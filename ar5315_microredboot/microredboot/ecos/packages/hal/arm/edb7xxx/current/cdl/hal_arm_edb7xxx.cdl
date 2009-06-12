@@ -1,0 +1,693 @@
+# ====================================================================
+#
+#      hal_arm_edb7xxx.cdl
+#
+#      Cirrus Logic EDB7XXX evaluation board HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2003 Gary Thomas <gary@mind.be>
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-07-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_ARM_EDB7XXX {
+    display       "Cirrus Logic ARM7 based development boards"
+    parent        CYGPKG_HAL_ARM
+    include_dir   cyg/hal
+    hardware
+    define_header hal_arm_edb7xxx.h
+    description   "
+The EDB7XXX HAL package provides the support needed to run eCos on Cirrus Logic
+CL-PS7111 and EP7xxx based development boards."
+
+    compile       hal_diag.c edb7xxx_misc.c
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+    implements    CYGINT_HAL_ARM_ARCH_ARM7
+    implements    CYGINT_HAL_SUPPORTS_MMU_TABLES
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_arm.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_arm_edb7xxx.h>"
+        puts $::cdl_header "#define HAL_PLATFORM_MACHINE_TYPE  131"
+        puts $::cdl_header "#define CYGHWR_REDBOOT_ARM_TRAMPOLINE_ADDRESS 0x00001f00"
+    }
+
+    requires { (CYGBLD_BUILD_REDBOOT_WITH_EXEC == 0) || \
+               (CYGHWR_REDBOOT_ARM_LINUX_EXEC_ADDRESS_DEFAULT == 0xC0038000) }
+
+    cdl_option CYGHWR_HAL_ARM_EDB7XXX_VARIANT {
+        display       "Cirrus Logic processor variant"
+        flavor        data
+        legal_values  { "CL_PS7111" "EP7209" "EP7211" "EP7212" "EP7312" }
+        default_value { "EP7211" }
+        description   "
+            The Cirrus Logic processor variant."
+        define -file system.h CYGHWR_HAL_ARM_EDB7XXX_VARIANT
+    }
+
+    cdl_option CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT {
+        display       "Cirrus Logic board variant"
+        flavor        data
+        legal_values  { "CL7111" "EDB7209" "EDB7211" "EDB7212" "EDB7312" }
+        default_value { CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "CL_PS7111" ? "CL7111" : \
+                        CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7209" ? "EDB7209" : \
+                        CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7211" ? "EDB7211" : \
+                        CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7212" ? "EDB7212" : \
+                        CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7312" ? "EDB7312" : \
+                        "" }
+        description   "
+            The board type which uses a Cirrus Logic processor variant."
+        define -file system.h CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT
+	define_proc {
+            puts $::cdl_header ""
+            puts $::cdl_header "#ifdef CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_CL7111"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"ARM 710C\""
+            puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"Cirrus Logic CL-PS7111\""
+            puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+            puts $::cdl_header "#define __CL7111"
+            puts $::cdl_header "#endif //CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_CL7111"
+            puts $::cdl_header ""
+            puts $::cdl_header "#ifdef CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7209"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"ARM 720T\""
+            puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"Cirrus Logic EDB7209\""
+            puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+            puts $::cdl_header "#define __EDB7209"
+            puts $::cdl_header "#endif //CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7209"
+            puts $::cdl_header ""
+            puts $::cdl_header "#ifdef CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7211"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"ARM 720T\""
+            puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"Cirrus Logic EDB7211\""
+            puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+            puts $::cdl_header "#define __EDB7211"
+            puts $::cdl_header "#endif //CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7211"
+            puts $::cdl_header ""
+            puts $::cdl_header "#ifdef CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7212"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"ARM 720T\""
+            puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"Cirrus Logic EDB7212\""
+            puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+            puts $::cdl_header "#define __EDB7209"
+            puts $::cdl_header "#define __EDB7212"
+            puts $::cdl_header "#endif //CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7212"
+            puts $::cdl_header ""
+            puts $::cdl_header "#ifdef CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7312"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"ARM 720T\""
+            puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"Cogent EDB7312\""
+            puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"Cirrus Logic EP7312\""
+            puts $::cdl_header "#define __EDB7312"
+            puts $::cdl_header "#endif //CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT_EDB7312"
+            puts $::cdl_header ""
+	}
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  { "ROM"
+                        ((CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7209") ? "" : "RAM")
+                        ((CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7312") ? "ROMRAM" : "")
+        }
+        default_value  { CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7209" ? "ROM" : "RAM"}
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+            When targetting the Cirrus Logic evaluation boards it is possible to build
+            the system for either RAM bootstrap or ROM bootstrap(s). Select
+            'ram' when building programs to load into RAM using onboard
+            debug software such as Angel or eCos GDB stubs.  Select 'rom'
+            when building a stand-alone application which will be put
+            into ROM."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+        display       "Diagnostic serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 115200
+        default_value 38400
+        description   "
+            This option selects the baud rate used for the diagnostic port.
+            Note: this should match the value chosen for the GDB port if the
+            diagnostic and GDB port are the same."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_BAUD {
+        display       "GDB serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 115200
+        default_value 38400
+        description   "
+            This option controls the baud rate used for the GDB connection."
+    }
+
+    cdl_component CYGSEM_EDB7XXX_LCD_COMM {
+        display        "Support LCD/touchscreen for comminication channel"
+        active_if      CYGPKG_REDBOOT && {CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7312"}
+        flavor         bool
+        default_value  1
+        compile        lcd_support.c
+        description    "
+          Enabling this option will use the LCD and touchscreen for a
+          communications channel, suitable for RedBoot, etc."
+
+        cdl_option  CYGSEM_EDB7XXX_LCD_COMM_PORTRAIT_MODE {
+            display       "LCD portrait mode"
+            flavor        bool
+            default_value 0
+            description   "
+                Setting this option will orient the data on the LCD screen
+                in portrait (240x320) mode."
+        }
+
+        cdl_option  CYGOPT_EDB7XXX_LCD_COMM_LOGO {
+            display       "RedHat logo location"
+            flavor        booldata
+            legal_values  { "TOP" "BOTTOM" }
+            default_value { "TOP" }
+            description   "
+                Use this option to control where the RedHat logo is placed
+                on the LCD screen."
+        }
+    }
+    
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+        display      "Number of communication channels on the board"
+        flavor       data
+        calculated   2+CYGSEM_EDB7XXX_LCD_COMM
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT {
+        display      "Default console channel."
+        flavor       data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        calculated   0
+    }
+ 
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+        display          "Debug serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+            The EDB7xxx boards have two serial ports. This option
+            chooses which port will be used to connect to a host
+            running GDB."
+     }
+ 
+     cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+         display          "Diagnostic serial port"
+         active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+         flavor data
+         legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+         default_value    CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT
+         description      "
+            The EDB7xxx boards have two serial ports.  This option
+            chooses which port will be used for diagnostic output."
+     }
+
+    cdl_option CYGHWR_HAL_ARM_EDB7XXX_PROCESSOR_CLOCK {
+        display       "Processor clock rate (kHz)"
+        flavor        data
+	    legal_values  18432 36864 49152 73728 90317
+        default_value { CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "CL_PS7111" ? 18432 : 73728 }
+        description   "
+            The processor can run at various frequencies."
+    }
+
+    cdl_option CYGHWR_HAL_ARM_EDB7XXX_DRAM_SIZE {
+        display       "Installed DRAM on board"
+        flavor        data
+        legal_values  0 2 16
+        default_value { CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "CL7111" ? 2 : \
+                        CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7209" ? 0 : 16 }
+        description   "
+            The Cirrus Logic boards can have various amounts of DRAM installed.
+            The machine needs to be initialized differently, depending
+            upon the amount installed."
+    }
+
+    cdl_option CYGHWR_HAL_ARM_EDB7XXX_SOFTWARE_DRAM_REFRESH {
+        display "Perform DRAM refresh in software"
+        flavor   bool
+        default_value 0
+        description "
+           This option will add code that refreshes the DRAM by
+           touching all of DRAM during the system clock interrupt
+           processing."
+    }
+    
+    cdl_option CYGHWR_HAL_ARM_EDB7XXX_LCD_INSTALLED {
+        display       "LCD installed"
+        flavor        bool
+        default_value 1
+        description   "
+            If an LCD panel is installed, 128K of DRAM will be dedicated to the
+            LCD buffer by the system intialization.  Note: changing this value
+	    from the default will alter the memory map and a new debug enviroment
+	    (GDB or RedBoot) may be required."
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants"
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value { CYGHWR_HAL_ARM_EDB7XXX_PROCESSOR_CLOCK <= 73728 ? 5120 : 6272 };
+	    # Assumes 512KHz clock - usually.
+        }
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+        parent  CYGPKG_NONE
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "arm-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "CL_PS7111" ? "-mcpu=arm710c -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" : \
+                                                                          "-mcpu=arm7tdmi -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which are used to
+                compile all packages by default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "CL_PS7111" ? "-mcpu=arm710c -Wl,--gc-sections -Wl,-static -g -nostdlib" : "-mcpu=arm7tdmi -Wl,--gc-sections -Wl,-static -g -nostdlib"}
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { (CYG_HAL_STARTUP == "ROM") || (CYG_HAL_STARTUP == "ROMRAM") }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            requires CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                binary data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+
+        cdl_option CYGBLD_BUILD_FLASH_TOOL {
+            display "Build flash programming tool"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "RAM" }
+            requires CYGPKG_LIBC
+            requires CYGPKG_KERNEL
+            no_define
+            description "This option enables the building of the flash programming tool for copying the GDB stubs into flash memory."
+
+            make -priority 320 {
+                <PREFIX>/bin/prog_flash.img : <PACKAGE>/misc/prog_flash.c
+                @sh -c "mkdir -p misc $(dir $@)"
+                $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o misc/prog_flash.o $<
+                @echo $@ ": \\" > $(notdir $@).deps
+                @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+                @tail -n +2 deps.tmp >> $(notdir $@).deps
+                @echo >> $(notdir $@).deps
+                @rm deps.tmp
+                $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ misc/prog_flash.o
+            }
+        }
+
+        cdl_option CYGBLD_BUILD_AUX_TESTS {
+            display "Build tests for auxiliaries"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "RAM" }
+            requires CYGPKG_LIBC
+            requires CYGPKG_KERNEL
+            no_define
+            description "
+               This option enables the building of some tests for the
+               auxiliary devices."
+
+            make -priority 320 {
+                <PREFIX>/bin/lcd_test.img : <PACKAGE>/misc/lcd_test.c
+                @sh -c "mkdir -p misc $(dir $@)"
+                $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o misc/lcd_test.o $<
+                @echo $@ ": \\" > $(notdir $@).deps
+                @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+                @tail -n +2 deps.tmp >> $(notdir $@).deps
+                @echo >> $(notdir $@).deps
+                @rm deps.tmp
+                $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ misc/lcd_test.o
+            }
+
+            make -priority 320 {
+                <PREFIX>/bin/panel_test.img : <PACKAGE>/misc/panel_test.c
+                @sh -c "mkdir -p misc $(dir $@)"
+                $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o misc/panel_test.o $<
+                @echo $@ ": \\" > $(notdir $@).deps
+                @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+                @tail -n +2 deps.tmp >> $(notdir $@).deps
+                @echo >> $(notdir $@).deps
+                @rm deps.tmp
+                $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ misc/panel_test.o
+            }
+
+            make -priority 320 {
+                <PREFIX>/bin/kbd_test.img : <PACKAGE>/misc/kbd_test.c
+                @sh -c "mkdir -p misc $(dir $@)"
+                $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o misc/kbd_test.o $<
+                @echo $@ ": \\" > $(notdir $@).deps
+                @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+                @tail -n +2 deps.tmp >> $(notdir $@).deps
+                @echo >> $(notdir $@).deps
+                @rm deps.tmp
+                $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ misc/kbd_test.o
+            }
+
+            make -priority 320 {
+                <PREFIX>/bin/i2s_audio_test.img : <PACKAGE>/misc/i2s_audio_test.c <PACKAGE>/misc/i2s_audio_fiq.S
+                @sh -c "mkdir -p misc $(dir $@)"
+                $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o misc/i2s_audio_test.o $<
+                @echo $@ ": \\" > $(notdir $@).deps
+                @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+                @tail -n +2 deps.tmp >> $(notdir $@).deps
+                @echo >> $(notdir $@).deps
+                # warning: no proper deps here
+                $(CC) -c $(INCLUDE_PATH) -I$(dir $<) $(CFLAGS) -o misc/i2s_audio_fiq.o $(REPOSITORY)/$(PACKAGE)/misc/i2s_audio_fiq.S
+                $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ misc/i2s_audio_test.o misc/i2s_audio_fiq.o
+            }
+
+        }
+    }
+
+
+    cdl_component CYGPKG_HAL_ARM_EDB7XXX_OPTIONS {
+        display "Cirrus Logic build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+# Note: now defined in <pkgconf/hal.h>
+#            default_value { CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "CL_PS7111" ? "-D__CL7111" : 
+#                            CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7209" ? "-D__EDB7209" : 
+#                            CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7211" ? "-D__EDB7211" : 
+#                            CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7212" ? "-D__EDB7209 -D__EDB7212" : 
+#                            CYGHWR_HAL_ARM_EDB7XXX_VARIANT == "EP7312" ? "-D__EDB7312" : 
+#                            "" }
+
+        cdl_option CYGPKG_HAL_ARM_EDB7XXX_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Cirrus Logic HAL. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_HAL_ARM_EDB7XXX_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Cirrus Logic HAL. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_HAL_ARM_EDB7XXX_TESTS {
+            display "Cirrus Logic tests"
+            flavor  data
+            no_define
+            calculated { "tests/dram_test" }
+            description   "
+                This option specifies the set of tests for the Cirrus Logic HAL."
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { 
+          CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "CL7111" ? 
+            (CYG_HAL_STARTUP == "RAM" ? "arm_cl7111_ram" : \
+             CYG_HAL_STARTUP == "ROM" ? "arm_cl7111_rom" : "BOGUS.mlt" ) : \
+          CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7209" ? 
+            (CYG_HAL_STARTUP == "ROM" ? "arm_edb7209_rom" : "BOGUS.mlt" ) : \
+          CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7211" ? 
+            (CYG_HAL_STARTUP == "RAM" ? "arm_edb7211_ram" : \
+             CYG_HAL_STARTUP == "ROM" ? "arm_edb7211_rom" : "BOGUS.mlt" ) : \
+          CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7212" ? 
+            (CYG_HAL_STARTUP == "RAM" ? "arm_edb7212_ram" : \
+             CYG_HAL_STARTUP == "ROM" ? "arm_edb7212_rom" : "BOGUS.mlt" ) : \
+          CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7312" ? 
+            (CYG_HAL_STARTUP == "RAM" ? "arm_edb7312_ram" : \
+             CYG_HAL_STARTUP == "ROMRAM" ? "arm_edb7312_romram" : \
+             CYG_HAL_STARTUP == "ROM" ? "arm_edb7312_rom" : "BOGUS.mlt" ) : \
+          "BOGUS.mlt"
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { 
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "CL7111" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_cl7111_ram.ldi>" :  \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_cl7111_rom.ldi>" :  "BOGUS.ldi" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7209" ?
+                (CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7209_rom.ldi>" :  "BOGUS.ldi" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7211" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_edb7211_ram.ldi>" :  \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7211_rom.ldi>" :  "BOGUS.ldi" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7212" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_edb7212_ram.ldi>" :  \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7212_rom.ldi>" :  "BOGUS.ldi" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7312" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_edb7312_ram.ldi>" :  \
+                 CYG_HAL_STARTUP == "ROMRAM" ? "<pkgconf/mlt_arm_edb7312_romram.ldi>" : \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7312_rom.ldi>" :  "BOGUS.ldi" ) : \
+              "BOGUS.ldi" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated {
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "CL7111" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_cl7111_ram.h>" :  \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_cl7111_rom.h>" :  "BOGUS.h" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7209" ?
+                (CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7209_rom.h>" :  "BOGUS.h" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7211" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_edb7211_ram.h>" :  \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7211_rom.h>" :  "BOGUS.h" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7212" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_edb7212_ram.h>" :  \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7212_rom.h>" :  "BOGUS.h" ) : \
+              CYGHWR_HAL_ARM_EDB7XXX_BOARD_VARIANT == "EDB7312" ?
+                (CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_edb7312_ram.h>" :  \
+                 CYG_HAL_STARTUP == "ROMRAM" ? "<pkgconf/mlt_arm_edb7312_romram.h>" : \
+                 CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_edb7312_rom.h>" :  "BOGUS.h" ) : \
+              "BOGUS.h" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { (CYG_HAL_STARTUP == "ROM") || (CYG_HAL_STARTUP == "ROMRAM") }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+
+    cdl_component CYGPKG_CYGMON_HAL_OPTIONS {
+        display       "CygMon HAL options"
+        flavor        none
+        no_define
+        parent        CYGPKG_CYGMON
+        active_if     CYGPKG_CYGMON
+        requires      CYGPKG_IO_SERIAL_ARM_EDB7XXX
+        requires      {(CYGDAT_CYGMON_CONSOLE_DEV != "\"/dev/ser1\"") || \
+                       (CYGPKG_IO_SERIAL_ARM_EDB7XXX_SERIAL1)}
+        requires      {(CYGDAT_CYGMON_CONSOLE_DEV != "\"/dev/ser2\"") || \
+                       (CYGPKG_IO_SERIAL_ARM_EDB7XXX_SERIAL2)}
+        description   "
+            This option lists the target's requirements for a valid CygMon
+            configuration."
+
+
+        cdl_option CYGDAT_CYGMON_CONSOLE_DEV {
+            display       "Serial port for default console"
+            flavor data
+            default_value { "\"/dev/ser1\"" }
+            description   "
+               This option selects the physical device to use as the default
+               console device for CygMon."
+    
+        }
+    
+        cdl_option CYGBLD_BUILD_CYGMON_BIN {
+            display       "Build CygMon ROM binary image"
+            active_if     CYGBLD_BUILD_CYGMON
+            default_value 1
+            no_define
+            description "This option enables the conversion of the CygMon ELF
+                         image to a binary image suitable for ROM programming."
+    
+            make -priority 325 {
+                <PREFIX>/bin/cygmon.bin : <PREFIX>/bin/cygmon.elf
+                $(OBJCOPY) --strip-debug $< $(@:.bin=.img) 
+                $(OBJCOPY) -O srec $< $(@:.bin=.srec)
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+         display       "Work with a ROM monitor"
+         flavor        booldata
+         legal_values  { "Generic" "GDB_stubs" }
+         default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+         parent        CYGPKG_HAL_ROM_MONITOR
+         requires      { CYG_HAL_STARTUP == "RAM" }
+         description   "
+             Support can be enabled for different varieties of ROM monitor.
+             This support changes various eCos semantics such as the encoding
+             of diagnostic output, or the overriding of hardware interrupt
+             vectors.
+             Firstly there is \"Generic\" support which prevents the HAL
+             from overriding the hardware vectors that it does not use, to
+             instead allow an installed ROM monitor to handle them. This is
+             the most basic support which is likely to be common to most
+             implementations of ROM monitor.
+             \"GDB_stubs\" provides support when GDB stubs are included in
+             the ROM monitor or boot ROM."
+     }
+
+    cdl_component CYGPKG_REDBOOT_HAL_OPTIONS {
+        display       "Redboot HAL options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+    
+        cdl_option CYGBLD_BUILD_REDBOOT_BIN {
+            display       "Build Redboot ROM binary image"
+            active_if     CYGBLD_BUILD_REDBOOT
+            default_value 1
+            no_define
+            description "This option enables the conversion of the Redboot ELF
+                         image to a binary image suitable for ROM programming."
+    
+            make -priority 325 {
+                <PREFIX>/bin/redboot.bin : <PREFIX>/bin/redboot.elf
+                $(OBJCOPY) --strip-debug $< $(@:.bin=.img) 
+                $(OBJCOPY) -O srec $< $(@:.bin=.srec)
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+    }
+
+}

@@ -1,0 +1,22 @@
+Jan 28, 2002
+
+These files were originally obtained from KAME, via
+  kame-20020107-netbsd152-snap.tgz
+(i.e. a KAME snapshot of FreeBSD 4.4, taken on Jan 7, 2002)
+
+The original files (and updates) were imported into the eCos
+tree via this process:
+  cd /tmp
+  gzip -d <kame-20020107-netbsd152-snap.tgz | tar -xpf -
+  cd kame/freebsd/sys
+  XXX=*THIS DOCUMENTATION DIRECTORY*
+  xargs -t -n2 <${XXX}/BSD_FILE_LIST ${XXX}/copy_files.sh
+
+This creates a directory tree suitable for starting as an
+eCos package.  This can then be imported into the eCos tree
+via:
+  cd /tmp/bsd_tcpip/current
+  cvs -d ECOS_CVS import -m 'import of FreeBSD 4.4 networking stack' -ko ecc/ecc/net/bsd_tcpip/current NET FreeBSD_4_4
+
+Be sure and edit the list of files if any new files from the
+network distribution is added to the eCos codebase.

@@ -1,0 +1,123 @@
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2002-03-05  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Added.
+	* misc/redboot_ROM.ecm: Include flash support.
+
+2001-11-19  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Added CYGHWR_HAL_SH_OOC_DIVIDER_1
+	(found by Koichi Nagashima)
+
+2001-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Default to big endian.
+
+2001-08-08  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_ROM.ecm: Added.
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Added RedBoot build rule.
+
+2001-07-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc (BSC_settings_table): Replaced
+	CYGARC_REG_SDMR2 with the value specific to the board.
+
+2001-07-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Option description tweaks.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Init correct vector with interrupt VSR.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Included private parts of serial driver.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Moved reset macro to
+	* include/plf_intr.h: this file.
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+
+2001-01-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Properly init interrupt VSR.
+
+2000-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Mangle symbols.
+
+2000-11-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Set flags to -m3 for now.
+
+2000-11-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc (BSC_settings_table): Use computed init frqcr.
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Updated clock default settings.
+
+2000-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7750_cq7750.cdl: Adding clock options.
+
+2000-08-16  Haruki Kashiwaya  <kashiwaya@redhat.com>
+
+	* Set up directory structure.
+
+2000-04-18  Ryozaburo Suzuki  <ryos@atom-tc.or.jp>
+
+	* Contributed sources for the CqREEK/SH-4 platform.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

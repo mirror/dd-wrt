@@ -1,0 +1,31 @@
+# GDBEventHandler class implementation for Insight.
+# Copyright 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# ------------------------------------------------------------
+#  PUBLIC PROC:  dispatch - Dispatch the given event to all
+#                 event handlers. The name of the handler
+#                 method to call is stored in the event's
+#                 "handler" method.                  
+# ------------------------------------------------------------
+body GDBEventHandler::dispatch {event} {
+
+  set handler [$event handler]
+
+  # invoke event handlers
+  foreach w [itcl_info objects -isa GDBEventHandler] {
+    dbug I "posting event \"$handler\" to \"$w\""
+    if {[catch {$w $handler $event}]} {
+      dbug E "On $handler event, $w errored:\n$::errorInfo"
+    }
+  }
+}

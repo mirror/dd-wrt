@@ -1,0 +1,49 @@
+# ====================================================================
+#
+#      acacia_eth_driver.cdl
+#
+#      Ethernet drivers - for MAC on idt32438
+#                         
+#
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      vsubbiah
+# Original data:  From acacia ethernet driver on LInux
+# Contributors:   Atheros engineering
+# Date:           2005-11-26
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_MIPS32_ACACIA {
+    display       "IDT 32438 acacia Ethernet Driver"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_HAL_MIPS_IDT32438
+    implements    CYGHWR_NET_DRIVERS
+    implements    CYGHWR_NET_DRIVER_ETH0
+    include_dir   .
+    include_files ;
+    description   "Ethernet driver for MAC on IDT 32438."
+    compile       -library=libextras.a acacia_ecos.c acacia_mac.c phy.c
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_ACACIA_OPTIONS {
+        display "IDT 32438 acacia ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_ACACIA_OPTIONS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the IDT 32438 ethernet driver package.
+                These flags are used in addition to the set of global
+		flags."
+        }
+    }
+}

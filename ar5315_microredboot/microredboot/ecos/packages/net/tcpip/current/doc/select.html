@@ -1,0 +1,108 @@
+<html>
+<body>
+<pre>
+NAME
+       select,  FD_CLR,  FD_ISSET,  FD_SET, FD_ZERO - synchronous
+       I/O multiplexing
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       int  select(int  n,  fd_set  *readfds,  fd_set  *writefds,
+       fd_set *exceptfds, struct timeval *timeout);
+
+       FD_CLR(int fd, fd_set *set);
+       FD_ISSET(int fd, fd_set *set);
+       FD_SET(int fd, fd_set *set);
+       FD_ZERO(fd_set *set);
+
+DESCRIPTION
+       select  waits  for  a number of file descriptors to change
+       status.
+
+       Three independent sets of descriptors are watched.   Those
+       listed  in  readfds  will  be watched to see if characters
+       become available for reading, those in  writefds  will  be
+       watched  to  see if it is ok to immediately write on them,
+       and those in exceptfds will be watched for exceptions.  On
+       exit,  the  sets  are  modified in place to indicate which
+       descriptors actually changed status.
+
+       Four macros are provided to manipulate the sets.   FD_ZERO
+       will clear a set.  FD_SET and FD_CLR add or remove a given
+       descriptor from  a  set.   FD_ISSET  tests  to  see  if  a
+       descriptor is part of the set; this is useful after select
+       returns.
+
+       n is the highest-numbered descriptor in any of  the  three
+       sets, plus 1.
+
+       timeout  is  an  upper bound on the amount of time elapsed
+       before select returns. It may be zero, causing  select  to
+       return  immediately.  If  timeout  is  NULL  (no timeout),
+       select can block indefinitely.
+
+RETURN VALUE
+       On success, select returns the number of descriptors  con-
+       tained  in  the  descriptor sets, which may be zero if the
+       timeout expires before anything interesting  happens.   On
+       error, -1 is returned, and errno is set appropriately; the
+       sets and timeout become undefined, so do not rely on their
+       contents after an error.
+
+ERRORS
+       EBADF   An invalid file descriptor was given in one of the
+               sets.
+
+       EINTR   A non blocked signal was caught.
+
+       EINVAL  n is negative.
+
+       ENOMEM  select was unable to allocate memory for  internal
+               tables.
+
+NOTES
+       Some  code calls select with all three sets empty, n zero,
+       and a non-null timeout as a fairly portable way  to  sleep
+       with subsecond precision.
+
+EXAMPLE
+       #include <stdio.h>
+       #include <sys/time.h>
+       #include <sys/types.h>
+       #include <unistd.h>
+
+       int
+       main(void)
+       {
+           fd_set rfds;
+           struct timeval tv;
+           int retval;
+
+           /* Watch stdin (fd 0) to see when it has input. */
+           FD_ZERO(&rfds);
+           FD_SET(0, &rfds);
+           /* Wait up to five seconds. */
+           tv.tv_sec = 5;
+           tv.tv_usec = 0;
+
+           retval = select(1, &rfds, NULL, NULL, &tv);
+           /* Don't rely on the value of tv now! */
+
+           if (retval)
+               printf("Data is available now.\n");
+               /* FD_ISSET(0, &rfds) will be true. */
+           else
+               printf("No data within five seconds.\n");
+
+           exit(0);
+       }
+
+       Generally  portable  to/from  non-BSD  systems  supporting
+       clones  of  the BSD socket layer (including System V vari-
+       ants).  However, note that the System V variant  typically
+       sets the timeout variable before exit, but the BSD variant
+       does not.
+</pre>
+</body>
+</html>

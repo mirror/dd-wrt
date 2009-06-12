@@ -1,0 +1,55 @@
+// eCos memory layout - Wed Apr 11 13:49:55 2001
+
+// This is a generated file - do not edit
+
+#include <cyg/infra/cyg_type.inc>
+
+MEMORY
+{
+    sram : ORIGIN = 0x00000000, LENGTH = 0x8000
+    ram : ORIGIN = 0x600000, LENGTH = 0x40000
+    rom : ORIGIN = 0x500000, LENGTH = 0x80000
+    aicvect : ORIGIN = 0xFFF080, LENGTH = 0x00020
+    magic : ORIGIN = 0x410000, LENGTH = 1024K
+}
+
+//
+SECTIONS
+{
+    SECTIONS_BEGIN
+    CYG_LABEL_DEFN(__reserved_bootmon) = 0x0500000; . = CYG_LABEL_DEFN(__reserved_bootmon);
+    SECTION_rom_vectors (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_text (rom, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_fini (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata1 (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fixup (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_gcc_except_table (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fixed_vectors (sram, 0x20, LMA_EQ_VMA)
+    .internal_vectors ALIGN(0x4) :  { . = . ; KEEP (*(.internal_vectors)) } > sram
+    SECTION_data (ram, 0x0600000, FOLLOWING (.gcc_except_table))
+    SECTION_bss (ram, ALIGN (0x4), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__heap1) = ALIGN (0x8);
+    SECTIONS_END
+    . = 0x410000;
+    .data_sx ALIGN (0x8) : {*(.P0_sx)} > magic
+        
+    . = 0x411800;
+    .BUFFER_sx ALIGN (0x8) : {*(.BUFFER_sx)} > magic
+    .XM_sx ALIGN (0x8) : {*(.XM_sx*)} > magic
+        
+    . = 0x420000;
+    .data_dx ALIGN (0x8) : {*(.P0_dx)} > magic
+        
+    . = 0x411800;
+    .BUFFER_dx ALIGN (0x8) : {*(.BUFFER_dx)} > magic
+    .XM_sx ALIGN (0x8) : {*(.XM_sx*)} > magic
+        
+    . = 0x490000;
+    .PARM_sx ALIGN (0x8) : {*(.PARM_sx)} > magic
+    . = 0x4A0000;
+    .PARM_dx ALIGN (0x8) : {*(.PARM_dx)} > magic
+        
+    . = 0x430000;
+    .prog ALIGN (0x10) : {*(prog.*)} > magic
+}

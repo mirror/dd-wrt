@@ -1,0 +1,317 @@
+# ====================================================================
+#
+#      posix.cdl
+#
+#      POSIX layer configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Contributors:
+# Date:           2000-3-28
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_POSIX {
+    display        "POSIX compatibility layer"
+    description    "This package enables the POSIX compatibility
+                    layer that implements IEEE 1003.1."
+    doc            ref/posix-compatibility.html
+    include_dir    cyg/posix
+    
+    requires       CYGPKG_KERNEL
+    requires       CYGPKG_ISOINFRA
+    requires       CYGPKG_ERROR
+    requires       CYGINT_ISO_ERRNO
+    requires       CYGINT_ISO_ERRNO_CODES
+    requires       CYGIMP_KERNEL_SCHED_SORTED_QUEUES
+
+    implements     CYGINT_ISO_SCHED_IMPL
+    implements     CYGINT_ISO_POSIX_LIMITS
+    implements     CYGINT_ISO_PMUTEXTYPES
+    implements     CYGINT_ISO_PTHREAD_MUTEX
+    requires       { CYGBLD_ISO_POSIX_LIMITS_HEADER == \
+                         "<cyg/posix/limits.h>" }
+    requires       { CYGBLD_ISO_PMUTEXTYPES_HEADER == \
+                         "<cyg/posix/muttypes.h>" }
+    requires       { CYGBLD_ISO_PTHREAD_MUTEX_HEADER == \
+                         "<cyg/posix/mutex.h>" }
+    
+    compile        mqueue.cxx mutex.cxx misc.cxx
+    compile       -library=libextras.a startup.cxx
+
+    cdl_option _POSIX_THREAD_PRIO_INHERIT {
+        display		"POSIX mutex priority inheritance feature test macro"
+        flavor        	bool
+        default_value 	1
+        requires	CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_INHERIT
+        description	"This option defines the POSIX feature test macro
+                         for supporting priority inheritance protocol in
+                         mutexes."
+    }
+    
+    cdl_option _POSIX_THREAD_PRIO_PROTECT {
+        display		"POSIX mutex priority ceiling feature test macro"
+        flavor        	bool
+        default_value 	1
+        requires	CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_CEILING
+        description	"This option defines the POSIX feature test macro
+                         for supporting priority ceiling protocol in mutexes."
+    }
+    
+    # ----------------------------------------------------------------
+    # Scheduling component
+    
+    cdl_component CYGPKG_POSIX_SCHED {
+	display          "POSIX scheduling configuration"
+	flavor           bool
+	default_value    1
+	description      "This component provides controls over scheduling
+	                  in POSIX."
+        requires         CYGPKG_POSIX_CLOCKS
+        compile          sched.cxx
+
+	cdl_option _POSIX_PRIORITY_SCHEDULING {
+	    display       "POSIX priority scheduling feature test macro"
+	    flavor        bool
+	    calculated    1
+	    requires      CYGSEM_KERNEL_SCHED_MLQUEUE
+	    description   "This option defines the POSIX feature test macro
+	                   that indicates that priority scheduling is present.
+	                   This should not be undefined."
+	}
+    }
+
+    # ----------------------------------------------------------------
+    # Pthreads component
+
+    cdl_component CYGPKG_POSIX_PTHREAD {
+	display          "POSIX pthread configuration"
+	flavor           bool
+	default_value    1
+	description      "This component provides configuration controls for
+	                  the POSIX pthreads package."
+        compile          pthread.cxx
+	script           pthread.cdl
+    }
+
+    # ----------------------------------------------------------------
+    # Timers component
+
+    cdl_option CYGPKG_POSIX_CLOCKS {
+	display          "POSIX clocks"
+	flavor           bool
+        default_value    1
+        implements       CYGINT_ISO_POSIX_CLOCK_TYPES
+        implements       CYGINT_ISO_POSIX_CLOCKS
+        implements       CYGINT_ISO_POSIX_SLEEP
+        requires         { CYGBLD_ISO_POSIX_CLOCK_TYPES_HEADER == \
+                             "<cyg/posix/time.h>" }
+        requires         { CYGBLD_ISO_POSIX_CLOCKS_HEADER == \
+                             "<cyg/posix/time.h>" }
+        requires         CYGPKG_KERNEL
+        requires         CYGVAR_KERNEL_COUNTERS_CLOCK
+        compile          time.cxx
+	description      "This component provides configuration controls for
+	                  the POSIX clocks."
+    }
+
+    # ----------------------------------------------------------------
+    # Timers component
+
+    cdl_option CYGPKG_POSIX_TIMERS {
+	display          "POSIX timers"
+	flavor           bool
+	default_value    1
+        implements       CYGINT_ISO_POSIX_TIMER_TYPES
+        implements       CYGINT_ISO_POSIX_TIMERS
+        implements       CYGINT_ISO_POSIX_TIMER_OPS
+        requires         { CYGBLD_ISO_POSIX_TIMER_TYPES_HEADER == \
+                             "<cyg/posix/time.h>" }
+        requires         { CYGBLD_ISO_POSIX_TIMERS_HEADER == \
+                             "<cyg/posix/time.h>" }
+        requires         CYGPKG_KERNEL
+        requires         CYGVAR_KERNEL_COUNTERS_CLOCK
+        requires         CYGPKG_POSIX_PTHREAD
+        requires         CYGPKG_POSIX_CLOCKS
+        requires         CYGPKG_POSIX_SIGNALS
+	description      "This component provides configuration controls for
+	                  the POSIX timers."
+    }
+
+    # ----------------------------------------------------------------
+    # Semaphores component
+
+    cdl_option CYGPKG_POSIX_SEMAPHORES {
+	display          "POSIX semaphores"
+	flavor           bool
+	default_value    1
+        implements       CYGINT_ISO_SEMAPHORES
+        requires         { CYGBLD_ISO_SEMAPHORES_HEADER == \
+                             "<cyg/posix/semaphore.h>" }
+	description      "This component provides configuration controls for
+	                  POSIX semaphores."
+
+        compile          sem.cxx
+    }
+
+    # ----------------------------------------------------------------
+    # Message queues component
+
+    cdl_component CYGPKG_POSIX_MQUEUES {
+	display          "POSIX message queues"
+	flavor           bool
+	default_value    1
+        implements       CYGINT_ISO_MQUEUE
+        requires         CYGPKG_KERNEL
+        requires         CYGINT_ISO_MALLOC
+        requires         CYGINT_ISO_ERRNO
+        requires         CYGINT_ISO_STRING_STRFUNCS
+	description      "This component provides configuration controls for
+	                  POSIX message queues."
+
+        cdl_option CYGNUM_POSIX_MQUEUE_OPEN_MAX {
+            display          "Maximum number of message queues"
+            flavor           data
+            default_value    8
+            legal_values     1 to 999999
+        }
+
+        cdl_option CYGIMP_POSIX_MQUEUE_VALIDATE_DESCRIPTOR {
+            display          "Validate queue descriptors"
+            flavor           bool
+            default_value    1
+            description      "
+                This option turns on checking that message queue descriptors
+                (of type mqd_t) passed into mq_* functions are valid. If so,
+                the functions will fail with EBADF, as POSIX 1003.1 mandates.
+                If this option is disabled, if an invalid descriptor is used,
+                random corruption may occur, or the system may crash. If
+                you are confident invalid descriptors will not be used,
+                you may wish to be disable this to save some per-instance
+                memory and execution time."
+        }
+
+        cdl_option CYGFUN_POSIX_MQUEUE_NOTIFY {
+            display          "Allow empty queue notification"
+            flavor           bool
+            requires         CYGPKG_POSIX_SIGNALS
+            default_value    CYGPKG_POSIX_SIGNALS
+            description      "
+                Enabling this option adds the function mq_notify() to the
+                API. Without it, some code and per-message queue descriptor
+                space is saved, as well as no longer requiring POSIX realtime
+                signal support."
+        }
+    }
+
+    # ----------------------------------------------------------------
+    # Signals component
+
+    cdl_component CYGPKG_POSIX_SIGNALS {
+	display          "POSIX signals configuration"
+	flavor           bool
+	default_value    1
+	requires	 CYGPKG_KERNEL_EXCEPTIONS
+        requires         CYGPKG_POSIX_PTHREAD
+        requires         CYGPKG_POSIX_TIMERS
+        implements       CYGINT_POSIX_REALTIME_SIGNALS
+        implements       CYGINT_ISO_SIGSETJMP
+        requires         { CYGBLD_ISO_SIGSETJMP_HEADER == \
+                             "<cyg/posix/sigsetjmp.h>" }
+        implements       CYGINT_ISO_SIGNAL_NUMBERS
+        implements       CYGINT_ISO_SIGNAL_IMPL
+        requires         { CYGBLD_ISO_SIGNAL_NUMBERS_HEADER == \
+                             "<cyg/posix/signal.h>" }
+        requires         { CYGBLD_ISO_SIGNAL_IMPL_HEADER == \
+                             "<cyg/posix/signal.h>" }
+	description      "This component provides configuration controls for
+	                  the POSIX signals."
+        compile          signal.cxx except.cxx 
+    }
+
+    # ----------------------------------------------------------------
+    # uname structure component
+
+    cdl_component CYGPKG_POSIX_UTSNAME {
+	display           "POSIX utsname configuration"
+	flavor            bool
+	default_value     1
+	requires          { CYGBLD_ISO_UTSNAME_HEADER == \
+                            "<cyg/posix/utsname.h>" }
+	description       "This component provides configuration controls for
+	                   the POSIX utsname structure and the uname() function."
+
+	cdl_option CYG_POSIX_UTSNAME_LENGTH {
+	    display          "Length of name strings in utsname structure"
+	    flavor           data
+	    default_value    65
+	    legal_values     1 to 99999999
+	}
+
+	cdl_option CYG_POSIX_UTSNAME_NODENAME_LENGTH {
+	    display          "Length of nodename string in utsname structure"
+	    flavor           data
+	    default_value    { CYG_POSIX_UTSNAME_LENGTH }
+	    legal_values     1 to 99999999	    
+	}
+
+    }
+
+    # ----------------------------------------------------------------
+    # Tests
+
+        cdl_option CYGPKG_POSIX_TESTS {
+            display "POSIX tests"
+            flavor  data
+            no_define
+            calculated { 
+                "tests/pthread1 tests/pthread2 tests/pthread3 tests/mutex3 tests/mqueue2"
+                . ((CYGPKG_POSIX_SIGNALS) ? " tests/mqueue1 tests/signal1 tests/signal2 tests/signal3 tests/sigsetjmp tests/timer1 tests/tm_basic" : "")
+            }
+            description   "
+                This option specifies the set of tests for the POSIX package."
+        }
+
+}
+
+# ====================================================================
+# End of posix.cdl
+
+

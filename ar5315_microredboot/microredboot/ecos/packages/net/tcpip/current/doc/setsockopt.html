@@ -1,0 +1,72 @@
+<html>
+<body>
+<pre>
+NAME
+       getsockopt, setsockopt - get and set options on sockets
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       int  getsockopt(int  s, int level, int optname, void *opt­
+       val, socklen_t *optlen);
+
+       int setsockopt(int s, int level, int optname,  const  void
+       *optval, socklen_t optlen);
+
+DESCRIPTION
+       Getsockopt  and  setsockopt manipulate the options associ­
+       ated with a socket.  Options may exist at multiple  proto­
+       col  levels;  they  are  always  present  at the uppermost
+       socket level.
+
+       When manipulating socket options the level  at  which  the
+       option  resides  and the name of the option must be speci­
+       fied.  To manipulate options at the socket level, level is
+       specified  as  SOL_SOCKET.   To  manipulate options at any
+       other level the protocol number of the appropriate  proto­
+       col  controlling  the option is supplied.  For example, to
+       indicate that an option is to be interpreted  by  the  TCP
+       protocol,  level  should  be set to the protocol number of
+       TCP; see getprotoent(3).
+
+       The parameters optval and optlen are used to access option
+       values  for  setsockopt.   For  getsockopt they identify a
+       buffer in which the value for the requested option(s)  are
+       to  be returned.  For getsockopt, optlen is a value-result
+       parameter, initially containing the  size  of  the  buffer
+       pointed  to  by optval, and modified on return to indicate
+       the actual size of the value returned.  If no option value
+       is to be supplied or returned, optval may be NULL.
+
+       Optname and any specified options are passed uninterpreted
+       to the appropriate  protocol  module  for  interpretation.
+       The  include  file &lt;network.h&gt; contains definitions for
+       socket level options, described below.  Options  at  other
+       protocol  levels  vary  in  format  and  name; consult the
+       appropriate entries in section 4 of the manual.
+
+       Most socket-level options utilize  an  int  parameter  for
+       optval.   For setsockopt, the parameter should be non-zero
+       to enable a boolean option, or zero if the option is to be
+       disabled.
+
+       For  a  description  of  the  available socket options see
+       socket(7) and the appropriate protocol man pages.
+
+RETURN VALUE
+       On success, zero is returned.  On error, -1  is  returned,
+       and errno is set appropriately.
+
+ERRORS
+       EBADF   The argument s is not a valid descriptor.
+
+       ENOTSOCK
+               The argument s is a file, not a socket.
+
+       ENOPROTOOPT
+               The option is unknown at the level indicated.
+
+
+</pre>
+</body>
+</html>

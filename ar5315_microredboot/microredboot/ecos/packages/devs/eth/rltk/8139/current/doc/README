@@ -1,0 +1,164 @@
+Some notes on the RealTek 8139 driver
+
+
+1. Using the driver
+
+This driver follows the customization model used by many other drivers
+to separate those parts of the code that are device specific from those
+that are platform specific by requiring two packages to actually use the
+driver -- the driver itself and a platform glue package that contains
+only a .cdl and an .inl file (see the devs/i386/pc/rltk8139 package for
+an example).
+
+Both the driver and the glue packages must be added to the package
+database before you can use them. My entries look like this:
+
+package CYGPKG_DEVS_ETH_RLTK_8139 {
+  alias     { "RealTek 8139 ethernet driver"
+              devs_eth_rltk_8139 8139_eth_driver }
+  hardware
+  directory devs/eth/rltk/8139
+  script    rltk_8139_eth_drivers.cdl
+        description     "Ethernet driver for RealTek 8139 NIC."
+}
+
+and
+
+package CYGPKG_DEVS_ETH_I386_RLTK8139 {
+  alias     { "Standard PC with RealTek 8139 ethernet device"
+              devs_eth_i386_pc_rltk8139 }
+  hardware
+  directory devs/eth/i386/pc/rltk8139
+  script    i386_pc_rltk8139_eth_drivers.cdl
+  description "Ethernet driver for the RealTek 8139 family of chips."
+}
+
+Finally, you will need to create a new target that includes the RealTek
+driver. The easiest way to this is copy an existing target and add the
+two packages defined above (and removing the Intel 82259 packages in case
+of an i386 pc target).
+
+
+2. Cache Coherency
+
+Since the 8139 reads data directly from memory via the PCI bus, you may
+have to worry about data cache coherency. For eCos, there are basically
+three cases (turning the data cache off is not considered a serious solution):
+
+a. Either the CPU has no data cache, or the CPU has cache snooping logic
+that will detect memory accesses by PCI bus master devices and flush the cache
+when necessary. In this case, nothing special needs to be done.
+
+b. The MMU is configured to access memory uncached in a certain address space.
+In this case, the macro CYGARC_UNCACHED_ADDRESS() can be used to convert
+normal (cached) into uncached accesses. The driver always uses this macro for
+accessing the transmit and receive buffers, since if the HAL doesn't
+support this mechanism, the macro does nothing and no harm is done.
+
+c. The data cache needs to be flushed/invalidated by the driver. In this case,
+you must define CYGPKG_DEVS_ETH_RLTK_8139_SOFTWARE_CACHE_COHERENCY in the
+platform specific .inl file. Furthermore, the HAL macros HAL_DCACHE_INVALIDATE
+and HAL_DCACHE_FLUSH must be defined. Next, you must ensure that the buffers
+are aligned to cache line boundaries; otherwise, the code could fail in
+mysterious ways.
+
+One way to do this is to define the following in the .inl file:
+
+#define CACHE_ALIGNED __attribute__ ((aligned (HAL_DCACHE_LINE_SIZE)))
+
+Then, use this attribute on the transmit and receive buffer definitions:
+
+static cyg_uint8 rltk8139_eth0_rx_ring[RX_BUF_TOT_LEN] CACHE_ALIGNED;
+
+Note that this may fail for long cache lines, since the 'aligned' attribute
+does not allow arbitrarily large alignment parameters. Unfortunately, the gcc
+documentation does not say what the maximum alignment that can be specified
+is. Additionally, the linker may also be limited in the maximum alignment that
+can be used. In such cases, you'll have to bite the bullet and define more
+space than would be strictly necessary, and ensure the necessary alignment
+like this:
+
+static cyg_uint8 rltk8139_eth0_rx_ring[RX_BUF_TOT_LEN + HAL_DCACHE_LINE_SIZE];
+
+Then, reference the buffers in the Rltk8139 definition like this:
+
+(cyg_uint8 *)((int)(&rltk8139_eth0_rx_ring[0] + HAL_DCACHE_LINE_SIZE)
+                    & ~(HAL_DCACHE_LINE_SIZE - 1))
+
+This assumes the cache line size is a power of 2; this is the case for all
+CPUs I know of. It also assumes an int can hold a pointer; if this is
+not true for your platform, use an integral type that can.
+
+Another thing to watch out for is that the buffers should also end on
+a cache line boundary. If your linker places the buffers sequentially in
+memory, you will only have to do this for the last buffer defined (since
+all buffers will start on cache line boundaries):
+
+static cyg_uint8
+rltk8139_eth0_tx_buffer[(TX_BUF_TOT_LEN + HAL_DCACHE_LINE_SIZE - 1)
+                        & ~(HAL_DCACHE_LINE_SIZE - 1)] CACHE_ALIGNED;
+
+
+3. Interrupt sharing
+
+If the 8139 must share it's interrupt request line with other devices, the
+HAL option 'chained interrupts' must be enabled. The 8139 driver does not
+support IRQ muxing like the Intel 82559 driver does (see also *Limitations*).
+
+The driver's ISR does not clear the interrupt status bits since I believe this
+should only be done after the conditions that caused those bits to be set
+have been handled by the '_deliver' routine. Instead, the interrupt is masked.
+There are two ways to do this (configurable with a CDL option):
+
+a. The interrupt vector is masked. Personally I think this is a bad idea
+   because this will also block interrupts from all other devices sharing
+   this interrupt until the network thread gets around to calling the
+   '_deliver' routine.
+
+b. Mask the interrupt request using the 8139's interrupt mask register. This
+   way, other devices' interrupt requests can still be serviced. Enable the
+   CYGPKG_DEVS_ETH_RLTK_8139_MASK_INTERRUPTS_IN_8139 option to use this.
+
+
+4. Limitations
+
+There are a number of limitations associated with this driver:
+
+a. The configuration of the NIC (MAC address, media selection, etc.) is
+   loaded from the serial EEPROM (which is assumed to exist) and cannot be
+   changed either at compile or run time.
+
+b. The 'twister' cannot be tuned. As far as I can make out, the 'twister'
+   can be tuned to improve signal quality over long lines. The RealTek
+   data sheet does not document the twister; and the code in the Linux
+   driver that does this is totally incomprehensible to me.
+
+c. If multiple 8139s share the same interrupt, chained interrupts have to
+   be used. No IRQ MUXing (like the Intel 82559 driver has) is supported.
+
+d. Programming the multicast acceptance filter is now implemented, but not
+   tested because eCos doesn't have such a test program (or at least I
+   couldn't find any). Since I have never used multicasting myself, I don't
+   feel competent to write one. Someone suggested setting up an IPv6 network
+   for testing, since it seems IPv6 makes use of multicasting in normal
+   operation, but I haven't got around to doing that.
+
+e. It's fairly slow. This is not really the driver's fault - the 8139 requires
+   a fast CPU to get anything approaching decent speed because all messages
+   have to be copied around in memory.
+
+
+5. Credits
+
+The 8139's data sheet is not really all that helpful, since it contains
+a lot of omissions and some data that is simply incorrect. As such, I am
+indebted to Bill Paul for his well-documented OpenBSD driver, which was
+invaluable for figuring out how the chip is supposed to work. The idea of
+using 'enum' instead of '#define' came from the Linux 8139 driver, which I
+initially wanted to port to eCos, but didn't because I found it extremely
+hard to read and understand. (Note that I didn't copy any code from those
+drivers to avoid tainting eCos' license). The basic structure of the driver
+and .cdl files was taken from the eCos i82559 driver.
+
+I'd also like all the people who have downloaded and tested the driver, and
+contributed bug reports and fixes.

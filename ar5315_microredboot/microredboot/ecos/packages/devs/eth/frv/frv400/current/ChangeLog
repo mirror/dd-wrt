@@ -1,0 +1,79 @@
+2004-09-05  Mark Salter      <msalter@redhat.com>
+            David Woodhouse  <dwmw2@redhat.com>
+
+	* include/devs_eth_frv400.inl: Use unsigned char for printing. Check
+	for no MAC address being given.
+	* include/devs_eth_frv400.inl: Read MAC address from ID PROM bytewise.
+	Add 'setmac' RedBoot command for setting the MAC address in the EEPROM.
+
+2002-05-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/devs_eth_frv400.inl: Use CYGINT_IO_ETH_INT_SUPPORT_REQUIRED
+	instead of CYGPKG_NET where required.
+
+2002-03-28  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/frv400_eth_drivers.cdl: Don't define CYGHWR_NET_DRIVERS as this
+	is done in the generic driver.
+
+2001-12-10  Richard Sandiford  <rsandifo@redhat.com>
+
+	* include/devs_eth_frv400.inl (_frv400_eth_int_clear): Don't
+	unmask the interrupt after clearing it.
+
+2001-10-16  Gary Thomas  <gthomas@redhat.com>
+
+	* include/devs_eth_frv400.inl: Specify buffer layout (change in
+	generic driver requires this).
+
+2001-10-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/devs_eth_frv400.inl: Allow configuration to force ESA
+	(in case EEPROM is bad), otherwise make sure EEPROM is used to
+	set chip address (ESA) before use.
+
+2001-10-12  Gary Thomas  <gthomas@redhat.com>
+
+	* include/devs_eth_frv400.inl: Add PCI scanning for device.
+	(_frv400_eth_int_clear): Need explicit interrupt acknowledge.
+
+2001-10-10  Gary Thomas  <gthomas@redhat.com>
+
+	* include/devs_eth_frv400.inl: 
+	* cdl/frv400_eth_drivers.cdl: New device driver for onboard LAN,
+	based on RTL8029s which is the same as DP8390 (NE2000).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

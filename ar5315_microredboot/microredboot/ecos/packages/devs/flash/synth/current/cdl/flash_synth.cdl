@@ -1,0 +1,130 @@
+# ====================================================================
+#
+#      flash_synth.cdl
+#
+#      FLASH memory - Synthetic flash driver for Synthetic target
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      andrew.lunn@ascom.ch
+# Contributors:   jlarmour
+# Date:           2000-10-30
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_FLASH_SYNTH {
+    display       "Synthetic FLASH memory support"
+
+    parent        CYGPKG_IO_FLASH
+    active_if	  CYGPKG_IO_FLASH
+    requires      CYGINT_ISO_ERRNO_CODES
+
+    implements    CYGHWR_IO_FLASH_DEVICE
+
+    include_dir   .
+    include_files ; # none _exported_ whatsoever
+    description   "FLASH memory device support for Synthetic target"
+    compile       synth.c flash_erase_block.c flash_program_buf.c flash_query.c
+	
+    cdl_option CYGMEM_FLASH_SYNTH_BASE {
+      display       "Base address of flash"
+      flavor        booldata
+      default_value 0
+      description  "
+              If enabled, controls where in the synth target memory map the 
+              flash is mapped. WARNING: This must be somewhere 
+              the host Linux kernel is prepaired to mmap a file. It
+              must be page aligned. For hosts with recent x86 Linux kernels,
+              a value of 0x40000000 is likely appropriate. When disabled,
+              the driver will automatically use whatever address the kernel
+              provides it with."
+    }
+
+    cdl_option CYGSEM_FLASH_SYNTH_FILE_WRITEBACK {
+      display       "FLASH changes modify the underlying file"
+      flavor        booldata
+      default_value 0
+      description  "
+              If enabled, changes made to the contents of the emulated
+              FLASH are reflected in the underlying file. Otherwise,
+              the file will be left unaffected by any changes the program
+              makes to FLASH contents."
+    }
+
+    cdl_option CYGNUM_FLASH_SYNTH_BLOCKSIZE {
+	display        "Size of one block of synth flash"
+	flavor	       data
+	default_value  65536
+        legal_values   4096 to 999999
+        requires       { (CYGNUM_FLASH_SYNTH_BLOCKSIZE % 4096) == 0 }
+	description    "
+	        This controls the size of one block of flash. This is 
+		the minimum size that can be erased."
+    }		
+
+    cdl_option CYGNUM_FLASH_SYNTH_NUMBLOCKS {
+	display        "Number of blocks in the synth flash"
+	flavor	       data
+	default_value  16
+	description    "
+	        This controls how many blocks there are in the flash"
+    }
+
+    cdl_option CYGDAT_FLASH_SYNTH_FILENAME {
+	display        "Name of file emulating synth flash"
+	flavor	       data
+	default_value  { "\"synth.flash\"" }
+	description    "
+	        This is the name of the file which holds the contents of
+		the flash. It is mmap'ed into memory and written for flash
+		program & erase operations. It will be created if it does
+                not exist."
+    }
+
+    cdl_option CYGPKG_DEVS_FLASH_SYNTH_TESTS {
+        display "Synth flash tests"
+        flavor  data
+        no_define
+        calculated { "tests/flash1.c"}
+            description   "
+                This option specifies the set of tests for the synth flash package."
+    }
+}
+
+# EOF flash_synth.cdl

@@ -1,0 +1,274 @@
+2003-12-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/viper.S: Only clear caches on non-RAM startup.  This is to
+	help solve a problem with network debug connections.  It seems 
+	that messing with the caches during startup confuses the CPM.
+
+	* misc/viper2_862P.ecm: New file, used to describe a Viper with
+	a PPC862P processor (very rare)
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_viper.cdl: 
+	HAL_PLATFORM_CPU now defined by MPC8xx variant CDL.
+
+2003-10-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/viper2_866T.ecm: 
+	* misc/viper2_860T.ecm: New file(s) describing new board variants.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-08-28  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c: Obsolete file - removed.
+
+	* src/plf_redboot_linux_exec.c: New file - platform specifics
+	for booting Linux kernel from RedBoot.
+
+	* cdl/hal_powerpc_viper.cdl: Linux booting from RedBoot is 
+	now supported at the architecture level.  Changes to support 
+	architecture/platform layering.
+
+2003-08-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/viper.S: 
+	* cdl/hal_powerpc_viper.cdl: Support new model Viper which
+	has slightly different layout and 16bit FLASH (instead of 8bit)
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_viper.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_viper.cdl: New CDL for setting processor type.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Call eth_drv_stop as necessary.
+
+2003-03-07  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_stub.h: Remove superfluous include <pkgconf/hal_powerpc_viper.h>
+
+2003-03-04  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/viper.S: 
+	* cdl/hal_powerpc_viper.cdl: Support higher speed parts - up to 100MHz.
+
+2002-12-02  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/plf_intr.h: Use MPC8xx variant RESET support.
+
+2002-11-26  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/hal_powerpc_viper.cdl: Move platform define to platform package.
+
+2002-11-25  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/viper.S: Minor include file cleanups.
+	* cdl/hal_powerpc_viper.cdl: Update port layout CDL.
+
+2002-10-18  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/plf_cache.h: No need for old FLASH cache support.
+
+	* src/hal_diag.c: 
+	* include/hal_diag.h: Remove old !VIRTUAL_VECTOR cruft.
+
+2002-09-02  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/hal_powerpc_viper.cdl: Fix descriptions for serial ports 
+	since both SMC1 and SCC1 are now supported.
+
+2002-08-02  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* cdl/hal_powerpc_viper.cdl: the RedBoot exec command can now 
+	  be disabled by CDL
+	
+2002-07-31  Gary Thomas  <gary@chez-thomas.org>
+
+	* misc/redboot_ROMRAM.ecm: 
+	* cdl/hal_powerpc_viper.cdl: Default board speed is now 63MHz.
+
+2002-07-24  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/viper.S: 
+	* cdl/hal_powerpc_viper.cdl: More choices for system clock.
+
+2002-07-22  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/viper.S: 
+	* cdl/hal_powerpc_viper.cdl: 
+	Support choices of 47.9, 51.6 MHz for the system clock.
+
+2002-07-18  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/viper.S: Increase power-up delay before starting SDRAM.
+
+2002-07-11  Gary Thomas  <gary@chez-thomas.org>
+
+	* cdl/hal_powerpc_viper.cdl: Add SCC1 as a serial console port.
+
+2002-06-27  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/plf_regs.h: New file - platform overrides.
+
+2002-06-25  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/redboot_linux_exec.c:
+	* cdl/hal_powerpc_viper.cdl: Add Linux boot (exec) command.
+
+2002-06-24  Gary Thomas  <gary@chez-thomas.org>
+
+	* misc/redboot_ROMRAM.ecm: Update for new FLASH chips.
+
+2002-06-20  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/viper.S: 
+	* src/hal_aux.c: Support up to 8M of FLASH space.
+
+2002-05-30  John Dallaway  <jld@redhat.com>
+
+	* include/pkgconf/mlt*: Regenerated memory layout files.
+
+2002-04-30  Nick Garnett  <nickg@redhat.com>
+
+	* src/viper.S: Changed boot ROM wait states from 4 to 7.
+
+2002-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROMRAM.ecm: 
+	RedBoot now requires 0x30000 in this configuration.
+
+2002-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_cache.h: Use common CDL for cache control.
+
+2002-04-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_aux.c (hal_platform_init): Avoid resetting ethernet PHY chip.
+
+	* include/plf_cache.h: [Re]enable caches.
+
+	* cdl/hal_powerpc_viper.cdl: Fix RTC calculations.
+
+2002-04-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/viper.S: Lots of changes to get ROMRAM mode working from
+	initial FLASH boot.
+
+2002-03-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/viper.S: 
+	* misc/redboot_ROMRAM.ecm: 
+	* include/pkgconf/mlt_powerpc_viper_romram.mlt: 
+	* include/pkgconf/mlt_powerpc_viper_romram.ldi: 
+	* include/pkgconf/mlt_powerpc_viper_romram.h: 
+	* include/pkgconf/mlt_powerpc_viper_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_viper_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_viper_ram.h: 
+	* cdl/hal_powerpc_viper.cdl: Add support for ROMRAM mode.
+
+2002-01-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_aux.c: Change mappings since IMMR has moved.
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* images/*: Remove. Don't bloat repository with things already on
+	the web.
+
+2001-05-01  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm: Update RedBoot to include compression.
+
+2001-03-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/viper.S: Set FLASH/ROM region to use 4 wait states - ~100ns.
+
+	* src/hal_aux.c: Use MLT values to define tables.
+
+	* include/pkgconf/mlt_powerpc_viper_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_viper_rom.ldi: 
+	* include/pkgconf/mlt_powerpc_viper_rom.h:
+	* include/pkgconf/mlt_powerpc_viper_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_viper_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_viper_ram.h: Viper board has 8M RAM.
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_cache.h (HAL_FLASH_CACHES_OLD_MACROS):  This platform
+	uses deprecated cache handling macros.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROM.ecm: Renamed from redboot_ROM.cfg
+
+	* misc/redboot_RAM.ecm: Renamed from redboot_RAM.cfg
+
+2001-02-21  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_viper_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_viper_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_viper_ram.h: Fix for 16M RAM.
+
+	* src/hal_aux.c (hal_platform_init): Set up port B (PHY reset).
+	Set up for 16M RAM.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_viper.cdl: Respect channel configuration
+	constraints.
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_GDB/None
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

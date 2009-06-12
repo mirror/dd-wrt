@@ -1,0 +1,834 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>USB Enumeration Data</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Introduction"
+HREF="usbs-intro.html"><LINK
+REL="NEXT"
+TITLE="Starting up a USB Device"
+HREF="usbs-start.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-intro.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-start.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-ENUM"
+>USB Enumeration Data</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN68"
+></A
+><H2
+>Name</H2
+>Enumeration Data&nbsp;--&nbsp;The USB enumeration data structures</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN71"
+></A
+><H2
+>Synopsis</H2
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>#include &lt;cyg/io/usb/usb.h&gt;
+#include &lt;cyg/io/usb/usbs.h&gt;
+
+typedef struct usb_device_descriptor {
+    &#8230;
+} usb_device_descriptor __attribute__((packed));
+
+typedef struct usb_configuration_descriptor {
+    &#8230;
+} usb_configuration_descriptor __attribute__((packed));
+
+typedef struct usb_interface_descriptor {
+    &#8230;
+} usb_interface_descriptor __attribute__((packed));        
+
+typedef struct usb_endpoint_descriptor {
+    &#8230;
+} usb_endpoint_descriptor;
+
+typedef struct usbs_enumeration_data {
+    usb_device_descriptor               device;
+    int                                 total_number_interfaces;
+    int                                 total_number_endpoints;
+    int                                 total_number_strings;
+    const usb_configuration_descriptor* configurations;
+    const usb_interface_descriptor*     interfaces;
+    const usb_endpoint_descriptor*      endpoints;
+    const unsigned char**               strings;
+} usbs_enumeration_data;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN73"
+></A
+><H2
+>USB Enumeration Data</H2
+><P
+>When a USB host detects that a peripheral has been plugged in or
+powered up, one of the first steps is to ask the peripheral to
+describe itself by supplying enumeration data. Some of this data
+depends on the class of peripheral. Other fields are vendor-specific.
+There is also a dependency on the hardware, specifically which
+endpoints are available should be used. In general it is not possible
+for generic code to provide this information, so it is the
+responsibility of application code to provide a suitable
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_enumeration_data</SPAN
+> data structure and
+install it in the endpoint 0 data structure during initialization.
+This must happen before the USB device is enabled by a call to
+<TT
+CLASS="FUNCTION"
+>usbs_start</TT
+>, for example:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const usbs_enumeration_data usb_enum_data = {
+    &#8230;
+};
+
+int
+main(int argc, char** argv)
+{
+    usbs_sa11x0_ep0.enumeration_data = &amp;usb_enum_data;
+    &#8230;
+    usbs_start(&amp;usbs_sa11x0_ep0);
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>For most applications the enumeration data will be static, although
+the <SPAN
+CLASS="STRUCTNAME"
+>usbs_enumeration_data</SPAN
+> structure can be
+filled in at run-time if necessary. Full details of the enumeration
+data can be found in the Universal Serial Bus specification obtainable
+from the <A
+HREF="http://www.usb.org/"
+TARGET="_top"
+>USB Implementers Forum web
+site</A
+>, although the meaning of most fields is fairly obvious.
+The various data structures and utility macros are defined in the
+header files <TT
+CLASS="FILENAME"
+>cyg/io/usb/usb.h</TT
+>
+and <TT
+CLASS="FILENAME"
+>cyg/io/usb/usbs.h</TT
+>. Note
+that the example code below makes use of the gcc labelled element
+extension.</P
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN84"
+></A
+><H3
+><SPAN
+CLASS="STRUCTNAME"
+>usb_device_descriptor</SPAN
+></H3
+><P
+>The main information about a USB peripheral comes from a single
+<SPAN
+CLASS="STRUCTNAME"
+>usb_device_descriptor</SPAN
+> structure, which is
+embedded in the <SPAN
+CLASS="STRUCTNAME"
+>usbs_enumeration_data</SPAN
+>
+structure. A typical example might look like this:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const usbs_enumeration_data usb_enum_data = {
+    {
+        length:                 USB_DEVICE_DESCRIPTOR_LENGTH,
+        type:                   USB_DEVICE_DESCRIPTOR_TYPE,
+        usb_spec_lo:            USB_DEVICE_DESCRIPTOR_USB11_LO,
+        usb_spec_hi:            USB_DEVICE_DESCRIPTOR_USB11_HI,
+        device_class:           USB_DEVICE_DESCRIPTOR_CLASS_VENDOR,
+        device_subclass:        USB_DEVICE_DESCRIPTOR_SUBCLASS_VENDOR,
+        device_protocol:        USB_DEVICE_DESCRIPTOR_PROTOCOL_VENDOR,
+        max_packet_size:        8,
+        vendor_lo:              0x42,
+        vendor_hi:              0x42,
+        product_lo:             0x42,
+        product_hi:             0x42,
+        device_lo:              0x00,
+        device_hi:              0x01,
+        manufacturer_str:       1,
+        product_str:            2,
+        serial_number_str:      0,
+        number_configurations:  1
+    },
+    &#8230;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>The length and type fields are specified by the USB standard. The
+<TT
+CLASS="STRUCTFIELD"
+><I
+>usb_spec_lo</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>usb_spec_hi</I
+></TT
+> fields identify the particular
+revision of the standard that the peripheral implements, for example
+revision 1.1.</P
+><P
+>The device class, subclass, and protocol fields are used by generic
+host-side USB software to determine which host-side device driver
+should be loaded to interact with the peripheral. A number of standard
+classes are defined, for example mass-storage devices and
+human-interface devices. If a peripheral implements one of the
+standard classes then a standard existing host-side device driver may
+exist, eliminating the need to write a custom driver. The value
+<TT
+CLASS="LITERAL"
+>0xFF</TT
+> (<TT
+CLASS="LITERAL"
+>VENDOR</TT
+>) is reserved for
+peripherals that implement a vendor-specific protocol rather than a
+standard one. Such peripherals will require a custom host-side device
+driver. The value <TT
+CLASS="LITERAL"
+>0x00</TT
+>
+(<TT
+CLASS="LITERAL"
+>INTERFACE</TT
+>) is reserved and indicates that the
+protocol used by the peripheral is defined at the interface level
+rather than for the peripheral as a whole.</P
+><P
+>The <TT
+CLASS="STRUCTFIELD"
+><I
+>max_package_size</I
+></TT
+> field specifies the
+maximum length of a control message. There is a lower bound of eight
+bytes, and typical hardware will not support anything larger because
+control messages are usually small and not performance-critical.</P
+><P
+>The <TT
+CLASS="STRUCTFIELD"
+><I
+>vendor_lo</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>vendor_hi</I
+></TT
+> fields specify a vendor id, which
+must be obtained from the USB Implementor's Forum. The numbers used in
+the code fragment above are examples only and must not be used in real
+USB peripherals. The product identifier is determined by the vendor,
+and different USB peripherals should use different identifiers. The
+device identifier field should indicate a release number in
+binary-coded decimal.</P
+><P
+>The above fields are all numerical in nature. A USB peripheral can
+also provide a number of strings as described <A
+HREF="usbs-enum.html#AEN159"
+>below</A
+>, for example the name of the
+vendor can be provided. The various <TT
+CLASS="STRUCTFIELD"
+><I
+>_str</I
+></TT
+>
+fields act as indices into an array of strings, with index 0
+indicating that no string is available. </P
+><P
+>A typical USB peripheral involves just a single configuration. However
+more complicated peripherals can support multiple configurations. Only
+one configuration will be active at any one time, and the host will
+switch between them as appropriate. If a peripheral does involve
+multiple configurations then typically it will be the responsibility
+of application code to <A
+HREF="usbs-control.html#AEN545"
+>handle</A
+> the standard
+set-configuration control message.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN109"
+></A
+><H3
+><SPAN
+CLASS="STRUCTNAME"
+>usb_configuration_descriptor</SPAN
+></H3
+><P
+>A USB peripheral involves at least one and possible several different
+configurations. The <SPAN
+CLASS="STRUCTNAME"
+>usbs_enumeration_data</SPAN
+>
+structure requires a pointer to an array, possibly of length 1, of
+<SPAN
+CLASS="STRUCTNAME"
+>usb_configuration_descriptor</SPAN
+> structures.
+Usually a single structure suffices:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const usb_configuration_descriptor usb_configuration = {
+    length:             USB_CONFIGURATION_DESCRIPTOR_LENGTH,
+    type:               USB_CONFIGURATION_DESCRIPTOR_TYPE,
+    total_length_lo:    USB_CONFIGURATION_DESCRIPTOR_TOTAL_LENGTH_LO(1, 2),
+    total_length_hi:    USB_CONFIGURATION_DESCRIPTOR_TOTAL_LENGTH_HI(1, 2),
+    number_interfaces:  1,
+    configuration_id:   1,
+    configuration_str:  0,
+    attributes:         USB_CONFIGURATION_DESCRIPTOR_ATTR_REQUIRED |
+                        USB_CONFIGURATION_DESCRIPTOR_ATTR_SELF_POWERED,
+    max_power:          50
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &#8230;
+    configurations:             &amp;usb_configuration,
+    &#8230;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>The values for the <TT
+CLASS="STRUCTFIELD"
+><I
+>length</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>type</I
+></TT
+> fields are determined by the standard.
+The <TT
+CLASS="STRUCTFIELD"
+><I
+>total_length</I
+></TT
+> field depends on the
+number of interfaces and endpoints used by this configuration, and
+convenience macros are provided to calculate this: the first argument
+to the macros specify the number of interfaces, the second the number
+of endpoints. The <TT
+CLASS="STRUCTFIELD"
+><I
+>number_interfaces</I
+></TT
+> field
+is self-explanatory. If the peripheral involves multiple
+configurations then each one must have a unique id, and this will be
+used in the set-configuration control message. The id
+<TT
+CLASS="LITERAL"
+>0</TT
+> is reserved, and a set-configuration control
+message that uses this id indicates that the peripheral should be
+inactive. Configurations can have a string description if required.
+The <TT
+CLASS="STRUCTFIELD"
+><I
+>attributes</I
+></TT
+> field must have the
+<TT
+CLASS="LITERAL"
+>REQUIRED</TT
+> bit set; the
+<TT
+CLASS="LITERAL"
+>SELF_POWERED</TT
+> bit informs the host that the
+peripheral has its own power supply and will not draw any power over
+the bus, leaving more bus power available to other peripherals; the
+<TT
+CLASS="LITERAL"
+>REMOTE_WAKEUP</TT
+> bit is used if the peripheral can
+interrupt the host when the latter is in power-saving mode. For
+peripherals that are not self-powered, the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>max_power</I
+></TT
+> field specifies the power
+requirements in units of 2mA.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN127"
+></A
+><H3
+><SPAN
+CLASS="STRUCTNAME"
+>usb_interface_descriptor</SPAN
+></H3
+><P
+>A USB configuration involves one or more interfaces, typically
+corresponding to different streams of data. For example, one interface
+might involve video data while another interface is for audio.
+Multiple interfaces in a single configuration will be active at the
+same time.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const usb_interface_descriptor usb_interface = {
+    length:             USB_INTERFACE_DESCRIPTOR_LENGTH,
+    type:               USB_INTERFACE_DESCRIPTOR_TYPE,
+    interface_id:       0,
+    alternate_setting:  0,
+    number_endpoints:   2,
+    interface_class:    USB_INTERFACE_DESCRIPTOR_CLASS_VENDOR,
+    interface_subclass: USB_INTERFACE_DESCRIPTOR_SUBCLASS_VENDOR,
+    interface_protocol: USB_INTERFACE_DESCRIPTOR_PROTOCOL_VENDOR,
+    interface_str:      0
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &#8230;
+    total_number_interfaces:    1,
+    interfaces:                 &amp;usb_interface,
+    &#8230;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>Again, the <TT
+CLASS="STRUCTFIELD"
+><I
+>length</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>type</I
+></TT
+> fields are specified by the standard.
+Each interface within a configuration requires its own id. However, a
+given interface may have several alternate settings, in other words
+entries in the interfaces array with the same id but different
+<TT
+CLASS="STRUCTFIELD"
+><I
+>alternate_setting</I
+></TT
+> fields. For example,
+there might be one setting which requires a bandwidth of 100K/s and
+another setting that only needs 50K/s. The host can use the standard
+set-interface control message to choose the most appropriate setting.
+The handling of this request is the responsibility of higher-level
+code, so the application may have to <A
+HREF="usbs-control.html#AEN545"
+>install</A
+> its own handler.</P
+><P
+>The number of endpoints used by an interface is specified in the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>number_endpoints</I
+></TT
+> field. Exact details of
+which endpoints are used is held in a separate array of endpoint
+descriptors. The class, subclass and protocol fields are used by
+host-side code to determine which host-side device driver should
+handle this specific interface. Usually this is determined on a
+per-peripheral basis in the
+<SPAN
+CLASS="STRUCTNAME"
+>usb_device_descriptor</SPAN
+> structure, but that can
+defer the details to individual interfaces. A per-interface string
+is allowed as well.</P
+><P
+>For USB peripherals involving multiple configurations, the array of
+<SPAN
+CLASS="STRUCTNAME"
+>usb_interface_descriptor</SPAN
+> structures should
+first contain all the interfaces for the first configuration, then all
+the interfaces for the second configuration, and so on.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN142"
+></A
+><H3
+><SPAN
+CLASS="STRUCTNAME"
+>usb_endpoint_descriptor</SPAN
+></H3
+><P
+>The host also needs information about which endpoint should be used
+for what. This involves an array of endpoint descriptors:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const usb_endpoint_descriptor usb_endpoints[] = {
+    {
+        length:         USB_ENDPOINT_DESCRIPTOR_LENGTH,
+        type:           USB_ENDPOINT_DESCRIPTOR_TYPE,
+        endpoint:       USB_ENDPOINT_DESCRIPTOR_ENDPOINT_OUT | 1,
+        attributes:     USB_ENDPOINT_DESCRIPTOR_ATTR_BULK,
+        max_packet_lo:  64,
+        max_packet_hi:  0,
+        interval:       0
+    },
+    {
+        length:         USB_ENDPOINT_DESCRIPTOR_LENGTH,
+        type:           USB_ENDPOINT_DESCRIPTOR_TYPE,
+        endpoint:       USB_ENDPOINT_DESCRIPTOR_ENDPOINT_IN | 2,
+        attributes:     USB_ENDPOINT_DESCRIPTOR_ATTR_BULK,
+        max_packet_lo:  64,
+        max_packet_hi:  0,
+        interval:       0
+    }
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &#8230;
+    total_number_endpoints:     2,
+    endpoints:                  usb_endpoints,
+    &#8230;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>As usual the values for the <TT
+CLASS="STRUCTFIELD"
+><I
+>length</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>type</I
+></TT
+> fields are specified by the standard.
+The <TT
+CLASS="STRUCTFIELD"
+><I
+>endpoint</I
+></TT
+> field gives both the endpoint
+number and the direction, so in the above example endpoint 1 is used
+for OUT (host to peripheral) transfers and endpoint 2 is used for IN
+(peripheral to host) transfers. The
+<TT
+CLASS="STRUCTFIELD"
+><I
+>attributes</I
+></TT
+> field indicates the USB protocol
+that should be used on this endpoint: <TT
+CLASS="LITERAL"
+>CONTROL</TT
+>,
+<TT
+CLASS="LITERAL"
+>ISOCHRONOUS</TT
+>, <TT
+CLASS="LITERAL"
+>BULK</TT
+> or
+<TT
+CLASS="LITERAL"
+>INTERRUPT</TT
+>. The
+<TT
+CLASS="STRUCTFIELD"
+><I
+>max_packet</I
+></TT
+> field specifies the maximum size
+of a single USB packet. For bulk transfers this will typically be 64
+bytes. For isochronous transfers this can be up to 1023 bytes. For
+interrupt transfers it can be up to 64 bytes, although usually a
+smaller value will be used. The <TT
+CLASS="STRUCTFIELD"
+><I
+>interval</I
+></TT
+>
+field is ignored for control and bulk transfers. For isochronous
+transfers it should be set to 1. For interrupt transfers it can be a
+value between 1 and 255, and indicates the number of milliseconds
+between successive polling operations.</P
+><P
+>For USB peripherals involving multiple configurations or interfaces
+the array of endpoint descriptors should be organized sequentially:
+first the endpoints corresponding to the first interface of the first
+configuration, then the second interface in that configuration, and so
+on; then all the endpoints for all the interfaces in the second
+configuration; etc.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN159"
+></A
+><H3
+>Strings</H3
+><P
+>The enumeration data can contain a number of strings with additional
+information. Unicode encoding is used for the strings, and it is
+possible for a peripheral to supply a given string in multiple
+languages using the appropriate characters. The first two bytes of
+each string give a length and type field. The first string is special;
+after the two bytes header it consists of an array of 2-byte language
+id codes, indicating the supported languages. The language code
+0x0409 corresponds to English (United States). </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const unsigned char* usb_strings[] = {
+    "\004\003\011\004",
+    "\020\003R\000e\000d\000 \000H\000a\000t\000"
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &#8230;
+    total_number_strings:       2,
+    strings:                    usb_strings,
+    &#8230;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>The default handler for standard control messages assumes that the
+peripheral only uses a single language. If this is not the case then
+higher-level code will have to handle the standard get-descriptor
+control messages when a string descriptor is requested.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN164"
+></A
+><H3
+><SPAN
+CLASS="STRUCTNAME"
+>usbs_enumeration_data</SPAN
+></H3
+><P
+>The <SPAN
+CLASS="STRUCTNAME"
+>usbs_enumeration_data</SPAN
+> data structure
+collects together all the various descriptors that make up the
+enumeration data. It is the responsibility of application code to
+supply a suitable data structure and install it in the control
+endpoints's <TT
+CLASS="STRUCTFIELD"
+><I
+>enumeration_data</I
+></TT
+> field before
+the USB device is started.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-intro.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-start.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Introduction</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Starting up a USB Device</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

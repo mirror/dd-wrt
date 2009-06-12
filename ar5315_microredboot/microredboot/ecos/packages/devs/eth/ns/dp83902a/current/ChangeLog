@@ -1,0 +1,155 @@
+2004-08-12  Jani Monoses <jani@iv.ro>
+
+	* src/if_dp83902a.c: Fix builing with lwip.
+
+2003-11-19  David Woodhouse  <dwmw2@redhat.com>
+
+	* src/if_dp83902a.c: Set STOP bit in CR after setting CURP 
+	register; required for AX88796 chip. Fix handling of BNDRY 
+	pointer w.r.t. ring buffer wrap-around. Add extra delays
+	ifdef CYGHWR_NS_DP83902A_PLF_BROKEN_RX_DMA.
+
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/if_dp83902a.c: 
+	Need to include <pkgconf/io_eth_drivers.h> for proper configuration
+	of stand-alone (polled) vs. system (interrupt driven) mode.
+
+2002-05-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/if_dp83902a.c: Use CYGINT_IO_ETH_INT_SUPPORT_REQUIRED instead
+	of CYGPKG_NET where required.
+
+2002-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_dp83902a.c: Clean up warnings.
+
+2002-03-28  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/ns_dp83902a_eth_drivers.cdl: Fix spelling of _OPTIONS
+	component as this is magic (CDL requires that it match the
+	package or it is ignored).
+
+2002-01-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_dp83902a.c (dp83902a_ClearCounters): Fix warning.
+
+2001-12-10  Richard Sandiford  <rsandifo@redhat.com>
+
+	* src/if_dp83902a.c (dp83902a_RxEvent): Remove unused argument.
+	(dp83902a_TxEvent): Likewise.
+	(dp83902a_BufEvent): Remove.
+	(dp83902a_ClearCounters): New.
+	(dp83902a_Overflow): New.
+	(dp83902a_poll): Rework polling loop to use the new functions.
+
+2001-10-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/dp83902a.h: Removed hardwired buffer
+	allocation. Replaced with per-device configuration.
+	* src/if_dp83902a.c: Same.
+
+2001-10-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/dp83902a.h: Added new page allocation layout.
+
+2001-10-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_dp83902a.c: Leave out interrupt code - not needed in 
+	non-NET configurations.
+
+2001-10-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_dp83902a.c: 
+	* include/dp83902a.h: More flexible setup.  Chip reset address is
+	now in device data, along with changes to the PLF reset functions.
+	Also, a new PLF init function can be defined which allows the driver
+	to work in a PCI enviroment (addresses unknown at compile time).
+
+2001-09-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_dp83902a.c: Apply a little more DMA magic.
+
+2001-08-25  Gary Thomas  <gthomas@redhat.com>
+
+	* include/dp83902a.h (DP_DATAPORT): Add - used by ESA discovery
+	on SC/LPE card.
+
+2001-06-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_dp83902a.c: Fix various build problems when net package
+	is included.
+
+2001-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_dp83902a.c (dp83902a_poll): Ignore spurious Tx events.
+
+2001-06-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_dp83902a.c: Added crude CR race check. Use plf interrupt
+	clear to allow for CF driver to use this driver. Cleaned up debug
+	output some.
+	(dp83902a_send): Added some magic delays to get driver working on
+	some (apparently) broken boards.
+
+	* src/dp83902a.h: Moved..
+	* include/dp83902a.h: to here. Moved macro definitions here from
+	the src file.
+
+	* cdl/ns_dp83902a_eth_drivers.cdl: Export header file.
+
+2001-06-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_dp83902a.c: Added some more debug info.
+
+	* src/dp83902a.h: Added 16bit/BE macros (untested).
+
+	* src/if_dp83902a.c: Add some debug code, fix endian issue. Proper
+	handling of odd-length reads in 16bit mode.
+
+2001-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_dp83902a.c: Assume LE ordering of read header data.
+
+	* src/dp83902a.h: BE/LE versions of data IO. Define proper DCR
+	init value depending on data access width.
+
+	* Cloned from DP8390 driver.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

@@ -1,0 +1,189 @@
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* Makefile.in, configure, testsuite/Makefile.in:
+	Regenerate after acinclude.m4 update
+
+2002-08-03  Bart Veer  <bartv@ecoscentric.com>
+
+	* acinclude.m4, configure.in, Makefile.am, testsuite/Makefile.am:
+	Rework host-side autoconf support
+
+	* hosttest.exp: allow for configury changes
+	
+	* assert.cxx: use mkstemp() when available
+	
+	* cyg_trac.h, trace.cxx: use const where appropriate
+
+2001-05-16  Bart Veer  <bartv@redhat.com>
+
+	* Makefile.am: use new compiler flag support
+
+	* configure, Makefile.in, testsuite/Makefile.in: regenerate
+
+2001-02-26  Julian Smart <julians@redhat.com>
+
+	* assert.cxx: Cygwin 00r1 needs to include <unistd.h> for _exit.
+
+2000-09-15  Jesper Skov  <jskov@redhat.com>
+
+	* assert.cxx: Include unistd.h on unix.
+	Oops. Forgot the C wrapper.
+
+2000-08-18  Bart Veer  <bartv@redhat.com>
+
+	* acinclude.m4, configure.in:
+	Allow cross-compilation
+
+	* aclocal.m4, configure, Makefile.in, testsuite/Makefile.in
+	Regenerate
+
+1999-08-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure:
+	* stamp-h.in:
+	* hosttest.exp:
+	First attempt at autoconfiscating the configtool	
+
+1999-07-05  Bart Veer  <bartv@cygnus.co.uk>
+
+	* assert.cxx:
+	Added new function cyg_assert_quickfail(), to facilitate
+	generating a dump file from inside gdb.
+
+1999-06-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure:
+	Regenerated after more updates to toplevel acinclude.m4
+
+1999-06-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure:
+	Updated toplevel acinclude.m4 to add --enable-debuginfo option.
+
+1999-04-13  Bart Veer  <bartv@cygnus.co.uk>
+
+	* testsuite/Makefile.am: 
+	* trace.cxx: 
+	* infra.h: 
+	* checkdata.cxx: 
+	* basetype.h: 
+	* assert.cxx:
+	Updated copyright banner
+	
+1999-03-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* testcase.cxx (cyg_test_output):
+	Update to match earlier testcase.h header file change
+	(new status codes GDBCMD and NA, change from int to enum)
+
+1999-01-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* Makefile.in:
+	* aclocal.m4:
+	* configure:
+	* Makefile.in:
+	Update to use autoconf 2.13 and automake 1.4, plus to
+	reflect tweaks to toplevel acinclude.m4
+
+	* hosttest.exp:
+	Improve the way compiler and linker diagnostics get handled.
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* basetype.h: 
+	Remove all traces of non-CYG_KERNEL_USE_INIT_PRIORITY code
+
+1999-01-21  Bart Veer  <bartv@cygnus.co.uk>
+
+	* acconfig.h: 
+	* configure.in: 
+	* infra.h:
+	Use new macro CYG_AC_SUBST_VERSION to generate a version
+	symbol CYGNUM_INFRA_VERSION
+
+1999-01-19  Bart Veer  <bartv@cygnus.co.uk>
+
+	* hosttest.exp:
+	Allow makefile variable assignments of the form := as well as =
+
+	* trace.cxx (parse_msg):
+	Fixed off-by-one error in output formatting, and "improved" the
+	way function names get displayed.
+
+1999-01-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* testcase.cxx (cyg_test_output):
+	Use const where appropriate.
+
+1999-01-07  Bart Veer  <bartv@cygnus.co.uk>
+
+	* testsuite/cyginfra/trace.exp: 
+	* testsuite/cyginfra/ttrace4.cxx:
+	Added new testcase
+
+	* testsuite/cyginfra/tassert7.cxx (main): 
+	* testsuite/cyginfra/tassert6.cxx (main): 
+	Eliminate warning about possible setjmp() side effects.
+	
+	* trace.cxx (trace_callback):
+	Off by one error when dumping a trace vector.
+
+	* hosttest.exp:
+	Relative paths in include and library search paths were causing
+	problems.
+	The wrong Makefile was being examined for variable settings.
+
+1999-01-06  Bart Veer  <bartv@cygnus.co.uk>
+
+	* testsuite/cyginfra/trace.exp: 
+	* testsuite/cyginfra/ttrace1.cxx: 
+	* testsuite/cyginfra/ttrace2.cxx: 
+	* testsuite/cyginfra/ttrace3.cxx: 
+	New test cases
+	
+	* testsuite/config/default.exp:
+	There was an easier way to get hold of hosttest.exp
+
+	* hosttest.exp:
+	Reordered compile and link command lines so as to pick up the
+	correct versions of the libraries.
+	Allow packages to extract information from the Makefile
+
+	* trace.cxx:
+	Initialisation via static object constructors did not work,
+	constructor priority ordering problems.
+
+	* assert.cxx (default_handler):
+	Removed spurious debugging lines.
+
+	* Makefile.am (install-exec-local):
+	Tweaks needed for MSVC
+
+1998-12-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* First check-in of host-side infrastructure.
+
+//####COPYRIGHTBEGIN####
+//                                                                          
+// ----------------------------------------------------------------------------
+// Copyright (C) 1998, 1999, 2000 Red Hat, Inc.
+//
+// This file is part of the eCos host tools.
+//
+// This program is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU General Public License as published by the Free 
+// Software Foundation; either version 2 of the License, or (at your option) 
+// any later version.
+// 
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+// more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this program; if not, write to the Free Software Foundation, Inc., 
+// 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+//
+// ----------------------------------------------------------------------------
+//                                                                          
+//####COPYRIGHTEND####

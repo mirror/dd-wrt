@@ -1,0 +1,21 @@
+NAME
+       close - close a file descriptor
+
+SYNOPSIS
+
+       int close(int fd);
+
+DESCRIPTION
+       close  closes  a  file  descriptor,  so  that it no longer
+       refers to any file and may be reused.
+
+       If fd is the last copy of a particular file descriptor the
+       resources associated with it are freed.
+
+RETURN VALUE
+       close returns zero on success, or -1 if an error occurred.
+
+ERRORS
+       EBADF  fd isn't a valid open file descriptor.
+
+

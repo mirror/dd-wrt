@@ -1,0 +1,14 @@
+lmmtolso
+gen_wctype
+wctables.h
+gen_wc8bit
+c8tables.h
+gen_locale
+locale_tables.h
+locale.mmap
+gen_mmap
+lt_defines.h
+locale_data.c
+uClibc_locale_data.h
+codesets.txt
+locales.txt

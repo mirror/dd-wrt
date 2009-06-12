@@ -1,0 +1,183 @@
+.\"	$OpenBSD: byteorder.3,v 1.8 2000/04/18 03:01:30 aaron Exp $
+.\"
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd June 4, 1993
+.Dt BYTEORDER 3
+.Os
+.Sh NAME
+.Nm htonl ,
+.Nm htons ,
+.Nm ntohl ,
+.Nm ntohs ,
+.Nm htobe32 ,
+.Nm htobe16 ,
+.Nm betoh32 ,
+.Nm betoh16 ,
+.Nm htole32 ,
+.Nm htole16 ,
+.Nm letoh32 ,
+.Nm letoh16 ,
+.Nm swap32 ,
+.Nm swap16
+.Nd convert values between different byte orderings
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <machine/endian.h>
+.Ft u_int32_t
+.Fn htonl "u_int32_t host32"
+.Ft u_int16_t
+.Fn htons "u_int16_t host16"
+.Ft u_int32_t
+.Fn ntohl "u_int32_t net32"
+.Ft u_int16_t
+.Fn ntohs "u_int16_t net16"
+.Ft u_int32_t
+.Fn htobe32 "u_int32_t host32"
+.Ft u_int16_t
+.Fn htobe16 "u_int16_t host16"
+.Ft u_int32_t
+.Fn betoh32 "u_int32_t big32"
+.Ft u_int16_t
+.Fn betoh16 "u_int16_t big16"
+.Ft u_int32_t
+.Fn htole32 "u_int32_t host32"
+.Ft u_int16_t
+.Fn htole16 "u_int16_t host16"
+.Ft u_int32_t
+.Fn letoh32 "u_int32_t little32"
+.Ft u_int16_t
+.Fn letoh16 "u_int16_t little16"
+.Ft u_int32_t
+.Fn swap32 "u_int32_t val32"
+.Ft u_int16_t
+.Fn swap16 "u_int16_t val16"
+.Sh DESCRIPTION
+These routines convert 16- and 32-bit quantities between different
+byte orderings.
+The
+.Dq swap
+functions reverse the byte ordering of
+the given quantity, the others converts either from/to the native
+byte order used by the host to/from either little- or big-endian (a.k.a
+network) order.
+.Pp
+Apart from the swap functions, the names can be described by this form:
+{src-order}to{dst-order}{size}.
+Both {src-order} and {dst-order} can take the following forms:
+.Pp
+.Bl -tag -width "be " -offset indent -compact
+.It h
+Host order.
+.It n
+Network order (big-endian).
+.It be
+Big-endian (most significant byte first).
+.It le
+Little-endian (least significant byte first).
+.El
+.Pp
+One of the specified orderings must be
+.Sq h .
+{size} will take these forms:
+.Pp
+.Bl -tag -width "32 " -offset indent -compact
+.It l
+Long (32-bit, used in conjunction with forms involving
+.Sq n ) .
+.It s
+Short (16-bit, used in conjunction with forms involving
+.Sq n ) .
+.It 16
+16-bit.
+.It 32
+32-bit.
+.El
+.Pp
+The swap functions are of the form: swap{size}.
+.Pp
+Names involving
+.Sq n
+convert quantities between network
+byte order and host byte order.
+The last letter
+.Pf ( Sq s
+or
+.Sq l )
+is a mnemonic
+for the traditional names for such quantities,
+.Li short
+and
+.Li long ,
+respectively.
+Today, the C concept of
+.Li short
+and
+.Li long
+integers need not coincide with this traditional misunderstanding.
+On machines which have a byte order which is the same as the network
+order, routines are defined as null macros.
+.Pp
+The functions involving either
+.Dq be ,
+.Dq le ,
+or
+.Dq swap
+use the numbers
+16 and 32 for specifying the bitwidth of the quantities they operate on.
+Currently all supported architectures are either big- or little-endian
+so either the
+.Dq be
+or
+.Dq le
+variants are implemented as null macros.
+.Pp
+The routines mentioned above which have either {src-order} or {dst-order}
+set to
+.Sq n
+are most often used in
+conjunction with Internet addresses and ports as returned by
+.Xr gethostbyname 3
+and
+.Xr getservent 3 .
+.Sh SEE ALSO
+.Xr gethostbyname 3 ,
+.Xr getservent 3
+.Sh HISTORY
+The
+.Nm byteorder
+functions appeared in
+.Bx 4.2 .
+.Sh BUGS
+On the vax, alpha, i386, and so far mips,
+bytes are handled backwards from most everyone else in the world.
+This is not expected to be fixed in the near future.

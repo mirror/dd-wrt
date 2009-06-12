@@ -1,0 +1,1186 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: Top,  Next: Contributing,  Up: (DIR)
+
+Introduction
+************
+
+   This manual documents the internals of the GNU compilers, including
+how to port them to new targets and some information about how to write
+front ends for new languages.  It corresponds to GCC version 3.2.  The
+use of the GNU compilers is documented in a separate manual.  *Note
+Introduction: (gcc)Top.
+
+   This manual is mainly a reference manual rather than a tutorial.  It
+discusses how to contribute to GCC (*note Contributing::), the
+characteristics of the machines supported by GCC as hosts and targets
+(*note Portability::), how GCC relates to the ABIs on such systems
+(*note Interface::), and the characteristics of the languages for which
+GCC front ends are written (*note Languages::).  It then describes the
+GCC source tree structure and build system, some of the interfaces to
+GCC front ends, and how support for a target system is implemented in
+GCC.
+
+   Additional tutorial information is linked to from
+`http://gcc.gnu.org/readings.html'.
+
+* Menu:
+
+* Contributing::    How to contribute to testing and developing GCC.
+* Portability::     Goals of GCC's portability features.
+* Interface::       Function-call interface of GCC output.
+* Languages::       Languages for which GCC front ends are written.
+* Source Tree::     GCC source tree structure and build system.
+* Passes::          Order of passes, what they do, and what each file is for.
+* Trees::           The source representation used by the C and C++ front ends.
+* RTL::             The intermediate representation that most passes work on.
+* Machine Desc::    How to write machine description instruction patterns.
+* Target Macros::   How to write the machine description C macros and functions.
+* Host Config::     Writing the `xm-MACHINE.h' file.
+* Fragments::       Writing the `t-TARGET' and `x-HOST' files.
+* Collect2::        How `collect2' works; how it finds `ld'.
+* Header Dirs::     Understanding the standard header file directories.
+
+* Funding::         How to help assure funding for free software.
+* GNU Project::     The GNU Project and GNU/Linux.
+
+* Copying::         GNU General Public License says
+                     how you can copy and share GCC.
+* GNU Free Documentation License:: How you can copy and share this manual.
+* Contributors::    People who have contributed to GCC.
+
+* Option Index::    Index to command line options.
+* Index::	    Index of concepts and symbol names.
+
+
+File: gccint.info,  Node: Contributing,  Next: Portability,  Prev: Top,  Up: Top
+
+Contributing to GCC Development
+*******************************
+
+   If you would like to help pretest GCC releases to assure they work
+well, our current development sources are available by CVS (see
+`http://gcc.gnu.org/cvs.html').  Source and binary snapshots are also
+available for FTP; see `http://gcc.gnu.org/snapshots.html'.
+
+   If you would like to work on improvements to GCC, please read the
+advice at these URLs:
+
+     `http://gcc.gnu.org/contribute.html'
+     `http://gcc.gnu.org/contributewhy.html'
+
+for information on how to make useful contributions and avoid
+duplication of effort.  Suggested projects are listed at
+`http://gcc.gnu.org/projects/'.
+
+
+File: gccint.info,  Node: Portability,  Next: Interface,  Prev: Contributing,  Up: Top
+
+GCC and Portability
+*******************
+
+   The main goal of GCC was to make a good, fast compiler for machines
+in the class that the GNU system aims to run on: 32-bit machines that
+address 8-bit bytes and have several general registers.  Elegance,
+theoretical power and simplicity are only secondary.
+
+   GCC gets most of the information about the target machine from a
+machine description which gives an algebraic formula for each of the
+machine's instructions.  This is a very clean way to describe the
+target.  But when the compiler needs information that is difficult to
+express in this fashion, I have not hesitated to define an ad-hoc
+parameter to the machine description.  The purpose of portability is to
+reduce the total work needed on the compiler; it was not of interest
+for its own sake.
+
+   GCC does not contain machine dependent code, but it does contain code
+that depends on machine parameters such as endianness (whether the most
+significant byte has the highest or lowest address of the bytes in a
+word) and the availability of autoincrement addressing.  In the
+RTL-generation pass, it is often necessary to have multiple strategies
+for generating code for a particular kind of syntax tree, strategies
+that are usable for different combinations of parameters.  Often I have
+not tried to address all possible cases, but only the common ones or
+only the ones that I have encountered.  As a result, a new target may
+require additional strategies.  You will know if this happens because
+the compiler will call `abort'.  Fortunately, the new strategies can be
+added in a machine-independent fashion, and will affect only the target
+machines that need them.
+
+
+File: gccint.info,  Node: Interface,  Next: Languages,  Prev: Portability,  Up: Top
+
+Interfacing to GCC Output
+*************************
+
+   GCC is normally configured to use the same function calling
+convention normally in use on the target system.  This is done with the
+machine-description macros described (*note Target Macros::).
+
+   However, returning of structure and union values is done differently
+on some target machines.  As a result, functions compiled with PCC
+returning such types cannot be called from code compiled with GCC, and
+vice versa.  This does not cause trouble often because few Unix library
+routines return structures or unions.
+
+   GCC code returns structures and unions that are 1, 2, 4 or 8 bytes
+long in the same registers used for `int' or `double' return values.
+(GCC typically allocates variables of such types in registers also.)
+Structures and unions of other sizes are returned by storing them into
+an address passed by the caller (usually in a register).  The
+machine-description macros `STRUCT_VALUE' and `STRUCT_INCOMING_VALUE'
+tell GCC where to pass this address.
+
+   By contrast, PCC on most target machines returns structures and
+unions of any size by copying the data into an area of static storage,
+and then returning the address of that storage as if it were a pointer
+value.  The caller must copy the data from that memory area to the
+place where the value is wanted.  This is slower than the method used
+by GCC, and fails to be reentrant.
+
+   On some target machines, such as RISC machines and the 80386, the
+standard system convention is to pass to the subroutine the address of
+where to return the value.  On these machines, GCC has been configured
+to be compatible with the standard compiler, when this method is used.
+It may not be compatible for structures of 1, 2, 4 or 8 bytes.
+
+   GCC uses the system's standard convention for passing arguments.  On
+some machines, the first few arguments are passed in registers; in
+others, all are passed on the stack.  It would be possible to use
+registers for argument passing on any machine, and this would probably
+result in a significant speedup.  But the result would be complete
+incompatibility with code that follows the standard convention.  So this
+change is practical only if you are switching to GCC as the sole C
+compiler for the system.  We may implement register argument passing on
+certain machines once we have a complete GNU system so that we can
+compile the libraries with GCC.
+
+   On some machines (particularly the Sparc), certain types of arguments
+are passed "by invisible reference".  This means that the value is
+stored in memory, and the address of the memory location is passed to
+the subroutine.
+
+   If you use `longjmp', beware of automatic variables.  ISO C says that
+automatic variables that are not declared `volatile' have undefined
+values after a `longjmp'.  And this is all GCC promises to do, because
+it is very difficult to restore register variables correctly, and one
+of GCC's features is that it can put variables in registers without
+your asking it to.
+
+   If you want a variable to be unaltered by `longjmp', and you don't
+want to write `volatile' because old C compilers don't accept it, just
+take the address of the variable.  If a variable's address is ever
+taken, even if just to compute it and ignore it, then the variable
+cannot go in a register:
+
+     {
+       int careful;
+       &careful;
+       ...
+     }
+
+   Code compiled with GCC may call certain library routines.  Most of
+them handle arithmetic for which there are no instructions.  This
+includes multiply and divide on some machines, and floating point
+operations on any machine for which floating point support is disabled
+with `-msoft-float'.  Some standard parts of the C library, such as
+`bcopy' or `memcpy', are also called automatically.  The usual function
+call interface is used for calling the library routines.
+
+   Some of these routines can be defined in mostly machine-independent
+C; they appear in `libgcc2.c'.  Others must be hand-written in assembly
+language for each processor.  Wherever they are defined, they are
+compiled into the support library, `libgcc.a', which is automatically
+searched when you link programs with GCC.
+
+
+File: gccint.info,  Node: Languages,  Next: Source Tree,  Prev: Interface,  Up: Top
+
+Language Front Ends in GCC
+**************************
+
+   The interface to front ends for languages in GCC, and in particular
+the `tree' structure (*note Trees::), was initially designed for C, and
+many aspects of it are still somewhat biased towards C and C-like
+languages.  It is, however, reasonably well suited to other procedural
+languages, and front ends for many such languages have been written for
+GCC.
+
+   Writing a compiler as a front end for GCC, rather than compiling
+directly to assembler or generating C code which is then compiled by
+GCC, has several advantages:
+
+   * GCC front ends benefit from the support for many different target
+     machines already present in GCC.
+
+   * GCC front ends benefit from all the optimizations in GCC.  Some of
+     these, such as alias analysis, may work better when GCC is
+     compiling directly from source code then when it is compiling from
+     generated C code.
+
+   * Better debugging information is generated when compiling directly
+     from source code than when going via intermediate generated C code.
+
+   Because of the advantages of writing a compiler as a GCC front end,
+GCC front ends have also been created for languages very different from
+those for which GCC was designed, such as the declarative
+logic/functional language Mercury.  For these reasons, it may also be
+useful to implement compilers created for specialized purposes (for
+example, as part of a research project) as GCC front ends.
+
+
+File: gccint.info,  Node: Source Tree,  Next: Passes,  Prev: Languages,  Up: Top
+
+Source Tree Structure and Build System
+**************************************
+
+   This chapter describes the structure of the GCC source tree, and how
+GCC is built.  The user documentation for building and installing GCC
+is in a separate manual (`http://gcc.gnu.org/install/'), with which it
+is presumed that you are familiar.
+
+* Menu:
+
+* Configure Terms:: Configuration terminology and history.
+* Top Level::       The top level source directory.
+* gcc Directory::   The `gcc' subdirectory.
+* Test Suites::     The GCC test suites.
+
+
+File: gccint.info,  Node: Configure Terms,  Next: Top Level,  Up: Source Tree
+
+Configure Terms and History
+===========================
+
+   The configure and build process has a long and colorful history, and
+can be confusing to anyone who doesn't know why things are the way they
+are.  While there are other documents which describe the configuration
+process in detail, here are a few things that everyone working on GCC
+should know.
+
+   There are three system names that the build knows about: the machine
+you are building on ("build"), the machine that you are building for
+("host"), and the machine that GCC will produce code for ("target").
+When you configure GCC, you specify these with `--build=', `--host=',
+and `--target='.
+
+   Specifying the host without specifying the build should be avoided,
+as `configure' may (and once did) assume that the host you specify is
+also the build, which may not be true.
+
+   If build, host, and target are all the same, this is called a
+"native".  If build and host are the same but target is different, this
+is called a "cross".  If build, host, and target are all different this
+is called a "canadian" (for obscure reasons dealing with Canada's
+political party and the background of the person working on the build
+at that time).  If host and target are the same, but build is
+different, you are using a cross-compiler to build a native for a
+different system.  Some people call this a "host-x-host", "crossed
+native", or "cross-built native".  If build and target are the same,
+but host is different, you are using a cross compiler to build a cross
+compiler that produces code for the machine you're building on.  This
+is rare, so there is no common way of describing it (although I propose
+calling it a "crossback").
+
+   If build and host are the same, the GCC you are building will also be
+used to build the target libraries (like `libstdc++').  If build and
+host are different, you must have already build and installed a cross
+compiler that will be used to build the target libraries (if you
+configured with `--target=foo-bar', this compiler will be called
+`foo-bar-gcc').
+
+   In the case of target libraries, the machine you're building for is
+the machine you specified with `--target'.  So, build is the machine
+you're building on (no change there), host is the machine you're
+building for (the target libraries are built for the target, so host is
+the target you specified), and target doesn't apply (because you're not
+building a compiler, you're building libraries).  The configure/make
+process will adjust these variables as needed.  It also sets
+`$with_cross_host' to the original `--host' value in case you need it.
+
+   The `libiberty' support library is built up to three times: once for
+the host, once for the target (even if they are the same), and once for
+the build if build and host are different.  This allows it to be used
+by all programs which are generated in the course of the build process.
+
+
+File: gccint.info,  Node: Top Level,  Next: gcc Directory,  Prev: Configure Terms,  Up: Source Tree
+
+Top Level Source Directory
+==========================
+
+   The top level source directory in a GCC distribution contains several
+files and directories that are shared with other software distributions
+such as that of GNU Binutils.  It also contains several subdirectories
+that contain parts of GCC and its runtime libraries:
+
+`boehm-gc'
+     The Boehm conservative garbage collector, used as part of the Java
+     runtime library.
+
+`contrib'
+     Contributed scripts that may be found useful in conjunction with
+     GCC.  One of these, `contrib/texi2pod.pl', is used to generate man
+     pages from Texinfo manuals as part of the GCC build process.
+
+`fastjar'
+     An implementation of the `jar' command, used with the Java front
+     end.
+
+`gcc'
+     The main sources of GCC itself (except for runtime libraries),
+     including optimizers, support for different target architectures,
+     language front ends, and test suites.  *Note The `gcc'
+     Subdirectory: gcc Directory, for details.
+
+`include'
+     Headers for the `libiberty' library.
+
+`libf2c'
+     The Fortran runtime library.
+
+`libffi'
+     The `libffi' library, used as part of the Java runtime library.
+
+`libiberty'
+     The `libiberty' library, used for portability and for some
+     generally useful data structures and algorithms.  *Note
+     Introduction: (libiberty)Top, for more information about this
+     library.
+
+`libjava'
+     The Java runtime library.
+
+`libobjc'
+     The Objective-C runtime library.
+
+`libstdc++-v3'
+     The C++ runtime library.
+
+`maintainer-scripts'
+     Scripts used by the `gccadmin' account on `gcc.gnu.org'.
+
+`zlib'
+     The `zlib' compression library, used by the Java front end and as
+     part of the Java runtime library.
+
+   The build system in the top level directory, including how recursion
+into subdirectories works and how building runtime libraries for
+multilibs is handled, is documented in a separate manual, included with
+GNU Binutils.  *Note GNU configure and build system: (configure)Top,
+for details.
+
+
+File: gccint.info,  Node: gcc Directory,  Next: Test Suites,  Prev: Top Level,  Up: Source Tree
+
+The `gcc' Subdirectory
+======================
+
+   The `gcc' directory contains many files that are part of the C
+sources of GCC, other files used as part of the configuration and build
+process, and subdirectories including documentation and a test suite.
+The files that are sources of GCC are documented in a separate chapter.
+*Note Passes and Files of the Compiler: Passes.
+
+* Menu:
+
+* Subdirectories:: Subdirectories of `gcc'.
+* Configuration::  The configuration process, and the files it uses.
+* Build::          The build system in the `gcc' directory.
+* Makefile::       Targets in `gcc/Makefile'.
+* Library Files::  Library source files and headers under `gcc/'.
+* Headers::        Headers installed by GCC.
+* Documentation::  Building documentation in GCC.
+* Front End::      Anatomy of a language front end.
+* Back End::       Anatomy of a target back end.
+
+
+File: gccint.info,  Node: Subdirectories,  Next: Configuration,  Up: gcc Directory
+
+Subdirectories of `gcc'
+-----------------------
+
+   The `gcc' directory contains the following subdirectories:
+
+`LANGUAGE'
+     Subdirectories for various languages.  Directories containing a
+     file `config-lang.in' are language subdirectories.  The contents of
+     the subdirectories `cp' (for C++) and `objc' (for Objective-C) are
+     documented in this manual (*note Passes and Files of the Compiler:
+     Passes.); those for other languages are not.  *Note Anatomy of a
+     Language Front End: Front End, for details of the files in these
+     directories.
+
+`config'
+     Configuration files for supported architectures and operating
+     systems.  *Note Anatomy of a Target Back End: Back End, for
+     details of the files in thie directory.
+
+`doc'
+     Texinfo documentation for GCC, together with automatically
+     generated man pages and support for converting the installation
+     manual to HTML.  *Note Documentation::.
+
+`fixinc'
+     The support for fixing system headers to work with GCC.  See
+     `fixinc/README' for more information.  The headers fixed by this
+     mechanism are installed in `LIBSUBDIR/include'.  Along with those
+     headers, `README-fixinc' is also installed, as
+     `LIBSUBDIR/include/README'.
+
+`ginclude'
+     System headers installed by GCC, mainly those required by the C
+     standard of freestanding implementations.  *Note Headers Installed
+     by GCC: Headers, for details of when these and other headers are
+     installed.
+
+`intl'
+     GNU `libintl', from GNU `gettext', for systems which do not
+     include it in libc.  Properly, this directory should be at top
+     level, parallel to the `gcc' directory.
+
+`po'
+     Message catalogs with translations of messages produced by GCC into
+     various languages, `LANGUAGE.po'.  This directory also contains
+     `gcc.pot', the template for these message catalogues, `exgettext',
+     a wrapper around `gettext' to extract the messages from the GCC
+     sources and create `gcc.pot', which is run by `make gcc.pot', and
+     `EXCLUDES', a list of files from which messages should not be
+     extracted.
+
+`testsuite'
+     The GCC test suites (except for those for runtime libraries).
+     *Note Test Suites::.
+
+
+File: gccint.info,  Node: Configuration,  Next: Build,  Prev: Subdirectories,  Up: gcc Directory
+
+Configuration in the `gcc' Directory
+------------------------------------
+
+   The `gcc' directory is configured with an Autoconf-generated script
+`configure'.  The `configure' script is generated from `configure.in'
+and `aclocal.m4'.  From the files `configure.in' and `acconfig.h',
+Autoheader generates the file `config.in'.  The file `cstamp-h.in' is
+used as a timestamp.
+
+* Menu:
+
+* Config Fragments::     Scripts used by `configure'.
+* System Config::        The `config.gcc' file.
+* Configuration Files::  Files created by running `configure'.
+
+
+File: gccint.info,  Node: Config Fragments,  Next: System Config,  Up: Configuration
+
+Scripts Used by `configure'
+...........................
+
+   `configure' uses some other scripts to help in its work:
+
+   * The standard GNU `config.sub' and `config.guess' files, kept in
+     the top level directory, are used.  FIXME: when is the
+     `config.guess' file in the `gcc' directory (that just calls the
+     top level one) used?
+
+   * The file `config.gcc' is used to handle configuration specific to
+     the particular build, host or target machine.  (In general, this
+     should only be used for features that cannot reasonably be tested
+     in Autoconf feature tests.)  *Note The `config.gcc' File: System
+     Config, for details of the contents of this file.
+
+   * Each language subdirectory has a file `LANGUAGE/config-lang.in'
+     that is used for front-end-specific configuration.  *Note The
+     Front End `config-lang.in' File: Front End Config, for details of
+     this file.
+
+   * A helper script `configure.frag' is used as part of creating the
+     output of `configure'.
+
+
+File: gccint.info,  Node: System Config,  Next: Configuration Files,  Prev: Config Fragments,  Up: Configuration
+
+The `config.gcc' File
+.....................
+
+   FIXME: document the contents of this file, and what variables should
+be set to control build, host and target configuration.
+
+
+File: gccint.info,  Node: Configuration Files,  Prev: System Config,  Up: Configuration
+
+Files Created by `configure'
+............................
+
+   Here we spell out what files will be set up by `configure' in the
+`gcc' directory.  Some other files are created as temporary files in
+the configuration process, and are not used in the subsequent build;
+these are not documented.
+
+   * `Makefile' is constructed from `Makefile.in', together with the
+     host and target fragments (*note Makefile Fragments: Fragments.)
+     `t-TARGET' and `x-HOST' from `config', if any, and language
+     Makefile fragments `LANGUAGE/Make-lang.in'.
+
+   * `auto-host.h' contains information about the host machine
+     determined by `configure'.  If the host machine is different from
+     the build machine, then `auto-build.h' is also created, containing
+     such information about the build machine.
+
+   * `config.status' is a script that may be run to recreate the
+     current configuration.
+
+   * `configargs.h' is a header containing details of the arguments
+     passed to `configure' to configure GCC, and of the thread model
+     used.
+
+   * `cstamp-h' is used as a timestamp.
+
+   * `fixinc/Makefile' is constructed from `fixinc/Makefile.in'.
+
+   * `gccbug', a script for reporting bugs in GCC, is constructed from
+     `gccbug.in'.
+
+   * `intl/Makefile' is constructed from `intl/Makefile.in'.
+
+   * `mklibgcc', a shell script to create a Makefile to build libgcc,
+     is constructed from `mklibgcc.in'.
+
+   * If a language `config-lang.in' file (*note The Front End
+     `config-lang.in' File: Front End Config.) sets `outputs', then the
+     files listed in `outputs' there are also generated.
+
+   The following configuration headers are created from the Makefile,
+using `mkconfig.sh', rather than directly by `configure'.  `config.h',
+`hconfig.h' and `tconfig.h' all contain the `xm-MACHINE.h' header, if
+any, appropriate to the host, build and target machines respectively,
+the configuration headers for the target, and some definitions; for the
+host and build machines, these include the autoconfigured headers
+generated by `configure'.  The other configuration headers are
+determined by `config.gcc'.  They also contain the typedefs for `rtx',
+`rtvec' and `tree'.
+
+   * `config.h', for use in programs that run on the host machine.
+
+   * `hconfig.h', for use in programs that run on the build machine.
+
+   * `tconfig.h', for use in programs and libraries for the target
+     machine.
+
+   * `tm_p.h', which includes the header `MACHINE-protos.h' that
+     contains prototypes for functions in the target `.c' file.  FIXME:
+     why is such a separate header necessary?
+
+
+File: gccint.info,  Node: Build,  Next: Makefile,  Prev: Configuration,  Up: gcc Directory
+
+Build System in the `gcc' Directory
+-----------------------------------
+
+   FIXME: describe the build system, including what is built in what
+stages.  Also list the various source files that are used in the build
+process but aren't source files of GCC itself and so aren't documented
+below (*note Passes::).
+
+
+File: gccint.info,  Node: Makefile,  Next: Library Files,  Prev: Build,  Up: gcc Directory
+
+Makefile Targets
+----------------
+
+`all'
+     This is the default target.  Depending on what your
+     build/host/target configuration is, it coordinates all the things
+     that need to be built.
+
+`doc'
+     Produce info-formatted documentation.  Also, `make dvi' is
+     available for DVI-formatted documentation, and `make
+     generated-manpages' to generate man pages.
+
+`mostlyclean'
+     Delete the files made while building the compiler.
+
+`clean'
+     That, and all the other files built by `make all'.
+
+`distclean'
+     That, and all the files created by `configure'.
+
+`extraclean'
+     That, and any temporary or intermediate files, like emacs backup
+     files.
+
+`maintainer-clean'
+     Distclean plus any file that can be generated from other files.
+     Note that additional tools may be required beyond what is normally
+     needed to build gcc.
+
+`install'
+     Installs gcc.
+
+`uninstall'
+     Deletes installed files.
+
+`check'
+     Run the testsuite.  This creates a `testsuite' subdirectory that
+     has various `.sum' and `.log' files containing the results of the
+     testing.  You can run subsets with, for example, `make check-gcc'.
+     You can specify specific tests by setting RUNTESTFLAGS to be the
+     name of the `.exp' file, optionally followed by (for some tests)
+     an equals and a file wildcard, like:
+
+          make check-gcc RUNTESTFLAGS="execute.exp=19980413-*"
+
+     Note that running the testsuite may require additional tools be
+     installed, such as TCL or dejagnu.
+
+`bootstrap'
+     Builds gcc three times--once with the native compiler, once with
+     the native-built compiler it just built, and once with the
+     compiler it built the second time.  In theory, the last two should
+     produce the same results, which `make compare' can check.  Each
+     step of this process is called a "stage", and the results of each
+     stage N (N = 1...3) are copied to a subdirectory `stageN/'.
+
+`bootstrap-lean'
+     Like `bootstrap', except that the various stages are removed once
+     they're no longer needed.  This saves disk space.
+
+`bubblestrap'
+     Once bootstrapped, this incrementally rebuilds each of the three
+     stages, one at a time.  It does this by "bubbling" the stages up
+     from their subdirectories, rebuilding them, and copying them back
+     to their subdirectories.  This will allow you to, for example,
+     quickly rebuild a bootstrapped compiler after changing the
+     sources, without having to do a full bootstrap.
+
+`quickstrap'
+     Rebuilds the most recently built stage.  Since each stage requires
+     special invocation, using this target means you don't have to keep
+     track of which stage you're on or what invocation that stage needs.
+
+`cleanstrap'
+     Removed everything (`make clean') and rebuilds (`make bootstrap').
+
+`stageN (N = 1...4)'
+     For each stage, moves the appropriate files to the `stageN'
+     subdirectory.
+
+`unstageN (N = 1...4)'
+     Undoes the corresponding `stageN'.
+
+`restageN (N = 1...4)'
+     Undoes the corresponding `stageN' and rebuilds it with the
+     appropriate flags.
+
+`compare'
+     Compares the results of stages 2 and 3.  This ensures that the
+     compiler is running properly, since it should produce the same
+     object files regardless of how it itself was compiled.
+
+
+File: gccint.info,  Node: Library Files,  Next: Headers,  Prev: Makefile,  Up: gcc Directory
+
+Library Source Files and Headers under the `gcc' Directory
+----------------------------------------------------------
+
+   FIXME: list here, with explanation, all the C source files and
+headers under the `gcc' directory that aren't built into the GCC
+executable but rather are part of runtime libraries and object files,
+such as `crtstuff.c' and `unwind-dw2.c'.  *Note Headers Installed by
+GCC: Headers, for more information about the `ginclude' directory.
+
+
+File: gccint.info,  Node: Headers,  Next: Documentation,  Prev: Library Files,  Up: gcc Directory
+
+Headers Installed by GCC
+------------------------
+
+   In general, GCC expects the system C library to provide most of the
+headers to be used with it.  However, GCC will fix those headers if
+necessary to make them work with GCC, and will install some headers
+required of freestanding implementations.  These headers are installed
+in `LIBSUBDIR/include'.  Headers for non-C runtime libraries are also
+installed by GCC; these are not documented here.  (FIXME: document them
+somewhere.)
+
+   Several of the headers GCC installs are in the `ginclude' directory.
+These headers, `iso646.h', `stdarg.h', `stdbool.h', `stddef.h' and
+`varargs.h', are installed in `LIBSUBDIR/include', unless the target
+Makefile fragment (*note Target Fragment::) overrides this by setting
+`USER_H'.
+
+   In addition to these headers and those generated by fixing system
+headers to work with GCC, some other headers may also be installed in
+`LIBSUBDIR/include'.  `config.gcc' may set `extra_headers'; this
+specifies additional headers under `config' to be installed on some
+systems.  GCC normally installs a `<float.h>' file; these are kept as
+`config/float-FORMAT.h', where FORMAT is specified by a `float_format'
+setting in `config.gcc', and a setting `float_format=none' disables
+installation of this header.  GCC also installs its own version of
+`<limits.h>'; this is generated from `glimits.h', together with
+`limitx.h' and `limity.h' if the system also has its own version of
+`<limits.h>'.  (GCC provides its own header because it is required of
+ISO C freestanding implementations, but needs to include the system
+header from its own header as well because other standards such as
+POSIX specify additional values to be defined in `<limits.h>'.)  The
+system's `<limits.h>' header is used via
+`LIBSUBDIR/include/syslimits.h', which is copied from `gsyslimits.h' if
+it does not need fixing to work with GCC; if it needs fixing,
+`syslimits.h' is the fixed copy.
+
+
+File: gccint.info,  Node: Documentation,  Next: Front End,  Prev: Headers,  Up: gcc Directory
+
+Building Documentation
+----------------------
+
+   The main GCC documentation is in the form of manuals in Texinfo
+format.  These are installed in Info format, and DVI versions may be
+generated by `make dvi'.  In addition, some man pages are generated
+from the Texinfo manuals, there are some other text files with
+miscellaneous documentation, and runtime libraries have their own
+documentation outside the `gcc' directory.  FIXME: document the
+documentation for runtime libraries somewhere.
+
+* Menu:
+
+* Texinfo Manuals::      GCC manuals in Texinfo format.
+* Man Page Generation::  Generating man pages from Texinfo manuals.
+* Miscellaneous Docs::   Miscellaneous text files with documentation.
+
+
+File: gccint.info,  Node: Texinfo Manuals,  Next: Man Page Generation,  Up: Documentation
+
+Texinfo Manuals
+...............
+
+   The manuals for GCC as a whole, and the C and C++ front ends, are in
+files `doc/*.texi'.  Other front ends have their own manuals in files
+`LANGUAGE/*.texi'.  Common files `doc/include/*.texi' are provided
+which may be included in multiple manuals; the following files are in
+`doc/include':
+
+`fdl.texi'
+     The GNU Free Documentation License.
+
+`funding.texi'
+     The section "Funding Free Software".
+
+`gcc-common.texi'
+     Common definitions for manuals.
+
+`gpl.texi'
+     The GNU General Public License.
+
+`texinfo.tex'
+     A copy of `texinfo.tex' known to work with the GCC manuals.
+
+   DVI formatted manuals are generated by `make dvi', which uses
+`texi2dvi' (via the Makefile macro `$(TEXI2DVI)').  Info manuals are
+generated by `make info' (which is run as part of a bootstrap); this
+generates the manuals in the source directory, using `makeinfo' via the
+Makefile macro `$(MAKEINFO)', and they are included in release
+distributions.
+
+   Manuals are also provided on the GCC web site, in both HTML and
+PostScript forms.  This is done via the script
+`maintainer-scripts/update_web_docs'.  Each manual to be provided
+online must be listed in the definition of `MANUALS' in that file; a
+file `NAME.texi' must only appear once in the source tree, and the
+output manual must have the same name as the source file.  (However,
+other Texinfo files, included in manuals but not themselves the root
+files of manuals, may have names that appear more than once in the
+source tree.)  The manual file `NAME.texi' should only include other
+files in its own directory or in `doc/include'.  HTML manuals will be
+generated by `makeinfo --html' and PostScript manuals by `texi2dvi' and
+`dvips'.  All Texinfo files that are parts of manuals must be checked
+into CVS, even if they are generated files, for the generation of
+online manuals to work.
+
+   The installation manual, `doc/install.texi', is also provided on the
+GCC web site.  The HTML version is generated by the script
+`doc/install.texi2html'.
+
+
+File: gccint.info,  Node: Man Page Generation,  Next: Miscellaneous Docs,  Prev: Texinfo Manuals,  Up: Documentation
+
+Man Page Generation
+...................
+
+   Because of user demand, in addition to full Texinfo manuals, man
+pages are provided which contain extracts from those manuals.  These man
+pages are generated from the Texinfo manuals using
+`contrib/texi2pod.pl' and `pod2man'.  (The man page for `g++',
+`cp/g++.1', just contains a `.so' reference to `gcc.1', but all the
+other man pages are generated from Texinfo manuals.)
+
+   Because many systems may not have the necessary tools installed to
+generate the man pages, they are only generated if the `configure'
+script detects that recent enough tools are installed, and the
+Makefiles allow generating man pages to fail without aborting the
+build.  Man pages are also included in release distributions.  They are
+generated in the source directory.
+
+   Magic comments in Texinfo files starting `@c man' control what parts
+of a Texinfo file go into a man page.  Only a subset of Texinfo is
+supported by `texi2pod.pl', and it may be necessary to add support for
+more Texinfo features to this script when generating new man pages.  To
+improve the man page output, some special Texinfo macros are provided
+in `doc/include/gcc-common.texi' which `texi2pod.pl' understands:
+
+`@gcctabopt'
+     Use in the form `@table @gcctabopt' for tables of options, where
+     for printed output the effect of `@code' is better than that of
+     `@option' but for man page output a different effect is wanted.
+
+`@gccoptlist'
+     Use for summary lists of options in manuals.
+
+`@gol'
+     Use at the end of each line inside `@gccoptlist'.  This is
+     necessary to avoid problems with differences in how the
+     `@gccoptlist' macro is handled by different Texinfo formatters.
+
+   FIXME: describe the `texi2pod.pl' input language and magic comments
+in more detail.
+
+
+File: gccint.info,  Node: Miscellaneous Docs,  Prev: Man Page Generation,  Up: Documentation
+
+Miscellaneous Documentation
+...........................
+
+   In addition to the formal documentation that is installed by GCC,
+there are several other text files with miscellaneous documentation:
+
+`ABOUT-GCC-NLS'
+     Notes on GCC's Native Language Support.  FIXME: this should be
+     part of this manual rather than a separate file.
+
+`ABOUT-NLS'
+     Notes on the Free Translation Project.
+
+`COPYING'
+     The GNU General Public License.
+
+`COPYING.LIB'
+     The GNU Lesser General Public License.
+
+`*ChangeLog*'
+`*/ChangeLog*'
+     Change log files for various parts of GCC.
+
+`LANGUAGES'
+     Details of a few changes to the GCC front-end interface.  FIXME:
+     the information in this file should be part of general
+     documentation of the front-end interface in this manual.
+
+`ONEWS'
+     Information about new features in old versions of GCC.  (For recent
+     versions, the information is on the GCC web site.)
+
+`README.Portability'
+     Information about portability issues when writing code in GCC.
+     FIXME: why isn't this part of this manual or of the GCC Coding
+     Conventions?
+
+`SERVICE'
+     A pointer to the GNU Service Directory.
+
+   FIXME: document such files in subdirectories, at least `config',
+`cp', `objc', `testsuite'.
+
+
+File: gccint.info,  Node: Front End,  Next: Back End,  Prev: Documentation,  Up: gcc Directory
+
+Anatomy of a Language Front End
+-------------------------------
+
+   A front end for a language in GCC has the following parts:
+
+   * A directory `LANGUAGE' under `gcc' containing source files for
+     that front end.  *Note The Front End `LANGUAGE' Directory: Front
+     End Directory, for details.
+
+   * A mention of the language in the list of supported languages in
+     `gcc/doc/install.texi'.
+
+   * Details of contributors to that front end in
+     `gcc/doc/contrib.texi'.  If the details are in that front end's
+     own manual then there should be a link to that manual's list in
+     `contrib.texi'.
+
+   * Information about support for that language in
+     `gcc/doc/frontends.texi'.
+
+   * Information about standards for that language, and the front end's
+     support for them, in `gcc/doc/standards.texi'.  This may be a link
+     to such information in the front end's own manual.
+
+   * Details of source file suffixes for that language and `-x LANG'
+     options supported, in `gcc/doc/invoke.texi'.
+
+   * Entries in `default_compilers' in `gcc.c' for source file suffixes
+     for that language.
+
+   * Preferably test suites, which may be under `gcc/testsuite' or
+     runtime library directories.  FIXME: document somewhere how to
+     write test suite harnesses.
+
+   * Probably a runtime library for the language, outside the `gcc'
+     directory.  FIXME: document this further.
+
+   * Details of the directories of any runtime libraries in
+     `gcc/doc/sourcebuild.texi'.
+
+   If the front end is added to the official GCC CVS repository, the
+following are also necessary:
+
+   * At least one GNATS category for bugs in that front end and runtime
+     libraries.  This category needs to be mentioned in
+     `gcc/gccbug.in', and in `gnats.html' on the GCC web site, as well
+     as being added to the GNATS database.
+
+   * Normally, one or more maintainers of that front end listed in
+     `MAINTAINERS'.
+
+   * Mentions on the GCC web site in `index.html' and `frontends.html',
+     with any relevant links on `readings.html'.  (Front ends that are
+     not an official part of GCC may also be listed on
+     `frontends.html', with relevant links.)
+
+   * A news item on `index.html', and possibly an announcement on the
+     <gcc-announce@gcc.gnu.org> mailing list.
+
+   * The front end's manuals should be mentioned in
+     `maintainer-scripts/update_web_docs' (*note Texinfo Manuals::) and
+     the online manuals should be linked to from
+     `onlinedocs/index.html'.
+
+   * Any old releases or CVS repositories of the front end, before its
+     inclusion in GCC, should be made available on the GCC FTP site
+     `ftp://gcc.gnu.org/pub/gcc/old-releases/'.
+
+   * The release and snapshot script `maintainer-scripts/gcc_release'
+     should be updated to generate appropriate tarballs for this front
+     end.
+
+   * If this front end includes its own version files that include the
+     current date, `maintainer-scripts/update_version' should be
+     updated accordingly.
+
+   * `CVSROOT/modules' in the GCC CVS repository should be updated.
+
+* Menu:
+
+* Front End Directory::  The front end `LANGUAGE' directory.
+* Front End Config::     The front end `config-lang.in' file.
+
+
+File: gccint.info,  Node: Front End Directory,  Next: Front End Config,  Up: Front End
+
+The Front End `LANGUAGE' Directory
+..................................
+
+   A front end `LANGUAGE' directory contains the source files of that
+front end (but not of any runtime libraries, which should be outside
+the `gcc' directory).  This includes documentation, and possibly some
+subsidiary programs build alongside the front end.  Certain files are
+special and other parts of the compiler depend on their names:
+
+`config-lang.in'
+     This file is required in all language subdirectories.  *Note The
+     Front End `config-lang.in' File: Front End Config, for details of
+     its contents
+
+`Make-lang.in'
+     This file is required in all language subdirectories.  It contains
+     targets `LANG.HOOK' (where `LANG' is the setting of `language' in
+     `config-lang.in') for the following values of `HOOK', and any
+     other Makefile rules required to build those targets (which may if
+     necessary use other Makefiles specified in `outputs' in
+     `config-lang.in', although this is deprecated).
+
+    `all.build'
+    `all.cross'
+    `start.encap'
+    `rest.encap'
+          FIXME: exactly what goes in each of these targets?
+
+    `info'
+          Build info documentation for the front end, in the source
+          directory.  This target is only called by `make bootstrap' if
+          a suitable version of `makeinfo' is available, so does not
+          need to check for this, and should fail if an error occurs.
+
+    `dvi'
+          Build DVI documentation for the front end, in the build
+          directory.  This should be done using `$(TEXI2DVI)', with
+          appropriate `-I' arguments pointing to directories of
+          included files.
+
+    `generated-manpages'
+          Build generated man pages for the front end from Texinfo
+          manuals (*note Man Page Generation::), in the source
+          directory.  This target is only called if the necessary tools
+          are available, but should ignore errors so as not to stop the
+          build if errors occur; man pages are optional and the tools
+          involved may be installed in a broken way.
+
+    `install-normal'
+          FIXME: what is this target for?
+
+    `install-common'
+          Install everything that is part of the front end, apart from
+          the compiler executables listed in `compilers' in
+          `config-lang.in' that are installed in `LIBSUBDIR' by the
+          main `Makefile'.
+
+    `install-info'
+          Install info documentation for the front end, if it is
+          present in the source directory.  (It may not be present if a
+          suitable version of `makeinfo' was not installed.)  This
+          target should run the command `install-info' to update the
+          info directory, but should ignore errors when running that
+          command.
+
+    `install-man'
+          Install man pages for the front end.  This target should
+          ignore errors.
+
+    `uninstall'
+          Uninstall files installed by installing the compiler.  This is
+          currently documented not to be supported, so the hook need
+          not do anything.
+
+    `mostlyclean'
+    `clean'
+    `distclean'
+    `extraclean'
+    `maintainer-clean'
+          Except for `extraclean', the language parts of the standard
+          GNU `*clean' targets. *Note Standard Targets for Users:
+          (standards)Standard Targets, for details of the standard
+          targets.  `extraclean' does `distclean' and also deletes
+          anything likely to be found in the source directory that
+          shouldn't be in the distribution.  For GCC,
+          `maintainer-clean' should delete all generated files in the
+          source directory that are not checked into CVS, but should
+          not delete anything checked into CVS.
+
+    `stage1'
+    `stage2'
+    `stage3'
+    `stage4'
+          Move to the stage directory files not included in
+          `stagestuff' in `config-lang.in' or otherwise moved by the
+          main `Makefile'.
+
+`lang-options.h'
+     This file provides entries for `documented_lang_options' in
+     `toplev.c' describing command-line options the front end accepts
+     for `--help' output.
+
+`lang-specs.h'
+     This file provides entries for `default_compilers' in `gcc.c'
+     which override the default of giving an error that a compiler for
+     that language is not installed.
+
+`LANGUAGE-tree.def'
+     This file, which need not exist, defines any language-specific tree
+     codes.
+
+
+File: gccint.info,  Node: Front End Config,  Prev: Front End Directory,  Up: Front End
+
+The Front End `config-lang.in' File
+...................................
+
+   Each language subdirectory contains a `config-lang.in' file.  This
+file is a shell script that may define some variables describing the
+language:
+
+`language'
+     This definition must be present, and gives the name of the language
+     for some purposes such as arguments to `--enable-languages'.
+
+`lang_requires'
+     If defined, this variable lists (space-separated) language front
+     ends other than C that this front end requires to be enabled (with
+     the names given being their `language' settings).  For example, the
+     Java front end depends on the C++ front end, so sets
+     `lang_requires=c++'.
+
+`target_libs'
+     If defined, this variable lists (space-separated) targets in the
+     top level `Makefile' to build the runtime libraries for this
+     language, such as `target-libobjc'.
+
+`lang_dirs'
+     If defined, this variable lists (space-separated) top level
+     directories (parallel to `gcc'), apart from the runtime libraries,
+     that should not be configured if this front end is not built.
+
+`build_by_default'
+     If defined to `no', this language front end is not built unless
+     enabled in a `--enable-languages' argument.  Otherwise, front ends
+     are built by default, subject to any special logic in
+     `configure.in' (as is present to disable the Ada front end if the
+     Ada compiler is not already installed).
+
+`boot_language'
+     If defined to `yes', this front end is built in stage 1 of the
+     bootstrap.  This is only relevant to front ends written in their
+     own languages.
+
+`compilers'
+     If defined, a space-separated list of compiler executables that
+     should be installed in `LIBSUBDIR'.  The names here will each end
+     with `\$(exeext)'.
+
+`stagestuff'
+     If defined, a space-separated list of files that should be moved to
+     the `stageN' directories in each stage of bootstrap.
+
+`outputs'
+     If defined, a space-separated list of files that should be
+     generated by `configure' substituting values in them.  This
+     mechanism can be used to create a file `LANGUAGE/Makefile' from
+     `LANGUAGE/Makefile.in', but this is deprecated, building
+     everything from the single `gcc/Makefile' is preferred.
+

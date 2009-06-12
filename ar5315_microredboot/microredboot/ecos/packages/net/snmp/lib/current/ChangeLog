@@ -1,0 +1,234 @@
+2003-03-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/keytools.c (decode_keychange): Avoid undefined behaviour.
+	(encode_keychange): Ditto.
+
+2003-02-28  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/config.h: Make random use rand on FreeBSD.
+	* include/system.h: For FreeBSD include param.h so we get the aliases.
+	#Undefine printf so stdio.h will compile. printf is not used anywhere.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/snmplib.cdl: Add doc link.
+
+2003-02-03  Manu Sharma <manu.sharma@ascom.com>
+
+        * include/transform_oids.h,
+        * src/keytools.c,
+        * src/lcd_time.c,
+        * src/scapi.c,
+        * src/snmp_api.c,
+        * src/snmp_client.c,
+        * src/snmpusm.c,
+        * src/snmpv3.c,
+        * src/tools.c,
+        * src/vacm.c : Support to conditionally implement SNMPv3 features, 
+        based on definition of CYGPKG_SNMPAGENT_V3_SUPPORT.
+
+2002-12-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * cdl/snmplib.cdl: Make use of the CYGINT_IO_FILEIO_FS interface
+        to determine if there are any filesystems in the system.
+        
+2002-11-11  Manu Sharma <manu.sharma@ascom.com>
+
+        * cdl/snmplib.cdl: Added new component
+          CYGPKG_SNMPLIB_FILESYSTEM_SUPPORT to support usage of the
+          snmpd.conf file based agent configuration.
+
+        * src/read_config.c: Include functions that read the snmpd.conf
+          file and setup the infrastructure based on configurations in
+          this file.
+
+2002-02-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/system.c: 
+	* src/snmp_api.c: Need valid value for sin_len.
+
+2002-01-18  Andrew Lunn  <Andrew.Lunn@ascom.ch>
+
+	* src/system.c (get_myaddr): The information returned by the ioctl
+	call SIOCGIFCONF is not a simple array of fixed length
+	entries. Look at each entry to work out its length.
+	
+2001-10-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/config.h: CYGINT_ISO_DNS changed to bool.
+
+2001-09-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/config.h: Define HAVE_GETHOSTBYNAME only if a DNS
+	package is available.
+
+2001-05-28  Andrew Lunn  <Andrew.Lunn@ascom.ch>
+2001-05-28  Manu Sharma  <Manu.Sharma@ascom.ch>
+
+	* src/snmpusm.c, include/snmpusm.h: Added the ability to tell the
+	agent the time of day has changed. This is used when an NTP client
+	finds out the correct time and jumps time forward by 30 odd years.
+
+	* include/config.h: If we have the OpenSSL package let the SNMP
+	agent use it.
+	
+2001-01-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/snmplib.cdl: Clarify ISO C requirements
+
+2000-11-07  Hugo Tyson  <hmt@redhat.com>
+2000-11-07  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* include/config.h (STRUCT_SOCKADDR_HAS_SA_LEN): #defined.
+	The BSD stack uses sa_len in its sockaddr structures, so the agent
+	must also use them or when it tries to send traps the stack
+	rejects them because the destination addres is invalid.
+
+2000-06-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/snmp_logging.c: 
+	* src/parse.c: Catch unprotected includes of sys/stat.h,
+	accidentally acquired from the stdinc/newlib world.  Now prevented
+	by the might of #ifndef __ECOS.
+
+2000-06-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmplib.cdl: Add option CYGDBG_NET_SNMPLIB_DEBUG to control
+	the standard UCD debugging.
+
+	* include/config.h: React to the above, and remove deal with
+	default definitions from the agent configury for system MIB
+	values.
+
+2000-06-14  John Dallaway  <jld@redhat.com>
+
+	* cdl/snmplib.cdl: Tidy display strings.
+
+2000-06-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmplib.cdl: Install all the header files below
+	include/ucd-snmp/ as is the normal host-side standard; this avoids
+	some rather terrible filenamespace pollution too.  That location
+	is also added to the include path, using a mechanism that's rather
+	build-method-specific; it may need revisiting.
+
+2000-06-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmplib.cdl: parent this below CYGPKG_NET.
+
+2000-06-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/system.c (gettimeofday): Simulate this using libc's time()
+	function which will call through to a wallclock of one is present,
+	or just count up from start time.
+
+2000-06-02  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/parse.c (add_mibdir): Return no mibs here, oh no; they're
+	not needed for agent use of the library.  Waste of time - unless
+	someone is liable to use the snmplib for tool rather than agent
+	purposes.
+
+	This goes along with the change to the agent to remove the ROFS
+	which contained all the MIBs - I had thought that the library
+	*needed* them to function, but it's not so - reading them in
+	(and complaining of their absence) is part of the snmplib startup,
+	but it's not needed by an agent.  This also means that if
+	reinstated they should live here in the lib component rather than
+	over there in the agent one; oh well.
+
+2000-05-31  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* Initial commit of port of UCD-SNMP version 4.1.2 to eCos.
+
+//==========================================================================
+//
+//      ./lib/current/ChangeLog
+//
+//
+//==========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//####UCDSNMPCOPYRIGHTBEGIN####
+//
+// -------------------------------------------
+//
+// Portions of this software may have been derived from the UCD-SNMP
+// project,  <http://ucd-snmp.ucdavis.edu/>  from the University of
+// California at Davis, which was originally based on the Carnegie Mellon
+// University SNMP implementation.  Portions of this software are therefore
+// covered by the appropriate copyright disclaimers included herein.
+//
+// The release used was version 4.1.2 of May 2000.  "ucd-snmp-4.1.2"
+// -------------------------------------------
+//
+//####UCDSNMPCOPYRIGHTEND####
+//==========================================================================
+//#####DESCRIPTIONBEGIN####
+//
+// Author(s):    hmt
+// Contributors: hmt
+// Date:         2000-05-30
+// Purpose:      Port of UCD-SNMP distribution to eCos.
+// Description:  
+//              
+//
+//####DESCRIPTIONEND####
+//
+//==========================================================================
+/********************************************************************
+       Copyright 1989, 1991, 1992 by Carnegie Mellon University
+
+			  Derivative Work -
+Copyright 1996, 1998, 1999, 2000 The Regents of the University of California
+
+			 All Rights Reserved
+
+Permission to use, copy, modify and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appears in all copies and
+that both that copyright notice and this permission notice appear in
+supporting documentation, and that the name of CMU and The Regents of
+the University of California not be used in advertising or publicity
+pertaining to distribution of the software without specific written
+permission.
+
+CMU AND THE REGENTS OF THE UNIVERSITY OF CALIFORNIA DISCLAIM ALL
+WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL CMU OR
+THE REGENTS OF THE UNIVERSITY OF CALIFORNIA BE LIABLE FOR ANY SPECIAL,
+INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+FROM THE LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*********************************************************************/

@@ -1,0 +1,361 @@
+                Memory allocation package - Implementation Notes
+                ------------------------------------------------
+
+
+
+Made with loving care by Jonathan Larmour (jlarmour@redhat.com)
+Initial version: 2000-07-03
+Last updated:    2000-07-03
+
+
+
+Meta
+----
+
+This document describes some interesting bits and pieces about the memory
+allocation package - CYGPKG_MEMALLOC. It is intended as a guide to
+developers, not users. This isn't (yet) in formal documentation format,
+and probably should be.
+
+
+Philosophy
+----------
+
+The object of this package is to provide everything required for dynamic
+memory allocation, some sample implementations, the ability to plug in
+more implementations, and a standard malloc() style interface to those
+allocators.
+
+The classic Unix-style view of a heap is using brk()/sbrk() to extend the
+data segment of the application. However this is inappropriate for an
+embedded system because:
+
+- you may not have an MMU, which means memory may be disjoint, thus breaking
+  this paradigm
+
+- in a single process system there is no need to play tricks since there
+  is only the one address space and therefore heap area to use.
+
+Therefore instead, we base the heap on the idea of fixed size memory pools.
+The size of each pool is known in advance.
+
+
+Overview
+--------
+
+Most of the infrastructure this package provides is geared towards
+supporting the ISO standard malloc() family of functions. A "standard"
+eCos allocator should be able to plug in to this infrastructure and
+transparently work. The interface is based on simple use of C++ - nothing
+too advanced.
+
+The allocator to use is dictated by the
+CYGBLD_MEMALLOC_MALLOC_IMPLEMENTATION_HEADER option. Choosing the
+allocator can be done by ensuring the CDL for the new allocator
+has a "requires" that sets the location of the header to use when that
+allocator is enabled. New allocators should default to disabled, so they
+don't have to worry about which one is the default, thus causing CDL
+conflicts. When enabled the new allocator should also claim to implement
+CYGINT_MEMALLOC_MALLOC_ALLOCATORS.
+
+The implementation header file that is set must have a special property
+though - it may be included with __MALLOC_IMPL_WANTED defined. If this
+is the case, then this means the infrastructure wants to find out the
+name of the class that is implemented in this header file. This is done
+by setting CYGCLS_MEMALLOC_MALLOC_IMPL. If __MALLOC_IMPL_WANTED is defined
+then no non-preprocessor output should be generated, as this will be included
+in a TCL script in due course. An existing example from this package would
+be:
+
+#define CYGCLS_MEMALLOC_MALLOC_IMPL Cyg_Mempool_dlmalloc
+
+// if the implementation is all that's required, don't output anything else
+#ifndef __MALLOC_IMPL_WANTED
+
+class Cyg_Mempool_dlmalloc
+{
+[etc.]
+
+To meet the expectations of malloc, the class should have the following
+public interfaces (for details it is best to look at some of the
+examples in this package):
+
+- a constructor taking arguments of the form:
+
+  ALLOCATORNAME( cyg_uint8 *base, cyg_int32 size );
+
+  If you want to be able to support other arguments for when accessing
+  the allocator directly you can add them, but give them default values,
+  or use overloading
+
+- a destructor
+
+- a try_alloc() function that returns new memory, or NULL on failure:
+
+    cyg_uint8 *
+    try_alloc( cyg_int32 size );
+
+- a free() function taking one pointer argument that returns a boolean
+  for success or failure:
+
+    cyg_bool
+    free( cyg_uint8 *ptr );
+
+  Again, extra arguments can be added, as long as they are defaulted.
+
+
+- resize_alloc() which is designed purely to support realloc(). It
+  has the prototype: 
+    cyg_uint8 *
+    resize_alloc( cyg_uint8 *alloc_ptr, cyg_int32 newsize,
+                  cyg_int32 *oldsize );
+
+  The idea is that if alloc_ptr can be adjusted to newsize, then it will
+  be. If oldsize is non-NULL the old size (possibly rounded) is placed
+  there. However what this *doesn't* do (unlike the real realloc()) is
+  fall back to doing a new malloc(). All it does is try to do tricks
+  inside the allocator. It's up to higher layers to call malloc().
+
+- get_status() allows the retrieval of info from the allocator. The idea
+  is to pass in the bitmask OR of the flags defined in common.hxx, which
+  selects what information is requested. If the request is supported by
+  the allocator, the approriate structure fields are filled in; otherwise
+  unsupported fields will be left with the value -1. (The constructor for
+  Cyg_Mempool_Status initializes them to -1). If you want to reinitialize
+  the structure and deliberately lose the data in a Cyg_Mempool_Status
+  object, you need to invoke the init() method of the status object to
+  reinitialize it.
+
+    void
+    get_status( cyg_mempool_status_flag_t flags, Cyg_Mempool_Status &status );
+
+  A subset of the available stats are exported via mallinfo()
+
+
+Cyg_Mempolt2 template
+---------------------
+
+If using the eCos kernel with multiple threads accessing the allocators,
+then obviously you need to be sure that the allocator is accessed in a
+thread-safe way. The malloc() wrappers do not make any assumptions
+about this. One helpful approach currently used by all the allocators
+in this package is to (optionally) use a template (Cyg_Mempolt2) that
+provides extra functions like a blocking alloc() that waits for memory
+to be freed before returning, and a timed variant. Other calls are
+generally passed straight through, but with the kernel scheduler locked
+to prevent pre-emption.
+
+You don't have to use this facility to fit into the infrastructure though,
+and thread safety is not a prerequisite for the rest of the infrastructure.
+And indeed certain allocators will be able to do scheduling at a finer
+granularity than just locking the scheduler every time.
+
+The odd name is because of an original desire to keep 8.3 filenames, which
+was reflected in the class name to make it correspond to the filename.
+There used to be an alternative Cyg_Mempoolt template, but that has fallen
+into disuse and is no longer supported.
+
+
+Automatic heap sizing
+---------------------
+
+This package contains infrastructure to allow the automatic definition
+of memory pools that occupy all available memory. In order to do this
+you must use the eCos Memory Layout Tool to define a user-defined section.
+These sections *must* have the prefix "heap", for example "heap1", "heap2",
+"heapdram" etc. otherwise they will be ignored.
+
+The user-defined section may be of fixed size, or of unknown size. If it
+has unknown size then its size is dictated by either the location of
+the next following section with an absolute address, or if there are
+no following sections, the end of the memory region. The latter should
+be the norm.
+
+If no user-defined sections starting with "heap" are found, a fallback
+static array (i.e. allocated in the BSS) will be used, whose size can
+be set in the configuration.
+
+It is also possible to define multiple heap sections. This is
+necessary when you have multiple disjoint memory regions, and no MMU
+to join it up into one contiguous memory space. In which case
+a special wrapper allocator object is automatically used. This object
+is an instantiation of the Cyg_Mempool_Joined template class,
+defined in memjoin.hxx. It is instantiated with a list of every heap
+section, which it then records. It's sole purpose is to act as a go
+between to the underlying implementation, and does the right thing by
+using pointer addresses to determine which memory pool the pointer
+allocator, and therefore which memory pool instantiation to use.
+
+Obviously using the Cyg_Mempool_Joined class adds overhead, but if this
+is a problem, then in that case you shouldn't define multiple disjoint
+heaps!
+
+
+Run-time heap sizing
+--------------------
+
+As a special case, some platforms support the addition of memory in the
+field, in which case it is desirable to automatically make this
+available to malloc. The mechanism for this is to define a macro in
+the HAL, specifically, defined in hal_intr.h:
+
+HAL_MEM_REAL_REGION_TOP( cyg_uint8 *regionend )
+
+This macro takes the address of the "normal" end of the region. This
+corresponds with the size of the memory region in the MLT, and would
+be end of the "unexpanded" region. This makes sense because the memory
+region must be determined by the "worst case" of what memory will be
+installed.
+
+This macro then returns a pointer which is the *real* region end,
+as determined by the HAL at run-time.
+
+By having the macro in this form, it is therefore flexible enough to
+work with multiple memory regions.
+
+There is an example in the ARM HAL - specifically the EBSA285.
+
+
+How it works
+------------
+
+The MLT outputs macros providing information about user-defined sections
+into a header file, available via system.h with the CYGHWR_MEMORY_LAYOUT_H
+define. When the user-defined section has no known size, it determines
+the size correctly relative to the end of the region, and sets the SIZE
+macro accordingly.
+
+A custom build rule preprocesses src/heapgen.cpp to generate heapgeninc.tcl
+This contains TCL "set"s to allow access to the values of various
+bits of configuration data. heapgen.cpp also includes the malloc
+implementation header (as defined by
+CYGBLD_MEMALLOC_MALLOC_IMPLEMENTATION_HEADER) with __MALLOC_IMPL_WANTED
+defined. This tells the header that it should define the macro
+CYGCLS_MEMALLOC_MALLOC_IMPL to be the name of the actual class. This
+is then also exported with a TCL "set".
+
+src/heapgen.tcl then includes heapgeninc.tcl which gives it access to
+the configuration values. heapgen.tcl then searches the LDI file for
+any sections beginning with "heap" (with possibly leading underscores).
+It records each one it finds and then generates a file heaps.cxx in the
+build tree to instantiate a memory pool object of the required class for
+each heap. It also generates a list containing the addresses of each
+pool that was instantiated. A header file heaps.hxx is then generated
+that exports the number of pools, a reference to this list array and
+includes the implementation header.
+
+Custom build rules then copy the heaps.hxx into the include/pkgconf
+subdir of the install tree, and compile the heaps.cxx.
+
+To access the generated information, you must #include <pkgconf/heaps.hxx>
+The number of heaps is given by the CYGMEM_HEAP_COUNT macro. The type of
+the pools is given by CYGCLS_MEMALLOC_MALLOC_IMPL, and the array of
+instantiated pools is available with cygmem_memalloc_heaps. For example,
+here is a sample heaps.hxx:
+
+#ifndef CYGONCE_PKGCONF_HEAPS_HXX
+#define CYGONCE_PKGCONF_HEAPS_HXX
+/* <pkgconf/heaps.hxx> */
+ 
+/* This is a generated file - do not edit! */
+ 
+#define CYGMEM_HEAP_COUNT 1
+#include <cyg/memalloc/dlmalloc.hxx>
+ 
+extern Cyg_Mempool_dlmalloc *cygmem_memalloc_heaps[ 2 ];
+ 
+#endif
+/* EOF <pkgconf/heaps.hxx> */
+
+The array has size 2 because it consists of one pool, plus a terminating
+NULL.
+
+In future the addition of cdl_get() available from TCL scripts contained
+within the CDL scripts will remove the need for a lot of this magic.
+
+
+dlmalloc
+--------
+
+A port of dlmalloc is included. Far too many changes were required to make
+it fit within the scheme above, so therefore there was no point
+trying to preserve the layout to make it easier to merge in new versions.
+However dlmalloc rarely changes any more - it is very stable.
+
+The version of dlmalloc used was a mixture of 2.6.6 and the dlmalloc from
+newlib (based on 2.6.4). In the event, most of the patches merged were
+of no consequence to the final version.
+
+For reference, the various versions examined are included in the
+doc/dlmalloc subdirectory: dlmalloc-2.6.4.c, dlmalloc-2.6.6.c,
+dlmalloc-newlib.c and dlmalloc-merged.c (which is the result of merging
+the changes between 2.6.4 and the newlib version into 2.6.6). Note it
+was not tested at that point.            
+
+
+Remaining issues
+----------------
+
+You should be allowed to have different allocators for different memory
+regions. The biggest hurdle here is host tools support to express this.
+
+Currently the "joined" allocator wrapper simply treats each memory pool
+as an equal. It doesn't understand that some memory pools may be faster
+than others, and cannot make decisions about which pools (and therefore
+regions and therefore possibly speeds of memory) to use on the basis
+of allocation size. This should be (configurably) possible.
+
+
+History
+-------
+
+
+A long, long time ago, in a galaxy far far away.... the situation used to
+be that the kernel package contained the fixed block and simple variable
+block memory allocators, and those were the only memory allocator
+implementations. This was all a bit incongruous as it meant that any code
+wanting dynamic memory allocation had to include the whole kernel, even
+though the dependencies could be encapsulated. This was particularly silly
+because the implementation of malloc() (etc.) in the C library didn't use
+any of the features that *did* depend on the kernel, such as timed waits
+while allocating memory, etc.
+
+The C library malloc was pretty naff then too. It used a static buffer
+as the basis of the memory pool, with a hard-coded size, set in the
+configuration. You couldn't make it fit into all of memory.
+
+Jifl
+2000-07-03
+
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####

@@ -1,0 +1,22 @@
+How to Flash a RedBoot Image
+
+First, create both the RAM and ROM versions of RedBoot, using the instructions
+in README.BUILD.
+
+WARNING: You should never attempt to replace the bootrom that is supplied
+with your board unless you know how to recover (e.g. you have an ICE and
+appropriate software and knowledge).
+
+STEP 1) Boot the RAM-based RedBoot image that you constructed earlier.
+        You can boot it using an ICE or boot it from existing bootrom.
+
+STEP 2) Here is an example of what to do at the redboot prompt:
+        ip_address -l 192.168.1.20 -h 192.168.1.100
+        fis init -f
+        load -r -b %{FREEMEMLO} redboot_rom.bin
+        fis create RedBoot     /* ...and answer 'y' */
+
+        NOTE: In order for the "load" command to work, you must have a
+        TFTP server running on 192.168.1.100.
+
+Now, simply reset and you're running the new bootrom image.

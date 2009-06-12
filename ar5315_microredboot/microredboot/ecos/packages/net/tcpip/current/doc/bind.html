@@ -1,0 +1,64 @@
+<html>
+<body>
+<pre>
+NAME
+       bind - bind a name to a socket
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       int   bind(int   sockfd,  struct  sockaddr  *my_addr,  int
+       addrlen);
+
+DESCRIPTION
+       bind gives the socket sockfd the  local  address  my_addr.
+       my_addr  is  addrlen  bytes  long.  Traditionally, this is
+       called "assigning a name to a socket."  (When a socket  is
+       created with socket(2), it exists in a name space (address
+       family) but has no name assigned.)
+
+       Before a SOCK_STREAM socket is put into the  LISTEN  state
+       to receive connections, you usually need to first assign a
+       local address using bind to make the socket visible.
+
+NOTES
+       Binding a name that is not in the  abstract  namespace  in
+       the  UNIX  domain creates a socket in the file system that
+       must be deleted by the caller when it is no longer  needed
+       (using unlink(2)).
+
+       The  rules used in name binding vary between communication
+       domains.  Consult the manual  entries  in  section  4  for
+       detailed information. For IP see ip(4) and for PF_UNIX see
+       unix(4).  If you want to listen to every  local  interface
+       for  IPv4 set the sin_addr member of the IP-specific sock-
+       addr_in to INADDR_ANY.  For IP  only  one  socket  may  be
+       bound  to  a  specific  local address/port pair. For TCP a
+       bound  local  socket  endpoint  (address/port   pair)   is
+       unavailable for some time after closing the socket, unless
+       the SO_REUSEADDR flag is set. Note that carelessly setting
+       SO_REUSEADDR might make TCP more unreliable unless PAWS is
+       used (see tcp(4)); the delay is needed to handle old pack-
+       ets still in the network.
+
+       IP  sockets  may  also  bind  to  a broadcast or multicast
+       address.
+
+RETURN VALUE
+       On success, zero is returned.  On error, -1  is  returned,
+       and errno is set appropriately.
+
+ERRORS
+       EBADF   sockfd is not a valid descriptor.
+
+       EINVAL  The  socket  is already bound to an address.  This
+               may change in the  future:  see  linux/unix/sock.c
+               for details.
+
+       ENOTSOCK
+               Argument is a descriptor for a file, not a socket.
+
+
+</pre>
+</body>
+</html>

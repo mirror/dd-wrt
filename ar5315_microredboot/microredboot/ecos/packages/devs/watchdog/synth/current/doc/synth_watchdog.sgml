@@ -1,0 +1,342 @@
+<!-- DOCTYPE refentry  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     synth_watchdog.sgml                                         -->
+<!--                                                                 -->
+<!--     Synthetic target watchdog device                            -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2002 Bart Veer                                    -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2002/09/09                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="devs-watchdog-synth-ref">
+<!-- reference id="devs-watchdog-synth-ref" -->
+  <title>Synthetic Target Watchdog Device</title>
+
+<refentry id="devs-watchdog-synth">
+  <refmeta>
+    <refentrytitle>Synthetic Target Watchdog Device</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Synthetic Target Watchdog Device</refname>
+    <refpurpose>Emulate watchdog hardware in the synthetic target</refpurpose> 
+  </refnamediv>
+
+  <refsect1><title>Overview</title>
+    <para>
+Some target hardware comes equipped with a watchdog timer. Application
+code can start this timer and after a certain period of time,
+typically a second, the watchdog will trigger. Usually this causes the
+hardware to reboot. The application can prevent this by regularly
+resetting the watchdog. An automatic reboot can be very useful when
+deploying hardware in the field: a hardware glitch could cause the
+unit to hang; or the software could receive an unexpected sequence of
+inputs, never seen in the laboratory, causing the system to lock up.
+Often the hardware is still functional, and a reboot sorts out the
+problem with only a brief interruption in service.
+    </para>
+    <para>
+The synthetic target watchdog package emulates watchdog hardware.
+During system initialization watchdog device will be instantiated,
+and the <filename>watchdog.tcl</filename> script will be loaded by the
+I/O auxiliary. When the eCos application starts the watchdog device,
+the <filename>watchdog.tcl</filename> script will start checking the
+state of the eCos application at one second intervals. A watchdog
+reset call simply involves a message to the I/O auxiliary. If the
+<filename>watchdog.tcl</filename> script detects that a second has
+<link linkend="synth-watchdog-wallclock-elapsed">elapsed</link>
+without a reset then it will send a <literal>SIGPWR</literal> signal
+to the eCos application, causing the latter to terminate. If gdb is
+being used to run the application, the user will get a chance to
+investigate what is happening. This behaviour is different from real
+hardware in that there is no automatic reboot, but the synthetic
+target is used only for development purposes, not deployment in the
+field: if a reboot is desired then this can be achieved very easily
+by using gdb commands to run another instance of the application.
+    </para>
+  </refsect1>
+
+  <refsect1 id="devs-watchdog-synth-install"><title>Installation</title>
+    <para>
+Before a synthetic target eCos application can use a watchdog device
+it is necessary to build and install host-side support. The relevant
+code resides in the <filename class="directory">host</filename>
+subdirectory of the synthetic target watchdog package, and building it
+involves the standard <command>configure</command>,
+<command>make</command> and <command>make install</command> steps. The
+implementation of the watchdog support does not require any
+executables, just a Tcl script <filename>watchdog.tcl</filename> and
+some support files, so the <command>make</command> step is a no-op.
+    </para>
+    <para>
+There are two main ways of building the host-side software. It is
+possible to build both the generic host-side software and all
+package-specific host-side software, including the watchdog support,
+in a single build tree. This involves using the
+<command>configure</command> script at the toplevel of the eCos
+repository. For more information on this, see the
+<filename>README.host</filename> file at the top of the repository.
+Note that if you have an existing build tree which does not include
+the synthetic target watchdog support then it will be necessary to
+rerun the toplevel configure script: the search for appropriate
+packages happens at configure time.
+    </para>
+    <para>
+The alternative is to build just the host-side for this package.
+This requires a separate build directory, building directly in the
+source tree is disallowed. The <command>configure</command> options
+are much the same as for a build from the toplevel, and the
+<filename>README.host</filename> file can be consulted for more
+details. It is essential that the watchdog support be configured with
+the same <option>--prefix</option> option as other eCos host-side
+software, especially the I/O auxiliary provided by the architectural
+synthetic target HAL package, otherwise the I/O auxiliary will be
+unable to locate the watchdog support.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-watchdog-target-config"><title>Target-side
+Configuration</title>
+    <para>
+The watchdog device depends on the generic watchdog support,
+<varname>CYGPKG_IO_WATCHDOG</varname>: if the generic support is
+absent then the watchdog device will be inactive. Some templates
+include this generic package by default, but not all. If the
+configuration does not include the generic package then it can be
+added using the eCos configuration tools, for example:
+    </para>
+    <screen>
+$ ecosconfig add CYGPKG_IO_WATCHDOG
+</screen>
+    <para>
+By default the configuration will use the hardware-specific support,
+i.e. this package. However the generic watchdog package contains an
+alternative implementation using the kernel alarm facility, and that
+implementation can be selected if desired. However usually it will be
+better to rely on an external watchdog facility as provided by the I/O
+auxiliary and the <filename>watchdog.tcl</filename> script: if there
+are serious problems within the application, for example memory
+corruption, then an internal software-only implementation will not be
+reliable.
+    </para>
+    <para>
+The watchdog resolution is currently fixed to one second: if the
+device does not receive a reset signal at least once a second then
+the watchdog will trigger and the eCos application will be terminated
+with a <literal>SIGPWR</literal> signal. The current implementation
+does not allow this resolution to be changed.
+    </para>
+    <para>
+On some targets the watchdog device does not perform a hard reset.
+Instead the device works more or less via the interrupt subsystem,
+allowing application code to install action routines that will be
+called when the watchdog triggers. The synthetic target watchdog
+support effectively does perform a hard reset, by sending a
+<literal>SIGPWR</literal> signal to the eCos application, and there is
+no support for action routines.
+    </para>
+    <para>
+The synthetic target watchdog package provides some configuration
+options for manipulating the compiler flags used for building the
+target-side code. That code is fairly simple, so for nearly all
+applications the default flags will suffice.
+    </para>
+    <para>
+It should be noted that the watchdog device is subject to selective
+linking. Unless some code explicitly references the device, for
+example by calling the start and reset functions, the watchdog support
+will not appear in the final executable. This is desirable because a
+watchdog device has no effect until started.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-watchdog-wallclock-elapsed"><title>Wallclock versus Elapsed Time</title>
+    <para>
+On real hardware the watchdog device uses wallclock time: if the
+device does not receive a reset signal within a set period of time
+then the watchdog will trigger. When developing for the synthetic
+target this is not always appropriate. There may be other processes
+running, using up some or most of the cpu time. For example, the
+application may be written such that it will issue a reset after some
+calculations which are known to complete within half a second, well
+within the one-second resolution of the watchdog device. However if
+other Linux processes are running then the synthetic target
+application may get timesliced, and half a second of computation may
+take several seconds of wallclock time.
+    </para>
+    <para>
+Another problem with using wallclock time is that it interferes with
+debugging: if the application hits a breakpoint then it is unlikely
+that the user will manage to restart it in less than a second, and the
+watchdog will not get reset in time.
+    </para>
+    <para>
+To avoid these problems the synthetic target watchdog normally uses
+consumed cpu time rather than wallclock time. If the application is
+timesliced or if it is halted inside gdb then it does not consume any
+cpu time. The application actually has to spend a whole second's worth
+of cpu cycles without issuing a reset before the watchdog triggers.
+    </para>
+    <para>
+However using consumed cpu time is not a perfect solution either. If
+the application makes blocking system calls then it is not using cpu
+time. Interaction with the I/O auxiliary involves system calls, but
+these should take only a short amount of time so their effects can be
+ignored. If the application makes direct system calls such as
+<function>cyg_hal_sys_read</function> then the system behaviour
+becomes undefined. In addition by default the idle thread will make
+blocking <function>select</function> system calls, effectively waiting
+until an interrupt occurs. If an application spends much of its time
+idle then the watchdog device may take much longer to trigger than
+expected. It may be desirable to enable the synthetic target HAL
+configuration option <varname>CYGIMP_HAL_IDLE_THREAD_SPIN</varname>,
+causing the idle thread to spin rather than block, at the cost of
+wasted cpu cycles.
+    </para>
+    <para>
+The default is to use consumed cpu time, but this can be changed in
+the target definition file:
+    </para>
+    <programlisting>
+synth_device watchdog {
+    use wallclock_time
+    &hellip;
+}
+</programlisting>
+  </refsect1>
+
+  <refsect1 id="synth-watchdog-gui"><title>User Interface</title>
+    <para>
+When the synthetic target is run in graphical mode the watchdog device
+extends the user interface in two ways. The <guimenu>Help</guimenu>
+menu is extended with an entry for the watchdog-specific
+documentation. There is also a graphical display of the current state
+of the watchdog. Initially the watchdog is asleep:
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="asleep.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+When application code starts the device the watchdog will begin to
+keep an eye on things (or occasionally both eyes).
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="awake.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+If the watchdog triggers the display will change again, and optionally
+the user can receive an audible alert. The location of the watchdog
+display within the I/O auxiliary's window can be controlled via
+a <command>watchdog_pack</command> entry in the target definition
+file. For example the following can be used to put the watchdog
+display to the right of the central text window:
+    </para>
+    <programlisting>
+synth_device watchdog {
+    watchdog_pack -in .main.e -side top
+    &hellip;
+}
+</programlisting>
+    <para>
+The user interface section of the generic synthetic target HAL
+documentation can be consulted for more information on window packing.
+    </para>
+    <para>
+By default the watchdog support will not generate an audible alert
+when the watchdog triggers, to avoid annoying colleagues. Sound can be
+enabled in the target definition file, and two suitable files
+<filename>sound1.au</filename> and <filename>sound2.au</filename> are
+supplied as standard:
+    </para>
+    <programlisting>
+synth_device watchdog {
+    sound sound1.au
+    &hellip;
+}
+</programlisting>
+    <para>
+An absolute path can be specified if desired:
+    </para>
+    <programlisting>
+synth_device watchdog {
+    sound /usr/share/emacs/site-lisp/emacspeak/sounds/default-8k/alarm.au
+    &hellip;
+}
+</programlisting>
+    <para>
+Sound facilities are not built into the I/O auxiliary itself, instead
+an external program is used. The default player is
+<command>play</command>, a front-end to the
+<application>sox</application> application shipped with some Linux
+distributions. If another player should be used then this can be
+specified in the target definition file:
+    </para>
+    <programlisting>
+synth_device watchdog {
+    &hellip;
+    sound_player my_sound_player
+</programlisting>
+    <para>
+The specified program will be run in the background with a single
+argument, the sound file.
+    </para>
+  </refsect1>
+
+  <refsect1 id="devs-watchdog-synth-args"><title>Command Line Arguments</title>
+    <para>
+The watchdog support does not use any command line arguments. All
+configuration is handled through the target definition file.
+    </para>
+  </refsect1>
+
+  <refsect1 id="devs-watchdog-synth-hooks"><title>Hooks</title>
+    <para>
+The watchdog support does not provide any hooks for use by other
+scripts. There is rarely any need for customizing the system's
+behaviour when a watchdog triggers because those should be rare
+events, even during application development.
+    </para>
+  </refsect1>
+
+  <refsect1 id="devs-watchdog-synth-tcl"><title>Additional Tcl Procedures</title>
+    <para>
+The watchdog support does not provide any additional Tcl procedures or
+variables for use by other scripts.
+    </para>
+  </refsect1>
+
+</refentry>
+</part>
+<!-- /reference -->

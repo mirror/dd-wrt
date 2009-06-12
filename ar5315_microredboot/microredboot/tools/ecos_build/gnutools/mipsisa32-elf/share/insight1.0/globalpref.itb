@@ -1,0 +1,472 @@
+# Global preference class implementation for Insight.
+# Copyright 1997, 1998, 1999, 2002 Red Hat
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ----------------------------------------------------------------------
+# Implements Global preferences dialog
+#
+# ----------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+#  METHOD:  _init - set up the tracing labels info
+# ------------------------------------------------------------------
+body GlobalPref::_init {} {
+  if {$inited} {
+    return
+  }
+  
+  set inited 1
+  
+  array set tracing_labels {
+    0 "Tracing features disabled"
+    1 "Tracing features enabled"
+    max_len 0
+  }
+  
+  foreach elem [array names tracing_labels] {
+    set len [string length $tracing_labels($elem)]
+    set tracing_labels(max_len) \
+      [expr $len > $tracing_labels(max_len) ? $len : $tracing_labels(max_len) ]
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  init_var - initialize preference variables
+# ------------------------------------------------------------------
+body GlobalPref::_init_var {} {
+  set vlist {gdb/ImageDir gdb/console/wrap gdb/mode
+    gdb/help/browser gdb/use_icons}
+
+  foreach var $vlist {
+    set _saved($var) [pref get $var]
+    set _new($var) $_saved($var)
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  constructor - create the Global Preferences object
+# ------------------------------------------------------------------
+body GlobalPref::constructor {args} {    
+  window_name "Global Preferences"
+  _init
+  _init_var
+  _build_win
+  eval itk_initialize $args
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  destructor - destroy the Global Preferences object
+# ------------------------------------------------------------------
+body GlobalPref::destructor {} {
+  foreach thunk $_fonts {
+    font delete test-$thunk-font
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _build_win - build the dialog
+# ------------------------------------------------------------------
+body GlobalPref::_build_win {} {
+  global tcl_platform GDBTK_LIBRARY
+  debug
+  frame $itk_interior.f
+  frame $itk_interior.x
+  set frame $itk_interior.f
+  
+  # Icons
+  frame $frame.icons
+  label $frame.icons.lab -text "Icons "
+  combobox::combobox $frame.icons.cb -editable 0 -maxheight 10\
+    -command [code $this _change_icons]
+  
+  # get list of icon directories
+  set curdir [pwd]
+  set _icondirlist ""
+  cd $GDBTK_LIBRARY
+  foreach foo [glob -- *] {
+    if {[file isdirectory $foo] && [file exists [file join $foo "icons.txt"]]} {
+      lappend _icondirlist $foo
+    }
+  }
+
+  set width 14
+  # load combobox
+  foreach dir $_icondirlist {
+    if {![string compare $dir $_saved(gdb/ImageDir)]} {
+      set cdir 1
+    } else {
+      set cdir 0
+    }
+    set foo [file join $dir "icons.txt"]
+    if {[catch {::open $foo r} fid]} {
+      # failed
+      dbug E "couldn't open $foo:$fid"
+      if {$cdir} {$frame.icons.cb entryset "unknown icons"}
+      $frame.icons.cb list insert end "unknown icons"
+    } else {
+      if {[gets $fid txt] >= 0} {
+	if {$cdir} {$frame.icons.cb entryset $txt}
+	if {[string length $txt] > $width} {set width [string length $txt]}
+	$frame.icons.cb list insert end $txt
+      } else {
+	if {$cdir} {$frame.icons.cb entryset "unknown icons"}
+	$frame.icons.cb list insert end "unknown icons"
+      }
+      close $fid
+    }
+  }
+  $frame.icons.cb configure -width $width
+  cd $curdir
+
+  # searching for fixed font families take a long time
+  # therefore, we cache the font names.  The font cache
+  # can be saved in the init file. A way should be provided
+  # to rescan the font list, without deleting the entry from the
+  # init file.
+  set font_cache [pref get gdb/font_cache]
+
+  # get list of fonts, removing some that typically
+  # are not useful or cause tk problems
+  set fam [lremove [font families] "open look glyph"]
+  set fam [lremove $fam "open look cursor"]
+  set fam [lremove $fam "song ti"]
+  set fam [lremove $fam "clearlyu"]
+  set fam [lremove $fam "clearlyu alternate glyphs"]
+  set fam [lremove $fam "clearlyu arabic extra"]
+  set fam [lremove $fam "clearlyu ligature"]
+  set fam [lremove $fam "clearlyu pua"]
+  set fam [lremove $fam "fangsong ti"]
+  set fam [lremove $fam "newspaper"]
+  set fam [lremove $fam "palatino linotype"]
+  set fam [lsort $fam]
+  
+  if {$font_cache == ""} {
+    if {$tcl_platform(platform) == "unix"} {
+      toplevel .c
+      wm title .c "Scanning for fonts"
+      message .c.m -width 3i -text "Scanning system for fonts\n\nPlease wait..." \
+	-relief flat -padx 30 -pady 30 \
+	-bg [pref get gdb/global_prefs/message_bg] \
+	-fg [pref get gdb/global_prefs/message_fg]
+      ::update
+      pack .c.m
+      focus .c
+      ::raise .c
+      ::update
+    }
+
+    foreach fn $fam {
+      if {[font metrics [list $fn] -fixed] == 1} {
+	lappend font_cache $fn
+      }
+    }
+    pref set gdb/font_cache $font_cache
+    if {[winfo exists .c]} { destroy .c }
+  }
+  
+  Labelledframe $frame.d -text "Fonts"
+  set f [$frame.d get_frame]
+
+  _make_font_item $f fixed "Fixed Font:" $font_cache
+
+  if {$tcl_platform(platform) != "windows"} {
+    # Cannot change the windows menu font ourselves
+    _make_font_item $f menu "Menu Font:" $fam
+  }
+
+  _make_font_item $f default "Default Font:" $fam
+  _make_font_item $f status  "Status Bar Font:" $fam
+
+  # This is the tracing preference
+  set tracing_cb [pref get gdb/mode]
+  if { ![info exists tracing_labels($tracing_cb)]} {
+    dbug E "Got unknown mode value: $tracing_cb"
+    set tracing_labels($tracing_cb) "Unknown gdb mode..."
+  }
+
+  frame $frame.tracing
+  checkbutton $frame.tracing.cb -variable [scope _new(gdb/mode)] \
+    -text $tracing_labels($tracing_cb) \
+    -command [code $this _toggle_tracing $frame.tracing.cb] \
+    -width $tracing_labels(max_len) -anchor w
+    pack $frame.tracing.cb -pady 10 -side left -fill none 
+
+  # help browser preferences
+  if {$tcl_platform(platform) == "windows"} {
+    set help_text "Use Internet Browser to View Help Files"
+  } else {
+    set help_text "Use Netscape to View Help Files"
+  }
+  frame $frame.browser
+  checkbutton $frame.browser.cb  \
+    -text $help_text -variable [scope _new(gdb/help/browser)]
+  pack $frame.browser.cb -pady 10 -side left -fill none 
+
+  # use_icons
+  if {$tcl_platform(platform) == "unix"} {
+    frame $frame.use_icons
+    checkbutton $frame.use_icons.cb  \
+      -text "Use builtin image as icon." -variable [scope _new(gdb/use_icons)]
+    pack $frame.use_icons.cb -pady 10 -side left -fill none 
+  }
+
+  # console wrap
+  frame $frame.consolewrap
+  checkbutton $frame.consolewrap.cw -text "wrap text in console window" \
+    -variable [scope _new(gdb/console/wrap)]
+  pack $frame.consolewrap.cw -pady 10 -side left -fill none
+
+  pack $frame.icons.lab $frame.icons.cb -side left
+  pack $frame.icons -side top -padx 10 -pady 10
+  pack $frame.tracing -side top -fill x -expand 0 -side bottom
+  pack $frame.browser -side top -fill x -expand 0 -side bottom
+  if {$tcl_platform(platform) == "unix"} {
+    pack $frame.use_icons -side top -fill x -expand 0 -side bottom
+  }
+  pack $frame.consolewrap -side top -fill x -expand 0 -side bottom
+  pack $frame.d -side top -fill both -expand yes
+
+  # make buttons
+  button $itk_interior.x.ok -text OK -underline 0 -width 7 -command [code $this _ok]
+  button $itk_interior.x.apply -text Apply -width 7 -underline 0 -command [code $this _apply]
+  button $itk_interior.x.cancel -text Cancel -width 7 -underline 0 -command [code $this _cancel]
+  pack $itk_interior.x.ok $itk_interior.x.apply $itk_interior.x.cancel -side left
+  standard_button_box $itk_interior.x
+  pack $itk_interior.x -fill x -padx 5 -pady 5 -side bottom
+
+
+  pack $itk_interior.f -fill both -expand yes -padx 10 -pady 5
+
+  bind $itk_interior.x.ok <Return> \
+    "$itk_interior.x.ok flash; $itk_interior.x.ok invoke"
+  focus $itk_interior.x.ok
+
+  # We don't want the window flashing around as we change the fonts...
+
+  ::update idletasks
+
+  _resize_font_item_height
+  pack propagate $itk_interior.f 0
+
+}
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _make_font_item
+# ------------------------------------------------------------------
+body GlobalPref::_make_font_item {f name label font_list} {
+  
+  # create ComboBox with font name
+  lappend _fonts $name
+  
+  set _original($name,family) [font actual global/$name -family]
+  set _original($name,size) [font actual global/$name -size]
+  font create test-$name-font -family $_original($name,family) \
+    -size $_original($name,size)
+  label $f.${name}x -text $label
+
+  combobox::combobox $f.${name}n -editable 0 -value $_original($name,family) \
+    -command [code $this _change_font $name]
+
+  foreach a $font_list {
+    $f.${name}n list insert end $a
+  }
+  
+  itk_component add $name-size {
+    iwidgets::spinint $f.${name}s -labeltext "Size:" -range {6 18} -step 1 \
+      -fixed 2 -width 2 -textvariable [scope _size($name)] -wrap 0 \
+      -increment [code $this _change_size up $name] \
+      -decrement [code $this _change_size down $name] \
+      -textbackground $::Colors(textbg)
+  } {}
+  label $f.${name}l -text ABCDEFabcdef0123456789 -font test-$name-font
+  set _size($name) $_original($name,size)
+
+  grid $f.${name}x $f.${name}n $f.${name}s $f.${name}l -sticky we -padx 5 -pady 5
+  grid columnconfigure $f 3 -weight 1
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _resize_font_item_height
+# ------------------------------------------------------------------
+body GlobalPref::_resize_font_item_height {} {
+  foreach font $_fonts {
+    set master [$itk_interior.f.d get_frame]
+    set row [gridCGet $master.${font}l -row]
+    grid rowconfigure $master $row -minsize [lindex [grid bbox $master 0 $row 3 $row ] 3]
+  } 
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _change_icons
+# ------------------------------------------------------------------
+body GlobalPref::_change_icons {w args} {
+  debug
+  set index [$w list curselection]
+  if {$index != ""} {
+    set _new(gdb/ImageDir) [lindex $_icondirlist $index]
+  }
+}
+
+# ------------------------------------------------------------------
+#  NAME:         private method GlobalPref::_change_font
+#  DESCRIPTION:  Change the given font's family
+#
+#  ARGUMENTS:
+#                font           - the font whose family is to be
+#                                 changed
+#                stupid         - the comobox widget which changed
+#                implementation - the new value of the combobox
+#  RETURNS:      Nothing
+#
+#  NOTES:        The combobox has a really non-standard callback
+#                mechanism: it always adds two args to the callback.
+# ------------------------------------------------------------------
+body GlobalPref::_change_font {font stupid implementation} {
+  font configure test-$font-font -family $implementation
+}
+
+# ------------------------------------------------------------------
+#  NAME:         private method GlobalPref::_change_size
+#  DESCRIPTION:  Change the given font's size
+#
+#  ARGUMENTS:
+#                direction  - the direction of the change (up/down)
+#                font       - the font that is changing
+#  RETURNS:      Nothing
+#
+#  NOTES:        See comments for purpose of "direction". Sigh.
+# ------------------------------------------------------------------
+body GlobalPref::_change_size {direction font} {
+
+  # Almost as stupid as the comobox, the iwidgets::spinint class
+  # will not treat its -increment and -decrement commands
+  # as command callbacks. Instead it OVERRIDES all behavior.
+  # Thus, we need to call the stupid spinint's callback.
+  $itk_component($font-size) $direction
+  font configure test-$font-font -size $_size($font)
+}
+
+
+body GlobalPref::_toggle_tracing {win} {
+  debug
+  $win configure -text $tracing_labels($_new(gdb/mode))
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _ok - called to accept settings and close dialog
+# ------------------------------------------------------------------
+body GlobalPref::_ok {} {
+  _apply 1
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _apply - apply current settings to the screen
+# ------------------------------------------------------------------
+body GlobalPref::_apply {{deleteMe 0}} {
+  debug
+  set changed_something 0
+
+  # If you are not destroying the window, then make sure to
+  # propagate the geometry info from the font frame, so that changing 
+  # the fonts IN the window don't cause some of the buttons to 
+  # get obscured...
+
+  if {!$deleteMe} {
+    pack propagate $itk_interior.f 1
+  }
+
+  foreach thunk $_fonts {
+    set font [font configure test-$thunk-font]
+    if {[pref get global/font/$thunk] != $font} {
+      pref set global/font/$thunk $font
+    }
+  }
+
+  foreach var [array names _new] {
+    if {$_new($var) != [pref get $var]} {
+      debug "$var = $_new($var)"
+
+      if {$var == "gdb/mode"} { 
+	if {!$_new(gdb/mode)} { pref set gdb/B1_behavior 1 }
+      } elseif {$var == "gdb/ImageDir"} {
+	set ::gdb_ImageDir [file join $::GDBTK_LIBRARY $_new($var)]
+      }
+      pref set $var $_new($var)
+      set changed_something 1
+    }
+  }
+
+  if {$changed_something} {
+    if {$deleteMe} { unpost }
+    ManagedWin::restart
+    return
+  }
+  if {$deleteMe} { 
+    unpost 
+  } else {
+    after idle " 
+      update idletasks
+      [code $this _resize_font_item_height]
+      pack propagate $itk_interior.f 0
+    "
+  }    
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _cancel - forget current settings -- reset to original
+#                    state and close preferences
+# ------------------------------------------------------------------
+body GlobalPref::_cancel {} {
+  debug
+  set changed_something 0
+
+  # Reset fonts if different
+  foreach thunk $_fonts {
+    set family [font configure global/$thunk -family]
+    set size   [font configure global/$thunk -size]
+    if {$_original($thunk,family) != $family || $_original($thunk,size) != $size} {
+      pref set global/font/$thunk \
+	[list -family $_original($thunk,family) -size $_original($thunk,size)]
+      set changed_something 1
+    }
+  }
+
+  foreach var [array names _saved] {
+    if {$_saved($var) != [pref get $var]} {
+      debug "$var = $_saved($var)"
+
+      if {$var == "gdb/mode"} { 
+	if {!$_saved(gdb/mode)} { pref set gdb/B1_behavior 1 }
+      } elseif {$var == "gdb/ImageDir"} {
+	set ::gdb_ImageDir [file join $::GDBTK_LIBRARY $_saved($var)]
+      }
+      pref set $var $_saved($var)
+      set changed_something 1
+    }
+  }
+
+  if {$changed_something} {
+    ManagedWin::restart
+  }
+  unpost
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  cancel - override modal dialog cancel method.
+#                    The cancel method is actually called when
+#		     the window is closed. Name needs fixed.
+# ------------------------------------------------------------------
+body GlobalPref::cancel {} {
+  # when the window is closed, we want the preferences selected to
+  # be applied.
+  _apply 1
+}

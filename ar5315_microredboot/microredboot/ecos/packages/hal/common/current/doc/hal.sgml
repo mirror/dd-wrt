@@ -1,0 +1,3123 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     HAL.sgml                                                    -->
+<!--                                                                 -->
+<!--     eCos common HAL documentation                               -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="the-ecos-hardware-abstraction-layer">
+<title>The eCos Hardware Abstraction Layer (HAL)</title>
+
+<!-- {{{ Intro -->
+
+<chapter id=hal-introduction>
+<title>Introduction</title>
+<PARA>
+This is an initial specification of the <EMPHASIS>eCos</EMPHASIS> <!--
+<index></index> -->Hardware Abstraction Layer (HAL). The HAL abstracts
+the underlying hardware of a processor architecture and/or the
+platform to a level sufficient for the eCos kernel to be ported onto
+that platform.
+</PARA>
+
+<note>
+<title>Caveat</title>
+<PARA>
+This document is an informal description of the HAL capabilities and
+is not intended to be full documentation, although it may be used as a
+source for such. It also describes the HAL as it is currently
+implemented for the architectures targeted in this release. It most
+closely describes the HALs for the MIPS, I386 and PowerPC HALs. Other
+architectures are similar but may not be organized precisely as
+described here.
+</PARA>
+</note>
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Architecture, Variant and Platform  -->
+
+<CHAPTER id="hal-architecture-variant-and-platform">
+<TITLE>Architecture, Variant and Platform</TITLE>
+
+<para>
+We have identified three levels at which the HAL must operate.
+</para>
+
+<itemizedlist>
+  <listitem>
+    <para>
+    The <!-- <index></index> --><firstterm>architecture
+    HAL</firstterm> abstracts the basic CPU architecture and includes
+    things like interrupt delivery, context switching, CPU startup
+    etc.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+    The <!-- <index></index> --> <firstterm>variant HAL</firstterm>
+    encapsulates features of the CPU variant such as caches, MMU and
+    FPU features. It also deals with any on-chip peripherals such as
+    memory and interrupt controllers. For architectural variations,
+    the actual implementation of the variation is often in the
+    architectural HAL, and the variant HAL simply provides the correct
+    configuration definitions.
+    </para>
+  </listitem>
+
+    <listitem>
+    <para>
+    The <!-- <index></index> --><firstterm>platform HAL</firstterm>
+    abstracts the properties of the current platform and includes
+    things like platform startup, timer devices, I/O register access
+    and interrupt controllers.
+    </para>
+  </listitem>
+
+</itemizedlist>
+
+<para>
+The boundaries between these three HAL levels are necessarily blurred
+since functionality shifts between levels on a target-by-target basis.
+For example caches and MMU may be either an architecture feature or a
+variant feature. Similarly, memory and interrupt controllers may be
+on-chip and in the variant HAL, or off-chip and in the platform HAL.
+</para>
+<para>
+Generally there is a separate package for each of the architecture,
+variant and package HALs for a target. For some of the older targets,
+or where it would be essentially empty, the variant HAL is omitted.
+</para>
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ General Principles -->
+
+<CHAPTER id="hal-general-principles">
+<TITLE>General principles</TITLE>
+
+<PARA>
+The HAL has been implemented according to the following general
+principles:
+</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>	      The HAL is implemented in C and assembler, although the
+	      eCos kernel is largely implemented in C&plus;&plus;.
+	      This is to permit the HAL the widest possible
+	      applicability.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>All interfaces to the HAL are implemented by
+	      CPP macros. This allows them to be implemented as inline
+	      C code, inline assembler or function calls to external C
+	      or assembler code. This allows the most efficient
+	      implementation to be selected without affecting the
+	      interface. It also allows them to be redefined if the
+	      platform or variant HAL needs to replace or enhance a definition
+	      from the architecture HAL.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The HAL provides simple, portable mechanisms for dealing
+with the hardware of a wide range of architectures and platforms.
+It is always possible to bypass the HAL and program the hardware
+directly, but this may lead to a loss of portability. </PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ HAL Interfaces -->
+
+<CHAPTER id="hal-interfaces">
+<TITLE><!-- <index></index> --><!-- <xref> -->HAL Interfaces</TITLE>
+
+<para>
+This section describes the main HAL interfaces. 
+</para>
+
+<!-- {{{ Base Definitions -->
+
+<SECTION id="hal-base-definitions">
+<TITLE>Base Definitions</TITLE>
+
+<para>
+These are definitions that characterize the properties of the base
+architecture that are used to compile the portable parts of the
+kernel. They are concerned with such things a portable type
+definitions, endianness, and labeling.
+</para>
+
+<PARA>
+These definitions are supplied by the
+<filename>cyg/hal/basetype.h</filename> header file which is supplied
+by the architecture HAL. It is included automatically by
+<FILENAME>cyg/infra/cyg_type.h</FILENAME>.
+</PARA>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Byte order</TITLE>
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM><VARNAME>CYG_BYTEORDER</VARNAME></TERM>
+    <LISTITEM>
+      <PARA>
+      This defines the byte order of the target and must be set to either
+      <varname>CYG_LSBFIRST</varname> or <varname>CYG_MSBFIRST</varname>.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Label Translation</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM><FUNCTION>CYG_LABEL_NAME(name)</FUNCTION></TERM>
+    <LISTITEM>
+
+      <PARA>
+      This is a wrapper used in some C and C&plus;&plus; files which
+      use labels defined in assembly code or the linker script.
+      It need only be defined if the default implementation in
+      <filename>cyg/infra/cyg_type.h</filename>, which passes the name
+      argument unaltered, is inadequate. It should be paired with
+      <function>CYG_LABEL_DEFN()</function>.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM><FUNCTION>CYG_LABEL_DEFN(name)</FUNCTION></TERM>
+    <LISTITEM>
+
+      <PARA>
+      This is a wrapper used in assembler sources and linker scripts
+      which define labels.  It need only be defined if the default
+      implementation in
+      <filename>cyg/infra/cyg_type.h</filename>, which passes the name
+      argument unaltered, is inadequate. The most usual alternative
+      definition of this macro prepends an underscore to the label
+      name. 
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Base types</TITLE>
+<PROGRAMLISTING>
+	cyg_halint8
+	cyg_halint16
+	cyg_halint32
+	cyg_halint64
+	cyg_halcount8
+	cyg_halcount16
+	cyg_halcount32
+	cyg_halcount64
+	cyg_halbool
+</PROGRAMLISTING>
+<PARA>
+These macros define the C base types that should be used to define
+variables of the given size. They only need to be defined if the
+default types specified in <filename>cyg/infra/cyg_type.h</filename>
+cannot be used. Note that these are only the base types, they will be
+composed with <literal>signed</literal> and
+<literal>unsigned</literal> to form full type specifications.
+</PARA>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Atomic types</TITLE>
+<PROGRAMLISTING>
+	cyg_halatomic CYG_ATOMIC
+</PROGRAMLISTING>
+<PARA>
+These types are guaranteed to be read or written in a single
+uninterruptible operation. It is architecture defined what size this
+type is, but it will be at least a byte.
+</PARA>
+</SECTION>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Architecture Characterization  -->
+
+<SECTION id="hal-architecture-characterization">
+<TITLE>Architecture Characterization</TITLE>
+
+<para>
+These are definition that are related to the basic architecture of the
+CPU. These include the CPU context save format, context switching, bit
+twiddling, breakpoints, stack sizes and address translation.
+</para>
+
+<PARA>
+Most of these definition are found in
+<filename>cyg/hal/hal_arch.h</filename>.  This file is supplied by the
+architecture HAL. If there are variant or platform specific
+definitions then these will be found in
+<filename>cyg/hal/var_arch.h</filename> or
+<filename>cyg/hal/plf_arch.h</filename>. These files are include
+automatically by this header, so need not be included explicitly.
+</PARA>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Register Save Format</TITLE>
+<PROGRAMLISTING>
+typedef struct HAL_SavedRegisters
+{
+    /* architecture-dependent list of registers to be saved */ 
+} HAL_SavedRegisters;
+</PROGRAMLISTING>
+<PARA>
+This structure describes the layout of a saved machine state on the
+stack. Such states are saved during thread context switches,
+interrupts and exceptions. Different quantities of state may be saved
+during each of these, but usually a thread context state is a subset
+of the interrupt state which is itself a subset of an exception state.
+For debugging purposes, the same structure is used for all three
+purposes, but where these states are significantly different, this
+structure may contain a union of the three states.
+</PARA>
+</SECTION>
+
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Thread Context Initialization</TITLE>
+
+<PROGRAMLISTING>
+HAL_THREAD_INIT_CONTEXT( sp, arg, entry, id )
+</PROGRAMLISTING>
+
+<PARA>
+This macro initializes a thread's context so that
+it may be switched to by <FUNCTION>HAL_THREAD_SWITCH_CONTEXT()</FUNCTION>.
+The arguments are:
+</PARA>
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>sp</TERM>
+    <LISTITEM>
+      <PARA>
+      A location containing the current value of the thread's stack
+      pointer. This should be a variable or a structure field. The SP
+      value will be read out of here and an adjusted value written
+      back.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>arg</TERM>
+    <LISTITEM>
+      <PARA>
+      A value that is passed as the first argument to the entry
+      point function.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>entry</TERM>
+    <LISTITEM>
+      <PARA>
+      The address of an entry point function. This will be called
+      according the C calling conventions, and the value of
+      <parameter>arg</parameter> will be passed as the first
+      argument. This function should have the following type signature
+      <function>void entry(CYG_ADDRWORD arg)</function>.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>id</TERM>
+    <LISTITEM>
+      <PARA>
+      A thread id value. This is only used for debugging purposes,
+      it is ORed into the initialization pattern for unused registers
+      and may be used to help identify the thread from its register dump.
+      The least significant 16 bits of this value should be zero to allow
+      space for a register identifier.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION id="hal-context-switch">
+<TITLE>Thread Context Switching</TITLE>
+
+<PROGRAMLISTING>
+HAL_THREAD_LOAD_CONTEXT( to )
+HAL_THREAD_SWITCH_CONTEXT( from, to )
+</PROGRAMLISTING>
+<PARA>
+These macros implement the thread switch code. The arguments are:
+</PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>from</TERM>
+    <LISTITEM>
+      <PARA>
+      A pointer to a location where the stack pointer of the current
+      thread will be stored.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>to</TERM>
+    <LISTITEM>
+      <PARA>
+      A pointer to a location from where the stack pointer of the next
+      thread will be read.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+<para>
+For <function>HAL_THREAD_LOAD_CONTEXT()</function> the current CPU
+state is discarded and the state of the destination thread is
+loaded. This is only used once, to load the first thread when the
+scheduler is started.
+</para>
+
+<PARA>
+For <function>HAL_THREAD_SWITCH_CONTEXT()</function> the state of the
+current thread is saved onto its stack, using the current value of the
+stack pointer, and the address of the saved state placed in
+<parameter>*from</parameter>.  The value in
+<parameter>*to</parameter> is then read and the state of the new
+thread is loaded from it.
+</PARA>
+
+<para>
+While these two operations may be implemented with inline assembler,
+they are normally implemented as calls to assembly code functions in
+the HAL. There are two advantages to doing it this way. First, the
+return link of the call provides a convenient PC value to be used in
+the saved context. Second, the calling conventions mean that the
+compiler will have already saved the caller-saved registers before the
+call, so the HAL need only save the callee-saved registers.
+</para>
+
+<para>
+The implementation of <function>HAL_THREAD_SWITCH_CONTEXT()</function>
+saves the current CPU state on the stack, including the current
+interrupt state (or at least the register that contains it). For
+debugging purposes it is useful to save the entire register set, but
+for performance only the ABI-defined callee-saved registers need be
+saved. If it is implemented, the option
+<literal>CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM</literal> controls
+how many registers are saved.
+</para>
+
+<para>
+The implementation of <function>HAL_THREAD_LOAD_CONTEXT()</function>
+loads a thread context, destroying the current context. With a little
+care this can be implemented by sharing code with
+<function>HAL_THREAD_SWITCH_CONTEXT()</function>. To load a thread
+context simply requires the saved registers to be restored from the
+stack and a jump or return made back to the saved PC.
+</para>
+
+<PARA>
+Note that interrupts are not disabled during this process, any
+interrupts that occur will be delivered onto the stack to which the
+current CPU stack pointer points. Hence the stack pointer
+should never be invalid, or loaded with a value that might cause the
+saved state to become corrupted by an interrupt. However, the current
+interrupt state is saved and restored as part of the thread
+context. If a thread disables interrupts and does something to cause a
+context switch, interrupts may be re-enabled on switching to another
+thread. Interrupts will be disabled again when the original thread
+regains control.
+</PARA>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Bit indexing</TITLE>
+
+<PROGRAMLISTING>
+HAL_LSBIT_INDEX( index, mask )
+HAL_MSBIT_INDEX( index, mask )
+</PROGRAMLISTING>
+
+<PARA>
+These macros place in <parameter>index</parameter> the bit index of
+the least significant bit in <parameter>mask</parameter>. Some
+architectures have instruction level support for one or other of these
+operations. If no architectural support is available, then these
+macros may call C functions to do the job.
+</PARA>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Idle thread activity</TITLE>
+
+<PROGRAMLISTING>
+HAL_IDLE_THREAD_ACTION( count )
+</PROGRAMLISTING>
+
+<PARA>
+It may be necessary under some circumstances for the HAL to execute
+code in the kernel idle thread's loop. An example might be to execute
+a processor halt instruction. This macro provides a portable way of
+doing this. The argument is a copy of the idle thread's loop counter,
+and may be used to trigger actions at longer intervals than every
+loop.
+</PARA>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Reorder barrier</TITLE>
+
+<PROGRAMLISTING>
+HAL_REORDER_BARRIER()
+</PROGRAMLISTING>
+
+<PARA>
+When optimizing the compiler can reorder code. In some parts of
+multi-threaded systems, where the order of actions is vital, this can
+sometimes cause problems. This macro may be inserted into places where
+reordering should not happen and prevents code being migrated across
+it by the compiler optimizer. It should be placed between statements
+that must be executed in the order written in the code.
+</PARA>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Breakpoint support</TITLE>
+
+<PROGRAMLISTING>
+HAL_BREAKPOINT( label )
+HAL_BREAKINST
+HAL_BREAKINST_SIZE
+</PROGRAMLISTING>
+
+<PARA>
+These macros provide support for breakpoints.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_BREAKPOINT()</FUNCTION> executes a breakpoint
+instruction. The label is defined at the breakpoint instruction so
+that exception code can detect which breakpoint was executed.
+</PARA>
+
+<PARA>
+<literal>HAL_BREAKINST</literal> contains the breakpoint instruction
+code as an integer value. <literal>HAL_BREAKINST_SIZE</literal> is
+the size of that breakpoint instruction in bytes. Together these
+may be used to place a breakpoint in any code.
+</PARA>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>GDB support</TITLE>
+
+<PROGRAMLISTING>
+HAL_THREAD_GET_SAVED_REGISTERS( sp, regs )
+HAL_GET_GDB_REGISTERS( regval, regs )
+HAL_SET_GDB_REGISTERS( regs, regval )
+</PROGRAMLISTING>
+
+<PARA>
+These macros provide support for interfacing GDB to the HAL.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_THREAD_GET_SAVED_REGISTERS()</FUNCTION> extracts a
+pointer to a <STRUCTNAME>HAL_SavedRegisters</STRUCTNAME> structure
+from a stack pointer value. The stack pointer passed in should be the
+value saved by the thread context macros. The macro will assign a
+pointer to the <STRUCTNAME>HAL_SavedRegisters</STRUCTNAME> structure
+to the variable passed as the second argument.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_GET_GDB_REGISTERS()</FUNCTION> translates a register
+state as saved by the HAL and into a register dump in the format
+expected by GDB. It takes a pointer to a
+<STRUCTNAME>HAL_SavedRegisters</STRUCTNAME> structure in the
+<parameter>regs</parameter> argument and a pointer to the memory to
+contain the GDB register dump in the <parameter>regval</parameter>
+argument.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_SET_GDB_REGISTERS()</FUNCTION> translates a GDB format
+register dump into a the format expected by the HAL.  It takes a
+pointer to the memory containing the GDB register dump in the
+<parameter>regval</parameter> argument and a pointer to a
+<STRUCTNAME>HAL_SavedRegisters</STRUCTNAME> structure
+in the <parameter>regs</parameter> argument.
+</PARA>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Setjmp and longjmp support</TITLE>
+
+<PROGRAMLISTING>
+CYGARC_JMP_BUF_SIZE
+hal_jmp_buf[CYGARC_JMP_BUF_SIZE]
+hal_setjmp( hal_jmp_buf env )
+hal_longjmp( hal_jmp_buf env, int val )
+</PROGRAMLISTING>
+
+<PARA>
+These functions provide support for the C
+<FUNCTION>setjmp()</FUNCTION> and <FUNCTION>longjmp()</FUNCTION>
+functions.  Refer to the C library for further information.
+</PARA>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<section>
+<title>Stack Sizes</title>
+<programlisting>
+CYGNUM_HAL_STACK_SIZE_MINIMUM
+CYGNUM_HAL_STACK_SIZE_TYPICAL
+</programlisting>
+
+<para>
+The values of these macros define the minimum and typical sizes of
+thread stacks.
+</para>
+
+<para>
+<literal>CYGNUM_HAL_STACK_SIZE_MINIMUM</literal> defines the minimum
+size of a thread stack. This is enough for the thread to function
+correctly within eCos and allows it to take interrupts and context
+switches. There should also be enough space for a simple thread entry
+function to execute and call basic kernel operations on objects like
+mutexes and semaphores. However there will not be enough room for much
+more than this. When creating stacks for their own threads,
+applications should determine the stack usage needed for application
+purposes and then add
+<literal>CYGNUM_HAL_STACK_SIZE_MINIMUM</literal>.
+</para>
+
+<para>
+<literal>CYGNUM_HAL_STACK_SIZE_TYPICAL</literal> is a reasonable increment over
+<literal>CYGNUM_HAL_STACK_SIZE_MINIMUM</literal>, usually about 1kB. This should be
+adequate for most modest thread needs. Only threads that need to
+define significant amounts of local data, or have very deep call trees
+should need to use a larger stack size.
+</para>
+
+</section>
+
+
+<!-- =================================================================== -->
+
+<section>
+<title>Address Translation</title>
+
+<programlisting>
+CYGARC_CACHED_ADDRESS(addr)
+CYGARC_UNCACHED_ADDRESS(addr)
+CYGARC_PHYSICAL_ADDRESS(addr)
+</programlisting>
+
+<para>
+These macros provide address translation between different views of
+memory. In many architectures a given memory location may be visible
+at different addresses in both cached and uncached forms. It is also
+possible that the MMU or some other address translation unit in the
+CPU presents memory to the program at a different virtual address to
+its physical address on the bus.
+</para>
+
+<para>
+<function>CYGARC_CACHED_ADDRESS()</function> translates the given
+address to its location in cached memory. This is typically where the
+application will access the memory.
+</para>
+
+<para>
+<function>CYGARC_UNCACHED_ADDRESS()</function> translates the given
+address to its location in uncached memory. This is typically where
+device drivers will access the memory to avoid cache problems. It may
+additionally be necessary for the cache to be flushed before the
+contents of this location is fully valid.
+</para>
+
+<para>
+<function>CYGARC_PHYSICAL_ADDRESS()</function> translates the given
+address to its location in the physical address space. This is
+typically the address that needs to be passed to device hardware such
+as a DMA engine, ethernet device or PCI bus bridge. The physical
+address may not be directly accessible to the program, it may be
+re-mapped by address translation.
+</para>
+
+</section>
+
+
+<!-- =================================================================== -->
+
+<section>
+<title>Global Pointer</title>
+
+<programlisting>
+CYGARC_HAL_SAVE_GP()
+CYGARC_HAL_RESTORE_GP()
+</programlisting>
+
+<para>
+These macros insert code to save and restore any global data pointer
+that the ABI uses. These are necessary when switching context between
+two eCos instances - for example between an eCos application and
+RedBoot.
+</para>
+
+</section>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Interrupt Handling -->
+
+<SECTION id="hal-interrupt-handling">
+<TITLE>Interrupt Handling</TITLE>
+
+<para>
+These interfaces contain definitions related to interrupt
+handling. They include definitions of exception and interrupt numbers,
+interrupt enabling and masking.
+</para>
+
+<PARA>
+These definitions are normally found in
+<FILENAME>cyg/hal/hal_intr.h</FILENAME>.  This file is supplied by the
+architecture HAL.  Any variant or platform specific definitions will
+be found in <filename>cyg/hal/var_intr.h</filename>,
+<filename>cyg/hal/plf_intr.h</filename> or
+<filename>cyg/hal/hal_platform_ints.h</filename> in the variant or platform
+HAL, depending on the exact target. These files are include
+automatically by this header, so need not be included explicitly.
+</PARA>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Vector numbers</TITLE>
+
+<PROGRAMLISTING>
+CYGNUM_HAL_VECTOR_XXXX
+CYGNUM_HAL_VSR_MIN
+CYGNUM_HAL_VSR_MAX
+CYGNUM_HAL_VSR_COUNT
+
+CYGNUM_HAL_INTERRUPT_XXXX
+CYGNUM_HAL_ISR_MIN
+CYGNUM_HAL_ISR_MAX
+CYGNUM_HAL_ISR_COUNT
+
+CYGNUM_HAL_EXCEPTION_XXXX
+CYGNUM_HAL_EXCEPTION_MIN
+CYGNUM_HAL_EXCEPTION_MAX
+CYGNUM_HAL_EXCEPTION_COUNT
+</PROGRAMLISTING>
+
+<PARA>
+All possible VSR, interrupt and exception vectors are specified here,
+together with maximum and minimum values for range checking. While the
+VSR and exception numbers will be defined in this file, the interrupt
+numbers will normally be defined in the variant or platform HAL file
+that is included by this header. 
+</PARA>
+
+<PARA>
+There are two ranges of numbers, those for the vector service
+routines and those for the interrupt service routines. The relationship
+between these two ranges is undefined, and no equivalence should
+be assumed if vectors from the two ranges coincide.
+</PARA>
+
+<PARA>
+The VSR vectors correspond to the set of exception vectors that can be
+delivered by the CPU architecture, many of these will be internal
+exception traps. The ISR vectors correspond to the set of external
+interrupts that can be delivered and are usually determined by extra
+decoding of the interrupt controller by the interrupt VSR.
+</PARA>
+
+<PARA>
+Where a CPU supports synchronous exceptions, the range of such
+exceptions allowed are defined by <literal>CYGNUM_HAL_EXCEPTION_MIN</literal> and
+<literal>CYGNUM_HAL_EXCEPTION_MAX</literal>. The
+<literal>CYGNUM_HAL_EXCEPTION_XXXX</literal> definitions are
+standard names used by target independent code to test for the
+presence of particular exceptions in the architecture. The actual
+exception numbers will normally correspond to the VSR exception
+range. In future other exceptions generated by the system software
+(such as stack overflow) may be added.
+</PARA>
+
+<PARA>
+<literal>CYGNUM_HAL_ISR_COUNT</literal>, <literal>CYGNUM_HAL_VSR_COUNT</literal> and
+<literal>CYGNUM_HAL_EXCEPTION_COUNT</literal> define the number of
+ISRs, VSRs and EXCEPTIONs respectively for the purposes of defining
+arrays etc. There might be a translation from the supplied vector
+numbers into array offsets. Hence
+<literal>CYGNUM_HAL_XXX_COUNT</literal> may not simply be
+<literal>CYGNUM_HAL_XXX_MAX</literal> - <literal>CYGNUM_HAL_XXX_MIN</literal> or <literal>CYGNUM_HAL_XXX_MAX</literal>&plus;1.
+</PARA>
+
+</SECTION>
+
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Interrupt state control</TITLE>
+
+<PROGRAMLISTING>
+CYG_INTERRUPT_STATE
+HAL_DISABLE_INTERRUPTS( old )
+HAL_RESTORE_INTERRUPTS( old )
+HAL_ENABLE_INTERRUPTS()
+HAL_QUERY_INTERRUPTS( state )
+</PROGRAMLISTING>
+
+<PARA>
+These macros provide control over the state of the CPUs interrupt mask
+mechanism. They should normally manipulate a CPU status register to
+enable and disable interrupt delivery. They should not access an
+interrupt controller.
+</PARA>
+
+
+<para>
+<literal>CYG_INTERRUPT_STATE</literal> is a data type that should be
+used to store the interrupt state returned by
+<function>HAL_DISABLE_INTERRUPTS()</function> and
+<function>HAL_QUERY_INTERRUPTS()</function> and passed to
+<function>HAL_RESTORE_INTERRUPTS()</function>.
+</para>
+
+<PARA>
+<FUNCTION>HAL_DISABLE_INTERRUPTS()</FUNCTION> disables the delivery of
+interrupts and stores the original state of the interrupt mask in the
+variable passed in the <parameter>old</parameter> argument.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_RESTORE_INTERRUPTS()</FUNCTION> restores the state of
+the interrupt mask to that recorded in <parameter>old</parameter>.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_ENABLE_INTERRUPTS()</FUNCTION> simply enables interrupts
+regardless of the current state of the mask.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_QUERY_INTERRUPTS()</FUNCTION> stores the state of the
+interrupt mask in the variable passed in the <parameter>
+state</parameter> argument. The state stored here should also be
+capable of being passed to
+<function>HAL_RESTORE_INTERRUPTS()</function> at a later point.
+</PARA>
+
+<PARA>
+It is at the HAL implementer&rsquo;s discretion exactly
+which interrupts are masked by this mechanism. Where a CPU has more
+than one interrupt type that may be masked separately (e.g. the
+ARM's IRQ and FIQ) only those that can raise DSRs need
+to be masked here. A separate architecture specific mechanism may
+then be used to control the other interrupt types.
+</PARA>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>ISR and VSR management</TITLE>
+
+<PROGRAMLISTING>
+HAL_INTERRUPT_IN_USE( vector, state )
+HAL_INTERRUPT_ATTACH( vector, isr, data, object )
+HAL_INTERRUPT_DETACH( vector, isr )
+HAL_VSR_SET( vector, vsr, poldvsr )
+HAL_VSR_GET( vector, pvsr )
+HAL_VSR_SET_TO_ECOS_HANDLER( vector, poldvsr )
+</PROGRAMLISTING>
+
+<PARA>
+These macros manage the attachment of interrupt and vector service
+routines to interrupt and exception vectors respectively.
+</PARA>
+
+<para>
+<function>HAL_INTERRUPT_IN_USE()</function> tests the state of the
+supplied interrupt vector and sets the value of the state parameter to
+either 1 or 0 depending on whether there is already an ISR attached to
+the vector. The HAL will only allow one ISR to be attached to each
+vector, so it is a good idea to use this function before using
+<function>HAL_INTERRUPT_ATTACH()</function>.
+</para>
+
+<PARA>
+<FUNCTION>HAL_INTERRUPT_ATTACH()</FUNCTION> attaches
+the ISR, data pointer and object pointer to the given
+<parameter>vector</parameter>. When an interrupt occurs on this
+vector the ISR is called using the C calling convention and the vector
+number and data pointer are passed to it as the first and second
+arguments respectively.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_INTERRUPT_DETACH()</FUNCTION> detaches the ISR from the
+vector.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_VSR_SET()</FUNCTION> replaces the VSR attached to the
+<parameter>vector</parameter> with the replacement supplied in
+<parameter>vsr</parameter>. The old VSR is returned in the location
+pointed to by <parameter>pvsr</parameter>.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_VSR_GET()</FUNCTION> assigns
+a copy of the VSR to the location pointed to by <parameter>pvsr</parameter>.
+</PARA>
+
+<para>
+<function>HAL_VSR_SET_TO_ECOS_HANDLER()</function> ensures that the
+VSR for a specific exception is pointing at the eCos exception VSR and
+not one for RedBoot or some other ROM monitor. The default when
+running under RedBoot is for exceptions to be handled by RedBoot and
+passed to GDB. This macro diverts the exception to eCos so that it may
+be handled by application code. The arguments are the VSR vector to be
+replaces, and a location in which to store the old VSR pointer, so
+that it may be replaced at a later point.
+</para>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Interrupt controller management</TITLE>
+
+<PROGRAMLISTING>
+HAL_INTERRUPT_MASK( vector )
+HAL_INTERRUPT_UNMASK( vector )
+HAL_INTERRUPT_ACKNOWLEDGE( vector )
+HAL_INTERRUPT_CONFIGURE( vector, level, up )
+HAL_INTERRUPT_SET_LEVEL( vector, level )
+</PROGRAMLISTING>
+
+<PARA>
+These macros exert control over any prioritized interrupt
+controller that is present. If no priority controller exists, then
+these macros should be empty.
+</para>
+
+<note>
+  <para>
+  These macros may not be reentrant, so care should be taken to
+  prevent them being called while interrupts are enabled. This means
+  that they can be safely used in initialization code before
+  interrupts are enabled, and in ISRs. In DSRs, ASRs and thread code,
+  however, interrupts must be disabled before these macros are
+  called. Here is an example for use in a DSR where the interrupt
+  source is unmasked after data processing:
+  </para>
+<PROGRAMLISTING>
+ ...
+ HAL_DISABLE_INTERRUPTS(old);
+ HAL_INTERRUPT_UNMASK(CYGNUM_HAL_INTERRUPT_ETH);
+ HAL_RESTORE_INTERRUPTS(old);
+ ...
+</PROGRAMLISTING>
+</note>
+
+<PARA>
+<FUNCTION>HAL_INTERRUPT_MASK()</FUNCTION> causes the interrupt
+associated with the given vector to be blocked.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_INTERRUPT_UNMASK()</FUNCTION> causes the interrupt
+associated with the given vector to be unblocked.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_INTERRUPT_ACKNOWLEDGE()</FUNCTION> acknowledges the
+current interrupt from the given vector. This is usually executed from
+the ISR for this vector when it is prepared to allow further
+interrupts.  Most interrupt controllers need some form of acknowledge
+action before the next interrupt is allowed through. Executing this
+macro may cause another interrupt to be delivered. Whether this
+interrupts the current code depends on the state of the CPU interrupt
+mask.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_INTERRUPT_CONFIGURE()</FUNCTION> provides
+control over how an interrupt signal is detected. The arguments
+are:
+</PARA>
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>vector</TERM>
+    <LISTITEM>
+      <PARA>The interrupt vector to be configured.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>level</TERM>
+    <LISTITEM>
+      <PARA>
+      Set to <varname>true</varname> if the interrupt is detected by
+      level, and <varname>false</varname> if it is edge triggered.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>up</TERM>
+    <LISTITEM>
+      <PARA>
+      If the interrupt is set to level detect, then if this is
+      <VARNAME>true</VARNAME> it is detected by a high signal level,
+      and if <VARNAME>false</VARNAME> by a low signal level. If the
+      interrupt is set to edge triggered, then if this is
+      <VARNAME>true</VARNAME> it is triggered by a rising edge and if
+      <VARNAME>false</VARNAME> by a falling edge.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+<PARA>
+<FUNCTION>HAL_INTERRUPT_SET_LEVEL()</FUNCTION> provides control over
+the hardware priority of the interrupt. The arguments are:
+</PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>vector</TERM>
+    <LISTITEM>
+      <PARA>The interrupt whose level is to be set.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>level</TERM>
+    <LISTITEM>
+      <PARA>
+      The priority level to which the interrupt is to set. In some
+      architectures the masking of an interrupt is achieved by
+      changing its priority level. Hence this function,
+      <FUNCTION>HAL_INTERRUPT_MASK()</FUNCTION> and
+      <FUNCTION>HAL_INTERRUPT_UNMASK()</FUNCTION> may interfere with
+      each other.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Clocks and Timers -->
+
+<SECTION id="hal-clocks-and-timers">
+<TITLE>Clocks and Timers</TITLE>
+
+<para>
+These interfaces contain definitions related to clock and timer
+handling. They include interfaces to initialize and read a clock for
+generating regular interrupts, definitions for setting the frequency of
+the clock, and support for short timed delays.
+</para>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Clock Control</TITLE>
+
+<PROGRAMLISTING>
+HAL_CLOCK_INITIALIZE( period )
+HAL_CLOCK_RESET( vector, period )
+HAL_CLOCK_READ( pvalue )
+</PROGRAMLISTING>
+
+<PARA>
+These macros provide control over a clock or timer device that may be
+used by the kernel to provide time-out, delay and scheduling
+services. The clock is assumed to be implemented by some form of
+counter that is incremented or decremented by some external source and
+which raises an interrupt when it reaches a predetermined value.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_CLOCK_INITIALIZE()</FUNCTION> initializes the timer
+device to interrupt at the given period. The period is essentially the
+value used to initialize the timer counter and must be calculated from
+the timer frequency and the desired interrupt rate. The timer device
+should generate an interrupt every <varname>period</varname> cycles.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_CLOCK_RESET()</FUNCTION> re-initializes the timer to
+provoke the next interrupt. This macro is only really necessary when
+the timer device needs to be reset in some way after each interrupt.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_CLOCK_READ()</FUNCTION> reads the current value of the
+timer counter and puts the value in the location pointed to by
+<parameter>pvalue</parameter>. The value stored will always be the
+number of timer cycles since the last interrupt, and hence ranges
+between zero and the initial period value. If this is a count-down
+cyclic timer, some arithmetic may be necessary to generate this value.
+</PARA>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<section>
+<title>Microsecond Delay</title>
+
+<programlisting width=72>
+HAL_DELAY_US(us)
+</programlisting>
+
+<para>
+This is an optional definition. If defined the macro implements a busy
+loop delay for the given number of microseconds. This is usually
+implemented by waiting for the required number of hardware timer ticks
+to pass. 
+</para>
+
+<para>
+This operation should normally be used when a very short delay is
+needed when controlling hardware, programming FLASH devices and similar
+situations where a wait/timeout loop would otherwise be used. Since it
+may disable interrupts, and is implemented by busy waiting, it should
+not be used in code that is sensitive to interrupt or context switch
+latencies.
+</para>
+
+</section>
+
+<!-- =================================================================== -->
+
+<section>
+<title>Clock Frequency Definition</title>
+
+<programlisting width=72>
+CYGNUM_HAL_RTC_NUMERATOR
+CYGNUM_HAL_RTC_DENOMINATOR
+CYGNUM_HAL_RTC_PERIOD
+</programlisting>
+
+<para>
+These macros are defined in the CDL for each platform and supply the
+necessary parameters to specify the frequency at which the clock
+interrupts. These parameters are usually found in the CDL definitions
+for the target platform, or in some cases the CPU variant.
+</para>
+
+<para>
+<literal>CYGNUM_HAL_RTC_NUMERATOR</literal> and
+<literal>CYGNUM_HAL_RTC_DENOMINATOR</literal> specify the resolution
+of the clock interrupt.  This resolution involves two separate values,
+the numerator and the denominator. The result of dividing the
+numerator by the denominator should correspond to the number of
+nanoseconds between clock interrupts. For example a numerator of
+1000000000 and a denominator of 100 means that there are 10000000
+nanoseconds (or 10 milliseconds) between clock interrupts. Expressing
+the resolution as a fraction minimizes clock drift even for
+frequencies that cannot be expressed as a simple integer. For example
+a frequency of 60Hz corresponds to a clock resolution of
+16666666.66...  nanoseconds. This can be expressed accurately as
+1000000000 over 60.
+</para>
+
+<para>
+<literal>CYGNUM_HAL_RTC_PERIOD</literal> specifies the exact value
+used to initialize the clock hardware, it is the value passed as a
+parameter to <literal>HAL_CLOCK_INITIALIZE()</literal> and
+<literal>HAL_CLOCK_RESET()</literal>. The exact meaning of the value
+and the range of legal values therefore depends on the target
+hardware, and the hardware documentation should be consulted for
+further details.
+</para>
+
+<para>
+The default values for these macros in all HALs are calculated to give
+a clock interrupt frequency of 100Hz, or 10ms between interrupts. To
+change the clock frequency, the period needs to be changed, and the
+resolution needs to be adjusted accordingly. As an example consider
+the i386 PC target. The default values for these macros are:
+</para>
+
+<programlisting width=72>
+CYGNUM_HAL_RTC_NUMERATOR     1000000000
+CYGNUM_HAL_RTC_DENOMINATOR   100
+CYGNUM_HAL_RTC_PERIOD        11932
+</programlisting>
+
+<para>
+To change to, say, a 200Hz clock the period needs to be halved to
+5966, and to compensate the denominator needs to be doubled to 200. To
+change to a 1KHz interrupt rate change the period to 1193 and the
+denominator to 1000.
+</para>
+
+<para>
+Some HALs make this process a little easier by deriving the period
+arithmetically from the denominator. This calculation may also involve
+the CPU clock frequency and possibly other factors. For example in the
+ARM AT91 variant HAL the period is defined by the following
+expression:
+</para>
+
+<programlisting width=72>
+((CYGNUM_HAL_ARM_AT91_CLOCK_SPEED/32) / CYGNUM_HAL_RTC_DENOMINATOR)
+</programlisting>
+
+<para>
+In this case it is not necessary to change the period at all, just
+change the denominator to select the desired clock frequency. However,
+note that for certain choices of frequency, rounding errors in this
+calculation may result in a small clock drift over time. This is
+usually negligible, but if perfect accuracy is required, it may be
+necessary to adjust the frequency or period by hand.
+</para>
+
+</section>
+
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Input and Output -->
+
+<SECTION id="hal-input-and-output">
+<TITLE>HAL I/O</TITLE>
+
+<PARA>
+This section contains definitions for supporting access
+to device control registers in an architecture neutral
+fashion.
+</PARA>
+
+<para>
+These definitions are normally found in the header file
+<FILENAME>cyg/hal/hal_io.h</FILENAME>.  This file itself contains
+macros that are generic to the architecture. If there are variant or
+platform specific IO access macros then these will be found in
+<filename>cyg/hal/var_io.h</filename> and
+<filename>cyg/hal/plf_io.h</filename> in the variant or platform HALs
+respectively. These files are include automatically by this header, so
+need not be included explicitly.
+</para>
+
+<para>
+This header (or more likely <filename>cyg/hal/plf_io.h</filename>) also
+defines the PCI access macros. For more information on these see <xref
+linkend="pci-library-reference">.
+</para>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Register address</TITLE>
+
+<PROGRAMLISTING>
+HAL_IO_REGISTER
+</PROGRAMLISTING>
+
+<PARA>
+This type is used to store the address of an I/O register. It will
+normally be a memory address, an integer port address or an offset
+into an I/O space. More complex architectures may need to code an
+address space plus offset pair into a single word, or may represent it
+as a structure.
+</PARA>
+
+<PARA>
+Values of variables and constants of this type will usually be
+supplied by configuration mechanisms or in target specific headers.
+</PARA>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Register read</TITLE>
+
+<PROGRAMLISTING>
+HAL_READ_XXX( register, value )
+HAL_READ_XXX_VECTOR( register, buffer, count, stride )
+</PROGRAMLISTING>
+
+<PARA>
+These macros support the reading of I/O registers in various
+sizes. The <replaceable>XXX</replaceable> component of the name may be
+<literal>UINT8</literal>, <literal>UINT16</literal>,
+<literal>UINT32</literal>.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_READ_XXX()</FUNCTION> reads the appropriately sized
+value from the register and stores it in the variable passed as the
+second argument.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_READ_XXX_VECTOR()</FUNCTION> reads
+<parameter>count</parameter> values of the appropriate size into
+<parameter>buffer</parameter>. The <parameter>stride</parameter>
+controls how the pointer advances through the register space. A stride
+of zero will read the same register repeatedly, and a stride of one
+will read adjacent registers of the given size. Greater strides will
+step by larger amounts, to allow for sparsely mapped registers for
+example.</PARA>
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Register write</TITLE>
+
+<PROGRAMLISTING>
+HAL_WRITE_XXX( register, value )
+HAL_WRITE_XXX_VECTOR( register, buffer,count, stride )
+</PROGRAMLISTING>
+
+<PARA>
+These macros support the writing of I/O registers in various
+sizes. The <replaceable>XXX</replaceable> component of the name may be
+<LITERAL>UINT8</LITERAL>, <LITERAL>UINT16</LITERAL>,
+<LITERAL>UINT32</LITERAL>.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_WRITE_XXX()</FUNCTION> writes
+the appropriately sized value from the variable passed as the second argument
+stored it in the register.</PARA>
+<PARA><FUNCTION>HAL_WRITE_XXX_VECTOR()</FUNCTION> writes
+<parameter>count</parameter> values of the appropriate size from <parameter>
+buffer</parameter>. The <parameter>stride</parameter> controls
+how the pointer advances through the register space. A stride of
+zero will write the same register repeatedly, and a stride of one
+will write adjacent registers of the given size. Greater strides
+will step by larger amounts, to allow for sparsely mapped registers
+for example.</PARA>
+</SECTION>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Cache Control -->
+
+<SECTION id="hal-cache-control">
+<TITLE>Cache Control</TITLE>
+
+<PARA>This section contains definitions for supporting control
+of the caches on the CPU.
+</PARA>
+
+<para>
+These definitions are usually found in the header file
+<FILENAME>cyg/hal/hal_cache.h</FILENAME>.  This file may be defined in
+the architecture, variant or platform HAL, depending on where the
+caches are implemented for the target. Often there will be a generic
+implementation of the cache control macros in the architecture HAL
+with the ability to override or undefine them in the variant or
+platform HAL. Even when the implementation of the cache macros is in
+the architecture HAL, the cache dimensions will be defined in the
+variant or platform HAL. As with other files, the variant or platform
+specific definitions are usually found in
+<filename>cyg/hal/var_cache.h</filename> and
+<filename>cyg/hal/plf_cache.h</filename> respectively.  These files
+are include automatically by this header, so need not be included
+explicitly.
+</para>
+
+<PARA>
+There are versions of the macros defined here for both the Data and
+Instruction caches. these are distinguished by the use of either
+<literal>DCACHE</literal> or <literal>ICACHE</literal> in the macro
+names. Some architectures have a unified cache, where both data and
+instruction share the same cache. In these cases the control macros
+use <literal>UCACHE</literal> and the <literal>DCACHE</literal> and
+<literal>ICACHE</literal> macros will just be calls to the
+<literal>UCACHE</literal> version. In the following descriptions,
+<literal>XCACHE</literal> is used to stand for any of these. Where
+there are issues specific to a particular cache, this will be
+explained in the text.
+</PARA>
+
+<PARA>
+There might be target specific restrictions on the use of some of the
+macros which it is the user's responsibility to comply with. Such
+restrictions are documented in the header file with the macro
+definition.
+</PARA>
+
+<PARA>
+Note that destructive cache macros should be used with caution.
+Preceding a cache invalidation with a cache synchronization is not
+safe in itself since an interrupt may happen after the synchronization
+but before the invalidation. This might cause the state of dirty data
+lines created during the interrupt to be lost.
+</PARA>
+
+<PARA>
+Depending on the architecture's capabilities, it may be possible to
+temporarily disable the cache while doing the synchronization and
+invalidation which solves the problem (no new data would be cached
+during an interrupt). Otherwise it is necessary to disable interrupts
+while manipulating the cache which may take a long time.
+</PARA>
+
+<PARA>
+Some platform HALs now support a pair of cache state query
+macros: <function>HAL_ICACHE_IS_ENABLED( x )</function> and
+<function>HAL_DCACHE_IS_ENABLED( x )</function> which set the argument
+to true if the instruction or data cache is enabled,
+respectively. Like most cache control macros, these are optional,
+because the capabilities of different targets and boards can vary
+considerably. Code which uses them, if it is to be considered
+portable, should test for their existence first by means of
+<literal>#ifdef</literal>.  Be sure to include
+<filename>&lt;cyg/hal/hal_cache.h&gt;</filename> in order to do this
+test and (maybe) use the macros.
+</PARA>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Cache Dimensions</TITLE>
+
+<PROGRAMLISTING>
+HAL_XCACHE_SIZE
+HAL_XCACHE_LINE_SIZE
+HAL_XCACHE_WAYS
+HAL_XCACHE_SETS
+</PROGRAMLISTING>
+<PARA>
+These macros define the size and dimensions of the Instruction
+and Data caches.
+</PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_SIZE 	</TERM>
+    <LISTITEM>
+      <PARA>Defines the total size of the cache in bytes.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_LINE_SIZE 	</TERM>
+    <LISTITEM>
+      <PARA>Defines the cache line size in bytes.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_WAYS 	</TERM>
+    <LISTITEM>
+      <PARA>
+      Defines the number of ways in each set and defines its level
+      of associativity. This would be 1 for a direct mapped
+      cache, 2 for a 2-way cache, 4 for 4-way and so on.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_SETS 	</TERM>
+    <LISTITEM>
+      <PARA>
+      Defines the number of sets in the cache, and is calculated from
+      the previous values.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Global Cache Control</TITLE>
+
+<PROGRAMLISTING>
+HAL_XCACHE_ENABLE()
+HAL_XCACHE_DISABLE()
+HAL_XCACHE_INVALIDATE_ALL()
+HAL_XCACHE_SYNC()
+HAL_XCACHE_BURST_SIZE( size )
+HAL_DCACHE_WRITE_MODE( mode )
+HAL_XCACHE_LOCK( base, size )
+HAL_XCACHE_UNLOCK( base, size )
+HAL_XCACHE_UNLOCK_ALL()
+</PROGRAMLISTING>
+
+<PARA>
+These macros affect the state of the entire cache, or a large part of
+it.
+</PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_ENABLE() and HAL_XCACHE_DISABLE()</TERM>
+    <LISTITEM>
+      <PARA>Enable and disable the cache.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_INVALIDATE_ALL()</TERM>
+    <LISTITEM>
+      <PARA>
+      Causes the entire contents of the cache to be invalidated.
+      Depending on the hardware, this may require the cache to be disabled
+      during the invalidation process. If so, the implementation must
+      use <function>HAL_XCACHE_IS_ENABLED()</function> to save and
+      restore the previous state.
+      </PARA>
+      <note>
+        <para>
+	If this macro is called after
+	<function>HAL_XCACHE_SYNC()</function> with the intention of clearing
+	the cache (invalidating the cache after writing dirty data back to
+	memory), you must prevent interrupts from happening between the two
+	calls:
+	</para>
+<PROGRAMLISTING>
+ ...
+ HAL_DISABLE_INTERRUPTS(old);
+ HAL_XCACHE_SYNC();
+ HAL_XCACHE_INVALIDATE_ALL();
+ HAL_RESTORE_INTERRUPTS(old);
+ ...
+</PROGRAMLISTING>
+        <para>
+	Since the operation may take a very long time, real-time
+	responsiveness could be affected, so only do this when it is
+	absolutely required and you know the delay will not interfere
+	with the operation of drivers or the application.
+	</para>
+      </note>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_SYNC()</TERM>
+    <LISTITEM>
+      <PARA>
+      Causes the contents of the cache to be brought into synchronization
+      with the contents of memory. In some implementations this may be
+      equivalent to <function>HAL_XCACHE_INVALIDATE_ALL()</function>.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_BURST_SIZE()</TERM>
+    <LISTITEM>
+      <PARA>
+      Allows the size of cache to/from memory bursts to
+      be controlled. This macro will only be defined if this functionality
+      is available.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_DCACHE_WRITE_MODE()</TERM>
+    <LISTITEM>
+      <PARA>
+      Controls the way in which data cache lines are written back to
+      memory. There will be definitions for the possible
+      modes. Typical definitions are
+      <literal>HAL_DCACHE_WRITEBACK_MODE</literal> and
+      <literal>HAL_DCACHE_WRITETHRU_MODE</literal>. This macro will
+      only be defined if this functionality is available.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_LOCK()</TERM>
+    <LISTITEM>
+      <PARA>
+      Causes data to be locked into the cache. The base and size
+      arguments define the memory region that will be locked into the
+      cache. It is architecture dependent whether more than one locked
+      region is allowed at any one time, and whether this operation
+      causes the cache to cease acting as a cache for addresses
+      outside the region during the duration of the lock. This macro
+      will only be defined if this functionality is available.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_UNLOCK()</TERM>
+    <LISTITEM>
+      <PARA>
+      Cancels the locking of the memory region given. This should
+      normally correspond to a region supplied in a matching lock
+      call.  This macro will only be defined if this functionality is
+      available.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_UNLOCK_ALL()</TERM>
+    <LISTITEM>
+      <PARA>
+      Cancels all existing locked memory regions. This may be required
+      as part of the cache initialization on some architectures. This
+      macro will only be defined if this functionality is available.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- =================================================================== -->
+
+<SECTION>
+<TITLE>Cache Line Control</TITLE>
+
+<PROGRAMLISTING>
+HAL_DCACHE_ALLOCATE( base , size )
+HAL_DCACHE_FLUSH( base , size )
+HAL_XCACHE_INVALIDATE( base , size )
+HAL_DCACHE_STORE( base , size )
+HAL_DCACHE_READ_HINT( base , size )
+HAL_DCACHE_WRITE_HINT( base , size )
+HAL_DCACHE_ZERO( base , size )
+</PROGRAMLISTING>
+
+<PARA>
+All of these macros apply a cache operation to all cache lines that
+match the memory address region defined by the base and size
+arguments. These macros will only be defined if the described
+functionality is available. Also, it is not guaranteed that the cache
+function will only be applied to just the described regions, in some
+architectures it may be applied to the whole cache.
+</PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>HAL_DCACHE_ALLOCATE()</TERM>
+    <LISTITEM>
+      <PARA>
+      Allocates lines in the cache for the given region without
+      reading their contents from memory, hence the contents of the lines
+      is undefined. This is useful for preallocating lines which are to
+      be completely overwritten, for example in a block copy
+      operation.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_DCACHE_FLUSH()</TERM>
+    <LISTITEM>
+      <PARA>
+      Invalidates all cache lines in the region after writing any
+      dirty lines to memory.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_XCACHE_INVALIDATE() </TERM>
+    <LISTITEM>
+      <PARA>
+      Invalidates all cache lines in the region. Any dirty lines
+      are invalidated without being written to memory.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_DCACHE_STORE() </TERM>
+    <LISTITEM>
+      <PARA>
+      Writes all dirty lines in the region to memory, but does not
+      invalidate any lines.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_DCACHE_READ_HINT() </TERM>
+    <LISTITEM>
+      <PARA>
+      Hints to the cache that the region is going to be read from
+      in the near future. This may cause the region to be speculatively
+      read into the cache.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>HAL_DCACHE_WRITE_HINT() </TERM>
+    <LISTITEM>
+      <PARA>
+      Hints to the cache that the region is going to be written
+      to in the near future. This may have the identical behavior to
+      HAL_DCACHE_READ_HINT().
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>HAL_DCACHE_ZERO()</TERM>
+    <LISTITEM>
+      <PARA>
+      Allocates and zeroes lines in the cache for the given
+      region without reading memory. This is useful if a large area of
+      memory is to be cleared.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Linker Scripts -->
+
+<SECTION id="hal-linker-scripts">
+<TITLE><!-- <xref> -->Linker Scripts</TITLE>
+
+<para>
+When an eCos application is linked it must be done under the control
+of a linker script. This script defines the memory areas, addresses
+and sized, into which the code and data are to be put, and allocates
+the various sections generated by the compiler to these.
+</para>
+
+<para>
+The linker script actually used is in
+<filename>lib/target.ld</filename> in the install directory. This is
+actually manufactured out of two other files: a base linker script and
+an <literal>.ldi</literal> file that was generated by the memory
+layout tool.
+</para>
+
+<para>
+The base linker script is usually supplied either by the architecture
+HAL or the variant HAL. It consists of a set of linker script
+fragments, in the form of C preprocessor macros, that define the major
+output sections to be generated by the link operation. The
+<literal>.ldi</literal> file, which is <literal>#include'ed</literal>
+by the base linker script, uses these macro definitions to assign the
+output sections to the required memory areas and link addresses.
+</para>
+
+<para>
+The <literal>.ldi</literal> file is supplied by the platform HAL, and
+contains knowledge of the memory layout of the target platform. These
+files generally conform to a standard naming convention, each file
+being of the form:
+</para>
+<para>
+<filename>pkgconf/mlt_&lt;architecture&gt;_&lt;variant&gt;_&lt;platform&gt;_&lt;startup&gt;.ldi</filename>
+</para>
+<para>
+where <literal>&lt;architecture&gt;</literal>,
+<literal>&lt;variant&gt;</literal> and
+<literal>&lt;platform&gt;</literal> are the respective HAL package
+names and <literal>&lt;startup&gt;</literal> is the startup type which
+is usually one of <literal>ROM</literal>, <literal>RAM</literal> or
+<literal>ROMRAM</literal>.
+</para>
+
+<para>
+In addition to the <literal>.ldi</literal> file, there is also a
+congruously name <literal>.h</literal> file. This may be used by the
+application to access information defined in the
+<literal>.ldi</literal> file. Specifically it contains the memory
+layout defined there, together with any additional section names
+defined by the user. Examples of the latter are heap areas or PCI bus
+memory access windows.
+</para>
+
+<para>
+The <literal>.ldi</literal> is manufactured by the <application>Memory
+Layout Tool</application> (MLT). The <application>MLT</application> saves the memory
+configuration into a file named
+</para>
+<para>
+<filename>include/pkgconf/mlt_&lt;architecture&gt;_&lt;variant&gt;_&lt;platform&gt;_&lt;startup&gt;.mlt</filename>
+</para>
+<para>
+in the platform HAL. This file is used by the
+<application>MLT</application> to manufacture both the
+<literal>.ldi</literal> and <literal>.h</literal> files. Users should
+beware that direct edits the either of these files may be overwritten
+if the <application>MLT</application> is run and regenerates them from the
+<literal>.mlt</literal> file.
+</para>
+
+<para>
+The names of the <literal>.ldi</literal> and <literal>.h</literal>
+files are defined by macro definitions in
+<FILENAME>pkgconf/system.h</FILENAME>. These are
+<literal>CYGHWR_MEMORY_LAYOUT_LDI</literal> and
+<literal>CYGHWR_MEMORY_LAYOUT_H</literal> respectively. While there
+will be little need for the application to refer to the
+<literal>.ldi</literal> file directly, it may include the
+<literal>.h</literal> file as follows:
+</para>
+
+<programlisting>
+#include CYGHWR_MEMORY_LAYOUT_H
+</programlisting>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Diagnostic Support -->
+
+<SECTION id="hal-diagnostic-support">
+<TITLE>Diagnostic Support</TITLE>
+
+<para>
+The HAL provides support for low level diagnostic IO. This is
+particularly useful during early development as an aid to bringing up
+a new platform. Usually this diagnostic channel is a UART or some
+other serial IO device, but it may equally be a a memory
+buffer, a simulator supported output channel, a ROM emulator virtual
+UART, and LCD panel, a memory mapped video buffer or any other output
+device.
+</para>
+
+<PARA>
+<FUNCTION>HAL_DIAG_INIT()</FUNCTION> performs any initialization
+required on the device being used to generate diagnostic output. This
+may include, for a UART, setting baud rate, and stop, parity and
+character bits. For other devices it may include initializing a
+controller or establishing contact with a remote device.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_DIAG_WRITE_CHAR(c)</FUNCTION> writes
+the character supplied to the diagnostic output device.
+</PARA>
+
+<PARA>
+<FUNCTION>HAL_DIAG_READ_CHAR(c)</FUNCTION> reads a character from the
+diagnostic device into the supplied variable. This is not supported
+for all diagnostic devices.
+</PARA>
+
+<para>
+These macros are defined in the header file
+<filename>cyg/hal/hal_diag.h</filename>. This file is usually supplied
+by the variant or platform HAL, depending on where the IO device being
+used is located. For example for on-chip UARTs it would be in the
+variant HAL, but for a board-level LCD panel it would be in the
+platform HAL.
+</para>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ SMP Support -->
+
+<section id="hal-smp-support">
+<TITLE>SMP Support</TITLE>
+
+<para>
+eCos contains support for limited Symmetric Multi-Processing
+(SMP). This is only available on selected architectures and platforms.
+</para>
+
+<section>
+<title>Target Hardware Limitations</title>
+
+<para>
+To allow a reasonable implementation of SMP, and to reduce the
+disruption to the existing source base, a number of assumptions have
+been made about the features of the target hardware.
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Modest multiprocessing. The typical number of CPUs supported is two
+to four, with an upper limit around eight. While there are no
+inherent limits in the code, hardware and algorithmic limitations
+will probably become significant beyond this point.
+</para>
+</listitem>
+
+<listitem>
+<para>
+SMP synchronization support. The hardware must supply a mechanism to
+allow software on two CPUs to synchronize. This is normally provided
+as part of the instruction set in the form of test-and-set,
+compare-and-swap or load-link/store-conditional instructions. An
+alternative approach is the provision of hardware semaphore
+registers which can be used to serialize implementations of these
+operations. Whatever hardware facilities are available, they are
+used in eCos to implement spinlocks.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Coherent caches. It is assumed that no extra effort will be required
+to access shared memory from any processor. This means that either
+there are no caches, they are shared by all processors, or are
+maintained in a coherent state by the hardware. It would be too
+disruptive to the eCos sources if every memory access had to be
+bracketed by cache load/flush operations. Any hardware that requires
+this is not supported.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Uniform addressing. It is assumed that all memory that is
+shared between CPUs is addressed at the same location from all
+CPUs. Like non-coherent caches, dealing with CPU-specific address
+translation is considered too disruptive to the eCos source
+base. This does not, however, preclude systems with non-uniform
+access costs for different CPUs.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Uniform device addressing. As with access to memory, it is assumed
+that all devices are equally accessible to all CPUs. Since device
+access is often made from thread contexts, it is not possible to
+restrict access to device control registers to certain CPUs, since
+there is currently no support for binding or migrating threads to CPUs.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Interrupt routing. The target hardware must have an interrupt
+controller that can route interrupts to specific CPUs. It is
+acceptable for all interrupts to be delivered to just one CPU, or
+for some interrupts to be bound to specific CPUs, or for some
+interrupts to be local to each CPU. At present dynamic routing,
+where a different CPU may be chosen each time an interrupt is
+delivered, is not supported. ECos cannot support hardware where all
+interrupts are delivered to all CPUs simultaneously with the
+expectation that software will resolve any conflicts.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Inter-CPU interrupts. A mechanism to allow one CPU to interrupt
+another is needed. This is necessary so that events on one CPU can
+cause rescheduling on other CPUs.
+</para>
+</listitem>
+
+<listitem>
+<para>
+CPU Identifiers. Code running on a CPU must be able to determine
+which CPU it is running on. The CPU Id is usually provided either in
+a CPU status register, or in a register associated with the
+inter-CPU interrupt delivery subsystem. ECos expects CPU Ids to be
+small positive integers, although alternative representations, such
+as bitmaps, can be converted relatively easily. Complex mechanisms
+for getting the CPU Id cannot be supported. Getting the CPU Id must
+be a cheap operation, since it is done often, and in performance
+critical places such as interrupt handlers and the scheduler.
+</para>
+</listitem>
+</itemizedlist>
+
+</section>  
+
+<section>
+<title>HAL Support</title>
+
+<para>
+SMP support in any platform depends on the HAL supplying the
+appropriate operations. All HAL SMP support is defined in the
+<filename>cyg/hal/hal_smp.h</filename> header. Variant and platform
+specific definitions will be in <filename>cyg/hal/var_smp.h</filename>
+and <filename>cyg/hal/plf_smp.h</filename> respectively. These files
+are include automatically by this header, so need not be included
+explicitly.
+</para>
+
+<para>
+SMP support falls into a number of functional groups.
+</para>
+
+<section>
+<title>CPU Control</title>
+
+<para>
+This group consists of descriptive and control macros for managing the
+CPUs in an SMP system.
+</para>
+
+<variablelist>
+<varlistentry>
+<term><literal>HAL_SMP_CPU_TYPE</literal></term>
+<listitem>
+<para>
+A type that can contain a CPU id. A CPU id is
+usually a small integer that is used to index
+arrays of variables that are managed on an
+per-CPU basis.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_CPU_MAX</literal></term>
+<listitem>
+<para>
+The maximum number of CPUs that can be
+supported. This is used to provide the size of
+any arrays that have an element per CPU.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_CPU_COUNT()</literal></term>
+<listitem>
+<para>
+Returns the number of CPUs currently
+operational. This may differ from
+HAL_SMP_CPU_MAX depending on the runtime
+environment.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_CPU_THIS()</literal></term>
+<listitem>
+<para>
+Returns the CPU id of the current CPU.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_CPU_NONE</literal></term>
+<listitem>
+<para>
+A value that does not match any real CPU
+id. This is uses where a CPU type variable
+must be set to a null value.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_CPU_START( cpu )</literal></term>
+<listitem>
+<para>
+Starts the given CPU executing at a defined
+HAL entry point. After performing any HAL
+level initialization, the CPU calls up into
+the kernel at <function>cyg_kernel_cpu_startup()</function>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_CPU_RESCHEDULE_INTERRUPT( cpu, wait )</literal></term>
+<listitem>
+<para>
+Sends the CPU a reschedule interrupt, and if
+<parameter>wait</parameter> is non-zero, waits for an
+acknowledgment. The interrupted CPU should call
+<function>cyg_scheduler_set_need_reschedule()</function> in its DSR to
+cause the reschedule to occur.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_CPU_TIMESLICE_INTERRUPT( cpu, wait )</literal></term>
+<listitem>
+<para>
+Sends the CPU a timeslice interrupt, and if
+<parameter>wait</parameter> is non-zero, waits for an
+acknowledgment. The interrupted CPU should call
+<function>cyg_scheduler_timeslice_cpu()</function> to cause the
+timeslice event to be processed.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</section>
+
+
+<section>
+<title>Test-and-set Support</title>
+
+<para>
+Test-and-set is the foundation of the SMP synchronization
+mechanisms.
+</para>
+
+<variablelist>
+<varlistentry>
+<term><literal>HAL_TAS_TYPE</literal></term>
+<listitem>
+<para>
+The type for all test-and-set variables. The
+test-and-set macros only support operations on
+a single bit (usually the least significant
+bit) of this location. This allows for maximum
+flexibility in the implementation.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_TAS_SET( tas, oldb )</literal></term>
+<listitem>
+<para>
+Performs a test and set operation on the
+location <parameter>tas</parameter>. <parameter>oldb</parameter> will contain <literal>true</literal> if
+the location was already set, and <literal>false</literal> if
+it was clear.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_TAS_CLEAR( tas, oldb )</literal></term>
+<listitem>
+<para>
+Performs a test and clear operation on the
+location <parameter>tas</parameter>. <parameter>oldb</parameter> will contain <literal>true</literal> if
+the location was already set, and <literal>false</literal> if
+it was clear.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</section>
+<section>
+
+<title>Spinlocks</title>
+
+<para>
+Spinlocks provide inter-CPU locking. Normally they will be implemented
+on top of the test-and-set mechanism above, but may also be
+implemented by other means if, for example, the hardware has more
+direct support for spinlocks.
+</para>
+
+<variablelist>
+<varlistentry>
+<term><literal>HAL_SPINLOCK_TYPE</literal></term>
+<listitem>
+<para>
+The type for all spinlock variables.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SPINLOCK_INIT_CLEAR</literal></term>
+<listitem>
+<para>
+A value that may be assigned to a spinlock
+variable to initialize it to clear.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SPINLOCK_INIT_SET</literal></term>
+<listitem>
+<para>
+A value that may be assigned to a spinlock
+variable to initialize it to set.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SPINLOCK_SPIN( lock )</literal></term>
+<listitem>
+<para>
+The caller spins in a busy loop waiting for
+the lock to become clear. It then sets it and
+continues. This is all handled atomically, so
+that there are no race conditions between CPUs.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SPINLOCK_CLEAR( lock )</literal></term>
+<listitem>
+<para>
+The caller clears the lock. One of any waiting
+spinners will then be able to proceed.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SPINLOCK_TRY( lock, val )</literal></term>
+<listitem>
+<para>
+Attempts to set the lock. The value put in
+<parameter>val</parameter> will be <literal>true</literal> if the lock was
+claimed successfully, and <literal>false</literal> if it was
+not.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SPINLOCK_TEST( lock, val )</literal></term>
+<listitem>
+<para>
+Tests the current value of the lock. The value
+put in <parameter>val</parameter> will be <literal>true</literal> if the lock is
+claimed and <literal>false</literal> of it is clear.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</section>
+<section>
+
+<title>Scheduler Lock</title>
+
+<para>
+The scheduler lock is the main protection for all kernel data
+structures. By default the kernel implements the scheduler lock itself
+using a spinlock. However, if spinlocks cannot be supported by the
+hardware, or there is a more efficient implementation available, the
+HAL may provide macros to implement the scheduler lock.
+</para>
+
+<variablelist>
+<varlistentry>
+<term><literal>HAL_SMP_SCHEDLOCK_DATA_TYPE</literal></term>
+<listitem>
+<para>
+A data type, possibly a structure, that
+contains any data items needed by the
+scheduler lock implementation. A variable of
+this type will be instantiated as a static
+member of the Cyg_Scheduler_SchedLock class
+and passed to all the following macros.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_SCHEDLOCK_INIT( lock, data )</literal></term>
+<listitem>
+<para>
+Initialize the scheduler lock. The <parameter>lock</parameter>
+argument is the scheduler lock counter and the
+<parameter>data</parameter> argument is a variable of
+HAL_SMP_SCHEDLOCK_DATA_TYPE type.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_SCHEDLOCK_INC( lock, data )</literal></term>
+<listitem>
+<para>
+Increment the scheduler lock. The first
+increment of the lock from zero to one for any
+CPU may cause it to wait until the lock is
+zeroed by another CPU. Subsequent increments
+should be less expensive since this CPU
+already holds the lock.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_SCHEDLOCK_ZERO( lock, data )</literal></term>
+<listitem>
+<para>
+Zero the scheduler lock. This operation will
+also clear the lock so that other CPUs may
+claim it.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_SMP_SCHEDLOCK_SET( lock, data, new )</literal></term>
+<listitem>
+<para>
+Set the lock to a different value, in
+<parameter>new</parameter>. This is only called when the lock is
+already known to be owned by the current CPU. It is never called to
+zero the lock, or to increment it from zero.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</section>
+<section>
+
+<title>Interrupt Routing</title>
+
+<para>
+The routing of interrupts to different CPUs is supported by two new
+interfaces in hal_intr.h.
+</para>
+
+<para>
+Once an interrupt has been routed to a new CPU, the existing vector
+masking and configuration operations should take account of the CPU
+routing. For example, if the operation is not invoked on the
+destination CPU itself, then the HAL may need to arrange to transfer
+the operation to the destination CPU for correct application.
+</para>
+
+<variablelist>
+<varlistentry>
+<term><literal>HAL_INTERRUPT_SET_CPU( vector, cpu )</literal></term>
+<listitem>
+<para>
+Route the interrupt for the given <parameter>vector</parameter> to
+the given <parameter>cpu</parameter>. 
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>HAL_INTERRUPT_GET_CPU( vector, cpu )</literal></term>
+<listitem>
+<para>
+Set <parameter>cpu</parameter> to the id of the CPU to which this
+vector is routed.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</section>
+
+</section>
+
+
+</section>
+
+<!-- }}} -->
+
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ Exception Handling -->
+
+<CHAPTER id="hal-exception-handling">
+<TITLE>Exception Handling</TITLE>
+
+<!-- {{{ Intro -->
+
+<para>
+Most of the HAL consists of simple macros or functions that are
+called via the interfaces described in the previous section. These
+just perform whatever operation is required by accessing the hardware
+and then return. The exception to this is the handling of exceptions:
+either synchronous hardware traps or asynchronous device
+interrupts. Here control is passed first to the HAL, which then passed
+it on to eCos or the application. After eCos has finished with it,
+control is then passed back to the HAL for it to tidy up the CPU state
+and resume processing from the point at which the exception occurred.
+</para>
+
+<PARA>
+The HAL exceptions handling code is usually found in the file
+<FILENAME>vectors.S</FILENAME> in the architecture HAL.  Since the
+reset entry point is usually implemented as one of these it also deals
+with system startup.
+</PARA>
+
+<PARA>
+The exact implementation of this code is under the control of the HAL
+implementer. So long as it interacts correctly with the interfaces
+defined previously it may take any form.  However, all current
+implementation follow the same pattern, and there should be a very
+good reason to break with this. The rest of this section describes
+these operate.
+</PARA>
+
+<para>
+Exception handling normally deals with the following broad areas of
+functionality:
+</para>
+
+<ITEMIZEDLIST>
+  <LISTITEM>
+    <PARA>Startup and initialization.</PARA>
+  </LISTITEM>
+
+  <LISTITEM>
+    <PARA>Hardware exception delivery.</PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>Default handling of synchronous exceptions.</PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>Default handling of asynchronous interrupts.</PARA>
+  </LISTITEM>
+</ITEMIZEDLIST>
+
+<!-- }}} -->
+<!-- {{{ HAL Startup -->
+
+<SECTION id="hal-startup">
+<TITLE><!-- <index></index> --><!-- <xref> -->HAL Startup</TITLE>
+
+<PARA>
+Execution normally begins at the reset vector with
+the machine in a minimal startup state. From here the HAL needs to get
+the machine running, set up the execution environment for the
+application, and finally invoke its entry point.
+</PARA>
+
+<PARA>
+The following is a list of the jobs that need to be done in
+approximately the order in which they should be accomplished. Many
+of these will not be needed in some configurations.
+</PARA>
+
+<ITEMIZEDLIST>
+  <listitem>
+  <para>
+  Initialize the hardware. This may involve initializing several
+  subsystems in both the architecture, variant and platform
+  HALs. These include:
+  </para>
+    <itemizedlist>
+      <LISTITEM>
+	<PARA>
+	Initialize various CPU status registers. Most importantly, the CPU
+	interrupt mask should be set to disable interrupts.
+	</PARA>
+      </LISTITEM>
+
+      <LISTITEM>
+	<PARA>
+	Initialize the MMU, if it is used. On many platforms it is
+	only possible to control the cacheability of address ranges
+	via the MMU. Also, it may be necessary to remap RAM and device
+	registers to locations other than their defaults. However, for
+	simplicity, the mapping should be kept as close to one-to-one
+	physical-to-virtual as possible.
+	</PARA>
+      </LISTITEM>
+
+      <LISTITEM>
+	<PARA>
+	Set up the memory controller to access RAM, ROM and I/O devices
+	correctly. Until this is done it may not be possible to access
+	RAM. If this is a ROMRAM startup then the program code can
+	now be copied to its RAM address and control transferred to it.
+	</PARA>
+      </LISTITEM>
+
+      <LISTITEM>
+	<PARA>
+	Set up any bus bridges and support chips. Often access to
+	device registers needs to go through various bus bridges and
+	other intermediary devices. In many systems these are combined
+	with the memory controller, so it makes sense to set these up
+	together. This is particularly important if early diagnostic
+	output needs to go through one of these devices.
+	</PARA>
+      </LISTITEM>
+
+      <LISTITEM>
+	<PARA>
+	Set up diagnostic mechanisms. If the platform includes an LED or
+	LCD output device, it often makes sense to output progress
+	indications on this during startup. This helps with diagnosing
+	hardware and software errors.
+	</PARA>
+      </LISTITEM>
+
+      <LISTITEM>
+	<PARA>
+	Initialize floating point and other extensions such as SIMD
+	and multimedia engines. It is usually necessary to enable
+	these and maybe initialize control and exception registers for
+	these extensions.
+	</PARA>
+      </LISTITEM>
+
+
+      <LISTITEM>
+	<PARA>
+	Initialize interrupt controller. At the very least, it should
+	be configured to mask all interrupts. It may also be necessary
+	to set up the mapping from the interrupt controller's vector
+	number space to the CPU's exception number space. Similar
+	mappings may need to be set up between primary and secondary
+	interrupt controllers.
+	</PARA>
+      </LISTITEM>
+      
+      <LISTITEM>
+	<PARA>
+	Disable and initialize the caches. The caches should not
+	normally be enabled at this point, but it may be necessary to
+	clear or initialize them so that they can be enabled
+	later. Some architectures require that the caches be
+	explicitly reinitialized after a power-on reset.
+	</PARA>
+      </LISTITEM>
+
+
+      <LISTITEM>
+	<PARA>
+	Initialize the timer, clock etc. While the timer used for RTC
+	interrupts will be initialized later, it may be necessary to
+	set up the clocks that drive it here.
+	</PARA>
+      </LISTITEM>
+      
+    </itemizedlist>
+    <para>
+    The exact order in which these initializations is done is
+    architecture or variant specific. It is also often not necessary
+    to do anything at all for some of these options. These fragments
+    of code should concentrate on getting the target up and running so
+    that C function calls can be made and code can be run. More
+    complex initializations that cannot be done in assembly code may
+    be postponed until calls to
+    <function>hal_variant_init()</function> or
+    <function>hal_platform_init()</function> are made.
+    </para>
+
+    <para>
+    Not all of these initializations need to be done for all startup
+    types. In particular, RAM startups can reasonably assume that the
+    ROM monitor or loader has already done most of this work.
+    </para>
+    
+  </listitem>
+  
+  <LISTITEM>
+    <PARA>
+    Set up the stack pointer, this allows subsequent initialization
+    code to make proper procedure calls. Usually the interrupt stack
+    is used for this purpose since it is available, large enough, and
+    will be reused for other purposes later.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Initialize any global pointer register needed for access to
+    globally defined variables. This allows subsequent initialization
+    code to access global variables.
+    </PARA>
+  </LISTITEM>
+
+  <LISTITEM>
+    <PARA>
+    If the system is starting from ROM, copy the ROM template of the 
+    <filename>.data</filename> section out to its correct position in
+    RAM. (<xref linkend="hal-linker-scripts">).
+    </PARA>
+  </LISTITEM>
+
+  <LISTITEM>
+    <PARA>
+    Zero the <filename>.bss</filename> section.
+    </PARA>
+  </LISTITEM>
+      
+  <LISTITEM>
+    <PARA>
+    Create a suitable C call stack frame. This may involve making
+    stack space for call frames, and arguments, and initializing the
+    back pointers to halt a GDB backtrace operation.
+    </PARA>
+  </LISTITEM>
+
+  <LISTITEM>
+    <PARA>
+    Call <function>hal_variant_init()</function> and
+    <function>hal_platform_init()</function>. These will perform any
+    additional initialization needed by the variant and platform. This
+    typically includes further initialization of the interrupt
+    controller, PCI bus bridges, basic IO devices and enabling the
+    caches.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Call <FUNCTION>cyg_hal_invoke_constructors()</FUNCTION> to run any
+    static constructors.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Call <FUNCTION>cyg_start()</FUNCTION>. If
+    <FUNCTION>cyg_start()</FUNCTION> returns, drop into an infinite
+    loop.
+    </PARA>
+  </LISTITEM>
+</ITEMIZEDLIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Vectors and VSRs -->
+
+<SECTION id="hal-vectors-and-vsrs"><!-- <index></index> -->
+<TITLE>Vectors and VSRs</TITLE>
+
+<PARA>
+The CPU delivers all <!-- <index></index> --> exceptions, whether
+synchronous faults or asynchronous interrupts, to a set of hardware
+defined vectors. Depending on the architecture, these may be
+implemented in a number of different ways. Examples of existing
+mechanisms are:
+</PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>PowerPC</TERM>
+    <LISTITEM>
+      <PARA>
+      Exceptions are vectored to locations 256 bytes apart starting at
+      either zero or <literal>0xFFF00000</literal>. There are 16 such
+      vectors defined by the basic architecture and extra vectors may
+      be defined by specific variants. One of the base vectors is for
+      all external interrupts, and another is for the architecture
+      defined timer.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>MIPS</TERM>
+    <LISTITEM>
+      <PARA>
+      Most exceptions and all interrupts are vectored to a single
+      address at either <literal>0x80000000</literal> or
+      <literal>0xBFC00180</literal>. Software is responsible for
+      reading the exception code from the CPU <literal>cause</literal>
+      register to discover its true source. Some TLB and debug
+      exceptions are delivered to different vector addresses, but
+      these are not used currently by eCos. One of the exception codes
+      in the <literal>cause</literal> register indicates an external
+      interrupt. Additional bits in the <literal>cause</literal>
+      register provide a first-level decode for the interrupt source,
+      one of which represents an architecture defined timer.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>IA32</TERM>
+    <LISTITEM>
+      <PARA>
+      Exceptions are delivered via an Interrupt Descriptor Table (IDT)
+      which is essentially an indirection table indexed by exception
+      number. The IDT may be placed anywhere in memory. In PC hardware
+      the standard interrupt controller can be programmed to deliver
+      the external interrupts to a block of 16 vectors at any offset
+      in the IDT. There is no hardware supplied mechanism for
+      determining the vector taken, other than from the address jumped
+      to.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>ARM</TERM>
+    <LISTITEM>
+      <PARA>
+      All exceptions, including the FIQ and IRQ interrupts, are
+      vectored to locations four bytes apart starting at zero. There
+      is only room for one instruction here, which must immediately
+      jump out to handling code higher in memory. Interrupt sources
+      have to be decoded entirely from the interrupt controller.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+
+<para>
+With such a wide variety of hardware approaches, it is not possible to
+provide a generic mechanism for the substitution of exception vectors
+directly. Therefore, eCos translates all of these mechanisms in to a
+common approach that can be used by portable code on all platforms.
+</para>
+
+<para>
+The mechanism implemented is to attach to each hardware vector a short
+piece of trampoline code that makes an indirect jump via a table to
+the actual handler for the exception. This handler is called the
+Vector Service Routine (VSR) and the table is called the VSR table.
+</para>
+
+<para>
+The trampoline code performs the absolute minimum processing necessary
+to identify the exception source, and jump to the VSR. The VSR is then
+responsible for saving the CPU state and taking the necessary actions
+to handle the exception or interrupt. The entry conditions for the VSR
+are as close to the raw hardware exception entry state as possible -
+although on some platforms the trampoline will have had to move or
+reorganize some registers to do its job.
+</para>
+
+<para>
+To make this more concrete, consider how the trampoline code operates
+in each of the architectures described above:
+</para>
+
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>PowerPC</TERM>
+    <LISTITEM>
+      <PARA>
+      A separate trampoline is contained in each of the vector
+      locations. This code saves a few work registers away to the
+      special purposes registers available, loads the exception number
+      into a register and then uses that to index the VSR table and
+      jump to the VSR. The VSR is entered with some registers move to
+      the SPRs, and one of the data register containing the number of
+      the vector taken.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  
+  <VARLISTENTRY>
+    <TERM>MIPS</TERM>
+    <LISTITEM>
+      <PARA>
+      A single trampoline routine attached to the common vector reads
+      the exception code out of the <literal>cause</literal> register
+      and uses that value to index the VSR table and jump to the VSR.
+      The trampoline uses the two registers defined in the ABI for
+      kernel use to do this, one of these will contain the exception
+      vector number for the VSR.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>IA32</TERM>
+    <LISTITEM>
+      <PARA>
+      There is a separate 3 or 4 instruction trampoline pointed to by
+      each active IDT table entry. The trampoline for exceptions that
+      also have an error code pop it from the stack and put it into a
+      memory location. Trampolines for non-error-code exceptions just
+      zero the memory location. Then all trampolines push an
+      interrupt/exception number onto the stack, and take an indirect
+      jump through a precalculated offset in the VSR table. This is
+      all done without saving any registers, using memory-only
+      operations. The VSR is entered with the vector number pushed
+      onto the stack on top of the standard hardware saved state.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+    
+  <VARLISTENTRY>
+    <TERM>ARM</TERM>
+    <LISTITEM>
+      <PARA>
+      The trampoline consists solely of the single instruction at the
+      exception entry point. This is an indirect jump via a location
+      32 bytes higher in memory. These locations, from
+      <literal>0x20</literal> up, form the VSR table. Since each VSR
+      is entered in a different CPU mode
+      (<literal>SVC,UNDEF,ABORT,IRQ or FIQ</literal>) there has to be a
+      different VSR for each exception that knows how to save the CPU
+      state correctly.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Synchronous Exception Handling -->
+
+<SECTION id="hal-default-synchronous-exception-handling">
+<TITLE><!-- <index></index> -->Default Synchronous Exception Handling</TITLE>
+
+<PARA>
+Most synchronous exception VSR table entries will point to a default
+exception VSR which is responsible for handling all exceptions in a
+generic manner. The default VSR simply saves the CPU state, makes any
+adjustments to the CPU state that is necessary, and calls
+<function>cyg_hal_exception_handler()</function>.
+</PARA>
+
+<PARA>
+<function>cyg_hal_exception_handler()</function> needs to pass the
+exception on to some handling code.  There are two basic destinations:
+enter GDB or pass the exception up to eCos. Exactly which
+destination is taken depends on the configuration. When the GDB stubs are
+included then the exception is passed to them, otherwise it is passed
+to eCos.
+</PARA>
+
+<para>
+If an eCos application has been loaded by RedBoot then the VSR table
+entries will all point into RedBoot's exception VSR, and will
+therefore enter GDB if an exception occurs. If the eCos application
+wants to handle an exception itself, it needs to replace the the VSR
+table entry with one pointing to its own VSR. It can do this with the
+<function>HAL_VSR_SET_TO_ECOS_HANDLER()</function> macro.
+</para>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Interrupt Handling -->
+
+<SECTION id="hal-default-interrupt-handling">
+<TITLE><!-- <index></index> -->Default Interrupt Handling</TITLE>
+
+<PARA>
+Most asynchronous external interrupt vectors will point to a default
+interrupt VSR which decodes the actual interrupt being delivered from
+the interrupt controller and invokes the appropriate ISR.
+</PARA>
+
+<PARA>
+The default interrupt VSR has a number of responsibilities if it is
+going to interact with the Kernel cleanly and allow interrupts to
+cause thread preemption.
+</PARA>
+
+<PARA>
+To support this VSR an ISR vector table is needed. For each valid
+vector three pointers need to be stored: the ISR, its data pointer and
+an opaque (to the HAL) interrupt object pointer needed by the
+kernel. It is implementation defined whether these are stored in a
+single table of triples, or in three separate tables.
+</PARA>
+
+<PARA>
+The VSR follows the following approximate plan:
+</PARA>
+
+<ORDEREDLIST>
+  <LISTITEM>
+    <PARA>
+    Save the CPU state. In non-debug configurations, it may be
+    possible to get away with saving less than the entire machine
+    state. The option
+    <literal>CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT</literal>
+    is supported in some targets to do this.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Increment the kernel scheduler lock. This is a static member of
+    the Cyg_Scheduler class, however it has also been aliased to
+    <literal>cyg_scheduler_sched_lock</literal> so that it can be
+    accessed from assembly code.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    (Optional) Switch to an interrupt stack if not already running on
+    it. This allows nested interrupts to be delivered without needing
+    every thread to have a stack large enough to take the maximum
+    possible nesting. It is implementation defined how to detect
+    whether this is a nested interrupt but there are two basic
+    techniques. The first is to inspect the stack pointer and switch
+    only if it is not currently within the interrupt stack range; the
+    second is to maintain a counter of the interrupt nesting level and
+    switch only if it is zero. The option
+    <literal>CYGIMP_HAL_COMMON_INTERRUPTS_USE_INTERRUPT_STACK</literal>
+    controls whether this happens.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Decode the actual external interrupt being delivered from
+    the interrupt controller. This will yield the ISR vector
+    number. The code to do this usually needs to come from the
+    variant or platform HAL, so is usually present in the form of a
+    macro or procedure callout.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    (Optional) Re-enable interrupts to permit nesting. At this point
+    we can potentially allow higher priority interrupts to occur. It
+    depends on the interrupt architecture of the CPU and platform
+    whether more interrupts will occur at this point, or whether they
+    will only be delivered after the current interrupt has been
+    acknowledged (by a call to
+    <function>HAL_INTERRUPT_ACKNOWLEDGE()</function> in the ISR).
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Using the ISR vector number as an index, retrieve the
+    ISR pointer and its data pointer from the ISR vector table.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Construct a C call stack frame. This may involve making stack
+    space for call frames, and arguments, and initializing the back
+    pointers to halt a GDB backtrace operation.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Call the ISR, passing the vector number and data pointer.  The
+    vector number and a pointer to the saved state should be preserved
+    across this call, preferably by storing them in registers that are
+    defined to be callee-saved by the calling conventions.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    If this is an un-nested interrupt and a separate interrupt
+    stack is being used, switch back to the interrupted thread's
+    own stack.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Use the saved ISR vector number to get the interrupt object
+    pointer from the ISR vector table.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    Call <FUNCTION>interrupt_end()</FUNCTION> passing it the return
+    value from the ISR, the interrupt object pointer and a pointer to
+    the saved CPU state. This function is implemented by the Kernel
+    and is responsible for finishing off the interrupt
+    handling. Specifically, it may post a DSR depending on the ISR
+    return value, and will decrement the scheduler lock. If the lock
+    is zeroed by this operation then any posted DSRs may be called and
+    may in turn result in a thread context switch.
+    </PARA>
+  </LISTITEM>
+  
+  <LISTITEM>
+    <PARA>
+    The return from <FUNCTION>interrupt_end()</FUNCTION> may occur
+    some time after the call. Many other threads may have executed in
+    the meantime. So here all we may do is restore the machine state
+    and resume execution of the interrupted thread. Depending on the
+    architecture, it may be necessary to disable interrupts again for
+    part of this.
+    </PARA>
+  </LISTITEM>
+  
+</ORDEREDLIST>
+
+<PARA>
+The detailed order of these steps may vary slightly depending on the
+architecture, in particular where interrupts are enabled and disabled.
+</PARA>
+
+</SECTION>
+
+<!-- }}} -->
+
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ Porting Guide -->
+
+&hal-common-porting-sgml;
+
+<!-- }}} -->
+<!-- {{{ Future Developments -->
+
+<CHAPTER id="hal-future-developments">
+<TITLE><!-- <index></index> --><!-- <xref> -->Future developments</TITLE>
+
+<PARA>
+The HAL is not complete, and will evolve and increase over
+time. Among the intended developments are:
+</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>Common macros for interpreting the contents of a saved
+machine context. These would allow portable code, such as debug
+stubs, to extract such values as the program counter and stack pointer
+from a state without having to interpret a <STRUCTNAME>HAL_SavedRegisters</STRUCTNAME> structure
+directly.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Debugging support. Macros to set and clear hardware and
+software breakpoints. Access to other areas of machine state may
+also be supported.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Static initialization support. The current HAL provides a
+dynamic interface to things like thread context initialization and ISR
+attachment. We also need to be able to define the system entirely
+statically so that it is ready to go on restart, without needing to
+run code. This will require extra macros to define these
+initializations.  Such support may have a consequential effect on the
+current HAL specification.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>CPU state control. Many CPUs have both kernel and user
+states. Although it is not intended to run any code in user state
+for the foreseeable future, it is possible that this may happen
+eventually. If this is the case, then some minor changes may be needed
+to the current HAL API to accommodate this. These should mostly
+be extensions, but minor changes in semantics may also be required.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Physical memory management. Many embedded systems have
+multiple memory areas with varying properties such as base address,
+size, speed, bus width, cacheability and persistence. An API is
+needed to support the discovery of this information about the machine's
+physical memory map.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Memory management control. Some embedded processors have
+a memory management unit. In some cases this must be enabled to
+allow the cache to be controlled, particularly if different regions
+of memory must have different caching properties. For some purposes,
+in some systems, it will be useful to manipulate the MMU settings
+dynamically.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Power management. Macros to access and control any power
+management mechanisms available on the CPU implementation. These
+would provide a substrate for a more general power management system
+that also involved device drivers and other hardware components.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Generic serial line macros. Most serial line devices operate
+in the same way, the only real differences being exactly which bits
+in which registers perform the standard functions. It should be
+possible to develop a set of HAL macros that provide basic serial
+line services such as baud rate setting, enabling interrupts, polling
+for transmit or receive ready, transmitting and receiving data etc.
+Given these it should be possible to create a generic serial line
+device driver that will allow rapid bootstrapping on any new platform.
+It may be possible to extend this mechanism to other device types.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</CHAPTER>
+
+<!-- }}} -->
+
+</part>

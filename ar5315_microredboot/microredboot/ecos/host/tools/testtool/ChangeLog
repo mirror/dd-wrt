@@ -1,0 +1,190 @@
+2000-06-15  John Dallaway  <jld@redhat.com>
+
+	* win32/RunTestsSheet.cpp:
+
+	Modify the CRunTestsSheet constructor to set the download
+	timeout type to TIMEOUT_SPECIFIED and server side GDB
+	flag to FALSE by default.
+
+	Modify OnRun() to specify a default timeout of 900 seconds.
+
+	* win32/RunTestsSheet.h:
+
+	Add SetResetNone() inline function.
+
+	* win32/TestTool.rc:
+
+	Modify the IDD_TT_PLATFORM dialog to accept CR chars in
+	the GDB commands edit box and to correct the tab order.
+
+2000-04-11 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\ExecutionPage.cpp
+    win32\ExecutionPage.h
+    win32\LocalPropertiesDialog.cpp
+    win32\PlatformDialog.cpp
+    win32\PlatformDialog.h
+    win32\PlatformsDialog.cpp
+    win32\PlatformsDialog.h
+    win32\PropertiesDialog.cpp
+    win32\RemotePropertiesDialog.cpp
+    win32\RunTestsSheet.cpp
+    win32\RunTestsSheet.h
+    win32\SummaryPage.cpp
+    win32\TestTool.cpp
+    win32\TestTool.dsp
+    win32\TestTool.rc
+    win32\testtoolres.h
+
+  General tidy-up.
+
+2000-04-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/TestTool.rc:
+
+	Relocate the OK button in the IDD_TT_PROPERTIES dialog.
+
+2000-03-13  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/testtoolres.h,
+	  win32/LocalPropertiesDialog.cpp:
+
+	Fix crash by removing references to obsolete controls
+	in the local properties dialog.
+
+2000-03-10 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\RunTestsSheet.cpp
+    win32\TestTool.dsp
+	
+	Move CeCosTrace class to its own file
+
+2000-03-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/TestTool.rc,
+	  win32/PlatformsDialog.cpp:
+
+	Use 'REMOTE_SIM' as the platform type identifier for
+	remote simulators.
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\RunTestsSheet.cpp
+
+  Add name argument to RunThread calls for debugging.
+
+2000-03-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\RunTestsSheet.cpp
+    win32\TestTool.dsp
+
+  Tidy output and trace functions and move to CeCosTrace
+
+2000-03-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\RunTestsSheet.cpp
+    win32\RunTestsSheet.h
+
+  Thread-related eCosTest code extracted to new class CeCosThreadUtils  
+
+2000-03-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\TestTool.dsp
+
+  Add new Utils files.
+
+2000-03-02 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\TestTool.dsp
+    win32\TestTool.rc
+    win32\testtoolres.h
+
+  Use common CSubprocess class implementation.
+
+2000-02-29 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\LocalPropertiesDialog.cpp
+    win32\LocalPropertiesDialog.h
+    win32\PropertiesDialog.cpp
+    win32\PropertiesDialog.h
+    win32\RunTestsSheet.cpp
+    win32\RunTestsSheet.h
+    win32\TestTool.dsp
+    win32\TestTool.rc
+    win32\testtoolres.h
+
+  Change to flexible reset scheme.
+  CeCosTestUtils::String -> String, CeCosTestUtils::StringArray -> StringArray
+
+2000-02-25 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\LocalPropertiesDialog.cpp
+    win32\LocalPropertiesDialog.h
+    win32\PropertiesDialog.cpp
+    win32\PropertiesDialog.h
+    win32\RunTestsSheet.cpp
+    win32\RunTestsSheet.h
+    win32\TestTool.rc
+    win32\testtoolres.h
+
+  Reset control string verification fully server-side
+
+2000-02-25 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\RunTestsSheet.cpp
+
+  Reset control string verification fully server-side
+
+2000-02-24 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\RunTestsSheet.cpp : Use new CResetAttributes class
+
+2000-02-23 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\PlatformsDialog.cpp
+    win32\TestTool.rc
+
+  Allow HwTypes to be expressed as strings.
+
+2000-02-17 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\PlatformsDialog.cpp
+
+  Ensure correct state of buttons on startup.
+
+2000-02-17  John Dallaway  <jld@redhat.co.uk>
+
+	* win32\TestTool.dsp:
+
+	Add the ChangeLog file to the project.
+
+2000-02-16 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\RunTestsSheet.cpp
+    win32\TestTool.rc
+    win32\testtoolres.h
+
+  Add support for defining platforms.
+
+2000-02-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\ExecutionPage.cpp
+    win32\ExecutionPage.h
+    win32\FileListBox.cpp
+    win32\FileListBox.h
+    win32\LocalPropertiesDialog.cpp
+    win32\LocalPropertiesDialog.h
+    win32\OutputEdit.cpp
+    win32\OutputEdit.h
+    win32\OutputPage.cpp
+    win32\OutputPage.h
+    win32\PropertiesDialog.cpp
+    win32\PropertiesDialog.h
+    win32\RemotePropertiesDialog.cpp
+    win32\RemotePropertiesDialog.h
+    win32\RunTestsDlg.cpp
+    win32\RunTestsDlg.h
+    win32\RunTestsSheet.cpp
+    win32\RunTestsSheet.h
+    win32\StdAfx.cpp
+    win32\StdAfx.h
+    win32\SummaryPage.cpp
+    win32\SummaryPage.h
+    win32\TestTool.cpp
+    win32\TestTool.h
+    win32\testtoolres.cpp
+    win32\testtoolres.h
+
+  Update copyright headers
+
+2000-02-11  John Dallaway  <jld@redhat.co.uk>
+
+  * win32\OutputPage.cpp:
+
+  Reduce output page font size to help reduce typical
+  dialog size requirement.

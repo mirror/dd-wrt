@@ -1,0 +1,89 @@
+2001-05-02  Hugo Tyson  <hmt@redhat.com>
+
+	* include/devs_eth_nano.inl: Because we now arrange PCI window
+	memory distant from normal RAM, it can be scattered in physical
+	RAM.  So define CYGHWR_DEVS_ETH_INTEL_I82559_PCIMEM_DISCONTIGUOUS.
+	This is not really needed by default with only 1Mb of PCI window,
+	but the overhead is small.
+
+2001-03-15  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/nano_eth_drivers.cdl: New component defined here because
+	it's platform dependent whether it's relevent, to control
+	additional variables in RedBoot's flash config system.
+	(CYGPKG_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA): the new component.
+	(CYGVAR_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA_ETH0): and so on,
+	control whether we create flash config variables here.
+	
+	* include/devs_eth_nano.inl: Define flash config variables, and
+	macro to access them from the generic driver, called
+	CYGHWR_DEVS_ETH_INTEL_I82559_GET_ESA(p_i82559,mac_address,ok).
+
+2001-03-13  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/nano_eth_drivers.cdl (CYGPKG_DEVS_ETH_ARM_NANO_ETH1):
+	enabled by default; full demux ability now supported in generic
+	device.
+
+2001-03-12  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/nano_eth_drivers.cdl (CYGPKG_DEVS_ETH_ARM_NANO_ETH1):
+	disabled by default.  The DEMUXing stuff for dealing with the fact
+	that both devices are connected to GPIO0 is incomplete in the
+	generic driver.
+
+	* include/devs_eth_nano.inl: Add additional macros to get
+	platform-required behaviour:
+	(CYGHWR_DEVS_ETH_INTEL_I82559_MISSED_INTERRUPT): Poll for a missed
+	interrupt by examining the level-attached GPIO lines.
+	(CYGHWR_DEVS_ETH_INTEL_I82559_RESET_TIMEOUT):
+	(CYGHWR_DEVS_ETH_INTEL_I82559_TIMEOUT_FIRED): Set and test timing
+	compared to the ever-incrementing system OS timer *SA11X0_OSCR.
+	(CYGPRI_DEVS_ETH_INTEL_I82559_MASK_INTERRUPTS): 
+	(CYGPRI_DEVS_ETH_INTEL_I82559_UNMASK_INTERRUPTS): 
+	(CYGPRI_DEVS_ETH_INTEL_I82559_ACK_INTERRUPTS): Rename local
+	interrupt handing macros.
+
+2001-03-01  Hugo Tyson  <hmt@redhat.com>
+
+	* include/devs_eth_nano.inl: New file.
+	* cdl/nano_eth_drivers.cdl: New file.
+	Platform specific information required to use the generic i82559
+	driver for the BSE nanoEngine/nanoBridge SA1110 platform.
+	This requires more configurability of the generic i82559
+	introduced on the same date.
+	
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

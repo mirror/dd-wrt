@@ -1,0 +1,380 @@
+2004-10-13  David Brennan <eCos@brennanhome.com>
+
+	* src/pci.c: Added include of cyg/infra/diag.h to fix compiler
+	warning.
+
+2004-10-12  Mark Salter  <msalter@redhat.com>
+
+	* cdl/io_pci.cdl (CYGPKG_IO_PCI_CONFIGURE_INTLINE): New option.
+	* src/pci.c (cyg_pci_translate_interrupt): Don't write INT LINE
+	register unless CYGPKG_IO_PCI_CONFIGURE_INTLINE defined.
+
+2004-08-31  Mark Salter  <msalter@redhat.com>
+
+	* src/pci.c (cyg_pci_translate_interrupt): Write vector number into
+	INT_LINE register.
+	(cyg_pci_get_device_info): Add mechanism for HALs to specify certain
+	BARs to be ignored.
+	* include/pci_hw.h (CYG_PCI_IGNORE_BAR): New macro.
+	* doc/pci.sgml: Add info on HAL_PCI_IGNORE_BAR.
+
+2004-01-14  Nick Garnett  <nickg@calivar.com>
+
+	* src/pci.c (cyg_pci_get_device_info): Added fix for devices that
+	only implement the bottom 16 bits of an IO BAR. This is allowed by
+	the standard but is very rare and mostly present in older devices
+	only. Without this cyg_pci_allocate_io_priv() gets confused.
+
+2004-01-09  David Vrabel  <dvrabel@arcom.com>
+        
+	* src/pci.c (cyg_pci_find_device): Remove debug message.
+
+2003-11-27  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/pci.c (cyg_pci_find_device): Removed a debug print which should
+	not be there and is causing an warning.
+
+2003-11-18  Manu Sharma  <manu.sharma@ascom.com>
+
+        * src/pci.c : Additional changes in cyg_pci_get_device_info, 
+        cyg_pci_set_device_info and cyg_pci_configure_device to be able
+        to support non-contiguous BARs.
+
+2003-09-29  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/pci.c (cyg_pci_get_device_info): Removed check for inactive
+	BARs since the requirement for the BARs to be contiguous has been
+	relaxed in more recent versions of the PCI standard.
+
+2003-08-08  Gary Thomas  <gary@mind.be>
+
+	* include/pci.h: Add CYGARC_PCI_DMA_ADDRESS() macro - used to
+	map CPU addresses to ones usable by PCI masters.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/io_pci.cdl: Fix doc link.
+
+2003-02-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/pci.c (cyg_pci_get_device_info): While scanning active
+	devices, remember the I/O and memory addresses they use.  This
+	allows for new devices to be added which will not conflict.
+
+2003-02-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/pcihdr.h: Update to latest published version.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* tests/pci1.c: Fix warning.
+
+2002-02-13  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/pci.sgml: Tidy up some typos and PROGRAMLISTING width
+	issues.
+
+2002-02-11  Mark Salter  <msalter@redhat.com>
+
+	* doc/pci.sgml: Brought docs up to date with current code.
+
+2002-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/pci.c (cyg_pci_init): Set default memory and io bases here
+	as the HAL_PCI_ALLOC_BASE_* macros may not be static values.
+
+2002-01-21  Mark Salter  <msalter@redhat.com>
+
+	* src/pci.c (cyg_pci_get_device_info): Fix setting of upper 32 bits
+	for 64-bit BAR.
+
+2001-09-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/pci.c (cyg_pci_find_next): 
+	* include/pci.h: Allow platforms to restrict PCI bus/device ranges.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/pci.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-02-28  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/pci1.c (pci_scan): Added a new function to re-scan the
+	device list after configuring to let a human confirm that we truly
+	are seeing distinct devices - ie. do they retain their distinct
+	resource allocations in the BARs?  This was useful to me in
+	investigating a recalcitrant target...
+
+2001-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* tests/pci2.c (pci_test): Removed bogus check for 1MB IO limit.
+
+2001-01-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/pci.c (cyg_pci_get_device_info): Do correct casting of
+	header_type. Do not make assumptions about structure layout.
+
+	* tests/pcihdr.h: Updated.
+
+2001-01-02  Hugo Tyson  <hmt@redhat.com>
+
+	* include/pci.h: Define new API to perform more generalized matching
+	on device properties.
+
+	* src/pci.c (cyg_pci_find_matching): New API implementation.
+
+2000-12-21  Mark Salter  <msalter@redhat.com>
+
+	* include/pci_hw.h: Add platform hook so certain devices
+	can be skipped by generic PCI io code. This is a workaround
+	for a hw problem where configuration space cycles on some
+	devices cause a bus lockup.
+	
+	* src/pci.c (cyg_pci_find_next): Use platform hook to ignore
+	certain devices during device search.
+
+2000-12-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/pci.c: 
+	* cdl/io_pci.cdl: Add CDL to control debug prints.
+
+2000-11-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/pci.c (cyg_pci_find_next): Improve debug prints when
+	scanning the bus, showing vendor and device code for each slot.
+
+2000-11-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/pci.c (cyg_pci_find_device): Don't update 'devid' if no
+	suitable devices found.  This allows for simpler rescan for
+	multiple device types.
+
+2000-11-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/pci_hw.c: 
+	* src/pci.c: Layout changes require <pkgconf/hal.h>
+
+2000-11-06  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/pci.c (cyg_pci_find_next): Conditionalize debug printfs
+
+2000-11-04  Mark Salter  <msalter@redhat.com>
+
+	* src/pci.c (cyg_pci_get_device_info): Add bridge support. Handle
+	already configured devices.
+	(cyg_pci_set_device_info): Add bridge support.
+	(cyg_pci_find_next): Support device id with valid bus number
+	combined with CYG_PCI_NULL_DEVFN.
+	(cyg_pci_configure_device): Return true if device already configured.
+	Fixed for devices which use no BARs.
+	(cyg_pci_allocate_io_priv): Remove bogus limit check.
+	(cyg_pci_configure_bus): New function to recursively configure a
+	bus and its subordinate bases.
+
+	* include/pci_cfg.h: Added bridge definitions.
+	(CYG_PCI_CFG_BAR_5): Corrected.
+
+	* include/pci.h (CYG_PCI_NULL_DEVFN): Define.
+	(cyg_pci_device): Add bridge support. Add num_bars. Add
+	declaration for cyg_pci_configure_bus.
+	(CYG_PCI_MAX_BUS): Increase to (arbitrary) 8.
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/io_pci.cdl:
+
+	Adjust documentation URLs.
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl\io_pci.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl\io_pci.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/io_pci.cdl (CYGPKG_IO_PCI): Relevant to more than one platform
+	so reparent under IO package
+	(CYGPKG_IO_PCI_CFLAGS_REMOVE): Fix display line typo
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/io_pci.cdl: Define build options.
+
+1999-09-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/pci2.c (pci_test): Replaced CYG_ASSERT with CYG_TEST_CHECK
+
+1999-09-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/io_pci.h: Reparent under CYGPKG_IO - this is used under
+	more than one target now and the library itself is generic.
+
+1999-08-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/pci.c (cyg_pci_init): Made it idempotent.
+
+	* tests/pci1.c:
+	* tests/pci2.c:
+	* src/pci.c: 
+	* include/pci.h: 
+	All functions that deal with addresses in PCI space now use PCI
+	ADDRESS types.
+	
+1999-08-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/pci1.c: 
+	* tests/pci2.c: 
+	* include/pci.h: 
+	* src/pci.c:
+	Handle requests for memory regions in 64bit space.
+	
+1999-08-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/pci1.c: Added more output, resource allocation, debug help
+	(enable devices).
+
+	* src/pci.c (cyg_pci_find_next): Handle multi-function devices.
+
+	* include/pci_cfg.h (CYG_PCI_CFG_COMMAND_ACTIVE): Added MASTER.
+	Added HEADER_TYPE definitions.
+
+1999-08-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/pci1.c: Fixed a couple of bugs in the vendor/device/class
+	table search code.
+
+1999-08-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/pcihdr.h: [Added]
+	* tests/pci1.c: Added Vendor/Device ID description output.
+
+	* include/pci_cfg.h: Added vendor and class IDs.
+	Also added Prog/IF IDs.
+
+1999-08-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/pci1.c (pci_test): Added printf() of class_rev code to
+	output of bus scan.
+
+	* include/pci.h (CYG_PCI_MAX_FN): Increased to 8.
+
+1999-08-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/pci.c (cyg_pci_allocate_memory, cyg_pci_allocate_io):
+	Check that device is inactive. Ensure that 1MB limits (IO/MEM1MB)
+	are observed.
+
+	* tests/pci2.c (pci_test): Added tests of io/mem allocators.
+
+1999-08-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/pci2.c (pci_test): Added (empty for now)
+	* tests/pci1.c: Added API checks.
+	* include/pci.h: Fixed typo.
+
+	* include/pci.h (CYG_PCI_NULL_DEVID): Changed initializer.
+	* src/pci.c (cyg_pci_find_next): Correct check for initializer.
+
+	* tests/pci1.c: Added.
+	Fixed output.
+
+	* include/pci_cfg.h: 
+	* include/pci.h: 
+	* include/pci_hw.h: 
+	* src/pci_hw.c: 
+	* src/pci.c: 
+	Renamed cyg_pci_config_interrupt to cyg_pci_translate_interrupt.
+	Untabified.
+	
+1999-08-16  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/io_pci.cdl:
+
+	Parent PCI library package under package on which it depends.
+
+1999-08-16  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/io_pci.h:
+
+	Parent PCI package under package on which it depends.
+
+1999-08-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pci.h: 
+	* src/pci.c (cyg_pci_config_interrupt): 
+	* include/pci_hw.h:
+	* src/pci_hw.c (cyg_pcihw_config_interrupt): 
+	Added interrupt configuration functions.
+	
+1999-08-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pci_cfg.h:
+	* include/pci.h: 
+	* src/pci_hw.c:
+	* src/pci.c:
+	Extended cyg_pci_device and API.
+	Renamed HAL macros.
+	Put physical address in base_map.
+
+	(cyg_pci_get_device_info): Fix switch. Clear base_size when device
+	enabled.
+
+1999-08-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pci_hw.h:
+	* include/pci_cfg.h:
+	* include/pci.h: 
+	* src/pci_hw.c: 
+	* src/pci.c:
+	Renamed some registers. Fixed some bad arguments. Added forgotten
+	externCs.
+	cyg_pci_configure_device fleshed out a bit.
+	
+	* First half-empty files checked in.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

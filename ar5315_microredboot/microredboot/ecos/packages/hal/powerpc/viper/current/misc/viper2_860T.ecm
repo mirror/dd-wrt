@@ -1,0 +1,13 @@
+cdl_component CYGHWR_HAL_POWERPC_MPC8XX {
+    user_value 860T
+};
+
+cdl_option CYGHWR_HAL_POWERPC_VIPER_I {
+    inferred_value 0
+};
+
+cdl_option CYGHWR_HAL_POWERPC_VIPER_II {
+    user_value 1
+};
+
+

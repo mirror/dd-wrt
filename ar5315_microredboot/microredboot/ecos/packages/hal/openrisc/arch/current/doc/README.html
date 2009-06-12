@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>README - eCos OpenRISC Port</title>
+   
+</head>
+<body>
+ For those unfamiliar with OpenRISC, it is an open-source RISC/DSP processor 
+architecture. &nbsp;OpenCores.org makes available an <a
+ href="http://www.opencores.org/projects/or1k">implementation</a> of this 
+architecture that can be synthesized, for example, as part of an FPGA or ASIC.
+&nbsp;The port of eCos to OpenRISC was sponsored by the <a
+ href="http://www.rosum.com">Rosum Corporation</a>.<br>
+ <br>
+ A few notes and caveats about the eCos OpenRISC port: 
+<ul>
+   <li>The only platform supported at this time is ORP (OpenRISC Reference 
+Platform).</li>
+   <li>The only ORP devices supported so far are serial ports used for  
+  diagnostic and debugging purposes and AM29LVxxxx Flash ROM.</li>
+   <li>To build and debug, you must build the GNU development tools from
+    <a
+ href="#%20http://www.opencores.org/projects/or1k/GNU%20Toolchain%20Port">source 
+available at the OpenCores web site</a> -- not the versions      available 
+from the GNU  web site or elsewhere. &nbsp;There is a <a
+ href="./build_or32_elf_tools.sh">shell script</a> in this directory that 
+will assist in downloading     and building the GNU toolchain.</li>
+   <li>For debugging, you can use either gdb's JTAG target or the serial
+    target.  The latter has some advantages, e.g. the gdb serial target is
+thread-aware, but it is much slower, especially while     simulating.<br>
+  </li>
+ 
+</ul>
+ Scott Furman<br>
+ <i>sfurman at rosum dot com</i><br>
+ <br>
+ 
+</body>
+</html>

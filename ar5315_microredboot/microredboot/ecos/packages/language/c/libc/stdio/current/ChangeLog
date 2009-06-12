@@ -1,0 +1,494 @@
+2004-09-27  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/stdio.cdl (CYGFUN_LIBC_STDIO_OPEN_POSIX_FDFUNCS): New option,
+	to control whether or not fdopen()/fileno() are implemented.
+	Only build fopen/fclose if CYGPKG_LIBC_STDIO_OPEN.
+
+	* src/common/fclose.cxx: Can remove ifdef CYGPKG_LIBC_STDIO_OPEN since
+	file now isn't even built if not.
+	* src/common/fopen.cxx: Ditto. Also condition on
+	CYGFUN_LIBC_STDIO_OPEN_POSIX_FDFUNCS so decision is centralised in CDL.
+
+2004-08-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/stdio.cdl (CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE): Only use
+	CYGDAT_IO_SERIAL_TTY_CONSOLE if set.
+
+2004-08-18  Fredrik Hederstierna  <fredrik@wespot.com>
+2004-08-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/input/vfscanf.cxx (vfscanf): Add long long and long double
+	support.
+	* cdl/stdio.cdl (CYGFUN_LIBC_STDIO_LONGLONG): Make it a new option.
+
+2004-08-16  Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* src/common/stream.cxx (read): fixed performance problem with
+	unbuffered reads. Long unbuffered i/o read requests would cause
+	one roundtrip to the underlying file system for each byte, instead
+	of a single trip as intended.
+
+2004-03-29  Kelvin Lawson <klawson@ad-holdings.co.uk>
+
+	* src/common/fopen.cxx:
+	* src/common/stream.cxx:
+	* include/io.inl:
+	* include/stream.hxx:
+	Split CYGSTREAM_READWRITE into CYGSTREAM_READWRITE_CREATE and
+	CYGSTREAM_READWRITE_NOCREATE. This fixes fopen() with mode 'w+'
+	which previously did not allow file creation.
+
+2004-03-27  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/stream.inl (set_position): Flush the output buffer
+	before seeking the underlying file otherwise the writes ends up in
+	the wrong location in the file.
+	
+2004-03-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/common/fileops.cxx (tmpnam): Only close if open() succeded.
+
+2004-03-12  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/input/vfscanf.cxx (vfscanf): Silence warning.
+
+	* include/stdio.h:
+	Add file operation functions which weren't here before!
+	While I'm here, add __THROW everywhere and use __externC not externC.
+
+	* cdl/stdio.cdl:  We implement stdio fileops in isoinfra now.
+	Also set header for that.
+	Build fileops.cxx.
+	L_tmpnam must be at least 4.
+	TMP_MAX must be at least 1, and ISO C says it should be >=25.
+	Add description for CYGPKG_LIBC_STDIO_FILEIO and move up from
+	bottom so it goes with others.
+
+	* src/common/fileops.cxx: New file. Implements rename(), remove(),
+	tmpnam() and tmpfile().
+
+	* src/common/fclose.cxx: Add throw specifiers to match stdio.h.
+	* src/common/feof.cxx: Ditto.
+	* src/common/fflush.cxx: Ditto.
+	* src/common/fopen.cxx: Ditto.
+	* src/common/freopen.cxx: Ditto.
+	* src/common/fseek.cxx: Ditto.
+	* src/common/setvbuf.cxx: Ditto.
+	* src/common/snprintf.cxx: Ditto.
+	* src/common/sprintf.cxx: Ditto.
+	* src/common/sscanf.cxx: Ditto.
+	* src/common/stdioinlines.cxx: Ditto.
+	* src/common/ungetc.cxx: Ditto.
+	* src/common/vsnprintf.cxx: Ditto.
+	* src/common/vsscanf.cxx: Ditto.
+	* src/input/fgetc.cxx: Ditto.
+	* src/input/fgets.cxx: Ditto.
+	* src/input/fread.cxx: Ditto.
+	* src/input/fscanf.cxx: Ditto.
+	* src/input/gets.cxx: Ditto.
+	* src/input/scanf.cxx: Ditto.
+	* src/input/vfscanf.cxx: Ditto.
+	* src/output/fnprintf.cxx: Ditto.
+	* src/output/fprintf.cxx: Ditto.
+	* src/output/fputc.cxx: Ditto.
+	* src/output/fputs.cxx: Ditto.
+	* src/output/fwrite.cxx: Ditto.
+	* src/output/printf.cxx: Ditto.
+	* src/output/vfnprintf.cxx: Ditto.
+	
+2004-02-17  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/stdio.cdl (CYGSEM_LIBC_STDIO_THREAD_SAFE_STREAMS): Can
+	be inactive when no kernel.
+	* cdl/stdio.cdl: Implements file positioning functions in isoinfra.
+
+2003-09-03  Thomas Koeller <thomas.koeller@baslerweb.com>
+
+	* cdl/stdio.cdl: only require "/dev/haldiag" if actually using it.
+
+2003-08-12  Scott Wilkinson <scott@alliantnetworks.com>
+	
+	* src/common/fclose.cxx (fclose): fclose would seg-fault if passed
+        NULL FILE pointer.  Now returns error.  Also cleaned up some exit
+        paths to call Cyg_libc_stdio_files::unlock()
+
+        * src/common/fopen.cxx (fopen): Cleaned up some exit paths to call
+        Cyg_libc_stdio_files::unlock()
+
+2003-06-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+	    Knud Wöhler  <woehler@ossi.fho-emden.de>    
+	
+	* src/output/vfnprintf.cxx (SARG): Cast size_t to long. This seems
+	to stop gcc from producing wrong code for the plain int clause. The 
+	wrong code causes negative numbers to be printed as positive because
+	the sign extend from 32 bits to 64 bits is wrong.
+
+2003-03-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/input/fread.cxx (fread): Simple EOF should not set error.
+
+	* tests/fileio.c: New file.
+	* cdl/stdio.cdl: Add new file I/O tests.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/stdio.cdl: Fix doc link.
+
+2003-02-15  Fabrice Gautier  <Fabrice_Gautier@sdesigns.com>
+
+	* include/stdio.inl (setbuf): Don't supply size with _IONBF.
+	* src/common/stdioinlines.cxx (setbuf): Ditto.
+
+2003-01-29  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/output/vfnprintf.cxx: Add support for C99 'z' flag (size_t).
+
+2002-09-02  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/stream.inl (set_position): Fixed typo in none buffered
+	case. Seek pos bytes, not whence bytes.
+
+2002-05-17  Martin Buck  <martin.buck@ascom.ch>
+ 
+ 	* include/stdio.h (fnprintf): Added printf-format-checking using
+ 	CYGBLD_ATTRIB_PRINTF_FORMAT, since gcc does it automatically only for
+ 	ISO C90 functions.
+ 	(snprintf) Likewise.
+ 
+2002-04-24  Yoshinori Sato  <qzb04471@nifty.ne.jp>
+
+	* include/streambuf.inl (Cyg_StdioStreamBuffer constructor): 
+	Don't set default args in func definition.
+	(set_buffer): Ditto.
+
+2002-04-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/input/fgetc.cxx (fgetc): Silence conversion warning.
+
+2002-04-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/common/fopen.cxx (fopen_inner): Allocate memory using malloc and
+	placement new, not default new.
+
+	* src/input/fgetc.cxx (fgetc): Don't set error on true EOF.
+
+2002-04-04  Jurica Baricevic  <jura@INTESIS.hr>
+
+	* src/common/fclose.cxx (fclose): Use delete if we can.
+
+2002-02-06  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/input/fread.cxx (fread): when looping read into ptrc, not ptr!
+
+2002-01-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stream.inl (set_position): Fix the seek backwards case again.
+	Doh!
+
+2002-01-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stream.inl (set_position): Fix the posdiff == 0 case.
+
+2002-01-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/stream.inl (set_position): Check that posdiff is >0
+	before taking the code path that assumes so.
+
+2002-01-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stream.inl (set_position): Use an off_t for bytesavail to
+	prevent warnings.
+
+2001-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/common/fflush.cxx (cyg_libc_stdio_flush_all_but): Fix starvation
+	problem when waiting for threads to unlock of lower priority.
+	Fix for bug #57014.
+
+2001-11-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/stdio.cdl: Add dependency on stdlib string conversion functions
+	for *scanf.
+
+2001-08-10  Robin Farine  <robin.farine@terminus.org>
+
+        * src/output/vfnprintf.cxx (cvt): Handles the cases of finite,
+        NaN and infinite numbers separately.
+
+	* src/common/stream.cxx (read): Read correct number of bytes when
+	a character has been "ungot".
+
+2001-08-03  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/streambuf.inl (~Cyg_StdioStreamBuffer): use correct configury
+	to decide when to call free.
+
+2001-07-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/common/fflush.cxx (cyg_libc_stdio_flush_all_but): The check
+	for last operation being a read is only valid in buffered IO mode.
+
+2001-07-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stream.inl (set_position): Take read buffer into account
+	when seeking. Thanks to jjtsai <jjtsai@itri.org.tw> for the
+	help.
+
+2001-07-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/common/fflush.cxx (cyg_libc_stdio_flush_all_but): Don't
+	flush a stream that was last used for reading - it doesn't need it.
+	* include/stream.hxx: cyg_libc_stdio_flush_all_but needs to be a
+	friend of class Cyg_StdioStream to do the above.
+
+2001-06-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/input/fread.cxx (fread): Fix compilation problem with below
+	change.
+
+2001-06-15  Rob Jansen  <rwjansen@planet.nl>
+
+	* src/input/fread.cxx (fread): Changed to read the requested amount
+	of data items instead of stopping on CYG_LIBC_STDIO_BUFSIZE boundaries.
+
+2001-06-08  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* src/input/vfscanf.cxx (vfscanf)[CYGINT_LIBC_I18N_MB_REQUIRED]: Added
+	call to mbtowc_fn for current locale to process format string.
+	Also added variable definitions needed in this circumstance.
+	* src/output/vfnprintf.cxx (vfnprintf)[CYGINT_LIBC_I18N_MB_REQUIRED]: Ditto.
+	(vfnprintf): Changed non-multibyte path to simply use the current
+	character rather than call the C mbtowc function since only
+	single byte characters would be possible. 
+
+2001-03-19  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/common/stream.cxx (refill_read_buffer): Flush all streams here...
+	(read): ...rather than here, or...
+	(read_byte): ...here.
+	This means less flushing, which improves performance.
+
+	* src/input/fgets.cxx: Add a reminder comment to improve this later.
+	* src/input/gets.cxx: Ditto.
+
+
+2001-03-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stream.hxx (class Cyg_StdioStream): Improve member visibility.
+
+	* src/common/stream.cxx (refill_read_buffer): Ensure eof is set.
+	* src/common/feof.cxx: New file. Implements the long lost
+	feof(), ferror() and clearerr() functions which were MIA for
+	no good reason.
+	* cdl/stdio.cdl: Build it.
+
+2001-03-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/stdio.cdl (CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE): Default to
+	tty default console.
+
+	* src/input/fgets.cxx (fgets): Reimplement to work with EOF properly.
+	Add tracing.
+	* src/input/gets.cxx (gets): Ditto.
+
+	* include/io.hxx, include/io.inl, include/stream.hxx,
+	include/stream.inl, include/streambuf.hxx, include/streambuf.inl:
+	Silence warnings from recent compilers.
+
+2001-02-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/stdio.cdl (CYGPKG_LIBC_STDIO_OPEN): Implements
+	CYGINT_ISO_STDIO_POSIX_FDFUNCS ( fileno() and fdopen() ).
+
+2000-11-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stdio.h: Make FILE array type larger to be more resistant
+	against small data sections.
+	Lose the cyg_libc_stdio_stdin/out/err definitions with macros for
+	stdin/stdout/err since it can cause problems with libgcc exception
+	code. Instead just make these extern FILE *s.
+	* src/common/stderr.cxx:
+	* src/common/stdin.cxx:
+	* src/common/stdout.cxx:
+	Define objects with init priority corresponding to order the fd's
+	should be allocated where applicable.
+	Define actual stdin, stdout, stderr externally visible constants to
+	point to the streams.
+
+	* cdl/stdio.cdl: Support CYGINT_ISO_STDIO_STREAMS interface
+
+	* src/common/fopen.cxx (fdopen): return f as intended
+
+2000-10-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/streambuf.inl: Adjust assertions to cope with buffers
+	generated by sprintf and similar non-bound-buffer calls.
+
+2000-08-09  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/io.inl: No need to include string.h
+
+	* cdl/stdio.cdl: Add some more requires statements
+
+2000-08-07  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/common/stream.cxx (Cyg_StdioStream::Cyg_StdioStream):
+	Only call io_buf members conditionally.
+
+2000-08-03  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/common/fseek.cxx: Include assertion and tracing support since
+	they are used.
+
+2000-07-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/stream.hxx (class Cyg_StdioStream): Added get_dev()
+	accessor member function to return underlying device handle.
+
+	* src/common/fopen.cxx: Added fdopen() and fileno(). Reorganized
+	fopen() so that code common with fdopen() is now in a separate
+	function.
+
+	* src/common/stdiosupp.cxx (Cyg_libc_stdio_find_filename): Removed
+	compiler warning.
+
+2000-07-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* cdl/stdio.cdl: Added common/fseek.cxx to compile list.
+	Reorganized options for stream buffering:
+	CYGSEM_LIBC_STDIO_DYNAMIC_SETVBUF now controls whether the user
+	can attach their own buffer to the stream.
+	CYGSEM_LIBC_STDIO_SETVBUF_MALLOC controls whether buffers can be
+	malloced or only statically defined.
+	Added CYGPKG_LIBC_STDIO_FILEIO option to control whether the STDIO
+	package uses the FILEIO package for all IO, or goes directly to
+	the device drivers as before.
+
+	* include/stdio.h: Added file positioning calls defined in section
+	7.9.9 of the standard.
+
+	* include/io.hxx: 
+	* include/io.inl:
+	Added these files to define an abstraction layer for access to the
+	real device underlying an IO stream. Depending on
+	CYGPKG_LIBC_STDIO_FILEIO this either goes to the FILEIO package or
+	directly to the device drivers.
+	
+	* include/stream.hxx:
+	Modifications to use io.hxx abstractions.
+	Added second constructor for creating a buffer-only stream.
+	Added initialize() function which contains most of the common
+	stream initialization code.
+	Added a close() member function.
+
+	* include/stream.inl:
+	Modifications to use io.hxx abstractions.
+	Moved most of the work of the destructor into close() member.
+	Added FILEIO version of set_position() member function.
+	
+	* include/streambuf.hxx:
+	* include/streambuf.inl:
+	* src/common/streambuf.cxx: 
+	Rearranged to match new buffering configuration options.
+
+	* src/common/stream.cxx:
+	Modifications to use io.hxx abstractions.
+	Added second constructor, and moved common initialization code to
+	initialize() member function.
+	Added code to make position member correctly track current file
+	position.
+
+	* src/common/fopen.cxx:
+	Fixed handling of write/append in process_mode().
+	Moved call of process_mode() to before call to cyg_stdio_open() so
+	that stream modes may be passed in.
+	Added code to detect an interactive stream and choose non-buffered
+	mode - fully buffered is now the default.
+	Added calls to cyg_stdio_close() where appropriate.
+
+	* src/output/vfnprintf.cxx: Removed FLUSH() macro and its
+	uses. Deciding to flush should be in the hands of the buffer code,
+	or the user calling fflush().
+
+	* src/common/vsscanf.cxx:
+	Added FILEIO variant of vsscanf(). This uses a precharged stream
+	object to emulate input.
+
+	* src/common/vsnprintf.cxx: 
+	Added FILEIO variant of vsnprintf(). This uses the standard stream
+	object to print into the supplied buffer.
+	
+	* src/common/fseek.cxx:
+	Added this file to implement file positioning functions.
+
+	* src/common/fclose.cxx (fclose):
+	Added call to Cyg_StdioStream::close().
+
+	* include/stdiosupp.hxx:
+	* src/common/stdiosupp.cxx: 
+	Modified Cyg_libc_stdio_find_filename() to take mode, binary and
+	append arguments.
+
+	* src/common/stdin.cxx: 
+	* src/common/stdout.cxx: 
+	* src/common/stderr.cxx:
+	Modified calls to Cyg_libc_stdio_find_filename() to pass
+	appropriate values for mode, binary and append arguments.
+
+2000-06-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/common/vsscanf.cxx: Add NULL select entry to DEVIO_TABLE
+	* src/common/vsnprintf.cxx: Likewise
+
+2000-05-25  Hugo Tyson  <hmt@cygnus.co.uk>
+ 
+        * include/stream.inl (set_error): If the error is EEOF, set
+        the EOF flag (flags.at_eof) so that clients know.
+ 
+        * src/input/fgetc.cxx (__fgetc):
+        * src/input/fgets.cxx (_fgets):
+        * src/input/fread.cxx (_fread): Correctly handle an error,
+        or EOF indication, from real_stream->refill_read_buffer().
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* New package
+	Separated original libc out into separate packages on functional
+	boundaries.
+	Header files are now managed by isoinfra package
+	Plenty of cleanups done, but no major functionality changes
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

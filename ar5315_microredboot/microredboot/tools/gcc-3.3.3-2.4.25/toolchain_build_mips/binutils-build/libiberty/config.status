@@ -1,0 +1,688 @@
+#! /bin/sh
+# Generated automatically by configure.
+# Run this file to recreate the current configuration.
+# This directory was configured as follows,
+# on host dd-wrt:
+#
+# /home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty/configure  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty
+#
+# Compiler output produced by configure, useful for debugging
+# configure, is in ./config.log if it exists.
+
+ac_cs_usage="Usage: ./config.status [--recheck] [--version] [--help]"
+for ac_option
+do
+  case "$ac_option" in
+  -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
+    echo "running ${CONFIG_SHELL-/bin/sh} /home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty/configure  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty --no-create --no-recursion"
+    exec ${CONFIG_SHELL-/bin/sh} /home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty/configure  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty --no-create --no-recursion ;;
+  -version | --version | --versio | --versi | --vers | --ver | --ve | --v)
+    echo "./config.status generated by autoconf version 2.13"
+    exit 0 ;;
+  -help | --help | --hel | --he | --h)
+    echo "$ac_cs_usage"; exit 0 ;;
+  *) echo "$ac_cs_usage"; exit 1 ;;
+  esac
+done
+
+ac_given_srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty
+ac_given_INSTALL="/usr/bin/install -c"
+
+trap 'rm -fr Makefile testsuite/Makefile config.h conftest*; exit 1' 1 2 15
+
+# Protect against being on the right side of a sed subst in config.status.
+sed 's/%@/@@/; s/@%/@@/; s/%g$/@g/; /@g$/s/[\\&%]/\\&/g;
+ s/@@/%@/; s/@@/@%/; s/@g$/%g/' > conftest.subs <<\CEOF
+
+
+s%@SHELL@%/bin/sh%g
+s%@CFLAGS@%-g -O2%g
+s%@CPPFLAGS@%%g
+s%@CXXFLAGS@%-g -O2%g
+s%@FFLAGS@%%g
+s%@DEFS@%-DHAVE_CONFIG_H%g
+s%@LDFLAGS@%%g
+s%@LIBS@%-ldl %g
+s%@exec_prefix@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips%g
+s%@prefix@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips%g
+s%@program_transform_name@%s,x,x,%g
+s%@bindir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin%g
+s%@sbindir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin%g
+s%@libexecdir@%${exec_prefix}/libexec%g
+s%@datadir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share%g
+s%@sysconfdir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc%g
+s%@sharedstatedir@%${prefix}/com%g
+s%@localstatedir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var%g
+s%@libdir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib%g
+s%@includedir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include%g
+s%@oldincludedir@%/usr/include%g
+s%@infodir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info%g
+s%@mandir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man%g
+s%@libiberty_topdir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty/..%g
+s%@MAINT@%#%g
+s%@NOTMAINT@%%g
+s%@MAKEINFO@%makeinfo%g
+s%@BUILD_INFO@%info%g
+s%@PERL@%perl%g
+s%@HAVE_PERL@%%g
+s%@host@%x86_64-pc-linux-gnu%g
+s%@host_alias@%x86_64-pc-linux-gnu%g
+s%@host_cpu@%x86_64%g
+s%@host_vendor@%pc%g
+s%@host_os@%linux-gnu%g
+s%@build@%x86_64-pc-linux-gnu%g
+s%@build_alias@%x86_64-pc-linux-gnu%g
+s%@build_cpu@%x86_64%g
+s%@build_vendor@%pc%g
+s%@build_os@%linux-gnu%g
+s%@AR@%ar%g
+s%@RANLIB@%ranlib%g
+s%@LN_S@%ln -s%g
+s%@DEMANGLER@%%g
+s%@CC@%gcc%g
+s%@ac_libiberty_warn_cflags@%-W -Wall -Wtraditional -pedantic%g
+s%@NO_MINUS_C_MINUS_O@%%g
+s%@OUTPUT_OPTION@%-o $@%g
+s%@INSTALL_PROGRAM@%${INSTALL}%g
+s%@INSTALL_SCRIPT@%${INSTALL_PROGRAM}%g
+s%@INSTALL_DATA@%${INSTALL} -m 644%g
+/@host_makefile_frag@/r xhost-mkfrag
+s%@host_makefile_frag@%%g
+s%@CPP@%gcc -E%g
+s%@CHECK@%check-cplus-dem%g
+s%@target_header_dir@%%g
+s%@LIBOBJS@% mkstemps.o%g
+s%@pexecute@%pex-unix.o%g
+s%@INSTALL_DEST@%libdir%g
+
+CEOF
+
+# Split the substitutions into bite-sized pieces for seds with
+# small command number limits, like on Digital OSF/1 and HP-UX.
+ac_max_sed_cmds=90 # Maximum number of lines to put in a sed script.
+ac_file=1 # Number of current file.
+ac_beg=1 # First line for current file.
+ac_end=$ac_max_sed_cmds # Line after last line for current file.
+ac_more_lines=:
+ac_sed_cmds=""
+while $ac_more_lines; do
+  if test $ac_beg -gt 1; then
+    sed "1,${ac_beg}d; ${ac_end}q" conftest.subs > conftest.s$ac_file
+  else
+    sed "${ac_end}q" conftest.subs > conftest.s$ac_file
+  fi
+  if test ! -s conftest.s$ac_file; then
+    ac_more_lines=false
+    rm -f conftest.s$ac_file
+  else
+    if test -z "$ac_sed_cmds"; then
+      ac_sed_cmds="sed -f conftest.s$ac_file"
+    else
+      ac_sed_cmds="$ac_sed_cmds | sed -f conftest.s$ac_file"
+    fi
+    ac_file=`expr $ac_file + 1`
+    ac_beg=$ac_end
+    ac_end=`expr $ac_end + $ac_max_sed_cmds`
+  fi
+done
+if test -z "$ac_sed_cmds"; then
+  ac_sed_cmds=cat
+fi
+
+CONFIG_FILES=${CONFIG_FILES-"Makefile testsuite/Makefile"}
+for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
+  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
+  case "$ac_file" in
+  *:*) ac_file_in=`echo "$ac_file"|sed 's%[^:]*:%%'`
+       ac_file=`echo "$ac_file"|sed 's%:.*%%'` ;;
+  *) ac_file_in="${ac_file}.in" ;;
+  esac
+
+  # Adjust a relative srcdir, top_srcdir, and INSTALL for subdirectories.
+
+  # Remove last slash and all that follows it.  Not all systems have dirname.
+  ac_dir=`echo $ac_file|sed 's%/[^/][^/]*$%%'`
+  if test "$ac_dir" != "$ac_file" && test "$ac_dir" != .; then
+    # The file is in a subdirectory.
+    test ! -d "$ac_dir" && mkdir "$ac_dir"
+    ac_dir_suffix="/`echo $ac_dir|sed 's%^\./%%'`"
+    # A "../" for each directory in $ac_dir_suffix.
+    ac_dots=`echo $ac_dir_suffix|sed 's%/[^/]*%../%g'`
+  else
+    ac_dir_suffix= ac_dots=
+  fi
+
+  case "$ac_given_srcdir" in
+  .)  srcdir=.
+      if test -z "$ac_dots"; then top_srcdir=.
+      else top_srcdir=`echo $ac_dots|sed 's%/$%%'`; fi ;;
+  /*) srcdir="$ac_given_srcdir$ac_dir_suffix"; top_srcdir="$ac_given_srcdir" ;;
+  *) # Relative path.
+    srcdir="$ac_dots$ac_given_srcdir$ac_dir_suffix"
+    top_srcdir="$ac_dots$ac_given_srcdir" ;;
+  esac
+
+  case "$ac_given_INSTALL" in
+  [/$]*) INSTALL="$ac_given_INSTALL" ;;
+  *) INSTALL="$ac_dots$ac_given_INSTALL" ;;
+  esac
+
+  echo creating "$ac_file"
+  rm -f "$ac_file"
+  configure_input="Generated automatically from `echo $ac_file_in|sed 's%.*/%%'` by configure."
+  case "$ac_file" in
+  *Makefile*) ac_comsub="1i\\
+# $configure_input" ;;
+  *) ac_comsub= ;;
+  esac
+
+  ac_file_inputs=`echo $ac_file_in|sed -e "s%^%$ac_given_srcdir/%" -e "s%:% $ac_given_srcdir/%g"`
+  sed -e "$ac_comsub
+s%@configure_input@%$configure_input%g
+s%@srcdir@%$srcdir%g
+s%@top_srcdir@%$top_srcdir%g
+s%@INSTALL@%$INSTALL%g
+" $ac_file_inputs | (eval "$ac_sed_cmds") > $ac_file
+fi; done
+rm -f conftest.s*
+
+# These sed commands are passed to sed as "A NAME B NAME C VALUE D", where
+# NAME is the cpp macro being defined and VALUE is the value it is being given.
+#
+# ac_d sets the value in "#define NAME VALUE" lines.
+ac_dA='s%^\([ 	]*\)#\([ 	]*define[ 	][ 	]*\)'
+ac_dB='\([ 	][ 	]*\)[^ 	]*%\1#\2'
+ac_dC='\3'
+ac_dD='%g'
+# ac_u turns "#undef NAME" with trailing blanks into "#define NAME VALUE".
+ac_uA='s%^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
+ac_uB='\([ 	]\)%\1#\2define\3'
+ac_uC=' '
+ac_uD='\4%g'
+# ac_e turns "#undef NAME" without trailing blanks into "#define NAME VALUE".
+ac_eA='s%^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
+ac_eB='$%\1#\2define\3'
+ac_eC=' '
+ac_eD='%g'
+
+if test "${CONFIG_HEADERS+set}" != set; then
+  CONFIG_HEADERS="config.h:config.in"
+fi
+for ac_file in .. $CONFIG_HEADERS; do if test "x$ac_file" != x..; then
+  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
+  case "$ac_file" in
+  *:*) ac_file_in=`echo "$ac_file"|sed 's%[^:]*:%%'`
+       ac_file=`echo "$ac_file"|sed 's%:.*%%'` ;;
+  *) ac_file_in="${ac_file}.in" ;;
+  esac
+
+  echo creating $ac_file
+
+  rm -f conftest.frag conftest.in conftest.out
+  ac_file_inputs=`echo $ac_file_in|sed -e "s%^%$ac_given_srcdir/%" -e "s%:% $ac_given_srcdir/%g"`
+  cat $ac_file_inputs > conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}BYTEORDER${ac_dB}BYTEORDER${ac_dC}1234${ac_dD}
+${ac_uA}BYTEORDER${ac_uB}BYTEORDER${ac_uC}1234${ac_uD}
+${ac_eA}BYTEORDER${ac_eB}BYTEORDER${ac_eC}1234${ac_eD}
+${ac_dA}HAVE_SYS_FILE_H${ac_dB}HAVE_SYS_FILE_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_FILE_H${ac_uB}HAVE_SYS_FILE_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_FILE_H${ac_eB}HAVE_SYS_FILE_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_PARAM_H${ac_dB}HAVE_SYS_PARAM_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_PARAM_H${ac_uB}HAVE_SYS_PARAM_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_PARAM_H${ac_eB}HAVE_SYS_PARAM_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_LIMITS_H${ac_dB}HAVE_LIMITS_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_LIMITS_H${ac_uB}HAVE_LIMITS_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_LIMITS_H${ac_eB}HAVE_LIMITS_H${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STDLIB_H${ac_dB}HAVE_STDLIB_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STDLIB_H${ac_uB}HAVE_STDLIB_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STDLIB_H${ac_eB}HAVE_STDLIB_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_MALLOC_H${ac_dB}HAVE_MALLOC_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_MALLOC_H${ac_uB}HAVE_MALLOC_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_MALLOC_H${ac_eB}HAVE_MALLOC_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRING_H${ac_dB}HAVE_STRING_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRING_H${ac_uB}HAVE_STRING_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRING_H${ac_eB}HAVE_STRING_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_UNISTD_H${ac_dB}HAVE_UNISTD_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_UNISTD_H${ac_uB}HAVE_UNISTD_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_UNISTD_H${ac_eB}HAVE_UNISTD_H${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STRINGS_H${ac_dB}HAVE_STRINGS_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRINGS_H${ac_uB}HAVE_STRINGS_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRINGS_H${ac_eB}HAVE_STRINGS_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_TIME_H${ac_dB}HAVE_SYS_TIME_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_TIME_H${ac_uB}HAVE_SYS_TIME_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_TIME_H${ac_eB}HAVE_SYS_TIME_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_TIME_H${ac_dB}HAVE_TIME_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_TIME_H${ac_uB}HAVE_TIME_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_TIME_H${ac_eB}HAVE_TIME_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_RESOURCE_H${ac_dB}HAVE_SYS_RESOURCE_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_RESOURCE_H${ac_uB}HAVE_SYS_RESOURCE_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_RESOURCE_H${ac_eB}HAVE_SYS_RESOURCE_H${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SYS_STAT_H${ac_dB}HAVE_SYS_STAT_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_STAT_H${ac_uB}HAVE_SYS_STAT_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_STAT_H${ac_eB}HAVE_SYS_STAT_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_MMAN_H${ac_dB}HAVE_SYS_MMAN_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_MMAN_H${ac_uB}HAVE_SYS_MMAN_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_MMAN_H${ac_eB}HAVE_SYS_MMAN_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_FCNTL_H${ac_dB}HAVE_FCNTL_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_FCNTL_H${ac_uB}HAVE_FCNTL_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_FCNTL_H${ac_eB}HAVE_FCNTL_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_ALLOCA_H${ac_dB}HAVE_ALLOCA_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_ALLOCA_H${ac_uB}HAVE_ALLOCA_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_ALLOCA_H${ac_eB}HAVE_ALLOCA_H${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SYS_SYSINFO_H${ac_dB}HAVE_SYS_SYSINFO_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_SYSINFO_H${ac_uB}HAVE_SYS_SYSINFO_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_SYSINFO_H${ac_eB}HAVE_SYS_SYSINFO_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_SYSCTL_H${ac_dB}HAVE_SYS_SYSCTL_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_SYSCTL_H${ac_uB}HAVE_SYS_SYSCTL_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_SYSCTL_H${ac_eB}HAVE_SYS_SYSCTL_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_DLFCN_H${ac_dB}HAVE_DLFCN_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_DLFCN_H${ac_uB}HAVE_DLFCN_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_DLFCN_H${ac_eB}HAVE_DLFCN_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_WAIT_H${ac_dB}HAVE_SYS_WAIT_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_WAIT_H${ac_uB}HAVE_SYS_WAIT_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_WAIT_H${ac_eB}HAVE_SYS_WAIT_H${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}TIME_WITH_SYS_TIME${ac_dB}TIME_WITH_SYS_TIME${ac_dC}1${ac_dD}
+${ac_uA}TIME_WITH_SYS_TIME${ac_uB}TIME_WITH_SYS_TIME${ac_uC}1${ac_uD}
+${ac_eA}TIME_WITH_SYS_TIME${ac_eB}TIME_WITH_SYS_TIME${ac_eC}1${ac_eD}
+${ac_dA}STDC_HEADERS${ac_dB}STDC_HEADERS${ac_dC}1${ac_dD}
+${ac_uA}STDC_HEADERS${ac_uB}STDC_HEADERS${ac_uC}1${ac_uD}
+${ac_eA}STDC_HEADERS${ac_eB}STDC_HEADERS${ac_eC}1${ac_eD}
+${ac_dA}uintptr_t${ac_dB}uintptr_t${ac_dC}unsigned long${ac_dD}
+${ac_uA}uintptr_t${ac_uB}uintptr_t${ac_uC}unsigned long${ac_uD}
+${ac_eA}uintptr_t${ac_eB}uintptr_t${ac_eC}unsigned long${ac_eD}
+${ac_dA}HAVE_UINTPTR_T${ac_dB}HAVE_UINTPTR_T${ac_dC}1${ac_dD}
+${ac_uA}HAVE_UINTPTR_T${ac_uB}HAVE_UINTPTR_T${ac_uC}1${ac_uD}
+${ac_eA}HAVE_UINTPTR_T${ac_eB}HAVE_UINTPTR_T${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_WEAK_SYMBOL${ac_dB}HAVE_WEAK_SYMBOL${ac_dC}1${ac_dD}
+${ac_uA}HAVE_WEAK_SYMBOL${ac_uB}HAVE_WEAK_SYMBOL${ac_uC}1${ac_uD}
+${ac_eA}HAVE_WEAK_SYMBOL${ac_eB}HAVE_WEAK_SYMBOL${ac_eC}1${ac_eD}
+${ac_dA}HAVE_DLOPEN${ac_dB}HAVE_DLOPEN${ac_dC}1${ac_dD}
+${ac_uA}HAVE_DLOPEN${ac_uB}HAVE_DLOPEN${ac_uC}1${ac_uD}
+${ac_eA}HAVE_DLOPEN${ac_eB}HAVE_DLOPEN${ac_eC}1${ac_eD}
+${ac_dA}HAVE_ASPRINTF${ac_dB}HAVE_ASPRINTF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_ASPRINTF${ac_uB}HAVE_ASPRINTF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_ASPRINTF${ac_eB}HAVE_ASPRINTF${ac_eC}1${ac_eD}
+${ac_dA}HAVE_ATEXIT${ac_dB}HAVE_ATEXIT${ac_dC}1${ac_dD}
+${ac_uA}HAVE_ATEXIT${ac_uB}HAVE_ATEXIT${ac_uC}1${ac_uD}
+${ac_eA}HAVE_ATEXIT${ac_eB}HAVE_ATEXIT${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_BASENAME${ac_dB}HAVE_BASENAME${ac_dC}1${ac_dD}
+${ac_uA}HAVE_BASENAME${ac_uB}HAVE_BASENAME${ac_uC}1${ac_uD}
+${ac_eA}HAVE_BASENAME${ac_eB}HAVE_BASENAME${ac_eC}1${ac_eD}
+${ac_dA}HAVE_BCMP${ac_dB}HAVE_BCMP${ac_dC}1${ac_dD}
+${ac_uA}HAVE_BCMP${ac_uB}HAVE_BCMP${ac_uC}1${ac_uD}
+${ac_eA}HAVE_BCMP${ac_eB}HAVE_BCMP${ac_eC}1${ac_eD}
+${ac_dA}HAVE_BCOPY${ac_dB}HAVE_BCOPY${ac_dC}1${ac_dD}
+${ac_uA}HAVE_BCOPY${ac_uB}HAVE_BCOPY${ac_uC}1${ac_uD}
+${ac_eA}HAVE_BCOPY${ac_eB}HAVE_BCOPY${ac_eC}1${ac_eD}
+${ac_dA}HAVE_BSEARCH${ac_dB}HAVE_BSEARCH${ac_dC}1${ac_dD}
+${ac_uA}HAVE_BSEARCH${ac_uB}HAVE_BSEARCH${ac_uC}1${ac_uD}
+${ac_eA}HAVE_BSEARCH${ac_eB}HAVE_BSEARCH${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_BZERO${ac_dB}HAVE_BZERO${ac_dC}1${ac_dD}
+${ac_uA}HAVE_BZERO${ac_uB}HAVE_BZERO${ac_uC}1${ac_uD}
+${ac_eA}HAVE_BZERO${ac_eB}HAVE_BZERO${ac_eC}1${ac_eD}
+${ac_dA}HAVE_CALLOC${ac_dB}HAVE_CALLOC${ac_dC}1${ac_dD}
+${ac_uA}HAVE_CALLOC${ac_uB}HAVE_CALLOC${ac_uC}1${ac_uD}
+${ac_eA}HAVE_CALLOC${ac_eB}HAVE_CALLOC${ac_eC}1${ac_eD}
+${ac_dA}HAVE_CLOCK${ac_dB}HAVE_CLOCK${ac_dC}1${ac_dD}
+${ac_uA}HAVE_CLOCK${ac_uB}HAVE_CLOCK${ac_uC}1${ac_uD}
+${ac_eA}HAVE_CLOCK${ac_eB}HAVE_CLOCK${ac_eC}1${ac_eD}
+${ac_dA}HAVE_FFS${ac_dB}HAVE_FFS${ac_dC}1${ac_dD}
+${ac_uA}HAVE_FFS${ac_uB}HAVE_FFS${ac_uC}1${ac_uD}
+${ac_eA}HAVE_FFS${ac_eB}HAVE_FFS${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_GETCWD${ac_dB}HAVE_GETCWD${ac_dC}1${ac_dD}
+${ac_uA}HAVE_GETCWD${ac_uB}HAVE_GETCWD${ac_uC}1${ac_uD}
+${ac_eA}HAVE_GETCWD${ac_eB}HAVE_GETCWD${ac_eC}1${ac_eD}
+${ac_dA}HAVE_GETPAGESIZE${ac_dB}HAVE_GETPAGESIZE${ac_dC}1${ac_dD}
+${ac_uA}HAVE_GETPAGESIZE${ac_uB}HAVE_GETPAGESIZE${ac_uC}1${ac_uD}
+${ac_eA}HAVE_GETPAGESIZE${ac_eB}HAVE_GETPAGESIZE${ac_eC}1${ac_eD}
+${ac_dA}HAVE_INDEX${ac_dB}HAVE_INDEX${ac_dC}1${ac_dD}
+${ac_uA}HAVE_INDEX${ac_uB}HAVE_INDEX${ac_uC}1${ac_uD}
+${ac_eA}HAVE_INDEX${ac_eB}HAVE_INDEX${ac_eC}1${ac_eD}
+${ac_dA}HAVE_INSQUE${ac_dB}HAVE_INSQUE${ac_dC}1${ac_dD}
+${ac_uA}HAVE_INSQUE${ac_uB}HAVE_INSQUE${ac_uC}1${ac_uD}
+${ac_eA}HAVE_INSQUE${ac_eB}HAVE_INSQUE${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_MEMCHR${ac_dB}HAVE_MEMCHR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_MEMCHR${ac_uB}HAVE_MEMCHR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_MEMCHR${ac_eB}HAVE_MEMCHR${ac_eC}1${ac_eD}
+${ac_dA}HAVE_MEMCMP${ac_dB}HAVE_MEMCMP${ac_dC}1${ac_dD}
+${ac_uA}HAVE_MEMCMP${ac_uB}HAVE_MEMCMP${ac_uC}1${ac_uD}
+${ac_eA}HAVE_MEMCMP${ac_eB}HAVE_MEMCMP${ac_eC}1${ac_eD}
+${ac_dA}HAVE_MEMCPY${ac_dB}HAVE_MEMCPY${ac_dC}1${ac_dD}
+${ac_uA}HAVE_MEMCPY${ac_uB}HAVE_MEMCPY${ac_uC}1${ac_uD}
+${ac_eA}HAVE_MEMCPY${ac_eB}HAVE_MEMCPY${ac_eC}1${ac_eD}
+${ac_dA}HAVE_MEMMOVE${ac_dB}HAVE_MEMMOVE${ac_dC}1${ac_dD}
+${ac_uA}HAVE_MEMMOVE${ac_uB}HAVE_MEMMOVE${ac_uC}1${ac_uD}
+${ac_eA}HAVE_MEMMOVE${ac_eB}HAVE_MEMMOVE${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_MEMPCPY${ac_dB}HAVE_MEMPCPY${ac_dC}1${ac_dD}
+${ac_uA}HAVE_MEMPCPY${ac_uB}HAVE_MEMPCPY${ac_uC}1${ac_uD}
+${ac_eA}HAVE_MEMPCPY${ac_eB}HAVE_MEMPCPY${ac_eC}1${ac_eD}
+${ac_dA}HAVE_MEMSET${ac_dB}HAVE_MEMSET${ac_dC}1${ac_dD}
+${ac_uA}HAVE_MEMSET${ac_uB}HAVE_MEMSET${ac_uC}1${ac_uD}
+${ac_eA}HAVE_MEMSET${ac_eB}HAVE_MEMSET${ac_eC}1${ac_eD}
+${ac_dA}HAVE_PUTENV${ac_dB}HAVE_PUTENV${ac_dC}1${ac_dD}
+${ac_uA}HAVE_PUTENV${ac_uB}HAVE_PUTENV${ac_uC}1${ac_uD}
+${ac_eA}HAVE_PUTENV${ac_eB}HAVE_PUTENV${ac_eC}1${ac_eD}
+${ac_dA}HAVE_RANDOM${ac_dB}HAVE_RANDOM${ac_dC}1${ac_dD}
+${ac_uA}HAVE_RANDOM${ac_uB}HAVE_RANDOM${ac_uC}1${ac_uD}
+${ac_eA}HAVE_RANDOM${ac_eB}HAVE_RANDOM${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_RENAME${ac_dB}HAVE_RENAME${ac_dC}1${ac_dD}
+${ac_uA}HAVE_RENAME${ac_uB}HAVE_RENAME${ac_uC}1${ac_uD}
+${ac_eA}HAVE_RENAME${ac_eB}HAVE_RENAME${ac_eC}1${ac_eD}
+${ac_dA}HAVE_RINDEX${ac_dB}HAVE_RINDEX${ac_dC}1${ac_dD}
+${ac_uA}HAVE_RINDEX${ac_uB}HAVE_RINDEX${ac_uC}1${ac_uD}
+${ac_eA}HAVE_RINDEX${ac_eB}HAVE_RINDEX${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SETENV${ac_dB}HAVE_SETENV${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SETENV${ac_uB}HAVE_SETENV${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SETENV${ac_eB}HAVE_SETENV${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SNPRINTF${ac_dB}HAVE_SNPRINTF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SNPRINTF${ac_uB}HAVE_SNPRINTF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SNPRINTF${ac_eB}HAVE_SNPRINTF${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SIGSETMASK${ac_dB}HAVE_SIGSETMASK${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SIGSETMASK${ac_uB}HAVE_SIGSETMASK${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SIGSETMASK${ac_eB}HAVE_SIGSETMASK${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STPCPY${ac_dB}HAVE_STPCPY${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STPCPY${ac_uB}HAVE_STPCPY${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STPCPY${ac_eB}HAVE_STPCPY${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STPNCPY${ac_dB}HAVE_STPNCPY${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STPNCPY${ac_uB}HAVE_STPNCPY${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STPNCPY${ac_eB}HAVE_STPNCPY${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRCASECMP${ac_dB}HAVE_STRCASECMP${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRCASECMP${ac_uB}HAVE_STRCASECMP${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRCASECMP${ac_eB}HAVE_STRCASECMP${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STRCHR${ac_dB}HAVE_STRCHR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRCHR${ac_uB}HAVE_STRCHR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRCHR${ac_eB}HAVE_STRCHR${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRDUP${ac_dB}HAVE_STRDUP${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRDUP${ac_uB}HAVE_STRDUP${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRDUP${ac_eB}HAVE_STRDUP${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRNCASECMP${ac_dB}HAVE_STRNCASECMP${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRNCASECMP${ac_uB}HAVE_STRNCASECMP${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRNCASECMP${ac_eB}HAVE_STRNCASECMP${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRRCHR${ac_dB}HAVE_STRRCHR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRRCHR${ac_uB}HAVE_STRRCHR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRRCHR${ac_eB}HAVE_STRRCHR${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STRSTR${ac_dB}HAVE_STRSTR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRSTR${ac_uB}HAVE_STRSTR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRSTR${ac_eB}HAVE_STRSTR${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRTOD${ac_dB}HAVE_STRTOD${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRTOD${ac_uB}HAVE_STRTOD${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRTOD${ac_eB}HAVE_STRTOD${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRTOL${ac_dB}HAVE_STRTOL${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRTOL${ac_uB}HAVE_STRTOL${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRTOL${ac_eB}HAVE_STRTOL${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRTOUL${ac_dB}HAVE_STRTOUL${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRTOUL${ac_uB}HAVE_STRTOUL${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRTOUL${ac_eB}HAVE_STRTOUL${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_TMPNAM${ac_dB}HAVE_TMPNAM${ac_dC}1${ac_dD}
+${ac_uA}HAVE_TMPNAM${ac_uB}HAVE_TMPNAM${ac_uC}1${ac_uD}
+${ac_eA}HAVE_TMPNAM${ac_eB}HAVE_TMPNAM${ac_eC}1${ac_eD}
+${ac_dA}HAVE_VASPRINTF${ac_dB}HAVE_VASPRINTF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_VASPRINTF${ac_uB}HAVE_VASPRINTF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_VASPRINTF${ac_eB}HAVE_VASPRINTF${ac_eC}1${ac_eD}
+${ac_dA}HAVE_VFPRINTF${ac_dB}HAVE_VFPRINTF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_VFPRINTF${ac_uB}HAVE_VFPRINTF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_VFPRINTF${ac_eB}HAVE_VFPRINTF${ac_eC}1${ac_eD}
+${ac_dA}HAVE_VPRINTF${ac_dB}HAVE_VPRINTF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_VPRINTF${ac_uB}HAVE_VPRINTF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_VPRINTF${ac_eB}HAVE_VPRINTF${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_VSNPRINTF${ac_dB}HAVE_VSNPRINTF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_VSNPRINTF${ac_uB}HAVE_VSNPRINTF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_VSNPRINTF${ac_eB}HAVE_VSNPRINTF${ac_eC}1${ac_eD}
+${ac_dA}HAVE_VSPRINTF${ac_dB}HAVE_VSPRINTF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_VSPRINTF${ac_uB}HAVE_VSPRINTF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_VSPRINTF${ac_eB}HAVE_VSPRINTF${ac_eC}1${ac_eD}
+${ac_dA}HAVE_WAITPID${ac_dB}HAVE_WAITPID${ac_dC}1${ac_dD}
+${ac_uA}HAVE_WAITPID${ac_uB}HAVE_WAITPID${ac_uC}1${ac_uD}
+${ac_eA}HAVE_WAITPID${ac_eB}HAVE_WAITPID${ac_eC}1${ac_eD}
+${ac_dA}STACK_DIRECTION${ac_dB}STACK_DIRECTION${ac_dC}-1${ac_dD}
+${ac_uA}STACK_DIRECTION${ac_uB}STACK_DIRECTION${ac_uC}-1${ac_uD}
+${ac_eA}STACK_DIRECTION${ac_eB}STACK_DIRECTION${ac_eC}-1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SYS_ERRLIST${ac_dB}HAVE_SYS_ERRLIST${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_ERRLIST${ac_uB}HAVE_SYS_ERRLIST${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_ERRLIST${ac_eB}HAVE_SYS_ERRLIST${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_NERR${ac_dB}HAVE_SYS_NERR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_NERR${ac_uB}HAVE_SYS_NERR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_NERR${ac_eB}HAVE_SYS_NERR${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_SIGLIST${ac_dB}HAVE_SYS_SIGLIST${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_SIGLIST${ac_uB}HAVE_SYS_SIGLIST${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_SIGLIST${ac_eB}HAVE_SYS_SIGLIST${ac_eC}1${ac_eD}
+${ac_dA}HAVE_GETRUSAGE${ac_dB}HAVE_GETRUSAGE${ac_dC}1${ac_dD}
+${ac_uA}HAVE_GETRUSAGE${ac_uB}HAVE_GETRUSAGE${ac_uC}1${ac_uD}
+${ac_eA}HAVE_GETRUSAGE${ac_eB}HAVE_GETRUSAGE${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_ON_EXIT${ac_dB}HAVE_ON_EXIT${ac_dC}1${ac_dD}
+${ac_uA}HAVE_ON_EXIT${ac_uB}HAVE_ON_EXIT${ac_uC}1${ac_uD}
+${ac_eA}HAVE_ON_EXIT${ac_eB}HAVE_ON_EXIT${ac_eC}1${ac_eD}
+${ac_dA}HAVE_PSIGNAL${ac_dB}HAVE_PSIGNAL${ac_dC}1${ac_dD}
+${ac_uA}HAVE_PSIGNAL${ac_uB}HAVE_PSIGNAL${ac_uC}1${ac_uD}
+${ac_eA}HAVE_PSIGNAL${ac_eB}HAVE_PSIGNAL${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRERROR${ac_dB}HAVE_STRERROR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRERROR${ac_uB}HAVE_STRERROR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRERROR${ac_eB}HAVE_STRERROR${ac_eC}1${ac_eD}
+${ac_dA}HAVE_STRSIGNAL${ac_dB}HAVE_STRSIGNAL${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRSIGNAL${ac_uB}HAVE_STRSIGNAL${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRSIGNAL${ac_eB}HAVE_STRSIGNAL${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SYSCONF${ac_dB}HAVE_SYSCONF${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYSCONF${ac_uB}HAVE_SYSCONF${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYSCONF${ac_eB}HAVE_SYSCONF${ac_eC}1${ac_eD}
+${ac_dA}HAVE_TIMES${ac_dB}HAVE_TIMES${ac_dC}1${ac_dD}
+${ac_uA}HAVE_TIMES${ac_uB}HAVE_TIMES${ac_uC}1${ac_uD}
+${ac_eA}HAVE_TIMES${ac_eB}HAVE_TIMES${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SBRK${ac_dB}HAVE_SBRK${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SBRK${ac_uB}HAVE_SBRK${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SBRK${ac_eB}HAVE_SBRK${ac_eC}1${ac_eD}
+${ac_dA}HAVE_GETTIMEOFDAY${ac_dB}HAVE_GETTIMEOFDAY${ac_dC}1${ac_dD}
+${ac_uA}HAVE_GETTIMEOFDAY${ac_uB}HAVE_GETTIMEOFDAY${ac_uC}1${ac_uD}
+${ac_eA}HAVE_GETTIMEOFDAY${ac_eB}HAVE_GETTIMEOFDAY${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_REALPATH${ac_dB}HAVE_REALPATH${ac_dC}1${ac_dD}
+${ac_uA}HAVE_REALPATH${ac_uB}HAVE_REALPATH${ac_uC}1${ac_uD}
+${ac_eA}HAVE_REALPATH${ac_eB}HAVE_REALPATH${ac_eC}1${ac_eD}
+${ac_dA}HAVE_CANONICALIZE_FILE_NAME${ac_dB}HAVE_CANONICALIZE_FILE_NAME${ac_dC}1${ac_dD}
+${ac_uA}HAVE_CANONICALIZE_FILE_NAME${ac_uB}HAVE_CANONICALIZE_FILE_NAME${ac_uC}1${ac_uD}
+${ac_eA}HAVE_CANONICALIZE_FILE_NAME${ac_eB}HAVE_CANONICALIZE_FILE_NAME${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYSCTL${ac_dB}HAVE_SYSCTL${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYSCTL${ac_uB}HAVE_SYSCTL${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYSCTL${ac_eB}HAVE_SYSCTL${ac_eC}1${ac_eD}
+${ac_dA}NEED_DECLARATION_CANONICALIZE_FILE_NAME${ac_dB}NEED_DECLARATION_CANONICALIZE_FILE_NAME${ac_dC}1${ac_dD}
+${ac_uA}NEED_DECLARATION_CANONICALIZE_FILE_NAME${ac_uB}NEED_DECLARATION_CANONICALIZE_FILE_NAME${ac_uC}1${ac_uD}
+${ac_eA}NEED_DECLARATION_CANONICALIZE_FILE_NAME${ac_eB}NEED_DECLARATION_CANONICALIZE_FILE_NAME${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STDLIB_H${ac_dB}HAVE_STDLIB_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STDLIB_H${ac_uB}HAVE_STDLIB_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STDLIB_H${ac_eB}HAVE_STDLIB_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_UNISTD_H${ac_dB}HAVE_UNISTD_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_UNISTD_H${ac_uB}HAVE_UNISTD_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_UNISTD_H${ac_eB}HAVE_UNISTD_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_STAT_H${ac_dB}HAVE_SYS_STAT_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_STAT_H${ac_uB}HAVE_SYS_STAT_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_STAT_H${ac_eB}HAVE_SYS_STAT_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_SYS_TYPES_H${ac_dB}HAVE_SYS_TYPES_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SYS_TYPES_H${ac_uB}HAVE_SYS_TYPES_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SYS_TYPES_H${ac_eB}HAVE_SYS_TYPES_H${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
+${ac_dA}HAVE_GETPAGESIZE${ac_dB}HAVE_GETPAGESIZE${ac_dC}1${ac_dD}
+${ac_uA}HAVE_GETPAGESIZE${ac_uB}HAVE_GETPAGESIZE${ac_uC}1${ac_uD}
+${ac_eA}HAVE_GETPAGESIZE${ac_eB}HAVE_GETPAGESIZE${ac_eC}1${ac_eD}
+s%^[ 	]*#[ 	]*undef[ 	][ 	]*[a-zA-Z_][a-zA-Z_0-9]*%/* & */%
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  rm -f conftest.frag conftest.h
+  echo "/* $ac_file.  Generated automatically by configure.  */" > conftest.h
+  cat conftest.in >> conftest.h
+  rm -f conftest.in
+  if cmp -s $ac_file conftest.h 2>/dev/null; then
+    echo "$ac_file is unchanged"
+    rm -f conftest.h
+  else
+    # Remove last slash and all that follows it.  Not all systems have dirname.
+      ac_dir=`echo $ac_file|sed 's%/[^/][^/]*$%%'`
+      if test "$ac_dir" != "$ac_file" && test "$ac_dir" != .; then
+      # The file is in a subdirectory.
+      test ! -d "$ac_dir" && mkdir "$ac_dir"
+    fi
+    rm -f $ac_file
+    mv conftest.h $ac_file
+  fi
+fi; done
+
+srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty
+host=x86_64-pc-linux-gnu
+target=mips-linux
+with_target_subdir=
+with_build_subdir=
+with_multisubdir=
+ac_configure_args="--enable-multilib  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty"
+CONFIG_SHELL=/bin/sh
+ORIGINAL_LD_FOR_MULTILIBS="/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld"
+libiberty_topdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/libiberty/..
+
+test -z "$CONFIG_HEADERS" || echo timestamp > stamp-h
+if test -n "$CONFIG_FILES"; then
+  if test -n "${with_build_subdir}" || test -n "${with_target_subdir}"; then
+    # FIXME: We shouldn't need to set ac_file
+    ac_file=Makefile
+    LD="${ORIGINAL_LD_FOR_MULTILIBS}"
+    . ${libiberty_topdir}/config-ml.in
+  fi
+fi
+exit 0

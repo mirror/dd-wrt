@@ -1,0 +1,110 @@
+# ====================================================================
+#
+#      synth_watchdog.cdl
+#
+#      Synthetic target watchdog package.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2002 Bart Veer
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting the
+## copyright holder(s).
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  bartv
+# Contributors:
+# Date:           2002-08-07
+#
+#####DESCRIPTIONEND####
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_WATCHDOG_SYNTH {
+    display     "Synthetic target watchdog support"
+    description "
+        The watchdog driver for the eCos synthetic target provides
+        emulation of a watchdog device: if the eCos application starts
+        the watchdog and fails to reset it regularly then the host-side
+        support will detect this and kill the eCos application with a
+        SIGPWR signal."
+    doc         ref/devs-watchdog-synth.html
+    
+    parent      CYGPKG_IO_WATCHDOG
+    active_if   CYGPKG_IO_WATCHDOG
+    implements  CYGINT_WATCHDOG_HW_IMPLEMENTATIONS
+    implements  CYGINT_WATCHDOG_RESETS_ON_TIMEOUT
+
+    cdl_option CYGIMP_WATCHDOG_HARDWARE {
+	parent        CYGPKG_IO_WATCHDOG_IMPLEMENTATION
+	display       "use \"hardware\" watchdog"
+	default_value 1
+	implements    CYGINT_WATCHDOG_IMPLEMENTATIONS
+	compile	      synth_watchdog.cxx
+	description "
+            eCos provides several implementations of a watchdog device.
+            The default is to use the \"hardware\" implementation, which
+            for the synthetic target involves interacting with a
+            watchdog.tcl script running inside the I/O auxiliary."
+    }
+    
+    cdl_component CYGPKG_DEVS_WATCHDOG_SYNTH_OPTIONS {
+	display     "Build options"
+	active_if   CYGIMP_WATCHDOG_HARDWARE
+	flavor      none
+
+	description "
+	    Package-specific build options including control over compiler
+	    flags used only in building this package."
+
+	cdl_option CYGPKG_DEVS_WATCHDOG_SYNTH_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are used in addition
+                to the set of global flags."
+	}
+        cdl_option CYGPKG_DEVS_WATCHDOG_SYNTH_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}
+

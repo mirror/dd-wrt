@@ -1,0 +1,137 @@
+2004-05-05  Jani Monoses <jani@iv.ro>
+
+	* src/netif/ppp/ppp.c: Decrease sleep period in main thread
+	from 250ms to 1ms. Was a leftover of debugging the code and
+	slowing things down.
+
+2004-05-04  Jani Monoses <jani@iv.ro>
+
+	* cdl/lwip_net.cdl
+	* src/api/err.c
+	* src/api/tcpip.c
+	* src/api/sockets.c
+	* src/api/api_lib.c
+	* src/api/api_msg.c
+	* src/core/tcp_in.c
+	* src/core/ipv4/ip.c
+	* src/core/ipv4/ip_addr.c
+	* src/core/ipv4/ip_frag.c
+	* src/core/ipv4/icmp.c
+	* src/core/tcp_out.c
+	* src/core/mem.c
+	* src/core/raw.c
+	* src/core/tcp.c
+	* src/core/sys.c
+	* src/core/udp.c
+	* src/core/stats.c
+	* src/core/dhcp.c
+	* src/core/netif.c
+	* src/core/inet.c
+	* src/core/memp.c
+	* src/core/pbuf.c
+	* src/ecos/sio.c
+	* src/ecos/sys_arch.c
+	* src/ecos/init.c
+	* src/netif/ppp/vj.c
+	* src/netif/ppp/vj.h
+	* src/netif/ppp/randm.c
+	* src/netif/ppp/randm.h
+	* src/netif/ppp/vjbsdhdr.h
+	* src/netif/ppp/fsm.c
+	* src/netif/ppp/fsm.h
+	* src/netif/ppp/lcp.c
+	* src/netif/ppp/lcp.h
+	* src/netif/ppp/md5.c
+	* src/netif/ppp/md5.h
+	* src/netif/ppp/pap.c
+	* src/netif/ppp/pap.h
+	* src/netif/ppp/ppp.c
+	* src/netif/ppp/ppp.h
+	* src/netif/ppp/magic.c
+	* src/netif/ppp/magic.h
+	* src/netif/ppp/pppdebug.h
+	* src/netif/ppp/auth.c
+	* src/netif/ppp/auth.h
+	* src/netif/ppp/chap.c
+	* src/netif/ppp/chap.h
+	* src/netif/ppp/ipcp.c
+	* src/netif/ppp/ipcp.h
+	* src/netif/ppp/chpms.c
+	* src/netif/ppp/chpms.h
+	* src/netif/etharp.c
+	* src/netif/slipif.c
+	* src/netif/loopif.c
+	* tests/tcpecho.c
+	* tests/udpecho.c
+	* tests/nc_test_framework.h
+	* tests/nc_test_slave.c
+	* tests/httpd.c
+	* tests/sys_timeout.c
+	* tests/socket.c
+	* include/arch/cc.h
+	* include/arch/sys_arch.h
+	* include/arch/perf.h
+	* include/lwip/ip.h
+	* include/lwip/debug.h
+	* include/lwip/ip_addr.h
+	* include/lwip/api.h
+	* include/lwip/def.h
+	* include/lwip/err.h
+	* include/lwip/mem.h
+	* include/lwip/opt.h
+	* include/lwip/ip_frag.h
+	* include/lwip/raw.h
+	* include/lwip/sio.h
+	* include/lwip/tcp.h
+	* include/lwip/sys.h
+	* include/lwip/udp.h
+	* include/lwip/tcpip.h
+	* include/lwip/stats.h
+	* include/lwip/arch.h
+	* include/lwip/dhcp.h
+	* include/lwip/netif.h
+	* include/lwip/icmp.h
+	* include/lwip/inet.h
+	* include/lwip/memp.h
+	* include/lwip/pbuf.h
+	* include/lwip/snmp.h
+	* include/lwip/sockets.h
+	* include/lwip/api_msg.h
+	* include/netif/etharp.h
+	* include/netif/slipif.h
+	* include/netif/loopif.h
+	* include/network.h
+	* include/lwipopts.h : Initial import of the lwIP TCP/IP stack.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 2004 eCosCentric  
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

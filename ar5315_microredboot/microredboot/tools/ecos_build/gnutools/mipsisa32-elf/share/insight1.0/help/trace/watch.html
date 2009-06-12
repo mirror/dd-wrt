@@ -1,0 +1,118 @@
+<HTML>
+<HEAD>
+<TITLE>Watch Window Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Watch Window</H1>
+<H3>Overview</H3>
+<P>The Watch Window may be used to inspect any collected expression, including
+global variables, static variables, local variables, function arguments,
+and registers.</P>
+
+<P>Watch Window topics:
+<UL>
+    <LI><UL><A HREF="#menus">Watch Menu</A>
+            <LI><A HREF="#menus_fmt">Format</A>
+            <LI><A HREF="#menus_remove">Remove</A>
+        </UL>
+    <LI><UL><A HREF="#new">Adding Watch Expressions</A>
+            <LI><A HREF="#new_ent">In the Watch Window</A>
+            <LI><A HREF="#new_src">In the Source Window</A>
+            <LI><A HREF="#new_cast">Casting Pointers</A>
+        </UL>
+    <LI><UL><A HREF="#display">Watch Display</A>
+            <LI><A HREF="#display_deref">Dereferencing Pointers</A>
+            <LI><A HREF="#display_struct">Viewing a Structure or Class</A>
+            <LI><A HREF="#display_popup">Watch Pop-up Menu</A>
+        </UL>
+</UL></P>
+
+<H3><A NAME="menus">Watch Menu</A></H3>
+The Watch Menu gives on-screen access to the funtions of the Watch Window.
+To use any of these functions, first use the left mouse button to select an
+expression from the display. Then select:
+
+<DL>
+    <DT><A NAME="menus_fmt">Format</A>
+        <DD>Change the display format of the expression
+    <DT><A NAME="menus_remove">Remove</A>
+        <DD>Remove the expression from the Watch Window
+</DL>
+
+<H3><A NAME="new">Adding Watch Expressions</A></H3>
+<A NAME="new_ent">To add an expression to the Watch Window</A>, simply enter
+the expression into the entry at the bottom of the window and press return
+or click the "Add Watch" button. The expression is validated and added to the
+Watch Window Display.
+
+<P><A NAME="new_src">To add an expression to the Watch Window from the
+<A HREF="source.html">Source Window</A></A>, use the
+"<A HREF="source.html#add_to_watch">Add to Watch</A>" option of the
+<A HREF="source.html#display_popup">Source Window Pop-up Menu</A>.</P>
+
+<P>Any legal expression may be added to the Watch Window, which will
+evaluate each of its expressions everytime the program runs. Be cautious
+adding expressions which cause assignments, such as "<CODE>i++</CODE>".</P>
+
+<P>Adding a register to the Watch Window can be advantages when debugging
+via a slow serial line. In this case, keeping the entire Register Window open
+may be inefficient. Consider adding the register to the Watch Window. Simply
+enter the name of the register preceded with a dollar sign ($) into the
+Entry. For example, to watch the PC register, enter "<CODE>$pc</CODE>" into
+the Watch Window Entry. The program counter is added to the Display.</P>
+
+<P><A NAME="new_cast">To cast pointers</A>, simply enter the cast into the
+Watch Window Entry at the bottom of the window. Use the same syntax for the
+cast that the source file uses. If the source file uses C, the a simple
+cast of "<CODE>ptr</CODE>" of type "<CODE>void *</CODE>" can be cast to type
+"<CODE>my_struct</CODE>" by entering "<CODE>(my_struct *) ptr</CODE>" into
+the Entry.</P>
+
+<H3><A NAME="display">Watch Display</A></H3>
+The Watch Window Display consists of a scrolled listbox which contains all
+watch expressions, one per line. To use any of the functions of the Watch
+Window, use the left mouse button to select any element from the Display.
+
+<P>Pointers, structures, and classes appear in the display with a small
+exapansion box before their names. To <A NAME="display_deref">dereference
+pointers</A> or <A NAME="display_struct">view the members of classes or
+structures</A>, click the closed expansion box (which appears as a small
+plus sign, "+") to "expand" the listing. The expansion box changes to a
+minus sign, "-", indicating that the display is now open. Pointers,
+structures and classes may be expanded recursively to allow multiple pointer
+dereferences and embedded structure viewing.
+
+<P>The Locals Display updates as the trace buffer is navigated, highlighting
+in blue those variables whose values have changed.</P>
+
+<P>The Watch Window will, by default, display all pointers in hexadecimal and all
+other variables in decimal. To change the default display of variables, use the
+"set output-radix" command in the console window. (Type "help set output-radix" in the
+console window for help. To make this change permanent, it must be added to the user's
+init file -- .gdbinit under unix and gdb.ini under Windows.) To change the display
+format for a variable, select the Format option from either the Variable Menu or the
+<A HREF="#display_popup">Watch Pop-up Menu</A>.
+<BR>
+
+<H4><A NAME="display_popup">Watch Pop-up Menu</A></H4>
+The Watch Pop-up Menu provides quick access to the functions of the Watch Window.
+To use the Locals Pop-up Menu, first select an expression from the Display (by
+clicking the left mouse button on it) and click the right mouse button, choosing
+from the pop-up:
+<DL>
+    <DT>Format
+        <DD>Change the display format of the expression. The expression may be
+            displayed as:
+            <DL>
+                <DT>Hex
+                    <DD>hexadecimal (base 16)
+                <DT>Decimal
+                    <DD>decimal (base 10)
+                <DT>Binary
+                    <DD>binary (base 2)
+                <DT>Octal
+                    <DD>octal (base 8)
+            </DL>
+</DL>
+</BODY>
+</HTML>

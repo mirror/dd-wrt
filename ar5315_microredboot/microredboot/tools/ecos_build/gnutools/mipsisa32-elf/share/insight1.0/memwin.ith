@@ -1,0 +1,85 @@
+# Memory display window class definition for Insight.
+# Copyright 1998, 1999, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class MemWin {
+  inherit EmbeddedWin GDBWin
+
+  private {
+    variable saved_addr ""
+    variable bad_expr 0
+    variable current_addr ""
+    variable dont_size 0
+    variable mbar 1
+    variable bg
+    variable top
+    variable nb 128
+    variable prefs_win ""
+    variable Running 0
+    variable Numrows 0
+    variable Numcols 0
+    variable saved_value
+    variable maxlen
+    variable maxalen
+    variable rheight ""
+    variable new_entry 0
+
+    method build_win {}
+    method init_addr_exp {}
+    method cursor {glyph}
+    method _update_address {make_busy}
+  }
+
+  public {
+    variable addr_exp ""
+    variable size 4
+    variable format x
+    variable bytes_per_row 16
+    variable numbytes 0
+    variable ascii 1
+    variable ascii_char "."
+    variable color green
+  }
+
+  protected common type
+
+  public {
+    method constructor {args}
+    method destructor {}
+    method paste {x y}
+    method validate {val}
+    method create_prefs {}
+    method changed_cell {from to}
+    method edit {cell}
+    method toggle_enabled {}
+    method newsize {height}
+    method update_address_cb {}
+    method update_address {addr_exp}
+    method BadExpr {errTxt}
+    method incr_addr {num}
+    method update_addr 
+    method hidemb {}
+    method reconfig {}
+    method do_popup {x y}
+    method goto {addr}
+    method memMoveCell {w x y}
+    method error_dialog {msg {modality task} {type ok}}
+
+    #
+    # GDB Events
+    #
+    method busy {event}
+    method idle {event}
+    method update {event}
+  }
+}

@@ -1,0 +1,372 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Overview</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="NEXT"
+TITLE="Installation"
+HREF="synth-install.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="synth-install.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH">Overview</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+>The eCos synthetic target&nbsp;--&nbsp;Overview</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-DESCRIPTION"
+></A
+><H2
+>Description</H2
+><P
+>Usually eCos runs on either a custom piece of hardware, specially
+designed to meet the needs of a specific application, or on a
+development board of some sort that is available before the final
+hardware. Such boards have a number of things in common:
+    </P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>Obviously there has to be at least one processor to do the work. Often
+this will be a 32-bit processor, but it can be smaller or larger.
+Processor speed will vary widely, depending on the expected needs of
+the application. However the exact processor being used tends not to
+matter very much for most of the development process: the use of
+languages such as C or C++ means that the compiler will handle those
+details.
+      </P
+></LI
+><LI
+><P
+>There needs to be memory for code and for data. A typical system will
+have two different types of memory. There will be some non-volatile
+memory such as flash, EPROM or masked ROM. There will also be some
+volatile memory such as DRAM or SRAM. Often the code for the final
+application will reside in the non-volatile memory and all of the RAM
+will be available for data. However updating non-volatile memory
+requires a non-trivial amount of effort, so for much of the
+development process it is more convenient to burn suitable firmware,
+for example RedBoot, into the non-volatile memory and then use that to
+load the application being debugged into RAM, alongside the
+application data and a small area reserved for use by the firmware.
+      </P
+></LI
+><LI
+><P
+>The platform must provide certain mimimal I/O facilities. Most eCos
+configurations require a clock signal of some sort. There must also be
+some way of outputting diagnostics to the user, often but not always 
+via a serial port. Unless special debug hardware is being used, source
+level debugging will require bidirectional communication between a
+host machine and the target hardware, usually via a serial port or an
+ethernet device.
+      </P
+></LI
+><LI
+><P
+>All the above is not actually very useful yet because there is no way
+for the embedded device to interact with the rest of the world, except
+by generating diagnostics. Therefore an embedded device will have
+additional I/O hardware. This may be fairly standard hardware such as
+an ethernet or USB interface, or special hardware designed
+specifically for the intended application, or quite often some
+combination. Standard hardware such as ethernet or USB may be
+supported by eCos device drivers and protocol stacks, whereas the
+special hardware will be driven directly by application code.
+      </P
+></LI
+></OL
+><P
+>Much of the above can be emulated on a typical PC running Linux.
+Instead of running the embedded application being developed on a
+target board of some sort, it can be run as a Linux process. The
+processor will be the PC's own processor, for example an x86, and the
+memory will be the process' address space. Some I/O facilities can be
+emulated directly through system calls. For example clock hardware can
+be emulated by setting up a <TT
+CLASS="LITERAL"
+>SIGALRM</TT
+> signal, which
+will cause the process to be interrupted at regular intervals. This
+emulation of real hardware will not be particularly accurate, the
+number of cpu cycles available to the eCos application between clock
+ticks will vary widely depending on what else is running on the PC,
+but for much development work it will be good enough.
+    </P
+><P
+>Other I/O facilities are provided through an I/O auxiliary process,
+ecosynth, that gets spawned by the eCos application during startup.
+When an eCos device driver wants to perform some I/O operation, for
+example send out an ethernet packet, it sends a request to the I/O
+auxiliary. That is an ordinary Linux application so it has ready
+access to all normal Linux I/O facilities. To emulate a device
+interrupt the I/O auxiliary can raise a <TT
+CLASS="LITERAL"
+>SIGIO</TT
+>
+signal within the eCos application. The HAL's interrupt subsystem
+installs a signal handler for this, which will then invoke the
+standard eCos ISR/DSR mechanisms. The I/O auxiliary is based around
+Tcl scripting, making it easy to extend and customize. It should be
+possible to configure the synthetic target so that its I/O
+functionality is similar to what will be available on the final target
+hardware for the application being developed.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN25"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="overview.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>A key requirement for synthetic target code is that the embedded
+application must not be linked with any of the standard Linux
+libraries such as the GNU C library: that would lead to a confusing
+situation where both eCos and the Linux libraries attempted to provide
+functions such as <TT
+CLASS="FUNCTION"
+>printf</TT
+>. Instead the synthetic
+target support must be implemented directly on top of the Linux
+kernels' system call interface. For example, the kernel provides a
+system call for write operations. The actual function
+<TT
+CLASS="FUNCTION"
+>write</TT
+> is implemented in the system's C library,
+but all it does is move its arguments on to the stack or into certain
+registers and then execute a special trap instruction such as
+<TT
+CLASS="LITERAL"
+>int&nbsp;0x80</TT
+>. When this instruction is executed
+control transfers into the kernel, which will validate the arguments
+and perform the appropriate operation. Now, a synthetic target
+application cannot be linked with the system's C library. Instead it
+contains a function <TT
+CLASS="FUNCTION"
+>cyg_hal_sys_write</TT
+> which, like
+the C library's <TT
+CLASS="FUNCTION"
+>write</TT
+> function, pushes its
+arguments on to the stack and executes the trap instruction. The Linux
+kernel cannot tell the difference, so it will perform the I/O
+operation requested by the synthetic target. With appropriate
+knowledge of what system calls are available, this makes it possible
+to emulate the required I/O facilities. For example, spawning the
+ecosynth I/O auxiliary involves system calls
+<TT
+CLASS="FUNCTION"
+>cyg_hal_sys_fork</TT
+> and
+<TT
+CLASS="FUNCTION"
+>cyg_hal_sys_execve</TT
+>, and sending a request to the
+auxiliary uses <TT
+CLASS="FUNCTION"
+>cyg_hal_sys_write</TT
+>.
+    </P
+><P
+>In many ways developing for the synthetic target is no different from
+developing for real embedded targets. eCos must be configured
+appropriately: selecting a suitable target such as
+<TT
+CLASS="USERINPUT"
+><B
+>i386linux</B
+></TT
+> will cause the configuration system
+to load the appropriate packages for this hardware; this includes an
+architectural HAL package and a platform-specific package; the
+architectural package contains generic code applicable to all Linux
+platforms, whereas the platform package is for specific Linux
+implementations such as the x86 version and contains any
+processor-specific code. Selecting this target will also bring in some
+device driver packages. Other aspects of the configuration such as
+which API's are supported are determined by the template, by adding
+and removing packages, and by fine-grained configuration.
+    </P
+><P
+>In other ways developing for the synthetic target can be much easier
+than developing for a real embedded target. For example there is no
+need to worry about building and installing suitable firmware on the
+target hardware, and then downloading and debugging the actual
+application over a serial line or a similar connection. Instead an
+eCos application built for the synthetic target is mostly
+indistinguishable from an ordinary Linux program. It can be run simply
+by typing the name of the executable file at a shell prompt.
+Alternatively you can debug the application using whichever version of
+gdb is provided by your Linux distribution. There is no need to build
+or install special toolchains. Essentially using the synthetic target
+means that the various problems associated with real embedded hardware
+can be bypassed for much of the development process.
+    </P
+><P
+>The eCos synthetic target provides emulation, not simulation. It is
+possible to run eCos in suitable architectural simulators but that
+involves a rather different approach to software development. For
+example, when running eCos on the psim PowerPC simulator you need
+appropriate cross-compilation tools that allow you to build PowerPC
+executables. These are then loaded into the simulator which interprets
+every instruction and attempts to simulate what would happen if the
+application were running on real hardware. This involves a lot of
+processing overhead, but depending on the functionality provided by
+the simulator it can give very accurate results. When developing for
+the synthetic target the executable is compiled for the PC's own
+processor and will be executed at full speed, with no need for a
+simulator or special tools. This will be much faster and somewhat
+simpler than using an architectural simulator, but no attempt is made
+to accurately match the behaviour of a real embedded target.
+    </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="synth-install.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>eCos Synthetic Target</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Installation</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

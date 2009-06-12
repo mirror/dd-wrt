@@ -1,0 +1,180 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_v85x_v850.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/v85x_v850.ld:
+	Added .eh_frame to data section. This is a stopgap fix to allow
+	C++ programs that define exceptions to link and run. It does not
+	allow them to actually throw exceptions, since that depends on
+	compiler changes that have not been made. Further, more
+	far-reaching, linker script changes will also be needs when that
+	happens.	
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_v85x_v850.cdl: Don't run cache tests.
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/v850_common.h: Add register defns for other V850/SA1 models.
+
+2001-04-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_v850.cdl: Separate v850_ice.cxx into separate file
+	and only build if CYGDBG_HAL_V850_ICE. Also only build for ROM
+	or ROMRAM startup.
+	* src/hal_diag.c: msec_timeout can be static
+	* src/v850_stub.c: Separate ICE support into new v850_ice.cxx file from
+	here
+	* src/v850_ice.cxx: New file
+	* src/v85x_v850.ld: Enter at reset_vector for ROM or ROMRAM startup.
+	This is better when loading via ICE.
+
+2001-03-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_v850.cdl: Fix typo.
+
+2001-03-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_diag.c: Move here from platform HALs - on-board serial0
+	is generic for V850 platforms.
+
+	* cdl/hal_v85x_v850.cdl: Build hal_diag.c
+	Add interfaces indicating variant.
+	Add option for ICE debugging.
+
+	* include/v850_common.h: Move register definitions here from
+	platform HAL and define both SA1 and SB1 variants.
+	Also rename some to match official docs.
+
+	* include/var_arch.h: No need to include <pkgconf/hal.h>
+
+	* include/var_cache.h: Provide empty default cache macros here.
+
+	* include/var_intr.h: Move interrupt definitions here from
+	platform HAL and define for both SA1 and SB1 variants.
+	Also rename some to match official docs.
+
+	* src/v850_misc.c: Doesn't use tracing, so don't include header.
+
+	* src/v850_stub.c: Reflect CYGNUM_HAL_VECTOR_WATCHDOG_TIMER ->
+	CYGNUM_HAL_VECTOR_INTWDT renaming.
+	Add support for debugging via ICE and gdbserv.
+
+	* src/v85x_v850.ld: Start at "start" not "reset_vector".
+	Support ram_vectors section (separated out to support ROMRAM startup).
+
+	* src/nec.ld: Remove - redundant.
+
+	* tests/nmitest.c: Added. Standalone test for checking if we've
+	received an NMI.
+
+2000-09-06  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_v85x_v850.cdl: Improve [CPU] variant support.
+
+2000-07-24  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/v850_stub.c (__is_breakpoint_function): Removed use
+	of CYG_LABEL_NAME() and added underscore to _breakinst.
+
+	* src/nec.ld, src/v85x_v850.ld:
+	Switched to new table definition mechanism.
+
+2000-06-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v850_misc.c (hal_interrupt_unmask): Remove [extra]
+	debug message.
+
+2000-06-09  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v850_misc.c: Make interrupt handling routines safe.
+	Also add asserts to verify.
+
+2000-05-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v85x_v850.ld: Add platform specifics.  In particular the
+	special, hardwired symbol "hal_vsr_table" needs to be platform
+	specific.
+
+2000-05-24  Gary Thomas  <gthomas@redhat.com>
+
+	* include/v850_common.h: Split into platform specific files.
+
+2000-04-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v85x_v850.ld: Fix linking problem with "_etext".
+
+2000-04-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v850_stub.c: Use 'br *' with a watchdog to emulate a
+	breakpoint since the hardware does not support them directly.
+
+2000-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v850_stub.c (next_pc): Instruction "jmp [Rn]" was being
+	decoded incorrectly, leading to erroneous single step behaviour.
+
+2000-03-31  Gary Thomas  <gthomas@redhat.com>
+
+	* src/context.S: Use SLD/SST for smaller, faster code in context
+	save/restore functions.
+
+2000-03-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/context.S (_hal_longjmp): 
+	(_hal_setjmp): Need to save R1/R2/R4/R5 since GCC seems to use them.
+
+2000-03-27  Gary Thomas  <gthomas@redhat.com>
+
+	* include/var_intr.h: Remove extra junk left over from cut&paste.
+
+	* src/context.S: Add setjmp/longjmp support.
+
+2000-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v850_stub.c (__skipinst): Use single step code properly.
+
+2000-03-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/v850_stub.c: Add single step support.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

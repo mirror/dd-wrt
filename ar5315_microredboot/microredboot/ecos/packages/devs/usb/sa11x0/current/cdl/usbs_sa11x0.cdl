@@ -1,0 +1,203 @@
+# ====================================================================
+#
+#      usbs_sa11x0.cdl
+#
+#      SA11X0 USB support.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  bartv
+# Contributors:
+# Date:           2000-10-04
+#
+#####DESCRIPTIONEND####
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_USB_SA11X0 {
+    display     "SA11X0 USB Device Driver"
+    include_dir "cyg/io/usb"
+    parent      CYGPKG_USB
+    implements  CYGHWR_IO_USB_SLAVE
+    doc         ref/devs-usb-sa11x0.html
+
+    # Make sure that we are running on the right hardware.
+    requires CYGPKG_HAL_ARM
+    requires CYGPKG_HAL_ARM_SA11X0
+
+    
+    description "
+        The on-chip serial port 0 on the SA11X0 implements a USB
+        device controller, facilitating the use of this processor
+        in USB peripherals. This package provides a suitable eCos
+        device driver."
+
+
+    cdl_option CYGFUN_DEVS_USB_SA11X0_EP0 {
+	display       "Support the control endpoint 0"
+	default_value CYGINT_IO_USB_SLAVE_CLIENTS
+	# And the USB support packages
+	requires      CYGPKG_IO_USB CYGPKG_IO_USB_SLAVE
+	compile       usbs_sa11x0.c
+	compile       -library=libextras.a usbs_sa11x0_data.cxx
+	description "
+	    Enable support for endpoint 0. If this support is disabled
+	    then the entire USB port is unusable."
+    }
+    
+    cdl_option CYGVAR_DEVS_USB_SA11X0_EP0_DEVTAB_ENTRY {
+	display       "Provide a devtab entry for endpoint 0"
+	default_value CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES
+	requires      CYGPKG_IO
+	description "
+	    If endpoint 0 will only be accessed via the low-level
+	    USB-specific calls then there is no need for an entry
+ 	    in the device table, saving some memory. If the
+	    application intends to access the endpoint by means
+	    of open and ioctl calls then a devtab entry is needed.
+	"
+    }
+    
+    cdl_component CYGPKG_DEVS_USB_SA11X0_EP1 {
+	display       "Support endpoint 1, used for host->slave communications"
+	implements    CYGHWR_IO_USB_SLAVE_OUT_ENDPOINTS
+	requires      CYGFUN_DEVS_USB_SA11X0_EP0
+	default_value CYGFUN_DEVS_USB_SA11X0_EP0
+	description "
+            In the SA11X0 USB implementation endpoint 1 can only be
+            used for host->slave communication. If the intended application
+	    only involves slave->host transfers then the support for
+	    endpoint 1 can be disabled. Note that this does not affect
+	    control messages which always go via endpoint 0."
+
+	cdl_option CYGNUM_DEVS_USB_SA11X0_EP1_DMA_CHANNEL {
+	    display       "Control DMA usage for endpoint 1"
+	    flavor        booldata
+	    legal_values  0 to 5
+	    default_value 4
+	    description "
+	        In the SA11X0 USB implementation endpoint 1 only has
+	        a 20-byte fifo. If the application only involves
+	        small transfers then this may prove sufficient, but
+	        for larger transfers the use of a DMA engine is
+	        mandated. This configuration option allows the
+	        use of DMA engine to be disabled or enabled, and the
+	        specific DMA channel to be selected. The SA11X0
+	        supports 6 DMA channels numbered 0 to 5. If DMA
+	        is enabled for endpoint 1 then the selected channel
+	        cannot be used by any other code."
+	}
+
+	cdl_option CYGVAR_DEVS_USB_SA11X0_EP1_DEVTAB_ENTRY {
+	    display       "Provide a devtab entry for endpoint 1"
+	    default_value CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES
+            requires      CYGPKG_IO 
+	    description "
+	        If endpoint 1 will only be accessed via the low-level
+	        USB-specific calls then there is no need for an entry
+ 	        in the device table, saving some memory. If the
+	        application intends to access the endpoint by means
+	        of open and read calls then a devtab entry is needed.
+	    "
+	}
+    }
+
+    cdl_component CYGPKG_DEVS_USB_SA11X0_EP2 {
+	display       "Support endpoint 2, used for slave->host communications"
+	implements CYGHWR_IO_USB_SLAVE_IN_ENDPOINTS
+	requires      CYGFUN_DEVS_USB_SA11X0_EP0
+	default_value CYGFUN_DEVS_USB_SA11X0_EP0
+	description "
+            In the SA11X0 USB implementation endpoint 2 can only be
+            used for slave->host communication. If the intended application
+	    only involves host->slave transfers then the support for
+	    endpoint 2 can be disabled. Note that this does not affect
+	    control messages which always go via endpoint 0."
+
+	cdl_option CYGNUM_DEVS_USB_SA11X0_EP2_DMA_CHANNEL {
+	    display       "Control DMA usage for endpoint 2"
+	    flavor        booldata
+	    legal_values  0 to 5
+	    default_value 5
+	    description "
+	        In the SA11X0 USB implementation endpoint 2 only has
+	        a 16-byte fifo. If the application only involves
+	        small transfers then this may prove sufficient, but
+	        for larger transfers the use of a DMA engine is
+	        mandated. This configuration option allows the
+	        use of DMA engine to be disabled or enabled, and the
+	        specific DMA channel to be selected. The SA11X0
+	        supports 6 DMA channels numbered 0 to 5. If DMA
+	        is enabled for endpoint 2 then the selected channel
+	        cannot be used by any other code."
+	}
+	
+	cdl_option CYGVAR_DEVS_USB_SA11X0_EP2_DEVTAB_ENTRY {
+	    display       "Provide a devtab entry for endpoint 2"
+	    default_value CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES
+            requires      CYGPKG_IO
+	    description "
+	        If endpoint 2 will only be accessed via the low-level
+	        USB-specific calls then there is no need for an entry
+ 	        in the device table, saving some memory. If the
+	        application intends to access the endpoint by means
+	        of open and write calls then a devtab entry is needed.
+	    "
+	}
+    }
+
+    cdl_option CYGDAT_DEVS_USB_SA11X0_DEVTAB_BASENAME {
+	display       "Base name for devtab entries"
+	flavor        data
+	active_if     { CYGVAR_DEVS_USB_SA11X0_EP0_DEVTAB_ENTRY ||
+	                CYGVAR_DEVS_USB_SA11X0_EP1_DEVTAB_ENTRY ||
+	                CYGVAR_DEVS_USB_SA11X0_EP2_DEVTAB_ENTRY
+        }
+	default_value { "\"/dev/usbs\"" }
+	description "
+            If the SA11X0 USB device driver package provides devtab
+	    entries for any of the endpoints then this option gives
+            control over the names of these entries. By default the
+	    endpoints will be called \"/dev/usbs0c\", \"/dev/usbs1r\"
+	    and \"/dev/usbs2w\" (assuming all three endpoints are
+	    enabled. The common part \"/dev/usbs\" is determined
+	    by this configuration option. It may be necessary to
+	    change this if there are multiple USB slave-side
+	    devices on the target hardware to prevent a name clash.
+	"
+    }
+}

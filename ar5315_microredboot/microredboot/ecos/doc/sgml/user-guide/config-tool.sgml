@@ -1,0 +1,1520 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     config-tool.sgml                                            -->
+<!--                                                                 -->
+<!--     eCos User Guide                                             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part ID="THE-ECOS-CONFIGURATION-TOOL">
+<TITLE>The eCos Configuration Tool</TITLE>
+
+<!-- {{{ Getting Started                -->
+
+<CHAPTER id="config-tool-getting-started">
+<TITLE>Getting Started</TITLE>
+
+<!-- ====================================================================== -->
+    
+<SECT1 id="config-tool-getting-started-intro">
+<TITLE>Introduction</TITLE>
+
+<PARA> The <productname>eCos</productname> <application>Configuration Tool</application> is used
+	  to tailor <productname>eCos</productname> at source level, prior to compilation or
+	  assembly, and provides a configuration file and a set of
+	  files used to build user applications. The sources and other
+	  files used for building a configuration are provided in a
+	  <EMPHASIS>component repository</EMPHASIS>, which is loaded
+	  when the <productname>eCos</productname> <APPLICATION>Configuration Tool</APPLICATION>
+	  is invoked. The component repository includes a set of files
+	  defining the structure of relationships between the
+	  <application>Configuration Tool</application> and other components, and is written in a
+	  <FIRSTTERM>Component Definition Language</FIRSTTERM> (<ACRONYM>CDL</ACRONYM>).
+	  For a description of the concepts underlying component
+	  configuration, see <xref linkend="cdl-concepts">.</PARA>
+</SECT1>
+
+<!-- ====================================================================== -->
+    
+<SECT1 id="config-tool-invoking">
+<TITLE>Invoking the <productname>eCos</productname> <application>Configuration Tool</application></TITLE>
+
+<SECT2>
+<TITLE>On Linux</TITLE>
+
+<PARA>Add the <productname>eCos</productname> <application>Configuration Tool</application> install directory to your PATH, for example:</PARA>
+
+<PROGRAMLISTING>
+export PATH=/opt/ecos/ecos<replaceable>&Version;</replaceable>/bin:$PATH
+</PROGRAMLISTING>
+
+<PARA>You may run configtool with zero, one or two arguments. You can specify the <productname>eCos</productname> repository
+ location, and/or an <productname>eCos</productname> save file (extension .ecc) on the command line. The ordering of these
+two arguments is not significant. For example:</PARA>
+
+<PROGRAMLISTING>
+configtool /opt/ecos/ecos<replaceable>&Version;</replaceable>/packages myfile.ecc
+</PROGRAMLISTING>
+
+<PARA>The <application>Configuration Tool</application> will be displayed (see <xref linkend="figure-configuration-tool">).</PARA>
+</SECT2>
+
+<SECT2>
+<TITLE>On Windows</TITLE>
+
+<PARA>There are two ways in which to invoke the <productname>eCos</productname> <application>Configuration Tool</application>:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>	      from the desktop explorer or program set up at installation
+	      time (by default 
+	      <EMPHASIS>Start</EMPHASIS>
+	      -&gt;
+	      <EMPHASIS>Programs</EMPHASIS>
+	      -&gt;
+	      <EMPHASIS>eCos</EMPHASIS>
+	      -&gt;
+	      <EMPHASIS>Configuration Tool</EMPHASIS>
+	      ).</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>type (at a command prompt or in the 
+	    <EMPHASIS>Start</EMPHASIS>
+	    menu&rsquo;s 
+	    <EMPHASIS>Run</EMPHASIS>
+	    item): &lt;foldername&gt;&bsol;ConfigTool.exe where &lt;foldername&gt; is
+	    the full path of the directory in which you installed the <productname>eCos</productname>
+	    <application>Configuration Tool</application>.</PARA>
+<!--
+<para>
+XXXXX Change location of configtool in line with installation
+              instructions. XXXXX
+</para>
+-->
+            
+</LISTITEM>
+<LISTITEM>
+<PARA>The 
+	    <application>Configuration Tool</application>
+	    will be displayed (see <xref linkend="figure-configuration-tool">).</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+
+<PARA>
+You may run configtool with zero, one or two arguments. You can specify the <productname>eCos</productname> repository
+location, and/or an <productname>eCos</productname> save file (extension .ecc) on the command line. The ordering of these
+two arguments is not significant. For example:</PARA>
+
+<PROGRAMLISTING>
+configtool "c:\Program Files\eCos\packages" myfile.ecc
+</PROGRAMLISTING>
+
+<!--        
+        <para>
+XXXXX Change location of eCos in line with installation instructions. XXXXX
+        </para>
+-->
+        
+<PARA>If you invoke the configuration tool from the command line with
+<EMPHASIS>--help</EMPHASIS>, you will see this output:</PARA>
+
+<PROGRAMLISTING>
+Usage: eCos Configuration Tool [-h] [-e] [-v] [-c] [input file 1] [input file 2]
+  -h  --help        	displays help on the command line parameters
+  -e  --edit-only   	edit save file only
+  -v  --version     	print version
+  -c  --compile-help	compile online help only
+</PROGRAMLISTING>
+
+<PARA>This summarizes valid parameters and switches. Switches are shown with
+both short form and long form.</PARA>
+
+<PARA><EMPHASIS>--help</EMPHASIS> shows valid options and parameters, as above.</PARA>
+
+<PARA><EMPHASIS>--edit-only</EMPHASIS> runs the <application>Configuration Tool</application> in a mode that
+suppresses creation of a build tree, in case you only want to create and edit save files.</PARA>
+
+<PARA><EMPHASIS>--version</EMPHASIS> shows version and build date information, and exits.</PARA>
+
+<PARA><EMPHASIS>--compile-help</EMPHASIS> compiles help contents files from the HTML documentation
+files that the tool finds in the <productname>eCos</productname> repository, and exits.</PARA>
+
+<FIGURE id="figure-configuration-tool">
+<TITLE><application>Configuration Tool</application></TITLE>
+<GRAPHIC ENTITYREF="graphic1"></GRAPHIC>
+</FIGURE>
+</SECT2>
+</SECT1>
+
+<!-- ====================================================================== -->
+    
+    
+<SECT1 id="config-tool-component-repository">
+<TITLE>The Component Repository</TITLE>
+<PARA>When you invoke the <productname>eCos</productname> <application>Configuration Tool</application>, it accesses the Component
+	  Repository, a read-only location of configuration
+	  information. For an explanation of &ldquo;Component
+	  Repository&rdquo; see <xref linkend="cdl-concepts">.</PARA>
+<PARA>The <productname>eCos</productname> <application>Configuration Tool</application> will look
+	  for a component repository using (in descending order of preference):</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>A location specified on the command line
+</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The component repository most recently used by the
+current user</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>An <productname>eCos</productname> distribution under <filename>/opt/ecos</filename> (under
+Linux) or a default location set by the installation procedure (under
+Windows)</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>User input</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The final case above will normally only occur if the previous
+	  repository has been moved or (under Windows) installation information stored in
+	  the Windows registry has been modified; it will result in a dialog box
+being displayed that allows you to specify the repository location:</PARA>
+<FIGURE>
+<TITLE>Repository relocation dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic2"></GRAPHIC>
+</FIGURE>
+<PARA>Note that in order to use the <productname>eCos</productname> <application>Configuration Tool</application> you are obliged to provide a
+	  valid repository location. </PARA>
+<PARA>In the rare event that you subsequently wish to change
+	  the component location, select
+	  <EMPHASIS>Build</EMPHASIS>-&gt;<EMPHASIS>Repository</EMPHASIS> 
+	  and the above dialog box will then be displayed.</PARA>
+<PARA>You can check the location of the current repository, the current save file
+path, and the current hardware template and default package,
+by selecting <EMPHASIS>Help</EMPHASIS>-&gt;<EMPHASIS>Repository Information...</EMPHASIS>.
+A summary will be displayed.</PARA>
+</SECT1>
+
+<!-- ====================================================================== -->
+   
+    
+<SECT1 ID="config-tool-documents">
+<TITLE><productname>eCos</productname> <application>Configuration Tool</application> Documents</TITLE>
+<SECT2>
+<TITLE>Configuration Save File</TITLE>
+<PARA><productname>eCos</productname> configuration settings and other information
+	    (such as disabled conflicts) that are set using the
+	    <productname>eCos</productname> <application>Configuration Tool</application> are saved to
+	    a file between sessions. By default, when the
+	    <productname>eCos</productname> <application>Configuration Tool</application> is first
+	    invoked, it reads and displays information from the
+	    Component Registry and displays the information in an
+	    untitled blank document. You can perform the following
+	    operations on a document:</PARA>
+<SECT3>
+<TITLE>Save the currently active document</TITLE>
+<PARA>Use the &ldquo;<EMPHASIS>File-&gt;Save</EMPHASIS>&rdquo; menu
+	    item or click the <EMPHASIS>Save Document</EMPHASIS> icon on the
+	    toolbar; if the current document is unnamed, you will be prompted
+	    to supply a name for the configuration save file.</PARA>
+<FIGURE>
+<TITLE>Save As dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic3"></GRAPHIC>
+</FIGURE>
+</SECT3>
+<SECT3>
+<TITLE>Open an existing document</TITLE>
+<PARA>Select <EMPHASIS>File</EMPHASIS>-&gt;<EMPHASIS>Open</EMPHASIS>,
+	    or click the <EMPHASIS>Open Document</EMPHASIS> icon on the toolbar.
+	    You will be prompted to supply a name for the configuration save
+	    file. </PARA>
+<FIGURE>
+<TITLE>Open dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic4"></GRAPHIC>
+</FIGURE>
+</SECT3>
+<SECT3>
+<TITLE>Open a document you have used recently</TITLE>
+<PARA>Click its name at the bottom of the
+	    <EMPHASIS>File</EMPHASIS> menu. </PARA>
+<PARA>Documents may also be opened by:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>double-clicking a Configuration Save File in the desktop
+explorer (Windows only);</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>invoking the <productname>eCos</productname>
+<application>Configuration Tool</application>
+with the name of a Configuration File as command-line argument,
+or by creating a shortcut to the <productname>eCos</productname> <application>Configuration Tool</application> with such an argument
+(under Windows or a suitable Linux desktop environment).</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Create a new blank document based on the Component
+	      Registry</TITLE>
+<PARA>Select <EMPHASIS>File</EMPHASIS>-&gt;<EMPHASIS>New</EMPHASIS>,
+or click the <EMPHASIS>New Document</EMPHASIS> icon on the toolbar.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>Save to a different file name</TITLE>
+<PARA>Select <EMPHASIS>File</EMPHASIS>-&gt;<EMPHASIS>Save
+		As</EMPHASIS>. You will be prompted to supply a new
+	      name for the configuration save file.</PARA>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Build and Install Trees</TITLE>
+<PARA>The location of the build and install trees are
+	    derived from the <productname>eCos</productname> save file name as illustrated in the
+	    following example:</PARA>
+<PARA>Save file name = &ldquo;c:&bsol;My
+	    eCos&bsol;config1.ecc&rdquo;</PARA>
+<PARA>Install tree folder = &ldquo;c:&bsol;My
+	    eCos&bsol;config1_install&rdquo;</PARA>
+<PARA>Build tree folder = &ldquo;c:&bsol;My
+	    eCos&bsol;config1_build&rdquo;</PARA>
+<PARA>These names are automatically generated from the name
+	    of the save file.</PARA>
+<PARA>See also <xref linkend="cdl-concepts">.</PARA>
+</SECT2>
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ Getting Help                   -->
+
+<CHAPTER id="config-tool-getting-help">
+<TITLE>Getting Help</TITLE>
+
+<PARA>The <productname>eCos</productname> <application>Configuration Tool</application> contains
+several methods for accessing online help.</PARA>
+
+<!-- ================================================== -->
+
+<SECT1 id="config-tool-context-help-dialogs">
+
+<TITLE>Context-sensitive Help for Dialogs</TITLE>
+<PARA>Most dialogs displayed by the <productname>eCos</productname> <application>Configuration Tool</application> are supplied
+with context-sensitive help. You can then get help relating
+to any control within the current dialog box by</PARA>
+
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>Right-clicking the control (or pressing 
+	      <EMPHASIS>F1</EMPHASIS>
+	      )</PARA>
+<PARA>A &ldquo;What&rsquo;s This?&rdquo; popup menu will
+	  be displayed. Click the menu to display a brief description of the
+	  function of the selected control.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Clicking the question mark icon in the dialog
+	    caption bar (Windows) or the question mark button on the dialog (Linux).</PARA>
+<PARA>A question mark cursor will be displayed. Click on
+	      any control to display a brief description of its
+	      function.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>Some dialogs may have a <EMPHASIS>Help</EMPHASIS>
+	  button. You can press this to display a more general
+	  description of the function of the dialog box as a whole.
+	  This help will be in HTML form; for more information, see
+	  below.</PARA>
+</SECT1>
+
+<!-- ================================================== -->
+
+<SECT1 id="config-tool-context-help-otherwin">
+<TITLE>Context-sensitive Help for Other Windows</TITLE>
+<PARA>In the <EMPHASIS>Help</EMPHASIS> menu, click
+	  <EMPHASIS>Help On...</EMPHASIS>
+<!--
+ (or press
+	  <EMPHASIS>F1</EMPHASIS>)
+-->
+and then click on a window (or click on the arrow/question mark button
+on the toolbar, then click on a window). A small popup window page describing the
+window will be displayed. The same thing can be achieved by right-clicking
+on a window and clicking on <EMPHASIS>What's This?</EMPHASIS>.
+<!--
+	  This help will normally be in HTML format; for more
+	  information, see <xref linkend="methods-of-displaying-html-help">.
+-->
+</PARA>
+</SECT1>
+<SECT1 id="config-tool-context-help-config-items">
+<TITLE>Context-sensitive Help for Configuration Items</TITLE>
+<PARA>In the configuration window, right-click on a configuration
+item (or use <EMPHASIS>Shift+F10</EMPHASIS>). A context
+menu will be displayed; select <EMPHASIS>Visit Documentation</EMPHASIS> 
+to display the page in the <productname>eCos</productname> documentation that most closely
+corresponds to the selected item.</PARA>
+</SECT1>
+
+<SECT1 id="methods-of-displaying-html-help">
+<TITLE>Methods of Displaying HTML Help</TITLE>
+
+<ORDEREDLIST>
+
+<LISTITEM>
+<PARA>
+Using the internal help system. This will show an internal viewer similar to Microsoft HTML Help, with a contents
+hierarchy on the left and HTML pages on the right; see <xref linkend="figure-help-viewer">. The index is regenerated for each repository. If the documentation in
+the repository has changed but the contents does not reflect this, please use the Tools Regenerate Help Index menu
+item.
+</PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>
+Using the default HTML browser. On Unix, you will need a .mailcap entry similar to this:
+</PARA>
+
+<PARA>
+<PROGRAMLISTING>
+text/html; netscape -no-about-splash %s
+</PROGRAMLISTING>
+</PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>
+Using the specified browser.
+</PARA>
+</LISTITEM>
+
+</ORDEREDLIST>
+
+
+<FIGURE id="figure-help-viewer">
+<TITLE>HTML Help viewer</TITLE>
+<GRAPHIC ENTITYREF="graphic5"></GRAPHIC>
+</FIGURE>
+<PARA>If you wish, you may choose to have <EMPHASIS>HTML Help</EMPHASIS> displayed
+in a browser of your choice. To do this, select <EMPHASIS>View</EMPHASIS>-&gt;<EMPHASIS>Settings</EMPHASIS> and
+use the controls in the View Documentation group to select the replacement browser.
+Note that the Navigation facilities of the built-in <EMPHASIS>HTML
+Help</EMPHASIS> system will be unavailable if you choose this method
+of displaying help.</PARA>
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->  
+<!-- {{{ Customization                  -->
+
+<CHAPTER id="config-tool-customization">
+<TITLE>Customization</TITLE>
+<PARA>The following visual aspects of the <productname>eCos</productname> <application>Configuration Tool</application> can be changed to suit
+	individual preferences. These aspects are saved on a per-user
+	basis, so that when the <productname>eCos</productname> <application>Configuration Tool</application> is next invoked by the same
+	user, the appearance will be as set in the previous
+	session.</PARA>
+<SECT1 id="config-tool-window-placement">
+<TITLE>Window Placement</TITLE>
+<PARA>The relative sizes of all windows in the <productname>eCos</productname> <application>Configuration Tool</application> may be adjusted by dragging
+	  the splitter bars that separate the windows. The chosen
+	  sizes will be used the next time the <productname>eCos</productname> <application>Configuration Tool</application> is invoked by the current
+	  user. </PARA>
+<PARA>All windows except the <EMPHASIS>Configuration
+	    Window</EMPHASIS> may be shown or hidden by using the
+	  commands under the <EMPHASIS>View</EMPHASIS> menu (for
+	  example, <EMPHASIS>View-&gt;Output</EMPHASIS>) or the
+	  corresponding keyboard accelerators
+	  (<EMPHASIS>Alt+1</EMPHASIS> to
+	  <EMPHASIS>Alt+4</EMPHASIS>).
+<!--
+By default the
+conflicts window is hidden.
+-->
+</PARA>
+<PARA>Your chosen set of windows (and their relative sizes) will
+be preserved between invocations of the <productname>eCos</productname> <application>Configuration
+Tool</application>.</PARA>
+</SECT1>
+<!--
+<SECT1 id="config-tool-toolbars">
+<TITLE>Toolbars</TITLE>
+<PARA>Select
+	  <EMPHASIS>View</EMPHASIS>-&gt;<EMPHASIS>Toolbars</EMPHASIS>:
+	  each of the standard and Memory Layout toolbars may be
+	  hidden or shown.</PARA>
+</SECT1>
+-->
+<SECT1 id="config-tool-settings">
+<TITLE>Settings</TITLE>
+<PARA>To change other visual aspects, select
+	  <EMPHASIS>View</EMPHASIS>-&gt;<EMPHASIS>Settings</EMPHASIS>
+	  and then select the <EMPHASIS>Display</EMPHASIS> and
+          <EMPHASIS>View</EMPHASIS> tabs depending on the settings
+          you wish to alter..
+	  The options are as follows:
+</PARA>
+
+
+<SECT2>
+<TITLE>Settings: Display tab</TITLE>
+
+<FIGURE>
+<TITLE>Settings dialog, Display tab</TITLE>
+<GRAPHIC ENTITYREF="graphic32"></GRAPHIC>
+</FIGURE>
+
+<SECT3>
+<TITLE>Labels</TITLE>
+
+<PARA>In the configuration window, you can choose to have
+	    either <EMPHASIS>descriptive names</EMPHASIS> (the
+	    default) or <EMPHASIS>macro names</EMPHASIS> displayed as
+	    tree item labels. Descriptive names are generally more
+	    comprehensible, but macro names are used in some contexts
+	    such as conflict resolution and may be directly related to
+	    the source code of the configuration. Note that it is
+	    possible to search for an item in the configuration view
+	    by selecting
+	    <EMPHASIS>Find</EMPHASIS>-&gt;<EMPHASIS>Edit</EMPHASIS>
+	    (see <xref linkend="config-tool-searching">). Both
+	    descriptive names and macro names can be searched.</PARA>
+</SECT3>
+
+<SECT3>
+<TITLE>Integer Items</TITLE>
+<PARA>You can choose to have integer items in the
+	    Configuration Window displayed in decimal or hexadecimal
+	    format.</PARA>
+</SECT3>
+
+<SECT3>
+<TITLE>Font</TITLE>
+
+<PARA>
+Change the font for a particular window by selecting the window name using the drop-down list,
+then clicking on <EMPHASIS>Change Font</EMPHASIS> to select a font for that
+window. The changes will be applied when the press <EMPHASIS>OK</EMPHASIS> to dismiss the Settings dialog.
+If you never make font changes, then the windows will take
+the default setting determined by your current Windows or Unix environment. 
+</PARA>
+</SECT3>
+
+<SECT3>
+<TITLE>Miscellaneous</TITLE>
+
+<PARA>
+If the <EMPHASIS>Splash Screen</EMPHASIS> checkbox is checked, a <EMPHASIS>splash</EMPHASIS>
+window will appear as the application is loading. Uncheck this to eliminate the splash screen.
+</PARA>
+
+</SECT3>
+</SECT2>
+
+<SECT2>
+<TITLE>Settings: Viewers tab</TITLE>
+
+<FIGURE>
+<TITLE>Settings dialog, Viewers tab</TITLE>
+<GRAPHIC ENTITYREF="graphic6"></GRAPHIC>
+</FIGURE>
+
+<SECT3>
+<TITLE>View header files</TITLE>
+
+<PARA>You can change the viewer used to display header files.</PARA>
+</SECT3>
+
+<SECT3>
+<TITLE>View documentation</TITLE>
+
+<PARA>You can change the viewer used to display HTML files.
+See <xref linkend="methods-of-displaying-html-help">.
+</PARA>
+
+
+
+</SECT3>
+
+</SECT2>
+
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->  
+<!-- {{{ Screen Layout                  -->
+
+<CHAPTER id="config-tool-screen-layout">
+<TITLE>Screen Layout</TITLE>
+<PARA>The following windows are available within the
+      <productname>eCos</productname> <application> Configuration
+        Tool</application>:
+    </PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>		Configuration Window</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>		Properties Window</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>		Short Description</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>		Conflicts</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>		Output</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+
+<PARA>The layout of the windows may be adjusted to suit your
+	preferences: see <xref linkend="config-tool-settings">.</PARA>
+
+<SECT1 id="config-tool-configuration-window">
+<TITLE>Configuration Window</TITLE>
+<PARA>This is the principal window used to configure <productname>eCos</productname>. It
+	  takes the form of a tree-based representation of the
+	  configuration items within the currently loaded <productname>eCos</productname>
+	  packages.</PARA>
+<PARA>In the case of items whose values may be changed,
+	  controls are available to set the item values. These either
+	  take the form of check boxes or radio buttons within the
+	  tree itself or cells to the right of the thin vertical
+	  splitter bar. Controls in the tree may be used in the usual
+	  way; cells, however, must first be activated.</PARA>
+<PARA>To activate a cell, simply click on it: it will assume a sunken
+appearance and data can then be edited in the cell. To terminate
+in-cell editing, click elsewhere in the configuration window or
+press <EMPHASIS>ENTER</EMPHASIS>. To discard the partial results
+of in-cell editing and revert to the previous value, press <EMPHASIS>ESCAPE</EMPHASIS>.
+<!-- Not yet implemented
+Note that an asterisk appears against configuration items which have changed since the configuration
+was last saved.
+-->
+</PARA>
+<PARA><GRAPHIC ENTITYREF="graphic7"></GRAPHIC></PARA>
+<PARA>Cells come in three varieties, according to the type of
+	  data they accept:</PARA>
+<TABLE>
+<TITLE>Cell types</TITLE>
+<TGROUP COLS="2">
+<THEAD>
+<ROW>
+<ENTRY>Cell Type</ENTRY>
+<ENTRY><PARA>Data Accepted</PARA></ENTRY>
+</ROW>
+</THEAD>
+<TBODY>
+<ROW>
+<ENTRY>Integer</ENTRY>
+<ENTRY>Decimal or hexadecimal values</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>Floating Point</ENTRY>
+<ENTRY>Floating point values</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>String</ENTRY>
+<ENTRY>Any</ENTRY>
+</ROW>
+</TBODY>
+</TGROUP>
+</TABLE><!--
+<row>
+<cell><normal>Integer</normal></cell><cell><normal>Decimal or hexadecimal
+values</normal></cell></row>
+<row>
+<cell><normal>Floating Point</normal></cell><cell><normal>Floating
+point values</normal></cell></row>
+<row>
+<cell><normal>String</normal></cell><cell><normal>Any</normal></cell></row>
+</body></formata>
+-->
+<PARA>In the case of string cells, you can double-click the cell
+to display a dialog box containing a larger region in which to edit
+the string value. This is useful in the case of long strings, or
+those spanning multiple lines.</PARA>
+<SECT2>
+<TITLE>Disabled items</TITLE>
+<PARA>Some items will appear disabled. In this case the item
+	    label and any associated controls and cells will be
+	    grayed. It is not be possible to change the values of
+	    disabled items.</PARA>
+<SECT3>
+<TITLE>Right-Clicking</TITLE>
+<PARA>You can right-click on an item in the configuration
+	      window item to display a pop-up menu which (depending on
+	      the type of the item selected) allows you to:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA> <EMPHASIS>Properties</EMPHASIS> &ndash;
+		  information relating to the currently selected item
+		  is displayed. The information is equivalent to that
+		  displayed in the Properties
+		  Window.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> <EMPHASIS>Restore Defaults</EMPHASIS> -
+		  the default value of the currently selected item is
+		  restored.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><EMPHASIS>Visit Documentation</EMPHASIS>
+		  - causes the HTML page most closely relating to the
+		  currently selected item to be displayed. This has
+		  the same effect as double-clicking the URL property
+		  in the Properties Window.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> <EMPHASIS>View Header File</EMPHASIS>
+		  &ndash; this causes the file containing the items to
+		  be displayed. This is equivalent to double-clicking
+		  on the File property in the Properties Window. The
+		  viewer used for this purpose may be changed using
+		  the <EMPHASIS>View-&gt;Settings</EMPHASIS> menu item
+		  (see <xref linkend="config-tool-settings">).
+		  Note that this operation is only possible when the
+		  current configuration is saved, in order to avoid
+		  the possibility of changing the source
+		  repository.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><EMPHASIS>Unload Package</EMPHASIS> -
+		  this is equivalent to using the
+		  <EMPHASIS>Build-&gt;Packages</EMPHASIS> menu item to
+		  select and unload the package in
+		  question.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Conflicts Window</TITLE>
+<PARA>This window exists to display any configuration item
+	    conflicts. Conflicts are the result of failures to meet
+	    the requirements between configuration items expressed in
+	    the CDL. See <xref linkend="cdl-conflicts"> <!--in &ldquo;CDL
+	    Concepts&rdquo; on&nbsp;page&nbsp;45 -->.<GRAPHIC ENTITYREF="graphic8"></GRAPHIC></PARA>
+<PARA>The window comprises three columns:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>		<EMPHASIS>Item</EMPHASIS></PARA>
+<PARA>This is the macro name of the first item involved
+		in the conflict.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			
+		<EMPHASIS>Conflict</EMPHASIS></PARA>
+<PARA>This is a description of the conflict type. The currently
+		supported types are &ldquo;unresolved&rdquo;, &ldquo;illegal
+		value&rdquo;, &ldquo;evaluation exception&rdquo;, &ldquo;goal
+		unsatisfied&rdquo; and &ldquo;bad data&rdquo;.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			
+		<EMPHASIS>Property</EMPHASIS></PARA>
+<PARA>This contains a description of the configuration
+		item&rsquo;s property that caused the conflict.</PARA>
+<PARA>Within the conflicts window you can right-click on
+		any item to display a context menu which allows you to
+		choose from one of the following options:</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+
+<PARA>To locate the item involved in the
+conflict, double-click in the first or third column, or
+right-click over the item and choose <EMPHASIS>Locate</EMPHASIS>
+from the popup menu.
+</PARA>
+
+<PARA>You can use the <EMPHASIS>Tools-&gt;Resolve Conflicts</EMPHASIS> menu
+item, or right-click over the item and select <EMPHASIS>Resolve</EMPHASIS> from the popup menu,
+to resolve conflicts &mdash; <xref linkend="resolving-conflicts">.</PARA>
+<SECT3>
+<TITLE>Output Window</TITLE>
+<PARA>This window displays any output generated by
+	      execution of external tools and any error messages that
+	      are not suitable for display in other forms (for
+	      example, as message boxes).</PARA>
+<PARA>Within the output window you can right-click to display a
+context menu which allows you to:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>Save the contents of the window to a
+		  file</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Clear the contents of the
+		  window</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Properties Window</TITLE>
+<PARA>This window displays the CDL properties of the item
+	      currently selected in the configuration window. The same
+	      information may be displayed by right-clicking the item
+	      and selecting &ldquo;properties&rdquo;.</PARA>
+<PARA>	      <GRAPHIC ENTITYREF="graphic9"></GRAPHIC></PARA>
+<PARA>Two properties may be double-clicked as
+	    follows:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA><EMPHASIS>URL</EMPHASIS> &ndash;
+		  double-clicking on a URL property causes the
+		  referenced HTML page to be displayed. This has the
+		  same effect as right-clicking on the item and
+		  choosing &ldquo;Visit
+		  Documentation&rdquo;.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><EMPHASIS>File</EMPHASIS> &ndash;
+		  double-clicking on a File property in a saved
+		  configuration causes the File to be displayed. The
+		  viewer used for this purpose may be changed using
+		  the <EMPHASIS>View-&gt;Settings</EMPHASIS> menu
+		  item. Note that this operation is only possible when
+		  the current configuration is saved, in order to
+		  avoid the possibility of changing the source
+		  repository.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Short Description Window</TITLE>
+<PARA>This window displays a short description of the item
+	      currently selected in the configuration window. More
+	      extensive documentation may be available by
+	      right-clicking on the item and choosing &ldquo;Visit
+	      Documentation&rdquo;.</PARA>
+</SECT3>
+</SECT2>
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->  
+<!-- {{{ Updating and Configuration     -->
+
+<CHAPTER id="config-tool-updating-configuration">
+<TITLE>Updating the Configuration</TITLE>
+<SECT1 id="config-tool-adding-removing-packages">
+<TITLE>Adding and Removing Packages</TITLE>
+<PARA>To add or remove packages from the configuration, select
+	  <EMPHASIS>Build</EMPHASIS>-&gt;<EMPHASIS>Packages</EMPHASIS>.<!--<conditionaltext>--> 
+	    The following dialog box will be displayed:</PARA>
+<FIGURE>
+<TITLE>Packages dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic14"></GRAPHIC>
+</FIGURE>
+<PARA>The left-hand list shows those packages that are available to
+	  be loaded. The right-hand list shows those that are
+	  currently loaded. In order to transfer packages from one
+	  list to another (that is, to load or unload packages)
+	  double-click the selection or click the
+	  <EMPHASIS>Add</EMPHASIS> or <EMPHASIS>Remove</EMPHASIS>
+	  buttons.</PARA>
+
+<PARA>The version drop-down list displays the versions of the
+	  selected packages. When loading packages, this control may
+	  be used to load versions other than the most recent
+	  (current). Note that if more than one package is selected,
+	  the version drop-down list will display only the versions
+	  common to all the selected packages.</PARA>
+
+<PARA>The window under the version displays a brief
+	  description of the selected package. If more than one
+	  package is selected, this window will be blank.</PARA>
+
+<PARA>
+	Under the description window there is a <EMPHASIS>Keywords</EMPHASIS>
+control into which you can type a string to be matched against
+package names, macro names and descriptions. The lists are updated
+a second or so after typing has stopped.
+If you type several separate words,
+all of these words must be associated with a given package
+for that package to be displayed. If you select
+the <EMPHASIS>Match exactly</EMPHASIS> checkbox, then the string
+is taken to be a complete fragment and matched against the beginning
+of a name, macro name or descriptions. All matches are done
+case-insensitively.</PARA>
+
+<PARA>
+If you check <EMPHASIS>Omit hardware packages</EMPHASIS>, only
+non-hardware packages will be shown.
+</PARA>
+
+</SECT1>
+<SECT1 id="config-tool-platform-selection">
+<TITLE>Platform Selection</TITLE>
+<PARA>To add, modify or remove entries in the list of
+	  platforms used for running tests, select
+	  <EMPHASIS>Tools-&gt;Platforms</EMPHASIS>. The following
+	  dialog will be displayed:</PARA>
+<FIGURE>
+<TITLE>Platforms dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic15"></GRAPHIC>
+</FIGURE>
+<PARA>You may add, modify or remove platform entries as you
+	  wish, but in order to run tests, a platform must be defined
+	  to correspond to the currently loaded hardware template. The
+	  information associated with each platform name is used to
+	  run tests.</PARA>
+<PARA>To modify a platform, click the
+	  <EMPHASIS>Modify</EMPHASIS> button with the appropriate
+	  platform selected, or double-click on an entry in the list.
+	  A dialog will be displayed that allows you to change the
+	  command prefix, platform type and arguments for
+	  <EMPHASIS>GDB</EMPHASIS>. </PARA>
+<FIGURE>
+<TITLE>Platform Modify dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic16"></GRAPHIC>
+</FIGURE>
+<PARA>To add a new platform, click the
+	  <EMPHASIS>Add</EMPHASIS> button. A similar dialog will be
+	  displayed that allows you to define a new platform. To
+	  remove a platform, click the <EMPHASIS>Delete</EMPHASIS>
+	  button or press the <EMPHASIS>DEL</EMPHASIS> key with the
+	  appropriate platform selected.</PARA>
+
+<PARA>The command prefix is used when running tests in order
+	  to determine the names of the executables (such as gdb) to
+	  be used. For example, if the gdb executable name is
+	  &ldquo;arm-elf-gdb.exe&rdquo; the prefix should be set to
+	  &ldquo;arm-elf&rdquo;.</PARA>
+<PARA>The platform type indicates the capabilities of the platform
+- whether it is hardware or a simulator, and whether breakpoints
+are supported.</PARA>
+<PARA>The arguments for the <EMPHASIS>GDB</EMPHASIS> field allow
+additional arguments to be passed to gdb when it is used to run
+a test.  This is typically used in the case of simulators linked
+to gdb in order to define memory layout.</PARA>
+</SECT1>
+<SECT1 id="config-tool-using-templates">
+<TITLE>Using Templates</TITLE>
+<PARA>To load a configuration based on a template, select
+	  <EMPHASIS>Build</EMPHASIS>-&gt;<EMPHASIS>Templates</EMPHASIS>.<!--<conditionaltext>--></PARA>
+<PARA>The following dialog box will be displayed:</PARA>
+<FIGURE>
+<TITLE>Templates dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic18"></GRAPHIC>
+</FIGURE>
+<PARA>Change the hardware template, the packages template, or
+	  both. To select a hardware template, choose from the first
+	  drop-list. To choose a packages template, choose from the
+	  second. Brief descriptions of each kind of template are
+	  provided in the corresponding edit boxes.</PARA>
+<SECT2 id="resolving-conflicts">
+<TITLE>Resolving conflicts</TITLE>
+<PARA>During the process of configuring <productname>eCos</productname> it is possible
+	    that conflicts will be created. For more details of the
+	    meaning of conflicts, see <xref linkend="cdl-concepts">.</PARA>
+<PARA>The Conflicts Window displays all conflicts in the
+	    current configuration. Additionally, a window in the
+	    status bar displays a count of the conflicts. Because the
+	    resolution of conflicts can be time-consuming, a mechanism
+	    exists whereby conflicts can be resolved
+	    automatically.</PARA>
+<PARA>You can choose to have a conflicts resolution dialog
+	    box displayed by means of the <EMPHASIS>View-&gt;Settings...
+	      <!--<conditionaltext>--></EMPHASIS>menu item, on the <EMPHASIS>Conflict Resolution</EMPHASIS>
+tab of the dialog.</PARA>
+<FIGURE>
+<TITLE>Options</TITLE>
+<GRAPHIC ENTITYREF="graphic19"></GRAPHIC>
+</FIGURE>
+<PARA>You can choose to have conflicts checked under the
+	    following circumstances:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>After any item is changed (in other words,
+		as soon as the conflict is created)</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Before saving the configuration (including
+		building)</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Never</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The method you chose depends on how much you need
+		your configuration to be free of conflicts. You may
+		want to avoid having to clean up all the conflicts at
+		once, or you may want to keep the configuration
+		consistent at all times. If you have major changes to
+		implement, which may resolve the conflicts, then you
+		might want to wait until after you have completed
+		these changes before you check for conflicts.</PARA>
+<!-- <label>NOTE</label> -->
+<NOTE>
+<PARA>If you choose to check conflicts after any item
+	      is changed, only newly arising conflicts are displayed.
+	      If you choose to check for conflicts before saving the
+	      configuration, the complete set is
+	      displayed.</PARA>
+</NOTE>
+</SECT2>
+<SECT2>
+<TITLE>Automatic resolution</TITLE>
+<PARA>If you check the &ldquo;Automatically suggest
+	    fixes&rdquo; check box, a conflicts resolution dialog box
+	    will be displayed whenever new conflicts are created. The
+	    same dialog box may be displayed at any stage by means of
+	    the <EMPHASIS>Tools-&gt;Resolve Conflicts</EMPHASIS>
+	    <EMPHASIS><!--<conditionaltext>--></EMPHASIS>menu item.
+	    </PARA>
+<PARA>The conflicts resolution dialog box contains two major windows. </PARA>
+<FIGURE>
+<TITLE>Resolve conflicts window</TITLE>
+<GRAPHIC ENTITYREF="graphic20"></GRAPHIC>
+</FIGURE>
+<PARA>The upper contains the set of conflicts to be addressed; the
+format of the data being as that of the Conflicts Window. The lower
+window contains a set of proposed resolutions &ndash; each entry
+is a suggested configuration item value change that as a whole may
+be expected to lead to the currently selected conflict being resolved. </PARA>
+<PARA>Note that there is no guarantee:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>that automatic resolutions will be determinable for every
+conflict.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>	that the resolutions for separate conflicts will be independent.
+In other words, the resolution of one conflict may serve to prevent
+the resolution of another.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>	that the resolution conflicts will not create further
+conflicts.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The above warnings are, however, conservative. In practice
+(so long as the number and extent of conflicts are limited) automatic
+conflict resolution may be used to good effect to correct problems
+without undue amounts of programmer intervention.</PARA>
+<PARA>In order to select the conflicts to be applied, select or
+clear the check boxes against the resolutions for each proposed
+resolution. By default all resolutions are selected; you can return
+to the default state (in other words, cause all check boxes for
+each conflict to again become checked) by pressing the &ldquo;Reset&rdquo; button.
+Note that multiple selection may be used in the resolutions control
+to allow ranges of check boxes to be toggled in one gesture.</PARA>
+<PARA>When you are happy to apply the selected resolutions for each
+conflict displayed, click <EMPHASIS>Apply</EMPHASIS>; this will
+apply the resolutions. Alternatively you may cancel from the dialog
+box without any resolutions being applied.</PARA>
+</SECT2>
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->  
+<!-- {{{ Searching                      -->
+
+<CHAPTER id="config-tool-searching">
+<TITLE>Searching</TITLE>
+<PARA>Select <EMPHASIS>Edit </EMPHASIS>--&gt; <EMPHASIS>Find</EMPHASIS>.
+You will be presented with a Find dialog box:</PARA>
+<FIGURE>
+<TITLE>Find dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic21"></GRAPHIC>
+</FIGURE>
+<PARA>Using this dialog box you can search for an exact text string
+in any one of three ways, as specified by your selection in the &ldquo;Search
+in&rdquo; drop-list:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>Macro names - the search is for a text match within
+configuration item macro names</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			Item names - the search is for a text match within
+configuration item descriptive names</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			Short descriptions - the search is for a text match
+within configuration item short descriptions</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>Note that to invoke <EMPHASIS>Find</EMPHASIS> you can also
+click the <EMPHASIS>Find</EMPHASIS> icon on the toolbar. </PARA>
+</CHAPTER>
+
+<!-- }}} -->  
+<!-- {{{ Building                       -->
+
+<CHAPTER id="config-tool-building">
+<TITLE>Building</TITLE>
+<PARA>When you have configured <productname>eCos</productname>, you may build the configuration.</PARA>
+<PARA><!--<conditionaltext>-->On the <EMPHASIS>Build</EMPHASIS> menu, click:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>			
+<EMPHASIS>Library</EMPHASIS>
+ (or click the Build Library icon on the toolbar) &ndash; this
+causes the <productname>eCos</productname> configuration to be built. The result of a successful
+build will be (among other things) a library against which user
+code can be linked</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			
+<EMPHASIS>Tests</EMPHASIS>
+ &ndash; this causes the <productname>eCos</productname> configuration to be built, and
+additionally builds the relevant test cases linked against the <productname>eCos</productname> library</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			
+<EMPHASIS>Clean</EMPHASIS>
+ &ndash; this removes all intermediate files, thus causing a
+subsequent build/library or build/tests operation
+to cause recompilation of all relevant files.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			
+<EMPHASIS>Stop</EMPHASIS>
+ &ndash; this causes a currently executing build (any of the
+above steps) to be interrupted</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>Build options may be displayed by using the <EMPHASIS>Build-&gt;Options</EMPHASIS> menu
+item. This displays a dialog box containing a drop-list control
+and two windows. The drop-list control allows you to select the
+type of build option to be displayed (for example &ldquo;LDFLAGS&rdquo; are
+the options applied at link-time. The left-hand window is a tree
+view of the packages loaded in the current configuration. The right-hand
+window is a list of the build options that will be used for the
+currently selected package.</PARA>
+<PARA>Note that this dialog box currently affords only read-only
+access to the build options. In order to change build options you
+must edit the relevant string configuration item.</PARA>
+<PARA>A single level of inheritance is supported: each package&rsquo;s
+build options are combined with the global options (these are to
+be found in the &ldquo;Global build options&rdquo; folder
+in the configuration view).</PARA>
+<PARA><GRAPHIC ENTITYREF="graphic22"></GRAPHIC></PARA>
+<SECT1 id="config-tool-selecting-build-tools">
+<TITLE>Selecting Build Tools</TITLE>
+<PARA>Normally the installation process will supply the information
+required for the <productname>eCos</productname><APPLICATION>Configuration Tool</APPLICATION> to
+locate the build tools (compiler, linker, etc.) necessary
+to perform a build. However if this information is not registered,
+or it is necessary to specify the location manually (for example,
+when a new toolchain installation has been made), select <EMPHASIS>Tools</EMPHASIS>-&gt;<EMPHASIS>Paths</EMPHASIS>-&gt;<EMPHASIS>Build
+Tools</EMPHASIS>. The following dialog box will be displayed:</PARA>
+<FIGURE>
+<TITLE>Build tools</TITLE>
+<GRAPHIC ENTITYREF="graphic23"></GRAPHIC>
+</FIGURE>
+<PARA>This dialog box allows you to locate the folder containing
+the build tools. </PARA>
+</SECT1>
+<SECT1 id="config-tool-selecting-user-tools">
+<TITLE>Selecting User Tools</TITLE>
+<PARA>Normally the installation process will supply the information
+required for the <productname>eCos</productname><APPLICATION>Configuration Tool</APPLICATION> to
+locate the user tools (cat, ls, etc.) necessary to perform
+a build. However if this information is not registered, or it is
+necessary to specify the location manually (for example, when a
+new toolchain installation has been made), select <EMPHASIS>Tools</EMPHASIS>-&gt;<EMPHASIS>Paths</EMPHASIS>-&gt;<EMPHASIS>User
+Tools</EMPHASIS>. The following dialog box will be displayed:</PARA>
+<FIGURE>
+<TITLE>User tools</TITLE>
+<GRAPHIC ENTITYREF="graphic24"></GRAPHIC>
+</FIGURE>
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->  
+<!-- {{{ Execution                      -->
+
+<CHAPTER id="config-tool-test-execution"><!--<conditionaltext>-->
+<TITLE>Execution</TITLE>
+<PARA>Test executables that have been linked using the Build/Tests
+operation against the current configuration can be executed by selecting <!--<conditionaltext>--><EMPHASIS>Tools</EMPHASIS>-&gt;<EMPHASIS>Run
+Tests<!--<conditionaltext>--></EMPHASIS>.</PARA>
+<PARA>When tests are run, the <application>Configuration Tool</application> looks
+for a platform name corresponding to the currently loaded hardware template.
+If no such platform is found, a dialog will be displayed for you
+to define one; this dialog is similar to that displayed by the <EMPHASIS>Add</EMPHASIS> function
+in the <EMPHASIS>Tools-&gt;Platforms</EMPHASIS> dialog, but
+in this case the platform name cannot be changed.</PARA>
+<PARA>When a test run is invoked, a property sheet is displayed,
+comprising three tabs: <EMPHASIS>Executables</EMPHASIS>, <EMPHASIS>Output</EMPHASIS> and <EMPHASIS>Summary</EMPHASIS>.</PARA>
+<PARA>Note that the property sheet is resizable.</PARA>
+<PARA>Three buttons appear on the property sheet itself: <EMPHASIS>Run/Stop</EMPHASIS>, <EMPHASIS>Close</EMPHASIS> and <EMPHASIS>Properties</EMPHASIS>.</PARA>
+<PARA>The <EMPHASIS>Run</EMPHASIS> button is used to initiate a
+test run. Those tests selected on the <EMPHASIS>Executables</EMPHASIS> tab
+are run, and the output recorded on the <EMPHASIS>Output</EMPHASIS> and <EMPHASIS>Summary</EMPHASIS> tabs.
+During the course of a run, the <EMPHASIS>Run</EMPHASIS> button
+changes to &ldquo;Stop&rdquo;. The button may be used to interrupt
+a test run at any point.</PARA>
+<SECT1 id="config-tool-test-properties">
+<TITLE>Properties</TITLE>
+<PARA>The <EMPHASIS>Properties</EMPHASIS> button is used to change
+the connectivity properties for the test run.</PARA>
+<FIGURE>
+<TITLE>Properties dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic25"></GRAPHIC>
+</FIGURE>
+<SECT2>
+<TITLE>Download Timeout</TITLE>
+<PARA>	    This group of controls serves to set the maximum time that
+	    is allowed for downloading a test to the target board. If
+	    the time is exceeded, the test will be deemed to have
+	    failed for reason of &ldquo;Download Timeout&rdquo; and
+	    the execution of that particular test will be abandoned.
+	    This option only applies to tests run on hardware, not to
+	    those executed in a simulator. Times are in units of
+	    elapsed seconds.</PARA>
+<PARA>Three options are available using the drop-down
+	    list:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>Calculated from file size - an estimate of the maximum
+time required for download is made using the (stripped) executable
+size and the currently used baud rate</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			Specified - a user-specified value may be entered in
+the adjacent edit box</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			None - no maximum download time is to be applied.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Run time Timeout</TITLE>
+<PARA>This group of controls serves to set the maximum time
+	    that is allowed for executing a test on the target board
+	    or in a simulator. If the time is exceeded, the test will
+	    be deemed to have failed for reason of
+	    &ldquo;Timeout&rdquo; and the execution of that particular
+	    test will be abandoned. In the case of hardware, the time
+	    is measured in elapsed seconds: in the case of a simulator
+	    it is in CPU seconds.</PARA>
+<PARA>Three options are available using the drop-down
+	  list:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>None - no maximum download time is to be
+		applied.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Specified - a user-specified value may be
+		entered in the adjacent edit box</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Default - a default value of 30 seconds is
+		used</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Connection</TITLE>
+<PARA>The <EMPHASIS>Connection</EMPHASIS> controls may be used
+	    to specify how the target board is to be accessed.</PARA>
+
+<PARA>If the target board is connected using a serial cable, the <EMPHASIS>Serial</EMPHASIS> radio
+button should be checked. In this case you can select a port (COM1,
+COM2, &hellip;) and an appropriate baud rate using drop-list boxes.</PARA>
+<PARA>If the target board is accessed remotely using GDB remote
+protocol, the &ldquo;TCP/IP&rdquo; radio button should
+be checked. In this case you can select a host name and TCP/IP port
+number using edit boxes.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Executables Tab</TITLE>
+<PARA>This is used to adjust the set of tests available for execution.
+A check box against each executable name indicates whether that
+executable will be included when the <EMPHASIS>Run</EMPHASIS> button
+is pressed. The <EMPHASIS>Check All</EMPHASIS> and <EMPHASIS>Uncheck
+All</EMPHASIS> buttons may be used to check or uncheck all items.</PARA>
+<PARA>When the property sheet is first displayed, it will be pre-populated
+with those test executables that have been linked using the Build/Tests
+operation against the current configuration. </PARA>
+<FIGURE>
+<TITLE>Run tests </TITLE>
+<GRAPHIC ENTITYREF="graphic27"></GRAPHIC>
+</FIGURE>
+<PARA>You can right-click in the window to display a context menu
+containing <EMPHASIS>Add</EMPHASIS> and <EMPHASIS>Remove</EMPHASIS> items.
+Clicking <EMPHASIS>Remove</EMPHASIS>  will remove those executables
+selected. Clicking <EMPHASIS>Add</EMPHASIS> will display a dialog
+box that allows you to add to the set of items. Equivalently the <EMPHASIS>Add</EMPHASIS> button
+may be used to add executables, and the <EMPHASIS>DEL</EMPHASIS> key
+may be used to remove them.</PARA>
+<PARA>You can use the <EMPHASIS>Add from Folder</EMPHASIS> button
+to add a number of executables in a specified folder (optionally
+including subfolders, if you click on <EMPHASIS>Yes</EMPHASIS> when
+asked).</PARA>
+<FIGURE>
+<TITLE>Add files from folder </TITLE>
+<GRAPHIC ENTITYREF="graphic28"></GRAPHIC>
+</FIGURE>
+
+<!--
+<PARA>The &ldquo;Add from subfolders&rdquo; check box should
+be checked if you wish the search for executables to descend into
+subfolders (in the example above the whole of the C drive would
+be searched).</PARA>
+
+<PARA>The &ldquo;Files of type&rdquo; edit box should be used
+to specify the extension of those files to be matched &lsqb;for
+example, &ldquo;*.exe&rdquo;&rsqb;.</PARA>
+-->
+</SECT2>
+<SECT2>
+<TITLE>Output Tab</TITLE>
+<PARA>This tab is used to display the output from running tests.
+The output can be saved to a file or cleared by means of the popup
+menu displayed when you right-click in the window.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Summary Tab</TITLE>
+<PARA>This tab is used to display a record, in summary form, of
+those tests executed. For each execution, the following information
+is displayed:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>			<EMPHASIS>Time</EMPHASIS> - the date and time of execution</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Host</EMPHASIS> - the host name of the machine
+from which the test was downloaded</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Platform</EMPHASIS> - the platform on which
+the test was executed</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Executable</EMPHASIS> - the executable (file
+name) of the test executed</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Status</EMPHASIS> - the result of executing
+the test. This will be one of the following:</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>				Not started</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>No result</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Inapplicable</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>				Pass</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>DTimeout</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Timeout</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Cancelled</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>				Fail</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Assert fail</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Size</EMPHASIS> - the size &lsqb;stripped/unstripped&rsqb; of
+the test executed</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Download</EMPHASIS> - the download time &lsqb;mm:ss/mm:ss&rsqb; used.
+The first of the two times displayed represents the actual time
+used: the second the limit time.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Elapsed</EMPHASIS> - the elapsed time &lsqb;mm:ss&rsqb; used.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>			<EMPHASIS>Execution</EMPHASIS> - the execution time
+ &lsqb;mm:ss/mm:ss&rsqb; used. The first of the
+two times displayed represents the actual time used: the second
+the limit time.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The output can be saved to a file or cleared by means of the
+popup menu displayed when you right-click in the window.</PARA>
+</SECT2>
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->  
+<!-- {{{ Creating a Shell               -->
+
+<CHAPTER id="config-tool-creating-a-shell">
+<TITLE>Creating a Shell</TITLE>
+<PARA>To call up a shell window, select <EMPHASIS>Tools</EMPHASIS>-&gt;<EMPHASIS>Shell</EMPHASIS>.
+Under Windows, you will get a Cygwin shell similar to the one below. On Linux, you will
+get a standard Linux shell window.</PARA>
+<GRAPHIC ENTITYREF="graphic29"></GRAPHIC>
+<SECT1 id="config-tool-keyboard-accelerators">
+<TITLE>Keyboard Accelerators</TITLE>
+<PARA>The following table presents the list of keyboard accelerators
+that can be used with the <application>Configuration Tool</application>. </PARA>
+
+<table id="keyboard-accelerators"><title>Keyboard accelerators</title>
+<tgroup cols="2">
+	  <thead>
+	    <row>
+	      <entry>Accelerator</entry>
+	      <entry>Action</entry>
+	      <entry>Remarks</entry>
+	    </row>
+	  </thead>
+<tbody>
+
+<row>
+<entry><emphasis>Alt+1</emphasis></entry>
+<entry>hide/show properties window</entry>
+<entry></entry>
+</row>
+
+<row>
+<entry><emphasis>Alt+2</emphasis></entry>
+<entry>hide/show output window</entry>
+<entry></entry></row>
+
+<row>
+<entry><emphasis>Alt+3</emphasis></entry>
+<entry>hide/show short description window</entry>
+<entry></entry></row>
+
+<row>
+<entry><emphasis>Alt+4</emphasis></entry>
+<entry>hide/show conflicts window</entry>
+<entry></entry>
+</row>
+
+<row>
+<entry><emphasis>Ctrl+A</emphasis></entry>
+<entry>select all</entry><entry>output
+window and in-cell editing</entry></row>
+<row>
+<entry><emphasis>Ctrl+C</emphasis></entry>
+<entry>copy</entry><entry>output window
+and in-cell editing</entry></row>
+<row>
+<entry><emphasis>Ctrl+F</emphasis></entry>
+<entry>Edit-&gt;Find</entry><entry></entry></row>
+<row>
+<entry><emphasis>Ctrl+N</emphasis></entry>
+<entry>File-&gt;New</entry><entry></entry></row>
+<row>
+<entry><emphasis>Ctrl+O</emphasis></entry>
+<entry>File-&gt;Open</entry><entry></entry></row>
+<row>
+<entry><emphasis>Ctrl+S</emphasis></entry>
+<entry>File-&gt;Save</entry><entry></entry></row>
+<row>
+<entry><emphasis>Ctrl+V</emphasis></entry>
+<entry>Paste</entry><entry>in-cell editing
+only</entry></row>
+<row>
+<entry><emphasis>Ctrl+X</emphasis></entry>
+<entry>Cut</entry><entry>in-cell-editing
+only</entry></row>
+<row>
+<entry><emphasis>Ctrl+Z</emphasis></entry>
+<entry>Undo</entry><entry>in-cell editing
+only</entry></row>
+<row>
+<entry><emphasis>F1</emphasis></entry>
+<entry>Context-sensitive help</entry><entry></entry></row>
+<row>
+<entry><emphasis>F3</emphasis></entry>
+<entry>Find next</entry><entry></entry></row>
+<row>
+<entry><emphasis>F7</emphasis></entry>
+<entry>Build-&gt;Library</entry><entry></entry></row>
+<row>
+<entry><emphasis>Shift+F7</emphasis></entry>
+<entry>Build-&gt;Tests</entry><entry></entry></row>
+<row>
+<entry><emphasis>Alt+F6</emphasis></entry>
+<entry>View-&gt;Next window</entry>
+<entry></entry></row>
+<row>
+<entry><emphasis>Shift+Alt+0</emphasis></entry>
+<entry>View-&gt;Previous window</entry>
+<entry></entry></row>
+<row>
+<entry><emphasis>Shift+Ins</emphasis></entry>
+<entry>Paste</entry><entry>in-cell editing
+only</entry></row>
+<row>
+<entry><emphasis>Shift+F10</emphasis></entry>
+<entry>Display context menu</entry><entry>Configuration
+window</entry></row>
+<row>
+<entry><emphasis>Alt+Enter</emphasis></entry>
+<entry>Display properties dialog box</entry>
+<entry>Configuration window</entry></row>
+<row>
+<entry><emphasis>&gt;</emphasis></entry>
+<entry>Increment item value</entry><entry>Configuration
+window</entry></row>
+<row>
+<entry>&lt;</entry><entry>Decrement
+item value</entry><entry>Configuration window</entry></row>
+<row>
+<entry><emphasis>Space</emphasis></entry>
+<entry>Toggle item value</entry><entry>Configuration
+window</entry></row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+</SECT1>
+</CHAPTER>
+
+<!-- }}} -->  
+
+  
+</PART>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:nil
+sgml-shorttag:t
+sgml-namecase-general:t
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:("user-guide.sgml" "book" "part")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,0 +1,136 @@
+2003-02-25  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/usbs_upd985xx.sgml: Declare as <part> not <reference> to get
+	correct TOC numbering.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/usbs_upd985xx.cdl: Fix doc link.
+
+	* doc/usbs_upd985xx.sgml: Comment out DOCTYPE for now to allow building
+	with standard doc build.
+	Add an enclosing <reference> so it's structured better with standard
+	doc build.
+
+2003-01-22  Anssi Pulkkinen <anssi.pulkkinen@ascom.ch>
+
+	* src/usbs_upd985xx.c (ep0_rx_dsr): After sending a stall response
+	on ep0, start a new receive process for the next control message.
+
+2002-12-01  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/usbs_upd985xx.c, cdl/usbs_upd985xx.cdl:
+	Make the control packet size configurable, to work around a
+	problem detected by USB compliance testing. Based on work
+	by Clark Williams and Andrew Lunn.
+
+2002-10-26  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/usbs_upd985xx.c (ep0_rx_dsr):
+	Fix typo in expression, reported by Andrew Lunn. The system's
+	behaviour should not be affected.
+
+2001-09-20  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_upd985xx.c (ep0_init):
+	During a reset, also reset the tx_in_progress and
+	tx_pending locks. Otherwise if there are ongoing
+	transmits while the host is issuing a reset no
+	further transmits would be possible.
+
+2001-09-14  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_upd985xx.c:
+	Various changes related to USB testing. Also include
+	potential work-arounds for some unconfirmed hardware
+	problems, but these are disabled for now.
+	
+	* src/usbs_upd985xx.c: 
+	Change how the reset signal interrupt bit gets masked, to
+	cope with the way Windows initializes a new USB device.
+
+2001-08-09  Bart Veer  <bartv@redhat.com>
+
+	* doc/usbs_upd985xx.sgml, doc/*.html:
+	Updated to describe the driver's current behaviour.
+
+	* src/usbs_upd985xx.c, cdl/usbs_upd985xx.cdl:
+	Implement workaround for some hardware problems,
+	by serializing transmit operations.
+
+2001-08-08  Bart Veer  <bartv@redhat.com>
+
+	* cdl/usbs_upd985xx.cdl, include/usbs_upd985xx.h,
+	  src/usbs_upd985xx.c, src/usbs_upd985xx.cxx:
+	Implement workarounds for some hardware problems.
+	1) flush the ibus after every write operation.
+	2) implement support for endpoint 5 transfers, and
+	   optionally for emulating bulk transfers over this
+	   endpoint (normally this endpoint is used for interrupt
+	   transfers).
+        All under the control of suitable configuration options,
+	which by default are set to work around the hardware problems.
+
+2001-08-06  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_upd985xx.c:
+	Add initial support for USB testing.
+
+2001-07-02  Bart Veer  <bartv@redhat.com>
+
+	* doc/usbs_upd985xx.sgml:
+	Document alignment restrictions for receive buffers, and
+	the optional platform-specific INIT macro.
+
+	* doc/devs-usb-nec-upd985xx.html
+	Regenerate following above change.
+	
+	* src/usbs_upd985xx.c:
+	Remove FIXME related to cacheline alignment, not an issue
+	for MIPS.
+	Remove FIXME related to platform-specific USB startup,
+	now implemented.
+
+2001-06-28  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_upd985xx.c, cdl/usbs_upd985xx.cdl:
+	Device driver now functional.
+
+2001-05-22  Bart Veer  <bartv@redhat.com>
+
+	* USB device driver work started.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

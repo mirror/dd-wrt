@@ -1,0 +1,1120 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: Jump Patterns,  Next: Looping Patterns,  Prev: Dependent Patterns,  Up: Machine Desc
+
+Defining Jump Instruction Patterns
+==================================
+
+   For most machines, GCC assumes that the machine has a condition code.
+A comparison insn sets the condition code, recording the results of both
+signed and unsigned comparison of the given operands.  A separate branch
+insn tests the condition code and branches or not according its value.
+The branch insns come in distinct signed and unsigned flavors.  Many
+common machines, such as the VAX, the 68000 and the 32000, work this
+way.
+
+   Some machines have distinct signed and unsigned compare
+instructions, and only one set of conditional branch instructions.  The
+easiest way to handle these machines is to treat them just like the
+others until the final stage where assembly code is written.  At this
+time, when outputting code for the compare instruction, peek ahead at
+the following branch using `next_cc0_user (insn)'.  (The variable
+`insn' refers to the insn being output, in the output-writing code in
+an instruction pattern.)  If the RTL says that is an unsigned branch,
+output an unsigned compare; otherwise output a signed compare.  When
+the branch itself is output, you can treat signed and unsigned branches
+identically.
+
+   The reason you can do this is that GCC always generates a pair of
+consecutive RTL insns, possibly separated by `note' insns, one to set
+the condition code and one to test it, and keeps the pair inviolate
+until the end.
+
+   To go with this technique, you must define the machine-description
+macro `NOTICE_UPDATE_CC' to do `CC_STATUS_INIT'; in other words, no
+compare instruction is superfluous.
+
+   Some machines have compare-and-branch instructions and no condition
+code.  A similar technique works for them.  When it is time to "output"
+a compare instruction, record its operands in two static variables.
+When outputting the branch-on-condition-code instruction that follows,
+actually output a compare-and-branch instruction that uses the
+remembered operands.
+
+   It also works to define patterns for compare-and-branch instructions.
+In optimizing compilation, the pair of compare and branch instructions
+will be combined according to these patterns.  But this does not happen
+if optimization is not requested.  So you must use one of the solutions
+above in addition to any special patterns you define.
+
+   In many RISC machines, most instructions do not affect the condition
+code and there may not even be a separate condition code register.  On
+these machines, the restriction that the definition and use of the
+condition code be adjacent insns is not necessary and can prevent
+important optimizations.  For example, on the IBM RS/6000, there is a
+delay for taken branches unless the condition code register is set three
+instructions earlier than the conditional branch.  The instruction
+scheduler cannot perform this optimization if it is not permitted to
+separate the definition and use of the condition code register.
+
+   On these machines, do not use `(cc0)', but instead use a register to
+represent the condition code.  If there is a specific condition code
+register in the machine, use a hard register.  If the condition code or
+comparison result can be placed in any general register, or if there are
+multiple condition registers, use a pseudo register.
+
+   On some machines, the type of branch instruction generated may
+depend on the way the condition code was produced; for example, on the
+68k and Sparc, setting the condition code directly from an add or
+subtract instruction does not clear the overflow bit the way that a test
+instruction does, so a different branch instruction must be used for
+some conditional branches.  For machines that use `(cc0)', the set and
+use of the condition code must be adjacent (separated only by `note'
+insns) allowing flags in `cc_status' to be used.  (*Note Condition
+Code::.)  Also, the comparison and branch insns can be located from
+each other by using the functions `prev_cc0_setter' and `next_cc0_user'.
+
+   However, this is not true on machines that do not use `(cc0)'.  On
+those machines, no assumptions can be made about the adjacency of the
+compare and branch insns and the above methods cannot be used.  Instead,
+we use the machine mode of the condition code register to record
+different formats of the condition code register.
+
+   Registers used to store the condition code value should have a mode
+that is in class `MODE_CC'.  Normally, it will be `CCmode'.  If
+additional modes are required (as for the add example mentioned above in
+the Sparc), define the macro `EXTRA_CC_MODES' to list the additional
+modes required (*note Condition Code::).  Also define `SELECT_CC_MODE'
+to choose a mode given an operand of a compare.
+
+   If it is known during RTL generation that a different mode will be
+required (for example, if the machine has separate compare instructions
+for signed and unsigned quantities, like most IBM processors), they can
+be specified at that time.
+
+   If the cases that require different modes would be made by
+instruction combination, the macro `SELECT_CC_MODE' determines which
+machine mode should be used for the comparison result.  The patterns
+should be written using that mode.  To support the case of the add on
+the Sparc discussed above, we have the pattern
+
+     (define_insn ""
+       [(set (reg:CC_NOOV 0)
+             (compare:CC_NOOV
+               (plus:SI (match_operand:SI 0 "register_operand" "%r")
+                        (match_operand:SI 1 "arith_operand" "rI"))
+               (const_int 0)))]
+       ""
+       "...")
+
+   The `SELECT_CC_MODE' macro on the Sparc returns `CC_NOOVmode' for
+comparisons whose argument is a `plus'.
+
+
+File: gccint.info,  Node: Looping Patterns,  Next: Insn Canonicalizations,  Prev: Jump Patterns,  Up: Machine Desc
+
+Defining Looping Instruction Patterns
+=====================================
+
+   Some machines have special jump instructions that can be utilised to
+make loops more efficient.  A common example is the 68000 `dbra'
+instruction which performs a decrement of a register and a branch if the
+result was greater than zero.  Other machines, in particular digital
+signal processors (DSPs), have special block repeat instructions to
+provide low-overhead loop support.  For example, the TI TMS320C3x/C4x
+DSPs have a block repeat instruction that loads special registers to
+mark the top and end of a loop and to count the number of loop
+iterations.  This avoids the need for fetching and executing a
+`dbra'-like instruction and avoids pipeline stalls associated with the
+jump.
+
+   GCC has three special named patterns to support low overhead looping.
+They are `decrement_and_branch_until_zero', `doloop_begin', and
+`doloop_end'.  The first pattern, `decrement_and_branch_until_zero', is
+not emitted during RTL generation but may be emitted during the
+instruction combination phase.  This requires the assistance of the
+loop optimizer, using information collected during strength reduction,
+to reverse a loop to count down to zero.  Some targets also require the
+loop optimizer to add a `REG_NONNEG' note to indicate that the
+iteration count is always positive.  This is needed if the target
+performs a signed loop termination test.  For example, the 68000 uses a
+pattern similar to the following for its `dbra' instruction:
+
+     (define_insn "decrement_and_branch_until_zero"
+       [(set (pc)
+     	(if_then_else
+     	  (ge (plus:SI (match_operand:SI 0 "general_operand" "+d*am")
+     		       (const_int -1))
+     	      (const_int 0))
+     	  (label_ref (match_operand 1 "" ""))
+     	  (pc)))
+        (set (match_dup 0)
+     	(plus:SI (match_dup 0)
+     		 (const_int -1)))]
+       "find_reg_note (insn, REG_NONNEG, 0)"
+       "...")
+
+   Note that since the insn is both a jump insn and has an output, it
+must deal with its own reloads, hence the `m' constraints.  Also note
+that since this insn is generated by the instruction combination phase
+combining two sequential insns together into an implicit parallel insn,
+the iteration counter needs to be biased by the same amount as the
+decrement operation, in this case -1.  Note that the following similar
+pattern will not be matched by the combiner.
+
+     (define_insn "decrement_and_branch_until_zero"
+       [(set (pc)
+     	(if_then_else
+     	  (ge (match_operand:SI 0 "general_operand" "+d*am")
+     	      (const_int 1))
+     	  (label_ref (match_operand 1 "" ""))
+     	  (pc)))
+        (set (match_dup 0)
+     	(plus:SI (match_dup 0)
+     		 (const_int -1)))]
+       "find_reg_note (insn, REG_NONNEG, 0)"
+       "...")
+
+   The other two special looping patterns, `doloop_begin' and
+`doloop_end', are emitted by the loop optimizer for certain
+well-behaved loops with a finite number of loop iterations using
+information collected during strength reduction.
+
+   The `doloop_end' pattern describes the actual looping instruction
+(or the implicit looping operation) and the `doloop_begin' pattern is
+an optional companion pattern that can be used for initialization
+needed for some low-overhead looping instructions.
+
+   Note that some machines require the actual looping instruction to be
+emitted at the top of the loop (e.g., the TMS320C3x/C4x DSPs).  Emitting
+the true RTL for a looping instruction at the top of the loop can cause
+problems with flow analysis.  So instead, a dummy `doloop' insn is
+emitted at the end of the loop.  The machine dependent reorg pass checks
+for the presence of this `doloop' insn and then searches back to the
+top of the loop, where it inserts the true looping insn (provided there
+are no instructions in the loop which would cause problems).  Any
+additional labels can be emitted at this point.  In addition, if the
+desired special iteration counter register was not allocated, this
+machine dependent reorg pass could emit a traditional compare and jump
+instruction pair.
+
+   The essential difference between the
+`decrement_and_branch_until_zero' and the `doloop_end' patterns is that
+the loop optimizer allocates an additional pseudo register for the
+latter as an iteration counter.  This pseudo register cannot be used
+within the loop (i.e., general induction variables cannot be derived
+from it), however, in many cases the loop induction variable may become
+redundant and removed by the flow pass.
+
+
+File: gccint.info,  Node: Insn Canonicalizations,  Next: Expander Definitions,  Prev: Looping Patterns,  Up: Machine Desc
+
+Canonicalization of Instructions
+================================
+
+   There are often cases where multiple RTL expressions could represent
+an operation performed by a single machine instruction.  This situation
+is most commonly encountered with logical, branch, and
+multiply-accumulate instructions.  In such cases, the compiler attempts
+to convert these multiple RTL expressions into a single canonical form
+to reduce the number of insn patterns required.
+
+   In addition to algebraic simplifications, following canonicalizations
+are performed:
+
+   * For commutative and comparison operators, a constant is always
+     made the second operand.  If a machine only supports a constant as
+     the second operand, only patterns that match a constant in the
+     second operand need be supplied.
+
+     For these operators, if only one operand is a `neg', `not',
+     `mult', `plus', or `minus' expression, it will be the first
+     operand.
+
+   * For the `compare' operator, a constant is always the second operand
+     on machines where `cc0' is used (*note Jump Patterns::).  On other
+     machines, there are rare cases where the compiler might want to
+     construct a `compare' with a constant as the first operand.
+     However, these cases are not common enough for it to be worthwhile
+     to provide a pattern matching a constant as the first operand
+     unless the machine actually has such an instruction.
+
+     An operand of `neg', `not', `mult', `plus', or `minus' is made the
+     first operand under the same conditions as above.
+
+   * `(minus X (const_int N))' is converted to `(plus X (const_int
+     -N))'.
+
+   * Within address computations (i.e., inside `mem'), a left shift is
+     converted into the appropriate multiplication by a power of two.
+
+   * De`Morgan's Law is used to move bitwise negation inside a bitwise
+     logical-and or logical-or operation.  If this results in only one
+     operand being a `not' expression, it will be the first one.
+
+     A machine that has an instruction that performs a bitwise
+     logical-and of one operand with the bitwise negation of the other
+     should specify the pattern for that instruction as
+
+          (define_insn ""
+            [(set (match_operand:M 0 ...)
+                  (and:M (not:M (match_operand:M 1 ...))
+                               (match_operand:M 2 ...)))]
+            "..."
+            "...")
+
+     Similarly, a pattern for a "NAND" instruction should be written
+
+          (define_insn ""
+            [(set (match_operand:M 0 ...)
+                  (ior:M (not:M (match_operand:M 1 ...))
+                               (not:M (match_operand:M 2 ...))))]
+            "..."
+            "...")
+
+     In both cases, it is not necessary to include patterns for the many
+     logically equivalent RTL expressions.
+
+   * The only possible RTL expressions involving both bitwise
+     exclusive-or and bitwise negation are `(xor:M X Y)' and `(not:M
+     (xor:M X Y))'.
+
+   * The sum of three items, one of which is a constant, will only
+     appear in the form
+
+          (plus:M (plus:M X Y) CONSTANT)
+
+   * On machines that do not use `cc0', `(compare X (const_int 0))'
+     will be converted to X.
+
+   * Equality comparisons of a group of bits (usually a single bit)
+     with zero will be written using `zero_extract' rather than the
+     equivalent `and' or `sign_extract' operations.
+
+
+
+File: gccint.info,  Node: Expander Definitions,  Next: Insn Splitting,  Prev: Insn Canonicalizations,  Up: Machine Desc
+
+Defining RTL Sequences for Code Generation
+==========================================
+
+   On some target machines, some standard pattern names for RTL
+generation cannot be handled with single insn, but a sequence of RTL
+insns can represent them.  For these target machines, you can write a
+`define_expand' to specify how to generate the sequence of RTL.
+
+   A `define_expand' is an RTL expression that looks almost like a
+`define_insn'; but, unlike the latter, a `define_expand' is used only
+for RTL generation and it can produce more than one RTL insn.
+
+   A `define_expand' RTX has four operands:
+
+   * The name.  Each `define_expand' must have a name, since the only
+     use for it is to refer to it by name.
+
+   * The RTL template.  This is a vector of RTL expressions representing
+     a sequence of separate instructions.  Unlike `define_insn', there
+     is no implicit surrounding `PARALLEL'.
+
+   * The condition, a string containing a C expression.  This
+     expression is used to express how the availability of this pattern
+     depends on subclasses of target machine, selected by command-line
+     options when GCC is run.  This is just like the condition of a
+     `define_insn' that has a standard name.  Therefore, the condition
+     (if present) may not depend on the data in the insn being matched,
+     but only the target-machine-type flags.  The compiler needs to
+     test these conditions during initialization in order to learn
+     exactly which named instructions are available in a particular run.
+
+   * The preparation statements, a string containing zero or more C
+     statements which are to be executed before RTL code is generated
+     from the RTL template.
+
+     Usually these statements prepare temporary registers for use as
+     internal operands in the RTL template, but they can also generate
+     RTL insns directly by calling routines such as `emit_insn', etc.
+     Any such insns precede the ones that come from the RTL template.
+
+   Every RTL insn emitted by a `define_expand' must match some
+`define_insn' in the machine description.  Otherwise, the compiler will
+crash when trying to generate code for the insn or trying to optimize
+it.
+
+   The RTL template, in addition to controlling generation of RTL insns,
+also describes the operands that need to be specified when this pattern
+is used.  In particular, it gives a predicate for each operand.
+
+   A true operand, which needs to be specified in order to generate RTL
+from the pattern, should be described with a `match_operand' in its
+first occurrence in the RTL template.  This enters information on the
+operand's predicate into the tables that record such things.  GCC uses
+the information to preload the operand into a register if that is
+required for valid RTL code.  If the operand is referred to more than
+once, subsequent references should use `match_dup'.
+
+   The RTL template may also refer to internal "operands" which are
+temporary registers or labels used only within the sequence made by the
+`define_expand'.  Internal operands are substituted into the RTL
+template with `match_dup', never with `match_operand'.  The values of
+the internal operands are not passed in as arguments by the compiler
+when it requests use of this pattern.  Instead, they are computed
+within the pattern, in the preparation statements.  These statements
+compute the values and store them into the appropriate elements of
+`operands' so that `match_dup' can find them.
+
+   There are two special macros defined for use in the preparation
+statements: `DONE' and `FAIL'.  Use them with a following semicolon, as
+a statement.
+
+`DONE'
+     Use the `DONE' macro to end RTL generation for the pattern.  The
+     only RTL insns resulting from the pattern on this occasion will be
+     those already emitted by explicit calls to `emit_insn' within the
+     preparation statements; the RTL template will not be generated.
+
+`FAIL'
+     Make the pattern fail on this occasion.  When a pattern fails, it
+     means that the pattern was not truly available.  The calling
+     routines in the compiler will try other strategies for code
+     generation using other patterns.
+
+     Failure is currently supported only for binary (addition,
+     multiplication, shifting, etc.) and bit-field (`extv', `extzv',
+     and `insv') operations.
+
+   If the preparation falls through (invokes neither `DONE' nor
+`FAIL'), then the `define_expand' acts like a `define_insn' in that the
+RTL template is used to generate the insn.
+
+   The RTL template is not used for matching, only for generating the
+initial insn list.  If the preparation statement always invokes `DONE'
+or `FAIL', the RTL template may be reduced to a simple list of
+operands, such as this example:
+
+     (define_expand "addsi3"
+       [(match_operand:SI 0 "register_operand" "")
+        (match_operand:SI 1 "register_operand" "")
+        (match_operand:SI 2 "register_operand" "")]
+       ""
+       "
+     {
+       handle_add (operands[0], operands[1], operands[2]);
+       DONE;
+     }")
+
+   Here is an example, the definition of left-shift for the SPUR chip:
+
+     (define_expand "ashlsi3"
+       [(set (match_operand:SI 0 "register_operand" "")
+             (ashift:SI
+               (match_operand:SI 1 "register_operand" "")
+               (match_operand:SI 2 "nonmemory_operand" "")))]
+       ""
+       "
+
+     {
+       if (GET_CODE (operands[2]) != CONST_INT
+           || (unsigned) INTVAL (operands[2]) > 3)
+         FAIL;
+     }")
+
+This example uses `define_expand' so that it can generate an RTL insn
+for shifting when the shift-count is in the supported range of 0 to 3
+but fail in other cases where machine insns aren't available.  When it
+fails, the compiler tries another strategy using different patterns
+(such as, a library call).
+
+   If the compiler were able to handle nontrivial condition-strings in
+patterns with names, then it would be possible to use a `define_insn'
+in that case.  Here is another case (zero-extension on the 68000) which
+makes more use of the power of `define_expand':
+
+     (define_expand "zero_extendhisi2"
+       [(set (match_operand:SI 0 "general_operand" "")
+             (const_int 0))
+        (set (strict_low_part
+               (subreg:HI
+                 (match_dup 0)
+                 0))
+             (match_operand:HI 1 "general_operand" ""))]
+       ""
+       "operands[1] = make_safe_from (operands[1], operands[0]);")
+
+Here two RTL insns are generated, one to clear the entire output operand
+and the other to copy the input operand into its low half.  This
+sequence is incorrect if the input operand refers to [the old value of]
+the output operand, so the preparation statement makes sure this isn't
+so.  The function `make_safe_from' copies the `operands[1]' into a
+temporary register if it refers to `operands[0]'.  It does this by
+emitting another RTL insn.
+
+   Finally, a third example shows the use of an internal operand.
+Zero-extension on the SPUR chip is done by `and'-ing the result against
+a halfword mask.  But this mask cannot be represented by a `const_int'
+because the constant value is too large to be legitimate on this
+machine.  So it must be copied into a register with `force_reg' and
+then the register used in the `and'.
+
+     (define_expand "zero_extendhisi2"
+       [(set (match_operand:SI 0 "register_operand" "")
+             (and:SI (subreg:SI
+                       (match_operand:HI 1 "register_operand" "")
+                       0)
+                     (match_dup 2)))]
+       ""
+       "operands[2]
+          = force_reg (SImode, GEN_INT (65535)); ")
+
+   *Note:* If the `define_expand' is used to serve a standard binary or
+unary arithmetic operation or a bit-field operation, then the last insn
+it generates must not be a `code_label', `barrier' or `note'.  It must
+be an `insn', `jump_insn' or `call_insn'.  If you don't need a real insn
+at the end, emit an insn to copy the result of the operation into
+itself.  Such an insn will generate no code, but it can avoid problems
+in the compiler.
+
+
+File: gccint.info,  Node: Insn Splitting,  Next: Including Patterns,  Prev: Expander Definitions,  Up: Machine Desc
+
+Defining How to Split Instructions
+==================================
+
+   There are two cases where you should specify how to split a pattern
+into multiple insns.  On machines that have instructions requiring delay
+slots (*note Delay Slots::) or that have instructions whose output is
+not available for multiple cycles (*note Function Units::), the compiler
+phases that optimize these cases need to be able to move insns into
+one-instruction delay slots.  However, some insns may generate more
+than one machine instruction.  These insns cannot be placed into a
+delay slot.
+
+   Often you can rewrite the single insn as a list of individual insns,
+each corresponding to one machine instruction.  The disadvantage of
+doing so is that it will cause the compilation to be slower and require
+more space.  If the resulting insns are too complex, it may also
+suppress some optimizations.  The compiler splits the insn if there is a
+reason to believe that it might improve instruction or delay slot
+scheduling.
+
+   The insn combiner phase also splits putative insns.  If three insns
+are merged into one insn with a complex expression that cannot be
+matched by some `define_insn' pattern, the combiner phase attempts to
+split the complex pattern into two insns that are recognized.  Usually
+it can break the complex pattern into two patterns by splitting out some
+subexpression.  However, in some other cases, such as performing an
+addition of a large constant in two insns on a RISC machine, the way to
+split the addition into two insns is machine-dependent.
+
+   The `define_split' definition tells the compiler how to split a
+complex insn into several simpler insns.  It looks like this:
+
+     (define_split
+       [INSN-PATTERN]
+       "CONDITION"
+       [NEW-INSN-PATTERN-1
+        NEW-INSN-PATTERN-2
+        ...]
+       "PREPARATION-STATEMENTS")
+
+   INSN-PATTERN is a pattern that needs to be split and CONDITION is
+the final condition to be tested, as in a `define_insn'.  When an insn
+matching INSN-PATTERN and satisfying CONDITION is found, it is replaced
+in the insn list with the insns given by NEW-INSN-PATTERN-1,
+NEW-INSN-PATTERN-2, etc.
+
+   The PREPARATION-STATEMENTS are similar to those statements that are
+specified for `define_expand' (*note Expander Definitions::) and are
+executed before the new RTL is generated to prepare for the generated
+code or emit some insns whose pattern is not fixed.  Unlike those in
+`define_expand', however, these statements must not generate any new
+pseudo-registers.  Once reload has completed, they also must not
+allocate any space in the stack frame.
+
+   Patterns are matched against INSN-PATTERN in two different
+circumstances.  If an insn needs to be split for delay slot scheduling
+or insn scheduling, the insn is already known to be valid, which means
+that it must have been matched by some `define_insn' and, if
+`reload_completed' is nonzero, is known to satisfy the constraints of
+that `define_insn'.  In that case, the new insn patterns must also be
+insns that are matched by some `define_insn' and, if `reload_completed'
+is nonzero, must also satisfy the constraints of those definitions.
+
+   As an example of this usage of `define_split', consider the following
+example from `a29k.md', which splits a `sign_extend' from `HImode' to
+`SImode' into a pair of shift insns:
+
+     (define_split
+       [(set (match_operand:SI 0 "gen_reg_operand" "")
+             (sign_extend:SI (match_operand:HI 1 "gen_reg_operand" "")))]
+       ""
+       [(set (match_dup 0)
+             (ashift:SI (match_dup 1)
+                        (const_int 16)))
+        (set (match_dup 0)
+             (ashiftrt:SI (match_dup 0)
+                          (const_int 16)))]
+       "
+     { operands[1] = gen_lowpart (SImode, operands[1]); }")
+
+   When the combiner phase tries to split an insn pattern, it is always
+the case that the pattern is _not_ matched by any `define_insn'.  The
+combiner pass first tries to split a single `set' expression and then
+the same `set' expression inside a `parallel', but followed by a
+`clobber' of a pseudo-reg to use as a scratch register.  In these
+cases, the combiner expects exactly two new insn patterns to be
+generated.  It will verify that these patterns match some `define_insn'
+definitions, so you need not do this test in the `define_split' (of
+course, there is no point in writing a `define_split' that will never
+produce insns that match).
+
+   Here is an example of this use of `define_split', taken from
+`rs6000.md':
+
+     (define_split
+       [(set (match_operand:SI 0 "gen_reg_operand" "")
+             (plus:SI (match_operand:SI 1 "gen_reg_operand" "")
+                      (match_operand:SI 2 "non_add_cint_operand" "")))]
+       ""
+       [(set (match_dup 0) (plus:SI (match_dup 1) (match_dup 3)))
+        (set (match_dup 0) (plus:SI (match_dup 0) (match_dup 4)))]
+     "
+     {
+       int low = INTVAL (operands[2]) & 0xffff;
+       int high = (unsigned) INTVAL (operands[2]) >> 16;
+     
+       if (low & 0x8000)
+         high++, low |= 0xffff0000;
+     
+       operands[3] = GEN_INT (high << 16);
+       operands[4] = GEN_INT (low);
+     }")
+
+   Here the predicate `non_add_cint_operand' matches any `const_int'
+that is _not_ a valid operand of a single add insn.  The add with the
+smaller displacement is written so that it can be substituted into the
+address of a subsequent operation.
+
+   An example that uses a scratch register, from the same file,
+generates an equality comparison of a register and a large constant:
+
+     (define_split
+       [(set (match_operand:CC 0 "cc_reg_operand" "")
+             (compare:CC (match_operand:SI 1 "gen_reg_operand" "")
+                         (match_operand:SI 2 "non_short_cint_operand" "")))
+        (clobber (match_operand:SI 3 "gen_reg_operand" ""))]
+       "find_single_use (operands[0], insn, 0)
+        && (GET_CODE (*find_single_use (operands[0], insn, 0)) == EQ
+            || GET_CODE (*find_single_use (operands[0], insn, 0)) == NE)"
+       [(set (match_dup 3) (xor:SI (match_dup 1) (match_dup 4)))
+        (set (match_dup 0) (compare:CC (match_dup 3) (match_dup 5)))]
+       "
+     {
+       /* Get the constant we are comparing against, C, and see what it
+          looks like sign-extended to 16 bits.  Then see what constant
+          could be XOR'ed with C to get the sign-extended value.  */
+     
+       int c = INTVAL (operands[2]);
+       int sextc = (c << 16) >> 16;
+       int xorv = c ^ sextc;
+     
+       operands[4] = GEN_INT (xorv);
+       operands[5] = GEN_INT (sextc);
+     }")
+
+   To avoid confusion, don't write a single `define_split' that accepts
+some insns that match some `define_insn' as well as some insns that
+don't.  Instead, write two separate `define_split' definitions, one for
+the insns that are valid and one for the insns that are not valid.
+
+   The splitter is allowed to split jump instructions into sequence of
+jumps or create new jumps in while splitting non-jump instructions.  As
+the central flowgraph and branch prediction information needs to be
+updated, several restriction apply.
+
+   Splitting of jump instruction into sequence that over by another jump
+instruction is always valid, as compiler expect identical behavior of
+new jump.  When new sequence contains multiple jump instructions or new
+labels, more assistance is needed.  Splitter is required to create only
+unconditional jumps, or simple conditional jump instructions.
+Additionally it must attach a `REG_BR_PROB' note to each conditional
+jump. An global variable `split_branch_probability' hold the
+probability of original branch in case it was an simple conditional
+jump, -1 otherwise.  To simplify recomputing of edge frequencies, new
+sequence is required to have only forward jumps to the newly created
+labels.
+
+   For the common case where the pattern of a define_split exactly
+matches the pattern of a define_insn, use `define_insn_and_split'.  It
+looks like this:
+
+     (define_insn_and_split
+       [INSN-PATTERN]
+       "CONDITION"
+       "OUTPUT-TEMPLATE"
+       "SPLIT-CONDITION"
+       [NEW-INSN-PATTERN-1
+        NEW-INSN-PATTERN-2
+        ...]
+       "PREPARATION-STATEMENTS"
+       [INSN-ATTRIBUTES])
+
+   INSN-PATTERN, CONDITION, OUTPUT-TEMPLATE, and INSN-ATTRIBUTES are
+used as in `define_insn'.  The NEW-INSN-PATTERN vector and the
+PREPARATION-STATEMENTS are used as in a `define_split'.  The
+SPLIT-CONDITION is also used as in `define_split', with the additional
+behavior that if the condition starts with `&&', the condition used for
+the split will be the constructed as a logical "and" of the split
+condition with the insn condition.  For example, from i386.md:
+
+     (define_insn_and_split "zero_extendhisi2_and"
+       [(set (match_operand:SI 0 "register_operand" "=r")
+          (zero_extend:SI (match_operand:HI 1 "register_operand" "0")))
+        (clobber (reg:CC 17))]
+       "TARGET_ZERO_EXTEND_WITH_AND && !optimize_size"
+       "#"
+       "&& reload_completed"
+       [(parallel [(set (match_dup 0)
+                        (and:SI (match_dup 0) (const_int 65535)))
+     	      (clobber (reg:CC 17))])]
+       ""
+       [(set_attr "type" "alu1")])
+
+   In this case, the actual split condition will be
+`TARGET_ZERO_EXTEND_WITH_AND && !optimize_size && reload_completed'.
+
+   The `define_insn_and_split' construction provides exactly the same
+functionality as two separate `define_insn' and `define_split'
+patterns.  It exists for compactness, and as a maintenance tool to
+prevent having to ensure the two patterns' templates match.
+
+
+File: gccint.info,  Node: Including Patterns,  Next: Peephole Definitions,  Prev: Insn Splitting,  Up: Machine Desc
+
+Including Patterns in Machine Descriptions.
+===========================================
+
+   The `include' pattern tells the compiler tools where to look for
+patterns that are in files other than in the file `.md'. This is used
+only at build time and there is no preprocessing allowed.
+
+   It looks like:
+
+
+     (include
+       PATHNAME)
+
+   For example:
+
+
+     (include "filestuff")
+
+   Where PATHNAME is a string that specifies the the location of the
+file, specifies the include file to be in
+`gcc/config/target/filestuff'. The directory `gcc/config/target' is
+regarded as the default directory.
+
+   Machine descriptions may be split up into smaller more manageable
+subsections and placed into subdirectories.
+
+   By specifying:
+
+
+     (include "BOGUS/filestuff")
+
+   the include file is specified to be in
+`gcc/config/TARGET/BOGUS/filestuff'.
+
+   Specifying an absolute path for the include file such as;
+
+     (include "/u2/BOGUS/filestuff")
+   is permitted but is not encouraged.
+
+RTL Generation Tool Options for Directory Search
+------------------------------------------------
+
+   The `-IDIR' option specifies directories to search for machine
+descriptions.  For example:
+
+
+     genrecog -I/p1/abc/proc1 -I/p2/abcd/pro2 target.md
+
+   Add the directory DIR to the head of the list of directories to be
+searched for header files.  This can be used to override a system
+machine definition file, substituting your own version, since these
+directories are searched before the default machine description file
+directories.  If you use more than one `-I' option, the directories are
+scanned in left-to-right order; the standard default directory come
+after.
+
+
+File: gccint.info,  Node: Peephole Definitions,  Next: Insn Attributes,  Prev: Including Patterns,  Up: Machine Desc
+
+Machine-Specific Peephole Optimizers
+====================================
+
+   In addition to instruction patterns the `md' file may contain
+definitions of machine-specific peephole optimizations.
+
+   The combiner does not notice certain peephole optimizations when the
+data flow in the program does not suggest that it should try them.  For
+example, sometimes two consecutive insns related in purpose can be
+combined even though the second one does not appear to use a register
+computed in the first one.  A machine-specific peephole optimizer can
+detect such opportunities.
+
+   There are two forms of peephole definitions that may be used.  The
+original `define_peephole' is run at assembly output time to match
+insns and substitute assembly text.  Use of `define_peephole' is
+deprecated.
+
+   A newer `define_peephole2' matches insns and substitutes new insns.
+The `peephole2' pass is run after register allocation but before
+scheduling, which may result in much better code for targets that do
+scheduling.
+
+* Menu:
+
+* define_peephole::     RTL to Text Peephole Optimizers
+* define_peephole2::    RTL to RTL Peephole Optimizers
+
+
+File: gccint.info,  Node: define_peephole,  Next: define_peephole2,  Up: Peephole Definitions
+
+RTL to Text Peephole Optimizers
+-------------------------------
+
+   A definition looks like this:
+
+     (define_peephole
+       [INSN-PATTERN-1
+        INSN-PATTERN-2
+        ...]
+       "CONDITION"
+       "TEMPLATE"
+       "OPTIONAL-INSN-ATTRIBUTES")
+
+The last string operand may be omitted if you are not using any
+machine-specific information in this machine description.  If present,
+it must obey the same rules as in a `define_insn'.
+
+   In this skeleton, INSN-PATTERN-1 and so on are patterns to match
+consecutive insns.  The optimization applies to a sequence of insns when
+INSN-PATTERN-1 matches the first one, INSN-PATTERN-2 matches the next,
+and so on.
+
+   Each of the insns matched by a peephole must also match a
+`define_insn'.  Peepholes are checked only at the last stage just
+before code generation, and only optionally.  Therefore, any insn which
+would match a peephole but no `define_insn' will cause a crash in code
+generation in an unoptimized compilation, or at various optimization
+stages.
+
+   The operands of the insns are matched with `match_operands',
+`match_operator', and `match_dup', as usual.  What is not usual is that
+the operand numbers apply to all the insn patterns in the definition.
+So, you can check for identical operands in two insns by using
+`match_operand' in one insn and `match_dup' in the other.
+
+   The operand constraints used in `match_operand' patterns do not have
+any direct effect on the applicability of the peephole, but they will
+be validated afterward, so make sure your constraints are general enough
+to apply whenever the peephole matches.  If the peephole matches but
+the constraints are not satisfied, the compiler will crash.
+
+   It is safe to omit constraints in all the operands of the peephole;
+or you can write constraints which serve as a double-check on the
+criteria previously tested.
+
+   Once a sequence of insns matches the patterns, the CONDITION is
+checked.  This is a C expression which makes the final decision whether
+to perform the optimization (we do so if the expression is nonzero).  If
+CONDITION is omitted (in other words, the string is empty) then the
+optimization is applied to every sequence of insns that matches the
+patterns.
+
+   The defined peephole optimizations are applied after register
+allocation is complete.  Therefore, the peephole definition can check
+which operands have ended up in which kinds of registers, just by
+looking at the operands.
+
+   The way to refer to the operands in CONDITION is to write
+`operands[I]' for operand number I (as matched by `(match_operand I
+...)').  Use the variable `insn' to refer to the last of the insns
+being matched; use `prev_active_insn' to find the preceding insns.
+
+   When optimizing computations with intermediate results, you can use
+CONDITION to match only when the intermediate results are not used
+elsewhere.  Use the C expression `dead_or_set_p (INSN, OP)', where INSN
+is the insn in which you expect the value to be used for the last time
+(from the value of `insn', together with use of `prev_nonnote_insn'),
+and OP is the intermediate value (from `operands[I]').
+
+   Applying the optimization means replacing the sequence of insns with
+one new insn.  The TEMPLATE controls ultimate output of assembler code
+for this combined insn.  It works exactly like the template of a
+`define_insn'.  Operand numbers in this template are the same ones used
+in matching the original sequence of insns.
+
+   The result of a defined peephole optimizer does not need to match
+any of the insn patterns in the machine description; it does not even
+have an opportunity to match them.  The peephole optimizer definition
+itself serves as the insn pattern to control how the insn is output.
+
+   Defined peephole optimizers are run as assembler code is being
+output, so the insns they produce are never combined or rearranged in
+any way.
+
+   Here is an example, taken from the 68000 machine description:
+
+     (define_peephole
+       [(set (reg:SI 15) (plus:SI (reg:SI 15) (const_int 4)))
+        (set (match_operand:DF 0 "register_operand" "=f")
+             (match_operand:DF 1 "register_operand" "ad"))]
+       "FP_REG_P (operands[0]) && ! FP_REG_P (operands[1])"
+     {
+       rtx xoperands[2];
+       xoperands[1] = gen_rtx (REG, SImode, REGNO (operands[1]) + 1);
+     #ifdef MOTOROLA
+       output_asm_insn ("move.l %1,(sp)", xoperands);
+       output_asm_insn ("move.l %1,-(sp)", operands);
+       return "fmove.d (sp)+,%0";
+     #else
+       output_asm_insn ("movel %1,sp@", xoperands);
+       output_asm_insn ("movel %1,sp@-", operands);
+       return "fmoved sp@+,%0";
+     #endif
+     })
+
+   The effect of this optimization is to change
+
+     jbsr _foobar
+     addql #4,sp
+     movel d1,sp@-
+     movel d0,sp@-
+     fmoved sp@+,fp0
+
+into
+
+     jbsr _foobar
+     movel d1,sp@
+     movel d0,sp@-
+     fmoved sp@+,fp0
+
+   INSN-PATTERN-1 and so on look _almost_ like the second operand of
+`define_insn'.  There is one important difference: the second operand
+of `define_insn' consists of one or more RTX's enclosed in square
+brackets.  Usually, there is only one: then the same action can be
+written as an element of a `define_peephole'.  But when there are
+multiple actions in a `define_insn', they are implicitly enclosed in a
+`parallel'.  Then you must explicitly write the `parallel', and the
+square brackets within it, in the `define_peephole'.  Thus, if an insn
+pattern looks like this,
+
+     (define_insn "divmodsi4"
+       [(set (match_operand:SI 0 "general_operand" "=d")
+             (div:SI (match_operand:SI 1 "general_operand" "0")
+                     (match_operand:SI 2 "general_operand" "dmsK")))
+        (set (match_operand:SI 3 "general_operand" "=d")
+             (mod:SI (match_dup 1) (match_dup 2)))]
+       "TARGET_68020"
+       "divsl%.l %2,%3:%0")
+
+then the way to mention this insn in a peephole is as follows:
+
+     (define_peephole
+       [...
+        (parallel
+         [(set (match_operand:SI 0 "general_operand" "=d")
+               (div:SI (match_operand:SI 1 "general_operand" "0")
+                       (match_operand:SI 2 "general_operand" "dmsK")))
+          (set (match_operand:SI 3 "general_operand" "=d")
+               (mod:SI (match_dup 1) (match_dup 2)))])
+        ...]
+       ...)
+
+
+File: gccint.info,  Node: define_peephole2,  Prev: define_peephole,  Up: Peephole Definitions
+
+RTL to RTL Peephole Optimizers
+------------------------------
+
+   The `define_peephole2' definition tells the compiler how to
+substitute one sequence of instructions for another sequence, what
+additional scratch registers may be needed and what their lifetimes
+must be.
+
+     (define_peephole2
+       [INSN-PATTERN-1
+        INSN-PATTERN-2
+        ...]
+       "CONDITION"
+       [NEW-INSN-PATTERN-1
+        NEW-INSN-PATTERN-2
+        ...]
+       "PREPARATION-STATEMENTS")
+
+   The definition is almost identical to `define_split' (*note Insn
+Splitting::) except that the pattern to match is not a single
+instruction, but a sequence of instructions.
+
+   It is possible to request additional scratch registers for use in the
+output template.  If appropriate registers are not free, the pattern
+will simply not match.
+
+   Scratch registers are requested with a `match_scratch' pattern at
+the top level of the input pattern.  The allocated register (initially)
+will be dead at the point requested within the original sequence.  If
+the scratch is used at more than a single point, a `match_dup' pattern
+at the top level of the input pattern marks the last position in the
+input sequence at which the register must be available.
+
+   Here is an example from the IA-32 machine description:
+
+     (define_peephole2
+       [(match_scratch:SI 2 "r")
+        (parallel [(set (match_operand:SI 0 "register_operand" "")
+                        (match_operator:SI 3 "arith_or_logical_operator"
+                          [(match_dup 0)
+                           (match_operand:SI 1 "memory_operand" "")]))
+                   (clobber (reg:CC 17))])]
+       "! optimize_size && ! TARGET_READ_MODIFY"
+       [(set (match_dup 2) (match_dup 1))
+        (parallel [(set (match_dup 0)
+                        (match_op_dup 3 [(match_dup 0) (match_dup 2)]))
+                   (clobber (reg:CC 17))])]
+       "")
+
+This pattern tries to split a load from its use in the hopes that we'll
+be able to schedule around the memory load latency.  It allocates a
+single `SImode' register of class `GENERAL_REGS' (`"r"') that needs to
+be live only at the point just before the arithmetic.
+
+   A real example requiring extended scratch lifetimes is harder to
+come by, so here's a silly made-up example:
+
+     (define_peephole2
+       [(match_scratch:SI 4 "r")
+        (set (match_operand:SI 0 "" "") (match_operand:SI 1 "" ""))
+        (set (match_operand:SI 2 "" "") (match_dup 1))
+        (match_dup 4)
+        (set (match_operand:SI 3 "" "") (match_dup 1))]
+       "/* determine 1 does not overlap 0 and 2 */"
+       [(set (match_dup 4) (match_dup 1))
+        (set (match_dup 0) (match_dup 4))
+        (set (match_dup 2) (match_dup 4))]
+        (set (match_dup 3) (match_dup 4))]
+       "")
+
+If we had not added the `(match_dup 4)' in the middle of the input
+sequence, it might have been the case that the register we chose at the
+beginning of the sequence is killed by the first or second `set'.
+
+
+File: gccint.info,  Node: Insn Attributes,  Next: Conditional Execution,  Prev: Peephole Definitions,  Up: Machine Desc
+
+Instruction Attributes
+======================
+
+   In addition to describing the instruction supported by the target
+machine, the `md' file also defines a group of "attributes" and a set of
+values for each.  Every generated insn is assigned a value for each
+attribute.  One possible attribute would be the effect that the insn
+has on the machine's condition code.  This attribute can then be used
+by `NOTICE_UPDATE_CC' to track the condition codes.
+
+* Menu:
+
+* Defining Attributes:: Specifying attributes and their values.
+* Expressions::         Valid expressions for attribute values.
+* Tagging Insns::       Assigning attribute values to insns.
+* Attr Example::        An example of assigning attributes.
+* Insn Lengths::        Computing the length of insns.
+* Constant Attributes:: Defining attributes that are constant.
+* Delay Slots::         Defining delay slots required for a machine.
+* Function Units::      Specifying information for insn scheduling.
+
+
+File: gccint.info,  Node: Defining Attributes,  Next: Expressions,  Up: Insn Attributes
+
+Defining Attributes and their Values
+------------------------------------
+
+   The `define_attr' expression is used to define each attribute
+required by the target machine.  It looks like:
+
+     (define_attr NAME LIST-OF-VALUES DEFAULT)
+
+   NAME is a string specifying the name of the attribute being defined.
+
+   LIST-OF-VALUES is either a string that specifies a comma-separated
+list of values that can be assigned to the attribute, or a null string
+to indicate that the attribute takes numeric values.
+
+   DEFAULT is an attribute expression that gives the value of this
+attribute for insns that match patterns whose definition does not
+include an explicit value for this attribute.  *Note Attr Example::,
+for more information on the handling of defaults.  *Note Constant
+Attributes::, for information on attributes that do not depend on any
+particular insn.
+
+   For each defined attribute, a number of definitions are written to
+the `insn-attr.h' file.  For cases where an explicit set of values is
+specified for an attribute, the following are defined:
+
+   * A `#define' is written for the symbol `HAVE_ATTR_NAME'.
+
+   * An enumeral class is defined for `attr_NAME' with elements of the
+     form `UPPER-NAME_UPPER-VALUE' where the attribute name and value
+     are first converted to upper case.
+
+   * A function `get_attr_NAME' is defined that is passed an insn and
+     returns the attribute value for that insn.
+
+   For example, if the following is present in the `md' file:
+
+     (define_attr "type" "branch,fp,load,store,arith" ...)
+
+the following lines will be written to the file `insn-attr.h'.
+
+     #define HAVE_ATTR_type
+     enum attr_type {TYPE_BRANCH, TYPE_FP, TYPE_LOAD,
+                      TYPE_STORE, TYPE_ARITH};
+     extern enum attr_type get_attr_type ();
+
+   If the attribute takes numeric values, no `enum' type will be
+defined and the function to obtain the attribute's value will return
+`int'.
+

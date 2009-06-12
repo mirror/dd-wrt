@@ -1,0 +1,163 @@
+# SrcTextWin class definition, for Insight
+# Copyright 1997, 1998, 1999, 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class SrcTextWin {
+  inherit itk::Widget GDBWin
+
+  public {
+    variable Tracing	;# 1 if we are running in trace mode
+    variable Browsing     0 ;# 1 if we are browsing a trace experiment
+    variable parent {}	;# the parent SrcWin
+    variable ignore_var_balloons 0;  # ignore all variable balloons
+
+    # Set the height of the src window
+    variable textheight 5i {
+      catch {$itk_interior.p configure -height $itk_option(-textheight)}
+    }
+    
+    method constructor {args}
+    method destructor {}
+    method disassembly_changed {}
+    method reconfig {}
+    method trace_find_hook {mode from_tty}
+    method set_control_mode {mode}
+    method build_popups {}
+    method build_win {}
+    method SetRunningState {state}
+    method enable {on}
+    method setTabs {win {asm S}}
+    method enable_disable_src_tags {win how}
+    method config_win {win {asm S}}
+    method addPopup {menu label command {abg {}} {browse 1} {run 1}}
+    method updateBalloon {}
+    method ClearTags {}
+    method FillSource {winname tagname filename funcname line addr pc_addr lib}
+    method FillAssembly {winname tagname filename funcname line addr pc_addr lib}
+    method FillMixed {winname tagname filename funcname line addr pc_addr lib}
+    method location {tagname filename funcname line addr pc_addr lib}
+    method LoadFile {winname name lib mtime_changed}
+    method display_line { win line }
+    method display_breaks {}
+    method insertBreakTag {win linenum tag}
+    method removeBreakTag {win linenum tag }
+    method bp {action bpnum addr {linenum {}} {file {}} {type 0} {enabled 0} {thread -1}}
+    method do_bp { win action linenum type bpnum enabled thread asm}
+    method hasBP {win line}
+    method hasTP {win line}
+    method report_source_location {}
+    method lookup_line {win y}
+    method continue_to_here {{win {}} {y -1} {threads -1}}
+    method jump_to_here {{win {}} {y -1} {threads -1}}
+    method set_bp_at_line {{type N} {win {}} {y -1} {threads "-1"}}
+    method remove_bp_at_line {{win {}} {y -1}}
+    method enable_disable_at_line {action}
+    method set_tp_at_line {{win {}} {y -1}}
+    method next_hit_at_line {{win {}} {y -1}}
+    method remove_tp_at_line {{win {}} {y -1}}
+    method do_tag_popup {name X Y y}
+    method do_source_popup { X Y x y }
+    method addToWatch {var}
+    method do_key {key}
+    method mode_get {}
+    method mode_set {new_mode {go 1}}
+    method cancelMotion {}
+    method motion {type win x y}
+    method showBPBalloon {win x y}
+    method showBalloon {win x y}
+    method getVariable {x y {line {}}}
+    method trace_help {args}
+    method line_is_executable {win line}
+    method tracepoint_range {win low high}
+    method search {exp direction}
+    method LoadFromCache {pname name asm lib}
+    method UnLoadFromCache {pname oldpane name asm lib}
+    method print {top}
+    method ask_thread_bp {}
+    method do_thread_bp {listbox}
+    method test_get {var}
+    method clear_file {}
+    method get_file {}
+    method set_tag_to_stack {}
+
+    # GDB Events
+    method breakpoint {event}
+    method tracepoint {event}
+    method set_variable {event}
+  }
+
+  private {
+    variable top	;# toplevel window
+    variable twin	;# top text window of pane
+    variable _tpane	;# top pane name
+    variable bwin ""	;# bottom text window of pane
+    variable _bpane ""	;# bottom pane name
+
+    variable do_display_breaks 0	;# flag    
+    variable popups
+    
+    variable timeoutID {} ;# The timeout ID for the variable balloon help
+    variable UseVariableBalloons
+    
+    variable mode_changed 0
+    variable current	;# our current state
+    variable pc		;# where the PC is now
+    variable oldmode ""	;# remember the mode we want, even if we can't have it
+    
+    variable Running 0	;# another way to disable things while target is active
+    variable Linenums	;# use linenumbers?
+    variable SearchIndex 1.0	;# static
+    variable id	;#thread id to line mapping
+    # needed for assembly support
+    variable _map
+    variable Cname  ""	;# cache index name for _map
+    # cache is not shared among windows yet.  That could be a later
+    # optimization
+    variable Stwc	;# Source Text Window Cache
+    variable filenum 0
+
+    # The variable object which the variable balloon describes 
+    variable _balloon_var {}
+
+    method balloon_value {variable}
+    method _mtime_changed {filename}
+    method _initialize_srctextwin {}
+    method _clear_cache {}
+    method _highlightAsmLine {win addr pc_addr tagname filename funcname} {}
+
+    proc makeBreakDot {size colorList {image {}}}
+  }
+
+
+  
+  # common variables are shared among all objects of this type
+  # break_images stores the images associated with the break dot.
+  # bp
+  # temp_bp
+  # disabled_bp
+  # tp
+  # thread_bp
+  protected common break_images
+
+  # This is the list of bp types.  Be nice, and don't put spaces in
+  # any of the elements of this list...
+  protected common bp_types {bp temp_bp disabled_bp thread_bp}
+
+  # This variable is used in the "Continue to here" case, where we are
+  # disabling then reenabling breakpoints behind the user's back to
+  # implement this feature, but we don't want the user to see this...
+  protected common dont_change_appearance 0
+
+  protected common TimeOut 100 ;# The timeout value for variable balloon help
+
+}

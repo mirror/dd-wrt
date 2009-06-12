@@ -1,0 +1,109 @@
+2002-11-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/iq80310_eth_drivers.cdl: Update for new Xscale package layout.
+
+2002-01-04  Mark Salter  <msalter@redhat.com>
+
+	* cdl/iq80310_eth_drivers.cdl: Remove
+	CYGNUM_DEVS_ETH_ARM_IQ80310_MAX_TX_DESCRIPTORS and
+	CYGNUM_DEVS_ETH_ARM_IQ80310_MAX_RX_DESCRIPTORS.
+
+2002-01-03  Mark Salter  <msalter@redhat.com>
+
+	* cdl/iq80310_eth_drivers.cdl: Rewrite to use generic i82559 driver.
+	* include/devs_eth_iq80310.inl: New file.
+	* src/if_iq80310.c: Remove.
+	* src/if_shmem.S: Remove.
+	* include/iq80310_info.h: Remove.
+
+2001-12-20  Mark Salter  <msalter@redhat.com>
+
+	* cdl/iq80310_eth_drivers.cdl: Add "flavor data" (as pointed out by
+	hmt@redhat.com) to CYGNUM_DEVS_ETH_ARM_IQ80310_MAX_TX_DESCRIPTORS and
+	CYGNUM_DEVS_ETH_ARM_IQ80310_MAX_RX_DESCRIPTORS.
+
+2001-10-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/iq80310_info.h: Remove MAX_TX_DESCRIPTORS and 
+	MAX_RX_DESCRIPTORS, to be replaced by...
+	* cdl/iq80310_eth_drivers.cdl: Add
+	CYGNUM_DEVS_ETH_ARM_IQ80310_MAX_TX_DESCRIPTORS and
+	CYGNUM_DEVS_ETH_ARM_IQ80310_MAX_RX_DESCRIPTORS.
+	* src/if_shmem.S: Use above definitions to calculate size of
+	shared mem.	
+	* src/if_iq80310.c (CYGHWR_HAL_ARM_IQ80310_PCI_MEM_MAP_SIZE): Ditto.
+
+2001-10-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_iq80310.c: Made code build with assertions.
+
+2001-08-24  Mark Salter  <msalter@redhat.com>
+
+	* src/if_iq80310.c (PacketRxReady): Break out of Rx loop after
+	one packet is delivered for RedBoot.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_iq80310.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-08-15  Mark Salter  <msalter@redhat.com>
+
+	* src/if_iq80310.c: Use 32-bit access to MDI. Problem discovered
+	by bruce.daly@spirentcom.com.
+
+2000-12-21  Mark Salter  <msalter@redhat.com>
+
+	* src/if_iq80310.c (i82559_start): Fix syntax error when DEBUG defined.
+
+2000-11-22  Mark Salter  <msalter@redhat.com>
+
+	* src/if_iq80310.c (pci_init_find_82559s): Don't install ISR handler or
+	unmask interrupt if CYGPKG_REDBOOT defined.
+
+2000-11-06  Mark Salter  <msalter@redhat.com>
+
+	* src/if_iq80310.c: Add initialization of physical layer interface.
+	Turned off debugging messages.
+
+	* include/iq80310_info.h: Add definitions for ethernet physical
+	interface.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

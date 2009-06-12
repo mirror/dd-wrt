@@ -1,0 +1,29 @@
+// eCos memory layout - Fri Oct 20 05:56:24 2000
+
+// This is a generated file - do not edit
+
+#include <cyg/infra/cyg_type.inc>
+
+// Space for PCI window, RedBoot
+
+MEMORY
+{
+    ram : ORIGIN = 0x0000, LENGTH = 0x03fc0000
+}
+
+SECTIONS
+{
+    SECTIONS_BEGIN
+    SECTION_fixed_vectors (ram, 0x1000, LMA_EQ_VMA)
+    SECTION_rom_vectors (ram, 0x20000, LMA_EQ_VMA)
+    SECTION_text (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fini (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata1 (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fixup (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_gcc_except_table (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_data (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_bss (ram, ALIGN (0x4), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__heap1) = ALIGN (0x1000);
+    SECTIONS_END
+}

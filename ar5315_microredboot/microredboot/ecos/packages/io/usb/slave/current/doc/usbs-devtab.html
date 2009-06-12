@@ -1,0 +1,480 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Devtab Entries</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Starting up a USB Device"
+HREF="usbs-start.html"><LINK
+REL="NEXT"
+TITLE="Receiving Data from the Host"
+HREF="usbs-start-rx.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-start.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-start-rx.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-DEVTAB"
+>Devtab Entries</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN200"
+></A
+><H2
+>Name</H2
+>Devtab Entries&nbsp;--&nbsp;Data endpoint data structure</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN203"
+></A
+><H2
+>Synopsis</H2
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>/dev/usb0c
+/dev/usb1r
+/dev/usb2w</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN205"
+></A
+><H2
+>Devtab Entries</H2
+><P
+>USB device drivers provide two ways of transferring data between host
+and peripheral. The first involves USB-specific functionality such as
+<A
+HREF="usbs-start-rx.html"
+><TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+></A
+>.
+This provides non-blocking I/O: a transfer is started, and some time
+later the device driver will call a supplied completion function. The
+second uses the conventional I/O model: there are entries in the
+device table corresponding to the various endpoints. Standard calls
+such as <TT
+CLASS="FUNCTION"
+>open</TT
+> can then be used to get a suitable
+handle. Actual I/O happens via blocking <TT
+CLASS="FUNCTION"
+>read</TT
+> and
+<TT
+CLASS="FUNCTION"
+>write</TT
+> calls. In practice the blocking operations
+are simply implemented using the underlying non-blocking
+functionality.</P
+><P
+>Each endpoint will have its own devtab entry. The exact names are
+controlled by the device driver package, but typically the root will
+be <TT
+CLASS="LITERAL"
+>/dev/usb</TT
+>. This is followed by one or more
+decimal digits giving the endpoint number, followed by
+<TT
+CLASS="LITERAL"
+>c</TT
+> for a control endpoint, <TT
+CLASS="LITERAL"
+>r</TT
+> for
+a receive endpoint (host to peripheral), and <TT
+CLASS="LITERAL"
+>w</TT
+> for
+a transmit endpoint (peripheral to host). If the target hardware
+involves more than one USB device then different roots should be used,
+for example <TT
+CLASS="LITERAL"
+>/dev/usb0c</TT
+> and
+<TT
+CLASS="LITERAL"
+>/dev/usb1_0c</TT
+>. This may require explicit
+manipulation of device driver configuration options by the application
+developer.</P
+><P
+>At present the devtab entry for a control endpoint does not support
+any I/O operations. </P
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN221"
+></A
+><H3
+><TT
+CLASS="FUNCTION"
+>write</TT
+> operations</H3
+><P
+><TT
+CLASS="FUNCTION"
+>cyg_io_write</TT
+> and similar functions in
+higher-level packages can be used to perform a transfer from
+peripheral to host. Successive write operations will not be coalesced.
+For example, when doing a 1000 byte write to an endpoint that uses the
+bulk transfer protocol this will involve 15 full-size 64-byte packets
+and a terminating 40-byte packet. USB device drivers are not expected
+to do any locking, and if higher-level code performs multiple
+concurrent write operations on a single endpoint then the resulting
+behaviour is undefined.</P
+><P
+>A USB <TT
+CLASS="FUNCTION"
+>write</TT
+> operation will never transfer less
+data than specified. It is the responsibility of higher-level code to
+ensure that the amount of data being transferred is acceptable to the
+host-side code. Usually this will be defined by a higher-level
+protocol. If an attempt is made to transfer more data than the host
+expects then the resulting behaviour is undefined.</P
+><P
+>There are two likely error conditions. <TT
+CLASS="LITERAL"
+>EPIPE</TT
+>
+indicates that the connection between host and target has been broken.
+<TT
+CLASS="LITERAL"
+>EAGAIN</TT
+> indicates that the endpoint has been
+stalled, either at the request of the host or by other activity
+inside the peripheral.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN231"
+></A
+><H3
+><TT
+CLASS="FUNCTION"
+>read</TT
+> operations</H3
+><P
+><TT
+CLASS="FUNCTION"
+>cyg_io_read</TT
+> and similar functions in higher-level
+packages can be used to perform a transfer from host to peripheral.
+This should be a complete transfer: higher-level protocols should
+define an upper bound on the amount of data being transferred, and the
+<TT
+CLASS="FUNCTION"
+>read</TT
+> operation should involve at least this
+amount of data. The return value will indicate the actual transfer
+size, which may be less than requested.</P
+><P
+>Some device drivers may support partial reads, but USB device drivers
+are not expected to perform any buffering because that involves both
+memory and code overheads. One technique that may work for bulk
+transfers is to exploit the fact that such transfers happen in 64-byte
+packets. It is possible to <TT
+CLASS="FUNCTION"
+>read</TT
+> an initial 64
+bytes, corresponding to the first packet in the transfer. These 64
+bytes can then be examined to determine the total transfer size, and
+the remaining data can be transferred in another
+<TT
+CLASS="FUNCTION"
+>read</TT
+> operation. This technique is not guaranteed
+to work with all USB hardware. Also, if the delay between accepting
+the first packet and the remainder of the transfer is excessive then
+this could cause timeout problems for the host-side software. For
+these reasons the use of partial reads should be avoided.</P
+><P
+>There are two likely error conditions. <TT
+CLASS="LITERAL"
+>EPIPE</TT
+>
+indicates that the connection between host and target has been broken.
+<TT
+CLASS="LITERAL"
+>EAGAIN</TT
+> indicates that the endpoint has been
+stalled, either at the request of the host or by other activity
+inside the peripheral.</P
+><P
+>USB device drivers are not expected to do any locking. If higher-level
+code performs multiple concurrent read operations on a single endpoint
+then the resulting behaviour is undefined.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN244"
+></A
+><H3
+><TT
+CLASS="FUNCTION"
+>select</TT
+> operations</H3
+><P
+>Typical USB device drivers will not provide any support for
+<TT
+CLASS="FUNCTION"
+>select</TT
+>. Consider bulk transfers from the host to
+the peripheral. At the USB device driver level there is no way of
+knowing in advance how large a transfer will be, so it is not feasible
+for the device driver to buffer the entire transfer. It may be
+possible to buffer part of the transfer, for example the first 64-byte
+packet, and copy this into application space at the start of a
+<TT
+CLASS="FUNCTION"
+>read</TT
+>, but this adds code and memory overheads.
+Worse, it means that there is an unknown but potentially long delay
+between a peripheral accepting the first packet of a transfer and the
+remaining packets, which could confuse or upset the host-side
+software.</P
+><P
+>With some USB hardware it may be possible for the device driver to
+detect OUT tokens from the host without actually accepting the data,
+and this would indicate that a  <TT
+CLASS="FUNCTION"
+>read</TT
+> is likely to
+succeed. However, it would not be reliable since the host-side I/O
+operation could time out. A similar mechanism could be used to
+implement <TT
+CLASS="FUNCTION"
+>select</TT
+> for outgoing data, but again
+this would not be reliable.</P
+><P
+>Some device drivers may provide partial support for
+<TT
+CLASS="FUNCTION"
+>select</TT
+> anyway, possibly under the control of a
+configuration option. The device driver's documentation should be
+consulted for further information. It is also worth noting that the
+USB-specific non-blocking API can often be used as an alternative to
+<TT
+CLASS="FUNCTION"
+>select</TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN256"
+></A
+><H3
+><TT
+CLASS="FUNCTION"
+>get_config</TT
+> and
+<TT
+CLASS="FUNCTION"
+>set_config</TT
+> operations</H3
+><P
+>There are no <TT
+CLASS="FUNCTION"
+>set_config</TT
+> or
+<TT
+CLASS="FUNCTION"
+>get_config</TT
+> (also known as
+<TT
+CLASS="FUNCTION"
+>ioctl</TT
+>) operations defined for USB devices.
+Some device drivers may provide hardware-specific facilities this way. </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Currently the USB-specific functions related to <A
+HREF="usbs-halt.html"
+>halted endpoints</A
+> cannot be accessed readily
+via devtab entries. This functionality should probably be made
+available via <TT
+CLASS="FUNCTION"
+>set_config</TT
+> and
+<TT
+CLASS="FUNCTION"
+>get_config</TT
+>. It may also prove useful to provide
+a <TT
+CLASS="FUNCTION"
+>get_config</TT
+> operation that maps from the
+devtab entries to the underlying endpoint data structures.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN270"
+></A
+><H3
+>Presence</H3
+><P
+>The devtab entries are optional. If the USB device is accessed
+primarily by class-specific code such as the USB-ethernet package and
+that package uses the USB-specific API directly, the devtab entries
+are redundant. Even if application code does need to access the USB
+device, the non-blocking API may be more convenient than the blocking
+I/O provided via the devtab entries. In these cases the devtab entries
+serve no useful purpose, but they still impose a memory overhead. It
+is possible to suppress the presence of these entries by disabling the
+configuration option
+<TT
+CLASS="LITERAL"
+>CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES</TT
+>.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-start.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-start-rx.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Starting up a USB Device</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Receiving Data from the Host</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

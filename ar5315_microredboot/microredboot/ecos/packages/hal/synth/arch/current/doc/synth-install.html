@@ -1,0 +1,404 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Installation</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="Overview"
+HREF="synth.html"><LINK
+REL="NEXT"
+TITLE="Running a Synthetic Target Application"
+HREF="synth-running.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="synth.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="synth-running.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH-INSTALL">Installation</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN45"
+></A
+><H2
+>Name</H2
+>Installation&nbsp;--&nbsp;Preparing to use the synthetic target</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-INSTALL-HOST"
+></A
+><H2
+>Host-side Software</H2
+><P
+>To get the full functionality of the synthetic target, users must
+build and install the I/O auxiliary ecosynth and various support
+files. It is possible to develop applications for the synthetic target
+without the auxiliary, but only limited I/O facilities will be
+available. The relevant code resides in the <TT
+CLASS="FILENAME"
+>host</TT
+> subdirectory of the synthetic target
+architectural HAL package, and building it involves the standard
+<B
+CLASS="COMMAND"
+>configure</B
+>, <B
+CLASS="COMMAND"
+>make</B
+>, and
+<B
+CLASS="COMMAND"
+>make install</B
+> steps.
+    </P
+><P
+>There are two main ways of building the host-side software. It is
+possible to build both the generic host-side software and all
+package-specific host-side software, including the I/O auxiliary. in a
+single build tree. This involves using the
+<B
+CLASS="COMMAND"
+>configure</B
+> script at the toplevel of the eCos
+repository, which will automatically search the <TT
+CLASS="FILENAME"
+>packages</TT
+> hierarchy for host-side
+software. For more information on this, see the
+<TT
+CLASS="FILENAME"
+>README.host</TT
+> file at the top of the repository.
+Note that if you have an existing build tree which does not include
+the synthetic target architectural HAL package then it will be
+necessary to rerun the toplevel configure script: the search for
+appropriate packages happens at configure time.
+    </P
+><P
+>The alternative is to build just the host-side for this package.
+This involves creating a suitable build directory and running the
+<B
+CLASS="COMMAND"
+>configure</B
+> script. Note that building directly in
+the source tree is not allowed.
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ cd &lt;somewhere suitable&gt;
+$ mkdir synth_build
+$ cd synth_build
+$ &lt;repo&lt;&gt;/packages/hal/synth/arch/&lt;version&gt;/host/configure &lt;options&gt;
+$ make
+$ make install</PRE
+></TD
+></TR
+></TABLE
+><P
+>The code makes extensive use of Tcl/TK and requires version 8.3 or
+later. This is checked by the <B
+CLASS="COMMAND"
+>configure</B
+> script. By
+default it will use the system's Tcl installation in <TT
+CLASS="FILENAME"
+>/usr</TT
+>. If a different, more recent Tcl
+installation should be used then its location can be specified using
+the options <TT
+CLASS="OPTION"
+>--with-tcl=&lt;path&gt;</TT
+>,
+<TT
+CLASS="OPTION"
+>--with-tcl-header=&lt;path&gt;</TT
+> and
+<TT
+CLASS="OPTION"
+>--with-tcl-lib=&lt;path&gt;</TT
+>. For more information on these options
+see the <TT
+CLASS="FILENAME"
+>README.host</TT
+> file at the toplevel of the
+eCos repository.
+    </P
+><P
+>Some users may also want to specify the install location using a
+<TT
+CLASS="OPTION"
+>--prefix=&lt;path&gt;</TT
+> option. The default install
+location is <TT
+CLASS="FILENAME"
+>/usr/local</TT
+>. It is
+essential that the <TT
+CLASS="FILENAME"
+>bin</TT
+>
+subdirectory of the install location is on the user's search
+<TT
+CLASS="ENVAR"
+>PATH</TT
+>, otherwise the eCos application will be unable to
+locate and execute the I/O auxiliary ecosynth.
+    </P
+><P
+>Because ecosynth is run automatically by an eCos application rather
+than explicitly by the user, it is not installed in the <TT
+CLASS="FILENAME"
+>bin</TT
+> subdirectory itself. Instead it is
+installed below <TT
+CLASS="FILENAME"
+>libexec</TT
+>,
+together with various support files such as images. At configure time
+it is usually possible to specify an alternative location for
+<TT
+CLASS="FILENAME"
+>libexec</TT
+> using
+<TT
+CLASS="OPTION"
+>--exec-prefix=&lt;path&gt;</TT
+> or
+<TT
+CLASS="OPTION"
+>--libexecdir=&lt;path&gt;</TT
+>. These options should not
+be used for this package because the eCos application is built
+completely separately and does not know how the host-side was
+configured. 
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-TOOLS"
+></A
+><H2
+>Toolchain</H2
+><P
+>When developing eCos applications for a normal embedded target it is
+necessary to use a suitable cross-compiler and related tools such as
+the linker. Developing for the synthetic target is easier because you
+can just use the standard GNU tools (gcc, g++, ld, &#8230;) which
+were provided with your Linux distribution, or which you used to build
+your own Linux setup. Any reasonably recent version of the tools, for
+example gcc 2.96(Red Hat) as shipped with Red Hat Linux 7, should be
+sufficient.
+    </P
+><P
+>There is one important limitation when using these tools: current gdb
+will not support debugging of eCos threads on the synthetic target. As
+far as gdb is concerned a synthetic target application is
+indistinguishable from a normal Linux application, so it assumes that
+any threads will be created by calls to the Linux
+<TT
+CLASS="FUNCTION"
+>pthread_create</TT
+> function provided by the C
+library. Obviously this is not the case since the application is never
+linked with that library. Therefore gdb never notices the eCos thread
+mechanisms and assumes the application is single-threaded. Fixing this
+is possible but would involve non-trivial changes to gdb.
+    </P
+><P
+>Theoretically it is possible to develop synthetic target applications
+on, for example, a PC running Windows and then run the resulting
+executables on another machine that runs Linux. This is rarely useful:
+if a Linux machine is available then usually that machine will also be
+used for building ecos and the application. However, if for some
+reason it is necessary or desirable to build on another machine then
+this requires a suitable cross-compiler and related tools. If the
+application will be running on a typical PC with an x86 processor then
+a suitable configure triplet would be
+<TT
+CLASS="USERINPUT"
+><B
+>i686-pc-linux-gnu</B
+></TT
+>. The installation
+instructions for the various GNU tools should be consulted for further
+information. 
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-HARDWARE"
+></A
+><H2
+>Hardware Preparation</H2
+><P
+>Preparing a real embedded target for eCos development can be tricky.
+Often the first step is to install suitable firmware, usually RedBoot.
+This means creating and building a special configuration for eCos with
+the RedBoot template, then somehow updating the target's flash chips
+with the resulting RedBoot image. Typically it will also be necessary
+to get a working serial connection, and possibly set up ethernet as
+well. Although usually none of the individual steps are particularly
+complicated, there are plenty of ways in which things can go wrong and
+it can be hard to figure out what is actually happening. Of course
+some board manufacturers make life easier for their developers by
+shipping hardware with RedBoot preinstalled, but even then it is still
+necessary to set up communication between host and target.
+    </P
+><P
+>None of this is applicable to the synthetic target. Instead you can
+just build a normal eCos configuration, link your application with the
+resulting libraries, and you end up with an executable that you can
+run directly on your Linux machine or via gdb. A useful side effect of
+this is that application development can start before any real
+embedded hardware is actually available.
+    </P
+><P
+>Typically the memory map for a synthetic target application will be
+set up such that there is a read-only ROM region containing all the
+code and constant data, and a read-write RAM region for the data. The
+default locations and sizes of these regions depend on the specific
+platform being used for development. Note that the application always
+executes out of ROM: on a real embedded target much of the development
+would involve running RedBoot firmware there, with application code
+and data loaded into RAM; usually this would change for the final
+system; the firmware would be replaced by the eCos application itself,
+configured for ROM bootstrap, and it would perform the appropriate
+hardware initialization. Therefore the synthetic target actually
+emulates the behaviour of a final system, not of a development
+environment. In practice this is rarely significant, although having
+the code in read-only memory can help catch some problems in
+application code.
+    </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="synth.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="synth-running.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Overview</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Running a Synthetic Target Application</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

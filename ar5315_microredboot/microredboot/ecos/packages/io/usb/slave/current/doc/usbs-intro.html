@@ -1,0 +1,473 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Introduction</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="NEXT"
+TITLE="USB Enumeration Data"
+HREF="usbs-enum.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="io-usb-slave.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-enum.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-INTRO"
+>Introduction</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+>Introduction&nbsp;--&nbsp;eCos support for USB slave devices</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN9"
+></A
+><H2
+>Introduction</H2
+><P
+>The eCos USB slave support allows developers to produce USB
+peripherals. It consists of a number of different eCos packages:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>Device drivers for specific implementations of USB slave hardware, for
+example the on-chip USB Device Controller provided by the Intel SA1110
+processor. A typical USB peripheral will only provide one USB slave
+port and therefore only one such device driver package will be needed.
+Usually the device driver package will be loaded automatically when
+you create an eCos configuration for target hardware that has a USB
+slave device. If you select a target which does have a USB slave
+device but no USB device driver is loaded, this implies that no such
+device driver is currently available.</P
+></LI
+><LI
+><P
+>The common USB slave package. This serves two purposes. It defines the
+API that specific device drivers should implement. It also provides
+various utilities that will be needed by most USB device drivers and
+applications, such as handlers for standard control messages.
+Usually this package will be loaded automatically at the same time as
+the USB device driver.</P
+></LI
+><LI
+><P
+>The common USB package. This merely provides some information common
+to both the host and slave sides of USB, such as details of the
+control protocol. It is also used to place the other USB-related
+packages appropriately in the overall configuration hierarchy. Usually
+this package will be loaded at the same time as the USB device driver.</P
+></LI
+><LI
+><P
+>Class-specific USB support packages. These make it easier to develop
+specific classes of USB peripheral, such as a USB-ethernet device. If
+no suitable package is available for a given class of peripheral then
+the USB device driver can instead be accessed directly from
+application code. Such packages will never be loaded automatically
+since the configuration system has no way of knowing what class of USB
+peripheral is being developed. Instead developers have to add the
+appropriate package or packages explicitly.</P
+></LI
+></OL
+><P
+>These packages only provide support for developing USB peripherals,
+not USB hosts.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN22"
+></A
+><H2
+>USB Concepts</H2
+><P
+>Information about USB can be obtained from a number of sources
+including the <A
+HREF="http://www.usb.org/"
+TARGET="_top"
+>USB Implementers Forum
+web site</A
+>. Only a brief summary is provided here.</P
+><P
+>A USB network is asymmetrical: it consists of a single host, one or
+more slave devices, and possibly some number of intermediate hubs. The
+host side is significantly more complicated than the slave side.
+Essentially, all operations are initiated by the host. For example, if
+the host needs to receive some data from a particular USB peripheral
+then it will send an IN token to that peripheral; the latter should
+respond with either a NAK or with appropriate data. Similarly, when
+the host wants to transmit data to a peripheral it will send an OUT
+token followed by the data; the peripheral will return a NAK if it is
+currently unable to receive more data or if there was corruption,
+otherwise it will return an ACK. All transfers are check-summed and
+there is a clearly-defined error recovery process. USB peripherals can
+only interact with the host, not with each other.</P
+><P
+>USB supports four different types of communication: control messages,
+interrupt transfers, isochronous transfers, and bulk transfers.
+Control messages are further subdivided into four categories:
+standard, class, vendor and a reserved category. All USB peripherals
+must respond to certain standard control messages, and usually this
+will be handled by the common USB slave package (for complicated
+peripherals, application support will be needed). Class and vendor
+control messages may be handled by an class-specific USB support
+package, for example the USB-ethernet package will handle control
+messages such as getting the MAC address or enabling/disabling
+promiscuous mode. Alternatively, some or all of these messages will
+have to be handled by application code.</P
+><P
+>Interrupt transfers are used for devices which need to be polled
+regularly. For example, a USB keyboard might be polled once every
+millisecond. The host will not poll the device more frequently than
+this, so interrupt transfers are best suited to peripherals that
+involve a relatively small amount of data. Isochronous transfers are
+intended for multimedia-related peripherals where typically a large
+amount of video or audio data needs to be exchanged continuously.
+Given appropriate host support a USB peripheral can reserve some of
+the available bandwidth. Isochronous transfers are not reliable; if a
+particular packet is corrupted then it will just be discarded and
+software is expected to recover from this. Bulk transfers are used for
+everything else: after taking care of any pending control, isochronous
+and interrupt transfers the host will use whatever bandwidth remains
+for bulk transfers. Bulk transfers are reliable.</P
+><P
+>Transfers are organized into USB packets, with the details depending
+on the transfer type. Control messages always involve an initial
+8-byte packet from host to peripheral, optionally followed by some
+additional packets; in theory these additional packets can be up to 64
+bytes, but hardware may limit it to 8 bytes. Interrupt transfers
+involve a single packet of up to 64 bytes. Isochronous transfers
+involve a single packet of up to 1024 bytes. Bulk transfers involve
+multiple packets. There will be some number, possibly zero, of 64-byte
+packets. The transfer is terminated by a single packet of less than 64
+bytes. If the transfer involves an exact multiple of 64 bytes than the
+final packet will be 0 bytes, consisting of just a header and checksum
+which typically will be generated by the hardware. There is no
+pre-defined limit on the size of a bulk transfer. Instead higher-level
+protocols are expected to handle this, so for a USB-ethernet
+peripheral the protocol could impose a limit of 1514 bytes of data
+plus maybe some additional protocol overhead.</P
+><P
+>Transfers from the host to a peripheral are addressed not just to that
+peripheral but to a specific endpoint within that peripheral.
+Similarly, the host requests incoming data from a specific endpoint
+rather than from the peripheral as a whole. For example, a combined
+keyboard/touchpad device could provide the keyboard events on endpoint
+1 and the mouse events on endpoint 2. A given USB peripheral can have
+up to 16 endpoints for incoming data and another 16 for outgoing data.
+However, given the comparatively high speed of USB I/O this endpoint
+addressing is typically implemented in hardware rather than software,
+and the hardware will only implement a small number of endpoints.
+Endpoint 0 is generally used only for control messages.</P
+><P
+>In practice, many of these details are irrelevant to application code
+or to class packages. Instead, such higher-level code usually just
+performs blocking <TT
+CLASS="FUNCTION"
+>read</TT
+> and
+<TT
+CLASS="FUNCTION"
+>write</TT
+>, or non-blocking USB-specific calls, to
+transfer data between host and target via a specific endpoint. Control
+messages are more complicated but are usually handled by existing
+code.</P
+><P
+>When a USB peripheral is plugged into the host there is an initial
+enumeration and configuration process. The peripheral provides
+information such as its class of device (audio, video, etc.), a
+vendor id, which endpoints should be used for what kind of data, and
+so on. The host OS uses this information to identify a suitable host
+device driver. This could be a generic driver for a class of
+peripherals, or it could be a vendor-specific driver. Assuming a
+suitable driver is installed the host will then activate the USB
+peripheral and perform additional application-specific initialisation.
+For example for a USB-ethernet device this would involve obtaining an
+ethernet MAC address. Most USB peripherals will be fairly simple, but
+it is possible to build multifunction peripherals with multiple
+configurations, interfaces, and alternate interface settings.</P
+><P
+>It is not possible for any of the eCos packages to generate all the
+enumeration data automatically. Some of the required information such
+as the vendor id cannot be supplied by generic packages; only by the
+application developer. Class support code such as the USB-ethernet
+package could in theory supply some of the information automatically,
+but there are also hardware dependencies such as which endpoints get
+used for incoming and outgoing ethernet frames. Instead it is the
+responsibility of the application developer to provide all the
+enumeration data and perform some additional initialisation. In
+addition, the common USB slave package can handle all the standard
+control messages for a simple USB peripheral, but for something like a
+multifunction peripheral additional application support is needed.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>The initial implementation of the eCos USB slave packages involved
+hardware that only supported control and bulk transfers, not
+isochronous or interrupt. There may be future changes to the USB
+code and API to allow for isochronous and interrupt transfers,
+especially the former. Other changes may be required to support
+different USB devices. At present there is no support for USB remote
+wakeups, since again it is not supported by the hardware.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN38"
+></A
+><H2
+>eCos USB I/O Facilities</H2
+><P
+>For protocols other than control messages, eCos provides two ways of
+performing USB I/O. The first involves device table or devtab entries such
+as <A
+HREF="usbs-devtab.html"
+><TT
+CLASS="LITERAL"
+>/dev/usb1r</TT
+></A
+>,
+with one entry per endpoint per USB device. It is possible to
+<TT
+CLASS="FUNCTION"
+>open</TT
+> these devices and use conventional blocking
+I/O functions such as <TT
+CLASS="FUNCTION"
+>read</TT
+> and
+<TT
+CLASS="FUNCTION"
+>write</TT
+> to exchange data between host and
+peripheral.</P
+><P
+>There is also a lower-level USB-specific API, consisting of functions
+such as <A
+HREF="usbs-start-rx.html"
+><TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+></A
+>.
+A USB device driver will supply a data structure for each endpoint,
+for example a <A
+HREF="usbs-data.html"
+><SPAN
+CLASS="STRUCTNAME"
+>usbs_rx_endpoint</SPAN
+></A
+>
+structure for every receive endpoint. The first argument to
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> should be a pointer to such
+a data structure. The USB-specific API is non-blocking: the initial
+call merely starts the transfer; some time later, once the transfer
+has completed or has been aborted, the device driver will invoke a
+completion function.</P
+><P
+>Control messages are different. With four different categories of
+control messages including application and vendor specific ones, the
+conventional
+<TT
+CLASS="FUNCTION"
+>open</TT
+>/<TT
+CLASS="FUNCTION"
+>read</TT
+>/<TT
+CLASS="FUNCTION"
+>write</TT
+>
+model of I/O cannot easily be applied. Instead, a USB device driver
+will supply a <A
+HREF="usbs-control.html"
+><SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+></A
+>
+data structure which can be manipulated appropriately. In practice the
+standard control messages will usually be handled by the common USB
+slave package, and other control messages will be handled by
+class-specific code such as the USB-ethernet package. Typically,
+application code remains responsible for supplying the <A
+HREF="usbs-enum.html"
+>enumeration data</A
+> and for actually <A
+HREF="usbs-start.html"
+>starting</A
+> up the USB device.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN60"
+></A
+><H2
+>Enabling the USB code</H2
+><P
+>If the target hardware contains a USB slave device then the
+appropriate USB device driver and the common packages will typically
+be loaded into the configuration automatically when that target is
+selected (assuming a suitable device driver exists). However, the
+driver will not necessarily be active. For example a processor might
+have an on-chip USB device, but not all applications using that
+processor will want to use USB functionality. Hence by default the USB
+device is disabled, ensuring that applications do not suffer any
+memory or other penalties for functionality that is not required.</P
+><P
+>If the application developer explicitly adds a class support package
+such as the USB-ethernet one then this implies that the USB device is
+actually needed, and the device will be enabled automatically.
+However, if no suitable class package is available and the USB device
+will instead be accessed by application code, it is necessary to
+enable the USB device manually. Usually the easiest way to do this is
+to enable the configuration option
+<TT
+CLASS="LITERAL"
+>CYGGLO_IO_USB_SLAVE_APPLICATION</TT
+>, and the USB device
+driver and related packages will adjust accordingly. Alternatively,
+the device driver may provide some configuration options to provide
+more fine-grained control.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-enum.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>eCos USB Slave Support</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>USB Enumeration Data</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

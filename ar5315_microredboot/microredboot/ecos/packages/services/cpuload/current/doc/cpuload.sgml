@@ -1,0 +1,149 @@
+<PART ID="services-cpuload">
+<TITLE>CPU load measurements</TITLE>
+<PARTINTRO>
+<PARA>
+The cpuload package provides a way to estimate the cpuload. It gives
+an estimated percentage load for the last 100 milliseconds, 1 second
+and 10 seconds.
+</PARA>
+</PARTINTRO>
+<CHAPTER id="cpuload-functions">
+<TITLE>CPU Load Measurements</TITLE>
+<SECT1 id="services-cpuload-api">
+<TITLE>CPU Load API</TITLE>
+<para>
+The package allows the CPU load to be estimated. The measurement code
+must first be calibrated to the target it is running on. Once this
+has been performed the measurement process can be started. This is a
+continuous process, so always providing the most up to data
+measurements. The process can be stopped at any time if required. Once
+the process is active, the results can be retrieved.
+</para>
+<para>
+Note that if the target/processor performs any power saving actions,
+such as reducing the clock speed, or halting until the next interrupt
+etc, these will interfere with the CPU load measurement. Under these
+conditions the measurement results are undefined. The synthetic target
+is one such system. See the implementation details at the foot of this
+page for further information.  </para>
+<para>
+SMP systems are not supported, only uniprocessor system.
+</para> 
+<para> The API for load measuring functions can be
+found in the file <filename>cyg/cpuload/cpuload.h</filename>.
+</para>
+<sect2 id="services-cpuload-api-cyg-cpuload-calibrate">
+<title>cyg_cpuload_calibrate</title>
+<para>
+This function is used to calibrate the cpu load measurement code. It
+makes a measurement to determine the CPU properties while idle.
+</para>
+<programlisting>
+void cyg_cpuload_calibrate(cyg_uint32  *calibration);
+</programlisting>
+<para>
+The function returns the calibration value at the location pointed to
+by <parameter>calibration</parameter>.
+</para>
+<para>
+This function is quite unusual. For it to work correctly a few
+conditions must be met. The function makes use of the two highest
+thread priorities. No other threads must be using these priorities
+while the function is being used. The kernel scheduler must be started
+and not disabled. The function takes 100ms to complete during which
+time no other threads will be run.
+</para>
+</sect2>
+<sect2 id="services-cpuload-api-cyg-cpuload-create">
+<title>cyg_cpuload_create</title>
+<para>
+This function starts the CPU load measurments.
+</para>
+<programlisting>
+void cyg_cpuload_create(cyg_cpuload_t *cpuload, 
+                        cyg_uint32 calibrate,
+                        cyg_handle_t *handle);
+</programlisting>
+<para>
+The measurement process is started and a handle to it is returned in
+<parameter>*handle</parameter>. This handle is used to access the
+results and the stop the measurement process. </para>
+</sect2>
+
+<sect2 id="services-cpuload-api-cyg-cpuload-delete">
+<title>cyg_cpuload_delete</title>
+<para>
+This function stops the measurement process. 
+</para>
+<programlisting>
+void cyg_cpuload_delete(cyg_handle_t handle);
+</programlisting>
+<para>
+<parameter>handle</parameter> should be the value returned by the create function.</para>
+</sect2>
+
+<sect2 id="services-cpuload-api-cyg-cpuload-get">
+<title>cyg_cpuload_get</title>
+<para>
+This function returns the latest measurements.
+</para>
+<programlisting>
+void cyg_cpuload_get(cyg_handle_t handle,
+		 cyg_uint32 *average_point1s, 	    
+		 cyg_uint32 *average_1s, 	    
+		 cyg_uint32 *average_10s);
+</programlisting>
+<para>
+<parameter>handle</parameter> should be the value returned by the
+create function. The load measurements for the last 100ms, 1s and 10s
+are returned in
+<parameter>*average_point1s</parameter>,<parameter>*average_1s</parameter>
+and <parameter>*average_10s</parameter> respectively.
+</para>
+</sect2>
+<sect2 id="services-cpuload-api-implementation">
+<title>Implementation details</title>
+<para>
+This section gives a few details of how the measurements are
+made. This should help to understand what the results mean.
+</para>
+<para>
+When there are no other threads runnable, eCos will execute the idle
+thread. This thread is always runnable and uses the lowest thread
+priority. The idle thread does little. It is an endless loop which
+increments the variable, <literal>idle_thread_loops</literal> and
+executes the macro <literal>HAL_IDLE_THREAD_ACTION</literal>. The cpu
+load measurement code makes use of the variable. It periodically
+examines the value of the variable and sees how much it has
+changed. The idler the system, the more it will have incremented. From
+this it is simple to determine the load of the system.
+</para>
+<para>
+The function <literal>cyg_cpuload_calibrate</literal> executes the
+idle thread for 100ms to determine how much
+<literal>idle_thread_loops</literal> is incremented on a system idle
+for 100ms. <literal>cyg_cpuload_create</literal> starts an alarm which
+every 100ms calls an alarm function. This function looks at the
+difference in <literal>idle_thread_loops</literal> since the last
+invocation of the alarm function and so calculated how idle or busy
+the system has been. The structure <literal>cyg_cpuload</literal> is
+updated during the alarm functions with the new results.  The 100ms
+result is simply the result from the last measurement period. A simple
+filter is used to average the load over a period of time, namely 1s
+and 10s. Due to rounding errors, the 1s and 10s value will probably
+never reach 100% on a fully loaded system, but 99% is often seen.
+</para>
+<para>
+As stated above, clever power management code will interfere with
+these measurements. The basic assumption is that the idle thread will
+be executed un-hindered and under the same conditions as when the
+calibration function was executed. If the CPU clock rate is reduced,
+the idle thread counter will be incremented less and so the CPU load
+measurements will give values too high. If the CPU is halted entirely,
+100% cpu load will be measured.
+</para>
+</sect2>
+</SECT1>
+</CHAPTER>
+</PART>
+

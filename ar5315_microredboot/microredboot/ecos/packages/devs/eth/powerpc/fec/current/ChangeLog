@@ -1,0 +1,218 @@
+2004-10-11  Harald Kuethe  <hkuethe@controlware.de>
+
+       * src/if_fec.c (fec_eth_RxEvent): remove crc from packet.
+
+2003-12-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/if_fec.c (fec_eth_RxEvent): Clean up some unused variables.
+
+2003-10-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/fec_eth_drivers.cdl: Disable STATUS_LEDS by default since these
+	are mostly useful for debugging and get in the way of "normal" LED use.
+
+2003-05-14  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/fec_eth_drivers.cdl: Only force serial console for eCos 
+	configurations (using actual network package).
+
+2003-05-04  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/if_fec.c: 
+	* cdl/fec_eth_drivers.cdl: Add control over use of LED display, since
+	it may interfere with some user programs.  Also, debug I/O during
+	network intialization seems frail, so force it to be disabled.
+
+2003-03-28  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/if_fec.c: Use new CPM/DPRAM buffer allocation scheme.  Also,
+	better handling when aligning buffers to cache lines.	
+	
+2003-01-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/fec_eth_drivers.cdl: Increase number of allowed buffers.
+
+2002-11-14  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/fec_eth_drivers.cdl: Increase default number of buffers (to a
+	more reasonable amount).
+
+2002-10-18  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/if_fec.c: Reduce warnings when PHY code is not used.
+
+2002-10-11  Gary Thomas  <gthomas@ecoscentric.com> [inspired by]
+2002-10-11  Wolfgang Heppner <hep@iis.fhg.de>	
+
+	* src/if_fec.c: 
+	* cdl/fec_eth_drivers.cdl: Make buffer descriptor use configurable.
+	Also, fix some issues where cache state wasn't being honored.
+
+2002-10-11  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/if_fec.c: 
+	* cdl/fec_eth_drivers.cdl: Add control over PHY - when to reset
+	and how to configure the link.
+
+2002-09-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/if_fec.c (fec_eth_init): Check for availability of RedBoot
+	FLASH support.
+
+2002-09-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/if_fec.c: Make driver more generic - platform specifics are
+	now contained in an include file CYGDAT_DEVS_FEC_ETH_INL.
+
+2002-08-15  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/if_fec.c (fec_eth_send): 
+	Clean up: remove unused variable _fec_eth_tx_count.
+
+2002-08-08  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/if_fec.c (fec_eth_RxEvent): Cache needs to be invalidated
+	to avoid any possible corruption.
+
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/if_fec.c: 
+	Need to include <pkgconf/io_eth_drivers.h> for proper configuration
+	of stand-alone (polled) vs. system (interrupt driven) mode.
+
+2002-05-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/if_fec.c: Use CYGINT_IO_ETH_INT_SUPPORT_REQUIRED where
+        appropriate.
+
+2002-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_fec.c: Initialized a variable and removed an unused
+	variable. Also made one volatile. All to remove warnings.
+	* src/fec.h: Made more pointers volatile to avoid compiler
+	warnings.
+
+2002-04-30  Nick Garnett  <nickg@redhat.com>
+
+	* src/if_fec.c: Changed order of initialization and made code more
+	robust against hangups. Changed initialization of ESA from memcpy
+	to 32 bit assignments, since 855 seems fussy about this where 860
+	is not.
+
+2002-04-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c (fec_eth_control): Fix compile error (multicast).
+
+2002-04-19  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/fec_eth_drivers.cdl: Add [minimal] multicast support.
+
+	* src/if_fec.c: Cleaned out debug code.
+
+2002-04-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c: Finally working!  Problem was that resetting the
+	interface is much more involved than simply set/reset the "enable".
+
+2002-04-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c: 
+	* src/fec.h: Add code to poll PHY for link status on startup.
+	Still trying to get reliable results in general operation.
+
+2002-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/fec.h: 
+	* src/if_fec.c: Lots of tinkering since this driver is somewhat
+	unreliable with the generic eCos stack (the RedBoot code seems
+	to work oddly enough).
+
+2002-02-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c (fec_eth_init): Args were backwards(!) getting
+	processor revision.	
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-06-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/if_fec.c (fec_eth_init): Use correct version register.
+
+2001-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c (fec_eth_init): Use RedBoot/fconfig data for ethernet
+	station address (ESA).
+
+2001-05-04  Gary Thomas  <gthomas@redhat.com>
+
+	* src/fec.h (iEvent_all): 
+	* src/if_fec.c (fec_eth_init): Enable interrupts.
+
+2001-05-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c (fec_eth_init): Force buffers to 32 byte boundary.
+
+2001-02-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_fec.c: Finally working!  Lots of little changes
+	to get the setup just right.
+	(fec_eth_init): Need to set Tx high water mark high for proper
+	operation when code is run from FLASH.  Also misc cleanups, removing
+	old debug code, etc.
+	(fec_eth_recv): 
+	(fec_eth_TxEvent): 
+	(fec_eth_RxEvent):
+	(fec_eth_send): Need to flush data cache - not snooped?	
+
+	* src/fec.h: Add new defines for rev D of chip.
+
+	* cdl/fec_eth_drivers.cdl: Remove CDL for chip revision,
+	now handled automatically by driver.
+
+2001-01-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/fec.h: 
+	* src/if_fec.c: 
+	* cdl/fec_eth_drivers.cdl: New package/file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

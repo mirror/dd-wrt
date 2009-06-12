@@ -1,0 +1,115 @@
+2003-07-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* host/rawether.c: Change error reporting to use standard 'strerror()' 
+	function since the use of sys_errlist[] is depricated.
+
+2003-07-09  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/Makefile.am: add a dummy install-data-hook if not
+	supported.
+
+	* host/Makefile.in, host/aclocal.m4, host/configure: regenerate
+
+2003-05-06  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/ethernet.tcl (filters_initialize):
+	Fix typo reported by Scott Wilkinson
+
+2003-02-25  Iztok Zupet  <iz@vsr.si>
+
+	* doc/syntheth.sgml: Replaced .gif with .png to get PDF
+	output.
+	* doc/overview.gif: delete.
+	* doc/overview.png: add.
+
+2003-04-08  Andrew Lunn  <lunn@londo>
+
+	* host/rawether.c (tap_init): Set the persistent flag on the tap
+	device if requested by the user. This allows dhcpd and radvd to
+	keep running on the tap device between invocations of the synth
+	target.	
+	* doc/syntheth.sgml: Documentation for the persistent option.
+
+2003-04-01  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/syntheth.c (synth_eth_init): Set the flag IFF_ALLMULTI when
+	the underlying device supports multicast so eth_drv correctly sets
+	mutlicast filtering.  
+	* cdl/syntheth.cdl: This driver implements multicast.
+
+2003-02-25  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/syntheth.sgml: Declare as <part> not <reference> to get
+	correct TOC numbering.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/syntheth.cdl: Add doc link.
+
+	* doc/syntheth.sgml: Comment out DOCTYPE for now to allow building
+	with standard doc build.
+	Add an enclosing <reference> so it's structured better with standard
+	doc build.
+
+2003-02-13  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/syntheth.c, cdl/syntheth.cdl: add dependency on errno.h for
+	error codes, and avoid memset() warning
+
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/Makefile.in, host/configure:
+	Regenerate after toplevel acinclude.m4 update
+
+2003-02-12  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/syntheth.cdl (CYGPKG_DEVS_ETH_ECOSYNTH_CFLAGS_ADD):
+	Define -D_KERNEL -D__ECOS in line with other drivers. Fixes build
+	issue with freeBSD stack.
+
+2002-09-25  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/configure.in, host/rawether.c, doc/syntheth.sgml: 
+	Only support the tap device if running a recent Linux kernel
+
+2002-09-22  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/configure.in:
+	Remove Tcl-related checks, the ethernet package only requires
+	the functionality of the architectural HAL support
+
+2002-08-07  Bart Veer  <bartv@ecoscentric.com>
+
+	* synthetic target ethernet driver package created
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 2002, 2003 Bart Veer
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

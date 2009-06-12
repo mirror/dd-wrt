@@ -1,0 +1,39 @@
+#! /bin/sh
+
+# helps bootstrapping demangler, when checked out from CVS
+# requires at least GNU autoconf 2.13 and GNU automake1.4-p5
+# Modified from the one in libtool.
+
+find . -name autom4te.cache -exec rm -r {} \;
+
+for sub in . lib; do
+  (cd $sub; rm -f aclocal.m4 Makefile configure)
+
+  case $sub in
+  .) 
+    if test -n "$ACLOCAL"; then
+      $ACLOCAL
+    else
+      aclocal-1.4 || aclocal
+    fi
+    if test -n "$AUTOCONF"; then
+      $AUTOCONF
+    else
+      autoconf-2.13 || autoconf
+    fi
+
+    AUTOMAKE_FLAGS="--cygnus"
+    ;;
+  *)
+    AUTOMAKE_FLAGS="--cygnus $sub/Makefile"
+    ;;
+  esac
+
+  if test -n "$AUTOMAKE"; then
+    eval $AUTOMAKE $AUTOMAKE_FLAGS
+  else
+    eval automake-1.4 $AUTOMAKE_FLAGS || automake $AUTOMAKE_FLAGS
+  fi
+done
+
+exit 0

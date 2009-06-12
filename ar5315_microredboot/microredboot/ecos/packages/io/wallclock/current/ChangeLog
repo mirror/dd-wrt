@@ -1,0 +1,322 @@
+2003-09-23  Dan Jakubiec <firstname.lastname@systech.com>
+
+	* src/emulate.cxx (get_hw_seconds): Modified the ticks-to-seconds
+	conversion in the wallclock emulator's get_hw_seconds() function.
+	The previous implementation would easily overflow for any
+	reasonable date/tick-resolution combinations.
+
+2003-09-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/wallclock.cxx: Allow test to complete, even if it looses sync.
+	This is useful to determine how much drift is present.
+
+2003-03-25  Michael Checky <Michael_Checky@Thermoking.com>
+
+	* include/wallclock/wallclock.inl: Added parens to TO_BCD() and TO_DEC()
+	macros so macro argument is interpreted correctly.
+
+2001-07-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/wallclock/wallclock.inl (_simple_mktime): Fix assertion
+	for leap seconds.
+
+2001-07-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/wallclock/wallclock.inl (_simple_mktime): Added some assertions.
+	(_simple_mktime): Adjust assertions to correct and more sensible
+	values.
+	(_simple_mktime): A few more assertion tweaks.
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/wallclock2.cxx: No need to check for CYGINT_LIBC_STARTUP_CONTEXT
+	as it is required by CYGPKG_LIBC_STARTUP.
+
+2001-04-06  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/wallclock/wallclock.inl (_simple_mkdate): Fix small
+	operator precedence bug.
+
+2001-04-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/wallclock.cxx: Don't run this test in any simulated
+	environment. It just takes far too long and is always timed out by
+	the testing infrastructure.
+
+2000-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/wallclock.cxx: User driver API instead of scheduler lock.
+
+	* cdl/wallclock.cdl: Emulation requires the kernel, as do the tests. 
+
+2000-11-09  Jesper Skov  <jskov@redhat.com>
+
+	* tests/wallclock2.cxx: Include string header.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/wallclock2.cxx: Play better with main() startup configury
+
+	* tests/wallclock.cxx: Ensure default priority constructors
+	are called.
+
+2000-07-24  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/wallclock2.cxx: Depend on CYGPKG_LIBC_TIME not CYGPKG_LIBC
+
+2000-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/wallclock/wallclock.inl (_simple_mktime): Replaced
+	expression with algorithm.
+
+	* tests/wallclock2.cxx: Test wallclock's conversion functions for
+	Y2K safety.
+
+2000-05-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/wallclock/wallclock.inl:
+	(_simple_mkdate): Rewritten.
+
+	* src/wallclock.cxx: 
+	* include/wallclock.hxx: low-level driver may need init call also
+	in set-get mode. Split helper functions out in new .inl header.
+	
+	* cdl/wallclock.cdl: Added set-get/init-get option.
+
+	* tests/wallclock2.cxx: Allow HW calls to take one second.
+	* tests/wallclock.cxx: Don't set clock.
+
+2000-04-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/wallclock.cxx: Construct after kernel RTC since the
+	emulation implementation may have to use the RTC.
+
+2000-04-13  Jesper Skov  <jskov@redhat.com>
+
+	* tests/wallclock.cxx: Use TEST_NA if N/A.
+	Split in two separate parts (accuracy & info).
+
+2000-04-12  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/wallclock.cdl: Don't let interfaces define anything.
+
+2000-04-06  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/wallclock2.cxx: Test correct libc feature CDL
+
+2000-04-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/wallclock.cdl:
+
+	Implement wallclock implementations as radio buttons.
+
+2000-04-05  Jesper Skov  <jskov@redhat.com>
+
+	* tests/wallclock.cxx: 
+	Increase precision of test.
+	
+	* src/wallclock.cxx: 
+	* src/emulate.cxx: 
+	* tests/wallclock.cxx: 
+	* tests/wallclock2.cxx: 
+
+	* Moved common code, emulation device and tests to io/wallclock.
+
+2000-04-04  Jesper Skov  <jskov@redhat.com>
+
+	* tests/wallclock2.cxx: Include testcase.h before conditional NA.
+
+2000-03-29  Jesper Skov  <jskov@redhat.com>
+
+	* tests/wallclock2.cxx:
+	* include/wallclock.hxx:
+	* src/sh3.cxx: 
+	* src/wallclock.cxx: 
+	* cdl/wallclock.cdl:
+	Reworked WallClock API. It should now be simpler to add new
+	wallclock drivers. Added a simple test to print out the current
+	wallclock value so a human can verify battery backup works.
+
+2000-03-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/wallclock.cdl: 
+	* src/sh3.cxx: 
+	Added wallclock driver for SH3 RTC module.
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/wallclock.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/wallclock.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/wallclock.cdl: Define build options.
+
+1999-07-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/emulate.cxx: Include pkgconf/kernel.h.
+
+1999-04-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/wallclock.cxx (cyg_start): Output message to show the test
+	has started
+	(wallclock_thread): Add call to CYG_TEST_STILL_ALIVE, so the user
+	can see that the test is still running.
+	Fix for PR 19870
+
+1999-04-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/wallclock.h: Add cdl_package doc attribute.
+
+1999-04-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19667
+	* tests/wallclock.cxx (cyg_start): 
+	Changed to use the new Cyg_Thread constructor.
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/wallclock.cxx: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/wallclock.cxx: 
+	Deal with CYGNUM_HAL_MINIMUM_STACK_SIZE requirement.
+
+
+1999-03-05  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/wallclock.hxx:
+	Remove dependency on cyg/kernel/ktypes.h
+	Tidy
+
+	* src/emulate.cxx:
+	Include cyg/kernel/ktypes.h since it isn't included in wallclock.hxx
+	any more
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/wallclock.h: Make package stand-alone (no "DEVICES").
+
+1999-02-02  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18970
+	* tests/wallclock.cxx (LOOPS_SIM): Only do two loops on
+	SIM. MN10300 sim takes 1min15secs to do one loop.
+
+1999-01-26  Jesper Skov  <jskov@cygnus.co.uk>
+        (PR 18305)
+	* tests/wallclock.cxx: Removed MIPS specific hackery. Now
+	dependent on cyg_test_is_simulator state.
+
+1999-01-21  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18847
+	* tests/wallclock.cxx (LOOPS_HW): Reduce run-time to 20 seconds.
+
+1999-01-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/wallclock.cxx: Added test of cyg_test_is_simulator to
+	reduce time on simulated hardware. PR 18715.
+
+1998-12-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/wallclock.cxx: Do NOP test if kernel RTC disabled.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/wallclock.cxx: Reduce test time on TX39 SIM.
+
+Tue Oct 20 15:54:09 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	Remove unnecessary override of PKGCONF_CXXFLAGS
+
+1998-09-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/wallclock.h:
+	PR17501: When using the emulation there is a requirement on the
+	kernel clock. This has been added to the configuration data.
+	If real hardware were used then this dependency would disappear,
+	but currently there is no easy way to express this, and there are
+	no hardware implementations.
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/wallclock.h:
+	Added missing descriptions (PR 17184)
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/wallclock.h:
+	Added minimal configuration data.
+
+Fri Aug 28 09:40:19 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/wallclock.cxx:
+	Rename int main(argc, argv) to void cyg_start( void ) under the
+	new entry point system. Therefore also remove return code.
+	
+Tue Aug 18 16:49:20 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/wallclock.cxx: 
+	Move inclusion of thread.inl before sched.hxx to prevent inline
+	warnings
+
+1998-07-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/wallclock.h:
+	Added this file to contain wallclock confiuration parameters.
+	
+	* src/emulate.cxx: 
+	Now uses pkgconf/wallclock.h for configuration.
+
+Wed Jul 22 21:04:15 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/emulate.cxx: 
+	Remove unnecessary include of <cyg/devs/table.h> and remove an
+	unused variable (result) from get_current_time()
+
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+
+

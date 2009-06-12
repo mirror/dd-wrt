@@ -1,0 +1,100 @@
+# Register display window class definition for Insight.
+# Copyright 1998, 1999, 2001 Red Hat, Inc.
+#
+# Written by Keith Seitz (keiths@redhat.com)
+# based on work by Martin Hunt (hunt@redhat.com)
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class RegWin {
+  inherit EmbeddedWin GDBWin
+  
+  private {
+    variable _change_list {}
+    variable _menuitems
+
+    # Display data for the table
+    variable _data
+
+    # Mapping of table cell index to register number
+    variable _register
+
+    # Mapping of register number to table cell index. "hidden" if
+    # the register was "removed" from the display.
+    variable _cell
+
+    # Is REGNUM editable?
+    variable _editable
+
+    # List of possible display types for the registers (indexed by regnum)
+    variable _types
+    # The display type to use for each register (indexed by regnum)
+    variable _type
+    # The display format to use for each register (indexed by regnum)
+    variable _format
+
+    # The list of registers we're displaying
+    variable _reg_display_list {}
+
+    # Size of columns
+    variable _col_size
+    variable _max_label_width
+
+    # Dimensions
+    variable _rows
+    variable _cols
+
+    # Fencepost
+    variable _running 0
+
+
+    # Table layout/display methods
+    method _build_win {}
+    method _layout_table {}
+    method _load_prefs {}
+    method _prefs_changed {pref value}
+    method _size_cell_column {cell down}
+    method _size_column {col down}
+
+    # Table event handlers and related methods
+    method _accept_edit {}
+    method _add_to_watch {rn}
+    method _but3 {x y X Y}
+    method _delete_from_display {rn} 
+    method _display_all {} 
+    method _edit {x y}
+    method _move {direction}
+    method _open_memory {rn}
+    method _post_menu {}
+    method _select_cell {cell}
+    method _unedit {}
+
+    # Register operations
+    method _get_value {rn}
+    method _change_format {rn {t {}}}
+    method _update_register {rn}
+  }
+
+  public {
+    method constructor {args}
+    method destructor {}
+
+    #
+    # Gdb Events
+    #
+    method busy {event}
+    method idle {event}
+    method set_variable {event}
+    method update {event}
+    method arch_changed {event}
+  }
+}

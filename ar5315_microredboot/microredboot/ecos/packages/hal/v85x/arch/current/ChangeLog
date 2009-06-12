@@ -1,0 +1,262 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_v85x.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_misc.c: Remove unused __mem_fault_handler declaration.
+
+2001-11-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c (hal_msbit_index): Fixed.
+
+2001-04-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S: Support daft platforms like the CEB which have
+	default on-chip flash that vector NMI to 2 insns after reset.
+	Also place hal_v85x_ice_syscall_info in fixed location, only
+	for ROM/ROMRAM builds.
+
+2001-03-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S: Overhaul...
+	Make interrupt processing path faster, especially by implementing
+	CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+	Add ROMRAM startup support
+	Pass in correct argument to exception_handler
+	Call DSRs with parameter flushback area
+	Add __allow_nmi as a somewhat kludgy means of determining
+	whether NMIs should be ignored - important if the board resets
+	and the vector tables are temporarily inconsistent.
+	Initialize __vsr_table statically.
+	Add some generic elements of ICE debugging support
+
+	* src/v85x.ld: Remove - redundant.
+
+	* src/hal_mk_defs.c (main): Update to reflect new vector names
+	(to match official NEC docs)
+
+	* src/hal_misc.c (exception_handler): Remove cygmon cruft.
+	(hal_arch_default_isr): Report spurious interrupts.
+	(hal_idle_thread_action): use halt instruction
+
+	* include/hal_arch.h: Remove obsolete comment reference to arch.inc.
+
+	* include/basetype.h: No need to include <pkgconf/hal.h>
+	* include/hal_io.h: Ditto.
+	* include/nec-stub.h: Similarly for <pkgconf/system.h>
+
+	* cdl/hal_v85x.cdl: Move CYGHWR_HAL_V85X_CPU_FREQ into platforms
+	(and make Hz, not MHz).
+	Add generic ICE debugging interface.
+	Description tidies.
+
+2001-01-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_intr.h: Move HAL_STUB_PLATFORM_RESET and
+	HAL_STUB_PLATFORM_RESET_ENTRY here from platform stub headers.
+	Also rename to HAL_PLATFORM_RESET and HAL_PLATFORM_RESET_ENTRY
+
+	* src/vectors.S (_hal_reset_board): Renamed from hal_plf_reset_board
+
+2001-01-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Added underscore to reference to
+	cyg_scheduler_sched_lock, since CYGBLD_ATTRIB_ASM_ALIAS() now adds
+	one automatically.
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c: Update __mem_fault_handler declaration.
+
+2000-10-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_arch.h (CYGARC_JMP_BUF_SIZE): Define hal_jmp_buf in
+	terms of this.
+
+2000-10-09  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (start): Need to handle ^C for all applications.
+
+2000-09-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S: When calling C functions, ensure there is 16 bytes
+	space for the parameter flushback area (as per the calling convention)
+	on the stack
+
+2000-09-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/basetype.h: Don't need special alignment after all - it was
+	a bug elsewhere.
+
+2000-09-06  Gary Thomas  <gthomas@redhat.com>
+
+	* include/basetype.h: Need special alignment to match the way
+	the compiler/linker actually do things.
+
+	* cdl/hal_v85x.cdl: Improve variant handling and specification.
+
+2000-08-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (start): Allow programs to field NMI exceptions.
+
+2000-07-24  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/basetype.h: Removed definition of CYG_LABEL_NAME().
+
+	* src/v85x.ld: 	Switched to new table definition mechanism.
+
+2000-07-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (_hal_plf_reset_board): Needs to be defined in all
+	configurations.
+
+2000-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S:
+	* src/hal_mk_defs.c: 
+	Fix compiler warnings.
+
+	* src/hal_misc.c (hal_default_isr): Let common version do the
+	checks.
+
+2000-06-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_mk_defs.c: 
+	* src/vectors.S: 
+	* src/hal_misc.c (hal_default_isr): Update for new debug
+	vector support.
+
+	* include/hal_intr.h: 
+	* src/vectors.S (do_interrupt): Proper handling of chained
+	interrupts.
+
+2000-06-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (return_from_exception_or_interrupt): Revert 
+	reorg change (05-26) which broke GDB breakpoints.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h (CYGARC_HAL_SAVE_GP, CYGARC_HAL_RESTORE_GP):
+	Added.
+
+2000-05-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S: Slight reorg of trap vectors (more readable).
+
+2000-05-25  John Dallaway  <jld@redhat.com>
+
+	* cdl/hal_v85x.cdl: Tidy display strings.
+
+2000-05-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S: Handle different chips (number of interrupt
+	sources differs, exception table is altered, etc).
+
+	* include/hal_intr.h: Actual interrupt layout now defined by
+	variant/platform since these differ depending on the chip.
+
+2000-05-03  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_arch.h: New breakpoint instruction ("br *").
+
+2000-04-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_misc.c (exception_handler): Proper handling of nested
+	[watchdog] interrupts - don't corrupt GDB registers.
+
+	* src/hal_mk_defs.c: Add some symbols required for NMI handling.
+
+	* src/vectors.S (return_from_exception_or_interrupt): 
+	Properly handle different cases for exception, NMI and ISR.
+
+	* include/hal_intr.h (HAL_TRANSLATE_VECTOR): Ignore interrupt
+	chaining - doesn't happen on this hardware.
+
+2000-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (exception): Handle NMI.  In particular, need to
+	have appropriate bits set so they clear and also get the state
+	from the proper save registers.
+	(exception): Register save was wrong - ROM only.
+
+2000-03-31  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_mk_defs.c: Add definition for 'ep' register.
+
+	* include/hal_intr.h: 
+	* cdl/hal_nec.cdl: Add config option to choose between inline and
+	real functions for interrupt macros.
+
+	* src/vectors.S: Tune up - use SLD/SST for smaller, faster code
+	in context load/save routines.  Also remove IRQ trace/debug code.
+
+2000-03-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (do_interrupt): Can't use R13 across function calls.
+	This caused instability when turning on kernel instrumentation.
+
+	* include/hal_intr.h: Use out-of-line code for interrupt functions
+	for tracing/testing.
+
+	* src/vectors.S: Working support for separate interrupt stack.
+	Some debug/trace code left in.
+
+	* src/hal_mk_defs.c: 
+	* include/hal_arch.h: Documented API does not match actual GCC 
+	register usage. Need to save R1/R2/R4/R5 for setjmp/longjmp.
+
+2000-03-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (do_interrupt): Pass regs to ISR & DSR.
+
+	* include/basetype.h: Endian-ness was incorrect.
+
+	* include/hal_arch.h: 
+	* src/hal_mk_defs.c: Complete setjmp/longjmp support.
+
+	* src/vectors.S: Add interrupt stack.
+
+2000-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (_hal_plf_reset_board): Add board reset function.
+
+	* include/hal_arch.h (CYGHWR_TEST_PROGRAM_EXIT): Define RESET for ROM
+	based programs.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

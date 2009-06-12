@@ -1,0 +1,2142 @@
+<!-- {{{ Banner         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     build.sgml                                                  -->
+<!--                                                                 -->
+<!--     Description of the build system.                            -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2000, 2001, 2002 Red Hat, Inc.                    -->
+<!--                                                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2000/02/06                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<chapter id="build">
+<title>The Build Process</title>
+
+<!-- {{{ Introit                -->
+
+<para>
+Some &CDL; properties describe the consequences of manipulating
+configuration options. There are two main types of consequences.
+Typically enabling a configuration option results in one or more
+<literal>#define's</literal> in a configuration header file, and
+properties that affect this include &define;, &define-proc; and
+&no-define;. Enabling a configuration option can also affect the build
+process, primarily determining which files get built and added to the
+appropriate library. Properties related to the build process include
+&compile; and &make;. This chapter describes the whole build process,
+including details such as compiler flags and custom build steps.
+</para>
+<para>
+Part of the overall design of the &eCos; component framework is that
+it can interact with a number of different build systems. The most
+obvious of these is <application class="software">GNU
+make</application>:the component framework can generate one or more
+makefiles, and the user can then build the various packages simply by
+invoking <application class="software">make</application>. However it
+should also be possible to build &eCos; by other means: the
+component framework can be queried about what is involved in building
+a given configuration, and this information can then be fed into the
+desired build system. Component writers should be aware of this
+possibility. Most packages will not be affected because the &compile;
+property can be used to provide all the required information, but care
+has to be taken when writing custom build steps.
+</para>
+
+<!-- }}} -->
+<!-- {{{ Build Tree Generation  -->
+
+<sect1 id="build.outline">
+<title>Build Tree Generation</title>
+
+<para>
+It is necessary to create an &eCos; configuration before anything can
+be built. With some tools such as the graphical configuration tool
+this configuration will be created in memory, and it is not essential
+to produce an <filename>ecos.ecc</filename> savefile first (although
+it is still very desirable to generate such a savefile at some point,
+to allow the configuration to be re-loaded later on). With other tools
+the savefile is generated first, for example using
+<literal>ecosconfig&nbsp;new</literal>, and then a build tree is
+generated using <literal>ecosconfig&nbsp;tree</literal>. The savefile
+contains all the information needed to recreate a configuration.
+</para>
+<para>
+An &eCos; build actually involves three separate trees. The component
+repository acts as the source tree, and for application developers
+this should be considered a read-only resource. The build tree is
+where all intermediate files, especially object files, are created.
+The install tree is where the main library
+<filename>libtarget.a</filename>, the exported header files, and
+similar files end up. Following a successful build it is possible to
+take just the install tree and use it for developing an application:
+none of the files in the component repository or the build tree are
+needed for that. The build tree will be needed again only if the user
+changes the configuration. However the install tree does not contain
+copies of all of the documentation for the various packages, instead
+the documentation is kept only in the component repository.
+</para>
+<para>
+By default the build tree, the install tree, and the
+<filename>ecos.ecc</filename> savefile all reside in the same
+directory tree. This is not a requirement, both the install tree and
+the savefile can be anywhere in the file system.
+</para>
+<para>
+It is worth noting that the component framework does not separate the
+usual <literal>make</literal> and <literal>make&nbsp;install</literal>
+stages. A build always populates the install tree, and any
+<literal>make&nbsp;install</literal> step would be redundant.
+</para>
+<para>
+The install tree will always begin with two directories, <filename
+class="directory">include</filename> for the exported header files and
+<filename class="directory">lib</filename> for the main library
+<filename class="directory">libtarget.a</filename> and other files
+such as the linker script. In addition there will be a subdirectory
+<filename class="directory">include/pkgconf</filename> containing the
+configuration header files, which are generated or updated at the same
+time the build tree is created or updated. More details of header file
+generation are given below. Additional <filename
+class="directory">include</filename> subdirectories such as <filename
+class="directory">sys</filename> and <filename
+class="directory">cyg/kernel</filename> will be created during the
+first build, when each package's exported header files are copied to
+the install tree. The install tree may also end up with additional
+subdirectories during a build, for example as a result of custom build
+steps. 
+</para>
+<para>
+The component framework does not define the structure of the build
+tree, and this may vary between build systems. It can be assumed that
+each package in the configuration will have its own directory in the
+build tree, and that this directory will be used for storing the
+package's object files and as the current directory for any build
+steps for that package. This avoids problems when custom build steps
+from different packages generate intermediate files which happen to
+have the same name.
+</para>
+<para>
+Some build systems may allow application developers to copy a source
+file from the component repository to the build tree and edit the
+copy. This allows users to experiment with small changes, for example
+to add a couple of lines of debugging to a package, without having to
+modify the master copy in the component repository which could be
+shared by several projects or several people. Functionality such as
+this is transparent to component writers, and it is the responsibility
+of the build system to make sure that the right thing happens.
+</para>
+
+<note>
+<para>
+There are some unresolved issues related to the build tree and install
+tree. Specifically, when updating an existing build or install tree,
+what should happen to unexpected files or directories? Suppose the
+user started with a configuration that included the math library, and
+the install tree contains header files <filename
+class="headerfile">include/math.h</filename> and <filename
+class="headerfile">include/sys/ieeefp.h</filename>. The user then removed
+the math library from the configuration and is updating the build
+tree. It is now desirable to remove these header files from the
+install tree, so that if any application code still attempts to use
+the math library this will fail at compile time rather than at link
+time. There will also be some object files in the existing
+<literal>libtarget.a</literal> library which are no longer
+appropriate, and there may be other files in the install tree as a
+result of custom build steps. The build tree will still contain a
+directory for the math library, which no longer serves any purpose.
+</para>
+<para>
+However, it is also possible that some of the files in the build tree
+or the install tree were placed there by the user, in which case
+removing them automatically would be a bad idea.
+</para>
+<para>
+At present the component framework does not keep track of exactly what
+should be present in the build and install trees, so it cannot readily
+determine which files or library members are obsolete and can safely
+be removed, and which ones are unexpected and need to be reported to
+the user. This will be addressed in a future release of the system.
+</para>
+</note>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Header File Generation -->
+
+<sect1 id="build.headers">
+<title>Configuration Header File Generation</title>
+
+<para>
+Configuration options can affect a build in two main ways. First,
+enabling a configuration option or other &CDL; entity can result in
+various files being built and added to a library, thus providing
+functionality to the application code. However this mechanism can only
+operate at a rather coarse grain, at the level of entire source files.
+Hence the component framework also generates configuration header
+files containing mainly C preprocessor <literal>#define</literal>
+directives. Package source code can then <literal>#include</literal>
+the appropriate header files and use <literal>#if</literal>,
+<literal>#ifdef</literal> and <literal>#ifndef</literal> directives to
+adapt accordingly. In this way configuration options can be used to
+enable or disable entire functions within a source file or just a
+single line, whichever is appropriate.
+</para>
+<para>
+The configuration header files end up in the <filename
+class="directory">include/pkgconf</filename> subdirectory of the
+install tree. There will be one header file for the system as a whole,
+<filename class="headerfile">pkgconf/system.h</filename>, and there will
+be additional header files for each package, for example
+<filename class="headerfile">pkgconf/kernel.h</filename>. The header files
+are generated when creating or updating the build and install trees,
+which needs to happen after every change to the configuration.
+</para>
+<para>
+The component framework processes each package in the configuration
+one at a time. The exact order in which the packages are processed is
+not defined, so the order in which <literal>#define's</literal> will
+end up in the global <filename
+class="headerfile">pkgconf/system.h</filename> header may vary. However
+for any given configuration the order should remain consistent until
+packages are added to or removed from the system. This avoids
+unnecessary changes to the global header file and hence unnecessary
+rebuilds of the packages and of application code because of header
+file dependency handling.
+</para>
+<para>
+Within a given package the various components, options and interfaces
+will be processed in the order in which they were defined in the
+corresponding &CDL; scripts. Typically the data in the configuration
+headers consists only of a sequence of <literal>#define's</literal> so
+the order in which these are generated is irrelevant, but some
+properties such as &define-proc; can be used to add arbitrary data to
+a configuration header and hence there may be dependencies on the
+order. It should be noted that re-parenting an option below some other
+package has no effect on which header file will contain the
+corresponding <literal>#define</literal>: the preprocessor directives
+will always end up in the header file for the package that defines the
+option, or in the global configuration header.
+</para>
+<para>
+There are six properties which affect the process of generating header
+files:
+<link linkend="ref.define-header">&define-header;</link>,
+<link linkend="ref.no-define">&no-define;</link>,
+<link linkend="ref.define-format">&define-format;</link>,
+<link linkend="ref.define">&define;</link>,
+<link linkend="ref.if-define">&if-define;</link>, and
+<link linkend="ref.define-proc">&define-proc;</link>.
+</para>
+<para>
+The &define-header; property can only occur in the body of a
+&cdl-package; command and specifies the name of the header file which
+should contain the package's configuration data, for example:
+</para>
+<programlisting width=72>
+cdl_package &lt;some_package&gt; {
+    &hellip;
+    define_header xyzzy.h
+}
+</programlisting>
+<para>
+Given such a &define-header; property the component framework will
+use the file <filename class="headerfile">pkgconf/xyzzy.h</filename> for
+the package's configuration data. If a package does not have
+a &define-header; property then a suitable file name is constructed
+from the package's name. This involves:
+</para>
+<orderedlist>
+<listitem>
+<para>
+All characters in the package name up to and including the first
+underscore are removed. For example <varname>CYGPKG_KERNEL</varname>
+is converted to <literal>KERNEL</literal>, and
+<varname>CYGPKG_HAL_ARM</varname> is converted to
+<literal>HAL_ARM</literal>.
+</para>
+</listitem>
+<listitem>
+<para>
+Any upper case letters in the resulting string will be converted to
+lower case, yielding e.g. <literal>kernel</literal> and
+<literal>hal_arm</literal>.
+</para>
+</listitem>
+<listitem>
+<para>
+A <literal>.h</literal> suffix is appended, yielding e.g.
+<literal>kernel.h</literal> and <literal>hal_arm.h</literal>.
+</para>
+</listitem>
+</orderedlist>
+<para>
+Because of the naming restrictions on configuration options, this
+should result in a valid filename. There is a small possibility of a
+file name class, for example <varname>CYGPKG_PLUGH</varname> and
+<varname>CYGPKG_plugh</varname> would both end up trying to use the
+same header file <filename class="headerfile">pkgconf/plugh.h</filename>,
+but the use of lower case letters for package names violates the
+naming conventions. It is not legal to use the &define-header;
+property to put the configuration data for several packages in a
+single header file. The resulting behaviour is undefined.
+</para>
+<para>
+Once the name of the package's header file has been determined and the
+file has been opened, the various components, options and interfaces
+in the package will be processed starting with the package itself. The
+following steps are involved:
+</para>
+<orderedlist>
+<listitem>
+<para>
+If the current option or other &CDL; entity is inactive or disabled,
+the option is ignored for the purposes of header file generation.
+<literal>#define's</literal> are only generated for options that are
+both active and enabled.
+</para>
+</listitem>
+<listitem>
+<para>
+The next step is to generate a default <literal>#define</literal> for
+the current option. If this option has a &no-define; property then the
+default <literal>#define</literal> is suppressed, and processing
+continues for &define;, &if-define; and &define-proc; properties.
+</para>
+<orderedlist>
+<listitem>
+<para>
+The header file appropriate for the default <literal>#define</literal>
+is determined. For a &cdl-package; this will be <filename
+class="headerfile">pkgconf/system.h</filename>, for any other option this
+will be the package's own header file. The intention here is that
+packages and application code can always determine which packages are
+in the configuration by <literal>#include'ing</literal> <filename
+class="headerfile">pkgconf/system.h</filename>. The C preprocessor lacks
+any facilities for including a header file only if it exists, and
+taking appropriate action otherwise.
+</para>
+</listitem>
+<listitem>
+<para>
+For options with the flavors <literal>bool</literal> or
+<literal>none</literal>, a single <literal>#define</literal> will be
+generated. This takes the form:
+</para>
+<programlisting width=72>
+#define &lt;option&gt; 1
+</programlisting>
+<para>
+For example:
+</para>
+<programlisting width=72>
+#define CYGFUN_LIBC_TIME_POSIX 1
+</programlisting>
+<para>
+Package source code can check whether or not an option is active and
+enabled by using the <literal>#ifdef</literal>,
+<literal>#ifndef</literal> or <literal>#if
+defined(&hellip;)</literal>directives.
+</para>
+</listitem>
+<listitem>
+<para>
+For options with the flavors <literal>data</literal> or
+<literal>booldata</literal>, either one or two
+<literal>#define's</literal> will be generated. The first of these may
+be affected by a &define-format; property. If this property is not
+defined then the first <literal>#define</literal> will take the form:
+</para>
+<programlisting width=72>
+#define &lt;option&gt; &lt;value&gt;
+</programlisting>
+<para>
+For example:
+</para>
+<programlisting width=72>
+#define CYGNUM_LIBC_ATEXIT_HANDLERS 32
+</programlisting>
+<para>
+Package source code can examine this value using the
+<literal>#if</literal> directive, or by using the symbol in
+code such as:
+</para>
+<programlisting width=72>
+    for (i = 0; i < CYGNUM_LIBC_ATEXIT_HANDLERS; i++) {
+        &hellip;
+    }
+</programlisting>
+<para>
+It must be noted that the <literal>#define</literal> will be generated
+only if the corresponding option is both active and enabled. Options
+with the <literal>data</literal> flavor are always enabled but may not
+be active. Code like the above should be written only if it is known
+that the symbol will always be defined, for example if the
+corresponding source file will only get built if the containing
+component is active and enabled. Otherwise the use of additional
+<literal>#ifdef</literal> or similar directives will be necessary.
+</para>
+</listitem>
+<listitem>
+<para>
+If there is a &define-format; property then this controls how the
+option's value will appear in the header file. Given a format string
+such as <literal>%08x</literal> and a value 42, the component
+framework will execute the &Tcl; command
+<literal>format&nbsp;%08x&nbsp;42</literal> and the result will be
+used for the <literal>#define's</literal> value. It is the
+responsibility of the component writer to make sure that this &Tcl;
+command will be valid given the format string and the legal values for
+the option.
+</para>
+</listitem>
+<listitem>
+<para>
+In addition a second <literal>#define</literal> may or may not be
+generated. This will take the form:
+</para>
+<programlisting width=72>
+#define &lt;option&gt;_&lt;value&gt;
+</programlisting>
+<para>
+For example:
+</para>
+<programlisting width=72>
+#define CYGNUM_LIBC_ATEXIT_HANDLERS_32
+</programlisting>
+<para>
+The <literal>#define</literal> will be generated only if it would
+result in a valid C preprocessor symbol. If the value is a string such
+as <literal>"/dev/ser0"</literal> then the <literal>#define</literal>
+would be suppressed. This second <literal>#define</literal> is not
+particularly useful for numerical data, but can be valuable in other
+circumstances. For example if the legal values for an option
+<literal>XXX_COLOR</literal> are <literal>red</literal>,
+<literal>green</literal> and <literal>blue</literal> then code like
+the following can be used:
+</para>
+<programlisting width=72>
+#ifdef XXX_COLOR_red
+    &hellip;
+#endif
+#ifdef XXX_COLOR_green
+    &hellip;
+#endif
+#ifdef XXX_COLOR_blue
+    &hellip;
+#endif
+</programlisting>
+<para>
+The expression syntax provided by the C preprocessor is limited to
+numerical data and cannot perform string comparisons. By generating
+two <literal>#define's</literal> in this way it is possible to work
+around this limitation of the C preprocessor. However some care has to
+be taken: if a component writer also defined a configuration option
+<literal>XXX_COLOR_green</literal> then there will be confusion. Since
+such a configuration option violates the naming conventions, the
+problem is unlikely to arise in practice.
+</para>
+</listitem>
+</orderedlist>
+</listitem>
+
+<listitem>
+<para>
+For some options it may be useful to generate one or more additional
+<literal>#define's</literal> or, in conjunction with the &no-define;
+property, to define a symbol with a name different from the option's
+name. This can be achieved with the &define; property, which takes the
+following form:
+</para>
+<programlisting width=72>
+    define [-file=&lt;filename&gt;] [-format=&lt;format&gt;] &lt;symbol&gt;
+</programlisting>
+<para>
+For example:
+</para>
+<programlisting width=72>
+    define FOPEN_MAX
+</programlisting>
+<para>
+This will result in something like:
+</para>
+<programlisting width=72>
+#define FOPEN_MAX 8
+#define FOPEN_MAX_8
+</programlisting>
+<para>
+The specified symbol must be a valid C preprocessor symbol. Normally
+the <literal>#define</literal> will end up in the same header file as
+the default one, in other words <filename
+class="headerfile">pkgconf/system.h</filename> in the case of a
+&cdl-package;, or the package's own header file for any other option.
+The <literal>-file</literal> option can be used to change this. At
+present the only legal value is <literal>system.h</literal>, for
+example:
+</para>
+<programlisting width=72>
+    define -file=system.h &lt;symbol&gt;
+</programlisting>
+<para>
+This will cause the <literal>#define</literal> to end up in the global
+configuration header rather than in the package's own header. Use of
+this facility should be avoided since it is very rarely necessary to
+make options globally visible.
+</para>
+<para>
+The &define; property takes another option,
+<literal>-format</literal>, to provide a format string.
+</para>
+<programlisting width=72>
+    define -format=%08x &lt;symbol&gt;
+</programlisting>
+<para>
+This should only be used for options with the <literal>data</literal>
+or <literal>booldata</literal> flavor, and has the same effect as the
+&define-format; property has on the default
+<literal>#define</literal>.
+</para>
+<para>
+&define; properties are processed in the same way the default
+<literal>#define</literal>. For options with the
+<literal>bool</literal> or <literal>none</literal> flavors a single
+<literal>#define</literal> will be generated using the value
+<literal>1</literal>. For options with the <literal>data</literal> or
+<literal>booldata</literal> flavors either one or two
+<literal>#define's</literal> will be generated.
+</para>
+</listitem>
+
+<listitem>
+<para>
+After processing all &define; properties, the component framework will
+look for any &if-define; properties. These take the following form:
+</para>
+<programlisting width=72>
+    if_define [-file=&lt;filename&gt;] &lt;symbol1&gt; &lt;symbol2&gt;
+</programlisting>
+<para>
+For example:
+</para>
+<programlisting width=72>
+    if_define CYGSRC_KERNEL CYGDBG_USE_ASSERTS
+</programlisting>
+<para>
+The following will be generated in the configuration header file:
+</para>
+<programlisting width=72>
+#ifdef CYGSRC_KERNEL
+# define CYGDBG_USE_ASSERTS
+#endif
+</programlisting>
+<para>
+Typical kernel source code would begin with the following construct:
+</para>
+<programlisting width=72>
+#define CYGSRC_KERNEL 1
+#include &lt;pkgconf/kernel.h&gt;
+#include &lt;cyg/infra/cyg_ass.h&gt;
+</programlisting>
+<para>
+The infrastructure header file <filename
+class="headerfile">cyg/infra/cyg_ass.h</filename> only checks for symbols
+such as <literal>CYGDBG_USE_ASSERTS</literal>, and has no special
+knowledge of the kernel or any other package. The &if-define; property
+will only affect code that defines the symbol
+<literal>CYGSRC_KERNEL</literal>, so typically only kernel source
+code. If the option is enabled then assertion support will be enabled
+for the kernel source code only. If the option is inactive or disabled
+then kernel assertions will be disabled. Assertions in other packages
+are not affected. Thus the &if-define; property allows control over
+assertions, tracing, and similar facilities at the level of individual
+packages, or at finer levels such as components or even single source
+files if desired.
+</para>
+<note>
+<para>
+Current &eCos; packages do not yet make use of this facility. Instead
+there is a single global configuration option
+<varname>CYGDBG_USE_ASSERTS</varname> which is used to enable or
+disable assertions for all packages. This issue should be addressed in
+a future release of the system.
+</para>
+</note>
+<para>
+As with the &define; property, the &if-define; property takes an
+option <literal>-file</literal> with a single legal value
+<literal>system.h</literal>. This allows the output to be redirected
+to <filename class="headerfile">pkgconf/system.h</filename> if and when
+necessary. 
+</para>
+</listitem>
+
+<listitem>
+<para>
+The final property that is relevant to configuration header file
+generation is &define-proc;. This takes a single argument, a &Tcl;
+fragment that can add arbitrary data to the global header <filename
+class="headerfile">pkgconf/system.h</filename> and to the package's own
+header. When the &define-proc; script is invoked two variables will be
+set up to allow access to these headers: <literal>cdl_header</literal>
+will be a channel to the package's own header file, for example
+<filename class="headerfile">pkgconf/kernel.h</filename>;
+<literal>cdl_system_header</literal> will be a channel to <filename
+class="headerfile">pkgconf/system.h</filename>. A typical &define-proc;
+script will use the &Tcl; <literal>puts</literal> command to output
+data to one of these channels, for example:
+</para>
+<programlisting width=72>
+cdl_option &lt;name&gt; {
+    &hellip;
+    define_proc {
+        puts $::cdl_header "#define XXX 1"
+    }
+}
+</programlisting>
+<note>
+<para>
+In the current implementation the use of &define-proc; is limited
+because the &Tcl; script cannot access any of the configuration data.
+Therefore the script is limited to writing constant data to the
+configuration headers. This is a major limitation which will be
+addressed in a future release of the component framework.
+</para>
+</note>
+
+</listitem>
+
+</orderedlist>
+
+<note>
+<para>
+Generating C header files with <literal>#define's</literal> for the
+configuration data suffices for existing packages written in some
+combination of C, C++ and assembler. It can also be used in
+conjunction with some other languages, for example by first passing
+the source code through the C preprocessor and feeding the result into
+the appropriate compiler. In future versions of the component
+framework additional programming languages such as Java may be
+supported, and the configuration data may also be written to files in
+some format other than C preprocessor directives. 
+</para>
+</note>
+
+<note>
+<para>
+At present there is no way for application or package source code to
+get hold of all the configuration details related to the current
+hardware. Instead that information is spread over various different
+configuration headers for the HAL and device driver packages, with
+some of the information going into <filename
+class="headerfile">pkgconf/system.h</filename>. It is possible that in
+some future release of the system there will be another global
+configuration header file <filename
+class="headerfile">pkgconf/hardware.h</filename> which either contains the
+configuration details for the various hardware-specific packages or
+which <literal>#include's</literal> all the hardware-specific
+configuration headers. The desirability and feasibility of such a
+scheme are still to be determined. To avoid future incompatibility
+problems as a result of any such changes, it is recommended that all
+hardware packages (in other packages containing the &hardware;
+property) use the &define-header; property to specify explicitly which
+configuration header should be generated.
+</para>
+</note>
+
+<sect2 id = "build.headers.system.h">
+<title>The <filename class="headerfile">system.h</filename> Header</title>
+
+<para>
+Typically configuration header files are <literal>#include'd</literal>
+only by the package's source code at build time, or by a package's
+exported header files if the interface provided by the package may be
+affected by a configuration option. There should be no need for
+application code to know the details of individual configuration
+options, instead the configuration should specifically meet the needs
+of the application.
+</para>
+<para>
+There are always exceptions. Application code may want to adapt to
+configuration options, for example to do different things for ROM and
+RAM booting systems, or when it is necessary to support several
+different target boards. This is especially true if the code in question
+is really re-usable library code which has not been converted to an
+eCos package, and hence cannot use any CDL facilities.
+</para>
+<para>
+A major problem here is determining which packages are in the
+configuration: attempting to <literal>#include</literal> a header file
+such as <filename class="headerfile">pkgconf/net.h</filename>
+when it is not known for certain that that particular package is part
+of the configuration will result in compilation errors. The global
+header file <filename class="headerfile">pkgconf/system.h</filename>
+serves to provide such information, so application code can use
+techniques like the following:
+</para>
+
+<programlisting width=72>
+#include &lt;pkgconf/system.h&gt;
+#ifdef CYGPKG_NET
+# include &lt;pkgconf/net.h&gt;
+#endif
+</programlisting>
+
+<para>
+This will compile correctly irrespective of the eCos configuration,
+and subsequent code can use <literal>#ifdef</literal> or similar
+directives on <literal>CYGPKG_NET</literal> or any of the
+configuration options in that package. 
+</para>
+<para>
+In addition to determining whether or not a package is present, the
+global configuration header file can also be used to find out the
+specific version of a package that is being used. This can be useful
+if a more recent version exports additional functionality. It may also
+be necessary to adapt to incompatible changes in the exported
+interface or to changes in behaviour. For each package the
+configuration system will typically <literal>#define</literal> three
+symbols, for example for a V1.3.1 release:
+</para>
+<programlisting width=72>
+#define CYGNUM_NET_VERSION_MAJOR 1
+#define CYGNUM_NET_VERSION_MINOR 3
+#define CYGNUM_NET_VERSION_RELEASE 1
+</programlisting>
+<para>
+There are a number of problems associated with such version
+<literal>#define's</literal>. The first restriction is that the
+package must follow the standard naming conventions, so the package
+name must be of the form <literal>xxxPKG_yyy</literal>. The three
+characters immediately preceding the first underscore must be
+<literal>PKG</literal>, and will be replaced with
+<literal>NUM</literal> when generating the version
+<literal>#define's</literal>. If a package does not follow the naming
+convention then no version <literal>#define's</literal> will be
+generated. 
+</para>
+<para>
+Assuming the package does follow the naming conventions, the
+configuration tools will always generate three version
+<literal>#define's</literal> for the major, minor, and release
+numbers. The symbol names are obtained from the package name by
+replacing <literal>PKG</literal> with <literal>NUM</literal> and
+appending <literal>_VERSION_MAJOR</literal>,
+<literal>_VERSION_MINOR</literal> and
+<literal>_VERSION_RELEASE</literal>. It is assumed that the resulting
+symbols will not clash with any configuration option names. The values
+for the <literal>#define's</literal> are determined by searching the
+version string for sequences of digits, optionally preceded by a minus
+sign. It is possible that some or all of the numbers are absent in any
+given version string, in which case <literal>-1</literal> will be used
+in the <literal>#define</literal>. For example, given a version string
+of <literal>V1.12beta</literal>, the major version number is
+<literal>1</literal>, the minor number is <literal>12</literal>, and
+the release number is <literal>-1</literal>. Given a version string of
+<literal>beta</literal> all three numbers would be set to
+<literal>-1</literal>.
+</para>
+<para>
+There is special case code for the version <literal>current</literal>,
+which typically corresponds to a development version obtained via
+anonymous CVS or similar means. The configuration system has special
+built-in knowledge of this version, and will assume it is more recent
+than any specific release number. The global configuration header
+defines a special symbol <literal>CYGNUM_VERSION_CURRENT</literal>,
+and this will be used as the major version number when version
+<literal>current</literal> of a package is used:
+</para>
+<programlisting width=72>
+#define CYGNUM_VERSION_CURRENT 0x7fffff00
+...
+#define CYGNUM_INFRA_VERSION_MAJOR CYGNUM_VERSION_CURRENT
+#define CYGNUM_INFRA_VERSION_MINOR -1
+#define CYGNUM_INFRA_VERSION_RELEASE -1
+</programlisting>
+
+<para>
+The large number used for <literal>CYGNUM_VERSION_CURRENT</literal>
+should ensure that major version comparisons work as expected, while
+still allowing for a small amount of arithmetic in case that proves
+useful. 
+</para>
+<para>
+It should be noted that this implementation of version
+<literal>#define's</literal> will not cope with all version number
+schemes. However for many cases it should suffice.
+</para>
+
+</sect2>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ The Build              -->
+
+<sect1 id="build.make">
+<title>Building eCos</title>
+
+<!-- {{{ Introit                -->
+
+<para>
+The primary goal of an eCos build is to produce the library
+<filename>libtarget.a</filename>. A typical &eCos; build will also
+generate a number of other targets: <filename>extras.o</filename>,
+startup code <filename>vectors.o</filename>, and a linker script. Some
+packages may cause additional libraries or targets to be generated.
+The basic build process involves a number of different phases with
+corresponding priorities. There are a number of predefined priorities:
+</para>
+<informaltable frame="all" colsep=1 rowsep=1 pgwide=0>
+<tgroup cols=2 colsep=1 rowsep=1>
+<colspec colnum=1 align=right>
+<colspec colnum=2 align=left>
+<thead>
+  <row>
+    <entry>Priority</entry>
+    <entry>Action</entry>
+  </row>
+</thead>
+<tbody>
+  <row>
+    <entry>0</entry>
+    <entry>Export header files</entry>
+  </row>
+  <row>
+    <entry>100</entry>
+    <entry>Process &compile; properties</entry>
+  </row>
+  <row>
+    <entry> </entry>
+    <entry>and most &make-object; custom build steps</entry>
+  </row>
+  <row>
+    <entry>200</entry>
+    <entry>Generate libraries</entry>
+  </row>
+  <row>
+    <entry>300</entry>
+    <entry>Process &make; custom build steps</entry>
+  </row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+Generation of the <filename>extras.o</filename> file, the startup code
+and the linker script actually happens via &make; custom build steps,
+typically defined in appropriate HAL packages. The component framework
+has no special knowledge of these targets.
+</para>
+<para>
+By default custom build steps for a &make-object; property happen
+during the same phase as most compilations, but this can be changed
+using a <literal>-priority</literal> option. Similarly custom build
+steps for a &make; property happen at the end of a build, but this can
+also be changed with a <literal>-priority</literal> option. For
+example a priority of 50 can be used to run a custom build step
+between the header file export phase and the main compilation phase.
+Custom build steps are discussed in more detail below.
+</para>
+<para>
+Some build systems may run several commands of the same priority in
+parallel. For example files listed in &compile; properties may get
+compiled in parallel, concurrently with &make-object; custom build
+steps with default priorities. Since most of the time for an &eCos;
+build involves processing &compile; properties, this allows builds to
+be speeded up on suitable host hardware. All build steps for a given
+phase will complete before the next phase is started.
+</para>
+
+<!-- }}} -->
+<!-- {{{ Update                 -->
+
+<sect2 id="build.make.update">
+<title>Updating the Build Tree</title>
+
+<para>
+Some build systems may involve a phase before the header files get
+exported, to update the build and install trees automatically when
+there has been a change to the configuration savefile
+<filename>ecos.ecc</filename>. This is useful mainly for application
+developers using the command line tools: it would allow users to
+create the build tree only once, and after any subsequent
+configuration changes the tree would be updated automatically by the
+build system. The facility would be analogous to the
+<literal>--enable-maintainer-mode</literal> option provide by the
+<application class="software">autoconf</application> and <application
+class="software">automake</application> programs. At present no &eCos;
+build system implements this functionality, but it is likely to be
+added in a future release.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Exporting headers      -->
+
+<sect2 id="build.make.export">
+<title>Exporting Public Header Files</title>
+
+<para>
+The first compulsory phase involves making sure that there is an up to
+date set of header files in the install tree. Each package can contain
+some number of header files defining the exported interface.
+Applications should only use exported functionality. A package can
+also contain some number of private header files which are only of
+interest to the implementation, and which should not be visible to
+application code. The various packages that go into a particular
+configuration can be spread all over the component repository. In
+theory it might be possible to make all the exported header files
+accessible by having a lengthy <literal>-I</literal> header file
+search path, but this would be inconvenient both for building eCos and
+for building applications. Instead all the relevant header files are
+copied to a single location, the <filename
+class="directory">include</filename> subdirectory of the install tree.
+The process involves the following:
+</para>
+
+<orderedlist>
+<listitem>
+<para>
+The install tree, for example <filename
+class="directory">/usr/local/ecos/install</filename>, and its <filename
+class="directory">include</filename> subdirectory <filename
+class="directory">/usr/local/ecos/install/include</filename> will typically be
+created when the build tree is generated or updated. At the same time
+configuration header files will be written to the <filename
+class="directory">pkgconf</filename> subdirectory, for example
+<filename
+class="directory">/usr/local/ecos/include/pkgconf</filename>, so that
+the configuration data is visible to all the packages and to
+application code that may wish to examine some of the configuration
+options.
+</para>
+</listitem>
+<listitem>
+<para>
+Each package in the configuration is examined for exported header
+files. The exact order in which the packages are processed is not
+defined, but should not matter.
+</para>
+<orderedlist>
+<listitem>
+<para>
+If the package has an <link
+linkend="ref.include-files">&include-files;</link> property then this
+lists all the exported header files:
+</para>
+<programlisting width=72>
+cdl_package &lt;some_package&gt; {
+    &hellip;
+    include_files header1.h header2.h
+}    
+</programlisting>
+<para>
+If no arguments are given then the package does not export any header
+files.
+</para>
+<programlisting width=72>
+cdl_package &lt;some_package&gt; {
+    &hellip;
+    include_files
+}    
+</programlisting>
+<para>
+The listed files may be in an <filename
+class="directory">include</filename> subdirectory within the package's
+hierarchy, or they may be relative to the package's toplevel
+directory. The &include-files; property is intended mainly for very
+simple packages. It can also be useful when converting existing code
+to an &eCos; package, to avoid rearranging the sources.
+</para>
+</listitem>
+<listitem>
+<para>
+If there is no &include-files; property then the component framework
+will look for an <filename class="directory">include</filename>
+subdirectory in the package, as per the layout conventions. All files,
+including those in subdirectories, will be treated as exported header
+files. For example, the math library package contains files <filename
+class="headerfile">include/math.h</filename> and <filename
+class="headerfile">include/sys/ieeefp.h</filename>, both of which will
+be exported to the install tree.
+</para>
+</listitem>
+<listitem>
+<para>
+As a last resort, if there is neither an &include-files; property nor
+an <filename class="directory">include</filename> subdirectory, the
+component framework will search the package's toplevel directory and
+all of its subdirectories for files with one of the following
+suffixes: <literal>.h</literal>, <literal>.hxx</literal>,
+<literal>.inl</literal> or <literal>.inc</literal>. All such files
+will be interpreted as exported header files.
+</para>
+<para>
+This last resort rule could cause confusion for packages which have no
+exported header files but which do contain one or more private header
+files. For example a typical device driver simply implements an
+existing interface rather than define a new one, so it does not need
+to export a header file. However it may still have one or more private
+header files. Such packages should use an &include-files; property
+with no arguments.
+</para>
+</listitem>
+</orderedlist>
+</listitem>
+<listitem>
+<para>
+If the package has one or more exported header files, the next step is
+to determine where the files should end up. By default all exported
+header files will just end up relative to the install tree's <filename
+class="directory">include</filename> subdirectory. For example the
+math library's <filename class="headerfile">math.h</filename> header
+would end up as <filename>/usr/local/ecos/include/math.h</filename>,
+and the <filename class="headerfile">sys/ieeefp.h</filename> header
+would end up as
+<filename>/usr/local/ecos/include/sys/ieeefp.h</filename>. This
+behaviour is correct for packages like the C library where the
+interface is defined by appropriate standards. For other packages this
+behaviour can lead to file name clashes, and the <link
+linkend="ref.include-dir">&include-dir;</link> property should be used
+to avoid this:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_KERNEL {
+    include_dir cyg/kernel
+}
+</programlisting>
+<para>
+This means that the kernel's exported header file
+<filename>include/kapi.h</filename> should be copied to
+<filename>/usr/local/ecos/include/cyg/kernel/kapi.h</filename>, where
+it is very unlikely to clash with a header file from some other
+package.
+</para>
+</listitem>
+<listitem>
+<para>
+For typical application developers there will be little or no need for
+the installed header files to change after the first build. Changes
+will be necessary only if packages are added to or removed from the
+configuration. For component writers, the build system should detect
+changes to the master copy of the header file source code and update
+the installed copies automatically during the next build. The build
+system is expected to perform a header file dependency analysis, so
+any source files affected should get rebuilt as well.
+</para>
+</listitem>
+<listitem>
+<para>
+Some build systems may provide additional support for application
+developers who want to make minor changes to a package, especially for
+debugging purposes. A header file could be copied from the
+component repository (which for application developers is assumed to
+be a read-only resource) into the build tree and edited there. The
+build system would detect a more recent version of such a header file
+in the build tree and install it. Care would have to be taken to
+recover properly if the modified copy in the build tree is
+subsequently removed, in order to revert to the original behaviour.
+</para>
+</listitem>
+<listitem>
+<para>
+When updating the install tree's <filename
+class="directory">include</filename> subdirectory, the build tree may
+also perform a clean-up operation. Specifically, it may check for any
+files which do not correspond to known exported header files and
+delete them.
+</para>
+</listitem>
+</orderedlist>
+<note>
+<para>
+At present there is no defined support in the build system for
+defining custom build steps that generate exported header files. Any
+attempt to use the existing custom build step support may fall foul of
+unexpected header files being deleted automatically by the build
+system. This limitation will be addressed in a future release of the
+component framework, and may require changing the priority for
+exporting header files so that a custom build step can happen first.
+</para>
+</note>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Compiling              -->
+
+<sect2 id="build.make.compiles">
+<title>Compiling</title>
+
+<para>
+Once there are up to date copies of all the exported header files in
+the build tree, the main build can proceed. Most of this involves
+compiling source files listed in &compile; properties in the &CDL;
+scripts for the various packages, for example:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_ERROR {
+    display       "Common error code support"
+    compile       strerror.cxx
+    &hellip;
+}
+</programlisting>
+<para>
+&compile; properties may appear in the body of a &cdl-package;,
+&cdl-component;, &cdl-option; or &cdl-interface;. If the option or
+other &CDL; entity is active and enabled, the property takes effect.
+If the option is inactive or disabled the property is ignored. It is
+possible for a &compile; property to list multiple source files, and
+it is also possible for a given &CDL; entity to contain multiple
+&compile; properties. The following three examples are equivalent:
+</para>
+<programlisting width=72>
+cdl_option &lt;some_option&gt; {
+    &hellip;
+    compile file1.c file2.c file3.c
+}
+
+cdl_option &lt;some_option&gt; {
+    &hellip;
+    compile file1.c
+    compile file2.c
+    compile file3.c
+}
+
+cdl_option &lt;some_option&gt; {
+    &hellip;
+    compile file1.c file2.c
+    compile file3.c
+}
+</programlisting>
+<para>
+Packages that follow the directory layout conventions should have a
+subdirectory <filename class="directory">src</filename>, and the
+component framework will first look for the specified files there.
+Failing that it will look for the specified files relative to the
+package's root directory. For example if a package contains a source
+file <filename>strerror.cxx</filename> then the following two lines
+are equivalent:
+</para>
+<programlisting width=72>
+    compile strerror.cxx
+    compile src/strerror.cxx
+</programlisting>
+<para>
+In the first case the component framework will find the file
+immediately in the packages <filename class="directory">src</filename>
+subdirectory. In the second case the framework will first look for a
+file <filename>src/src/strerror.cxx</filename>, and then for
+<filename>str/strerror.cxx</filename> relative to the package's root
+directory. The result is the same.
+</para>
+<para>
+The file names may be relative paths, allowing the source code to be
+split over multiple directories. For example if a package contains a
+file <filename>src/sync/mutex.cxx</filename> then the corresponding
+&CDL; entry would be:
+</para>
+<programlisting width=72>
+    compile sync/mutex.cxx
+</programlisting>
+<para>
+All the source files relevant to the current configuration will be
+identified when the build tree is generated or updated, and added to
+the appropriate makefile (or its equivalent for other build systems).
+The actual build will involve a rule of the form:
+</para>
+<programlisting width=72>
+&lt;object file&gt; : &lt;source file&gt;
+        $(CC) -c $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+</programlisting>
+
+<para>
+The component framework has built-in knowledge for processing source
+files written in C, C++ or assembler. These should have a
+<literal>.c</literal>, <literal>.cxx</literal> and
+<literal>.S</literal> suffix respectively. The current implementation
+has no simple mechanism for extending this with support for other
+languages or for alternative suffixes, but this should be addressed in
+a future release.
+</para>
+<para>
+The compiler command that will be used is something like
+<literal>arm-elf-gcc</literal>. This consists of a command prefix, in
+this case <literal>arm-elf</literal>, and a specific command such as
+<literal>gcc</literal>. The command prefix will depend on the target
+architecture and is controlled by a configuration option in the
+appropriate HAL package. It will have a sensible default value for the
+current architecture, but users can modify this option when necessary.
+The command prefix cannot be changed on a per-package basis, since
+it is usually essential that all packages are built with a consistent
+set of tools.
+</para>
+<para>
+The <literal>$(INCLUDE_PATH)</literal> header file search path
+consists of at least the following:
+</para>
+<orderedlist>
+<listitem>
+<para>
+The <filename class="directory">include</filename> directory in the
+install tree. This allows source files to access the various header
+files exported by all the packages in the configuration, and also the
+configuration header files.
+</para>
+</listitem>
+<listitem>
+<para>
+The current package's root directory. This ensures that all files in
+the package are accessible at build time.
+</para>
+</listitem>
+<listitem>
+<para>
+The current package's <filename class="directory">src</filename>
+subdirectory, if it is present. Generally all files to be compiled are
+located in or below this directory. Typically this is used to access
+private header files containing implementation details only.
+</para>
+</listitem>
+</orderedlist>
+<para>
+The compiler flags <literal>$(CFLAGS)</literal> are determined in two
+steps. First the appropriate HAL package will provide a configuration
+option defining the global flags. Typically this includes flags that
+are needed for the target processor, for example
+<literal>-mcpu=arm9</literal>, various flags related to warnings,
+debugging and optimization, and flags such as
+<literal>-finit-priority</literal> which are needed by &eCos; itself.
+Users can modify the global flags option as required. In addition it
+is possible for existing flags to be removed from and new flags to be
+added to the current set on a per-package basis, again by means of
+user-modifiable configuration options. More details are given below.
+</para>
+<para>
+Component writers can assume that the build system will perform full
+header file dependency analysis, including dependencies on
+configuration headers, but the exact means by which this happens is
+implementation-defined. Typical application developers are unlikely to
+modify exported or private header files, but configuration headers are
+likely to change as the configuration is changed to better meet the
+needs of the application. Full header file dependency analysis also
+makes things easier for the component writers themselves.
+</para>
+<para>
+The current directory used during a compilation is an implementation
+detail of the build system. However it can be assumed that each
+package will have its own directory somewhere in the build tree, to
+prevent file name clashes, that this will be the current directory,
+and that intermediate object files will end up here.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Library Generation     -->
+
+<sect2 id="build.make.libraries">
+<title>Generating the Libraries</title>
+
+<para>
+Once all the &compile; and &make-object; properties have been
+processed and the required object files have been built or rebuilt,
+these can be collected together in one or more libraries. The archiver
+will be the <application class="software">ar</application> command
+corresponding to the current architecture, for example <application
+class="software">powerpc-eabi-ar</application>. By default al of the
+object files will end up in a single library
+<filename>libtarget.a</filename>. This can be changed on a per-package
+basis using the <link linkend="ref.library">&library</link> property
+in the body of the corresponding &cdl-package; command, for example:
+</para>
+<programlisting width=72>
+cdl_package &lt;SOME_PACKAGE&gt; {
+    &hellip;
+    library  libSomePackage.a
+}
+</programlisting>
+
+<para>
+However using different libraries for each package should be avoided.
+It makes things more difficult for application developers since they
+now have to link the application code with more libraries, and
+possibly even change this set of libraries when packages are added to
+or removed from the configuration. The use of a single library
+<filename>libtarget.a</filename> avoids any complications.
+</para>
+<para>
+It is also possible to change the target library for individual files,
+using a <literal>-library</literal> option with the corresponding
+&compile; or &make-object; property. For example:
+</para>
+<programlisting width=72>
+    compile -library=libSomePackage.a hello.c
+    make_object -library=libSomePackage.a {
+        &hellip;
+    }
+</programlisting>
+<para>
+Again this should be avoided because it makes application development
+more difficult. There is one special library which can be used freely,
+<filename>libextras.a</filename>, which is used to generate the
+<filename>extras.o</filename> file as described below.
+</para>
+<para>
+The order in which object files end up in a library is not defined.
+Typically each library will be created directly in the install tree,
+since there is little point in generating a file in the build tree and
+then immediately copying it to the install tree.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ extras.o               -->
+
+<sect2 id="build.extras">
+<title>The <filename>extras.o</filename> file</title>
+
+<para>
+Package sources files normally get compiled and then added to a
+library, by default <filename>libtarget.a</filename>, which is then
+linked with the application code. Because of the usual rules for
+linking with libraries, augmented by the use of link-time garbage
+collection, this means that code will only end up in the final
+executable if there is a direct or indirect reference to it in the
+application. Usually this is the desired behaviour: if the application
+does not make any use of say kernel message boxes, directly or
+indirectly, then that code should not end up in the final executable
+taking up valuable memory space.
+</para>
+<para>
+In a few cases it is desirable for package code to end up in the final
+executable even if there are no direct or indirect references. For
+example, device driver functions are often not called directly.
+Instead the application will access the device via the string
+<literal>"/dev/xyzzy"</literal> and call the device functions
+indirectly. This will be impossible if the functions have been
+removed at link-time.
+</para>
+<para>
+Another example involves static C++ objects. It is possible to have a
+static C++ object, preferably with a suitable constructor priority,
+where all of the interesting work happens as a side effect of running
+the constructor. For example a package might include a monitoring
+thread or a garbage collection thread created from inside such a
+constructor. Without a reference by the application to the static
+object the latter will never get linked in, and the package will not
+function as expected.
+</para>
+<para>
+A third example would be copyright messages. A package vendor may want
+to insist that all products shipped using that package include a
+particular message in memory, even though many users of that package
+will object to such a restriction.
+</para>
+<para>
+To meet requirements such as these the build system provides support
+for a file <filename>extras.o</filename>, which always gets linked
+with the application code via the linker script. Because it is an
+object file rather than a library everything in the file will be
+linked in. The <filename>extras.o</filename> file is generated at the
+end of a build from a library <filename>libextras.a</filename>, so
+packages can put functions and variables in suitable source files and
+add them to that library explicitly:
+</para>
+<programlisting width=72>
+    compile -library=libextras.a xyzzy.c
+    compile xyzzy_support.c
+</programlisting>
+<para>
+In this example <filename>xyzzy.o</filename> will end up in
+<filename>libextras.a</filename>, and hence in
+<filename>extras.o</filename> and in the final executable.
+<filename>xyzzy_support.o</filename> will end up in
+<filename>libtarget.a</filename> as usual, and is subject to linker
+garbage collection.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Compilers and flags    -->
+
+<sect2 id="build.flags">
+<title>Compilers and Flags</title>
+
+<caution>
+<para>
+Some of the details of compiler selection and compiler flags described
+below are subject to change in future revisions of the component
+framework, although every reasonable attempt will be made to avoid
+breaking backwards compatibility.
+</para>
+</caution>
+
+<para>
+The build system needs to know what compiler to use, what compiler
+flags should be used for different stages of the build and so on. Much
+of this information will vary from target to target, although users
+should be able to override this when appropriate. There may also be a
+need for some packages to modify the compiler flags. All platform HAL
+packages should define a number of options with well-known names,
+along the following lines (any existing platform HAL package can be
+consulted for a complete example):
+</para>
+<programlisting width=72>
+cdl_component CYGBLD_GLOBAL_OPTIONS {
+    flavor  none
+    parent  CYGPKG_NONE
+    &hellip;
+
+    cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+        flavor  data
+        default_value { "arm-elf" }
+        &hellip;
+    }
+    cdl_option CYGBLD_GLOBAL_CFLAGS {
+        flavor  data
+        default_value "-Wall -g -O2 &hellip;"
+        &hellip;
+    }
+
+    cdl_option CYGBLD_GLOBAL_LDFLAGS {
+        flavor  data
+        default_value "-g -nostdlib -Wl,--gc-sections &hellip;"
+        &hellip;
+    }
+}
+</programlisting>
+<para>
+The <varname>CYGBLD_GLOBAL_OPTIONS</varname> component serves to
+collect together all global build-related options. It has the flavor
+<literal>none</literal> since disabling all of these options would
+make it impossible to build anything and hence is not useful. It is
+parented immediately below the root of the configuration hierarchy,
+thus making sure that it is readily accessible in the graphical
+configuration tool and, for command line users, in the
+<filename>ecos.ecc</filename> save file.
+</para>
+<note>
+<para>
+Currently the &parent; property lists a parent of
+<varname>CYGPKG_NONE</varname>, rather than an empty string. This
+could be unfortunate if there was ever a package with that name. The
+issue will be addressed in a future release of the component
+framework.
+</para>
+</note>
+<para>
+The option <varname>CYGBLD_GLOBAL_COMMAND_PREFIX</varname> defines
+which tools should be used for the current target. Typically this is
+determined by the processor on the target hardware. In some cases a
+given target board may be able to support several different
+processors, in which case the &default-value; expression could select
+a different toolchain depending on some other option that is used to
+control which particular processor.
+<varname>CYGBLD_GLOBAL_COMMAND_PREFIX</varname> is modifiable rather
+than calculated, so users can override this when necessary.
+</para>
+<para>
+Given a command prefix such as <literal>arm-elf</literal>, all C
+source files will be compiled with <literal>arm-elf-gcc</literal>, all
+C++ sources will be built using <literal>arm-elf-g++</literal>,
+and <literal>arm-elf-ar</literal> will be used to generate the
+library. This is in accordance with the usual naming conventions for
+GNU cross-compilers and similar tools. For the purposes of custom
+build steps, tokens such as <literal>$(CC)</literal> will be set to
+<literal>arm-elf-gcc</literal>.
+</para>
+<para>
+The next option, <varname>CYGBLD_GLOBAL_CFLAGS</varname>, is used to
+provide the initial value of <literal>$(CFLAGS)</literal>. Some
+compiler flags such as <literal>-Wall</literal> and
+<literal>-g</literal> are likely to be used on all targets. Other
+flags such as <literal>-mcpu=arm7tdmi</literal> will be
+target-specific. Again this is a modifiable option, so the user can
+switch from say <literal>-O2</literal> to <literal>-Os</literal> if
+desired. The option <varname>CYGBLD_GLOBAL_LDFLAGS</varname> serves
+the same purpose for <literal>$(LDFLAGS)</literal> and linking. It is
+used primarily when building test cases or possibly for some custom
+build steps, since building eCos itself generally involves building
+one or more libraries rather than executables.
+</para>
+<para>
+Some packages may wish to add certain flags to the global set, or
+possibly remove some flags. This can be achieved by having
+appropriately named options in the package, for example:
+</para>
+<programlisting width=72>
+cdl_component CYGPKG_KERNEL_OPTIONS {
+    display "Kernel build options"
+    flavor  none
+    &hellip;
+
+    cdl_option CYGPKG_KERNEL_CFLAGS_ADD {
+        display "Additional compiler flags"
+        flavor  data
+        default_value { "" }
+        &hellip;
+    }
+
+    cdl_option CYGPKG_KERNEL_CFLAGS_REMOVE {
+        display "Suppressed compiler flags"
+        flavor  data
+        default_value { "" }
+        &hellip;
+    }
+
+    cdl_option CYGPKG_KERNEL_LDFLAGS_ADD {
+        display "Additional linker flags"
+        flavor  data
+        default_value { "" }
+        &hellip;
+    }
+
+    cdl_option CYGPKG_KERNEL_LDFLAGS_REMOVE {
+        display "Suppressed linker flags"
+        flavor  data
+        default_value { "" }
+        &hellip;
+    }
+}
+</programlisting>
+<para>
+In this example the kernel does not modify the global compiler flags
+by default, but it is possible for the users to modify the options if
+desired. The value of <literal>$(CFLAGS)</literal> that is used for
+the compilations and custom build steps in a given package is
+determined as follows:
+</para>
+<orderedlist>
+<listitem>
+<para>
+Start with the global settings from
+<varname>CYGBLD_GLOBAL_CFLAGS</varname>, for example
+<literal>-g&nbsp;-O2</literal>.
+</para>
+</listitem>
+<listitem>
+<para>
+Remove any flags specified in the per-package
+<literal>CFLAGS_REMOVE</literal> option, if any. For example
+if <literal>-O2</literal> should be removed for this package then
+<literal>$(CFLAGS)</literal> would now have a value of just
+<literal>-g</literal>.
+</para>
+</listitem>
+<listitem>
+<para>
+Then concatenate the flags specified by the per-package
+<literal>CFLAGS_ADD</literal> option, if any. For example if
+<literal>-Os</literal> should be added for the current package then
+the final value of <literal>$(CFLAGS)</literal> will be
+<literal>-g&nbsp;-Os</literal>.
+</para>
+</listitem>
+</orderedlist>
+<para>
+<literal>$(LDFLAGS)</literal> is determined in much the same way.
+</para>
+
+<note>
+<para>
+The way compiler flags are handled at present has numerous limitations
+that need to be addressed in a future release, although it should
+suffice for nearly all cases. For the time being custom build steps
+and in particular the &make-object; property can be used to work
+around the limitations.
+</para>
+<para>
+Amongst the issues, there is a specific problem with package
+encapsulation. For example the math library imposes some stringent
+requirements on the compiler in order to guarantee exact IEEE
+behavior, and may need special flags on a per-architecture basis. One
+way of handling this is to have
+<varname>CYGPKG_LIBM_CFLAGS_ADD</varname> and
+<varname>CYGPKG_LIBM_CFLAGS_REMOVE</varname> &default-value;
+expressions which depend on the target architecture, but such
+expressions may have to updated for each new architecture. An
+alternative approach would allow the architectural HAL package to
+modify the &default-value; expressions for the math library, but this
+breaks encapsulation. A third approach would allow some architectural
+HAL packages to define one or more special options with well-known
+names, and the math library could check if these options were defined
+and adjust the default values appropriately. Other packages with
+floating point requirements could do the same. This approach also has
+scalability issues, in particular how many such categories of options
+would be needed? It is not yet clear how best to resolve such issues.
+</para>
+</note>
+
+<note>
+<para>
+When generating a build tree it would be desirable for the component
+framework to output details of the tools and compiler flags in a
+format that can be re-used for application builds, for example a
+makefile fragment. This would make it easier for application
+developers to use the same set of flags as were used for building eCos
+itself, thus avoiding some potential problems with incompatible
+compiler flags.
+</para>
+</note>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Custom build steps     -->
+
+<sect2 id="build.custom">
+<title>Custom Build Steps</title>
+
+<caution>
+<para>
+Some of the details of custom build steps as described below are
+subject to change in future revisions of the component framework,
+although every reasonable attempt will be made to avoid breaking
+backwards compatibility.
+</para>
+</caution>
+
+<para>
+For most packages simply listing one or more source files in a
+&compile; property is sufficient. These files will get built using the
+appropriate compiler and compiler flags and added to a library, which
+then gets linked with application code. A package that can be built in
+this way is likely to be more portable to different targets and build
+environments, since it avoids build-time dependencies. However some
+packages have special needs, and the component framework supports
+custom build steps to allow for these needs. There are two properties
+related to this, &make; and &make-object;, and both take the following
+form:
+</para>
+<programlisting width=72>
+    make {
+        &lt;target_filepath&gt; : &lt;dependency_filepath&gt; &hellip;
+            &lt;command&gt;
+            ...
+    }
+</programlisting>
+<para>
+Although this may look like makefile syntax, and although some build
+environments will indeed involve generating makefiles and running
+<application class="software">make</application>, this is not
+guaranteed. It is possible for the component framework to be
+integrated with some other build system, and custom build steps should
+be written with that possibility in mind. Each custom build step
+involves a target, some number of dependency files, and some number of
+commands. If the target is not up to date with respect to one or more
+of the dependencies then the commands need to be executed.
+</para>
+
+<orderedlist numeration="Loweralpha">
+
+<listitem>
+<para>
+Only one target can be specified. For a &make-object; property this
+target must be an object file. For a &make; property it can be any
+file. In both cases it must refer to a physical file, the use of
+phony targets is not supported. The target should not be an absolute
+path name. If the generated file needs to end up in the install tree
+then this can be achieved using a <literal>&lt;PREFIX&gt;</literal>
+token, for example:
+</para>
+<programlisting width=72>
+    make {
+        &lt;PREFIX&gt;/lib/mytarget : &hellip;
+            ...
+    }
+</programlisting>
+<para>
+When the build tree is generated and the custom build step is added to
+the makefile (or whatever build system is used)
+<literal>&lt;PREFIX&gt;</literal> will be replaced with the absolute
+path to the install tree. 
+</para>
+</listitem>
+
+<listitem>
+<para>
+All the dependencies must also refer to physical files, not to phony
+targets. These files may be in the source tree. The
+<literal>&lt;PACKAGE&gt;</literal> token can be used to indicate this:
+when the build tree is generated this token will be replaced with the
+absolute path to the package's root directory in the component
+repository, for example:
+</para>
+<programlisting width=72>
+    make_object {
+        xyzzy.o : &lt;PACKAGE&gt;/src/xyzzy.c
+            &hellip;
+</programlisting>
+<para>
+If the component repository was installed in <filename
+class="directory">/usr/local/ecos</filename> and this custom build
+step existed in version 1_5 of the kernel,
+<literal>&lt;PACKAGE&gt;</literal> would be replaced with
+<filename>/usr/local/ecos/packages/kernel/v1_5</filename>.
+</para>
+<para>
+Alternatively the dependencies may refer to files that are generated
+during the build. These may be object files resulting from &compile;
+properties or other &make-object; properties, or they may be other
+files resulting from a &make; property, for example:
+</para>
+<programlisting width=72>
+    compile plugh.c
+    make_object {
+        xyzzy.o : plugh.o
+            &hellip;
+    }
+</programlisting>
+</listitem>
+<listitem>
+<para>
+No other token or makefile variables may be used in the target or
+dependency file names. Also conditionals such as
+<literal>ifneq</literal> and similar makefile functionality must not
+be used.
+</para>
+</listitem>
+
+<listitem>
+<para> 
+Similarly the list of commands must not use any makefile conditionals
+or similar functionality. A number of tokens can be used to provide
+access to target-specific or environmental data. Note that these
+tokens look like makefile variables, unlike the 
+<literal>&lt;PREFIX&gt;</literal> and
+<literal>&lt;PACKAGE&gt;</literal> tokens mentioned earlier:
+</para>
+
+<informaltable frame="all" colsep=1 rowsep=1 pgwide=0 tocentry=0>
+<tgroup cols=3 colsep=1 rowsep=1 align=left>
+<thead>
+  <row>
+    <entry>Token</entry>
+    <entry>Purpose</entry>
+    <entry>Example value</entry>
+  </row>
+</thead>
+<tbody>
+  <row>
+    <entry><literal>$(AR)</literal></entry>
+    <entry>the GNU archiver</entry>
+    <entry><literal>mips-tx39-elf-ar</literal></entry>
+  </row>
+  <row>
+    <entry><literal>$(CC)</literal></entry>
+    <entry>the GNU compiler</entry>
+    <entry><literal>sh-elf-gcc</literal></entry>
+  </row>
+  <row>
+    <entry><literal>$(CFLAGS)</literal></entry>
+    <entry>compiler flags</entry>
+    <entry><literal>-O2 -Wall</literal></entry>
+  </row>
+  <row>
+    <entry><literal>$(COMMAND_PREFIX)</literal></entry>
+    <entry>the triplet prefix</entry>
+    <entry><literal>mn10300-elf-</literal></entry>
+  </row>
+  <row>
+    <entry><literal>$(INCLUDE_PATH></literal></entry>
+    <entry>header file search path</entry>
+    <entry><literal>-I. -Isrc/misc</literal></entry>
+  </row>
+  <row>
+    <entry><literal>$(LDFLAGS)</literal></entry>
+    <entry>linker flags</entry>
+    <entry><literal>-nostdlib -Wl,-static</literal></entry>
+  </row>
+  <row>
+    <entry><literal>$(OBJCOPY)</literal></entry>
+    <entry>the objcopy utility</entry>
+    <entry><literal>arm-elf-objcopy</literal></entry>
+  </row>
+  <row>
+    <entry><literal>$(PREFIX)</literal></entry>
+    <entry>location of the install tree</entry>
+    <entry><filename class="directory">/home/fred/ecos-install</filename></entry>
+  </row>
+  <row>
+    <entry><literal>$(REPOSITORY)</literal></entry>
+    <entry>location of the component repository</entry>
+    <entry><filename class="directory">/home/fred/ecos/packages</filename></entry>
+  </row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+In addition commands in a custom build step may refer to the target
+and the dependencies using <literal>$@</literal>,
+<literal>$<</literal>, <literal>$^</literal> and
+<literal>$*</literal>, all of which behave as per GNU make syntax. The
+commands will execute in a suitable directory in the build tree.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The current directory used during a custom build step is an
+implementation detail of the build system. However it can be assumed
+that each package will have its own directory somewhere in the build
+tree, to prevent file name clashes, and that this will be the current
+directory. In addition any object files generated as a result of
+&compile properties will be located here as well, which is useful for
+custom build steps that depend on a <literal>.o</literal> file
+previously generated.
+</para>
+<para>
+Any temporary files created by a custom build step should be generated
+in the build tree (in or under the current directory). Such files
+should be given a <filename>.tmp</filename> file extension to ensure
+that they are deleted during a <literal>make&nbsp;clean</literal> or
+equivalent operation.
+</para>
+<para>
+If a package contains multiple custom build steps with the same
+priority, it is possible that these build steps will be run
+concurrently. Therefore these custom build steps must not accidentally
+use the same file names for intermediate files.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Care has to be taken to make sure that the commands in a custom build
+step will run on all host platforms, including Windows NT as well as
+Linux and other Unix systems. For example, all file paths should use
+forward slashes as the directory separator. It can be assumed that
+Windows users will have a full set of CygWin tools installed and
+available on the path. The <ulink
+url="http://www.gnu.org/prep/standards.html">GNU coding
+standards</ulink> provide some useful guidelines for writing portable
+build rules.
+</para>
+</listitem>
+
+<listitem>
+<para>
+A custom build step must not make any assumptions concerning the
+version of another package. This enforces package encapsulation,
+preventing one package from accessing the internals of another.
+</para>
+</listitem>
+
+<listitem>
+<para>
+No assumptions should be made about the target platform, unless the
+package is inherently specific to that platform. Even then it is
+better to use the various tokens whenever possible, rather than
+hard-coding in details such as the compiler. For example, given a
+custom build step such as:
+</para>
+<programlisting width=72>
+    arm-elf-gcc -c -mcpu=arm7di -o $@ $&lt;
+</programlisting>
+<para>
+Even if this build step will only be invoked on ARM targets, it could
+cause problems. For example the toolchain may have been installed
+using a prefix other than <literal>arm-elf</literal>. Also, if the
+user changes the compiler flags then this would not be reflected in
+the build step. The correct way to write this rule would be:
+</para>
+<programlisting width=72>
+    $(CC) -c $(CFLAGS) -o $@ $&lt;
+</programlisting>
+<para>
+Some commands such as the compiler, the archiver, and objcopy are
+required sufficiently often to warrant their own tokens, for example
+<literal>$(CC)</literal> and <literal>$(OBJCOPY)</literal>. Other
+target-specific commands are needed only rarely and the
+<literal>$(COMMAND_PREFIX)</literal> token can be used to construct
+the appropriate command name, for example:
+</para>
+<programlisting width=72>
+
+    $(COMMAND_PREFIX)size $&lt; &gt; $@
+</programlisting>
+</listitem>
+
+<listitem>
+<para>
+Custom build steps should not be used to build host-side executables,
+even if those executables are needed to build parts of the target side
+code. Support for building host-side executables will be added in a
+future version of the component framework, although it will not
+necessarily involve these custom build steps.
+</para>
+</listitem>
+
+</orderedlist>
+
+<para>
+By default custom build steps defined in a &make-object; property
+have a priority of 100, which means that they will be executed 
+in the same phase as compilations resulting from a &compile; property.
+It is possible to change the priority using a property option, for
+example:
+</para>
+<programlisting width=72>
+    make_object -priority 50 {
+        &hellip;
+    }
+</programlisting>
+<para>
+Specifying a priority smaller than a 100 means that the custom build
+step happens before the normal compilations. Priorities between 100
+and 200 happen after normal compilations but before the libraries are
+archived together. &make-object; properties should not specify a
+priority of 200 or later. 
+</para>
+<para>
+Custom build steps defined in a &make; property have a default
+priority of 300, and so they will happen after the libraries have been
+built. Again this can be changed using a <literal>-priority</literal>
+property option.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Startup Code           -->
+
+<sect2 id="build.startup">
+<title>Startup Code</title>
+
+<para>
+Linking an application requires the application code, a linker script,
+the eCos library or libraries, the <literal>extras.o</literal> file,
+and some startup code. Depending on the target hardware and how the
+application gets booted, this startup code may do little more than
+branching to <literal>main()</literal>, or it may have to perform a
+considerable amount of hardware initialization. The startup code
+generally lives in a file <literal>vectors.o</literal> which is
+created by a custom build step in a HAL package. As far as application
+developers are concered the existence of this file is largely
+transparent, since the linker script ensures that the file is part of
+the final executable.
+</para>
+<para>
+This startup code is not generally of interest to component writers,
+only to HAL developers who are referred to one of the existing HAL
+packages for specific details. Other packages are not expected to
+modify the startup in any way. If a package needs some work performed
+early on during system initialization, before the application's main
+entry point gets invoked, this can be achieved using a static object
+with a suitable constructor priority.
+</para>
+
+<note>
+<para>
+It is possible that the <literal>extras.o</literal> support, in
+conjunction with appropriate linker script directives, could be used
+to eliminate the need for a special startup file. The details are not
+yet clear.
+</para>
+</note>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ The Linker Script      -->
+
+<sect2 id="build.linkerscript">
+<title>The Linker Script</title>
+
+<caution>
+<para>
+This section is not finished, and the details are subject to change in
+a future release. Arguably linker script issues should be documented
+in the HAL documentation rather than in this guide.
+</para>
+</caution>
+
+<para>
+Generating the linker script is the responsibility of the various HAL
+packages that are applicable to a given target. Developers of
+components other than HAL packages need not be concerned about what is
+involved. Developers of new HAL packages should use an existing HAL as
+a template.
+</para>
+
+<note>
+<para>
+It may be desirable for some packages to have some control over the
+linker script, for example to add extra alignment details for a
+particular section. This can be risky because it can result in subtle
+portability problems, and the current component framework has no
+support for any such operations. The issue may be addressed in a
+future release.
+</para>
+</note>
+
+</sect2>
+
+<!-- }}} -->
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Test cases             -->
+
+<sect1 id="build.tests">
+<title>Building Test Cases</title>
+
+<caution>
+<para>
+The support in the current implementation of the component framework
+for building and running test cases is limited, and should be enhanced
+considerably in a future version. Compatibility with the existing
+mechanisms described below will be maintained if possible, but this
+cannot be guaranteed.
+</para>
+</caution>
+
+<para>
+Whenever possible packages should be shipped with one or more test
+cases. This allows users to check that all packages function correctly
+in their particular configuration and on their target, which may be
+custom hardware unavailable to the package developer. The component
+framework needs to provide a way of building such test cases. For
+example, if a makefile system is used then there could be a
+<literal>make&nbsp;tests</literal> target to build the test cases, or
+possibly a <literal>make&nbsp;check</literal> target to build and run
+the test cases and process all the results. Unfortunately there are
+various complications.
+</para>
+<para>
+Not every test case will be applicable to every configuration. For
+example if the user has disabled the C library's
+<varname>CYGPKG_LIBC_STDIO</varname> component then there is no point
+in building or running any of the test cases for that component. This
+implies that test cases need to be associated with configuration
+options somehow. It is possible for the test case to use one or more
+<literal>#ifdef</literal> statements to check whether or not it is
+applicable in the current configuration, and compile to a null program
+when not applicable. This is inefficient because the test case will
+still get built and possibly run, even though it will not provide any
+useful information.
+</para>
+<para>
+Many packages involve direct interaction with hardware, for example a
+serial line or an ethernet interface. In such cases it is only
+worthwhile building and running the test if there is suitable software
+running at the other end of the serial line or listening on the same
+ethernet segment, and that software would typically have to run on the
+host. Of course the serial line in question may be hooked up to a
+different piece of hardware which the application needs to talk to, so
+disconnecting it and then hooking it up to the host for running some
+tests may be undesirable. The decision as to whether or not to build
+the test depends not just on the eCos configuration but also on the
+hardware setup and the availability of suitable host software.
+</para>
+<para>
+There are different kinds of tests, and it is not always desirable to
+run all of them. For example a package may contain a number of stress
+tests intended to run for long periods of time, possibly days or
+longer. Such tests should certainly be distinguished somehow from
+ordinary test cases so that users will not run them accidentally and
+wonder how long they should wait for a <literal>pass</literal> message
+before giving up. Stress tests may also have dependencies on the
+hardware configuration and on host software, for example a network
+stress test may require lots of ethernet packets.
+</para>
+<para>
+In the current implementation of the component framework these issues
+are not yet addressed. Instead there is only very limited support for
+building test cases. Any package can define a calculated configuration
+option of the form
+<literal>CYGPKG_&lt;package-name&gt;_TESTS</literal>, whose value is a
+list of test cases. The &calculated; property can involve an
+expression so it is possible to adapt to a small number of
+configuration options, but this quickly becomes unwieldy. A typical
+example would be:
+</para>
+<programlisting width=80>
+        cdl_option CYGPKG_UITRON_TESTS {
+            display "uITRON tests"
+            flavor  data
+            no_define
+            calculated { "tests/test1 tests/test2 tests/test3 \
+                tests/test4 tests/test5 tests/test6 tests/test7 \
+                tests/test8 tests/test9 tests/testcxx tests/testcx2 \
+                tests/testcx3 tests/testcx4 tests/testcx5 \
+                tests/testcx6 tests/testcx7 tests/testcx8 \
+                tests/testcx9 tests/testintr" }
+            description   "
+This option specifies the set of tests for the uITRON compatibility layer."
+        }
+</programlisting>
+
+<para>
+This implies that there is a file <filename>tests/test1.c</filename>
+or <filename>tests/test1.cxx</filename> in the package's directory.
+The commands that will be used to build the test case will take the
+form:
+</para>
+<programlisting width=72>
+    $(CC) -c $(INCLUDE_PATH) $(CFLAGS) -o &lt;build path&gt;/test1.o \
+         &lt;source path&gt;/tests/test1.c
+    $(CC) $(LDFLAGS) -o &lt;install path&gt;/tests/test1 &lt;build_path&gt;/test1.o
+</programlisting>
+<para>
+The variables <literal>$(CC)</literal> and so on are determined in the
+same way as for custom build steps. The various paths and the current
+directory will depend on the exact build system being used, and are
+subject to change. As usual the sources in the component repository
+are treated as a read-only resources, intermediate files live in the
+build tree, and the desired executables should end up in the install
+tree. 
+</para>
+<para>
+Each test source file must be self-contained. It is not possible at
+present to build a little per-package library that can be used by the
+test cases, or to link together several object files to produce a
+single test executable. In some cases it may be possible to
+<literal>#include</literal> source code from a shared file in order to
+avoid unnecessary code replication. There is no support for
+manipulating compiler or linker flags for individual test cases: the
+flags that will be used for all files are <literal>$(CFLAGS)</literal>
+and <literal>$(LDFLAGS)</literal>, as per custom build steps. Note
+that it is possible for a package to define options of the form
+<varname>CYGPKG_&lt;PACKAGE-NAME&gt;_LDFLAGS_ADD</varname> and
+<varname>CYGPKG_&lt;PACKAGE-NAME&gt;_LDFLAGS_REMOVE</varname>. These
+will affect test cases, but in the absence of custom build steps they
+will have no other effect on the build.
+</para>
+
+</sect1>
+
+<!-- }}} -->
+
+</chapter>

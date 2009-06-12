@@ -1,0 +1,736 @@
+# Breakpoint window for Insight.
+# Copyright 1997, 1998, 1999, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ------------------------------------------------------------------
+#  CONSTRUCTOR:  create the main breakpoint window
+# ------------------------------------------------------------------
+body BpWin::constructor {args} {
+  window_name "Breakpoints" "BPs"
+  
+  if {[pref getd gdb/bp/menu] != ""} {
+    set mbar 0
+  }
+  set show_threads [pref get gdb/bp/show_threads]
+  debug "Ready to build"
+  build_win
+  eval itk_initialize $args 
+
+  # The scrolledframe uses a canvas, which doesn't properly
+  # calculate an initial size, so we must set a default
+  # window size here. ManagedWin could override this still
+  # if there is a user preference for the geometry.
+  wm geometry $_top 350x165
+  debug "done building"
+}
+
+# ------------------------------------------------------------------
+#  DESTRUCTOR:  destroy the breakpoint window
+# ------------------------------------------------------------------
+body BpWin::destructor {} {}
+
+
+# ------------------------------------------------------------------
+#  METHOD:  build_win - build the main breakpoint window
+# ------------------------------------------------------------------
+body BpWin::build_win {} {
+  global _bp_en _bp_disp tcl_platform
+  set bg1 $::Colors(bg)
+
+  if {$tcl_platform(platform) == "windows"} {
+    # Add a sizebox and set scroll modes to static
+    ide_sizebox $itk_interior.sbox
+    place $itk_interior.sbox -relx 1.0 -rely 1.0 -anchor se
+    set hsmode static
+    set vsmode static
+  } else {
+    set hsmode dynamic
+    set vsmode dynamic
+  }
+
+  # FIXME: The iwidgets scrolled frame is pretty useless.
+  # When we get BLT, use its hiertable to do this.
+  itk_component add sframe {
+    iwidgets::scrolledframe $itk_interior.sf \
+      -hscrollmode $hsmode -vscrollmode $vsmode
+  }
+
+  set twin [$itk_component(sframe) childsite]
+
+  # write header
+  if {$tracepoints} {
+    label $twin.num0 -text "Num" -relief raised -bd 2 -anchor center \
+      -font global/fixed
+  } 
+  label $twin.thread0 -text "Thread" -relief raised -bd 2 -anchor center \
+    -font global/fixed
+  label $twin.addr0 -text "Address" -relief raised -bd 2 -anchor center \
+    -font global/fixed
+  label $twin.file0 -text "File" -relief raised -bd 2 -anchor center \
+    -font global/fixed
+  label $twin.line0 -text "Line" -relief raised -bd 2 -anchor center \
+    -font global/fixed
+  label $twin.func0 -text "Function" -relief raised -bd 2 -anchor center \
+    -font global/fixed
+
+  if {$tracepoints} {
+    label $twin.pass0 -text "PassCount" -relief raised -borderwidth 2 \
+      -anchor center -font global/fixed
+    grid x $twin.num0 $twin.addr0 $twin.file0 $twin.line0 $twin.func0 $twin.pass0 \
+      -sticky new
+  } else {
+    if {$show_threads} {
+      grid x $twin.thread0 $twin.addr0 $twin.file0 $twin.line0 $twin.func0 -sticky new
+      # Let the File and Function columns expand; no others.
+      grid columnconfigure $twin 3 -weight 1
+      grid columnconfigure $twin 5 -weight 1
+    } else {
+      grid x $twin.addr0 $twin.file0 $twin.line0 $twin.func0 -sticky new
+      # Let the File and Function columns expand; no others.
+      grid columnconfigure $twin 2 -weight 1
+      grid columnconfigure $twin 4 -weight 1
+    }
+  }
+
+
+  # The last row must always suck up all the leftover vertical
+  # space.
+  set next_row 1
+  grid rowconfigure $twin $next_row -weight 1
+
+  if { $mbar } {
+    menu $itk_interior.m -tearoff 0
+    [winfo toplevel $itk_interior] configure -menu $itk_interior.m
+    if { $tracepoints == 0 } {
+      $itk_interior.m add cascade -menu $itk_interior.m.bp -label "Breakpoint" -underline 0
+    } else {
+      $itk_interior.m add cascade -menu $itk_interior.m.bp -label "Tracepoint" -underline 0
+    }
+    set m [menu $itk_interior.m.bp]
+    if { $tracepoints == 0 } {
+      $m add radio -label "Normal" -variable _bp_disp($selected) \
+	-value donttouch -underline 0 -state disabled
+      $m add radio -label "Temporary" -variable _bp_disp($selected) \
+	-value delete -underline 0 -state disabled
+    } else {
+      $m add command -label "Actions" -underline 0 -state disabled
+    }
+
+    $m add separator
+    $m add radio -label "Enabled" -variable _bp_en($selected) -value 1 \
+      -underline 0 -state disabled
+    $m add radio -label "Disabled" -variable _bp_en($selected) -value 0 \
+      -underline 0 -state disabled
+    $m add separator
+    $m add command -label "Remove" -underline 0 -state disabled
+    $itk_interior.m add cascade -menu $itk_interior.m.all -label "Global" \
+      -underline 0
+    set m [menu $itk_interior.m.all]
+    $m add check -label " Show Threads" \
+      -variable [pref varname gdb/bp/show_threads] \
+      -underline 1 -command "$this toggle_threads"
+    $m add separator
+    $m add command -label "Disable All" -underline 0 \
+      -command "$this bp_all disable"
+    $m add command -label "Enable All" -underline 0 \
+      -command "$this bp_all enable"
+    $m add separator
+    $m add command -label "Remove All" -underline 0 \
+      -command "$this bp_all delete"
+    $m add separator
+    $m add command -label "Store Breakpoints..." -underline 0 \
+      -command [code $this bp_store]
+    $m add command -label "Restore Breakpoints..." -underline 3 \
+      -command [code $this bp_restore]
+  }
+
+  set Menu [menu $itk_interior.pop -tearoff 0]
+  
+  if { $tracepoints == 0 } {
+    $Menu add radio -label "Normal" -variable _bp_disp($selected) \
+      -value donttouch -underline 0
+    $Menu add radio -label "Temporary" -variable _bp_disp($selected) \
+      -value delete -underline 0
+  } else {
+    $Menu add command -label "Actions" -underline 0 
+  }
+  $Menu add separator
+  $Menu add radio -label "Enabled" -variable _bp_en($selected) -value 1 -underline 0
+  $Menu add radio -label "Disabled" -variable _bp_en($selected) -value 0 -underline 0
+  $Menu add separator
+  $Menu add command -label "Remove" -underline 0
+  $Menu add cascade -menu $Menu.all -label "Global" -underline 0
+  set m [menu $Menu.all]
+  $m add check -label " Show Threads" -variable [pref varname gdb/bp/show_threads] \
+    -underline 1 -command "$this toggle_threads"
+  $m add separator
+  $m add command -label "Disable All" -underline 0 -command "$this bp_all disable"
+  $m add command -label "Enable All" -underline 0 -command "$this bp_all enable"
+  $m add separator
+  $m add command -label "Remove All" -underline 0 -command "$this bp_all delete"
+
+  if { $tracepoints == 0 } {
+    # insert all breakpoints
+    foreach i [gdb_get_breakpoint_list] {
+      set e [BreakpointEvent \#auto -action create -number $i]
+      bp_add $e
+      delete object $e
+    }
+  } else {
+    # insert all tracepoints
+    foreach i [gdb_get_tracepoint_list] {
+      set e [TracepointEvent \#auto -action create -number $i]
+      bp_add $e 1
+      delete object $e
+    }
+  }
+
+  pack $itk_component(sframe) -side left -expand true -fill both
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_add - add a breakpoint entry
+# ------------------------------------------------------------------
+body BpWin::bp_add {bp_event {tracepoint 0}} {
+  global _bp_en _bp_disp tcl_platform _files
+
+  set number [$bp_event get number]
+  set thread [$bp_event get thread]
+  set disposition [$bp_event get disposition]
+  set file [$bp_event get file]
+
+  if {$tracepoint} {
+    set diposition tracepoint
+    set bptype tracepoint
+  } else {
+    set bptype breakpoint
+  }
+
+  debug "bp_add bpnum=$number thread=$thread show=$show_threads"
+  set i $next_row
+  set _bp_en($i) [$bp_event get enabled]
+  set _bp_disp($i) $disposition
+  set temp($i) ""
+  switch $disposition {
+    donttouch { set color [pref get gdb/src/bp_fg] }
+    delete { 
+      set color [pref get gdb/src/temp_bp_fg]
+      set temp($i) delete
+    }
+    tracepoint {
+      set color [pref get gdb/src/trace_fg]
+    }
+    default { set color yellow }
+  }
+  
+  if {$thread != "-1"} {set color [pref get gdb/src/thread_fg]}
+
+  if {$tcl_platform(platform) == "windows"} {
+    checkbutton $twin.en$i -relief flat -variable _bp_en($i) \
+      -activebackground $bg1 -command "$this bp_able $i" -fg $color 
+  } else {
+    checkbutton $twin.en$i -relief flat -variable _bp_en($i) \
+      -command "$this bp_able $i" -activebackground $bg1 \
+      -selectcolor $color -highlightbackground $bg1
+  }
+
+  if {$tracepoints} {
+    label $twin.num$i -text "$number " -relief flat -anchor w -font global/fixed
+  }
+  label $twin.addr$i -text "[$bp_event get address] " -relief flat -anchor w -font global/fixed -bg $bg1
+  if {[info exists _files(short,$file)]} {
+    set file $_files(short,$file)
+  } else {
+    # FIXME.  Really need to do better than this.
+    set file [::file tail $file]
+  }
+  if {$show_threads} {
+    if {$thread == "-1"} {set thread "ALL"}
+    label $twin.thread$i -text "$thread " -relief flat -anchor w -font global/fixed
+  }
+  label $twin.file$i -text "$file " -relief flat -anchor w -font global/fixed 
+  label $twin.line$i -text "[$bp_event get line] " -relief flat -anchor w -font global/fixed
+  label $twin.func$i -text "[$bp_event get function] " -relief flat -anchor w -font global/fixed 
+  if {$tracepoints} {
+    label $twin.pass$i -text "[$bp_event get pass_count] " -relief flat -anchor w -font global/fixed
+  }
+
+  if {$mbar} {
+    set zz [list addr file func line]
+    if {$tracepoints} {lappend zz num pass}
+    if {$show_threads} {lappend zz thread}
+    foreach thing $zz {
+      bind $twin.${thing}${i} <1> "$this bp_select $i"
+      bind $twin.${thing}${i} <Double-1> "$this goto_bp $i"
+      bind $twin.${thing}${i} <3> [code $this _select_and_popup $i %X %Y]
+    }
+  }
+
+  if {$tracepoints} {
+    grid $twin.en$i $twin.num$i $twin.addr$i $twin.file$i $twin.line$i \
+      $twin.func$i $twin.pass$i -sticky new -ipadx 4 -ipady 2
+  } else {
+    if {$show_threads} {
+      grid $twin.en$i $twin.thread$i $twin.addr$i $twin.file$i $twin.line$i \
+	$twin.func$i -sticky new -ipadx 4 -ipady 2
+    } else {
+      grid $twin.en$i $twin.addr$i $twin.file$i $twin.line$i \
+	$twin.func$i -sticky new -ipadx 4 -ipady 2
+    }
+  }
+
+  # This used to be the last row.  Fix it vertically again.
+  grid rowconfigure $twin $i -weight 0
+
+  set index_to_bpnum($i) $number
+  set Index_to_bptype($i) $bptype
+  incr i
+  set next_row $i
+  grid rowconfigure $twin $i -weight 1
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_store - stores away the breakpoints in a file of gdb
+#                      commands
+# ------------------------------------------------------------------
+body BpWin::bp_store {} {
+  set out_file [tk_getSaveFile]
+  if {$out_file == ""} {
+    return
+  }
+  if {[catch {::open $out_file w} outH]} {
+    tk_messageBox -message "Could not open $out_file: $outH"
+    return
+  }
+  foreach breakpoint [gdb_get_breakpoint_list] {
+    # This is an lassign
+    foreach {file function line_no address type \
+	       enable_p disp ignore cmds thread hit_count user_spec} \
+      [gdb_get_breakpoint_info $breakpoint] {
+	break
+      }
+
+    if {$user_spec != ""} {
+      set bp_specifier $user_spec
+    } elseif {$file != ""} {
+      set filename [file tail $file]
+      set bp_specifier $filename:$line_no
+    } else {
+      set bp_specifier *$address
+    }
+
+    # FIXME: doesn't handle watchpoints.
+    if {[string compare $disp "delete"] == 0} {
+      puts $outH "tbreak $bp_specifier"
+    } else {
+      puts $outH "break $bp_specifier"
+    }
+      
+    if {!$enable_p} {
+      puts $outH "disable \$bpnum"
+    }
+    if {$ignore > 0} {
+      puts $outH "ignore \$bpnum $ignore"
+    }
+  }
+  close $outH
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_restore - restore the breakpoints from a file of gdb
+#                      commands
+# ------------------------------------------------------------------
+body BpWin::bp_restore {} {
+  set inH [tk_getOpenFile]
+  if {$inH == ""} {
+    return
+  }
+  bp_all delete
+  if {[catch {gdb_cmd "source $inH"} err]} {
+    tk_messageBox -message "Error sourcing in BP file $inH: \"$err\""
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_select - select a row in the grid
+# ------------------------------------------------------------------
+body BpWin::bp_select { r } {
+  global _bp_en _bp_disp
+
+  set zz [list addr file func line]
+  if {$tracepoints} {lappend zz num pass}
+  if {$show_threads} {lappend zz thread}
+  
+  if {$selected} {
+    set i $selected
+    
+    foreach thing $zz {
+      $twin.${thing}${i}  configure -fg $::Colors(fg) -bg $bg1
+    }
+  }
+
+  # if we click on the same line, unselect it and return
+  if {$selected == $r} {
+    set selected 0
+
+    if {$tracepoints == 0} {
+      $itk_interior.m.bp entryconfigure "Normal" -state disabled
+      $itk_interior.m.bp entryconfigure "Temporary" -state disabled
+    } else {
+      $itk_interior.m.bp entryconfigure "Actions" -state disabled
+    }
+    $itk_interior.m.bp entryconfigure "Enabled" -state disabled
+    $itk_interior.m.bp entryconfigure "Disabled" -state disabled
+    $itk_interior.m.bp entryconfigure "Remove" -state disabled
+    
+    return
+  }
+
+  foreach thing $zz {
+    $twin.${thing}${r} configure -fg $::Colors(sfg) -bg $::Colors(sbg)
+  }
+  
+  if {$tracepoints == 0} {
+    $itk_interior.m.bp entryconfigure "Normal" -variable _bp_disp($r) \
+      -command "$this bp_type $r" -state normal
+    $itk_interior.m.bp entryconfigure "Temporary" -variable _bp_disp($r) \
+      -command "$this bp_type $r" -state normal
+    $Menu entryconfigure "Normal" -variable _bp_disp($r)      \
+      -command "$this bp_type $r" -state normal
+    $Menu entryconfigure "Temporary" -variable _bp_disp($r)      \
+      -command "$this bp_type $r" -state normal
+  } else {
+    $itk_interior.m.bp entryconfigure "Actions" -command "$this get_actions $r" -state normal
+    $Menu entryconfigure "Actions" -command "$this get_actions $r" -state normal
+  }
+  $itk_interior.m.bp entryconfigure "Enabled" -variable _bp_en($r)   \
+    -command "$this bp_able $r" -state normal
+  $itk_interior.m.bp entryconfigure "Disabled" -variable _bp_en($r)   \
+    -command "$this bp_able $r" -state normal
+  $itk_interior.m.bp entryconfigure "Remove" -command "$this bp_remove $r" -state normal
+  $Menu entryconfigure "Enabled" -variable _bp_en($r)        \
+    -command "$this bp_able $r" -state normal
+  $Menu entryconfigure "Disabled" -variable _bp_en($r)        \
+    -command "$this bp_able $r" -state normal
+  $Menu entryconfigure "Remove" -command "$this bp_remove $r" -state normal
+  
+  set selected $r
+}
+
+# ------------------------------------------------------------------
+#  NAME:         private method BpWin::_select_and_popup
+#  DESCRIPTION:  Select the given breakpoint and popup the options
+#                menu at the given location.
+#
+#  ARGUMENTS:    None
+#  RETURNS:      Nothing
+# ------------------------------------------------------------------
+body BpWin::_select_and_popup {bp X Y} {
+  if {$selected != $bp} {
+    bp_select $bp
+  }
+  tk_popup $Menu $X $Y
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_modify - modify a breakpoint entry
+# ------------------------------------------------------------------
+body BpWin::bp_modify {bp_event {tracepoint 0}} {
+  global _bp_en _bp_disp tcl_platform _files
+
+  set number [$bp_event get number]
+  set thread [$bp_event get thread]
+  set disposition [$bp_event get disposition]
+  set file [$bp_event get file]
+
+  if {$tracepoint} {
+    set disposition tracepoint
+    set bptype tracepoint
+  } else {
+    set bptype breakpoint
+  }
+
+  set found 0
+  for {set i 1} {$i < $next_row} {incr i} {
+    if { $number == $index_to_bpnum($i)
+	 && "$Index_to_bptype($i)" == "$bptype"} {
+      incr found
+      break
+    }
+  }
+
+  if {!$found} {
+    debug "ERROR: breakpoint number $number not found!"
+    return
+  }
+
+  if {$_bp_en($i) != [$bp_event get enabled]} {
+    set _bp_en($i) [$bp_event get enabled]
+  }
+
+  if {$_bp_disp($i) != $disposition} {
+    set _bp_disp($i) $disposition
+  }
+
+  switch $disposition {
+    donttouch { set color [pref get gdb/src/bp_fg] }
+    delete { 
+      set color [pref get gdb/src/temp_bp_fg]
+    }
+    tracepoint { set color [pref get gdb/src/trace_fg] }
+    default { set color yellow}
+  }
+
+  if {$thread != "-1"} {set color [pref get gdb/src/thread_fg]}
+
+  if {$tcl_platform(platform) == "windows"} then {
+    $twin.en$i configure -fg $color 
+  } else {
+    $twin.en$i configure -selectcolor $color
+  }
+  if {$tracepoints} {
+    $twin.num$i configure  -text "$number "
+  }
+  $twin.addr$i configure -text "[$bp_event get address] " 
+  if {[info exists _files(short,$file)]} {
+    set file $_files(short,$file)
+  } else {
+    # FIXME.  Really need to do better than this.
+    set file [::file tail $file]
+  }
+  if {$show_threads} {
+    if {$thread == "-1"} {set thread "ALL"}
+    $twin.thread$i configure -text "$thread "
+  }
+  $twin.file$i configure -text "$file "
+  $twin.line$i configure  -text "[$bp_event get line] "
+  $twin.func$i configure  -text "[$bp_event get function] "
+  if {$tracepoints} {
+    $twin.pass$i configure  -text "[$bp_event get pass_count] "
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_able - enable/disable a breakpoint
+# ------------------------------------------------------------------
+body BpWin::bp_able { i } {
+  global _bp_en
+  
+  bp_select $i
+
+  switch $Index_to_bptype($i) {
+    breakpoint {set type {}}
+    tracepoint {set type "tracepoint"}
+  }
+
+  if {$_bp_en($i) == "1"} {
+    set command "enable $type $temp($i) "
+  } else {
+    set command "disable $type "
+  }
+
+  append command  "$index_to_bpnum($i)"
+  gdb_cmd "$command"
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_remove - remove a breakpoint
+# ------------------------------------------------------------------
+body BpWin::bp_remove { i } {
+
+  bp_select $i
+
+  switch $Index_to_bptype($i) {
+    breakpoint { set type {} }
+    tracepoint { set type "tracepoint" }
+  }
+
+  gdb_cmd "delete $type $index_to_bpnum($i)"
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_type - change the breakpoint type (disposition)
+# ------------------------------------------------------------------
+body BpWin::bp_type { i } {
+  
+  if {$Index_to_bptype($i) != "breakpoint"} {
+    return
+  }
+
+  set bpnum $index_to_bpnum($i)
+  #debug "bp_type $i $bpnum"
+  set bpinfo [gdb_get_breakpoint_info $bpnum]
+  lassign $bpinfo file func line pc type enabled disposition \
+    ignore_count commands cond thread hit_count user_spec
+  bp_select $i
+  switch $disposition {
+    delete {  
+      gdb_cmd "delete $bpnum"
+      gdb_cmd "break *$pc"
+    }
+    donttouch {
+      gdb_cmd "delete $bpnum"
+      gdb_cmd "tbreak *$pc"
+    }
+    default { debug "Unknown breakpoint disposition: $disposition" }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_delete - delete a breakpoint
+# ------------------------------------------------------------------
+body BpWin::bp_delete {bp_event} {
+  set number [$bp_event get number]
+  for {set i 1} {$i < $next_row} {incr i} {
+    if { $number == $index_to_bpnum($i) } {
+      if {$tracepoints} {
+	grid forget $twin.en$i $twin.num$i $twin.addr$i $twin.file$i \
+	  $twin.line$i $twin.func$i $twin.pass$i
+	destroy $twin.en$i $twin.num$i $twin.addr$i $twin.file$i \
+	  $twin.line$i $twin.func$i $twin.pass$i
+      } else {
+	if {$show_threads} {
+	  grid forget $twin.thread$i
+	  destroy $twin.thread$i
+	}
+	grid forget $twin.en$i $twin.addr$i $twin.file$i $twin.line$i $twin.func$i
+	destroy $twin.en$i $twin.addr$i $twin.file$i $twin.line$i $twin.func$i
+      }
+      if {$selected == $i} {
+	set selected 0
+      }
+      return
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  breakpoint - Update widget when a breakpoint
+#                   event is received from the backend.
+# ------------------------------------------------------------------
+body BpWin::breakpoint {bp_event} {
+
+  set action [$bp_event get action]
+  #debug "bp update $action [$bp_event get number] [$bp_event get type]"
+
+  switch $action {
+    modify  { bp_modify $bp_event 0 }
+    create  { bp_add $bp_event 0 }
+    delete  { bp_delete $bp_event }
+    default { dbug E "Unknown breakpoint action: $action" }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  tracepoint - Update widget when a tracepoint event
+#            is received from the backend.
+# ------------------------------------------------------------------
+body BpWin::tracepoint {tp_event} {
+
+  set action [$tp_event get action]
+  #debug "tp update $action [$tp_event get number]"
+
+  switch $action {
+    modify  { bp_modify $tp_event 1 }
+    create  { bp_add $tp_event 1 }
+    delete  { bp_delete $tp_event }
+    default { dbug E "Unknown tracepoint action: $action" }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  bp_all - perform a command on all breakpoints
+# ------------------------------------------------------------------
+body BpWin::bp_all { command } {
+
+  if {!$tracepoints} {
+    # Do all breakpoints
+    foreach bpnum [gdb_get_breakpoint_list] {
+      if { $command == "enable"} {
+	for {set i 1} {$i < $next_row} {incr i} {
+	  if { $bpnum == $index_to_bpnum($i)
+	       && "$Index_to_bptype($i)" == "breakpoint"} {
+	    gdb_cmd "enable $temp($i) $bpnum"
+	    break
+	  }
+	}
+      } else {
+	gdb_cmd "$command $bpnum"
+      }
+    }
+  } else {
+    # Do all tracepoints
+    foreach bpnum [gdb_get_tracepoint_list] {
+      if { $command == "enable"} {
+	for {set i 1} {$i < $next_row} {incr i} {
+	  if { $bpnum == $index_to_bpnum($i)
+	       && "$Index_to_bptype($i)" == "tracepoint"} {
+	    gdb_cmd "enable tracepoint $bpnum"
+	    break
+	  }
+	}
+      } else {
+	gdb_cmd "$command tracepoint $bpnum"
+      }
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  get_actions - pops up the add trace dialog on a selected 
+#                         tracepoint
+# ------------------------------------------------------------------
+body BpWin::get_actions {bpnum} {
+  set bpnum $index_to_bpnum($bpnum)
+  set bpinfo [gdb_get_tracepoint_info $bpnum]
+  lassign $bpinfo file func line pc enabled pass_count \
+    step_count thread hit_count actions
+
+  set filename [::file tail $file]
+  ManagedWin::open TraceDlg -File $filename -Lines $line
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  toggle_threads - callback when show_threads is toggled
+# ------------------------------------------------------------------
+body BpWin::toggle_threads {} {
+  set show_threads [pref get gdb/bp/show_threads]
+  reconfig
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  reconfig - used when preferences change
+# ------------------------------------------------------------------
+body BpWin::reconfig {} {
+  if {[winfo exists $itk_interior.f]} { destroy $itk_interior.f }
+  if {[winfo exists $itk_interior.m]} { destroy $itk_interior.m }
+  if {[winfo exists $itk_interior.sbox]} { destroy $itk_interior.sbox }
+  if {[winfo exists $itk_interior.sf]} { destroy $itk_interior.sf }
+  if {[winfo exists $itk_interior.pop]} { destroy $itk_interior.pop }
+  build_win
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  goto_bp - show bp in source window
+# ------------------------------------------------------------------
+body BpWin::goto_bp {r} {
+  set bpnum $index_to_bpnum($r)
+  if {$tracepoints} {
+    set bpinfo [gdb_get_tracepoint_info $bpnum]
+  } else {
+    set bpinfo [gdb_get_breakpoint_info $bpnum]
+  }
+  set pc [lindex $bpinfo 3]
+
+  SrcWin::choose_and_display BROWSE_TAG [gdb_loc *$pc]
+}

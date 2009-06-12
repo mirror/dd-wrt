@@ -1,0 +1,59 @@
+# Breakpoint window class definition for Insight
+# Copyright 1997, 1998, 1999, 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class BpWin {
+  inherit EmbeddedWin GDBWin
+
+  public {
+    variable tracepoints 0
+
+    method constructor {args}
+    method destructor {}
+    method bp_select {r}
+    method bp_able { i } 
+    method bp_remove { i }
+    method bp_restore {}
+    method bp_store {}
+    method bp_type { i }
+    method bp_all { command }
+    method get_actions {bpnum}
+    method toggle_threads {}
+    method reconfig {} 
+    method goto_bp {r}
+
+    # GDB Events
+    method breakpoint {event}
+    method tracepoint {event}
+  }
+
+  private {
+    variable twin
+    variable next_row 0
+    variable index_to_bpnum
+    variable Index_to_bptype
+    variable temp
+    variable mbar 1
+    variable selected 0
+    variable bg1
+    variable Menu
+    variable show_threads	;#cached copy of [pref get gdb/bp/show_threads]
+    
+    method build_win {}
+    method bp_add {bp_event {tracepoint 0}}
+    method bp_modify {bp_event {tracepoint 0}} 
+    method bp_delete {bp_event}
+    method _select_and_popup {bp X Y}
+  }
+
+}

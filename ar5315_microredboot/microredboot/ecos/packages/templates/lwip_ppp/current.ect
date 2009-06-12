@@ -1,0 +1,54 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration template_lwip_net {
+    description "lwIP network template" ;
+    package CYGPKG_HAL current ;
+    package CYGPKG_IO current ;
+    package CYGPKG_IO_SERIAL current ;
+    package CYGPKG_INFRA current ;
+    package CYGPKG_KERNEL current ;
+    package CYGPKG_ERROR current ;
+    package CYGPKG_MEMALLOC current ;
+    package CYGPKG_ISOINFRA current ;
+    package CYGPKG_NET_LWIP current ;
+    package CYGPKG_LIBC_STRING current ;
+};
+
+cdl_option CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING {
+    user_value 1
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    inferred_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    inferred_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGPKG_LWIP_SERV_ADDR {
+    user_value 192,168,0,3
+};
+
+cdl_option CYGPKG_LWIP_MY_ADDR {
+    user_value 192,168,0,4
+};
+
+cdl_component CYGPKG_LWIP_PPP {
+    user_value 1
+}
+
+cdl_option CYGPKG_LWIP_PPP_DEV {
+    user_value "\"/dev/ser1\""
+};

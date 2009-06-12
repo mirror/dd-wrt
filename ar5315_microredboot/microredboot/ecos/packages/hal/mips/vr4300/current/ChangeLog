@@ -1,0 +1,312 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_vr4300.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/mips_vr4300.ld: 
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2001-12-05  Nick Garnett  <nickg@redhat.com>
+
+	* include/variant.inc: Add ifdef around cache clearing code to
+	only do this in non-RAM-startup configurations. If this is done in
+	a RAM-startup configuration, it can play merry havoc with the
+	state of things like RedBoot's network stack.
+	We now assume, for RAM applications, that our loader has
+	initialized the cache.
+
+2001-10-12  Nick Garnett  <nickg@redhat.com>
+
+	* src/mips_vr4300.ld (SECTION_rom_vectors): Updated this section
+	to make ROM startup work.
+	Note: this still does not fix all ROM startup problems, since the
+	ROM is still too slow to execute code from at anything like a
+	relistic speed.
+
+2001-10-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mips_vr4300.cdl: Define endianness in platform CDL instead.
+
+2001-09-10  Nick Garnett  <nickg@redhat.com>
+
+	* src/mips_vr4300.ld: Added .2ram sections to data section needed
+	for FLASH support.
+
+2001-09-07  Nick Garnett  <nickg@redhat.com>
+
+	* include/variant.inc: Added definition of INITIAL_SR_VAR.
+
+	* include/var_arch.h (CYG_HAL_GDB_REG): Returned GDB registers to
+	full 64bit width.
+
+	* cdl/hal_mips_vr4300.cdl: Added endianness configuration.
+	Currently the VRC4373 platform is big endian for historical
+	reasons, while the VRC4375 platform is little endian.
+	
+2000-09-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/var_arch.h (CYG_HAL_GDB_REG): vr4300 GDB stubs now use 
+	32-bits internally to represent registers
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips_vr4300.ld:
+	Switched to new table definition mechanism.
+
+2000-02-23  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/var_cache.h: Don't need to conditionalize on vr4300
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_vr4300.cdl: removed fix me
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/mips_vr4300.ld: Add support for network package.
+
+2000-01-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips_vr4300.h:
+	Added define for CYGHWR_HAL_MIPS_64BIT so that all vr4300 targets
+	save and restore 64 bit register values.
+
+	* cdl/hal_mips_vr4300.cdl:
+	Added option for CYGHWR_HAL_MIPS_64BIT so that all vr4300 targets
+	save and restore 64 bit register values.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300.cdl: Some cosmetic layout changes and fixed typos
+	Ensure we "puts" to correct CDL header
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300.cdl: Added.
+
+1999-10-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_cache.h: The single nop added on 10-21 seems to
+	cause exceptions on the vrc4373 board but not on others. Extended
+	this to three nops, which seem to work on all boards.
+
+1999-10-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_intr.h: Removed superfluous placeholder ifdef.
+
+1999-10-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_cache.h: Added an extra nop after reading the
+	config0 register. In some boards we get an exception when reloading
+	it if we don't have this here. Something to do with coprocessor
+	hazards.
+
+1999-10-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Don't create extras.o here any more
+
+1999-10-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/PKGconf.mak: Switched link command for libextras over to big
+	endian.
+
+	* include/pkgconf/hal_mips_vr4300.h: Added definition of
+	CYGPKG_HAL_MIPS_MSBFIRST.
+
+	* include/variant.inc: Set BE bit in config0 register depending on
+	definitions of CYGPKG_HAL_MIPS_[L|M]SBFIRST.
+
+1999-09-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips_vr4300.ld:
+	Extended size of .rom_vectors section to 0x800 bytes for ROMRAM
+	startup so that when it is copied down into RAM, the VSR and
+	vector tables are zeroed automatically.
+
+	* include/variant.inc:
+	Moved cache macros here so that code to initialize the caches is
+	variant specific.
+
+1999-09-08  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mips_vr4300.ld: Discard debug vector - it doesn't exist on the
+	vr4300
+
+1999-08-05  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/variant.inc: VR4300 is a mips 3 processor, so always allow
+	mips3 instructions
+
+1999-07-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/variant.inc: Rename CYG_HAL_MIPS_FSR_INIT to
+	CYG_HAL_MIPS_FCSR_INIT since that's closer to its documented name
+
+1999-07-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/var_cache.h: Define HAL_ICACHE_IS_ENABLED() to be the same
+	as HAL_DCACHE_IS_ENABLED()
+
+1999-06-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc:
+	Added initializer for FPU FSR register.
+
+1999-06-17  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_cache.h: Added defines to disable generic code for
+	cache lock support in hal_cache.h. The vr4300 does not have cache
+	locking.
+
+1999-06-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/mips_vr4300.ld: Removed below workaround.
+
+1999-06-16  Jesper Skov  <jskov@cygnus.co.uk>
+        CR 100804 workaround
+	* src/mips_vr4300.ld:  Suppress .mdebug in the final output.
+
+1999-05-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips_vr4300.ld:
+	Removed references to CYG_HAL_STARTUP_STUBS
+
+1999-05-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_cache.h (HAL_DCACHE_IS_ENABLED): Added an
+	implementation of this macro.
+
+1999-05-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/var_misc.c (hal_variant_init): Added enables for caches.
+
+	* src/mips_vr4300.ld: Added definition of SECTION_rom_vectors()
+	for ROMRAM and STUBS startups.
+
+	* include/variant.inc: Added an initial value for config0.
+
+	* include/var_cache.h: Added enable and disable macros for data
+	and instruction caches.
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	Imported whole directory tree into main trunk of repository.
+
+1999-05-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* include/imp_arch.h: 
+	* include/imp_intr.h: 
+	* include/imp_cache.h:
+	* include/impl.inc:
+	* src/imp_misc.c:
+	* include/var_arch.h: 
+	* include/var_intr.h: 
+	* include/var_cache.h:
+	* include/variant.inc:
+	* src/var_misc.c:
+	* src/PKGconf.mak:
+	"Imp" and "Impl" files renamed to "var" and "variant" equivalents.
+
+	* include/pkgconf/hal_vr4300.h
+	* include/pkgconf/hal_mips_vr4300.h
+	Config file hal_vr4300.h renamed to hal_mips_vr4300.h so that it
+	matches the name synthesized by pkgconf.tcl.
+
+	* src/mips_vr4300.ld:
+	Moved VSR table and vector table to 0x800XXXXX.
+	
+1999-05-11  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* src/mips_vr4300.ld: Change CTOR sort order - fixes problems
+	with uItron initialization.
+
+1999-04-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]
+	* src/mips_vr4300.ld: Added definitions of hal_vsr_table and
+	hal_virtual_vector_table. These are currently at 0x806XXXXX but
+	will be moved to 0x800XXXXX when we can make proper ROMs.
+
+1999-04-27  John Dallaway  <jld@cygnus.co.uk>
+
+	[VR4300 branch]
+	* src/PKGconf.mak: Force generation of little-endian extras.o
+
+1999-04-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]
+	* include/pkgconf/hal_vr4300.h: Added some CPU characterization
+	definitions for the benefit of the generic mips HAL.
+
+	* include/imp_arch.h: Added this file. It contains configuration
+	and redefinitions for stuff in hal_arch.h.
+
+1999-04-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]
+	* src/imp_misc.c: Added this file to contain
+	hal_implementation_init().
+	
+	* src/PKGconf.mak (COMPILE): Added imp_misc.c.
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

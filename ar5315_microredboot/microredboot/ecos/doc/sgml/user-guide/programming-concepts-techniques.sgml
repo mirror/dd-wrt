@@ -1,0 +1,959 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     programming-concepts-techniques.sgml                        -->
+<!--                                                                 -->
+<!--     eCos User Guide                                             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART id="ecos-programming-concepts-and-techniques">
+<TITLE><productname>eCos</productname> Programming Concepts and Techniques</TITLE>
+<PARTINTRO id="programming-partintro">
+<PARA>Programming with <productname>eCos</productname> is somewhat different from programming
+      in more traditional environments. <productname>eCos</productname> is a configurable open
+      source system, and you are able to configure and build a system
+      specifically to meet the needs of your application. </PARA>
+<PARA>Various different directory hierarchies are involved in
+      configuring and building the system: the <EMPHASIS>component
+	repository</EMPHASIS>, the <EMPHASIS>build tree</EMPHASIS>,
+      and the <EMPHASIS>install tree</EMPHASIS>. These directories
+      exist in addition to the ones used to develop
+      applications.</PARA>
+</PARTINTRO>
+<CHAPTER id="cdl-concepts">
+<TITLE>CDL Concepts</TITLE>
+<SECT1 id="cdl-concepts-about">
+<TITLE>About this chapter</TITLE>
+<PARA>This chapter serves as a brief introduction to the
+	concepts involved in <productname>eCos</productname> (Embedded Configurable Operating
+	System).  It describes the configuration architecture and the
+	underlying technology to a level required for the embedded
+	systems developer to configure <productname>eCos</productname>.  It does not describe in
+	detail aspects such as how to write reusable components for
+	<productname>eCos</productname>: this information is given in the <citetitle>Component
+	  Writer&rsquo;s Guide</citetitle>.</PARA>
+<SECT2>
+<TITLE>Background</TITLE>
+<PARA>Software solutions for the embedded space place
+	  particularly stringent demands on the developer, typically
+	  represented as requirements for small memory footprint, high
+	  performance and robustness.  These demands are addressed in
+	  <productname>eCos</productname> by providing the ability to perform compile-time
+	  specialization: the developer can tailor the operating
+	  system to suit the needs of the application.  In order to
+	  make this process manageable, <productname>eCos</productname> is built in the context
+	  of a Configuration Infrastructure: a set of tools including
+	  a <application>Configuration Tool</application> and a formal
+	  description of the process of configuration by means of a
+	  <EMPHASIS>Component Definition Language</EMPHASIS>.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Configurations</TITLE>
+<PARA><productname>eCos</productname> is tailored at source level (that is, before
+	    compilation or assembly) in order to create an <productname>eCos</productname>
+	    <EMPHASIS>configuration</EMPHASIS>. In concrete terms, an
+	    <productname>eCos</productname> configuration takes the form of a configuration save
+	    file (with extension .ecc) and set of files used to build
+	    user applications (including, when built, a library file
+	    against which the application is linked). </PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="cdl-component-repository">
+<TITLE>Component Repository</TITLE>
+<PARA><productname>eCos</productname> is shipped in source in the form of a
+	  <EMPHASIS>component repository</EMPHASIS> - a directory
+	  hierarchy that contains the sources and other files which
+	  are used to build a configuration. The component repository
+	  can be added to by, for example, downloading from the
+	  net.</PARA>
+</SECT1>
+<SECT1 id="cdl-component-definition-language">
+<TITLE>Component Definition Language</TITLE>
+<PARA>Part of the component repository is a set of files
+	  containing a definition of its structure.  The form used for
+	  this purpose is the <EMPHASIS>Component Definition
+	    Language</EMPHASIS> (CDL).  CDL defines the relationships
+	  between components and other information used by tools such
+	  as the <productname>eCos</productname><APPLICATION>Configuration Tool</APPLICATION>.
+	  CDL is generally formulated by the writers of components: it
+	  is not necessary to write or understand CDL in order for the
+	  embedded systems developer to construct an <productname>eCos</productname>
+	  configuration. </PARA>
+</SECT1>
+<SECT1 id="cdl-packages">
+<TITLE>Packages</TITLE>
+<PARA>The building blocks of an <productname>eCos</productname> configuration are called
+	  <EMPHASIS>packages</EMPHASIS>. Packages are the units of
+	  software distribution.  A set of core packages (such as
+	  kernel, C library and math library) is provided by Red Hat:
+	  additional third-party packages will be available in
+	  future.</PARA>
+<PARA>A package may exist in one of a number of <EMPHASIS>versions</EMPHASIS>.
+ The default version is the <EMPHASIS>current</EMPHASIS> version.
+ Only one version of a given package may be present in the component
+repository at any given time.</PARA>
+<PARA>Packages are organized in a tree hierarchy.  Each package
+is either at the top-level or is the child of another package.</PARA>
+<PARA>The <productname>eCos</productname> <application> Package Administration Tool</application> can be used to add or remove
+packages from the component repository.  The <productname>eCos</productname> <APPLICATION>Configuration Tool</APPLICATION> can be used to include or exclude packages from the configuration
+being built.</PARA>
+</SECT1>
+<SECT1 id="cdl-configuration-items">
+<TITLE>Configuration Items</TITLE>
+<PARA><EMPHASIS>Configuration items</EMPHASIS> are the
+	  individual entities that form a configuration.  Each item
+	  corresponds to the setting of a C pre-processor macro (for
+	  example,
+	  <literal>CYGHWR_HAL_ARM_PID_GDB_BAUD</literal>). 
+	  The code of <productname>eCos</productname> itself is written to test such pre-processor
+	  macros so as to tailor the code.  User code can do
+	  likewise.</PARA>
+<PARA>Configuration items come in the following flavors:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA><EMPHASIS>None</EMPHASIS>: such entities serve only as
+place holders in the hierarchy, allowing other entities to be grouped
+more easily.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><EMPHASIS>Boolean</EMPHASIS> entities are the most common
+flavor; they correspond to units of functionality that can be either
+enabled or disabled.  If the entity is enabled then there will be
+a #define; code will check the setting using, for example, #ifdef</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><EMPHASIS>Data</EMPHASIS> entities encapsulate some arbitrary
+data. Other properties such as a set or range of legal values can
+be used to constrain the actual values, for example to an integer
+or floating point value within a certain range.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><EMPHASIS>Booldata</EMPHASIS> entities combine the attributes
+of <EMPHASIS>Boolean</EMPHASIS> and <EMPHASIS>Data</EMPHASIS>: they
+can be enabled or disabled and, if enabled, will hold a data value.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>Like packages, configuration items exist in a tree-based hierarchy:
+each configuration item has a parent which may be another configuration
+item or a package.  Under some conditions (such as when packages
+are added or removed from a configuration), items may be &ldquo;re-parented&rdquo; such
+that their position in the tree changes. </PARA>
+<SECT2>
+<TITLE>Expressions</TITLE>
+<PARA>Expressions are relationships between CDL items.  There are
+three types of expression in CDL:</PARA>
+	<table id="cdl-expressions">
+	  <title>CDL Expressions</title>
+	<tgroup cols="3">
+	  <thead>
+	  <row>
+	      <entry>Expression Type</entry>
+	      <entry>Result</entry>
+	      <entry>Common Use (see <xref linkend="table-configuration-properties">)</entry></row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>Ordinary</entry>
+	      <entry>A single value</entry>
+	      <entry>legal_values property</entry>
+	    </row>
+	    <row>
+	      <entry>List</entry><entry>A range of
+		values (for example &ldquo;1 to 10&rdquo;)</entry>
+	      <entry>legal_values property </entry></row>
+	    <row>
+	      <entry>Goal</entry><entry>True or False</entry>
+	      <entry>requires and active_if properties</entry></row>
+	    </tbody>
+	  </tgroup>
+	</table>
+      </SECT2>
+      <SECT2>
+	<TITLE>Properties</TITLE>
+<PARA>Each configuration item has a set of properties.  The following
+table describes the most commonly used:</PARA>
+	<table id="table-configuration-properties">
+	  <title>Configuration properties</title>
+	  <tgroup cols="2">
+	    <thead><row>
+		<entry><emphasis>Property</emphasis></entry>
+<entry><emphasis>Use </emphasis></entry></row>
+	    </thead>
+	    <tbody>
+	      <row>
+		<entry>Flavor</entry>
+		<entry>The &ldquo;type&rdquo; of the item, as
+		  described above </entry></row>
+	      <row>
+		<entry>Enabled</entry><entry>Whether
+		  the item is enabled </entry></row>
+	      <row>
+		<entry>Current_value</entry>
+<entry>The current value of the item </entry></row>
+	      <row>
+		<entry>Default_value</entry>
+<entry>An ordinary expression defining the default value of the
+		    item</entry></row>
+	      <row>
+		<entry>Legal_values</entry><entry>A
+		  list expression defining the values the item may hold (for example,
+		  1 to10) </entry></row>
+	      <row>
+		<entry>Active_if</entry><entry>A
+		  goal expression denoting the requirement for this item to be active
+(see below: <emphasis>Inactive Items</emphasis>) </entry></row>
+<row>
+<entry>Requires</entry><entry>A goal
+expression denoting requirements this item places on others (see
+below: <emphasis>Conflicts</emphasis>) </entry></row>
+<row>
+<entry>Calculated</entry><entry>Whether
+the item as non-modifiable </entry></row>
+<row>
+<entry>Macro</entry><entry>The corresponding
+C pre-processor macro </entry></row>
+<row>
+<entry>File</entry><entry>The C header
+file in which the macro is defined </entry></row>
+<row>
+<entry>URL</entry><entry>The URL of
+a documentation page describing the item </entry></row>
+<row>
+<entry>Hardware</entry><entry>Indicates
+that a particular package is related to specific hardware</entry></row>
+	    </tbody>
+	  </tgroup>
+	</table>
+
+<PARA>A complete description of properties is contained in the <citetitle>Component
+Writer&rsquo;s Guide</citetitle>.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Inactive Items</TITLE>
+<PARA>Descendants of an item that is disabled are inactive: their
+values may not be changed.  Items may also become <EMPHASIS>inactive</EMPHASIS> if
+an active_if expression is used to make the item dependent
+on an expression involving other items. </PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="cdl-conflicts">
+<TITLE>Conflicts</TITLE>
+<PARA>Not all settings of configuration items will lead to a
+	  coherent configuration; for example, the use of a timeout
+	  facility might require the existence of timer support, so if
+	  the one is required the other cannot be removed.  Coherence
+	  is policed by means of consistency rules (in particular, the
+	  goal expressions that appear as CDL items
+	  <EMPHASIS>requires</EMPHASIS> and
+	  <EMPHASIS>active_if</EMPHASIS> attributes [see
+	  above]).  A violation of consistency rules creates a
+	  <EMPHASIS>conflict</EMPHASIS>, which must be resolved in
+	  order to ensure a consistent configuration. Conflict
+	  resolution can be performed manually or with the assistance
+	  of the <productname>eCos</productname> tools.  Conflicts come in the following
+	  flavors:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>An <EMPHASIS>unresolved</EMPHASIS> conflict means that
+there is a reference to an entity that is not yet in the current
+configuration </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>An <EMPHASIS>illegal value</EMPHASIS> conflict is caused
+when a configuration item is set to a value that is not permitted
+(that is, a <EMPHASIS>legal_values</EMPHASIS> goal expression
+is failing) </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>An <EMPHASIS>evaluation exception</EMPHASIS> conflict
+is caused when the evaluation of an expression would fail (for example,
+because of a division by zero) </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>An <EMPHASIS>unsatisfied goal</EMPHASIS> conflict is caused
+by a failing <EMPHASIS>requires</EMPHASIS> goal expression </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>A <EMPHASIS>bad data</EMPHASIS> conflict arises only rarely,
+and corresponds to badly constructed CDL.  Such a conflict can only
+be resolved by reference to the CDL writer.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT1>
+<SECT1 id="cdl-templates">
+<TITLE>Templates</TITLE>
+<PARA>A <EMPHASIS>template</EMPHASIS> is a saved configuration
+	  - that is, a set of packages and configuration item
+	  settings.  Templates are provided with <productname>eCos</productname> to allow you to
+	  get started quickly by instantiating (copying) a saved
+	  configuration corresponding to one of a number of common
+	  scenarios; for example, a basic <productname>eCos</productname> configuration template
+	  is supplied that contains the infrastructure, kernel, C and
+	  math libraries, plus their support packages.</PARA>
+</SECT1>
+</CHAPTER>
+<CHAPTER id="component-repo-and-working-dirs">
+<TITLE>The Component Repository and Working Directories</TITLE>
+<PARA>Each of the file trees involved in <productname>eCos</productname> development has a
+	different role. </PARA>
+<SECT1 id="component-repo">
+<TITLE>Component Repository</TITLE>
+<PARA>The <productname>eCos</productname> <FIRSTTERM>component repository</FIRSTTERM>
+	  contains directories for all the packages that are shipped
+	  with <productname>eCos</productname> or provided by third parties.</PARA>
+<PARA>The component repository should not be modified as part of
+application development. </PARA>
+<!--
+<para>
+XXXXX We may want to change this picture XXXXX
+</para>
+-->
+<FIGURE>
+<TITLE>Component repository</TITLE>
+<GRAPHIC ENTITYREF="graphic30"></GRAPHIC>
+</FIGURE>
+<SECT2>
+<TITLE>Purpose</TITLE>
+<PARA>The component repository is the master copy of source code
+for all system and third party components. It also contains some
+files needed to administer and build the system, such as <command>ecosadmin.tcl</command>.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>How is it modified?</TITLE>
+<PARA>You modify it by importing new versions of packages from a
+distribution or removing existing packages. These activities are
+undertaken using the <productname>eCos</productname> <application>Package Administration Tool</application>.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>When is it edited manually?</TITLE>
+<PARA>Files in the component repository should only be edited manually
+as determined by the component maintainer.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>User Applications</TITLE>
+<PARA>User application source code should <EMPHASIS>not</EMPHASIS> go
+into the component repository.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Examples of files in this hierarchy:</TITLE>
+<VARIABLELIST>
+<VARLISTENTRY>
+<TERM><FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/doc/ref/ecos-ref.html</FILENAME></TERM>
+<LISTITEM>
+<PARA>The top level HTML file for the
+		  <citetitle><PRODUCTNAME>eCos</PRODUCTNAME> Reference
+		    Manual</citetitle>. </PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/prebuilt/pid/tests/kernel/<replaceable>&Version;</replaceable>/tests/thread_gdb.exe</FILENAME></TERM>
+<LISTITEM>
+<PARA></PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/prebuilt/linux/tests/kernel/<replaceable>&Version;</replaceable>/tests/thread_gdb.exe</FILENAME></TERM>
+<LISTITEM>
+<PARA>Pre-built tests for the supported platforms, and
+		  the synthetic Linux target.</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/examples/twothreads.c</FILENAME></TERM>
+<LISTITEM>
+<PARA>One of the example programs.</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/ecosadmin.tcl</FILENAME></TERM>
+<LISTITEM>
+<para>The Tcl program which is used to  import new versions of packages
+from a distribution or remove existing packages.</para>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/packages/language/c/libm/<replaceable>&Version;</replaceable>/src/double/portable-api/s_tanh.c</FILENAME></TERM>
+<LISTITEM>
+<para>Implementation of the hyperbolic tangent function in the standard
+math library.</para>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/pkgconf/rules.mak</FILENAME></TERM>
+<LISTITEM>
+<para>A file with <command>make</command> rules, used
+by the <FILENAME>makefile</FILENAME>.</para>
+</LISTITEM>
+</VARLISTENTRY>
+</VARIABLELIST>
+</SECT2>
+</SECT1>
+<SECT1 id="build-tree">
+<TITLE>Build Tree</TITLE>
+<PARA>The <FIRSTTERM>build tree</FIRSTTERM> is the directory
+	  hierarchy in which all <EMPHASIS>generated</EMPHASIS> files
+	  are placed. Generated files consist of the
+	  <FILENAME>makefile</FILENAME>, the compiled object files,
+	  and a dependency file (with a <FILENAME>.d</FILENAME>
+	  extension) for each source file.</PARA>
+<SECT2><!--<conditionaltext>-->
+<TITLE>Purpose</TITLE>
+<PARA>The build tree is where all intermediate object files are
+	    placed. </PARA>
+</SECT2>
+<SECT2>
+<TITLE>How is it modified?</TITLE>
+<PARA>Recompiling can modify the object files.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>User applications</TITLE>
+<PARA>User application source or binary code should
+	    <EMPHASIS>not</EMPHASIS> go in the build tree. </PARA>
+</SECT2>
+<SECT2>
+<TITLE>Examples of files in this hierarchy</TITLE>
+<VARIABLELIST>
+<VARLISTENTRY>
+<TERM><FILENAME>ecos-work/language/c/libc/<replaceable>&Version;</replaceable>/src</FILENAME></TERM>
+<LISTITEM>
+<PARA>The directory in which object files for
+		  the C library are built.</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+</VARIABLELIST>
+</SECT2>
+</SECT1>
+<SECT1 id="install-tree">
+<TITLE>Install Tree</TITLE>
+<PARA>The <FIRSTTERM>install tree</FIRSTTERM> is the location
+	  for all files needed for application development. The
+	  <filename>libtarget.a</filename> library, which contains the
+	    custom-built <productname>eCos</productname> kernel and other components, is placed
+	    in the install tree, along with all packages&rsquo; public
+	    header files. If you build the tests, the test executable
+	    programs will also be placed in the install
+	    tree. </PARA>
+<PARA>By default, the install tree is created by
+	  <COMMAND>ecosconfig</COMMAND> in a subdirectory of the build
+	  tree called <FILENAME>install</FILENAME>. This can be
+	  modified with the <OPTION>--prefix</OPTION> option (see
+	  <xref linkend="manual-configuration">).
+	</PARA>
+<SECT2><!--<conditionaltext>-->
+<TITLE>Purpose</TITLE>
+<PARA>The install tree is where the custom-built
+	    <FILENAME>libtarget.a</FILENAME> library, which contains
+	    the <productname>eCos</productname> kernel and other components, is located. The
+	    install tree is also the location for all the header files
+	    that are part of a published interface for their
+	    component. </PARA>
+</SECT2>
+<SECT2>
+<TITLE>How is it modified?</TITLE>
+<PARA>Recompiling can replace
+	    <FILENAME>libtarget.a</FILENAME> and the test
+	    executables. </PARA>
+</SECT2>
+<SECT2>
+<TITLE>When is it edited manually?</TITLE>
+<PARA>Where a memory layout requires modification without
+	    use of the <productname>eCos</productname> <application>Configuration Tool</application>, the memory layout
+	    files must be edited directly in the install tree. These
+	    files are located at
+	    <FILENAME>install/include/pkgconf/mlt_*.*</FILENAME>. 
+	    Note that subsequent modification of the install tree
+	    using the Configuration Tool will result in such manual
+	    edits being lost.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>User applications</TITLE>
+<PARA>User application source or binary code should
+	    <EMPHASIS>not</EMPHASIS> go in the install tree. </PARA>
+</SECT2>
+<SECT2>
+<TITLE>Examples of files in this hierarchy</TITLE>
+<VARIABLELIST>
+<VARLISTENTRY>
+<TERM><FILENAME>install/lib/libtarget.a</FILENAME></TERM>
+<LISTITEM>
+<PARA>The library containing the kernel and other components.</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME>install/include/cyg/kernel/kapi.h</FILENAME></TERM>
+<LISTITEM>
+<PARA>The header file for the kernel C language API.</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME>install/include/pkgconf/mlt_arm_pid_ram.ldi</FILENAME></TERM>
+<LISTITEM>
+<PARA>The linker script fragment describing the memory
+		  layout for linking applications intended for
+		  execution on an ARM PID development board using RAM
+		  startup.</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM><FILENAME>install/include/stdio.h</FILENAME></TERM>
+<LISTITEM>
+<PARA>The C library header file for standard I/O. </PARA>
+</LISTITEM>
+</VARLISTENTRY>
+</VARIABLELIST>
+</SECT2>
+</SECT1>
+<SECT1 id="repository-app-build-tree">
+<TITLE>Application Build Tree</TITLE>
+<PARA>This tree is not part of <productname>eCos</productname> itself: it is the
+	  directory in which <productname>eCos</productname> end users write their own
+	  applications.</PARA>
+<PARA>Example applications and their
+	  <FILENAME>Makefile</FILENAME> are located in the component
+	  repository, in the directory
+	  <FILENAME>BASE_DIR</FILENAME><FILENAME>/examples</FILENAME>. 
+	  
+	</PARA>
+<PARA>There is no imposed format on this directory, but there
+	  are certain compiler and linker flags that must be used to
+	  compile an <productname>eCos</productname> application. The basic set of flags is shown
+	  in the example <FILENAME>Makefile</FILENAME>, and additional
+	  details can be found in <xref linkend="compiler-and-linker-options">. </PARA>
+</SECT1>
+</CHAPTER>
+<CHAPTER id="compiler-and-linker-options">
+<TITLE>Compiler and Linker Options</TITLE>
+
+    <PARA><productname>eCos</productname> is built using
+      the GNU C and C++ compilers. <productname>eCos</productname> relies on certain features of these
+      tools such as constructor priority ordering and selective linking
+      which are not part of other toolchains.
+    </PARA>
+    
+<PARA>Some <application>GCC</application> options are required for <productname>eCos</productname>,
+and others can be useful. This chapter gives a brief description
+of the required options as well as some recommended <productname>eCos</productname>-specific options.
+All other <application>GCC</application> options (described in the <application>GCC</application> manuals)
+are available. </PARA>
+<SECT1 id="compiling-c-app">
+<TITLE>Compiling a C Application</TITLE>
+<PARA>The following command lines demonstrate the
+	  <EMPHASIS>minimum</EMPHASIS> set of options required to
+	  compile and link an <productname>eCos</productname> program written in C. </PARA>
+<NOTE>
+<PARA>Remember that when this manual shows
+	    <COMMAND><replaceable>TARGET-</replaceable>gcc</COMMAND>
+	    you should use the full name of the cross compiler,
+	    e.g. <COMMAND>i386-elf-gcc</COMMAND>,
+	    <COMMAND>arm-elf-gcc</COMMAND>, or
+	    <COMMAND>sh-elf-gcc</COMMAND>. When compiling for the
+	    synthetic Linux target, use the native
+	    <command>gcc</command> which must have the features
+	    required by <productname>eCos</productname>.</PARA>
+</NOTE>
+<SCREEN>
+$ <replaceable>TARGET-</replaceable>gcc -c  -I<EMPHASIS>INSTALL_DIR</EMPHASIS>/include file.c
+$ <replaceable>TARGET-</replaceable>gcc -o program file.o -L<EMPHASIS>INSTALL_DIR</EMPHASIS>/lib -Ttarget.ld -nostdlib
+</SCREEN>
+<NOTE>
+<PARA>Certain targets may require extra options, for example
+	    the SPARClite architectures require the option
+	    <OPTION>-mcpu=sparclite</OPTION>. Examine the
+	    <FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/examples/Makefile</FILENAME> 
+	    or the &ldquo;Global compiler flags&rdquo; option
+	    (CYGBLD_GLOBAL_CFLAGS) in your generated
+	    <productname>eCos</productname> configuration) to see if any extra options are
+	    required, and if so, what they are. </PARA>
+<PARA>The following command lines use some other options
+	    which are recommended because they use the
+	<!-- <index></index> -->selective linking feature:</PARA>
+<SCREEN>$ <replaceable>TARGET-</replaceable>gcc -c  -I<REPLACEABLE>INSTALL_DIR</REPLACEABLE>/include -I. -ffunction-sections -fdata-sections -g -O2 file.c
+$ <replaceable>TARGET-</replaceable>gcc -o program file.o -ffunction-sections -fdata-sections -Wl,--gc-sections -g -O2 \
+          -L<REPLACEABLE>INSTALL_DIR</REPLACEABLE>/lib -Ttarget.ld -nostdlib
+</SCREEN>
+        
+</NOTE>
+</SECT1>
+<SECT1 id="compiling-cpp-app">
+<TITLE>Compiling a C++ Application</TITLE>
+<PARA>The following command lines demonstrate the
+	  <EMPHASIS>minimum</EMPHASIS> set of options required to
+	  compile and link an <productname>eCos</productname> program written in C++.
+	</PARA>
+<NOTE>
+<PARA>Remember that when this manual shows
+	    <COMMAND><replaceable>TARGET-</replaceable>g++</COMMAND>
+	    you should use the full name of the cross compiler,
+	    e.g. <COMMAND>i386-elf-g++</COMMAND>,
+	    <COMMAND>arm-elf-g++</COMMAND>, or
+	    <COMMAND>sh-elf-g++</COMMAND>. When compiling for the
+	    synthetic Linux target, use the native
+	    <command>g++</command> which must have the features
+	    required by <productname>eCos</productname>.</PARA>
+</NOTE>
+<SCREEN>$ <replaceable>TARGET-</replaceable>g++ -c  -I<REPLACEABLE>INSTALL_DIR</REPLACEABLE>/include -fno-rtti -fno-exceptions file.cxx
+$ <replaceable>TARGET-</replaceable>g++ -o program file.o -L<REPLACEABLE>INSTALL_DIR</REPLACEABLE>/lib -Ttarget.ld -nostdlib
+</SCREEN>
+
+<NOTE>
+<PARA>Certain targets may require extra options,
+	    for example the SPARClite architectures require the option 
+	    <OPTION>-mcpu=sparclite</OPTION>. Examine the
+	    <FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/packages/targets</FILENAME>
+	    file or <FILENAME><REPLACEABLE>BASE_DIR</REPLACEABLE>/examples/Makefile</FILENAME>
+	    or the &ldquo;Global compiler flags&rdquo; option
+	    (CYGBLD_GLOBAL_CFLAGS) in your generated
+	    <productname>eCos</productname> configuration) to see if any extra options are
+	    required, and if so, what they are.</PARA>
+<PARA>The following command lines use some other options
+	    which are recommended because they use the
+	    <FIRSTTERM>selective linking</FIRSTTERM> feature:</PARA>
+<SCREEN>
+$ <replaceable>TARGET-</replaceable>g++ -c -I<REPLACEABLE>INSTALL_DIR</REPLACEABLE>/include -I. -ffunction-sections -fdata-sections -fno-rtti \
+          -fno-exceptions -finit-priority -g -O2 file.cxx
+$ <replaceable>TARGET-</replaceable>g++ -o program file.o -W1,--gc-sections -g -O2 -L<REPLACEABLE>INSTALL_DIR</REPLACEABLE>/lib -Ttarget.ld  -nostdlib</SCREEN>
+</NOTE>
+</SECT1>
+</CHAPTER>
+  
+<CHAPTER id="debugging-techniques">
+<TITLE>Debugging Techniques</TITLE>
+<PARA><productname>eCos</productname> applications and components can be debugged in
+	traditional ways, with printing statements and debugger
+	single-stepping, but there are situations in which these
+	techniques cannot be used. One example of this is when a
+	program is getting data at a high rate from a real-time
+	source, and cannot be slowed down or interrupted.</PARA>
+<PARA><productname>eCos</productname>&rsquo;s infrastructure module provides a
+	<EMPHASIS>tracing</EMPHASIS> formalism, allowing the
+	kernel&rsquo;s tracing macros to be configured in many useful
+	ways. <productname>eCos</productname>&rsquo;s kernel provides <FIRSTTERM>instrumentation
+	  buffers</FIRSTTERM> which also collect specific
+	(configurable) data about the system&rsquo;s history and
+	performance.</PARA>
+<SECT1 id="tracing">
+<TITLE>Tracing</TITLE>
+<PARA>To use <productname>eCos</productname>&rsquo;s tracing facilities you must first
+	  configure your system to use <FIRSTTERM>tracing</FIRSTTERM>.
+	  You should enable the Asserts and Tracing component
+	  (<OPTION>CYGPKG_INFRA_DEBUG</OPTION>) and the
+	  <OPTION>Use tracing</OPTION> component within it
+	  (<OPTION>CYGDBG_USE_TRACING</OPTION>). These
+	  options can be enabled with the <APPLICATION>Configuration
+	    Tool</APPLICATION> or by editing the file
+	  <FILENAME><REPLACEABLE>BUILD_DIR</REPLACEABLE>/pkgconf/infra.h 
+	  </FILENAME> manually.</PARA>
+<PARA>You should then examine all the tracing-related options in
+the <citetitle>Package: Infrastructure</citetitle> chapter of the <citetitle><PRODUCTNAME>eCos</PRODUCTNAME> Reference
+Manual</citetitle>. One useful set of configuration options are: <literal>CYGDBG_INFRA_DEBUG_FUNCTION_REPORTS</literal> and <literal>CYGDBG_INFRA_DEBUG_TRACE_MESSAGE</literal>,
+which are both enabled by default when tracing is enabled.</PARA>
+<PARA>The following &ldquo;Hello world with tracing&rdquo; shows
+the output from running the hello world program (from <xref linkend="ecos-hello-world">) that was
+built with tracing enabled: </PARA>
+<EXAMPLE>
+<TITLE>Hello world with tracing</TITLE>
+<SCREEN>$ mips-tx39-elf-run --board=jmr3904  hello
+Hello, eCos world!
+ASSERT FAIL: &lt;2&gt;cyg_trac.h          [ 623] Cyg_TraceFunction_Report_::set_exitvoid()                                                            exitvoid used in typed function
+TRACE: &lt;1&gt;mlqueue.cxx         [ 395] Cyg_ThreadQueue_Implementation::enqueue()                                                            {{enter
+TRACE: &lt;1&gt;mlqueue.cxx         [ 395] Cyg_ThreadQueue_Implementation::enqueue()                                                            }}RETURNING UNSET!
+TRACE: &lt;1&gt;mlqueue.cxx         [ 126] Cyg_Scheduler_Implementation::add_thread()                                                           }}RETURNING UNSET!
+TRACE: &lt;1&gt;thread.cxx          [ 654] Cyg_Thread::resume()                                                                                 }}return void
+TRACE: &lt;1&gt;cstartup.cxx        [ 160] cyg_iso_c_start()                                                                                    }}return void
+TRACE: &lt;1&gt;startup.cxx         [ 142] cyg_package_start()                                                                                  }}return void
+TRACE: &lt;1&gt;startup.cxx         [ 150] cyg_user_start()                                                                                     {{enter
+TRACE: &lt;1&gt;startup.cxx         [ 150] cyg_user_start()                                                                                     (((void)))
+TRACE: &lt;1&gt;startup.cxx         [ 153] cyg_user_start()                                                                                     'This is the system default cyg_user_start()'
+TRACE: &lt;1&gt;startup.cxx         [ 157] cyg_user_start()                                                                                     }}return void
+TRACE: &lt;1&gt;sched.cxx           [ 212] Cyg_Scheduler::start()                                                                               {{enter
+TRACE: &lt;1&gt;mlqueue.cxx         [ 102] Cyg_Scheduler_Implementation::schedule()                                                             {{enter
+TRACE: &lt;1&gt;mlqueue.cxx         [ 437] Cyg_ThreadQueue_Implementation::highpri()                                                            {{enter
+TRACE: &lt;1&gt;mlqueue.cxx         [ 437] Cyg_ThreadQueue_Implementation::highpri()                                                            }}RETURNING UNSET!
+TRACE: &lt;1&gt;mlqueue.cxx         [ 102] Cyg_Scheduler_Implementation::schedule()                                                             }}RETURNING UNSET!
+TRACE: &lt;2&gt;intr.cxx            [ 450] Cyg_Interrupt::enable_interrupts()                                                                   {{enter
+TRACE: &lt;2&gt;intr.cxx            [ 450] Cyg_Interrupt::enable_interrupts()                                                                   }}RETURNING UNSET!
+TRACE: &lt;2&gt;thread.cxx          [  69] Cyg_HardwareThread::thread_entry()                                                                   {{enter
+TRACE: &lt;2&gt;cstartup.cxx        [ 127] invoke_main()                                                                                        {{enter
+TRACE: &lt;2&gt;cstartup.cxx        [ 127] invoke_main()                                                                                        ((argument is ignored))
+TRACE: &lt;2&gt;dummyxxmain.cxx     [  60] __main()                                                                                             {{enter
+TRACE: &lt;2&gt;dummyxxmain.cxx     [  60] __main()                                                                                             (((void)))
+TRACE: &lt;2&gt;dummyxxmain.cxx     [  63] __main()                                                                                             'This is the system default __main()'
+TRACE: &lt;2&gt;dummyxxmain.cxx     [  67] __main()                                                                                             }}return void
+TRACE: &lt;2&gt;memcpy.c            [ 112] _memcpy()                                                                                            {{enter
+TRACE: &lt;2&gt;memcpy.c            [ 112] _memcpy()                                                                                            ((dst=80002804, src=BFC14E58, n=19))
+TRACE: &lt;2&gt;memcpy.c            [ 164] _memcpy()                                                                                            }}returning 80002804
+TRACE: &lt;2&gt;cstartup.cxx        [ 137] invoke_main()                                                                                        'main() has returned with code 0. Calling exit()'
+TRACE: &lt;2&gt;exit.cxx            [  71] __libc_exit()                                                                                        {{enter
+TRACE: &lt;2&gt;exit.cxx            [  71] __libc_exit()                                                                                        ((status=0 ))
+TRACE: &lt;2&gt;atexit.cxx          [  84] cyg_libc_invoke_atexit_handlers()                                                                    {{enter
+TRACE: &lt;2&gt;atexit.cxx          [  84] cyg_libc_invoke_atexit_handlers()                                                                      (((void)))
+
+Scheduler:
+
+Lock:                0
+Current Thread:      &lt;null&gt;
+
+Threads:
+
+Idle Thread          pri =  31 state = R      id =   1
+                     stack base = 800021F0 ptr = 80002510 size = 00000400
+                     sleep reason NONE     wake reason NONE    
+                     queue = 80000C54      wait info = 00000000
+
+&lt;null&gt;               pri =   0 state = R      id =   2
+                     stack base = 80002A48 ptr = 8000A968 size = 00008000
+                     sleep reason NONE     wake reason NONE    
+                     queue = 80000BD8      wait info = 00000000
+	  </SCREEN>
+</EXAMPLE>
+</SECT1>
+<SECT1 id="kernel-instrumentation">
+<TITLE>Kernel Instrumentation</TITLE>
+<PARA><FIRSTTERM>Instrument buffers</FIRSTTERM> can be used to
+	  find out how many events of a given type happened in the
+	  kernel during execution of a program.</PARA>
+<PARA>You can monitor a class of several types of events, or
+	  you can just look at individual events. </PARA>
+<PARA>Examples of <FIRSTTERM>events</FIRSTTERM> that can be
+	  monitored are:
+	</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>scheduler events </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>thread operations</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>interrupts </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>mutex operations </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>binary semaphore operations </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>counting semaphore operations </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>clock ticks and interrupts </PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>Examples of fine-grained scheduler event types are: </PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>scheduler lock</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>scheduler unlock</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>rescheduling</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>time slicing </PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>Information about the events is stored in an
+	  <FIRSTTERM>event record</FIRSTTERM>. The structure that
+	  defines this record has type <type>struct
+	  Instrument_Record</type>:
+</PARA>
+<PARA>The list of records is stored in an array called <TYPE>instrument_buffer</TYPE>
+which you can let the kernel provide or you can provide yourself
+by setting the configuration option <literal>CYGVAR_KERNEL_INSTRUMENT_EXTERNAL_BUFFER</literal>. </PARA>
+<PARA>To write a program that examines the instrumentation
+	  buffers: </PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Enable instrumentation buffers in the <productname>eCos</productname> kernel configuration.
+The component macro is <literal>CYGPKG_KERNEL_INSTRUMENT</literal>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To allocate the buffers yourself, enable the configuration
+option <literal>CYGVAR_KERNEL_INSTRUMENT_EXTERNAL_BUFFER</literal>. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Include the header file 
+<FILENAME>cyg/kernel/instrmnt.h</FILENAME>
+. 
+<PROGRAMLISTING>#include &lt;cyg/kernel/instrmnt.h&gt;</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The <STRUCTNAME>Instrumentation_Record</STRUCTNAME> structure
+is not published in the kernel header file. In the future there
+will be a cleaner mechanism to access it, but for now you should
+paste into your code in the following lines: 
+	    </para>
+<PROGRAMLISTING>struct Instrument_Record
+{
+ CYG_WORD16 type; // record type
+ CYG_WORD16 thread; // current thread id
+ CYG_WORD timestamp; // 32 bit timestamp
+ CYG_WORD arg1; // first arg
+ CYG_WORD arg2; // second arg
+};</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enable the events you want to record using 
+<FUNCTION>cyg_instrument_enable()</FUNCTION>
+, and disable them later. Look at 
+<filename>cyg/kernel/instrmnt.h</filename>
+ and the examples below to see what events can be enabled. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Place the code you want to debug between the matching
+functions  
+<FUNCTION>cyg_instrument_enable()</FUNCTION>
+ and 
+<FUNCTION>cyg_instrument_disable()</FUNCTION>
+. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Examine the buffer. For now you need to look at the data
+in there (the example program below shows how to do that), and future
+versions of <productname>eCos</productname> will include a host-side tool to help you understand
+the data. </PARA>
+</LISTITEM>
+</ORDEREDLIST>
+<EXAMPLE>
+<TITLE>Using instrument buffers</TITLE>
+<PARA>This program is also provided in the
+	    <FILENAME>examples</FILENAME> directory.
+	  </PARA>
+<PROGRAMLISTING>
+/* this is a program which uses <productname>eCos</productname> instrumentation buffers; it needs
+ to be linked with a kernel which was compiled with support for
+ instrumentation */
+
+#include &lt;stdio.h&gt;
+#include &lt;pkgconf/kernel.h&gt;
+#include &lt;cyg/kernel/instrmnt.h&gt;
+#include &lt;cyg/kernel/kapi.h&gt;
+
+#ifndef CYGVAR_KERNEL_INSTRUMENT_EXTERNAL_BUFFER
+# error You must configure eCos with CYGVAR_KERNEL_INSTRUMENT_EXTERNAL_BUFFER
+#endif
+
+struct Instrument_Record
+{
+ CYG_WORD16 type; // record type
+ CYG_WORD16 thread; // current thread id
+ CYG_WORD timestamp; // 32 bit timestamp
+ CYG_WORD arg1; // first arg
+ CYG_WORD arg2; // second arg
+};
+
+struct Instrument_Record instrument_buffer[20];
+cyg_uint32 instrument_buffer_size = 20;
+
+int main(void)
+{
+ int i;
+
+ cyg_instrument_enable(CYG_INSTRUMENT_CLASS_CLOCK, 0);
+ cyg_instrument_enable(CYG_INSTRUMENT_CLASS_THREAD, 0);
+ cyg_instrument_enable(CYG_INSTRUMENT_CLASS_ALARM, 0);
+
+ printf("Program to play with instrumentation buffer\n");
+
+ cyg_thread_delay(2);
+
+ cyg_instrument_disable(CYG_INSTRUMENT_CLASS_CLOCK, 0);
+ cyg_instrument_disable(CYG_INSTRUMENT_CLASS_THREAD, 0);
+ cyg_instrument_disable(CYG_INSTRUMENT_CLASS_ALARM, 0);
+
+ for (i = 0; i &lt; instrument_buffer_size; ++i) {
+ printf("Record %02d: type 0x%04x, thread %d, ",
+	i, instrument_buffer[i].type, instrument_buffer[i].thread);
+ printf("time %5d, arg1 0x%08x, arg2 0x%08x\n",
+	instrument_buffer[i].timestamp, instrument_buffer[i].arg1,
+	instrument_buffer[i].arg2);
+ }
+ return 0;
+}</PROGRAMLISTING>
+</EXAMPLE>
+<PARA>Here is how you could compile and run this program in the <filename>examples</filename> directory,
+using (for example) the MN10300 simulator target: </PARA>
+<SCREEN>
+$ make XCC=mn10300-elf-gcc INSTALL_DIR=/tmp/ecos-work-mn10300/install instrument-test
+mn10300-elf-gcc -c -o instrument-test.o -g -Wall -I/tmp/ecos-work-mn10300/install/include \
+        -ffunction-sections -fdata-sections instrument-test.c
+mn10300-elf-gcc -nostartfiles -L/tmp/ecos-work-mn10300/install/lib -W1,--gc-sections -o \
+        instrument-test instrument-test.o -Ttarget.ld -nostdlib
+$ mn10300-elf-run --board=stdeval1 instrument-test
+</SCREEN>
+<EXAMPLE>
+<TITLE>Instrument buffer output</TITLE>
+<PARA>Here is the output of the
+	    <COMMAND>instrument-test</COMMAND> program. Notice that in
+	    little over 2 seconds, and with very little activity, and
+	    with few event types enabled, it gathered 17 records. In
+	    larger programs it will be necessary to select very few
+	    event types for debugging. </PARA>
+<PROGRAMLISTING>Program to play with instrumentation buffer
+Record 00: type 0x0207, thread 2, time  6057, arg1 0x48001cd8, arg2 0x00000002
+Record 01: type 0x0202, thread 2, time  6153, arg1 0x48001cd8, arg2 0x00000000
+Record 02: type 0x0904, thread 2, time  6358, arg1 0x48001d24, arg2 0x00000000
+Record 03: type 0x0905, thread 2, time  6424, arg1 0x00000002, arg2 0x00000000
+Record 04: type 0x0906, thread 2, time  6490, arg1 0x00000000, arg2 0x00000000
+Record 05: type 0x0901, thread 2, time  6608, arg1 0x48009d74, arg2 0x48001d24
+Record 06: type 0x0201, thread 2, time  6804, arg1 0x48001cd8, arg2 0x480013e0
+Record 07: type 0x0803, thread 1, time    94, arg1 0x00000000, arg2 0x00000000
+Record 08: type 0x0801, thread 1, time   361, arg1 0x00000000, arg2 0x00000000
+Record 09: type 0x0802, thread 1, time   548, arg1 0x00000001, arg2 0x00000000
+Record 10: type 0x0803, thread 1, time    94, arg1 0x00000000, arg2 0x00000000
+Record 11: type 0x0801, thread 1, time   361, arg1 0x00000001, arg2 0x00000000
+Record 12: type 0x0903, thread 1, time   513, arg1 0x48009d74, arg2 0x48001d24
+Record 13: type 0x0208, thread 1, time   588, arg1 0x00000000, arg2 0x00000000
+Record 14: type 0x0203, thread 1, time   697, arg1 0x48001cd8, arg2 0x480013e0
+Record 15: type 0x0802, thread 1, time   946, arg1 0x00000002, arg2 0x00000000
+Record 16: type 0x0201, thread 1, time  1083, arg1 0x480013e0, arg2 0x48001cd8
+Record 17: type 0x0000, thread 0, time     0, arg1 0x00000000, arg2 0x00000000
+Record 18: type 0x0000, thread 0, time     0, arg1 0x00000000, arg2 0x00000000
+Record 19: type 0x0000, thread 0, time     0, arg1 0x00000000, arg2 0x00000000</PROGRAMLISTING>
+</EXAMPLE>
+</SECT1>
+</CHAPTER>
+</PART>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:nil
+sgml-shorttag:t
+sgml-namecase-general:t
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:("user-guide.sgml" "book" "part")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,0 +1,249 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_sh_sh3.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-27  Rod Campbell  <rodc@sigmaelectronics.com>
+
+	* include/mod_regs_cpg.h (CYGARC_REG_FRQCR_INIT_DIVIDER2): Fix
+	FRQCR_INIT_DIVIDER2 value when CYGHWR_HAL_SH_OOC_DIVIDER_2 set at 6.
+
+2003-01-18  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/variant.S, include/variant.inc:
+	Cope with binutils 2.13.1, gas is morefinicky about immediate
+	constants.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/sh3_scif.c: 
+	* src/sh3_sci.c: 
+	* include/sh3_scif.h: 
+	* include/sh3_sci.h: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh3.cdl: Select variant 7709A by default.
+
+2002-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh3_sci.c: Register renaming.
+	* src/sh3_scif.c: Register renaming.
+
+	* include/mod_regs_ser.h: Register renaming. SCI registers now
+	contain _SCI_, SCIF registers contain _SCIF_. Merge SCIF and IrDA
+	definitions (stripping SCIF identifier suffix).
+
+2002-01-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc (hal_intc_decode): include needed ptrs.
+
+2002-01-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh3.cdl: Added interrupt model header definition.
+	Added RTC_PRESCALE option.
+
+2002-01-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh3.cdl: Added exception model header definitions.
+
+	* include/variant.inc: Fixed assembler warning.
+
+2001-10-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7709r.h: Added. I don't know if the module content
+	is correct as I have no docs for the CPU.
+
+	* cdl/hal_sh_sh3.cdl: Added option for 7709r. 
+
+2001-10-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_mk_defs.c (main): Fixed warning.
+
+2001-09-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h: Default CYGPRI_HAL_INTERRUPT_ACKNOWLEDGE_PLF
+	and CYGPRI_HAL_INTERRUPT_CONFIGURE_PLF added.
+
+	* src/var_misc.c: Use those macros.
+
+2001-09-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/variant.S: Don't include C intr header.
+
+	* include/var_intr.h (CYGPRI_HAL_INTERRUPT_UPDATE_LEVEL_PLF):
+	Provide default version.
+
+	* src/var_misc.c (hal_interrupt_update_level): Don't ignore LVL
+	interrupts.
+	* src/var_misc.c (hal_interrupt_unmask, hal_interrupt_mask): Same.
+
+	* src/var_mk_defs.c: Added some interrupt defs.
+
+2001-09-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh3_sci.c (cyg_hal_plf_sci_isr,
+	cyg_hal_plf_sci_getc_nonblock): Recover from serial RX overruns.
+
+2001-09-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ubc.h: Type 2 BRCR definitions.
+
+	* include/mod_7729.h (CYGARC_SH_MOD_UBC): Changed to type 2.
+
+2001-07-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h: Fix cache query function.
+
+2001-07-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c (cyg_var_enable_caches): Small hack to prevent
+	ethernet connection to be lost in RAM applications when started
+	from a ROM monitor.
+
+	* include/mod_7729.h: Single stepping using UBC is broken -
+	disable it for now.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/sd0001.h: Even more definitions.
+	* include/var_intr.h: Allow platforms to extend vector table.
+	* src/var_misc.c: Same.
+
+2001-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/sd0001.h: Added more definitions.
+
+2001-06-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/sd0001.h: Definitions for IO access.
+
+2001-06-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ubc.h: Allow MOD_UBC to be unset.
+
+	* cdl/hal_sh_sh3.cdl: Added SH7709S support - incomplete due to
+	lack of documentation.
+
+	* include/mod_7709s.h: Added.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_io.h: Added. Includes plf_io.h
+
+2001-05-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7729.h: Also include SD0001 header.
+
+2001-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/variant.S (cyg_hal_cache_enable): Write ORed value, not just
+	the enable bit.
+	Problem noticed by Ryouzaburou Suzuki <ryos@atom-tc.or.jp>
+
+2001-02-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ser.h: Add a couple of zeroes to
+	SCIF clear masks (for looks - no semantic change).
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h: Include plf_cache.h
+
+2001-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh3_sci.c: Baud rate is always specified, remove fallback
+	hack. Proper macro renaming.
+	* src/sh3_scif.c: Same.  Proper macro renaming.
+	* cdl/hal_sh_sh3.cdl: Added baud rate options which get default
+	values from platform CDL if it needs to be different from 38400
+	baud.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh3_scif.h: Moved init_channel function into private
+	part.
+	* include/sh3_sci.h: Same.
+
+2001-01-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh3_sci.h: Separate exported API from definitions used
+	in the driver.
+	* include/sh3_scif.h: Same.
+	* src/sh3_sci.c: Request private definitions.
+	* src/sh3_scif.c: Same.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh3_sci.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* src/sh3_scif.c: Same.
+
+	* include/var_intr.h: Include platform interrupt header.
+
+2001-01-18  Jesper Skov  <jskov@redhat.com>
+
+	Case 105302
+	* src/var_misc.c: Separate interrupt level and mask controls.
+	* src/variant.S: Include cyg_hal_ILVL_table and
+	cyg_hal_IMASK_table.
+
+2000-11-22  Jesper Skov  <jskov@redhat.com>
+
+ 	* src/variant.S: Mangle symbols.
+	* include/variant.inc: Same.
+
+2000-11-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ser.h (CYGARC_SCBRR_N): Reduce rounding error.
+
+2000-11-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c: Add spaces around ... used in ranges.
+
+2000-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* Many changes to bring the Haruki's HAL split up to date. Also
+	split the register header file into many header files, one for
+	each CPU module.
+
+2000-08-15  Haruki Kashiwaya  <kashiwaya@redhat.com>
+
+        * Set up directory structure.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 2003 Bart Veer	
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

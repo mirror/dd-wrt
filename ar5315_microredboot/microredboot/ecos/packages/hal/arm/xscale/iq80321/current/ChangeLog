@@ -1,0 +1,331 @@
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-07-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/hal_platform_setup.h: Remove erroneous 'O' that somehow
+	crept into this file.
+
+2003-06-21  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Use base+offset addressing to access
+	I2C port.
+
+2003-02-22  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80321_pci.c (cyg_hal_plf_pci_init): Make BAR0 non-prefetchable.
+
+2003-02-12  Mark Salter  <msalter@redhat.com>
+
+	* include/iq80321.h: Fix battery defines.
+	* src/diag/battery.c: Fix battery tests to match updated docs.
+
+2003-01-30  Mark Salter  <msalter@redhat.com>
+
+	* include/pkgconf/mlt_*: Adjust RAM size to match max supported.
+	Actual size of installed RAM determined at runtime.
+	
+2003-01-22  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/diag.c: Don't define DEFINE_VARS.
+
+2002-09-23  Mark Salter  <msalter@redhat.com>
+
+	* include/plf_mmap.h: Remove. Not used.
+
+2002-09-19  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_RAM.ecm: Add CYGPKG_HAL_ARM_XSCALE_CORE.
+	* misc/redboot_RAM_ALTMAP.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_ROM_ALTMAP.ecm: Ditto.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_ROM.ecm: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT.
+	* misc/redboot_RAM.ecm: Ditto.
+
+	* include/hal_platform_setup.h: Do some ATU initialization
+	before scrubbing, so PC BIOS can continue booting during
+	time consuming scrub.
+
+	* src/iq80321_pci.c (cyg_hal_plf_pci_init): Always set ATUCMD
+	register. Moved some ATU initialization to hal_platform_setup.h.
+	(cyg_hal_plf_wait_for_bios): Moved some ATU initialization to
+	hal_platform_setup.h.
+
+2002-07-15  Mark Salter  <msalter@redhat.com>
+
+	* include/pkgconf/mlt_arm_xscale_iq80321_rom.mlt: Add mmu_tables section.
+	* include/pkgconf/mlt_arm_xscale_iq80321_rom.ldi: Regenerated.
+	* include/pkgconf/mlt_arm_xscale_iq80321_rom.h: Ditto.
+
+2002-05-28  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Add HAL_PLATFORM_MACHINE_TYPE.
+
+	* misc/redboot_RAM.ecm: Changed Linux address.
+	* misc/redboot_ROM.ecm: Ditto.
+
+2002-05-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_diag.c: Support dynamic getting and setting of baud rates.
+	* cdl/hal_arm_xscale_iq80321.cdl: implements
+	CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-04-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/redboot_RAM.ecm: Enable GDB remote file I/O support.
+	* misc/redboot_RAM_ALTMAP.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_ROM_ALTMAP.ecm: Ditto.
+
+2002-04-16  John Dallaway  <jld@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Use arm-elf toolchain by default.
+
+2002-03-25  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_extras.h: Use X=1,C=1,B=1 for RAM.
+	* include/hal_platform_setup.h: Fix handling of x16 DIMM modules and
+	registered vs. non-registered handling.
+
+2002-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Added zlib and DNS packages.
+	* misc/redboot_ROM.ecm: Same.
+
+2002-02-27  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Enable battery test by default.
+
+	* include/hal_platform_setup.h: Get battery test data before enabling
+	ECC.
+
+2002-02-24  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/xscale_test.c: Don't include battery test unless
+	CYGSEM_HAL_ARM_IQ80321_BATTERY_TEST is defined.
+	* src/diag/battery.c: Ditto
+	
+	* include/iq80321.h (SDRAM_BATTERY_TEST_ADDR): Use uncached addresses.
+
+	* cdl/hal_arm_xscale_iq80321.cdl: CYGSEM_HAL_ARM_IQ80321_BATTERY_TEST
+	added.
+	
+	* include/hal_platform_setup.h: Don't save/restore battery test value
+	unless CYGSEM_HAL_ARM_IQ80321_BATTERY_TEST is defined.
+	Use latest criteria and numbers for DRAM drive strengths.
+
+2002-02-22  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80321_pci.c (cyg_hal_plf_pci_init): Improve handling of PC BIOS.
+
+	* include/plf_io.h: Fix Fab D IDSELs.
+
+	* include/hal_platform_setup.h: Support battery backup test.
+	Plug in new drive strength numbers from Intel.
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Add battery.c and timer.c to diags.
+
+	* src/diag/io_utils.c (diag_ishex): Renamed from ishex and made global.
+	(diag_hex2dec): Renamed from hex2dec and made global.
+
+	* src/diag/i82544.c (get_mac_address): New function.
+	(enet_setup): Use get_mac_address for user entry.
+
+	* src/diag/pcitest.c (pci_test): Mask BAR config bits from address.
+	Remove debugging printfs.
+
+	* src/diag/xscale_test.c: Add new tests to menu.
+
+	* include/iq80321.h (SDRAM_BASE): Remove duplicate define. Add battery
+	status defines.
+
+2002-02-20  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/i82544.c (enet_setup): Use macros for device IDs.
+	* src/diag/pcitest.c (pci_test): Ditto.
+
+	* include/plf_io.h: Define PCI slot and NIC device IDs based on
+	CYGSEM_HAL_ARM_IQ80321_FAB_C flag.
+	Add macros to convert between virtual and physical addresses
+	needed for hw watchpoints and breakpoints.
+	(HAL_PCI_TRANSLATE_INTERRUPT): Fix test for onboard NIC.
+	
+	* include/hal_plf_ints.h: Define ethernet and UART interrupt numbers
+	based on CYGSEM_HAL_ARM_IQ80321_FAB_C flag.
+
+	* cdl/hal_arm_xscale_iq80321.cdl (CYGSEM_HAL_ARM_IQ80321_FAB_C): New
+	option to distinguish between fab C and later boards.
+
+2002-01-31  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Set default for
+	CYGSEM_HAL_ARM_IQ80321_CLEAR_PCI_RETRY back to 1.
+
+	* src/iq80321_pci.c (cyg_hal_plf_pci_init): Fixed to work with PC BIOS.
+	Moved PCI CFG support to verde_pci.c
+	* include/plf_io.h: Removed HAL_PCI_CFG_* support to var_io.h
+
+2002-01-30  Mark Salter  <msalter@redhat.com>
+
+	* include/iq80321.h: Remove unneeded CCLKCFG values.
+	* include/hal_platform_setup.h: Remove write to non-existant CCLKCFG.
+
+2002-01-30  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Set default for
+	CYGSEM_HAL_ARM_IQ80321_CLEAR_PCI_RETRY to 0 rather that 1. This
+	allows PC-hosted boards to prevent the PC booting and conflicting
+	over access to the i82544. It also allows us to build tests for
+	the testfarm without having to do extra configury.
+	If/when we get a resolution to the conflict problem, we can change
+	this.
+
+2002-01-30  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/i82544.c: New file.
+	* src/diag/pcitests.c: New file.
+	* cdl/hal_arm_xscale_iq80321.cdl: Add new diag files to compile	list.
+	* src/diag/xscale_test.c: General cleanup.
+	* src/diag/test_menu.h (MENU_RTN): Fix typedef to reflect reality.
+	* src/diag/memtest.c: Largely rewritten for portability.
+	* src/diag/io_utils.c: Rewrote to use RedBoot io support.
+	* src/diag/diag.c: Remove unused cruft.
+
+	* src/iq80321_pci.c (cyg_hal_plf_pci_init): Don't try to set bus
+	and device number for Verde.
+	(pci_config_setup): Fix handling of bus number.
+
+	* misc/redboot_RAM.ecm: Remove override of default
+	CYGSEM_DEVS_ETH_ARM_IQ80321_I82544_ETH0_SET_ESA.
+	* misc/redboot_RAM_ALTMAP.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_ROM_ALTMAP.ecm: Ditto.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Removed explicit declaration of
+	plf_io.h
+
+2002-01-25  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Fix I2C cleanup on last byte read.
+
+2002-01-24  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Add
+	CYGSEM_HAL_ARM_IQ80321_CLEAR_PCI_RETRY
+
+	* src/iq80321_pci.c (cyg_hal_plf_pci_init): Only init GBE_PIO_PIN.
+	Clear retry bit if CYGSEM_HAL_ARM_IQ80321_CLEAR_PCI_RETRY defined.
+
+	* include/iq80321.h (IQ80321_GBE_GPIO_PIN): Define.
+
+	* include/plf_io.h (HAL_PCI_TRANSLATE_INTERRUPT): Test for both
+	private and public ethernet device numbers.
+
+2002-01-23  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80321_pci.c (cyg_hal_plf_pci_init): Remove unneeded cruft.
+
+	* include/pkgconf/mlt_arm_xscale_iq80321_ram_altmap.ldi: New file.
+	* include/pkgconf/mlt_arm_xscale_iq80321_ram_altmap.h: Newfile.
+	* include/pkgconf/mlt_arm_xscale_iq80321_rom_altmap.ldi: New file.
+	* include/pkgconf/mlt_arm_xscale_iq80321_rom_altmap.h: Newfile.
+	* misc/redboot_ROM_ALTMAP.ecm: New file.
+	* misc/redboot_RAM_ALTMAP.ecm: New file.
+	
+	* cdl/hal_arm_xscale_iq80321.cdl: Support alternate memory map.
+	* include/hal_platform_extras.h: Ditto.
+	* include/iq80321.h: Define alternate SDRAM virtual base.
+	* include/plf_io.h: Support alternative PCI window virtual addresses.
+
+	* include/hal_plf_ints.h: Remove HAL_PLATFORM_RESET.
+
+2002-01-22  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_ROM.ecm: Add ethernet and min flash image size.
+	* misc/redboot_RAM.ecm: Add ethernet and min flash image size.
+
+2002-01-21  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_plf_ints.h: Rename CYGNUM_HAL_INTERRUPT_82544 to
+	CYGNUM_HAL_INTERRUPT_ETHERNET. 
+
+	* cdl/hal_arm_xscale_iq80321.cdl: Add iq80321_pci.c to compile list.
+	Use plf_io.h as CYGBLD_HAL_PLATFORM_IO_H.
+
+	* include/plf_io.h: New file. IQ80321 IO macros.
+
+	* src/iq80321_pci.c: New file. IQ80321 PCI-X support.
+
+	* include/iq80321.h (REG_DISPLAY): New ASM macro to display register
+	contents on LEDs.
+	(SDRAM_DEVID): New define. I2C address for SDRAM module.
+
+	* include/pkgconf/mlt_arm_xscale_iq80321_rom.ldi: Add mmu_tables.
+
+	* include/hal_platform_extras.h: Put MMU table in .mmu_tables section.
+
+	* include/hal_platform_setup.h: Add runtime SDRAM sizing/config.
+
+2002-01-09  Mark Salter  <msalter@redhat.com>
+
+	* include/pkgconf/mlt*: Rearrange flash address and delete PCI window.
+
+	* include/hal_platform_setup.h: Use uncached access to scrub RAM.
+	Cached access should work, so this may indicate a potential bug.
+
+	* include/iq80321.h: Move cache flush and flash base.
+
+	* include/hal_platform_extras.h: Page table rearrangement.
+	
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

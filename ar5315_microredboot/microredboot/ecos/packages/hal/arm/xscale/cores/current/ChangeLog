@@ -1,0 +1,75 @@
+2004-09-23  Knud Woehler  <knud.woehler@microplex.de>
+
+	* include/hal_cache.h (HAL_DCACHE_ENABLE): Typo fixed.
+
+2004-09-02  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_xscale.h: Add CYGARC_HAL_MMU_OFF_X.
+	* include/hal_mm.h: Add some convenience macros.
+
+2003-02-04  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_core.cdl (CYGSEM_HAL_ARM_XSCALE_BTB): New option.
+
+	* include/hal_xscale.h: Make enabling of BTB conditional on 
+	CYGSEM_HAL_ARM_XSCALE_BTB.
+
+	* include/hal_cache.h: Support systems using write-through caching
+	which need no DCACHE_FLUSH_AREA.
+
+2002-11-13  Mark Salter  <msalter@redhat.com>
+
+	* src/xscale_stub.c (find_watch_address): Squelch compiler warning.
+
+2002-10-01  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/hal_cache.h: SA11X0 -> XScale
+
+2002-09-23  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_cache.h: Remove mmap-related externs which don't belong
+	here.
+
+2002-09-20  Mark Salter  <msalter@redhat.com>
+
+	* src/xscale_stub.c: Fill in holes in logic used to decide which
+	of two watchpoints caused exception.
+
+2002-09-19  Mark Salter  <msalter@redhat.com>
+
+	* Initial checkin.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

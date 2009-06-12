@@ -1,0 +1,4581 @@
+2004-09-24  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/sched/mlqueue.cxx (enqueue): Fix bug in sorted queue
+	insertion: priority test was inverted. Spotted by TomChen.
+
+2004-08-08  Bart Veer  <bartv@ecoscentric.com>
+
+	* cdl/counters.cdl: add new option for the clock interrupt
+	priority.
+
+	* src/common/clock.cxx (Cyg_RealTimeClock): use this option.
+
+2004-04-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/fptest.c (do_test): Silence aliasing warning when breaking
+	doubles into two ints.
+
+2004-04-11  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* doc/kernel.sgml: Expanded the documentation about the use of
+	CYG_FLAG_WAITMODE_CLR.
+
+2004-03-27  Sebastien Couret	<sebastien.couret@elios-informatique.fr>
+
+	* src/debug/dbg-thread-demux.c (dbg_thread_syscall_rmt): Only
+	needed if CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT is enabled.
+
+2004-03-12  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/kapi.h: Add throw specifications throughout.
+	* src/kapi.cxx: Ditto.
+	* include/sched.inl: Move include of thread.inl further down to
+	allow Cyg_Scheduler inlines to be defined first.
+	* include/thread.inl: Reorder destructors section and include
+	sched.inl right before it to solve mutual header dependency
+	problems.
+
+2004-03-04  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/kernel.sgml: Document cyg_thread_delete return value.
+
+2004-02-19  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/kmutex3.c (cyg_start): Use CYG_TEST_NA.
+	* tests/kmutex4.c (cyg_start): Ditto.
+	* tests/mutex2.cxx (cyg_start): Ditto.
+	* tests/mutex3.cxx (cyg_start): Ditto.
+	* tests/sync3.cxx (cyg_start): Ditto.
+	* tests/thread2.cxx (cyg_start): Ditto.
+
+	* tests/fptest.c (cyg_start): Use one line NA msg.
+	* tests/smp.cxx (cyg_start): Ditto.
+	* tests/timeslice.c (cyg_start): Ditto.
+	* tests/tm_basic.cxx (cyg_start): Ditto.
+
+2003-12-08  Dan Jakubiec  <djakubiec@yahoo.com>
+
+	* src/common/kapi.cxx: Added new function cyg_thread_get_id().
+	This function returns the unique thread ID for a given thread
+	handle.
+
+	* include/kapi.h: Added function prototype for cyg_thread_get_id().
+
+	* doc/kernel.sgml: Added documentation for cyg_thread_get_id().
+
+2003-10-13  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/common/clock.cxx (Cyg_Counter::tick): Changed code to deal
+	with manipulation of unsorted lists (see ChangeLogs passim). There
+	are several corner cases where the current code does not
+	work. Replaced with a more straightforward, but slightly more
+	expensive, implementation.
+
+2003-09-22  Reinhard Jessich  <Reinhard.Jessich@frequentis.com>
+
+	* src/common/clock.cxx: Removed	label/goto
+	add_alarm_unlock_return to get rid of compiler error when
+	CYGIMP_KERNEL_COUNTERS_SORT_LIST is enabled.
+
+2003-09-01  Bart Veer  <bartv@ecoscentric.com>
+
+	* doc/kernel.sgml: fix typo, cyg_thread vs. cyg_thread_t
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/counters.cdl: Removed the counters override CDL
+	options. These are no longer very useful, since too much
+	non-kernel code now uses the HAL options to get these values.
+
+2003-07-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/common/clock.cxx (Cyg_Counter::tick): In unsorted list case:
+	moved saving of next node details to before re-insertion of alarms
+	with intervals. The call to add_alarm() can make enough of a
+	difference to the list to need to force a rescan.
+
+2003-07-06  Bart Veer  <bartv@ecoscentric.com>
+
+	* include/test/stackmon.h (cyg_test_size_a_stack):
+	If stack checking is enabled, look for 0xdeadbeef rather than 0x0
+	to determine usage. Also reset the interrupt stack to that value.
+
+2003-07-02  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/kernel.sgml: Document that timeouts for timed functions are
+	absolute, not relative. Also document new semantics for
+	cyg_semaphore_timed_wait() for timeouts in the past.
+
+2003-07-01  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/clock.hxx: Made Cyg_Counter::add_alarm() and
+	Cyg_Counter::rem_alarm() private functions. They no longer lock
+	the scheduler, so should not be called directly, only via the
+	Cyg_Alarm functions.
+
+	* include/clock.inl: Removed inline version of
+	Cyg_Alarm::disable(). It's no longer a one-liner and is thus
+	better as a proper function.
+
+	* src/common/clock.cxx (Cyg_Counter::tick): Rewrote the unsorted
+	list option. If the function of one alarm adds or removes other
+	alarms, then is was possible for the list to become corrupted. The
+	new implementation attempts to avoid this problem.
+	(Cyg_Alarm::initialize): Added scheduler locking to protect the
+	enabled flag.
+	(Cyg_Alarm::enable): Ditto.
+	(Cyg_Alarm::disable): Ditto. Moved here from clock.inl.
+	(Cyg_Alarm::add_alarm): Removed scheduler locking, it is now
+	always called from functions that have already locked it. Added an
+	assertion to double-check this.
+	(Cyg_Alarm::rem_alarm): Ditto.
+
+	* cdl/kernel.cdl:
+	* tests/kalarm0.c:
+	Added new test to test that alarms can be added and removed in
+	alarm functions safely.
+	
+2003-06-25  Thomas Binder  <Thomas.Binder@frequentis.com>
+
+	* src/common/clock.cxx (Cyg_Counter::rem_alarm): Bugfix: call
+	Cyg_Scheduler::lock() before calculation of index into alarm_list
+	array to avoid race condition with multi list counters.
+
+2003-06-06  David Brennan  <eCos@brennanhome.com>
+2003-06-23  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/kernel.cdl: Added tests/bin_sem3 to list of kernel tests.
+
+	* include/sema.hxx: Added declaration for wait with timeout for
+        Cyg_Binary_Semaphore.
+	
+	* include/instrmnt.h: Added instrumentation point for binary semaphore
+        timeout.
+	
+        * src/sync/bin_sem.cxx: Added wait with time-out function to 
+        Cyg_Binary_Semaphore class. 
+
+	* src/sync/cnt_sem.cxx: Modified semantics slightly to claim an
+	available semaphore even with a timeout in the past. This is in
+	line with the new timed wait in bin_sem.cxx. 
+
+	* tests/bin_sem3.cxx: Created new test for timed wait binary
+        semaphore.
+		
+2003-05-20  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/common/kapi.cxx (cyg_thread_get_next): Passing a *current
+	pointer as NULL if how you start the walk of the linked list. So
+	don't assert on NULL. Reported by Daniel Lidsten.
+
+2003-05-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/tm_basic.cxx: Support new option controlling number of times
+	this test runs.  This is useful for long-term stress and performance
+	analysis.
+
+2003-05-03  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/mqueue.inl (Cyg_Mqueue::get): Fix invalid loop termination
+	cheque for whether busy or not.
+	(Cyg_Mqueue::put): Ditto.
+
+2003-03-03  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/fptest.c: Make all variables static to avoid any risk
+	of collisions with symbols defined elsewhere in eCos.
+
+2003-02-27  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/kapidata.h: Revert change of 2001-08-23 and instead make
+	it conditional on the GCC version. Also add comments explaining why
+	this file has been apparently obfuscated.
+
+2003-02-25  Nick Garnett  <nickg@calivar.com>
+
+	* tests/fptest.c (alarm_fn): Added CYG_TEST_PASS() call to keep
+	configtool happy.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/kernel.cdl: Update doc links.
+	* cdl/synch.cdl: Ditto.
+	* cdl/thread.cdl: Ditto.
+
+2003-02-19  Nick Garnett  <nickg@calivar.com>
+
+	* tests/fptest.c: Changed to run for a constant time rather than a
+	constant number of iterations, with a shorter run time for
+	simulated targets.
+
+2003-02-10  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/thread.inl: Add more debug info to thread stack checking.
+
+	* tests/clocktruth.cxx: 
+	* tests/clockcnv.cxx: Use <cyg/infra/diag.h> for diag_printf()
+	prototype, rather than hard coding (because it was inconsistent).
+
+2003-02-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/kcache2.c (test_dcache_operation): New test to verify
+	that the DATA cache syncs properly.
+
+2003-01-31  Nick Garnett  <nickg@calivar.com>
+
+	* cdl/kernel.cdl: 
+	* tests/fptest.c: Added this program to test interaction of FPU
+	with multiple threads.
+
+2003-01-30  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/common/thread.cxx: Fix potential warning and overflow with
+	CYGNUM_KERNEL_THREADS_DATA_MAX == 32.
+
+2003-01-28  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/common/kapi.cxx (cyg_thread_get_next): Be quite zealous about
+	checking the validity of passed in threads in debug mode.
+	(cyg_thread_get_info): Ditto.
+
+	* cdl/thread.cdl: Correct max legal value for
+	CYGNUM_KERNEL_THREADS_DATA_MAX.
+
+2003-01-22  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/kernel.sgml: Document cyg_thread_info type.
+
+2003-01-13  Dmitriy Korovkin  <dkorovkin@rambler.ru>
+2003-01-13  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/mqueue.hxx: Allow get/put to return time out.
+	* include mqueue.inl: Ditto.
+
+2003-01-02  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/kcache2.c: New subtest for raw data cache operations.
+
+2002-12-12  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/common/kapi.cxx: 
+	* include/kapi.h:
+	Added function cyg_thread_get_next(), cyg_thread_find() and
+	cyg_thread_get_info() to allow the current set of threads to be
+	enumerated, and per-thread information to be retrieved safely.
+
+	* doc/kernel.sgml: Documented new KAPI calls.
+
+	* src/common/thread.cxx: Zero unique_id in thread destructor so
+	that a stale thread pointer can be checked for validity.
+
+	* include/instrmnt.h:
+	Added cyg_instrument_state() to report the current state of an
+	instrumentation flag.
+	Moved ifdef for CYGDBG_KERNEL_INSTRUMENT_MSGS out of within FLAGS
+	ifdef. We can have messages without flags.
+
+	* src/instrmnt/meminst.cxx: 
+	Added cyg_instrument_state() to report the current state of an
+	instrumentation flag.
+	Modified cyg_instrument_msg() in line with header and table
+	changes.
+
+	* host/instr/dump_instr.c:
+	* host/instr/instrument.sh:
+	* include/instrument_desc.h: 
+	Added a final NULL element to the generated table in
+	instrument_desc.h to mark its end. Otherwise code that does not
+	have access to the table definition cannot find its end. Also
+	added ifdefs to allow instrument_desc.h to be used to acquire the
+	structure definition and table pointer.
+
+2002-12-03  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* tests/tm_basic.cxx: Add tests of 'flag' synchronizers.
+
+2002-10-28  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* tests/tm_basic.cxx: Include infra/diag.h and removed the 
+	incorrect prototype for diag_printf
+
+2002-10-16  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/test/stackmon.h (STACKMON_PRINTF): Use #include to get
+	prototype for 'diag_printf()'.
+
+2002-10-01  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/common/clock.cxx (add_alarm): Tweak last change to allow
+	alarm order for identical alarms to be the same as it used to be.
+
+2002-09-30  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/common/clock.cxx (add_alarm): Fix bug resulting in alarms
+	not being added at all if a lower triggered alarm already exists.
+	Reported by Christoph Csebits.
+	Also fix bug when alarm is entered for the same time as tail.
+	These bugs only apply for CYGIMP_KERNEL_COUNTERS_SORT_LIST enabled.
+
+	* doc/kernel.sgml: document that order of callback for alarms at
+	identical times is unspecified.
+
+2002-08-08  Nick Garnett  <nickg@calivar.demon.co.uk>
+
+	* src/sched/sched.cxx (unlock_inner): Removed initial
+	assertion. This has served its purpose and with the introduction
+	of routines such as unlock_reschedule() is prone to firing in
+	otherwise benign circumstances.
+
+2002-08-05  Bart Veer  <bartv@tymora.demon.co.uk>
+
+	* cdl/kernel.cdl, include/kapidata.h, include/kapi.h:
+	Allow configurations with the kernel but no malloc
+
+2002-06-05  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/kapi.h: Fix prototype (to allow builds with net stack).
+
+2002-05-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/kernel.cdl: Fix typo.
+
+2002-05-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/kapi.h: Expose new cyg_thread_add_destructor and
+	cyg_thread_rem_destructor APIs.
+
+	* include/kapidata.h (struct Cyg_Destructor_Entry):
+	Change CYG_ADDRWORD to more correct cyg_addrword_t.
+
+	* include/thread.hxx (class Cyg_Thread): add_destructor and
+	rem_destructor are onyl static when not per-thread.
+
+	* include/thread.inl (add_destructor): Don't need to lock and unlock
+	scheduler when destructors are per-thread.
+	(rem_destructor): Ditto.
+
+	* src/common/thread.cxx (exit): No need to lock scheduler when
+	calling destructors.
+
+	* doc/kernel.sgml: Document thread destructor API.
+
+2002-05-23  Nick Garnett  <nickg@redhat.com>
+
+	* doc/kernel.sgml: Some more edits to the kernel documentation:
+	changed all references to message boxes to mail boxes, clarified
+	some thing in various places, fixed a few typos.
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/kernel.cdl: Cleaned up kernel tests rule. Also remove tests
+	depending on the C API when its not present. And skip dhrystone
+	test when debug or instrumentation is enabled.
+
+	* tests/tm_basic.cxx: Fixed warning.
+
+2002-05-22  Nick Garnett  <nickg@redhat.com>
+
+	* doc/kernel.sgml:
+	Fixed up SMP documentation.
+	Rewrote condtion variable documentation to make its relationship
+	to mutexes more apparent.
+
+2002-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* tests/smp.cxx: Move inclusion of testaux.hxx to below NA
+	checks.
+
+2002-05-21  Bart Veer  <bartv@redhat.com>
+
+	* doc/kernel.sgml:
+	Major update to the kernel documentation.
+
+2002-05-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/common/clock.cxx (dsr): Fix latency ifdef guards.
+	* tests/tm_basic.cxx: Same.
+
+2002-05-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/sched/mlqueue.cxx: Don't force timeslice tracing on by default
+	against	the user's wishes.
+	* cdl/scheduler.cdl: Instead provide an option controlling it.
+
+2002-05-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/kapidata.h (CYG_HARDWARETHREAD_MEMBERS): entry_point
+	should be a pointer to function not an addrword (which may be
+	different).
+	(cyg_reason_t): Define cyg_reason_t as an enum not an int.
+	(struct cyg_mutex_t): Define mutex protocol as an enum not a cyg_uint32.
+	Define locked member as a cyg_atomic, not a cyg_bool.
+
+2002-05-09  Nick Garnett  <nickg@redhat.com>
+
+	* tests/timeslice.c: Modified test thread to accumulate run time
+	by reading HAL clock, and to detect and record changes of CPU. The
+	previous version of this code reported varying results - probably
+	as a consequence of cache effects.
+
+	* include/instrmnt.h: Fixed left-over debug edit to MLQ
+	instrumentation enable code.
+
+2002-04-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/kapi.h: Added cyg_alarm_get_times and
+	cyg_counter_multi_tick.
+	* src/common/kapi.cxx: Same. Er, fix oversight.
+	* doc/kernel.sgml: Doc update.
+
+2002-04-24  Yoshinori Sato  <qzb04471@nifty.ne.jp>
+
+	* src/sync/flag.cxx: Don't set default args in func definitions.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dhrystone.c: Moved platform max number of passes to CDL in
+	HALs.
+
+2002-04-23  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dhrystone.c: Allow platform to define max number of passes
+	via CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES.
+
+2002-04-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/kapi.h: Use NORET attributes from cyg_type.h.
+	* include/sched.hxx (class Cyg_Scheduler): Ditto.
+
+2002-04-08  Nick Garnett  <nickg@redhat.com>
+
+	* src/sync/mutex.cxx: Added IF_PROTOCOL_ACTIVE macro to condition
+	use of the mutex counter. This means that a mutex that is not
+	configured to participate in a priority inversion protocol does not
+	count for operation of that protocol. 
+
+2002-03-04  Lars Viklund <lars.viklund@axis.com>
+
+	* include/kapidata.h (CYG_SCHEDTHREAD_ASR_MEMBER): 
+	asr_inhibit is cyg_ucount32 - must match
+
+2002-02-13  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/kernel.sgml: NEW FILE: Correct reference to uITRON doc.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kexcept1.c: Fix warning.
+
+2002-01-24  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kcache1.c (time0DI): Disable interrupts around the
+	sync+invalidate process.
+	* tests/kcache2.c: Same.
+
+2002-01-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/intr/intr.cxx (mask_interrupt): Disable interrupts.
+	(unmask_interrupt): Ditto.
+	(mask_interrupt_intunsafe): New function to avoid disabled interrupts.
+	(unmask_interrupt_intunsafe): Ditto.
+	* include/intr.hxx (class Cyg_Interrupt): Declare above new funcs.
+	* src/common/kapi.cxx (cyg_interrupt_unmask_intunsafe): Above
+	replicated to KAPI.
+	(cyg_interrupt_mask_intunsafe): Ditto.
+	* include/kapi.h: Ditto.
+
+2002-01-07  Nick Garnett  <nickg@redhat.com>
+
+	* tests/except1.cxx: 
+	* tests/kexcept1.cxx:
+	Added ifdef to disable these tests in ARM PID platform. This
+	platform cannot generate any of the exceptions that this test
+	needs to work.
+
+2001-12-12  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kcache2.c (time_ilock): Put some dummy goto statements in
+	to prevent compiler from moving labels around.
+
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/sched/mlqueue.cxx (timeslice_cpu): Reset timeslice_count on
+	a timeslice.
+	Noticed by Tony Kho.
+
+2001-11-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/klock.c (entry1): Support running with
+	CYGFUN_KERNEL_THREADS_TIMER disabled.
+
+2001-10-30  Nick Garnett  <nickg@redhat.com>
+
+	* tests/kcache2.c (test_dsync):
+	Added call to HAL_ICACHE_INVALIDATE_ALL() just before DCACHE
+	disable. In platforms where both caches are controlled together,
+	such as the VR4300, not doing this can result in strange behaviour
+	as the ICACHE gets turned off under the program's feet, when it is
+	not ready for it.
+
+2001-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dhrystone.c: CYGINT_ISO_STRING_STRFUNCS check changed to
+	ifdef.
+
+2001-10-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/synch.cdl (CYGIMP_KERNEL_SYNCH_MQUEUE_NOT_INLINE): New option
+	to avoid inlining mqueue implementation.
+
+	* src/sync/mqueue.cxx: New file to provide non-inline version of
+	mqueue functions.
+
+	* include/mqueue.hxx: Don't include .inl if user doesn't want inlining.
+
+	* include/mqueue.inl: Allow choice of inlining or not to be
+	overridden by macro.
+
+	* tests/mqueue1.cxx: Never use inline version.
+
+2001-10-11  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kmutex3.c (new_thread): Fixed allocation: increase counter
+	before starting threads which have been allocated resources.
+	* tests/kmutex4.c (new_thread): Same.
+	* tests/mutex3.cxx (new_thread): Same.
+	* tests/testaux.hxx (new_thread): Same.
+
+	* tests/kcache2.c: Fixed warning.
+	* tests/stress_threads.c: Same.
+
+2001-09-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* host/instr/dump_instr.c (main): Fix argc check.
+
+2001-09-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/thread.inl (measure_stack_usage): Deal with stack limits.
+
+2001-09-07  Nick Garnett  <nickg@redhat.com>
+
+	* src/common/thread.cxx (set_priority): Change argument to
+	instrumentation call to new_priority rather than current
+	priority. (Suggested by Andrew Lunn).
+
+2001-09-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/mqueue.inl (Cyg_Mqueue): Initialize busy flag of last
+	entry in the list.
+
+2001-09-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/instrument.cdl (CYGDBG_KERNEL_INSTRUMENT_BUILD_HOST_DUMP): 
+	Remove redundant requires, and adjust make rule to be more portable
+	across hosts.
+	(CYGDBG_KERNEL_INSTRUMENT_MSGS_BUILD_HEADERFILE):
+	Invoke script with sh directly rather than rely on executable attribute.
+
+	* host/instr/readme.txt: Update build of host dump as per the changed
+	CDL.
+
+	* cdl/kernel.cdl: Don't build nullinst.cxx any more.
+	Build meminst.cxx only in CYGPKG_KERNEL_INSTRUMENT.
+	* src/instrmnt/nullinst.cxx: Delete. It causes confusion in the
+	library as it declares cyg_instrument like meminst.cxx does.
+
+2001-08-31  Nick Garnett  <nickg@redhat.com>
+
+	* src/intr/intr.cxx: Clean up typo in DSR table
+	case. dsr_table_tail and dsr_table_head were not being subscripted
+	in a couple of places.
+
+2001-08-23  Hugo Tyson  <hmt@redhat.com>
+2001-08-20  Andrew Lunn <andrew.lunn@ascom.ch>
+
+	* include/instrument_desc.h: New file.  This contains the table of
+	events used to print the nice information.  It should be
+	regenerated when the instrumentation numbers change.
+
+	* src/instrmnt/meminst.cxx (cyg_instrument_msg):
+	returns an ASCII string describing the type of event the
+	instrumentation code logged.
+
+	* include/instrmnt.h: Added function prototype.
+
+	* cdl/instrument.cdl: Configury for enabling the new function, and
+	optionally rebuilding its header file and building a host tool.
+
+	* host/instr/dump_instr.c: New file.  A host program to print the
+	instrumentation information in a human readable form.
+
+	* host/instr/instrument.sh: New file.  Script to generate table of
+	events with textual representation.
+
+	* host/instr/readme.txt: New file.  Helpful information.
+
+2001-08-23  Nick Garnett  <nickg@redhat.com>
+
+	* include/kapidata.h (CYG_THREADTIMER_MEMBERS):
+	Substituted an expicit cyg_alarm object for CYG_ALARM_MEMBERS in
+	this definition. In some architectures (MIPS in particular) the
+	structures need to be padded to a multiple of 64 bits. This was
+	not happening with the macro substituted versions.
+	This is just a temporary fix, I'll leave it to Jifl to sort out a
+	real patch when he returns.
+
+2001-08-23  Hugo Tyson  <hmt@redhat.com>
+
+	* src/common/thread.cxx: Properly qualify Cyg_Thread::destructors
+	array so that it builds when destructors are not used.
+
+2001-08-23  Nick Garnett  <nickg@redhat.com>
+
+	* src/sched/mlqueue.cxx: Added code to
+	Cyg_SchedThread_Implementation::to_queue_head() to handle a NULL
+	thread queue pointer. This compensates for a minor change in
+	behaviour of the scheduler.
+
+2001-08-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/thread.cdl: Add kernel thread destructor options.
+	* include/kapidata.h: Add thread destructor entries to cyg_thread
+	* include/thread.hxx (Cyg_Thread): Give per-thread data indexes
+	their own type, cyg_data_index.
+	Include new thread destructor data members, and new add_destructor
+	and rem_destructor member functions.
+	* include/thread.inl: Use a cyg_data_index for per-thread data handle.
+	(add_destructor): New Cyg_Thread member function.
+	(rem_destructor): Ditto.
+	* src/common/kapi.cxx: Use cyg_data_index type for per-thread data
+	functions.
+	* src/common/thread.cxx (Cyg_Thread): initialise per-thread
+	destructors if needed.
+	Define static destructors if needed.
+	(exit): Call destructors.
+	(new_data_index): Use cyg_data_index type.
+	(free_data_index): Ditto.
+
+2001-08-22  Hugo Tyson  <hmt@redhat.com>
+  
+	* src/sync/mutex.cxx (Cyg_Mutex): Add initialization of the
+	priority ceiling value in the non-dynamic protocol case.
+
+2001-08-22  Nick Garnett  <nickg@redhat.com>
+
+	* tests/intr0.c: 
+	* tests/kintr0.c:
+	Swapped order of interrupt enable/disable calls to keep kernel
+	happy when assertions are enabled. Otherwise the enable call
+	complains that interrupts have not been disabled.
+
+	* src/sched/mlqueue.cxx:
+	Simplified algorithm in set_need_reschedule().
+
+	* include/smp.hxx: 
+	* include/kapidata.h: Change spinlock to be a cyg_uint32, rather
+	than a cyg_atomic.
+
+	* src/intr/intr.cxx: 
+	* include/intr.hxx:
+	Now arrange for DSRs to be called on the same CPU as the ISR. This
+	is necessary if the DSR needs to access per-CPU hardware (such as
+	interrupt controllers). This is achieved by keeping a separate DSR
+	list/table for each CPU.
+
+	* tests/smp.cxx: Some modifications to make this test work in a
+	real SMP environment.
+
+	* tests/timeslice.c: 
+	* cdl/kernel.cdl: Added timeslice test.
+
+2001-08-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sync/mutex.cxx (lock): Bugfix: a ceiling priority mutex
+	wasn't elevated until after it had acquired the mutex.  This meant
+	it slept with a low priority, and so did not run when awakened by
+	the release of the mutex.  The fix is to elevate the potential
+	claimant before it sleeps in contention. 
+
+	* tests/kmutex4.c: New testcase - very similar to kmutex3 but it
+	loops a load more times using different mutex priority protocols.
+	This checks that dynamically set protos do in fact behave
+	differently from one another and as they are each intended to.
+
+	* tests/kmutex3.c: Remove FIXME comments - we now test dynamic
+	protocol.
+
+	* cdl/kernel.cdl: Build the new test.
+
+2001-08-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/kapidata.h: Reorganize most struct type definitions into
+	macros to allow compatible layout with all G++ implementations that
+	align non-POD types differently from included C structures.
+	* include/kapi.h: Similarly for cyg_resolution_t.
+
+2001-08-17  Nick Garnett  <nickg@redhat.com>
+
+	* src/sched/mlqueue.cxx (timeslice): Fix timeslice_count comparison.
+
+2001-08-16  Hugo Tyson  <hmt@redhat.com>
+
+	* include/kapi.h (cyg_mutex_protocol): Tidy up names of mutex
+	protocol type and values.  These polluted rather in 'C'.
+
+	* src/common/kapi.cxx (cyg_mutex_set_protocol): ditto.
+
+2001-08-15  Hugo Tyson  <hmt@redhat.com>
+2001-08-15  Andrew Lunn <andrew.lunn@ascom.ch>
+
+	* src/common/kapi.c (cyg_thread_get_current_priority): Export
+	this function into the C api.
+	* include/kapi.h: Declaration of new function.
+
+2001-08-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/common/kapi.cxx (cyg_spinlock_spin_intsave): Cast to istate
+	to CYG_INTERRUPT_STATE * since that's what is needed.
+	(cyg_spinlock_clear_intsave): Similarly.
+
+2001-08-10  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/synch.cdl: Re-organize the options for mutexes so they are
+	active a bit more sensibly; place the default ceiling within
+	selection of ceiling protocol, and only have a default protocol if
+	there is more than one protocol active.
+
+	* tests/mutex3.cxx: More detailed handling of the possibility of
+	ceiling protocol instead of the inherit or none cases; we can run
+	the test ok and treat as inherit if the ceiling prio is higher
+	than 5, treat as none if lower than 15, and don't check anything
+	if in between - the test runs happily.
+
+	* tests/kmutex3.c (cyg_start): New test, a KAPI translation of the
+	now-classic mutex3.cxx.
+
+	* cdl/kernel.cdl: Build tests/kmutex3.c
+
+2001-08-06  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sched/sched.cxx (unlock_inner): Fix assignment to current,
+	wouldn't build if stack checking after merger from SMP branch.
+
+2001-08-06  Andrew Lunn   <andrew.lunn@ascom.ch>
+2001-08-06  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sync/mutex.cxx: (set_protocol) Added a function to set the
+	priority inversion protocol for a mutex.
+
+	* src/common/kapi.cxx: Export the new function above and
+	set_ceiling into the C API.
+	
+	* include/mutex.hxx (class Cyg_Mutex): New member function
+	set_protocol().
+
+	* include/kapi.h (cyg_protcol): Define new emumeration for mutex
+	priority protocol setting, and headers for the new function to set
+	it.
+
+2001-08-03  Nick Garnett  <nickg@redhat.com>
+
+	Imported from a development branch:
+	
+	2001-07-11  Nick Garnett  <nickg@redhat.com>
+
+		* src/sched/mlqueue.cxx: Changed behaviour of
+		set_need_reschedule() to a better implementation of the intended
+		algorithm.
+
+		* include/kapi.h: 
+		* src/common/kapi.cxx:
+		Added API for controlling routing of interrupts to CPUs in SMP
+		configurations.
+
+	2001-07-03  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* cdl/scheduler.cdl:
+		* include/bitmap.hxx:
+		* src/sched/bitmap.cxx:
+		Fixed up bitmap scheduler so it still works within the
+		SMP-modified scheduling infrastructure. The bitmap scheduler
+		is not currently SMP-enabled, only single CPU configurations are
+		supported - hence the CDL change to require this.
+
+	2001-06-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* src/sched/sched.cxx:
+		Removed the call to Cyg_Interrupt::enable_interrupts() in
+		Cyg_Scheduler::start_cpu(). This was a relic from the days when
+		the interrupt enable state was not part of the thread state. Now
+		it is, and loading the first thread will cause interrupts to be
+		enabled.
+
+		* src/intr/intr.cxx:
+		Changed initial values of Cyg_Interrupt::disable_counter[]s to
+		zero as a result of the change in Cyg_Scheduler::start_cpu().
+
+		* include/kapi.h:
+		* include/kapidata.h:
+		* src/common/kapi.cxx: 
+		Added API for using spinlocks. Largely so that it may be extended
+		to the driver API.
+
+		* include/mlqueue.hxx:
+		* include/intr.hxx:
+		* include/sched.hxx:
+		Added annotations to various static variables.
+
+	2001-06-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* include/intr.hxx:
+		* src/intr/intr.cxx:
+		Changed behaviour of Cyg_Interrupt::disable_interrupts() and
+		Cyg_Interrupt::enable_interrupts(). These now claim and release a
+		spinlock in addition to disabling and enabling interrupts. The
+		original interrupt state is also preserved and restored. This is
+		necessary in SMP systems to allow drivers etc. to correctly
+		synchronize with threads and DSRs that may be running on different
+		CPUs. In the single CPU case this mechanism reduces to the
+		original simple interrupt disable code.
+		[Later change] Backed off addition of volatile modifier to
+		interrupt_disable_state.
+
+		* include/smp.hxx: Some minor tidies.
+
+	2001-06-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* tests/release.cxx: Added spin loop in thread1 to allow thread0
+		to execute its wait. This is necessary in SMP systems where the
+		threads will execute in parallel, but is also benign in single CPU
+		systems.
+
+		* tests/mutex2.cxx:
+		* tests/mutex3.cxx:
+		* tests/sync3.cxx: 
+		* tests/thread2.cxx: 
+		These tests depend on predicting the behaviour of threads at
+		different priorities to pass. In an SMP system, several threads
+		will run in parallel, and the execution order will not be as
+		expected. These tests are therefore disabled in SMP
+		configurations.
+
+		* src/sched/mlqueue.cxx (add_thread): Moved call to
+		set_need_reschedule() out of test for empty queue. In SMP systems,
+		any addition to a queue may require a reschedule on another CPU.
+
+	2001-06-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* include/mlqueue.hxx:
+		* src/sched/mlqueue.cxx:
+		A major change to the way in which this scheduler works in SMP
+		systems. The previous version removed all runnable threads from
+		the run queues when they were executing. This resulted in serious
+		complications and messy code, particularly when dealing with
+		priority changes and timeslicing. The new version keeps running
+		threads in the run queues, just like the single-CPU version. The
+		main disadvantage of this is that we may have to search past
+		threads running on other CPUs before we find one available to run
+		on this CPU. However, the pending count array and map mean that we
+		only need search one run queue, and in any case the search remains
+		bounded by the number of CPUs available.
+		Another change is in the way that timeslicing is handled. Now, the
+		CPU that takes the clock interrupt decrements the timeslice counts
+		for all CPUs and if any go zero, sends a TIMESLICE message to
+		that CPU.
+
+		* src/sched/sched.cxx (unlock_inner):
+		Removed call to requeue(), no longer needed as a result of
+		scheduler reorganization.
+
+		* src/common/thread.cxx:
+		Added test in Cyg_Thread::exit() to check that the thread has not
+		already been killed. This is only an issue if the thread is
+		calling exit() when it is kill()ed from another CPU. The test is
+		redundant in single-CPU systems, but it does no harm having it.
+		Added code to Cyg_Thread::set_priority() to check for reschedule
+		when another thread is being changed in priority.
+		Added call in idle thread constructor to scheduler to install the
+		idle thread as the default current thread for a CPU.
+
+		* include/smp.hxx:
+		Added CYG_KERNEL_CPU_TIMESLICE_INTERRUPT(), did some miscellaneous
+		tidying.
+
+		* include/instrmnt.h: Added SMP_RESCHED_SEND and SMP_RESCHED_RECV
+		events.
+
+		* cdl/kernel.cdl: Added smp test program.
+
+		* tests/smp.cxx: Added this program to test SMP functionality.
+
+	2001-06-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* src/sched/sched.cxx:
+		Removed code to set up initial current thread, this is now done
+		in the idle thread constructor.
+		Added code here to set up interrupts for SMP inter-processor
+		interrupts. This is not very tidy and may need to be
+		changed in the future.
+
+		* src/sched/mlqueue.cxx:
+		Added local set_need_reschedule() function to set the
+		need_reschedule flag on a suitable CPU.
+		Many more changes to cope with SMP systems.
+		NOTE: This code has all become somthing of a mess, it need to be
+		tidied up and the SMP-specific changes integrated better into the
+		code. Also, timesliceing currently only works on the CPU that
+		takes clock interrupts - this needs fixing.
+
+		* src/common/thread.cxx:
+		Moved assignment of initial current thread to here from sched.cxx.
+
+		* include/smp.hxx:
+		Changed CYG_KERNEL_CPU_INTERRUPT()
+		CYG_KERNEL_CPU_RESCHEDULE_INTERRUPT() since there may be other
+		interrupt types to worry about.
+		Added annotations to scheduler data items.
+
+		* include/sched.hxx:
+		Split set_current_thread() into two functions, the original works
+		only on the current CPU, the new one sets another CPU's current
+		thread. This latter function is only used to prime the current
+		threads during initialization.
+		Added second need_reschedule() function that takes a thread
+		argument. This is intended to be overridden by a scheduler
+		specific function that sets the need_reschedule flag if the
+		supplied thread is more deserving of CPU time that any current
+		thread.
+
+		* include/mlqueue.hxx:
+		Made cyg_scheduler_set_need_reschedule() a friend of
+		Cyg_Scheduler_Implementation class.
+		Added override set_need_reschedule() functions.
+
+		* include/kapidata.h: Added cpu field to cyg_thread structure when
+		in SMP systems.
+
+		* include/intr.hxx:
+		* src/intr/intr.cxx:
+		Added Cyg_Interrupt::set_cpu() and Cyg_Interrupt::get_cpu() for
+		SMP systems.
+
+		* include/instrmnt.h: Added events for INTR_GET_CPU and
+		INTR_SET_CPU.
+
+	2001-05-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+		The following changes were all imported from the SMP branch:
+
+		* tests/tm_basic.cxx:
+		Modified to work in SMP configuration - mostly at present by
+		ifdeffing out code I didn't want to fix.
+
+		* include/sched.hxx:
+		Moved scheduler lock operation into Cyg_Scheduler_SchedLock class.
+		Converted current_thread, need_reschedule, and thread_switches
+		into CPU indexed arrays. Added member functions to get and set
+		these indirectly.
+		Added start_cpu() to do per-CPU scheduler startup.
+
+		* include/sched.inl:
+		Converted scheduler lock/unlock functions to use new schedlock
+		class.
+
+		* src/sched/sched.cxx:
+		Changed in line with sched.hxx.
+		Added call to requeue() in unlock_inner() to restore current
+		thread to run queue if necessary.	
+		Moved most of scheduler startup to Cyg_Scheduler::start_cpu().
+		Cyg_Scheduler::start() now also starts secondary CPUs in SMP
+		systems.
+		Added cyg_kernel_smp_startup() as entry point from HAL into kernel
+		for secondary CPUs.
+
+		* include/mlqueue.hxx:
+		Added Cyg_RunQueue type and removed
+		Cyg_SchedulerThreadQueue_Implementation type.
+		Converted timeslice_count to CPU indexed array.
+		Added requeue() member function to scheduler class.
+		Added cpu member to thread implementation class, to record
+		thread's current CPU.
+
+		* src/sched/mlqueue.cxx:
+		Changed behaviour when in SMP system to remove scheduled thread
+		from run queue and replace it when preempted.
+		Added some extra asserts, and removed some that are no longer true
+		in an SMP system.
+
+		* src/instrmnt/meminst.cxx: In SMP systems: added spinlock to
+		protect instrument buffer, added CPU Id in top 4 bits of thread Id
+		field.
+
+		* src/common/thread.cxx:
+		Converted to use accessor functions for need_reschedule and
+		current_thread.
+		Rearranged idle thread creation to create one for each CPU.
+
+		* include/test/stackmon.h: Extended to handle stack usage for
+		multiple idle threads.
+
+		* include/thread.inl:
+		Added some extra instrumentation.
+
+		* include/smp.hxx:
+		Added this file to contain all kernel SMP support. The main
+		definitions exported by this file are spin lock and scheduler lock
+		implementation classes, for both SMP and uniprocessor
+		configurations.
+
+		* src/intr/intr.cxx: 
+		* include/intr.hxx:
+		Converted interrupt disable counter to CPU indexed array. In
+		intr.cxx: added lock of scheduler lock in interrupt_end() rather
+		than in default interrupt VSR.
+
+		* cdl/kernel.cdl: Added option to enable SMP support.
+
+		* include/instrmnt.h: 
+		* cdl/instrument.cdl: Added SMP instrumentation.
+
+	2001-05-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* include/intr.hxx:
+		* src/intr/intr.cxx: 
+		Added default definition of CYGNUM_HAL_ISR_TABLE_SIZE. This is now
+		used to declare the chain table so that architectures which have
+		different sizes for the interrupt table and vector count will work
+		correctly.
+
+	2001-05-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* include/sched.hxx (class Cyg_Scheduler_Base):
+		Added annotation to sched_lock.
+
+		* cdl/instrument.cdl:
+		Rename CYGNUM_KERNEL_INSTRUMENT_BUFFER_WRAP to
+		CYGDBG_KERNEL_INSTRUMENT_BUFFER_WRAP as it appears in the code.
+
+2001-07-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/intr/intr.cxx (chain_isr): Return isr_ret so caller (which
+	may be an arbiter) can tell if the interrupt was handled.
+
+2001-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/common/clock.cxx (dsr): Fix problems mixing signed and
+	unsigned values.  Normally only generated warnings, but...
+
+2001-07-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/sched.inl (unlock_reschedule): Fix commenting.
+	* src/sched/sched.cxx: Improve description of unlock_inner().
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/common/thread.cxx (Cyg_Thread::Cyg_Thread): Initialize
+	wakeup_count
+
+2001-06-06  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/clocktruth.cxx: New file.  A test to get a sanity check on
+	whether the clock is accurate to wallclock time, only useful for
+	humans to watch really.  But important!
+
+2001-05-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/thread.hxx (class Cyg_HardwareThread): Remove unused
+	load_context() method.
+	* include/thread.inl: Ditto.
+
+2001-05-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/sched/bitmap.cxx (rem_thread): No need to set need_reschedule...
+	rescheduling will happen automatically when the state changes.
+
+	* src/sched/mlqueue.cxx (add_thread): No need to explicitly clear
+	thread->queue.
+
+2001-04-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/intr0.cxx: 
+	* tests/kintr0.c:
+	Fixed these two tests so that they work properly on architectures
+	where CYGNUM_HAL_ISR_MIN is not zero. These include the x86 and
+	V850.
+
+2001-04-18  Bart Veer  <bartv@redhat.com>
+
+	* tests/dhrystone.c:
+	Fix the conditional for STDIO_FORMATTED_IO
+
+2001-04-17  Bart Veer  <bartv@redhat.com>
+
+	* tests/stress_threads.c (setup_death_alarm):
+	Cope with synthetic target reorg
+
+	* tests/except1.cxx, tests/kexcept1.c:
+	Reenable for the synthetic target
+
+	* tests/tm_basic.cxx:
+	Reenable for the synthetic target
+
+2001-04-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/kernel.cdl: Do cache tests on E7T.
+
+2001-04-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/flag1.cxx: Apply same changes here as were applied to
+	kflag1 on 2000-07-17. This allows this test to run to completion
+	in slow targets, especially simulators.
+
+	* tests/stress_threads.c: Reduce run time even further in
+	simulator runs where instrumentation is enabled.
+
+2001-04-03  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dhrystone.c: Fix feature check.
+
+2001-03-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/kernel.cdl: Only need to compile dbg_gdb.cxx with
+	CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+
+	* src/debug/dbg_gdb.cxx: Add new dbg_thread_id() function.
+
+2001-02-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/thread.inl (attach_stack): Check for non-NULL stack base.
+
+2001-02-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/stress_threads.c: CYGINT_ISO_STDIO_FORMATTED_IO needs a
+	#ifdef not an #if.
+	* tests/dhrystone.c: Ditto.
+
+2001-02-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/kill.cxx: Increase delay for all targets, just in case some
+	are slow.
+
+2001-01-30  Hugo Tyson  <hmt@redhat.com>
+
+	* src/common/clock.cxx (rem_alarm): Must clear the enabled flag;
+	this disappeared in the changes to using clists of 2001-01-09.
+	Symptom was that an alarm, once disabled, could never be
+	re-attached to its counter because it claimed it already was.
+	Plus asserts with multiple disables - "bad counter object".
+
+2001-01-30  Hugo Tyson  <hmt@redhat.com>
+
+	* src/common/thread.cxx (reinitialize): Following change of
+	2000-12-05, if CYGFUN_KERNEL_THREADS_STACK_CHECKING, this was
+	using the stack_base/stack_size variables directly to reinitialize
+	the stack area.  This was wrong, and leaked store off the top and
+	bottom of the stacks because the "buffer zone" was carved off
+	repeatedly.  Fix is to use the published APIs which compensate.
+
+2001-01-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/mlqueue.hxx: 
+	* src/sched/mlqueue.cxx:
+	Restored Cyg_ThreadQueue_Implementation::remove() since it must
+	clear the thread's queue pointer, which the base clist class
+	remove() does not.
+
+2001-01-24  Jesper Skov  <jskov@redhat.com>
+
+	* src/sched/mlqueue.cxx (highpri): Fix trace call.
+
+2001-01-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/mlqueue.hxx:
+	* src/sched/mlqueue.cxx: 
+	Converted to use clist.hxx list implementation. The main effect of
+	this is to clean up the code and class definitions since much of
+	what was part of the thread queue and thread classes now moves to
+	the DNode and CList classes.
+
+	* include/clock.hxx:
+	* src/common/clock.cxx: 
+	Converted to use clist.hxx list implementation. This removes all
+	the explicit list manipulation code from the counter and alarm
+	classes, resulting in cleaner, easier to understand code.
+
+	* include/kapidata.h: Adjusted cyg_alarm struct to match Cyg_Alarm
+	using Cyg_DNode.
+	
+2000-12-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/thread.inl (check_stack): check word alignment with CYG_WORD
+	not cyg_uint32
+	Add extra stack checking for when stack limits are used.
+	(measure_stack_usage): New function to measure stack usage of the thread
+	(attach_stack): check word alignment with CYG_WORD not cyg_uint32
+	Initialize stack to preset value when measuring stack usage
+	(increment_stack_limit): Conditionalize here wrt 
+	CYGFUN_KERNEL_THREADS_STACK_CHECKING and use the version in thread.cxx
+	instead if CYGFUN_KERNEL_THREADS_STACK_CHECKING is defined.
+
+	* src/common/thread.cxx (exit): If verbose stack measurement enabled,
+	output stack usage
+	(increment_stack_limit): Add version of this method when
+	CYGFUN_KERNEL_THREADS_STACK_CHECKING *is* defined. This will add
+	padding above the stack limit as necessary.
+
+	* include/thread.hxx (class Cyg_HardwareThread): Add
+	measure_stack_usage() member
+
+	* cdl/thread.cdl (CYGFUN_KERNEL_THREADS_STACK_MEASUREMENT):
+	Add to implement stack usage measurement.
+
+	* include/kapi.h (cyg_thread_measure_stack_usage): New function
+	* src/common/kapi.cxx (cyg_thread_measure_stack_usage): New function
+
+2000-12-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/thread.cdl (CYGFUN_KERNEL_ALL_THREADS_STACK_CHECKING): 
+	Requires threads list, rather than active_if them so that
+	inference engine can do its thang.
+
+2000-12-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/debug/dbg-thread-demux.c: Add comment about the use of
+	DBG_SYSCALL_THREAD_VEC_NUM vs CYGNUM_CALL_IF_DBG_SYSCALL.
+
+2000-12-06  Hugo Tyson  <hmt@redhat.com>
+
+	* include/thread.inl (attach_stack): Additional assert check for
+	unsigned wrap of the stack size in subtracting the signature
+	areas' size.  Also round to whole words better.
+
+2000-12-05  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/thread.cdl (CYGFUN_KERNEL_THREADS_STACK_CHECKING): New
+	option, to control new stack check features.  Enabled by default,
+	but only active if CYGPKG_INFRA_DEBUG and CYGDBG_USE_ASSERTS
+	anyway, plus checking *all* threads is possible, but default off,
+	iff CYGVAR_KERNEL_THREADS_LIST.
+
+	* include/thread.hxx (class Cyg_HardwareThread): Define
+	check_stack() function.
+
+	* include/thread.inl (attach_stack): Add initialization of a
+	signature in the top and base of the stack, if so configured.
+	(check_stack): New function to check that signature for
+	correctness; minor re-ordering to permit more inlining.
+
+	* src/sched/sched.cxx (unlock_inner): Check departing and incoming
+	thread stacks if CYGFUN_KERNEL_THREADS_STACK_CHECKING.  Also, if
+	CYGFUN_KERNEL_ALL_THREADS_STACK_CHECKING, check all registered
+	thread stacks.  This is placed here to get executed every
+	clocktick and other interrupts that call DSRs, rather than messing
+	with interrupt_end() or the idle thread.
+
+2000-12-04  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/kcache2.c (entry0): Make this more robust against a
+	complete absence of useful caches.  Previous change was not
+	careful enough.
+
+2000-12-01  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/kernel.cdl: Build the kcache tests for SA11x0 family; they
+	were being omitted by default as part of ARM family.  They work on
+	SA1110, so this should be OK.  They're OK on EBSAs too.  See
+	associated fix to cache macros in SA11x0 and EBSSA HALs.
+
+	* tests/kcache2.c (entry0): Fix the test; the problem was it
+	assumed that a write to a previously unseen location would end up
+	in the cache.  It ain't so on StrongARMs.  Also make tests safe
+	wrt interrupts possibly perturbing the cache, add explicit tests
+	for HAL_DCACHE_INVALIDATE_ALL(), ...DISABLE() and ...SYNC(), and
+	improve the tests for cache line invalidate and store.
+
+2000-10-30  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/synch.cdl: Replaced CYGINT_KERNEL_SCHEDULER_CAN_YIELD with
+	CYGINT_KERNEL_SCHEDULER_UNIQUE_PRIORITIES.
+	* cdl/scheduler.cdl:
+	CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL requires
+	CYGINT_KERNEL_SCHEDULER_UNIQUE_PRIORITIES.
+
+	* tests/thread2.cxx: Use new option.
+	* tests/klock.c: Same.
+	* src/common/thread.cxx: Same.
+	* src/common/clock.cxx: Same.
+
+	* include/bitmap.hxx: Leave unique priority setting to CDL.
+	* include/mlqueue.hxx: Same.
+	* include/sched.hxx: Let CDL do sanity check of config.
+
+2000-10-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/scheduler.cdl: Added CYGINT_KERNEL_SCHEDULER_CAN_YIELD
+
+	* tests/klock.c: Avoid use of disabled features. Require scheduler
+	that can yield.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/bin_sem0.cxx:
+	* tests/bin_sem1.cxx:
+	* tests/bin_sem2.cxx:
+	* tests/clock0.cxx:
+	* tests/clock1.cxx:
+	* tests/clockcnv.cxx:
+	* tests/cnt_sem0.cxx:
+	* tests/cnt_sem1.cxx:
+	* tests/except1.cxx:
+	* tests/flag0.cxx:
+	* tests/flag1.cxx:
+	* tests/intr0.cxx:
+	* tests/kill.cxx:
+	* tests/mbox1.cxx:
+	* tests/mqueue1.cxx:
+	* tests/mutex0.cxx:
+	* tests/mutex1.cxx:
+	* tests/mutex2.cxx:
+	* tests/mutex3.cxx:
+	* tests/philo.cxx:
+	* tests/release.cxx:
+	* tests/sched1.cxx:
+	* tests/sync2.cxx:
+	* tests/sync3.cxx:
+	* tests/testaux.hxx:
+	* tests/thread0.cxx:
+	* tests/thread1.cxx:
+	* tests/thread2.cxx:
+	* tests/tm_basic.cxx:
+	Make sure default priority constructors have been invoked.
+
+	* include/intr.hxx (class Cyg_Interrupt): Make dsr_count volatile
+	to prevent a potential race condition with overzealous C
+	compilers.
+
+2000-10-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sched/sched.cxx (unlock_inner): Added condition to test for
+	DSRs to only call DSRs when the scheduler lock is making a 0->1
+	transition. Otherwise there is the danger of calling DSRs when the
+	scheduler lock is > 1. This violates our original assumptions
+	about how the scheduler lock worked with respect to DSR. 
+
+	* src/intr/intr.cxx (call_pending_DSRs): Added assert to check
+	that DSRs are only called when the scheduler lock is exactly 1.
+
+2000-10-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/intr.hxx: Fixing syntax mistake; volatile keyword must
+	appear after the type for it to affect the pointer variable.
+	* src/intr/intr.cxx: Same. Remove volatile from local block.
+
+2000-10-05  Jesper Skov  <jskov@redhat.co.uk>
+
+	* src/intr/intr.cxx: Made dsr_table_tail volatile as well.
+	* include/intr.hxx: Ditto.
+
+2000-10-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sched/sched.cxx: 
+	* include/sched.hxx: Converted asr_inhibit from a bool to a
+	counter. This is necessary to permit nesting of ASR inhibiting
+	functions.
+
+2000-10-04  Jesper Skov  <jskov@redhat.co.uk>
+
+	* include/intr.hxx: Made dsr_list volatile.
+	* src/intr/intr.cxx: Same. Also fix compiler warning.
+
+2000-09-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sched/mlqueue.cxx:
+	Added test for current thread not runnable in
+	Cyg_Scheduler_Implementation::timeslice().  This is possible if a
+	prior DSR has caused the current thread to be descheduled. Added
+	an assert to Cyg_ThreadQueue_Implementation::rotate() for
+	additional paranoia. (This problem was originally identified and
+	fixed (differently) by Andrew Lunn <andrew.lunn@ascom.ch>.)
+
+2000-09-13  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kexcept1.c (cause_exception): Use separate cause_fpe function.
+	* tests/except1.cxx (cause_exception): Same.
+
+	* tests/kexcept1.c (cause_exception): Do not use division at all.
+	* tests/except1.cxx (cause_exception): Same.
+
+	* tests/kexcept1.c (cause_exception): Do not cause div-by-zero.
+	* tests/except1.cxx (cause_exception): Same.
+
+2000-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/instrument.cdl (CYGVAR_KERNEL_INSTRUMENT_EXTERNAL_BUFFER): 
+	Bring this option back from the dead
+
+2000-09-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sched.hxx:
+	* include/sched.inl:
+	Added Cyg_Scheduler::unlock_reschedule() function. This decrements
+	the scheduler lock by one but also permits the current thread to
+	be rescheduled if it ready to sleep, or there is a higher priority
+	thread ready to run. This is to support use of various
+	synchronization objects while the scheduler lock is claimed.
+
+	* src/sched/sched.cxx (unlock_inner): Modified precondition to
+	allow for functionality of unlock_reschedule().
+
+	* src/sched/mlqueue.cxx:
+	Now uses Cyg_SchedulerThreadQueue_Implementation for all runqueue
+	pointers. It was using Cyg_ThreadQueue_Implementation in some
+	places which meant we were trying to sort the run queues!
+	Changed yield() so it can be called with the scheduler lock
+	claimed.
+	Changed Cyg_Scheduler_Implementation::timeslice() to rotate the
+	queue itself rather than call yield(). The changes to yield() make
+	it unsafe to call here any more.
+
+	* include/mlqueue.hxx (class Cyg_SchedulerThreadQueue_Implementation): 
+	Made enqueue() member public.
+	
+	* include/mboxt2.inl:
+	* src/common/thread.cxx: 
+	* src/sync/mutex.cxx: 
+	* src/sync/cnt_sem2.cxx: 
+	Removed assertions for zero scheduler lock and replaced some
+	invocations of Cyg_Scheduler::unlock() with
+	Cyg_Scheduler::unlock_reschedule() or Cyg_Scheduler::reschedule()
+	where appropriate.
+
+	* tests/klock.c:
+	* cdl/kernel.cdl:
+	Added klock.c to test functionality while scheduler lock is claimed.
+
+2000-08-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sched/sched.cxx (unlock_inner): Move an assert to some place
+	where it's true *all* the time!  There was a narrow margin where a
+	DSR could confuse unlock_inner() by reanimating the current thread
+	before it had a chance to sleep - hence the call appears to be
+	pointless.  Putting the assert before the DSR calls makes sense.
+
+	* include/mboxt.inl:
+	* src/sync/bin_sem.cxx:
+	* src/sync/cnt_sem.cxx:
+	* src/sync/flag.cxx:
+	* src/sync/mutex.cxx:
+	All of these now use Cyg_Scheduler::reschedule() rather than an
+	unlock/lock pair to yield in their functions which can sleep.
+	They therefore can be called safely and atomically with the
+	scheduler already locked.  This is a Good Thing[tm].  Since the
+	network stack synch primitives now use this feature, the asserts
+	that the scheduler was not locked must disappear: this change.
+
+
+2000-08-07  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/mutex.hxx (class Cyg_Mutex): Add comment explaining
+	presence of locked.
+
+2000-08-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/stress_threads.c (STACK_SIZE_HANDLER): Increase stack sizes
+	otherwise it crashes!
+
+2000-07-31  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/mempolt2.hxx: As per change of 2000-07-04, also delete - left
+	behind accidentally
+
+2000-07-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/mutex.hxx (class Cyg_Mutex): Added get_ceiling()
+	accessor function.
+
+	* src/sched/mlqueue.cxx: Fixed bug in sorted queue code that
+	resulted in an infinite loop if the thread being inserted is of
+	lower priority than all threads in the queue. This case is now
+	detected early.
+
+2000-07-17  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/kflag1.c (FIRST_THREAD_WAIT_TIME): Parameterize thread 
+	synchronization wait times (for understanding) and adjust for
+	incredibly slow platforms.  [Previous value allowed for the test
+	to get out of sync because the code ran so slowly]
+
+2000-07-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/kernel.cdl: Remove all configury related to memory allocators,
+	including tests. Make CYGFUN_KERNEL_API_C require CYGFUN_MEMALLOC_KAPI
+
+	* include/memfixed.hxx, include/mempolt2.inl, include/mempoolt.hxx,
+	  include/mempoolt.inl, include/memvar.hxx, include/mfiximpl.hxx,
+	  include/mfiximpl.inl, include/mvarimpl.hxx, include/mvarimpl.inl, 
+	  src/mem/memfixed.cxx, src/mem/memvar.cxx, tests/kmemfix1.c,
+	  tests/kmemvar1.c, tests/memfix1.cxx, tests/memfix2.cxx,
+	  tests/memvar1.cxx, tests/memvar2.cxx:
+	Move to separate memory allocator package CYGPKG_MEMALLOC
+	
+	* include/kapi.h, include/kapidata.h, src/common/kapi.cxx:
+	Remove memory allocator functionality - now implemented in
+	CYGPKG_MEMALLOC
+
+	* tests/dhrystone.c:
+	Update configuration dependencies for new isoinfra design
+	* tests/stress_threads.c:
+	Likewise.
+	Also fix early termination after DEATH_TIME_LIMIT so that 
+	allocated resources are freed, and so more appropriate
+	statistics are reported
+	Also update to use mallinfo() interface to memory allocator
+
+2000-06-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/kapi.h (cyg_scheduler_read_lock): New function, to
+	return the value of the scheduler lock; this for implementing SPLX
+	in the network stack.
+
+	* src/common/kapi.cxx (cyg_scheduler_read_lock): New function.
+
+2000-06-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sched/mlqueue.cxx (Cyg_ThreadQueue_Implementation::enqueue):
+	Rewrote code to insert threads into priority sorted queue. The
+	original code could not cope with a queue all of whose members
+	were lower priority than the new thread - it looped for ever. Also
+	provided fast paths for common and easily detected cases such as
+	adding to a single element queue and adding at the front. By
+	taking these cases out early, we can also simplify the code to
+	search the queue.
+
+2000-06-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/kernel.cdl: Remove exception tests for CMA230 - not supported
+	by hardware.
+
+2000-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/intr/intr.cxx (chain_isr): Only call default_isr if no isrs
+	in the chain reacted to the interrupt.
+
+2000-06-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/mutex.hxx (class Cyg_Condition_Variable): Added an
+	inline function, get_queue(), to return a pointer to the
+	underlying thread queue. To be used mainly for comparing with a
+	thread's current queue to decide whether it is waiting for a
+	condition variable.
+
+	* include/kapi.h:
+	* src/common/kapi.cxx: 
+	Changed return type of cyg_semaphore_wait() to match existing
+	behaviour of Cyg_Counting_Semaphore::wait().
+	Changed return type of cyg_cond_wait() to match new behaviour of
+	Cyg_Condition_Variable::wait().
+
+2000-06-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/mutex.hxx:
+	* src/sync/mutex.cxx:
+	Modified non-timeout condition variable wait() API to return
+	cyg_bool. A true result indicates that the wait() terminated
+	normally. A false result indicates that the wait() was terminated
+	as a result of a release() or destroy operation. For most uses
+	this distinction is irrelevant, but in some situations it is a
+	useful bit of information to have.
+	Also modified timeout condition variable wait to reacquire the
+	mutex under all circumstances. This is the correct and consistent
+	thing to do.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/debug/dbg-thread-demux.c: Use generic HAL feature to allow
+	ROM/RAM intercalling.
+
+2000-06-06  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kcache1.c (entry0): Skip invalidate tests on TX49. Too slow.
+
+2000-05-30  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/dhrystone.c: Increase number of test loops for faster
+	StrongARM platforms.
+
+2000-05-22  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/scheduler.cdl (CYGIMP_KERNEL_SCHED_SORTED_QUEUES): Disable by
+	default
+
+	* src/sched/mlqueue.cxx (enqueue): Add to end of thread queue even
+	when not priority ordered
+
+2000-05-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/mqueue.hxx, include/mqueue.inl:
+	Add POSIX-style message queue implementation
+	
+	* cdl/kernel.cdl: Add mqueue1 test
+	* cdl/scheduler.cdl: Add new CYGIMP_KERNEL_SCHED_SORTED_QUEUES option
+
+	* include/sema.hxx: Need thread.inl header, not just thread.hxx
+	Make Cyg_Counting_Semaphore::peek() const since it is
+
+	* src/sync/cnt_sem.cxx, src/sync/cnt_sem2.cxx, include/sema2.hxx:
+	Make Cyg_Counting_Semaphore{2}::peek() const since it is
+
+	* include/thread.hxx: don't want Cyg_Thread_queue::empty() to be marked
+	inline in the class def, otherwise we get warnings elsewhere
+
+	* include/mlqueue.hxx (Cyg_ThreadQueue_Implementation):
+	Add set_thread_queue private method
+	Add derived class Cyg_SchedulerThreadQueue_Implementation, and
+	make scheduler implementation use it instead of
+	Cyg_ThreadQueue_Implementation
+	
+	* src/mlqueue.cxx: Fix typo
+	Support  CYGIMP_KERNEL_SCHED_SORTED_QUEUES, i.e. allow insertion
+	into thread queue in order of thread priority, with oldest at the
+	front
+	(Cyg_ThreadQueue_Implementation::set_thread_queue): Add
+	(Cyg_SchedulerThreadQueue_Implementation::enqueue): Add, like old
+	one, except make it FIFO instead of LIFO by inserting at end of queue
+
+2000-05-16  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dhrystone.c: More loops on the TX49
+
+2000-05-15  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/counters.cdl (CYGVAR_KERNEL_COUNTERS_CLOCK_DSR_LATENCY): 
+	Default to CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY
+
+2000-05-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/instrmnt.h: Remove all CYG_UNUSED_PARAMs as they could
+	cause problems when used with volatile arguments
+	* src/intr/intr.cxx: Use CYG_UNUSED_PARAM to silence warning that
+	appears because of the above change.
+
+2000-05-02  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/kintr0.c:
+	* tests/intr0.cxx: Correct test for cases when VSR_MIN or
+	ISR_MIN are not zero (bad assumption).
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/thread.cdl (CYGNUM_KERNEL_THREADS_DATA_LIBC): Don't need libc
+	slot. Replace with CYGNUM_KERNEL_THREADS_DATA_ERRNO slot instead.	
+
+2000-04-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sched/sched.cxx (unlock_inner):
+	A significant change to the behaviour of this function.  The
+	new_lock argument contains the value that the scheduler lock
+	should have after this function has completed. If it is zero then
+	the lock is being released and some extra work (running ASRs,
+	checking for DSRs) is done before returning. If it is non-zero
+	then it must equal the current value of the lock, and is used to
+	indicate that we want to reacquire the scheduler lock before
+	returning. This latter option only makes any sense if the current
+	thread is no longer runnable, otherwise this function will do
+	nothing.
+
+	The result of this is that where we used to "blip" the scheduler
+	lock to force a sleep, we now call reschedule(), which calls
+	unlock_inner() with the current sched_lock value. The important
+	difference is that there is not now the brief window between the
+	calls where the lock is unclaimed. It also prevents ASRs being run
+	at inopportune moments. In future this will also allow us to force
+	threads to sleep even when they are deeply nested in the scheduler
+	lock.
+
+	* include/mutex.hxx:
+	Added Cyg_Mutex::get_owner() to return pointer to owning thread.
+	
+	* include/sched.hxx:
+	* include/sched.inl:	
+	Added new_lock argument to unlock_inner(), added reschedule().
+	Made set_asr_inhibit() and clear_asr_inhibit() available even when
+	ASRs are disabled.
+
+	* include/mboxt.inl:
+	* src/sync/bin_sem.cxx: 
+	* src/sync/cnt_sem.cxx:
+	* src/sync/flag.cxx: 
+	* src/sync/mutex.cxx: 
+	Converted instances of "blipping" the scheduler lock into calls to
+	Cyg_Scheduler::reschedule(), which is better behaved. Some calls
+	to set_asr_inhibit() and clear_asr_inhibit() also added in various
+	places.
+
+2000-04-26  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kcache1.c: Also to flush testing with unified caches.
+
+2000-04-26  Jesper Skov  <jskov@redhat.com>
+
+	* tests/clockcnv.cxx: 
+	* tests/dhrystone.c: 
+	Renamed 850 HAL package.
+	
+2000-04-25  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kcache1.c: Fixed cache check to also look for unified
+	caches.
+
+2000-04-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/clockcnv.cxx:
+	* tests/dhrystone.c:
+	Only a few laps around the block on the v850...
+
+2000-04-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/clock.hxx:
+	* src/common/clock.cxx:
+	Added Cyg_Alarm::get_times() member function to allow reading of
+	trigger and interval values from an alarm.
+
+2000-04-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sched.hxx:
+	* src/sched/sched.cxx:
+	Added ASR support.
+
+	* include/thread.hxx:
+	Made Cyg_ThreadQueue::empty() an inline in class definition.
+
+	* src/common/thread.cxx:
+	Added CYG_REPORT_FUNCTION() to Cyg_Thread::exit().
+
+	* include/kapidata.h:
+	Brought thread structures up to date with kernel objects.
+
+	* cdl/thread.cdl: 
+	* cdl/scheduler.cdl:
+	Added ASR configuration, minor tidies.
+
+2000-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/common/kapi.cxx (cyg_scheduler_safe_lock): 
+	* include/kapi.h: Add 'cyg_scheduler_safe_lock()' function.
+
+2000-04-12  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/interrupts.cdl: 
+	* cdl/scheduler.cdl: 
+	* cdl/counters.cdl: 
+	Don't let interfaces define anything.
+	
+2000-04-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sched.hxx:
+	* include/thread.inl: 
+	* src/sync/mutex.cxx: 
+	* src/sched/sched.cxx: 
+	* src/common/thread.cxx: 
+	General reorganization of priority inversion protocol support,
+	addition of priority ceiling protocol.
+
+	* include/mlqueue.hxx:
+	* src/sched/mlqueue.cxx: 
+	Added timeslicing enable support.
+
+	* cdl/thread.cdl: 
+	* cdl/synch.cdl:
+	Reorganized priority inversion protocol configuration to permit
+	different protocols and dynamic choice.  Added configuration for
+	condition variables to use a user-specified mutex.
+
+	* cdl/scheduler.cdl:
+	Added dynamic timeslicing enable option.
+
+	* include/kapidata.h:
+	Adjusted to match changes in other header files.
+
+	* tests/mutex3.cxx: 
+	* tests/sync3.cxx: 
+	Modified these tests to match new priority inversion protocols
+	configuration options.
+	
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/counters.cdl,
+	  cdl/interrupts.cdl,
+	  cdl/kernel.cdl,
+	  cdl/scheduler.cdl,
+	  cdl/synch.cdl,
+	  cdl/thread.cdl:
+
+	Adjust documentation URLs.
+
+2000-03-27  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/except1.cxx: 
+	* tests/kexcept1.c: Avoid trying to generate data access errors
+	on platforms that don't support them.
+
+	* tests/kcache1.c: Ignore test if no [data] caches defined.
+
+	* tests/stress_threads.c: Infer minimal configuration for platforms
+	with small amount of memory (as opposed to platform special cases).
+
+2000-03-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/sync/mutex.cxx: 
+	* src/sched/sched.cxx: 
+	* src/common/thread.cxx: 
+	* src/common/clock.cxx:
+	Use cyg_bool instead of bool for check_this().
+
+	* tests/dhrystone.c: Requires CYGPKG_LIBC_MALLOC
+
+2000-03-07  Jesper Skov  <jskov@redhat.com>
+
+	* tests/mutex3.cxx: Minor tweak from Hugo to allow reduced runtime
+	on sims.
+
+2000-02-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/debug/dbg-thread-demux.c:
+	CYG_HAL_SPARCLITE_SLEB -> CYGPKG_HAL_SPARCLITE_SLEB
+	Also fix a comment typo
+
+2000-02-29  Jesper Skov  <jskov@redhat.com>
+
+	* tests/kcache1.c: Don't run last part of test on MIPS sim - it's
+	very slow.
+
+2000-02-25  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dhrystone.c: 
+	* tests/tm_basic.cxx: 
+	Don't allow use of devices for diag output when running performace
+	tests.
+
+2000-02-17  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/kernel.h: Make
+	CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INHERITANCE_SIMPLE a cdl_component
+	since it has children now
+
+2000-02-17  Jesper Skov  <jskov@redhat.com>
+	CR101202, CR902078
+	* include/mvarimpl.inl: Avoid unlinking the list from the head
+	during coalescing.
+
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dhrystone.c (PASSES): Reduced for MPC8xx targets.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* tests/except1.cxx (except0_main): 
+	* tests/kexcept1.c (except0_main):
+	Also reclaim DATA_TLB_MISS vector if available.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* src/sched/lottery.cxx (schedule): CYG_HAL_POWERPC_x->CYGPKG_...
+
+2000-02-01  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/tm_basic.cxx (NTEST_THREADS): Reduce further to fit on small
+	targets
+	(NMBOXES): Likewise
+	(NCOUNTERS): Likewise
+
+	* src/common/clock.cxx: Rework last change - change types of
+	clock_dsr_read and delta to unsigned instead
+
+2000-01-31  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/common/clock.cxx (isr): Use HAL_CLOCK_LATENCY, not HAL_CLOCK_READ
+	(dsr): Likewise
+	
+	* cdl/counters.cdl (CYGVAR_KERNEL_COUNTERS_CLOCK_DSR_LATENCY): 
+	Copy configury for this option here from include/pkgconf/kernel.h - it
+	was left behind by accident
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* tests/tm_basic.cxx: Use CYG_TEST_NA insetad of PASS when not
+	applicable.
+
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/clock.hxx (class Cyg_Clock): Add members to convert to
+	and from this clock resolution and others.
+
+	* include/clock.inl (convert): New Cyg_Clock member.
+
+	* src/common/clock.cxx (construct_converter): New routine to
+	factorize a rational (or very near neighbour) to help with clock
+	tick conversions for a particular clock.
+	(get_other_to_clock_converter):
+	(get_clock_to_other_converter): Cyg_Clock member functions to
+	construct converters to or from this clock, using above routine.
+
+	* tests/clockcnv.cxx: New file: test the clock converters.
+
+	* tests/PKGconf.mak (TESTS): Add clockcnv to the tests.
+
+	* cdl/kernel.cdl: Add clockcnv to the tests.
+
+2000-01-20  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/synch.cdl
+	(CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INHERITANCE_SIMPLE_RELAY):
+	Change this to an active_if on simple prio-inh.  Was broken.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+	Also reorganized calculated opts about per-thread-data in
+	thread.cdl; these are really for info only.
+
+2000-01-19  Jesper Skov  <jskov@cygnus.co.uk>
+	CR 902054
+	* tests/stress_threads.c: Don't assert requested priority =
+	allocated. Allow some flexibility of handler priorities.
+
+2000-01-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/mutex3.cxx (control_thread): Add a CYG_TEST_INIT();
+	Whoops!
+
+2000-01-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/kernel.cdl: Add new kernel test mutex3, put in to test
+	RELAY prio inheritance extension.
+
+	* tests/mutex3.cxx: New test case.  It tests mutex prio
+	inheritance - or not - in a multiple thread manner, depending only
+	on delays and the clock, so it tests that scheduling does the
+	right thing, rather than simply checking reported priorities.
+
+	* tests/PKGconf.mak: Add new kernel test mutex3, put in to test
+	RELAY prio inheritance extension.
+
+2000-01-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/synch.cdl: New config option added,
+	(CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INHERITANCE_SIMPLE_RELAY).
+
+	* include/pkgconf/kernel.h: New config option added,
+	(CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INHERITANCE_SIMPLE_RELAY).
+	It is a child of ..._PRIORITY_INHERITANCE_SIMPLE and is really
+	only there to turn off if you really want the old implementation.
+
+	* src/sync/mutex.cxx (unlock): Add call to
+	Cyg_SchedThread::relay_priority() when relinquishing the mutex, in
+	order to relay any raised priority to the new owner.  Also count
+	the mutex we are waiting for as well as those held for correct
+	recovery in the case of inheriting priority then being killed, for
+	example.
+
+	* include/sched.hxx (class Cyg_SchedThread::relay_priority): New
+	member function declared.
+
+	* src/sched/sched.cxx (Cyg_SchedThread::relay_priority): New
+	member function to implement pass-it-on or "discovered ceiling"
+	priority inheritance extension to the simple algorithm.  Also use
+	get_current_priority() in Cyg_SchedThread::inherit_priority() to
+	let this work.
+
+2000-01-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/clock.hxx (class Cyg_Counter::counter): make the counter
+	volatile, otherwise a busy-wait loop for the real time clock to
+	change never completes.
+
+1999-12-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sched/sched.cxx (inherit_priority): Fix bug; inheriting a
+	2nd time would overwrite the saved initial_priority, so
+	disinheriting had no effect.
+
+1999-12-13  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/tm_basic.cxx (run_alarm_tests): Add new measurement of
+	latency between alarm firing and thread resume
+
+1999-12-13  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/kernel.cdl: Fix some minor mistakes in the lists of tests to
+	build conditionally
+
+1999-12-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/kernel.cdl:
+
+	Conditionally build the tests 'stress_threads', 'kcache1' and
+	'kcache2'.
+
+1999-11-30  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/common/kapi.cxx (cyg_scheduler_lock, cyg_scheduler_unlock):
+	assert good range for sched lock, and be defensive anyway.  This
+	is in response to a long time taken to track down a "unlocked too
+	many times" bug.
+
+1999-11-24  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Size tests based on available resources,
+	using MLT files.  Fall back if not available.
+
+1999-11-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sched/bitmap.cxx (Cyg_Scheduler_Implementation::add_thread):
+	Fixed typo in assertion, and moved it to a more useful place.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/kernel.cdl: Define all tests.
+
+1999-10-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/PKGconf.mak: Enable cache tests for Cirrus Logic boards.
+
+1999-10-27  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/kernel.cdl:
+
+	Specify CYGPKG_KERNEL_TESTS in terms of testing
+	source files.
+
+1999-10-26  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/kernel.cdl:
+
+	Define initial version of CYGPKG_KERNEL_TESTS for
+	verification purposes.
+
+1999-10-19  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/kernel.cdl:
+
+	Define CDL options for package-specific CFLAGS.
+
+1999-10-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kcache1.c: Fix array size.
+
+	* src/sched/bitmap.cxx (add_thread): 
+	* src/sched/mlqueue.cxx (add_thread): 
+	Check for valid thread priority.
+
+1999-10-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/counters.cdl,
+	  cdl/interrupts.cdl,
+	  cdl/scheduler.cdl:
+
+	Specify radio buttons using CDL interfaces.
+
+1999-10-06  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdl/scheduler.cdl:
+	Make the schedulers mutually exclusive via a cdl_interface
+
+1999-10-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kcache1.c: Reduced memory footprint.
+
+1999-09-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c: Added date header and flush() calls.
+
+1999-09-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tm_basic.cxx (run_mutex_tests): Must unlock mutices before
+	destroying, given the change below.
+
+	* src/common/kapi.cxx (cyg_cond_destroy): Call the correct
+	destructor.  As it happens, it didn't matter because all these
+	destructors do is assert the queue is empty, and the queue is the
+	2nd word in every case.
+	(cyg_mutex_destroy): Call the destructor at all, so that
+	assertions are made.
+
+1999-09-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/intr/intr.cxx (call_pending_DSRs_inner): Add assert to check
+	for valid DSR (before trying to use it).
+
+1999-09-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c: Print out malloc system info.
+	(print_statistics): Fix buglet.
+
+1999-09-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c: Print out more info. Reduce dump
+	frequency as test runs.
+
+1999-08-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Add missing close brace in
+	CYGIMP_KERNEL_COUNTERS_CLOCK_LATENCY CDL.
+
+1999-08-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache1.c (entry0): Depending on architecture, set
+	cyg_test_is_simulator for last two tests. Otherwise they take far
+	too long and time out.
+
+1999-08-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/intr0.cxx (vsr0): 
+	* tests/kintr0.c (vsr0): 
+	Add a comment to the effect that vsr0() is NOT a valid VSR on any
+	known platform; VSRs must be writ in assembler.  Customer
+	requested this, the examples are rather confusing otherwise.
+
+1999-08-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	* src/common/clock.cxx:
+	* tests/tm_basic.cxx:
+	Added CYGVAR_KERNEL_COUNTERS_CLOCK_DSR_LATENCY to enable recording
+	of DSR latency figures. Added code controlled by this option to
+	clock and tm_basic. Also made interrupt latency measurement
+	primarily dependent on CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY since
+	whether HAL_CLOCK_LATENCY is defined is not sufficient.
+
+1999-08-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/counters.cdl, cdl/interrupts.cdl, cdl/scheduler.cdl:
+
+	Implement radio buttons using "FIXME radio" hack in
+	description field for now.
+
+1999-08-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sload/sload.c: Rename AM32 to AM31
+
+1999-08-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg_gdb.cxx (dbg_make_threadref): Extended test for
+	uninitialized thread pointer.
+
+1999-07-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sync/mutex.cxx (lock): Removed assertion again. Not possible
+	to determine if a violation wil cause a deadlock.
+
+1999-07-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sync/mutex.cxx (lock): Added simple assertion check for
+	deadlocks.
+
+	* tests/stress_threads.c: Only allow printf from main thread to
+	prevent deadlocks.
+
+1999-07-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/kcache1.c (entry0): Also perform timing tests with
+	HAL_DCACHE_INVALIDATE_ALL and/or HAL_ICACHE_INVALIDATE_ALL in the
+	loop if provided by the HAL.  Invalidating the Data cache can
+	spoil clock operation, so elapsed time appears to be 0.
+
+	* tests/kcache2.c (entry0): Replace the "if (0)" for having a
+	copy-back cache with a proper test on a HAL macro.  Even though I
+	couldn't actually get those parts of the test to work on the
+	platform I'm currently working on.
+
+	* tests/PKGconf.mak (TESTS): Do build kcache1 and kcache2 for the
+	ARM_EBSA285; it seems kosher.  kcache2 does absolutely nothing, of
+	course.
+	
+1999-07-09  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 20210, 20142
+	* tests/stress_threads.c: Shifted thread priorities to make room
+	for main() at priority 0.
+
+	Fixed indentation.
+	
+1999-07-08  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 20244
+	* tests/stress_threads.c: Changed cyg_user_start() to main()
+	ensuring a bigger stack (it calls sprintf).
+	Increased STACK_SIZE by 2kB for printf calls.
+
+1999-06-30  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/dhrystone.c: Also NA-quit if CYGPKG_INFRA_DEBUG or
+	CYGPKG_KERNEL_INSTRUMENT are enabled.
+
+1999-06-23  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 20209
+	* tests/dhrystone.c: Use fewer loops on ARM targets - they don't
+	have a cache.
+
+1999-06-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/intr/intr.cxx (Cyg_Interrupt::chain_isr): Was testing the wrong
+	macro for the default ISR. Fixed.
+
+	* src/common/clock.cxx (Cyg_RealTimeClock::isr): Add HANDLED bit
+	to returned value.
+
+1999-06-21  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 20209
+	* tests/dhrystone.c: Don't run test on sims or synthetic target.
+	Only run test when compiled with optimization.
+
+1999-06-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/dhrystone.c: Added unsupported header.
+
+1999-06-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/debug/dbg_gdb.cxx (dbg_threadinfo): Report counted sleep
+	correctly; both COUNTSLEEP and SLEEPING are set.
+
+1999-06-01  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* src/debug/dbg_gdb.cxx (dbg_threadinfo): Make the thread state
+	string a little more sensible when read as plain english.
+
+1999-05-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/dhrystone.c: 
+	* tests/PKGconf.mak (TESTS): 
+	Added dhrystone test.
+
+	Updated to 2.1 from ftp.nosc.mil
+	
+1999-05-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/intr/intr.cxx (Cyg_Interrupt::chain_isr): Calls
+	HAL_DEFAULT_ISR if it is defined and no chained ISRs have
+	reported that they have handled the interrupt.
+
+	* src/debug/dbg_gdb.cxx (dbg_make_threadref): Fixed this routine
+	so that it copes with a NULL thread object.
+
+1999-05-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c: Output stackmon status
+	occasionally. Output (simple) run time.
+
+1999-05-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kcache1.c: Added handling of unified caches.
+
+1999-05-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/test/stackmon.h: Fixed some typos and thinkos.
+
+	* tests/tm_basic.cxx: Include new stackmon header.
+
+	* src/common/kapi.cxx: 
+	* include/kapi.h: 
+	Added kapi support for stackmon requirements.
+	
+	* include/stackmon.hxx:    [deleted]
+	* include/test/stackmon.h: [added]
+	Made stackmon safe to use from both C and C++.
+
+1999-05-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c (setup_death_alarm): Only compile when
+	DEATH_TIME_LIMIT is defined.
+
+1999-05-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/except1.cxx: 
+	* tests/intr0.cxx (intr0_main): 
+	* tests/kexcept1.c: 
+	* tests/kintr0.c (kintr0_main): 
+	Change all mentions of CYG_HAL_TX39[_JMR3904] to
+	CYG_HAL_MIPS_TX39[_JMR3904]
+	
+	* tests/kcache1.c: Use HAL_DCACHE_SYNC if possible
+
+1999-05-20  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tm_basic.cxx (run_all_tests): Added some more stack stats
+	output using stackmon.hxx; also fixed a BUG associated with the
+	definition of stacks in testaux.hxx (within tests dir) that was
+	making the main stack usage bogus.
+
+	* include/stackmon.hxx: new file, to ease printing stuff about
+	stack usage, particularly of interrupt stacks and the idle
+	thread.  It's not HAL specific, and it can apply to tests outside
+	of the kernel, which is why it's in a public include-place.
+	It just contains inline functions which define empty if there's no
+	handle on the symbols available, so should be safe enough.
+
+1999-05-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c (main_program): Changed behavior of
+	cyg_thread_delete caller.
+
+1999-05-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/kapi.h (cyg_thread_delete): is now a boolean function to
+	indicate success.  Failure is when the thread needs to run in
+	order to become killed.
+
+	* src/common/kapi.cxx (cyg_thread_delete): Try killing the thread
+	if necessary before deleting; only run the destructor if it was
+	killed, and tell the caller so.
+	(cyg_thread_kill): Back to the simpler version with no priority
+	diddling; it's up to the called to determine that it _has_ died.
+
+	* src/common/thread.cxx (kill): Only perform the state-changes
+	implied by kill if the thread has not already been killed;
+	otherwise two kill()'s will remove a thread unconditionally,
+	whether it's in the middle of a wait that needs tidying up or not.
+	In other words, ensure idempotency.
+	
+1999-05-17  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* src/common/kapi.cxx (cyg_thread_kill): Up the priority of the
+	killee to make it terminate *now* if we have priorities and they
+	are not unique, otherwise asserts are likely with the bitmap
+	scheduler.  Likewise in thread delete.  Condition out the bodies
+	of the priority ops if the scheduler does not support priorities.
+
+1999-05-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/intr/intr.cxx (call_pending_DSRs): 
+	* include/intr.hxx: Change mechanism for defining HAL function
+	to run DSRs.  This was a "weak" symbol with override, but is now
+	a macro in <cyg/hal/hal_intr.h>.
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	The following changes were all made in a branch and are now being
+	merged:
+	
+    1999-05-06  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c:
+	Use dbg-thread-syscall.h from HAL rather than local version.
+	Made dbg_thread_syscall_rmt_1() generic to all MIPS targets.
+
+	* src/debug/dbg-thread-syscall.h:
+	Removed. Replaced by identical file in hal/common.
+	
+    1999-04-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Added CYGDBG_KERNEL_INSTRUMENT_BUFFER_WRAP option.
+	Changed CYGNUM_KERNEL_COUNTERS_RTC_PERIOD to the correct value for
+	VR4300.
+
+	* include/instrmnt.h: Added CYG_INSTRUMENT_EVENT_THREAD_ENTER
+	event.
+
+	* src/instrmnt/meminst.cxx (cyg_instrument): Added implementation
+	of CYGDBG_KERNEL_INSTRUMENT_BUFFER_WRAP option.
+
+	* src/common/thread.cxx: Added extra instrumentation point on
+	thread entry.
+
+1999-05-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c (main_program): Added workaround for a
+	few PRs.
+
+1999-05-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/kapi.cxx (cyg_scheduler_unlock, cyg_scheduler_lock):
+	Make these simple calls to the scheduler.
+
+1999-05-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stress_threads.c (setup_death_alarm): Reduce run time on
+	synthetic target.
+
+1999-05-06  Jesper Skov  <jskov@cygnus.co.uk>
+        
+	* tests/stress_threads.c: Reversed priorities of agents.
+
+1999-05-06  Jesper Skov  <jskov@cygnus.co.uk>
+        PRs 20040, (20027), 19991
+	* tests/stress_threads.c: Added main_thread handling resource
+	deallocation and printing.
+
+1999-04-27  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stress_threads.c: 
+	If there aren't enough priorities, output an N/A, rather than
+	stopping compilation with a #error
+
+1999-04-28  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19850
+	* tests/stress_threads.c: Don't print text from alarm handler.
+
+1999-04-28  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19945 workaround
+	* tests/kexcept1.c: 
+	* tests/except1.cxx:
+	Made NA to PowerPC SIM.
+
+1999-04-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: 
+	Use/test 'cyg_thread_delete()' function.
+	Add ability to compute statistics with first datum removed which
+	can show up cache effects.
+	Show thread stack usage.
+
+	Fix merge screwup :-(
+
+1999-04-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/kapi.h: Add missing function cyg_thread_delete();
+	otherwise there is no way in the C API to re-use thread memory
+	safely.  It just calls the destructor of the Cyg_Thread class.
+
+	* src/common/kapi.cxx (cyg_thread_delete): Implement it.
+
+1999-04-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/stress_threads.c: Commit a better version for Mark since I
+	happen to have it here; having addressed the main concern of my
+	approval process.  It runs better in sims so long as the
+	constructor execution isn't messed with, nor timeslicing nor
+	priority inheritance.
+
+1999-04-23  Mark Galassi  <rosalia@cygnus.com>
+
+	* tests/stress_threads.c (setup_death_alarm): shortened the
+	simulator time by another factor of 10, hoping that it will not
+	slow down nightly testing for simulator platforms too much.
+	(perform_stressful_tasks): added writing of a bit pattern to the
+	malloc()-ed spaces.  Also reduced stack requirements for threads.
+
+1999-04-23  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* src/common/timer.cxx (Cyg_Timer::activate): we must also disable
+	the alarm when resetting it so as to remove it from its queue, so
+	that the enable afterwards places it on the right queue instead of
+	assuming that, being enabled, it's already there.  (if not
+	enabling, the behaviour is unchanged and correct) This was
+	detected by uITRON tests[cx]4, with some random perms including
+	enable CYGIMP_KERNEL_COUNTERS_MULTI_LIST,
+	value CYGNUM_KERNEL_COUNTERS_MULTI_LIST_SIZE {8}.
+	The PR is 19475.
+	
+1999-04-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/bin_sem1.cxx (bin_sem1_main): Doh!  Use priorities 4 and 5
+	for the two threads so that they are unique (with a bitmap
+	scheduler, the threads had prios 0 and 1 resp, which causes an
+	assert in the attempt to set thread 0's prio to 1, "prios not
+	unique").  PR 19904.
+
+1999-04-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/kcache2.c: 
+	Reduce iterations for time_ilock(), time_dlock(), and test_dzero()
+	if a simulated environment is detected
+	Fix for PR 19853
+
+1999-04-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/kill.cxx: Make delay ticks greater than 1 to prevent
+	scheduling problems if the clock rolls over immediately
+	Fix for PR 19516
+
+1999-04-20  Mark Galassi  <rosalia@cygnus.com>
+
+	* tests/stress_threads.c: applied Hugo's patch to fix stack sizes.
+ 
+1999-04-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/bin_sem1.cxx (bin_sem1_main): Add priorities to the
+	threads so that they run sequentially like the tester expected.
+	Otherwise simple timing, and shorter timeslicing, causes failure
+	to be reported; likewise if the kernel happens not to run entry0
+	first!
+        (another checkin)
+	(bin_sem1_main): Add conditional use of set_priority on
+	CYGIMP_THREAD_PRIORITY as it should be.
+
+1999-04-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/dbg_gdb.cxx: Fixed compiler warnings, cleaned up stub
+	requirements (removed FIX ME).
+
+1999-04-14  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/intr.hxx: 
+	* src/intr/intr.cxx (call_pending_DSRs_inner): Rework calling of
+	DSRs to allow calls from HAL code.  This will allow for proper
+	use of a separate interrupt stack.
+
+1999-04-14  Mark Galassi  <rosalia@cygnus.com>
+
+	* tests/PKGconf.mak: added an ifndef for the AEB-1 board so that
+	stress_threads is only built conditionally.
+
+	* tests/stress_threads.c: added more config smarts suggested by
+	Jesper for his configurations.
+
+1999-04-13  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19822
+	* src/debug/dbg_gdb.cxx: Current thread's registers live in
+	registers, not _registers.
+
+1999-04-13  Mark Galassi  <rosalia@cygnus.com>
+
+	* tests/stress_threads.c: simple stressing of thread
+	creation/deletion with some memory-intensive and alarm-based
+	tasks.  This version is set so that it dies after DEATH_TIME_LIMIT
+	seconds, currently set to 120.  #undef-ing DEATH_TIME_LIMIT makes
+	the test run forever.  This is currently not working with the
+	bitmap scheduler, probably for some simple reason, but I have not
+	yet broken it down to see why.
+
+1999-04-12  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/except1.cxx: 
+	* tests/kexcept1.cxx: 
+	Remove now unnecessary tx39-specific setting of
+	CYGNUM_HAL_EXCEPTION_DATA_UNALIGNED_ACCESS VSR
+	Part of cleanup for PR 19731
+
+1999-04-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	Generally: thread->to_queue_head() moves a thread to the head of
+	whatever queue it is on, if relevant.  This is so that a thread
+	can change priority and then put itself at the front of its new
+	run queue instead of the end; otherwise it yields too, which may
+	be undesirable.  Particularly for internal use of priorities in
+	the uITRON compatibility layer.
+
+	* include/thread.hxx (class Cyg_Thread): to_queue_head(): new
+	function. Define Cyg_Thread::rotate_queue() for all schedulers.
+	Public inheritance of Cyg_ThreadQueue_Implementation.
+
+	* include/thread.inl (class Cyg_Thread): to_queue_head(): new
+	function. Define Cyg_Thread::rotate_queue() for all schedulers.
+
+	* include/mlqueue.hxx (class Cyg_SchedThread_Implementation):
+	to_queue_head(), ...ThreadQueue...::to_head(): new functions.
+
+	* src/sched/mlqueue.cxx (class Cyg_SchedThread_Implementation):
+	to_queue_head(), ...ThreadQueue...::to_head(): new functions.
+
+	* include/bitmap.hxx (class Cyg_SchedThread_Implementation): 
+	Add empty placeholders for rotate_queue() and to_queue_head() to
+	maintain commonality of interface.
+
+1999-04-08  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19667
+	* kernel/current/src/common/thread.cxx:
+	Removed obsolete Cyg_Thread constructor.
+
+	* kernel/current/tests/testaux.hxx:
+	* kernel/current/tests/thread0.cxx:
+	* kernel/current/tests/thread1.cxx:
+	Changed to use the new Cyg_Thread constructor.
+
+1999-04-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/kapi.cxx: Minor indentation fixes.
+
+1999-04-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19743
+	* include/mfiximpl.inl (Cyg_Mempool_Fixed_Implementation): Moved
+	argument assertions before the first use of the arguments.
+
+1999-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/kexcept1.c (except0_main): 
+	* tests/except1.cxx (except0_main): 
+	Use macro HAL_VSR_SET_TO_ECOS_HANDLER() if defined, to reset
+	likely exception handler VSRs to eCos' default handlers - the
+	target side equivalent to CYG_TEST_GDBCMD("handle SIGBUS nostop");
+	The VSR may not be the eCos standard one in some implementations
+	of cooperation with CygMon.
+
+1999-03-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h (CYGNUM_KERNEL_COUNTERS_RTC_PERIOD):
+	Fixed value of this option for TX39 66MHz to correct number.
+
+1999-03-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: More adjustments to get clock latency correct.
+	Some fine tuning of messages and layout to fit well within 80 columns.
+
+1999-03-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Fixed an ifdef error.
+
+1999-03-24  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx (NTEST_THREADS): Reduce # threads so test can
+	build on smaller machines.  Also, only adjust timings by single
+	"overhead" value instead of the more generous 2*overhead.
+
+	* src/common/clock.cxx: Clock latency measurement defaults to 'off'.
+
+1999-03-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache2.c: Reduced number of loops in time_ilock(). On the
+	MN10300 and TX39 this caused the test to timeout in the testing
+	farm.
+
+1999-03-23  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: 
+	* src/common/clock.cxx: Add 'measure_clock_latency' boolean which
+	is used to turn clock latency measurements on/off.
+
+1999-03-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/tm_basic.cxx (run_all_tests): Changed initial delay from
+	100 ticks to 2. This is adequate for the purpose of letting the
+	clock get going, while 100 ticks was too long on simulators.
+
+1999-03-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/kcache1.c:
+	* tests/kcache2.c:
+	* tests/kclock1.c:
+	* tests/kexcept1.c:
+	* tests/kflag1.c:
+	* tests/kmbox1.c:
+	* tests/kmemfix1.c:
+	* tests/kmemvar1.c:
+	* tests/kmutex1.c:
+	* tests/ksched1.c:
+	* tests/ksem1.c:
+	* tests/kthread0.c:
+	* tests/thread0.cxx:
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL instead of "4096" and include
+	hal_arch.h where necessary to get it.
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/thread.inl (attach_stack): 
+	Fix typo in assert; missing comma.
+
+1999-03-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/debug/dbg-thread-syscall.h: Update copyright
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/thread.inl:
+	* src/common/thread.cxx:
+	* tests/kthread1.c:
+	* tests/testaux.hxx:
+	* tests/thread1.cxx:
+	* tests/thread_gdb.c:
+	* tests/tm_basic.cxx:
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+	Except for stack checking and the idle thread stack which uses 
+	CYGNUM_HAL_STACK_SIZE_MINIMUM.
+
+1999-03-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache1.c:
+	* tests/kcache2.c:
+	Made all CYG_INTERRUPT_STATE variables register variables. The
+	value of this variable has to survive cache invalidation and does
+	not in some testing permutations that are unoptimized.
+	Fixes PR 19165.
+
+	* include/kapi.h: Type of cyg_tick_count_t changed to cyg_uint64.
+	Response to PR 19320.
+
+1999-03-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Much better analysis of clock interrupt times.
+	Print average deviation instead of variance.  Also print "confidence"
+	numbers which are a measure of "how likely" a particular number would
+	be relative to the mean and min of the sample set.
+
+1999-03-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Improve messages and layout.
+	Better message for 'hardware clock tick' value.
+
+	* src/common/clock.cxx: Be more careful about clock latency delta
+	values that are used/kept - some hardware can yield incorrect values.
+
+	* tests/testaux.hxx: Use HAL recommended stack size for default.
+
+1999-03-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/common/thread.cxx:
+	Removed MIPS specific definition of idle_thread_stack[]. This is
+	so it gets the benefit of the redefinition of
+	CYGNUM_KERNEL_THREADS_IDLE_STACK_SIZE. This definition has also
+	been made static, since the MIPS compiler would otherwise put it
+	in the .data section.
+
+	* include/intr.hxx (class Cyg_Interrupt):
+	Changed implementation of Cyg_Interrupt::interrupts_enabled() to
+	test the value of disable_counter, rather than the hardware.
+
+1999-03-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache1.c:
+	* tests/kcache2.c: 
+	Added interrupt disables around cache operations. If these take
+	too long, an inopportune interrupt can disrupt the cache contents,
+	or result in the interrupt seeing an inconsistent world.
+
+1999-03-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Improved and cleaned up messages overall.
+
+1999-03-15  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19504
+	* tests/tm_basic.cxx: Kill created threads after mutex, mbox and
+	semaphore tests.
+
+1999-03-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c: 
+	Only try handling the SPARClite-SLEB vector correctly if
+	CYG_HAL_USE_ROM_MONITOR_CYGMON ie. we are talking with CygMon.
+	Otherwise the code is wrong, but also not used.  No matter.
+	
+1999-03-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/kthread1.c: 
+	* tests/thread1.cxx: 
+	* tests/thread_gdb.c: 
+	Deal with CYGNUM_HAL_MINIMUM_STACK_SIZE requirement.
+
+1999-03-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/thread.inl (attach_stack): Add check/assert for minimum
+	stack size (HAL defined)
+
+1999-03-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c (patch_dbg_syscalls): 
+	Use the correct vector table slot for SPARClite-SLEB; it's not 15
+	on here, it's BSP_VEC_MT_DEBUG from the hal's hal_cygm.h
+
+1999-03-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/testaux.hxx:
+	Move definition of inline placement operator new outside of ifdef
+	for NTHREADS so that it can be used by other code.
+
+	* tests/intr0.cxx:
+	* tests/thread1.cxx:
+	Make use of placement operator new rather than dynamic one in
+	intr0. Removed duplicate definition from thread1.
+
+1999-03-11  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19472
+	* tests/kill.cxx: Increased delays for the synthetic target.
+
+1999-03-11  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19468
+	* tests/intr0.cxx (intr0_main): 
+	* tests/kintr0.c (kintr0_main): 
+	Only attach interrupt handlers to vectors not in use.
+	
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19368
+	* src/sched/sched.cxx (start): Change the dependency for
+	referencing the RTC to make its inclusion independent of scheduler
+	choice.
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17357
+	* src/intr/intr.cxx (attach): Assert that interrupt vector attach
+	will succeed.
+
+1999-03-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Changed names used to control clock frequency on TX39 target.
+
+1999-03-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/sync/mutex.cxx: Allow 'Cyg_Condition_Variable::wait()'
+	to be entered with the scheduler locked (and thsu exit in
+	the same state).  This will allow for fully thread-safe use
+	of 'Cyg_Condition_Variable::wait()'.
+
+1999-02-26  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/except1.cxx (except0_main): 
+	* tests/kexcept1.c (except0_main): 
+	Move CYG_TEST_GDBCMD back to being before CYG_TEST_INIT
+
+1999-02-26  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19283
+
+	* src/common/kapi.cxx: Changed cyg_exception_call_handler
+	definition to be consistent with declaration.
+
+	* include/kapi.h: Change cyg_code_t to signed type.
+
+	* tests/except1.cxx (except0_main): 
+	* tests/kexcept1.c (except0_main): 
+	Init diag before making first output.
+
+1999-02-26  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19284
+	* tests/mutex2.cxx (mutex2_main): Set priorities in a different
+	order.
+
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sched.hxx (class Cyg_Scheduler_Base):
+	Added CYGBLD_ATTRIB_ASM_ALIAS(cyg_scheduler_sched_lock) to
+	declaration of sched_lock member. This makes it have the given
+	name in the object and assembler files. This in turn eliminates
+	the need to have a C++ mangled name in the HAL.
+
+	* src/intr/intr.cxx:
+	Cyg_Interrupt::detach() was not translating the vector to a table
+	index correctly in the chained case. Fixed.
+
+1999-02-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/intr.hxx: 
+	* src/intr/intr.cxx:
+	Added an interrupt disable counter to
+	Cyg_Interrupt::disable_interrupts() and
+	Cyg_Interrupt::enable_interrupts().
+
+1999-02-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Added support for 66MHz part.
+
+	* include/instrmnt.h:
+	Added CYG_INSTRUMENT_EVENT_MUTEX_RELEASE and
+	CYG_INSTRUMENT_EVENT_MUTEX_RELEASED. This should have been part of
+	the 1999-02-22 checkin.
+
+1999-02-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/clock0.cxx, tests/clock1.cxx, tests/except1.cxx,
+	  tests/kcache1.c, tests/kcache2.c, tests/kclock0.c, tests/kclock1.c,
+	  tests/kexcept1.c, tests/kflag0.c, tests/kflag1.c, tests/kill.cxx,
+	  tests/kintr0.c, tests/kmbox1.c, tests/kmemfix1.c, tests/kmemvar1.c,
+	  tests/kmutex0.c, tests/kmutex1.c, tests/ksched1.c, tests/ksem0.c,
+	  tests/ksem1.c, tests/kthread0.c, tests/kthread1.c, tests/thread1.cxx:
+	Use CYG_TEST_NA() rather than CYG_TEST_PASS_FINISH() for tests that
+	are not applicable for this configuration
+
+1999-02-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/kapi.h: 
+	* include/mutex.hxx: 
+	* src/sync/mutex.cxx: 
+	* src/common/kapi.cxx: 
+	* tests/mutex2.cxx:
+	* tests/PKGconf.mak: 
+	Added Kernel API support for thread release, which allows a thread
+	to be broken out of any wait. Also added support for releasing all
+	threads waiting to lock a mutex, both at C++ and Kernel API
+	levels. Added a test program, mutex2, to test this fuctionality
+	out.
+	
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/except.hxx: 
+	* include/kapidata.h
+	Rename CYG_EXCEPTION_COUNT -> CYGNUM_HAL_EXCEPTION_COUNT in line
+	with HAL changes
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	QA improvements
+
+	* src/common/clock.cxx:
+	Rename CYG_VECTOR_RTC -> CYGNUM_HAL_INTERRUPT_RTC in line with
+	HAL changes
+
+	* src/common/except.cxx:
+	Rename CYG_EXCEPTION_* -> CYGNUM_HAL_EXCEPTION_* in line
+	with HAL changes
+	Allow for CYGNUM_HAL_EXCEPTION_MIN != 0
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	Add more tracing, and fix some existing
+	QA improvements
+
+	* src/intr/intr.cxx:
+	Rename CYG_ISR_* -> CYGNUM_HAL_ISR_* in line with HAL changes
+	Add more tracing, and fix some existing
+	QA improvements
+
+	* src/sched/bitmap.cxx:
+	* src/sched/mlqueue.cxx:
+	* src/sync/mutex.cxx:
+	Add more tracing and fix some existing
+	QA improvements
+
+	* tests/except1.cxx:
+	* tests/kexcept1.c
+	Rename CYG_EXCEPTION_* -> CYGNUM_HAL_EXCEPTION_* in line
+	with HAL changes
+	QA improvements
+	Use new CYG_TEST_GDBCMD to tell GDB not to stop
+	Remove special simulator case as it should now work
+
+	* tests/intr0.cxx:
+	* tests/kintr0.c:
+	Rename CYG_ISR/VSR_* -> CYGNUM_HAL_ISR/VSR_* in line
+	with HAL changes
+	QA improvements		
+
+1999-02-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/kexcept1.c (except0_main): Tell GDB to not stop on
+	SIGBUS or SIGSEGV since we know we're going to cause an exception
+
+1999-02-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/common/thread.cxx (idle_thread_stack): 
+	Override CYGNUM_KERNEL_THREADS_IDLE_STACK_SIZE if
+	CYGNUM_HAL_MINIMUM_STACK_SIZE demands it.
+
+	* include/pkgconf/kernel.h (CYGNUM_KERNEL_THREADS_IDLE_STACK_SIZE):
+	Document that this option can be overridden by HALs demands.
+
+1999-02-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/dbg-thread-syscall.h: 
+	* src/debug/dbg-thread-demux.c: 
+	Added handling of dbg_scheduler_func calls.
+
+1999-02-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/kapi.h: 
+	* src/common/kapi.cxx: 
+	Added API support for per-thread data.
+
+	* include/kapi.h: 
+	* src/common/kapi.cxx:
+	* tests/ksem1.c: 
+	* tests/tm_basic.cxx: 
+	Changed arguments to Kernel C API semaphore functions to take
+	cyg_count32 rather than cyg_ucount32. This makes them consistent
+	with the underlying implementation and allows for negative counts
+	in the future. Changed some tests to match.
+	Fixes PR 17877.
+
+1999-02-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kexcept1.c (entry0): 
+	* tests/except1.cxx (entry0): 
+	Don't call cause_exception on SIMs.
+
+1999-02-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/clock.cxx (isr): Ignore a latency of 0 when finding
+	min_clock_latency.
+
+1999-02-04  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19075
+	* include/instrmnt.h: Slightly overdid the use of CYG_UNUSED_PARAM
+	macros.
+
+1999-02-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/intr/intr.cxx:
+	Make instrumentation macros always use the parameters to avoid
+	compiler warnings.
+
+1999-02-03  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18075
+	* tests/memfix1.cxx:
+	* tests/kmemfix1.c:
+	Make timing less sensitive.
+	
+1999-02-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/bin_sem2.cxx: Fixed compiler warning.
+
+1999-02-02  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18971
+	* tests/bin_sem2.cxx (bin_sem2_main): Reduce run time in SIM.
+
+1999-02-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache2.c: Added calls to HAL_DCACHE_SYNC() before all
+	relevant calls to HAL_DCACHE_DISABLE(). This should have been done
+	on 1999-01-25 where is was only done to one instance.
+
+1999-02-01  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Adjust stack sizes for platforms with
+	limited memory.
+
+1999-01-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/intr/intr.cxx: When using chained interrupts,
+	interrupt_end() is passed NULL as the intr argument. If
+	instrumentation is also enabled, the CYG_INSTRUMENT_INTR() calls
+	will try to indirect through zero. Added ifdefs to avoid
+	this. Also test intr for NULL before trying to post the DSR.
+	Fixes PR 18771.
+
+1999-01-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Fixed strings.
+
+1999-01-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/kcache1.c (time0): Waste much less time if running in a
+	simulator.  Do only 40 loops instead of 4000.
+	In consequence the nasty meddling with MAX_STRIDE depending on
+	HAL_xxx_SIM package definitions can go.
+
+1999-01-26  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18902
+	* src/debug/dbg-thread-demux.c: Oops. Undid my change of 1999-01-21.
+
+1999-01-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/common/except.cxx: Make global exception initialisation object
+	be constructed at INTERRUPT priority
+
+1999-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18002
+	* tests/thread_gdb.c: Ensure that there are enough priorities.
+
+1999-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18875
+	* tests/tm_basic.cxx: Ensure that there are enough priorities.
+
+1999-01-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache2.c (test_dstore): Added call to HAL_DCACHE_SYNC()
+	before disabling cache. On some architectures disabling the cache
+	would cause the following call to do nothing.
+	Fixes PR 18849.
+
+1999-01-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Don't run on Linux target.
+
+1999-01-21  Hugo Tyson  <hmt@cygnus.co.uk>
+	These changes are to get tests working with the SPARClite port; it
+	doesn't do 8-byte register access unless it's properly aligned.
+	
+	* tests/philo.cxx (cyg_start): 
+	Use tests/testaux.hxx to get new threads, to get the alignment
+	required; see below.
+
+	* tests/thread2.cxx (thread2_main):
+	Use tests/testaux.hxx to get new threads, to get the alignment
+	required; see below.
+
+	* tests/tm_basic.cxx: 
+	Larger stack for greedy processor.
+
+	* tests/testaux.hxx: 
+	thread_obj[][] and stack[][] are now 8-byte aligned like certain
+	processors require; Cyg_Thread contains cyg_tick_count which is
+	64-bit so any "standalone" C++ object would be so aligned.  These
+	dynamically allocated ones should be too.
+
+1999-01-21  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18747
+	* tests/flag1.cxx: Increase delays/timeouts to prevent failure
+	when configured with full trace logging.
+
+1999-01-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c: Removed PR 17327 workarounds.
+
+1999-01-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sched/sched.cxx (start): 
+	CYG_REFERENCE_SYMBOL -> CYG_REFERENCE_OBJECT in line with
+	cyg_type.h change
+
+1999-01-19  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18824
+	* src/sync/mutex.cxx: 
+	* include/pkgconf/kernel.h: Let
+	CYGMFN_KERNEL_SYNCH_CONDVAR_TIMED_WAIT require
+	CYGFUN_KERNEL_THREADS_TIMER.
+
+1999-01-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c (patch_dbg_syscalls): Added test
+	for CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT in patch_dbg_syscalls().
+
+1999-01-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/mvarimpl.inl (free): Memory list sort was incorrect.
+
+	* tests/PKGconf.mak (TESTS): Don't build cache tests on
+	some platforms.
+
+1999-01-15  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18768
+	
+	* tests/kmbox1.c:
+	* tests/mbox1.cxx:
+	Increase delays used so the overhead of GDB packets doesn't make
+	the tests fail.
+
+1999-01-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sched/sched.cxx (start): Use new CYG_REFERENCE_SYMBOL macro.
+
+1999-01-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg_gdb.cxx: Extended return types to include success,
+	fail and caller-do-it as required by msnyder.
+
+	* src/debug/dbg-thread-demux.c: Moved prototype of dbg_scheduler()
+	to dbg-threads-api.h.
+
+1999-01-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sched/sched.cxx (start): Better implementation of the
+	real_time_clock reference.
+
+1999-01-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Disable CYGSEM_KERNEL_SCHED_TIMESLICE
+	in CYG_HAL_ROM_MONITOR magic.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Added RTC values for i386/Linux.
+
+
+1999-01-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c:
+	Changed API of patch_dbg_syscalls() to take a pointer to the start
+	of the vector and insert several vectors.
+
+	* src/debug/dbg_gdb.cxx:
+	Added dbg_scheduler() function to allow debuggers to lock and
+	unlock the scheduler. This helps when stepping multithreaded code.
+
+	* include/sched.hxx:
+	* include/sched.inl:
+	Added Cyg_Scheduler::unlock_simple() to decrement the lock without
+	rescheduling.
+
+1999-01-05  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18574
+
+	* src/sched/sched.cxx (start): Reference the real time clock to
+	ensure it is included when linking.
+
+1999-01-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/thread1.cxx:
+	* tests/mbox1.cxx:
+	* tests/kmbox1.c:
+	* tests/kill.cxx:
+	* tests/kflag1.c:
+	* tests/kclock1.c:
+	* tests/flag1.cxx:
+	* src/common/thread.cxx:
+	CYGFUN_KERNEL_THREADS_TIMER requires CYGVAR_KERNEL_COUNTERS_CLOCK
+	so don't check for the latter explicitly.
+
+1999-01-04  Jesper Skov  <jskov@cygnus.co.uk>
+	PR 18573
+
+	* tests/thread1.cxx:
+	* tests/mbox1.cxx:
+	* tests/kmbox1.c:
+	* tests/kflag1.c:
+	* tests/flag1.cxx:
+        Don't run tests that rely on delay() when delay() is only defined
+	as an empty function.
+
+1998-12-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/sync/mutex.cxx: 
+	* src/sync/mbox.cxx: 
+	* src/sync/flag.cxx: 
+	* src/sched/sched.cxx: 
+	* src/mem/memvar.cxx: 
+	* src/mem/memfixed.cxx: 
+	* src/common/thread.cxx: 
+	* src/common/clock.cxx:
+	* include/mempoolt.inl: 
+	* include/mempolt2.inl: 
+	* include/mboxt2.inl: 
+	* include/mboxt.inl:
+	check_this() member functions should now be const
+
+1998-12-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/instrmnt.h: Fixed casts for arguments to
+	cyg_instrument() to work in C. Fixes PR 18413.
+
+1998-12-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Change AEB-1 clock scale.
+
+1998-12-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Calculate system clock resolution
+	based on 'CYGNUM_KERNEL_COUNTERS_RTC_RESOLUTION'
+
+1998-12-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h (CYGNUM_KERNEL_COUNTERS_RTC_PERIOD): 
+	Add support for new ARM AEB-1.
+
+1998-12-16  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* tests/intr0.cxx (intr0_main): 
+	* tests/kintr0.c (kintr0_main): 
+	Conditionally use a different interrupt vector number on tx39 when
+	in the simulator (according to cyg_test_is_simulator) so that
+	these tests execute correctly in simulators.
+	
+1998-12-16  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18546
+
+	* tests/kill.cxx (cyg_start): Do NOP test if required kernel
+	functionality is disabled.
+
+1998-12-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Changed
+	CYGDBG_KERNEL_DEBUG_GDB_INCLUDE_STUBS to
+	CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS.
+
+1998-12-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Made use of cyg_mbox_get() conditional on
+	CYGMFN_KERNEL_SYNCH_MBOXT_PUT_CAN_WAIT.
+
+1998-12-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Added requirement for kernel RTC.
+
+1998-12-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kcache2.c: Added tests of three more macros.
+
+1998-12-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kcache2.c: Added tests of three more macros.
+
+1998-12-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/PKGconf.mak: 
+	* tests/kcache2.c: 
+	Added new cache test.
+
+1998-12-04  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/intr.hxx:
+	* src/intr/intr.cxx (cyg_interrupt_post_dsr): Added this function
+	to allow functions in the HAL, which are always only in C, to call
+	Cyg_Interrupt::post_dsr(). Have also returned post_dsr() to
+	private parts of Cyg_Interrupt.
+
+1998-12-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/intr.hxx (class Cyg_Interrupt): Made post_dsr public so
+	it can be called from HAL interrupt arbiters.
+
+1998-12-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h (CYGNUM_KERNEL_COUNTERS_RTC_PERIOD):
+	Set to the correct value for a 33.333MHz clock.
+
+1998-12-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/intr/intr.cxx (interrupt_end, chain_isr): Got rid of magic
+	interrupt constants.
+
+1998-11-30  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Fix spelling of CYGVAR_KERNEL_COUNTERS_CLOCK
+
+1998-11-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/thread.cxx (check_this): Check that stack_ptr is
+	within its limits.
+
+Wed Nov 25 18:45:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/sched.inl (unlock) (lock): 
+	* src/common/thread.cxx (thread_entry): 
+	* src/sched/sched.cxx (unlock_inner): 
+
+	Ensure all accesses to sched_lock cannot be reordered by the
+	optimiser
+
+1998-11-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/thread.cxx (thread_entry): Prevent scheduler lock
+       	from being released too early.
+
+1998-11-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	* src/common/clock.cxx:
+	Added CYGIMP_KERNEL_COUNTERS_SORT_LIST option to determine whether
+	the alarm lists in counters are sorted or not.
+
+	* tests/tm_basic.cxx: Added a test for many alarms firing
+	separately. 
+
+1998-11-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kcache1.c: Only run with stride 1 on SIMs.
+
+1998-11-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Insure appropriate kernel configuration for
+	building tool.  Needs at least kernel C API and multi-level scheduler.
+
+1998-11-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Add interrupt latency support.  Print 
+	results to 10ns accuracy.
+
+	* tests/PKGconf.mak: Add 'tm_basic' (the kernel timing test
+	program) to list of built tests.
+
+	* src/intr/intr.cxx: Change usage of HAL_INTERRUPT_MASK to have
+	trailing ';' to match similar macros.
+
+	* src/common/clock.cxx: 
+	* include/pkgconf/kernel.h: Add CDL option 
+	CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY used to define if interrupt
+	latency measurements should be built into kernel.
+
+1998-11-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: Renamed CYG_HAL_POWERPC_MP860 to
+	CYG_HAL_POWERPC_MPC860.
+
+
+1998-10-28  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* include/pkgconf/kernel.h
+ 	(CYGNUM_KERNEL_COUNTERS_RTC_RESOLUTION): Changed default value for
+ 	MIPS simulator to be 0.01 secs instead of 0.001 seconds.
+
+1998-10-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/kcache1.c (HAL_DCACHE_PURGE_ALL): Fixed compiler problem
+	on PowerPC.
+
+1998-10-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache1.c:
+	Added calls to HAL_DCACHE_PURGE_ALL() before each test.  Added
+	local version of HAL_DCACHE_PURGE_ALL() if this is not supplied by
+	the HAL.
+
+1998-10-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/common/thread.cxx (wake): 
+	Remove the thread unconditionally from any queue it was on; for we
+	have just become not-asleep, so it must be OK.  (Bug was: it
+	didn't happen in transit WAIT-SUSPEND -> SUSPEND, so synch object
+	still believed the task was waiting on it).  PR#17998
+
+1998-10-26  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17527, PR 17837
+
+	* tests/kcache1.c: 
+	* tests/kclock0.c: 
+	* tests/kclock1.c: 
+	* tests/clock1.cxx: 
+	* tests/clock0.cxx: 
+	Do N/A PASS when kernel real-time clock is configured out.
+
+1998-10-26  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 17866
+
+	* include/pkgconf/kernel.h
+	(CYGNUM_KERNEL_THREADS_IDLE_STACK_SIZE): Doubled to prevent stack
+	overruns on PowerPC.
+
+1998-10-26  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17987
+
+	* src/debug/dbg_gdb.cxx (dbg_threadinfo): Removed "more: <none>"
+	output.
+
+1998-10-23  John Dallaway  <jld@cygnus.co.uk>
+
+	* tests/tm_basic.cxx: Added basic timing test.
+
+1998-10-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/instrmnt.h:
+	Improved documentation of cyg_instrument_enable() and
+	cyg_instrument_disable().
+
+	* src/instrmnt/meminst.cxx:
+	Added code to enable and disable whole groups of events.
+
+1998-10-23  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/generic-stub.h: Deleted. It was moved to hal common some
+	time ago.
+
+Fri Oct 23 04:45:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/kcache1.c: 
+	Remove forced warning of a warning which no longer applies
+
+1998-10-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/common/clock.cxx:
+	Stop searching the alarm list when the current alarm is in the
+	future in Cyg_Counter::tick().  Changed sense of comparison in
+	Cyg_Counter::add_alarm() to sort alarms in ascending order.
+
+Thu Oct 22 18:21:50 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	Fix commenting within CDL "comments"
+
+Thu Oct 22 17:25:45 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	Remove CYGVAR_KERNEL_INSTRUMENT_EXTERNAL_BUFFER configuration
+	option. For PR 17838
+
+1998-10-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h (CYGNUM_KERNEL_COUNTERS_RTC_PERIOD):
+	Changed value for JMR3904 board to 15360 which is correct for a
+	24.576MHz board rather than 25MHz as before.
+
+	* src/common/thread.cxx:
+	Exchanged stack_base and stack_size in idle thread constructor.
+
+1998-10-20  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/kflag1.c (kflag1_main): 
+	Only mess with f2 if it exists, ie. CYGFUN_KERNEL_THREADS_TIMER.
+
+1998-10-19  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/kernel.h: updated the doc URL
+
+1998-10-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/kapi.h: 
+	* include/kapidata.h (struct cyg_flag_t): 
+	* src/common/kapi.cxx: 
+	Add flags (Cyg_Flag, kernel.../flag.hxx) to the C API.
+
+	* tests/PKGconf.mak (TESTS): 
+	Add new tests for flags via the C API.
+
+	* tests/kflag0.c: 
+	* tests/kflag1.c: 
+	New tests (well, versions of the plain C++ versions flag0.cxx and
+	flag1.cxx) for flags via the kernel C API.
+	
+1998-10-19  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Fixed description of clock resolution.
+
+1998-10-17  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Added a way of configuring the clock interrupt frequency.
+
+Thu Oct 15 21:31:58 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Allow kernel to be disabled now
+
+	* src/common/delete.cxx, src/common/memcpy.c, src/common/memset.c:
+	Move these files to the infra package
+
+	* src/PKGconf.mak:
+	Don't build the above files any more
+
+	Above changes are required for PR 17229
+
+1998-10-15  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/mempoolt.inl (Cyg_Mempoolt): 
+	* include/mempolt2.inl (Cyg_Mempolt2): 
+	Flesh out the destructors to awaken any waiting threads
+	with reason Cyg_Thread::DESTRUCT to support uITRON
+	create and delete of memory pool objects.
+	Note that only template mempolt2 is actually used.
+	
+Wed Oct 14 21:45:54 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/thread_gdb.c: 
+	Remove unnecessary inclusion of <cyg/kernel/diag.h>
+
+	* tests/kcache1.c: 
+	Add a warning to expect the "function declaration isn't a
+	prototype" warning from infra/diag.h
+
+1998-10-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/common/thread.cxx (kill,reinitialize): 
+	Do not refer to member timer unless CYGFUN_KERNEL_THREADS_TIMER is
+	defined.
+	
+1998-10-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c:
+	Now get dbg-threads-api.h from HAL.
+
+	* src/debug/dbg_gdb.cxx:
+	Tidied up info sent back by dbg_threadinfo().
+
+	* src/common/thread.cxx:
+	Changed constructor of idle thread to include initial priority and
+	a thread name.
+
+	* include/pkgconf/kernel.h:
+	Moved GDB stub configuration code out to hal.h.
+
+	* include/ktypes.h:
+	Moved definition of CYG_LABEL_NAME() out to cyg_type.h.
+
+	* src/debug/PKGconf.mak:
+	* src/debug/dbg-threads-api.h:
+	* src/debug/generic-stub.c:
+	* src/debug/stubrom.c:
+	* src/debug/thread-packets.c:
+	* src/debug/thread-pkts.h:
+	These files have all be relocated to hal/common.
+
+1998-10-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/thread.hxx (class Cyg_Thread): 
+	Add public members get_stack_base(), get_stack_size() and
+	get_stack_limit();
+	Add private members add_to_list() and remove_from_list() to
+	centralize handling of the CYGVAR_KERNEL_THREADS_LIST as it is
+	known.
+
+	* include/thread.inl (class Cyg_Thread): 
+	Add public members get_stack_base(), get_stack_size() and
+	get_stack_limit();
+
+	* src/common/thread.cxx: 
+	Add private members add_to_list() and remove_from_list() to
+	centralize handling of the CYGVAR_KERNEL_THREADS_LIST as it is
+	known.
+	Tidy up the two constructors to use them.
+	Add CYG_REPORT_RETURN()/_RETVAL(...) logging throughout.
+	Tidy up reinitialize() to use the 6-argument constructor,
+	thus preserving the thread name.
+	Fix some bugs in the CYGVAR_KERNEL_THREADS_LIST stuff where
+	re-adding a thread caused loops in the list, and the like.
+	Fix bug in set_priority() when the thread is asleep but NOT on any
+	queue, such as a plain counted_sleep().
+
+1998-10-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/thread-packets.c: 
+	* src/debug/dbg_gdb.cxx: 
+	Don't include hal_stub.h unless it's really, really, really
+	needed.
+		
+1998-10-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/dbg_gdb.cxx: Don't include hal_stub.h unless it's really
+	needed.
+
+1998-10-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/generic-stub.c: Added thread support. Renaming a few
+	functions/variables to match the most recent libstub
+	generic-stub.c.
+	Use thread_get_register & thread_put_register when handling GDB
+	register packets.
+
+	* src/debug/dbg_gdb.cxx (dbg_getthreadreg, dbg_getthreadreg):
+	DTRT for current thread when CygMon is not configured.
+	
+	* src/debug/dbg_gdb.cxx (dbg_threadlist, dbg_getthreadreg,
+	dbg_getthreadreg): return true/false rather than 0, 1, -1.
+	
+	* src/debug/dbg_gdb.cxx:
+	* src/debug/dbg-threads-api.h: 
+	Added dbg_currthread_id.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/debug/generic-stub.c: 
+	* src/debug/generic-stub.h: 
+	Added control of interrupts.
+	Removed unused functions set_debug_trap and initialize_stub.
+	
+Tue Oct 13 17:36:29 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/test/tsttracc.c (cyg_start): 
+	Replace CYG_REPORT_FUNCARGSVOID with the correct
+	CYG_REPORT_FUNCARGVOID
+
+1998-10-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/common/thread.cxx: 
+	clear_timer() is a static which always affects the executing
+	thread and none other.  Removed the "foo->" from various
+	"foo->clear_timer()" calls to make this less confusing.
+	Ditto set_timer().
+	Changed a "clear_timer()" call to "timer.disable()" and added one
+	so that they affect _this_ thread, the thread which is being
+	kill()ed or reinitialize()d rather than the killer or the
+	resuscitator.  Otherwise the alarm list can still get a loop in
+	it when a thread's killed when waiting with a timeout and
+	restarted soon enough.
+	
+1998-10-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	In general, these changes are to support create/delete of uITRON
+	objects; this requires that an object can be destroyed whilst
+	there are threads waiting on it, and that they shall be awoken
+	with a specific return code.
+
+	* include/thread.hxx:
+	Cyg_Thread::DESTRUCT added to wake reasons, to deal with an object
+	being destroyed whilst a thread is waiting on it; it's handled in
+	a manner very similar to release() and BREAK wake_reason.
+	
+	* src/common/thread.cxx: 
+	thread_entry(): threads now exit() if the entry_point returns.
+	Cyg_Thread() constructors now initialize wake_reason to NONE.
+	reinitialize() clears any pending timeout before calling
+	constructors.
+	counted_sleep( [timeout] ) now both deal with the wake reason in
+	general, and with DESTRUCT in particular.
+	exit() now clears any pending timeout.
+	kill() now force_resumes the thread first.
+	kill() now does not explicitly remove the thread from any queue
+	it's on; wake() does that for you anyway.
+	delay() clears the timer just in case and handles DESTRUCT
+	properly.
+	DESTRUCT added to various switches for completeness.
+
+	The fixes to counted_sleep()[x2] and kill() are a bugfix for
+	PR#17688.
+
+	* include/flag.hxx:
+	* src/sync/flag.cxx:
+	Add an argument, defaulting to 0, to the constructor which sets
+	the initial flag value.
+	Add handing of DESTRUCT wake reason.
+	Add a destructor which wakes all threads with DESTRUCT
+	wake_reason.
+
+	* include/mboxt2.inl:
+	Add handing of DESTRUCT wake reason.
+	Add a destructor which wakes all threads with DESTRUCT
+	wake_reason.
+
+	* src/sync/cnt_sem2.cxx:
+	Add handing of DESTRUCT wake reason.
+	Add a destructor which wakes all threads with DESTRUCT
+	wake_reason.
+	Correct typo in logic for queueing a waiting thread in
+	Cyg_Counting_Semaphore2::wait( cyg_tick_count abs_timeout ).
+	This is a bugfix for PR#17687.
+
+	* include/mboxt.inl:
+	* include/mempoolt.inl:
+	* include/mempolt2.inl:
+	* src/sync/bin_sem.cxx:
+	* src/sync/cnt_sem.cxx:
+	* src/sync/mutex.cxx:
+	All these gain handling of the DESTRUCT wake_reason, that's all.
+	
+1998-10-08  Gary Thomas  <gthomas@penang.cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	Add support for new architecture
+
+1998-10-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache1.c (entry0):
+	Replaced CYG_TEST_FINISH() with CYG_TEST_PASS_FINISH().
+
+	* src/debug/dbg-thread-demux.c:
+	Added dbg_thread_syscall_rmt_1() to save/set and restore the $gp
+	register values when being called from Cygmon.
+
+Sun Sep 27 20:12:15 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* include/mlqueue.hxx: 
+	* include/bitmap.hxx: 
+	Disallow more than 32 priority levels
+	
+	* include/pkgconf/kernel.h:
+	Changed range of allowed levels from 64 to 32
+
+1998-09-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/memfix2.cxx:
+	Changed message to say "Fixed memory pool 2 OK" rather than
+	"Variable memory pool 2 OK".
+
+1998-09-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/intr.hxx (DSRs_pending):
+	PR 17500: if DSR support is disabled completely then this inline
+	function should not be defined at all.
+
+1998-09-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/kcache1.c:
+	Added this test program for cache API. Includes some performance
+	testing.
+
+1998-09-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg_gdb.cxx:
+	Removed some debugging code.
+
+	* tests/thread_gdb.c:
+	Added this test program to allow for GDB thread support testing.
+
+1998-09-25  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	The GDB thread support requires the kernel to keep track of all
+	threads on a linked list. This is a separate option. An additional
+	requires statement enforces the dependency.
+	
+1998-09-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c:
+	Added include of <pkgconf/kernel.h>, removed debug code.
+
+1998-09-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c (dbg_thread_syscall_rmt):
+	PR 17327. If kernel gdb thread support is disabled, do not compile
+	in the relevant cases in the rmt switch statement. This is a
+	partial solution to the general problem of how the HAL, kernel,
+	cygmon, and gdb interact.
+
+1998-09-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/common/clock.cxx (Cyg_RealTimeClock):
+	Changed clock priority from zero to one, since it is now used to
+	set the hardware interrupt priority.
+
+	* src/intr/intr.cxx:
+	Cyg_Interrupt::chain_isr() now only calls interrupt objects that
+	have the matching vector number.
+	Call HAL_INTERRUPT_SET_LEVEL() when attaching interrupts using the
+	priority passed in the constructor.
+	Added call to HAL_TRANSLATE_VECTOR() for attaching chained
+	interrupts.
+
+	* include/instrmnt.h (CYG_INSTRUMENT_EVENT_INTR_CHAIN_ISR):
+	Added this event.
+
+Thu Sep 24 11:07:12 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* tests/except1.cxx: 
+	* tests/kexcept1.cxx: 
+	Made exception tests detect when CYGPKG_KERNEL_EXCEPTIONS
+	is disabled.
+	
+
+1998-09-22  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Changed the kernel package from type bool to type dummy, since
+	it is not yet possible to disable this package.
+
+1998-09-20  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/kernel.h: updated CDL doc strings.
+	fixed some typos in my doc strings.
+
+1998-09-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/common/thread.cxx: 
+	* include/thread.inl:
+	Modified threads list from a LIFO stack to a ring so that we can
+	add new ones to the end and present the threads to GDB in an order
+	that more closely matches how it assigns thread ids.
+	
+Wed Sep 16 19:11:22 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/thread.inl (get_unique_id): 
+	Move this declaration to before its first use, so that the user
+	knows it is inline at the point of use.  Avoids a warning.
+
+Wed Sep 16 08:49:48 1998  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17269
+ 
+ 	* src/common/except.cxx (Cyg_Exception_Control): Replaced
+	CYGNUM_EXCEPTION_MAX (bug!) with CYG_EXCEPTION_COUNT.
+ 
+ 	* include/kapidata.h (struct cyg_exception_conrol): Replaced
+ 	CYG_EXCEPTION_MAX (bug!) with CYG_EXCEPTION_COUNT.
+ 
+ 	* src/intr/intr.cxx:
+ 	* include/intr.hxx (class Cyg_Interrupt): Replaced CYG_ISR_MAX+1
+ 	with CYG_ISR_COUNT.
+ 
+ 	* include/except.hxx: Replaced CYGNUM_EXCEPTION_COUNT with
+ 	CYG_EXCEPTION_COUNT.
+ 
+ 	* tests/kintr0.c: 
+ 	* tests/intr0.cxx: Replaced CYG_ISR_MAX (bug!) with
+ 	CYG_ISR_COUNT.
+ 
+Tue Sep 15 19:19:37 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/mboxt2.hxx:
+	Add inclusion of thread.inl to silence warning
+
+	* tests/kexcept1.c:
+	Insert void as parameter list of __default_exception_vsr() to
+	silence	warning
+
+Tue Sep 15 19:16:52 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* src/sched/sched.cxx: Cleaned up comments.
+
+1998-09-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg-thread-demux.c:
+	Stubbed out led() function.
+
+	* src/debug/dbg_gdb.cxx:
+	Decide whether to byteswap thread id depending on reported byte
+	order of target.
+	Many small changes to debug code.
+
+	* include/thread.inl (init_context):
+	Changed CYG_DEBUG to CYGPKG_INFRA_DEBUG.
+
+Tue Sep 15 09:35:14 1998  Jesper Skov  <jskov@cygnus.co.uk>
+	PR 17236
+
+	* src/common/clock.cxx (add_alarm): A retriggering alarm called
+	with a trigger time in the past or now will be assigned a new
+	trigger time. Don't find the counter list until the final trigger
+	time is known.
+	Also added a few #else error statements to catch a situation where
+	no CYGIMP_KERNEL_COUNTERS_x_LIST implementation config is
+	selected.
+	
+	* tests/clock0.cxx: Added extra ASSERT to ensure alarms enabled
+	with a trigger time of now or in the past actually fire.
+	* tests/kclock0.c: Same.
+	
+1998-09-15  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Cleaning up coonfiguration data (mostly improving the
+	descriptions). 
+
+Mon Sep 14 11:08:59 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 17230
+
+	* include/pkgconf/kernel.h: CYGIMP_KERNEL_INTERRUPTS_CHAIN
+	requires CYGIMP_HAL_COMMON_INTERRUPTS_CHAIN.
+
+1998-09-14  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/kernel.h: started adding CDL doc fields.
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	Sort out exception handling options (PR 16953)
+	Added missing descriptions (PR 17184)
+
+Fri Sep 11 19:18:28 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/clock.hxx (class Cyg_Alarm): 
+	* src/common/clock.cxx (Cyg_Alarm::add_alarm): 
+	PR#17182
+	Move the code to synchronize a repeating alarm which had been
+ 	firing in the dim and distant past with times in the future, which
+ 	had been inline in Cyg_Alarm::enable(), into a function of its
+ 	own, Cyg_Alarm::synchronize().  Call it from Cyg_Alarm::enable()
+	and also from add_alarm() when the immediate time to fire is now
+	or in the past; otherwise an initial time of, say, NOW-10 with an
+	interval of 5 would just get lost.  Also corrected/commented the
+	logic there to allow an alarm's handler to cancel itself.
+	
+Wed Sep  9 17:43:26 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/common/delete.cxx: 
+	Control the provision of empty delete functions rather better, via
+	an explicit option from the libc package.  Read the rather lengthy
+	comment in delete.cxx for the explanation.
+	Also note that the correct place for this functionality is in the
+ 	infrastructure, and the same should be done for the C++ new
+ 	functions also.
+
+1998-09-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/common/thread.cxx:
+	combined separate next_unique_id variables in both constructors.
+	This would have caused duplicate thread ids to be generated.
+
+	* include/thread.inl:
+	Added code to initialize Cyg_HardwareThread::saved_context.
+
+	* src/debug/dbg-thread-demux.c: 
+	* src/debug/dbg_gdb.cxx:
+	Many changes to get thread API working with Cygmon. Debug code
+	currently left in place until complete testing is possible.
+
+Tue Sep  8 17:17:32 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h (CYGNUM_KERNEL_COUNTERS_RTC_PERIOD):
+	Set up a sensible default RTC for CYG_HAL_MN10300_SIM different
+ 	from that for the MN103002 or CYG_HAL_MN10300_STDEVAL1, so that
+ 	sim tests run in less than geological time.  This is the same as
+ 	the default value of before.
+
+Fri Sep  4 18:25:02 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sched/mlqueue.cxx (timeslice): 
+	* src/sched/sched.cxx (unlock_inner): 
+	Condition out the tracing macros here by default, for tracing
+	these consumes the whole quantum.
+	
+1998-09-04  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Commented out the ROM monitor-specific option settings for now.
+	
+	* tests/kclock1.c: 
+	* include/pkgconf/kernel.h: 
+	* include/kapidata.h (struct cyg_counter): 
+	Fixed typos in configuration option names.
+	
+1998-09-03  David Moore  <dsm@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h
+ 	(CYGNUM_KERNEL_INTERRUPTS_DSRS_TABLE_SIZE):
+	Fixed typo in configuration option name.
+
+	* src/intr/intr.cxx:
+	Fixed typo in configuration option name.
+	Fixed cast to incorrect type.
+	
+1998-09-03  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/PKGconf.mak (COMPILE): 
+	Added debug/dbg-thread-demux.c to COMPILE list.
+	
+	* src/debug/dbg_gdb.cxx (dbg_threadinfo): 
+	Added first cut at providing thread state string.
+	
+	* src/debug/dbg-thread-syscall.h: 
+	* src/debug/dbg-thread-demux.c: 
+	Added these two files to implement the interface between Cygmon
+	and eCos.
+	
+1998-09-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h (CYGSEM_KERNEL_MEMORY_COALESCE): 
+	* include/mvarimpl.inl (Cyg_Mempool_Variable_Implementation): 
+	Fixed typo in configuration option name.
+	
+	* include/pkgconf/kernel.h:
+	Fixed type in configuration option name.
+
+Wed Sep  2 19:01:02 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/mboxt.hxx:
+	* include/mboxt.inl:
+	* include/mboxt2.hxx:
+	* include/mboxt2.inl:
+	* include/mempolt2.hxx:
+	* include/mempolt2.inl:
+	* include/mempoolt.hxx:
+	* include/mempoolt.inl:
+	* include/sema2.hxx:
+	* src/sync/cnt_sem2.cxx:
+	* include/flag.hxx:
+	* src/sync/flag.cxx:
+	* include/kapi.h:
+	* src/common/kapi.cxx:
+	* tests/kmbox1.c:
+	* tests/kmemfix1.c:
+	* tests/kmemvar1.c:
+	* tests/mbox1.cxx:
+	* tests/memfix1.cxx:
+	* tests/memvar1.cxx:
+	Memory pool (both types) and message boxes (both types) and flags
+ 	and cnt_sem2-type semaphores now all have absolute timeouts
+ 	instead of relative ones in the timely wait functions.
+	uITRON has changed to add the current time itself.
+	Kapi changes are mainly name changes to make it clear that
+	timeouts are now absolute.
+	The tests (incl. kapi) add in the time themselves now.
+	
+1998-09-01  Tim Goodwin  <tgoodwin@cygnus.co.uk>
+
+	* include/kapi.h:
+	* src/common/kapi.cxx:
+	* tests/kclock1.c:
+	* tests/kexcept1.c:
+	* tests/kmbox1.c:
+	* tests/kmemfix1.c:
+	* tests/kmemvar1.c:
+	* tests/kmutex1.c:
+	* tests/ksched1.c:
+	* tests/ksem1.c:
+	* tests/kthread0.c:
+	* tests/kthread1.c:
+	* src/test/kcache1.c:
+	* src/test/kphilo.c:
+	* tests/kphilo.c:
+	* tests/lottery.c:
+	Changes to cyg_thread_create() interface.
+
+Tue Sep  1 18:49:06 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	Moved and renamed CYG_DIAG_USE_DEVICE to infra and to
+	CYGDBG_INFRA_DIAG_USE_DEVICE; kernel.h now includes infra.h as
+	well as hal.h to ensure all its clients get the info too.
+	
+	* include/intr.hxx (class Cyg_Interrupt): 
+	Add static member interrupts_enabled() to poll the current status;
+	just to avoid calling the HAL directly, really.
+
+	* include/diag.h: 
+	Now just includes cyg/infra/diag.h, so that kernel-specific
+	features can be added later - original diag.h has moved to infra,
+	and is that includee.
+
+	* src/PKGconf.mak: 
+	Trace folder and its contents elided, now in infra.
+
+	* src/trace/diag.c:
+	* src/trace/fancy.cxx:
+	* src/trace/null.cxx:
+	* src/trace/simple.cxx:
+	* src/trace/tcdiag.cxx:
+	Deleted; all moved to infra, actually.
+
+1998-09-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/dbg-threads-api.h: 
+	* src/debug/dbg_gdb.cxx:
+	Converted threadref from long long to char[8] as defined by Cygmon
+	guys.
+
+	* src/common/thread.cxx:
+	Added scheduler lock around manipulations of thread list.
+
+	* include/except.hxx:
+	Now use CYG_EXCEPTION_COUNT to size handler arrays.
+
+Mon Aug 31 17:53:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/memfixed.hxx, include/mempolt2.hxx, include/mempolt2.inl,
+	  include/mempoolt.hxx, include/mempoolt.inl, include/memvar.hxx,
+	  include/mvarimpl.hxx, include/mvarimpl.inl, src/mem/memfixed.cxx,
+	  src/mem/memvar.cxx:
+	
+	Add new get_allocation_size() method to return the size of a
+	previously allocated block - trivial for fixed block allocator, and
+	requiring a bit of poking around for the variable block allocator.
+
+	This is required for the C library realloc() implementation. Strictly
+	this only uses the variable block allocator, but the API can only be
+	enhanced by also updating the template. As a result, this also meant
+	doing it for the fixed block allocator.	
+
+Mon Aug 31 09:51:37 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/stubrom.c (cyg_start): Renamed from main().
+
+Mon Aug 31 09:00:01 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/thread.cxx: Fixed typo.
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h, include/bitmap.hxx, include/clock.hxx,
+	  include/except.hxx, include/flag.hxx, include/instrmnt.h,
+	  include/intr.hxx, include/kapi.h, include/kapidata.h,
+	  include/mbox.hxx, include/mboxt.hxx, include/mboxt.inl,
+	  include/mboxt2.hxx, include/mboxt2.inl, include/memfixed.hxx,
+	  include/mempolt2.hxx, include/mempolt2.inl,
+	  include/mempoolt.hxx, include/mempoolt.inl, include/memvar.hxx,
+	  include/mlqueue.hxx, include/mutex.hxx, include/mvarimpl.inl,
+	  include/sched.hxx, include/sema.hxx, include/sema2.hxx,
+	  include/thread.hxx, include/thread.inl,
+	  include/pkgconf/kernel.h:
+	  src/common/clock.cxx, src/common/except.cxx,
+	  src/common/kapi.cxx, src/common/thread.cxx,
+	  src/debug/dbg_gdb.cxx, src/debug/generic-stub.c,
+	  src/instrmnt/meminst.cxx, src/instrmnt/nullinst.cxx,
+	  src/intr/intr.cxx, src/mem/memfixed.cxx, src/mem/memvar.cxx,
+	  src/sched/bitmap.cxx, src/sched/lottery.cxx,
+	  src/sched/mlqueue.cxx, src/sched/sched.cxx,
+	  src/sync/cnt_sem.cxx, src/sync/cnt_sem2.cxx, src/sync/flag.cxx,
+	  src/sync/mbox.cxx, src/sync/mutex.cxx, src/test/diag.cxx,
+	  src/test/kcache1.c, src/test/main.cxx, src/test/timer.cxx,
+	  src/test/tstmbox.cxx:
+	  tests/clock0.cxx, tests/clock1.cxx, tests/except1.cxx,
+	  tests/flag1.cxx, tests/intr0.cxx, tests/kclock0.c,
+	  tests/kclock1.c, tests/kexcept1.c, tests/kintr0.c,
+	  tests/kmbox1.c, tests/kmemfix1.c, tests/kmemvar1.c,
+	  tests/kmutex0.c, tests/kmutex1.c, tests/ksched1.c,
+	  tests/ksem0.c, tests/ksem1.c, tests/kthread0.c,
+	  tests/kthread1.c, tests/lottery.c, tests/mbox1.cxx,
+	  tests/memfix1.cxx, tests/memvar1.cxx, tests/sync3.cxx,
+	  tests/thread2.cxx :
+	Provide configuration data and rename configuration options
+
+Fri Aug 28 15:27:31 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/trace/fancy.cxx: 
+	* src/trace/simple.cxx: 
+	* src/trace/null.cxx: 
+	Condition on newly named symbols from the infra package, whence
+	these units will be moved soon.
+	
+Fri Aug 28 09:33:17 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/test/demo.cxx, src/test/kcache1.c, src/test/kphilo.c,
+	  src/test/main.cxx, src/test/philo.cxx, src/test/sload.c,
+	  src/test/timer.cxx, src/test/tstflag.cxx, src/test/tstmbox.cxx,
+	  src/test/tstmpf.cxx, src/test/tstmpool.cxx, src/test/tsttracc.c,
+	  src/test/tsttrace.cxx, tests/bin_sem0.cxx, tests/bin_sem1.cxx,
+	  tests/bin_sem2.cxx, tests/clock0.cxx, tests/clock1.cxx,
+	  tests/cnt_sem0.cxx, tests/cnt_sem1.cxx, tests/except1.cxx,
+	  tests/flag0.cxx, tests/flag1.cxx, tests/intr0.cxx, tests/kclock0.c,
+	  tests/kclock1.c, tests/kexcept1.c, tests/kill.cxx, tests/kintr0.c,
+	  tests/kmbox1.c, tests/kmemfix1.c, tests/kmemvar1.c, tests/kmutex0.c,
+ 	  tests/kmutex1.c, tests/kphilo.c, tests/ksched1.c, tests/ksem0.c,
+ 	  tests/ksem1.c, tests/kthread0.c, tests/kthread1.c, tests/lottery.c,
+ 	  tests/mbox1.cxx, tests/memfix1.cxx, tests/memfix2.cxx,
+ 	  tests/memvar1.cxx, tests/memvar2.cxx, tests/mutex0.cxx,
+	  tests/mutex1.cxx, tests/philo.cxx, tests/release.cxx,
+	  tests/sched1.cxx, tests/sync2.cxx, tests/sync3.cxx,
+	  tests/thread0.cxx, tests/thread1.cxx, tests/thread2.cxx:
+	Change entry points from main() to cyg_start(), and remove return
+	codes - while main returned an int, cyg_start() returns void. It has
+	no meaning anyway - what could you do with the code?
+
+	* src/test/tsttracc.c, src/test/tsttrace.cxx:
+	Also change trace calls (CYG_REPORT_...) to reflect that it is a
+	function called cyg_start with no args returning void, rather than
+	what it was for main(argc, argv)
+
+Fri Aug 28 09:24:41 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/debug/generic-stub.c: Moved strcpy/strlen from hal-stub to
+	generic-stub. Cleaned up a bit to avoid compiler warnings.
+
+Thu Aug 27 19:22:51 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/kphilo.c (Philosopher): 
+	* tests/philo.cxx (Philosopher): 
+	* src/test/philo.cxx (Philosopher): 
+	* src/test/kphilo.c (Philosopher): 
+	* src/common/kapi.cxx: 
+	Change CYG_RELEASE_DEBUG to CYGPKG_INFRA_DEBUG.
+	These changes are self-contained, so they can go in right now.
+	
+Thu Aug 27 15:20:31 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/mvarimpl.inl (free): 
+	Remove a couple of warning due to pointer comparison without casts
+	in coallesce(sic.) code.
+
+1998-08-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/kapidata.h:
+	Added saved_context to cyg_hardwarethread structure to track
+	GDB support in rest of kernel.
+
+1998-08-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Added CYGIMP_KERNEL_THREAD_GDB_SUPPORT to configure for GDB
+	interactions with the kernel.
+
+	* src/debug/dbg-threads-api.h: 
+	* src/debug/dbg_gdb.cxx:
+	Added these files to repository to support GDB interactions
+	with the kernel. Note that dbg-threads-api.h is a copy of a
+	file in devo/libstub. Any changes there must be merged in here
+	too.
+
+	* src/PKGconf.mak:
+	Added debug/dbg_gdb.cxx to COMPILE list.
+
+	* include/thread.inl: 
+	* include/thread.hxx:
+	Added support for GDB, specifically for thread-aware debugging.
+
+	* include/intr.hxx:
+	* src/intr/intr.cxx:
+	Added an extra argument to interrupt_end(): a pointer to
+	the saved register state. This is optionally used to provide
+	a more interesting saved register state for GDB.
+
+Tue Aug 25 02:36:26 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/generic-stub.h: 
+	Add void to empty prototype argument lists to silence compiler
+	warnings
+
+Fri Aug 21 18:46:34 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/common/clock.cxx (enable): 
+	Make the maths work right if we only just set up the clock
+	thingy.  Unsigned has a lot to answer for; when the next scheduled
+	tick was all correct, the delta was -1, which correctly rounds to
+	zero in the division.  But it isn't -1 it's 18446744073709551615
+ 	which gave a shift of 15 in the the uITRON test programs.
+
+Fri Aug 21 11:40:50 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/mboxt2.inl (put): 
+	* include/mempolt2.inl (alloc): 
+	Tidy Nick's changes (1998-07-27) for set_timer() semantics a bit,
+	make it a bit more efficient and smaller code.
+	
+Thu Aug 20 17:37:35 BST 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* include/mvarimpl.inl, include/pkgconf/kernel.h:
+	Added memory coallecsing to the variable size memory allocator.
+	This option is enabled my default.
+
+	* tests/stdlib/malloc2.c: Only print 50 messages, not 500.
+
+1998-08-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Moved definition of CYG_KERNEL_USE_INIT_PRIORITY from here
+	to hal.h.
+
+	* include/thread.hxx:
+	Changed argument to cyg_thread_entry() to CYG_ADDRWORD from
+	CYG_ADDRESS.
+
+	* include/ktypes.h:
+	Moved constructor priority ordering stuff out to infra/cyg_type.h.
+
+	* include/kapi.h: 
+	* src/common/kapi.cxx:
+	Added name and priority parameters to cyg_thread_create() and
+	swapped stack size and base parameters. These changes are
+	currently protected by DAY_OF_CHAOS ifdefs and are therefore
+	inactive.
+
+Wed Aug 19 19:06:16 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/bin_sem1.cxx, tests/bin_sem2.cxx, tests/cnt_sem1.cxx,
+	  tests/flag1.cxx, tests/mbox1.cxx, tests/memfix2.cxx,
+	  tests/memvar2.cxx, tests/sync2.cxx, tests/sync3.cxx,
+	  tests/thread2.cxx, tests/release.cxx, tests/kill.cxx: 
+	Reorder inclusion of thread.inl to silence warnings
+
+Wed Aug 19 18:48:03 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/kernel.hxx: 
+	Reorder inclusion of thread.inl to silence warnings
+
+Wed Aug 19 18:21:31 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/common/kapi.cxx, src/sync/flag.cxx: 
+	Reorder inclusion of thread.inl to silence warnings
+
+	* src/sync/bin_sem.cxx, src/sync/cnt_sem.cxx, src/sync/cnt_sem2.cxx,
+	  src/sync/mbox.cxx:
+	Add inclusion of thread.inl to silence warnings
+
+	* src/common/memset.c:
+	Make pointer arithmetic be on char *, not void * to silence warnings
+
+	* include/diag.h, src/trace/diag.c:
+	Make diag_init take void parameter, and give diag_printf explicit
+	parameters in prototypes to silence warnings
+
+1998-08-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	* src/common/thread.cxx:
+	Added ifdef for CYGIMP_IDLE_THREAD_YIELD to support single
+	priority configurations.
+
+Tue Aug 18 16:56:38 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/thread.hxx, include/thread.inl: 
+	To silence compiler warnings, move register_exception inline definition
+	from the .hxx to the .inl. Also move attach_stack to before the
+	constructor where it is invoked from.
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h:
+	Moved all HAL specific config options out to a HAL config file.
+
+	* include/kapi.h: 
+	* src/common/kapi.cxx:
+	Added cyg_scheduler_lock() and cyg_scheduler_unlock() to provide
+	user access to the scheduler lock.
+
+Mon Aug 17 21:39:20 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/kapi.h: 
+	Insert "void" to empty parameter lists to silence warnings
+
+Fri Aug 14 18:10:20 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* src/common/thread.cxx (exit): 
+	Set the state explicitly to EXITED rather than or'ing
+	it in; should be safe cos it's what kill does in the normal case.
+	Needed to avoid suspend sort of states persisting after death.
+	One character changes are always aesthetically pleasing.
+
+Fri Aug 14 17:28:01 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/kernel.h: 
+	Add config options as below:
+
+	* src/common/thread.cxx:
+	Add asserts of CYGNUM_KERNEL_MAX_COUNTED_WAKE_COUNT_ASSERT
+	and CYGNUM_KERNEL_MAX_SUSPEND_COUNT_ASSERT if they are defined.
+	Also lazily tidied format of func hdrs as per code review et al.
+
+1998-08-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/kapidata.h:
+	Added support for thread names and thread housekeeping list.
+
+	* src/common/delete.cxx:
+	Added include for cyg_type.h.
+
+	* include/pkgconf/kernel.h:
+	Added CYGIMP_THREAD_NAME and CYGIMP_THREAD_LIST options.
+
+	* include/thread.inl: 
+	* include/thread.hxx:
+	Added support for thread names and thread housekeeping list.
+
+	* src/common/thread.cxx:
+	Added support for thread names and thread housekeeping list.
+	Fixed ordering bug in Cyg_Thread::delay().
+
+Thu Aug 13 15:33:48 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/ktypes.h:
+	Remove inlined new and delete as they aren't strictly permitted and
+	they prevent a valid new and delete being defined anywhere else!
+	
+	* src/common/delete.cxx, src/PKGconf.mak: 
+	Add delete.cxx to provide default delete operation for when a C
+	library isn't present
+
+1998-07-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/thread.hxx, include/sched.hxx, include/mlqueue.hxx,
+	  include/lottery.hxx, include/bitmap.hxx, src/common/thread.cxx,
+	  src/sched/sched.cxx, src/sched/mlqueue.cxx, src/sched/lottery.cxx,
+	  src/sched/bitmap.cxx:
+	Added an alternative constructor to Cyg_Thread which takes
+	arguments in new order, and includes a scheduling parameters
+	argument. Propagated effects of this through Cyg_SchedThread
+	and Cyg_SchedThread_Implementation. This mostly takes the form
+	of passing the scheduling parameters through to the constructors.
+
+1998-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sync/flag.cxx, src/sync/cnt_sem2.cxx, include/mempoolt.inl,
+	  include/mempolt2.inl, include/mboxt2.inl, include/mboxt.inl:
+	Modified code in API calls that take a timeout to allow for a
+	timeout in the past.
+	NOTE: The timeouts have for now been left as relative delays, they
+	should be converted to absolute timeouts.
+
+	* src/common/thread.cxx:
+	Modified code in counted_sleep to allow	for a timeout in the past.
+	Added handling of EXIT wake_reason in delay().
+
+1998-07-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/thread.inl:
+	Reordered code in Cyg_Thread::set_timer() to init the timer after
+	wake_reason has been assigned.
+
+	* include/clock.inl: 
+	Removed Cyg_Alarm::enable().
+	
+	* src/sync/mutex.cxx (Cyg_Condition_Variable::wait): 
+	Modified order of code in timed version of wait to allow for a
+	timout in the past.
+	
+	* src/sync/cnt_sem.cxx (Cyg_Counting_Semaphore::wait):
+	Modified order of code in timed version of wait to allow for a
+	timout in the past. Also modified timeout to be absolute rather
+	than relative.
+
+	* src/common/thread.cxx (Cyg_Thread::wake):
+	Added test for whether a thread is actually asleep before waking
+	it. Allows us to apply wake() to awake threads without damage.
+
+	* src/common/clock.cxx:
+	Added code to Cyg_Counter::add_alarm() to deal with alarms
+	that trigger now or in the past.
+	Moved Cyg_Alarm::enable() here. Added code to do the right thing
+	when reenabling previously disabled interval alarms.
+
+1998-07-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/debug/stubrom.c: Added header comments.
+
+Thu Mar 26 18:25:36 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/test/philo.cxx:
+	Rename CYG_DEBUG ifdef to CYG_RELEASE_DEBUG
+
+Wed Mar 25 23:23:39 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* configure.in: Fix so non_arch.h is updated even if
+	config.cache does exists.
+
+	* include/kapi.h, include/kapidata.h, include/kernel.hxx
+	* include/mboxt.inl, include/sched.hxx:
+	#include <eccconf/kernel.h> instead of include <eccconf/kernel.h>
+
+	* include/eccconf/kernel.h: Added. This was old devo/config.h
+
+	* src/Makefile.am : Set CYG_CONFIGURATION to "<eccconf/kernel.h>"
+
+	* src/test/Makefile.am : Build .gdbinit from gdbinit.in
+	and tree from tree.in
+
+Wed Mar 25 18:24:48 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/Makefile.am, src/common/memcpy.c, src/common/memset.c:
+	  Move memcpy and memset functions from C library into kernel to
+	  satisfy the requirements of gcc - namely it must be available at
+	  at all time. Changed memcpy and memset to sit more cleanly in the
+	  kernel, and lose all dependencies on the C library
+	* src/Makefile.in: regenerated
+
+Fri Mar 13 18:36:42 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* configure.in : Add rule to get correct objcopy for target
+	* src/test/Makefile.am : Add rule to build philo.srec
+
+Fri Mar 13 11:47:23 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* configure.in, non_arch.h.in, non_arch.sh
+	Add support for the mn103000
+
+Thu Mar 12 11:38:28 GMT 1998  David Moore       <dsm@cygnus.co.uk>
+
+	* src/Makefile.am:
+	Removed flag to leave comments in generated linker script.
+       
+Thu Mar 12 10:55:20 GMT 1998  David Moore       <dsm@cygnus.co.uk>
+
+	* configure.in:
+	Fixed setting of platform variable
+
+Wed Mar 11 16:54:28 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* src/test/Makefile.am, tests/Makefile.am:
+	Make sure CXXFLAGS from configure are also used
+
+Wed Mar 11 16:16:57 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* configure.in, non_arch.h.in. non_arch.sh:
+	Added build support for mips 
+	* tests/Makefile.am, src/test/Makefile.am
+	Link with -nostdlib -lgcc
+
+Wed Mar 11 14:43:36 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* Makefile.am, configure.in, tests/Makefile.am
+	support building tests in the tests directory
+
+Wed Mar 11 13:18:17 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* acinclude.m4, stamp-h.in, non_arch.h.in, src/Makefile.am:
+	Added to support new kernel configure/make process
+
+	* Makefile.am: Modified to support new kernel configure/make 
+	process.
+
+	* src/acinclude.m4, src/aclocal.m4, src/configure, src/configure.in
+	Deleted to support new kernel configure/make process
+
+	* Makefile.in, configure, aclocal.m4, src/Makefile.in, 
+	src/configure: regenerated
+
+	* non_arch.sh: New shellscript to change platform/startup/debug
+	options after a configure is done.
+
+	* src/devo/config.h: include non_arch.h, for platform/startup/debug
+	options. This is generated at configure and modified by non_arch.sh
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

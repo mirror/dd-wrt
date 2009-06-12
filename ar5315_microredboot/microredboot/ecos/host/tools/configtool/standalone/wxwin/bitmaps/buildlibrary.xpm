@@ -1,0 +1,21 @@
+/* XPM */
+static char *buildlibrary_xpm[] = {
+"16 15 3 1",
+" 	c None",
+".	c #000080",
+"X	c Black",
+"                ",
+" .   .   .   .  ",
+"   .   .   .    ",
+" .   .   .   .  ",
+"    .  .  .     ",
+"X   .     .   X ",
+"X ..... ..... X ",
+"X  ...   ...  X ",
+"X   .     .   X ",
+"X             X ",
+"X X X X X X X X ",
+"X             X ",
+"X X X X X X X X ",
+"X             X ",
+"XXXXXXXXXXXXXXX "};

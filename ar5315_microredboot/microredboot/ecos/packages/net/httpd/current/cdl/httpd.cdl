@@ -1,0 +1,203 @@
+# ====================================================================
+#
+#      httpd.cdl
+#
+#      HTTPD configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2002 Nick Garnett
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Original data:  nickg
+# Contributors:   andrew Lunn
+# Date:           2002-10-15
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HTTPD {
+    display       "HTTP Daemon"
+    parent        CYGPKG_NET
+    doc           ref/net-httpd.html
+    include_dir   cyg/httpd
+    requires      CYGPKG_IO
+    requires      { 0 != CYGINT_ISO_STDLIB_STRCONV }
+    requires      { 0 != CYGINT_ISO_STDIO_FORMATTED_IO }
+    requires      { 0 != CYGINT_ISO_STRING_STRFUNCS }
+    requires      { 0 != CYGINT_ISO_ERRNO }
+    requires      { 0 != CYGINT_ISO_ERRNO_CODES }
+    requires      CYGPKG_NET
+    description   "
+        HTTP Daemon. This is an embedded HTTP server for use with
+        applications in eCos.This server is specifically aimed at
+        the remote control and monitoring requirements of embedded
+        applications. For this reason the emphasis is on dynamically
+        generated content, simple forms handling and a basic CGI
+        interface. It is NOT intended to be a general purpose server for
+        delivering arbitrary web content."
+
+    compile httpd.c 
+    compile -library=libextras.a init.cxx
+
+    cdl_option CYGNUM_HTTPD_SERVER_PORT {
+        display "HTTP port"
+        flavor   data
+        default_value 80
+        description "HTTP port to which browsers will connect.
+                     This defaults to the standard port 80, but may
+                     be changed to any other port number if required."
+    }
+
+    cdl_option CYGDAT_HTTPD_SERVER_ID {
+        display "HTTP server ID"
+        flavor   data
+        default_value { "\"eCos/1.0\"" }
+        description "This is the string that will be used as the server
+                     identifier in the HTTP header."
+    }
+    
+    cdl_option CYGNUM_HTTPD_THREAD_COUNT {
+        display "HTTPD thread count"
+        flavor data
+        default_value 1
+        description "The HTTP server can be configured to use more than
+                     one thread to service requests. This is useful if you
+                     expect to serve complex pages, or if you expect to have
+                     several simultaneous users. For most purposes, just
+                     one thread is perfectly adequate."
+    }
+
+    cdl_option CYGNUM_HTTPD_THREAD_PRIORITY {
+        display "HTTPD thread priority"
+        flavor data
+        default_value { CYGNUM_KERNEL_SCHED_PRIORITIES/2 }
+        legal_values 0 to CYGNUM_KERNEL_SCHED_PRIORITIES
+        description "The HTTP server threads can be run at any priority.
+                     The exact priority depends on the importance of the
+                     server relative to the rest of the system. The default
+                     is to put it in the middle of the priority range to provide
+                     reasonable response without impacting genuine high
+                     priority threads."
+    }
+
+    cdl_option CYGNUM_HTTPD_THREAD_STACK_SIZE {
+        display "HTTPD thread stack size"
+        flavor data
+        default_value 2048
+        description "This is the amount of stack to be allocated for each
+                     of the HTTPD threads. This quantity is in addition to the values
+                     of CYGNUM_HAL_STACK_SIZE_MINIMUM and
+                     CYGNUM_HTTPD_SERVER_BUFFER_SIZE."
+    }
+
+    cdl_option CYGNUM_HTTPD_SERVER_BUFFER_SIZE {
+        display "HTTPD server buffer size"
+        flavor data
+        default_value 256
+        description "This defines the size of the buffer used to receive the first
+                     line of each HTTP request. If you expect to use particularly
+                     long URLs or have very complex forms, this should be increased."
+    }
+
+    cdl_option CYGNUM_HTTPD_SERVER_AUTO_START {
+       display  "Autostart HTTPD"
+       default_value 1
+       description  "This option causes the HTTP Daemon to be started
+                     automatically during system initialization. If this option
+                     is not set then the application must start the daemon
+                     explicitly by calling cyg_httpd_startup()."
+    }
+
+    cdl_option CYGNUM_HTTPD_SERVER_DELAY {
+        display "HTTPD server startup delay"
+        flavor data
+        default_value 0
+        description "This defines the number of system clock ticks that the HTTP
+                     server will wait before initializing itself and spawning any
+                     extra server threads. This is to give the application a chance
+                     to initialize properly without any interference from the HTTPD."
+    }
+
+    cdl_component CYGPKG_HTTPD_MONITOR {
+        display "Simple Web System Monitor"
+        default_value 1
+        description "This enables a simple system monitor that displays the
+                     status of an eCos system using a small number of HTML pages."
+
+        compile -library=libextras.a monitor.c        
+    }
+    
+    cdl_component CYGPKG_HTTPD_TESTS {
+        display "HTTPD tests"
+        flavor  data
+        no_define
+        calculated { 
+	    "tests/httpd1"
+        }
+        description   "
+                This option causes the building of a simple test server."
+    }
+
+    cdl_component CYGPKG_HTTPD_OPTIONS {
+        display "HTTP server build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_HTTPD_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the HTTP server package.
+	        These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_HTTPD_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the HTTP server package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}
+
+# EOF httpd.cdl

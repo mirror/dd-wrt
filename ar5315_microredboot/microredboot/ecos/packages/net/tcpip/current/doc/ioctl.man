@@ -1,0 +1,40 @@
+NAME
+       ioctl - control device
+
+SYNOPSIS
+       #include <sys/ioctl.h>
+
+       int ioctl(int d, int request, ...)
+
+       [The  "third"  argument  is  traditionally char *argp, and
+       will be so named for this discussion.]
+
+DESCRIPTION
+       The  ioctl  function  manipulates  the  underlying  device
+       parameters  of special files.  In particular, many operat-
+       ing characteristics of sockets and network devices
+       may be controlled with ioctl requests.  The argu-
+       ment d must be an open file descriptor.
+
+       An ioctl request has encoded in it whether the argument is
+       an  in  parameter  or  out  parameter, and the size of the
+       argument argp in bytes.  Macros and defines used in speci-
+       fying   an   ioctl   request   are  located  in  the  file
+       <sys/ioctl.h>.
+
+RETURN VALUE
+       On success, zero is returned.  On error, -1  is  returned,
+       and errno is set appropriately.
+
+ERRORS
+       EBADF  d is not a valid descriptor.
+
+       EFAULT argp references an inaccessible memory area.
+
+       ENOTTY d  is  not  associated  with  a  character  special
+              device.
+
+       ENOTTY The specified request does not apply to the kind of
+              object that the descriptor d references.
+
+       EINVAL Request or argp is not valid.

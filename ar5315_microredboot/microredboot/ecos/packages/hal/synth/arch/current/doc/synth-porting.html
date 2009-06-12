@@ -1,0 +1,379 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Porting</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="Writing New Devices - host"
+HREF="synth-new-host.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="synth-new-host.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH-PORTING">Porting</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN1049"
+></A
+><H2
+>Name</H2
+>Porting&nbsp;--&nbsp;Adding support for other hosts</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-PORTING-DESCRIPTION"
+></A
+><H2
+>Description</H2
+><P
+>The initial development effort of the eCos synthetic target happened
+on x86 Linux machines. Porting to other platforms involves addressing
+a number of different issues. Some ports should be fairly
+straightforward, for example a port to Linux on a processor other than
+an x86. Porting to Unix or Unix-like operating systems other than
+Linux may be possible, but would involve more effort. Porting to a
+completely different operating system such as Windows would be very
+difficult. The text below complements the eCos Porting Guide.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-PORTING-LINUX"
+></A
+><H2
+>Other Linux Platforms</H2
+><P
+>Porting the synthetic target to a Linux platform that uses a processor
+other than x86 should be straightforward. The simplest approach is to
+copy the existing <TT
+CLASS="FILENAME"
+>i386linux</TT
+>
+directory tree in the <TT
+CLASS="FILENAME"
+>hal/synth</TT
+>
+hierarchy, then rename and edit the ten or so files in this package.
+Most of the changes should be pretty obvious, for example on a 64-bit
+processor some new data types will be needed in the
+<TT
+CLASS="FILENAME"
+>basetype.h</TT
+> header file. It will also be necessary
+to update the toplevel <TT
+CLASS="FILENAME"
+>ecos.db</TT
+> database with an
+entry for the new HAL package, and a new target entry will be needed.
+    </P
+><P
+>Obviously a different processor will have different register sets and
+calling conventions, so the code for saving and restoring thread
+contexts and for implementing <TT
+CLASS="FUNCTION"
+>setjmp</TT
+> and
+<TT
+CLASS="FUNCTION"
+>longjmp</TT
+> will need to be updated. The exact way of
+performing Linux system calls will vary: on x86 linux this usually
+involves pushing some registers on the stack and then executing an
+<TT
+CLASS="LITERAL"
+>int&nbsp;0x080</TT
+> trap instruction, but on a different
+processor the arguments might be passed in registers instead and
+certainly a different trap instruction will be used. The startup code
+is written in assembler, but needs to do little more than extract the
+process' argument and environment variables and then jump to the main
+<TT
+CLASS="FUNCTION"
+>linux_entry</TT
+> function provided by the
+architectural synthetic target HAL package.
+    </P
+><P
+>The header file <TT
+CLASS="FILENAME"
+>hal_io.h</TT
+> provided by the
+architectural HAL package provides various structure definitions,
+function prototypes, and macros related to system calls. These are
+correct for x86 linux, but there may be problems on other processors.
+For example a structure field that is currently defined as a 32-bit
+number may in fact may be a 64-bit number instead.
+    </P
+><P
+>The synthetic target's memory map is defined in two files in the
+<TT
+CLASS="FILENAME"
+>include/pkgconf</TT
+> subdirectory.
+For x86 the default memory map involves eight megabytes of read-only
+memory for the code at location 0x1000000 and another eight megabytes
+for data at 0x2000000. These address ranges may be reserved for other
+purposes on the new architecture, so may need changing. There may be
+some additional areas of memory allocated by the system for other
+purposes, for example the startup stack and any environment variables,
+but usually eCos applications can and should ignore those.
+    </P
+><P
+>Other HAL functionality such as interrupt handling, diagnostics, and
+the system clock are provided by the architectural HAL package and
+should work on different processors with few if any changes. There may
+be some problems in the code that interacts with the I/O auxiliary
+because of lurking assumptions about endianness or the sizes of
+various data types.
+    </P
+><P
+>When porting to other processors, a number of sources of information
+are likely to prove useful. Obviously the Linux kernel sources and
+header files constitute the ultimate authority on how things work at
+the system call level. The GNU C library sources may also prove very
+useful: for a normal Linux application it is the C library that
+provides the startup code and the system call interface.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-PORTING-UNIX"
+></A
+><H2
+>Other Unix Platforms</H2
+><P
+>Porting to a Unix or Unix-like operating system other than Linux would
+be somewhat more involved. The first requirement is toolchains: the
+GNU compilers, gcc and g++, must definitely be used; use of other GNU
+tools such as the linker may be needed as well, because eCos depends
+on functionality such as prioritizing C++ static constructors, and
+other linkers may not implement this or may implement it in a
+different and incompatible way. A closely related requirement is the
+use of ELF format for binary executables: if the operating system
+still uses an older format such as COFF then there are likely to be
+problems because they do not provide the flexibility required by eCos.
+    </P
+><P
+>In the architectural HAL there should be very little code that is
+specific to Linux. Instead the code should work on any operating
+system that provides a reasonable implementation of the POSIX
+standard. There may be some problems with program startup, but those
+could be handled at the architectural level. Some changes may also be
+required to the exception handling code. However one file which will
+present a problem is <TT
+CLASS="FILENAME"
+>hal_io.h</TT
+>, which contains
+various structure definitions and macros used with the system call
+interface. It is likely that many of these definitions will need
+changing, and it may well be appropriate to implement variant HAL
+packages for the different operating systems where this information
+can be separated out. Another possible problem is that the generic
+code assumes that system calls such as
+<TT
+CLASS="FUNCTION"
+>cyg_hal_sys_write</TT
+> are available. On an operating
+system other than Linux it is possible that some of these are not
+simple system calls, and instead wrapper functions will need to be
+implemented at the variant HAL level.
+    </P
+><P
+>The generic I/O auxiliary code should be fairly portable to other Unix
+platforms. However some of the device drivers may contain code that is
+specific to Linux, for example the <TT
+CLASS="LITERAL"
+>PF_PACKET</TT
+> socket
+address family and the ethertap virtual tunnelling interface. These
+may prove quite difficult to port.
+    </P
+><P
+>The remaining porting task is to implement one or more platform HAL
+packages, one per processor type that is supported. This should
+involve much the same work as a port to <A
+HREF="synth-porting.html#SYNTH-PORTING-LINUX"
+>another processor running Linux</A
+>.
+    </P
+><P
+>When using other Unix operating systems the kernel source code may not
+be available, which would make any porting effort more challenging.
+However there is still a good chance that the GNU C library will have
+been ported already, so its source code may contain much useful
+information. 
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-PORTING-OTHER"
+></A
+><H2
+>Windows Platforms</H2
+><P
+>Porting the current synthetic target code to some version of Windows
+or to another non-Unix platform is likely to prove very difficult. The
+first hurdle that needs to be crossed is the file format for binary
+executables: current Windows implementations do not use ELF, instead
+they use their own format PE which is a variant of the rather old and
+limited COFF format. It may well prove easier to first write an ELF
+loader for Windows executables, rather than try to get eCos to work
+within the constraints of PE. Of course that introduces new problems,
+for example existing source-level debuggers will still expect
+executables to be in PE format.
+    </P
+><P
+>Under Linux a synthetic target application is not linked with the
+system's C library or any other standard system library. That would
+cause confusion, for example both eCos and the system's C library
+might try to define the <TT
+CLASS="FUNCTION"
+>printf</TT
+> function, and
+introduce complications such as working with shared libraries. For
+much the same reasons, a synthetic target application under Windows
+should not be linked with any Windows DLL's. If an ELF loader has been
+specially written then this may not be much of a problem.
+    </P
+><P
+>The next big problem is the system call interface. Under Windows
+system calls are generally made via DLL's, and it is not clear that
+the underlying trap mechanism is well-documented or consistent between
+different releases of Windows.
+    </P
+><P
+>The current code depends on the operating system providing an
+implementation of POSIX signal handling. This is used for I/O
+purposes, for example <TT
+CLASS="LITERAL"
+>SIGALRM</TT
+> is used for the
+system clock, and for exceptions. It is not known what equivalent
+functionality is available under Windows.
+    </P
+><P
+>Given the above problems a port of the synthetic target to Windows may
+or may not be technically feasible, but it would certainly require a
+very large amount of effort.
+    </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="synth-new-host.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Writing New Devices - host</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

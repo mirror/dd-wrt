@@ -1,0 +1,157 @@
+2003-03-27  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/Makefile.am, host/Makefile.in:
+	$(bindir) may not exist yet, so create it if necessary.
+
+2003-02-25  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/usbs.sgml: Declare as <part> not <reference> to get
+	correct TOC numbering.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/usbs.cdl: Update doc links.
+
+	* doc/usbs.sgml: Comment out DOCTYPE for now to allow building
+	with standard doc build.
+
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/Makefile.in, host/configure:
+	Regenerate after toplevel acinclude.m4 update
+
+2002-09-23  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/configure.in:
+	Only build if the required Linux kernel support is present.
+
+2002-09-21  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/usbhost.c:
+	Avoid const compatibility problems with Tcl 8.4
+
+2002-01-23  Bart Veer  <bartv@redhat.com>
+
+	* host/Makefile.am, host/Makefile.in, host/acinclude.m4,
+	  host/aclocal.m4, host/configure, host/configure.in,
+	  host/usbhost.c, host/usbhost.tcl, host/verbose.tcl
+        Host-side support for USB testing
+	
+	* tests/usbtarget.c, tests/common.c, tests/protocol.h:
+	New files containing the target-side testing support and
+	support files.
+
+	* cdl/usbs.cdl:
+	Add a configuration option to build the target-side testing
+	support.
+
+	* doc/usbs.sgml, doc/*.html:
+	Document the testing support. Regenerate html.
+
+2001-09-14  Bart Veer  <bartv@redhat.com>
+
+	* doc/usbs.sgml, doc/*.html:
+	Fix the example strings in the enumeration data.
+	Regenerate html.
+
+	* include/usbs.h:
+	Update the USB testing data structure	
+
+	* src/usbs.c (usbs_handle_standard_control):
+	Fix an assertion for the special case of a USB configuration that
+	defines no endpoints.
+
+2001-08-06  Bart Veer  <bartv@redhat.com>
+
+	* include/usbs.h:
+	Define additional data structures required for USB testing.
+
+2001-06-19  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs.c, include/usbs.h (usbs_devtab_cread):
+	read operations should not take a const buffer
+
+2001-02-02  Bart Veer  <bartv@redhat.com>
+
+	* cdl/usbs.cdl:
+	Add doc property to point at the HTML
+
+	* doc/usbs.sgml, *.html:
+	Incorporate changes from docs department, regenerate HTML
+
+2001-01-25  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs.c: 
+	* include/usbs.h:
+	Only declare the devtab support functions if the I/O package is
+	present, since that provides required data types.
+
+	* cdl/usbs.cdl:
+	devtab support should be enabled by default iff the I/O package is
+	present. 
+
+2001-01-22  Bart Veer  <bartv@redhat.com>
+
+	* doc/usbs.sgml, doc/makefile:
+	Added documentation
+
+2001-01-16  Bart Veer  <bartv@redhat.com>
+
+	* include/usbs.h:
+	* src/usbs.c:
+	Update the start() and poll() functions to match the documentation.
+
+2000-12-15  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs.c:
+	Fix missing return statements.
+
+2000-11-28  Bart Veer  <bartv@redhat.com>
+
+	* cdl/usbs.cdl
+	* include/usbs.h:
+	* usbs.c
+	Update interface to USB device drivers
+
+2000-11-22  Bart Veer  <bartv@redhat.com>
+
+	* include/usbs.h: Fix nested #include protection
+
+2000-11-21  Bart Veer  <bartv@redhat.com>
+
+	* First check-in of eCos USB support.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

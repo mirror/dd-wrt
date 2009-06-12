@@ -1,0 +1,1643 @@
+2004-05-27  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c (do_exec): Be sensitive to value in
+	"entry_address" as this can indicate if the image to be executed
+	is valid (the "load" functions set it to "NO_MEMORY" when invalid)
+
+2004-05-16  Andrew Dyer  <adyer@righthandtech.com>
+
+	* include/hal_cache.h: Changed the calculation of _IWAY and _DWAY
+	for the case where HAL_MIPS_CACHE_INSN_USES_LSB is set to only
+	affect the LSBs in the CACHE instruction offset field.  #define
+	MIPS cache ops and use them instead of constants in the
+	HAL_?CACHE_* macros below.
+
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-08-06  Andy Dyer <adyer@righthandtech.com>
+
+	* include/arch.inc: Changed mask for cause register interrupt bits
+	to 0x3f from 0x7f. The extra bit was wrong, but in all current
+	implementations, benign.
+
+	* include/mips-stub.h: Disabled use of 64 bit registers for TX49,
+	so we can work with the public release compiler.
+
+2003-04-27  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/vectors.S: Pass saved interrupt state pointer to interrupt
+	handlers as (undeclared) third argument. Suggested by
+	Ryouzaburou Suzuki.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Call eth_drv_stop as necessary.
+
+2003-02-27  Nick Garnett  <nickg@calivar.com>
+
+	* include/mips-stub.h: Disabled option that makes MIPS32 targets
+	use 64 bit registers in GDB protocol. The standard GDB does not
+	support this, only MIPS own version.
+
+2003-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Let generic syscall code
+	handle exit.
+
+2003-01-09  Tim Michals  <t.michals@attbi.com>
+
+	* src/hal_misc.c (hal_delay_us): Use HAL_CLOCK_READ instead of inline
+	asm, to allow for variant/platform HAL packages overriding.
+
+2002-12-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* include/hal_cache.h: allow for cache flushes etc. where the base
+	address is not aligned to a cacheline boundary.
+
+2002-08-02  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* cdl/hal_mips.cdl: Redboot exec command can now be disabled 
+	  by CDL
+	
+2002-05-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h: Fix CYGNUM_HAL_EXCEPTION_MIN definition so
+	it reflects the FPU configuration.
+
+2002-04-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h: Only define decoded FPU vectors if these are
+	actually used. This allows tests to check for capabilities and do
+	N/A when appropriate.
+
+2002-04-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Add extra sig argument to
+	__do_syscall.
+
+2002-03-21  Nick Garnett  <nickg@redhat.com>
+
+	* include/hal_cache.h: Added macros to adjust the size argument to
+	some of the cache macros to a whole multiple of the cache line
+	size. Otherwise, for some values of the arguments, we can miss the
+	last line.
+
+2001-12-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h (CYGARC_HAL_GET_RETURN_ADDRESS,
+	(CYGARC_HAL_GET_RETURN_ADDRESS_BACKUP): Added dummy arguments.
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Fix warning.
+
+2001-12-04  Nick Garnett  <nickg@redhat.com>
+
+	* src/hal_misc.c: Added hal_arch_program_new_stack() to support
+	running user programs on a new stack placed at the top of RAM.
+
+	* src/vectors.S: Added hal_program_new_stack function to support
+	hal_arch_program_new_stack(). This does the actual stack
+	switching.
+
+	* include/mips-stub.h (NUMREGS): 
+	* include/mips-regs.h (NUM_REGS):
+	Added test to correctly define these when the target expects the
+	CP0 registers to be reported to GDB
+
+	* include/hal_arch.h: Added support for fetching CP0 registers in
+	MIPS64 platforms for GDB. Reorganized the code slightly.
+
+	* cdl/hal_mips.cdl:
+	Added define_proc to define HAL_ARCH_PROGRAM_NEW_STACK.
+
+2001-11-16  Nick Garnett  <nickg@redhat.com>
+
+	* src/hal_misc.c (hal_msbit_index): Fixed this function so that it
+	actually works!
+
+2001-10-24  Nick Garnett  <nickg@redhat.com>
+
+	* src/vectors.S:
+	Change behaviour of __default_exception_vsr to only switch to
+	interrupt stack if we are not already on it. This is now similar
+	to the way the interrupt VSR operates. This is necessary since it
+	is possible to take exceptions (such as TLB miss or address error)
+	while running in the GDB stubs.
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Ensure that PC
+	planted when catching stub exceptions gets sign extended where
+	necessary in 64 bit platforms.
+
+2001-10-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h: Provide CYGARC_CACHED_ADDRESS() and friends
+	without casting for use in assembler files.
+
+2001-09-17  Nick Garnett  <nickg@redhat.com>
+
+	* src/hal_misc.c (hal_delay_us): Rewrote this routine to work
+	correctly in higher speed CPUs. The counter register counts at
+	half CPU clock speed. The original ticks calculation could
+	overflow very easily. For example in a 133MHz CPU, it overflowed
+	with any argument greater than 32! This is another of those "how
+	did it ever work?" things.
+
+	* include/hal_arch.h: Added casts to CYGARC_PHYSICAL_ADDRESS() and
+	friends.
+
+2001-09-07  Nick Garnett  <nickg@redhat.com>
+
+	* include/mips-stub.h: Returned target_register_t to long long
+	type for VR4300 target. This is the only platform that does 64bit
+	register saves/restores, and the GDB registers must be full sized.
+
+	* include/arch.inc: Added option to select correct initial SR
+	value when the startup is ROMRAM.
+	Disabled setting of status and config registers when using a ROM
+	monitor. The monitor should have already set these to appropriate
+	values.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-08-01  Hugo Tyson  <hmt@redhat.com>
+
+	* src/vectors.S (restore_state): (see the change below 2001-07-03)
+	Make the code to keep SR IM bits from the ISR conditional on a CDL
+	interface so that it is selected on a per-platform or variant basis.
+
+	* cdl/hal_mips.cdl (CYGINT_HAL_MIPS_INTERRUPT_RETURN_KEEP_SR_IM):
+	New interface to control conditional code.
+
+	* include/hal_intr.h (HAL_ENABLE_INTERRUPTS): Make this (et al)
+	conditional on CYGHWR_HAL_INTERRUPT_ENABLE_DISABLE_RESTORE_DEFINED
+	so that the variant HAL can define these insead, in the usual
+	manner.
+
+2001-07-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/redboot_linux_exec.c: Adjust below change by getting baud
+	rate, thus allowing for runtime baud rate changes, and no
+	dependency on platform CDL defines.
+
+2001-07-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c: Define DEFAULT_BAUD.  The supporting
+	CDL differs from platform to platform, so this define is used to
+	ameliorate the differences.
+
+2001-07-17  David Woodhouse <dwmw2@redhat.com>
+
+	* src/redboot_linux_exec.c: Add environment stuff to the 'exec' 
+	command, also make it use the entry point from the last 'load' 
+	command if there is one.
+	Also add '-w' delay option.
+
+2001-07-09  David Woodhouse <dwmw2@redhat.com>
+
+	* src/redboot_linux_exec.c: New 'exec' command for RedBoot, mostly
+	copied from the SH version, hacked to pass arguments in argc/argv
+	form as that seems to be what most Linux/MIPS kernels expect to
+	receive from PMON.
+	* cdl/hal_mips.cdl: Add necessary magic for the above.
+	
+2001-07-03  Hugo Tyson  <hmt@redhat.com>
+
+	* src/vectors.S (restore_state): When restoring the CPU status
+	register right at the end of interrupt processing, keep the
+	current settings of the IM[7:0] bits within the status register.
+	Depending on platform, these may be used as interrupt masks, so if
+	an ISR or DSR masks interrupts they must be preserved.  If they
+	are not used, then this does no harm.
+	#ifdef'd out for CYG_HAL_MIPS_R3900 anyway 'cos the TX39 does not
+	use these bits at all.
+
+2001-06-27  Mark Salter  <msalter@redhat.com>
+
+	* src/vectors.S (_start): Add code to switch from KSEG1 to KSEG0 if
+	CYGARC_START_FUNC_UNCACHED.
+
+2001-06-27  Hugo Tyson  <hmt@redhat.com>
+
+	* src/hal_misc.c: Include <cyg/hal/hal_if.h> for definition of
+	hal_ctrlc_isr() and hence warnings reduced.
+
+2001-06-19  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_arch.h: Support saving/restoring CP0 registers for GDB.
+
+	* include/mips-stub.h (NUMREGS): Use different value for mips32.
+
+2001-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/mips.inc (FUNC_START): Added .noreorder.
+
+2001-06-05  Hugo Tyson  <hmt@redhat.com>
+
+	* include/mips-stub.h: Configuration messing to avoid the need to
+	add a platform-specific clause for every new 32-as-64-to-GDB
+	target that we make.  The header can now pick REGSIZE,
+	target_register_t and so on according to a generic define as well
+	as specific platform defs.
+
+	* cdl/hal_mips.cdl: Provide interface for the above, so targets
+	can implement it.  CYGINT_HAL_MIPS_STUB_REPRESENT_32BIT_AS_64BIT
+
+2001-02-27  Chris Morrow  <cmorrow@YottaYotta.com>
+
+	* src/vectors.S (hal_zero_bss): Oops, allow for bss being multiple
+	of block size. And add delay slot.
+
+2001-02-26  Chris Morrow  <cmorrow@YottaYotta.com>
+
+	* src/vectors.S (hal_zero_bss): Implemented in assembler for speed.
+	* src/hal_misc.c (hal_zero_bss): Delete.
+
+2001-02-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c: Added option to call hal_ctrlc_isr() in default
+	ISR when in RedBoot.
+
+2001-02-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/mips.inc: Added some extra CP0 register names.
+
+2001-02-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Small tweak of comments to work around tools problem
+	with mipsisa32 tools.
+
+2001-01-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/mips-stub.h: Added prototypes for __is_bsp_syscall() and
+	hal_syscall_handler().
+
+	* include/hal_arch.h:
+	Reorganized HAL_SavedRegisters structure to work properly with a
+	64 bit processor. Fields are now correctly sized, and aligned on
+	the right boundaries.
+
+	* include/arch.inc:
+	Added option for variant and platform to supply extra bits to be
+	added to INITIAL_SR.
+	Reorganized register save area layout to match changes in
+	hal_arch.h.
+	Added macros sva, lva, mvatc0, mvafc0 to transfer 64 bit items to
+	and from memory/CP0 (*va* is used because most such values are
+	(virtual) addresses).
+
+	* src/vectors.S: Added use of *va* macros where appropriate.
+	
+	* src/mips-stub.c: Added __is_bsp_syscall() function.
+
+	* src/hal_syscall.c: Added this file to support GNUPro system
+	calls in RedBoot.
+
+	* cdl/hal_mips.cdl: Added hal_syscall.c to compile list.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h: Added extern for hal_delay_us.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Make hal_intc_decode macro mask the cause
+	register with the status (interrupt mask) register.
+
+2001-01-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/arch.inc: Allow hal_intc_decode to be defined by variant
+	or platform.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h (HAL_DELAY_US): Added.
+	* src/hal_misc.c (hal_delay_us): Added. And fixed to work with an
+	incrementer that ticks at the pipeline clock rate.
+
+	* include/mips-stub.h: RM7000 is also a 64bit CPU.
+
+2000-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_cache.h: IWAY->_IWAY, DWAY->_DWAY for namespace 
+	cleanliness
+
+2000-12-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h: Use variant specific method to select cache
+	WAY.
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c: Update __mem_fault_handler declaration.
+
+2000-09-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h (HAL_DEFAULT_ISR): Fix warning.
+	(HAL_DEFAULT_ISR): Undo that change.
+
+2000-09-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h: Only define _FPE when there's a FPU.
+
+2000-09-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h (HAL_VSR_SET_TO_ECOS_HANDLER): Fix compiler
+	warning.
+
+	* src/vectors.S: Fully decode TLB related exceptions.
+	* src/hal_misc.c (cyg_hal_exception_handler): Undid below change.
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Base vector
+	calculation on cause register, not the provided vector value.
+
+2000-09-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h: Added definition for decoded FPU
+	exceptions.
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Decode FPU
+	exceptions.
+
+2000-09-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/basetype.h: Removed change from yesterday.
+
+	* include/hal_intr.h (CYGNUM_HAL_EXCEPTION_FPU): Associated to FPE
+	exceptions.
+
+2000-09-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/basetype.h: Override the alignment macros for the MIPS
+	architecture. The MIPS compiler only alows a maximum of 4 bytes
+	of alignment where as the default is 8
+
+	* include/hal_cache.h (_HAL_ASM_DCACHE_ALL_WAYS): Force d-cache
+	selection.
+
+2000-09-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/mips-stub.h: No longer need to define
+	CYGARC_REGSIZE_DIFFERS_FROM_TARGET_REGISTER_T
+	(CYGARC_SIGN_EXTEND_REGISTERS): 
+
+        * include/mips-stub.h: Change vr4300 register sizes to use 32-bit
+        target_register_t, and tell the generic stub to use sign extension.
+ 	Ditto for tx49
+	* include/hal_cache.h (_HAL_ASM_SET_MIPS_ISA): Don't use pasting
+	when it doesn't result in a preprocessing token. Just use string
+	concatenation.
+
+2000-07-21  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/vectors.S: Only jump uncached to _start if
+	CYGARC_START_FUNC_UNCACHED is defined.
+
+2000-07-20  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/mips-stub.h: Define CYGARC_REGSIZE_DIFFERS_FROM_TARGET_REGISTER_T
+	for the MIPS32 targets since GDB needs 64 bit registers regardless of
+	what size we are really storing.
+
+2000-07-19  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/mips-stub.h (CYGARC_SIGN_EXTEND_REGISTERS): Make sure
+	the stub sign-extends the registers before returning them to GDB.
+
+2000-07-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/vectors.S: Added hal_reset_vector_first_code and
+	hal_early_init macros.
+
+	* src/mips-stub.c (__install_breakpoints): Also install any
+	breakpoints in the list.
+
+	* include/mips-regs.h: Added a few new register definitions.
+
+	* include/hal_intr.h: Added CYGNUM_HAL_EXCEPTION_INTERRUPT.
+
+	* include/hal_arch.h: Added some macros for jumping between cached
+	and uncached.
+
+	* include/mips-stub.h: Renamed some enums to work around namespace
+	corruption.  Added breakpoint support in the HAL.
+
+2000-07-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/arch.inc: Support for mips3264.
+	* include/mips-stub.h: Ditto.
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips-stub.c: Removed use of CYG_LABEL_NAME() and added
+	underscore to _breakinst.
+
+	* include/basetype.h: Removed definition of CYG_LABEL_NAME().
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c (hal_arch_default_isr): Removed what's now a
+	generic C-c check in the common HAL.
+
+	* include/hal_arch.h (CYGARC_HAL_GET_RETURN_ADDRESS): Defined.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h (CYGARC_HAL_SAVE_GP, CYGARC_HAL_RESTORE_GP):
+	Added.
+
+2000-05-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/basetype.h: 
+	* src/mipsfp.c: 
+	Support FPU double-LE layout in BE mode.
+
+2000-05-24  Jesper Skov  <jskov@redhat.com>
+
+	* src/mipsfp.c: Also handle doubles in 32bit FPU mode.
+
+2000-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/arch.inc: 
+	* src/vectors.S:
+	Made exception return safe.
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Call CTRLC init after stub initialization.
+
+	* cdl/hal_mips.cdl: Only include CTRLC support if not prevented
+	by platform.
+
+	* include/hal_cache.h: When using 'cache' instruction, hit all
+	ways, not only way0.
+
+2000-05-18  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_io.h: Allow platforms to override IO macro
+	definitions.
+
+2000-05-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h:
+	* src/vectors.S:
+	Filter 'break 0x7' (GCC division-by-zero) exceptions out into a
+	new vector.
+	Fix typo.
+	
+2000-05-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Allow warm-start to be treated like cold-start if
+	platform requires it.
+
+2000-05-11  Jesper Skov  <jskov@redhat.com>
+
+	* include/mips-stub.h: Added register size for TX49.
+
+2000-05-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/arch.inc: Force assembler into MIPS3 mode before using
+	eret.
+
+	* include/basetype.h: Fix comments.
+
+2000-03-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/mips-stub.h: Make C++ safe
+
+	* include/hal_cache.h (_hal_asm_mips_cpp_stringize): Add as a separate
+	macro because the compiler has got more picky
+
+2000-03-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/vectors.S (_start): Set return address to 0 and unconditionally
+	jump to cyg_start, so that GDB doesn't get confused with backtraces
+
+2000-03-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/context.S :
+	Added jmpbuf_regsize to insulate jumb buffer from changes in
+	mips_regsize. This will need extra work if we go to a full 64 bit
+	variant, but for now is the simplest solution to this problem.
+
+2000-02-25  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/arch.inc: Add lpc and spc macros to save and restore PC
+	* src/context.S (hal_thread_switch_context): Restore RA into PC
+	location in context so that thread debugging works
+
+2000-02-23  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/hal_misc.c (hal_idle_thread_action):
+	CYG_HAL_MIPS_SIM -> CYGPKG_HAL_MIPS_SIM
+	CYG_HAL_MIPS_JMR3904 -> CYGPKG_HAL_MIPS_TX39_JMR3904
+
+	* include/arch.inc: CYG_HAL_MIPS_SIM -> CYGPKG_HAL_MIPS_SIM
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips.cdl: removed fix me.
+
+2000-01-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	* include/arch.inc: 
+	* src/vectors.S: 
+	* src/context.S: 
+	Several fixes to allow the GPRs to be saved
+	and restored as 64 bit values on some architectures. This is not
+	full 64 bit support since it only covers the GPRs, HI and LO,
+	there is more to be done in the CP0 registers (however it is a
+	start).
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/vectors.S (__default_exception_vsr): Rename
+	CYG_HAL_USE_ROM_MONITOR_CYGMON -> CYGSEM_HAL_USE_ROM_MONITOR_CygMon
+	Rename CYG_HAL_ROM_MONITOR -> CYGSEM_HAL_ROM_MONITOR
+
+	* src/hal_misc.c (hal_default_isr): Rename
+	CYG_HAL_USE_ROM_MONITOR_CYGMON ->
+	CYGSEM_HAL_USE_ROM_MONITOR_CygMon
+
+	* include/arch.inc: Rename CYG_HAL_USE_ROM_MONITOR ->
+	CYGSEM_HAL_USE_ROM_MONITOR
+
+1999-12-20  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips.cdl:
+
+	Fix syntax error.
+
+1999-12-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mipsfp.c (flt2reg): New inline function to convert between
+	float union and register type
+	(reg2flt): Likewise in reverse
+	(cyg_hal_mips_process_fpe): Handle endianness correctly using the above
+	functions. Avoid possible aliasing problems with the compiler. Ensure
+	values are zeroed with the correct sign. Check for denormalized operands
+	for all remaining FPU opcodes.
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Allow handling of
+	unimplemented operation FPU exceptions to be configurable
+	* include/pkgconf/hal_mips.h: Provide
+	CYGSEM_HAL_MIPS_EMULATE_UNIMPLEMENTED_FPU_OPS to do this
+	* cdl/hal_mips.cdl: Likewise
+
+	All the above required for cases 102817 and 102820
+
+1999-12-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_intr.h (CYGNUM_HAL_EXCEPTION_COUNT): Ensure you can
+	handle FPU exceptions if present
+	Reported in case 102817
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-04  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Added code in reset vector to reset the config0
+	register to a known state. This is because on some MIPS variants
+	the K0 field comes up in an undefined state.
+	[Later] Moved this code to just work in the case of a cold boot.
+	NMIs and warm boots should leave it as it was.
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips.cdl: Added.
+
+1999-10-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips.h: Added condition to set a
+	MIPS-private option (CYGDBG_HAL_MIPS_DEBUG_GDB_CTRLC_SUPPORT) if
+	either CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT or
+	CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT are defined. In the MIPS HAL
+	these are implmented with the same code.
+
+	* src/hal_misc.c: Changed CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT to
+	CYGDBG_HAL_MIPS_DEBUG_GDB_CTRLC_SUPPORT.
+
+	* src/vectors.S: Space for old SP after switching to interrupt
+	stack must be 8 bytes to preserve alignment of SP. Otherwise any
+	nested interrupts or exceptions will get an address error
+	exception if the FP regs are saved, which then recurses.
+	Changed CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT to
+	CYGDBG_HAL_MIPS_DEBUG_GDB_CTRLC_SUPPORT.
+	
+	* src/mips-stub.c (__is_breakpoint_function): Fixed comparison
+	between PC register and label. On 64 bit CPUs these are both 32
+	bit values in 64 bit types, but the way that they are generated,
+	the PC is zero extended and the label is sign extended. This
+	caused them to always differ. Fixed by casting label to unsigned
+	long before widening.
+
+1999-10-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Replaced ifdef with call to hal_intc_translate
+	macro so the behaviour here may be customized by variant or
+	platform HALs.
+
+	* include/arch.inc: Added default implementations of
+	hal_intc_translate macro.
+
+1999-10-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/basetype.h: Made definition of CYG_BYTEORDER dependent
+	on definition of CYGPKG_HAL_MIPS_[L|M]SBFIRST.
+
+1999-09-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/vectors.S (__default_exception_vsr):
+	Rename exception_handler()->cyg_hal_exception_handler()
+	After all, we will just do a jump rather than a jal into
+	cyg_hal_exception_handler()
+	(restore_state): Make the change below (by Hugo) be conditional
+	on CYG_HAL_USE_ROM_MONITOR_CYGMON.
+	Add explanatory comment about the additions for Cygmon
+
+	* src/hal_misc.c (hal_default_isr): Use new format HAL_DIAG_IRQ_CHECK()
+	and check return code is negative; if so, return
+	(cyg_hal_exception_handler): Rename from exception_handler()
+	Now return cyg_uint32, but default to returning 0 always
+
+1999-09-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	This set of changes with matching ones in jmr3904 comes from Mark
+	Salter's work to make jmr3904 CygMon talk Ethernet.
+	
+	* src/vectors.S (restore_state): Call CygMon for exceptions or
+	unhandled interrupts if CYG_HAL_USE_ROM_MONITOR.  This is why the
+	return value from the ISR is preserved.  Don't fully understand
+	this.
+
+	* src/hal_misc.c (hal_default_isr): Call into hal_diag via
+	HAL_DIAG_IRQ_CHECK if it's defined and CYG_HAL_USE_ROM_MONITOR.
+	This lets CygMon check for network interrupts &c.
+
+1999-09-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/arch.inc:
+	Moved code to initialize cache out to variant header since it is
+	variant specific.
+
+1999-09-08  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c (exception_handler): Catch exceptions that come from
+	within GDB stubs and return if that's what the stubs intend
+
+1999-08-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_io.h: Added include of plf_io.h.
+
+1999-08-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mipsfp.c (cyg_hal_mips_process_fpe): CYG_REPORT_FUNCNAMETYPE()
+	must be first in a C file
+
+1999-07-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/arch.inc (hal_fpu_save_caller): Save fcr31 first as
+	recommended by user's manual
+	(hal_fpu_load_caller): Similarly restore fcr31 last
+
+	Rename CYG_HAL_MIPS_FSR_INIT to CYG_HAL_MIPS_FCSR_INIT since that's
+	closer to its documented name
+
+	* include/mips-regs.h: 
+	Add floating point register definitions, and bitfields/masks for FCR31
+	in particular
+
+	* src/mips-stub.c (__single_step):
+	Enable FP branch support if the hardware has an FPU.
+
+	Change register access to FCR using HAL macro names from mips-regs.h
+
+	When comparing branch tests with 0, cast the result of get_register()
+	to int so that it works on 64-bit MIPS targets even in 32-bit mode,
+	when GDB still insists REG_SIZE must be 8 (in which case negative
+	results would otherwise go positive)
+	
+	* src/mipsfp.c: New file to emulate unimplemented MIPS FP operations
+	* src/PKGconf.mak (COMPILE): compile it
+
+	* src/hal_misc.c (exception_handler): If we have an FPU and get an FP
+	exception, call cyg_hal_mips_process_fpe() from mipsfp.c to process
+	it
+
+
+1999-07-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/mips.inc:
+	* include/arch.inc:
+	* src/vectors.S:
+	Rename "cache" register to "cachectrl" to prevent confusion with
+	the "cache" instruction.
+	For symmetry therefore also rename mipsreg_cache to mipsreg_cachectrl
+
+	* include/arch.inc (hal_cache_init):
+	Invalidate caches at startup
+
+	* include/hal_cache.h:
+	Allow cache invalidation when cache disabled
+	Add _HAL_ASM_SET_MIPS_ISA() to allow use of cache macros in code
+	compiled with a MIPS ISA below 3
+
+1999-06-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/arch.inc:
+	* include/hal_arch.h:
+	Added initializer for FPU FSR register.
+
+1999-06-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c (hal_default_isr): When chaining, always try the
+	ctrlc ISR, the passed-in vector number can be bogus.
+
+1999-06-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	Added cyg_hal_clock_period variable.	
+	
+	* include/hal_intr.h:
+	Modified HAL_CLOCK_LATENCY() macro to do the right thing.
+	Added cyg_hal_clock_period variable.	
+
+	* include/hal_cache.h: Modified implementations of cache macros to
+	only do anything if the appropriate cache is enabled.
+
+1999-06-17  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Added code to discriminate different entry
+	conditions to the reset vector. Added code to translate an NMI
+	into a standard exception and added a new vector in the VSR table
+	for it.
+	Made above code not be present in RAM. Tidied away some debug
+	code.
+
+1999-06-11  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c: Make sure all symbol addresses are given an
+	appropriate type that they won't be relocated relative to $gp
+	Fix for CR 100800
+	
+1999-06-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h: Added macros to copy FPU registers between
+	HAL and GDB register save states.
+
+1999-06-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Dummy __gccmain did not have a delay slot after
+	the "jr ra".
+
+	* include/hal_arch.h: Make value of CYGNUM_HAL_STACK_SIZE_TYPICAL
+	always be greater than CYGNUM_HAL_STACK_SIZE_MINIMUM.
+
+1999-06-02  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_invoke_constructors): 
+	Rework for new constructor scheme for new compilers. Should work
+	with old compilers too.
+
+1999-05-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Removed references to CYG_HAL_STARTUP_STUBS.
+	Removed some defunct code.
+
+	* include/hal_cache.h (HAL_ICACHE_INVALIDATE_ALL): Fixed typo.
+
+1999-05-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Move call to hal_diag_intr_start to a more useful place.
+	Added a save of the current state pointer to memory for ctrl-c
+	support. Ensure that exceptions are enabled before calling the ISR
+	to allow breakpoints to function.
+
+	* src/mips-stub.c: Imported asynchronous interrupt support from
+	libstub/cygmon.
+
+	* include/hal_intr.h: Added HAL_DEFAULT_ISR to contain the name of
+	the default ISR.
+
+	* src/hal_misc.c: Added code to call HAL_CTRLC_ISR to default ISR
+	if it is enabled. Added some (disabled) debug code.
+
+	* include/hal_cache.h: Added default implementation of
+	HAL_DCACHE_IS_ENABLED(). Made use of it in some cache macros.
+	Also fixed some typos in some macros.
+
+1999-05-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_intr.h: Define HAL_INTERRUPT_STACK_BASE and
+	HAL_INTERRUPT_STACK_TOP so that stack usage macros in
+	kernel/.../stackmon.hxx can work.
+
+	* src/vectors.S (cyg_interrupt_stack_base): Define this symbol for
+	the interrupt stack and its friend for the stack top so that we
+	can publish them with nice names.
+
+1999-05-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: 
+	Rationalized use of "at" and "noat" setting.
+	Made use of "lar" where necessary.
+	
+	* src/mips-stub.c (__install_breakpoints): Added cache flushes to
+	ensure that the just-set breakpoint is migrated to main memory and
+	will be fetched by the instruction cache.
+
+	* src/context.S:
+	Rationalized use of "at" and "noat" setting.
+
+	* include/arch.inc:
+	Added initial value for the config0 register and added code to set
+	it to hal_cpu_init.
+	Added default "lar" macro.
+
+1999-05-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_INTERRUPT_STACK_CALL_PENDING_DSRS): 
+	Add macro for new DSR handling mechanism (was override of a
+	"weak" symbol in kernel).	
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+	The following have been merged from a branch:
+	
+    1999-05-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	* include/hal_intr.h: 
+	* include/hal_cache.h: 
+	* include/arch.inc:
+	Changed references to "imp" and "implementation" to "var" and
+	"variant" respectively. These are better names for these files and
+	functions.
+
+	* src/vectors.S: 
+	Removed or disabled some development/debug code.
+	Same imp->var changes as above.
+	
+    1999-05-06  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Added call to hal_cpu_except_enable in
+	__default_exception_vsr to re-enable nested exceptions.
+
+	* src/mips-stub.c: Use _registers[X] rather that register[X] for
+	accessing CPU registers, since the former may point to per-thread
+	register sets while the latter only refers to the current trap
+	register set.
+
+	* include/arch.inc: Added hal_cpu_except_enable macro to
+	(re-)enable exception processing and disable interrupts. This is
+	necessary if we are to allow nested exceptions (like breakpoints
+	in exception handlers).
+
+    1999-04-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Reenable interrupts while processing exceptions.
+	Several temporary kludges to permit us to test ROM code from RAM
+	under PMON.
+
+	* include/mips.inc: Extended list of CP0 register aliases.
+
+	* include/mips-stub.h: The stubs must behave as if we are on a 64
+	bit processor when debugging the VR4300, since that is what GDB
+	expects.
+	
+	* include/arch.inc: Added generic version of hal_cache_init to
+	disable kseg0 caching in config0 register.
+
+	* include/hal_cache.h: Moved dummy addresses used in index
+	operations to 0x80000000, zero caused MMU exceptions.
+	Fixed looping bugs in all macros that use them.
+
+    1999-04-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	[v1_2_2_beta branch]
+	* src/vectors.S: Add dummy "__gccmain()"
+
+    1999-04-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_arch.h: Make minimum stack sizes more realistic.
+	Also fix size of interrupt stack frame when FPU present.
+
+    1999-04-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Added support for floating point register save
+	and restore. Fixed hal_interrupt_stack_call_pending_DSRs to use
+	hal_cpu_int_merge macro.
+
+	* src/context.S: Added support for floating point register save
+	and restore. Started some preparations for 64 bit processor
+	support.
+
+	* include/mips.inc: Added floating point register aliases. Moved
+	saved state to arch.inc.
+
+	* include/hal_arch.h: Completed support for floating point state
+	save and restore. Parameterized GDB support macros a little to
+	enable GDB to work properly.
+
+	* include/arch.inc: Added support for floating point state save
+	and restore. Moved assembler version of saved state layout here
+	from mips.inc.
+
+    1999-04-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/context.S (hal_thread_load_context): Substituted explicit
+	code to reload the interrupt enable state with a macro.
+
+	* include/hal_cache.h: Removed default implementations of
+	HAL_[D/I]CACHE_[EN/DIS]ABLE since these were actually TX39
+	specific. There is aparrently no standard way of implementing
+	these function in the MIPS architecture.
+
+	* include/mips.inc: Added a comment to point out a TX39-only
+	register.
+	
+	* src/vectors.S: Modified hal_interrupt_stack_call_pending_DSRs()
+	to also call DSRs with interrupts enabled. Returns interrupt state
+	to original value when finished.
+	Use hal_cpu_int_ensable macro in place of explicit code in
+	hal_interrupt_stack_call_pending_DSRs().
+
+    1999-04-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/arch.inc: Ifdeffed definition of hal_intc_init macro to
+	allow it to be defined elsewhere. Added default versions of diag
+	macros.
+
+	* src/vectors.S: Added some low-level diagnostic macros to show
+	HAL events if there is adequate hardware (such as leds).
+	Removed interrupt enable/disables in interrupt processing since we
+	can now go through a thread switch with interrupts disabled.
+	Ifdeffed ISR tables so they can be defined elsewhere.
+	Added implementation of hal_interrupt_stack_call_pending_DSRs.
+	Added calls to implementation and platform init routines.
+	
+	* src/hal_misc.c: Many changes to hal_idle_thread_action() to
+	print or instrument various CPU registers. Left with code to
+	wiggle an led in the idle loop.
+	Stripped out TX39 specific code and moved it to plf_misc.c.
+	
+	* src/context.S: Added code to save and restore the interrupt mask
+	state in thread contexts.
+
+	* include/hal_intr.h:
+	Renamed default interrupts to match the hardware more closely.
+	Added ifdef around HAL_TRANSLATE_VECTOR() so it can be made
+	platform/variant specific. Added implementation of
+	HAL_INTERRUPT_ACKNOWLEDGE().
+
+	* include/hal_arch.h (HAL_THREAD_INIT_CONTEXT): Aligned the
+	intitial stack pointer to 16 byte boundary, added an initial value
+	for the status register.
+
+	* include/arch.inc: Added some nops to eret macros.
+
+    1999-04-13  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/mips.ld: Migrate global MIPS linker script to individual
+	MIPS variant directories
+
+1999-04-30  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	Merge the following changes from the 1.2.1 release branch,
+	but without any CDL for CYGDBG_HAL_MIPS_INSTALL_CTRL_C_ISR,
+	it is always on.
+
+    1999-04-30  Jesper Skov  <jskov@cygnus.co.uk>
+	* src/hal_misc.c: Added vector decoding to the below.
+    1999-04-30  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+	* src/hal_misc.c (hal_init_ctrlc_intr): Chain onto the old value
+	of the ISR when attaching the ctrl-c ISR; this allows chained
+	interrupts to work (otherwise a stack-wrecking interrupt loop
+	occurs).
+    1999-04-29  Hugo Tyson  <hmt@cygnus.co.uk>
+	* include/pkgconf/hal_tx39.h (CYGDBG_HAL_MIPS_INSTALL_CTRL_C_ISR): 
+	New config option, on by default.
+	* src/hal_misc.c (hal_ctrlc_isr): Enable these features on
+	CYGDBG_HAL_MIPS_INSTALL_CTRL_C_ISR new config option.
+
+1999-04-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Remove the -n argument to tail, it does not appear to be required
+	on any supported host and causes problems with some
+	implementations of tail.
+
+1999-04-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_intr.h: Don't sync TRR if platform sim - it doesn't need
+	it
+
+	* include/pkgconf/hal_tx39.h: 
+	Allow CYGARC_TX39_PR19846 to override
+	CYGHWR_HAL_MIPS_TX3904_TRR_REQUIRES_SYNC so that we can do something
+	sensible in the simulators
+	
+	Related to PR 19846
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/tx39.ld: Define __bss_end at the end of the BSS
+	* src/hal_misc.c (hal_zero_bss): Stop at __bss_end rather than _end
+	when clearing BSS
+	These fix PR 19750
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	* src/vectors.S:
+	Separate parts of cyg_hal_invoke_constructors() out into new functions
+	cyg_hal_enable_caches() and cyg_hal_debug_init() so that
+	cyg_hal_invoke_constructors() can be called again safely if
+	necessary
+	Related fix to that of PR19642
+
+1999-04-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak (EXTRAS): Don't generate extras.o here any more
+	But do define EXTRAS every time for the linker script
+
+1999-04-13  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_CLOCK_READ): 
+	Add workaround for tx39 bug - needs to sync and wait for the
+	write buffer to clear before reading the clock.
+	Submitted by akira.yokosawa@toshiba.co.jp
+
+	* include/pkgconf/hal_tx39.h
+	(CYGHWR_HAL_MIPS_TX3904_TRR_REQUIRES_SYNC): Define this by default
+	to implement above
+
+1999-04-12  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_VSR_SET_TO_ECOS_HANDLER): Added.
+	(HAL_VSR_SET): Cast types to CYG_ADDRESS to prevent warnings
+
+	Part of fix for PRs 19731/19607
+
+1999-04-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/mips-stub.c: 
+	Moved get_register and put_register to hal_stub.c.
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/*.ld: Use double underscore substitution for period
+	character in SECTION_* macro names (PR 19787)
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/*.ld: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h: Added include of hal.h and a test that a
+	valid set of macros have been added.
+	Also moved address used in HAL_DCACHE_INVALIDATE_ALL() to
+	0x9fc00000, which is the cached ROM space.
+
+1999-03-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Added options to allow different settings for DRAM initialization.
+	Fixed some ifdef bugs. 
+
+	* src/hal_misc.c (cyg_hal_invoke_constructors):
+	Added ifdefs to control enabling and disabling of timeout
+	exceptions.
+
+	* include/pkgconf/hal_tx39.h:
+	Added translations from the user friendly CPU speed settings into
+	the real CPU frequencies in Hz.
+
+	* include/hal_intr.h:
+	Added HAL_TX39_DEBUG_TOE_ENABLE() and ...DISABLE, to switch
+	timeout exceptions on and off.
+
+1999-03-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h:
+	Modified stack size definitions to be more accurate.
+
+1999-03-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/mips-regs.h: Update copyright
+
+	* include/mips-stub.h: Update copyright
+
+	* src/mips-stub.c: Update copyright
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_user_break): Remove #warning - it doesn't
+	really provide any useful info, and may unnecessarily worry a user
+	since it fires in normal situations
+
+1999-03-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/PKGconf.mak: Remove dependence on echo '-e' switch.
+
+1999-03-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Removed definition of idle thread stack. 
+
+1999-03-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h:
+	Changed implementation of HAL_DCACHE_INVALIDATE_ALL() to read from
+	ROM space rather than RAM. This fixes PR 19510.
+
+1999-03-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Modified ROMC and SCS settings in line with
+	Toshiba's suggestions for compatibility with other CPU variants.
+
+1999-03-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_arch.h: Add definition for 'CYGNUM_HAL_MINIMUM_STACK_SIZE'
+
+1999-03-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	Disabled use of stand-alone ^C detection interrupt. This is now
+	done in the serial driver. Added cyg_hal_is_break() and
+	cyg_hal_user_break() to detect and provoke ^C processing. These
+	are used by the serial driver and will one day interact with the
+	BSP/Cygmon/GDB stubs to do the right thing.
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_INTERRUPT_IN_USE): Added.
+
+1999-03-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39.h: 
+	* src/vectors.S:
+	Changed names used to control CPU frequency into something more
+	generic. Moved definition into hal_tx39.h from hal_tx39_jmr3904.h.
+
+1999-03-09  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19370
+	* src/hal_misc.c (cyg_hal_invoke_constructors): Changed
+	constructor loop.
+
+1999-03-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/tx39.ld: 
+	* src/PKGconf.mak: Clean up I/O package changes.
+
+1999-03-04  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/tx39.ld: 
+	Add INPUT(libextras.a), include libextras.a in GROUP() and include 
+	new __DEVTAB__ section for new device drivers
+
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Changed label used to access scheduler lock to one that is not
+	mangled by C++. This is intended to make support for interrupt
+	handling in non-kernel configurations easier.
+	Added some code to initialize DRAM in ROM-only configurations.
+
+1999-02-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c: 
+	Added support for SIGINT-causing magic breakpoint. This involves
+	passing a third, hidden argument to hal_ctrlc_isr() which is a
+	pointer to the saved CPU state.
+	
+	* src/vectors.S:
+	Added support for 66MHz part (untested).
+	Added support for SIGINT-causing magic breakpoint to allow
+	continuation after ^C. This also relies on CYGMON changes.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	QA improvements
+
+	* include/hal_intr.h:
+	Reorganise vector/interrupt/exception names according to purpose
+	QA improvements
+
+	* src/hal_misc.c:
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	Rename CYG_VECTOR_SIO_0 -> CYGNUM_HAL_INTERRUPT_SIO_0
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Added call to initialize_stub.
+
+	* src/mips-stub.c: 
+	* include/mips-stub.h:
+	Cleaned up to only include arch specific stub code.
+
+	* include/hal_arch.h (HAL_BREAKPOINT): Added SIM breakpoint code
+	from (now dead) jmr3904/.../hal_stub.c.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/mips.ld: Rename to tx39.ld since this is the target name
+        * src/PKGconf.mak: Process tx39.ld instead of mips.ld
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/mips.ld: Add LMA_EQ_VMA macro definition.
+
+1999-02-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_misc.c: 
+	* include/hal_cache.h:
+	Moved nested external declarations into top-level scope to avoid
+	compiler warnings.
+
+1999-02-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h :
+	In HAL_ICACHE_INVALIDATE_ALL() and HAL_ICACHE_INVALIDATE(), fixed
+	typos in passing arguments to asm sections.
+	Fixes PR 18951.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* src/mips.ld:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_invoke_constructors): 
+	Add code to deal with CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG
+	Tidy up and update description header
+	Shorten needlessly long lines
+	Remove all traces of non-CYG_KERNEL_USE_INIT_PRIORITY code
+
+1999-01-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mips.ld:
+	Provide alternate definition of macro SECTION_rom_vectors() for
+	RAM startup (CYG_HAL_STARTUP_RAM) so that minimal sim testing
+	works.  Note: this is an instance where two definitions (of
+	identical "API") of a macro occur in the prototype <target>.ld
+	file; the MLT is required not to be confused by this.
+
+1999-01-15  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/mips.ld: add section macro for .vsr_table
+
+1999-01-13  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/mips.ld: add section macro for .rel.dyn
+
+1999-01-13  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/mips.ld: new linker script for MLT
+      * src/PKGconf.mak: add mips.ld rules for MLT
+
+1999-01-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/basetype.h: CYG_DOUBLE_BYTEORDER now in <infra/cyg_type.h>
+
+1999-01-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/basetype.h (CYG_DOUBLE_BYTEORDER): Define ordering
+	for words within doubles.
+
+1999-01-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h: 
+	Modified HAL_DCACHE_INVALIDATE_ALL() to correctly touch all cache
+	lines twice to ensure that the cache and memory are
+	consistent. This is the best we can do without direct support for
+	invalidation.
+	
+	* src/hal_misc.c: Altered call to patch_dbg_syscalls() to pass
+	pointer to base of vector rather than a single vector entry.
+
+1998-12-15  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18543
+
+	* include/hal_cache.h (HAL_DCACHE_INVALIDATE): Fixed variable
+	name.
+
+1998-12-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	* src/context.S (hal_setjmp, hal_longjump):
+	Added CYGARC definitions for jmpbuf entries.
+	Corrected jmpbuf size.
+
+1998-12-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_DCACHE_UNLOCK_ALL,
+	HAL_ICACHE_UNLOCK_ALL): Added.
+
+1998-11-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/mips-regs.h:
+	* src/mips-stub.c:
+	Added use of CYGARC_HAL_COMMON_EXPORT_CPU_MACROS.
+
+1998-11-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_intr.h: Add support for interrupt latency
+	measurements, controlled by CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY.
+
+1998-10-27  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18033
+
+	* include/hal_intr.h: Replaced CYGIMP_HAL_INTERRUPTS_CHAIN
+	with the correct CYGIMP_HAL_COMMON_INTERRUPTS_CHAIN.
+
+1998-10-27  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18021
+	* src/hal_misc.c (hal_ctrlc_isr): Removed break; to prevent
+	compiler error.
+
+1998-10-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/mips-stub.c (__build_t_packet): Replaced
+	CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT with
+	CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT. 
+	Fixed #endif comment.
+
+	* src/hal_misc.c (hal_ctrlc_isr): Replaced
+	CYGDBG_KERNEL_DEBUG_GDB_INCLUDE_STUBS with
+	CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS.
+
+	* include/hal_intr.h: Replaced CYGIMP_KERNEL_INTERRUPTS_CHAIN with
+	CYGIMP_HAL_INTERRUPTS_CHAIN.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Include pkgconf/hal.h.
+
+1998-10-16  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/vectors.S (__interrupt_stack):
+	Made the interrupt stack size configurable.
+
+1998-10-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	Enabled caches by default.
+
+1998-10-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/context.S (hal_thread_switch_context):
+	Store copy of R31(RA) in PC slot in register state to keep GDB
+	happy.
+	* include/hal_arch.h (HAL_THREAD_INIT_CONTEXT):
+	Intialize PC slot in register state.
+
+	* src/hal_misc.c:
+	Altered ifdefs to allow building without kernel present.
+
+	* include/mips-stub.h:
+	Include generic-stub.h from HAL rather than from kernel.
+
+	* src/mips-stub.c:
+	Added signal definitions to avoid including signal.h.
+
+	* include/hal_intr.h:
+	Added implementations of HAL_INTERRUPT_ACKNOWLEDGE() and
+	HAL_INTERRUPT_SET_LEVEL().
+
+1998-10-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_misc.c: Use GDB array rather than HAL_SavedRegisters
+	structure. Rely on generic stub to pack/unpack the array.
+
+	* include/hal_arch.h (HAL_GET_GDB_REGISTERS,
+	HAL_SET_GDB_REGISTERS): get/set full register set.
+
+1998-10-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/mips-stub.h: Moved first use of regnames below
+	definition.
+
+Sun Sep 27 12:17:42 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_DCACHE_LOCK): Terminate asm string.
+
+1998-09-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h:
+	Cleaned up some compilation errors.
+
+Tue Sep 15 19:13:43 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* src/vectors.S: Cleaned up comments.
+
+1998-09-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h (HAL_GET_GDB_REGISTERS):
+	Initialized R30 to a copy of SP to avoid GDB making bogus memory
+	references.
+
+	* src/hal_misc.c:
+	Added support for Ctrl-C processing when running under Cygmon.
+	Fixed a compiler warning.
+
+1998-09-14  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Made vectors.o dependent on the various files that can contain
+	makefile variables or rules. This is needed after changes to
+	pkgconf.tcl for PRs 17195 and 17286.
+
+Mon Sep 14 11:10:20 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 17230
+	
+	* src/vectors.S: Replaced CYGIMP_KERNEL_INTERRUPTS_CHAIN with new
+ 	CYGIMP_HAL_COMMON_INTERRUPTS_CHAIN.
+
+1998-09-14  Nick Garnett  <nickg@cygnus.co.uk>
+        PR 17230
+
+	* include/hal_intr.h:
+	Added HAL_TRANSLATE_VECTOR() to translate a supplied vector number
+	into one that can be used in the HAL. Added calls to it in
+	HAL_INTERRUPT_ATTACH() and HAL_INTERRUPT_DETACH().
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39.h:
+	Added missing descriptions (PR 17184)
+
+	* src/vectors.S:
+	<pkgconf/kernel.h> was being included without properly checking
+	that the kernel package was enabled.
+
+	* src/hal_misc.c (exception_handler): 
+	Sort out exception handling options (PR 16953)
+
+1998-09-11  Nick Garnett  <nickg@cygnus.co.uk>
+        PR 17230
+	
+	* src/vectors.S (__default_interrupt_vsr):
+	Modified interrupt decode code to preserve raising interrupt
+	number to pass to ISR, even when using chained interrupts.
+
+1998-09-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/mips-stub.c:
+	Fixed type in config option name.
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39.h: 
+	New header file for architecture-specific configuration options
+	
+	* tests/PKGconf.mak: 
+	* src/PKGconf.mak: 
+	Sort out package naming conventions.
+	
+Tue Sep  1 19:26:45 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_misc.c: 
+	Use CYGDBG_INFRA_DIAG_USE_DEVICE (from infra.h) instead of
+	CYG_DIAG_USE_DEVICE (badly named, from kernel.h).
+
+1998-09-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_intr.h:
+	Added CYG_EXCEPTION_COUNT.
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/vectors.S, src/context.S, src/hal_misc.c, src/mips-stub.c:
+	Updated for new kernel configuration option symbol names
+
+Fri Aug 28 10:01:24 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	Rename __main() to cyg_hal_invoke_constructors() to prevent the
+	implied link with things called, or related to main(). Remove static
+	initialised variable as we can now guarantee it is only called
+	once.
+
+	* src/vectors.S:
+	Instead of calling main(), call cyg_start() which lives in the infra
+	package.
+	Explicitly invoke constructors as it isn't done magically for us
+	any more, now that main() is no longer used.
+	
+
+1998-08-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Now pass pointer to saved registers as third argument to
+	interrupt_end().
+
+	* include/hal_arch.h:
+	Added macros to support GDB.
+
+Tue Aug 25 02:33:59 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/mips_stub.h, src/hal_misc.c: 
+	Add void to prototypes and typedefs that want it to silence warnings
+
+1998-08-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h:
+	Now includes cyg_type.h rather than ktypes.h.	
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/context.S: 
+	* include/hal_arch.h: 
+	* include/hal_io.h: 
+	* include/hal_intr.h:
+	Now uses cyg_type.h rather than ktypes.h.
+
+	* src/hal_misc.c: 
+	* src/vectors.S:
+	Now uses hal.h rather than kernel.h.
+
+1998-07-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_intr.h: Fixed some issues raised bt code review.
+
+	* src/context.S: 
+	* include/hal_arch.h: Fixed some typos raised by code review.
+
+	* include/hal_intr.h (HAL_INTERRUPT_MASK): 
+	* src/vectors.S (hal_interrupt_level): Added hal_interrupt_level
+	to allow for interaction between HAL_INTERRUPT_UNMASK() and
+	HAL_INTERRUPT_SET_LEVEL().
+	
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

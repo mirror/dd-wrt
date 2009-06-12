@@ -1,0 +1,228 @@
+# ====================================================================
+#
+#      hal_mips_upd985xx.cdl
+#
+#      MIPS/UPD985XX variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      hmt, jskov
+# Original data:  nickg
+# Contributors:
+# Date:           2001-05-24
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_UPD985XX {
+    display       "UPD985XX variant"
+    parent        CYGPKG_HAL_MIPS
+    implements    CYGINT_HAL_MIPS_VARIANT
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mips_upd985xx.h
+    description   "
+           The UPD985XX variant HAL package provides generic support
+           for this NEC system-on-chip processor architecture, uPD985xx.
+	   It is also necessary to
+           select a specific target platform HAL package."
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+
+    implements CYGINT_HAL_MIPS_STUB_REPRESENT_32BIT_AS_64BIT
+
+    implements CYGINT_HAL_MIPS_INTERRUPT_RETURN_KEEP_SR_IM
+
+    # The way the arbitration ISR is attached does not work with chained interrupts
+    requires	! CYGIMP_HAL_COMMON_INTERRUPTS_CHAIN
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+        display      "Number of communication channels on the board"
+        flavor       data
+        calculated   1
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+        display          "Debug serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           There is only one serial port. This option
+           chooses which port will be used to connect to a host
+           running GDB."
+    }
+ 
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+        display          "Diagnostic serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           There is only one serial port.  This option
+           chooses which port will be used for diagnostic output."
+    }
+     
+    cdl_option CYGHWR_HAL_MIPS_UPD985XX_DIAG_BAUD {
+	display          "Diagnostic Serial Port Baud Rate"
+	flavor data
+	legal_values     9600 19200 38400 115200
+	default_value    38400
+        define           CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD
+	description      "
+	This option selects the baud rate used for the diagnostic port.
+	Note: this must match the value chosen for the GDB port if the
+	diagnostic and GDB port are the same."
+    }
+    
+    cdl_option CYGHWR_HAL_MIPS_UPD985XX_GDB_BAUD {
+	display          "GDB Serial Port Baud Rate"
+	active_if { CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL != \
+		CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL }
+	flavor data
+	legal_values     9600 19200 38400 115200
+	default_value    38400
+	description      "
+	This option controls the baud rate used for the GDB connection."
+    }
+
+    cdl_component CYGPKG_HAL_MIPS_UPD985XX_HARDWARE_BUGS {
+        display       "Workarounds for uPD98503 hardware bugs "
+        flavor        bool
+        default_value 1
+        description   "
+	This component controls whether code workarounds for the
+	hardware bugs in the uPD98503 System Controller and IBUS are included.
+	Please refer to the manufacturer's
+	Behaviour Analysis Report to make your decision about which of
+	these options to enable or disable.
+	The default is to enable all workarounds for best reliability.
+	Please refer to the
+	USB and Ethernet devices for controls for subsystem specific
+	workarounds such as U3 and U4 in the USB; or E1,E2,E3 and E8 in
+	the ethernet."
+
+	cdl_option CYGOPT_HAL_MIPS_UPD985XX_HARDWARE_BUGS_S1 {
+            display       "S1 - CPU to IBUS write restriction"
+	    active_if { CYGPKG_DEVS_USB_UPD985XX || CYGPKG_DEVS_ETH_MIPS_UPD985XX }
+            flavor        bool
+            default_value 1
+	    # require either the workaround, or not the package ;
+	    requires { CYGIMP_DEVS_USB_UPD985XX_IBUS_WRITE_LIMIT || !CYGPKG_DEVS_USB_UPD985XX }
+	    requires { CYGOPT_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS_S1 || !CYGPKG_DEVS_ETH_MIPS_UPD985XX}
+	    description   "
+	    This workaround is actually implemented in the Ethernet and USB
+	    drivers; this option is a short cut to enable those options when
+	    those packages are included in the build."
+        }
+	cdl_option CYGOPT_HAL_MIPS_UPD985XX_HARDWARE_BUGS_S2 {
+            display       "S2 - Interrupt Mask restriction"
+            flavor        bool
+            default_value 1
+	    description   "
+	    Problem 'S2' is that masking an interrupt source at the same
+	    instant that the interrupt 'fires' can lock up the system.
+	    This workaround enables code which never masks an interrupt
+	    once it has been unmasked, and silently fields any interrupts
+	    which occur when that interrupt is soft-masked.  When the
+	    interrupt is unmasked by the application, then passing on the
+	    interrupt is once more permitted, and any stored-up interrupt
+	    will have its ISR called, otherwise interrupts would be
+	    lost; they would not pend until the interrupt is unmasked.
+	    This tactic is only possible due to the edge-triggered nature
+	    of the interrupt controller in this device."
+        }
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_64BIT {
+        display    "Variant 64 bit architecture support"
+        calculated 0
+	description "
+                While the vr4100 is a 64bit CPU core, only its 32bit mode is
+                currently supported in eCos."
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_FPU {
+        display    "Variant FPU support"
+        calculated 0
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_FPU_64BIT {
+        display    "Variant 64 bit FPU support"
+        calculated 0
+    }
+
+    cdl_option CYGPKG_HAL_MIPS_LSBFIRST {
+        display    "CPU Variant little-endian"
+        calculated 1
+    }
+
+    cdl_option CYGPKG_HAL_MIPS_MSBFIRST {
+        display    "CPU Variant big-endian"
+        calculated { ! CYGPKG_HAL_MIPS_LSBFIRST }
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_mips.h>"
+    }
+
+    compile       variant.S var_misc.c hal_diag.c
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/hal_mips_upd985xx.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/hal_mips_upd985xx.ld" }
+    }
+
+}

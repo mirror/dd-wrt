@@ -1,0 +1,192 @@
+# ====================================================================
+#
+#      ramfs.cdl
+#
+#      RAM Filesystem configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Original data:  nickg
+# Contributors:
+# Date:           2000-08-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_FS_RAM {
+    display        "RAM filesystem"
+    doc            ref/fileio.html
+    include_dir    cyg/ramfs
+
+    requires       CYGPKG_IO_FILEIO
+
+    requires       CYGPKG_ISOINFRA
+    requires       CYGPKG_ERROR
+    requires       CYGINT_ISO_ERRNO
+    requires       CYGINT_ISO_ERRNO_CODES
+
+    implements     CYGINT_IO_FILEIO_FS
+
+    compile        -library=libextras.a ramfs.c
+
+    # ----------------------------------------------------------------------
+    # Simple allocation mechanism using malloc()
+    
+    cdl_component CYGPKG_FS_RAM_SIMPLE {
+	display    "Simple, malloc() based, implementation"
+	requires   { CYGINT_ISO_MALLOC != 0 }
+	default_value 1
+	active_if      !CYGPKG_FS_RAM_BLOCKS
+
+	cdl_option     CYGNUM_RAMFS_REALLOC_INCREMENT {
+	    display       "Size of file data storage increment"
+	    flavor        data
+	    default_value 256
+	    legal_values  64 to 32768
+	    description   "This option controls the size of the increment to a file data
+	                   storage block."
+	}
+
+    }
+
+    # ----------------------------------------------------------------------
+    # Block based allocation, using either malloc() or a private block
+    # pool.
+    
+    cdl_component CYGPKG_FS_RAM_BLOCKS {
+	display        "Block-based RAM filesystem allocation"
+	default_value  0
+	active_if      !CYGPKG_FS_RAM_SIMPLE
+
+	
+	cdl_option     CYGNUM_RAMFS_BLOCK_SIZE {
+	    display       "Size of file data storage block"
+	    flavor        data
+	    default_value 256
+	    legal_values  64 to 32768
+	    description   "This option controls the size of a data storage block."
+	}
+
+	cdl_option     CYGNUM_RAMFS_BLOCKS_DIRECT {
+	    display       "Directly referenced data storage blocks"
+	    flavor        data
+	    default_value 8
+	    legal_values  0 to 32
+	    description   "This option controls the number of data storage blocks that
+	                   are referenced directly from a file or directory node."
+	}
+
+	cdl_option     CYGNUM_RAMFS_BLOCKS_INDIRECT1 {
+	    display       "Single level indirect data storage blocks"
+	    flavor        data
+	    default_value 1
+	    legal_values  0 to 32
+	    description   "This option controls the number of single level indirect storage
+	                   blocks that are referenced from a file or directory node."
+	}
+
+	cdl_option     CYGNUM_RAMFS_BLOCKS_INDIRECT2 {
+	    display       "Two level indirect data storage blocks"
+	    flavor        data
+	    default_value 1
+	    legal_values  0 to 32
+	    description   "This option controls the number of two level indirect storage
+	                   blocks that are referenced from a file or directory node."
+	}
+
+	cdl_component CYGPKG_FS_RAM_BLOCKS_ARRAY {
+	    display       "Use block array rather than malloc()"
+	    default_value 0
+	    description   "This option controls whether the blocks are allocated from
+	                   an array of blocks rather from the heap using malloc()."
+
+	    cdl_option CYGPKG_FS_RAM_BLOCKS_ARRAY_EXTERN {
+		display         "Block array is external"
+		default_value 0
+		description     "This option controls whether the block array is
+		                 defined by the RAMFS package or whether it is provided
+		                 by an external component. The latter option may be
+		                 useful when the RAM file system is to be put into a
+		                 special memory area."
+	    }
+
+	    cdl_option CYGPKG_FS_RAM_BLOCKS_ARRAY_NAME {
+		display         "Name of external block array"
+		active_if       CYGPKG_FS_RAM_BLOCKS_ARRAY_EXTERN
+		flavor          data
+		default_value   "cyg_ramfs_block_array"
+		description     "This option controls what the symbol name of the external
+		                 block array will be."
+	    }
+
+	    cdl_option CYGNUM_FS_RAM_BLOCKS_ARRAY_SIZE {
+		display         "Size of blocks array"
+		flavor          data
+		default_value   128
+		legal_values    1 to 9999999999
+		description     "The number of blocks in the array. The total size of
+		                 the array will be this value times the block size."
+	    }
+	}
+    }
+
+    cdl_option     CYGNUM_RAMFS_DIRENT_SIZE {
+	display       "Directory entry size"
+	flavor        data
+	default_value 32
+	legal_values  16 to { CYGNUM_RAMFS_BLOCK_SIZE ? CYGNUM_RAMFS_BLOCK_SIZE : 128 }
+	description   "This option controls the number of two level indirect storage
+                       blocks that are referenced from a file or directory node."
+    }
+
+    # ----------------------------------------------------------------
+    # Tests
+
+    cdl_option CYGPKG_FS_RAM_TESTS {
+	display "RAM FS tests"
+	flavor  data
+	no_define
+	calculated { "tests/fileio1.c tests/fseek1.c" }
+            description   "
+                This option specifies the set of tests for the RAM FS package."
+        }
+    
+}
+
+# End of ramfs.cdl

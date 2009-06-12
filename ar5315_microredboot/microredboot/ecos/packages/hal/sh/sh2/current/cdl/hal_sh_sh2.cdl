@@ -1,0 +1,349 @@
+# ====================================================================
+#
+#      hal_sh_sh2.cdl
+#
+#      SH2 variant HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  jskov
+# Contributors:
+# Date:           2002-01-09
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_SH_SH2 {
+    display       "SH2 variant"
+    parent        CYGPKG_HAL_SH
+    hardware
+    include_dir   cyg/hal
+    define_header hal_sh_sh2.h
+    description   "
+        The SH2 (SuperH 2) variant HAL package provides generic
+        support for SH2 variant CPUs."
+
+    requires      CYGHWR_HAL_SH_BIGENDIAN
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_VARIANT_H   <pkgconf/hal_sh_sh2.h>"
+        puts $::cdl_header "#define CYGBLD_HAL_VAR_EXCEPTION_MODEL_H   <cyg/hal/hal_var_sp.h>"
+        puts $::cdl_header "#define CYGBLD_HAL_VAR_EXCEPTION_MODEL_INC <cyg/hal/hal_var_sp.inc>"
+        puts $::cdl_header "#define CYGBLD_HAL_VAR_INTR_MODEL_H   <cyg/hal/hal_intr_vecs.h>"
+    }
+
+    compile       sh2_sci.c sh2_scif.c var_misc.c variant.S
+
+    # The "-o file" is a workaround for CR100958 - without it the
+    # output file would end up in the source directory under CygWin.
+    # n.b. grep does not behave itself under win32
+    make -priority 1 {
+        <PREFIX>/include/cyg/hal/sh2_offsets.inc : <PACKAGE>/src/var_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,sh2_offsets.tmp -o var_mk_defs.tmp -S $<
+        fgrep .equ var_mk_defs.tmp | sed s/#// > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 sh2_offsets.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm sh2_offsets.tmp var_mk_defs.tmp
+    }
+
+    # CPU variant supported
+    cdl_option CYGPKG_HAL_SH_7044 {
+        display       "SH 7044 microprocessor"
+        parent        CYGPKG_HAL_SH_CPU
+        implements    CYGINT_HAL_SH_VARIANT
+        implements    CYGINT_HAL_SH_CPG_T2
+        default_value 1
+        no_define
+        define        -file=system.h CYGPKG_HAL_SH_7044
+        description "
+            The SH2 7044 microprocessor. This is an embedded part that in
+            addition to the SH2 processor core has built in peripherals
+            such as memory controllers, serial ports, and timers/counters.
+            It also has some amount of flash memory."               
+        define_proc {
+            puts $cdl_system_header "#define CYGBLD_HAL_CPU_MODULES_H <cyg/hal/mod_7044.h>"
+        }
+    }
+
+    cdl_option CYGPKG_HAL_SH_7615 {
+        display       "SH 7615 microprocessor"
+        parent        CYGPKG_HAL_SH_CPU
+        implements    CYGINT_HAL_SH_VARIANT
+        implements    CYGINT_HAL_SH_CPG_T1
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_SH_7615
+        description "
+            The SH2 7615 microprocessor. This is an embedded part that in
+            addition to the SH2 processor core has built in peripherals
+            such as memory controllers, serial ports, timers/counters, and
+            ethernet controller."               
+        define_proc {
+            puts $cdl_system_header "#define CYGBLD_HAL_CPU_MODULES_H <cyg/hal/mod_7615.h>"
+        }
+    }
+    
+    cdl_component CYGHWR_HAL_SH_CLOCK_SETTINGS {
+        display          "SH on-chip generic clock controls"
+        description      "
+            The various clocks used by the system are controlled by
+            these options, some of which are derived from platform
+            settings."
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_HAL_SH_CPG_T1 {
+            display     "Clock pulse generator type 1"
+        }
+
+        cdl_interface CYGINT_HAL_SH_CPG_T2 {
+            display     "Clock pulse generator type 2"
+        }
+
+
+        cdl_option CYGHWR_HAL_SH_FRT_PRESCALE {
+            display       "FRT prescaling"
+            description   "
+                The free running timer used for
+                the real-time clock is prescaled by this factor."
+            flavor        data
+            active_if     CYGINT_HAL_SH_CPG_T1
+            legal_values  { 8 32 128 }
+            default_value 8
+        }
+
+        cdl_option CYGHWR_HAL_SH_CMT_PRESCALE {
+            display       "CMT prescaling"
+            description   "
+                The Compare Match Timer used for
+                the real-time clock is prescaled by this factor."
+            flavor        data
+            active_if     CYGINT_HAL_SH_CPG_T2
+            legal_values  { 8 32 128 512 }
+            default_value 8
+        }
+
+        cdl_option CYGHWR_HAL_SH_RTC_PRESCALE {
+            display       "eCos RTC prescaling"
+            flavor        data
+            calculated    { CYGHWR_HAL_SH_FRT_PRESCALE ? CYGHWR_HAL_SH_FRT_PRESCALE :
+                            CYGHWR_HAL_SH_CMT_PRESCALE ? CYGHWR_HAL_SH_CMT_PRESCALE :
+                            0
+                          }
+        }
+
+        cdl_option CYGHWR_HAL_SH_CLOCK_CKIO {
+            display    "CKIO clock"
+            no_define
+            flavor     data
+            # CKIO is either XTAL (input = PLL2 disabled) or PLL2 output
+            calculated { CYGINT_HAL_SH_CPG_T1 ? (
+                             (CYGHWR_HAL_SH_OOC_CLOCK_MODE >= 4 && CYGHWR_HAL_SH_OOC_CLOCK_MODE <= 6) 
+                             ? (CYGHWR_HAL_SH_OOC_XTAL)
+                             : CYGHWR_HAL_SH_PLL2_OUTPUT
+                         )
+                         : CYGINT_HAL_SH_CPG_T2 ? (
+                             CYGHWR_HAL_SH_OOC_XTAL
+                         )
+                         : 0 }
+        }
+
+        cdl_option CYGHWR_HAL_SH_PLL1_OUTPUT {
+            display    "The clock output from PLL1"
+            no_define
+            flavor     data
+            calculated { CYGHWR_HAL_SH_CLOCK_CKIO * CYGHWR_HAL_SH_OOC_PLL_1 }
+        }
+
+        cdl_option CYGHWR_HAL_SH_PLL2_OUTPUT {
+            display    "The clock output from PLL2"
+            no_define
+            flavor     data
+            calculated { CYGINT_HAL_SH_CPG_T1 ? (
+                             (CYGHWR_HAL_SH_OOC_XTAL * CYGHWR_HAL_SH_OOC_PLL_2)
+                         )
+                         : CYGINT_HAL_SH_CPG_T2 ? (
+                             (CYGHWR_HAL_SH_OOC_XTAL * CYGHWR_HAL_SH_OOC_PLL)
+                         )
+                         : 0 }
+        }
+
+        cdl_option CYGHWR_HAL_SH_PROCESSOR_SPEED {
+            display          "Processor clock speed (MHz)"
+            flavor           data
+            calculated       { CYGHWR_HAL_SH_PLL2_OUTPUT / CYGHWR_HAL_SH_OOC_DIVM }
+            description      "
+                The core (CPU, cache and MMU) speed is computed from
+                the input clock speed and the divider DIVM setting."
+        }
+
+        cdl_option CYGHWR_HAL_SH_BOARD_SPEED {
+            display          "Platform bus clock speed (MHz)"
+            flavor           data
+            calculated       { CYGHWR_HAL_SH_CLOCK_CKIO }
+            description      "
+                The platform bus speed is CKIO."
+        }
+
+        cdl_option CYGHWR_HAL_SH_ONCHIP_PERIPHERAL_SPEED {
+            display          "Processor on-chip peripheral clock speed (MHz)"
+            flavor           data
+            calculated       { CYGHWR_HAL_SH_PLL2_OUTPUT / CYGHWR_HAL_SH_OOC_DIVP }
+            description      "
+                The peripheral speed is computed from the input clock
+                speed and the divider DIVP setting."
+        }
+    }
+
+    cdl_option CYGNUM_HAL_SH_SH2_SCI_BAUD_RATE {
+        display          "SCI serial port default baud rate"
+        flavor data
+        legal_values     { 4800 9600 14400 19200 38400 57600 115200 }
+        default_value    { CYGNUM_HAL_SH_SH2_SCI_BAUD_RATE_DEFAULT ? \
+                           CYGNUM_HAL_SH_SH2_SCI_BAUD_RATE_DEFAULT : 38400 }
+        description      "
+           This controls the default baud rate used for communicating
+           with GDB / displaying diagnostic output."
+    }
+
+    cdl_option CYGNUM_HAL_SH_SH2_SCIF_BAUD_RATE {
+        display          "SCIF serial ports default baud rate"
+        flavor data
+        legal_values     { 4800 9600 14400 19200 38400 57600 115200 }
+        default_value    { CYGNUM_HAL_SH_SH2_SCIF_BAUD_RATE_DEFAULT ? \
+                           CYGNUM_HAL_SH_SH2_SCIF_BAUD_RATE_DEFAULT : 38400 }
+        description      "
+           This controls the default baud rate used for communicating
+           with GDB / displaying diagnostic output."
+    }
+
+    cdl_option CYGHWR_HAL_SH_SH2_SCIF_ASYNC_RXTX {
+        display          "SCIF should support async RX/TX"
+        default_value    0
+        description      "
+            Some transceiver modes require the transmitter and
+            receiver to never be enabled at the same time. Enabling
+            this option lets clients enable async mode."
+    }
+
+
+    cdl_option CYGHWR_HAL_SH_SH2_SCIF_IRDA_TXRX_COMPENSATION {
+        display          "SCIF IrDA TX/RX switch compensation"
+        default_value    1
+        description      "
+            When switching from TX mode to RX mode, the controller causes
+            a spurious 0xff character to be received at speeds up to
+            57600 baud. At higher baud rates, more spurious characters
+            may be received. Enabling this option tries to remove the
+            spurious characters, but since there are no errors reported
+            from the controller, it is impossible to do so with any kind
+            of precision.
+            Having this option enabled makes RedBoot usable. There is a
+            matching option in the eCos serial driver controlling a
+            similar kludge, allowing some eCos serial tests to run.
+            It is an incomplete kludge however, and for any real use of
+            the IrDA mode for data transmission, the option should be
+            disabled, and a protocol capable of handling the spurious
+            receive characters must be used on top of the driver.
+            Note that the problem is exaggerated when the baud rate is
+            changed."
+    }
+
+    cdl_component CYGPKG_HAL_SH_INTERRUPT {
+        display          "Interrupt controls"
+        flavor     none
+        no_define
+        description      "
+            Initial interrupt settings can be specified using these option."
+
+        cdl_option CYGHWR_HAL_SH_IRQ_HANDLE_SPURIOUS_INTERRUPTS {
+            display          "Handle spurious interrupts"
+            default_value    0
+            description      "
+               The SH2 may generate spurious interrupts with INTEVT = 0
+               when changing the BL bit of the status register. Enabling
+               this option will cause such interrupts to be identified
+               very early in the interrupt handler and be ignored.  Given
+               that the SH HAL uses the I-mask to control interrupts,
+               these spurious interrupts should not occur, and so there
+               should be no reason to include the special handling code."
+        }
+
+        cdl_option CYGHWR_HAL_SH_IRQ_USE_IRQLVL {
+            display          "Use IRQ0-3 pins as IRL input"
+            default_value    0
+            description      "
+                It is possible for the IRQ0-3 pins to be used as IRL
+                inputs by enabling this option."
+        }
+
+        cdl_option CYGHWR_HAL_SH_IRQ_ENABLE_IRLS_INTERRUPTS {
+            display          "Enable IRLS interrupt pins"
+            default_value    0
+            active_if        CYGHWR_HAL_SH_IRQ_USE_IRQLVL
+            description      "
+                IRLS interrupt pins must be specifically
+                activated. When they are, they will cause the same
+                type of interrupt as those caused by the IRL pins. If
+                IRL and IRLS pins signal an interrupt at the same
+                time, the highest level interrupt will be generated.
+                Only available on some cores, and probably share pins
+                with other interrupt sources (PINT) which cannot be
+                used in this configuration."
+        }
+    }
+
+    # Cache settings
+    cdl_option CYGHWR_HAL_SH_CACHE_MODE {
+        display       "Select cache mode set at startup"
+        parent        CYGPKG_HAL_SH_CACHE
+        default_value { "WRITE_BACK" }
+        legal_values  { "WRITE_BACK" "WRITE_THROUGH" }
+        flavor        data
+        description "
+            Controls what cache mode the cache should be put in at
+            startup. Write-back mode improves
+            performance by letting dirty data to be kept in the
+            cache for a period of time, allowing mutiple writes to
+            the same cache line to be written back to memory in
+            one memory transaction. In Write-through mode, each
+            individual write will cause a memory transaction."
+    }
+}

@@ -1,0 +1,6 @@
+tdir_elf32btsmip=mips-linux
+tdir_elf32ltsmip=mips-linux
+tdir_elf32btsmipn32=mips-linux
+tdir_elf64btsmip=mips-linux
+tdir_elf32ltsmipn32=mips-linux
+tdir_elf64ltsmip=mips-linux

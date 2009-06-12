@@ -1,0 +1,88 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_ts6.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-07  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_stub.h: Remove [confusing] platform specific include.
+
+2003-03-04  Paul Fine <pfine@delcomsys.com>
+	
+	* cdl/hal_powerpc_ts6.cdl: Now that the cache control macros
+	are correct and quicc2 ethernet driver has been fixed with respect
+	to caching operations, allow the cache to be enabled at startup.
+	* src/ts6.S: Make SDRAM test global, so that RedBoot (for ROM)
+	can invoke the test.
+	* src/hal_aux.c : Add RedBoot command to test SDRAM.  Also modify
+	the initialization of the Serial Periphial Interface (SPI)
+	controller in the CPM. Also removed some debug code.
+	* redboot_RAM.ecm:
+	* redboot_ROM.ecm:
+	* redboot_ROMRAM.ecm: Bumped DCS version to 1.17, added
+	REDBOOT_BACKUP option.
+
+2002-12-12  Gary Thomas  <gthomas@ecoscentric.com>
+2002-12-12  Patrick Doyle <wpd@delcomsys.com>
+
+	* src/ts6.S: 
+	* src/hal_diag.c: 
+	* src/hal_aux.c: 
+	* misc/redboot_ROMRAM.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: 
+	* include/pkgconf/mlt_powerpc_ts6_romram.ldi: 
+	* include/pkgconf/mlt_powerpc_ts6_romram.h: 
+	* include/pkgconf/mlt_powerpc_ts6_romlow.ldi: 
+	* include/pkgconf/mlt_powerpc_ts6_romlow.h: 
+	* include/pkgconf/mlt_powerpc_ts6_romhigh.ldi: 
+	* include/pkgconf/mlt_powerpc_ts6_romhigh.h: 
+	* include/pkgconf/mlt_powerpc_ts6_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_ts6_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_ts6_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_ts6_ram.h: 
+	* include/plf_stub.h: 
+	* include/plf_intr.h: 
+	* include/plf_cache.h: 
+	* include/hal_diag.h: 
+	* cdl/hal_powerpc_ts6.cdl: New package - support for Delphi 
+	Communications TS6 board.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+// Copyright (C) 2002 Gary Thomas
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

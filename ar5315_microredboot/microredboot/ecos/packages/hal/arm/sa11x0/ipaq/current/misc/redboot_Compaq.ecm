@@ -1,0 +1,73 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    ipaq ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_ARM current ;
+    package -hardware CYGPKG_HAL_ARM_SA11X0 current ;
+    package -hardware CYGPKG_HAL_ARM_SA11X0_IPAQ current ;
+    package -hardware CYGPKG_IO_SERIAL_ARM_SA11X0 current ;
+    package -hardware CYGPKG_DEVS_PCMCIA_IPAQ current ;
+    package -hardware CYGPKG_DEVS_FLASH_IPAQ current ;
+    package -hardware CYGPKG_DEVS_FLASH_STRATA current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package CYGPKG_IO_PCMCIA current ;
+    package CYGPKG_DEVS_ETH_CF current ;
+    package CYGPKG_IO_ETH_DRIVERS current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+    package CYGPKG_ISOINFRA current ;
+    package CYGPKG_MEMALLOC current ;
+};
+
+cdl_option CYGBLD_BUILD_GDB_STUBS {
+    user_value 0
+};
+
+cdl_option CYGNUM_IO_ETH_DRIVERS_NUM_PKT {
+    user_value 4
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    inferred_value 0
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    inferred_value 0 0
+};
+
+cdl_option CYGHWR_HAL_ARM_SA11X0_PROCESSOR_CLOCK {
+    user_value 206400
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value Compaq
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+

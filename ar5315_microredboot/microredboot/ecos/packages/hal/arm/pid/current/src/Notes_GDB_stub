@@ -1,0 +1,195 @@
+===========================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+===========================================================================
+
+27 Oct 1999, revised on 2000.01.28
+
+How to build and install the GDB module on the PID
+
+Make GDB module
+~~~~~~~~~~~~~~~
+Configure and build using the 'stubs' template for the PID
+target. These are the necessary CLI instructions. It can also be done
+from the Configtool by selecting the appropriate templates.
+
+ % cd /tmp
+ % mkdir stubs
+ % cd stubs
+ % ecosconfig new pid stubs
+ % ecosconfig tree
+ % make
+
+This will install some files in ./install/bin:
+
+ cygmon.elf:   The built stubs image
+ cygmon.bin:   The image converted to binary (suitable for burning to ROM)
+ cygmon.img:   The relocated ELF image (suitable for FLASH writing, see below)
+
+
+Make FLASH tool
+~~~~~~~~~~~~~~~
+
+Again, these are the necessary CLI instructions. It can also be done
+from the Configtool by selecting the appropriate templates, and
+enabling the option.
+
+ % cd /tmp
+ % mkdir pid-flash
+ % cd pid-flash
+ % ecosconfig new pid
+ % <edit ecos.ecc, enabling the CYGBLD_BUILD_FLASH_TOOL option:>
+      --- ecos.ecc.orig       Fri Jan 28 11:21:43 2000
+      +++ ecos.ecc            Fri Jan 28 11:22:01 2000
+      @@ -150,7 +150,7 @@
+       cdl_option CYGBLD_BUILD_FLASH_TOOL {
+      	   # Flavor: bool
+      	   # No user value, uncomment the following line to provide one.
+      -    # user_value 0
+      +    user_value 1
+      	   # value_source default
+      	   # Default value: 0
+      	   # Requires:  CYG_HAL_STARTUP == "RAM" 
+ % ecosconfig resolve
+ % ecosconfig tree
+ % make
+
+The flash tool is installed in ./install/bin
+
+
+Prepare board for eCos
+~~~~~~~~~~~~~~~~~~~~~~
+ 1. Set jumper 7-8 on LK6   [using the Angle code in the 16 bit EPROM]
+ 2. Set jumper 5-6 on LK6   [select 8bit ROM mode]
+ 3. Set jumper LK18         [ROM remap - this is also required for eCos]
+ 4. Set S1 to 0-0-1-1       [20MHz operation]
+
+
+Program FLASH
+~~~~~~~~~~~~~
+ 1. Download the image onto the PID board:
+      % cd /tmp
+      % arm-elf-gdb -nw stubs/install/bin/gdb_image.img
+
+  	(gdb) target rdi s=<serial device>
+ 	Angel Debug Monitor V1.04 (Advanced RISC Machines SDT 2.11a) for PID
+ 	Built with Serial(x1), Parallel, DCC
+ 	Rebuilt on Apr  7 1998 at 22:20:43
+ 	Serial Rate:   9600
+ 	Connected to ARM RDI target.
+  	(gdb) load
+ 	Loading section .rom_vectors, size 0x60 lma 0x60000
+ 	Loading section .text, size 0xeea8 lma 0x60060
+ 	Loading section .rodata, size 0x304c lma 0x6ef08
+ 	Loading section .data, size 0x7f8 lma 0x71f54
+ 	Start address 0x60060 , load size 75596
+ 	Transfer rate: 5548 bits/sec.
+  	(gdb) quit
+
+   This will download the stubs onto the board at 0x60000..0x80000
+
+   Use /dev/ttyS0, COM1 or similar for the <serial device> name.
+
+ 2. Now download the FLASH programmer tool
+      % arm-elf-gdb -nw pid-flash/install/bin/prog_flash.img
+
+ 	(gdb) target rdi s=<serial device>
+ 	Angel Debug Monitor V1.04 (Advanced RISC Machines SDT 2.11a) for PID
+ 	Built with Serial(x1), Parallel, DCC
+ 	Rebuilt on Apr  7 1998 at 22:20:43
+ 	Serial Rate:   9600
+ 	Connected to ARM RDI target.
+ 	(gdb) load
+ 	Loading section .rom_vectors, size 0x60 lma 0x4000
+ 	Loading section .text, size 0x4964 lma 0x4060
+ 	Loading section .rodata, size 0x384 lma 0x89c4
+ 	Loading section .data, size 0x28c lma 0x8d48
+ 	Start address 0x4060 , load size 20436
+ 	Transfer rate: 5449 bits/sec.
+ 	(gdb) cont
+
+ 3. The FLASH tool will output some text on the board serial port B at
+    38400 baud:
+
+       ARM eCos
+       FLASH here!
+       manuf: 8, device: 40
+       Error: Wrong Manufaturer: 08
+       ... Please change FLASH jumper
+
+ 4. This text is repeated until you remove the jumper 7-8 on LK6. Then
+    the output should be:
+
+       manuf: 1F, device: A4
+       AT29C040A recognised
+       About to program FLASH using data at 60000..80000
+       *** Press RESET now to abort!
+    
+ 5. You have about 10 seconds to abort the operation by pressing
+    reset. After this timeout, the FLASH programming happens:
+  
+      ...Programming FLASH
+      All done!
+
+ 6. Quit/kill the GDB process which will hang.
+
+ 7. Next time you reset the board, the stub will be in control, communicating
+    on serial port A at 38400 baud. See documentation for further details
+    on how to connect with GDB.
+
+
+
+Big-Endian operation
+~~~~~~~~~~~~~~~~~~~~
+
+  1) If the board is to be used in big-endian mode, the stub should be
+     configured for platform 'pidbe' instead of 'pid'.
+
+ 2a) If a big-endian rom controller is installed on the board, the
+     programming of a new stub into flash is covered in the ARM PID
+     manual.
+
+ 2b) If a big-endian rom controller is _not_ used, this is what you
+     must do:
+
+       1) Follow the above instructions (including jumper settings) ,
+          but instead of building and using the 'prog_flash' FLASH
+          tool, use the 'prog_flash_BE_image_LE_system' FLASH tool
+          (build it by enabling CYGBLD_BUILD_FLASH_TOOL_BE)
+
+       2) Instead of resetting the board after the FLASH has been
+          programmed, switch off the power and enable jumper LK4.
+
+     If you have to re-program the FLASH later, you can follow the
+     steps above again, but also disable jumper LK4 when changing the
+     other jumpers.

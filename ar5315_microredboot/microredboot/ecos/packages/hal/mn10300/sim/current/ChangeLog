@@ -1,0 +1,237 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mn10300_am31_sim.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-06  Bart Veer  <bartv@ecoscentric.com>
+
+	* include/plf_io.h: add dummy header file needed by the
+	mn10300 architectural hal.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mn10300_am31_sim_ram.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_mn10300_am31_sim_ram.h:
+	* include/pkgconf/mlt_mn10300_am31_sim_ram.ldi:
+	Regenerated
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am31_sim.cdl: removed fix me
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am31_sim.cdl: Ensure we "puts" to appropriate CDL
+	header
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am31_sim.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mn10300_am31_sim_ram.h: New file.
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am31_sim.cdl: Added.
+
+1999-09-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/plf_misc.c: New file.
+
+	* src/PKGconf.mak (PACKAGE): Rename hal_mn10300_sim to
+	hal_mn10300_am31_sim
+	(COMPILE): Add plf_misc.c
+
+	* tests/PKGconf.mak (PACKAGE): Likewise
+
+	* include/platform.inc: New file, effectively empty
+	* include/plf_intr.h: Likewise
+	* include/pkgconf/mlt_mn10300_sim_ram.ldi: Rename to
+	mlt_mn10300_am31_sim_ram.ldi
+	* include/pkgconf/mlt_mn10300_am31_sim_ram.ldi: New file
+	* include/pkgconf/mlt_mn10300_sim_ram.mlt: Rename to
+	mlt_mn10300_am31_sim_ram.mlt
+	* include/pkgconf/mlt_mn10300_am31_sim_ram.mlt: New file
+	* src/makefile: delete
+
+1999-09-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h: Rename to hal_mn10300_am31_sim.h
+	* include/pkgconf/hal_mn10300_am31_sim.h: New file
+	Require AM31 target
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h: Move RTC setup here.
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h:  Take out DEVICES dependencies.
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: Removed.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.mlt: New memory layout save files
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+	* src/PKGconf.mak (COMPILE): 
+	Remove obsolete and in fact empty file sim.S
+
+	* src/sim.S:
+	Removed.
+
+1999-01-14  John Dallaway  <jld@cygnus.co.uk>
+
+      * include/pkgconf/ram.ldi: correct the start address
+
+1999-01-12  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/sim.ld: remove for MLT
+      * src/PKGconf.mak: remove sim.ld rules for MLT
+      * include/pkgconf/ram.ldi: new linker script fragment for MLT
+
+1998-11-06  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_stub.h: Added for GDB stub support.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h: Allow wallclock and watchdog
+	devices to be configured.
+
+1998-10-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h: Undid 1998-10-16 change.
+
+1998-10-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h: Changed
+	CYGPKG_HAL_MN10300_SIM to CYG_HAL_MN10300_SIM.
+
+1998-09-22  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h: 
+	Preclude the gdb pseudo device as well as all the other devices.
+	This allows the configuration tool to do a better job when
+	switching from hardware to simulator.
+	
+1998-09-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h:
+	Updated configuration information with a description and
+	some requires.
+
+Thu Sep  3 15:15:57 1998  Tim Goodwin  <tgoodwin@cygnus.co.uk>
+
+	* hal/mn10300/sim/current/src/PKGconf.mak
+	* hal/mn10300/sim/current/src/makefile
+	* hal/mn10300/sim/current/tests/PKGconf.mak
+
+	s/panx/mn10300/g
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_sim.h:
+	New header file for platform-specific configuration options
+
+	* tests/PKGconf.mak: 
+	* src/PKGconf.mak: 
+	Sort out package naming conventions.
+
+Wed Aug 19 18:45:44 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_init): 
+	Put void into function prototype argument list to silence warning
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_diag.h: 
+	* src/hal_diag.c: 
+	* src/sim.ld:
+	Now uses hal.h rather than kernel.h.
+
+Tue Aug 18 11:45:25 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: Reorder GROUP line
+
+Mon Aug 17 22:21:34 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: 
+	Add GROUP(libgcc.a libtarget.a) to prevent need for explicit linking
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,373 @@
+.TH SNMPD.CONF 5 "27 Jan 2000"
+.ds )H U.C. Davis, ECE Dept.
+.ds ]W V4.1.2
+.UC 4
+.SH NAME
+share/snmp/snmpd.conf - configuration file for the ucd-snmp SNMP agent.
+.SH DESCRIPTION
+.B snmpd.conf
+is the configuration file which defines how the ucd-smnp SNMP agent
+operates.  These files may contain any of the directives found in the
+DIRECTIVES section below.  This file is not required for the agent to
+operate and report mib entries.
+.SH PLEASE READ FIRST
+First, make sure you have read the snmp_config(5) manual page that
+describes how the ucd-snmp configuration files operate, where they
+are located and how they all work together.
+.SH EXTENSIBLE-MIB
+.PP
+The ucd-snmp SNMP agent reports much of its information through
+queries to the 1.3.6.1.4.1.2021 section of the mib tree.  Every mib in
+this section has the following table entries in it.
+.IP ".1 -- index"
+This is the table's index numbers for each of the DIRECTIVES listed below.
+.IP ".2 -- name"
+The name of the given table entry.  This should be unique, but is not
+required to be.
+.IP ".100 -- errorFlag"
+This is a flag returning either the integer value 1 or 0 if an error
+is detected for this table entry.
+.IP ".101 -- errorMsg"
+This is a DISPLAY-STRING describing any error triggering the errorFlag above.
+.IP ".102 -- errorFix"
+If this entry is SNMPset to the integer value of 1 AND the errorFlag
+defined above is indeed a 1, a program or script will get executed
+with the table entry name from above as the argument.  The program to
+be executed is configured in the config.h file at compile time.
+.SS Directives
+.IP "proc NAME"
+.IP "proc NAME MAX"
+.IP "proc NAME MAX MIN"
+.IP
+Checks to see if the NAME'd processes are running on the agent's
+machine.  An error flag (1) and a description message are then passed
+to the 1.3.6.1.4.1.2021.2.100 and
+1.3.6.1.4.1.2021.2.101 mib tables (respectively) if the
+NAME'd program is not found in the process table as reported by "/bin/ps -e".
+.IP
+If MAX and MIN are not specified, MAX is assumed to be 
+.B infinity
+and MIN is assumed to be 1.
+.IP
+If MAX is specified but MIN is not specified, MIN is assumed to be 0.
+.IP "procfix NAME PROG ARGS"
+This registers a command that knows how to fix errors with the given
+process NAME.  When 1.3.6.1.4.1.2021.2.102 for a given
+NAMEd program is set to the integer value of 1, this command will be
+called.  It defaults to a compiled value set using the PROCFIXCMD
+definition in the config.h file.
+.IP "exec NAME PROG ARGS"
+.IP "exec MIBNUM NAME PROG ARGS"
+.IP
+If MIBNUM is not specified, the agent executes the named PROG with
+arguments of ARGS and returns the exit status and the first line of
+the STDOUT output of the PROG program to queries of the
+1.3.6.1.4.1.2021.8.100 and
+1.3.6.1.4.1.2021.8.101 mib tables (respectively).  All
+STDOUT output beyond the first line is silently truncated.
+.IP
+If MIBNUM is specified, it acts as above but returns the exit status
+to MIBNUM.100.0 and the entire STDOUT output to the table
+MIBNUM.101 in a mib table.  In this case, the MIBNUM.101 mib
+contains the entire STDOUT output, one mib table entry per line of
+output (ie, the first line is output as MIBNUM.101.1, the second
+at MIBNUM.101.2, etc...).
+.RS
+.IP Note:
+The MIBNUM must be specified in dotted-integer notation and can
+not be specified as ".iso.org.dod.internet..." (should instead be
+.1.3.6.1...).
+.IP Note: 
+The agent caches the exit status and STDOUT of the executed program
+for 30 seconds after the initial query.  This is to increase speed and
+maintain consistency of information for consecutive table queries.
+The cache can be flushed by a snmp-set request of integer(1) to
+1.3.6.1.4.1.2021.100.VERCLEARCACHE.
+.RE
+.IP "execfix NAME PROG ARGS"
+This registers a command that knows how to fix errors with the given
+exec or sh NAME.  When 1.3.6.1.4.1.2021.8.102 for a
+given NAMEd entry is set to the integer value of 1, this command will
+be called.  It defaults to a compiled value set using the EXECFIXCMD
+definition in the config.h file.
+.IP "disk PATH"
+.IP "disk PATH [ MINSPACE | MINPERCENT% ]"
+.IP
+Checks the named disks mounted at PATH for available disk space.  If
+the disk space is less than MINSPACE (kB) if specified or less than
+MINPERCENT (%) if a % sign is specified, or DEFDISKMINIMUMSPACE (kB)
+if not specified, the associated entry in the
+1.3.6.1.4.1.2021.9.100 mib table will be set to (1) and
+a descriptive error message will be returned to queries of
+1.3.6.1.4.1.2021.9.101.
+.IP "load MAX1"
+.IP "load MAX1 MAX5"
+.IP "load MAX1 MAX5 MAX15"
+.IP
+Checks the load average of the machine and returns an error flag (1),
+and an text-string error message
+to queries of 1.3.6.1.4.1.2021.10.100 and
+1.3.6.1.4.1.2021.10.101 (respectively) when the
+1-minute, 5-minute, or 15-minute averages exceed the associated
+maximum values.  If any of the MAX1, MAX5, or MAX15 values are
+unspecified, they default to a value of DEFMAXLOADAVE.
+.IP "file FILE [MAXSIZE]"
+Monitors file sizes and makes sure they don't grow beyond a certain
+size.  MAXSIZE defaults to infinite if not specified, and only
+monitors the size without reporting errors about it.
+.SS "Errors"
+.PP
+Any errors in obtaining the above information are reported via the
+1.3.6.1.4.1.2021.101.100 flag and the
+1.3.6.1.4.1.2021.101.101 text-string description.
+.SH SMUX SUB-AGENTS
+To enable and SMUX based sub-agent, such as
+.IR gated ,
+use the
+.I smuxpeer
+configuration entry
+.IP "smuxpeer OID PASS"
+For 
+.I gated
+a sensible entry might be
+.IP ".1.3.6.1.4.1.4.1.3 secret"
+.SH ACCESS CONTROL
+snmpd supports the View-Based Access Control Model (vacm)
+as defined in RFC 2275.
+To this end, it recognizes the following keywords in the configuration
+file: \fIcom2sec\fR, \fIgroup\fR, \fIaccess\fR, and \fIview\fR as well 
+as some easier-to-use wrapper directives: \fIrocommunity\fR,
+\fIrwcommunity\fR, \fIrouser\fR, \fIrwuser\fR.
+.IP "rocommunity COMMUNITY [SOURCE] [OID]"
+.IP "rwcommunity COMMUNITY [SOURCE] [OID]"
+These create read-only and read-write communities that can be used to
+access the agent.  They are a quick method of using the following
+\fIcom2sec\fR, \fIgroup\fR, \fIaccess\fR, and \fIview\fR directive lines.  They are
+not as efficient either, as groups aren't created so the tables are
+possibly larger.  In other words: don't use these if you have complex
+situations to set up.
+.IP
+The format of the SOURCE is token is described in the \fIcom2sec\fR
+directive section below.  The OID token restricts access for that
+community to everything below that given OID.
+.IP "rouser USER [noauth|auth|priv] [OID]"
+.IP "rwuser USER [noauth|auth|priv] [OID]"
+Creates a SNMPv3 USM user in the VACM access configuration tables.
+Again, its more efficient (and powerful) to use the combined
+\fIcom2sec\fR, \fIgroup\fR, \fIaccess\fR, and \fIview\fR directives instead.
+.IP
+The minimum level of authentication and privacy the user must use is
+specified by the first token (which defaults to "auth").  The OID
+parameter restricts access for that user to everything below the given 
+OID.
+.IP "com2sec NAME SOURCE COMMUNITY"
+This directive specifies the mapping from a source/community pair to
+a security name. SOURCE can be a hostname, a subnet, or the word
+\fI"default"\fR.
+A subnet can be specified as IP/MASK or IP/BITS.
+The first source/community combination that matches the incoming packet
+is selected.
+.IP "group NAME MODEL SECURITY"
+This directive defines the mapping from securitymodel/securityname to group.
+MODEL is one of \fIv1\fR, \fIv2c\fR, or \fIusm\fR.
+.IP "access NAME CONTEXT MODEL LEVEL PREFX READ WRITE NOTIFY"
+The access directive maps from group/security model/security level to
+a view. 
+MODEL is one of \fIany\fR, \fIv1\fR, \fIv2c\fR, or \fIusm\fR.
+LEVEL is one of \fInoauth\fR, \fIauth\fR, or \fIpriv\fR.
+PREFX specifies how CONTEXT should be matched against the context of
+the incoming pdu, either \fIexact\fR or \fIprefix\fR.
+READ, WRITE and NOTIFY specifies the view to be used for the corresponding 
+access.
+For v1 or v2c access, LEVEL will be noauth, and CONTEXT will be empty.
+.IP "view NAME TYPE SUBTREE [MASK]"
+The defines the named view. TYPE is either \fIincluded\fR or \fIexcluded\fR.
+MASK is a list of hex octets, separated by '.' or ':'.  The MASK
+defaults to "ff" if not specified.
+.IP
+The reason for the mask is, that it allows you to control access to
+one row in a table, in a relatively simple way. As an example, as an ISP
+you might consider giving each customer access to his or her own interface:
+.IP
+.nf
+view cust1 included interfaces.ifTable.ifEntry.ifIndex.1 ff.a0
+view cust2 included interfaces.ifTable.ifEntry.ifIndex.2 ff.a0
+.IP
+(interfaces.ifTable.ifEntry.ifIndex.1 == .1.3.6.1.2.1.2.2.1.1.1,
+ff.a0 == 11111111.10100000. which nicely covers up and including
+the row index, but lets the user vary the field of the row)
+.IP "VACM Examples:"
+.nf
+#       sec.name  source          community
+com2sec local     localhost       private
+com2sec mynet     10.10.10.0/24   public
+com2sec public    default         public
+
+#             sec.model  sec.name
+group mygroup v1         mynet
+group mygroup v2c        mynet
+group mygroup usm        mynet
+group local   v1         local
+group local   v2c        local
+group local   usm        local
+group public  v1         public
+group public  v2c        public
+group public  usm        public
+
+#           incl/excl subtree                          mask
+view all    included  .1                               80
+view system included  system                           fe
+view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc
+
+#              context sec.model sec.level prefix read   write notify
+access mygroup ""      any       noauth    exact  mib2   none  none
+access public  ""      any       noauth    exact  system none  none
+access local   ""      any       noauth    exact  all    all   all
+.IP "Default VACM model"
+The default configuration of the agent, as shipped, is functionally
+equivalent to the following entries:
+.nf
+com2sec	public	default	public
+group	public	v1	public
+group	public	v2c	public
+group	public	usm	public
+view 	all	included	.1
+access	public	""	any	noauth	exact	all	none	none
+.SH SNMPv3 CONFIGURATION
+.PP
+.IP "engineID STRING"
+The snmpd agent needs to be configured with an engineID to be able to
+respond to SNMPv3 messages.  With this configuration file line, the
+engineID will be configured from STRING.  The default value of the
+engineID is configured with the first IP address found for the
+hostname of the machine.
+.IP "createUser username (MD5|SHA) authpassphrase [DES] [privpassphrase]"
+This directive should be placed into the
+"/var/ucd-snmp"/snmpd.conf file instead of the other normal
+locations.  The reason is that the information is read from the file
+and then the line is removed (eliminating the storage of the master
+password for that user) and replaced with the key that is derived from 
+it.  This key is a localized key, so that if it is stolen it can not
+be used to access other agents.  If the password is stolen, however,
+it can be.
+.IP
+MD5 and SHA are the authentication types to use, but you must have
+built the package with openssl installed in order to use SHA.  The
+only privacy protocol currently supported is DES.  If the privacy
+passphrase is not specified, it is assumed to be the same as the
+authentication passphrase.  Note that the users created will be
+useless unless they are also added to the VACM access control tables
+described above.
+.IP
+Warning: the minimum pass phrase length is 8 characters.
+.IP
+SNMPv3 users can be created at runtime using the
+.I snmpusm
+command.
+.IP
+.SH SETTING SYSTEM INFORMATION
+.IP "syslocation STRING"
+.IP "syscontact STRING"
+.IP
+Sets the system location and the system contact for the agent.  This
+information is reported by the 'system' table in the mibII tree.
+.IP "authtrapenable NUMBER"
+Setting authtrapenable to 1 enables generation of authentication failure
+traps. The default value is 2 (disable).
+.IP "trapcommunity STRING"
+This defines the default community string to be used when sending traps.
+Note that this command must be used prior to any of the following three
+commands that are intended use this community string.
+.IP "trapsink HOST [COMMUNITY [PORT]]"
+.IP "trap2sink HOST [COMMUNITY [PORT]]"
+.IP "informsink HOST [COMMUNITY [PORT]]"
+These commands define
+the hosts to receive traps (and/or inform notifications). The
+daemon sends a Cold Start trap when it starts up. If enabled, it also sends
+traps on authentication failures.  Multiple \fItrapsink\fR, \fItrap2sink\fR
+and \fIinformsink\fR lines may be specified to specify multiple destinations.
+Use \fItrap2sink\fR to send SNMPv2 traps and \fIinformsink\fR to send
+inform notifications.
+If COMMUNITY is not specified, the string from a preceding \fItrapcommunity\fR
+directive will be used. If PORT is not specified, the well known SNMP trap
+port (162) will be used.
+.SH "PASS-THROUGH CONTROL"
+.IP "pass MIBOID EXEC"
+Passes entire control of MIBOID to the EXEC program.  The EXEC program
+is called in one of the following three ways:
+.RS
+.IP "EXEC -g MIBOID"
+.IP "EXEC -n MIBOID"
+.IP
+These call lines match to SNMP get and getnext requests.  It is
+expected that the EXEC program will take the arguments passed to it
+and return the appropriate response through it's stdout.  
+.IP
+The first line of stdout should be the mib OID of the returning value.
+The second line should be the TYPE of value returned, where TYPE is
+one of the text strings:
+.B string, integer, unsigned, objectid, timeticks, ipaddress, counter, 
+or
+.B gauge.
+The third line of stdout should be the VALUE corresponding with the
+returned TYPE.
+.IP
+For instance, if a script was to return the value integer value "42"
+when a request for .1.3.6.1.4.100 was requested, the script should
+return the following 3 lines:
+.br
+.RS
+  .1.3.6.1.4.100
+.br
+  integer
+.br
+  42
+.RE
+.IP
+To indicate that the script is unable to comply with the request due
+to an end-of-mib condition or an invalid request, simple exit and
+return no output to stdout at all.  A snmp error will be generated
+corresponding to the SNMP NO-SUCH-NAME response.
+.IP "EXEC -s MIBOID TYPE VALUE"
+.IP 
+For SNMP set requests, the above call method is used.  The TYPE passed
+to the EXEC program is one of the text strings:
+.B integer, counter, gauge, timeticks, ipaddress, objid,
+or 
+.B string,
+indicating the type of value passed in the next argument.
+.IP
+Return nothing to stdout, and the set will assumed to have been
+successful.  Otherwise, return one of the following error strings to
+signal an error:
+.B not-writable, 
+or 
+.B wrong-type
+and the appropriate error response will be generated instead.
+.RS
+.IP Note:
+By default, the only community allowed to write (ie snmpset) to your
+script will be the "private" community,or community #2 if defined
+differently by the "community" token discussed above.  Which
+communities are allowed write access are controlled by the RWRITE
+definition in the snmplib/snmp_impl.h source file.
+.RE
+.RE
+.SH "EXAMPLE"
+See the EXAMPLE.CONF file in the top level source directory for a more
+detailed example of how the above information is used in real
+examples.
+.SH "RE-READING snmpd.conf and snmpd.local.conf"
+The ucd-snmp agent can be forced to re-read its configuration files.
+It can be told to do so by one of two ways:
+.IP 1.
+An snmpset of integer(1) to 1.3.6.1.4.1.2021.100.VERUPDATECONFIG.
+.IP 2.
+A "kill -HUP" signal sent to the snmpd agent process.
+.SH "FILES"
+share/snmp/snmpd.conf
+.SH "SEE ALSO"
+snmp_config(5), snmpd(1), EXAMPLE.conf, read_config(3).
+.\" Local Variables:
+.\"  mode: nroff
+.\" End:

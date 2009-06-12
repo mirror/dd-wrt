@@ -1,0 +1,379 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_tx49_ref4955.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_tx49_ref4955.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-01-29  John Dallaway  <jld@ecoscentric.com>
+
+	* misc/slow_cat.tcl, misc/swap4.tcl:
+	Accommodate latest Cygwin Tcl shell (tclsh83.exe)
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/pc87338.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Removed implemntation of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx49_ref4955.cdl:
+	CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES defined.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Does not guarantee virtual vector
+	support.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Respect channel configuration
+	constraints.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/pc87338.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.mlt:
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.h:
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.h:
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.ldi:
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.ldi:
+	Regenerated
+
+2000-09-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Flush cache after copying vectors.
+
+	* src/plf_misc.c (hal_platform_init): Removed cache-enabling
+	code. This is now done earlier in the variant init code.
+
+2000-07-21  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Moved vector copying code to
+	hal_mon_init so it comes after cache initialization.
+
+2000-06-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/pc87338.c: calling i/f macro changes.
+
+	* src/hal_diag.c: Fix warning.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Endian options next to each
+	other.
+
+	* include/platform.inc: Only define hal_memc_setup if it will have
+	a content - otherwise the assembler emits a (harmless) warning.
+
+2000-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Changed to match the below.
+
+	* src/pc87338.c: Use per-channel data struct instead of crufty code.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Cleanup.
+
+2000-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: 
+	* src/pc87338.c:
+	* include/plf_intr.h: 
+	Moved Ctrl-c handling to driver file. Added timeout and proper
+	channel changing services.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Removed ROM_DEBUG_CHANNEL option.
+
+2000-06-21  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* misc/slow_cat.tcl: Fix quoting when invoking TCL interpreter
+	* misc/swap4.tcl: Likewise
+
+2000-06-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_stub.c: 
+	* src/pc87338.c: [added]
+	* src/pc87338.inl: [deleted]
+	* src/hal_diag.c: 
+	* include/plf_stub.h: 
+	* include/hal_diag.h:
+	* cdl/hal_mips_tx49_ref4955.cdl:
+	Whenever a serial driver is included, use it to service both ports
+	via the vector table, both for diag and stub use. Configurations
+	which rely on the vector table then do not need any serial driver,
+	regardless of which port is configured for use.
+
+2000-06-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_diag.h: Only define HAL_PLF_DIAG functions when
+	required.
+
+	* src/plf_misc.c: Comment fix.
+
+	* src/plf_stub.c: Config option renamed.
+
+	* src/hal_diag.c:
+	* include/hal_diag.h:
+	Use common HAL console wrappers for virtual vector diag.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Added final console/debug comm
+	config options. Cleaned up USE_ROM_MONITOR option.
+
+2000-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c (hal_ctrlc_isr): Only return handled when the irq
+	was indeed handled.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Added some virtual vector config
+	variables.
+
+2000-06-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Only use table diag if so configured.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_stub.c: init code moved to common HAL.
+
+	* src/plf_misc.c: Moved some code and init responsibilities to
+	common HAL.
+
+	* src/hal_diag.c: Allow use of ROM interface for diag IO.
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET_ENTRY): defined
+	(mostly for testing, as the board has reset).
+
+	* include/hal_diag.h: Use diag_init to allow for configuration.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Tweaks for
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT. 
+
+2000-06-06  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* misc/slow_cat.tcl: Use more correct runes to restart with tclsh
+	* misc/swap4.tcl: likewise
+
+2000-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h:
+	Handle V320USC sources in mask/unmask/ack macros.
+
+	* src/plf_misc.c:
+	* include/plf_intr.h:
+	Set VSC320 interrupt controller as per spec.	
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET): Memory access to
+	reset board.
+
+	* src/platform.S: 
+	* src/plf_mk_defs.c:
+	Mask request bits with enable bits on VSC320.
+
+2000-05-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.h: 
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.ldi: 
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.mlt: 
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.h: 
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.ldi: 
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.mlt: 
+	Updated MLT files.
+
+2000-05-25  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Set up thread debug ptr.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Include thread support in stub.
+
+2000-05-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Don't use k0/k1 in init code (not a
+	problem per se, but for consistency).
+
+2000-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_mk_defs.c:
+	* src/platform.S:
+	* include/plf_intr.h: 
+	* include/platform.inc (hal_intc_translate): Use vectors 0-5 even
+	when chaining is enabled.
+
+	* misc/slow_cat.tcl: Removed the regexp magic. gets handles the
+	conversion.
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* misc/slow_cat.tcl: Comments and minor tweaks.
+
+	* src/platform.S: 
+	* include/platform.inc: 
+	* src/plf_mk_defs.c:
+	* cdl/hal_mips_tx49_ref4955.cdl: 
+	Use mk_defs definitions instead of magic constants.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Generate swapped srec file.
+
+	* src/pc87338.inl:
+	* src/hal_diag.c:
+	Cleanup.
+
+2000-05-18  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Define endian-safe IO macros.
+
+	* src/plf_stub.c:
+	* src/hal_diag.c:
+	Use specified ports.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Change default endianess to
+	big. Add options to control debug/diag ports.
+
+	* src/platform.S: Set V320SC to big-endian mode when required.
+
+2000-05-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_stub.c:
+	* src/plf_misc.c:
+	* src/pc87338.inl: 
+	Ctrl-c code uses local stub if available.
+
+	* src/hal_diag.c: Fixed for running under stub.
+
+	* include/plf_intr.h: Fix warnings.
+
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.ldi: 
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.ldi: 
+	Leave gap for virtual table.
+
+	* src/plf_misc.c: Support ctrl-c.
+
+	* src/platform.S: Springboard code must use mask since sources are
+	set to interrupt when disabled.
+
+	* src/pc87338.inl: Added interrupt definitions and interrupt init.
+
+	* src/plf_stub.c:
+	* include/plf_stub.h: 
+	Platform stub init of virtual vector table.
+
+	* include/plf_intr.h: Added control macros. Only handles on-board
+	interrupt controller, not the V320USC one.
+
+	* include/platform.inc: Use VSR/break springboard.
+
+2000-05-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc:
+	Use FPU in 32 bit mode.
+
+2000-05-15  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Require warm-starts to be treated
+	like cold-starts.
+
+	* src/plf_stub.c: 
+	* include/plf_stub.h: 
+	* include/plf_io.h: 
+	* include/hal_diag.h:
+	Cleanup.
+
+	* src/platform.S: Adjust springboard code for the three interrupt
+	controllers.
+	* include/plf_intr.h: Change vectors to match decoding.
+	* include/platform.inc: Cleanup. Enable FPU.
+	* cdl/hal_mips_tx49_ref4955.cdl: Cleanup. Fix incrementer rate.
+
+2000-05-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c (hal_platform_init): Initialize SuperIO chip.
+
+	* src/platform.S: Added magic assembler operand.
+
+	* src/hal_diag.c: Cleaned up.
+
+	* include/platform.inc (hal_memc_init): Added configury.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: Default to GDB_stubs ROM monitor.
+
+2000-05-11  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.ldi: 
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.ldi: 
+	More space for vectors and VSR table [need to update .h&.ldi]
+	
+	* include/platform.inc: Move memory setup into a function. Fix
+	register typos.
+
+	* include/platform.inc: Re-added the magic debug exception VSR
+	pointers. Copy VSRs to vector space [needs configury].
+
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.h:
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.ldi:
+	* include/pkgconf/mlt_mips_tx49_ref4955_ram.mlt:
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.h:
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.ldi:
+	* include/pkgconf/mlt_mips_tx49_ref4955_rom.mlt:
+	Updated for platform.
+
+	* include/platform.inc: Some definitions added.
+
+	* cdl/hal_mips_tx49_ref4955.cdl: don't move srec image.
+
+2000-05-10  Jesper Skov  <jskov@redhat.com>
+
+	* Cloned from jmr3904. Still stuff to clean out and stuff to add.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

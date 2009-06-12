@@ -1,0 +1,918 @@
+# Browswer window for Insight.
+# Copyright 1998, 1999, 2001, 2002 Red Hat
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ----------------------------------------------------------------------
+# Implements Browser window for gdb
+#
+# ----------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+#  CONSTRUCTOR - create new browser window
+# ------------------------------------------------------------------
+
+option add *BrowserWin.textBackground  white
+
+body BrowserWin::constructor {args} {
+  #eval itk_initialize $args 
+  window_name "Function Browser"
+
+  set Current(filename) {}
+  set Current(function) {}
+  _build_win
+
+  eval itk_initialize $args
+
+  # Create the toplevel binding for this class
+  bind Configure_Browser_$this <Configure> [code $this _resize]
+
+  add_hook file_changed_hook [code $this _fill_file_box]
+}
+
+# ------------------------------------------------------------------
+#  DESTRUCTOR - destroy window containing widget
+# ------------------------------------------------------------------
+body BrowserWin::destructor {} {
+
+  if {$resize_after != ""} {
+    after cancel $resize_after
+  }
+  if {$filter_trace_after != ""} {
+    after cancel $filter_trace_after
+  }
+
+  if {$MoreVisible} {
+    pref set gdb/browser/view_is_open 1
+  } else {
+    pref set gdb/browser/view_is_open 0
+  }
+
+  remove_hook file_changed_hook [code $this _fill_file_box]
+  trace vdelete [pref varname gdb/search/last_symbol] \
+    w [code $this _filter_trace_proc]
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _build_win - build the main browser window
+# ------------------------------------------------------------------
+body BrowserWin::_build_win {} {
+  global PREFS_state gdb_ImageDir
+
+  # Three frames: regexp, listboxes, and drop-down pane
+
+  itk_component add filter {
+    iwidgets::labeledframe $itk_interior.filter -labeltext "Filter" \
+      -labelrelief groove -labelborderwidth 2 -ipadx 6 -ipady 4
+  }
+
+  append labelUpdateCode [$itk_component(filter) clientHandlesConfigure 1] "\n"
+
+  itk_component add browser {
+    frame $itk_interior.browser
+  }
+
+  itk_component add view {
+    frame $itk_interior.view
+  }
+
+  # Set up the contents of the Filter frame
+
+  itk_component add filt_label {
+    label [$itk_component(filter) childsite].lbl -text {Show if function } \
+      -font global/fixed
+  }
+
+  itk_component add filt_type {
+    combobox::combobox [$itk_component(filter) childsite].type -height 4 \
+      -width 15 -editable 0 \
+      -command [code $this _set_filter_mode] \
+      -font global/fixed
+  } { }
+
+  # Fill the filter mode combo-box
+
+  foreach elem $filter_modes {
+    $itk_component(filt_type) list insert end $elem
+  }
+
+  set cur_filter_mode [pref get gdb/search/filter_mode]
+  if {[lsearch $filter_modes $cur_filter_mode] < 0} {
+    set cur_filter_mode [lindex $filter_modes 0]
+  }
+  $itk_component(filt_type) entryset $cur_filter_mode
+
+  itk_component add filt_entry {
+    entry [$itk_component(filter) childsite].ent -font global/fixed \
+      -textvariable [pref varname gdb/search/last_symbol] 
+  } {}
+
+
+  # Watch keystrokes into the entry box and filter on them...
+
+  trace variable [pref varname gdb/search/last_symbol] w \
+    [code $this _filter_trace_proc]
+
+  pack $itk_component(filt_label) -side left 
+  pack $itk_component(filt_type) -side left -padx 4 -fill y -pady 5
+  pack $itk_component(filt_entry) -side right -fill both -expand 1 \
+    -padx 6 -pady 5
+
+  # Files Listbox for the Browser frame
+  itk_component add file_box {
+    iwidgets::scrolledlistbox $itk_component(browser).files \
+      -selectmode extended -exportselection false \
+      -labeltext "Files" -labelpos nw -labelrelief groove \
+      -labelborderwidth 2 -ipadx 8 -ipady 6 -foreground $::Colors(textfg) \
+      -childsitepos s -hscrollmode none -textbackground $::Colors(textbg)
+  } {}
+
+  append labelUpdateCode [$itk_component(file_box) clientHandlesConfigure 1] \
+    "\n"
+
+  bind [$itk_component(file_box) component listbox] <ButtonRelease-1> \
+    [code $this _process_file_selection %y]
+
+  itk_component add file_sep {
+    frame [$itk_component(file_box) childsite].sep -relief raised -height 2 \
+      -borderwidth 1
+  }
+	
+  itk_component add file_hide {
+    checkbutton [$itk_component(file_box) childsite].hide \
+      -text {Hide .h files} \
+      -variable [pref varname gdb/browser/hide_h] \
+      -command [code $this _file_hide_h]
+  }
+
+  itk_component add file_all {
+    button [$itk_component(file_box) childsite].sel \
+      -text {Select All} -width 12 \
+      -command [code $this _select 1]
+  }
+
+  # Pack the file box in, and grid in the separate bits of the child-site.
+
+  pack $itk_component(file_box) -side left -fill both -expand yes \
+    -padx 5 -pady 5
+
+  grid $itk_component(file_sep) -column 0 -row 0 -columnspan 2 \
+    -sticky ew -pady 8
+  grid $itk_component(file_hide) -column 0 -row 1 -padx 5 -sticky w
+  grid $itk_component(file_all) -column 1 -row 1 -padx 5 -sticky e
+
+  grid columnconfigure [$itk_component(file_box) childsite] 0 -weight 1
+
+  # Functions Listbox for the Browser frame
+
+  itk_component add func_box {
+    iwidgets::scrolledlistbox $itk_component(browser).funcs \
+      -selectmode extended \
+      -exportselection false \
+      -labeltext "Functions" -labelpos nw -labelrelief groove \
+      -labelborderwidth 2 -ipadx 8 -ipady 6 -foreground $::Colors(textfg) \
+      -childsitepos s -hscrollmode none -textbackground $::Colors(textbg)
+  } {}
+	    
+  append labelUpdateCode [$itk_component(func_box) clientHandlesConfigure 1] \
+    "\n"
+
+  bind [$itk_component(func_box) component listbox] <ButtonRelease-1> \
+    [code $this _process_func_selection %y]
+
+  itk_component add func_sep {
+    frame [$itk_component(func_box) childsite].sep -relief raised \
+      -height 2 -borderwidth 1
+  }
+	
+  itk_component add func_bp_label {   
+    label [$itk_component(func_box) childsite].bpl -text {Breakpoints:}
+  }
+
+  itk_component add func_add_bp {   
+    button [$itk_component(func_box) childsite].abp -text {Set} \
+      -command [code $this do_all_bp 1]
+  }
+
+  itk_component add func_remove_bp {
+    button [$itk_component(func_box) childsite].rbp -text {Delete} \
+      -command [code $this do_all_bp 0]
+  }
+
+  # Pack in the Function box, and grid in the bits of the child-site
+
+  pack $itk_component(func_box) -side right -fill both -expand yes \
+    -padx 5 -pady 5
+
+  grid $itk_component(func_sep) -row 0 -column 0 -columnspan 3 \
+    -sticky ew -pady 8
+  grid $itk_component(func_bp_label) -row 1 -column 0 -padx 5
+  grid $itk_component(func_remove_bp) -row 1 -column 1  -padx 5
+  grid $itk_component(func_add_bp) -row 1 -column 2  -padx 5
+
+  grid columnconfigure [$itk_component(func_box) childsite] 1 -weight 1
+  grid columnconfigure [$itk_component(func_box) childsite] 2 -weight 1
+
+  # "More" frame for viewing source
+
+  if {[lsearch [image names] _MORE_] == -1} {
+    image create photo _MORE_ -file [file join $gdb_ImageDir more.gif]
+    image create photo _LESS_ -file [file join $gdb_ImageDir less.gif]
+  }
+
+  itk_component add view_vis {
+    frame $itk_interior.view.visible
+  }
+
+  itk_component add view_more {
+    button $itk_component(view_vis).btn -image _MORE_ -relief flat \
+		    -command [code $this _toggle_more]
+  }
+
+  itk_component add view_label {
+    label $itk_component(view_vis).lbl -text {View Source}
+  }
+
+  itk_component add view_sep {
+    frame $itk_component(view_vis).sep -relief raised -borderwidth 1 -height 2
+  }
+
+  pack $itk_component(view_more) -side left -padx 10 -pady 10
+  pack $itk_component(view_label) -side left -padx 10 -pady 10
+  pack $itk_component(view_sep) -padx 4 -pady 10 -fill x -expand 1
+
+  grid columnconfigure $itk_component(view_vis) 2 -weight 1
+
+  pack $itk_component(view_vis) -side top -fill x -expand yes
+
+  # Key bindings for "visible" frames
+  bind_plain_key $itk_component(filt_entry) Return [list $this search]
+  bind $itk_component(func_box) <3> [code $this _toggle_bp %y]
+
+  # Construct hidden frame
+
+  itk_component add view_hidden {
+    frame $itk_interior.hidden
+  }
+
+  itk_component add view_src {
+    SrcTextWin $itk_component(view_hidden).src -Tracing 0 \
+      -parent $this -ignore_var_balloons 1 
+  } {
+    rename -background -textbackground textBackground Background
+  }    
+
+  $itk_component(view_src) configure -textheight 2i
+
+  itk_component add view_bottom {
+    frame $itk_component(view_hidden).bottom
+  }
+
+  itk_component add view_name {
+    label $itk_component(view_hidden).name -font global/fixed
+  }
+
+  itk_component add view_func {
+    combobox::combobox $itk_component(view_bottom).combo -maxheight 15 \
+      -font global/fixed -command [code $this _goto_func]
+  } {
+    # Should be able to do this, but can't cause the combobox doesn't
+    # fake up a MegaWidget well enough
+    #rename -background -textbackground textBackground Background
+  }
+  
+  itk_component add view_mode {
+    combobox::combobox $itk_component(view_bottom).mode -width 9 \
+      -font global/fixed -command [code $this mode]
+  } {
+    #rename -background -textbackground textBackground Background
+  }
+
+  itk_component add view_search {
+    entry $itk_component(view_bottom).search -borderwidth 2 \
+      -font global/fixed -width 10 -background $::Colors(textbg)
+  } {}
+
+  # Pack all the components of view_hidden into the frame:
+
+  pack $itk_component(view_search) -side right -padx 5 -fill none \
+    -expand 1 -anchor e
+  pack $itk_component(view_mode) -side right -padx 5
+  pack $itk_component(view_func) -side left
+
+  pack $itk_component(view_name) -side top -fill x -padx 5 -pady 3
+  pack $itk_component(view_bottom) -side bottom -fill x -pady 3 -padx 5
+  pack $itk_component(view_src) -fill both -expand 1 -padx 5 -pady 3
+
+  
+  # Fill combo boxes
+  $itk_component(view_mode) list insert end SOURCE
+  $itk_component(view_mode) list insert end ASSEMBLY
+  $itk_component(view_mode) list insert end MIXED
+
+  # don't allow SRC+ASM mode... $itk_component(view_mode) insert end SRC+ASM
+  $itk_component(view_mode) entryset [$itk_component(view_src) mode_get]
+
+  # Key bindings for hidden frame
+  bind_plain_key $itk_component(view_search) Return \
+    [code $this _search_src forwards]
+  bind_plain_key $itk_component(view_search) Shift-Return \
+    [code $this _search_src backwards]
+
+  # Now map everything onto the screen
+  grid $itk_component(filter) -column 0 -row 0 -padx 6 -pady 4 -sticky ew
+  grid $itk_component(browser) -column 0 -row 1 -sticky nsew
+  grid $itk_component(view)  -column 0 -row 2 -pady 4 -padx 6 -sticky ew
+
+  # Now set up any initial values:
+
+  set MoreVisible [pref get gdb/browser/view_is_open]
+  set BrowserHeight [pref get gdb/browser/top_height]
+  set Width [pref get gdb/browser/width]
+
+  if {$BrowserHeight > 0} {
+    grid rowconfigure $itk_component(hull) $componentToRow(browser) \
+      -minsize $BrowserHeight
+  }
+  
+  if {$Width > 0} {
+    grid columnconfigure $itk_component(hull) 0 -minsize $Width
+  }
+
+  grid rowconfigure $itk_component(hull) 1 -weight 1 
+  grid columnconfigure $itk_component(hull) 0 -weight 1
+
+  update idletasks
+  eval $labelUpdateCode
+
+  if {$MoreVisible} {
+    debug "Got moreVisible at 1"
+    set MoreVisible 0
+    _toggle_more 1
+  }
+
+  # Fill file box
+  _fill_file_box
+
+  after idle "
+    update idletasks
+    grid rowconfigure $itk_component(hull) 2 \
+        -minsize \[winfo height $itk_component(view)\]
+  "
+
+  # Finally set up the top level bindings:
+  _bind_toplevel 1
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _filter_trace_proc
+#           This is called when something is entered in the filter
+#           box.  The actual filtering is done in an after to avoid
+#           flashing too much if the user is typing quickly.
+# ------------------------------------------------------------------
+body BrowserWin::_filter_trace_proc {v1 v2 mode} {
+  if {$filter_trace_after != ""} {
+    after cancel $filter_trace_after
+  }
+  set filter_trace_after [after 100 [code $this _filter_trace_after]]
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _filter_trace_after
+#           This is a wrapper around search, needed to pass to trace
+# ------------------------------------------------------------------
+body BrowserWin::_filter_trace_after {} {
+  set filter_trace_after ""
+  search
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _search_src
+#           Search for text or jump to a specific line
+#           in source window, going in the specified DIRECTION.
+# ------------------------------------------------------------------
+body BrowserWin::_search_src {direction} {
+  set exp [$itk_component(view_search) get]
+  $itk_component(view_src) search $exp $direction
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  search
+#           Search for functions matching regexp/pattern
+#           in specified files
+# ------------------------------------------------------------------
+body BrowserWin::search {} {
+
+  set files [$itk_component(file_box) getcurselection]
+
+  if {[llength $files] == 0} {
+    return
+  }
+
+  _freeze_me
+
+  set filt_pat [format $filter_regexp($cur_filter_mode) \
+		  [pref get gdb/search/last_symbol]]
+
+  if {[llength $files] == [$itk_component(file_box) size]} {
+    set err [catch {gdb_search functions $filt_pat \
+		    -filename 1} matches]
+  } else {
+    set err [catch {gdb_search functions $filt_pat \
+		      -files $files -filename 1} matches]
+  }
+
+  if {$err} {
+    debug "ERROR searching for [pref get gdb/search/last_symbol]: $matches"
+    _thaw_me
+    return
+  }
+
+  $itk_component(func_box) delete 0 end
+
+  set i -1
+  catch {unset index_to_file}
+
+  foreach func [lsort -command "list_element_strcmp 0" $matches] {
+    $itk_component(func_box) insert end [lindex $func 0]
+    set index_to_file([incr i]) [lindex $func 1]
+  }
+  _thaw_me
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _toggle_more
+#           Toggle display of source listing
+# ------------------------------------------------------------------   
+body BrowserWin::_toggle_more {{in_constructor 0}} {
+
+  debug "Running toggle_more with MoreVisible: $MoreVisible"
+  # Temporarily disable the resize bindings before opening the window.
+  _bind_toplevel 0
+
+  set topHeight [winfo height $_top]
+  set topWidth  [winfo width $_top]
+
+  if {!$MoreVisible} {
+
+    $itk_component(view_label) configure -text {Hide Source}
+    $itk_component(view_more) configure -image _LESS_
+    grid $itk_component(view_hidden) -row 3 -column 0 -sticky nsew \
+      -padx 6 -pady 4
+    
+    # Check the stored height.  Restore the view to this if it will fit on the
+    # screen.  Otherwise, figure out how big to make it...
+
+    set height [pref get gdb/browser/view_height]
+    set bottom [expr {[winfo y $_top] + $topHeight}]
+
+    set extra [expr {[winfo screenheight $_top] - $bottom - 20}]
+    
+    if {$height < 0} {
+      set default [winfo pixels $_top 3i]
+      set height [expr {$extra > $default ? $default : $extra}]
+    } else {
+      set height [expr {$extra > $height ? $height : $extra}]
+    }
+
+    wm geometry $_top ${topWidth}x[expr {$topHeight + $height}]
+    grid rowconfigure $itk_component(hull) $componentToRow(view_hidden) \
+      -weight 1
+    grid rowconfigure $itk_component(hull) $componentToRow(browser) -weight 0
+
+    pref set gdb/browser/view_height $height
+
+    set MoreVisible 1
+    update idletasks
+
+    # If we have a selected function, display it in the window
+
+    set f [$itk_component(func_box) getcurselection]
+
+    if {$f != ""} {
+      # FIXME - If there is more than 1 function selected, I just load the
+      # first.  It would probably be better to load the one nearest to the
+      # middle of the current window on the listbox.  But I am running out
+      # of time for this round...
+
+      if {[llength $f] > 1} {
+	set f [lindex $f 0]
+      }
+      
+      _fill_source $f
+    } else {
+      # If no function was chosen, try the file box...
+
+      set f [$itk_component(file_box) getcurselection]
+      if { $f != "" } {
+	if {[llength $f] > 1} {
+	  set f [lindex $f 0]
+	}
+	_fill_source $f 0
+      }
+    }
+  } else {
+    if {!$in_constructor} {
+      pref set gdb/browser/view_height \
+	[winfo height $itk_component(view_hidden)]
+    }
+
+    $itk_component(view_label) configure -text {View Source}
+    $itk_component(view_more) configure -image _MORE_
+
+    grid propagate $itk_component(func_box) 0
+    grid propagate $itk_component(file_box) 0
+
+    set newTopHeight [expr {$topHeight - \
+			      [winfo height $itk_component(view_hidden)]}]
+    wm geometry $_top ${topWidth}x$newTopHeight
+
+    if {!$in_constructor} {
+      grid rowconfigure $itk_component(hull) $componentToRow(browser) -weight 1
+      grid forget $itk_component(view_hidden)
+      grid rowconfigure $itk_component(hull) $componentToRow(view_hidden) \
+	-minsize 0 -weight 0
+    }
+
+    set MoreVisible 0
+
+    # Flush the changes
+
+    update idletasks
+
+    grid propagate $itk_component(func_box) 1
+    grid propagate $itk_component(file_box) 1
+
+  }
+
+  # restore the bindings
+
+  _bind_toplevel 1
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _bind_toplevel
+#            Setup the bindings for the toplevel.
+# ------------------------------------------------------------------
+body BrowserWin::_bind_toplevel {install} {
+
+  set bindings [bindtags $_top]
+  if {$install} {
+    bindtags $_top [linsert $bindings 0 Configure_Browser_$this]
+  } else {
+    set bindLoc [lsearch $bindings Configure_Browser_$this]
+    bindtags $_top [lreplace $bindings $bindLoc $bindLoc]
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _do_resize
+#            Does the actual work of the resize.
+# ------------------------------------------------------------------
+body BrowserWin::_do_resize {} {
+
+  update idletasks
+  debug "Running _do_resize"
+
+  set width [winfo width $itk_component(hull)]
+  pref set gdb/browser/width      $width
+  grid columnconfigure $itk_component(hull) 0 -minsize $width
+
+  if {$MoreVisible} {
+    set v_height [winfo height $itk_component(view_hidden)]
+    pref set gdb/browser/view_height $v_height
+    grid rowconfigure $itk_component(hull) $componentToRow(view_hidden) \
+      -minsize $v_height
+    grid rowconfigure $itk_component(hull) $componentToRow(browser)
+  } else {    
+    set b_height [winfo height $itk_component(browser)]
+    pref set gdb/browser/top_height $b_height
+    grid rowconfigure $itk_component(hull) $componentToRow(browser) \
+      -minsize $b_height
+  }
+
+  eval $labelUpdateCode
+  pack propagate $_top 1
+
+  set resize_after ""
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _resize
+#            Resize "itk_component(view_hidden)" after all configure events
+# ------------------------------------------------------------------
+body BrowserWin::_resize {} {
+
+  pack propagate $_top 0
+
+  if {$MoreVisible} {
+    grid rowconfigure $itk_component(hull) $componentToRow(view_hidden) \
+      -minsize 0
+  } else {
+    grid rowconfigure $itk_component(hull) 1 -minsize 0
+  }
+
+  grid columnconfigure $itk_component(hull) 0 -minsize 0
+
+  if {$resize_after != ""} {
+    after cancel $resize_after
+  }
+  set resize_after [after 100 "[code $this _do_resize]"]
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _process_file_selection
+#            This fills the func combo, and the more window if it
+#            is currently open with the hit in the File combobox.
+# ------------------------------------------------------------------
+body BrowserWin::_process_file_selection {y} {
+
+  set curIndex [$itk_component(file_box) nearest $y]
+  set curSelection [$itk_component(file_box) curselection]
+
+  # We got a button-release - First make sure the click selected the item...
+
+  if {[lsearch $curIndex $curSelection] >= 0} {
+    _fill_source [$itk_component(file_box) get $curIndex] 0
+  } else {
+    # If the item was deselected, go back to the first one in the list...
+    # It would be better to keep a stack of the clicked items, and go to the
+    # last one on the stack.  But in extended mode, this is tricky.  FIXME
+
+    if {[llength $curSelection] > 0} {
+      _fill_source [$itk_component(file_box) get [lindex $curSelection 0]] 0
+    } else {
+      _fill_source ""
+    }
+  }
+
+  search
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _process_func_selection
+#            This points the  more window to the hit in the Func combobox
+#            if it is currently open.
+# ------------------------------------------------------------------
+body BrowserWin::_process_func_selection {y} {
+
+  set curIndex [$itk_component(func_box) nearest $y]
+  set curSelection [$itk_component(func_box) curselection]
+
+  # We got a button-release - First make sure the click selected the item...
+
+  if {[lsearch $curIndex $curSelection] >= 0} {
+    set funcName [$itk_component(func_box) get $curIndex]
+    set fileName $index_to_file($curIndex)
+    _fill_source $funcName 1 $fileName
+  }
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  do_all_bp
+#           Toggle a bp at every selected function in FuncLB
+# ------------------------------------------------------------------
+body BrowserWin::do_all_bp {onp} {
+
+  set funcs [$itk_component(func_box) getcurselection]
+  _freeze_me
+
+  foreach f $funcs {
+    if {[catch {gdb_loc $f} linespec]} {
+      dbug W "Could not gdb_loc \"$f\""
+      return
+    }
+    set bpnum [bp_exists $linespec]
+    if {$bpnum == -1 && $onp} {
+
+      # FIXME: gdb_set_bp is the preferred method, but it requires
+      # a file and line number. This doesn't work very well for
+      # templates...
+      gdb_cmd "break $f"
+    } elseif {!$onp} {
+      catch {gdb_cmd "delete $bpnum"}
+    }
+  }
+  _thaw_me
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _toggle_bp
+#           Toggle bp at function specified by the given Y
+#           coordinate in the listbox
+# ------------------------------------------------------------------
+body BrowserWin::_toggle_bp {y} {
+
+  set f [$itk_component(func_box) get [$itk_component(func_box) nearest $y]]
+  if {$f != ""} {
+    if {[catch {gdb_loc $f} linespec]} {
+      return
+    }
+    set bpnum [bp_exists $linespec]
+    if {$bpnum == -1} {	
+      # FIXME: gdb_set_bp is the preferred method, but it requires
+      # a file and line number. This doesn't work very well for
+      # templates...
+      gdb_cmd "break $f"
+    } else {
+      catch {gdb_cmd "delete $bpnum"}
+    }
+  }
+}
+
+# ------------------------------------------------------------------  
+#  METHOD:  _select
+#           (Un/Highlight all files in the files list
+# ------------------------------------------------------------------  
+body BrowserWin::_select {highlight} {
+  if {$highlight} {
+    $itk_component(file_box) selection set 0 end
+  } else {
+    $itk_component(file_box) selection clear 0 end
+  }
+  search
+}
+
+# ------------------------------------------------------------------  
+#  METHOD:  _set_filter_mode
+#           React to changes in the filter mode
+# ------------------------------------------------------------------  
+body BrowserWin::_set_filter_mode {w mode} {
+  if {[string compare $mode $cur_filter_mode] != 0} {
+    set cur_filter_mode $mode
+    pref set gdb/search/filter_mode $mode
+    search
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _file_hide_h
+#           Run when the "Hide .h files" preference is chosen.
+# ------------------------------------------------------------------
+body BrowserWin::_file_hide_h {} {
+
+  _fill_file_box
+  search
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _fill_source
+#           Helper function to fill the srctextwin
+#           when needed.
+# ------------------------------------------------------------------
+body BrowserWin::_fill_source {f {funcp 1} {filename ""}} {
+
+  if {!$MoreVisible } {
+    return
+  }
+
+  if {($funcp && [string compare $f $Current(function)]) \
+	|| [string compare $f $Current(filename)]} {
+    if {!$funcp} {
+      if {$filename == ""} {
+	set f $f:1
+      } else {
+	set f $f:$filename
+      }
+    }
+
+    if {[catch {gdb_loc $f} linespec]} {
+      return
+    }
+
+    lassign $linespec foo funcname name line addr pc_addr lib
+    set file_changed [string compare $Current(filename) $name]
+    # fill srctextwin
+
+    if {$file_changed} {
+      # Set the file name label:
+      $itk_component(view_name) configure -text $name:
+      _freeze_me
+    }
+
+    $itk_component(view_src) location BROWSE_TAG $name $funcname \
+      $line $addr $pc_addr lib
+
+    if {$file_changed} {
+      _thaw_me
+    }
+
+    set Current(function) $funcname
+    # fill func combo
+    if {$file_changed} {
+      set Current(filename) $name
+      _fill_funcs_combo $name
+    }
+    # Set current function in combo box
+    $itk_component(view_func) entryset $f
+    
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  mode
+#           Function called by srctextwin when the display
+#           mode changes
+# ------------------------------------------------------------------
+body BrowserWin::mode {w {mode ""} {go 1}} {
+  if {$mode != ""} {
+    $itk_component(view_src) mode_set $mode $go
+    $itk_component(view_mode) entryset $mode
+  }
+}
+
+# ------------------------------------------------------------------
+# METHOD:  _goto_func
+#          Callback for the function combo box which
+#          sets the srctextwin looking at the given function (VAL)
+# ------------------------------------------------------------------
+body BrowserWin::_goto_func {w {val ""}} {
+  if {$val != ""} {
+    set mang 0
+    if {[info exists _mangled_func($val)]} {
+      set mang $_mangled_func($val)
+    }
+    if {$mang} {
+      set loc $val
+    } else {
+      set fn [lindex [::file split $Current(filename)] end]
+      set loc $fn:$val
+    }
+    debug "GOTO \"$loc\""
+    if {![catch {gdb_loc $loc} result]} {
+      lassign $result foo funcname name line addr pc_addr lib
+      $itk_component(view_src) location BROWSE_TAG $name $funcname \
+	$line $addr $pc_addr lib
+    } else {
+      dbug W "gdb_loc returned \"$result\""
+    }
+  }
+}
+# ------------------------------------------------------------------
+#  METHOD:  _fill_file_box
+#           This private method fills the file listbox
+# ------------------------------------------------------------------
+body BrowserWin::_fill_file_box {} {
+  # It would be cool if gdb_listfiles took a regexp to match,
+  # but it doesn't...
+
+  $itk_component(file_box) clear
+  set allFiles [gdb_listfiles]
+
+  if {[pref get gdb/browser/hide_h]} {
+    foreach file $allFiles {
+      if {[string compare [file extension $file] ".h"]} {
+	$itk_component(file_box) insert end $file
+      }
+    }
+  } else {
+    foreach file $allFiles {
+      $itk_component(file_box) insert end $file
+    } 
+  }
+  search
+}
+# ------------------------------------------------------------------
+#  METHOD:  _fill_funcs_combo
+#           This private method fills the functions combo box
+#           with all the functions in NAME.
+# ------------------------------------------------------------------
+body BrowserWin::_fill_funcs_combo {name} {
+
+  $itk_component(view_func) list delete 0 end
+  if {$name != ""} {
+    set maxlen 10
+    if {[catch {gdb_listfuncs $name} listfuncs]} {
+      tk_messageBox -icon error -default ok \
+	-title "GDB" -type ok \
+	-message "This file can not be found or does not contain\ndebugging information."
+      return
+    }
+    foreach f [lsort -increasing $listfuncs] {
+      lassign $f func mang
+      if {$func == "global constructors keyed to main"} {continue}
+      set _mangled_func($func) $mang
+      $itk_component(view_func) list insert end $func
+      if {[string length $func] > $maxlen} {
+	set maxlen [string length $func]
+      }
+    }
+    $itk_component(view_func) configure -width [expr {$maxlen + 1}]
+  }
+}

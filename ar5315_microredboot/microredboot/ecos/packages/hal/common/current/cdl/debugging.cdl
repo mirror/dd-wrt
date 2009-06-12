@@ -1,0 +1,169 @@
+# ====================================================================
+#
+#      debugging.cdl
+#
+#      HAL debugging configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2003 Jonathan Larmour
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg,jskov,jlarmour
+# Contributors:
+# Date:           1999-07-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_interface CYGINT_HAL_DEBUG_GDB_STUBS {
+    display       "Support for GDB stubs"
+    no_define
+    description   "
+        The HAL implements GDB stubs for the target."
+}
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    display       "Include GDB stubs in HAL"
+    active_if     CYGINT_HAL_DEBUG_GDB_STUBS
+    default_value 0
+    requires      ! CYGSEM_HAL_USE_ROM_MONITOR
+    requires      ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+    requires      ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+    requires      { !CYGSEM_HAL_VIRTUAL_VECTOR_DIAG \
+                    || CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_COMMS }
+    description   "
+        This option causes a set of GDB stubs to be included into the
+        system. On some target systems the GDB support will be
+        provided by other means, for example by a ROM monitor. On
+        other targets, especially when building a ROM-booting system,
+        the necessary support has to go into the target library
+        itself. When GDB stubs are include in a configuration, HAL
+        serial drivers must also be included."
+
+    compile       generic-stub.c thread-packets.c hal_stub.c drv_api.c bplist-dynamic.c
+}
+
+cdl_interface CYGINT_HAL_DEBUG_GDB_STUBS_BREAK {
+    display       "Support for external break support in GDB stubs"
+    no_define
+    description   "
+        The HAL implements external break (or asynchronous interrupt)
+        in the GDB stubs for the target."  
+}
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT {
+    display       "Include GDB external break support for stubs"
+    active_if     CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    requires      CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+    default_value CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+    description   "
+        This option causes the GDB stub to add a serial interrupt handler
+        which will listen for GDB break packets. This lets you stop the
+        target asynchronously when using GDB, usually by hitting Control+C
+        or pressing the STOP button. This option differs from
+        CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT in that it is used when
+        GDB stubs are present."
+}
+
+cdl_interface CYGINT_HAL_DEBUG_GDB_CTRLC_UNSUPPORTED {
+    display "Platform does not support CTRLC"
+    no_define
+}
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT {
+    display       "Include GDB external break support when no stubs"
+    requires      !CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+    active_if     { CYGSEM_HAL_USE_ROM_MONITOR || CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS }
+    active_if     { CYGINT_HAL_DEBUG_GDB_CTRLC_UNSUPPORTED == 0 }
+    default_value { !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS }
+    description   "
+        This option adds an interrupt handler for the GDB serial line
+        which will listen for GDB break packets. This lets you stop the
+        target asynchronously when using GDB, usually by hitting Control+C
+        or pressing the STOP button. This option differs from
+        CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT in that it is used when the GDB
+        stubs are NOT present."
+}
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT {
+    display       "Include GDB multi-threading debug support"
+    active_if     { CYGSEM_HAL_ROM_MONITOR || CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT }
+    default_value 1
+    description   "
+        This option enables some extra HAL code which is needed
+        to support multi-threaded source level debugging."
+
+    compile dbg-threads-syscall.c
+}
+
+cdl_option CYGNUM_HAL_DEBUG_GDB_PROTOCOL_RETRIES {
+    display       "Number of times to retry sending a \$O packet"
+    default_value 0
+    flavor        data
+    description   "
+        This option controls the number of attempts that eCos programs
+        will make to send a \$O packet to a host GDB process.  If it is
+        set non-zero, then the target process will attempt to resend the
+        \$O packet data up to this number of retries.  Caution: use of
+        this option is not recommended as it can thoroughly confuse the
+        host GDB process."
+}
+
+cdl_option CYGNUM_HAL_DEBUG_GDB_PROTOCOL_TIMEOUT {
+    display       "Timeout period for GDB packets"
+    default_value 500
+    flavor        data
+    description   "
+        This option controls the time (in milliseconds) that eCos programs
+        will wait for a response when sending packets to a host GDB process.
+        If this time elapses, then the packet will be resent, up to some
+        maximum number of times (CYGNUM_HAL_DEBUG_GDB_PROTOCOL_RETRIES)."
+}
+
+cdl_option CYGDBG_HAL_CRCTABLE_LOCATION {
+    display       "Location of CRC32 table"
+    flavor        data
+    legal_values  {"ROM" "RAM"}
+    default_value {"RAM"}
+    description   "
+        The stubs use a 1 kilobyte CRC table that can either be pregenerated
+        and placed in ROM, or generated at runtime in RAM. Depending on
+        your memory constraints, one of these options may be better."
+}
+
+# EOF debugging.cdl

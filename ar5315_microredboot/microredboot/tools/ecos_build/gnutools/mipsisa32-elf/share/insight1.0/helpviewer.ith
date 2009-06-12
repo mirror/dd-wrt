@@ -1,0 +1,97 @@
+# HtmlViewer class definition
+# Copyright 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# -----------------------------------------------------------------------------
+# NAME:
+#	class HtmlViewer
+#
+# DESC:
+#	This class implements a simple HTML browser.  It has both pulldown
+#	menus and buttons for navigating.  It uses the scrolledhtml iwidget
+#	to do its rendering.
+#
+# NOTES:
+#	Currently used as a help window.
+#
+# -----------------------------------------------------------------------------
+class HtmlViewer {
+  inherit EmbeddedWin
+  
+  public {
+    variable topics { 
+      {index index.html}
+      {"Attach Dialog" attach.html}
+      {"Breakpoint Window" breakpoint.html}
+      {"Console Window" console.html }
+      {"Function Browser" browser.html }
+      {"Locals Window" locals.html }
+      {"Memory Window" memory.html}
+      {"Register Window" register.html}
+      {"Source Window" source.html}
+      {"Stack Window" stack.html}
+      {"Target Window" target.html }
+      {"Thread Window" thread.html }
+      {"Watch Window" watch.html}
+    }
+    variable file "index.html"
+    method back {}
+    method forward {}
+    method link {link}
+    method load {link}
+    method close {}
+    method constructor {args}
+    proc open_help {file}
+  }
+  
+  private {
+    variable _html
+    variable _links
+    variable _m
+    variable _f
+    
+    method _enable {on args}
+    method _buildwin {}
+  }
+  
+}
+
+# -----------------------------------------------------------------------------
+# NAME:
+#	class PageStack
+#
+# DESC:
+#	Implements a stack-like class for saving and recalling items
+#	like pages in a help browser. It differs from a traditional
+#	stack only by the 'back' and 'next' methods which move up and
+#	down the stack without disturbing it, unlike 'push' and 'pop'.
+#
+# NOTES:
+#	Currently used by the HtmlViewer class.
+#
+# -----------------------------------------------------------------------------
+class PageStack {
+  private {
+    variable _ptr -1
+    variable _max -1
+    variable _stack
+  }
+  public {
+    method push {val}
+    method back {}
+    method next {}
+    method more {}
+    method less {}
+    method current {}
+  }
+}

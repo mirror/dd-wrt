@@ -1,0 +1,1059 @@
+# Target selection dialog for Insight.
+# Copyright 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ----------------------------------------------------------------------
+# Implements GDB TargetSelection dialog
+# ----------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+#  CONSTRUCTOR - create new target selection window
+# ------------------------------------------------------------------
+body TargetSelection::constructor {args} {
+  eval itk_initialize $args
+  set top [winfo toplevel $itk_interior]
+  _init
+  build_win
+}
+
+body TargetSelection::getname {target name} {
+
+  # Init target database if we haven't already done so
+  init_target_db
+
+  if {[info exists gdb_target($target,$name)]} {
+    return $gdb_target($target,$name)
+  } else {
+    return ""
+  }
+}
+
+body TargetSelection::init_target_db {} {
+  # check to see if we already initialized this database
+  if {$db_inited} { 
+    return 
+  }
+  set db_inited 1
+
+  # Target Database
+  # Set the following members:
+  # TARGET,pretty-name: Name to display to user
+  # TARGET,debaud: Default baudrate
+  # TARGET,baud-rates: Permissible baudrates
+  # TARGET,cmd: Abstracted command to run for this target (tcpX and com1 are
+  #          replaced with the real port and host/port in set_target)
+  # TARGET,runlist: List of preferences for the target: {attach download run cont}
+  # TARGET,after_attaching: a command to run after attaching to the target
+
+  # Default target
+  set gdb_target(default,pretty-name) "Default"
+  set gdb_target(default,defbaud) ""
+  set gdb_target(default,baud-rates) {}
+  set gdb_target(default,cmd) ""
+  set gdb_target(default,runlist) {0 0 1 0}
+  set gdb_target(default,options) ""
+  set gdb_target(default,after_attaching) {}
+
+  # Exec target
+  set gdb_target(exec,pretty-name) "Exec"
+  set gdb_target(exec,defbaud) ""
+  set gdb_target(exec,baud-rates) {}
+  set gdb_target(exec,cmd) ""
+  set gdb_target(exec,runlist) {0 0 1 0}
+  set gdb_target(exec,options) ""
+  set gdb_target(exec,after_attaching) {}
+
+  # ADS board w/SDS protocol
+  set gdb_target(sds,pretty-name) "SDS"
+  set gdb_target(sds,defbaud) "38400"
+  set gdb_target(sds,baud-rates) {9600 38400}
+  set gdb_target(sds,cmd) "sds com1"
+  set gdb_target(sds,runlist) {1 1 0 1}
+  set gdb_target(sds,after_attaching) {}
+
+  # Simulator
+  set gdb_target(sim,pretty-name) "Simulator"
+  set gdb_target(sim,defbaud) ""
+  set gdb_target(sim,baud-rates) {}
+  set gdb_target(sim,cmd) "sim"
+  set gdb_target(sim,runlist) {1 1 1 0}
+  set gdb_target(sim,options) ""
+  set gdb_target(sim,after_attaching) {}
+
+  # Remote
+  set gdb_target(remote,pretty-name) "Remote/Serial"
+  set gdb_target(remote,defbaud) "9600"
+  set gdb_target(remote,baud-rates) {9600 19200 38400 57600 115200}
+  set gdb_target(remote,cmd) "remote com1"
+  set gdb_target(remote,runlist) {1 1 0 1}
+  set gdb_target(remote,after_attaching) {}
+  set gdb_target(remotetcp,pretty-name) "Remote/TCP"
+  set gdb_target(remotetcp,defbaud) "TCP"
+  set gdb_target(remotetcp,baud-rates) {}
+  set gdb_target(remotetcp,cmd) "remote tcpX"
+  set gdb_target(remotetcp,runlist) {1 1 0 1}
+  set gdb_target(remotetcp,after_attaching) {}
+
+  # ARM Angel
+  set gdb_target(rdi,pretty-name) "ARM Angel/Serial"
+  set gdb_target(rdi,defbaud) "9600"
+  set gdb_target(rdi,baud-rates) {9600 19200 38400 57600 115200}
+  set gdb_target(rdi,cmd) "rdi com1"
+  set gdb_target(rdi,runlist) {1 1 0 1}
+  set gdb_target(rdi,after_attaching) {}
+
+  # ARM Angel/Ethernet
+  set gdb_target(rditcp,pretty-name) "ARM Angel/Ethernet"
+  set gdb_target(rditcp,defbaud) "ETH"
+  set gdb_target(rditcp,baud-rates) {}
+  set gdb_target(rditcp,cmd) "rdi ethX"
+  set gdb_target(rditcp,runlist) {1 1 0 1}
+  set gdb_target(rditcp,after_attaching) {}
+
+  # ARM Remote
+  set gdb_target(rdp,pretty-name) "ARM Remote/Serial"
+  set gdb_target(rdp,defbaud) "9600"
+  set gdb_target(rdp,baud-rates) {9600}
+  set gdb_target(rdp,cmd) "rdp com1"
+  set gdb_target(rdp,runlist) {1 1 0 1}
+  set gdb_target(rdp,after_attaching) {}
+  set gdb_target(rdptcp,pretty-name) "ARM Remote/TCP"
+  set gdb_target(rdptcp,defbaud) "TCP"
+  set gdb_target(rdptcp,baud-rates) {}
+  set gdb_target(rdptcp,cmd) "rdp tcpX"
+  set gdb_target(rdptcp,runlist) {1 1 0 1}
+  set gdb_target(rdptcp,after_attaching) {}
+
+  # m32r rev C
+  set gdb_target(m32r,pretty-name) "M32R/Serial"
+  set gdb_target(m32r,defbaud) "9600"
+  set gdb_target(m32r,baud-rates) {9600}
+  set gdb_target(m32r,cmd) "m32r com1"
+  set gdb_target(m32r,runlist) {1 1 0 1}
+  set gdb_target(m32r,after_attaching) {}
+  set gdb_target(m32rtcp,pretty-name) "M32R/TCP"
+  set gdb_target(m32rtcp,defbaud) "TCP"
+  set gdb_target(m32rtcp,baud-rates) {}
+  set gdb_target(m32rtcp,cmd) "m32r tcpX"
+  set gdb_target(m32rtcp,runlist) {1 1 0 1}
+  set gdb_target(m32rtcp,after_attaching) {}
+
+  # m32r msa2000
+  set gdb_target(mon2000,pretty-name) "MON2000/Serial"
+  set gdb_target(mon2000,defbaud) "9600"
+  set gdb_target(mon2000,baud-rates) {9600}
+  set gdb_target(mon2000,cmd) "mon2000 com1"
+  set gdb_target(mon2000,runlist) {1 1 0 1}
+  set gdb_target(mon2000,after_attaching) {}
+  set gdb_target(mon2000tcp,pretty-name) "MON2000/TCP"
+  set gdb_target(mon2000tcp,defbaud) "TCP"
+  set gdb_target(mon2000tcp,baud-rates) {}
+  set gdb_target(mon2000tcp,cmd) "mon2000 tcpX"
+  set gdb_target(mon2000tcp,runlist) {1 1 0 1}
+  set gdb_target(mon2000tcp,after_attaching) {}
+
+  # sparclite
+  set gdb_target(sparclite,pretty-name) "SPARClite/Serial"
+  set gdb_target(sparclite,defbaud) "9600"
+  set gdb_target(sparclite,baud-rates) {9600}
+  set gdb_target(sparclite,cmd) "sparclite com1"
+  set gdb_target(sparclite,runlist) {1 1 0 1}
+  set gdb_target(sparclite,after_attaching) {}
+  set gdb_target(sparclitetcp,pretty-name) "SPARClite/TCP"
+  set gdb_target(sparclitetcp,defbaud) "TCP"
+  set gdb_target(sparclitetcp,baud-rates) {}
+  set gdb_target(sparclitetcp,cmd) "sparclite tcpX"
+  set gdb_target(sparclitetcp,runlist) {1 1 0 1}
+  set gdb_target(sparclitetcp,after_attaching) {}
+
+  # V850 ICE
+  set gdb_target(ice,pretty-name) "V850 ICE"
+  set gdb_target(ice,defbaud) ""
+  set gdb_target(ice,baud-rates) {}
+  set gdb_target(ice,cmd) "ice"
+  set gdb_target(ice,runlist) {1 1 0 1}
+  set gdb_target(ice,after_attaching) {}
+
+  # MIPS
+  set gdb_target(mips,pretty-name) "MIPS/Serial"
+  set gdb_target(mips,defbaud) "9600"
+  set gdb_target(mips,baud-rates) {9600}
+  set gdb_target(mips,cmd) "mips com1"
+  set gdb_target(mips,runlist) {1 1 0 1}
+  set gdb_target(mips,after_attaching) {}
+  set gdb_target(mipstcp,pretty-name) "MIPS/TCP"
+  set gdb_target(mipstcp,defbaud) "TCP"
+  set gdb_target(mipstcp,baud-rates) {}
+  set gdb_target(mipstcp,cmd) "mips tcpX"
+  set gdb_target(mipstcp,runlist) {1 1 0 1}
+  set gdb_target(mipstcp,after_attaching) {}
+
+  # PMON
+  set gdb_target(pmon,pretty-name) "PMON/Serial"
+  set gdb_target(pmon,defbaud) "9600"
+  set gdb_target(pmon,baud-rates) {9600 19200 38400}
+  set gdb_target(pmon,cmd) "pmon com1"
+  set gdb_target(pmon,runlist) {1 1 0 1}
+  set gdb_target(pmon,after_attaching) {}
+  set gdb_target(pmontcp,pretty-name) "PMON/TCP"
+  set gdb_target(pmontcp,defbaud) "TCP"
+  set gdb_target(pmontcp,baud-rates) {}
+  set gdb_target(pmontcp,cmd) "pmon tcpX"
+  set gdb_target(pmontcp,runlist) {1 1 0 1}
+  set gdb_target(pmontcp,after_attaching) {}
+
+  # DDB
+  set gdb_target(ddb,pretty-name) "DDB/Serial"
+  set gdb_target(ddb,defbaud) "19200"
+  set gdb_target(ddb,baud-rates) {9600 19200 38400}
+  set gdb_target(ddb,cmd) "ddb com1"
+  set gdb_target(ddb,runlist) {1 1 0 1}
+  set gdb_target(ddb,after_attaching) {}
+  set gdb_target(ddbtcp,pretty-name) "DDB/TCP"
+  set gdb_target(ddbtcp,defbaud) "TCP"
+  set gdb_target(ddbtcp,baud-rates) {}
+  set gdb_target(ddbtcp,cmd) "ddb tcpX"
+  set gdb_target(ddbtcp,runlist) {1 1 0 1}
+  set gdb_target(ddbtcp,after_attaching) {}
+
+  # Picobug
+  set gdb_target(picobug,pretty-name) "Picobug/Serial"
+  set gdb_target(picobug,defbaud) "19200"
+  set gdb_target(picobug,baud-rates) {19200}
+  set gdb_target(picobug,cmd) "picobug com1"
+  set gdb_target(picobug,runlist) {1 1 0 1}
+  set gdb_target(picobug,after_attaching) {}
+  set gdb_target(picobugtcp,pretty-name) "Picobug/TCP"
+  set gdb_target(picobugtcp,defbaud) "TCP"
+  set gdb_target(picobugtcp,baud-rates) {}
+  set gdb_target(picobugtcp,cmd) "picobug tcpX"
+  set gdb_target(picobugtcp,runlist) {1 1 0 1}
+  set gdb_target(picobugtcp,after_attaching) {}
+
+  # Cisco.
+  set gdb_target(cisco,pretty-name) "Cisco/Serial"
+  set gdb_target(cisco,defbaud) "38400"
+  set gdb_target(cisco,baud-rates) {9600 19200 38400 56000}
+  set gdb_target(cisco,cmd) "cisco com1"
+  set gdb_target(cisco,runlist) {1 0 0 0}
+  set gdb_target(cisco,after_attaching) "set os cisco"
+  set gdb_target(ciscotcp,pretty-name) "Cisco/TCP"
+  set gdb_target(ciscotcp,defbaud) "TCP"
+  set gdb_target(ciscotcp,baud-rates) {}
+  set gdb_target(ciscotcp,cmd) "cisco tcpX"
+  set gdb_target(ciscotcp,runlist) {1 0 0 0}
+  set gdb_target(ciscotcp,after_attaching) "set os cisco"
+
+  # VxWorks
+  set gdb_target(vxworks,pretty-name) "VxWorks RDB"
+  set gdb_target(vxworks,defbaud) "ETH"
+  set gdb_target(vxworks,baud-rates) {}
+  set gdb_target(vxworks,cmd) "vxworks ethX"
+  set gdb_target(vxworks,runlist) { 1 0 1 1}
+  set gdb_target(vxworks,after_attaching) { sym vxWorks.st }
+}
+
+body TargetSelection::default_port {} {
+  global tcl_platform
+  switch -regexp $tcl_platform(os) {
+    Windows { set port com1 }
+    Linux   { set port /dev/ttyS0 }
+    SunOS   { set port /dev/ttya }
+    AIX     { set port /dev/foo1 }
+    ULTRIX  { set port /dev/foo1 }
+    IRIX    { set port /dev/foo1 }
+    OSF1    { set port /dev/foo1 }
+    NetBSD  { set port /dev/foo1 }
+    HP-UX   { 
+      # Special case...
+      switch -regexp $tcl_platform(osVersion) {
+	A.09 { set port /dev/tty00 }
+	B.10 -
+	B.11 { set port /dev/tty0p0 }
+      }
+    }
+    default { set port /dev/ttya }
+  }
+  
+  return $port
+}
+
+
+body TargetSelection::_init_prefs {} {
+
+  if {$prefs_inited} {
+    return
+  }
+  set prefs_inited 1
+
+  # these are not target-specific
+
+  pref define gdb/load/main 1
+  pref define gdb/load/exit 1
+  pref define gdb/load/check 0
+
+  # these are target-specific
+  # set up the defaults
+  pref define gdb/load/default-verbose 0
+  pref define gdb/load/default-port [default_port]
+  pref define gdb/load/default-hostname ""
+  pref define gdb/load/default-after_attaching {}
+}
+
+body TargetSelection::_init_target {} {
+  global gdb_target_name
+  set target_list [get_target_list]
+  set target $gdb_target_name
+
+  # target = CANCEL should never come into here.  If the target was
+  # returned as CANCEL, it should be fixed by the caller...  But it
+  # should not be harmful if it gets in here.
+
+  if {$target == "" || [string compare $target CANCEL] == 0} {
+    set target default
+  }
+    
+  set defbaud $gdb_target($target,defbaud)
+  pref define gdb/load/$target-baud $defbaud
+  pref define gdb/load/$target-port [pref get gdb/load/default-port]
+  pref define gdb/load/$target-verbose [pref get gdb/load/default-verbose]
+  pref define gdb/load/$target-portname 1000
+  pref define gdb/load/$target-hostname [pref get gdb/load/default-hostname]
+  
+  set err [catch {pref get gdb/load/$target-runlist} run_list]
+  if {$err} {
+    set run_list $gdb_target($target,runlist)
+    pref setd gdb/load/$target-runlist $run_list
+  }
+  pref set gdb/src/run_attach [lindex $run_list 0]
+  pref set gdb/src/run_load   [lindex $run_list 1]
+  pref set gdb/src/run_run    [lindex $run_list 2]
+  pref set gdb/src/run_cont   [lindex $run_list 3]
+  
+  set err [catch {pref get gdb/load/$target-after_attaching} aa]
+  if {$err} {
+    set aa $gdb_target($target,after_attaching)
+    pref setd gdb/load/$target-after_attaching $aa
+  }
+}
+
+body TargetSelection::_init {} {
+
+  if {!$trace_inited} {
+    # Trace all gdb_loaded changes based on target
+    trace variable gdb_loaded w [code TargetSelection::target_trace]
+  }
+  set trace_inited 1
+
+  init_target_db	;# initialize database
+  _init_prefs	;# initialize load prefs 
+  _init_target	;# initialize target prefs
+  set_saved
+
+  # This tells us that the target system is inited.  Some of these
+  # init functions need to be called every time the target dialog is
+  # posted, some only once.  The latter functions can check inited to
+  # see what they should do.
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  build_win - build the dialog
+# ------------------------------------------------------------------
+body TargetSelection::build_win {} {
+  global tcl_platform PREFS_state gdb_ImageDir gdb_target_name
+
+  set f [frame $itk_interior.f]
+  set opts [frame $itk_interior.moreoptions]
+  frame $itk_interior.moreoptionsframe
+  set btns [frame $itk_interior.buttons]
+
+  #labelled frame "Connection"
+  iwidgets::Labeledframe $f.lab -labelpos nw -labeltext [gettext "Connection"]
+  set fr [$f.lab childsite]
+
+  # target name
+  label $fr.tarl -text [gettext "Target:"]
+  combobox::combobox $fr.tar -editable 0 -command [code $this change_target] \
+    -width $Width -maxheight 10
+
+  # baud rate combobox
+  label $fr.cbl -text [gettext "Baud Rate:"]
+  combobox::combobox $fr.cb -editable 0 -command [code $this change_baud] \
+    -textvariable [pref varname gdb/load/$target-baud] -width $Width \
+    -maxheight 10
+
+  if {[catch {gdb_cmd "show remotebaud"} res]} {
+    set baud [pref get gdb/load/$target-baud]
+  } else {
+    set baud [lindex $res end]
+    set baud [string trimright $baud "."]
+    # When uninitialized, GDB returns a baud rate of 2^32
+    # Detect this and ignore it.
+    if {$baud > 4000000000} {
+      set baud [pref get gdb/load/$target-baud]
+    } else {
+      pref setd gdb/load/$target-baud $baud
+    }
+  }
+
+  # host entry widget
+  entry $fr.host -textvariable [pref varname gdb/load/$target-hostname] \
+    -width $Width
+
+  # port combobox
+  if {$tcl_platform(platform) == "windows"} {
+    set editable 0
+  } else {
+    set editable 1
+  }
+
+  label $fr.portl -text [gettext "Port:"]
+  combobox::combobox $fr.port -editable $editable \
+    -textvariable [pref varname gdb/load/$target-port] \
+    -width $Width -maxheight 10
+
+  # load baud rates into combobox
+  fill_rates
+
+  # load port combobox
+  if {$tcl_platform(platform) == "windows"} {
+    foreach val [port_list] {
+      $fr.port list insert end $val
+    }
+  } else {
+    # fixme:  how do I find valid values for these????
+    switch $tcl_platform(os) {
+      Linux { set ports [list /dev/cua0 /dev/ttyS0 /dev/ttyS1 /dev/ttyS2 /dev/ttyS3]}
+      SunOS { set ports [list /dev/ttya /dev/ttyb] }
+      AIX   { set ports [list /dev/foo1 /dev/foo2] }
+      ULTRIX { set ports [list /dev/foo1 /dev/foo2] }
+      IRIX   { set ports [list /dev/foo1 /dev/foo2] }
+      OSF1   { set ports [list /dev/foo1 /dev/foo2] }
+      NetBSD { set ports [list /dev/foo1 /dev/foo2] }
+      HP-UX  { 
+	# Special case...
+	switch -regexp $tcl_platform(osVersion) {
+	  A.09 { set ports [list /dev/tty00 /dev/tty01] }
+	  B.10 -
+	  B.11 { set ports [list /dev/tty0p0 /dev/tty1p0] }
+	}
+      }
+      default { set ports [list UNKNOWN UNKNOWN] }
+    }
+    foreach val $ports {
+      $fr.port list insert end $val
+    }
+  }
+
+  # Port entry widget
+  entry $fr.porte -textvariable [pref varname gdb/load/$target-port] -width $Width
+
+  frame $f.fr
+  checkbutton $f.fr.main -text [gettext "Set breakpoint at 'main'"] \
+    -variable [pref varname gdb/load/main]
+  checkbutton $f.fr.exit -text [gettext "Set breakpoint at 'exit'"] \
+    -variable [pref varname gdb/load/exit]
+  frame $f.fr.bp
+  checkbutton $f.fr.bp.at_func -text [gettext "Set breakpoint at"] \
+    -variable [pref varname gdb/load/bp_at_func]
+  entry $f.fr.bp.func -textvariable [pref varname gdb/load/bp_func] -width 20
+  checkbutton $f.fr.verb -text [gettext "Display Download Dialog"] \
+    -variable [pref varname gdb/load/$target-verbose]
+  checkbutton $f.fr.xterm -text [gettext "Use xterm as inferior's tty"] \
+    -variable [pref varname gdb/process/xtermtty] \
+    -onvalue yes -offvalue no
+
+  if {![pref get gdb/control_target]} {
+    $f.fr.main configure -state disabled
+    $f.fr.exit configure -state disabled
+    $f.fr.verb configure -state disabled
+    $f.fr.bp.at_func configure -state disabled
+    $f.fr.bp.func configure -state disabled
+    checkbutton $f.fr.check -text [gettext "Compare to remote executable"] \
+      -variable [pref varname gdb/load/check]
+    if { $gdb_target_name == "exec" } {
+      $f.fr.check configure -state disabled
+    }
+  }
+
+  grid $fr.tarl $fr.tar -sticky w -padx 5 -pady 5
+  grid $fr.cbl $fr.cb -sticky w -padx 5 -pady 5
+  grid $fr.portl $fr.port -sticky w -padx 5 -pady 5
+  set mapped1 $fr.cb
+  set mapped2 $fr.port
+
+  grid $f.fr.main -sticky w -padx 5 -pady 5
+  grid $f.fr.exit -sticky w -padx 5 -pady 5
+  pack $f.fr.bp.at_func $f.fr.bp.func -side left
+  grid $f.fr.bp -sticky w -padx 5 -pady 5
+  grid $f.fr.verb -sticky w -padx 5 -pady 5
+  grid $f.fr.xterm -sticky w -padx 5 -pady 5
+  if {![pref get gdb/control_target]} {
+    grid $f.fr.check -sticky w -padx 5 -pady 5
+  }
+
+  grid $f.lab $f.fr -sticky w -padx 5 -pady 5
+
+  # Create the "More Options" thingy
+  if {[lsearch [image names] _MORE_] == -1} {
+    image create photo _MORE_ -file [file join $gdb_ImageDir more.gif]
+    image create photo _LESS_ -file [file join $gdb_ImageDir less.gif]
+  }
+
+  set MoreButton [button $opts.button -image _MORE_ \
+		    -relief flat -command [code $this toggle_more_options]]
+  set MoreLabel [label $opts.lbl -text {More Options}]
+  frame $opts.frame -relief raised -bd 1
+  pack $opts.button $opts.lbl -side left
+  place $opts.frame -relx 1 -x -10 -rely 0.5 -relwidth 0.73 -height 2 -anchor e
+
+  # Create the (hidden) more options frame
+  set MoreFrame [iwidgets::Labeledframe $itk_interior.moreoptionsframe.frame \
+		   -labelpos nw -labeltext {Run Options}]
+  set frame [$MoreFrame childsite]
+
+  set var [pref varname gdb/src/run_attach]
+  checkbutton $frame.attach -text {Attach to Target} -variable $var
+
+  set var [pref varname gdb/src/run_load]
+  checkbutton $frame.load -text {Download Program} -variable $var
+
+  set rm_frame [iwidgets::labeledframe $frame.run_method -labelpos nw -labeltext "Run Method" ]
+  set RunMethod [ $rm_frame childsite ]
+
+  set rm_label [label $frame.label -text "Run Method:"]
+  set var [pref varname gdb/src/run_cont]
+  radiobutton $RunMethod.cont -text {Continue from Last Stop} -value 1 -variable $var \
+    -command [code $this set_run run]
+  
+  set var [pref varname gdb/src/run_run]
+  radiobutton $RunMethod.run -text {Run Program} -value 1 -variable $var \
+    -command [code $this set_run cont]
+
+  # The after attaching command entry
+  set _after_entry [entry $frame.aftere]
+  label $frame.afterl -text {Command to issue after attaching:}
+
+  grid $frame.label -column 1 -row 0 -sticky w
+  grid $frame.attach -column 0 -row 1 -ipady 2
+  grid $frame.load -column 0 -row 2 -ipady 2
+
+  grid $RunMethod.run -column 0 -row 1 -sticky w -ipady 2
+  grid $RunMethod.cont -column 0 -row 2 -sticky w -ipady 2
+  
+  grid $rm_frame -column 1 -row 1 -rowspan 2 -sticky nsew -ipady 2
+
+  grid $frame.afterl -row 4 -sticky we -columnspan 2 -ipady 2
+  grid $frame.aftere -sticky we -columnspan 2 -ipady 2
+  grid columnconfigure $frame 0 -weight 1
+  grid columnconfigure $frame 1 -weight 1
+
+  # Map everything onto the screen
+  # This looks like a possible packing bug -- our topmost frame
+  # will not resize itself. So, instead, use the topmost frame.
+  #pack $f $opts $itk_interior.moreoptionsframe -side top -fill x
+  pack $MoreFrame -fill x -expand yes
+  pack $f $opts -side top -fill x
+
+  change_target $gdb_target($target,pretty-name)
+
+  button $btns.ok -text [gettext OK] -width 7 -command [code $this save] \
+    -default active
+  button $btns.cancel -text [gettext Cancel] -width 7 \
+    -command [code $this cancel]
+  button $btns.help -text [gettext Help] -width 7 -command [code $this help] \
+    -state disabled
+  standard_button_box $btns
+  bind $btns.ok <Return> "$btns.ok flash; $btns.ok invoke"
+  bind $btns.cancel <Return> "$btns.cancel flash; $btns.cancel invoke"
+  bind $btns.help <Return> "$btns.help flash; $btns.help invoke"
+
+  pack $btns -side bottom -anchor e
+  focus $btns.ok
+  
+  # set up balloon help
+  balloon register $f.fr.bp.at_func "Set User-Speficied Breakpoints at Run Time"
+  balloon register $f.fr.bp.func "Enter a List of Functions for Breakpoints"
+
+  window_name "Target Selection"
+
+  if {[valid_target $target]} {
+    $fr.tar configure -value $gdb_target($target,pretty-name)
+  }
+  fill_targets
+
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  set_saved - set saved values
+# ------------------------------------------------------------------
+body TargetSelection::set_saved {} {
+  set saved_baud [pref get gdb/load/$target-baud]
+  set saved_port [pref get gdb/load/$target-port]
+  set saved_main [pref get gdb/load/main]
+  set saved_exit [pref get gdb/load/exit]
+  set saved_check [pref get gdb/load/check]
+  set saved_verb [pref get gdb/load/$target-verbose]
+  set saved_portname [pref get gdb/load/$target-portname]
+  set saved_hostname [pref get gdb/load/$target-hostname]
+  set saved_attach [pref get gdb/src/run_attach]
+  set saved_load   [pref get gdb/src/run_load]
+  set saved_run    [pref get gdb/src/run_run]
+  set saved_cont   [pref get gdb/src/run_cont]
+  if {[info exists gdb_target($target,options)]} {
+    if {[catch {pref get gdb/load/$target-opts} saved_options]} {
+      set saved_options ""
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  write_saved - write saved values to preferences
+# ------------------------------------------------------------------
+body TargetSelection::write_saved {} {
+  pref setd gdb/load/$target-baud $saved_baud
+  pref setd gdb/load/$target-port $saved_port
+  pref setd gdb/load/main $saved_main
+  pref setd gdb/load/exit $saved_exit
+  pref setd gdb/load/check $saved_check
+  pref setd gdb/load/$target-verbose $saved_verb
+  pref setd gdb/load/$target-portname $saved_portname
+  pref setd gdb/load/$target-hostname $saved_hostname
+  pref setd gdb/load/$target-runlist [list $saved_attach $saved_load $saved_run $saved_cont]
+  if {[info exists gdb_target($target,options)]} {
+    pref setd gdb/load/$target-opts $saved_options
+  }
+  if {[catch {$_after_entry get} saved_after_attaching]} {
+    set saved_after_attaching ""
+  }
+  pref setd gdb/load/$target-after_attaching $saved_after_attaching
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  fill_rates - fill baud rate combobox
+# ------------------------------------------------------------------
+body TargetSelection::fill_rates {} {
+  $fr.cb list delete 0 end
+
+  if {$gdb_target($target,baud-rates) != ""} {
+    foreach val $gdb_target($target,baud-rates) {
+      $fr.cb list insert end $val
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  fill_targets - fill target combobox
+# ------------------------------------------------------------------
+body TargetSelection::fill_targets {} {
+  #[$fr.tar subwidget listbox] delete 0 end
+  $fr.tar list delete 0 end
+
+  foreach val $target_list {
+    if {[info exists gdb_target($val,pretty-name)]} {
+      $fr.tar list insert end $gdb_target($val,pretty-name)
+
+      # Insert TCP target, if it exists
+      if {[info exists gdb_target(${val}tcp,pretty-name)]} {
+	$fr.tar list insert end $gdb_target(${val}tcp,pretty-name)
+      }
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  config_dialog - Convenience method to map/unmap/rename
+#            components onto the screen based on target T.
+# ------------------------------------------------------------------
+body TargetSelection::config_dialog {t} {
+  pref define gdb/load/$t-verbose [pref get gdb/load/verbose]
+  $f.fr.verb config -variable [pref varname gdb/load/$t-verbose]
+  # Map the correct entries and comboboxes onto the screen
+  if {$gdb_target($t,defbaud) == "TCP"} {
+    # we have a tcp target
+    # map host and porte
+    if {$mapped1 != "$fr.host"} {
+      grid forget $mapped1
+      set mapped1 $fr.host
+      grid $mapped1 -row 1 -column 1 -sticky w -padx 5 -pady 5
+    }
+    $fr.cbl configure -text "Hostname:"
+    $fr.host config -textvariable [pref varname gdb/load/$t-hostname]
+
+    if {$mapped2 != "$fr.porte"} {
+      grid forget $mapped2
+      set mapped2 $fr.porte
+      grid $mapped2 -row 2 -column 1 -sticky w -padx 5 -pady 5
+    }
+    $fr.portl configure -text {Port:}
+    $fr.porte config -textvariable [pref varname gdb/load/$t-portname] -fg black
+
+    $mapped1 configure -state normal
+    $mapped2 configure -state normal
+  } elseif {$gdb_target($t,defbaud) == "ETH"} {
+    # we have a udp target
+    # map host and porte
+    if {$mapped1 != "$fr.host"} {
+      grid forget $mapped1
+      set mapped1 $fr.host
+      grid $mapped1 -row 1 -column 1 -sticky w -padx 5 -pady 5
+    }
+    $fr.cbl configure -text "Hostname:"
+    $fr.host config -textvariable [pref varname gdb/load/$t-hostname]
+
+    if {$mapped2 != "$fr.porte"} {
+      grid forget $mapped2
+    }
+    $fr.portl configure -text {Port: N/A (fixed)}
+
+    $mapped1 configure -state normal
+    $mapped2 configure -state disabled
+  } elseif {$gdb_target($t,defbaud) != ""} {
+    # we have a serial target
+    # map port and cb
+    if {$mapped1 != "$fr.cb"} {
+      grid forget $mapped1
+      set mapped1 $fr.cb
+      grid $mapped1 -row 1 -column 1 -sticky w -padx 5 -pady 5
+    }
+    $fr.cbl configure -text "Baud Rate:"
+    $fr.cb configure -textvariable [pref varname gdb/load/$t-baud]
+    
+    if {$mapped2 != "$fr.port"} {
+      grid forget $mapped2
+      set mapped2 $fr.port
+      grid $mapped2 -row 2 -column 1 -sticky w -padx 5 -pady 5
+    }
+    $fr.portl configure -text {Port:}
+    $fr.port configure -textvariable [pref varname gdb/load/$t-port]
+
+    $mapped1 configure -state normal
+    $mapped2 configure -state normal
+  } else {
+    # we have a non-remote(-like) target
+    # disable all (except tar) and check for
+    # options
+    $mapped1 configure -state disabled
+    $mapped2 configure -state disabled
+    $fr.porte configure -fg gray
+
+    if {[info exists gdb_target($t,options)]} {
+      if {$mapped1 != "$fr.host"} {
+	grid forget $mapped1
+	set mapped1 $fr.host
+	grid $mapped1 -row 1 -column 1 -sticky w -padx 5 -pady 5
+      }
+      $mapped1 configure -state normal
+      $fr.host config -textvariable [pref varname gdb/load/$t-opts]
+
+      # We call options "arguments" for the exec target
+      # FIXME: this is really overloaded!!
+      if {$t == "exec"} {
+	set text "Arguments:"
+      } else {
+	set text "Options:"
+      }
+      $fr.cbl configure -text $text
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  change_target - callback for target combobox
+# ------------------------------------------------------------------
+body TargetSelection::change_target {w {name ""}} {
+  if {$name == ""} {return}
+  set target [get_target $name]
+
+  if { "$target" == "exec" } {
+    $RunMethod.run configure -state disabled -value 1
+    $RunMethod.cont configure -state disabled
+  } else {
+    $RunMethod.run configure -state normal
+    $RunMethod.cont configure -state normal
+  }
+
+  debug "$target"
+  set defbaud $gdb_target($target,defbaud)
+  pref define gdb/load/$target-baud $defbaud
+  pref define gdb/load/$target-portname 1000
+  pref define gdb/load/$target-hostname [pref get gdb/load/default-hostname]
+  if {$defbaud == ""} {
+    pref define gdb/load/$target-port ""
+  } else {
+    pref define gdb/load/$target-port [pref get gdb/load/default-port]
+  }
+
+  config_dialog $target
+  fill_rates
+
+  # Configure the default run options for this target
+  set err [catch {pref get gdb/load/$target-runlist} run_list]
+  if {$err} {
+    set run_list $gdb_target($target,runlist)
+    pref setd gdb/load/$target-runlist $run_list
+  }
+
+  pref set gdb/src/run_attach [lindex $run_list 0]
+  pref set gdb/src/run_load   [lindex $run_list 1]
+  pref set gdb/src/run_run    [lindex $run_list 2]
+  pref set gdb/src/run_cont   [lindex $run_list 3]
+  set_check_button $name
+
+  set err [catch {pref get gdb/load/$target-after_attaching} aa]
+  if {$err} {
+    set aa $gdb_target($target,after_attaching)
+    pref setd gdb/load/$target-after_attaching $aa
+  }
+
+  $_after_entry delete 0 end
+  $_after_entry insert 0 $aa
+
+  set_saved
+
+  set changes 0
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  change_baud - called when the baud rate is changed.
+#  If GDB is running, set baud rate in GDB and read it back.
+# ------------------------------------------------------------------
+body TargetSelection::change_baud {w {baud ""}} {
+  if {$baud != ""} {
+    if {([string compare $baud "TCP"] != 0)
+        && ([string compare $baud "ETH"] != 0)} {
+      gdb_cmd "set remotebaud $baud"
+      if {[catch {gdb_cmd "show remotebaud"} res]} {
+	set newbaud 0
+      } else {
+	set newbaud [lindex $res end]
+	set newbaud [string trimright $newbaud "."]
+	if {$newbaud > 4000000} {
+	  set newbaud 0
+	}
+      }
+      if {$newbaud != $baud} {
+	pref set gdb/load/$target-baud $newbaud
+      }
+    }
+  }
+}
+
+
+# ------------------------------------------------------------------
+#  METHOD:  port_list - return a list of valid ports for Windows
+# ------------------------------------------------------------------
+body TargetSelection::port_list {} {
+  set plist ""
+  # Scan com1 - com8 trying to open each one.
+  # If permission is denied that means it is in use,
+  # which is OK because we may be using it or the user
+  # may be setting up the remote target manually with
+  # a terminal program.
+  for {set i 1} {$i < 9} { incr i} {
+    if {[catch { set fd [::open COM$i: RDWR] } msg]} {
+      # Failed.  Find out why.
+      if {[string first "permission denied" $msg] != -1} {
+	# Port is there, but busy right now. That's OK.
+	lappend plist com$i
+      }
+    } else {
+      # We got it.  Now close it and add to list.
+      close $fd
+      lappend plist com$i
+    }
+  }
+  return $plist
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  get_target_list - return a list of targets supported
+#  by this GDB.  Parses the output of "help target"
+# ------------------------------------------------------------------
+body TargetSelection::get_target_list {} {
+  set native [native_debugging]
+  set names ""
+  set res [gdb_cmd "help target"]
+  foreach line [split $res \n] {
+    if {![string compare [lindex $line 0] "target"]} {
+      set name [lindex $line 1]
+
+      # For cross debuggers, do not allow the target "exec"
+      if {$name == "exec" && !$native} {
+	continue
+      }
+      lappend names $name
+    }
+  }
+  return $names
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  save - save values
+# ------------------------------------------------------------------
+body TargetSelection::save {} {
+  global gdb_target_name
+  set err [catch {
+    set_saved
+    write_saved
+    set gdb_target_name $target
+    pref setd gdb/load/target $target
+  } errtxt]
+  if {$err} {debug "target: $errtxt"}
+  if {[valid_target $gdb_target_name]} {
+    # Dismiss the dialog box
+    unpost
+  } else {
+    tk_messageBox -message "The current target is not valid."
+  }
+  
+}
+
+
+# ------------------------------------------------------------------
+#  METHOD:  cancel - restore previous values
+# ------------------------------------------------------------------
+body TargetSelection::cancel {} {
+  global gdb_target_name
+  catch {gdb_cmd "set remotebaud $saved_baud"}
+
+  $fr.cb configure -value $saved_baud
+  write_saved
+  if {$exportcancel} {
+    set gdb_target_name CANCEL
+  }
+
+  # Now dismiss the dialog
+  unpost
+}
+
+# ------------------------------------------------------------------
+#  METHOD: set_check_button - enable/disable compare-section command 
+# ------------------------------------------------------------------
+body TargetSelection::set_check_button {name} {
+  if {[winfo exists  $itk_interior.f.fr.check]} {
+    if { $name == "exec" } {
+      $itk_interior.f.fr.check configure -state disabled
+    } else {
+      $itk_interior.f.fr.check configure -state normal
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  help - launches context sensitive help.
+# ------------------------------------------------------------------
+body TargetSelection::help {} {
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  reconfig - used when preferences change
+# ------------------------------------------------------------------
+body TargetSelection::reconfig {} {
+  # for now, just delete and recreate
+  destroy $itk_interior.f
+  build_win
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  get_target - get the internal name of a target from the
+#              pretty-name
+# ------------------------------------------------------------------
+body TargetSelection::get_target {name} {
+  set t {}
+  set list [array get gdb_target *,pretty-name]
+  set i [lsearch -exact $list $name]
+  if {$i != -1} {
+    incr i -1
+    set t [lindex [split [lindex $list $i] ,] 0]
+  } else {
+    debug "unknown pretty-name \"$name\""
+  }
+  return $t
+}
+
+# ------------------------------------------------------------------
+#  METHOD: toggle_more_options -- toggle displaying the  More/Fewer
+#                Options pane
+# ------------------------------------------------------------------
+body TargetSelection::toggle_more_options {} {
+  if {[$MoreLabel cget -text] == "More Options"} {
+    $MoreLabel configure -text "Fewer Options"
+    $MoreButton configure -image _LESS_
+    # Bug in Tk? The top-most frame does not shrink...
+    #pack $MoreFrame
+    pack $itk_interior.moreoptionsframe -after $itk_interior.moreoptions -fill both -padx 5 -pady 5
+  } else {
+    $MoreLabel configure -text "More Options"
+    $MoreButton configure -image _MORE_
+    #pack forget $MoreFrame
+    pack forget $itk_interior.moreoptionsframe
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  set_run - set the run button. Make sure not both run and
+#                     continue are selected.
+# ------------------------------------------------------------------
+body TargetSelection::set_run {check_which} {
+  global PREFS_state
+  set var [pref varname gdb/src/run_$check_which]
+  global $var
+  if {[set $var]} {
+    set $var 0
+  }
+}
+
+# ------------------------------------------------------------------
+#   PROCEDURE: target_trace
+#          This procedure is used to configure gdb_loaded
+#          and possible more) whenever the value of gdb_loaded
+#          is changed based on the current target.
+# ------------------------------------------------------------------
+body TargetSelection::target_trace {variable index op} {
+  global gdb_target_name gdb_loaded
+
+  switch $gdb_target_name {
+
+    exec {
+      # The exec target is always loaded.
+      set gdb_loaded 1
+    }
+  }
+}
+
+# Returns 1 if TARGET is a _runnable_ target for this gdb.
+body TargetSelection::valid_target {target} {
+  set err [catch {gdb_cmd "help target $target"}]
+  if {$target == "exec" && ![native_debugging]} {
+    set err 1
+  }
+
+  if {[regexp "tcp$" $target]} {
+    # Special case (of course)
+    regsub tcp$ $target {} foo
+    return [valid_target $foo]
+  }
+
+  return [expr {$err == 0}]
+}
+
+# Returns 1 if this is not a cross debugger.
+body TargetSelection::native_debugging {} {
+  global GDBStartup
+
+  set r [string compare $GDBStartup(host_name) $GDBStartup(target_name)]
+  return [expr {!$r}]
+}

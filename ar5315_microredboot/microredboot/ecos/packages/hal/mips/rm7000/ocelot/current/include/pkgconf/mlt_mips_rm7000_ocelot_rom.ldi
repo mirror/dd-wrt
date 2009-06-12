@@ -1,0 +1,44 @@
+// eCos memory layout - Fri Jan 19 11:28:42 2001
+
+// This is a generated file - do not edit
+
+#include <cyg/infra/cyg_type.inc>
+
+MEMORY
+{
+    ram : ORIGIN = 0x80000000, LENGTH = 0x10000000
+    rom : ORIGIN = 0xbfc00000, LENGTH = 0x80000
+}
+
+SECTIONS
+{
+    SECTIONS_BEGIN
+    SECTION_rom_vectors (rom, 0xbfc00000, LMA_EQ_VMA)
+    SECTION_ROMISC (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_RELOCS (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_init (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_text (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_fini (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_rodata (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_rodata1 (rom, ALIGN (0x8), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__reserved_vectors) = 0x80000000; . = CYG_LABEL_DEFN(__reserved_vectors) + 0x200;
+    CYG_LABEL_DEFN(__reserved_vsr_table) = ALIGN (0x10); . = CYG_LABEL_DEFN(__reserved_vsr_table) + 0x100;
+    CYG_LABEL_DEFN(__reserved_virtual_table) = ALIGN (0x10); . = CYG_LABEL_DEFN(__reserved_virtual_table) + 0x100;
+    SECTION_data (ram, ALIGN (0x10), FOLLOWING (.rodata1))
+    SECTION_data1 (ram, ALIGN (0x8), FOLLOWING (.data))
+    SECTION_eh_frame (ram, ALIGN (0x8), FOLLOWING (.data1))
+    SECTION_gcc_except_table (ram, ALIGN (0x8), FOLLOWING (.eh_frame))
+    SECTION_ctors (ram, ALIGN (0x8), FOLLOWING (.gcc_except_table))
+    SECTION_dtors (ram, ALIGN (0x8), FOLLOWING (.ctors))
+    SECTION_devtab (ram, ALIGN (0x8), FOLLOWING (.dtors))
+    SECTION_got (ram, ALIGN (0x8), FOLLOWING (.devtab))
+    SECTION_dynamic (ram, ALIGN (0x8), FOLLOWING (.got))
+    SECTION_sdata (ram, ALIGN (0x8), FOLLOWING (.dynamic))
+    SECTION_lit8 (ram, ALIGN (0x8), FOLLOWING (.sdata))
+    SECTION_lit4 (ram, ALIGN (0x8), FOLLOWING (.lit8))
+    SECTION_sbss (ram, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_bss (ram, ALIGN (0x8), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__heap1) = ALIGN (0x8);
+    CYG_LABEL_DEFN(__pci_window) = 0x8ff00000; . = CYG_LABEL_DEFN(__pci_window) + 0x100000;
+    SECTIONS_END
+}

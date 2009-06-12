@@ -1,0 +1,33 @@
+// eCos memory layout - Thu May 31 15:02:44 2001
+
+// This is a generated file - do not edit
+
+#include <cyg/infra/cyg_type.inc>
+
+MEMORY
+{
+    rom : ORIGIN = 0x80000000, LENGTH = 0x200000
+    sram1 : ORIGIN = 0x82000000, LENGTH = 0x100000
+    sram2 : ORIGIN = 0x89000000, LENGTH = 0x100000
+    ram : ORIGIN = 0x8c000000, LENGTH = 0x4000000
+}
+
+SECTIONS
+{
+    SECTIONS_BEGIN
+    SECTION_vectors (rom, 0x80000000, LMA_EQ_VMA)
+    SECTION_text (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fini (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata1 (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_rodata (rom, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_fixup (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_gcc_except_table (rom, ALIGN (0x1), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__heap2) = 0x82000000;
+    CYG_LABEL_DEFN(__heap3) = 0x89000000;
+    CYG_LABEL_DEFN(__reserved) = 0x8c000000; . = CYG_LABEL_DEFN(__reserved) + 0x200;
+    SECTION_data (ram, ALIGN (0x1), FOLLOWING (.gcc_except_table))
+    SECTION_bss (ram, ALIGN (0x10), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__heap1) = ALIGN (0x8);
+    CYG_LABEL_DEFN(__pci_window) = 0x8ff00000; . = CYG_LABEL_DEFN(__pci_window) + 0x100000;
+    SECTIONS_END
+}

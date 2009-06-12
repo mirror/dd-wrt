@@ -1,0 +1,275 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_sim.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mips_tx39_sim_ram.mlt:
+	* include/pkgconf/mlt_mips_vr4300_sim_ram.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_mips_tx39_sim_ram.h:
+	* include/pkgconf/mlt_mips_vr4300_sim_ram.h:
+	* include/pkgconf/mlt_mips_tx39_sim_ram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_sim_ram.ldi:
+	Regenerated
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_sim.cdl: Doesn't support CTRLC.
+
+2000-04-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_sim_ram.ldi,
+	  include/pkgconf/mlt_mips_tx39_sim_ram.mlt: 
+	Split lit section into lit4 and lit8
+	DEVTAB -> devtab
+	Update alignments
+	Above changed as per new mips_tx39.ld in variant HAL
+
+2000-03-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* sim/current/include/pkgconf/mlt_mips_tx39_sim_ram.h,
+	sim/current/include/pkgconf/mlt_mips_tx39_sim_ram.ldi,
+	sim/current/include/pkgconf/mlt_mips_tx39_sim_ram.mlt:
+	Update new sections according to new mips_tx39.ld from variant HAL
+	
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_sim.cdl: removed some fix mes.
+	Use correct memory files for target.
+	
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_sim.cdl: use cpu options when linking.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_mips_sim.cdl: Add -Wl to linker options.
+
+1999-11-29  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_vr4300_sim_ram.h:
+
+	New memory layout header file.
+
+1999-11-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_sim_ram.h:
+	Add
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_sim.cdl: Fixed various problems.
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_sim.cdl: Added.
+
+1999-08-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/plf_io.h: Added this file to match other platforms.
+
+1999-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c: Added hal_saved_interrupt_state variable to
+	allow code to link.
+
+1999-06-02  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_sim_ram.ldi: 
+	* include/pkgconf/mlt_mips_tx39_sim_ram.mlt: 
+	Add support for ctors/dtors sections required by new compiler
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips_sim.h: Move RTC setup here.
+
+1999-05-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c:
+	* src/platform.S:
+	* src/sim.S:
+	* src/PKGconf.mak (COMPILE): Added platform.S and plf_misc.c and
+	removed sim.S.
+
+	* include/plf_intr.h:
+	* include/plf_cache.h:
+	* include/platform.inc:
+	Added these files to complete support for TX39 sim builds using
+	new HAL organization.
+
+1999-05-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips_tx39_sim.h: New file to include
+	the common MIPS simulator configuration header file.
+	* include/pkgconf/hal_mips_vr4300_sim.h: New file to include
+	the common MIPS simulator configuration header file.
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_*.*: Use double underscore substitution
+	for period character in SECTION_* macro names (PR 19787)
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_sim.h:  Take out DEVICES dependencies.
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: Removed.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.mlt: New memory layout save files
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1999-01-15  John Dallaway  <jld@cygnus.co.uk>
+
+      * include/pkgconf/ram.ldi: add .vsr_table output section
+
+1999-01-13  John Dallaway  <jld@cygnus.co.uk>
+
+      * include/pkgconf/ram.ldi: add .rel.dyn output section
+
+1999-01-13  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/sim.ld: remove for MLT
+      * src/PKGconf.mak: remove sim.ld rules for MLT
+      * include/pkgconf/ram.ldi: new linker script fragment for MLT
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_sim.h: Allow wallclock and watchdog
+	devices to be configured.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: Include generic-stub.h from hal.
+
+Fri Oct 23 03:35:20 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: 
+	Move _gp pointer to after data section and constructors/destructors
+
+1998-10-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_sim.h: Preclude GDB device.
+
+1998-10-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_sim.h: Undid 1998-10-16 change.
+
+1998-10-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_sim.h: Changed CYGPKG_HAL_TX39_SIM to
+	CYG_HAL_TX39_SIM.
+
+1998-09-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_sim.h:
+	Updated configuration data with a description and some
+	requires.
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_sim.h:
+	New header file for platform-specific configuration options
+
+	* tests/PKGconf.mak: 
+	* src/PKGconf.mak: 
+	Sort out package naming conventions.
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_diag.h: 
+	* include/hal_stub.h: 
+	* src/sim.S: 
+	* src/sim.ld:
+	Now uses hal.h rather than kernel.h.
+
+Tue Aug 18 11:43:47 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: reorder GROUP line
+
+Mon Aug 17 22:24:54 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: 
+        Add GROUP(libgcc.a libtarget.a) to prevent need for explicit linking
+
+1998-07-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c: Added header comments to keep pkgrelease happy.
+
+	* src/sim.ld: Added header comment and tidied up a bit.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

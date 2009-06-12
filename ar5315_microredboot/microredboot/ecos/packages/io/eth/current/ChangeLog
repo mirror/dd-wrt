@@ -1,0 +1,657 @@
+2004-08-06  Jani Monoses <jani@iv.ro>
+
+	* src/stand_alone/eth_drv.c: Add parantheses to fix operator
+	precedence bugs even though they were harmless in practice.
+
+2004-01-09  Jani Monoses <jani@iv.ro>
+
+	* include/eth_drv.h:
+	* src/lwip/eth_drv.c: Update to support more than one device and
+	be in sync with current lwip code.
+	
+2004-01-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/eth_drv.c: Names of FLASH config types changed.
+
+2003-10-09  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/stand_alone/eth_drv.c: Obviate __local_enet_addr, since this
+	same information is already kept in the driver structure *__local_enet_sc
+
+2003-08-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/stand_alone/eth_drv.c: 
+	* src/net/eth_drv.c: Improve network speeds by reducing some
+	overhead and also the delay when sending a packet.
+
+2003-07-23  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/eth_drv.h:
+	* src/net/eth_drv.c:
+	Added an ifndef to fix warnings about NBPFILTER not being
+	defined. 
+
+2003-03-20  Mark Salter  <msalter@redhat.com>
+
+	* cdl/eth_drivers.cdl (CYGHWR_NET_DRIVERS): Moved here from net/common.
+
+2003-03-14  Nick Garnett  <nickg@calivar.com>
+
+	* src/net/eth_drv.c: Added calls to cyg_net_show_mbufs() whenever
+	we see an out-of-mbufs problem.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/stand_alone/eth_drv.c (eth_drv_stop): Uncomment, make non-static,
+	and use __local_enet_sc.
+	* include/eth_drv.h: Add extern decl for eth_drv_stop.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/eth_drivers.cdl: Add doc link.
+
+2003-02-07  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/net/eth_drv.c: If driver can't set multi-cast, indicate it's
+	only a warning.
+
+2002-08-14  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/eth_drivers.cdl: CYGNUM_IO_ETH_DRIVERS_SG_LIST_SIZE 
+	needs to be global (used by all drivers, not just NET).
+
+2002-08-13  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/net/eth_drv.c (eth_drv_send): Print a better message
+	if the scatter-gather list overflows.
+
+	* include/eth_drv.h (MAX_ETH_DRV_SG): 
+	* cdl/eth_drivers.cdl: Add control over size of scatter-gather
+	data lists used to pass requests to physical layer.  Previous
+	value was sometimes too small.
+
+2002-07-31  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/net/eth_drv.c (eth_drv_start): Fix compile error when
+	built with old stack (no multicast) - introduced below.
+
+2002-07-26  Gary Thomas  <gary@chez-thomas.org>
+2002-07-26  Ken Cox <jkc@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_start): Force multicast address
+	setup any time chip is reset/reconfigured.
+
+2002-05-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/eth_drivers.cdl: Provide CYGINT_IO_ETH_INT_SUPPORT_REQUIRED
+	interface to indicate if interrupt support is required.
+
+2002-05-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lwip/lw.diff: Remove. Obsolete.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/eth_drivers.cdl: Moved the package's header files to
+	cyg/io/eth to clean up the include root directory.
+
+2002-04-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lwip/eth_drv.c: Update from Jani Monoses.
+
+	* cdl/eth_drivers.cdl: Move CYGINT_ISO_STRING_STRFUNCS requirement
+	into CYGPKG_IO_ETH_DRIVERS_NET where it belongs.
+	Move CYGINT_ISO_STRING_MEMFUNCS requirement into
+	CYGPKG_IO_ETH_DRIVERS_STAND_ALONE where it belongs.
+
+2002-04-10   Gary Thomas <gthomas@redhat.com>
+
+	* src/net/eth_drv.c: Only pass mutlicast addresses down to drivers.	
+
+2002-04-05   Jani Monoses  <jani@iv.ro>
+
+	* src/lwip/eth_drv.c: New file. Add eth driver support for lwip.
+	* src/lwip/lw.diff: New file. diff against lwip sources.
+	* src/lwip/README: New file.
+	* cdl/eth_drivers.cdl: Add lwip driver support.
+
+2002-03-09  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c: Select 'multicast_all' if too many addresses
+	are required.  Also, ignore any non-multicast addresses.
+
+2002-02-22  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/ethdrv.sgml: New file.  SGML-ized the existing driver-doc
+	file and brought the information up to date with deliver functions
+	and all that.
+
+2002-02-18  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/eth_drivers.cdl: 
+	Add new interface CYGINT_IO_ETH_MULTICAST which is used to
+	insure that drivers support multicast addresses if IPv6 is used.
+
+2002-02-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c: 
+	* include/eth_drv.h: Add framework for multicast address support.
+
+2002-01-30  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/eth_drivers.cdl (CYGPKG_IO_ETH_DRIVERS_WARN_FORCE_CONSOLE):
+	CDL options removed; control is now from RedBoot.
+
+	* src/net/eth_drv.c (START_CONSOLE): Changed to use RedBoot
+	fconfig items for deciding what console to use for special debug
+	messages such as "out of MBUFs" and the like.
+
+	* src/stand_alone/eth_drv.c (LOCK_APPLICATION_SCHEDULER): New
+	macro to do what it says, before passing packets to the app.
+	Used in two places: when passing a received packet, and when
+	passing a tx completion status back.
+
+2002-01-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_init): Changes for supporting new
+	FreeBSD based stack (minor API changes internal to that stack).
+
+2001-12-12  Hugo Tyson  <hmt@redhat.com>
+
+	* src/net/eth_drv.c (START_CONSOLE,END_CONSOLE): New macros akin
+	to those within RedBoot's internal net_io.c, for directing warning
+	messages to a serial line if required.  All printf's wrapped in
+	them for safety.
+
+	* cdl/eth_drivers.cdl (CYGPKG_IO_ETH_DRIVERS_WARN_FORCE_CONSOLE):
+	and ..._NUMBER, new options to direct application warning output
+	somewhere useful (less harmful) for when you are debugging over
+	the net.  Trying to print within a call which occurred from within
+	RedBoot itself is such a recursive situation as to be fatal.
+	Defaults are disabled, you must choose to set these up if
+	you want to debug your app safely over the network.
+
+2001-12-12  Hugo Tyson  <hmt@redhat.com>
+
+	* src/stand_alone/eth_drv.c (DIAG_DUMP_BUF_HDR,DIAG_DUMP_BUF_BDY):
+	Separate macros for debug dumps of ethernet header and body.
+	(eth_drv_write): Use them.
+	(eth_drv_copy_recv): Do not corrupt the static data pointer, so
+	that if we are erroneously called twice, at least what we pass is
+	a packet, rather than random memory; do not escape to SEGV.  Guard
+	against NULL sg_list[].buf pointers, in case caller out of MBUFs.
+	(eth_drv_recv): Only dump packet if we actually have a buffer.
+	Only forward the packet if actually have a buffer.
+
+2001-12-04  Richard Sandiford  <rsandifo@redhat.com>
+
+	* src/stand_alone/eth_drv.c (eth_drv_read): Check that the return
+	buffer is big enough to hold the packet.
+
+2001-11-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* doc/driver_doc: Mention preferences on how the ESA should be set.
+
+2001-10-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* doc/driver_doc: Add description of poll, deliver and int_vector
+	driver functions.
+
+2001-10-29  Hugo Tyson  <hmt@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_tickle_devices): [CASE 106613] Rather
+	than calling can_send() in the device driver directly, call our
+	own eth_drv_send() function which will also dequeue a waiting
+	packet if we find we indeed can_send().  This helps to recover
+	from queue full situations within the if_ethersubr layer above.
+	This change is belt & braces with a similar call in the code which
+	drops a packet if the queue is full, in the main network code in
+	net/tcpip/.../src/sys/net/if_ethersubr.c (ether_output); this
+	change will recover the situation shortly even if the application
+	gives up trying to send because of ENOBUFS.
+
+2001-10-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/eth_drivers.cdl: Rename CYGSEM_IO_ETH_DRIVERS_DEBUG to
+	CYGDBG_IO_ETH_DRIVERS_DEBUG and make it a common option.
+	Add separate CYGDBG_IO_ETH_DRIVERS_DEBUG_VERBOSITY config.
+
+	* include/eth_drv.h: Don't claim BSD if it isn't.
+	* include/eth_drv_stats.h: Ditto.
+	* include/netdev.h: Ditto.
+	* src/net/eth_drv.c: Ditto.
+	Also use above CDL options to conditionalize debugging (and the
+	verbosity level).
+	* src/stand_alone/eth_drv.c: Use above renamed CDL options.
+
+2001-10-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c (eth_drv_recv): 
+	Defensive programming - insure valid packet size.
+
+2001-10-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/eth_drv.c: Add default implementation of min().
+
+2001-09-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/eth_drivers.cdl: Require the string functions.
+
+	* src/stand_alone/eth_drv.c: Fix warnings.
+
+2001-09-25  Hugo Tyson  <hmt@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_dsr): Assert that the "sc" given to
+	eth_drv_dsr() really is a sc from the valid list.  This can save a
+	few hours debug time of a typo.
+
+2001-09-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_tickle_devices): New function to call
+	can_send() on all devices to allow them to unstick from a lost
+	interrupt or other wedge - it's up to the device to detect this,
+	of course, can_send() does not explicitly do this, it's just used
+	as an opportunity harmlessly to get control into the device so it
+	can examine its world.
+
+2001-09-05  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c (eth_drv_init): Don't initialize
+	structures if ESA is zero.  This is used by low level drivers
+	to indicate that a device is present, but can't currently be
+	used.  The eCos driver handles this case as well.
+
+2001-08-31  Hugo Tyson  <hmt@redhat.com>
+2001-08-31  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* src/net/eth_drv.c (eth_drv_tx_done): Guard against a NULL key
+	return - which can be caused by race conditions in the driver,
+	this is the neatest fixup.  It's good defensive programming
+	anyway and ASCOM's tests indicate a benefit for CASE 106059.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+	* cdl/eth_drivers.cdl: Only enable warning/debug modes if RedBoot
+	is present as the debug environment (since there are implicit
+	dependencies on RedBoot functions).
+
+2001-08-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_send): Move endif location to fix build
+	error.
+
+2001-08-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/eth_drivers.cdl (CYGSEM_IO_ETH_DRIVERS_DEBUG): Now booldata.
+	* src/stand_along/eth_drv.c (eth_drv_tx_done): Use different
+	value of CYGSEM_IO_ETH_DRIVERS_DEBUG for verbosity.
+
+2001-08-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c (eth_drv_write): 
+	(eth_drv_tx_done): 
+	(eth_drv_read): Better handling of stacking (layering) of drivers.
+	RedBoot (stand alone code) is designed to call into the eCos 
+	stack and these changes make sure that this is done properly
+	nested/stacked.  These changes also affect the behaviour positively
+	for CR 902745-CR.
+
+	* src/net/eth_drv.c (eth_drv_send): Add locking of driver while
+	actual hardware routines are involved.  Since the same driver
+	can be shared by both eCos and RedBoot, it is imperative that
+	additional locking (in the form of locking the scheduler) be
+	employed during this window to make sure that the hardware is
+	handled in complete, consistent steps.  This helps with known
+	bug CR 902745-CR.
+
+2001-08-09  Hugo Tyson  <hmt@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_recv): Add a pair of
+	CYGARC_HAL_SAVE_GP()/CYGARC_HAL_RESTORE_GP() on entry and exit;
+	this function is intercalled between RedBoot and the application.
+	A minor re-org at the ending to accommodate these macros' nesting.
+	(eth_drv_tx_done): CYGARC_HAL_SAVE_GP()/CYGARC_HAL_RESTORE_GP().
+
+	* src/stand_alone/eth_drv.c (eth_drv_tx_done): Add a pair of
+	CYGARC_HAL_SAVE_GP()/CYGARC_HAL_RESTORE_GP() on entry and exit;
+	this function is intercalled between RedBoot and the application.
+	Also make printing message about "tx_done for other key" also
+	conditional on net_debug variable - it's commonplace.
+	(eth_drv_recv): CYGARC_HAL_SAVE_GP()/CYGARC_HAL_RESTORE_GP().
+	(eth_drv_copy_recv): CYGARC_HAL_SAVE_GP()/CYGARC_HAL_RESTORE_GP().
+
+2001-07-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_recv): Better cleanup when running
+	out of mbufs - could have lost mbufs before.
+
+2001-06-21  David Woodhouse <dwmw2@redhat.com>
+
+	* src/stand_alone/eth_drv.c: Timeout when waiting for Ethernet
+	driver to finish sending packet.
+	* src/stand_alone/eth_drv.c: Don't delay if it's ready immediately.
+
+2001-06-11  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/eth_drivers.cdl: Make debug default for RedBoot.
+
+2001-05-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/eth_drivers.cdl: New option: CYGSEM_IO_ETH_DRIVERS_PASS_PACKETS
+	which replaces the static define in...
+	* src/stand_alone_eth_drv.c: Rename ETH_DRV_PASS_PACKETS to
+	new CDL option above.
+	Also, ensure references to start_console/end_console are conditional
+	on CYGSEM_IO_ETH_DRIVERS_DEBUG.
+
+2001-05-22  Hugo Tyson  <hmt@redhat.com>
+2001-05-22  Sanjay Bisen <Sanjay.Bisen@ascom.ch>
+
+	* src/net/eth_drv.c (eth_drv_recv): Patch from Sanjay at Ascom; it
+	leaked one mbuf if you run out of clusters.  Fix is simply to
+	free m in addition to top.
+
+	* src/net/eth_drv.c (eth_drv_run_deliveries): Fixed a warning with
+	an int cast in HAL_CTRLC_CHECK().
+
+2001-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/eth_drivers.cdl: Fewer buffers needed in stand-alone mode.
+
+2001-03-12  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/eth_drivers.cdl: Permit defines for
+	CYGPKG_IO_ETH_DRIVERS_STAND_ALONE and CYGPKG_IO_ETH_DRIVERS_NET.
+	The generic i82559 driver needs to know, unfortunately; it calls
+	its own DSR directly to unblock after a lost interrupt.  And you
+	mustn't call the DSR under RedBoot == ....STAND_ALONE.
+
+2001-01-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_init): Do not use enaddr if NULL.
+
+2001-01-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/eth_drivers.cdl: Add interface 'CYGPKG_NET_DRIVER_FRAMEWORK'
+	to describe interdependencies between network stack and driver
+	framework packages.
+
+2001-01-04  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_tx_done): Update count of Tx packets.
+
+2000-12-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_run_deliveries): Support ^C when
+	using network based debug channel.
+
+2000-12-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c (eth_drv_write): Debug: dump packet
+	before calling hardware routine for improved usability.
+
+2000-10-30  Gary Thomas  <gthomas@redhat.com>
+
+	* include/eth_drv.h: Fix compile error in stand-alone mode.
+
+2000-10-17  Hugo Tyson  <hmt@redhat.com>
+2000-10-10  Andrew Lunn <Andrew.Lunn@ascom.ch>
+	* cdl/eth_drivers.cdl: Add configury to disable the warnings about
+	out of mbufs for receives.
+
+	* src/net/eth_drv.c: The changes required for the above.
+
+2000-09-28  Hugo Tyson  <hmt@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_run_deliveries): Remove race
+	condition; a chance to deliver could be delayed until "next time"
+	if the DSR snuck in just right.
+
+2000-09-14  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/eth_drivers.cdl: Add configury to control new features.  All
+	is controlled globally by CYGPKG_IO_ETH_DRIVERS_SIMULATED_FAILURES
+	which is by default off, natch.
+
+	* src/net/eth_drv.c (simulate_fail): Implement simulated failures
+	in ethernet packet delivery - independent tx and rx dropping and
+	rx packet corruption.  Also a "line break" drop-all feature.
+
+2000-09-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c: Take out noisy dump when out of buffers.
+
+2000-09-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/stand_alone/eth_drv.c (eth_drv_write): If we timeout waiting
+	for the write to complete, do reset the vectors to point to the
+	application, rather just a bald "return".
+
+2000-09-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/netdev.h (NETDEVTAB_ENTRY): Work around feature of new
+	version of CYG_HAL_TABLE_ENTRY() whereby no spaces are allowed.
+
+2000-09-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/netdev.h (cyg_netdevtab_entry_t): Correct syntax for
+	CYG_HAL_TABLE_TYPE
+
+2000-09-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/netdev.h (cyg_netdevtab_entry_t): Apply CYG_HAL_TABLE_TYPE
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/stand_alone/eth_drv.c (eth_drv_dsr): New function, never
+	called but maybe referenced in stand_alone context, which lets
+	redboot work in the new world.
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* OVERVIEW: This is part of the change to the network stack to
+	greatly reduce latencies both of (other) DSRs and of thread
+	scheduling.  All the work that the network stack *and* individual
+	ether drivers used to do in DSRs (including alarm callbacks and
+	data copies to/from the device memory) is moved into a "fast
+	network thread" instead.  It calls a device's "deliver" function
+	to do the work that was previously in the DSR.  This is a separate
+	thread so that it can be set higher priority than application
+	threads in order to minimize packet loss (depending on the
+	driver), if required (the application threads presumed to be
+	higher priority in turn than the network thread).  A crucial
+	consequence of this is that we are no longer locking against DSRs,
+	so a plain mutex can be used rather than the global scheduler
+	lock, thus simplifying all the splfoo/splx() style functions.
+
+	These changes WILL BREAK individual device drivers until they are
+	updated AND the standalone logical ether driver in this component,
+	until it is updated also.
+
+	* include/eth_drv.h (ETH_DRV_SC): Add "deliver" entry to struct
+	eth_hwr_funs interface record; declare available DSR and flag for
+	"needs delivery" in SC status field.
+
+	* src/net/eth_drv.c (eth_drv_run_deliveries): New function,
+	performs callbacks to deliver funcs for all devs that want it.
+	(eth_drv_dsr): New function, sets flag in sc and calls up to net
+	stack to schedule the fast network thread.
+	(eth_drv_send): No need to lock scheduler here.
+
+2000-08-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c: Use null buffer, (char *)0,
+	instead of wasting memory - low level drivers must be designed
+	to handle this case.
+
+2000-08-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c: Use new configuration parameters.
+
+	* cdl/eth_drivers.cdl: Add new configury to control number of
+	internal buffers used by this layer.  Also exposed some of the
+	debug flags here.
+
+2000-08-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/eth_drv_stats.h (ether_drv_stats): A little further
+	diddling; have a bool to say whether the dot3 info is filled in.
+
+2000-08-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/net/eth_drv.c (eth_drv_ioctl): Implement ioctl() calls.
+	sockio.h numbers SIOCGIFSTATS and SIOCGIFSTATSUD map to
+	ETH_DRV_GET_IF_STATS and ETH_DRV_GET_IF_STATS_UD respectively.
+
+	* include/eth_drv.h (ETH_DRV_GET_IF_STATS_UD): Add new device
+	interface ioctl() numbers, to get the struct below filled in.
+	Also pull in the definition include file (below).
+
+	* include/eth_drv_stats.h (ether_drv_stats): New file: Define
+	common structure for ether devices to return stats info to higher
+	up, via an ioctl() call.  SNMP uses this.
+
+2000-08-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c: 
+	* include/eth_drv.h: Low level drivers now need to export a 
+	function which returns the interrupt vector used by that interface.
+	This allows outside code to determine this in a portable fashion.
+
+2000-08-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/stand_alone/eth_drv.c: 
+	* include/eth_drv.h: Clean up warnings (better protyping).
+
+	* src/stand_alone/eth_drv.c (eth_drv_write): Abandon sending
+	packet if device goes not ready for a long time (in some cases,
+	this is the only indication that the link is down).
+
+2000-08-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c (eth_drv_recv): Add safety in case this gets
+	called [from stand-alone code] while interface is not up.
+	
+	* src/stand_alone/eth_drv.c: 
+	* include/eth_drv.h: Rework to more fully support mixed stand-alone
+	and system (eCos) stacks.
+
+2000-08-03  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/eth_drivers.cdl: Reparent within I/O, not NET.  This allows
+	for stand-alone use as well as support for other stack implementations.
+
+2000-07-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/eth_drv.c (eth_drv_recv): Assert that the length we're asked
+	to deal with is at least an ether header, and also be defensive in
+	any case; discard small packets.  [CASE 104206]
+
+2000-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/eth_drv.c: 
+	* include/eth_drv.h: Change interfaces used by hardware layer to
+	be "soft" (pointers to functions).  This will allow those drivers
+	to be shared by applications and the ROM/debug environment.
+
+2000-07-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/eth_drv.h: Add [initial] extensions to let this
+	layer work either in an eCos environment or stand-alone.
+
+2000-07-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/eth_drv.h: Add minimal PCMCIA support.
+
+	* src/eth_drv.c (eth_drv_netdev): New function - used to find the
+	ethernet device info for PCMCIA devices.
+
+2000-06-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/eth_drv.c (eth_drv_send): Do not consume an SG entry for
+	zero length data; tolerate overflow of the SG.  Before this, pings
+	of 6000 bytes crashed the system!
+
+	You can now set net_debug to 2 to get quieter output; 1 gives the
+	whole packet dump as before.
+
+	* include/eth_drv.h (MAX_ETH_DRV_SG): Make this 16 so that an MTU
+	made of all mbufs will not overflow.
+
+2000-03-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/eth_drv.c (eth_drv_recv): Tolerate running out of MBUFs
+	instead of "panic"ing.
+
+2000-03-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/eth_drv.c: Add some function [block] comments.
+	(eth_drv_send): Use eCos scheduler lock instead of interrupt lock.
+
+2000-03-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* doc/driver_doc: Add some clarification about what's called when,
+	proofreading results, shorter lines so I can print it nicely.
+
+2000-03-06  Gary Thomas  <gthomas@redhat.com>
+
+	* src/eth_drv.c: 
+	* include/eth_drv.h: 
+	* doc/driver_doc: Remove generic "priv"ate references.
+
+2000-02-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/eth_drv.c: 
+	* include/eth_drv.h: New expanded API for hardware drivers.
+
+2000-02-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/eth_drv.c (eth_drv_send): Disable interrupts while initiating
+	the buffer send - avoid a possible race.
+
+2000-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/eth_drivers.cdl:
+	Reparent under CYGPKG_NET and tidy display strings.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

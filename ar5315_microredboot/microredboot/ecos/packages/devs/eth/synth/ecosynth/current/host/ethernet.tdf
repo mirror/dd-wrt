@@ -1,0 +1,117 @@
+# Target definition file fragment for ethernet devices.
+#
+# The target-side can instantiate up to four ethernet devices,
+# eth0 to eth3. Each instance requires an entry in the
+# target definition file specifying what underlying Linux
+# kernel facility should be used to implement the I/O. This
+# can take the following forms:
+#
+# 1) an existing ethernet device, e.g.
+#        eth0 real eth1
+#    thus mapping the eCos device eth0 on to the Linux device eth1.
+#    The latter network interface must not currently be in use
+#    by Linux. Traffic will flow to and from the real ethernet, and
+#    communication is possible with any machine on the LAN.
+#    
+# 2) the Linux kernel's tap facility.
+#        eth0 ethertap
+#    This will result in a Linux ethernet interface such as
+#    tap3 appearing. The interface can be configured like any
+#    other network device, for example by using the ifconfig
+#    command or by creating a configuration file
+#    /etc/sysconfig/network-scripts/ifcfg-tap3
+#    The result is a virtual ethernet segment visible only
+#    to the Linux host and eCos. Bridge software inside the
+#    Linux host can be used to connect eCos to a larger network.
+#
+#    Optionally a specific tap device can be configured,
+#        eth0 ethertap tap3
+#    By default the code will pick up the next free tap device,
+#    usually tap0. If the Linux interface should come up automatically
+#    then this can be achieved with an ifcfg-tap?? configuration
+#    file. Explicitly specifying the tap device can avoid some
+#    confusion.
+#
+#    Both the eCos and the Linux network interface need a unique
+#    MAC address. There is no real ethernet hardware involved to
+#    supply these addresses, so they have to be invented. The
+#    Linux kernel will automatically invent one for its interface.
+#    By default a random MAC address will also be generated for
+#    the eCos interface, but to make the system more deterministic
+#    it is possible to specify the MAC address to be used. This
+#    facility is only available in conjunction with an explicit
+#    tap device, e.g.:
+#        eth0 ethertap tap3 00:01:02:03:04:05
+#    The MAC address should be in the usual format: six 2-digit
+#    hexadecimal numbers separated by colons. It is the user's
+#    responsibility to make sure that the address specified
+#    does not match any other real or invented address visible
+#    on the local network.
+#
+# It is possible that bursts of ethernet traffic occur, causing
+# packets to arrive faster than they can be forwarded to and
+# processed by eCos. It is desirable that some number of packets
+# be buffered, matching the behaviour of many ethernet devices
+# with built-in fifos. However the number of these packets should
+# be restricted: if eCos stops accepting ethernet packets or
+# cannot handle the data quickly enough, then it is possible that
+# an unlimited number of packets could accumulate in the I/O
+# auxiliary until all available memory and swap space is exhausted.
+# By default up to 16 packets will be buffered per device, but
+# this can be changes with the max_buffer option.
+#
+# The ethernet emulation code can perform logging and limited
+# analysis of each ethernet packet. For example if a particular
+# packet is an IPv4 ICMP request then details of the request
+# will be logged to the main text window. The appearance of the
+# various filters can be controlled here, using the usual
+# options such as -foreground, -background, and -hide.
+#
+# This logging of each ethernet frame can be somewhat time-consuming
+# and, for a long run, require a lot of memory. Logging can be
+# disabled by default if desired, and a button on the toolbar allows
+# this setting to be toggled.
+#
+# Ethernet packets can be up to 1514 bytes, so showing entire packets
+# on a single line can mean very wide lines. In practice the interesting
+# data is usually at the start, so the output can be truncated to a
+# maximum number of bytes. The data is displayed in hex so each byte
+# requires two columns, and some spacing will be added as well to
+# improve legibility.
+
+synth_device ethernet {
+    ## Map eCos devices on to Linux ones.
+    
+    # eth0 real eth1
+    # eth0 ethertap
+    # eth0 ethertap tap3
+    eth0 ethertap tap3 00:FE:42:63:84:A5
+
+    # eth1 ethertap tap4 00:FE:12:34:56:78
+    # eth2 ethertap tap5 00:FE:9A:BC:DE:F0
+    # eth3 real eth2
+
+    ## Maximum number of packets that should be buffered per interface.
+    ## Default 16
+    max_buffer 32
+
+    ## Should packets be logged? The default is yes.
+    # logging  0
+
+    ## Maximum number of data bytes to be shown.
+    ## Default 64
+    # max_show 128
+
+    ## Filters for the various recognised protocols.
+    ## By default all filters are visible and use standard colours.
+    # filter ether     -hide 0
+    # filter arp       -hide 1
+    # filter ipv4      -hide 1
+    # filter ipv6      -hide 1
+    # filter icmpv4    -hide 1
+    # filter icmpv6    -hide 1
+    # filter udp       -hide 1
+    # filter tcp       -hide 1
+    # filter hexdata   -hide 0
+    # filter asciidata -hide 0
+}

@@ -1,0 +1,60 @@
+2001-10-15  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h (libiberty_demanglers): Lose Const-ify.
+
+2001-08-30  H.J. Lu  (hjl@gnu.org)
+
+	* bin-bugs.h (REPORT_BUGS_TO): Remove the extra `and'.
+
+2001-02-03  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h (demangler_list_buffer): Removed.
+
+2000-06-21  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h (DMGL_STYLE_MASK): Add DMGL_GNAT and DMGL_COMPAQ.
+	(GNAT_DEMANGLING): Defined.
+	(COMPAQ_DEMANGLING): Defined.
+
+2000-06-20  Kenneth Block  <krblock@computer.org>
+
+	* demangle.h (DMGL_STYLE_MASK): Add DMGL_JAVA.
+	(demangling_styles): Add java_demangling.
+	(JAVA_DEMANGLING_STYLE_STRING): Defined.
+	(JAVA_DEMANGLING): Defined.
+
+2000-06-15  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h: Updated from sourceware.
+	(get_demangler_list): New function.
+	(demangler_list_buffer): New variable.
+
+2000-04-03  H.J. Lu  (hjl@gnu.org)
+
+	* bin-bugs.h (REPORT_BUGS_TO): Add hjl@lucon.org.
+
+Mon Oct 11 09:57:57 1999  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h (demangling_styles): Renumbered.
+	(demangle_function): New types.
+	(demangle_symbol_with_style): New prototype.
+	(demangle_symbol_with_style_options): Likewise.
+	(cplus_demangle_with_style): Likewise.
+
+Mon Oct 11 09:57:57 1999  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h (demangler_engine): New. Based on a patch from
+	Ken Block USG <block@zk3.dec.com> on Fri Oct  1 11:37:24 1999.
+
+Sat Oct  9 09:52:54 1999  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h (DMGL_COMPAQ): New.
+	(demangling_styles): Add gnat_demangling and compaq_demangling.
+	(GNAT_DEMANGLING_STYLE_STRING, COMPAQ_DEMANGLING_STYLE_STRING):
+	New macros.
+	(demangle_symbol, demangle_symbol_with_options,
+	init_demangler): New prototypes.
+
+Sun Feb 14 12:26:18 1999  H.J. Lu  (hjl@gnu.org)
+
+	* demangle.h (DMGL_GNAT): New.

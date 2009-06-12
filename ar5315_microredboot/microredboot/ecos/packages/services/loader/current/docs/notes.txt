@@ -1,0 +1,107 @@
+
+These notes were written to record the current state of this code.
+Much of it was written during the investigation work.
+
+At present this stuff is only partially functional. Do not assume
+anything works. In particular things like constructor/destructors and
+init/fini sections have not been fully implemented. 
+
+
+Initial Investigations
+======================	
+
+Attempts to build a simple shared library using the existing
+tools. Command line is something like:
+
+xxx-gcc -shared -o libfoo.so foo.so
+
+
+arm-elf			no - includes crt0 which fails to find main() etc.
+thumb-elf		no - includes crt0 which fails to find main() etc.
+i686-pc-linux-gnu	yes
+i386-elf		no - tries to build program
+mn10300			no - tries to build program
+powerpc-eabi		no - implicit ref to libc.so
+sh-elf			no - tries to build program
+sparclite		no - fails to find crtn.o
+mips-tx39-elf		yes - but seriously mangles PHDR DYNAMIC section
+mips66vr4300-elf	yes - but seriously mangles PHDR DYNAMIC section
+
+
+Building new Toolchains
+=======================
+
+Given the poor results from our standard toolchains, it was decided to
+try and use Linux-targeted toolchains, which are guranteed to have the
+necessary support.
+
+These builds all use bindutils-2.1.1, gcc-2.95.2 and gdb-5.0.
+
+arm-unknown-linux-gnu	build of libgcc fails looking for asm/unistd.h
+
+All MIPS Linux toolchains use collect2 constructors, so no priorities.
+MIPS support also requires PIC code support, which needs HAL
+changes. In this case it is fairly easy since the assembler does a lot
+of the conversion for us but there are still some things that need
+fixing.
+
+MIPS BSD toolchains fail building libgcc, but adding files from
+openbsd sources allows these to build. However, these then fail to
+build proper PIC code and omit some features.
+
+PowerPC toolchains need to use the full ABI, not the ebedded one, with
+TOCs and all the trimmings. This requires major changes to the
+HAL. Or maybe not - not too sure about this one.
+
+Since we are having so much difficulty getting any of these to work,
+try to get it running on the i686-pc-linux-gnu synthetic target, since
+we know that works.
+
+
+Synthetic Target
+================
+
+To enable a progam to be capable of loading a shared library it must
+include a DYNAMIC section. This includes the symbol, string and hash
+tables needed to satisfy any references from the loaded library back
+to the executable. The only way I have so far worked out to make this
+happen is to link the executable against a dynamic library. This needs
+the -Wl,-static flag to be removed.
+
+A simple library, libdlforce.so has been created to make this
+happen. It is not even necessary for the progam to call into the
+library, just having it on the command line is enough.
+
+
+Generation of usable libraries and executables is very sensitive to
+the exact form of the linker scripts used.
+
+src/dynamic.ld has been replaced by a very lightly edited copy of 
+i686-pc-linux-gnu/H-i686-pc-linux-gnu/i686-pc-linux-gnu/lib/ldscripts/elf_i386.xs
+
+To make the main executable work correctly the i386.dynamic.ld script
+in this directory must be copied over target.ld before building any
+programs. I have not yet worked out what the problems are, but the
+original target.ld causes programs built for dynamic loading to
+SIGSEGV in ld.so.
+
+If we try to use the POSIX package, we get spurious calls to
+pthread_mutex_unlock() from somewhere in the Linux runtime. This may
+be a result of using a different linker script, however.
+
+
+Retesting toolchains
+====================
+
+Having got the synthetic target sort-of working, now go back and see
+what happens when configuring each of our standard toolchains for the
+loader.
+
+arm-elf		- build of shared library with external references
+		  result in "undefined reference to `fee'".
+
+mips-tx39-elf	- mangles DYNAMIC section as before.
+
+powerpc-eabi	- Compiler selects a libgcc.a that contains references
+		  to "abort" and "strcmp". With these defined we get
+		  sensible looking libraries. 

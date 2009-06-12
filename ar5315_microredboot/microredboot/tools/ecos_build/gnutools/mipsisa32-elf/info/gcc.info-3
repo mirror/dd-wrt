@@ -1,0 +1,796 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Warning Options,  Next: Debugging Options,  Prev: Language Independent Options,  Up: Invoking GCC
+
+Options to Request or Suppress Warnings
+=======================================
+
+   Warnings are diagnostic messages that report constructions which are
+not inherently erroneous but which are risky or suggest there may have
+been an error.
+
+   You can request many specific warnings with options beginning `-W',
+for example `-Wimplicit' to request warnings on implicit declarations.
+Each of these specific warning options also has a negative form
+beginning `-Wno-' to turn off warnings; for example, `-Wno-implicit'.
+This manual lists only one of the two forms, whichever is not the
+default.
+
+   The following options control the amount and kinds of warnings
+produced by GCC; for further, language-specific options also refer to
+*Note C++ Dialect Options:: and *Note Objective-C Dialect Options::.
+
+`-fsyntax-only'
+     Check the code for syntax errors, but don't do anything beyond
+     that.
+
+`-pedantic'
+     Issue all the warnings demanded by strict ISO C and ISO C++;
+     reject all programs that use forbidden extensions, and some other
+     programs that do not follow ISO C and ISO C++.  For ISO C, follows
+     the version of the ISO C standard specified by any `-std' option
+     used.
+
+     Valid ISO C and ISO C++ programs should compile properly with or
+     without this option (though a rare few will require `-ansi' or a
+     `-std' option specifying the required version of ISO C).  However,
+     without this option, certain GNU extensions and traditional C and
+     C++ features are supported as well.  With this option, they are
+     rejected.
+
+     `-pedantic' does not cause warning messages for use of the
+     alternate keywords whose names begin and end with `__'.  Pedantic
+     warnings are also disabled in the expression that follows
+     `__extension__'.  However, only system header files should use
+     these escape routes; application programs should avoid them.
+     *Note Alternate Keywords::.
+
+     Some users try to use `-pedantic' to check programs for strict ISO
+     C conformance.  They soon find that it does not do quite what they
+     want: it finds some non-ISO practices, but not all--only those for
+     which ISO C _requires_ a diagnostic, and some others for which
+     diagnostics have been added.
+
+     A feature to report any failure to conform to ISO C might be
+     useful in some instances, but would require considerable
+     additional work and would be quite different from `-pedantic'.  We
+     don't have plans to support such a feature in the near future.
+
+     Where the standard specified with `-std' represents a GNU extended
+     dialect of C, such as `gnu89' or `gnu99', there is a corresponding
+     "base standard", the version of ISO C on which the GNU extended
+     dialect is based.  Warnings from `-pedantic' are given where they
+     are required by the base standard.  (It would not make sense for
+     such warnings to be given only for features not in the specified
+     GNU C dialect, since by definition the GNU dialects of C include
+     all features the compiler supports with the given option, and
+     there would be nothing to warn about.)
+
+`-pedantic-errors'
+     Like `-pedantic', except that errors are produced rather than
+     warnings.
+
+`-w'
+     Inhibit all warning messages.
+
+`-Wno-import'
+     Inhibit warning messages about the use of `#import'.
+
+`-Wchar-subscripts'
+     Warn if an array subscript has type `char'.  This is a common cause
+     of error, as programmers often forget that this type is signed on
+     some machines.
+
+`-Wcomment'
+     Warn whenever a comment-start sequence `/*' appears in a `/*'
+     comment, or whenever a Backslash-Newline appears in a `//' comment.
+
+`-Wformat'
+     Check calls to `printf' and `scanf', etc., to make sure that the
+     arguments supplied have types appropriate to the format string
+     specified, and that the conversions specified in the format string
+     make sense.  This includes standard functions, and others
+     specified by format attributes (*note Function Attributes::), in
+     the `printf', `scanf', `strftime' and `strfmon' (an X/Open
+     extension, not in the C standard) families.
+
+     The formats are checked against the format features supported by
+     GNU libc version 2.2.  These include all ISO C89 and C99 features,
+     as well as features from the Single Unix Specification and some
+     BSD and GNU extensions.  Other library implementations may not
+     support all these features; GCC does not support warning about
+     features that go beyond a particular library's limitations.
+     However, if `-pedantic' is used with `-Wformat', warnings will be
+     given about format features not in the selected standard version
+     (but not for `strfmon' formats, since those are not in any version
+     of the C standard).  *Note Options Controlling C Dialect: C
+     Dialect Options.
+
+     `-Wformat' is included in `-Wall'.  For more control over some
+     aspects of format checking, the options `-Wno-format-y2k',
+     `-Wno-format-extra-args', `-Wformat-nonliteral',
+     `-Wformat-security' and `-Wformat=2' are available, but are not
+     included in `-Wall'.
+
+`-Wno-format-y2k'
+     If `-Wformat' is specified, do not warn about `strftime' formats
+     which may yield only a two-digit year.
+
+`-Wno-format-extra-args'
+     If `-Wformat' is specified, do not warn about excess arguments to a
+     `printf' or `scanf' format function.  The C standard specifies
+     that such arguments are ignored.
+
+     Where the unused arguments lie between used arguments that are
+     specified with `$' operand number specifications, normally
+     warnings are still given, since the implementation could not know
+     what type to pass to `va_arg' to skip the unused arguments.
+     However, in the case of `scanf' formats, this option will suppress
+     the warning if the unused arguments are all pointers, since the
+     Single Unix Specification says that such unused arguments are
+     allowed.
+
+`-Wformat-nonliteral'
+     If `-Wformat' is specified, also warn if the format string is not a
+     string literal and so cannot be checked, unless the format function
+     takes its format arguments as a `va_list'.
+
+`-Wformat-security'
+     If `-Wformat' is specified, also warn about uses of format
+     functions that represent possible security problems.  At present,
+     this warns about calls to `printf' and `scanf' functions where the
+     format string is not a string literal and there are no format
+     arguments, as in `printf (foo);'.  This may be a security hole if
+     the format string came from untrusted input and contains `%n'.
+     (This is currently a subset of what `-Wformat-nonliteral' warns
+     about, but in future warnings may be added to `-Wformat-security'
+     that are not included in `-Wformat-nonliteral'.)
+
+`-Wformat=2'
+     Enable `-Wformat' plus format checks not included in `-Wformat'.
+     Currently equivalent to `-Wformat -Wformat-nonliteral
+     -Wformat-security'.
+
+`-Wimplicit-int'
+     Warn when a declaration does not specify a type.
+
+`-Wimplicit-function-declaration'
+`-Werror-implicit-function-declaration'
+     Give a warning (or error) whenever a function is used before being
+     declared.
+
+`-Wimplicit'
+     Same as `-Wimplicit-int' and `-Wimplicit-function-declaration'.
+
+`-Wmain'
+     Warn if the type of `main' is suspicious.  `main' should be a
+     function with external linkage, returning int, taking either zero
+     arguments, two, or three arguments of appropriate types.
+
+`-Wmissing-braces'
+     Warn if an aggregate or union initializer is not fully bracketed.
+     In the following example, the initializer for `a' is not fully
+     bracketed, but that for `b' is fully bracketed.
+
+          int a[2][2] = { 0, 1, 2, 3 };
+          int b[2][2] = { { 0, 1 }, { 2, 3 } };
+
+`-Wparentheses'
+     Warn if parentheses are omitted in certain contexts, such as when
+     there is an assignment in a context where a truth value is
+     expected, or when operators are nested whose precedence people
+     often get confused about.
+
+     Also warn about constructions where there may be confusion to which
+     `if' statement an `else' branch belongs.  Here is an example of
+     such a case:
+
+          {
+            if (a)
+              if (b)
+                foo ();
+            else
+              bar ();
+          }
+
+     In C, every `else' branch belongs to the innermost possible `if'
+     statement, which in this example is `if (b)'.  This is often not
+     what the programmer expected, as illustrated in the above example
+     by indentation the programmer chose.  When there is the potential
+     for this confusion, GCC will issue a warning when this flag is
+     specified.  To eliminate the warning, add explicit braces around
+     the innermost `if' statement so there is no way the `else' could
+     belong to the enclosing `if'.  The resulting code would look like
+     this:
+
+          {
+            if (a)
+              {
+                if (b)
+                  foo ();
+                else
+                  bar ();
+              }
+          }
+
+`-Wsequence-point'
+     Warn about code that may have undefined semantics because of
+     violations of sequence point rules in the C standard.
+
+     The C standard defines the order in which expressions in a C
+     program are evaluated in terms of "sequence points", which
+     represent a partial ordering between the execution of parts of the
+     program: those executed before the sequence point, and those
+     executed after it.  These occur after the evaluation of a full
+     expression (one which is not part of a larger expression), after
+     the evaluation of the first operand of a `&&', `||', `? :' or `,'
+     (comma) operator, before a function is called (but after the
+     evaluation of its arguments and the expression denoting the called
+     function), and in certain other places.  Other than as expressed
+     by the sequence point rules, the order of evaluation of
+     subexpressions of an expression is not specified.  All these rules
+     describe only a partial order rather than a total order, since,
+     for example, if two functions are called within one expression
+     with no sequence point between them, the order in which the
+     functions are called is not specified.  However, the standards
+     committee have ruled that function calls do not overlap.
+
+     It is not specified when between sequence points modifications to
+     the values of objects take effect.  Programs whose behavior
+     depends on this have undefined behavior; the C standard specifies
+     that "Between the previous and next sequence point an object shall
+     have its stored value modified at most once by the evaluation of
+     an expression.  Furthermore, the prior value shall be read only to
+     determine the value to be stored.".  If a program breaks these
+     rules, the results on any particular implementation are entirely
+     unpredictable.
+
+     Examples of code with undefined behavior are `a = a++;', `a[n] =
+     b[n++]' and `a[i++] = i;'.  Some more complicated cases are not
+     diagnosed by this option, and it may give an occasional false
+     positive result, but in general it has been found fairly effective
+     at detecting this sort of problem in programs.
+
+     The present implementation of this option only works for C
+     programs.  A future implementation may also work for C++ programs.
+
+     The C standard is worded confusingly, therefore there is some
+     debate over the precise meaning of the sequence point rules in
+     subtle cases.  Links to discussions of the problem, including
+     proposed formal definitions, may be found on our readings page, at
+     `http://gcc.gnu.org/readings.html'.
+
+`-Wreturn-type'
+     Warn whenever a function is defined with a return-type that
+     defaults to `int'.  Also warn about any `return' statement with no
+     return-value in a function whose return-type is not `void'.
+
+     For C++, a function without return type always produces a
+     diagnostic message, even when `-Wno-return-type' is specified.
+     The only exceptions are `main' and functions defined in system
+     headers.
+
+`-Wswitch'
+     Warn whenever a `switch' statement has an index of enumeral type
+     and lacks a `case' for one or more of the named codes of that
+     enumeration.  (The presence of a `default' label prevents this
+     warning.)  `case' labels outside the enumeration range also
+     provoke warnings when this option is used.
+
+`-Wtrigraphs'
+     Warn if any trigraphs are encountered that might change the
+     meaning of the program (trigraphs within comments are not warned
+     about).
+
+`-Wunused-function'
+     Warn whenever a static function is declared but not defined or a
+     non\-inline static function is unused.
+
+`-Wunused-label'
+     Warn whenever a label is declared but not used.
+
+     To suppress this warning use the `unused' attribute (*note
+     Variable Attributes::).
+
+`-Wunused-parameter'
+     Warn whenever a function parameter is unused aside from its
+     declaration.
+
+     To suppress this warning use the `unused' attribute (*note
+     Variable Attributes::).
+
+`-Wunused-variable'
+     Warn whenever a local variable or non-constant static variable is
+     unused aside from its declaration
+
+     To suppress this warning use the `unused' attribute (*note
+     Variable Attributes::).
+
+`-Wunused-value'
+     Warn whenever a statement computes a result that is explicitly not
+     used.
+
+     To suppress this warning cast the expression to `void'.
+
+`-Wunused'
+     All all the above `-Wunused' options combined.
+
+     In order to get a warning about an unused function parameter, you
+     must either specify `-W -Wunused' or separately specify
+     `-Wunused-parameter'.
+
+`-Wuninitialized'
+     Warn if an automatic variable is used without first being
+     initialized or if a variable may be clobbered by a `setjmp' call.
+
+     These warnings are possible only in optimizing compilation,
+     because they require data flow information that is computed only
+     when optimizing.  If you don't specify `-O', you simply won't get
+     these warnings.
+
+     These warnings occur only for variables that are candidates for
+     register allocation.  Therefore, they do not occur for a variable
+     that is declared `volatile', or whose address is taken, or whose
+     size is other than 1, 2, 4 or 8 bytes.  Also, they do not occur for
+     structures, unions or arrays, even when they are in registers.
+
+     Note that there may be no warning about a variable that is used
+     only to compute a value that itself is never used, because such
+     computations may be deleted by data flow analysis before the
+     warnings are printed.
+
+     These warnings are made optional because GCC is not smart enough
+     to see all the reasons why the code might be correct despite
+     appearing to have an error.  Here is one example of how this can
+     happen:
+
+          {
+            int x;
+            switch (y)
+              {
+              case 1: x = 1;
+                break;
+              case 2: x = 4;
+                break;
+              case 3: x = 5;
+              }
+            foo (x);
+          }
+
+     If the value of `y' is always 1, 2 or 3, then `x' is always
+     initialized, but GCC doesn't know this.  Here is another common
+     case:
+
+          {
+            int save_y;
+            if (change_y) save_y = y, y = new_y;
+            ...
+            if (change_y) y = save_y;
+          }
+
+     This has no bug because `save_y' is used only if it is set.
+
+     This option also warns when a non-volatile automatic variable
+     might be changed by a call to `longjmp'.  These warnings as well
+     are possible only in optimizing compilation.
+
+     The compiler sees only the calls to `setjmp'.  It cannot know
+     where `longjmp' will be called; in fact, a signal handler could
+     call it at any point in the code.  As a result, you may get a
+     warning even when there is in fact no problem because `longjmp'
+     cannot in fact be called at the place which would cause a problem.
+
+     Some spurious warnings can be avoided if you declare all the
+     functions you use that never return as `noreturn'.  *Note Function
+     Attributes::.
+
+`-Wreorder (C++ only)'
+     Warn when the order of member initializers given in the code does
+     not match the order in which they must be executed.  For instance:
+
+`-Wunknown-pragmas'
+     Warn when a #pragma directive is encountered which is not
+     understood by GCC.  If this command line option is used, warnings
+     will even be issued for unknown pragmas in system header files.
+     This is not the case if the warnings were only enabled by the
+     `-Wall' command line option.
+
+`-Wall'
+     All of the above `-W' options combined.  This enables all the
+     warnings about constructions that some users consider
+     questionable, and that are easy to avoid (or modify to prevent the
+     warning), even in conjunction with macros.
+
+`-Wdiv-by-zero'
+     Warn about compile-time integer division by zero.  This is
+     default.  To inhibit the warning messages, use `-Wno-div-by-zero'.
+     Floating point division by zero is not warned about, as it can be
+     a legitimate way of obtaining infinities and NaNs.
+
+`-Wmultichar'
+     Warn if a multicharacter constant (`'FOOF'') is used.  This is
+     default.  To inhibit the warning messages, use `-Wno-multichar'.
+     Usually they indicate a typo in the user's code, as they have
+     implementation-defined values, and should not be used in portable
+     code.
+
+`-Wsystem-headers'
+     Print warning messages for constructs found in system header files.
+     Warnings from system headers are normally suppressed, on the
+     assumption that they usually do not indicate real problems and
+     would only make the compiler output harder to read.  Using this
+     command line option tells GCC to emit warnings from system headers
+     as if they occurred in user code.  However, note that using
+     `-Wall' in conjunction with this option will _not_ warn about
+     unknown pragmas in system headers--for that, `-Wunknown-pragmas'
+     must also be used.
+
+   The following `-W...' options are not implied by `-Wall'.  Some of
+them warn about constructions that users generally do not consider
+questionable, but which occasionally you might wish to check for;
+others warn about constructions that are necessary or hard to avoid in
+some cases, and there is no simple way to modify the code to suppress
+the warning.
+
+`-W'
+     Print extra warning messages for these events:
+
+        * A function can return either with or without a value.
+          (Falling off the end of the function body is considered
+          returning without a value.)  For example, this function would
+          evoke such a warning:
+
+               foo (a)
+               {
+                 if (a > 0)
+                   return a;
+               }
+
+        * An expression-statement or the left-hand side of a comma
+          expression contains no side effects.  To suppress the
+          warning, cast the unused expression to void.  For example, an
+          expression such as `x[i,j]' will cause a warning, but
+          `x[(void)i,j]' will not.
+
+        * An unsigned value is compared against zero with `<' or `<='.
+
+        * A comparison like `x<=y<=z' appears; this is equivalent to
+          `(x<=y ? 1 : 0) <= z', which is a different interpretation
+          from that of ordinary mathematical notation.
+
+        * Storage-class specifiers like `static' are not the first
+          things in a declaration.  According to the C Standard, this
+          usage is obsolescent.
+
+        * The return type of a function has a type qualifier such as
+          `const'.  Such a type qualifier has no effect, since the
+          value returned by a function is not an lvalue.  (But don't
+          warn about the GNU extension of `volatile void' return types.
+          That extension will be warned about if `-pedantic' is
+          specified.)
+
+        * If `-Wall' or `-Wunused' is also specified, warn about unused
+          arguments.
+
+        * A comparison between signed and unsigned values could produce
+          an incorrect result when the signed value is converted to
+          unsigned.  (But don't warn if `-Wno-sign-compare' is also
+          specified.)
+
+        * An aggregate has a partly bracketed initializer.  For
+          example, the following code would evoke such a warning,
+          because braces are missing around the initializer for `x.h':
+
+               struct s { int f, g; };
+               struct t { struct s h; int i; };
+               struct t x = { 1, 2, 3 };
+
+        * An aggregate has an initializer which does not initialize all
+          members.  For example, the following code would cause such a
+          warning, because `x.h' would be implicitly initialized to
+          zero:
+
+               struct s { int f, g, h; };
+               struct s x = { 3, 4 };
+
+`-Wfloat-equal'
+     Warn if floating point values are used in equality comparisons.
+
+     The idea behind this is that sometimes it is convenient (for the
+     programmer) to consider floating-point values as approximations to
+     infinitely precise real numbers.  If you are doing this, then you
+     need to compute (by analysing the code, or in some other way) the
+     maximum or likely maximum error that the computation introduces,
+     and allow for it when performing comparisons (and when producing
+     output, but that's a different problem).  In particular, instead
+     of testing for equality, you would check to see whether the two
+     values have ranges that overlap; and this is done with the
+     relational operators, so equality comparisons are probably
+     mistaken.
+
+`-Wtraditional (C only)'
+     Warn about certain constructs that behave differently in
+     traditional and ISO C.  Also warn about ISO C constructs that have
+     no traditional C equivalent, and/or problematic constructs which
+     should be avoided.
+
+        * Macro parameters that appear within string literals in the
+          macro body.  In traditional C macro replacement takes place
+          within string literals, but does not in ISO C.
+
+        * In traditional C, some preprocessor directives did not exist.
+          Traditional preprocessors would only consider a line to be a
+          directive if the `#' appeared in column 1 on the line.
+          Therefore `-Wtraditional' warns about directives that
+          traditional C understands but would ignore because the `#'
+          does not appear as the first character on the line.  It also
+          suggests you hide directives like `#pragma' not understood by
+          traditional C by indenting them.  Some traditional
+          implementations would not recognize `#elif', so it suggests
+          avoiding it altogether.
+
+        * A function-like macro that appears without arguments.
+
+        * The unary plus operator.
+
+        * The `U' integer constant suffix, or the `F' or `L' floating
+          point constant suffixes.  (Traditional C does support the `L'
+          suffix on integer constants.)  Note, these suffixes appear in
+          macros defined in the system headers of most modern systems,
+          e.g. the `_MIN'/`_MAX' macros in `<limits.h>'.  Use of these
+          macros in user code might normally lead to spurious warnings,
+          however gcc's integrated preprocessor has enough context to
+          avoid warning in these cases.
+
+        * A function declared external in one block and then used after
+          the end of the block.
+
+        * A `switch' statement has an operand of type `long'.
+
+        * A non-`static' function declaration follows a `static' one.
+          This construct is not accepted by some traditional C
+          compilers.
+
+        * The ISO type of an integer constant has a different width or
+          signedness from its traditional type.  This warning is only
+          issued if the base of the constant is ten.  I.e. hexadecimal
+          or octal values, which typically represent bit patterns, are
+          not warned about.
+
+        * Usage of ISO string concatenation is detected.
+
+        * Initialization of automatic aggregates.
+
+        * Identifier conflicts with labels.  Traditional C lacks a
+          separate namespace for labels.
+
+        * Initialization of unions.  If the initializer is zero, the
+          warning is omitted.  This is done under the assumption that
+          the zero initializer in user code appears conditioned on e.g.
+          `__STDC__' to avoid missing initializer warnings and relies
+          on default initialization to zero in the traditional C case.
+
+        * Conversions by prototypes between fixed/floating point values
+          and vice versa.  The absence of these prototypes when
+          compiling with traditional C would cause serious problems.
+          This is a subset of the possible conversion warnings, for the
+          full set use `-Wconversion'.
+
+`-Wundef'
+     Warn if an undefined identifier is evaluated in an `#if' directive.
+
+`-Wshadow'
+     Warn whenever a local variable shadows another local variable,
+     parameter or global variable or whenever a built-in function is
+     shadowed.
+
+`-Wlarger-than-LEN'
+     Warn whenever an object of larger than LEN bytes is defined.
+
+`-Wpointer-arith'
+     Warn about anything that depends on the "size of" a function type
+     or of `void'.  GNU C assigns these types a size of 1, for
+     convenience in calculations with `void *' pointers and pointers to
+     functions.
+
+`-Wbad-function-cast (C only)'
+     Warn whenever a function call is cast to a non-matching type.  For
+     example, warn if `int malloc()' is cast to `anything *'.
+
+`-Wcast-qual'
+     Warn whenever a pointer is cast so as to remove a type qualifier
+     from the target type.  For example, warn if a `const char *' is
+     cast to an ordinary `char *'.
+
+`-Wcast-align'
+     Warn whenever a pointer is cast such that the required alignment
+     of the target is increased.  For example, warn if a `char *' is
+     cast to an `int *' on machines where integers can only be accessed
+     at two- or four-byte boundaries.
+
+`-Wwrite-strings'
+     When compiling C, give string constants the type `const
+     char[LENGTH]' so that copying the address of one into a
+     non-`const' `char *' pointer will get a warning; when compiling
+     C++, warn about the deprecated conversion from string constants to
+     `char *'.  These warnings will help you find at compile time code
+     that can try to write into a string constant, but only if you have
+     been very careful about using `const' in declarations and
+     prototypes.  Otherwise, it will just be a nuisance; this is why we
+     did not make `-Wall' request these warnings.
+
+`-Wconversion'
+     Warn if a prototype causes a type conversion that is different
+     from what would happen to the same argument in the absence of a
+     prototype.  This includes conversions of fixed point to floating
+     and vice versa, and conversions changing the width or signedness
+     of a fixed point argument except when the same as the default
+     promotion.
+
+     Also, warn if a negative integer constant expression is implicitly
+     converted to an unsigned type.  For example, warn about the
+     assignment `x = -1' if `x' is unsigned.  But do not warn about
+     explicit casts like `(unsigned) -1'.
+
+`-Wsign-compare'
+     Warn when a comparison between signed and unsigned values could
+     produce an incorrect result when the signed value is converted to
+     unsigned.  This warning is also enabled by `-W'; to get the other
+     warnings of `-W' without this warning, use `-W -Wno-sign-compare'.
+
+`-Waggregate-return'
+     Warn if any functions that return structures or unions are defined
+     or called.  (In languages where you can return an array, this also
+     elicits a warning.)
+
+`-Wstrict-prototypes (C only)'
+     Warn if a function is declared or defined without specifying the
+     argument types.  (An old-style function definition is permitted
+     without a warning if preceded by a declaration which specifies the
+     argument types.)
+
+`-Wmissing-prototypes (C only)'
+     Warn if a global function is defined without a previous prototype
+     declaration.  This warning is issued even if the definition itself
+     provides a prototype.  The aim is to detect global functions that
+     fail to be declared in header files.
+
+`-Wmissing-declarations'
+     Warn if a global function is defined without a previous
+     declaration.  Do so even if the definition itself provides a
+     prototype.  Use this option to detect global functions that are
+     not declared in header files.
+
+`-Wmissing-noreturn'
+     Warn about functions which might be candidates for attribute
+     `noreturn'.  Note these are only possible candidates, not absolute
+     ones.  Care should be taken to manually verify functions actually
+     do not ever return before adding the `noreturn' attribute,
+     otherwise subtle code generation bugs could be introduced.  You
+     will not get a warning for `main' in hosted C environments.
+
+`-Wmissing-format-attribute'
+     If `-Wformat' is enabled, also warn about functions which might be
+     candidates for `format' attributes.  Note these are only possible
+     candidates, not absolute ones.  GCC will guess that `format'
+     attributes might be appropriate for any function that calls a
+     function like `vprintf' or `vscanf', but this might not always be
+     the case, and some functions for which `format' attributes are
+     appropriate may not be detected.  This option has no effect unless
+     `-Wformat' is enabled (possibly by `-Wall').
+
+`-Wno-deprecated-declarations'
+     Do not warn about uses of functions, variables, and types marked as
+     deprecated by using the `deprecated' attribute.  (*note Function
+     Attributes::, *note Variable Attributes::, *note Type
+     Attributes::.)
+
+`-Wpacked'
+     Warn if a structure is given the packed attribute, but the packed
+     attribute has no effect on the layout or size of the structure.
+     Such structures may be mis-aligned for little benefit.  For
+     instance, in this code, the variable `f.x' in `struct bar' will be
+     misaligned even though `struct bar' does not itself have the
+     packed attribute:
+
+          struct foo {
+            int x;
+            char a, b, c, d;
+          } __attribute__((packed));
+          struct bar {
+            char z;
+            struct foo f;
+          };
+
+`-Wpadded'
+     Warn if padding is included in a structure, either to align an
+     element of the structure or to align the whole structure.
+     Sometimes when this happens it is possible to rearrange the fields
+     of the structure to reduce the padding and so make the structure
+     smaller.
+
+`-Wredundant-decls'
+     Warn if anything is declared more than once in the same scope,
+     even in cases where multiple declaration is valid and changes
+     nothing.
+
+`-Wnested-externs (C only)'
+     Warn if an `extern' declaration is encountered within a function.
+
+`-Wunreachable-code'
+     Warn if the compiler detects that code will never be executed.
+
+     This option is intended to warn when the compiler detects that at
+     least a whole line of source code will never be executed, because
+     some condition is never satisfied or because it is after a
+     procedure that never returns.
+
+     It is possible for this option to produce a warning even though
+     there are circumstances under which part of the affected line can
+     be executed, so care should be taken when removing
+     apparently-unreachable code.
+
+     For instance, when a function is inlined, a warning may mean that
+     the line is unreachable in only one inlined copy of the function.
+
+     This option is not made part of `-Wall' because in a debugging
+     version of a program there is often substantial code which checks
+     correct functioning of the program and is, hopefully, unreachable
+     because the program does work.  Another common use of unreachable
+     code is to provide behavior which is selectable at compile-time.
+
+`-Winline'
+     Warn if a function can not be inlined and it was declared as
+     inline.
+
+`-Wlong-long'
+     Warn if `long long' type is used.  This is default.  To inhibit
+     the warning messages, use `-Wno-long-long'.  Flags `-Wlong-long'
+     and `-Wno-long-long' are taken into account only when `-pedantic'
+     flag is used.
+
+`-Wdisabled-optimization'
+     Warn if a requested optimization pass is disabled.  This warning
+     does not generally indicate that there is anything wrong with your
+     code; it merely indicates that GCC's optimizers were unable to
+     handle the code effectively.  Often, the problem is that your code
+     is too big or too complex; GCC will refuse to optimize programs
+     when the optimization itself is likely to take inordinate amounts
+     of time.
+
+`-Werror'
+     Make all warnings into errors.
+

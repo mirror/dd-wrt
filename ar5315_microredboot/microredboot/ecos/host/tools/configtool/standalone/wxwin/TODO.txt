@@ -1,0 +1,43 @@
+To-Do List for Configuration Tool 2.x
+=====================================
+
+- Implement Memory Layout Tool.
+
+- Verify Run Tests Dialog works for TCP/IP mode on Linux.
+  There's a problem under Windows too, apparently (2002-02-13),
+  whereby everything is greyed out.
+
+- Importing more than one package at a time can cause conflicts
+  whereas importing one at a time causes no conflicts.
+
+- Switching to Rich Edit control for Output Window causes scroll problems
+  on Windows 98.
+
+- Resolve target makefile problems. A user:-
+
+  "It looks like the Configuration Tool 2.0 builds the library by replacing
+  lib members, not recreating the whole library. Example situation: I want to
+  remove POSIX pthread support and write my enhanced pthread_create() etc..
+  If I just uncheck POSIX thread support and rebuild, the pthread functions
+  remain in libtarget.a, resulting to redefinition error in my application
+  link phase. Is this intended for some obvious reason?
+  Now I must save to another xxx.ecc and build all."
+
+  Bart says: "The whole makefile generation system needs a major overhaul."
+
+- Make as many UI elements as possible copyable to the clipboard, such as the
+  name and description for a configuration option. Can do this via the right-click
+  menus.
+
+- Should look for a .ecc file in the current directory if no save file is
+  passed on the command line.
+
+- Packages dialog:
+
+  o optionally, the ability to hide inactive and/or calculated options
+    and/or interfaces. They add a lot to visual clutter, but we do require the
+    user to be _able_ to view them if need be.
+
+- List controls: sometimes it's not possible to scroll horizontally to see
+  all of a label, for example in the Properties window. Need to set the
+  column width according to the maximum size of labels in that column.

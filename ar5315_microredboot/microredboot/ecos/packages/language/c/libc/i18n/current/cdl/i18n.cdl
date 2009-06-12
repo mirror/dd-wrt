@@ -1,0 +1,241 @@
+# ====================================================================
+#
+#      i18n.cdl
+#
+#      C library internationalization (i18n) related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:   jjohnstn
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBC_I18N {
+    display       "ISO C library internationalization functions"
+    description   "
+        This package provides internationalization functions specified by the
+        ISO C standard - ISO/IEC 9899:1990. These include locale-related
+        functionality and <ctype.h> functionality."
+    doc           ref/libc.html
+    include_dir   cyg/libc/i18n
+    parent        CYGPKG_LIBC
+    implements    CYGINT_ISO_LOCALE
+    implements    CYGINT_ISO_CTYPE
+    implements    CYGINT_ISO_STDLIB_MULTIBYTE
+    requires      CYGPKG_ISOINFRA
+    compile       ctype.cxx locale.cxx mblen.cxx mbtowc.cxx mbstowcs.cxx \
+                  wctomb.cxx wcstombs.cxx mbtowc_jp.cxx wctomb_jp.cxx mbtowc_c.cxx
+
+# ====================================================================
+
+    cdl_component CYGPKG_LIBC_I18N_LOCALES {
+	display       "Supported locales"
+	flavor	      none
+	description   "
+	    These options determine which locales other than the \"C\" locale
+	    are supported and hence contribute to the size of the executable."
+
+        cdl_interface CYGINT_LIBC_I18N_MB_REQUIRED {
+            display       "Support for multiple locales required"
+            flavor        booldata
+            requires      { CYGBLD_ISO_STDLIB_MB_CUR_MAX_HEADER == \
+                            "<cyg/libc/i18n/mb.h>" }
+        }
+
+	cdl_option CYGFUN_LIBC_I18N_LOCALE_C_SJIS {
+	    display       "C-SJIS locale support"
+	    default_value 0
+            implements    CYGINT_LIBC_I18N_MB_REQUIRED
+	    description    "
+		This option controls if the \"C-SJIS\" locale will be
+		supported by setlocale().  The locale is a hybrid locale
+		that is mostly the \"C\" locale with Japanese SJIS multibyte
+		support added."
+        }
+
+	cdl_option CYGFUN_LIBC_I18N_LOCALE_C_JIS {
+	    display       "C-JIS locale support"
+	    default_value 0
+            implements    CYGINT_LIBC_I18N_MB_REQUIRED
+	    description    "
+                This option controls if the \"C-JIS\" locale will be
+                supported by setlocale().  The locale is a hybrid locale
+                that is mostly the \"C\" locale with Japanese JIS multibyte
+                support added."
+        }
+
+	cdl_option CYGFUN_LIBC_I18N_LOCALE_C_EUCJP {
+	    display       "C-EUCJP locale support"
+	    default_value 0
+            implements    CYGINT_LIBC_I18N_MB_REQUIRED
+	    description    "
+                This option controls if the \"C-EUCJP\" locale will be
+                supported by setlocale().  The locale is a hybrid locale
+                that is mostly the \"C\" locale with Japanese EUCJP multibyte
+                support added."
+        }
+    }
+
+# ====================================================================
+
+    cdl_option CYGPKG_LIBC_I18N_NEWLIB_CTYPE {
+        display       "Newlib's ctype implementation"
+        default_value 0
+        requires      { CYGBLD_ISO_CTYPE_HEADER == \
+                        "<cyg/libc/i18n/newlibctype.h>" }
+        description   "
+            This option enables the implementation of the ctype functions
+            that comes with newlib. It is table driven and therefore
+            exhibits different performance characteristics. It also offers
+            a limited amount of binary compatibility
+            with newlib so that programs linked against newlib ctype/locale
+            do not need to be recompiled when linked with eCos."
+        compile       newlibctype.cxx
+    }
+    
+    cdl_option CYGSEM_LIBC_I18N_PER_THREAD_MB	 {
+        display       "Per-thread multibyte state"
+        active_if     CYGPKG_KERNEL
+        requires      CYGVAR_KERNEL_THREADS_DATA
+        default_value { CYGVAR_KERNEL_THREADS_DATA != 0 }
+        description   "
+            This option controls whether the multibyte character
+            handling functions mblen(), mbtowc(), and wctomb(),
+            have their state recorded on a per-thread
+            basis rather than global. If this option is
+            disabled, some per-thread space can be saved.
+            Enabling this option will use three slots
+            of kernel per-thread data. You should ensure you
+            have enough slots configured for all your
+            per-thread data."
+    }
+
+# ====================================================================
+
+    cdl_option CYGNUM_LIBC_I18N_MAX_LOCALE_NAME_SIZE {
+        display       "Size of locale name strings"
+        flavor        data
+        legal_values  { (CYGFUN_LIBC_I18N_LOCALE_C_EUCJP ? 8 : \
+                        (CYGFUN_LIBC_I18N_LOCALE_C_SJIS ? 7 :  \
+                          (CYGFUN_LIBC_I18N_LOCALE_C_JIS ? 6 : 2))) to 0x7fffffff }
+        default_value { (CYGFUN_LIBC_I18N_LOCALE_C_EUCJP ? 8 : \
+                        (CYGFUN_LIBC_I18N_LOCALE_C_SJIS ? 7 :  \
+                          (CYGFUN_LIBC_I18N_LOCALE_C_JIS ? 6 : 2)))  }
+        description   "
+            This option controls the maximum size of
+            locale names and is used, among other things
+            to instantiate a static string used
+            as a return value from the
+            setlocale() function. When requesting the
+            current locale settings with LC_ALL, a string
+            must be constructed to contain this data, rather
+            than just returning a constant string. This
+            string data is stored in the static string.
+            This depends on the length of locale names,
+            hence this option. If just the C locale is
+            present, this option can be set as low as 2."
+    }
+
+# ====================================================================
+
+    cdl_option CYGIMP_LIBC_I18N_CTYPE_INLINES {
+        display       "Inline versions of <ctype.h> functions"
+        default_value 1
+        requires      { CYGBLD_ISO_CTYPE_HEADER == \
+                           "<cyg/libc/i18n/ctype.inl>" }
+        description   "
+            This option chooses whether the simple character
+            classification and conversion functions (e.g.
+            isupper(), isalpha(), toupper(), etc.)
+            from <ctype.h> are available as inline
+            functions. This may improve performance and as
+            the functions are small, may even improve code
+            size."
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_LIBC_I18N_OPTIONS {
+        display "C library i18n functions build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBC_I18N_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBC_I18N_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBC_I18N_TESTS {
+            display "C library i18n function tests"
+            flavor  data
+            no_define
+            calculated { "tests/ctype tests/setlocale tests/i18nmb" }
+            description   "
+                This option specifies the set of tests for the C library
+                i18n functions."
+        }
+    }
+}
+
+# ====================================================================
+# EOF i18n.cdl

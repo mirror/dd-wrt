@@ -1,0 +1,319 @@
+<html>
+<body>
+<pre>
+NAME
+     bridge - Ethernet bridge interface
+
+SYNOPSIS
+     pseudo-device bridge 2
+
+DESCRIPTION
+     The bridge device creates a logical link between two or more Ethernet in
+     terfaces.  This link between the interfaces selectively forwards frames
+     from each interface on the bridge to every other interface on the bridge.
+     A bridge can serve several services, including, isolation of traffic be
+     tween sets of machines so that traffic local to one set of machines is
+     not available on the wire of another set of machines, and it can act as a
+     transparent filter for ip(4) datagrams.
+
+     The bridges provided by this interface are learning bridges with IP fil
+     tering, see ipf(4).  In general a bridge works like a hub, forwarding
+     traffic from one interface to another.  It differs from a hub in that it
+     will "learn" which machines are on each of its attached segments by ac
+     tively listening to incoming traffic and examining the headers of each
+     frame.  A table is built containing the MAC address and segment to which
+     the MAC address is attached.  This allows a bridge to be more selective
+     about what it forwards, which can be used to reduce traffic on a set of
+     segments and also to provide an IP firewall without changing the topology
+     of the network.
+
+     The algorithm works as follows by default, but can be modified via
+     ioctl(2) or the utility brconfig(8).  When a frame comes in, the origin
+     segment and the source address are recorded.  If the bridge has no knowl
+     edge about where the destination is to be found, the bridge will forward
+     the frame to all attached segments.  If the destination is known to be on
+     a different segment from its origin, the bridge will forward the packet
+     only to the destination segment.  If the destination is on the same seg
+     ment as the origin segment, the bridge will drop the packet because the
+     receiver has already had a chance to see the frame.  Before forwarding a
+     frame, the bridge will check to see if the packet contains an ip(4) data
+     gram; if so, the datagram is run through the ipf(4) interface so that it
+     can be filtered.  Only the ipf(4) input rules for the source interface
+     are checked with the datagram; output rules have no effect.
+
+IOCTLS
+     A bridge interface responds to all of the ioctl(2) calls specific to oth
+     er interfaces listed in netintro(4).  The following ioctl(2) calls are
+     specific to bridge devices.  They are defined in <sys/sockio.h>.
+
+     SIOCBRDGIFS      (struct ifbifconf) Retrieve member interface list from a
+                      bridge.  This request takes an ifbifconf structure (see
+                      below) as a value-result parameter.  The ifbic_len field
+                      should be initially set to the size of the buffer point
+                      ed to by ifbic_buf. On return it will contain the
+                      length, in bytes, of the configuration list.  Alterna
+                      tively, if the ifbic_len passed in is set to 0,
+                      SIOCBRDGIFS will set ifbic_len to the size that
+                      ifbic_buf needs to be to fit the entire configuration
+                      list, and will not fill in the other parameters.  This
+                      is useful for determining the exact size that ifbic_buf
+                      needs to be in advance.
+
+                      The argument structure is defined as follows:
+
+                            struct ifbreq {
+                                    char ifbr_name[IFNAMSIZ];    /* brdg nam */
+                                    char ifbr_ifsname[IFNAMSIZ]; /* if name */
+                                    u_int32_t ifbr_ifsflags;     /* if flags */
+                            };
+
+                            #define IFBIF_LEARNING  0x1 /* learns addrs */
+                            #define IFBIF_DISCOVER  0x2 /* gets fwd'd pkts */
+
+                            struct ifbifconf {
+                                    char ifbic_name[IFNAMSIZ]; /* brdg name */
+                                    u_int32_t       ifbic_len; /* buf size */
+                                    union {
+                                            caddr_t ifbicu_buf; /* buffer */
+                                            struct  ifbreq *ifbicu_req;
+                                    } ifbic_ifbicu;
+                            #define ifbic_buf       ifbic_ifbicu.ifbicu_buf
+                            #define ifbic_req       ifbic_ifbicu.ifbicu_req
+                            };
+
+     SIOCBRDGADD      (struct ifbreq) Add the interface named in ifbr_ifsname
+                      to the bridge named in ifbr_name.
+
+     SIOCBRDGDEL      (struct ifbreq) Delete the interface named in
+                      ifbr_ifsname from the bridge named in ifbr_name.
+
+     SIOCBRDGSIFFLGS  (struct ifbreq) Set the bridge member interface flags
+                      for the interface named in ifbr_ifsname attached to the
+                      bridge ifbr_name. If the flag IFBIF_LEARNING is set on
+                      an interface, source addresses from frames received on
+                      the interface are recorded in the address cache.  If the
+                      flag IFBIF_DISCOVER is set, the interface will receive
+                      packets destined for unknown destinations, otherwise a
+                      frame that has a destination not found in the address
+                      cache is not forwarded to this interface.  The default
+                      for newly added interfaces has both flags set.  If the
+                      flag IFBIF_BLOCKNONIP is set, packets that are one of
+                      ip(4),  ip6(4),  arp(4),  or Reverse ARP, will not be
+                      bridged from and to the interface.
+
+     SIOCBRDGGIFFLGS  Retrieve the bridge member interface flags for the in
+                      terface named in ifbr_ifsname attached to the bridge
+                      ifbr_name.
+
+     SIOCBRDGRTS      (struct ifbaconf) Retrieve the address cache of the
+                      bridge named in ifbac_name. This request takes an
+                      ifbaconf structure (see below) as a value result parame
+                      ter.  The ifbac_len field should be initially set to the
+                      size of the buffer pointed to by ifbac_buf. On return,
+                      it will contain the length, in bytes, of the configura
+                      tion list.  Alternatively, if the ifbac_len passed in is
+                      set to 0, SIOCBRDGRTS will set it to the size that
+                      ifbac_buf needs to be to fit the entire configuration
+                      list and not fill in the other parameters.  As with
+                      SIOCBRDGIFS, this is useful for determining the exact
+                      size that ifbac_buf needs to be in advance.
+
+                      The argument structure is defined as follows:
+
+                            struct ifbareq {
+                                    char ifba_name[IFNAMSIZ];   /* brdg nam */
+                                    char ifba_ifsname[IFNAMSIZ];/* dest ifs */
+                                    u_int8_t ifba_age;          /* addr age */
+                                    u_int8_t ifba_flags;        /* addr flag */
+                                    struct ether_addr ifba_dst; /* dst addr */
+                            };
+
+                            #define IFBAF_TYPEMASK 0x03  /* addr type mask */
+                            #define IFBAF_DYNAMIC  0x00  /* dynamic addr */
+                            #define IFBAF_STATIC   0x01  /* static address */
+
+                            struct ifbaconf {
+                                    char ifbac_name[IFNAMSIZ]; /* brdg name */
+                                    u_int32_t ifbac_len;       /* buf size */
+                                    union {
+                                            caddr_t ifbacu_buf;     /* buf */
+                                            struct ifbareq *ifbacu_req;
+                                    } ifbac_ifbacu;
+                            #define ifbac_buf       ifbac_ifbacu.ifbacu_buf
+                            #define ifbac_req       ifbac_ifbacu.ifbacu_req
+                            };
+                      Address cache entries with the type set to IFBAF_DYNAMIC
+                      in ifba_flags are entries learned by the bridge.  En
+                      tries with the type set to IFBAF_STATIC are manually
+                      added entries.
+
+     SIOCBRDGSADDR    (struct ifbareq) Add an entry, manually, to the address
+                      cache for the bridge named in ifba_name. The address and
+                      its associated interface and flags are set in the
+                      ifba_dst, ifba_ifsname, ifba_flags fields, respectively.
+
+     SIOCBRDGDADDR    (struct ifbareq) Delete an entry from the address cache
+                      of the bridge named in ifba_name. Entries are deleted
+                      strictly based on the address field ifba_dst.
+
+     SIOCBRDGSCACHE   (struct ifbcachereq) Set the maximum address cache size
+                      for the bridge named in ifbc_name to ifbc_size entries.
+
+                      The argument structure is as follows:
+
+                            struct ifbcachereq {
+                                    char ifbc_name[IFNAMSIZ]; /* bridge */
+                                    u_int32_t ifbc_size;      /* size */
+                            };
+
+     SIOCBRDGGCACHE   (struct ifbcachereq) Retrieve the maximum size of the
+                      address cache for the bridge ifbc_name.
+
+     SIOCBRDGSTO      (struct ifbcachetoreq) Set the time, in seconds, that
+                      addresses which have not been seen on the network
+                      (transmitted a packet) remain in the cache.  If the time
+                      is set to zero, no aging is performed on the address
+                      cache.  The argument structure is as follows:
+
+                            struct ifbcachetoreq {
+                                    char ifbct_name[IFNAMSIZ]; /* bridge */
+                                    u_int32_t ifbct_time;      /* time */
+                            };
+
+     SIOCBRDGGTO      (struct ifbcachetoreq) Retrieve the address cache expi
+                      ration time (see above).
+
+     SIOCBRDGFLUSH    (struct ifbreq) Flush addresses from the cache.
+                      ifbr_name contains the name of the bridge device, and
+                      ifbr_ifsflags should be set to IFBF_FLUSHALL to flush
+                      all addresses from the cache or IFBF_FLUSHDYN to flush
+                      only the dynamically learned addresses from the cache.
+
+     SIOCBRDGARL      (struct ifbrlreq) Add a filtering rule to the bridge
+                      named in ifbr_name on the interface named in
+                      ifbr_ifsname. The argument structure is as follows:
+
+                            struct ifbrlreq {
+                                    char ifbr_name[IFNAMSIZ];    /* bridge */
+                                    char ifbr_ifsname[IFNAMSIZ]; /* ifs */
+                                    u_int8_t ifbr_action;        /* handling */
+                                    u_int8_t ifbr_flags;         /* flags */
+                                    struct ether_addr ifbr_src;  /* src mac */
+                                    struct ether_addr ifbr_dst;  /* dst mac */
+                            };
+                            #define BRL_ACTION_BLOCK        0x01
+                            #define BRL_ACTION_PASS         0x02
+                            #define BRL_FLAG_IN             0x08
+                            #define BRL_FLAG_OUT            0x04
+                            #define BRL_FLAG_SRCVALID       0x02
+                            #define BRL_FLAG_DSTVALID       0x01
+
+                      Rules are applied in the order in which they were added
+                      to the bridge, and the first matching rule's action pa
+                      rameter determines the fate of the packet.  The
+                      ifbr_action parameter specifies whether a frame matching
+                      the rule is to be blocked or passed.
+
+                      If the BRL_FLAG_IN bit is set in ifbr_flags, then the
+                      rule applies to frames received by the interface.  If
+                      the BRL_FLAG_OUT bit is set, then the rule applies to
+                      frame transmitted by the interface.  At least one of
+                      BRL_FLAG_IN or BRL_FLAG_OUT must be set.
+
+                      The source ethernet address in ifbr_src is checked if
+                      the BRL_FLAG_SRCVALID bit is set in ifbr_flags. The des
+                      tination address in ifbr_dst is check if the
+                      BRL_FLAG_DSTVALID bit is set.  If neither bit is set,
+                      the rule is matches all frames.
+
+     SIOCBRDGFRL      (struct ifbrlreq) Remove all filtering rules from a
+                      bridge interface member.  ifbr_name contains the name of
+                      the bridge device, and ifbr_ifsname contains the name of
+                      the bridge member interface.
+
+     SIOCBRDGGRL      (struct ifbrlconf) Retrieve all of the rules from the
+                      bridge, ifbrl_name, for the member interface,
+                      ifbrl_ifsname.
+
+                      This request takes an ifbrlconf structure (see below) as
+                      a value result parameter.  The ifbrl_len field should be
+                      initially set to the size of the buffer pointed to by
+                      ifbrl_buf. On return, it will contain the length, in
+                      bytes, of the configuration list.  Alternatively, if the
+                      ifbrl_len passed in is set to 0, SIOCBRDGGRL will set it
+                      to the size that ifbrl_buf needs to be to fit the entire
+                      configuration list and not fill in the other parameters.
+                      As with SIOCBRDGIFS, this is useful for determining the
+                      exact size that ifbrl_buf needs to be in advance.
+
+                      The argument structure is defined as follows:
+
+                            struct ifbrlconf {
+                                    char ifbrl_name[IFNAMSIZ];   /* brdg nam */
+                                    char ifbrl_ifsname[IFNAMSIZ];/* ifs name */
+                                    u_int32_t ifbr_len;         /* buf len */
+                                    union {
+                                            caddr_t ifbrlu_buf;
+                                            struct ifbrlreq *ifbrlu_req;
+                                    } ifrl_ifbrlu;
+                            #define ifbrl_buf ifbrl_ifbrlu.ifbrlu_buf
+                            #define ifbrl_req ifbrl_ifbrlu.ifbrlu_req
+                            };
+
+
+ERRORS
+     If the ioctl(2) call fails, errno(2) is set to one of the following val
+     ues:
+
+     [ENOENT]      For an add request, this means that the named interface is
+                   not configured into the system.  For delete operation, it
+                   means that the named interface is not a member of the
+                   bridge.  For a address cache deletion, the address was not
+                   found in the table.
+
+     [ENOMEM]      Memory could not be allocated for an interface or cache en
+                   try to be added to the bridge.
+
+     [EEXIST]      The named interface is already a member of the bridge.
+
+     [EBUSY]       The named interface is already a member of another bridge.
+
+     [EINVAL]      The named interface is not an Ethernet interface or an in
+                   valid ioctl was performed on the bridge.
+
+     [ENETDOWN]    Address cache operation (flush, add, delete) on a bridge
+                   that is in the down state.
+
+     [EPERM]       Super-user privilege is required to add and delete inter
+                   faces to and from bridges and to set the bridge interface
+                   flags.
+
+     [EFAULT]      The buffer used in a SIOCBRDGIFS or SIOCBRDGRTS request
+
+                   points outside of the process's allocated address space.
+
+     [ESRCH]       No such member interface in the bridge.
+
+SEE ALSO
+     errno(2),  ioctl(2),  ip(4),  ipf(4),  netintro(4),  bridgename.if(5),
+     brconfig(8)
+
+HISTORY
+     The brconfig(8) command and the bridge(4) kernel interface first appeared
+     in
+
+AUTHOR
+     The brconfig(8) command and the bridge(4) kernel interface were written
+     by Jason L. Wright <jason@thought.net> as part of an undergraduate inde
+     pendent study at the University of North Carolina at Greensboro.
+
+BUGS
+     There is currently no loop detection.  Care must be taken to make sure
+     that loops are not created when a bridge is brought up.
+
+     Only ipf(4) input rules are checked with incoming packet; there is no
+     easy way to handle output rules.
+
+</pre>
+</body>
+</html>

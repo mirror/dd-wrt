@@ -1,0 +1,333 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>System Calls</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="The Console Device"
+HREF="synth-console.html"><LINK
+REL="NEXT"
+TITLE="Writing New Devices - target"
+HREF="synth-new-target.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="synth-console.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="synth-new-target.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH-SYSCALLS">System Calls</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN483"
+></A
+><H2
+>Name</H2
+>cyg_hal_sys_xyz&nbsp;--&nbsp;Access Linux system facilities</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN486"><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN487"><P
+></P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/hal/hal_io.h
+      </PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>int cyg_hal_sys_xyzzy</CODE
+>(...);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-SYSCALLS-DESCRIPTION"
+></A
+><H2
+>Description</H2
+><P
+>On a real embedded target eCos interacts with the hardware by peeking
+and poking various registers, manipulating special regions of memory,
+and so on. The synthetic target does not access hardware directly.
+Instead I/O and other operations are emulated by making appropriate
+Linux system calls. The HAL package exports a number of functions
+which allow other packages, or even application code, to make these
+same system calls. However this facility must be used with care: any
+code which calls, for example, <TT
+CLASS="FUNCTION"
+>cyg_hal_sys_write</TT
+>
+will only ever run on the synthetic target; that functionality is
+obviously not provided on any real hardware because there is no
+underlying Linux kernel to implement it.
+    </P
+><P
+>The synthetic target only provides a subset of the available system
+calls, specifically those calls which have proved useful to implement
+I/O emulation. This subset can be extended fairly easily if necessary.
+All of the available calls, plus associated data structures and
+macros, are defined in the header file <TT
+CLASS="FILENAME"
+>cyg/hal/hal_io.h</TT
+>. There is a simple
+convention: given a Linux system call such as
+<TT
+CLASS="FUNCTION"
+>open</TT
+>, the synthetic target will prefix
+<TT
+CLASS="LITERAL"
+>cyg_hal_sys</TT
+> and provide a function with that name.
+The second argument to the <TT
+CLASS="FUNCTION"
+>open</TT
+> system call is
+a set of flags such as <TT
+CLASS="CONSTANT"
+>O_RDONLY</TT
+>, and the header
+file will define a matching constant
+<TT
+CLASS="CONSTANT"
+>CYG_HAL_SYS_O_RDONLY</TT
+>. There are also data
+structures such as <SPAN
+CLASS="STRUCTNAME"
+>cyg_hal_sys_sigset_t</SPAN
+>,
+matching the Linux data structure <SPAN
+CLASS="STRUCTNAME"
+>sigset_t</SPAN
+>.
+    </P
+><P
+>In most cases the functions provided by the synthetic target behave as
+per the documentation for the Linux system calls, and section 2 of the
+Linux man pages can be consulted for more information. There is one
+important difference: typically the documentation will say that a
+function returns <TT
+CLASS="LITERAL"
+>-1</TT
+> to indicate an error, with the
+actual error code held in <TT
+CLASS="VARNAME"
+>errno</TT
+>; the actual
+underlying system call and hence the
+<TT
+CLASS="FUNCTION"
+>cyg_hal_sys_xyz</TT
+> provided by eCos instead returns
+a negative number to indicate an error, with the absolute value of
+that number corresponding to the error code; usually it is the C
+library which handles this and manipulates errno, but of course
+synthetic target applications are not linked with that Linux library.
+    </P
+><P
+>However, there are some exceptions. The Linux kernel has evolved over
+the years, and some of the original system call interfaces are no
+longer appropriate. For example the original
+<TT
+CLASS="FUNCTION"
+>select</TT
+> system call has been superseded by
+<TT
+CLASS="FUNCTION"
+>_newselect</TT
+>, and that is what the
+<TT
+CLASS="FUNCTION"
+>select</TT
+> function in the C library actually uses.
+The old call is still available to preserve binary compatibility but,
+like the C library, eCos makes use of the new one because it provides
+the appropriate functionality. In an attempt to reduce confusion the
+eCos function is called <TT
+CLASS="FUNCTION"
+>cyg_hal_sys__newselect</TT
+>,
+in other words it matches the official system call naming scheme. The
+authoritive source of information on such matters is the Linux kernel
+sources themselves, and especially its header files.
+    </P
+><P
+>eCos packages and applications should never
+<TT
+CLASS="LITERAL"
+>#include</TT
+> Linux header files directly. For example,
+doing a <TT
+CLASS="LITERAL"
+>#include&nbsp;&lt;/usr/include/fcntl.h&gt;</TT
+>
+to access additional macros or structure definitions, or alternatively
+manipulating the header file search path, will lead to problems
+because the Linux header files are likely to duplicate and clash with
+definitions in the eCos headers. Instead the appropriate functionality
+should be extracted from the Linux headers and moved into either
+<TT
+CLASS="FILENAME"
+>cyg/hal/hal_io.h</TT
+> or into
+application code, with suitable renaming to avoid clashes with eCos
+names. Users should be aware that large-scale copying may involve
+licensing complications.
+    </P
+><P
+>Adding more system calls is usually straightforward and involves
+adding one or more lines to the platform-specific file in the
+appropriate platform HAL, for example
+<TT
+CLASS="FILENAME"
+>syscall-i386-linux-1.0.S</TT
+>. However it is necessary
+to do some research first about the exact interface implemented by the
+system call, because of issues such as old system calls that have been
+superseded. The required information can usually be found fairly
+easily by searching through the Linux kernel sources and possibly the
+GNU C library sources.
+    </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="synth-console.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="synth-new-target.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>The Console Device</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Writing New Devices - target</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

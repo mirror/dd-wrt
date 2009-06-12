@@ -1,0 +1,84 @@
+# Browser window class definition for GDBtk.
+# Copyright 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+class BrowserWin {
+ inherit EmbeddedWin
+
+  public {
+    method constructor {args}
+    method destructor {}
+    method mode {w {mode ""} {go 1}}
+    method search {}
+    method test_get {var}
+    method do_all_bp {onp}
+
+  }
+
+  private {
+    method _bind_toplevel {install}
+    method _build_win {}
+    method _do_resize {}
+    method _file_hide_h {}
+    method _fill_file_box {}
+    method _fill_funcs_combo {name}
+    method _fill_source {f {funcp 1} {filename ""}}
+    method _filter_trace_proc {v1 v2 mode}
+    method _filter_trace_after {}
+    method _goto_func {w {val ""}}
+    method _process_file_selection {y}
+    method _process_func_selection {y}
+    method _resize {}
+    method _search_src {direction}
+    method _select {highlight}
+    method _set_filter_mode {w mode}
+    method _toggle_bp {y}
+    method _toggle_more {{in_constructor 0}}
+
+    variable cur_filter_mode
+
+    variable MoreVisible 0; #whether viewing source
+    variable TopHalfHeight 0
+    variable BottomHalfHeight 0
+    variable CollapsedHeight 0; #height of the window when collapsed
+    variable Current;
+    variable labelUpdateCode ""
+    variable index_to_file
+    variable _mangled_func
+    variable resize_after ""
+    variable filter_trace_after ""
+
+    common componentToRow
+    array set componentToRow {
+      filter      0
+      browser     1
+      view        2
+      view_hidden 3
+    }
+
+    common filter_modes [list "starts with" \
+			   "contains" \
+			   "ends with" \
+			   "matches regexp"]
+    common filter_regexp
+    array set filter_regexp {
+      "starts with" ^%s
+      "contains" %s
+      "ends with" %s$
+      "matches regexp" %s
+    }
+  }
+
+  protected proc dont_remember_size {} {
+    return 1
+  }
+}

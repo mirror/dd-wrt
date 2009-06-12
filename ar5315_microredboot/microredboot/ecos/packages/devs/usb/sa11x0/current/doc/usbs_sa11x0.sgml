@@ -1,0 +1,236 @@
+<!-- DOCTYPE refentry  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     usbs_sa11x0.sgml                                            -->
+<!--                                                                 -->
+<!--     Documentation for the SA11x0 USB Device Driver.             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2001, 2002 Red Hat, Inc.                          -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2001/01/11                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="devs-usb-sa11x0-ref">
+<!-- reference id="devs-usb-sa11x0-ref" -->
+  <title>SA11X0 USB Device Driver</title>
+
+<refentry id="devs-usb-sa11x0">
+<refmeta>
+<refentrytitle>SA11X0 USB Device Driver</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>SA11X0 USB Support</refname>
+<refpurpose>Device driver for the on-chip SA11X0 USB device</refpurpose>
+</refnamediv>
+
+<refsect1><title>SA11X0 USB Hardware</title>
+<para>
+The Intel StrongARM SA11x0 family of processors is supplied with an
+on-chip USB slave device, the UDC (USB Device Controller). This
+supports three endpoints. Endpoint 0 can only be used for control
+messages. Endpoint 1 can only be used for bulk transfers from host to
+peripheral. Endpoint 2 can only be used for bulk transfers from
+peripheral to host. Isochronous and interrupt transfers are not
+supported.
+</para>
+<caution>    
+<para>
+Different revisions of the SA11x0 silicon have had various problems
+with the USB support. The device driver has been tested primarily
+against stepping B4 of the SA1110 processor, and may not function as
+expected with other revisions. Application developers should obtain
+the manufacturer's current errata sheets and specification updates.
+The B4 stepping still has a number of problems, but the device driver
+can work around these. However there is a penalty in terms of extra
+code, extra cpu cycles, and increased dispatch latency because extra
+processing is needed at DSR level. Interrupt latency should not be
+affected.
+</para>
+<para>
+There is one specific problem inherent in the UDC design of which
+application developers should be aware: the hardware cannot fully
+implement the USB standard for bulk transfers. A bulk transfer
+typically consists of some number of full-size 64-byte packets and is
+terminated by a packet less than the full size. If the amount of data
+transferred is an exact multiple of 64 bytes then this requires a
+terminating packet of 0 bytes of data (plus header and checksum). The
+SA11x0 USB hardware does not allow a 0-byte packet to be transmitted,
+so the device driver is forced to substitute a 1-byte packet and the
+host receives more data than expected. Protocol support is needed so
+that the appropriate host-side device driver can allow buffer space
+for the extra byte, detect when it gets sent, and discard it.
+Consequently certain standard USB class protocols cannot be
+implemented using the SA11x0, and therefore custom host-side device
+drivers will generally have to be provided, rather than re-using
+existing ones that understand the standard protocol.
+</para>
+</caution>
+</refsect1>
+
+<refsect1><title>Endpoint Data Structures</title>
+<para>
+The SA11x0 USB device driver can provide up to three data structures
+corresponding to the three endpoints: a
+<structname>usbs_control_endpoint</structname> structure
+<literal>usbs_sa11x0_ep0</literal>; a
+<structname>usbs_rx_endpoint</structname>
+<literal>usbs_sa11x0_ep1</literal>; and a
+<structname>usbs_tx_endpoint</structname>
+<literal>usbs_sa11x0_ep2</literal>. The header file
+<filename class="headerfile">cyg/io/usb/usbs_sa11x0.h</filename>
+provides declarations for these.
+</para>
+<para>
+Not all applications will require support for all the endpoints. For
+example, if the intended use of the UDC only involves peripheral to
+host transfers then <literal>usbs_sa11x0_ep1</literal> is redundant.
+The device driver provides configuration options to control the
+presence of each endpoint:
+</para>
+<orderedlist>
+<listitem>
+<para>
+Endpoint 0 is controlled by
+<literal>CYGFUN_DEVS_USB_SA11X0_EP0</literal>. This defaults to
+enabled if there are any higher-level packages that require USB
+hardware or if the global preference
+<literal>CYGGLO_IO_USB_SLAVE_APPLICATION</literal> is enabled,
+otherwise it is disabled. Usually this has the desired effect. It may
+be necessary to override this in special circumstances, for example if
+the target board uses an external USB chip in preference to the UDC
+and it is that external chip's device driver that should be used
+rather than the on-chip UDC. It is not possible to disable endpoint 0
+and at the same time enable one or both of the other endpoints, since
+a USB device is only usable if it can process the standard control
+messages.
+</para>
+</listitem>
+<listitem>
+<para>
+Endpoint 1 is controlled by
+<literal>CYGPKG_DEVS_USB_SA11X0_EP1</literal>. By default it is
+enabled whenever endpoint 0 is enabled, but it can be disabled
+manually when not required.
+</para>
+</listitem>
+<listitem>
+<para>
+Similarly endpoint 2 is controlled by
+<literal>CYGPKG_DEVS_USB_SA11X0_EP2</literal>. This is also enabled by
+default whenever endpoint 0 is enabled, but it can be disabled manually.
+</para>
+</listitem>
+</orderedlist>
+<para>
+The SA11X0 USB device driver implements the interface specified by the
+common eCos USB Slave Support package. The documentation for that
+package should be consulted for further details. There is only one
+major deviation: when there is a peripheral to host transfer on
+endpoint 2 which is an exact multiple of the bulk transfer packet size
+(usually 64 bytes) the device driver has to pad the transfer with one
+extra byte. This is because of a hardware limitation: the UDC is
+incapable of transmitting 0-byte packets as required by the USB
+specification. Higher-level code, including the host-side device
+driver, needs to be aware of this and adapt accordingly.
+</para>
+<para>
+The device driver assumes a bulk packet size of 64 bytes, so this
+value should be used in the endpoint descriptors in the enumeration
+data provided by application code. There is experimental code
+for running with <link linkend="usbs-sa11x0-dma">DMA disabled</link>,
+in which case the packet size will be 16 bytes rather than 64.
+</para>
+</refsect1>
+
+<refsect1><title>Devtab Entries</title>
+<para>
+In addition to the endpoint data structures the SA11X0 USB device
+driver can also provide devtab entries for each endpoint. This allows
+higher-level code to use traditional I/O operations such as
+<function>open</function>/<function>read</function>/<function>write</function>
+rather than the USB-specific non-blocking functions like
+<function>usbs_start_rx_buffer</function>. These devtab entries are
+optional since they are not always required. The relevant
+configuration options are
+<literal>CYGVAR_DEVS_USB_SA11X0_EP0_DEVTAB_ENTRY</literal>,
+<literal>CYGVAR_DEVS_USB_SA11X0_EP1_DEVTAB_ENTRY</literal> and
+<literal>CYGVAR_DEVS_USB_SA11X0_EP2_DEVTAB_ENTRY</literal>. By default
+these devtab entries are provided if the global preference
+<literal>CYGGLO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES</literal> is enabled,
+which is usually the case. Obviously a devtab entry for a given
+endpoint will only be provided if the underlying endpoint is enabled.
+For example, there will not be a devtab entry for endpoint 1 if
+<literal>CYGPKG_DEVS_USB_SA11X0_EP1</literal> is disabled.
+</para>
+<para>
+The names for the three devtab entries are determined by using a
+configurable base name and appending <literal>0c</literal>,
+<literal>1r</literal> or <literal>2w</literal>. The base name is
+determined by the configuration option
+<literal>CYGDAT_DEVS_USB_SA11X0_DEVTAB_BASENAME</literal> and has a
+default value of <literal>/dev/usbs</literal>, so the devtab entry for
+endpoint 1 would default to <literal>/dev/usbs1r</literal>. If the
+target hardware involves multiple USB devices then application
+developers may have to change the base name to prevent a name clash.
+</para>
+</refsect1>
+
+<refsect1><title id="usbs-sa11x0-dma">DMA Engines</title>
+<para>
+The SA11X0 UDC provides only limited fifos for bulk transfers on
+endpoints 1 and 2; smaller than the normal 64-byte bulk packet size.
+Therefore a typical transfer requires the use of DMA engines. The
+SA11x0 provides six DMA engines that can be used for this, and the
+endpoints require one each (assuming both endpoints are enabled). At
+the time of writing there is no arbitration mechanism to control
+access to the DMA engines. By default the device driver will use
+DMA engine 4 for endpoint 1 and DMA engine 5 for endpoint 2, and it
+assumes that no other code uses these particular engines.
+</para>
+<para>
+The exact DMA engines that will be used are determined by the
+configuration options
+<literal>CYGNUM_DEVS_USB_SA11X0_EP1_DMA_CHANNEL</literal> and
+<literal>CYGNUM_DEVS_USB_SA11X0_EP2_DMA_CHANNEL</literal>. These
+options have the booldata flavor, allowing the use of DMA to be
+disabled completely in addition to controlling which DMA engines are
+used. If DMA is disabled then the device driver will attempt to
+work purely using the fifos, and the packet size will be limited to
+only 16 bytes. This limit should be reflected in the appropriate
+endpoint descriptors in the enumeration data. The code for driving the
+endpoints without DMA should be considered experimental. At best it
+will be suitable only for applications where the amount of data
+transferred is relatively small, because four times as many interrupts
+will be raised and performance will suffer accordingly.
+</para>
+</refsect1>
+
+</refentry>
+</part>
+<!-- /reference -->

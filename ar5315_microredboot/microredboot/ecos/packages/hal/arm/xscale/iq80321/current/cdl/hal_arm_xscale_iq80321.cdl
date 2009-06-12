@@ -1,0 +1,410 @@
+# ====================================================================
+#
+#      hal_arm_xscale_iq80321.cdl
+#
+#      Intel XScale IQ80321 platform HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      msalter
+# Contributors:   hmt
+# Date:           2001-12-03
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_ARM_XSCALE_IQ80321 {
+    display       "Intel XScale IQ80321 evaluation board"
+    parent        CYGPKG_HAL_ARM_XSCALE
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm_xscale_iq80321.h
+    description   "
+        This HAL platform package provides 
+        support for the Intel XScale IQ80321 board."
+
+    compile       iq80321_misc.c hal_diag.c iq80321_pci.c
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+    implements    CYGINT_HAL_ARM_MEM_REAL_REGION_TOP
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_arm.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_VARIANT_H  <pkgconf/hal_arm_xscale_verde.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_arm_xscale_iq80321.h>"
+        puts $::cdl_header "#define CYGBLD_HAL_PLF_INTS_H <cyg/hal/hal_plf_ints.h>"
+	puts $::cdl_header "#define HAL_PLATFORM_CPU    \"XScale\""
+        puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"IQ80321\""
+        puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+        puts $::cdl_header "#define HAL_PLATFORM_MACHINE_TYPE  169"
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        default_value {"RAM"}
+        legal_values  {"RAM" "ROM"}
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+           When targeting the IQ80321 eval board it is possible to build
+           the system for either RAM bootstrap or ROM bootstrap(s). Select
+           'ram' when building programs to load into RAM using onboard
+           debug software such as Angel or eCos GDB stubs.  Select 'rom'
+           when building a stand-alone application which will be put
+           into ROM.  Selection of 'stubs' is for the special case of
+           building the eCos GDB stubs themselves."
+    }
+
+    cdl_component CYG_HAL_MEMORY_MAP {
+        display       "MMU Mapping"
+        flavor        data
+        default_value {"NORMAL"}
+        legal_values  {"NORMAL" "ALTERNATE"}
+        no_define
+        define -file system.h CYG_HAL_MEMORY_MAP
+        description   "
+           When targeting the IQ80321 eval board it is possible to build
+           the system for two MMU mappings. Select 'NORMAL' when building
+           programs to map all of RAM to virtual address 0x00000000. Select
+           ALTERNATE when building programs to map RAM at 0xA0000000. In
+           the ALTERNATE case, the first 1MB of RAM is also mapped at virtual
+           address 0x00000000 for CPU exception vectors."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+        display       "Diagnostic serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 57600 115200
+        default_value 115200 ;
+        description   "
+            This option selects the baud rate used for the diagnostic port.
+            Note: this should match the value chosen for the GDB port if the
+            diagnostic and GDB port are the same."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_BAUD {
+        display       "GDB serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 57600 115200
+        default_value 115200 ;
+        description   "
+            This option selects the baud rate used for the diagnostic port.
+            Note: this should match the value chosen for the GDB port if the
+            diagnostic and GDB port are the same."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+        display      "Number of communication channels on the board"
+        flavor       data
+        calculated   1
+	description "
+	    Channel 0 is the only serial port on the board."
+    }
+ 
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+        display          "Debug serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+            The IQ80321 has only one serial port."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT {
+        display      "Default console channel."
+        flavor       data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        calculated   0
+    }
+ 
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+	display          "Diagnostic serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+	flavor data
+	legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+	default_value    CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT
+	description      "
+            The IQ80321 has only one serial port."
+    }
+    
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        no_define
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+        parent  CYGPKG_NONE
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "arm-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-mcpu=xscale -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -mapcs-frame" }
+            description   "
+                This option controls the global compiler flags which are used to
+                compile all packages by default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-mcpu=xscale -Wl,--gc-sections -Wl,-static -g -O2 -nostdlib" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "ROM" }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            requires CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                binary data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) --remove-section=.fixed_vectors -O binary $< $@
+            }
+        }
+    }
+
+    cdl_component CYGPKG_HAL_ARM_XSCALE_IQ80321_OPTIONS {
+        display "Intel XScale IQ80321 build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+        cdl_option CYGPKG_HAL_ARM_XSCALE_IQ80321_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the XScale IQ80321 HAL. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_HAL_ARM_XSCALE_IQ80321_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the XScale IQ80321 HAL. These flags are removed from
+                the set of global flags if present."
+        }
+
+	cdl_option CYGNUM_HAL_BREAKPOINT_LIST_SIZE {
+            display       "Number of breakpoints supported by the HAL."
+            flavor        data
+            default_value 32
+            description   "
+                This option determines the number of breakpoints supported by the HAL."
+        }
+
+	cdl_option CYGSEM_HAL_ARM_IQ80321_FAB_C {
+            display       "Use Fab C IDSEL and IRQ steering"
+            flavor        bool
+            default_value 0
+            description   "
+                This option controls whether or not the HAL uses PCI IDSEL and IRQ
+                routing appropriate for Fab C boards. Fab D and later boards have
+                different IDSELs and interrupt routing. Default is to not build
+                for Fab C."
+        }
+
+	cdl_option CYGSEM_HAL_ARM_IQ80321_CLEAR_PCI_RETRY {
+            display       "Clear PCI Retry bit"
+            flavor        bool
+            default_value 1
+            description   "
+                This option controls whether or not the HAL allows the host PC
+                to completely boot. In some cases, it may not be desired to allow
+                this if RedBoot is used to automatically launch an application
+                which needs to run some setup code before allowing the PC to
+                finish booting. In that case, the application code, not RedBoot
+                will clear the PCI retry bit."
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "arm_xscale_iq80321_ram" : \
+	                                        "arm_xscale_iq80321_rom" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ?                                                  \
+                CYG_HAL_MEMORY_MAP == "NORMAL" ? "<pkgconf/mlt_arm_xscale_iq80321_ram.ldi>" :        \
+                                                 "<pkgconf/mlt_arm_xscale_iq80321_ram_altmap.ldi>" : \
+                CYG_HAL_MEMORY_MAP == "NORMAL" ? "<pkgconf/mlt_arm_xscale_iq80321_rom.ldi>" :        \
+                                                 "<pkgconf/mlt_arm_xscale_iq80321_rom_altmap.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ?                                                \
+                CYG_HAL_MEMORY_MAP == "NORMAL" ? "<pkgconf/mlt_arm_xscale_iq80321_ram.h>" :        \
+                                                 "<pkgconf/mlt_arm_xscale_iq80321_ram_altmap.h>" : \
+                CYG_HAL_MEMORY_MAP == "NORMAL" ? "<pkgconf/mlt_arm_xscale_iq80321_rom.h>" :        \
+                                                 "<pkgconf/mlt_arm_xscale_iq80321_rom_altmap.h>" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+         display       "Work with a ROM monitor"
+         flavor        booldata
+         legal_values  { "Generic" "GDB_stubs" }
+         default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+         parent        CYGPKG_HAL_ROM_MONITOR
+         requires      { CYG_HAL_STARTUP == "RAM" }
+         description   "
+             Support can be enabled for different varieties of ROM monitor.
+             This support changes various eCos semantics such as the encoding
+             of diagnostic output, or the overriding of hardware interrupt
+             vectors.
+             Firstly there is \"Generic\" support which prevents the HAL
+             from overriding the hardware vectors that it does not use, to
+             instead allow an installed ROM monitor to handle them. This is
+             the most basic support which is likely to be common to most
+             implementations of ROM monitor.
+             \"GDB_stubs\" provides support when GDB stubs are included in
+             the ROM monitor or boot ROM."
+     }
+
+    cdl_component CYGPKG_REDBOOT_HAL_OPTIONS {
+        display       "Redboot HAL options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        # compile -library=libextras.a redboot_cmds.c
+    
+        cdl_option CYGBLD_BUILD_REDBOOT_BIN {
+            display       "Build Redboot ROM binary image"
+            active_if     CYGBLD_BUILD_REDBOOT
+            default_value 1
+            no_define
+            description "This option enables the conversion of the Redboot ELF
+                         image to a binary image suitable for ROM programming."
+
+            compile -library=libextras.a diag/diag.c diag/io_utils.c \
+				diag/xscale_test.c  \
+                                diag/memtest.c diag/test_menu.c diag/i82544.c \
+				diag/pcitest.c diag/battery.c diag/timer.c
+    
+            make -priority 325 {
+                <PREFIX>/bin/redboot.bin : <PREFIX>/bin/redboot.elf
+                $(OBJCOPY) --strip-debug $< $(@:.bin=.img) 
+                $(OBJCOPY) -O srec $< $(@:.bin=.srec)
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+
+	cdl_option CYGSEM_HAL_ARM_IQ80321_BATTERY_TEST {
+            display       "Include Battery Test in Diagnostics Menu"
+            flavor        bool
+            default_value 1
+            description   "
+                This option controls whether or not the battery test is included
+                in the IQ80321 diagnostics."
+        }
+    }
+
+}

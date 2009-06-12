@@ -1,0 +1,149 @@
+# ====================================================================
+#
+#	refidt334_eth_drivers.cdl
+#
+#	Ethernet drivers
+#	Intel PRO/100+ platform specific support for IDT MIPS 334
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Tim Michals
+# Original data:  hmt
+# Contributors:	  
+# Date:           2003-02-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_REFIDT334 {
+    display       "MIPS IDT 79RC32334 reference platform ethernet driver"
+    description   "Ethernet driver for MIPS IDT 79RC32334 reference platform."
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_HAL_MIPS_IDT32334_REFIDT334
+
+    include_dir   cyg/io
+
+    # FIXME: This really belongs in the INTEL_I82559 package
+    cdl_interface CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED {
+        display   "Intel i82559 ethernet driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I82559_INL <cyg/io/devs_eth_refidt334.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I82559_CFG <pkgconf/devs_eth_mips_refidt334.h>"
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_REFIDT334_I82559_ETH0 {
+        display       "IDT 79RC32334 ethernet port 0 driver"
+        flavor        bool
+        default_value 1
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH0
+        implements CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_MIPS_REFIDT334_I82559_ETH0_NAME {
+            display       "Device name for the ETH0 ethernet port 0 driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                i82559 ethernet port 0."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_MIPS_REFIDT334_I82559_ETH0_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+	    default_value 0
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA."
+            
+            cdl_option CYGDAT_DEVS_ETH_MIPS_REFIDT334_I82559_ETH0_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x08, 0x00, 0x00, 0x00, 0x00, 0x01}"}
+                description   "The ethernet station address"
+            }
+        }
+    }
+    
+    cdl_component CYGPKG_DEVS_ETH_MIPS_REFIDT334_I82559_ETH1 {
+        display       "IDT 79RC32334 ethernet port 1 driver"
+        flavor        bool
+        default_value 1
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH1
+        implements CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_MIPS_REFIDT334_I82559_ETH1_NAME {
+            display       "Device name for the ETH0 ethernet port 1 driver"
+            flavor        data
+            default_value {"\"eth1\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                i82559 ethernet port 1."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_MIPS_REFIDT334_I82559_ETH1_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+	    default_value 0
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA."
+            
+            cdl_option CYGDAT_DEVS_ETH_MIPS_REFIDT334_I82559_ETH1_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x08, 0x00, 0x00, 0x00, 0x00, 0x02}"}
+                description   "The ethernet station address"
+            }
+        }
+    }
+
+}
+
+# EOF refidt334_eth_drivers.cdl

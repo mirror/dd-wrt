@@ -1,0 +1,8 @@
+2003-03-03  John Dallaway  <jld@ecoscentric.com>
+
+	Makefile: Rename ECOS_INSTALL -> INSTALL_DIR to match
+	documentation.
+
+2003-01-20  John Dallaway  <jld@ecoscentric.com>
+
+	Makefile: Simplify by reference to ecos.mak

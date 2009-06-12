@@ -1,0 +1,476 @@
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-10-30  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_arm_sa11x0.cdl: 
+	* src/sa11x0_misc.c: Add support for profiling, using timer #1
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_sa11x0.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2002-10-26  Gary Thomas  <gthomas@ecoscentric.com> (inspired by)
+2002-10-26  Gordon Schumacher <gordon_schumacher@maxtor.com>
+
+	* include/hal_sa11x0.h: Make ROM/RAM/FLASH space layout clearer.
+
+2002-10-25  Gary Thomas  <gthomas@ecoscentric.com> (inspired by)
+2002-10-25  Gordon Schumacher <gordon_schumacher@maxtor.com>
+
+	* include/hal_sa11x0.h: Add SRAM definitions.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT
+	requirement.
+
+2002-05-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c (cyg_hal_plf_serial_control): Fix return value
+	when changing the baud rate.
+
+2002-05-01  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/mmap_test.c: Diagnostic prints for failure cases.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES added.
+
+2002-01-29  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Removed CRUFT_H.
+
+	* include/hal_sa11x0.h: Moved CYGARC_PHYSICAL_ADDRESS definition
+	to:
+	* include/var_io.h: this file.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Declare var_io.h file.
+	Tug RedBoot requirements away in a component properly controlled
+	by the RedBoot presence.
+	* include/var_io.h: Added.
+
+2002-01-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_sa11x0.h (CYGARC_PHYSICAL_ADDRESS): Added.
+
+	* src/redboot_linux_exec.c: Moved to arch directory.
+	* cdl/hal_arm_sa11x0.cdl: Replaced options with requirements to
+	arch options.
+
+2002-01-25  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Trick the compiler into
+	thinking that the end1 and lab1 labels are both actually used,
+	so it doesn't move them around.
+	
+2002-01-22  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Pass ATAG_MEM to Linux
+	kernel, having tried to obtain the appropriate numbers from the
+	MLT header file. This could probably do with some improvement -
+	the actual information we need isn't necessarily present in the
+	required form.
+
+2002-01-14  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Use load start/end
+	parameters as defaults. Don't copy image if specified length is
+	zero.
+
+2001-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Indicate support of variable baud rates.
+
+2001-10-09  Hugo Tyson  <hmt@redhat.com>
+
+	* src/hal_diag.c (cyg_hal_plf_serial_isr): As well as the sticky
+	Rx Idle bit, clear the sticky bits for interrupts for start or end
+	of a line break, otherwise messing with the wiring can cause an
+	interrupt loop and hang the target.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-08-21  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_var_ints.h (HAL_CLOCK_LATENCY()): Define this if
+	it's needed, for the routine below.
+
+	* src/sa11x0_misc.c (hal_clock_latency): A neater fix for the
+	below change: use a separate routine for measuring latency, which
+	assumes it is called in the ISR, before the clock is reset.
+
+2001-08-20  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sa11x0_misc.c (hal_clock_read): Make hal_clock_read() return
+	the true value (as expected by the kernel latency test) from the
+	last interrupt if we just had that interrupt and didn't yet reset
+	the clock.  Otherwise ISR latencies are reported as one tick (1cS,
+	10000uS) too large.
+
+2001-07-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c: Fix copyright disclaimers to satisfy
+	original owner (Linux kernel maintainer Russell King).
+
+2001-07-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sa11x0_misc.c (hal_IRQ_handler): Support board/platform
+	specific [extended] interrupts.  On the SA11x0, these would often
+	be cascaded via GPIO logic.  Use of extended macros allows SA11x0
+	variant code to handle the general case, with board specific code
+	defined by board packages.  Look at the iPAQ board package for
+	a sample of how to use this.
+
+2001-05-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Protect compilation - scripting
+	is configurable.
+
+2001-05-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c: Allow baud rate to be settable.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Add CDL to describe CPU family.
+
+2001-03-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): 
+	Entry point must be a physical address.
+
+	* cdl/hal_arm_sa11x0.cdl: 
+	Allow platforms to override default clock speed.
+
+2001-03-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Improve wait timeout.
+
+2001-03-07  Hugo Tyson  <hmt@redhat.com>
+
+	* src/redboot_linux_exec.c: Do not build anything if
+	HAL_PLATFORM_MACHINE_TYPE is not defined.
+
+2001-03-02  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: HAL_PLF_INIT stuff moved to hal/common.
+
+2001-03-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sa11x0_misc.c: 
+	* cdl/hal_arm_sa11x0.cdl: New interface CYGINT_HAL_PLF_IF_INIT
+	which, if defined, indicates that the platform has plf_if_init.
+
+2001-03-01  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sa11x0_misc.c: Remove warnings from lack of prototype for
+	plf_if_init() - for platforms that don't have it.
+
+2001-02-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sa11x0_misc.c: Allow platform to perform additional
+	I/O initialization (virtual vector based).  The function
+	plf_if_init() can be overridden by platform code for this.
+
+2001-02-28  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_sa11x0.h (SA11X0_TUCR_RESERVED_BITS):
+	(SA11X0_TUCR_EXTERNAL_MEMORY_MASTER): Add definitions of these
+	bits for enabling an external bus master.
+
+2001-02-28  Hugo Tyson  <hmt@redhat.com>
+ 
+	* include/hal_sa11x0.h (SA11X0_OWER): Add OS Timer Watchdog Match
+	Enable Register for use by Watchdog package.
+	(SA11X0_OWER_ENABLE): And a long-winded "1" to enable it.
+
+2001-02-24  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Add RedBoot commands/options.
+	
+	* src/redboot_linux_exec.c: New file - RedBoot commands to
+	support booting Linux kernel.
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h (HAL_FLASH_CACHES_OLD_MACROS): Some
+	platforms use deprecated cache handling macros.
+
+2001-02-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Clarify CYGHWR_HAL_ARM_SA11X0_UART1,3
+	description.
+
+2001-02-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c: 
+	* cdl/hal_arm_sa11x0.cdl: Add CDL to control which serial ports
+	are available/used.
+
+2001-02-20  Hugo Tyson  <hmt@redhat.com>
+2001-02-12  Robin Farine  <acnrf@dial.eunet.ch>
+
+	* include/hal_sa11x0.h (SA11X0_IRQ_GPIO_9_EDGE_DETECT): Define
+	this to be 9 not 0 - simple typo.  Thanks Robin!
+
+2001-02-19  Hugo Tyson  <hmt@redhat.com>
+2001-02-12  Robin Farine  <acnrf@dial.eunet.ch>
+
+	* src/sa11x0_misc.c (hal_clock_reset): Handles SA11X0_OSCR as a
+	free running counter.
+	(hal_clock_read): Adapts to changes in hal_clock_reset().
+	(hal_delay_us): Likewise.
+
+	There is only one counting register (OSCR), but multiple match
+	registers and interrupt sources (OSMR1-OSMR3).  Setting our match
+	register to COUNT and the counter register to 0 each tick makes it
+	very hard to use the other match registers - whereas they are
+	intended for easy general use.
+
+	This change sets our match register OSMR0 to the next time
+	interval and leaves the OSCR freerunning so that other match
+	registers can easily be used, which is much more flexible, and
+	much more what was intented.
+
+	Because the OSCR is just a counter, and the match registers
+	compare only for exact equality, no special measures to deal with
+	the counter wrapping/overflowing are needed.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-02-01  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_ints.h: Include registers definitions used in
+	reset macro.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_None
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Moved reset macro to
+	* include/hal_var_ints.h: this file.
+
+2001-01-05  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_mm.h: Change bitfields within memmap entry to
+	unsigned, so that we can compare values successfully - otherwise
+	"0x02" sign-extends and is never equal after promotion!
+
+	* include/hal_cache.h: Include the platform memory map
+	interrogation definitions from <cyg/hal/plf_mmap.h> and header for
+	the new functions below.
+
+	* src/sa11x0_misc.c (hal_virt_to_phys_address): 
+	(hal_phys_to_virt_address): 
+	(hal_virt_to_uncached_address): New functions which inspect the
+	real memory map in force to verify the static translations defined
+	in the efficient macro versions.
+
+	* tests/mmap_test.c (endif): New file: testcase for memory map
+	interrogation macros and verification functions.
+
+	* cdl/hal_arm_sa11x0.cdl: Build the testcase.
+
+2000-12-13  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Define a symbol CYGBLD_HAL_VAR_INTS_H so
+	that the architectural HAL can see <cyg/hal/hal_var_ints.h> below.
+
+	* include/hal_var_ints.h: New file; actually a copy of all the
+	platforms' hal_platform_ints.h for all the sa11x0 platforms.
+
+	* include/hal_mm.h: New file; actually an excerpt from all the
+	platforms' $PLATFORM_misc.h for all the sa11x0 platforms, which
+	describes MM table layout and macros for initializing it.
+
+2000-12-12  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: Allow RTC clock rate to be changable.
+
+2000-12-04  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_cache.h: Consistently ensure that ARM registers used
+	in MCR ops to cache-control coprocessors, where the data doesn't
+	matter, all actually have data zero ("SBZ") as in the Jaggar book.
+	This may well not be necessary, but for the sake of making sure...
+
+2000-12-01  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_cache.h: Define addressable cache line operations
+	HAL_DCACHE_STORE(), HAL_DCACHE_INVALIDATE(), HAL_DCACHE_FLUSH()
+	now that I have understood how come the test (kcache2) was
+	failing.  See kernel ChangeLog for details.  Also tidied up a
+	couple of other minor details.
+
+2000-11-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c (init_channel): UART setup required on Brutus as well.
+
+2000-11-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c (init_channel): Disable broken uart setups on platforms
+	other than the SA1110MM, since this code seems to be somewhat broken.
+
+2000-10-25  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/hal_diag.c: Added UART1 support for SA1100 targets.
+
+	* include/hal_sa11x0.h: Added GPIO bit definitions.
+
+2000-07-14  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_diag.h (HAL_DELAY_US): Define.
+
+	* src/sa11x0_misc.c (hal_delay_us): New function.  Used to 
+	provide timers/delays in non-kernel systems.
+
+2000-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: 
+	* src/hal_diag.c:
+	Cleaned up channel options.
+	
+	* src/hal_diag.c: Use per-channel structure instead of code cruft.
+
+2000-06-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: calling i/f macro changes.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0.cdl: 
+	* include/plf_stub.h:
+	* src/plf_stub.c: [deleted]
+	Stub uses vector table for all IO.
+	
+	* src/sa11x0_misc.c: Fix compiler warning.
+
+2000-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Some fixes and code layout changes (Gary
+	Thomas).
+
+	* src/hal_diag.c:
+	* include/hal_diag.h:
+	* include/hal_sa11x0.h:
+	Changed to initialize all procs tables. Added timeout getc, and
+	proper debug channel switch behavior.
+
+2000-06-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sa11x0_misc.c (hal_clock_reset): Add code to compensate for
+	clock drift since this hardware does not reset on interrupts.
+	(hal_clock_read): Also adjust the value returned here for same reason.
+
+2000-06-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c (hal_diag_write_char): 
+	Fix typo: CYGINT_HAL_GDB_PORT_VECTOR to be CYGHWR_HAL_GDB_PORT_VECTOR
+	
+2000-06-19  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_diag.h: 
+	* include/plf_stub.h: 
+	* src/hal_diag.c: 
+	* src/sa11x0_misc.c: Update for virtual vector (debug) support.
+
+2000-06-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c: Fix baud rates for 960,19200.  Take out "announce"
+	string in ROM mode.
+
+2000-06-05  Gary Thomas  <gthomas@redhat.com>
+
+	* src/plf_stub.c: 
+	* include/plf_stub.h: 'sa1100' shared items renamed to 'sa11x0'.
+
+	* src/sa11x0_misc.c (hal_IRQ_handler): 
+	(hal_interrupt_mask): 
+	(hal_interrupt_unmask): 
+	(hal_interrupt_acknowledge): 
+	(hal_interrupt_configure): Complete support for GPIO interrupts.  
+	Some of these are direct, others are grouped and the code needs 
+	to handle both.  Also update support for GPIO edge detect interrupt 
+	circuitry.
+
+2000-06-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_cache.h: 
+	* src/hal_diag.c: 
+	* src/sa11x0_misc.c: Renaming of 'sa1100' shared stuff to be
+	'sa11x0'.
+	
+	* include/hal_sa11x0.h: Renamed from 'hal_sa1100.h'.
+
+2000-06-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sa11x0_misc.c: Enable caches.
+
+	* include/hal_sa1100.h: Misc cleanups and additions necessary for
+	ROM startup mode.
+
+2000-05-10  Gary Thomas  <gthomas@redhat.com>
+
+	* current/src/plf_stub.c:
+	* current/src/hal_diag.c:
+	* current/src/sa11x0_misc.c: 
+	* current/include/hal_diag.h: 
+	* current/include/hal_sa1100.h: 
+	* current/include/hal_cache.h: 
+	* current/include/plf_stub.h: 
+	* current/cdl/hal_arm_sa11x0.cdl: New file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

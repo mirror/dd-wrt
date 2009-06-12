@@ -1,0 +1,205 @@
+2004-09-24  Drew Moseley  <drew.moseley@intel.com>
+
+       * src/verde_misc.c: Fix typo in drain-write-buffer command.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_xscale_verde.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-06-21  Mark Salter  <msalter@redhat.com>
+
+	* src/verde_pci.c (pci_config_setup): Add dev field to PCI-X Type 0
+	config cycles. 
+	* include/hal_verde.h: Define I2C registers as base+offset.
+
+2003-01-24  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_verde.h: Add some arbitatration unit defines.
+	* src/verde_misc.c (_scrub_ecc): Make scrub an atomic operation on
+	the bus. Thanks to rickr@mn.rr.com for pointing out the need for
+	this.
+
+2002-11-12  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_var_ints.h (CYGNUM_HAL_INTERRUPT_MSG_IBPQ): IRQ 26
+	belongs to messaging unit.
+
+2002-09-19  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_verde.h: Remove stuff provided by XScale core package.
+	* src/verde_misc.c: Ditto.
+	* cdl/hal_arm_xscale_verde.cdl (CYGBLD_HAL_VAR_H): Define.
+
+2002-08-29  Mark Salter  <msalter@redhat.com>
+
+	* include/plf_stub.h: Add HAL_STUB_HW_BREAKPOINT_LIST_SIZE and
+	HAL_STUB_HW_WATCHPOINT_LIST_SIZE.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_verde.cdl: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT
+	requirement.
+
+2002-05-28  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_verde.cdl: Fix linux exec address test.
+
+	* include/hal_verde.h (CYGARC_HAL_MMU_OFF): XScale has
+	special requirements for turning off MMU.
+
+2002-05-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_xscale_verde.cdl: Remove implement of
+	CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT since platforms should
+	define whether baud rate changes are possible.
+
+2002-04-01  Rory Bolt  <rorybolt@pacbell.net>
+
+	* include/hal_var_ints.h: Fix definition for DMA1_ERR.
+
+2002-02-25  Mark Salter  <msalter@redhat.com>
+
+	* src/verde_misc.c: Timer source clock is always exactly 200MHz.
+
+2002-02-22  Mark Salter  <msalter@redhat.com>
+
+	* src/verde_misc.c: Fix hw watch/break support.
+
+2002-02-20  Mark Salter  <msalter@redhat.com>
+
+	* include/plf_stub.h: Add HW watchpoint/breakpoint support.
+	* src/verde_misc.c: Ditto.
+
+2002-02-19  Mark Salter  <msalter@redhat.com>
+
+	* src/verde_misc.c (hal_hardware_init): Initialize debug unit to
+	sane state.
+
+2002-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/verde_pci.c: New file. PCI support common to verde.
+	* cdl/hal_arm_xscale_verde.cdl: Add verde_pci.c to compile list.
+	* include/var_io.h: Move HAL_PCI_CFG_* macros from plf_io.h
+	(CYGARC_PHYSICAL_ADDRESS): Fix conversion.
+
+2002-01-30  Mark Salter  <msalter@redhat.com>
+
+	* src/verde_misc.c (hal_delay_us): Fix delay calculation.
+
+2002-01-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_io.h (CYGARC_PHYSICAL_ADDRESS): Added.
+
+	* cdl/hal_arm_xscale_verde.cdl: Use common ARM linux exec
+	command.
+	* src/redboot_linux_exec.c: Removed.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_xscale_verde.cdl: Declare var_io.h
+
+	* include/var_io.h: Added.
+
+	* src/verde_misc.c: Don't include CYGBLD_HAL_PLATFORM_IO_H.
+
+	* include/hal_cache.h: Include hal_io.h
+
+2002-01-24  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/hal_arm_xscale_verde.cdl: Removed CYGHWR_HAL_ARM_VERDE_P_CLK
+	and CYGHWR_HAL_ARM_VERDE_BUS_CLK options in favour of a more
+	dynamic determination of the P_CLK value. CYGNUM_HAL_RTC_PERIOD is
+	now a simple number of microseconds which is converted to the
+	actual clock value in the HAL.
+
+	* src/verde_misc.c: Rearranged clock code to make use of
+	dynamically determined P_CLK value to set timer value.
+
+2002-01-23  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_verde.h: Add PCSR bit defines.
+
+	* include/hal_var_ints.h (HAL_PLATFORM_RESET): Use HW feature to
+	perform reset.
+
+2002-01-23  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/hal_arm_xscale_verde.cdl:
+	Added CYGHWR_HAL_ARM_VERDE_P_CLK, which defines the external clock
+	frequency applied to the Verde chip. All other CPU frequencies are
+	derived from this.
+	Added CYGHWR_HAL_ARM_VERDE_BUS_CLK which calculates the internal
+	bus clock from the P_CLK value.
+	Rewrote calculation for CYGNUM_HAL_RTC_PERIOD to derive the period
+	from the bus clock and CYGNUM_HAL_RTC_DENOMINATOR.
+
+	* src/verde_misc.c:
+	Reorganized hal_IRQ_handler() to do the right thing.
+	Added test to hal_interrupt_acknowledge() to acknowledge timer
+	interrupts. Also removed misleading comment from hal_clock_reset().
+
+	* include/hal_verde.h: Added TISR_WRITE().
+
+2002-01-21  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_verde.h: Add definitions for ATU, I2C, etc.
+
+	* include/hal_cache.h: Turn write buffer coalescing on and off
+	along with Dcache.
+
+2002-01-18  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_var_ints.h (HAL_CLOCK_REINITIALIZE): New macro
+        which calls the below, also a prototype for it.
+
+	* src/verde_misc.c (hal_clock_reinitialize): New routine to
+        reset the clock to a different frequency.  This is for GPROF type
+        profiling use only; not general purpose eCos usage.
+	
+2002-01-09  Mark Salter  <msalter@redhat.com>
+
+	* src/verde_misc.c: Add MCU ISR handler for ECC scrubbing.
+
+	* include/hal_verde.h (MCU_MCISR): Define.
+
+	* include/hal_cache.h (HAL_DCACHE_SYNC): Use platform defined
+	constant instead of hardcoded flush area base.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

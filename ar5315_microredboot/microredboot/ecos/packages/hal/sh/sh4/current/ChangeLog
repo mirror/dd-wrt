@@ -1,0 +1,336 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_sh_sh4.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-09-21  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/var_misc.c (hal_variant_init): Set FPSCR on startup.
+
+	* src/sh4_scif.c (cyg_hal_plf_scif_set_baud):  New function, taken
+	from init code, but with fix to wait for hardware to settle.
+	(cyg_hal_plf_scif_control): Add __COMMCTL_GETBAUD and _SETBAUD support
+	using above function.
+
+	* include/sh4_scif.h: Add baud_rate to channel data.
+
+	* include/mod_regs_ser.h (CYGARC_SCBRR_N): Don't tweak BRR for
+	values < 4800 or > 115200 as it gets the values wrong. Instead trust
+	the developer to DTRT.
+	(CYGARC_REG_SCIF_SCLSR_ORER): Add definition for overrun in line status
+	reg.
+
+2003-09-19  John Dallaway  <jld@ecoscentric.com>
+
+	* cdl/hal_sh_sh4.cdl: Specify default CDL values for sh4_202_md
+	target.
+
+2003-09-11  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/var_regs.h (CYG_FPSCR): Changed initial value of fpscr
+	to do round-to-nearest rather than round-to-zero.
+
+2003-09-08  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/mod_202.h: Added define for UBC. The 202 appears to have
+	one, although there is no documented info. It is also not clear
+	what version it is. Setting this to 1 seems to work.
+
+	* include/mod_regs_cac.h:
+	* include/variant.inc:
+	Updated cache dimensions and initialization to support larger, two
+	way cache in sh4-202.
+
+2003-09-05  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/variant.inc:	
+	* include/var_reg.h:
+	* include/mod_202.h:
+	* include/mod_regs_cpg.h:
+	* include/mod_regs_emi.h:
+	* include/mod_regs_femi.h:
+	* include/mod_regs_intc.h:
+	* cdl/hal_sh_sh4.cdl: Added SH-202 sub-variant, extra
+	functional units, and modifications to existing units for this
+	variant.
+
+2003-02-05  Nick Garnett  <nickg@calivar.com>
+
+	* include/var_cache.h: Added include for hal_io.h since this file
+	uses HAL_READ_UINT32() etc.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/sh4_scif.c: 
+	* include/sh4_scif.h: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-07-19  Larice Robert  <larice@vidisys.de>
+
+	* include/var_intr.h (CYGNUM_HAL_INTERRUPT_IRL0..3): Fixed
+	interrupt vector definitions for SH4 when INTC used in IRL mode.
+
+2002-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh4.cdl: Select variant 7750 by default.
+
+2002-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh4_scif.c: Register renaming.
+
+	* include/mod_regs_ser.h: Register renaming. SCI registers now
+	contain _SCI_, SCIF registers contain _SCIF_. Merge SCIF and IrDA
+	definitions (stripping SCIF identifier suffix).
+
+2002-01-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Include needed ptrs.
+
+2002-01-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh4.cdl: Added interrupt model header definition.
+	Added RTC_PRESCALE option.
+
+2002-01-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh4.cdl: Added exception model header definitions.
+
+	* include/variant.inc: Fixed assembler warning.
+
+2001-11-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_mk_defs.c (main): Fix warning.
+
+2001-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ubc.h (CYGARC_REG_BRCR_ONE_STEP): Added.
+
+2001-09-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h: Default CYGPRI_HAL_INTERRUPT_ACKNOWLEDGE_PLF
+	and CYGPRI_HAL_INTERRUPT_CONFIGURE_PLF added.
+
+	* src/var_misc.c: Use those macros.
+
+2001-09-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh4.cdl: Disable cache on 7750. Doesn't work
+	properly.
+
+2001-09-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h (CYGPRI_HAL_INTERRUPT_UPDATE_LEVEL_PLF):
+	Provide default version.
+
+2001-08-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7750.h: Don't use UBC as handling of it is broken.
+
+2001-07-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h: Define flash cache macros that also disable
+	instruction cache. Not at all clear to me why it should make a
+	difference, but it does.
+
+	* src/var_misc.c (cyg_var_enable_caches): Don't allow caches to be
+	enabled when the flash IO driver has been included. This is a
+	temporary workaround for an unidentified caching problem.
+	(cyg_var_enable_caches): Enabled again.
+
+	* include/var_cache.h: Fix cache enabled query macros.
+
+2001-07-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h: Define CYGPRI_HAL_INTERRUPT_UPDATE_LEVEL_PLF
+	if the platform didn't.
+
+2001-07-24  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c: Allow platform to handle IRL vectors.
+
+2001-07-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c (cyg_var_enable_caches): Small hack to prevent
+	ethernet connection to be lost in RAM applications when started
+	from a ROM monitor.
+
+2001-07-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh4.cdl: Allow caching.
+
+	* include/mod_regs_intc.h (CYGARC_REG_ICR_INIT): Revert
+	CYGHWR_HAL_SH_IRQ_USE_IRQLVL sense.
+
+	* include/variant.inc: Fix alignment bug.
+
+	* include/mod_regs_ubc.h: Compile when UBC disabled.
+
+2001-07-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Fix ICR init, add IPRD init.
+	* include/var_intr.h: Added IRL vectors.
+	* include/mod_regs_intc.c: Added IPRD definitions.
+	* src/var_misc.c (hal_interrupt_update_level): Handle IRPD
+	vectors.
+
+2001-07-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c (hal_interrupt_update_level): Fix typo.
+
+	* include/variant.inc: Added ICR initialization.
+
+	* include/mod_regs_intc.h: Added ICR definitions.
+
+	* cdl/hal_sh_sh4.cdl: Interrupt option cleanup.
+
+	* include/mod_regs_bsc.h: Added some BCR1 and MCR register bit
+	definitions. Deleted wrong register definitions.
+
+	* src/pcic.c (cyg_hal_sh_pcic_pci_init): Set PCIC MCR
+	register. Set BCR1 master flag. Set PCI cache line size.
+
+2001-07-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_bsc.h: Removed SDMR2 definition - it is
+	platform specific.
+
+2001-07-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7750.h: define intc macro.
+
+	* src/var_misc.c: Added handling of INTR00 vectors.
+	* include/mod_regs_intc.h: Added INTR00 definitions.
+
+	* include/var_regs.h: Include pcic when appropriate.
+	* include/mod_7751.h (CYGARC_SH_MOD_PCIC): Define.
+	* include/mod_regs_pcic.h: Added.
+	* src/pcic.c: Added. Fix typo.
+
+2001-07-09  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ubc.h: Ignore ASID when stepping.
+
+	* include/mod_7750.h: Fix DCAC address top.
+
+	* src/variant.S: Let all cache functions delay for 8 nops before
+	returning.
+
+	* include/mod_regs_bsc.h: Added more registers.
+
+	* cdl/hal_sh_sh4.cdl: Tweak options, add options for interrupts
+	and cache settings.
+	Add support for 7751.
+	* include/mod_7751.h: Added.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_io.h: Added. Includes plf_io.h
+
+2001-03-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/var_misc.c: Ensure case ranges have spaces around identifiers
+	to allow correct parsing by compiler.
+
+2001-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/variant.S (cyg_hal_dcache_enable, cyg_hal_icache_enable):
+	Write ORed value, not just the enable bit.
+	* include/var_cache.h: Fix various macro typos.
+	Fixes from Ryouzaburou Suzuki <ryos@atom-tc.or.jp>
+
+2001-02-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ser.h: Add a couple of zeroes to SCIF clear
+	masks (for looks - no semantic change).
+
+2001-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh4.cdl: Added baud rate option.
+
+	* src/sh4_scif.c (cyg_hal_plf_scif_init_channel): Use specified
+	baud rate.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh4_scif.h: Separate exported API from definitions used
+	in the driver.
+	* src/sh4_scif.c: Request private definitions.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh4_sci.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* src/sh4_scif.c: Same.
+
+2001-01-18  Jesper Skov  <jskov@redhat.com>
+
+	Case 105302
+	* src/var_misc.c: Separate interrupt level and mask controls.
+	* src/variant.S: Include cyg_hal_ILVL_table and
+	cyg_hal_IMASK_table.
+
+2000-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/variant.S: Mangle symbols.
+	* include/variant.inc: Same.
+
+2000-11-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ser.h (CYGARC_SCBRR_N): Reduce rounding error.
+
+2000-11-09  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ubc.h: Correct definitions.
+
+	* include/mod_7750.h (CYGARC_SH_MOD_UBC): Defined.
+
+	* cdl/hal_sh_sh4.cdl: Disable cache for now.
+
+2000-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* Many changes to bring the variant HAL up to date with the later
+	SH arch HAL changes. Rewrote caching code to handle the split
+	cache.
+
+2000-08-16  Haruki Kashiwaya  <kashiwaya@redhat.com>
+
+	* Set up directory structure.
+
+2000-04-18  Ryozaburo Suzuki  <ryos@atom-tc.or.jp>
+
+	* Contributed sources for the CqREEK/SH-4 platform.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

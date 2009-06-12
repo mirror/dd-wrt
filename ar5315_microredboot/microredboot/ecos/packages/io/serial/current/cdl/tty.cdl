@@ -1,0 +1,130 @@
+# ====================================================================
+#
+#      tty.cdl
+#
+#      eCos serial TTY configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_component CYGPKG_IO_SERIAL_HALDIAG {
+    display       "HAL/diag serial device driver"
+    flavor        bool
+    default_value 1
+    description   "
+        This option enables the use of the HAL diagnostic channel
+        via the standard I/O drivers."
+    compile       -library=libextras.a common/haldiag.c
+}
+
+cdl_option CYGDAT_IO_SERIAL_TTY_CONSOLE {
+    display       "Console device name"
+    flavor        data
+    default_value {"\"/dev/ttydiag\""}
+    description   "
+        This option selects the TTY device to use for the console."
+}
+
+cdl_component CYGPKG_IO_SERIAL_TTY_TTYDIAG {
+    display       "TTY mode HAL/diag channel"
+    flavor        bool
+    default_value 1
+    description   "
+        This option causes '/dev/ttydiag' to be included in the standard
+        drivers."
+}
+
+cdl_component CYGPKG_IO_SERIAL_TTY_TTY0 {
+    display       "TTY mode channel #0"
+    flavor        bool
+    default_value 0
+    description   "
+        This option causes '/dev/tty0' to be included in the standard 
+        drivers."
+
+    cdl_option CYGDAT_IO_SERIAL_TTY_TTY0_DEV {
+        display       "TTY mode channel #0 device"
+        flavor        data
+        default_value { "\"/dev/ser0\"" }
+        description   "
+            This option selects the physical device to use for 
+            '/dev/tty0'."
+    }
+}
+cdl_component CYGPKG_IO_SERIAL_TTY_TTY1 {
+    display       "TTY mode channel #1"
+    flavor        bool
+    default_value 0
+    description   "
+        This option causes '/dev/tty1' to be included in the standard 
+        drivers."
+
+    cdl_option CYGDAT_IO_SERIAL_TTY_TTY1_DEV {
+        display       "TTY mode channel #1 device"
+        flavor        data
+        default_value {"\"/dev/ser1\""}
+        description   "
+            This option selects the physical device to use for 
+            '/dev/tty1'."
+    }
+}
+
+cdl_component CYGPKG_IO_SERIAL_TTY_TTY2 {
+    display       "TTY mode channel #2"
+    flavor        bool
+    default_value 0
+    description   "
+        This option causes '/dev/tty2' to be included in the standard 
+        drivers."
+
+    cdl_option CYGDAT_IO_SERIAL_TTY_TTY2_DEV {
+        display       "TTY mode channel #2 device"
+        flavor        data
+        default_value {"\"/dev/ser2\""}
+        description   "
+            This option selects the physical device to use for 
+            '/dev/tty2'."
+    }
+}

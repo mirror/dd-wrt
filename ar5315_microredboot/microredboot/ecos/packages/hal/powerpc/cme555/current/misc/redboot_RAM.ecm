@@ -1,0 +1,282 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    cme555 ;
+    template    default ;
+    package -hardware CYGPKG_HAL_POWERPC current ;
+    package -hardware CYGPKG_HAL_POWERPC_MPC5xx current ;
+    package -hardware CYGPKG_HAL_POWERPC_CME555 current ;
+    package -hardware CYGPKG_DEVS_FLASH_CME555 current ;
+    package -hardware CYGPKG_DEVS_FLASH_AMD_AM29XXXXX current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package CYGPKG_REDBOOT current ;
+    package CYGPKG_LIBC current ;
+    package CYGPKG_LIBC_STRING current ;
+    package CYGPKG_ISOINFRA current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+};
+
+cdl_option CYGBLD_GLOBAL_CFLAGS {
+    user_value "-mcpu=505 -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -mmultiple -fno-rtti -fno-exceptions -finit-priority"
+};
+
+cdl_option CYGBLD_GLOBAL_LDFLAGS {
+    user_value "-mcpu=505 -g -nostdlib -Wl,--gc-sections -Wl,-static"
+};
+
+cdl_option CYGBLD_BUILD_COMMON_GDB_STUBS {
+    user_value 0
+};
+
+cdl_option CYGFUN_HAL_COMMON_KERNEL_SUPPORT {
+    user_value 0
+};
+
+cdl_component CYGDBG_HAL_DIAG_TO_DEBUG_CHAN {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_DIAG_MANGLER {
+    user_value GDB
+};
+
+cdl_option CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE {
+    user_value 16384
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_ENABLE_DCACHE_ON_STARTUP {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_ENABLE_ICACHE_ON_STARTUP {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    user_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT {
+    user_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_COMMS {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_POWERPC_COPY_VECTORS {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_POWERPC_FRAME_WALLS {
+    user_value 0
+};
+
+cdl_component CYGPKG_HAL_POWERPC_MPC555 {
+    inferred_value 1
+};
+
+cdl_option CYGHWR_HAL_POWERPC_FPU {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_POWERPC_IEEE_FLOATING_POINT {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_POWERPC_MPC5XX_OCD_ENABLE {
+    user_value 0
+};
+
+cdl_option CYGHWR_HAL_POWERPC_MPC5XX_IFLASH_ENABLE {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_POWERPC_MPC5XX_IFLASH_DUAL_MAP {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_POWERPC_MPC5XX_IMB3_ARBITER {
+    user_value 0
+};
+
+cdl_option CYGBLD_BUILD_VERSION_TOOL {
+    user_value 0
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value RAM
+};
+
+cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+    user_value 1
+};
+
+cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+    user_value 38400
+};
+
+cdl_option CYGIMP_INFRA_PREFER_SMALL_TO_FAST_MEMCPY {
+    user_value 1
+};
+
+cdl_option CYGIMP_INFRA_PREFER_SMALL_TO_FAST_MEMSET {
+    user_value 1
+};
+
+cdl_option CYGFUN_INFRA_EMPTY_DELETE_FUNCTIONS {
+    user_value 0
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_option CYGBLD_BUILD_REDBOOT_WITH_ZLIB {
+    user_value 1
+};
+
+cdl_option CYGBLD_BUILD_REDBOOT_WITH_THREADS {
+    user_value 1
+};
+
+cdl_option CYGDAT_REDBOOT_CUSTOM_VERSION {
+    user_value 1 "CME555/MPC555 RAM-Startup"
+};
+
+cdl_option CYGNUM_REDBOOT_CMD_LINE_EDITING {
+    user_value 0
+};
+
+cdl_option CYGSEM_REDBOOT_VARIABLE_BAUD_RATE {
+    user_value 1
+};
+
+cdl_option CYGBLD_REDBOOT_MIN_IMAGE_SIZE {
+    user_value 0x00008000
+};
+
+cdl_option CYGBLD_REDBOOT_FLASH_BOOT_OFFSET {
+    user_value 0x00000000
+};
+
+cdl_option CYGNUM_REDBOOT_FLASH_RESERVED_BASE {
+    user_value 0x00000000
+};
+
+cdl_option CYGOPT_REDBOOT_FIS {
+    user_value 0
+};
+
+cdl_component CYGSEM_REDBOOT_FLASH_CONFIG {
+    user_value 0
+};
+
+cdl_option CYGIMP_LIBC_STRING_INLINES {
+    user_value 1
+};
+
+cdl_option CYGIMP_LIBC_STRING_PREFER_SMALL_TO_FAST {
+    user_value 1
+};
+
+cdl_option CYGFUN_LIBC_STRING_BSD_FUNCS {
+    inferred_value 0
+};
+
+cdl_option CYGBLD_ISO_CTYPE_HEADER {
+    user_value 0 0
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    user_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    user_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_STRCONV_HEADER {
+    user_value 1 <cyg/libc/stdlib/atox.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_STRCONV_FLOAT_HEADER {
+    user_value 0 0
+};
+
+cdl_option CYGBLD_ISO_STDLIB_ABS_HEADER {
+    user_value 1 <cyg/libc/stdlib/abs.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_DIV_HEADER {
+    user_value 1 <cyg/libc/stdlib/div.inl>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    user_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV200 {
+    user_value 1
+};
+
+cdl_option CYGHWR_DEVS_FLASH_ST_M29W200B {
+    user_value 1
+};
+
+cdl_option CYGSEM_COMPRESS_ZLIB_NEEDS_MALLOC {
+    user_value 0
+};
+
+
+

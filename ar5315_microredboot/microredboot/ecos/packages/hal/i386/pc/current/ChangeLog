@@ -1,0 +1,506 @@
+2004-08-14  David Brennan <eCos@brennanhome.com>
+
+	 * cdl/hal_i386_pc.cdl: Added capability to build redboot with GRUB
+	 startup type. Also added capability to load applications into a 
+	 higher RAM address (2MB) so they work with new GRUB based redboot.
+	 * include/pkgconf/mlt_i386_pc_ram_hi.mlt: 
+	 * include/pkgconf/mlt_i386_pc_ram_hi.h: 
+	 * include/pkgconf/mlt_i386_pc_ram_hi.ldi: New files for loading
+	 applications at 2MB.
+	 * misc/redboot_GRUB.ecm: New file for creating GRUB loadable
+	 redboot
+
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_i386_pc.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-07-23  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/plf_intr.h: Added extern definition for hal_pc_reset().
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/pkgconf/mlt_i386_pc_rom.ldi: Brought list of sections up
+	to date with other files.
+
+2003-01-22  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/pkgconf/hal_i386_pc.h: Old file. Remove.
+
+2002-11-28  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/plf_stub.c: Removed redundant reinitialization of VSR table
+	in hal_pc_stubs_init(). This has already been done in
+	hal_platform_init() and reinitializing here destroys the FPU
+	switch VSR.
+
+	* src/plf_misc.c (hal_platform_init):
+	Added configuration and test to avoid overwriting the FPU switch
+	VSR with the default VSR. This caused problems with stand-alone
+	application that use lazy FPU switching.
+	Moved call to hal_ctrlc_isr_init() to after call to
+	hal_if_init(). Previously, stand-alone applications had problems
+	with ctrl-c handling because the CALL_HACK stuff didn't work.
+
+	* cdl/hal_i386_pc.cdl:
+	Added GRUB startup option. This enables support for booting from
+	the GRUB bootloader.
+	Added CYGDBG_HAL_DEBUG_GDB_INITIAL_BREAK option to force a
+	breakpoint just before calling cyg_start(). This is insinuated
+	into the CYGPKG_HAL_DEBUG part of the tree, and conditioned to
+	only work for stand-alone apps with the stubs included.
+
+	* include/platform.inc: Added GRUB startup support.
+
+	* include/pkgconf/mlt_i386_pc_grub.mlt: 
+	* include/pkgconf/mlt_i386_pc_grub.ldi: 
+	* include/pkgconf/mlt_i386_pc_grub.h: 
+	Added these MLT files to support the new GRUB startup option.
+
+	* misc/menu.lst: Added this example GRUB menu configuration file.
+	
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_i386_pc.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-04-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/romboot.S:
+	Don't use .file as it can confuse debugging since the .file
+	doesn't contain the path and therefore the debugger will never
+	know where it lives! This conflicts with using -Wa,--gstabs.
+
+2002-04-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_i386_pc.cdl: Remove unused compile line.
+
+2001-12-07  Nick Garnett  <nickg@redhat.com>
+
+	* include/plf_intr.h: Added definition of HAL_DELAY_US() so that
+	this is used instead of the delay loop in delay_us(). This is
+	necessary to handle fast Pentiums and Athlons.
+
+	* misc/redboot_FLOPPY_D850GB.ecm: Removed reference to SMP.
+
+2001-10-16  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_FLOPPY_D850GB.ecm: New file. RedBoot config for
+	Intel D850GB motherboard.
+
+	* src/hal_diag.c: Setup pc_ser_channels based on CDL.
+
+2001-10-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_i386_pc.cdl: Parent CYGBLD_BUILD_REDBOOT_BIN_ROM and
+	CYGBLD_BUILD_REDBOOT_BIN_FLOPPY under a CYGBLD_BUILD_REDBOOT_BIN_ROM
+	component for better cross-platform consistency.
+
+2001-10-08  Ian Campbell  <icampbell@arcom.co.uk>
+
+	* cdl/hal_i386_pc.cdl: CYGBLD_BUILD_I386_ROMBOOT and
+	CYGBLD_BUILD_REDBOOT_BIN_ROM moved here from hal_i386.cdl in the
+	arch package. Rename CYGBLD_BUILD_REDBOOT_BIN to
+	CYGBLD_BUILD_REDBOOT_BIN_FLOPPY for consistency.
+	* src/romboot.S: Moved from arch package.
+	* src/romboot.ld: Moved from arch package.
+
+2001-10-05  Mark Salter  <msalter@redhat.com>
+
+	* src/plf_stub.c (hal_pc_stubs_init): Install idt entry for GNUPro
+	syscalls.
+
+	* misc/redboot_FLOPPY.ecm: Turn on CYGSEM_REDBOOT_BSP_SYSCALLS.
+
+	* include/plf_misc.h: Add extern decl for cyg_hal_pc_set_idt_entry.
+
+2001-10-02  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_i386_pc.cdl 
+	(CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT): Allow user to
+	change value.
+
+2001-09-28  Ian Campbell  <icampbell@arcom.co.uk>
+
+	* include/platform.inc (hal_cpu_init): Initialise %ss.
+	Be more pedantic about register names matching opcode suffixes.
+
+2001-09-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/redboot_FLOPPY.ecm: Disable
+	CYGSEM_REDBOOT_VALIDATE_USER_RAM_LOADS
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_FLOPPY_SMP.ecm: Ditto.
+
+2001-09-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/plf_misc.c (hal_platform_init): If not RAM startup, install
+	exception VSRs.
+
+2001-08-22  Nick Garnett  <nickg@redhat.com>
+
+	* include/pkgconf/mlt_i386_pc_floppy.ldi:
+	* include/pkgconf/mlt_i386_pc_floppy.mlt:
+	Moved load base address from 0x2000 to 0x3000.
+	We now use page 0x2000 for SMP related data including the slave
+	CPU startup trampoline and various data structures that need to be
+	shared between RedBoot and the application.
+
+	* misc/redboot_FLOPPY_SMP.ecm: Added this file to configure an
+	SMP-aware RedBoot floppy. If SMP applications are to be run it is
+	essential that this version of RedBoot be used because a degree of
+	cooperation is required to get the CPUs going, and to handle
+	exceptions cleanly.
+
+	* src/plf_misc.c (hal_platform_init): Added call to cyg_hal_smp_init().
+
+
+	* include/platform.inc (hal_idt_init): Added entries to set up IDT
+	entries 48..67.
+
+2001-08-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_i386_pc.cdl: Fix CYG_HAL_STARTUP description.
+
+2001-07-13  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/hal_i386_pc.cdl: Added requires statement to
+	CYGSEM_HAL_ROM_MONITOR option to turn off lazy FPU switching. ROM
+	monitors should not be playing these kinds of games.
+
+2001-05-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_i386_pc_ram.mlt: Fix pci_window description.
+
+2001-05-03  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* cdl/hal_i386_pc.cdl: Changed option
+	CYGIMP_HAL_I386_PCMB_SCREEN_SUPPORT to interface
+	CYGINT_HAL_I386_PCMB_SCREEN_SUPPORT.
+
+2001-04-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* cdl/hal_i386_pc.cdl: Added options to convert ELF file to binary
+	for copying to a floppy disc.
+
+2001-03-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* misc/redboot_ROM.ecm:
+	Removed ETH_DRIVERS package for initial work.
+	(This is work in progress and is not yet complete.)
+
+	* include/pkgconf/mlt_i386_pc_rom.ldi: 
+	* include/pkgconf/mlt_i386_pc_rom.h:
+	Added these files to enable building of ROM images.
+	(This is work in progress and is not yet complete.)
+
+	* include/platform.inc: Modified ROM startup to work with romboot.S.
+
+	* cdl/hal_i386_pc.cdl: Modified options to allow for ROM startup.
+
+	* include/pkgconf/mlt_i386_pc_ram.mlt: 
+	* include/pkgconf/mlt_i386_pc_ram.ldi: 
+	* include/pkgconf/mlt_i386_pc_ram.h:
+	Fixed some bugs in these files with the size and layout of
+	RAM. This was causing the heap to be badly mangled.
+
+2001-03-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/plf_misc.c (hal_platform_init): Added call to
+	hal_pcmb_init().
+
+	* include/platform.inc:	Removed memory size stuff.
+
+2001-03-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]	
+	* src/plf_misc.c: Deleted old FP context switch code.
+
+	* include/platform.inc: Removed some now redundant code.
+
+2001-03-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/plf_misc.c: ISR tables and cyg_hal_pc_set_idt_entry() moved
+	here from hal_startup.c. ISR table setup code tidied.
+	hal_delay_us() now works in 1s bursts to avoid arithmetic
+	overflow.
+
+	* src/hal_diag.c: Most of contents of file moved out to
+	pcmb_serial.c and pcmb_screen.c. This remains as an intialization
+	interface for those.
+
+	* include/plf_io.h: Move contents out to pcmb_io.h.
+
+	* include/plf_intr.h: Added include of pcmb_intr.h and other
+	headers.
+
+	* include/plf_arch.h: File added. Currently contains nothing.
+
+	* include/platform.inc: floppy boot code moved to PCMB HAL. FPU
+	support moved to architectural HAL. Various tidies.
+
+	* cdl/hal_i386_pc.cdl: Many changes to bring this HAL in line with
+	reorganization of whole i386 HAL. Lots of stuff deleted, and other
+	things moved out to PCMB package.
+
+	* misc/redboot_FLOPPY.ecm: Added setting of CYGSEM_HAL_ROM_MONITOR
+	to 1.
+
+	* include/var_intr.h:
+	* include/variant.inc:
+	* src/hal_intr.c:
+	* src/hal_startup.c:
+	* src/var_misc.c:
+	Files removed. Most of the contents of these files has become
+	redundant. Those parts that are not have been moved to more
+	appropriate places.
+	
+2001-03-06  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/var_misc.c: Rewrote clock init and access functions in terms
+	of HAL IO macros.
+
+	* src/plf_misc.c:
+	Added call to HAL_CLOCK_INITIALIZE() to hal_platform_init() when
+	in RedBoot configurations.
+	Rewrote hal_delay_us() to use timer 0.
+
+	* misc/redboot_FLOPPY.ecm: Added ETH drivers to configuration.
+
+	* include/pkgconf/mlt_i386_pc_floppy.ldi: 
+	* include/pkgconf/mlt_i386_pc_floppy.h:
+	Added __pci_window label for use with PCI devices.
+
+	* include/plf_misc.h: Removed unnecessary port IO functions.
+
+	* include/plf_io.h:
+	Gave correct values to HAL_PCI_PHYSICAL_MEMORY_BASE and friends.
+	Tidied up a bit.	
+
+2001-03-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	Some of these changes were initially made by Fabrice Gautier and
+	then liberally modified by me.
+	
+	* src/var_misc.c: Miscellaneous tidies.
+
+	* src/plf_misc.c (hal_platform_init): Some redundant stuff
+	removed.
+
+	* src/plf_stub.c: 
+	* src/hal_startup.c: 
+	* src/hal_intr.c:
+	Lots of stuff removed from these files. When we reorganise the
+	HAL, these files should be eliminated.
+
+	* src/hal_diag.c:
+	Lots of changes to support IF vectors for both serial ports and
+	screen/keyboard.
+
+	* misc/redboot_FLOPPY.ecm: 
+	* misc/redboot_ROM.ecm:
+	ecosconfig import files to generate Redboot configs.
+
+	* include/pkgconf/mlt_i386_pc_floppy.ldi: 
+	* include/pkgconf/mlt_i386_pc_floppy.mlt: 
+	* include/pkgconf/mlt_i386_pc_ram.ldi: 
+	* include/pkgconf/mlt_i386_pc_ram.mlt:
+	Updated to reflect new memory layout for Redboot and RAM apps.
+
+	* include/var_intr.h: Tidied up and made consistent with rest of
+	HAL. HAL_TRANSLATE_VECTOR() used where necessary.
+
+	* include/plf_stub.h: Some minor changes and tidies.
+
+	* include/plf_misc.h: Tidied up. This file should eventually
+	become redundant.
+
+	* include/plf_io.h: New file - contains PCI support code.
+
+	* include/plf_intr.h: Added HAL_PLATFORM_RESET_ENTRY.
+
+	* include/platform.inc:
+	Better separation of startup types, added start of ROM startup.
+	Added IDT initialization. Various tidies.
+
+	* include/hal_diag.h: Added virtual vector support.
+
+	* cdl/hal_i386_pc.cdl: Many changes to support Redboot.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2000-12-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/plf_misc.c (hal_pc_fpe_dsr): Raise the base stack address by
+	CYGNUM_KERNEL_THREADS_STACK_CHECK_DATA_SIZE if that is defined;
+	otherwise a stack overflow would immediately be reported.
+
+2000-11-02  Fabrice Gautier <Fabrice_Gautier@sdesigns.com>
+
+	* src/platform.inc (hal_cpu_init): Load image from floppy one
+        sector at a time to avoid "DMA access across 64k boundary" error.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_i386_pc_floppy.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_i386_pc_floppy.h:
+	* include/pkgconf/mlt_i386_pc_ram.h:
+	* include/pkgconf/mlt_i386_pc_floppy.ldi:
+	* include/pkgconf/mlt_i386_pc_ram.ldi:
+	Regenerated
+
+2000-10-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_i386_pc_ram.h: Added heap1 label.
+	* include/pkgconf/mlt_i386_pc_ram.mlt: Same.
+	* include/pkgconf/mlt_i386_pc_ram.ldi: Same.
+
+2000-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/platform.inc:
+	* include/var_intr.h:
+	Fixed code to acknowledge interrupts to always ack on the master
+	controller and ack the slave controller when it is INT8 or higher.
+
+2000-06-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_intr.h: Added cast to _data_ argument in
+	HAL_INTERRUPT_ATTACH() to prevent compiler errors.
+
+2000-03-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* doc/RELEASENOTES.txt: Added this file to contain release notes.
+
+2000-03-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c: Added code to handle keyboard input on PC when
+	using SCREEN diagnostics. This is as much for completeness and
+	future use than for any pressing current need.
+
+	* include/platform.inc: Fixed some mismatches between instruction
+	suffixes and operand sizes that the latest i386 assembler now
+	warns about. Also tidied up GDT and IDT load code and protected
+	mode switch because of warnings from assembler.
+
+2000-03-09  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc:
+	* cdl/hal_i386_pc.cdl: Rename CYGHWR_HAL_STARTUP to
+	CYG_HAL_STARTUP for consistency with other HALs (and tools).
+
+2000-03-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_i386_pc.cdl (CYGBLD_GLOBAL_COMMAND_PREFIX): 
+	Use i386-elf toolchain by default, although add a note in the
+	description that appropriate versions of native linux tools can
+	also be used.
+
+2000-03-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_stub.c (cyg_hal_gdb_isr): Added check for a character
+	being available at the serial line. With the introduction of GDB O
+	packet debugging, it is possible for this code to see a spurious
+	interrupt and get stuck in hal_pc_get_char().
+
+	* include/var_intr.h:
+	Modified interrupt enable/disable code so that it is closer in
+	behavior to other HALs.
+
+	* include/platform.inc:
+	Changed floppy bootstrap code so it can load binaries greater than
+	64k and only loads the .text+.data parts, not the .bss.
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_i386_pc.cdl (CYGBLD_BUILD_GDB_STUBS): When
+	building stubs, define every dependency required here rather than
+	in the template
+
+2000-02-18  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_i386_pc_ram.mlt,
+	  include/pkgconf/mlt_i386_pc_floppy.mlt:
+
+	Add/update memory layout save files to match the corresponding
+	linker script fragments.
+
+2000-02-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c: Added support for generating GDB O packets when
+	diagnosing to serial0.
+
+	* include/plf_intr.h: Added missed copyright notice.
+
+2000-02-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+        * cdl/hal_i386_pc.cdl:
+        * include/hal_diag.h: 
+        * include/platform.inc: 
+        * include/plf_intr.h: 
+        * include/plf_misc.h: 
+        * include/plf_stub.h: 
+        * include/var_intr.h: 
+        * include/variant.inc: 
+        * include/pkgconf/hal_i386_pc.h: 
+        * include/pkgconf/mlt_i386_pc_floppy.h: 
+        * include/pkgconf/mlt_i386_pc_floppy.ldi: 
+        * include/pkgconf/mlt_i386_pc_ram.h: 
+        * include/pkgconf/mlt_i386_pc_ram.ldi: 
+        * include/pkgconf/mlt_i386_pc_ram.mlt: 
+        * src/PKGconf.mak: 
+        * src/hal_diag.c: 
+        * src/hal_intr.c: 
+        * src/hal_startup.c: 
+        * src/plf_misc.c: 
+        * src/plf_stub.c: 
+        * src/var_misc.c:
+	Files added to provide PC support. Most of these are based on code
+	contributed by Patrick O'Grady (patrick@softprocess.com).
+	
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

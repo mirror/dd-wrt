@@ -1,0 +1,136 @@
+# ====================================================================
+#
+#      hal_arm_xscale_pxa2x0.cdl
+#
+#      Intel PXA2X0 architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+# -------------------------------------------
+# This file is part of eCos, the Embedded Configurable Operating System.
+# Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# eCos is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 or (at your option) any later version.
+#
+# eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with eCos; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+#
+# As a special exception, if other files instantiate templates or use macros
+# or inline functions from this file, or you compile this file and link it
+# with other works to produce a work based on this file, this file does not
+# by itself cause the resulting work to be covered by the GNU General Public
+# License. However the source code for this file must still be made available
+# in accordance with section (3) of the GNU General Public License.
+#
+# This exception does not invalidate any other reasons why a work based on
+# this file might be covered by the GNU General Public License.
+#
+# Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+# at http://sources.redhat.com/ecos/ecos-license
+# -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      <knud.woehler@microplex.de>
+# Date:           2003-01-06
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_ARM_XSCALE_PXA2X0 {
+    display       "ARM PXA2X0 architecture"
+    parent        CYGPKG_HAL_ARM
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm_xscale_pxa2x0.h
+    description   "
+        This HAL variant package provides generic
+        support for the Intel PXA2x0 processors. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    implements    CYGINT_HAL_ARM_ARCH_PXA2X0
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+
+	define_proc {
+		puts $::cdl_header "#define CYGBLD_HAL_VAR_INTS_H <cyg/hal/hal_var_ints.h>"
+		puts $::cdl_header "#define CYGBLD_HAL_VAR_H <cyg/hal/hal_pxa2x0.h>"
+		puts $::cdl_system_header "#define CYGBLD_HAL_ARM_VAR_IO_H"
+	}
+	
+    compile       hal_diag.c pxa2x0_misc.c
+    
+	# Real-time clock/counter specifics
+	cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+		display       "Real-time clock constants"
+		flavor        none
+		no_define
+    
+		cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+			display       "Real-time clock numerator"
+			flavor        data
+			default_value 1000000000
+		}
+		
+		cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+			display       "Real-time clock denominator"
+			flavor        data
+			default_value 100
+			description   "
+				This option selects the heartbeat rate for the real-time clock.
+				The rate is specified in ticks per second.  Change this value
+				with caution - too high and your system will become saturated
+				just handling clock interrupts, too low and some operations
+				such as thread scheduling may become sluggish."
+		}
+		
+		cdl_option CYGNUM_HAL_RTC_PERIOD {
+			display       "Real-time clock period"
+			flavor        data
+			default_value (3686400/CYGNUM_HAL_RTC_DENOMINATOR)
+		}
+    }
+    
+	# UART
+	cdl_interface CYGHWR_HAL_ARM_PXA2X0_FFUART {
+		display   "FFUART available as diagnostic/debug channel"
+		description "
+			The PXA2X0 chip has multiple serial channels which may be
+			used for different things on different platforms.  This
+			interface allows a platform to indicate that the specified
+			serial port can be used as a diagnostic and/or debug channel."
+	}
+	
+	cdl_interface CYGHWR_HAL_ARM_PXA2X0_BTUART {
+		display   "BTUART available as diagnostic/debug channel"
+		description "
+			The PXA2X0 chip has multiple serial channels which may be
+			used for different things on different platforms.  This
+			interface allows a platform to indicate that the specified
+			serial port can be used as a diagnostic and/or debug channel."
+	}
+
+	cdl_interface CYGHWR_HAL_ARM_PXA2X0_STUART {
+		display   "STUART available as diagnostic/debug channel"
+		description "
+			The PXA2X0 chip has multiple serial channels which may be
+			used for different things on different platforms.  This
+			interface allows a platform to indicate that the specified
+			serial port can be used as a diagnostic and/or debug channel."
+	}
+
+}
+
+
+
+

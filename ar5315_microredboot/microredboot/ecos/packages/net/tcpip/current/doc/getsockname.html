@@ -1,0 +1,37 @@
+<html>
+<body>
+<pre>
+NAME
+       getsockname - get socket name
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       int   getsockname(int   s  ,  struct  sockaddr  *  name  ,
+       socklen_t * namelen )
+
+DESCRIPTION
+       Getsockname returns the current  name  for  the  specified
+       socket.   The  namelen  parameter should be initialized to
+       indicate the amount of  space  pointed  to  by  name.   On
+       return  it  contains  the actual size of the name returned
+       (in bytes).
+
+RETURN VALUE
+       On success, zero is returned.  On error, -1  is  returned,
+       and  errno  is  set appropriately.  A 0 is returned if the
+       call succeeds, -1 if it fails.
+
+ERRORS
+       EBADF   The argument s is not a valid descriptor.
+
+       ENOTSOCK
+               The argument s is a file, not a socket.
+
+       ENOBUFS Insufficient resources were available in the  sys-
+               tem to perform the operation.
+
+
+</pre>
+</body>
+</html>

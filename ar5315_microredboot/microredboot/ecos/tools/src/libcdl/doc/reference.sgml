@@ -1,0 +1,3877 @@
+<!-- {{{ Banner         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     reference.sgml                                              -->
+<!--                                                                 -->
+<!--     The man pages.                                              -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2000, 2001, 2002 Red Hat, Inc.                    -->
+<!--                                                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2000/02/06                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<chapter id="reference">
+<title>CDL Language Specification</title>
+
+<para>
+This chapter contains reference information for the main &CDL;
+commands &cdl-option;, &cdl-component;, &cdl-package; and
+&cdl-interface;, followed by the various properties such as
+&active-if; and &compile; in alphabetical order.
+</para>
+
+<!-- {{{ cdl_option     -->
+
+<refentry id="ref.cdl-option">
+<refmeta>
+<refentrytitle>&cdl-option;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Command &cdl-option;</refname>
+<refpurpose>Define a single configuration option</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The option is the basic unit of configurability. Generally each option
+corresponds to a single user choice. Typically there is a certain
+amount of information associated with an option to assist the user in
+manipulating that option, for example a textual description. There
+will also be some limits on the possible values that the user can
+choose, so an option may be a simple yes-or-no choice or it may be
+something more complicated such as an array size or a device name.
+Options may have associated constraints, so if that option is enabled
+then certain conditions have to satisfied elsewhere in the
+configuration. Options usually have direct consequences such as
+preprocessor <literal>#define</literal> symbols in a configuration
+header file.
+</para>
+<para>
+&cdl-option; is implemented as a Tcl command that takes two arguments,
+a name and a body. The name must be a valid C preprocessor identifier:
+a sequence of upper or lower case letters, digits or underscores,
+starting with a non-digit character; identifiers beginning with an
+underscore should normally be avoided because they may clash with
+system packages or with identifiers reserved for use by the compiler.
+Within a single configuration, names must be unique. If a
+configuration contained two packages which defined the same entity
+<literal>CYGIMP_SOME_OPTION</literal>, any references to that entity
+in a &requires; property or any other expression
+would be ambiguous. It is possible for a given name to be used by two
+different packages if those packages should never be loaded into a
+single configuration. For example, architectural HAL packages are
+allowed to re-use names because a single configuration cannot target
+two different architectures. For a recommended naming convention see
+<xref linkend="package.contents">.
+</para>
+<para>
+The second argument to <literal>cdl_option</literal> is a body of
+properties, typically surrounded by braces so that the Tcl interpreter
+treats it as a single argument. This body will be processed by a
+recursive invocation of the Tcl interpreter, extended with additional
+commands for the various properties that are allowed inside a
+&cdl-option;. The valid properties are:
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term><link linkend="ref.active-if">&active-if;</link></term>
+<listitem><para>
+Allow additional control over the active state of this option.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.calculated">&calculated;</link></term>
+<listitem><para>
+The option's value is not directly user-modifiable, it is calculated
+using a suitable CDL expression.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.compile">&compile;</link></term>
+<listitem><para>
+List the source files that should be built if this option is active
+and enabled.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.default-value">&default-value;</link></term>
+<listitem><para>
+Provide a default value for this option using a CDL expression.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define">&define;</link></term>
+<listitem><para>
+Specify additional <literal>#define</literal> symbols that should go
+into the owning package's configuration header file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-format">&define-format;</link></term>
+<listitem><para>
+Control how the option's value will appear in the configuration header
+file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-proc">&define-proc;</link></term>
+<listitem><para>
+Use a fragment of Tcl code to output additional data to
+configuration header files.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.description">&description;</link></term>
+<listitem><para>
+Provide a textual description for this option.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.display">&display;</link></term>
+<listitem><para>
+Provide a short string describing this option.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.doc">&doc;</link></term>
+<listitem><para>
+The location of on-line documentation for this option.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.flavor">&flavor;</link></term>
+<listitem><para>
+Specify the nature of this option.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.if-define">&if-define;</link></term>
+<listitem><para>
+Output a common preprocessor construct to a configuration header file. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.implements">&implements;</link></term>
+<listitem><para>
+Enabling this option provides one instance of a more general
+interface. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.legal-values">&legal-values;</link></term>
+<listitem><para>
+Impose constraints on the possible values for this option.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make">&make;</link></term>
+<listitem><para>
+An additional custom build step associated with this option, resulting
+in a target that should not go directly into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make-object">&make-object;</link></term>
+<listitem><para>
+An additional custom build step associated with this option, resulting
+in an object file that should go into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.no-define">&no-define;</link></term>
+<listitem><para>
+Suppress the normal generation of a preprocessor
+<literal>#define</literal> symbol in a configuration header file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.parent">&parent;</link></term>
+<listitem><para>
+Control the location of this option in the configuration hierarchy. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.requires">&requires;</link></term>
+<listitem><para>
+List constraints that the configuration should satisfy if this option is
+active and enabled.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting format="linespecific" width=72>
+cdl_option CYGDBG_INFRA_DEBUG_PRECONDITIONS {
+    display       "Preconditions"
+    default_value 1
+    description   "
+        This option allows individual control of preconditions.
+        A precondition is one type of assert, which it is
+        useful to control separately from more general asserts.
+        The function is CYG_PRECONDITION(condition,msg)."
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Command <link linkend="ref.cdl-component">&cdl-component;</link>,
+command <link linkend="ref.cdl-package">&cdl-package;</link>,
+command <link linkend="ref.cdl-interface">&cdl-interface;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ cdl_component  -->
+
+<refentry id="ref.cdl-component">
+<refmeta>
+<refentrytitle>&cdl-component;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Command &cdl-component;</refname>
+<refpurpose>Define a component, a collection of configuration options</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_component &lt;name&gt; {
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+A component is a configuration option that can contain additional
+options and sub-components. The body of a &cdl-component; can contain
+the same properties as that of a &cdl-option;. There is an additional
+property, &script; which allows configuration data to be split into
+multiple files. It is also possible for a component body to include
+&cdl-component;, &cdl-option; and &cdl-interface; entities that should
+go below this component in the configuration hierarchy.
+</para>
+<para>
+&cdl-component; is implemented as a Tcl command that takes two
+arguments, a name and a body. The name must be a valid C preprocessor
+identifier: a sequence of upper or lower case letters, digits or
+underscores, starting with a non-digit character; identifiers
+beginning with an underscore should normally be avoided because they
+may clash with system packages or with identifiers reserved for use by
+the compiler. Within a single configuration, names must be unique. If
+a configuration contained two packages which defined the same entity
+<literal>CYGIMP_SOME_OPTION</literal>, any references to that entity
+in a &requires; property or any other expression would be ambiguous.
+It is possible for a given name to be used by two different packages
+if those packages should never be loaded into a single configuration.
+For example, architectural HAL packages are allowed to re-use certain
+names because a single configuration cannot target two different
+architectures. For a recommended naming convention see <xref
+linkend="package.contents">.
+</para>
+<para>
+The second argument to &cdl-component; is a body of properties and
+other commands, typically surrounded by braces so that the Tcl
+interpreter treats it as a single argument. This body will be
+processed by a recursive invocation of the Tcl interpreter, extended
+with additional commands for the various properties that are allowed
+inside a &cdl-component;. The valid commands are:
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term><link linkend="ref.active-if">&active-if;</link></term>
+<listitem><para>
+Allow additional control over the active state of this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.calculated">&calculated;</link></term>
+<listitem><para>
+The component's value is not directly user-modifiable, it is calculated
+using a suitable CDL expression.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.cdl-component">&cdl-component</link></term>
+<listitem><para>
+Define a sub-component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.cdl-interface">&cdl-interface;</link></term>
+<listitem><para>
+Define an interface which should appear immediately below this
+component in the configuration hierarchy.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.cdl-option">&cdl-option;</link></term>
+<listitem><para>
+Define a configuration option which should appear immediately below
+this component in the configuration hierarchy.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.compile">&compile;</link></term>
+<listitem><para>
+List the source files that should be built if this component is active
+and enabled.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.default-value">&default-value;</link></term>
+<listitem><para>
+Provide a default value for this component using a CDL expression.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define">&define;</link></term>
+<listitem><para>
+Specify additional <literal>#define</literal> symbols that should go
+into the owning package's configuration header file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-format">&define-format;</link></term>
+<listitem><para>
+Control how the component's value will appear in the configuration header
+file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-proc">&define-proc;</link></term>
+<listitem><para>
+Use a fragment of Tcl code to output additional data to
+configuration header files.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.description">&description;</link></term>
+<listitem><para>
+Provide a textual description for this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.display">&display;</link></term>
+<listitem><para>
+Provide a short string describing this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.doc">&doc;</link></term>
+<listitem><para>
+The location of on-line documentation for this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.flavor">&flavor;</link></term>
+<listitem><para>
+Specify the nature of this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.if-define">&if-define;</link></term>
+<listitem><para>
+Output a common preprocessor construct to a configuration header file. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.implements">&implements;</link></term>
+<listitem><para>
+Enabling this component provides one instance of a more general
+interface. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.legal-values">&legal-values;</link></term>
+<listitem><para>
+Impose constraints on the possible values for this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make">&make;</link></term>
+<listitem><para>
+An additional custom build step associated with this component, resulting
+in a target that should not go directly into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make-object">&make-object;</link></term>
+<listitem><para>
+An additional custom build step associated with this component, resulting
+in an object file that should go into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.no-define">&no-define;</link></term>
+<listitem><para>
+Suppress the normal generation of a preprocessor
+<literal>#define</literal> symbol in a configuration header file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.parent">&parent;</link></term>
+<listitem><para>
+Control the location of this component in the configuration hierarchy. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.requires">&requires;</link></term>
+<listitem><para>
+List constraints that the configuration should satisfy if this component is
+active and enabled.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.script">&script;</link></term>
+<listitem><para>
+Include additional configuration information from another
+CDL script
+</para></listitem></varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<para>
+<programlisting format="linespecific" width=72>
+cdl_component CYGDBG_USE_ASSERTS {
+    display       "Use asserts"
+    default_value 1
+    description   "
+        If this component is enabled, assertions in the code are
+        tested at run-time. Assert functions (CYG_ASSERT()) are
+        defined in 'include/cyg/infra/cyg_ass.h' within the 'install'
+        tree. If the component is disabled, these result in no
+        additional object code and no checking of the asserted
+        conditions."
+    script        assert.cdl
+}
+</programlisting>
+</para>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Command <link linkend="ref.cdl-option">&cdl-option;</link>,
+command <link linkend="ref.cdl-package">&cdl-package;</link>,
+command <link linkend="ref.cdl-interface">&cdl-interface;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ cdl_package    -->
+
+<refentry id="ref.cdl-package">
+<refmeta>
+<refentrytitle>&cdl-package;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Command &cdl-package;</refname>
+<refpurpose>Define a package, a component that can be distributed</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_package &lt;name&gt; {
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+A package is a unit of distribution. It is also a configuration option
+in that users can choose whether or not a particular package is loaded
+into the configuration, and which version of that package should be
+loaded. It is also a component in that it can contain additional
+components and options in a hierarchy.
+</para>
+<para>
+The top-level &CDL; script for a package should begin with a &cdl-package;
+command. This can contain most of the properties that can be used in a
+&cdl-option; command, and a number of additional ones which apply to a
+package as a whole. It is also possible to include &cdl-component;,
+&cdl-interface; and &cdl-option; commands in the body of a package.
+However all configuration entities that occur at the top level of the
+script containing the &cdl-package; command are automatically placed
+below that package in the configuration hierarchy, so putting them
+inside the body has no effect.
+</para>
+<para>
+The following properties cannot be used in the body of a &cdl-package;
+command:
+</para>
+<variablelist TermLength=16>
+
+<varlistentry><term>&flavor;</term>
+<listitem><para>
+Packages always have the flavor <literal>booldata</literal>.
+</para></listitem></varlistentry>
+
+<varlistentry><term>&default-value;</term>
+<listitem><para>
+The value of a package is its version number. This is specified at the
+time the package is loaded into the configuration, and cannot be
+calculated afterwards. Typically the most recent version of the
+package will be loaded.
+</para></listitem></varlistentry>
+
+<varlistentry><term>&legal-values;</term>
+<listitem><para>
+The legal values list for a given package is determined by which
+versions of that package are installed in the component repository,
+and cannot be further constrained in the CDL scripts.
+</para></listitem></varlistentry>
+
+<varlistentry><term>&calculated;</term>
+<listitem><para>
+The value of a package is always selected at the time that it is
+loaded into the configuration, and cannot be re-calculated afterwards.
+</para></listitem></varlistentry>
+
+<varlistentry><term>&script;</term>
+<listitem><para>
+This would be redundant since the CDL script containing the
+&cdl-package; command acts as that package's script.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+<para>
+&cdl-package; is implemented as a Tcl command that takes two
+arguments, a name and a body. The name must be a valid C preprocessor
+identifier: a sequence of upper or lower case letters, digits or
+underscores, starting with a non-digit character; identifiers
+beginning with an underscore should normally be avoided because they
+may clash with system packages or with identifiers reserved for use by
+the compiler. Packages should always have unique names within a given
+component repository. For a recommended naming convention see <xref
+linkend="package.contents">.
+</para>
+<para>
+The second argument to &cdl-package; is a body of properties and other
+commands, typically surrounded by braces so that the Tcl interpreter
+treats it as a single argument. This body will be processed by a
+recursive invocation of the Tcl interpreter, extended with additional
+commands for the various properties that are allowed inside a
+&cdl-package;. The valid commands are:
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term><link linkend="ref.active-if">&active-if;</link></term>
+<listitem><para>
+Allow additional control over the active state of this package.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.cdl-component">&cdl-component;</link></term>
+<listitem><para>
+Define a component which should appear immediately below this package
+in the configuration hierarchy.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.cdl-interface">&cdl-interface;</link></term>
+<listitem><para>
+Define an interface which should appear immediately below this
+package in the configuration hierarchy.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.cdl-option">&cdl-option;</link></term>
+<listitem><para>
+Define an option which should appear immediately below
+this package in the configuration hierarchy.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.compile">&compile;</link></term>
+<listitem><para>
+List the source files that should be built for this package.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define">&define;</link></term>
+<listitem><para>
+Specify additional <literal>#define</literal> symbols that should go
+into the package's configuration header file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-format">&define-format;</link></term>
+<listitem><para>
+Control how the package's value will appear in the global
+configuration header file <filename
+class="headerfile">pkgconf/system.h</filename>
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-header">&define-header;</link></term>
+<listitem><para>
+Specify the configuration header file that will be generated for this package.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-proc">&define-proc;</link></term>
+<listitem><para>
+Use a fragment of Tcl code to output additional data to
+configuration header files.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.description">&description;</link></term>
+<listitem><para>
+Provide a textual description for this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.display">&display;</link></term>
+<listitem><para>
+Provide a short string describing this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.doc">&doc;</link></term>
+<listitem><para>
+The location of on-line documentation for this component.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.hardware">&hardware;</link></term>
+<listitem><para>
+This package is tied to specific hardware.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.if-define">&if-define;</link></term>
+<listitem><para>
+Output a common preprocessor construct to a configuration header file. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.implements">&implements;</link></term>
+<listitem><para>
+Enabling this component provides one instance of a more general
+interface. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.include-dir">&include-dir;</link></term>
+<listitem><para>
+Specify the desired location of this package's exported header files in
+the install tree.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.include-files">&include-files;</link></term>
+<listitem><para>
+List the header files that are exported by this package.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.library">&library;</link></term>
+<listitem><para>
+Specify which library should contain the object files
+generated by building this package.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make">&make;</link></term>
+<listitem><para>
+An additional custom build step associated with this component, resulting
+in a target that should not go directly into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make-object">&make-object;</link></term>
+<listitem><para>
+An additional custom build step associated with this component, resulting
+in an object file that should go into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.no-define">&no-define;</link></term>
+<listitem><para>
+Suppress the normal generation of the package's
+<literal>#define</literal> in the global configuration header file
+<filename class="headerfile">pkgconf/system.h</filename>.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.parent">&parent;</link></term>
+<listitem><para>
+Control the location of this package in the configuration hierarchy. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.requires">&requires;</link></term>
+<listitem><para>
+List constraints that the configuration should satisfy if this package is
+active.
+</para></listitem></varlistentry>
+
+
+</variablelist>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting format="linespecific" width=72>
+cdl_package CYGPKG_INFRA {
+    display       "Infrastructure"
+    include_dir   cyg/infra
+    description   "
+        Common types and useful macros.
+        Tracing and assertion facilities.
+        Package startup options." 
+
+    compile startup.cxx prestart.cxx pkgstart.cxx userstart.cxx      \
+            dummyxxmain.cxx null.cxx simple.cxx fancy.cxx buffer.cxx \
+            diag.cxx tcdiag.cxx memcpy.c memset.c delete.cxx
+}
+
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Command <link linkend="ref.cdl-option">&cdl-option;</link>,
+command <link linkend="ref.cdl-component">&cdl-component;</link>,
+command <link linkend="ref.cdl-interface">&cdl-interface;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ cdl_interface  -->
+
+<refentry id="ref.cdl-interface">
+<refmeta>
+<refentrytitle>&cdl-interface;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Command &cdl-interface;</refname>
+<refpurpose>Define an interface, functionality that can be provided by
+a number of different implementations.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_interface &lt;name&gt; {
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+An interface is a special type of calculated configuration option.
+It provides an abstraction mechanism that is often useful in &CDL;
+expressions. As an example, suppose that some package relies on the
+presence of code that implements the standard kernel scheduling
+interface. However the requirement is no more stringent than this, so
+the constraint can be satisfied by the mlqueue scheduler, the bitmap
+scheduler, or any additional schedulers that may get implemented in
+future. A first attempt at expressing the dependency might be:
+</para>
+<programlisting width=72>
+    requires CYGSEM_KERNEL_SCHED_MLQUEUE || CYGSEM_KERNEL_SCHED_BITMAP
+</programlisting>
+<para>
+This constraint is limited, it may need to be changed if a new
+scheduler were to be added to the system. Interfaces provide a way of
+expressing more general relationships:
+</para>
+<programlisting width=72>
+    requires CYGINT_KERNEL_SCHEDULER
+</programlisting>
+<para>
+The interface <literal>CYGINT_KERNEL_SCHEDULER</literal> is
+<emphasis>implemented</emphasis> by both the mlqueue and bitmap
+schedulers, and may be implemented by future schedulers as well. The
+value of an interface is the number of implementors that are active
+and enabled, so in a typical configuration only one scheduler will be
+in use and the value of the interface will be <literal>1</literal>. If
+all schedulers are disabled then the interface will have a value
+<literal>0</literal> and the &requires; constraint will not be
+satisfied.
+</para>
+<para>
+Some component writers may prefer to use the first &requires;
+constraint on the grounds that the code will only have been tested
+with the mlqueue and bitmap schedulers and cannot be guaranteed to
+work with any new schedulers. Other component writers may take a more
+optimistic view and assume that their code will work with any
+scheduler until proven otherwise.
+</para>
+<para>
+Interfaces must be defined in CDL scripts, just like options,
+components and packages. This involves the command &cdl-interface;
+which takes two arguments, a name and a body. The name must be a valid
+C preprocessor identifier: a sequence of upper or lower case letters,
+digits or underscores, starting with a non-digit character;
+identifiers beginning with an underscore should normally be avoided
+because they may clash with system packages or with identifiers
+reserved for use by the compiler. Within a single configuration, names
+must be unique. If a configuration contained two packages which
+defined the same entity <literal>CYGIMP_SOME_OPTION</literal>, any
+references to that entity in a &requires; property or any other
+expression would be ambiguous. It is possible for a given name to be
+used by two different packages if those packages should never be
+loaded into a single configuration. For example, architectural HAL
+packages are allowed to re-use names because a single configuration
+cannot target two different architectures. For a recommended naming
+convention see <xref linkend="package.contents">.
+</para>
+<para>
+The second argument to &cdl-interface; is a body of properties,
+typically surrounded by braces so that the Tcl interpreter treats it
+as a single argument. This body will be processed by a recursive
+invocation of the Tcl interpreter, extended with additional commands
+for the various properties that are allowed inside a &cdl-interface;.
+The valid properties are a subset of those for a &cdl-option;.
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term><link linkend="ref.active-if">&active-if;</link></term>
+<listitem><para>
+Allow additional control over the active state of this interface.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.compile">&compile;</link></term>
+<listitem><para>
+List the source files that should be built if this interface is active.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define">&define;</link></term>
+<listitem><para>
+Specify additional <literal>#define</literal> symbols that should go
+into the owning package's configuration header file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-format">&define-format;</link></term>
+<listitem><para>
+Control how the interface's value will appear in the configuration header
+file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.define-proc">&define-proc;</link></term>
+<listitem><para>
+Use a fragment of Tcl code to output additional data to
+configuration header files.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.description">&description;</link></term>
+<listitem><para>
+Provide a textual description for this interface.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.display">&display;</link></term>
+<listitem><para>
+Provide a short string describing this interface.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.doc">&doc;</link></term>
+<listitem><para>
+The location of on-line documentation for this interface.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.flavor">&flavor;</link></term>
+<listitem><para>
+Interfaces have the <literal>data</literal> flavor by default, but
+they can also be given the <literal>bool</literal> or
+<literal>booldata</literal> flavor when necessary. A
+<literal>bool</literal> interface is disabled if there are no active
+and enabled implementors, otherwise it is enabled. A
+<literal>booldata</literal> interface is also disabled if there are no
+active and enabled implementors, otherwise it is enabled and the data
+is a number corresponding to the number of these implementors.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.if-define">&if-define;</link></term>
+<listitem><para>
+Output a common preprocessor construct to a configuration header file. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.implements">&implements;</link></term>
+<listitem><para>
+If this interface is active it provides one instance of a more general
+interface. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.legal-values">&legal-values;</link></term>
+<listitem><para>
+Interfaces always have a small numerical value. The &legal-values; can
+be used to apply additional constraints such as an upper limit.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make">&make;</link></term>
+<listitem><para>
+An additional custom build step associated with this option, resulting
+in a target that should not go directly into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.make-object">&make-object;</link></term>
+<listitem><para>
+An additional custom build step associated with this option, resulting
+in an object file that should go into a library.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.no-define">&no-define;</link></term>
+<listitem><para>
+Suppress the normal generation of a preprocessor
+<literal>#define</literal> symbol in a configuration header file.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.parent">&parent;</link></term>
+<listitem><para>
+Control the location of this option in the configuration hierarchy. 
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.requires">&requires;</link></term>
+<listitem><para>
+List constraints that the configuration should satisfy if this option is
+active and enabled.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+<para>
+A number of properties are not applicable to interfaces:
+</para>
+<variablelist>
+
+<varlistentry><term><link linkend="ref.calculated">&calculated;</link></term>
+<listitem><para>
+Interfaces are always calculated, based on the number of active and
+enabled entities that implement the interface.
+</para></listitem></varlistentry>
+
+<varlistentry><term><link linkend="ref.default-value">&default-value;</link></term>
+<listitem><para>
+Interface values are calculated so a &default-value; property would be
+meaningless.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+<para>
+Interfaces are not containers, so they cannot hold other entities such
+as options or components.
+</para>
+<para>
+A commonly used constraint on interface values takes the form:
+</para>
+<programlisting width=72>
+    requires CYGINT_KERNEL_SCHEDULER == 1
+</programlisting>
+<para>
+This constraint specifies that there can be only one scheduler in the
+system. In some circumstances it is possible for the configuration
+tools to detect this pattern and act accordingly, so for example
+enabling the bitmap scheduler would automatically disable the mlqueue
+scheduler.
+</para>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_interface CYGINT_KERNEL_SCHEDULER {
+    display  "Number of schedulers in this configuration"
+    requires 1 == CYGINT_KERNEL_SCHEDULER
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Property <link linkend="ref.implements">&implements;</link>,
+command <link linkend="ref.cdl-option">&cdl-option;</link>.
+command <link linkend="ref.cdl-component">&cdl-component;</link>,
+command <link linkend="ref.cdl-package">&cdl-package;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+
+<!-- {{{ active_if      -->
+
+<refentry id="ref.active-if">
+<refmeta>
+<refentrytitle>&active-if;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &active-if;</refname>
+<refpurpose>Allow additional control over the active state of an
+option or other CDL entity.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    active_if &lt;condition&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Configuration options or other entities may be either active or
+inactive. Typically this is controlled by the option's location in the
+overall hierarchy. Consider the option
+<literal>CYGDBG_INFRA_DEBUG_PRECONDITIONS</literal>, which exists
+below the component <literal>CYGDBG_USE_ASSERT</literal>. If the whole
+component is disabled then the options it contains are inactive: there
+is no point in enabling preconditions unless there is generic
+assertion support; any &requires; constraints associated with
+preconditions are irrelevant; any &compile; property or other
+build-related property is ignored.
+</para>
+<para>
+In some cases the hierarchy does not provide sufficient control over
+whether or not a particular option should be active. For example, the
+math library could have support for floating point exceptions which
+is only worthwhile if the hardware implements appropriate
+functionality, as specified by the architectural HAL. The relevant
+math library configuration options should remain below the
+<literal>CYGPKG_LIBM</literal> package in the overall hierarchy, but
+should be inactive unless there is appropriate hardware support. In
+cases like this an &active-if; property is appropriate.
+</para>
+<para>
+Another common use of &active-if; properties is to avoid excessive
+nesting in the configuration hierarchy. If some option B is only
+relevant if option A is enabled, it is possible to turn A into a
+component that contains B. However adding another level to the
+hierarchy for a component which will contain just one entry may be
+considered excessive. In such cases it is possible for B to have an
+&active-if; dependency on A.
+</para>
+<para>
+&active-if; takes a goal expression as argument. For details of goal
+expression syntax see <xref linkend="language.goal-expression">. In
+most cases the goal expression will be very simple, often involving
+just one other option, but more complicated expressions can be used
+when appropriate. It is also possible to have multiple &active-if;
+conditions in a single option, in which case all of the conditions
+have to be satisfied if the option is to be active.
+</para>
+<para>
+The &active-if; and &requires; properties have certain similarities,
+but they serve a different purpose. Suppose there are two options A
+and B, and option B relies on functionality provided by A. This could
+be expressed as either <literal>active_if&nbsp;A</literal> or as
+<literal>requires&nbsp;A</literal>. The points to note are:
+</para>
+<itemizedlist>
+
+<listitem><para>
+If <literal>active_if&nbsp;A</literal> is used and A is disabled or
+inactive, then graphical tools will generally prevent any attempt at
+modifying B. For example the text for B could be grayed out, and the
+associated checkbutton (if B is a boolean option) would be disabled.
+If the user needs the functionality provided by option B then it is
+necessary to go to option A first and manipulate it appropriately.
+</para></listitem>
+
+<listitem><para>
+If <literal>requires&nbsp;A</literal> is used and A is disabled or
+inactive, graphical tools will still allow B to be manipulated and
+enabled. This would result in a new conflict which may get resolved
+automatically or which may need user intervention.
+</para></listitem>
+
+<listitem><para>
+If there are hardware dependencies then an &active-if; condition is
+usually the preferred approach. There is no point in allowing the user
+to manipulate a configuration option if the corresponding
+functionality cannot possibly work on the currently-selected hardware.
+Much the same argument applies to coarse-grained dependencies, for
+example if an option depends on the presence of a TCP/IP stack then an
+<literal>active_if&nbsp;CYGPKG_NET</literal> condition is appropriate:
+it may be possible to satisfy the condition, but it requires the
+fairly drastic step of loading another package; further more, if the
+user wanted a TCP/IP stack in the configuration then it would probably
+have been loaded already. </para></listitem>
+
+<listitem><para>
+If option B exists to provide additional debugging information about
+the functionality provided by A then again an &active-if; constraint
+is appropriate. There is no point in letting users enable extra
+debugging facilities for a feature that is not actually present.
+</para></listitem>
+
+<listitem><para>
+The configuration system's inference engine will cope equally well
+with &active-if; and &requires; properties. Suppose there is a
+conflict because some third option depends on B. If B is
+<literal>active_if&nbsp;A</literal> then the inference engine will
+attempt to make A active and enabled, and then to enable B if
+necessary. If B <literal>requires&nbsp;A</literal> then the inference
+engine will attempt to enable B and resolve the resulting conflict by
+causing A to be both active and enabled. Although the inference occurs
+in a different order, in most cases the effect will be the same.
+</para></listitem>
+
+</itemizedlist>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+# Do not provide extra semaphore debugging if there are no semaphores
+cdl_option CYGDBG_KERNEL_INSTRUMENT_BINSEM {
+    active_if CYGPKG_KERNEL_SYNCH
+    &hellip;
+}
+
+# Avoid another level in the configuration hierarchy
+cdl_option CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INHERITANCE_SIMPLE_RELAY {
+    active_if CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INHERITANCE_SIMPLE
+    &hellip;
+}
+
+# Functionality that is only relevant if another package is loaded
+cdl_option CYGSEM_START_UITRON_COMPATIBILITY {
+    active_if CYGPKG_UITRON
+    &hellip;
+}
+
+# Check that the hardware or HAL provide the appropriate functionality
+cdl_option CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT {
+    active_if CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Property <link linkend="ref.requires">&requires;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ calculated     -->
+
+<refentry id="ref.calculated">
+<refmeta>
+<refentrytitle>&calculated;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &calculated;</refname>
+<refpurpose>Used if the current option's value is not user-modifiable,
+but is calculated using a suitable CDL expression.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    calculated &lt;expression&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+In some cases it is useful to have a configuration option whose value
+cannot be modified directly by the user. This can be achieved using a
+&calculated;, which takes a CDL expression as argument (see <xref
+linkend="language.expression"> for a description of expression
+syntax). The configuration system evaluates the expression when the
+current package is loaded and whenever there is a change to any other
+option referenced in the expression. The result depends on the
+option's flavor:
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term><literal>flavor none</literal></term>
+<listitem><para>
+Options with this flavor have no value, so the &calculated;
+property is not applicable.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor bool</literal></term>
+<listitem><para>
+If the expression evaluates to a non-zero result the option is
+enabled, otherwise it is disabled.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor booldata</literal></term>
+<listitem><para>
+If the result of evaluating the expression is zero then the option is
+disabled, otherwise the option is enabled and its value is the result.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor data</literal></term>
+<listitem><para>
+The value of the option is the result of evaluating the expression.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+<para>
+There are a number of valid uses for calculated options, and there are
+also many cases where some other CDL facility would be more
+appropriate. Valid uses of calculated options include the following:
+</para>
+<itemizedlist>
+
+<listitem><para>
+On some target hardware a particular feature may be user-configurable,
+while on other targets it is fixed. For example some processors can
+operate in either big-endian or little-endian mode, while other
+processors do not provide any choice. It is possible to have an
+option <literal>CYGARC_BIGENDIAN</literal> which is calculated in
+some architectural HAL packages but user-modifiable in others.
+</para></listitem>
+
+<listitem><para>
+Calculated options can provide an alternative way for one package to
+affect the behavior of another one. Suppose a package may provide two
+possible implementations, a preferred one involving self-modifying
+code and a slower alternative. If the system involves a ROM bootstrap
+then the slower alternative must be used, but it would be
+inappropriate to modify the startup option in every HAL to impose
+constraints on this package. Instead it is possible to have a
+calculated option whose value is
+<literal>{&nbsp;CYG_HAL_STARTUP&nbsp;==&nbsp;"ROM"&nbsp;}</literal>,
+and which has appropriate consequences. Arguably this is a spurious
+example, and it should be a user choice whether or not to use
+self-modifying code with a &default-value; based on
+<literal>CYG_HAL_STARTUP</literal>, but that is for the component
+writer to decide.
+</para></listitem>
+
+<listitem><para>
+Sometimes it should be possible to perform a particular test at
+compile-time, for example by using a C preprocessor
+<literal>#if</literal> construct. However the preprocessor has only
+limited functionality, for example it cannot perform string
+comparisons. CDL expressions are more powerful.
+</para></listitem>
+
+<listitem><para>
+Occasionally a particular sub-expression may occur multiple times in
+a CDL script. If the sub-expression is sufficiently complex then it
+may be worthwhile to have a calculated option whose value is the
+sub-expression, and then reference that calculated option in the
+appropriate places. 
+</para></listitem>
+
+</itemizedlist>
+
+<para>
+Alternatives to using calculated options include the following:
+</para>
+<itemizedlist>
+
+<listitem><para>
+CDL <link linkend="language.interface">interfaces</link> are a form of
+calculated option intended as an abstraction mechanism. An interface
+can be used to express the concept of <emphasis>any
+scheduler</emphasis>, as opposed to a specific one such as the bitmap scheduler.
+</para></listitem>
+
+<listitem><para>
+If a calculated option would serve only to add additional information
+to a configuration header file, it may be possible to achieve the same
+effect using a <link linkend="ref.define-proc">&define-proc</link>
+property or one of the other properties related to header file
+generation.
+</para></listitem>
+
+</itemizedlist>
+
+<tip>
+<para>
+If the first entry in a &calculated; expression is a negative
+number, for example <literal>calculated&nbsp;-1</literal> then this
+can be misinterpreted as an option instead of as part of the
+expression. Currently the &calculated; property does not take any
+options, but this may change in future. Option processing halts at the
+sequence <literal>--</literal>, so the desired value can be expressed
+safely using
+<literal>calculated&nbsp;--&nbsp;-1</literal>
+</para>
+</tip>
+
+<warning>
+<para>
+Some of the CDL scripts in current &eCos; releases make excessive use
+of calculated options. This is partly because the recommended
+alternatives were not always available at the time the scripts were
+written. It is also partly because there is still some missing
+functionality, for example &define-proc; properties cannot yet access
+the configuration data so it may be necessary to use &calculated;
+properties to access the data and perform the desired manipulation via
+a &CDL; expression. New scripts should use calculated options only in
+accordance with the guidelines.
+</para>
+</warning>
+
+<note>
+<para>
+For options with the booldata flavor the current CDL syntax does not
+allow the enabled flag and the value to be calculated separately.
+Functionality to permit this may be added in a future release.
+</para>
+</note>
+
+<note>
+<para>
+It has been suggested that having options which are not
+user-modifiable is potentially confusing, and that a top-level
+<literal>cdl_constant</literal> command should be added to the
+language instead of or in addition to the &calculated; property. Such
+a change is under consideration. However because the value of a
+calculated option can depend on other options, it is not necessarily
+constant.
+</para>
+</note>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+# A constant on some target hardware, perhaps user-modifiable on other
+# targets.
+cdl_option CYGNUM_HAL_RTC_PERIOD {
+    display       "Real-time clock period"
+    flavor        data
+    calculated    12500
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.default-value">&default-value;</link>,
+<link linkend="ref.flavor">&flavor;</link> and
+<link linkend="ref.legal-values">&legal-values;</link>,
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ compile        -->
+
+<refentry id="ref.compile">
+<refmeta>
+<refentrytitle>&compile;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &compile;</refname>
+<refpurpose>List the source files that should be built if this option
+is active and enabled.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    compile [-library=libxxx.a] &lt;list of files&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The &compile; property allows component developers to specify source
+files which should be compiled and added to one of the target
+libraries. Usually each source file will end up the library
+<filename>libtarget.a</filename>. It is possible for component writers
+to specify an alternative library for an entire package using the
+<link linkend="ref.library">&library;</link> property. Alternatively
+the desired library can be specified on the &compile; line itself. For
+example, to add a particular source file to the
+<filename>libextras.a</filename> library the following could be used:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_IO_SERIAL {
+    &hellip;
+    compile -library=libextras.a common/tty.c
+}
+</programlisting>
+<para>
+Details of the build process including such issues as compiler flags
+and the order in which things happen can be found in
+<xref linkend="build">. 
+</para>
+<para>
+&compile; properties can occur in any of &cdl-option;,
+&cdl-component;, &cdl-package; or &cdl-interface;. A &compile;
+property has effect if and only if the entity that contains it is
+active and enabled. Typically the body of a &cdl-package; will define
+any source files that need to be built irrespective of individual
+options, and each &cdl-component;, &cdl-option;, and &cdl-interface;
+will define source files that are more specific. A single &compile;
+property can list any number of source files, all destined for the
+same library. A &cdl-option; or other entity can contain multiple
+&compile; properties, each of which can specify a different library.
+It is possible for a given source file to be specified in &compile;
+properties for several different options, in which case the source
+file will get built if any of these options are active and enabled.
+</para>
+<para>
+If the package follows the <link linkend="package.hierarchy">directory
+layout conventions</link> then the configuration tools will search for
+the specified source files first in the
+<filename class="directory">src</filename> subdirectory of the
+package, then relative to the package directory itself. 
+</para>
+
+<note>
+<para>
+A shortcoming of the current specification of &compile; properties is
+that there is no easy way to specify source files that should be built
+unless an option is enabled. It would sometimes be useful to be able
+to say: &ldquo;if option <literal>A</literal> is enabled then compile
+file <filename>x.c</filename>, otherwise compile file
+<filename>y.c</filename>. There are two simple ways of achieving this: 
+</para>
+<itemizedlist>
+<listitem><para>
+Always compile <filename>y.c</filename>, typically by listing it in
+the body of the &cdl-package;, but use
+<literal>#ifndef&nbsp;A</literal> to produce an empty object file if
+option <literal>A</literal> is not enabled. This has the big
+disadvantage that the file always gets compiled and hence for some
+configurations builds will take longer than necessary.
+</para></listitem>
+<listitem><para>
+Use a &calculated; option whose value is <literal>!A</literal>, and
+have a <literal>compile&nbsp;y.c</literal> property in its body. This
+has the big disadvantage of adding another calculated option to the
+configuration.
+</para></listitem>
+</itemizedlist>
+<para>
+It is likely that this will be resolved in the future, possibly by
+using some sort of expression as the argument to a &compile; property.
+</para>
+</note>
+
+<note>
+<para>
+Currently it is not possible to control the priority of a &compile;
+property, in other words the order in which a file gets compiled
+relative to other build steps. This functionality might prove useful
+for complicated packages and should be added.
+</para>
+</note>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package CYGPKG_INFRA {
+    display       "Infrastructure"
+    include_dir   cyg/infra
+    description   "
+        Common types and useful macros.
+        Tracing and assertion facilities.
+        Package startup options." 
+
+    compile startup.cxx prestart.cxx pkgstart.cxx userstart.cxx \
+            dummyxxmain.cxx memcpy.c memset.c delete.cxx \
+            diag.cxx tcdiag.cxx
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.make">make</link>,
+<link linkend="ref.make-object">make_object</link> and
+<link linkend="ref.library">library</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ default_value  -->
+
+<refentry id="ref.default-value">
+<refmeta>
+<refentrytitle>&default-value;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &default-value;</refname>
+<refpurpose>Provide a default value for this option using a CDL expression.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    default_value &lt;expression&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The &default-value; property allows the initial value of a
+configuration option to depend on other configuration options. The
+arguments to the property should be a &CDL; expression, see
+<xref linkend="language.expression"> for the syntactic details.
+In many cases a simple constant value will suffice, for example:
+</para>
+<programlisting width=72>
+cdl_component CYGPKG_KERNEL_EXCEPTIONS {
+    &hellip;
+    default_value 1
+
+    cdl_option CYGSEM_KERNEL_EXCEPTIONS_DECODE {
+        &hellip;
+        default_value 0
+    }
+}
+</programlisting>
+<para>
+However it is also possible for an option's default value to depend on
+other options. For example the common HAL package provides some
+support functions that are needed by the &eCos; kernel, but are
+unlikely to be useful if the kernel is not being used. This
+relationship can be expressed using:
+</para>
+<programlisting width=72>
+cdl_option CYGFUN_HAL_COMMON_KERNEL_SUPPORT {
+    ...
+    default_value CYGPKG_KERNEL
+}
+</programlisting>
+<para>
+If the kernel is loaded then this HAL option is automatically enabled,
+although the user can still disable it explicitly should this prove
+necessary. If the kernel is not loaded then the option is disabled,
+although it can still be enabled by the user if desired.
+&default-value; expressions can be more complicated than this if
+appropriate, and provide a very powerful facility for component
+writers who want their code to &ldquo;just do the right thing&rdquo;
+in a wide variety of configurations.
+</para>
+<para>
+The &CDL; configuration system evaluates the &default-value;
+expression when the current package is loaded and whenever there is a
+change to any other option referenced in the expression. The result
+depends on the option's flavor:
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term><literal>flavor none</literal></term>
+<listitem><para>
+Options with this flavor have no value, so the &default-value;
+property is not applicable.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor bool</literal></term>
+<listitem><para>
+If the expression evaluates to a non-zero result the option is
+enabled by default, otherwise it is disabled.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor booldata</literal></term>
+<listitem><para>
+If the result of evaluating the expression is zero then the option is
+disabled, otherwise the option is enabled and its value is the result.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor data</literal></term>
+<listitem><para>
+The default value of the option is the result of evaluating the
+expression.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+<para>
+A &cdl-option; or other entity can have at most one &default-value;
+property, and it is illegal to have both a &calculated; and a
+&default-value; property in one body. If an option does not have
+either a &default-value; or a &calculated; property and it does not
+have the flavor <literal>none</literal> then the configuration tools
+will assume a default value expression of <literal>0</literal>.
+</para>
+<para>
+On occasion it is useful to have a configuration option
+<literal>A</literal> which has both a &requires; constraint on some
+other option <literal>B</literal> and a &default-value; expression of
+<literal>B</literal>. If option <literal>B</literal> is not enabled
+then <literal>A</literal> will also be disabled by default and no
+conflict arises. If <literal>B</literal> is enabled then
+<literal>A</literal> also becomes enabled and again no conflict
+arises. If a user attempts to enable <literal>B</literal> but not
+<literal>A</literal> then there will be a conflict. Users should be
+able to deduce that the two options are closely interlinked and should
+not be manipulated independently except in very unusual circumstances.
+</para>
+
+<tip>
+<para>
+If the first entry in a &default-value; expression is a negative
+number, for example <literal>default_value&nbsp;-1</literal> then this
+can be misinterpreted as an option instead of as part of the
+expression. Currently the &default-value; property does not take any
+options, but this may change in future. Option processing halts at the
+sequence <literal>--</literal>, so the desired value can be expressed
+safely using
+<literal>default_value&nbsp;--&nbsp;-1</literal>
+</para>
+</tip>
+
+<note>
+<para>
+In many cases it would be useful to calculate default values using
+some global preferences, for example:
+</para>
+<programlisting width=72>
+cdl_option CYGIMP_LIBC_STRING_PREFER_SMALL_TO_FAST {
+    &hellip;
+    default_value CYGGLO_CODESIZE > CYGGLO_SPEED
+}
+</programlisting>
+<para>
+Such global preference options do not yet exist, but are likely to be
+added in a future version.
+</para>
+</note>
+
+<note>
+<para>
+For options with the booldata flavor the current syntax does not allow
+the default values of the enabled flag and the value to be controlled
+separately. Functionality to permit this may be added in a future
+release.
+</para>
+</note>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT {
+    display       "Include GDB multi-threading debug support"
+    requires      CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+    default_value CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+    description   "
+        This option enables some extra HAL code which is needed
+        to support multi-threaded source level debugging."
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.calculated">&calculated;</link>,
+<link linkend="ref.flavor">&flavor;</link> and
+<link linkend="ref.legal-values">&legal-values;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ define         -->
+
+<refentry id="ref.define">
+<refmeta>
+<refentrytitle>&define;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &define;</refname>
+<refpurpose>Specify additional <literal>#define</literal> symbols that
+should go into the owning package's configuration header file.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    define [-file=&lt;filename&gt;] [-format=&lt;format&gt;] &lt;symbol&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Normally the configuration system generates a single
+<literal>#define</literal> for each option that is active and enabled,
+with the defined symbol being the name of the option. These
+<literal>#define's</literal> go to the package's own configuration
+header file, for example <filename class="HeaderFile">pkgconf/kernel.h</filename>
+for kernel configuration options. For the majority of options this is
+sufficient. Sometimes it is useful to have more control over which
+<literal>#define's</literal> get generated.
+</para>
+<para>
+The &define; property can be used to generate an addition
+<literal>#define</literal> if the option is both active and enabled,
+for example:
+</para>
+<programlisting width=72>
+cdl_option CYGNUM_LIBC_STDIO_FOPEN_MAX {
+    &hellip;
+    define FOPEN_MAX
+}
+</programlisting>
+<para>
+If this option is given the value 40 then the following
+<literal>#define's</literal> will be generated in the configuration
+header <filename class="HeaderFile">pkgconf/libc.h</filename>:
+</para>
+<screen width=72>
+#define CYGNUM_LIBC_STDIO_FOPEN_MAX 40
+#define FOPEN_MAX 40
+</screen>
+<para>
+The default <literal>#define</literal> can be suppressed if desired
+using the &no-define; property. This is useful if the symbol should
+only be defined in
+<filename class="HeaderFile">pkgconf/system.h</filename> and not in
+the package's own configuration header file. The value that will be
+used for this <literal>#define</literal> is the same as for the
+default one, and depends on the option's flavor as follows:
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term><literal>flavor none</literal></term>
+<listitem><para>
+Options with this flavor are always enabled and have no value, so the
+constant <literal>1</literal> will be used.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor bool</literal></term>
+<listitem><para>
+If the option is disabled then no <literal>#define</literal> will be
+generated. Otherwise the constant <literal>1</literal> will be used.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor booldata</literal></term>
+<listitem><para>
+If the option is disabled then no <literal>#define</literal> will be
+generated. Otherwise the option's current value will be used.
+</para></listitem></varlistentry>
+
+<varlistentry><term><literal>flavor data</literal></term>
+<listitem><para>
+The option's current value will be used.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+<para>
+For active options with the <literal>data</literal> flavor, and for
+active and enabled options with the <literal>booldata</literal>
+flavor, either one or two <literal>#define's</literal> will be
+generated. These take the following forms:
+</para>
+<programlisting width=72>
+#define &lt;symbol&gt; &lt;value&gt;
+#define &lt;symbol&gt;_&lt;value&gt;
+</programlisting>
+<para>
+For the first <literal>#define</literal> it is possible to control the
+format used for the value using a
+<literal>-format=&lt;format&gt;</literal> option. For example, the
+following can be used to output some configuration data as a C string:
+</para>
+<programlisting width=72>
+cdl_option &lt;name&gt; {
+    &hellip;
+    define -format="\\\"%s\\\"" &lt;symbol&gt;
+}
+</programlisting>
+<para>
+The implementation of this facility involves concatenating the
+Tcl command <literal>format</literal>, the format string, and the
+string representation of the option's value, and evaluating this in a
+Tcl interpreter. Therefore the format string will be processed twice
+by a Tcl parser, and appropriate care has to be taken with quoting.
+</para>
+<para>
+The second <literal>#define</literal> will be generated only if is a
+valid C preprocessor macro symbol. By default the symbols generated by
+&define; properties will end up in the package's own configuration
+header file. The <literal>-file</literal> option can be used to
+specify an alternative destination. At the time of writing the only
+valid alternative definition is <literal>-file=system.h</literal>,
+which will send the output to the global configuration header file
+<filename class="HeaderFile">pkgconf/system.h</filename>.
+</para>
+<caution>
+<para>
+Care has to be taken with the <literal>-format</literal> option.
+Because the Tcl interpreter's <literal>format</literal> command is
+used, this property is subject to any problems with the implementation
+of this in the Tcl library. Generally there should be no problems with
+string data or with integers up to 32 bits, but there may well be
+problems if 64-bit data is involved. This issue may be addressed in a
+future release.
+</para>
+</caution>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_component CYG_HAL_STARTUP {
+    display       "Startup type"
+    flavor        data
+    legal_values  {"RAM" "ROM" }
+    default_value {"RAM"}
+    no_define
+    define -file=system.h CYG_HAL_STARTUP
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.define-format">&define-format;</link>,
+<link linkend="ref.define-header">&define-header;</link>,
+<link linkend="ref.define-proc">&define-proc;</link>,
+<link linkend="ref.if-define">&if-define;</link> and
+<link linkend="ref.no-define">&no-define;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ define_format  -->
+
+<refentry id="ref.define-format">
+<refmeta>
+<refentrytitle>&define-format;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &define-format;</refname>
+<refpurpose>Control how an option's value will appear in the
+configuration header file.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    define_format &lt;format string&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+For active options with the <literal>data</literal> flavor, and for
+active and enabled options with the <literal>booldata</literal>
+flavor, the configuration tools will normally generate two
+<literal>#define's</literal> in the package's configuration header
+file. These take the following forms:
+</para>
+<programlisting width=72>
+#define &lt;name&gt; &lt;value&gt;
+#define &lt;name&gt;_&lt;value&gt;
+</programlisting>
+<para>
+The &define-format; property can be used to control exactly what
+appears as the value for the first of these
+<literal>#define's</literal>. For example, the following can be used
+to output some configuration data as a C string:
+</para>
+<programlisting width=72>
+cdl_option &lt;name&gt; {
+    &hellip;
+    define -format="\\\"%s\\\"" &lt;symbol&gt;
+}
+</programlisting>
+<para>
+The implementation of &define-format; involves concatenating the Tcl
+command <literal>format</literal>, the format string, and the string
+representation of the option's value, and evaluating this in a Tcl
+interpreter. Therefore the format string will be processed twice by a
+Tcl parser, and appropriate care has to be taken with quoting.
+</para>
+<para>
+The second <literal>#define</literal> will be generated only if is a
+valid C preprocessor macro symbol, and is not affected by the
+&define-format; property. Also, the property is only relevant for
+options with the <literal>data</literal> or
+<literal>booldata</literal> flavor, and cannot be used in
+conjunction with the &no-define; property since it makes no sense to
+specify the format if no <literal>#define</literal> is generated.
+</para>
+<caution>
+<para>
+Because the Tcl interpreter's <literal>format</literal> command is
+used, this property is subject to any problems with the implementation
+of this in the Tcl library. Generally there should be no problems with
+string data or with integers up to 32 bits, but there may well be
+problems if 64-bit data is involved. This issue may be addressed in a
+future release.
+</para>
+</caution>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option CYGNUM_UITRON_VER_ID     {
+    display       "OS identification"
+    flavor        data
+    legal_values  0 to 0xFFFF
+    default_value 0
+    define_format "0x%04x"
+    description   "
+        This value is returned in the 'id'
+        field of the T_VER structure in
+        response to a get_ver() system call."
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.define">&define;</link>,
+<link linkend="ref.define-header">&define-header;</link>,
+<link linkend="ref.define-proc">&define-proc;</link>,
+<link linkend="ref.if-define">&if-define;</link> and
+<link linkend="ref.no-define">&no-define;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ define_header  -->
+
+<refentry id="ref.define-header">
+<refmeta>
+<refentrytitle>&define-header;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &define-header;</refname>
+<refpurpose>Specify the  configuration header file that
+will be generated for a given package.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_package &lt;name&gt; {
+    define_header &lt;file name&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+When the configuration tools generate a build tree, one of the steps
+is to output each package's configuration data to a header file. For
+example the kernel's configuration data gets output to
+<filename class="HeaderFile">pkgconf/kernel.h</filename>. This allows
+each package's source code to <literal>#include</literal> the
+appropriate header file and adapt to the choices made by the user.
+</para>
+<para>
+By default the configuration tools will synthesize a file name from
+the package name. This involves removing any prefix such as
+<literal>CYGPKG_</literal>, up to and including the first underscore,
+and then converting the remainder of the name to lower case. In some
+cases it may be desirable to use a different header file, for example
+an existing package may have been ported to &eCos; and the source code
+may already <literal>#include</literal> a particular file for
+configuration data. In such cases a &define-header; property can be
+used to specify an alternative filename.
+</para>
+<para>
+The &define-header; property can only be used in the body of a
+&cdl-package; command. It applies to a package as a whole and cannot
+be used at a finer grain. The name specified in a &define-header;
+property will always be interpreted as relative to the
+<filename class="Directory">include/pkgconf</filename> sub-directory
+of the install tree.
+</para>
+<note>
+<para>
+For hardware-specific packages such as device drivers and HAL
+packages, the current scheme of generating a configuration header file
+name based on the package name may be abandoned. Instead all hardware
+packages would send their configuration data to a single header file,
+<filename class="HeaderFile">pkgconf/hardware.h</filename>. This would
+make it easier for code to obtain details of the current hardware, but
+obviously there are compatibility issues. For now it is recommended
+that all hardware packages specify their configuration header file
+explicitly. 
+</para>
+</note>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package CYGPKG_HAL_ARM {
+    display       "ARM architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm.h
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.define">&define;</link>,
+<link linkend="ref.define-format">&define-format;</link>,
+<link linkend="ref.define-proc">&define-proc;</link>,
+<link linkend="ref.if-define">&if-define;</link>,
+<link linkend="ref.no-define">&no-define;</link> and
+<link linkend="ref.hardware">&hardware;</link>,
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ define_proc    -->
+
+<refentry id="ref.define-proc">
+<refmeta>
+<refentrytitle>&define-proc;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &define-proc;</refname>
+<refpurpose>Use a fragment of Tcl code to output additional data to
+configuration header files.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    define_proc &lt;Tcl script&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+For most configuration options it is sufficient to have an entry in
+the configuration header file of the form:
+</para>
+<programlisting width=72>
+#define &lt;name&gt; &lt;value&gt;
+</programlisting>
+<para>
+In some cases it is desirable to perform some more complicated
+processing when generating a configuration header file. There are a
+number of CDL properties for this, including &define-format; and
+&if-define;. The most flexible is &define-proc;: this allows the
+component writer to specify a Tcl script that gets invoked whenever
+the configuration system generates the header file for the owning
+package. The script can output anything to the header file, for
+example it could generate a C data structure based on various
+configuration values.
+</para>
+<para>
+At the point that the &define-proc; script is invoked there will be
+two channels to open files, accessible via Tcl variables:
+<literal>cdl_header</literal> is a channel to the current package's
+own header file for example
+<filename class="HeaderFile">pkgconf/kernel.h</filename>;
+<literal>cdl_system_header</literal> is a channel to the global
+configuration file
+<filename class="Headerfile">pkgconf/system.h</filename>. A typical
+&define-proc; script will use the <literal>puts</literal> command to
+output data to one of these channels.
+</para>
+<para>
+&define-proc; properties only take effect if the current option is
+active and enabled. The default behavior of the configuration system
+for an option with the <literal>bool</literal> flavor corresponds to
+the following &define-proc;:
+</para>
+<programlisting width=72>
+    cdl_option XXX {
+        &hellip;
+        define_proc {
+            puts $cdl_header "#define XXX 1"
+        }
+}
+</programlisting>
+<warning>
+<para>
+In the current implementation it is not possible for a &define-proc;
+property to examine the current values of various configuration
+options and adapt accordingly. This is a major limitation, and will be
+addressed in future versions of the configuration tools.
+</para>
+</warning>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=90>
+cdl_package CYGPKG_HAL_ARM_PID {
+    display       "ARM PID evaluation board"
+    parent        CYGPKG_HAL_ARM
+    define_header hal_arm_pid.h
+    include_dir   cyg/hal
+    hardware
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   &lt;pkgconf/hal_arm.h&gt;"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H &lt;pkgconf/hal_arm_pid.h&gt;"
+        puts $::cdl_header ""
+        puts $::cdl_header "#define HAL_PLATFORM_CPU    \"ARM 7TDMI\""
+        puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"PID\""
+        puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+        puts $::cdl_header ""
+    }
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.define">&define;</link>,
+<link linkend="ref.define-format">&define-format;</link>,
+<link linkend="ref.define-header">&define-header;</link>,
+<link linkend="ref.if-define">&if-define;</link> and
+<link linkend="ref.no-define">&no-define;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ description    -->
+
+<refentry id="ref.description">
+<refmeta>
+<refentrytitle>&description;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &description;</refname>
+<refpurpose>Provide a textual description for an option.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    description &lt;text&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Users can only be expected to manipulate configuration options
+sensibly if they are given sufficient information about these options.
+There are three properties which serve to explain an option in plain
+text: the &display; property gives a textual alias for an option,
+which is usually more comprehensible than something like
+<literal>CYGPKG_LIBC_TIME_ZONES</literal>; the &description; property
+gives a longer description, typically a paragraph or so; the &doc;
+property specifies the location of additional on-line documentation
+related to a configuration option. In the context of a graphical tool
+the &display; string will be the primary way for users to identify
+configuration options; the &description; paragraph will be visible
+whenever the option is selected; the on-line documentation will only
+be accessed when the user explicitly requests it.
+</para>
+<para>
+At present there is no way of providing any sort of formatting mark-up
+in a description. It is possible that future versions of the
+configuration tools will provide some control over the way the
+description text gets rendered.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option CYGDBG_INFRA_DEBUG_TRACE_MESSAGE {
+    display       "Use trace text"
+    default_value 1
+    description   "
+        All trace calls within eCos contain a text message
+        which should give some information about the circumstances.
+        These text messages will end up being embedded in the
+        application image and hence there is a significant penalty
+        in terms of image size.
+        It is possible to suppress the use of these messages by
+        disabling this option.
+        This results in smaller code size, but there is less
+        human-readable information available in the trace output,
+        possibly only filenames and line numbers."
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.display">&display;</link> and
+<link linkend="ref.doc">&doc;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ display        -->
+
+<refentry id="ref.display">
+<refmeta>
+<refentrytitle>&display;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &display;</refname>
+<refpurpose>Provide a short string describing this option.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    display &lt;string&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Users can only be expected to manipulate configuration options
+sensibly if they are given sufficient information about these options.
+There are three properties which serve to explain an option in plain
+text: the &display; property gives a textual alias for an option,
+which is usually more comprehensible than something like
+<literal>CYGPKG_LIBC_TIME_ZONES</literal>; the &description; property
+gives a longer description, typically a paragraph or so; the &doc;
+property specifies the location of additional on-line documentation
+related to a configuration option. In the context of a graphical tool
+the &display; string will be the primary way for users to identify
+configuration options; the &description; paragraph will be visible
+whenever the option is selected; the on-line documentation will only
+be accessed when the user explicitly requests it.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option CYGNUM_KERNEL_SYNCH_MBOX_QUEUE_SIZE {
+    display       "Message box queue size"
+    flavor        data
+    legal_values  1 to 65535
+    default_value 10
+    description   "
+        This configuration option controls the number of messages
+        that can be queued in a message box before a non-blocking
+        put() operation will fail or a blocking put() operation will
+        block. The cost in memory is one pointer per message box for
+        each possible message."
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.description">&description;</link> and
+<link linkend="ref.doc">&doc;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ doc            -->
+
+<refentry id="ref.doc">
+<refmeta>
+<refentrytitle>&doc;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &doc;</refname>
+<refpurpose>The location of online-documentation for a configuration option.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    doc &lt;URL;&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Users can only be expected to manipulate configuration options
+sensibly if they are given sufficient information about these options.
+There are three properties which serve to explain an option in plain
+text: the &display; property gives a textual alias for an option,
+which is usually more comprehensible than something like
+<literal>CYGPKG_LIBC_TIME_ZONES</literal>; the &description; property
+gives a longer description, typically a paragraph or so; the &doc;
+property specifies the location of additional on-line documentation
+related to a configuration option. In the context of a graphical tool
+the &display; string will be the primary way for users to identify
+configuration options; the &description; paragraph will be visible
+whenever the option is selected; the on-line documentation will only
+be accessed when the user explicitly requests it.
+</para>
+<para>
+The documentation may be an absolute URL, but more generally the
+on-line documentation will be shipped with the package and can be
+accessed via a relative URL. If the package follows the <link
+linkend="package.hierarchy">directory layout conventions</link> then
+the configuration tools will search for the specified html file
+first in the <filename class="directory">doc</filename> subdirectory
+of the package, then relative to the package directory itself. The URL
+may contain a <literal>#</literal> character to specify an anchor
+within a page.
+</para>
+<warning>
+<para>
+At the time of writing the &eCos; packages in the standard
+distribution do not conform to the directory layout conventions when
+it comes to the documentation. Instead of organizing the documentation
+on a per-package basis and placing it in the corresponding
+<filename class="directory">doc</filename> sub-directories, all the
+documentation is kept in a central location. This should get addressed
+in a future release of the system. Third party component writers
+should follow the layout conventions.
+</para>
+</warning>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package CYGPKG_KERNEL {
+    display       "eCos kernel"
+    doc           ref/ecos-ref.4.html
+    include_dir   cyg/kernel
+    description   "
+        This package contains the core functionality of the eCos
+        kernel. It relies on functionality provided by various HAL
+        packages and by the eCos infrastructure. In turn the eCos
+        kernel provides support for other packages such as the device
+        drivers and the uITRON compatibility layer."
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.description">&description;</link> and
+<link linkend="ref.display">&display;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ flavor         -->
+
+<refentry id="ref.flavor">
+<refmeta>
+<refentrytitle>&flavor;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &flavor;</refname>
+<refpurpose>Specify the nature of a configuration option.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    flavor &lt;flavor&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The state of a &CDL; configuration option is a somewhat complicated
+concept. This state determines what happens when a build tree is
+generated: it controls what files get built and what
+<literal>#define's</literal> end up in configuration header files. The
+state also controls the values used during expression evaluation. The
+key concepts are:
+</para>
+<orderedlist>
+<listitem><para>
+An option may or may not be loaded into the current configuration.
+However it is still possible for packages to reference options which
+are not loaded in a &requires; constraint or other expression. If an
+option is not loaded then it will have no direct effect on the build
+process, and <literal>0</literal> will be used for expression
+evaluation. 
+</para></listitem>
+
+<listitem><para>
+Even if an option is loaded it may still be inactive. Usually this is
+controlled by the option's location in the configuration hierarchy. If
+an option's parent is active and enabled then the option will normally
+be active. If the parent is either inactive or disabled then the
+option will be inactive. For example, if kernel timeslicing is diabled
+then the option <literal>CYGNUM_KERNEL_SCHED_TIMESLICE_TICKS</literal>
+is irrelevant and must have no effect. The &active-if; property can be
+used to specify additional constraints. If an option is inactive then
+it will have no direct effect on the build process, in other words it
+will not cause any files to get built or <literal>#define's</literal>
+to be generated. For the purposes of expression evaluation an inactive
+option has a value of <literal>0</literal>.
+</para></listitem>
+
+<listitem><para>
+An option may be enabled or disabled. Most options are boolean in
+nature, for example a particular function may get inlined or it may
+involve a full procedure call. If an option is disabled then it has no
+direct effect on the build process, and for the purposes of expression
+evaluation it has a value of 0.
+</para></listitem>
+<listitem><para>
+An option may also have additional data associated with it, for
+example a numerical value used to control the size of an array.
+</para></listitem>
+</orderedlist>
+<para>
+Most options are boolean in nature and do not have any additional
+associated data. For some options only the data part makes sense and
+users should be unable to manipulate the enabled/disabled part of the
+state. For a comparatively small number of options it makes sense to
+have the ability to disable that option or to enable it and associate
+data as well. Finally, when constructing an option hierarchy it is
+occasionally useful to have entities which serve only as placeholders.
+The &flavor; property can be used to control all this. There are four
+possible values. It should be noted that the active or inactive state
+of an option takes priority over the flavor: if an option is inactive
+then no <literal>#define's</literal> will be generated and any
+build-related properties such as &compile; will be ignored.
+</para>
+
+<variablelist TermLength=16>
+
+<varlistentry><term>flavor&nbsp;<literal>none</literal></term>
+<listitem><para>
+The <literal>none</literal> is intended primarily for placeholder
+components in the hierarchy, although it can be used for other
+purposes. Options with this flavor are always enabled and do not have
+any additional data associated with them, so there is no way for users
+to modify the option. For the purposes of expression evaluation an
+option with flavor <literal>none</literal> always has the value
+<literal>1</literal>. Normal <literal>#define</literal> processing
+will take place, so typically a single <literal>#define</literal> will
+be generated using the option name and a value of
+<literal>1</literal>. Similarly build-related properties such as
+&compile; will take effect.
+</para></listitem></varlistentry>
+
+<varlistentry><term>flavor&nbsp;<literal>bool</literal></term>
+<listitem><para>
+Boolean options can be either enabled or disabled, and there is no
+additional data associated with them. If a boolean option is disabled
+then no <literal>#define</literal> will be generated and any
+build-related properties such as &compile; will be ignored. For the
+purposes of expression evaluation a disabled option has the value
+<literal>0</literal>. If a boolean option is enabled then normal
+<literal>#define</literal> processing will take place, all
+build-related properties take effect, and the option's value will be
+<literal>1</literal>.
+</para></listitem></varlistentry>
+
+<varlistentry><term>flavor&nbsp;<literal>data</literal></term>
+<listitem><para>
+Options with this flavor are always enabled, and have some additional
+data associated with them which can be edited by the user. This data
+can be any sequence of characters, although in practice the
+&legal-values; property will often be used to impose constraints. In
+appropriate contexts such as expressions the configuration tools will
+attempt to interpret the data as integer or floating point numbers.
+Since an option with the <literal>data</literal> flavor cannot be
+disabled, normal <literal>#define</literal> processing takes place and
+the data will be used for the value. Similarly all build-related
+properties take effect, and the option's value for the purposes of
+expression evaluation is the data.
+</para></listitem></varlistentry>
+
+<varlistentry><term>flavor&nbsp;<literal>booldata</literal></term>
+<listitem><para>
+This combines the <literal>bool</literal> and <literal>data</literal>
+flavors. The option may be enabled or disabled, and in addition the
+option has some associated data. If the option is disabled then no
+<literal>#define</literal> will be generated, the build-related
+properties have no effect, and for the purposes of expression
+evaluation the option's value is <literal>0</literal>. If the option
+is enabled then a <literal>#define</literal> will be generated using
+the data as the value, all build-related properties take effect, and
+the option's value for the purposes of expression evaluation is the
+data. If <literal>0</literal> is legal data then it is not possible to
+distinguish this case from the option being disabled or inactive.
+</para></listitem></varlistentry>
+
+</variablelist>
+
+<para>
+Options and components have the <literal>bool</literal> flavor by
+default, but this can be changed as desired. Packages always have the
+<literal>booldata</literal> flavor, and this cannot be changed.
+Interfaces have the <literal>data</literal> flavor by default, since
+the value of an interface is a count of the number of active and
+enabled interfaces, but they can be given the <literal>bool</literal>
+or <literal>booldata</literal> flavors.
+</para>
+
+<note>
+<para>
+The expression syntax needs to be extended to allow the loaded,
+active, enabled and data aspects of an option's state to be examined
+individually. This would allow component writers to distinguish
+between a disabled <literal>booldata</literal> option and an enabled
+one which has a value of <literal>0</literal>. Such an enhancement to
+the expression syntax may also prove useful in other circumstances.
+</para>
+</note>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+
+cdl_component CYGPKG_LIBM_COMPATIBILITY {
+
+    cdl_component CYGNUM_LIBM_COMPATIBILITY {
+        flavor booldata
+        &hellip;
+
+        cdl_option CYGNUM_LIBM_COMPAT_DEFAULT {
+            flavor data
+            &hellip;
+        }
+    }
+
+    &hellip;
+}
+
+cdl_component CYGPKG_LIBM_TRACE {
+    flavor        bool
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.calculated">&calculated;</link>,
+<link linkend="ref.default-value">&default-value;</link> and
+<link linkend="ref.legal-values">&legal-values;</link>,
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ hardware       -->
+
+<refentry id="ref.hardware">
+<refmeta>
+<refentrytitle>&hardware;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &hardware;</refname>
+<refpurpose>Specify that a package is tied to specific hardware.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    active_if &lt;condition&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Some packages such as device drivers and HAL packages are
+hardware-specific, and generally it makes no sense to add such
+packages to a configuration unless the corresponding hardware is
+present on your target system. Typically hardware package selection
+happens automatically when you select your target. The &hardware;
+property can be used in the body of a &cdl-package; command to
+indicate that the package is hardware-specific.
+</para>
+
+<note>
+<para>
+At the time of writing the &hardware; property is largely ignored by
+the configuration tools, but this may change in future. Amongst other
+possible changes, for hardware-specific packages such as device
+drivers and HAL packages, the current scheme of generating a
+configuration header file name based purely on the package name may be
+abandoned. Instead all hardware packages would send their
+configuration data to a single header file, <filename
+class="HeaderFile">pkgconf/hardware.h</filename>. This would make it
+easier for code to obtain details of the current hardware, but
+obviously there are compatibility issues. For now it is recommended
+that all hardware packages specify their configuration header file
+explicitly.
+</para>
+</note>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package CYGPKG_HAL_ARM {
+    display       "ARM architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm.h
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Property <link linkend="ref.define-header">&define-header;</link>, and
+command <link linkend="ref.cdl-package">&cdl-package;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ if_define      -->
+
+<refentry id="ref.if-define">
+<refmeta>
+<refentrytitle>&if-define;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &if-define;</refname>
+<refpurpose>Output a common preprocessor construct to a configuration
+header file.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    if_define [-file=&lt;filename&gt;] &lt;symbol1&gt; &lt;symbol2&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The purpose of the &if-define; property is best explained by an
+example. Suppose you want finer-grained control over assertions, say
+on a per-package or even a per-file basis rather than globally. The
+assertion macros can be defined by an exported header file in an
+infrastructure package, using code like the following:
+</para>
+<programlisting width=72>
+#ifdef CYGDBG_USE_ASSERTS
+# define CYG_ASSERT( _bool_, _msg_ )    \
+        CYG_MACRO_START                 \
+        if ( ! ( _bool_ ) )             \
+            CYG_ASSERT_DOCALL( _msg_ ); \
+        CYG_MACRO_END
+#else
+# define CYG_ASSERT( _bool_, _msg_ ) CYG_EMPTY_STATEMENT
+#endif
+</programlisting>
+<para>
+Assuming this header file is <literal>#include'd</literal> directly or
+indirectly by any code which may need to be built with assertions
+enabled, the challenge is now to control whether or not
+<varname>CYGDBG_USE_ASSERTS</varname> is defined for any given source
+file. This is the purpose of the &if-define; property:
+</para>
+<programlisting width=72>
+cdl_option CYGDBG_KERNEL_USE_ASSERTS {
+    &hellip;
+    if_define CYGSRC_KERNEL CYGDBG_USE_ASSERTS
+    requires  CYGDBG_INFRA_ASSERTION_SUPPORT
+}
+</programlisting>
+<para>
+If this option is active and enabled then the kernel's configuration
+header file would end up containing the following:
+</para>
+<programlisting width=72>
+#ifdef CYGSRC_KERNEL
+# define CYGDBG_USE_ASSERTS 1
+#endif
+</programlisting>
+<para>
+Kernel source code can now begin with the following construct:
+</para>
+<programlisting width=72>
+#define CYGSRC_KERNEL 1
+#include &lt;pkgconf/kernel.h&gt;
+#include &lt;cyg/infra/cyg_ass.h&gt;
+</programlisting>
+<para>
+The configuration option only affects kernel source code, assuming
+nothing else <literal>#define's</literal> the symbol
+<varname>CYGSRC_KERNEL</varname>. If the per-package assertion option
+is disabled then <varname>CYGDBG_USE_ASSERTS</varname> will not get
+defined. If the option is enabled then
+<varname>CYGDBG_USE_ASSERTS</varname> will get defined and assertions
+will be enabled for the kernel sources. It is possible to use the same
+mechanism for other facilities such as tracing, and to apply it at a
+finer grain such as individual source files by having multiple options
+with &if-define; properties and multiple symbols such as
+<varname>CYGSRC_KERNEL_SCHED_BITMAP_CXX</varname>.
+</para>
+<para>
+The &if-define; property takes two arguments, both of which must be
+valid C preprocessor symbols. If the current option is active and
+enabled then three lines will be output to the configuration header
+file:
+</para>
+<programlisting width=72>
+#ifdef &lt;symbol1&gt;
+# define &lt;symbol2&gt;
+#endif
+</programlisting>
+<para>
+If the option is inactive or disabled then these lines will not be
+output. By default the current package's configuration header file
+will be used, but it is possible to specify an alternative destination
+using a <literal>-file</literal> option. At present the only
+legitimate alternative destination is <literal>system.h</literal>, the
+global configuration header. &if-define; processing happens in
+addition to, not instead of, the normal <literal>#define</literal>
+processing or the handling of other header-file related properties.
+</para>
+<note>
+<para>
+The infrastructure in the current &eCos; release does not yet work
+this way. In future it may do so, and the intention is that suitable
+configuration options get generated semi-automatically by the
+configuration system rather than having to be defined explicitly.
+</para>
+</note>
+<tip>
+<para>
+As an alternative to changing the configuration, updating the build
+tree, and so on, it is possible to enable assertions by editing a
+source file directly, for example:
+</para>
+<programlisting width=72>
+#define CYGSRC_KERNEL 1
+#define CYGDBG_USE_ASSERTS 1
+#include &lt;pkgconf/kernel.h&gt;
+#include &lt;cyg/infra/cyg_ass.h&gt;
+</programlisting>
+<para>
+The assertion header file does not care whether
+<varname>CYGDBG_USE_ASSERTS</varname> is <literal>#define'd</literal>
+via a configuration option or by explicit code. This technique can be
+useful to component writers when debugging their source code, although
+care has to be taken to remove any such <literal>#define's</literal>
+later on.
+</para>
+</tip>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option CYGDBG_KERNEL_USE_ASSERTS {
+    display "Assertions in the kernel package"
+    &hellip;
+    if_define CYGSRC_KERNEL CYGDBG_USE_ASSERTS
+    requires  CYGDBG_INFRA_ASSERTION_SUPPORT
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.define">&define;</link>,
+<link linkend="ref.define-format">&define-format;</link>,
+<link linkend="ref.define-header">&define-header;</link>,
+<link linkend="ref.define-proc">&define-proc;</link> and
+<link linkend="ref.no-define">&no-define;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ implements     -->
+
+<refentry id="ref.implements">
+<refmeta>
+<refentrytitle>&implements;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &implements;</refname>
+<refpurpose>Enabling this option provides one instance of a more
+general interface.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    implements &lt;interface&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The &CDL; interface concept provides an abstraction mechanism that can
+be useful in many different circumstances. Essentially an interface is
+a calculated option whose value is the number of active and enabled
+options which implement that interface. For example the interface
+<varname>CYGINT_KERNEL_SCHEDULER</varname> has a value corresponding
+to the number of schedulers in the system, typically just one.
+</para>
+<para>
+The &implements; property takes a single argument, which should be the
+name of an interface. This interface may be defined in the same
+package as the implementor or in some other package. In the latter
+case it may sometimes be appropriate for the implementor or the
+implementor's package to have a &requires; property for the package
+containing the interface. An option may contain multiple &implements;
+properties. It is possible for an option to implement a given
+interface multiple times, and on occasion this is actually useful.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option CYGSEM_KERNEL_SCHED_MLQUEUE {
+    display       "Multi-level queue scheduler"
+    default_value 1
+    implements    CYGINT_KERNEL_SCHEDULER
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Command <link linkend="ref.cdl-interface">&cdl-interface;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ include_dir    -->
+
+<refentry id="ref.include-dir">
+<refmeta>
+<refentrytitle>&include-dir;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &include-dir;</refname>
+<refpurpose>Specify the desired location of a package's exported
+header files in the install tree.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_package &lt;name&gt; {
+    include_dir &lt;sub-directory&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Most packages export one or more header files defining their public
+interface. For example the C library exports header files such as
+<filename class="HeaderFile">stdio.h</filename> and
+<filename class="HeaderFile">ctype.h</filename>. 
+If the package follows the <link linkend="package.hierarchy">directory
+layout conventions</link> then the exported header files will normally
+be found in the package's
+<filename class="directory">include</filename> sub-directory.
+Alternatively the &include-files; property can be used to specify
+which header files should be exported.
+</para>
+<para>
+By default a package's exported header files will be copied to
+the <filename class="directory">include</filename> sub-directory of
+the install tree. This is correct for packages like the C library
+because that is the correct location for files such as
+<filename class="HeaderFile">stdio.h</filename>. However to reduce the
+probability of name clashes it is desirable for packages to use
+different sub-directories, for example infrastructure header files get
+copied to <filename class="directory">include/cyg/infra</filename>
+rather than to the top-level
+<filename class="directory">include</filename> directory itself.
+</para>
+<para>
+It would be possible to replicate these sub-directories in each
+package's source tree, such that the infrastructure header file
+sources lived in
+<filename class="directory">include/cyg/infra</filename> in the source
+tree as well as in the install tree. This would make things more
+difficult for the package developers. Instead it is possible to
+specify the desired install tree sub-directory using an &include-dir;
+property, for example <literal>include_dir&nbsp;cyg/infra</literal>.
+</para>
+<para>
+The &include-dir; property can only be used in the body of a
+&cdl-package; command, since it applies to all of the header files
+exported by a package, and only one &include-dir; property can be
+used. If there is no &include-dir; property then exported header files
+will end up in the top-level <filename class="directory">include</filename>
+directory of the install tree.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package CYGPKG_INFRA {
+    display       "Infrastructure"
+    include_dir   cyg/infra
+    description   "
+        Common types and useful macros.
+        Tracing and assertion facilities.
+        Package startup options."
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Property <link linkend="ref.include-files">&include-files;</link>, and
+command <link linkend="ref.cdl-package">&cdl-package;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ include_files  -->
+
+<refentry id="ref.include-files">
+<refmeta>
+<refentrytitle>&include-files;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &include-files;</refname>
+<refpurpose>List the header files that are exported by a package.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_package &lt;name&gt; {
+    include_files &lt;file1&gt; &hellip;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Most packages export one or more header files defining their public
+interface. For example the C library exports header files such as
+<filename class="HeaderFile">stdio.h</filename> and
+<filename class="HeaderFile">ctype.h</filename>. 
+If the package follows the <link linkend="package.hierarchy">directory
+layout conventions</link> then the exported header files will normally
+be found in the package's
+<filename class="directory">include</filename> sub-directory. For
+packages which do not follow these conventions, typically simple ones
+for which a complicated sub-directory hierarchy is undesirable, there
+has to be an alternative way of specifying which header file or files
+define the public interface. The &include-files; property provides
+support for this.
+</para>
+<para>
+By default, if a package does not have an
+<filename class="directory">include</filename> subdirectory and it
+does not have an &include-files; property then all files with a suffix
+of <literal>.h</literal>, <literal>.hxx</literal>,
+<literal>.inl</literal> or <literal>.inc</literal> will be treated as
+public header files. However some of these may be private files
+containing implementation details. If there is an
+&include-files; property then only the files listed in that property
+will be exported.
+</para>
+<para>
+If a package should not export any header files but does contain
+private implementation headers, an &include-files; property with no
+arguments should be used.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package &lt;SOME_PACKAGE&gt; {
+    &hellip;
+    include_dir   &lt;some directory&gt;
+    include_files interface.h
+}
+
+cdl_package &lt;ANOTHER_PACKAGE&gt; {
+    &hellip;
+    include_files
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Property <link linkend="ref.include-dir">&include-dir;</link>, and
+command <link linkend="ref.cdl-package">&cdl-package;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ legal_values   -->
+
+<refentry id="ref.legal-values">
+<refmeta>
+<refentrytitle>&legal-values;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &legal-values;</refname>
+<refpurpose>Impose constraints on the possible values for an option.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    legal_values &lt;list expression&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Options with the <literal>data</literal> or
+<literal>booldata</literal> flavors can have an arbitrary sequence of
+characters as their data. In nearly all cases some restrictions have
+to be imposed, for example the data should correspond to a number
+within a certain range, or it should be one of a small number of
+constants. The &legal-values; property can be used to impose such
+constraints. The arguments to the property should be a &CDL; list
+expression, see <xref linkend="language.list-expression"> for the
+syntactic details. Common examples include:
+</para>
+<programlisting width=72>
+    legal_values 0 to 0x7fff
+    legal_values 9600 19200 38400
+    legal_values { "RAM" "ROM" }
+</programlisting>
+<para>
+The &legal-values; property can only be used for options with the
+<literal>data</literal> or <literal>booldata</literal> flavors, since
+it makes little sense to further constrain the legal values of a
+boolean option. An option can have at most one &legal-values;
+property.
+</para>
+
+<tip>
+<para>
+If the first entry in a &legal-values; list expression is a negative
+number, for example
+<literal>legal_values&nbsp;-1&nbsp;to&nbsp;1</literal>  then this can
+be misinterpreted as an option instead of as part of the expression.
+Currently the &legal-values; property does not take any options, but
+this may change in future. Option processing halts at the sequence
+<literal>--</literal>, so the desired range can be expressed safely
+using <literal>legal_values&nbsp;--&nbsp;-1&nbsp;to&nbsp;1</literal>
+</para>
+</tip>
+
+<note>
+<para>
+Architectural HAL packages should provide constants which can be used
+in &legal-values; list expressions. For example it should be possible
+to specify a numeric range such as
+<literal>0&nbsp;to&nbsp;CYGARC_MAXINT</literal>, rather than
+hard-wiring numbers such as <literal>0x7fffffff</literal> which may
+not be valid on all targets. Current HAL packages do not define such
+constants. 
+</para>
+</note>
+
+<note>
+<para>
+The &legal-values; property is restricted mainly to numerical ranges
+and simple enumerations, and cannot cope with more complicated data
+items. Future versions of the configuration system will provide
+additional data validation facilities, for example a
+<literal>check_proc</literal> property which specifies a Tcl script
+that can be used to perform the validation.
+</para>
+</note>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET {
+    display       "Default Standard Time offset"
+    flavor        data
+    legal_values  -- -90000 to 90000
+    default_value -- 0
+    description   "
+        This option controls the offset from UTC in
+        seconds when in local Standard Time. This
+        value can be positive or negative. It
+        can also be set at run time using the
+        cyg_libc_time_setzoneoffsets() function."
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.calculated">&calculated;</link>,
+<link linkend="ref.default-value">&default-value;</link>, and
+<link linkend="ref.flavor">&flavor;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ library        -->
+
+<refentry id="ref.library">
+<refmeta>
+<refentrytitle>&library;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &library;</refname>
+<refpurpose>Specify which library should contain the object files
+generated by building this package.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_package &lt;name&gt; {
+    library &lt;library name&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+By default all object files that get built for all packages end up in
+a single library, <filename>libtarget.a</filename>. This makes things
+easier for the typical application developer because it is only
+necessary to link with a single library, rather than with separate
+libraries for each package. It is possible to specify an alternative
+library for specific files as an option to the &compile; and
+&make-object; properties, and there is one library <link
+linkend="build"><filename>libextras.a</filename></link> which serves a
+specific purpose in the build system. The &library; property allows an
+alternative library to be specified for all the object files that will
+be generated for a given package.
+</para>
+<para>
+The use of the &library; property should be avoided, since it makes
+things more difficult for application developers. The property is
+intended only for special cases, for example if there are legal
+objections to mingling object files from different packages in a
+single library. It could also be used to work around name clash
+problems if two packages happen to define an exported symbol with the
+same name, but any attempt to use multiple libraries in this way is
+error-prone and should be avoided.
+</para>
+<para>
+The &library; property takes a single argument, the name of a library,
+which should follow the standard naming convention of
+<literal>lib&lt;something&gt;.a</literal>. A &library; property can
+only occur in the body of a &cdl-package; command and applies to all
+object files generated for that package (except where explicitly
+overwritten with a <literal>-library=</literal> option to one of the
+build-related properties). A &cdl-package; body can contain at most
+one &library; property.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package &lt;SOME_PACKAGE&gt; {
+    &hellip;
+    library  libSomePackage.a
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.compile">&compile;</link>,
+<link linkend="ref.make">&make;</link>, and
+<link linkend="ref.make-object">&make-object;</link>,
+command <link linkend="ref.cdl-package">&cdl-package;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ make           -->
+
+<refentry id="ref.make">
+<refmeta>
+<refentrytitle>&make;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &make;</refname>
+<refpurpose>Define an additional custom build step associated with an
+option, resulting in a target that should not go directly into a library.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    make [-priority=&lt;pri&gt;]  {
+        &lt;custom build step&gt;
+    }
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+When building an &eCos; configuration the primary target is a single
+library, <filename>libtarget.a</filename>. In some cases it is
+necessary to build some additional targets. For example architectural
+HAL packages typically build a linker script and some start-up code.
+Such additional targets can be specified by a &make; property. Any
+option can have one or more &make; properties, although typically such
+properties only occur in the body of a &cdl-package; command.
+</para>
+<para>
+The &make; property takes a single argument, which resembles a
+makefile rule: it consists of a target, a list of dependencies, and
+one or more commands that should be executed. However the argument is
+not a makefile fragment, and custom build steps may get executed in
+build environments that do not involve make. For full details of
+custom build steps see <xref linkend="build.custom">.
+</para>
+<warning>
+<para>
+The exact syntax and limitations of custom build steps have not yet
+been finalized, and are subject to change in future versions of the
+configuration tools.
+</para>
+</warning>
+<para>
+The &make; property takes an optional priority argument indicating the
+order in which build steps take place. This priority complements the
+dependency list, and avoids problems with packages needing to know
+details of custom build steps in other packages (which may change
+between releases). The defined order is:
+</para>
+<variablelist termlength=12>
+
+<varlistentry><term>Priority 0</term>
+<listitem><para>
+The header files exported by the current set of packages are copied
+to the appropriate places in the
+<filename class="directory">include</filename> subdirectory of the
+install tree. Any unnecessary copies are avoided, to prevent rebuilds
+of package and application source modules caused by header file dependencies.
+</para>
+<note><para>
+A possible future enhancement of the build system may result in the
+build and install trees being updated automatically if there has been
+a change to the <filename>ecos.ecc</filename> configuration savefile.
+</para></note></listitem>
+</varlistentry>
+
+<varlistentry><term>Priority 100</term>
+<listitem><para>
+All files specified in &compile; properties will get built, producing
+the corresponding object files. In addition any custom build steps
+defined by &make-object; properties get executed, unless there is
+a <literal>-priority=</literal> option.
+</para></listitem>
+</varlistentry>
+
+<varlistentry><term>Priority 200</term>
+<listitem><para>
+The libraries now get built using the appropriate object files.
+</para></listitem>
+</varlistentry>
+
+<varlistentry><term>Priority 300</term>
+<listitem><para>
+Any custom build steps specified by &make; properties now get
+executed, unless the priority for a particular build step is changed
+from its default.
+</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+For example, if a custom build step needs to take place before any of
+the normal source files get compiled then it should be given a
+priority somewhere between 0 and 100. If a custom build step involves
+post-processing an object file prior to its incorporation into a
+library then a priority between 100 and 200 should be used.
+</para>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=88>
+cdl_package CYGPKG_HAL_MN10300_AM33 {
+    display       "MN10300 AM33 variant"
+    parent        CYGPKG_HAL_MN10300
+    implements    CYGINT_HAL_MN10300_VARIANT
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mn10300_am33.h
+    description   "
+           The MN10300 AM33 variant HAL package provides generic
+           support for this processor architecture. It is also
+           necessary to select a specific target platform HAL
+           package."
+
+    make {
+        &lt;PREFIX&gt;/lib/target.ld: &lt;PACKAGE&gt;/src/mn10300_am33.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $&lt;
+        @echo $@ ": \\" &gt; $(notdir $@).deps
+        @tail +2 target.tmp &gt;&gt; $(notdir $@).deps
+        @echo &gt;&gt; $(notdir $@).deps
+        @rm target.tmp
+    }
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.compile">compile</link>,
+<link linkend="ref.make-object">make_object</link> and
+<link linkend="ref.library">library</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ make_object    -->
+
+<refentry id="ref.make-object">
+<refmeta>
+<refentrytitle>&make-object;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &make-object;</refname>
+<refpurpose>Define a custom build step, resulting in an object file
+that should go into a library.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    make_object [-library=&lt;library&gt;] [-priority=&lt;pri&gt;]  {
+        &lt;custom build step&gt;
+    }
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+When building an &eCos; configuration the primary target is a single
+library, <filename>libtarget.a</filename>. Most of the object files
+which go into this library will be generated as a result of &compile;
+properties. Occasionally it may be necessary to have special build
+steps for a given object file, and this can be achieved with a
+&make-object; property. The use of this property should be avoided
+whenever possible because it greatly increases the risk of portability
+problems, both on the host side because of possible problems with the
+tools, and on the target side because a custom build step may not
+allow adequately for the wide variety of architectures supported by
+&eCos;.
+</para>
+<para>
+The &make-object; property takes a single argument, which resembles a
+makefile rule: it consists of a target, a list of dependencies, and
+one or more commands that should be executed. The target should be an
+object file. However the &make-object; argument is not a makefile
+fragment, and custom build steps may get executed in build
+environments that do not involve make. For full details of custom
+build steps see <xref linkend="build.custom">.
+</para>
+<warning>
+<para>
+The exact syntax and limitations of custom build steps have not yet
+been finalized, and may change in future versions of the
+configuration tools.
+</para>
+</warning>
+<para>
+The &make-object; property takes an optional library argument. If no
+library is specified then the default library for the current package
+will be used, which will be <filename>libtarget.a</filename> unless
+the &cdl-package; command contains a &library; property.
+</para>
+<para>
+The &make-object; property also takes an optional priority argument
+indicating the order in which build steps take place. This priority
+complements the dependency list, and avoids problems with packages
+needing to know details of custom build steps in other packages (which
+may change between releases). The defined order is:
+</para>
+<variablelist termlength=12>
+
+<varlistentry><term>Priority 0</term>
+<listitem><para>
+The header files exported by the current set of packages are copied
+to the appropriate places in the
+<filename class="directory">include</filename> subdirectory of the
+install tree. Any unnecessary copies are avoided, to prevent rebuilds
+of package and application source modules caused by header file dependencies.
+</para>
+<note><para>
+A possible future enhancement of the build system may result in the
+build and install trees being updated automatically if there has been
+a change to the <filename>ecos.ecc</filename> configuration savefile.
+</para></note></listitem>
+</varlistentry>
+
+<varlistentry><term>Priority 100</term>
+<listitem><para>
+All files specified in &compile; properties will get built, producing
+the corresponding object files. In addition any custom build steps
+defined by &make-object; properties get executed, unless there is a
+<literal>-priority=</literal> option.
+</para></listitem>
+</varlistentry>
+
+<varlistentry><term>Priority 200</term>
+<listitem><para>
+The libraries now get built using the appropriate object files.
+</para></listitem>
+</varlistentry>
+
+<varlistentry><term>Priority 300</term>
+<listitem><para>
+Any custom build steps specified by &make; properties now get
+executed, unless the priority for a particular build step is changed
+from its default.
+</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+For example, if a custom build step needs to take place before any of
+the normal source files get compiled then it should be given a
+priority somewhere between 0 and 100. If a custom build step involves
+post-processing an object file prior to its incorporation into a
+library then a priority between 100 and 200 should be used. It is not
+sensible to have a priority above 200, since that would imply building
+an additional object file for a library that has already been created.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_option XXX {
+    &hellip;
+    make_object {
+        parser.o: parser.y
+                yacc $&lt;
+                $(CC) $(CFLAGS) -o $@ y.tab.c
+    }
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.compile">compile</link>,
+<link linkend="ref.make">make</link> and
+<link linkend="ref.library">library</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ no_define      -->
+
+<refentry id="ref.no-define">
+<refmeta>
+<refentrytitle>&no-define;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &no-define;</refname>
+<refpurpose>Suppress the normal generation of a preprocessor
+<literal>#define</literal> symbol in a configuration header file.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    no_define
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+By default all active and enabled properties result in either one or
+two <literal>#define'd</literal> symbols in the package's
+configuration header file, and this is one of the main ways in which
+options can affect packages at build-time. It is possible to suppress
+the default <literal>#define's</literal> by specifying a
+&no-define; property in the body of an option or other &CDL; entity. 
+This property takes no arguments and should occur only once in a given
+body. 
+</para>
+<para>
+The &no-define; property is frequently used in conjunction with one of
+the other header-file related properties such as &define;. If one of
+the other properties is used to export the required information to a
+configuration header file then often there is little point in
+exporting the default <literal>#define</literal> as
+well&nbsp;&mdash&nbsp; in fact there could be a name clash. The
+&no-define; property can also be useful if the sole purpose of an
+option is to affect which files get built, and the default
+<literal>#define</literal> would never get tested in any source code.
+However in such cases the default <literal>#define</literal> is
+mostly harmless and there is little to be gained by suppressing it.
+</para>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_component CYG_HAL_STARTUP {
+    display       "Startup type"
+    flavor        data
+    legal_values  { "RAM" "ROM" }
+    default_value {"RAM"}
+    no_define
+    define -file system.h CYG_HAL_STARTUP
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Properties <link linkend="ref.define">&define;</link>,
+<link linkend="ref.define-format">&define-format;</link>,
+<link linkend="ref.define-header">&define-header;</link>,
+<link linkend="ref.define-proc">&define-proc;</link> and
+<link linkend="ref.if-define">&if-define;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ parent         -->
+
+<refentry id="ref.parent">
+<refmeta>
+<refentrytitle>&parent;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &parent;</refname>
+<refpurpose>Control the location of an option in the configuration hierarchy.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    parent &lt;component or package&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Configuration options live in a hierarchy of packages and components.
+By default a given option's position in the hierarchy is a simple
+consequence of its position within the CDL scripts. Packages are
+generally placed at the top-level of the configuration. Any components
+or options that are defined at the same level as the &cdl-package;
+command in a package's top-level CDL script are placed immediately
+below that package in the hierarchy. Any options or components that
+are defined in the body of a &cdl-package; or &cdl-component; command,
+or that are read in as a result of processing a component's &script;
+property, will be placed immediately below that package or component
+in the hierarchy.
+</para>
+<para>
+In some circumstances it is useful to specify an alternative position
+in the hierarchy for a given option. For example it is often
+convenient to re-parent device driver packages below
+<varname>CYGPKG_IO</varname> in the configuration hierarchy, thus
+reducing the number of packages at the top level of the hierarchy and
+making navigation easier. The &parent; property can be used to achieve
+this. 
+</para>
+<para>
+The &parent; property takes a single argument, which should be the
+name of a package or component. The body of a &cdl-option; or other
+CDL entity can contain at most one &parent; property.
+</para>
+<para>
+Although the &parent; property affects an option's position in the
+overall hierarchy and hence whether or not that option is active, a
+re-parented option still belongs to the package that defines it. By
+default any <literal>#define's</literal> will be exported to that
+package's configuration header file. Any &compile; properties can only
+reference source files present in that package, and it is not directly
+possible to cause some file in another package to be built by
+re-parenting. 
+</para>
+<para>
+As a special case, if an empty string is specified for the parent then
+the option is placed at the top of the hierarchy, ahead of any
+packages which are not explicitly re-parented in this way. This
+facility is useful for configuration options such as global
+preferences and default compiler flags.
+</para>
+
+<tip>
+<para>
+If an option is re-parented somewhere below another package and that
+other package is not actually loaded, the option is an orphan and its
+active/inactive state is undefined. In such cases it is a good idea
+for the owning package to require the presence of the other one.
+Unfortunately this technique does not work if a package as a whole is
+reparented below another one that has not been loaded: the package is
+orphaned so it may be automatically inactive, and hence any &requires;
+properties would have no effect.
+</para>
+</tip>
+
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_package CYGPKG_HAL_I386 {
+    display       "i386 architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_i386.h
+    &hellip;
+}
+
+cdl_component CYGBLD_GLOBAL_OPTIONS {
+    display       "Global build options"
+    parent        ""
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Property <link linkend="ref.script">&script;</link>,
+commands <link linkend="ref.cdl-component">&cdl-component;</link> and
+<link linkend="ref.cdl-package">&cdl-package;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ requires       -->
+
+<refentry id="ref.requires">
+<refmeta>
+<refentrytitle>&requires;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &requires;</refname>
+<refpurpose>List constraints that the configuration should satisfy if
+a given option is active and enabled..</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_option &lt;name&gt; {
+    requires &lt;goal expression&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Configuration options are not independent. For example the C library
+can provide thread-safe implementations of certain functions, but only
+if the kernel is present, if the kernel provides multi-threading, and
+if the kernel options related to per-thread data are enabled. It is
+possible to express such constraints using &requires; properties.
+</para>
+<para>
+The arguments to a &requires; property should constitute a goal
+expression, as described in <xref linkend="language.list-expression">.
+Most goal expressions are relatively simple because the constraints
+being described are simple, but complicated expressions can be used
+when necessary. The body of an option or other CDL entity can contain
+any number of &requires; constraints. If the option is active and
+enabled then all these constraints should be satisfied, and any goal
+expressions which evaluate to <literal>0</literal> will result in
+conflicts being raised. It is possible for users to ignore such
+conflicts and attempt to build the current configuration anyway, but
+there is no guarantee that anything will work. If an option is
+inactive or disabled then its &requires; constraints will be ignored. 
+</para>
+<para>
+The configuration system contains an inference engine which can
+resolve many types of conflicts automatically. For example, if option
+<literal>A</literal> is enabled and requires an option
+<literal>B</literal> that is currently disabled then the inference
+engine may attempt to resolve the conflict by enabling
+<literal>B</literal>. However this will not always be possible, for
+example there may be other constraints in the configuration which
+force <literal>B</literal> to be disabled at present, in which case
+user intervention is required.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_component CYGPKG_IO_SERIAL_POWERPC_COGENT_SERIAL_A {
+    display       "Cogent PowerPC serial port A driver"
+    flavor        bool
+    default_value 0
+    requires      (CYGIMP_KERNEL_INTERRUPTS_CHAIN || \
+                   !CYGPKG_IO_SERIAL_POWERPC_COGENT_SERIAL_B)
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Property <link linkend="ref.active-if">&active-if;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ script         -->
+
+<refentry id="ref.script">
+<refmeta>
+<refentrytitle>&script;</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Property &script;</refname>
+<refpurpose>Include additional configuration information from another
+CDL script.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+cdl_component &lt;name&gt; {
+    script &lt;filename&gt;
+    &hellip;
+}
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+It is possible to define all the configuration options and
+sub-components for a given package in a single CDL script, either by
+nesting them in the appropriate command bodies, by extensive use of
+the &parent; property, or by some combination of these two. However
+for large packages this is inconvenient and it is better to split the
+raw configuration data over several different files. The &script;
+property can be used to achieve this. It takes a single filename as
+argument. If the package follows the <link
+linkend="package.hierarchy">directory layout conventions</link> then
+the configuration tools will look for the specified file in the
+<filename class="directory">cdl</filename> sub-directory of the
+package, otherwise it will look for the file relative to the package's
+top-level directory.
+</para>
+<para>
+The &script; property can only occur in the body of a &cdl-component
+command, and only one &script; property per body is allowed.
+</para>
+</refsect1>
+
+<refsect1><title>Example</title>
+<programlisting width=72>
+cdl_component CYGPKG_UITRON_TASKS {
+    display      "Tasks"
+    flavor        none
+    description   "
+        uITRON Tasks are the basic blocks of multi-tasking
+        in the uITRON world; they are threads or lightweight
+        processes, sharing the address space and the CPU.
+        They communicate using the primitives outlined above.
+        Each has a stack, an entry point (a C or C++ function),
+        and (where appropriate) a scheduling priority."
+
+    script        tasks.cdl
+}
+</programlisting>
+</refsect1>
+
+<refsect1><title>See Also</title>
+<para>
+Command  <link linkend="ref.cdl-component">&cdl-component;</link>,
+and property <link linkend="ref.parent">&parent;</link>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+
+</chapter>

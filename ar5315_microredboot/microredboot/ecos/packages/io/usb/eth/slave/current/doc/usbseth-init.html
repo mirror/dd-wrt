@@ -1,0 +1,326 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Initializing the USB-ethernet Package</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="PREVIOUS"
+TITLE="Introduction"
+HREF="usbseth-intro.html"><LINK
+REL="NEXT"
+TITLE="USB-ethernet Data Transfers"
+HREF="usbseth-data.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Support for Developing USB-ethernet Peripherals</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbseth-intro.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbseth-data.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBSETH-INIT"
+>Initializing the USB-ethernet Package</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN47"
+></A
+><H2
+>Name</H2
+><TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+>&nbsp;--&nbsp;Initializing the USB-ethernet Package</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN51"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN52"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/io/usb/usbs_eth.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_eth_init</CODE
+>(usbs_eth* usbeth, usbs_control_endpoint* ep0, usbs_rx_endpoint* ep1, usbs_tx_endpoint* ep2, unsigned char* mac_address);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN67"
+></A
+><H2
+>Description</H2
+><P
+>The USB-ethernet package is not tied to any specific hardware. It
+requires certain functionality: there must be USB-slave hardware
+supported by a device driver; there must also be two endpoints for
+bulk transfers between host and peripheral, one for each direction;
+there must also be a control endpoint, although of course that is
+implicit with any USB hardware.</P
+><P
+>However, USB-slave hardware may well provide more endpoints than the
+minimum required for ethernet support. Some of those endpoints might
+be used by other packages, while other endpoints might be used
+directly by the application, or might not be needed for the peripheral
+being built. There is also the possibility of a USB peripheral that
+supports multiple configurations, with the ethernet support active in
+only some of those configurations. The USB-ethernet package has no
+knowledge about any of this, so it relies on higher-level code to tell
+it which endpoints should be used and other information. This is the
+purpose of the <TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+> function.</P
+><P
+>The first argument identifies the specific
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_eth</SPAN
+> data structure that is affected. It
+is expected that the vast majority of affected applications will only
+provide a single USB-ethernet device to a single host, and the package
+automatically provides a suitable data structure
+<TT
+CLASS="LITERAL"
+>usbs_eth0</TT
+> to support this. If multiple
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_eth</SPAN
+> structures are needed for some
+reason then these need to be instantiated by other code, and each one
+needs to be initialised by a call to
+<TT
+CLASS="FUNCTION"
+>usbs_eth_init()</TT
+>. </P
+><P
+>The next three arguments identify the endpoints that should be used
+for USB communications: a control endpoint, a receive endpoint for
+ethernet packets coming from the host to the peripheral, and a
+transmit endpoint for ethernet packets going in the other direction.
+Obviously all three endpoints should be provided by the same USB
+hardware. The USB-ethernet package assumes that it has sole access to
+the receive and transmit endpoints, subject to the use of
+<TT
+CLASS="FUNCTION"
+>usbs_eth_disable</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_eth_enable</TT
+> control functions. The package
+also assumes that no other code is interested in USB state changes or
+class control messages: it installs handlers
+<A
+HREF="usbseth-control.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_state_change_handler</TT
+></A
+>
+and
+<A
+HREF="usbseth-control.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_class_control_handler</TT
+></A
+>
+in the control endpoint. If any other code does need to handle USB
+state changes or class control messages then replacement handlers
+should be installed after the call to
+<TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+>, and those replacements should
+invoke the USB-ethernet ones when appropriate.</P
+><P
+>The final argument to <TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+> specifies 
+the MAC address (or Ethernet Station Address) that should be provided
+to the host-side device driver. Since the USB-ethernet package does not
+interact directly with a real ethernet device it cannot obtain the MAC
+address from any hardware. Instead, it must be supplied by higher-level
+code. The details depend on the <A
+HREF="usbseth-intro.html#AEN22"
+>scenario</A
+> in which the
+USB-ethernet package is being used.</P
+><P
+>The call to <TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+> should normally happen
+after the enumeration data has been provided but before the underlying
+USB device driver has been started. If the USB device were to be
+started first then a connection between host and peripheral could be
+established immediately, and the host-side device driver would attempt
+to contact the USB-ethernet package for information such as the MAC
+address. </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>int
+main(int argc, char** argv)
+{
+    unsigned char host_MAC[6] = { 0x40, 0x5d, 0x90, 0xa9, 0xbc, 0x02 };
+
+    usbs_sa11x0_ep0.enumeration_data    = &amp;usb_enum_data;
+    &#8230;
+    usbs_eth_init(&amp;usbs_eth0, &amp;usbs_sa11x0_ep0, &amp;usbs_sa11x0_ep1, &amp;usbs_sa11x0_ep2, host_MAC);
+    &#8230;
+    usbs_start(&amp;usbs_sa11x0_ep0);
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbseth-intro.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbseth-data.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Introduction</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>USB-ethernet Data Transfers</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

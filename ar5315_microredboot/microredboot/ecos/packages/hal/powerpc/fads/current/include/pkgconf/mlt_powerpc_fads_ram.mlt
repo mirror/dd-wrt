@@ -1,0 +1,17 @@
+version 0
+region ram 0 800000 0 !
+section reserved_vectors 3000 1 0 0 1 1 1 1 0 0 reserved_vsr_table reserved_vsr_table !
+section reserved_vsr_table 200 1 0 0 0 1 0 1 reserved_virtual_table reserved_virtual_table !
+section reserved_virtual_table 100 1 0 0 0 1 0 1 reserved_for_rom reserved_for_rom !
+section reserved_for_rom cd00 1 0 0 0 1 0 1 vectors vectors !
+section vectors 0 4 0 1 0 1 0 1 text text !
+section text 0 4 0 1 0 1 0 1 fini fini !
+section fini 0 4 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 8 0 1 0 1 0 1 rodata rodata !
+section rodata 0 8 0 1 0 1 0 1 fixup fixup !
+section fixup 0 4 0 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 1 0 1 0 1 0 1 data data !
+section data 0 8 0 1 0 1 0 1 sbss sbss !
+section sbss 0 4 0 1 0 1 0 1 bss bss !
+section bss 0 10 0 1 0 1 0 1 heap1 heap1 !
+section heap1 0 8 0 0 0 0 0 0 !

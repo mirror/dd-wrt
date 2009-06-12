@@ -1,0 +1,139 @@
+# ====================================================================
+#
+#      hal_h8300.cdl
+#
+#      H8/300 architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      yoshinori sato
+# Original data:  bartv, nickg
+# Contributors:   yoshinori sato
+# Date:           2002-02-16
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_H8300 {
+    display "H8/300 architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_h8300.h
+    description   "
+           The H8/300 architecture HAL package provides generic
+           support for this processor architecture. It is also
+           necessary to select a specific target platform HAL
+           package."
+
+    cdl_interface CYGINT_HAL_H8300_VARIANT {
+        display  "Number of variant implementations in this configuration"
+        requires 1 == CYGINT_HAL_H8300_VARIANT
+    }
+
+    cdl_option CYGDBG_HAL_H8300_DEBUG_GDB_CTRLC_SUPPORT {
+        display "Architecture GDB CTRLC support"
+        calculated { CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT || CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT }
+        active_if { CYGINT_HAL_DEBUG_GDB_CTRLC_UNSUPPORTED == 0 }
+        description "
+            If either the CTRLC or BREAK support options in hal.h are set
+            then set our own option to turn on shared generic support for
+            control C handling."
+    }
+
+    compile       hal_misc.c hal_syscall.c context.S sci.c
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+    cdl_component CYGPKG_REDBOOT_H8300_OPTIONS {
+        display       "Redboot for H8300 options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_component CYGSEM_REDBOOT_H8300_LINUX_BOOT {
+            display        "Support booting uCinux via RedBoot"
+            flavor         bool
+            default_value  1
+            description    "
+               This option enables RedBoot to support booting of a uClinux kernel."
+            compile -library=libextras.a redboot_linux_exec.c
+
+            cdl_option CYGDAT_REDBOOT_H8300_LINUX_BOOT_ENTRY {
+                display        "Default kernel entry address"
+                flavor         data
+                default_value  0x400000
+                description    "
+                   This option uClinux kernel entry address of default."
+            }
+        }
+    }
+    cdl_option CYGNUM_HAL_H8300_SCI_BAUD_RATE {
+        display          "SCI serial port default baud rate"
+        flavor data
+        legal_values     { 4800 9600 14400 19200 38400 57600 115200 }
+        default_value    { 38400 }
+    }
+    cdl_option CYGSEM_HAL_H8300_VECTOR_HOOK {
+        display       "Interrupt Vector Hook"
+        flavor        bool
+        default_value 1
+        parent        CYGPKG_HAL_ROM_MONITOR
+        description   "
+            Interrupt Vector Table Hooking Support"
+    }
+    cdl_option CYGSEM_HAL_H8300_SAVE_STUB_VECTOR {
+        display       "Save gdb-stub breakpoint vector"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        description   "
+            Do not change vector of the breakpoint exception that 
+	    gdb-stub uses"
+    }
+}

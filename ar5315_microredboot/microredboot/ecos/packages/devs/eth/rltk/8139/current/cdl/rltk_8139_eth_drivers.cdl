@@ -1,0 +1,171 @@
+# ====================================================================
+#
+#	rltk_8139_eth_drivers.cdl
+#
+#	RealTek 8139 ethernet driver
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Eric Doenges
+# Original data:
+# Contributors:
+# Date:           2003-07-16
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_RLTK_8139 {
+    display       "RealTek 8139 ethernet driver"
+    description   "Ethernet driver for RealTek 8139 controller."
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGINT_DEVS_ETH_RLTK_8139_REQUIRED
+
+    implements    CYGINT_IO_ETH_MULTICAST
+
+    include_dir   cyg/devs/eth
+
+    # SNMP demands to know stuff; this sadly makes us break the neat
+    # abstraction of the device having nothing exported.
+    # include_files include/8139_info.h
+    # and tell them that it is available
+    define_proc {
+	    puts $::cdl_system_header \
+      "#define CYGBLD_DEVS_ETH_DEVICE_H <pkgconf/devs_eth_rltk_8139.h>"
+
+      puts $::cdl_header "#include CYGDAT_DEVS_ETH_RLTK_8139_CFG";
+    }
+
+    compile       -library=libextras.a if_8139.c
+
+    cdl_component CYGPKG_DEVS_ETH_RLTK_8139_SHARE_INTERRUPTS {
+      display "Share interrupt with other devices"
+      default_value 1
+      description "
+        If this option is enabled, the driver does not assume that it is
+        in sole possession of the interrupt pin used by the 8139."
+
+      cdl_option CYGPKG_DEVS_ETH_RLTK_8139_MASK_INTERRUPTS_IN_8139 {
+        display "Mask 8139 interrupts on chip"
+        default_value 1
+        description "
+          If this option is enabled, the driver masks interrupts in the 8139's
+          status register, and does not mask the interrupt vector. This is
+          only useful if the 8139 must share it's interrupt line with other
+          devices."
+      }
+    }
+
+    cdl_option CYGDBG_DEVS_ETH_RLTK_8139_CHATTER {
+      display "Print debugging messages"
+      default_value 0
+      description   "
+        If this option is set, a lot of debugging messages are printed
+        to the console to help debug the driver."
+    }
+
+#    cdl_component CYGDBG_DEVS_ETH_RLTK_8139_KEEP_STATISTICS {
+#	display "Keep Ethernet statistics"
+#	default_value 1
+#	description   "
+#	    The ethernet device can maintain statistics about the network,
+#	    specifically a great variety of error rates which are useful
+#	    for network management.  SNMP for example uses this
+#	    information.  There is some performance cost in maintaining
+#	    this information; disable this option to recoup that."
+
+#	cdl_option CYGDBG_DEVS_ETH_RLTK_8139_KEEP_8139_STATISTICS {
+#	    display "Keep RealTek 8139 internal statistics"
+#	    default_value 1
+#	    description   "
+#	        The i82559 keeps internal counters, and it is possible to
+#	        acquire these.  But the i82559 (reputedly) does not service
+#	        the network whilst uploading the data to RAM from its
+#	        internal registers.  If throughput is a problem, disable
+#	        this option to acquire only those statistics gathered by
+#	        software, so that the i82559 never sleeps."
+#	}
+#    }
+
+#    cdl_component CYGPKG_DEVS_ETH_RLTK_8139_WRITE_EEPROM {
+#	display "SIOCSIFHWADDR records MAC address in EEPROM"
+#	default_value 0
+#	description   "
+#	    The ioctl() socket call with operand SIOCSIFHWADDR sets the
+#	    interface hardware address - the MAC address or ethernet
+#	    address.  This option causes the new MAC address to be written
+#	    into the EEPROM associated with the interface, so that the new
+#	    MAC address is permanently recorded.  Doing this should be a
+#	    carefully chosen decision, hence this option."
+#    }
+
+    cdl_option CYGNUM_DEVS_ETH_RLTK_8139_RX_BUF_LEN_IDX {
+        display       "Size of the receive ring"
+        flavor  data
+				legal_values  0 to 2
+        default_value { CYGPKG_REDBOOT ? 0 : 2 }
+        define        RX_BUF_LEN_IDX
+        description   "
+                The 8139 stores all received packets in a single 'rx ring'
+                located somewhere in physical memory. The size of this ring
+                can be varied from ~8k to ~64k; however the driver currently
+                supports a maximum buffer size of only ~32k (so we can use
+                the 8139's WRAP mode). The actual buffer size is
+                8192<<x + 16 + 1536 bytes, with x being the value of this
+                option."
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_RLTK_8139_OPTIONS {
+        display "RealTek 8139 ethernet driver build options"
+        flavor  none
+	      no_define
+
+        cdl_option CYGPKG_DEVS_ETH_RLTK_8139_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the RealTek 8139 ethernet driver package. These
+                flags are used in addition to the set of global flags."
+        }
+    }
+}
+# EOF rltk_8139_eth_drivers.cdl

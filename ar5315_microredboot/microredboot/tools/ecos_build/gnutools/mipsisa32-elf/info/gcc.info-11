@@ -1,0 +1,1143 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Local Labels,  Next: Labels as Values,  Prev: Statement Exprs,  Up: C Extensions
+
+Locally Declared Labels
+=======================
+
+   Each statement expression is a scope in which "local labels" can be
+declared.  A local label is simply an identifier; you can jump to it
+with an ordinary `goto' statement, but only from within the statement
+expression it belongs to.
+
+   A local label declaration looks like this:
+
+     __label__ LABEL;
+
+or
+
+     __label__ LABEL1, LABEL2, ...;
+
+   Local label declarations must come at the beginning of the statement
+expression, right after the `({', before any ordinary declarations.
+
+   The label declaration defines the label _name_, but does not define
+the label itself.  You must do this in the usual way, with `LABEL:',
+within the statements of the statement expression.
+
+   The local label feature is useful because statement expressions are
+often used in macros.  If the macro contains nested loops, a `goto' can
+be useful for breaking out of them.  However, an ordinary label whose
+scope is the whole function cannot be used: if the macro can be
+expanded several times in one function, the label will be multiply
+defined in that function.  A local label avoids this problem.  For
+example:
+
+     #define SEARCH(array, target)                     \
+     ({                                                \
+       __label__ found;                                \
+       typeof (target) _SEARCH_target = (target);      \
+       typeof (*(array)) *_SEARCH_array = (array);     \
+       int i, j;                                       \
+       int value;                                      \
+       for (i = 0; i < max; i++)                       \
+         for (j = 0; j < max; j++)                     \
+           if (_SEARCH_array[i][j] == _SEARCH_target)  \
+             { value = i; goto found; }                \
+       value = -1;                                     \
+      found:                                           \
+       value;                                          \
+     })
+
+
+File: gcc.info,  Node: Labels as Values,  Next: Nested Functions,  Prev: Local Labels,  Up: C Extensions
+
+Labels as Values
+================
+
+   You can get the address of a label defined in the current function
+(or a containing function) with the unary operator `&&'.  The value has
+type `void *'.  This value is a constant and can be used wherever a
+constant of that type is valid.  For example:
+
+     void *ptr;
+     ...
+     ptr = &&foo;
+
+   To use these values, you need to be able to jump to one.  This is
+done with the computed goto statement(1), `goto *EXP;'.  For example,
+
+     goto *ptr;
+
+Any expression of type `void *' is allowed.
+
+   One way of using these constants is in initializing a static array
+that will serve as a jump table:
+
+     static void *array[] = { &&foo, &&bar, &&hack };
+
+   Then you can select a label with indexing, like this:
+
+     goto *array[i];
+
+Note that this does not check whether the subscript is in bounds--array
+indexing in C never does that.
+
+   Such an array of label values serves a purpose much like that of the
+`switch' statement.  The `switch' statement is cleaner, so use that
+rather than an array unless the problem does not fit a `switch'
+statement very well.
+
+   Another use of label values is in an interpreter for threaded code.
+The labels within the interpreter function can be stored in the
+threaded code for super-fast dispatching.
+
+   You may not use this mechanism to jump to code in a different
+function.  If you do that, totally unpredictable things will happen.
+The best way to avoid this is to store the label address only in
+automatic variables and never pass it as an argument.
+
+   An alternate way to write the above example is
+
+     static const int array[] = { &&foo - &&foo, &&bar - &&foo,
+                                  &&hack - &&foo };
+     goto *(&&foo + array[i]);
+
+This is more friendly to code living in shared libraries, as it reduces
+the number of dynamic relocations that are needed, and by consequence,
+allows the data to be read-only.
+
+   ---------- Footnotes ----------
+
+   (1) The analogous feature in Fortran is called an assigned goto, but
+that name seems inappropriate in C, where one can do more than simply
+store label addresses in label variables.
+
+
+File: gcc.info,  Node: Nested Functions,  Next: Constructing Calls,  Prev: Labels as Values,  Up: C Extensions
+
+Nested Functions
+================
+
+   A "nested function" is a function defined inside another function.
+(Nested functions are not supported for GNU C++.)  The nested function's
+name is local to the block where it is defined.  For example, here we
+define a nested function named `square', and call it twice:
+
+     foo (double a, double b)
+     {
+       double square (double z) { return z * z; }
+     
+       return square (a) + square (b);
+     }
+
+   The nested function can access all the variables of the containing
+function that are visible at the point of its definition.  This is
+called "lexical scoping".  For example, here we show a nested function
+which uses an inherited variable named `offset':
+
+     bar (int *array, int offset, int size)
+     {
+       int access (int *array, int index)
+         { return array[index + offset]; }
+       int i;
+       ...
+       for (i = 0; i < size; i++)
+         ... access (array, i) ...
+     }
+
+   Nested function definitions are permitted within functions in the
+places where variable definitions are allowed; that is, in any block,
+before the first statement in the block.
+
+   It is possible to call the nested function from outside the scope of
+its name by storing its address or passing the address to another
+function:
+
+     hack (int *array, int size)
+     {
+       void store (int index, int value)
+         { array[index] = value; }
+     
+       intermediate (store, size);
+     }
+
+   Here, the function `intermediate' receives the address of `store' as
+an argument.  If `intermediate' calls `store', the arguments given to
+`store' are used to store into `array'.  But this technique works only
+so long as the containing function (`hack', in this example) does not
+exit.
+
+   If you try to call the nested function through its address after the
+containing function has exited, all hell will break loose.  If you try
+to call it after a containing scope level has exited, and if it refers
+to some of the variables that are no longer in scope, you may be lucky,
+but it's not wise to take the risk.  If, however, the nested function
+does not refer to anything that has gone out of scope, you should be
+safe.
+
+   GCC implements taking the address of a nested function using a
+technique called "trampolines".  A paper describing them is available as
+
+`http://people.debian.org/~aaronl/Usenix88-lexic.pdf'.
+
+   A nested function can jump to a label inherited from a containing
+function, provided the label was explicitly declared in the containing
+function (*note Local Labels::).  Such a jump returns instantly to the
+containing function, exiting the nested function which did the `goto'
+and any intermediate functions as well.  Here is an example:
+
+     bar (int *array, int offset, int size)
+     {
+       __label__ failure;
+       int access (int *array, int index)
+         {
+           if (index > size)
+             goto failure;
+           return array[index + offset];
+         }
+       int i;
+       ...
+       for (i = 0; i < size; i++)
+         ... access (array, i) ...
+       ...
+       return 0;
+     
+      /* Control comes here from `access'
+         if it detects an error.  */
+      failure:
+       return -1;
+     }
+
+   A nested function always has internal linkage.  Declaring one with
+`extern' is erroneous.  If you need to declare the nested function
+before its definition, use `auto' (which is otherwise meaningless for
+function declarations).
+
+     bar (int *array, int offset, int size)
+     {
+       __label__ failure;
+       auto int access (int *, int);
+       ...
+       int access (int *array, int index)
+         {
+           if (index > size)
+             goto failure;
+           return array[index + offset];
+         }
+       ...
+     }
+
+
+File: gcc.info,  Node: Constructing Calls,  Next: Typeof,  Prev: Nested Functions,  Up: C Extensions
+
+Constructing Function Calls
+===========================
+
+   Using the built-in functions described below, you can record the
+arguments a function received, and call another function with the same
+arguments, without knowing the number or types of the arguments.
+
+   You can also record the return value of that function call, and
+later return that value, without knowing what data type the function
+tried to return (as long as your caller expects that data type).
+
+ - Built-in Function: void * __builtin_apply_args ()
+     This built-in function returns a pointer to data describing how to
+     perform a call with the same arguments as were passed to the
+     current function.
+
+     The function saves the arg pointer register, structure value
+     address, and all registers that might be used to pass arguments to
+     a function into a block of memory allocated on the stack.  Then it
+     returns the address of that block.
+
+ - Built-in Function: void * __builtin_apply (void (*FUNCTION)(), void
+          *ARGUMENTS, size_t SIZE)
+     This built-in function invokes FUNCTION with a copy of the
+     parameters described by ARGUMENTS and SIZE.
+
+     The value of ARGUMENTS should be the value returned by
+     `__builtin_apply_args'.  The argument SIZE specifies the size of
+     the stack argument data, in bytes.
+
+     This function returns a pointer to data describing how to return
+     whatever value was returned by FUNCTION.  The data is saved in a
+     block of memory allocated on the stack.
+
+     It is not always simple to compute the proper value for SIZE.  The
+     value is used by `__builtin_apply' to compute the amount of data
+     that should be pushed on the stack and copied from the incoming
+     argument area.
+
+ - Built-in Function: void __builtin_return (void *RESULT)
+     This built-in function returns the value described by RESULT from
+     the containing function.  You should specify, for RESULT, a value
+     returned by `__builtin_apply'.
+
+   The reason for using names that start with underscores for the local
+variables is to avoid conflicts with variable names that occur within
+the expressions that are substituted for `a' and `b'.  Eventually we
+hope to design a new form of declaration syntax that allows you to
+declare variables whose scopes start only after their initializers;
+this will be a more reliable way to prevent such conflicts.
+
+
+File: gcc.info,  Node: Typeof,  Next: Lvalues,  Prev: Constructing Calls,  Up: C Extensions
+
+Referring to a Type with `typeof'
+=================================
+
+   Another way to refer to the type of an expression is with `typeof'.
+The syntax of using of this keyword looks like `sizeof', but the
+construct acts semantically like a type name defined with `typedef'.
+
+   There are two ways of writing the argument to `typeof': with an
+expression or with a type.  Here is an example with an expression:
+
+     typeof (x[0](1))
+
+This assumes that `x' is an array of pointers to functions; the type
+described is that of the values of the functions.
+
+   Here is an example with a typename as the argument:
+
+     typeof (int *)
+
+Here the type described is that of pointers to `int'.
+
+   If you are writing a header file that must work when included in ISO
+C programs, write `__typeof__' instead of `typeof'.  *Note Alternate
+Keywords::.
+
+   A `typeof'-construct can be used anywhere a typedef name could be
+used.  For example, you can use it in a declaration, in a cast, or
+inside of `sizeof' or `typeof'.
+
+   `typeof' is often useful in conjunction with the
+statements-within-expressions feature.  Here is how the two together can
+be used to define a safe "maximum" macro that operates on any
+arithmetic type and evaluates each of its arguments exactly once:
+
+     #define max(a,b) \
+       ({ typeof (a) _a = (a); \
+           typeof (b) _b = (b); \
+         _a > _b ? _a : _b; })
+
+Some more examples of the use of `typeof':
+
+   * This declares `y' with the type of what `x' points to.
+
+          typeof (*x) y;
+
+   * This declares `y' as an array of such values.
+
+          typeof (*x) y[4];
+
+   * This declares `y' as an array of pointers to characters:
+
+          typeof (typeof (char *)[4]) y;
+
+     It is equivalent to the following traditional C declaration:
+
+          char *y[4];
+
+     To see the meaning of the declaration using `typeof', and why it
+     might be a useful way to write, let's rewrite it with these macros:
+
+          #define pointer(T)  typeof(T *)
+          #define array(T, N) typeof(T [N])
+
+     Now the declaration can be rewritten this way:
+
+          array (pointer (char), 4) y;
+
+     Thus, `array (pointer (char), 4)' is the type of arrays of 4
+     pointers to `char'.
+
+   _Compatibility Note:_ In addition to `typeof', GCC 2 supported a
+more limited extension which permitted one to write
+
+     typedef T = EXPR;
+
+with the effect of declaring T to have the type of the expression EXPR.
+This extension does not work with GCC 3 (versions between 3.0 and 3.2
+will crash; 3.2.1 and later give an error).  Code which relies on it
+should be rewritten to use `typeof':
+
+     typedef typeof(EXPR) T;
+
+This will work with all versions of GCC.
+
+
+File: gcc.info,  Node: Lvalues,  Next: Conditionals,  Prev: Typeof,  Up: C Extensions
+
+Generalized Lvalues
+===================
+
+   Compound expressions, conditional expressions and casts are allowed
+as lvalues provided their operands are lvalues.  This means that you
+can take their addresses or store values into them.
+
+   Standard C++ allows compound expressions and conditional expressions
+as lvalues, and permits casts to reference type, so use of this
+extension is deprecated for C++ code.
+
+   For example, a compound expression can be assigned, provided the last
+expression in the sequence is an lvalue.  These two expressions are
+equivalent:
+
+     (a, b) += 5
+     a, (b += 5)
+
+   Similarly, the address of the compound expression can be taken.
+These two expressions are equivalent:
+
+     &(a, b)
+     a, &b
+
+   A conditional expression is a valid lvalue if its type is not void
+and the true and false branches are both valid lvalues.  For example,
+these two expressions are equivalent:
+
+     (a ? b : c) = 5
+     (a ? b = 5 : (c = 5))
+
+   A cast is a valid lvalue if its operand is an lvalue.  A simple
+assignment whose left-hand side is a cast works by converting the
+right-hand side first to the specified type, then to the type of the
+inner left-hand side expression.  After this is stored, the value is
+converted back to the specified type to become the value of the
+assignment.  Thus, if `a' has type `char *', the following two
+expressions are equivalent:
+
+     (int)a = 5
+     (int)(a = (char *)(int)5)
+
+   An assignment-with-arithmetic operation such as `+=' applied to a
+cast performs the arithmetic using the type resulting from the cast,
+and then continues as in the previous case.  Therefore, these two
+expressions are equivalent:
+
+     (int)a += 5
+     (int)(a = (char *)(int) ((int)a + 5))
+
+   You cannot take the address of an lvalue cast, because the use of its
+address would not work out coherently.  Suppose that `&(int)f' were
+permitted, where `f' has type `float'.  Then the following statement
+would try to store an integer bit-pattern where a floating point number
+belongs:
+
+     *&(int)f = 1;
+
+   This is quite different from what `(int)f = 1' would do--that would
+convert 1 to floating point and store it.  Rather than cause this
+inconsistency, we think it is better to prohibit use of `&' on a cast.
+
+   If you really do want an `int *' pointer with the address of `f',
+you can simply write `(int *)&f'.
+
+
+File: gcc.info,  Node: Conditionals,  Next: Long Long,  Prev: Lvalues,  Up: C Extensions
+
+Conditionals with Omitted Operands
+==================================
+
+   The middle operand in a conditional expression may be omitted.  Then
+if the first operand is nonzero, its value is the value of the
+conditional expression.
+
+   Therefore, the expression
+
+     x ? : y
+
+has the value of `x' if that is nonzero; otherwise, the value of `y'.
+
+   This example is perfectly equivalent to
+
+     x ? x : y
+
+In this simple case, the ability to omit the middle operand is not
+especially useful.  When it becomes useful is when the first operand
+does, or may (if it is a macro argument), contain a side effect.  Then
+repeating the operand in the middle would perform the side effect
+twice.  Omitting the middle operand uses the value already computed
+without the undesirable effects of recomputing it.
+
+
+File: gcc.info,  Node: Long Long,  Next: Complex,  Prev: Conditionals,  Up: C Extensions
+
+Double-Word Integers
+====================
+
+   ISO C99 supports data types for integers that are at least 64 bits
+wide, and as an extension GCC supports them in C89 mode and in C++.
+Simply write `long long int' for a signed integer, or `unsigned long
+long int' for an unsigned integer.  To make an integer constant of type
+`long long int', add the suffix `LL' to the integer.  To make an
+integer constant of type `unsigned long long int', add the suffix `ULL'
+to the integer.
+
+   You can use these types in arithmetic like any other integer types.
+Addition, subtraction, and bitwise boolean operations on these types
+are open-coded on all types of machines.  Multiplication is open-coded
+if the machine supports fullword-to-doubleword a widening multiply
+instruction.  Division and shifts are open-coded only on machines that
+provide special support.  The operations that are not open-coded use
+special library routines that come with GCC.
+
+   There may be pitfalls when you use `long long' types for function
+arguments, unless you declare function prototypes.  If a function
+expects type `int' for its argument, and you pass a value of type `long
+long int', confusion will result because the caller and the subroutine
+will disagree about the number of bytes for the argument.  Likewise, if
+the function expects `long long int' and you pass `int'.  The best way
+to avoid such problems is to use prototypes.
+
+
+File: gcc.info,  Node: Complex,  Next: Hex Floats,  Prev: Long Long,  Up: C Extensions
+
+Complex Numbers
+===============
+
+   ISO C99 supports complex floating data types, and as an extension GCC
+supports them in C89 mode and in C++, and supports complex integer data
+types which are not part of ISO C99.  You can declare complex types
+using the keyword `_Complex'.  As an extension, the older GNU keyword
+`__complex__' is also supported.
+
+   For example, `_Complex double x;' declares `x' as a variable whose
+real part and imaginary part are both of type `double'.  `_Complex
+short int y;' declares `y' to have real and imaginary parts of type
+`short int'; this is not likely to be useful, but it shows that the set
+of complex types is complete.
+
+   To write a constant with a complex data type, use the suffix `i' or
+`j' (either one; they are equivalent).  For example, `2.5fi' has type
+`_Complex float' and `3i' has type `_Complex int'.  Such a constant
+always has a pure imaginary value, but you can form any complex value
+you like by adding one to a real constant.  This is a GNU extension; if
+you have an ISO C99 conforming C library (such as GNU libc), and want
+to construct complex constants of floating type, you should include
+`<complex.h>' and use the macros `I' or `_Complex_I' instead.
+
+   To extract the real part of a complex-valued expression EXP, write
+`__real__ EXP'.  Likewise, use `__imag__' to extract the imaginary
+part.  This is a GNU extension; for values of floating type, you should
+use the ISO C99 functions `crealf', `creal', `creall', `cimagf',
+`cimag' and `cimagl', declared in `<complex.h>' and also provided as
+built-in functions by GCC.
+
+   The operator `~' performs complex conjugation when used on a value
+with a complex type.  This is a GNU extension; for values of floating
+type, you should use the ISO C99 functions `conjf', `conj' and `conjl',
+declared in `<complex.h>' and also provided as built-in functions by
+GCC.
+
+   GCC can allocate complex automatic variables in a noncontiguous
+fashion; it's even possible for the real part to be in a register while
+the imaginary part is on the stack (or vice-versa).  None of the
+supported debugging info formats has a way to represent noncontiguous
+allocation like this, so GCC describes a noncontiguous complex variable
+as if it were two separate variables of noncomplex type.  If the
+variable's actual name is `foo', the two fictitious variables are named
+`foo$real' and `foo$imag'.  You can examine and set these two
+fictitious variables with your debugger.
+
+   A future version of GDB will know how to recognize such pairs and
+treat them as a single variable with a complex type.
+
+
+File: gcc.info,  Node: Hex Floats,  Next: Zero Length,  Prev: Complex,  Up: C Extensions
+
+Hex Floats
+==========
+
+   ISO C99 supports floating-point numbers written not only in the usual
+decimal notation, such as `1.55e1', but also numbers such as `0x1.fp3'
+written in hexadecimal format.  As a GNU extension, GCC supports this
+in C89 mode (except in some cases when strictly conforming) and in C++.
+In that format the `0x' hex introducer and the `p' or `P' exponent
+field are mandatory.  The exponent is a decimal number that indicates
+the power of 2 by which the significant part will be multiplied.  Thus
+`0x1.f' is 1 15/16, `p3' multiplies it by 8, and the value of `0x1.fp3'
+is the same as `1.55e1'.
+
+   Unlike for floating-point numbers in the decimal notation the
+exponent is always required in the hexadecimal notation.  Otherwise the
+compiler would not be able to resolve the ambiguity of, e.g., `0x1.f'.
+This could mean `1.0f' or `1.9375' since `f' is also the extension for
+floating-point constants of type `float'.
+
+
+File: gcc.info,  Node: Zero Length,  Next: Variable Length,  Prev: Hex Floats,  Up: C Extensions
+
+Arrays of Length Zero
+=====================
+
+   Zero-length arrays are allowed in GNU C.  They are very useful as the
+last element of a structure which is really a header for a
+variable-length object:
+
+     struct line {
+       int length;
+       char contents[0];
+     };
+     
+     struct line *thisline = (struct line *)
+       malloc (sizeof (struct line) + this_length);
+     thisline->length = this_length;
+
+   In ISO C89, you would have to give `contents' a length of 1, which
+means either you waste space or complicate the argument to `malloc'.
+
+   In ISO C99, you would use a "flexible array member", which is
+slightly different in syntax and semantics:
+
+   * Flexible array members are written as `contents[]' without the `0'.
+
+   * Flexible array members have incomplete type, and so the `sizeof'
+     operator may not be applied.  As a quirk of the original
+     implementation of zero-length arrays, `sizeof' evaluates to zero.
+
+   * Flexible array members may only appear as the last member of a
+     `struct' that is otherwise non-empty.
+
+   GCC versions before 3.0 allowed zero-length arrays to be statically
+initialized, as if they were flexible arrays.  In addition to those
+cases that were useful, it also allowed initializations in situations
+that would corrupt later data.  Non-empty initialization of zero-length
+arrays is now treated like any case where there are more initializer
+elements than the array holds, in that a suitable warning about "excess
+elements in array" is given, and the excess elements (all of them, in
+this case) are ignored.
+
+   Instead GCC allows static initialization of flexible array members.
+This is equivalent to defining a new structure containing the original
+structure followed by an array of sufficient size to contain the data.
+I.e. in the following, `f1' is constructed as if it were declared like
+`f2'.
+
+     struct f1 {
+       int x; int y[];
+     } f1 = { 1, { 2, 3, 4 } };
+     
+     struct f2 {
+       struct f1 f1; int data[3];
+     } f2 = { { 1 }, { 2, 3, 4 } };
+
+The convenience of this extension is that `f1' has the desired type,
+eliminating the need to consistently refer to `f2.f1'.
+
+   This has symmetry with normal static arrays, in that an array of
+unknown size is also written with `[]'.
+
+   Of course, this extension only makes sense if the extra data comes at
+the end of a top-level object, as otherwise we would be overwriting
+data at subsequent offsets.  To avoid undue complication and confusion
+with initialization of deeply nested arrays, we simply disallow any
+non-empty initialization except when the structure is the top-level
+object.  For example:
+
+     struct foo { int x; int y[]; };
+     struct bar { struct foo z; };
+     
+     struct foo a = { 1, { 2, 3, 4 } };        // Valid.
+     struct bar b = { { 1, { 2, 3, 4 } } };    // Invalid.
+     struct bar c = { { 1, { } } };            // Valid.
+     struct foo d[1] = { { 1 { 2, 3, 4 } } };  // Invalid.
+
+
+File: gcc.info,  Node: Variable Length,  Next: Variadic Macros,  Prev: Zero Length,  Up: C Extensions
+
+Arrays of Variable Length
+=========================
+
+   Variable-length automatic arrays are allowed in ISO C99, and as an
+extension GCC accepts them in C89 mode and in C++.  (However, GCC's
+implementation of variable-length arrays does not yet conform in detail
+to the ISO C99 standard.)  These arrays are declared like any other
+automatic arrays, but with a length that is not a constant expression.
+The storage is allocated at the point of declaration and deallocated
+when the brace-level is exited.  For example:
+
+     FILE *
+     concat_fopen (char *s1, char *s2, char *mode)
+     {
+       char str[strlen (s1) + strlen (s2) + 1];
+       strcpy (str, s1);
+       strcat (str, s2);
+       return fopen (str, mode);
+     }
+
+   Jumping or breaking out of the scope of the array name deallocates
+the storage.  Jumping into the scope is not allowed; you get an error
+message for it.
+
+   You can use the function `alloca' to get an effect much like
+variable-length arrays.  The function `alloca' is available in many
+other C implementations (but not in all).  On the other hand,
+variable-length arrays are more elegant.
+
+   There are other differences between these two methods.  Space
+allocated with `alloca' exists until the containing _function_ returns.
+The space for a variable-length array is deallocated as soon as the
+array name's scope ends.  (If you use both variable-length arrays and
+`alloca' in the same function, deallocation of a variable-length array
+will also deallocate anything more recently allocated with `alloca'.)
+
+   You can also use variable-length arrays as arguments to functions:
+
+     struct entry
+     tester (int len, char data[len][len])
+     {
+       ...
+     }
+
+   The length of an array is computed once when the storage is allocated
+and is remembered for the scope of the array in case you access it with
+`sizeof'.
+
+   If you want to pass the array first and the length afterward, you can
+use a forward declaration in the parameter list--another GNU extension.
+
+     struct entry
+     tester (int len; char data[len][len], int len)
+     {
+       ...
+     }
+
+   The `int len' before the semicolon is a "parameter forward
+declaration", and it serves the purpose of making the name `len' known
+when the declaration of `data' is parsed.
+
+   You can write any number of such parameter forward declarations in
+the parameter list.  They can be separated by commas or semicolons, but
+the last one must end with a semicolon, which is followed by the "real"
+parameter declarations.  Each forward declaration must match a "real"
+declaration in parameter name and data type.  ISO C99 does not support
+parameter forward declarations.
+
+
+File: gcc.info,  Node: Variadic Macros,  Next: Escaped Newlines,  Prev: Variable Length,  Up: C Extensions
+
+Macros with a Variable Number of Arguments.
+===========================================
+
+   In the ISO C standard of 1999, a macro can be declared to accept a
+variable number of arguments much as a function can.  The syntax for
+defining the macro is similar to that of a function.  Here is an
+example:
+
+     #define debug(format, ...) fprintf (stderr, format, __VA_ARGS__)
+
+   Here `...' is a "variable argument".  In the invocation of such a
+macro, it represents the zero or more tokens until the closing
+parenthesis that ends the invocation, including any commas.  This set of
+tokens replaces the identifier `__VA_ARGS__' in the macro body wherever
+it appears.  See the CPP manual for more information.
+
+   GCC has long supported variadic macros, and used a different syntax
+that allowed you to give a name to the variable arguments just like any
+other argument.  Here is an example:
+
+     #define debug(format, args...) fprintf (stderr, format, args)
+
+   This is in all ways equivalent to the ISO C example above, but
+arguably more readable and descriptive.
+
+   GNU CPP has two further variadic macro extensions, and permits them
+to be used with either of the above forms of macro definition.
+
+   In standard C, you are not allowed to leave the variable argument out
+entirely; but you are allowed to pass an empty argument.  For example,
+this invocation is invalid in ISO C, because there is no comma after
+the string:
+
+     debug ("A message")
+
+   GNU CPP permits you to completely omit the variable arguments in this
+way.  In the above examples, the compiler would complain, though since
+the expansion of the macro still has the extra comma after the format
+string.
+
+   To help solve this problem, CPP behaves specially for variable
+arguments used with the token paste operator, `##'.  If instead you
+write
+
+     #define debug(format, ...) fprintf (stderr, format, ## __VA_ARGS__)
+
+   and if the variable arguments are omitted or empty, the `##'
+operator causes the preprocessor to remove the comma before it.  If you
+do provide some variable arguments in your macro invocation, GNU CPP
+does not complain about the paste operation and instead places the
+variable arguments after the comma.  Just like any other pasted macro
+argument, these arguments are not macro expanded.
+
+
+File: gcc.info,  Node: Escaped Newlines,  Next: Multi-line Strings,  Prev: Variadic Macros,  Up: C Extensions
+
+Slightly Looser Rules for Escaped Newlines
+==========================================
+
+   Recently, the non-traditional preprocessor has relaxed its treatment
+of escaped newlines.  Previously, the newline had to immediately follow
+a backslash.  The current implementation allows whitespace in the form
+of spaces, horizontal and vertical tabs, and form feeds between the
+backslash and the subsequent newline.  The preprocessor issues a
+warning, but treats it as a valid escaped newline and combines the two
+lines to form a single logical line.  This works within comments and
+tokens, including multi-line strings, as well as between tokens.
+Comments are _not_ treated as whitespace for the purposes of this
+relaxation, since they have not yet been replaced with spaces.
+
+
+File: gcc.info,  Node: Multi-line Strings,  Next: Subscripting,  Prev: Escaped Newlines,  Up: C Extensions
+
+String Literals with Embedded Newlines
+======================================
+
+   As an extension, GNU CPP permits string literals to cross multiple
+lines without escaping the embedded newlines.  Each embedded newline is
+replaced with a single `\n' character in the resulting string literal,
+regardless of what form the newline took originally.
+
+   CPP currently allows such strings in directives as well (other than
+the `#include' family).  This is deprecated and will eventually be
+removed.
+
+
+File: gcc.info,  Node: Subscripting,  Next: Pointer Arith,  Prev: Multi-line Strings,  Up: C Extensions
+
+Non-Lvalue Arrays May Have Subscripts
+=====================================
+
+   In ISO C99, arrays that are not lvalues still decay to pointers, and
+may be subscripted, although they may not be modified or used after the
+next sequence point and the unary `&' operator may not be applied to
+them.  As an extension, GCC allows such arrays to be subscripted in C89
+mode, though otherwise they do not decay to pointers outside C99 mode.
+For example, this is valid in GNU C though not valid in C89:
+
+     struct foo {int a[4];};
+     
+     struct foo f();
+     
+     bar (int index)
+     {
+       return f().a[index];
+     }
+
+
+File: gcc.info,  Node: Pointer Arith,  Next: Initializers,  Prev: Subscripting,  Up: C Extensions
+
+Arithmetic on `void'- and Function-Pointers
+===========================================
+
+   In GNU C, addition and subtraction operations are supported on
+pointers to `void' and on pointers to functions.  This is done by
+treating the size of a `void' or of a function as 1.
+
+   A consequence of this is that `sizeof' is also allowed on `void' and
+on function types, and returns 1.
+
+   The option `-Wpointer-arith' requests a warning if these extensions
+are used.
+
+
+File: gcc.info,  Node: Initializers,  Next: Compound Literals,  Prev: Pointer Arith,  Up: C Extensions
+
+Non-Constant Initializers
+=========================
+
+   As in standard C++ and ISO C99, the elements of an aggregate
+initializer for an automatic variable are not required to be constant
+expressions in GNU C.  Here is an example of an initializer with
+run-time varying elements:
+
+     foo (float f, float g)
+     {
+       float beat_freqs[2] = { f-g, f+g };
+       ...
+     }
+
+
+File: gcc.info,  Node: Compound Literals,  Next: Designated Inits,  Prev: Initializers,  Up: C Extensions
+
+Compound Literals
+=================
+
+   ISO C99 supports compound literals.  A compound literal looks like a
+cast containing an initializer.  Its value is an object of the type
+specified in the cast, containing the elements specified in the
+initializer; it is an lvalue.  As an extension, GCC supports compound
+literals in C89 mode and in C++.
+
+   Usually, the specified type is a structure.  Assume that `struct
+foo' and `structure' are declared as shown:
+
+     struct foo {int a; char b[2];} structure;
+
+Here is an example of constructing a `struct foo' with a compound
+literal:
+
+     structure = ((struct foo) {x + y, 'a', 0});
+
+This is equivalent to writing the following:
+
+     {
+       struct foo temp = {x + y, 'a', 0};
+       structure = temp;
+     }
+
+   You can also construct an array.  If all the elements of the
+compound literal are (made up of) simple constant expressions, suitable
+for use in initializers of objects of static storage duration, then the
+compound literal can be coerced to a pointer to its first element and
+used in such an initializer, as shown here:
+
+     char **foo = (char *[]) { "x", "y", "z" };
+
+   Compound literals for scalar types and union types are is also
+allowed, but then the compound literal is equivalent to a cast.
+
+   As a GNU extension, GCC allows initialization of objects with static
+storage duration by compound literals (which is not possible in ISO
+C99, because the initializer is not a constant).  It is handled as if
+the object was initialized only with the bracket enclosed list if
+compound literal's and object types match.  The initializer list of the
+compound literal must be constant.  If the object being initialized has
+array type of unknown size, the size is determined by compound literal
+size.
+
+     static struct foo x = (struct foo) {1, 'a', 'b'};
+     static int y[] = (int []) {1, 2, 3};
+     static int z[] = (int [3]) {1};
+
+The above lines are equivalent to the following:
+     static struct foo x = {1, 'a', 'b'};
+     static int y[] = {1, 2, 3};
+     static int z[] = {1, 0, 0};
+
+
+File: gcc.info,  Node: Designated Inits,  Next: Cast to Union,  Prev: Compound Literals,  Up: C Extensions
+
+Designated Initializers
+=======================
+
+   Standard C89 requires the elements of an initializer to appear in a
+fixed order, the same as the order of the elements in the array or
+structure being initialized.
+
+   In ISO C99 you can give the elements in any order, specifying the
+array indices or structure field names they apply to, and GNU C allows
+this as an extension in C89 mode as well.  This extension is not
+implemented in GNU C++.
+
+   To specify an array index, write `[INDEX] =' before the element
+value.  For example,
+
+     int a[6] = { [4] = 29, [2] = 15 };
+
+is equivalent to
+
+     int a[6] = { 0, 0, 15, 0, 29, 0 };
+
+The index values must be constant expressions, even if the array being
+initialized is automatic.
+
+   An alternative syntax for this which has been obsolete since GCC 2.5
+but GCC still accepts is to write `[INDEX]' before the element value,
+with no `='.
+
+   To initialize a range of elements to the same value, write `[FIRST
+... LAST] = VALUE'.  This is a GNU extension.  For example,
+
+     int widths[] = { [0 ... 9] = 1, [10 ... 99] = 2, [100] = 3 };
+
+If the value in it has side-effects, the side-effects will happen only
+once, not for each initialized field by the range initializer.
+
+Note that the length of the array is the highest value specified plus
+one.
+
+   In a structure initializer, specify the name of a field to initialize
+with `.FIELDNAME =' before the element value.  For example, given the
+following structure,
+
+     struct point { int x, y; };
+
+the following initialization
+
+     struct point p = { .y = yvalue, .x = xvalue };
+
+is equivalent to
+
+     struct point p = { xvalue, yvalue };
+
+   Another syntax which has the same meaning, obsolete since GCC 2.5, is
+`FIELDNAME:', as shown here:
+
+     struct point p = { y: yvalue, x: xvalue };
+
+   The `[INDEX]' or `.FIELDNAME' is known as a "designator".  You can
+also use a designator (or the obsolete colon syntax) when initializing
+a union, to specify which element of the union should be used.  For
+example,
+
+     union foo { int i; double d; };
+     
+     union foo f = { .d = 4 };
+
+will convert 4 to a `double' to store it in the union using the second
+element.  By contrast, casting 4 to type `union foo' would store it
+into the union as the integer `i', since it is an integer.  (*Note Cast
+to Union::.)
+
+   You can combine this technique of naming elements with ordinary C
+initialization of successive elements.  Each initializer element that
+does not have a designator applies to the next consecutive element of
+the array or structure.  For example,
+
+     int a[6] = { [1] = v1, v2, [4] = v4 };
+
+is equivalent to
+
+     int a[6] = { 0, v1, v2, 0, v4, 0 };
+
+   Labeling the elements of an array initializer is especially useful
+when the indices are characters or belong to an `enum' type.  For
+example:
+
+     int whitespace[256]
+       = { [' '] = 1, ['\t'] = 1, ['\h'] = 1,
+           ['\f'] = 1, ['\n'] = 1, ['\r'] = 1 };
+
+   You can also write a series of `.FIELDNAME' and `[INDEX]'
+designators before an `=' to specify a nested subobject to initialize;
+the list is taken relative to the subobject corresponding to the
+closest surrounding brace pair.  For example, with the `struct point'
+declaration above:
+
+     struct point ptarray[10] = { [2].y = yv2, [2].x = xv2, [0].x = xv0 };
+
+If the same field is initialized multiple times, it will have value from
+the last initialization.  If any such overridden initialization has
+side-effect, it is unspecified whether the side-effect happens or not.
+Currently, gcc will discard them and issue a warning.
+
+
+File: gcc.info,  Node: Case Ranges,  Next: Mixed Declarations,  Prev: Cast to Union,  Up: C Extensions
+
+Case Ranges
+===========
+
+   You can specify a range of consecutive values in a single `case'
+label, like this:
+
+     case LOW ... HIGH:
+
+This has the same effect as the proper number of individual `case'
+labels, one for each integer value from LOW to HIGH, inclusive.
+
+   This feature is especially useful for ranges of ASCII character
+codes:
+
+     case 'A' ... 'Z':
+
+   *Be careful:* Write spaces around the `...', for otherwise it may be
+parsed wrong when you use it with integer values.  For example, write
+this:
+
+     case 1 ... 5:
+
+rather than this:
+
+     case 1...5:
+
+
+File: gcc.info,  Node: Cast to Union,  Next: Case Ranges,  Prev: Designated Inits,  Up: C Extensions
+
+Cast to a Union Type
+====================
+
+   A cast to union type is similar to other casts, except that the type
+specified is a union type.  You can specify the type either with `union
+TAG' or with a typedef name.  A cast to union is actually a constructor
+though, not a cast, and hence does not yield an lvalue like normal
+casts.  (*Note Compound Literals::.)
+
+   The types that may be cast to the union type are those of the members
+of the union.  Thus, given the following union and variables:
+
+     union foo { int i; double d; };
+     int x;
+     double y;
+
+both `x' and `y' can be cast to type `union foo'.
+
+   Using the cast as the right-hand side of an assignment to a variable
+of union type is equivalent to storing in a member of the union:
+
+     union foo u;
+     ...
+     u = (union foo) x  ==  u.i = x
+     u = (union foo) y  ==  u.d = y
+
+   You can also use the union cast as a function argument:
+
+     void hack (union foo);
+     ...
+     hack ((union foo) x);
+
+
+File: gcc.info,  Node: Mixed Declarations,  Next: Function Attributes,  Prev: Case Ranges,  Up: C Extensions
+
+Mixed Declarations and Code
+===========================
+
+   ISO C99 and ISO C++ allow declarations and code to be freely mixed
+within compound statements.  As an extension, GCC also allows this in
+C89 mode.  For example, you could do:
+
+     int i;
+     ...
+     i++;
+     int j = i + 2;
+
+   Each identifier is visible from where it is declared until the end of
+the enclosing block.
+

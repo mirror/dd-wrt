@@ -1,0 +1,312 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Halted Endpoints</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Sending Data to the Host"
+HREF="usbs-start-tx.html"><LINK
+REL="NEXT"
+TITLE="Control Endpoints"
+HREF="usbs-control.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-start-tx.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-control.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-HALT"
+>Halted Endpoints</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN420"
+></A
+><H2
+>Name</H2
+>Halted Endpoints&nbsp;--&nbsp;Support for Halting and Halted Endpoints</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN423"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN424"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/io/usb/usbs.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>cyg_bool usbs_rx_endpoint_halted</CODE
+>(usbs_rx_endpoint* ep);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_set_rx_endpoint_halted</CODE
+>(usbs_rx_endpoint* ep, cyg_bool new_state);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_start_rx_endpoint_wait</CODE
+>(usbs_rx_endpoint* ep, void (*)(void*, int) complete_fn, void * complete_data);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>cyg_bool
+usbs_tx_endpoint_halted</CODE
+>(usbs_tx_endpoint* ep);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_set_tx_endpoint_halted</CODE
+>(usbs_tx_endpoint* ep, cyg_bool new_state);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_start_tx_endpoint_wait</CODE
+>(usbs_tx_endpoint* ep, void (*)(void*, int) complete_fn, void * complete_data);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN468"
+></A
+><H2
+><TT
+CLASS="FUNCTION"
+>Description</TT
+></H2
+><P
+>Normal USB traffic involves straightforward handshakes, with either an
+<TT
+CLASS="LITERAL"
+>ACK</TT
+> to indicate that a packet was transferred
+without errors, or a <TT
+CLASS="LITERAL"
+>NAK</TT
+> if an error occurred, or
+if a peripheral is currently unable to process another packet from the
+host, or has no packet to send to the host. There is a third form of
+handshake, a <TT
+CLASS="LITERAL"
+>STALL</TT
+>, which indicates that the
+endpoint is currently <I
+CLASS="EMPHASIS"
+>halted</I
+>.</P
+><P
+>When an endpoint is halted it means that the host-side code needs to
+take some sort of recovery action before communication over that
+endpoint can resume. The exact circumstances under which this can
+happen are not defined by the USB specification, but one example would
+be a protocol violation if say the peripheral attempted to transmit
+more data to the host than was permitted by the protocol in use. The
+host can use the standard control messages get-status, set-feature and
+clear-feature to examine and manipulate the halted status of a given
+endpoint. There are USB-specific functions which can be used inside
+the peripheral to achieve the same effect. Once an endpoint has been
+halted the host can then interact with the peripheral using class or
+vendor control messages to perform appropriate recovery, and then the
+halted condition can be cleared.</P
+><P
+>Halting an endpoint does not constitute a device state change, and
+there is no mechanism by which higher-level code can be informed
+immediately. However, any ongoing receive or transmit operations will
+be aborted with an <TT
+CLASS="LITERAL"
+>-EAGAIN</TT
+> error, and any new
+receives or transmits will fail immediately with the same error.</P
+><P
+>There are six functions to support halted endpoints, one set for
+receive endpoints and another for transmit endpoints, with both sets
+behaving in essentially the same way. The first,
+<TT
+CLASS="FUNCTION"
+>usbs_rx_endpoint_halted</TT
+>, can be used to determine
+whether or not an endpoint is currently halted: it takes a single
+argument that identifies the endpoint of interest. The second
+function, <TT
+CLASS="FUNCTION"
+>usbs_set_rx_endpoint_halted</TT
+>, can be
+used to change the halted condition of an endpoint: it takes two
+arguments; one to identify the endpoint and another to specify the new
+state. The last function
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_endpoint_wait</TT
+> operates in much the
+same way as <TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+>: when the
+endpoint is no longer halted the device driver will invoke the
+supplied completion function with a status of 0. The completion
+function has the same signature as that for a transfer operation.
+Often it will be possible to use a single completion function and have
+the foreground code invoke either
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> or
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_endpoint_wait</TT
+> depending on the
+current state of the endpoint.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-start-tx.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-control.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Sending Data to the Host</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Control Endpoints</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,292 @@
+2004-07-13  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/dns.c (cyg_dns_getaddrinfo): Typo spotted by Andy Jackson.
+	* src/dns.c (cyg_dns_getnameinfo): And another typo
+
+2003-09-04  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/dns.cdl: CDL control of what DNS server to use for the tests
+	* tests/dns1.c: Fine tuned the information for my server and added
+	Iztok Zupet's Server to the test.
+
+2003-05-22  Andrew Lunn  <andrew.lunn@ascom.cd>
+
+        * src/dns.c: (cyg_dns_res_start) New: Allow IPv6 to be used to
+	transport queries to the DNS server. This requires a new API
+	function to start the client which if protocol family
+	independent.
+	* tests/dns1.c: Added a test which uses IPv6 as the transport to
+	the DNS server.
+	* doc/dns.sgml: Documentation of new API function for IPv6.
+	* cdl/dns.cdl: Comment that the default DNS server can be an IPv6
+	address.
+
+2003-05-14  Mark Salter  <msalter@redhat.com>
+
+	* include/dns_impl.inl: Use strrchr instead of rindex.
+
+2003-04-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* doc/dns.sgml: Updated to reflect changes for IPv6.
+
+2003-04-24  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/dns_impl.inl (setdomainname): Append a . to the end of 
+	the domainname if it does not have one.
+	* cdl/dns.cdl: CYGOPT_NS_DNS_FIRST_FAMILTY to control order of
+	results.
+	* src/dns.c: Order the results from cyg_dns_getaddrinfo.
+	* test/dns1.c: Re-written to perform better testing and for
+	getaddrinfo and getnameinfo.
+	* test/dns2.c: Removed. It does not add anything useful.
+
+2003-04-21  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/dns.c (cyg_dns_getnameinfo): New. Interface between
+	getnameinfo and the DNS client.
+
+2003-04-19  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/dns.c (cyg_dns_getaddrinfo): New. Interface between
+	getaddrinfo and the DNS client. This supports both IPv4 and IPv6
+	* test/dns1.c: Added tests for getnameinfo using both IPv4 and
+	IPv6 addresses.
+	
+2003-03-03  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/dns1.c: Use BOOTP info where possible in preference to
+	(likely incorrect!) hardcoded info. Use non-Red Hat test
+	addresses.
+
+	* tests/dns2.c: Use non-Red Hat test addresses. And don't check
+	BOOTP-derived domainname as we don't know what it should be!
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/dns.cdl: Add doc link.
+
+2003-01-22  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/dns.sgml: Use correct (and working!) docbook.
+
+2003-01-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/dns_impl.inl (setdomainname): define with const name
+	argument.
+	* include/dns.h: Ditto.
+	* doc/dns.sgml: Document const in setdomainname proto here.
+
+2003-01-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/dns.cdl: Added the ability to hard code a domain name.
+	Inspired by Motoya Kurotsu.
+	* doc/dns.sgml: Documentation for this.
+	
+2003-01-10  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>
+
+        * tests/dns2.c: Verify domain name from the DHCP server with
+	_LOOKUP_DOMAINNAME, not _DNS_IP which is the address of the DNS
+	server.
+
+2003-01-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/dns.cdl: Added the ability to hard code a DNS server
+	address into the image which is used as the default.
+	* doc/dns.sgml: Documentation for this.
+
+2002-10-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/dns.cdl: Move CYGBLD_ISO_DNS_HEADER requires in with
+	CYGINT_ISO_DNS which is where it should always be beside.
+
+2002-10-11  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/dns.cdl: If CYGPKG_NS_DNS_BUILD is disable we don't
+	implement the CYGINT_ISO_DNS interface.
+
+2002-08-29  Roland Caﬂebohm <roland.cassebohm@visionsystems.de>
+
+        * include/dns_priv.h: Make dns_header structure endian dependent.
+
+        * include/dns_impl.inl: Don't use htons() for bitfields <= 8 bit.
+        Change the way setting the type and class fields in build_query()
+        to work with big-endian.
+
+2002-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/dns.c: fixed index->ptdindex oversight.
+
+2002-05-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/dns.c (free_hent): Actually free hent itself!
+
+2002-05-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/dns.cdl (CYGPKG_NS_DNS_BUILD): Require thread destructors in
+	kernel.
+	* include/dns_impl.inl: Instead of using cyg_thread_get_data
+	and _set_data directly, instead use store_hent and free_stored_hent
+	defined by includer.
+	* src/dns.c: Define store_hent() and free_stored_hent() and make
+	them use thread destructors thus fixing a memory leak.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dns2.c: Fix warning.
+
+2002-02-22  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/dns.sgml: New file.  Documentation separated from monolithic
+	network component.
+
+2002-02-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/dns.c (cyg_dns_res_init): Need valid value for sin_len.
+
+2002-01-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/dns.cdl: Don't build tests if no DNS!
+
+2001-12-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/dns.c (cyg_dns_res_init): Allow this to be called more than
+	once.  The DHCP client will do this when interfaces YoYo.
+	Restarting requires closing the socket (if any) and freeing the
+	per-thread-data slot number.
+
+	* include/dns_impl.inl (setdomainname): Allow the name to be
+	cleared.  Check for NULL pointers variously before checking for
+	valid pointer asserts.
+
+	* tests/dns2.c: New file: Test the DNS configuration via DHCP.
+
+	* tests/dns1.c: Initially clear the domainname.
+	
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/dns.c: Rename index -> ptdindex to avoid conflict with BSD
+	index() function.
+	* include/dns_impl.inl: Ditto.
+
+2001-09-28  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dns1.c (_DNS_IP): Changed to IP used in farm.
+
+2001-09-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/dns_priv.h: Added DNS_REPLY definitions.
+
+	* include/dns_impl.inl: Handle NXDomain returns.
+
+	* include/dns_impl.inl: Added tracing.
+	* src/dns.c: Same.
+
+2001-09-26  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dns1.c (dns_test): Use hstrerror instead of strerror.
+
+	* include/dns.h: Added h_errno support.
+	* include/dns_impl.inl: Use h_errno instead of errno. Added
+	hstrerror(). Make hostname lookups before hostname.domainmain
+	lookups.
+
+2001-09-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/dns.h: Moved some more defs to..
+	* include/dns_priv.h: ...here.
+
+	* src/dns-priv.h: [deleted]
+	* include/dns_priv.h: [added]
+	
+	* tests/dns1.c: Include netdb.h instead of dns.h.
+
+	* src/dns.c: Moved all DNS protocol functions into
+	dns_impl.inl. Allow for RedBoot to share the implementation with a
+	smaller overhead.
+	* include/dns_impl.inl: Added.
+
+	* cdl/dns.cdl: Moved compile statement and requirements into
+	CYGPKG_NS_DNS_BUILD option which can be forced off by RedBoot.
+	Moved headers to cyg/ns/dns.
+
+	* src/dns.c (alloc_hent, free_hent, alloc_string, free_string):
+	Added these wrapper functions for malloc/free calls - allow easier
+	maintaining of cloned function in RedBoot which uses static
+	variables for storage. Incidently removed a little code
+	duplication.
+
+	* include/dns.h: Only include exported information.
+	* src/dns-priv.h: Everything else moved to this file.
+
+	* cdl/dns.cdl: Added feature requirements and CYGINT_ISO_DNS
+	magic.
+
+	* include/dns.h: Renamed res_init to cyg_dns_res_init.
+	* src/dns.c: Same.
+	* tests/dns1.c: Same.
+
+	* src/dns.c: Use drv_api mutex, removed some include statements.
+	* include/dns.h: Provide hostent definition and function
+	declarations.
+	
+	* tests/dns1.c: Use cambridge.redhat.com addresses. Changed to
+	output PASS/FAIL.
+
+	* src/dns.c (parse_answer): On PTR lookups, alloc space for
+	in_addr, so caller can copy data there. Fix gethostbyaddr() to
+	do so.
+	Note that error values do not match gethostbyaddr(3).
+
+2001-09-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/dns.c: More cosmetic changes, a few htons -> ntohs changes,
+	reducing size of critical section a few places, rely on
+	build_query setting errno, and set errno when getdomainname can't
+	copy domain name out due to size limitation.
+
+2001-09-19  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dns1.c (dns_test): Fix inet_aton check.
+	* src/dns.c: A few comment and cosmetic changes.
+
+2001-09-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/dns.c: Added DNS code contributed by Andrew Lunn
+	<andrew.lunn@ascom.ch>
+	* include/dns.h: Same.
+	* tests/dns1.c: Same.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

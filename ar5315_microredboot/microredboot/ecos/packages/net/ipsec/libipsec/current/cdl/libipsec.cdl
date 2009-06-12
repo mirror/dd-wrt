@@ -1,0 +1,74 @@
+# ====================================================================
+#
+#      bsd_crypto.cdl
+#
+#      FreeBSD crypto functions
+#
+# ====================================================================
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2003 Andrew Lunn
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Andrew Lunn
+# Original data:  Andrew Lunn
+# Contributors:
+# Date:           2003-11-08
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_NET_IPSEC_LIBIPSEC {
+    display       "Implements the libipsec library"
+    parent        CYGPKG_NET_IPSEC
+    requires      CYGPKG_NET_IPSEC
+    
+    compile \
+            ipsec_dump_policy.c \
+            ipsec_get_policylen.c \
+            ipsec_strerror.c \
+            pfkey.c \
+            pfkey_dump.c \
+            policy_parse.tab.c \
+            lex.yy.c
+
+    cdl_option CYGPKG_NET_IPSEC_LIBIPSEC_CFLAGS_ADD {
+        display "Additional compiler flags"
+        flavor  data
+        no_define
+        default_value { "-D__ECOS -D__FreeBSD_" }
+        description   "
+            This option modifies the set of compiler flags for
+            building the networking package.
+            These flags are used in addition
+            to the set of global flags."
+    }
+
+    cdl_option CYGPKG_NET_IPSEC_LIBIPSEC_CFLAGS_REMOVE {
+        display "Suppressed compiler flags"
+        flavor  data
+        no_define
+        default_value { "" }
+        description   "
+            This option modifies the set of compiler flags for
+            building the networking package. These flags are removed from
+            the set of global flags if present."
+    }
+
+    cdl_option CYGPKG_NET_IPSEC_LIBIPSEC_TESTS {
+            display     "libipsec tests"
+            flavor      data
+            no_define
+            calculated  { "tests/test-policy" }
+            description "
+                 This option specifies the set of tests for libipsec" 
+    }
+}

@@ -1,0 +1,72 @@
+2001-10-21  H.J. Lu <hjl@gnu.org>
+
+	* configure: Rebuid for ../libtool.m4 change.
+
+2000-09-02  H.J. Lu  <hjl@gnu.org>
+
+	* acinclude.m4: Include ../libiberty/aclibdl.m4 instead of
+	../libiberty/acinclude.m4.
+
+	* aclocal.m4: Rebuild.
+	* configure: Likewise.
+
+2000-07-20  H.J. Lu  <hjl@gnu.org>
+
+	* gprof.c: Updated for the demangler support.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* Makefile.am: Rebuild dependency.
+	* Makefile.in: Rebuild.
+
+	* gprof.c (usage): Call get_demangler_list () for the demangler
+	list.
+
+Mon Oct 11 15:18:43 1999  H.J. Lu  <hjl@gnu.org>
+
+	* configure.in: Check HAVE_WEAK_SYMBOL before checking dlopen.
+	* configure: Rebuilt.
+
+	* acinclude.m4: New.
+	* aclocal.m4: Rebuilt.
+
+Sun Oct 10 10:02:51 1999  H.J. Lu  (hjl@gnu.org)
+
+	* configure.in (AC_SEARCH_LIBS): Added dlopen/dl.
+	* configure: Rebuilt.
+
+	* utils.c (print_name_only): Call demangle_symbol () instead of
+	cplus_demangle.
+
+	* gprof.c: Include "demangle.h"
+	(OPTION_DEMANGLER, OPTION_STYLE): New.
+	(long_options): Add entries for OPTION_DEMANGLER and
+	OPTION_STYLE.
+	(usage): Add "[--demangler=dso:function]" and
+	"[--style={gnu,lucid,arm,hp,edg,gnat,compaq}]".
+	(main): Handle OPTION_DEMANGLER and OPTION_STYLE. Call
+	init_demangler ().
+
+	* utils.h: Undo the change made on Tue Aug 25 17:14:38 1998.
+	* utils.c: Likewise.
+	* gprof.c: Likewise.
+
+Tue Aug 25 17:14:38 1998  H.J. Lu  (hjl@gnu.org)
+
+	* Makefile.am (gprof.o): Also depend on $(INCDIR)/demangle.h.
+
+	* Makefile.in: Regenerated.
+	* configure: Likewise.
+
+	* utils.h: Declare "demangle_lang".
+
+	* utils.c: Include "utils.h".
+	(print_name_only): Call cplus_demangle () with "demangle_lang"
+	instead of "DMGL_ANSI | DMGL_PARAMS".
+
+	* gprof.c: Include "demangle.h"
+	(demangle_lang): New. Initialized to "DMGL_ANSI | DMGL_PARAMS".
+	(OPTION_LANG): New.
+	(long_options): Add an entry for OPTION_LANG.
+	(main): Handle OPTION_LANG.
+	(usage): Add "[--lang=language]".

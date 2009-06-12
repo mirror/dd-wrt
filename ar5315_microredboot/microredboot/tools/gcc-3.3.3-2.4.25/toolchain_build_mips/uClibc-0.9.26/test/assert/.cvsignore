@@ -1,0 +1,4 @@
+assert
+assert.o
+assert_glibc.o
+assert_glibc

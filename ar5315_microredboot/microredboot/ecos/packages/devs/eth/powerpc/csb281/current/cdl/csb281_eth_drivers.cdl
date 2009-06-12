@@ -1,0 +1,201 @@
+# ====================================================================
+#
+#      csb281_eth_drivers.cdl
+#
+#      Ethernet drivers - support for i82559 ethernet controller
+#      on the Cogent CSB281 (PowerPC 8245) board.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Contributors:   jskov, hmt, gthomas
+# Date:           2001-02-28
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_CSB281 {
+    display       "Cogent CSB281 ethernet driver"
+    description   "
+	Ethernet driver for Cogent CSB281 with Intel
+	i82559 Ethernet controllers attached via the PCI"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_HAL_POWERPC_CSB281
+
+    include_dir   cyg/io
+
+    # FIXME: This really belongs in the INTEL_I82559 package
+    cdl_interface CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED {
+        display   "Intel i82559 ethernet driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I82559_INL <cyg/io/devs_eth_csb281.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I82559_CFG <pkgconf/devs_eth_csb281.h>"
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_CSB281_ETH0 {
+        display       "CSB281 ethernet port 0 driver"
+        flavor        bool
+        default_value 1
+        description   "
+            This option includes the ethernet device driver on the 
+            csb281 motherboard."
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH0
+        implements CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_CSB281_ETH0_NAME {
+            display       "Device name for the ethernet port 0 driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                ethernet port 0."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_CSB281_ETH0_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+	    default_value !CYGPKG_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA, and if RedBoot's
+	    flash configuration support is not available."
+            
+            cdl_option CYGDAT_DEVS_ETH_CSB281_ETH0_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x00, 0xB5, 0xE0, 0xB5, 0xE0, 0x11}"}
+                description   "The ethernet station address"
+            }
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_CSB281_ETH1 {
+        display       "CSB281 ethernet port 1 driver"
+        flavor        bool
+        default_value 0
+        description   "
+            This option includes the ethernet device driver for the
+            additional i82559 devices plugged into a PCI slot."
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH1
+        implements CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_CSB281_ETH1_NAME {
+            display       "Device name for the ethernet port 1 driver"
+            flavor        data
+            default_value {"\"eth1\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                ethernet port 1."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_CSB281_ETH1_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+	    default_value !CYGPKG_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA, and if RedBoot's
+	    flash configuration support is not available."
+            
+            cdl_option CYGDAT_DEVS_ETH_CSB281_ETH1_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x00, 0xB5, 0xE0, 0xB5, 0xE0, 0x12}"}
+                description   "The ethernet station address"
+            }
+        }
+    }
+
+
+    # note that this option's name is NOT csb281-specific, but i82559
+    # generic - other instantiations can set these also.
+    cdl_component CYGPKG_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA {
+	display         "RedBoot manages ESA initialization data"
+	flavor          bool
+	default_value	1
+
+	active_if     CYGSEM_HAL_VIRTUAL_VECTOR_SUPPORT
+
+	description   "Enabling this option will allow the ethernet
+	station address to be acquired from RedBoot's configuration data,
+	stored in flash memory.  It can be overridden individually by the
+	'Set the ethernet station address' option for each interface."
+
+	cdl_component CYGPKG_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA_VARS {
+	    display        "Build-in flash config fields for ESAs"
+	    flavor         bool
+	    default_value  1
+
+	    active_if       CYGPKG_REDBOOT
+	    active_if       CYGPKG_REDBOOT_FLASH
+	    active_if       CYGSEM_REDBOOT_FLASH_CONFIG
+	    active_if 	    CYGPKG_REDBOOT_NETWORKING
+
+	    description	"
+	    This option controls the presence of RedBoot flash
+	    configuration fields for the ESAs of the interfaces when you
+	    are building RedBoot.  It is independent of whether RedBoot
+	    itself uses the network or any particular interface; this
+	    support is more for the application to use than for RedBoot
+	    itself, though the application gets at the data by vector
+	    calls; this option cannot be enabled outside of building
+	    RedBoot."
+	
+	    cdl_option CYGVAR_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA_ETH0 {
+		display         "RedBoot manages ESA for eth0"
+		flavor          bool
+		default_value   1
+	    }
+	}
+    }
+}
+
+# EOF csb281_eth_drivers.cdl

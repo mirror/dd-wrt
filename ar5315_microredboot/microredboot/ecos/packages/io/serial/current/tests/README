@@ -1,0 +1,285 @@
+		    Serial Testing with ser_filter
+
+Rationale
+~~~~~~~~~
+ Since some targets only have one serial connection, a serial testing
+ harness needs to be able to share the connection with GDB (however,
+ the test and GDB can also run on separate lines).
+
+ The serial filter (ser_filter) sits between the serial port and GDB
+ and monitors the exchange of data between GDB and the
+ target. Normally, no changes are made to the data.
+
+ When a test request packet is sent from the test on the target, it is
+ intercepted by the filter. The filter and target then enter a loop,
+ exchanging protocol data between them which GDB never sees.
+
+ In the event of a timeout, or a crash on the target, the filter falls
+ back into its pass-through mode. If this happens due to a crash it
+ should be possible to start regular debugging with GDB. The filter
+ will then stay in the pass-though mode until GDB disconnects.
+
+
+Adding A New Platform
+~~~~~~~~~~~~~~~~~~~~~
+ The file ser_test_protocol.inl contains information about how to run
+ the serial tests on supported platforms. When adding a new serial
+ driver to eCos, ser_test_protocol.inl should be updated accordingly
+ so the driver can be tested.
+
+ The definitions TEST_SER_DEV and TEST_TTY_DEV are set according to
+ platform:
+
+  TEST_SER_DEV is the name of the serial device over which the serial
+  test protocol runs. The definition should be conditional on all
+  required configuration options.
+
+  TEST_TTY_DEV is the name of the TTY device over which the TTY test
+  protocol runs. The definition should be conditional on all required
+  configuration options. Note that this device is layered on top of a
+  serial device and must be conditional on that device's config
+  options as well as its own.
+
+ Here's an example for the PowerPC/Cogent where GDB is connected via
+ serial connector B:
+ 
+#if defined(CYGPKG_HAL_POWERPC_COGENT)                          \
+    && defined(CYGPKG_IO_SERIAL_POWERPC_COGENT)                 \
+    && defined(CYGPKG_IO_SERIAL_POWERPC_COGENT_SERIAL_B)
+# define TEST_SER_DEV CYGDAT_IO_SERIAL_POWERPC_COGENT_SERIAL_B_NAME
+# if defined(CYGPKG_IO_SERIAL_TTY_TTY2)
+#  define TEST_TTY_DEV CYGDAT_IO_SERIAL_TTY_TTY2_DEV
+# endif
+#endif
+
+ 
+ On some targets it may also be necessary to intialize interrupt
+ vectors which are otherwise used by CygMon or an eCos GDB stub to
+ monitor characters from the host (looking for Control-C):
+
+#  define SER_OVERRIDE_INT_1 CYGNUM_HAL_INTERRUPT_9
+#  define SER_OVERRIDE_INT_2 CYGNUM_HAL_INTERRUPT_10
+
+ These definitions cause the serial test to restore the eCos handler
+ on the specified vectors before opening the serial device.
+
+
+ The file ser_test_protocol.inl also contains an array of serial
+ configurations (test_configs). It may be necessary to comment some of
+ these out for the platform if the driver or hardware cannot handle
+ all the given serial configurations.
+
+
+The Protocol
+~~~~~~~~~~~~
+ The protocol commands are prefixed with an @-character which the
+ serial filter is looking for. The protocol commands include:
+
+  PING
+   Allows the test on the target to probe for the filter. The filter
+   responds with OK, while GDB would just ignore the command. This
+   allows the tests to do nothing if they require the filter and it is
+   not present.
+
+  CONFIG
+   Requests a change of serial line configuration. Arguments of the
+   command specify baud rate, data bits, stop bits, and parity.
+
+  OPT
+   Requests changes in the filter's options. This allows various
+   amounts of tracing to be recorded when running tests without
+   requiring the filter to be restarted.
+
+  BINARY
+   Requests data to be sent from the filter to the target. The data is
+   checksummed, allowing errors in the transfer to be detected.
+   Sub-options of this command control how the data transfer is made:
+
+    NO_ECHO (serial driver receive test)
+     Just send data from the filter to the target. The test verifies
+     the checksum and PASS/FAIL depending on the result.
+
+    EOP_ECHO (serial driver half-duplex receive and send test)
+     As NO_ECHO but the test echoes back the data to the filter. The
+     filter does a checksum on the received data and sends the result
+     to the target. The test PASS/FAIL depending on the result of both
+     checksum verifications.
+
+    DUPLEX_ECHO (serial driver duplex receive and send test)
+     Smaller packets of data are sent back and forth in a pattern that
+     ensures that the serial driver will be both sending and receiving
+     at the same time. Again, checksums are computed and verified
+     resulting in PASS/FAIL.
+
+  TEXT
+   This is a test of the text translations in the TTY layer.
+   Requests a transfer of text data from the target to the filter and
+   possibly back again. The filter treats this as a binary transfer,
+   while the target may be doing translations on the data. The target
+   provides the filter with checksums for what it should expect to
+   see.
+   [This test is not implemented yet]
+
+ The above commands may be extended, and new commands added, as
+ required to test (new) parts of the serial drivers in eCos. 
+
+ See ser_test_protocol.inl for further details on the protocols.
+
+
+The Serial Tests
+~~~~~~~~~~~~~~~~
+ The serial tests are built as any other eCos test. After running the
+ 'make tests' command, the tests can be found in:
+
+ install/tests/io_serial/
+
+ serial1
+  A simple API test.
+
+ serial2
+  A simple serial send test. It writes out two strings, one raw and
+  one encoded as a GDB O-packet.
+
+ serial3 [requires the serial filter]
+  This tests the half-duplex send and receive capabilities of the
+  serial driver.
+ 
+ serial4 [requires the serial filter]
+  This test attempts to use a few different serial configurations,
+  testing the driver's configuration/setup functionality.
+
+ serial5 [requires the serial filter]
+  This tests the duplex send and receive capabilities of the serial
+  driver.
+
+ All tests should complete in less than 30 seconds.
+
+
+Serial Filter Usage
+~~~~~~~~~~~~~~~~~~~
+ Running the ser_filter program with no (or wrong) arguments results
+ in the below output:
+
+  Usage: ser_filter [-t -c -g -S] TcpIPport SerialPort BaudRate
+   or:   ser_filter -n [-t -c -g -S] SerialPort BaudRate
+   -t: Enable tracing.
+   -f: Enable filter output tracing.
+   -g: Enable GDB tracing.
+   -S: Output data read from serial line.
+   -c: Output data on console instead of via GDB.
+   -n: No GDB.
+
+ The normal way to use it with GDB is to start the filter:
+
+  ser_filter -t 9000 com1 38400
+
+ In this case, the filter will be listening on port 9000 and connect
+ to the target via the serial port COM1 at 38400 baud. On a UNIX host,
+ replace "com1" with a device such as "/dev/ttyS0".
+
+ The '-t' option enables tracing which will cause the filter to
+ describe its actions on the console.
+
+ Now start GDB with one of the tests as an argument:
+
+  $ mips-tx39-elf-gdb -nw install/tests/io_serial/serial3
+ 
+ Then connect to the filter:
+
+  (gdb) target remote localhost:9000
+
+ This should result in a connection in exactly the same way as if you
+ had connected directly to the target on the serial line.
+
+  (gdb) load
+  ...
+  (gdb) cont
+
+ Which should result in output similar to the below:
+
+  Continuing.
+  INFO:<BINARY:16:1!>
+  PASS:<Binary test completed>
+  INFO:<BINARY:128:1!>
+  PASS:<Binary test completed>
+  INFO:<BINARY:256:1!>
+  PASS:<Binary test completed>
+  INFO:<BINARY:1024:1!>
+  PASS:<Binary test completed>
+  INFO:<BINARY:512:0!>
+  PASS:<Binary test completed>
+  ...
+  PASS:<Binary test completed>
+  INFO:<BINARY:16384:0!>
+  PASS:<Binary test completed>
+  PASS:<serial3 test OK>
+  EXIT:<done>
+
+ If any of the individual tests fail the testing will terminate with
+ a FAIL.
+
+ With tracing enabled, you would also see the filter's status output: 
+
+ The PING command sent from the target to determine the presence of
+ the filter:
+  [400 11:35:16] Dispatching command PING
+  [400 11:35:16] Responding with status OK
+
+ Each of the binary commands result in output similar to:
+  [400 11:35:16] Dispatching command BINARY
+  [400 11:35:16] Binary data (Size:16, Flags:1).
+  [400 11:35:16] Sending CRC: '170231!', len: 7.
+  [400 11:35:16] Reading 16 bytes from target.
+  [400 11:35:16] Done. in_crc 170231, out_crc 170231.
+  [400 11:35:16] Responding with status OK
+  [400 11:35:16] Received DONE from target.
+
+ This tracing output is normally sent as O-packets to GDB which will
+ display the tracing text. By using the -c option, the tracing text
+ can be redirected to the console from which ser_filter was started.
+
+
+ The trace options -f, -g, and -S cause data sent from filter, GDB or
+ target to be output in hexadecimal form.
+
+
+A Note on Failures
+~~~~~~~~~~~~~~~~~~
+ A serial connection (especially when driven at a high baud rate) can
+ garble the transmitted data because of noise from the environment. It
+ is not the job of the serial driver to ensure data integrity - that
+ is the job of protocols layering on top of the serial driver.
+
+ In the current implementation the serial tests and the serial filter
+ are not resilient to such data errors. This means that the test may
+ crash or hang (possibly without reporting a FAIL). It also means that
+ you should be aware of random errors - a FAIL is not necessarily
+ caused by a bug in the serial driver.
+
+ Ideally, the serial testing infrastructure should be able to
+ distinguish random errors from consistent errors - the former are
+ most likely due to noise in the transfer medium, while the latter are
+ more likely to be caused by faulty drivers. The current
+ implementation of the infrastructure does not have this capability.
+
+
+Debugging
+~~~~~~~~~
+ If a test fails, the serial filter's output may provide some hints
+ about what the problem is. If the option '-S' is used when starting
+ the filter, data received from the target is printed out:
+
+  [400 11:35:16] 0000 50 41 53 53 3a 3c 42 69 'PASS:<Bi'
+  [400 11:35:16] 0008 6e 61 72 79 20 74 65 73 'nary.tes'
+  [400 11:35:16] 0010 74 20 63 6f 6d 70 6c 65 't.comple'
+  [400 11:35:16] 0018 74 65 64 3e 0d 0a 49 4e 'ted>..IN'
+  [400 11:35:16] 0020 46 4f 3a 3c 42 49 4e 41 'FO:<BINA'
+  [400 11:35:16] 0028 52 59 3a 31 32 38 3a 31 'RY:128:1'
+  [400 11:35:16] 0030 21 3e 0d 0a 40 42 49 4e '!>..@BIN'
+  [400 11:35:16] 0038 41 52 59 3a 31 32 38 3a 'ARY:128:'
+  [400 11:35:16] 0040 31 21 .. .. .. .. .. .. '1!'
+
+ In the case of an error during a testing command the data received by
+ the filter will be printed out, as will the data that was
+ expected. This allows the two data sets to be compared which may give
+ some idea of what the problem is.

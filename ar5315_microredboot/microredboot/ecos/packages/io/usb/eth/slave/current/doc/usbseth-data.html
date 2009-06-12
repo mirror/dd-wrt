@@ -1,0 +1,374 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>USB-ethernet Data Transfers</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="PREVIOUS"
+TITLE="Initializing the USB-ethernet Package"
+HREF="usbseth-init.html"><LINK
+REL="NEXT"
+TITLE="USB-ethernet State Handling"
+HREF="usbseth-control.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Support for Developing USB-ethernet Peripherals</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbseth-init.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbseth-control.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBSETH-DATA"
+>USB-ethernet Data Transfers</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN94"
+></A
+><H2
+>Name</H2
+>USB-ethernet Data Transfers&nbsp;--&nbsp;Exchanging ethernet packets with the USB host</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN97"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN98"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/io/usb/usbs_eth.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_eth_start_rx</CODE
+>(usbs_eth* usbseth, unsigned char* buffer, void (*)(usbs_eth*, void*, int) complete_fn, void* complete_data);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_eth_start_tx</CODE
+>(usbs_eth* usbseth, unsigned char* buffer, void (*)(usbs_eth*, void*, int) complete_fn, void* complete_data);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN122"
+></A
+><H2
+>Description</H2
+><P
+>The USB-ethernet package provides two main modes of operation. In the
+first mode it provides a <A
+HREF="usbseth-netdev.html"
+>network device
+driver</A
+> for use by a TCP/IP stack running inside the USB
+peripheral. All incoming ethernet packages should be passed up the
+TCP/IP stack, and only the stack will generate outgoing packets. Apart
+from <A
+HREF="usbseth-init.html"
+>initialization</A
+> and possibly
+certain <A
+HREF="usbseth-control.html"
+>control operations</A
+>,
+higher-level code will not interact with the USB-ethernet package
+directly.</P
+><P
+>In the second mode there is no TCP/IP stack running inside the USB
+peripheral. For example, a simple USB-ethernet converter has an
+ethernet chip and a USB port: ethernet packets received by the
+ethernet chip need to be forwarded to the USB host, and ethernet
+packets sent by the USB host need to be sent out of the ethernet chip.
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_rx</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_tx</TT
+> allow for this lower-level
+access to the USB-ethernet package.</P
+><P
+>The two modes of operation are mutually exclusive. If the network
+device driver mode is enabled then application code should communicate
+at the TCP/IP level, and not by using the lower-level functions.
+Instead, it is the network device driver that will make use of these
+functions, and it assumes that it has exclusive access. The package
+does not perform any locking.</P
+><P
+>The transmit and receive functions work in much the same way. The
+first argument identifies the <SPAN
+CLASS="STRUCTNAME"
+>usbs_eth</SPAN
+>
+structure that should be used. For the majority of applications this
+will be <TT
+CLASS="LITERAL"
+>usbs_eth0</TT
+>. The second argument specifies
+the location of the ethernet packet; outgoing for
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_tx</TT
+> and incoming for
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_rx</TT
+>. This buffer should correspond
+to the <A
+HREF="usbseth-protocol.html"
+>protocol</A
+>:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>Outgoing packets can consist of up to 1516 bytes, consisting of a
+two-byte header specific to USB-ethernet followed by a standard
+ethernet frame (a header with 6-byte destination address, 6-byte
+source address and a further two bytes, followed by a payload of
+up to 1500 bytes). The two-byte USB-ethernet header consists simply of
+the size of the ethernet frame, i.e. the size of the rest of the
+packet not including the USB-ethernet header, with the least
+significant byte first.</P
+></LI
+><LI
+><P
+>For incoming packets the supplied buffer should usually be at least
+1516 bytes. There may be special circumstances in which a smaller
+buffer might be safe; for example, if the host-side device driver is
+modified to support only smaller packets. Once the packet has been
+received the buffer will contain a two-byte header specific to
+USB-ethernet, followed by a normal ethernet frame. The header
+gives the size of the ethernet frame, excluding the header, with the
+least significant byte first.</P
+></LI
+></OL
+><P
+>Both <TT
+CLASS="FUNCTION"
+>usbs_eth_start_tx</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_rx</TT
+> are asynchronous: the transfer
+is started and, some time later, a completion function will be invoked.
+The third and fourth arguments to both
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_tx</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_rx</TT
+> supply the completion function
+and an argument to that function respectively. The completion function
+will be invoked with three arguments: a pointer to the
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_eth</SPAN
+> data structure, usually
+<TT
+CLASS="LITERAL"
+>usbs_eth0</TT
+>; the supplied completion data ; and a
+return code field. A negative value indicates that an error occurred,
+for example <TT
+CLASS="LITERAL"
+>-EPIPE</TT
+> if the connection between USB
+host and peripheral has been broken, or <TT
+CLASS="LITERAL"
+>-EAGAIN</TT
+> if
+an endpoint has been halted. A positive value indicates the total size
+of the transfer, which should correspond to the size in the
+USB-ethernet header plus an additional two bytes for the header
+itself.</P
+><P
+>If the data transfer is succesful then the completion function will
+typically be invoked in DSR context rather than in thread context,
+although this depends on the implementation of the underlying USB
+device driver. Therefore the completion function is restricted in what
+it can do; in particular, it must not make any calls that will or may
+block such as locking a mutex or allocating memory. The kernel
+documentation should be consulted for more details of DSR's and
+interrupt handling generally. Note that if the transfer finishes
+quickly then the completion function may be invoked before
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_rx</TT
+> or
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_tx</TT
+> returns. This is especially
+likely to happen if the current thread is descheduled after starting
+the data transfer but before returning from these functions.</P
+><P
+>For transmit operations, it is possible for
+<TT
+CLASS="FUNCTION"
+>usbs_eth_start_tx</TT
+> to invoke the completion
+function immediately. If there is no current connection between host
+and target then the transmit will fail immediately with
+<TT
+CLASS="LITERAL"
+>-EPIPE</TT
+>. In addition the USB-ethernet package will
+check the destination MAC address and make sure that the ethernet
+frame really is intended for the host: either it must be for the
+address specified in the initialization call <A
+HREF="usbseth-init.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+></A
+>, or
+it must be a broadcast packet, or the host must have enabled
+promiscuous mode. </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbseth-init.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbseth-control.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Initializing the USB-ethernet Package</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>USB-ethernet State Handling</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

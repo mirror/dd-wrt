@@ -1,0 +1,1098 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: Instruction Output,  Next: Dispatch Tables,  Prev: Macros for Initialization,  Up: Assembler Format
+
+Output of Assembler Instructions
+--------------------------------
+
+   This describes assembler instruction output.
+
+`REGISTER_NAMES'
+     A C initializer containing the assembler's names for the machine
+     registers, each one as a C string constant.  This is what
+     translates register numbers in the compiler into assembler
+     language.
+
+`ADDITIONAL_REGISTER_NAMES'
+     If defined, a C initializer for an array of structures containing
+     a name and a register number.  This macro defines additional names
+     for hard registers, thus allowing the `asm' option in declarations
+     to refer to registers using alternate names.
+
+`ASM_OUTPUT_OPCODE (STREAM, PTR)'
+     Define this macro if you are using an unusual assembler that
+     requires different names for the machine instructions.
+
+     The definition is a C statement or statements which output an
+     assembler instruction opcode to the stdio stream STREAM.  The
+     macro-operand PTR is a variable of type `char *' which points to
+     the opcode name in its "internal" form--the form that is written
+     in the machine description.  The definition should output the
+     opcode name to STREAM, performing any translation you desire, and
+     increment the variable PTR to point at the end of the opcode so
+     that it will not be output twice.
+
+     In fact, your macro definition may process less than the entire
+     opcode name, or more than the opcode name; but if you want to
+     process text that includes `%'-sequences to substitute operands,
+     you must take care of the substitution yourself.  Just be sure to
+     increment PTR over whatever text should not be output normally.
+
+     If you need to look at the operand values, they can be found as the
+     elements of `recog_data.operand'.
+
+     If the macro definition does nothing, the instruction is output in
+     the usual way.
+
+`FINAL_PRESCAN_INSN (INSN, OPVEC, NOPERANDS)'
+     If defined, a C statement to be executed just prior to the output
+     of assembler code for INSN, to modify the extracted operands so
+     they will be output differently.
+
+     Here the argument OPVEC is the vector containing the operands
+     extracted from INSN, and NOPERANDS is the number of elements of
+     the vector which contain meaningful data for this insn.  The
+     contents of this vector are what will be used to convert the insn
+     template into assembler code, so you can change the assembler
+     output by changing the contents of the vector.
+
+     This macro is useful when various assembler syntaxes share a single
+     file of instruction patterns; by defining this macro differently,
+     you can cause a large class of instructions to be output
+     differently (such as with rearranged operands).  Naturally,
+     variations in assembler syntax affecting individual insn patterns
+     ought to be handled by writing conditional output routines in
+     those patterns.
+
+     If this macro is not defined, it is equivalent to a null statement.
+
+`FINAL_PRESCAN_LABEL'
+     If defined, `FINAL_PRESCAN_INSN' will be called on each
+     `CODE_LABEL'.  In that case, OPVEC will be a null pointer and
+     NOPERANDS will be zero.
+
+`PRINT_OPERAND (STREAM, X, CODE)'
+     A C compound statement to output to stdio stream STREAM the
+     assembler syntax for an instruction operand X.  X is an RTL
+     expression.
+
+     CODE is a value that can be used to specify one of several ways of
+     printing the operand.  It is used when identical operands must be
+     printed differently depending on the context.  CODE comes from the
+     `%' specification that was used to request printing of the
+     operand.  If the specification was just `%DIGIT' then CODE is 0;
+     if the specification was `%LTR DIGIT' then CODE is the ASCII code
+     for LTR.
+
+     If X is a register, this macro should print the register's name.
+     The names can be found in an array `reg_names' whose type is `char
+     *[]'.  `reg_names' is initialized from `REGISTER_NAMES'.
+
+     When the machine description has a specification `%PUNCT' (a `%'
+     followed by a punctuation character), this macro is called with a
+     null pointer for X and the punctuation character for CODE.
+
+`PRINT_OPERAND_PUNCT_VALID_P (CODE)'
+     A C expression which evaluates to true if CODE is a valid
+     punctuation character for use in the `PRINT_OPERAND' macro.  If
+     `PRINT_OPERAND_PUNCT_VALID_P' is not defined, it means that no
+     punctuation characters (except for the standard one, `%') are used
+     in this way.
+
+`PRINT_OPERAND_ADDRESS (STREAM, X)'
+     A C compound statement to output to stdio stream STREAM the
+     assembler syntax for an instruction operand that is a memory
+     reference whose address is X.  X is an RTL expression.
+
+     On some machines, the syntax for a symbolic address depends on the
+     section that the address refers to.  On these machines, define the
+     macro `ENCODE_SECTION_INFO' to store the information into the
+     `symbol_ref', and then check for it here.  *Note Assembler
+     Format::.
+
+`DBR_OUTPUT_SEQEND(FILE)'
+     A C statement, to be executed after all slot-filler instructions
+     have been output.  If necessary, call `dbr_sequence_length' to
+     determine the number of slots filled in a sequence (zero if not
+     currently outputting a sequence), to decide how many no-ops to
+     output, or whatever.
+
+     Don't define this macro if it has nothing to do, but it is helpful
+     in reading assembly output if the extent of the delay sequence is
+     made explicit (e.g. with white space).
+
+     Note that output routines for instructions with delay slots must be
+     prepared to deal with not being output as part of a sequence (i.e.
+     when the scheduling pass is not run, or when no slot fillers could
+     be found.)  The variable `final_sequence' is null when not
+     processing a sequence, otherwise it contains the `sequence' rtx
+     being output.
+
+`REGISTER_PREFIX'
+`LOCAL_LABEL_PREFIX'
+`USER_LABEL_PREFIX'
+`IMMEDIATE_PREFIX'
+     If defined, C string expressions to be used for the `%R', `%L',
+     `%U', and `%I' options of `asm_fprintf' (see `final.c').  These
+     are useful when a single `md' file must support multiple assembler
+     formats.  In that case, the various `tm.h' files can define these
+     macros differently.
+
+`ASM_FPRINTF_EXTENSIONS(FILE, ARGPTR, FORMAT)'
+     If defined this macro should expand to a series of `case'
+     statements which will be parsed inside the `switch' statement of
+     the `asm_fprintf' function.  This allows targets to define extra
+     printf formats which may useful when generating their assembler
+     statements.  Note that upper case letters are reserved for future
+     generic extensions to asm_fprintf, and so are not available to
+     target specific code.  The output file is given by the parameter
+     FILE.  The varargs input pointer is ARGPTR and the rest of the
+     format string, starting the character after the one that is being
+     switched upon, is pointed to by FORMAT.
+
+`ASSEMBLER_DIALECT'
+     If your target supports multiple dialects of assembler language
+     (such as different opcodes), define this macro as a C expression
+     that gives the numeric index of the assembler language dialect to
+     use, with zero as the first variant.
+
+     If this macro is defined, you may use constructs of the form
+          `{option0|option1|option2...}'
+
+     in the output templates of patterns (*note Output Template::) or
+     in the first argument of `asm_fprintf'.  This construct outputs
+     `option0', `option1', `option2', etc., if the value of
+     `ASSEMBLER_DIALECT' is zero, one, two, etc.  Any special characters
+     within these strings retain their usual meaning.  If there are
+     fewer alternatives within the braces than the value of
+     `ASSEMBLER_DIALECT', the construct outputs nothing.
+
+     If you do not define this macro, the characters `{', `|' and `}'
+     do not have any special meaning when used in templates or operands
+     to `asm_fprintf'.
+
+     Define the macros `REGISTER_PREFIX', `LOCAL_LABEL_PREFIX',
+     `USER_LABEL_PREFIX' and `IMMEDIATE_PREFIX' if you can express the
+     variations in assembler language syntax with that mechanism.
+     Define `ASSEMBLER_DIALECT' and use the `{option0|option1}' syntax
+     if the syntax variant are larger and involve such things as
+     different opcodes or operand order.
+
+`ASM_OUTPUT_REG_PUSH (STREAM, REGNO)'
+     A C expression to output to STREAM some assembler code which will
+     push hard register number REGNO onto the stack.  The code need not
+     be optimal, since this macro is used only when profiling.
+
+`ASM_OUTPUT_REG_POP (STREAM, REGNO)'
+     A C expression to output to STREAM some assembler code which will
+     pop hard register number REGNO off of the stack.  The code need
+     not be optimal, since this macro is used only when profiling.
+
+
+File: gccint.info,  Node: Dispatch Tables,  Next: Exception Region Output,  Prev: Instruction Output,  Up: Assembler Format
+
+Output of Dispatch Tables
+-------------------------
+
+   This concerns dispatch tables.
+
+`ASM_OUTPUT_ADDR_DIFF_ELT (STREAM, BODY, VALUE, REL)'
+     A C statement to output to the stdio stream STREAM an assembler
+     pseudo-instruction to generate a difference between two labels.
+     VALUE and REL are the numbers of two internal labels.  The
+     definitions of these labels are output using
+     `ASM_OUTPUT_INTERNAL_LABEL', and they must be printed in the same
+     way here.  For example,
+
+          fprintf (STREAM, "\t.word L%d-L%d\n",
+                   VALUE, REL)
+
+     You must provide this macro on machines where the addresses in a
+     dispatch table are relative to the table's own address.  If
+     defined, GCC will also use this macro on all machines when
+     producing PIC.  BODY is the body of the `ADDR_DIFF_VEC'; it is
+     provided so that the mode and flags can be read.
+
+`ASM_OUTPUT_ADDR_VEC_ELT (STREAM, VALUE)'
+     This macro should be provided on machines where the addresses in a
+     dispatch table are absolute.
+
+     The definition should be a C statement to output to the stdio
+     stream STREAM an assembler pseudo-instruction to generate a
+     reference to a label.  VALUE is the number of an internal label
+     whose definition is output using `ASM_OUTPUT_INTERNAL_LABEL'.  For
+     example,
+
+          fprintf (STREAM, "\t.word L%d\n", VALUE)
+
+`ASM_OUTPUT_CASE_LABEL (STREAM, PREFIX, NUM, TABLE)'
+     Define this if the label before a jump-table needs to be output
+     specially.  The first three arguments are the same as for
+     `ASM_OUTPUT_INTERNAL_LABEL'; the fourth argument is the jump-table
+     which follows (a `jump_insn' containing an `addr_vec' or
+     `addr_diff_vec').
+
+     This feature is used on system V to output a `swbeg' statement for
+     the table.
+
+     If this macro is not defined, these labels are output with
+     `ASM_OUTPUT_INTERNAL_LABEL'.
+
+`ASM_OUTPUT_CASE_END (STREAM, NUM, TABLE)'
+     Define this if something special must be output at the end of a
+     jump-table.  The definition should be a C statement to be executed
+     after the assembler code for the table is written.  It should write
+     the appropriate code to stdio stream STREAM.  The argument TABLE
+     is the jump-table insn, and NUM is the label-number of the
+     preceding label.
+
+     If this macro is not defined, nothing special is output at the end
+     of the jump-table.
+
+
+File: gccint.info,  Node: Exception Region Output,  Next: Alignment Output,  Prev: Dispatch Tables,  Up: Assembler Format
+
+Assembler Commands for Exception Regions
+----------------------------------------
+
+   This describes commands marking the start and the end of an exception
+region.
+
+`EH_FRAME_SECTION_NAME'
+     If defined, a C string constant for the name of the section
+     containing exception handling frame unwind information.  If not
+     defined, GCC will provide a default definition if the target
+     supports named sections.  `crtstuff.c' uses this macro to switch
+     to the appropriate section.
+
+     You should define this symbol if your target supports DWARF 2 frame
+     unwind information and the default definition does not work.
+
+`EH_FRAME_IN_DATA_SECTION'
+     If defined, DWARF 2 frame unwind information will be placed in the
+     data section even though the target supports named sections.  This
+     might be necessary, for instance, if the system linker does garbage
+     collection and sections cannot be marked as not to be collected.
+
+     Do not define this macro unless `TARGET_ASM_NAMED_SECTION' is also
+     defined.
+
+`MASK_RETURN_ADDR'
+     An rtx used to mask the return address found via
+     `RETURN_ADDR_RTX', so that it does not contain any extraneous set
+     bits in it.
+
+`DWARF2_UNWIND_INFO'
+     Define this macro to 0 if your target supports DWARF 2 frame unwind
+     information, but it does not yet work with exception handling.
+     Otherwise, if your target supports this information (if it defines
+     `INCOMING_RETURN_ADDR_RTX' and either `UNALIGNED_INT_ASM_OP' or
+     `OBJECT_FORMAT_ELF'), GCC will provide a default definition of 1.
+
+     If this macro is defined to 1, the DWARF 2 unwinder will be the
+     default exception handling mechanism; otherwise,
+     `setjmp'/`longjmp' will be used by default.
+
+     If this macro is defined to anything, the DWARF 2 unwinder will be
+     used instead of inline unwinders and `__unwind_function' in the
+     non-`setjmp' case.
+
+`DWARF_CIE_DATA_ALIGNMENT'
+     This macro need only be defined if the target might save registers
+     in the function prologue at an offset to the stack pointer that is
+     not aligned to `UNITS_PER_WORD'.  The definition should be the
+     negative minimum alignment if `STACK_GROWS_DOWNWARD' is defined,
+     and the positive minimum alignment otherwise.  *Note SDB and
+     DWARF::.  Only applicable if the target supports DWARF 2 frame
+     unwind information.
+
+ - Target Hook: void TARGET_ASM_EXCEPTION_SECTION ()
+     If defined, a function that switches to the section in which the
+     main exception table is to be placed (*note Sections::).  The
+     default is a function that switches to a section named
+     `.gcc_except_table' on machines that support named sections via
+     `TARGET_ASM_NAMED_SECTION', otherwise if `-fpic' or `-fPIC' is in
+     effect, the `data_section', otherwise the `readonly_data_section'.
+
+ - Target Hook: void TARGET_ASM_EH_FRAME_SECTION ()
+     If defined, a function that switches to the section in which the
+     DWARF 2 frame unwind information to be placed (*note Sections::).
+     The default is a function that outputs a standard GAS section
+     directive, if `EH_FRAME_SECTION_NAME' is defined, or else a data
+     section directive followed by a synthetic label.
+
+
+File: gccint.info,  Node: Alignment Output,  Prev: Exception Region Output,  Up: Assembler Format
+
+Assembler Commands for Alignment
+--------------------------------
+
+   This describes commands for alignment.
+
+`JUMP_ALIGN (LABEL)'
+     The alignment (log base 2) to put in front of LABEL, which is a
+     common destination of jumps and has no fallthru incoming edge.
+
+     This macro need not be defined if you don't want any special
+     alignment to be done at such a time.  Most machine descriptions do
+     not currently define the macro.
+
+     Unless it's necessary to inspect the LABEL parameter, it is better
+     to set the variable ALIGN_JUMPS in the target's
+     `OVERRIDE_OPTIONS'.  Otherwise, you should try to honor the user's
+     selection in ALIGN_JUMPS in a `JUMP_ALIGN' implementation.
+
+`LABEL_ALIGN_AFTER_BARRIER (LABEL)'
+     The alignment (log base 2) to put in front of LABEL, which follows
+     a `BARRIER'.
+
+     This macro need not be defined if you don't want any special
+     alignment to be done at such a time.  Most machine descriptions do
+     not currently define the macro.
+
+`LABEL_ALIGN_AFTER_BARRIER_MAX_SKIP'
+     The maximum number of bytes to skip when applying
+     `LABEL_ALIGN_AFTER_BARRIER'.  This works only if
+     `ASM_OUTPUT_MAX_SKIP_ALIGN' is defined.
+
+`LOOP_ALIGN (LABEL)'
+     The alignment (log base 2) to put in front of LABEL, which follows
+     a `NOTE_INSN_LOOP_BEG' note.
+
+     This macro need not be defined if you don't want any special
+     alignment to be done at such a time.  Most machine descriptions do
+     not currently define the macro.
+
+     Unless it's necessary to inspect the LABEL parameter, it is better
+     to set the variable `align_loops' in the target's
+     `OVERRIDE_OPTIONS'.  Otherwise, you should try to honor the user's
+     selection in `align_loops' in a `LOOP_ALIGN' implementation.
+
+`LOOP_ALIGN_MAX_SKIP'
+     The maximum number of bytes to skip when applying `LOOP_ALIGN'.
+     This works only if `ASM_OUTPUT_MAX_SKIP_ALIGN' is defined.
+
+`LABEL_ALIGN (LABEL)'
+     The alignment (log base 2) to put in front of LABEL.  If
+     `LABEL_ALIGN_AFTER_BARRIER' / `LOOP_ALIGN' specify a different
+     alignment, the maximum of the specified values is used.
+
+     Unless it's necessary to inspect the LABEL parameter, it is better
+     to set the variable `align_labels' in the target's
+     `OVERRIDE_OPTIONS'.  Otherwise, you should try to honor the user's
+     selection in `align_labels' in a `LABEL_ALIGN' implementation.
+
+`LABEL_ALIGN_MAX_SKIP'
+     The maximum number of bytes to skip when applying `LABEL_ALIGN'.
+     This works only if `ASM_OUTPUT_MAX_SKIP_ALIGN' is defined.
+
+`ASM_OUTPUT_SKIP (STREAM, NBYTES)'
+     A C statement to output to the stdio stream STREAM an assembler
+     instruction to advance the location counter by NBYTES bytes.
+     Those bytes should be zero when loaded.  NBYTES will be a C
+     expression of type `int'.
+
+`ASM_NO_SKIP_IN_TEXT'
+     Define this macro if `ASM_OUTPUT_SKIP' should not be used in the
+     text section because it fails to put zeros in the bytes that are
+     skipped.  This is true on many Unix systems, where the pseudo-op
+     to skip bytes produces no-op instructions rather than zeros when
+     used in the text section.
+
+`ASM_OUTPUT_ALIGN (STREAM, POWER)'
+     A C statement to output to the stdio stream STREAM an assembler
+     command to advance the location counter to a multiple of 2 to the
+     POWER bytes.  POWER will be a C expression of type `int'.
+
+`ASM_OUTPUT_MAX_SKIP_ALIGN (STREAM, POWER, MAX_SKIP)'
+     A C statement to output to the stdio stream STREAM an assembler
+     command to advance the location counter to a multiple of 2 to the
+     POWER bytes, but only if MAX_SKIP or fewer bytes are needed to
+     satisfy the alignment request.  POWER and MAX_SKIP will be a C
+     expression of type `int'.
+
+
+File: gccint.info,  Node: Debugging Info,  Next: Cross-compilation,  Prev: Assembler Format,  Up: Target Macros
+
+Controlling Debugging Information Format
+========================================
+
+   This describes how to specify debugging information.
+
+* Menu:
+
+* All Debuggers::      Macros that affect all debugging formats uniformly.
+* DBX Options::        Macros enabling specific options in DBX format.
+* DBX Hooks::          Hook macros for varying DBX format.
+* File Names and DBX:: Macros controlling output of file names in DBX format.
+* SDB and DWARF::      Macros for SDB (COFF) and DWARF formats.
+* VMS Debug::          Macros for VMS debug format.
+
+
+File: gccint.info,  Node: All Debuggers,  Next: DBX Options,  Up: Debugging Info
+
+Macros Affecting All Debugging Formats
+--------------------------------------
+
+   These macros affect all debugging formats.
+
+`DBX_REGISTER_NUMBER (REGNO)'
+     A C expression that returns the DBX register number for the
+     compiler register number REGNO.  In the default macro provided,
+     the value of this expression will be REGNO itself.  But sometimes
+     there are some registers that the compiler knows about and DBX
+     does not, or vice versa.  In such cases, some register may need to
+     have one number in the compiler and another for DBX.
+
+     If two registers have consecutive numbers inside GCC, and they can
+     be used as a pair to hold a multiword value, then they _must_ have
+     consecutive numbers after renumbering with `DBX_REGISTER_NUMBER'.
+     Otherwise, debuggers will be unable to access such a pair, because
+     they expect register pairs to be consecutive in their own
+     numbering scheme.
+
+     If you find yourself defining `DBX_REGISTER_NUMBER' in way that
+     does not preserve register pairs, then what you must do instead is
+     redefine the actual register numbering scheme.
+
+`DEBUGGER_AUTO_OFFSET (X)'
+     A C expression that returns the integer offset value for an
+     automatic variable having address X (an RTL expression).  The
+     default computation assumes that X is based on the frame-pointer
+     and gives the offset from the frame-pointer.  This is required for
+     targets that produce debugging output for DBX or COFF-style
+     debugging output for SDB and allow the frame-pointer to be
+     eliminated when the `-g' options is used.
+
+`DEBUGGER_ARG_OFFSET (OFFSET, X)'
+     A C expression that returns the integer offset value for an
+     argument having address X (an RTL expression).  The nominal offset
+     is OFFSET.
+
+`PREFERRED_DEBUGGING_TYPE'
+     A C expression that returns the type of debugging output GCC should
+     produce when the user specifies just `-g'.  Define this if you
+     have arranged for GCC to support more than one format of debugging
+     output.  Currently, the allowable values are `DBX_DEBUG',
+     `SDB_DEBUG', `DWARF_DEBUG', `DWARF2_DEBUG', `XCOFF_DEBUG',
+     `VMS_DEBUG', and `VMS_AND_DWARF2_DEBUG'.
+
+     When the user specifies `-ggdb', GCC normally also uses the value
+     of this macro to select the debugging output format, but with two
+     exceptions.  If `DWARF2_DEBUGGING_INFO' is defined and
+     `LINKER_DOES_NOT_WORK_WITH_DWARF2' is not defined, GCC uses the
+     value `DWARF2_DEBUG'.  Otherwise, if `DBX_DEBUGGING_INFO' is
+     defined, GCC uses `DBX_DEBUG'.
+
+     The value of this macro only affects the default debugging output;
+     the user can always get a specific type of output by using
+     `-gstabs', `-gcoff', `-gdwarf-1', `-gdwarf-2', `-gxcoff', or
+     `-gvms'.
+
+
+File: gccint.info,  Node: DBX Options,  Next: DBX Hooks,  Prev: All Debuggers,  Up: Debugging Info
+
+Specific Options for DBX Output
+-------------------------------
+
+   These are specific options for DBX output.
+
+`DBX_DEBUGGING_INFO'
+     Define this macro if GCC should produce debugging output for DBX
+     in response to the `-g' option.
+
+`XCOFF_DEBUGGING_INFO'
+     Define this macro if GCC should produce XCOFF format debugging
+     output in response to the `-g' option.  This is a variant of DBX
+     format.
+
+`DEFAULT_GDB_EXTENSIONS'
+     Define this macro to control whether GCC should by default generate
+     GDB's extended version of DBX debugging information (assuming
+     DBX-format debugging information is enabled at all).  If you don't
+     define the macro, the default is 1: always generate the extended
+     information if there is any occasion to.
+
+`DEBUG_SYMS_TEXT'
+     Define this macro if all `.stabs' commands should be output while
+     in the text section.
+
+`ASM_STABS_OP'
+     A C string constant, including spacing, naming the assembler
+     pseudo op to use instead of `"\t.stabs\t"' to define an ordinary
+     debugging symbol.  If you don't define this macro, `"\t.stabs\t"'
+     is used.  This macro applies only to DBX debugging information
+     format.
+
+`ASM_STABD_OP'
+     A C string constant, including spacing, naming the assembler
+     pseudo op to use instead of `"\t.stabd\t"' to define a debugging
+     symbol whose value is the current location.  If you don't define
+     this macro, `"\t.stabd\t"' is used.  This macro applies only to
+     DBX debugging information format.
+
+`ASM_STABN_OP'
+     A C string constant, including spacing, naming the assembler
+     pseudo op to use instead of `"\t.stabn\t"' to define a debugging
+     symbol with no name.  If you don't define this macro,
+     `"\t.stabn\t"' is used.  This macro applies only to DBX debugging
+     information format.
+
+`DBX_NO_XREFS'
+     Define this macro if DBX on your system does not support the
+     construct `xsTAGNAME'.  On some systems, this construct is used to
+     describe a forward reference to a structure named TAGNAME.  On
+     other systems, this construct is not supported at all.
+
+`DBX_CONTIN_LENGTH'
+     A symbol name in DBX-format debugging information is normally
+     continued (split into two separate `.stabs' directives) when it
+     exceeds a certain length (by default, 80 characters).  On some
+     operating systems, DBX requires this splitting; on others,
+     splitting must not be done.  You can inhibit splitting by defining
+     this macro with the value zero.  You can override the default
+     splitting-length by defining this macro as an expression for the
+     length you desire.
+
+`DBX_CONTIN_CHAR'
+     Normally continuation is indicated by adding a `\' character to
+     the end of a `.stabs' string when a continuation follows.  To use
+     a different character instead, define this macro as a character
+     constant for the character you want to use.  Do not define this
+     macro if backslash is correct for your system.
+
+`DBX_STATIC_STAB_DATA_SECTION'
+     Define this macro if it is necessary to go to the data section
+     before outputting the `.stabs' pseudo-op for a non-global static
+     variable.
+
+`DBX_TYPE_DECL_STABS_CODE'
+     The value to use in the "code" field of the `.stabs' directive for
+     a typedef.  The default is `N_LSYM'.
+
+`DBX_STATIC_CONST_VAR_CODE'
+     The value to use in the "code" field of the `.stabs' directive for
+     a static variable located in the text section.  DBX format does not
+     provide any "right" way to do this.  The default is `N_FUN'.
+
+`DBX_REGPARM_STABS_CODE'
+     The value to use in the "code" field of the `.stabs' directive for
+     a parameter passed in registers.  DBX format does not provide any
+     "right" way to do this.  The default is `N_RSYM'.
+
+`DBX_REGPARM_STABS_LETTER'
+     The letter to use in DBX symbol data to identify a symbol as a
+     parameter passed in registers.  DBX format does not customarily
+     provide any way to do this.  The default is `'P''.
+
+`DBX_MEMPARM_STABS_LETTER'
+     The letter to use in DBX symbol data to identify a symbol as a
+     stack parameter.  The default is `'p''.
+
+`DBX_FUNCTION_FIRST'
+     Define this macro if the DBX information for a function and its
+     arguments should precede the assembler code for the function.
+     Normally, in DBX format, the debugging information entirely
+     follows the assembler code.
+
+`DBX_LBRAC_FIRST'
+     Define this macro if the `N_LBRAC' symbol for a block should
+     precede the debugging information for variables and functions
+     defined in that block.  Normally, in DBX format, the `N_LBRAC'
+     symbol comes first.
+
+`DBX_BLOCKS_FUNCTION_RELATIVE'
+     Define this macro if the value of a symbol describing the scope of
+     a block (`N_LBRAC' or `N_RBRAC') should be relative to the start
+     of the enclosing function.  Normally, GCC uses an absolute address.
+
+`DBX_USE_BINCL'
+     Define this macro if GCC should generate `N_BINCL' and `N_EINCL'
+     stabs for included header files, as on Sun systems.  This macro
+     also directs GCC to output a type number as a pair of a file
+     number and a type number within the file.  Normally, GCC does not
+     generate `N_BINCL' or `N_EINCL' stabs, and it outputs a single
+     number for a type number.
+
+
+File: gccint.info,  Node: DBX Hooks,  Next: File Names and DBX,  Prev: DBX Options,  Up: Debugging Info
+
+Open-Ended Hooks for DBX Format
+-------------------------------
+
+   These are hooks for DBX format.
+
+`DBX_OUTPUT_LBRAC (STREAM, NAME)'
+     Define this macro to say how to output to STREAM the debugging
+     information for the start of a scope level for variable names.  The
+     argument NAME is the name of an assembler symbol (for use with
+     `assemble_name') whose value is the address where the scope begins.
+
+`DBX_OUTPUT_RBRAC (STREAM, NAME)'
+     Like `DBX_OUTPUT_LBRAC', but for the end of a scope level.
+
+`DBX_OUTPUT_NFUN (STREAM, LSCOPE_LABEL, DECL)'
+     Define this macro if the target machine requires special handling
+     to output an `N_FUN' entry for the function DECL.
+
+`DBX_OUTPUT_ENUM (STREAM, TYPE)'
+     Define this macro if the target machine requires special handling
+     to output an enumeration type.  The definition should be a C
+     statement (sans semicolon) to output the appropriate information
+     to STREAM for the type TYPE.
+
+`DBX_OUTPUT_FUNCTION_END (STREAM, FUNCTION)'
+     Define this macro if the target machine requires special output at
+     the end of the debugging information for a function.  The
+     definition should be a C statement (sans semicolon) to output the
+     appropriate information to STREAM.  FUNCTION is the
+     `FUNCTION_DECL' node for the function.
+
+`DBX_OUTPUT_STANDARD_TYPES (SYMS)'
+     Define this macro if you need to control the order of output of the
+     standard data types at the beginning of compilation.  The argument
+     SYMS is a `tree' which is a chain of all the predefined global
+     symbols, including names of data types.
+
+     Normally, DBX output starts with definitions of the types for
+     integers and characters, followed by all the other predefined
+     types of the particular language in no particular order.
+
+     On some machines, it is necessary to output different particular
+     types first.  To do this, define `DBX_OUTPUT_STANDARD_TYPES' to
+     output those symbols in the necessary order.  Any predefined types
+     that you don't explicitly output will be output afterward in no
+     particular order.
+
+     Be careful not to define this macro so that it works only for C.
+     There are no global variables to access most of the built-in
+     types, because another language may have another set of types.
+     The way to output a particular type is to look through SYMS to see
+     if you can find it.  Here is an example:
+
+          {
+            tree decl;
+            for (decl = syms; decl; decl = TREE_CHAIN (decl))
+              if (!strcmp (IDENTIFIER_POINTER (DECL_NAME (decl)),
+                           "long int"))
+                dbxout_symbol (decl);
+            ...
+          }
+
+     This does nothing if the expected type does not exist.
+
+     See the function `init_decl_processing' in `c-decl.c' to find the
+     names to use for all the built-in C types.
+
+     Here is another way of finding a particular type:
+
+          {
+            tree decl;
+            for (decl = syms; decl; decl = TREE_CHAIN (decl))
+              if (TREE_CODE (decl) == TYPE_DECL
+                  && (TREE_CODE (TREE_TYPE (decl))
+                      == INTEGER_CST)
+                  && TYPE_PRECISION (TREE_TYPE (decl)) == 16
+                  && TYPE_UNSIGNED (TREE_TYPE (decl)))
+                /* This must be `unsigned short'.  */
+                dbxout_symbol (decl);
+            ...
+          }
+
+`NO_DBX_FUNCTION_END'
+     Some stabs encapsulation formats (in particular ECOFF), cannot
+     handle the `.stabs "",N_FUN,,0,0,Lscope-function-1' gdb dbx
+     extension construct.  On those machines, define this macro to turn
+     this feature off without disturbing the rest of the gdb extensions.
+
+
+File: gccint.info,  Node: File Names and DBX,  Next: SDB and DWARF,  Prev: DBX Hooks,  Up: Debugging Info
+
+File Names in DBX Format
+------------------------
+
+   This describes file names in DBX format.
+
+`DBX_WORKING_DIRECTORY'
+     Define this if DBX wants to have the current directory recorded in
+     each object file.
+
+     Note that the working directory is always recorded if GDB
+     extensions are enabled.
+
+`DBX_OUTPUT_MAIN_SOURCE_FILENAME (STREAM, NAME)'
+     A C statement to output DBX debugging information to the stdio
+     stream STREAM which indicates that file NAME is the main source
+     file--the file specified as the input file for compilation.  This
+     macro is called only once, at the beginning of compilation.
+
+     This macro need not be defined if the standard form of output for
+     DBX debugging information is appropriate.
+
+`DBX_OUTPUT_MAIN_SOURCE_DIRECTORY (STREAM, NAME)'
+     A C statement to output DBX debugging information to the stdio
+     stream STREAM which indicates that the current directory during
+     compilation is named NAME.
+
+     This macro need not be defined if the standard form of output for
+     DBX debugging information is appropriate.
+
+`DBX_OUTPUT_MAIN_SOURCE_FILE_END (STREAM, NAME)'
+     A C statement to output DBX debugging information at the end of
+     compilation of the main source file NAME.
+
+     If you don't define this macro, nothing special is output at the
+     end of compilation, which is correct for most machines.
+
+`DBX_OUTPUT_SOURCE_FILENAME (STREAM, NAME)'
+     A C statement to output DBX debugging information to the stdio
+     stream STREAM which indicates that file NAME is the current source
+     file.  This output is generated each time input shifts to a
+     different source file as a result of `#include', the end of an
+     included file, or a `#line' command.
+
+     This macro need not be defined if the standard form of output for
+     DBX debugging information is appropriate.
+
+
+File: gccint.info,  Node: SDB and DWARF,  Next: VMS Debug,  Prev: File Names and DBX,  Up: Debugging Info
+
+Macros for SDB and DWARF Output
+-------------------------------
+
+   Here are macros for SDB and DWARF output.
+
+`SDB_DEBUGGING_INFO'
+     Define this macro if GCC should produce COFF-style debugging output
+     for SDB in response to the `-g' option.
+
+`DWARF_DEBUGGING_INFO'
+     Define this macro if GCC should produce dwarf format debugging
+     output in response to the `-g' option.
+
+`DWARF2_DEBUGGING_INFO'
+     Define this macro if GCC should produce dwarf version 2 format
+     debugging output in response to the `-g' option.
+
+     To support optional call frame debugging information, you must also
+     define `INCOMING_RETURN_ADDR_RTX' and either set
+     `RTX_FRAME_RELATED_P' on the prologue insns if you use RTL for the
+     prologue, or call `dwarf2out_def_cfa' and `dwarf2out_reg_save' as
+     appropriate from `TARGET_ASM_FUNCTION_PROLOGUE' if you don't.
+
+`DWARF2_FRAME_INFO'
+     Define this macro to a nonzero value if GCC should always output
+     Dwarf 2 frame information.  If `DWARF2_UNWIND_INFO' (*note
+     Exception Region Output:: is nonzero, GCC will output this
+     information not matter how you define `DWARF2_FRAME_INFO'.
+
+`LINKER_DOES_NOT_WORK_WITH_DWARF2'
+     Define this macro if the linker does not work with Dwarf version 2.
+     Normally, if the user specifies only `-ggdb' GCC will use Dwarf
+     version 2 if available; this macro disables this.  See the
+     description of the `PREFERRED_DEBUGGING_TYPE' macro for more
+     details.
+
+`DWARF2_GENERATE_TEXT_SECTION_LABEL'
+     By default, the Dwarf 2 debugging information generator will
+     generate a label to mark the beginning of the text section.  If it
+     is better simply to use the name of the text section itself,
+     rather than an explicit label, to indicate the beginning of the
+     text section, define this macro to zero.
+
+`DWARF2_ASM_LINE_DEBUG_INFO'
+     Define this macro to be a nonzero value if the assembler can
+     generate Dwarf 2 line debug info sections.  This will result in
+     much more compact line number tables, and hence is desirable if it
+     works.
+
+`PUT_SDB_...'
+     Define these macros to override the assembler syntax for the
+     special SDB assembler directives.  See `sdbout.c' for a list of
+     these macros and their arguments.  If the standard syntax is used,
+     you need not define them yourself.
+
+`SDB_DELIM'
+     Some assemblers do not support a semicolon as a delimiter, even
+     between SDB assembler directives.  In that case, define this macro
+     to be the delimiter to use (usually `\n').  It is not necessary to
+     define a new set of `PUT_SDB_OP' macros if this is the only change
+     required.
+
+`SDB_GENERATE_FAKE'
+     Define this macro to override the usual method of constructing a
+     dummy name for anonymous structure and union types.  See
+     `sdbout.c' for more information.
+
+`SDB_ALLOW_UNKNOWN_REFERENCES'
+     Define this macro to allow references to unknown structure, union,
+     or enumeration tags to be emitted.  Standard COFF does not allow
+     handling of unknown references, MIPS ECOFF has support for it.
+
+`SDB_ALLOW_FORWARD_REFERENCES'
+     Define this macro to allow references to structure, union, or
+     enumeration tags that have not yet been seen to be handled.  Some
+     assemblers choke if forward tags are used, while some require it.
+
+
+File: gccint.info,  Node: VMS Debug,  Prev: SDB and DWARF,  Up: Debugging Info
+
+Macros for VMS Debug Format
+---------------------------
+
+   Here are macros for VMS debug format.
+
+`VMS_DEBUGGING_INFO'
+     Define this macro if GCC should produce debugging output for VMS
+     in response to the `-g' option.  The default behavior for VMS is
+     to generate minimal debug info for a traceback in the absence of
+     `-g' unless explicitly overridden with `-g0'.  This behavior is
+     controlled by `OPTIMIZATION_OPTIONS' and `OVERRIDE_OPTIONS'.
+
+
+File: gccint.info,  Node: Cross-compilation,  Next: Mode Switching,  Prev: Debugging Info,  Up: Target Macros
+
+Cross Compilation and Floating Point
+====================================
+
+   While all modern machines use 2's complement representation for
+integers, there are a variety of representations for floating point
+numbers.  This means that in a cross-compiler the representation of
+floating point numbers in the compiled program may be different from
+that used in the machine doing the compilation.
+
+   Because different representation systems may offer different amounts
+of range and precision, the cross compiler cannot safely use the host
+machine's floating point arithmetic.  Therefore, floating point
+constants must be represented in the target machine's format.  This
+means that the cross compiler cannot use `atof' to parse a floating
+point constant; it must have its own special routine to use instead.
+Also, constant folding must emulate the target machine's arithmetic (or
+must not be done at all).
+
+   The macros in the following table should be defined only if you are
+cross compiling between different floating point formats.
+
+   Otherwise, don't define them.  Then default definitions will be set
+up which use `double' as the data type, `==' to test for equality, etc.
+
+   You don't need to worry about how many times you use an operand of
+any of these macros.  The compiler never uses operands which have side
+effects.
+
+`REAL_VALUE_TYPE'
+     A macro for the C data type to be used to hold a floating point
+     value in the target machine's format.  Typically this would be a
+     `struct' containing an array of `int'.
+
+`REAL_VALUES_EQUAL (X, Y)'
+     A macro for a C expression which compares for equality the two
+     values, X and Y, both of type `REAL_VALUE_TYPE'.
+
+`REAL_VALUES_LESS (X, Y)'
+     A macro for a C expression which tests whether X is less than Y,
+     both values being of type `REAL_VALUE_TYPE' and interpreted as
+     floating point numbers in the target machine's representation.
+
+`REAL_VALUE_LDEXP (X, SCALE)'
+     A macro for a C expression which performs the standard library
+     function `ldexp', but using the target machine's floating point
+     representation.  Both X and the value of the expression have type
+     `REAL_VALUE_TYPE'.  The second argument, SCALE, is an integer.
+
+`REAL_VALUE_FIX (X)'
+     A macro whose definition is a C expression to convert the
+     target-machine floating point value X to a signed integer.  X has
+     type `REAL_VALUE_TYPE'.
+
+`REAL_VALUE_UNSIGNED_FIX (X)'
+     A macro whose definition is a C expression to convert the
+     target-machine floating point value X to an unsigned integer.  X
+     has type `REAL_VALUE_TYPE'.
+
+`REAL_VALUE_RNDZINT (X)'
+     A macro whose definition is a C expression to round the
+     target-machine floating point value X towards zero to an integer
+     value (but still as a floating point number).  X has type
+     `REAL_VALUE_TYPE', and so does the value.
+
+`REAL_VALUE_UNSIGNED_RNDZINT (X)'
+     A macro whose definition is a C expression to round the
+     target-machine floating point value X towards zero to an unsigned
+     integer value (but still represented as a floating point number).
+     X has type `REAL_VALUE_TYPE', and so does the value.
+
+`REAL_VALUE_ATOF (STRING, MODE)'
+     A macro for a C expression which converts STRING, an expression of
+     type `char *', into a floating point number in the target machine's
+     representation for mode MODE.  The value has type
+     `REAL_VALUE_TYPE'.
+
+`REAL_INFINITY'
+     Define this macro if infinity is a possible floating point value,
+     and therefore division by 0 is legitimate.
+
+`REAL_VALUE_ISINF (X)'
+     A macro for a C expression which determines whether X, a floating
+     point value, is infinity.  The value has type `int'.  By default,
+     this is defined to call `isinf'.
+
+`REAL_VALUE_ISNAN (X)'
+     A macro for a C expression which determines whether X, a floating
+     point value, is a "nan" (not-a-number).  The value has type `int'.
+     By default, this is defined to call `isnan'.
+
+   Define the following additional macros if you want to make floating
+point constant folding work while cross compiling.  If you don't define
+them, cross compilation is still possible, but constant folding will
+not happen for floating point values.
+
+`REAL_ARITHMETIC (OUTPUT, CODE, X, Y)'
+     A macro for a C statement which calculates an arithmetic operation
+     of the two floating point values X and Y, both of type
+     `REAL_VALUE_TYPE' in the target machine's representation, to
+     produce a result of the same type and representation which is
+     stored in OUTPUT (which will be a variable).
+
+     The operation to be performed is specified by CODE, a tree code
+     which will always be one of the following: `PLUS_EXPR',
+     `MINUS_EXPR', `MULT_EXPR', `RDIV_EXPR', `MAX_EXPR', `MIN_EXPR'.
+
+     The expansion of this macro is responsible for checking for
+     overflow.  If overflow happens, the macro expansion should execute
+     the statement `return 0;', which indicates the inability to
+     perform the arithmetic operation requested.
+
+`REAL_VALUE_NEGATE (X)'
+     A macro for a C expression which returns the negative of the
+     floating point value X.  Both X and the value of the expression
+     have type `REAL_VALUE_TYPE' and are in the target machine's
+     floating point representation.
+
+     There is no way for this macro to report overflow, since overflow
+     can't happen in the negation operation.
+
+`REAL_VALUE_TRUNCATE (MODE, X)'
+     A macro for a C expression which converts the floating point value
+     X to mode MODE.
+
+     Both X and the value of the expression are in the target machine's
+     floating point representation and have type `REAL_VALUE_TYPE'.
+     However, the value should have an appropriate bit pattern to be
+     output properly as a floating constant whose precision accords
+     with mode MODE.
+
+     There is no way for this macro to report overflow.
+
+`REAL_VALUE_TO_INT (LOW, HIGH, X)'
+     A macro for a C expression which converts a floating point value X
+     into a double-precision integer which is then stored into LOW and
+     HIGH, two variables of type INT.
+
+`REAL_VALUE_FROM_INT (X, LOW, HIGH, MODE)'
+     A macro for a C expression which converts a double-precision
+     integer found in LOW and HIGH, two variables of type INT, into a
+     floating point value which is then stored into X.  The value is in
+     the target machine's representation for mode MODE and has the type
+     `REAL_VALUE_TYPE'.
+
+
+File: gccint.info,  Node: Mode Switching,  Next: Target Attributes,  Prev: Cross-compilation,  Up: Target Macros
+
+Mode Switching Instructions
+===========================
+
+   The following macros control mode switching optimizations:
+
+`OPTIMIZE_MODE_SWITCHING (ENTITY)'
+     Define this macro if the port needs extra instructions inserted
+     for mode switching in an optimizing compilation.
+
+     For an example, the SH4 can perform both single and double
+     precision floating point operations, but to perform a single
+     precision operation, the FPSCR PR bit has to be cleared, while for
+     a double precision operation, this bit has to be set.  Changing
+     the PR bit requires a general purpose register as a scratch
+     register, hence these FPSCR sets have to be inserted before
+     reload, i.e. you can't put this into instruction emitting or
+     `MACHINE_DEPENDENT_REORG'.
+
+     You can have multiple entities that are mode-switched, and select
+     at run time which entities actually need it.
+     `OPTIMIZE_MODE_SWITCHING' should return nonzero for any ENTITY
+     that needs mode-switching.  If you define this macro, you also
+     have to define `NUM_MODES_FOR_MODE_SWITCHING', `MODE_NEEDED',
+     `MODE_PRIORITY_TO_MODE' and `EMIT_MODE_SET'.  `NORMAL_MODE' is
+     optional.
+
+`NUM_MODES_FOR_MODE_SWITCHING'
+     If you define `OPTIMIZE_MODE_SWITCHING', you have to define this as
+     initializer for an array of integers.  Each initializer element N
+     refers to an entity that needs mode switching, and specifies the
+     number of different modes that might need to be set for this
+     entity.  The position of the initializer in the initializer -
+     starting counting at zero - determines the integer that is used to
+     refer to the mode-switched entity in question.  In macros that
+     take mode arguments / yield a mode result, modes are represented
+     as numbers 0 ... N - 1.  N is used to specify that no mode switch
+     is needed / supplied.
+
+`MODE_NEEDED (ENTITY, INSN)'
+     ENTITY is an integer specifying a mode-switched entity.  If
+     `OPTIMIZE_MODE_SWITCHING' is defined, you must define this macro to
+     return an integer value not larger than the corresponding element
+     in `NUM_MODES_FOR_MODE_SWITCHING', to denote the mode that ENTITY
+     must be switched into prior to the execution of INSN.
+
+`NORMAL_MODE (ENTITY)'
+     If this macro is defined, it is evaluated for every ENTITY that
+     needs mode switching.  It should evaluate to an integer, which is
+     a mode that ENTITY is assumed to be switched to at function entry
+     and exit.
+
+`MODE_PRIORITY_TO_MODE (ENTITY, N)'
+     This macro specifies the order in which modes for ENTITY are
+     processed.  0 is the highest priority,
+     `NUM_MODES_FOR_MODE_SWITCHING[ENTITY] - 1' the lowest.  The value
+     of the macro should be an integer designating a mode for ENTITY.
+     For any fixed ENTITY, `mode_priority_to_mode' (ENTITY, N) shall be
+     a bijection in 0 ...  `num_modes_for_mode_switching[ENTITY] - 1'.
+
+`EMIT_MODE_SET (ENTITY, MODE, HARD_REGS_LIVE)'
+     Generate one or more insns to set ENTITY to MODE.  HARD_REG_LIVE
+     is the set of hard registers live at the point where the insn(s)
+     are to be inserted.
+

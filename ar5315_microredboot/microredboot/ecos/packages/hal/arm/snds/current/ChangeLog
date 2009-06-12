@@ -1,0 +1,157 @@
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-11-05  Roland Caﬂebohm  <roland.cassebohm@visionsystems.de>
+
+        * include/plf_io.h: Define HAL_IO_MACROS_NO_ADDRESS_MUNGING to
+        force the IO macros not to mung the addresses. This platform
+        don't need this.
+
+2003-10-08  Roland Caﬂebohm  <roland.cassebohm@visionsystems.de>
+
+        * include/plf_io.h: Correct (unused) defines for
+        KS32C_ROMCON_BASE_MASK, KS32C_ROMCON_NEXT_MASK, 
+        KS32C_DRAMCON_BASE_MASK and KS32C_DRAMCON_NEXT_MASK.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_snds.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2002-10-19  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Only define if
+	ROM or ROMRAM, not if STUBS which can be RAM.
+
+2003-02-05  Nick Garnett  <nickg@calivar.com>
+
+	* include/plf_io.h (CYGARC_PHYSICAL_ADDRESS): Added this
+	definition to keep redboot_linux_exec.c happy.
+
+2002-10-03  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/pkgconf/mlt_arm_snds_ram.ldi: Add definition of heap1.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_snds.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2001-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Don't trust the
+	syscfg SDRAM request bit as suggested by manual - always set it to
+	what works. Use relative loads to get a pointer to the tables with
+	system controller setup data.
+
+	* src/snds100_misc.c: Don't mess up the syscfg register.
+
+2001-10-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h (KS32C_REFEXTCON): Split in DRAM and SDRAM
+	settings.
+
+	* include/hal_platform_setup.h: Fix KS32C_REFEXTCON parameters,
+	and set some LEDs to help debugging.
+
+	* cdl/hal_arm_snds.cdl: On the SNDS100 board the CPU runs at
+	50MHZ.
+
+	* include/pkgconf/mlt_arm_snds_rom.ldi: Moved flash to
+	0x01800000.
+	* include/pkgconf/mlt_arm_snds_rom.mlt: Same.
+	* include/pkgconf/mlt_arm_snds_rom.h: Same.
+
+	* include/hal_platform_setup.h: Added LED macro. Use relative
+	branch in reset vector. Moved flash to 0x01800000.
+
+2001-10-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Definition names updated.
+	* src/snds100_misc.c: Same.
+
+	* include/pkgconf/mlt_arm_snds_rom.ldi: Added.
+	* include/pkgconf/mlt_arm_snds_rom.mlt: Same.
+	* include/pkgconf/mlt_arm_snds_rom.h: Same.
+
+	* include/pkgconf/mlt_arm_snds_ram.ldi: Updated layout.
+	* include/pkgconf/mlt_arm_snds_ram.mlt: Same.
+	* include/pkgconf/mlt_arm_snds_ram.h: Same.
+
+	* include/hal_platform_setup.h: Fixed instruction typo.
+
+	* include/hal_platform_ints.h: Vector definitions renamed to match
+	those in E7T HAL.
+
+	* include/hal_cache.h: Replaced with E7T HAL version.
+
+	* cdl/hal_arm_snds.cdl: Added default baud rate option, ROM
+	startup mode, and removed PID tools make rules.
+
+2001-10-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Copied here from E7T HAL.
+	* src/snds100_misc.c: Functions replaced with E7T HAL
+	versions.
+
+	* include/plf_io.h: Added.
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Code matching
+	board mon.
+
+2001-10-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_cache.h: Don't define cache dimensions at all rather
+	than using 0.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/snds100_misc.c: 
+	* src/hal_diag.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

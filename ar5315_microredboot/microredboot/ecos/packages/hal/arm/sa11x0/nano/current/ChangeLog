@@ -1,0 +1,223 @@
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_POST.ecm: 
+	* misc/redboot_RAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-02-13  Patrick Doyle  <wpd@delcomsys.com>
+	* src/nano_misc.c: Replaced explicit prototype of memset with
+	#include <string.h>.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_POST.ecm: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT.
+	* misc/redboot_RAM.ecm: Ditto.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/nano_misc.c: Fixed warning.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_nano.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Updated. Added zlib.
+	* misc/redboot_ROM.ecm: Same.
+
+2002-01-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/nano.h (HAL_PCI_DO_CONFIG_ACCESS): If requesting vendor
+	config, check it isn't 0 or 256 which would be bogus - instead
+	this indicates the device is absent, e.g. the second eth controller
+	that is found on the commEngine, but not on the nanoEngine.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+	* cdl/hal_arm_sa11x0_nano.cdl: Remove explicit plf_io.h
+	declaration.
+
+2001-05-02  Hugo Tyson  <hmt@redhat.com>
+
+	* src/nano_misc.c (hal_mmu_init): Set up PCI memory in the new
+	location, where it will not already be mapped by the default
+	layout.  This requires "stealing" RAM from the linear layout.
+	It's done this way so that a RAM app will work OK atop an
+	old-style RedBoot with the old PCI window area set up.
+	(hal_arm_mem_real_region_top): Better comments, and a safety
+	check; do not repeat the test for boundary movement.
+	
+	* include/pkgconf/mlt_arm_sa11x0_nano_ram.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_nano_ram.h: 
+	* include/pkgconf/mlt_arm_sa11x0_nano_ram.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_nano_post.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_nano_post.h: 
+	* include/pkgconf/mlt_arm_sa11x0_nano_post.mlt: 
+	Add "fixed" region to contain PCI window at 0xfa00000 (250Mb),
+	well away from normal memory.  Adjust ram region size to 15Mb - a
+	smaller possible memory installation, with the 1Mb default PCI
+	window removed.
+
+2001-04-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_sa11x0_nano.cdl: Remove redundant -Wl,-N from link flags
+
+2001-04-12  Hugo Tyson  <hmt@redhat.com>
+
+	* src/nano_misc.c (hal_arm_mem_real_region_top): Also report
+	variants on the CYGMEM_SECTION_heap1 as described by default.
+	This is ugly, but necessary, else the heap tries to use memory
+	that is not installed.  Oh, for a proper MLT!
+
+2001-04-02  Hugo Tyson  <hmt@redhat.com>
+
+	* misc/readme.txt: Update the readme to reflect more info about
+	using the nano target.
+
+2001-03-29  Hugo Tyson  <hmt@redhat.com>
+
+	* src/nano_misc.c (hal_mmu_init): Find the real physical address
+	for mapping the uncacheable, unbufferable PCI window - it might be
+	various places depending on what SDRAMs are installed.
+
+2001-03-14  Hugo Tyson  <hmt@redhat.com>
+
+	* include/nano.h (HAL_PCI_INIT): Disconnect the two ethernet
+	devices from the PCI bus during init so that we can re-scan during
+	startup regardless of what happened before - such as
+	network-enabled RedBoot doing the same setup already.
+
+	* misc/redboot_POST.ecm: 
+	* misc/redboot_RAM.ecm: 
+	Enable package CYGPKG_IO_ETH_DRIVERS so that RedBoot is network
+	capable.  Disable CYGPKG_DEVS_ETH_ARM_NANO_ETH1 so that it uses
+	only the first ether device.  Tidy some comments and whitespace.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_nano.cdl:  Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-03-01  Hugo Tyson  <hmt@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_nano_post.h:
+	* include/pkgconf/mlt_arm_sa11x0_nano_post.ldi:	
+	* include/pkgconf/mlt_arm_sa11x0_nano_post.mlt:
+	* include/pkgconf/mlt_arm_sa11x0_nano_ram.h:
+	* include/pkgconf/mlt_arm_sa11x0_nano_ram.ldi:
+	* include/pkgconf/mlt_arm_sa11x0_nano_ram.mlt:
+	Add MLT definition of PCI window.
+	I chose 0x1e00000 ie. megabyte 30 because I believe
+	megabyte 31 is used by RedBoot for buffers or stacks.
+	
+	* include/nano.h: Take external MLT definition of PCI window for
+	defining BASE, SIZE symbols.  Set the interrupts on GPIO0 and
+	GPIO1 to be falling-edge in HAL_PCI_INIT().  Don't define any of
+	this unless CYGPKG_IO_PCI and not assembler.
+
+	* src/nano_misc.c (hal_mmu_init): Take external MLT definition of
+	PCI window.  Also define and initialize an int holding the real
+	address of the PCI window, if CYGPKG_IO_PCI.
+
+2001-02-28  Hugo Tyson  <hmt@redhat.com>
+
+	* include/plf_mmap.h (HAL_VIRT_TO_PHYS_ADDRESS): [et al] Use
+	variant HAL routines which scan the true memory map installed.
+	This is necessary for dealing with eg. PCI window - also future
+	similar targets with different physical memory arrangements,
+
+	* src/nano_misc.c (plf_hardware_init): Perform MMU initialization
+	even in RAM startup - so that different configurations of
+	ROM(RedBoot) and RAM app can work together.
+	(hal_mmu_init): Perform partial initialization when in RAM startup
+	- so that ROM settings can be overridden eg. for PCI non-cacheable
+	memory windows and the like.  [Incomplete initial version.]
+
+	* include/nano.h (HAL_PCI_INIT): Implement this and all its mates,
+	ie. a PCI device driver for the nanoBridge and *very specifically*
+	its two attached i82559s only - it's by no means general, because
+	it's not a proper implementation of a PCI bridge.
+
+2001-02-22  Hugo Tyson  <hmt@redhat.com>
+
+	* misc/redboot_POSTecm: 
+	* misc/redboot_RAM.ecm: add configuration of the Flash Image
+	System initialization in RedBoot.
+
+2001-02-20  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_arm_sa11x0_nano.cdl: New CDL describing serial
+	ports - CYGHWR_HAL_ARM_SA11X0_UART1,3.
+
+	* cdl/hal_arm_sa11x0_nano.cdl: Also changed the default baud rates
+	to 38400, having realized that the other port works just fine too.
+	So you can put your serial line on the non-BSE port for normal
+	work and not be hassled by out-of-time characters over reset.
+
+2001-02-15  Hugo Tyson  <hmt@redhat.com>
+
+	* misc/redboot_POST.ecm: 
+	* misc/redboot_RAM.ecm:
+	Add CYGPKG_IO_FLASH for RedBoot builds now that flash driver
+	exists.   CYGPKG_DEVS_FLASH_NANO + CYGPKG_DEVS_FLASH_STRATA
+
+2001-02-14  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_platform_setup.h: Clean up debug and cache hacks to
+	get it limping along.  Import proper value (as read from system
+	regs) to SDRAM controller setup - in case true ROM startup is ever
+	used.
+
+	* src/nano_misc.c (hal_arm_mem_real_region_top): Add.  Support
+	hal_dram_size.
+	(hal_mmu_init): Add a SDRAM sizer like others we have.  Just in
+	case.  Deals with 32Mb sized parts also.
+
+	* cdl/hal_arm_sa11x0_nano.cdl: implements
+	CYGINT_HAL_ARM_MEM_REAL_REGION_TOP
+
+2001-02-14  Hugo Tyson  <hmt@redhat.com>
+
+	* hal/arm/sa11x0/nano: New package, based on Assabet 
+	HAL.  This is the nanoEngine from Bright Star Engineering; an
+	SA1110 CPU + 2x i82559 ethernets.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

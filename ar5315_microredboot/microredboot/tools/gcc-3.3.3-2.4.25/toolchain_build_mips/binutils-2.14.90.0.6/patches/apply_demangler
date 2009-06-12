@@ -1,0 +1,15 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+patch -p1 $BACKUP < $dir/demangler.patch
+[ $? = 0 ] || exit 1
+(cd demangler && sh ./bootstrap)
+[ $? = 0 ] || exit 1
+(cd libiberty && rm -f configure && autoconf-2.13)
+[ $? = 0 ] || exit 1
+rm -f configure && autoconf-2.13 && rm -f Makefile.in && autogen Makefile.def
+[ $? = 0 ] || exit 1
+find -name "*.rej" | grep rej && exit 1
+find -name "*.orig" | xargs rm -fv
+find -name "*.gmo" | xargs rm -fv

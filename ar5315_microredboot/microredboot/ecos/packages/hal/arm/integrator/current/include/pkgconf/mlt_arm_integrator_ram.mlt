@@ -1,0 +1,12 @@
+version 0
+region ram 0 01000000 0 !
+section reserved 8000 1 0 0 1 1 1 1 0 0 rom_vectors rom_vectors !
+section rom_vectors 0 4 0 1 0 1 0 1 text text !
+section text 0 4 0 1 0 1 0 1 fini fini !
+section fini 0 4 0 1 0 1 0 1 rodata rodata !
+section rodata 0 4 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 4 0 1 0 1 0 1 fixup fixup !
+section fixup 0 4 0 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 4 0 1 0 1 0 1 data data !
+section data 0 4 0 1 0 1 0 1 bss bss !
+section bss 0 4 0 1 0 0 0 0 !

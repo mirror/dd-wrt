@@ -1,0 +1,105 @@
+<HTML>
+<HEAD>
+<TITLE>Register Window Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Register Window</H1>
+<H2>Overview</H2>
+<P>The Register Window lists all the registers and their contents for
+the selected stack frame. It permits viewing the contents of registers
+in different formats and some display customizations.</P>
+
+<P>Any register that was not collected will be displayed as having a value
+of "0x0". To collect registers, add them to the collection action in the
+<A HREF="tracedlg.html">Tracepoint Dialog</A>.
+
+<P>The Register Window will update the register contents in the display
+to match the stack frame currently being viewed in the <A HREF="source.html">
+Source Window</A> and <A HREF="stack.html">Stack Winodw</A>.</P>
+
+<P>Register Window topics:
+<UL>
+    <LI><UL><A HREF="#menus">Register Menu</A>
+            <LI><A HREF="#menus_fmt">Format</A>
+            <LI><A HREF="#menus_remove">Remove from Display</A>
+            <LI><A HREF="#menus_all">Display All Registers</A>
+        </UL>
+    <LI><UL><A HREF="#display">Register Display</A>
+            <LI><A HREF="#display_nav">Navigating the Register Display</A>
+            <LI><A HREF="#display_popup">Register Pop-up Menu</A>
+            <LI><A HREF="#display_format">Changing the Display Format of
+                a Register</A>
+            <LI><A HREF="#display_remove">Removing a Register
+                 from the display</A>
+            <LI><A HREF="#display_all">Displaying all Registers</A>
+        </UL>
+</UL></P>
+
+<H3><A NAME="menus">Register Menu</A></H3>
+The Register Menu provides on-screen access to the functionality of the
+Register Window. To use any item from this menu, first use the mouse and
+select (click the left mouse button) on any register cell. Users may then
+select:
+<BR>
+<DL>
+    <DT><A NAME="menus_fmt"><A HREF="#display_format">Format</A></A>
+        <DD>Change the display format of the selected register
+    <DT><A NAME="menus_remove"><A HREF="#display_remove">Remove
+        from Display</A></A>
+        <DD>Remove the selected register from the Register
+            Window Display
+    <DT><A NAME="menus_all"><A HREF="#display_all">Display All
+        Registers</A></A>
+        <DD>Display all registers in the Display. This item
+            is only available when a register was previously
+            removed from the Display.
+</DL>
+
+<H3><A NAME="display">Register Display</A></H3>
+The Register Display contains name and value pairs for each register
+available on the target hardware. These "cells" are layed out as a
+spreadsheet for ease of use.
+
+<P><A NAME="display_nav"></A>To navigate the Register Display, use either
+the mouse and left mouse button or the arrow keys on the keyboard to
+highlight the appropriate cell. Users may then use the <A HREF="#menus">
+Register Menu</A> or use the Register Pop-up Menu to access special display
+options for the Register Window.</P>
+<BR>
+
+<H4><A NAME="display_popup">The Register Pop-up Menu</A></H4>
+All of the special functions of the register window are accessed through
+the Register Pop-up Menu. To use the Menu, simply select a register (see
+<A HREF="#display_nav">Navigating the Register Display</A>) and click the
+right mouse button. The Menu offers:
+<DL>
+    <DT><A NAME="display_format">Format</A>
+        <DD><DL>Change the display format of the register. Valid display types
+            are:
+                <DT>Hex
+                    <DD>The register's contents are displayed in
+                        hexadecimal (base 16).
+                <DT>Decimal
+                    <DD>The value is shown as
+                        a decimal number (base 10).
+                <DT>Natural
+                    <DD>The register is displayed in its natural format.
+                <DT>Binary
+                    <DD>The contents of the register are displayed 
+                        as a binary number (base 2).
+                <DT>Octal
+                    <DD>The register's contents are shown in octal (base 8).
+                <DT>Raw
+                    <DD>The raw contents of the register are shown.
+             </DL>
+    <DT><A NAME="display_remove">Remove</A>
+        <DD>Remove the selected register from the display. To display
+            the removed register again, select the "Display All Registers"
+            option from the Register Menu or the Register Pop-up Menu.
+    <DT><A NAME="display_all">Display All Registers</A>
+        <DD>Causes the Register Window Display to show all registers,
+            including those which were previously "removed". This menu
+            item is only available when removed registers exist.
+</DL>
+</BODY>
+</HTML>

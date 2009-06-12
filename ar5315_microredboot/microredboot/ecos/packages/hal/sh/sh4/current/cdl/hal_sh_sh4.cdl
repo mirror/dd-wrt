@@ -1,0 +1,287 @@
+# ====================================================================
+#
+#      hal_sh_sh4.cdl
+#
+#      SH4 architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2003 Nick Garnett 
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov, nickg
+# Original data:  jskov
+# Contributors:
+# Date:           1999-10-29
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_SH_SH4 {
+    display       "SH4 architecture"
+    parent        CYGPKG_HAL_SH
+
+    hardware
+    include_dir   cyg/hal
+    define_header hal_sh_sh4.h
+    description   "
+        The SH4 (SuperH 4) architecture HAL package provides generic
+        support for this processor architecture. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    compile        sh4_scif.c var_misc.c variant.S
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_VARIANT_H   <pkgconf/hal_sh_sh4.h>"
+        puts $::cdl_header "#define CYGBLD_HAL_VAR_EXCEPTION_MODEL_H   <cyg/hal/hal_var_bank.h>"
+        puts $::cdl_header "#define CYGBLD_HAL_VAR_EXCEPTION_MODEL_INC <cyg/hal/hal_var_bank.inc>"
+        puts $::cdl_header "#define CYGBLD_HAL_VAR_INTR_MODEL_H   <cyg/hal/hal_intr_excevt.h>"
+    }
+
+    # The "-o file" is a workaround for CR100958 - without it the
+    # output file would end up in the source directory under CygWin.
+    # n.b. grep does not behave itself under win32
+    make -priority 1 {
+        <PREFIX>/include/cyg/hal/sh4_offsets.inc : <PACKAGE>/src/var_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,sh4_offsets.tmp -o var_mk_defs.tmp -S $<
+        fgrep .equ var_mk_defs.tmp | sed s/#// > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 sh4_offsets.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm sh4_offsets.tmp var_mk_defs.tmp
+    }
+
+    # CPU variant supported
+    cdl_component CYGPKG_HAL_SH_7750 {
+        display       "SH 7750 microprocessor"
+        parent        CYGPKG_HAL_SH_CPU
+        implements    CYGINT_HAL_SH_VARIANT
+        implements    CYGINT_HAL_SH_CPG_T1
+        requires      ! CYGHWR_HAL_SH_CACHE_ENABLE
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_SH_7750
+        description "
+            The SH4 7750 microprocessor. This is an embedded part that in
+            addition to the SH4 processor core has built in peripherals
+            such as memory controllers, DMA controllers, serial ports and
+            timers/counters."               
+        define_proc {
+            puts $cdl_system_header "#define CYGBLD_HAL_CPU_MODULES_H <cyg/hal/mod_7750.h>"
+        }
+    }
+
+    cdl_component CYGPKG_HAL_SH_7751 {
+        display       "SH 7751 microprocessor"
+        parent        CYGPKG_HAL_SH_CPU
+        implements    CYGINT_HAL_SH_VARIANT
+        implements    CYGINT_HAL_SH_CPG_T1
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_SH_7751
+        compile       pcic.c
+        description "
+            The SH4 7751 microprocessor. This is an embedded part that in
+            addition to the SH4 processor core has built in peripherals
+            such as memory controllers, DMA controllers, serial ports and
+            timers/counters."               
+        define_proc {
+            puts $cdl_system_header "#define CYGBLD_HAL_CPU_MODULES_H <cyg/hal/mod_7751.h>"
+        }
+    }
+
+    cdl_component CYGPKG_HAL_SH_202 {
+        display       "SH 202 microprocessor"
+        parent        CYGPKG_HAL_SH_CPU
+        implements    CYGINT_HAL_SH_VARIANT
+        implements    CYGINT_HAL_SH_CPG_T1
+        requires      CYGHWR_HAL_SH_FPU
+        requires      { CYGHWR_HAL_SH_FPU_REGS == 16 }
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_SH_202
+        description "
+            The SH4-202 microprocessor. This is an embedded part that in
+            addition to the SH4 processor core has built in peripherals
+            such as memory controllers, DMA controllers, serial ports and
+            timers/counters."               
+        define_proc {
+            puts $cdl_system_header "#define CYGBLD_HAL_CPU_MODULES_H <cyg/hal/mod_202.h>"
+        }
+    }
+
+    cdl_component CYGHWR_HAL_SH_CLOCK_SETTINGS {
+        display          "SH on-chip generic clock controls"
+        description      "
+            The various clocks used by the system are controlled by
+            these options, some of which are derived from platform
+            settings."
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_HAL_SH_CPG_T1 {
+            display     "Clock pulse generator type 1"
+        }
+
+        cdl_option CYGHWR_HAL_SH_TMU_PRESCALE_0 {
+            display       "TMU counter 0 prescaling"
+            description   "
+                The peripheral clock is driving the counter used for
+                the real-time clock, prescaled by this factor."
+            flavor        data
+            legal_values  { 4 16 64 256 }
+            default_value 4
+        }
+
+        cdl_option CYGHWR_HAL_SH_RTC_PRESCALE {
+            display       "eCos RTC prescaling"
+            flavor        data
+            calculated    CYGHWR_HAL_SH_TMU_PRESCALE_0
+        }
+
+        cdl_option CYGHWR_HAL_SH_CLOCK_CKIO {
+            display    "CKIO clock"
+            no_define
+            flavor     data
+            calculated { CYGHWR_HAL_SH_PLL2_OUTPUT }
+        }
+
+        cdl_option CYGHWR_HAL_SH_PLL1_OUTPUT {
+            display    "The clock output from PLL1"
+            no_define
+            flavor     data
+            calculated { CYGHWR_HAL_SH_DIVIDER1_OUTPUT * CYGHWR_HAL_SH_OOC_PLL_1 }
+        }
+
+        cdl_option CYGHWR_HAL_SH_DIVIDER1_OUTPUT {
+            display    "The clock output from divider 1"
+            no_define
+            flavor     data
+            # DIV1 output is either 1 or 1/2 XTAL
+            calculated { (CYGHWR_HAL_SH_OOC_DIVIDER_1 == 1)
+                           ? CYGHWR_HAL_SH_OOC_XTAL
+                           : CYGHWR_HAL_SH_OOC_XTAL / 2 }
+        }
+
+        cdl_option CYGHWR_HAL_SH_PROCESSOR_SPEED {
+            display          "Processor clock speed (MHz)"
+            flavor           data
+            calculated       { CYGHWR_HAL_SH_PLL1_OUTPUT / CYGHWR_HAL_SH_OOC_DIVIDER_IFC }
+            description      "
+                The peripheral speed is computed from the PLL2 output clock
+                speed and the IFC divider settings."
+        }
+
+        cdl_option CYGHWR_HAL_SH_BOARD_SPEED {
+            display          "Platform bus clock speed (MHz)"
+            flavor           data
+            calculated       { CYGHWR_HAL_SH_PLL1_OUTPUT / CYGHWR_HAL_SH_OOC_DIVIDER_BFC }
+            description      "
+                The peripheral speed is computed from the PLL2 output clock
+                speed and the BFC divider settings."
+        }
+
+        cdl_option CYGHWR_HAL_SH_ONCHIP_PERIPHERAL_SPEED {
+            display          "Processor on-chip peripheral clock speed (MHz)"
+            flavor           data
+            calculated       { CYGHWR_HAL_SH_PLL1_OUTPUT / CYGHWR_HAL_SH_OOC_DIVIDER_PFC }
+            description      "
+                The peripheral speed is computed from the PLL2 output clock
+                speed and the PFC divider settings."
+        }
+    }
+
+    cdl_option CYGNUM_HAL_SH_SH4_SCIF_BAUD_RATE {
+        display          "SCIF serial ports default baud rate"
+        flavor data
+        legal_values     { 4800 9600 14400 19200 38400 57600 115200 }
+        default_value    { CYGNUM_HAL_SH_SH4_SCIF_BAUD_RATE_DEFAULT ? \
+                           CYGNUM_HAL_SH_SH4_SCIF_BAUD_RATE_DEFAULT : 38400 }
+        description      "
+           This controls the default baud rate used for communicating
+           with GDB / displaying diagnostic output."
+    }
+
+    cdl_component CYGPKG_HAL_SH_INTERRUPT {
+        display          "Interrupt controls"
+        flavor     none
+        no_define
+        description      "
+            Initial interrupt settings can be specified using these option."
+
+        cdl_option CYGHWR_HAL_SH_IRQ_USE_IRQLVL {
+            display          "Use IRL0-3 pins as IRL input"
+            default_value    0
+            description      "
+                It is possible for the IRL0-3 pins to be used as IRL
+                inputs by enabling this option."
+        }
+    }
+
+    # Cache settings
+    cdl_option CYGHWR_HAL_SH_CACHE_MODE_P0 {
+        display       "Select cache mode set for P0/U0/P3 at startup"
+        parent        CYGPKG_HAL_SH_CACHE
+        default_value { "WRITE_BACK" }
+        legal_values  { "WRITE_BACK" "WRITE_THROUGH" }
+        flavor        data
+        description "
+            Controls what cache mode the cache should be put in at
+            startup for areas P0, U0 and P3. Write-back mode improves
+            performance by letting dirty data to be kept in the
+            cache for a period of time, allowing mutiple writes to
+            the same cache line to be written back to memory in
+            one memory transaction. In Write-through mode, each
+            individual write will cause a memory transaction."
+    }
+    
+    cdl_option CYGHWR_HAL_SH_CACHE_MODE_P1 {
+        display       "Select cache mode set for P1 at startup"
+        parent        CYGPKG_HAL_SH_CACHE
+        default_value { "WRITE_BACK" }
+        legal_values  { "WRITE_BACK" "WRITE_THROUGH" }
+        flavor        data
+        description "
+            Controls what cache mode the cache should be put in at
+            startup for area P1. Write-back mode improves
+            performance by letting dirty data to be kept in the
+            cache for a period of time, allowing mutiple writes to
+            the same cache line to be written back to memory in
+            one memory transaction. In Write-through mode, each
+            individual write will cause a memory transaction."
+    }
+}

@@ -1,0 +1,23 @@
+/* XPM */
+static char * package_closed_dis_xpm[] = {
+"16 16 4 1",
+" 	c None",
+".	c Black",
+"X	c #c0c0c0",
+"o	c #808080",
+"                ",
+"                ",
+"                ",
+"                ",
+"                ",
+"                ",
+"                ",
+"                ",
+"    .........   ",
+"   .XXXXXXXo.   ",
+"   ..........   ",
+"   .XXXXXX.o.   ",
+"   .XXXXXX.o.   ",
+"   .XXXXXX...   ",
+"   .........    ",
+"                "};

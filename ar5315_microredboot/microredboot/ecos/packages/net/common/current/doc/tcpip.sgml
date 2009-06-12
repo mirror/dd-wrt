@@ -1,0 +1,638 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     tcpip.sgml                                                  -->
+<!--                                                                 -->
+<!--     eCos TCP/IP Stacks                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART id="net-common-tcpip">
+<TITLE>TCP/IP Stack Support for eCos</TITLE>
+<PARTINTRO>
+<PARA>
+The Common Networking for <productname>eCos</productname> package
+provides support for a complete TCP/IP networking stack.
+The design allows for the actual stack to be modular and at the
+current time two different implementations, one based on OpenBSD
+from 2000 and a new version based on FreeBSD, are available.
+The particulars of each stack implementation are presented in
+separate sections following this top-level discussion.
+</PARA>
+</PARTINTRO>
+<CHAPTER id="net-common-ethernet-driver-design">
+<TITLE>Ethernet Driver Design</TITLE>
+<PARA>Currently, the networking stack only supports ethernet based
+networking. </PARA>
+<PARA>The network drivers use a two-layer design.  One layer is
+hardware independent and contains all the stack specific code. 
+The other layer is platform dependent and communicates with the
+hardware independent layer via a very simple API.  In this way,
+hardware device drivers can actually be used with other stacks,
+if the same API can be provided by that stack.  We designed the
+drivers this way to encourage the development of other stacks in
+eCos while allowing re-use of the actual hardware specific code. </PARA>
+<PARA>More comprehensive documentation of the ethernet device driver and
+the associated API can be found in the generic ethernet device driver
+documentation
+<xref linkend="io-eth-drv-generic">
+The driver and API is the same as the minimal debug stack used by
+the RedBoot application. See the RedBoot documentation
+for further
+information.</PARA>
+</CHAPTER>
+<CHAPTER id="net-common-sample-code">
+<TITLE>Sample Code</TITLE>
+<PARA>Many examples using the networking support are provided. 
+These are arranged as eCos test programs, primarily for use in verifying
+the package, but they can also serve as useful frameworks for program
+design.  We have taken a
+<acronym>KISS</acronym>
+approach to building programs which
+use the network.  A single include file
+&lt;<FILENAME>network.h</FILENAME>&gt; is
+all that is required to access the stack.  A complete, annotated
+test program can be found at
+<FILENAME>net/common/<REPLACEABLE>VERSION</REPLACEABLE>/tests/ftp_test.c</FILENAME>,
+with its associated files.     </PARA>
+</CHAPTER>
+<CHAPTER id="net-common-configuring-ip-addresses">
+<TITLE>Configuring IP Addresses</TITLE>
+<PARA>Each interface (&ldquo;eth0&rdquo; and &ldquo;eth1&rdquo;)
+has independent configuration of its setup.  Each can be set up
+manually (in which case you must write code to do this), or by using
+<acronym>BOOTP/DHCP</acronym>,
+or explicitly, with configured values. If additional
+interfaces are added, these must be configured manually.</PARA>
+<PARA>The configurable values are: </PARA>
+<itemizedlist>
+<LISTITEM><PARA>IP address</para></listitem>
+<LISTITEM><PARA>netmask</para></listitem>
+<LISTITEM><PARA>broadcast address</para></listitem>
+<LISTITEM><PARA>gateway/router</para></listitem>
+<LISTITEM><PARA>server address.</para></listitem>
+</itemizedlist>
+<PARA>Server address is the DHCP server if applicable, but in addition,
+many test cases use it as &ldquo;the machine to talk to&rdquo; in
+whatever manner the test exercises the protocol stack.</PARA>
+<PARA>The initialization is invoked by calling the C routine   
+<PROGRAMLISTING>
+void <function>init_all_network_interfaces</function>(void);
+</PROGRAMLISTING>
+</PARA>
+<PARA>
+Additionally, if the system is configured to support IPv6 then each
+interface may have an address assigned which is a composite of a 64 bit
+prefix and the 32 bit IPv4 address for that interface.
+The prefix is controlled by the CDL setting 
+CYGHWR_NET_DRIVER_ETH0_IPV6_PREFIX for &ldquo;eth0&rdquo;, etc.
+This is a CDL booldata type, allowing this address to be suppressed if
+not desired.
+</PARA>
+
+<PARA>Alternatively, the system can configure its IPv6 address using
+router solicitation. When the CDL option
+CYGOPT_NET_IPV6_ROUTING_THREAD is enabled,
+<function>init_all_network_interface</function> will start a thread which sends out router solicit messages, process router advertisements and thus configure an IPv6 address to the interface.</PARA>
+
+<PARA>
+Refer to the test cases,
+<FILENAME>&hellip;/packages/net/common/<REPLACEABLE>VERSION</REPLACEABLE>/tests/ftp_test.c</FILENAME>
+for example usage, and the source files in
+<FILENAME>&hellip;/packages/net/common/<REPLACEABLE>VERSION</REPLACEABLE>/src/bootp_support.c</FILENAME>
+and
+<FILENAME>network_support.c</FILENAME>
+to see what that call does.</PARA>
+<PARA>This assumes that the MAC address (also known as 
+<acronym>ESA</acronym> or Ethernet Station Address)
+is already defined in the
+serial EEPROM or however the particular target implements this;
+support for setting the MAC address is hardware dependent.</PARA>
+<PARA>DHCP support is active by default, and there are configuration
+options to control it.  Firstly, in the top level of the
+&ldquo;Networking&rdquo; configuration
+tree, &ldquo;Use full DHCP instead of BOOTP&rdquo; enables
+DHCP, and it contains an option to have the system provide a thread
+to renew DHCP leases and manage lease expiry. Secondly, the individual
+interfaces &ldquo;eth0&rdquo; and &ldquo;eth1&rdquo; each
+have new options within the &ldquo;Use BOOTP/DHCP to
+initialize &lsquo;<EMPHASIS>ethX</EMPHASIS>&rsquo;&rdquo; to
+select whether to use DHCP rather than BOOTP.</PARA>
+<para>
+Note that you are completely at liberty to ignore this startup code and its
+configuration in building your application.
+<function>init_all_network_interfaces()</function>
+is provided for three main purposes:
+<itemizedlist>
+<LISTITEM><PARA>For use by Red Hat's own test programs.</para></listitem>
+<LISTITEM><PARA>As an easy &ldquo;get you going&rdquo; utility for
+newcomers to <productname>eCos</productname>.</para></listitem>
+<LISTITEM><PARA>As readable example code from which further development
+might start.</para></listitem>
+</itemizedlist>
+</para><para>
+If your application has different requirements for bringing up 
+available network interfaces, setting up routes, determining IP addresses
+and the like from the defaults that the example code provides, you can
+write your own initialization code to use whatever sequence of
+<function>ioctl()</function> function
+calls carries out the desired setup.  Analogously, in larger systems,
+a sequence of &ldquo;ifconfig&rdquo invocations is used; these mostly
+map to <function>ioctl()</function> calls to manipulate the state of
+the interface in question.
+</para>
+</CHAPTER>
+<CHAPTER id="net-common-tests-and-demonstrations">
+<TITLE>Tests and Demonstrations</TITLE>
+<SECT1 id="net-common-loopback-tests">
+<TITLE><!-- <xref> -->Loopback tests</TITLE>
+<PARA>By default, only tests which can execute on any target
+	  will be built. These therefore do not actually use external
+	  network interfaces (though they may configure and initialize
+	  them) but are limited to testing via the loopback
+	  interface.</PARA>
+<PROGRAMLISTING><EMPHASIS>ping_lo_test</EMPHASIS> - ping test of the loopback address 
+<EMPHASIS>tcp_lo_select</EMPHASIS> - simple test of select with TCP via loopback 
+<EMPHASIS>tcp_lo_test</EMPHASIS> - trivial TCP test via loopback 
+<EMPHASIS>udp_lo_test</EMPHASIS> - trivial UDP test via loopback 
+<EMPHASIS>multi_lo_select</EMPHASIS> - test of multiple select() calls simultaneously</PROGRAMLISTING>
+</SECT1>
+<SECT1 id="net-common-building-the-network-tests">
+<TITLE>Building the Network Tests</TITLE>
+<PARA>To build further network tests, ensure that the configuration
+option CYGPKG_NET_BUILD_TESTS is set in your build
+and then make the tests in the usual way.  Alternatively
+(with that option set) use
+<PROGRAMLISTING>make -C net/common/<REPLACEABLE>VERSION</REPLACEABLE>/ tests </PROGRAMLISTING>
+after building the eCos library, if you wish to build
+<emphasis>only</emphasis>
+the network tests.</PARA>
+<PARA>This should give test executables in
+<FILENAME>install/tests/net/common/<REPLACEABLE>VERSION</REPLACEABLE>/tests</FILENAME>
+including
+the following:</PARA>
+<PROGRAMLISTING><EMPHASIS>socket_test</EMPHASIS> - trivial test of socket creation API 
+<EMPHASIS>mbuf_test</EMPHASIS> - trivial test of mbuf allocation API 
+<EMPHASIS>ftp_test</EMPHASIS> - simple FTP test, connects to &ldquo;server&rdquo; 
+<EMPHASIS>ping_test</EMPHASIS> - pings &ldquo;server&rdquo; and non-existent host to test timeout 
+<EMPHASIS>dhcp_test</EMPHASIS> - ping test, but also relinquishes and
+            reacquires DHCP leases periodically 
+<EMPHASIS>flood</EMPHASIS> - a flood ping test; use with care 
+<EMPHASIS>tcp_echo</EMPHASIS> - data forwarding program for performance test
+<EMPHASIS>nc_test_master </EMPHASIS>- network characterization master
+<EMPHASIS>nc_test_slave </EMPHASIS>- network characterization slave
+<EMPHASIS>server_test</EMPHASIS> - a very simple server example
+<EMPHASIS>tftp_client_test</EMPHASIS> - performs a tftp get and put from/to &ldquo;server&rdquo; 
+<EMPHASIS>tftp_server_test</EMPHASIS> - runs a tftp server for a short while 
+<EMPHASIS>set_mac_address </EMPHASIS>- set MAC address(es) of interfaces in NVRAM
+<EMPHASIS>bridge</EMPHASIS> - contributed network bridge code
+<EMPHASIS>nc6_test_master </EMPHASIS>- IPv4/IPv6 network characterization master
+<EMPHASIS>nc6_test_slave </EMPHASIS>- IPv4/IPv6 network characterization slave
+<EMPHASIS>ga_server_test</EMPHASIS> - a very simple IPv4/IPv6 server example
+</PROGRAMLISTING>
+</SECT1>
+<SECT1 id="net-common-standalone-tests">
+<TITLE>Standalone Tests</TITLE>
+<PROGRAMLISTING><EMPHASIS>socket_test</EMPHASIS> - trivial test of socket creation API 
+<EMPHASIS>mbuf_test</EMPHASIS> - trivial test of mbuf allocation API</PROGRAMLISTING>
+<PARA>These two do not communicate over the net; they just perform
+simple API tests then exit.</PARA>
+<PROGRAMLISTING><EMPHASIS>ftp_test</EMPHASIS>      - simple FTP test, connects to &ldquo;server&rdquo;</PROGRAMLISTING>
+<PARA>This test initializes the interface(s) then connects to the
+FTP server on the &ldquo;server&rdquo; machine for for each
+active interface in turn, confirms that the connection was successful,
+disconnects and exits.  This tests interworking with the server.</PARA>
+<PROGRAMLISTING><EMPHASIS>ping_test</EMPHASIS>      - pings &ldquo;server&rdquo; and non-existent host to test timeout</PROGRAMLISTING>
+<PARA>This test initializes the interface(s) then pings the server
+machine in the standard way, then pings address &ldquo;32 up&rdquo; from
+the server in the expectation that there is no machine there.  This
+confirms that the successful ping is not a false positive, and tests
+the receive timeout.  If there is such a machine, of course the
+2nd set of pings succeeds, confirming that we can talk to a machine
+not previously mentioned by configuration or by bootp. It then does
+the same thing on the other interface, eth1.</PARA>
+
+<PARA>If IPv6 is enabled, the program will also ping to the address it
+last received a router advertisement from. Also a ping will be made to
+that address plus 32, in a similar way the the IPv4 case.</PARA>
+
+<PROGRAMLISTING><EMPHASIS>dhcp_test</EMPHASIS>    - ping test, but also manipulates DHCP leases</PROGRAMLISTING>
+<PARA>This test is very similar to the ping test, but in addition,
+provided the network package is not configured to do this automatically,
+it manually relinquishes and reclaims DHCP leases for all available
+interfaces. This tests the external API to DHCP. See section below
+describing this.</PARA>
+<PROGRAMLISTING><EMPHASIS>flood</EMPHASIS>        - a flood ping test; use with care</PROGRAMLISTING>
+<PARA>This test performs pings on all interfaces as quickly as possible,
+and only prints status information periodically. Flood pinging is
+bad for network performance; so do not use this test on general
+purpose networks unless protected by a switch.</PARA>
+</SECT1>
+<SECT1 id="net-common-performance-test">
+<TITLE>Performance Test</TITLE>
+<PROGRAMLISTING><EMPHASIS>tcp_echo</EMPHASIS>      - data forwarding program for performance test</PROGRAMLISTING>
+<PARA><command>tcp_echo</command> is one
+part of the standard performance test we use.  The other parts are
+host programs <LITERAL>tcp_source</LITERAL> and <LITERAL>tcp_sink</LITERAL>.
+ To make these (under your <emphasis>HOST</emphasis> system) cd to the tests source directory in
+the eCos repository and type &ldquo;<LITERAL>make -f make.host</LITERAL>&rdquo; -
+this should build <LITERAL>tcp_source</LITERAL> and <LITERAL>tcp_sink</LITERAL>.</PARA>
+<PARA>The host program &ldquo;<LITERAL>tcp_source</LITERAL>&rdquo; sends
+data to the target.  On the target, &ldquo;<LITERAL>tcp_echo</LITERAL>&rdquo; sends
+it onwards to &ldquo;<LITERAL>tcp_sink</LITERAL>&rdquo; running
+on your host.  So the target must receive and send on all the data that <LITERAL>tcp_source</LITERAL> sends
+it; the time taken for this is measured and the data rate is calculated.</PARA>
+<PARA>To invoke the test, first start <LITERAL>tcp_echo</LITERAL> on
+the target board and wait for it to become quiescent - it will report
+work to calibrate a CPU load which can be used to simulate real
+operating conditions for the stack.</PARA>
+<PARA>Then on your host machine, in one terminal window, invoke <LITERAL>tcp_sink</LITERAL> giving
+it the IP address (or hostname) of one interface of the target board.
+ For example &ldquo;<LITERAL>tcp_sink 10.130.39.66</LITERAL>&rdquo;.
+ <LITERAL>tcp_echo</LITERAL> on the target
+will print something like &ldquo;<LITERAL>SINK connection
+from 10.130.39.13:1143</LITERAL>&rdquo; when <LITERAL>tcp_sink</LITERAL> is
+correctly invoked.</PARA>
+<PARA>Next, in another host terminal window, invoke <LITERAL>tcp_source</LITERAL>,
+giving it the IP address (or hostname) of an interface of the target
+board, and optionally a background load to apply to the target while
+the test runs.  For example, &ldquo;<LITERAL>tcp_source
+194.130.39.66</LITERAL>&rdquo; to run the test with no
+additional target CPU load, or &ldquo;<LITERAL>tcp_source
+194.130.39.66 85</LITERAL>&rdquo; to load it up to 85% used.
+ The target load must be a multiple of 5.  <LITERAL>tcp_echo</LITERAL> on
+the target will print something like &ldquo;<LITERAL>SOURCE
+connection from 194.130.39.13:1144</LITERAL>&rdquo; when
+tcp_source is correctly invoked.</PARA>
+<PARA>You can connect tcp_sink to one target interface
+and tcp_source to another, or both to the same interface.
+ Similarly, you can run <LITERAL>tcp_sink</LITERAL> and <LITERAL>tcp_source</LITERAL> on
+the same host machine or different ones.  TCP/IP and ARP
+look after them finding one another, as intended.</PARA>
+<PROGRAMLISTING><EMPHASIS>nc_test_master</EMPHASIS> - network characterization master
+<EMPHASIS>nc_test_slave</EMPHASIS> - network characterization slave</PROGRAMLISTING>
+<PARA>These tests talk to each other to measure network performance.
+They can each run on either a test target or a host computer
+given some customization to your local environment. As provided, <literal>nc_test_slave</literal> must
+run on the test target, and <literal>nc_test_master</literal> must
+be run on a host computer, and be given the test target's
+IP address or hostname.</PARA>
+<PARA>The tests print network performance for various packet sizes
+over UDP and TCP, versus various additional CPU loads on the target.</PARA>
+<PARA>
+The programs <PROGRAMLISTING><EMPHASIS>nc6_test_slave</EMPHASIS>
+<EMPHASIS>nc6_test_master</EMPHASIS></PROGRAMLISTING>
+are additional forms which support both IPv4 and IPv6 addressing.
+</PARA>
+</SECT1>
+<SECT1 id="net-common-interactive-tests">
+<TITLE>Interactive Tests</TITLE>
+<PROGRAMLISTING><EMPHASIS>server_test</EMPHASIS> - a very simple server example</PROGRAMLISTING>
+<PARA>This test simply awaits a connection on port 7734 and after
+accepting a connection, gets a packet (with a timeout of a few seconds)
+and prints it. </PARA>
+<PARA>The connection is then closed. We then loop to await the next
+connection, and so on. To use it, telnet to the target on port 7734
+then type something (quickly!)</PARA>
+<screen>% telnet 172.16.19.171 7734 
+Hello target board</screen>
+<PARA>and the test program will print something like:</PARA>
+<screen>connection from 172.16.19.13:3369 
+buf = "Hello target board"</screen>
+
+<PROGRAMLISTING><EMPHASIS>ga_server_test</EMPHASIS> - another very simple server example</PROGRAMLISTING>
+<PARA>This is a variation on the <EMPHASIS>ga_server_test</EMPHASIS> test
+with the difference being that it uses the <FUNCTION>getaddrinfo</FUNCTION>
+function to set up its addresses.  On a system with IPv6 enabled, it will
+listen on port 7734 for a TCP connection via either IPv4 or IPv6.
+</PARA>
+
+<PROGRAMLISTING><EMPHASIS>tftp_client_test</EMPHASIS> - performs a tftp get and put from/to &ldquo;server&rdquo;</PROGRAMLISTING>
+<PARA>This is only partially interactive.  You need to set things
+up on the &ldquo;server&rdquo; in order for this to work,
+and you will need to look at the server afterwards to confirm that all
+was well.</PARA>
+<PARA>For each interface in turn, this test attempts to read by
+tftp from the server, a file called
+<filename>tftp_get</filename>
+and
+prints the status and contents it read (if any).  It then writes
+the same data to a file called
+<filename>tftp_put</filename>
+on
+the same server.</PARA>
+<PARA>In order for this to succeed, both files must already exist.
+ The TFTP protocol does not require that a WRQ request _create_ a
+file, just that it can write it.  The TFTP server on Linux certainly
+will only allow writes to an existing file, given the appropriate
+permission.  Thus, you need to have these files in place, with proper permission,
+before running the test.</PARA>
+<PARA>The conventional place for the tftp server to operate in LINUX
+is /tftpboot/; you will likely need root privileges
+to create files there. The data contents of
+<filename>tftp_get</filename>
+can
+be anything you like, but anything very large will waste lots of
+time printing it on the test&rsquo;s stdout, and anything above
+32kB will cause a buffer overflow and unpredictable failure.</PARA>
+<PARA>Creating an empty tftp_put file (eg. by copying /dev/null
+to it) is neatest.  So before the test you should have something
+like:</PARA>
+<PROGRAMLISTING>-rw-rw-rw- 1 root        1076 May  1 11:39 tftp_get
+-rw-rw-rw- 1 root        0 May  1 15:52 tftp_put </PROGRAMLISTING>
+<PARA>note that both files have public permissions wide open.  After
+running the test,
+<filename>tftp_put</filename>
+should
+be a copy of
+<filename>tftp_get</filename>.</PARA>
+<PROGRAMLISTING>-rw-rw-rw-  1 root       1076 May  1 11:39 tftp_get
+-rw-rw-rw-  1 root       1076 May  1 15:52 tftp_put
+
+</PROGRAMLISTING>
+
+<PARA>If the configuration contains IPv6 support, the test program
+will also use IPv6. It will attempt to put/get the files listed above
+from the address it last received a routers solicit from.</PARA>
+
+<PROGRAMLISTING><EMPHASIS>tftp_server_test</EMPHASIS> - runs a tftp server for a short while</PROGRAMLISTING>
+<PARA>This test is truly interactive, in that you can use a standard
+tftp application to get and put files from the server, during the
+5 minutes that it runs.  The dummy filesystem which underlies the
+server initially contains one file, called &ldquo;uu&rdquo; which contains
+part of a familiar text and some padding.  It also accommodates
+creation of 3 further files of up to 1Mb in size and names of up
+to 256 bytes.  Exceeding these limits will cause a buffer overflow
+and unpredictable failure.</PARA>
+<PARA>The dummy filesystem is an implementation of the generic API
+which allows a true filesystem to be attached to the tftp server
+in the network stack.</PARA>
+<PARA>We have been testing the tftp server by running the test on
+the target board, then using two different host computers connecting
+to the different target interfaces, putting a file from each, getting
+the &ldquo;uu&rdquo; file, and getting the file from the other computer.
+ This verifies that data is preserved during the transfer as well
+as interworking with standard tftp applications.</PARA>
+</SECT1>
+<SECT1 id="net-common-maintenance-tools">
+<TITLE>Maintenance Tools </TITLE>
+<PROGRAMLISTING><EMPHASIS>set_mac_address</EMPHASIS> - set MAC address(es) of interfaces in NVRAM</PROGRAMLISTING>
+<PARA>This program makes an example <function>ioctl()</function> call
+<acronym>SIOCSIFHWADDR</acronym> 
+&ldquo;Socket IO Set InterFace HardWare ADDRess&rdquo;
+to set the MAC address on targets
+where this is supported and enabled in the configuration. You must
+edit the source to choose a MAC address and further edit it to allow
+this very dangerous operation. Not all ethernet drivers support
+this operation, because most ethernet hardware does not support
+it &mdash; or it comes pre-set from the factory.
+<emphasis>Do not use this program.</emphasis></PARA>
+</SECT1>
+</CHAPTER>
+<CHAPTER id="net-common-support">
+<title>Support Features</title>
+<SECT1 id="net-common-tftp">
+<TITLE>TFTP</TITLE>
+<PARA>The TFTP client and server are described in
+<filename>tftp_support.h</filename>;
+</PARA>
+<PARA>The TFTP client has and new and an older, deprecated, API. The
+new API works for both IPv4 and IPv6 where as the deprecated API is
+IPv4 only.
+</PARA>
+<PARA>
+The new API is as follows:
+</PARA>
+<PROGRAMLISTING>int tftp_client_get(char *filename,
+		    char *server,
+		    int port,
+		    char *buf,
+		    int len,
+		    int mode,
+		    int *err);
+
+int tftp_client_put(char *filename,
+		    char *server,
+		    int port,
+		    char *buf,
+		    int len,
+		    int mode,
+		    int *err);
+</PROGRAMLISTING>
+<PARA>Currently <varname>server</varname> can only be a numeric IPv4 or
+IPv6 address. The resolver is currently not used, but it is planned to
+add this feature (patches welcome). If <varname>port</varname> is zero
+the client connects to the default TFTP port on the server. Otherwise
+the specified port is used.
+</PARA>
+<PARA> 
+The deprecated API is:
+<PROGRAMLISTING>int tftp_client_get(char *filename,
+		    struct sockaddr_in *server,
+		    char *buf,
+		    int len,
+		    int mode,
+		    int *err);
+
+int tftp_client_put(char *filename,
+		    struct sockaddr_in *server,
+		    char *buf,
+		    int len,
+		    int mode,
+		    int *err);
+</PROGRAMLISTING>
+</PARA>
+<PARA>
+The <varname>server</varname> should contain the address of the
+server to contact. If the <varname>sin_port</varname> member of the
+structure is zero the default TFTP port is used. Otherwise the
+specified port is used.
+</PARA>
+<PARA>
+Both API's report errors in the same way. The functions return a value
+of -1 and <varname>*err</varname> will be set to one of the
+following values:
+</PARA>
+<PROGRAMLISTING>
+#define	TFTP_ENOTFOUND   1   /* file not found */
+#define	TFTP_EACCESS     2   /* access violation */
+#define	TFTP_ENOSPACE    3   /* disk full or allocation exceeded */
+#define	TFTP_EBADOP      4   /* illegal TFTP operation */
+#define	TFTP_EBADID      5   /* unknown transfer ID */
+#define	TFTP_EEXISTS     6   /* file already exists */
+#define	TFTP_ENOUSER     7   /* no such user */
+#define TFTP_TIMEOUT     8   /* operation timed out */
+#define TFTP_NETERR      9   /* some sort of network error */
+#define TFTP_INVALID    10   /* invalid parameter */
+#define TFTP_PROTOCOL   11   /* protocol violation */
+#define TFTP_TOOLARGE   12   /* file is larger than buffer */
+</PROGRAMLISTING>
+<PARA>If there are no errors the return value is the number of bytes
+transfered.
+</PARA>
+
+<PARA>The server is more complex.  It requires a filesystem implementation
+to be supplied by the user, and attached to the tftp server by means
+of a vector of function pointers:</PARA>
+<PROGRAMLISTING>struct tftpd_fileops {
+             int (&ast;open)(const char &ast;, int);
+             int (&ast;close)(int);
+             int (&ast;write)(int, const void &ast;, int);
+             int (&ast;read)(int, void &ast;, int);
+};</PROGRAMLISTING>
+<PARA>These functions have the obvious semantics.  The structure
+describing the filesystem is an argument to the <function>tftpd_start</function>:
+<PROGRAMLISTING>
+int tftp_start(int port,
+               struct tftpd_fileops *ops);
+</PROGRAMLISTING>
+</PARA>
+<PARA>The first argument is the port to use for the server. If this
+port number is zero, the default TFTP port number will be used. The
+return value from <function>tftpd_start</function> is a handle which
+can be passed to <function>tftpd_stop</function>. This will kill the
+tftpd thread. Note that this is not a clean shutdown. The thread will
+simply be killed. <function>tftpd_stop</function> will attempt to
+close the sockets the thread was listening on and free some of its
+allocated memory. But if the thread was actively transferreing data at
+the time <function>tftpd_stop</function> is called, it is quite likely
+some memory and a socket will be leaked. Use this function with
+caution (or implement a clean shutdown and please contribute the code
+back :-).
+</PARA>
+
+<PARA>There are two CDL configuration options that control how many
+servers on how many different ports tftp can be
+started. CYGSEM_NET_TFTPD_MULTITHREADED, when enabled, allows multiple
+tftpd threads to operate on the same port number. With only one
+thread, while the thread is active transferring data, new requests for
+transfers will not be served until the active transfer is
+complete. When multiple threads are started on the same port, multiple
+transfers can take place simultaneous, up to the number of threads
+started. However a semaphore is required to synchronise the
+threads. This semaphore is required per port. The CDL option
+CYGNUM_NET_TFTPD_MULTITHREADED_PORTS controls how many different port
+numbers multithreaded servers can service.
+</PARA>
+<PARA>If CYGSEM_NET_TFTPD_MULTITHREADED is not enabled, only one
+thread may be run per port number. But this removes the need for a
+semaphore and so CYGNUM_NET_TFTPD_MULTITHREADED_PORTS is not required
+and unlimited number of ports can be used. </PARA>
+
+<PARA>It should be noted that the TFTPD does not perform any form of
+file locking. When multiple servers are active, it is assumed the
+underlying filesystem will refuse to open the same file multiple
+times, operate correctly with simultaneous read/writes to the same
+file, or if you are unlucky, corrupt itself beyond all repair.</PARA>
+ 
+<PARA>When IPv6 is enabled the tftpd thread will listen for requests
+from both IPv4 and IPv6 addresses.</PARA>
+
+<PARA>As discussed in the description of the tftp_server_test
+above, an example filesystem is provided in
+<filename>net/common/<REPLACEABLE>VERSION</REPLACEABLE>/src/tftp_dummy_file.c</filename>
+for
+use by the tftp server test.  The dummy filesystem is not a supported
+part of the network stack, it exists purely for demonstration purposes.</PARA>
+</SECT1>
+<SECT1 id="net-common-dhcp">
+<TITLE>DHCP</TITLE>
+<PARA>This API publishes a routine to maintain DHCP state, and a
+semaphore that is signalled when a lease requires attention: this
+is your clue to call the aforementioned routine.</PARA>
+<PARA>The intent with this API is that a simple DHCP client thread,
+which maintains the state of the interfaces, can go as follows:
+(after <function>init_all_network_interfaces()</function> is
+called from elsewhere)</PARA>
+<PROGRAMLISTING>while ( 1 ) {
+        while ( 1 ) {
+            cyg_semaphore_wait( &amp;dhcp_needs_attention );
+            if ( ! dhcp_bind() ) // a lease expired
+                break; // If we need to re-bind
+        }
+        dhcp_halt(); // tear everything down
+        init_all_network_interfaces(); // re-initialize
+}</PROGRAMLISTING>
+<PARA>and if the application does not want to suffer the overhead
+of a separate thread and its stack for this, this functionality
+can be placed in the app&rsquo;s server loop in an obvious fashion.
+ That is the goal of breaking out these internal elements.  For example,
+some server might be arranged to poll DHCP from time to time like
+this:</PARA>
+<PROGRAMLISTING>while ( 1 ) {
+    init_all_network_interfaces();
+    open-my-listen-sockets();
+    while ( 1 ) {
+       serve-one-request();
+       // sleeps if no connections, but not forever; 
+       // so this loop is polled a few times a minute...
+       if ( cyg_semaphore_trywait( &amp;dhcp_needs_attention )) {
+             if ( ! dhcp_bind() ) {
+                 close-my-listen-sockets();
+                 dhcp_halt();
+                 break;
+             }
+       }
+    }
+}</PROGRAMLISTING>
+<PARA>If the configuration option CYGOPT_NET_DHCP_DHCP_THREAD
+is defined, then eCos provides a thread as described initially.
+Independent of this option, initialization of the interfaces still
+occurs in <function>init_all_network_interfaces()</function> and
+your startup code can call that.  It will start the DHCP management
+thread if configured.  If a lease fails to be renewed, the management
+thread will shut down all interfaces and attempt to initialize all
+the interfaces again from scratch.  This may cause chaos in the
+app, which is why managing the DHCP state in an application aware
+thread is actually better, just far less convenient for testing.</PARA>
+
+<PARA>If the configuration option CYGOPT_NET_DHCP_OPTION_HOST_NAME
+is defined, then the TAG_HOST_NAME DHCP option will be included
+in any DHCP lease requests.  The text for the hostname is set by
+calling <function>dhcp_set_hostname()</function>.  Any DHCP lease requests
+made prior to calling <function>dhcp_set_hostname()</function> will not
+include the TAG_HOST_NAME DHCP option.  The configuration option
+CYGNUM_NET_DHCP_OPTION_HOST_NAME_LEN controls the maximum length allowed
+for the hostname.  This permits the hostname text to be determined at
+run-time.  Setting the hostname to the empty string will have the effect
+of disabling the TAG_HOST_NAME DHCP option.</PARA>
+<PARA>If the configuration option CYGOPT_NET_DHCP_OPTION_DHCP_CLIENTID_MAC
+is defined, then the TAG_DHCP_CLIENTID DHCP option will be included
+in any DHCP lease requests.  The client ID used will be the current
+MAC address of the network interface.</PARA>
+
+<PARA>The option CYGOPT_NET_DHCP_PARM_REQ_LIST_ADDITIONAL allows
+additional DHCP options to be added to the request sent to the DHCP
+server. This option should be set to a comma separated list of options.
+</PARA>
+
+<PARA> The option CYGOPT_NET_DHCP_PARM_REQ_LIST_REPLACE is similar to
+CYGOPT_NET_DHCP_PARM_REQ_LIST_ADDITIONAL but in this case it
+completely replaces the default list of options with the configured
+set of comma separated options.</para>
+</SECT1>
+</CHAPTER>
+    &net-common-tcpip-manpages-sgml;
+</PART>

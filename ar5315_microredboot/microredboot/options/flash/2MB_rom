@@ -1,0 +1,6 @@
+cdl_option CYGNUM_FLASH_SIZE {
+    user_value 0x00200000
+};
+cdl_option CYGNUM_FLASH_BASE {
+    user_value 0xbfc00000
+};

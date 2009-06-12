@@ -1,0 +1,1177 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Code Gen Options,  Next: Environment Variables,  Prev: Submodel Options,  Up: Invoking GCC
+
+Options for Code Generation Conventions
+=======================================
+
+   These machine-independent options control the interface conventions
+used in code generation.
+
+   Most of them have both positive and negative forms; the negative form
+of `-ffoo' would be `-fno-foo'.  In the table below, only one of the
+forms is listed--the one which is not the default.  You can figure out
+the other form by either removing `no-' or adding it.
+
+`-fexceptions'
+     Enable exception handling.  Generates extra code needed to
+     propagate exceptions.  For some targets, this implies GCC will
+     generate frame unwind information for all functions, which can
+     produce significant data size overhead, although it does not
+     affect execution.  If you do not specify this option, GCC will
+     enable it by default for languages like C++ which normally require
+     exception handling, and disable it for languages like C that do
+     not normally require it.  However, you may need to enable this
+     option when compiling C code that needs to interoperate properly
+     with exception handlers written in C++.  You may also wish to
+     disable this option if you are compiling older C++ programs that
+     don't use exception handling.
+
+`-fnon-call-exceptions'
+     Generate code that allows trapping instructions to throw
+     exceptions.  Note that this requires platform-specific runtime
+     support that does not exist everywhere.  Moreover, it only allows
+     _trapping_ instructions to throw exceptions, i.e. memory
+     references or floating point instructions.  It does not allow
+     exceptions to be thrown from arbitrary signal handlers such as
+     `SIGALRM'.
+
+`-funwind-tables'
+     Similar to `-fexceptions', except that it will just generate any
+     needed static data, but will not affect the generated code in any
+     other way.  You will normally not enable this option; instead, a
+     language processor that needs this handling would enable it on
+     your behalf.
+
+`-fasynchronous-unwind-tables'
+     Generate unwind table in dwarf2 format, if supported by target
+     machine.  The table is exact at each instruction boundary, so it
+     can be used for stack unwinding from asynchronous events (such as
+     debugger or garbage collector).
+
+`-fpcc-struct-return'
+     Return "short" `struct' and `union' values in memory like longer
+     ones, rather than in registers.  This convention is less
+     efficient, but it has the advantage of allowing intercallability
+     between GCC-compiled files and files compiled with other
+     compilers, particularly the Portable C Compiler (pcc).
+
+     The precise convention for returning structures in memory depends
+     on the target configuration macros.
+
+     Short structures and unions are those whose size and alignment
+     match that of some integer type.
+
+     *Warning:* code compiled with the `-fpcc-struct-return' switch is
+     not binary compatible with code compiled with the
+     `-freg-struct-return' switch.  Use it to conform to a non-default
+     application binary interface.
+
+`-freg-struct-return'
+     Return `struct' and `union' values in registers when possible.
+     This is more efficient for small structures than
+     `-fpcc-struct-return'.
+
+     If you specify neither `-fpcc-struct-return' nor
+     `-freg-struct-return', GCC defaults to whichever convention is
+     standard for the target.  If there is no standard convention, GCC
+     defaults to `-fpcc-struct-return', except on targets where GCC is
+     the principal compiler.  In those cases, we can choose the
+     standard, and we chose the more efficient register return
+     alternative.
+
+     *Warning:* code compiled with the `-freg-struct-return' switch is
+     not binary compatible with code compiled with the
+     `-fpcc-struct-return' switch.  Use it to conform to a non-default
+     application binary interface.
+
+`-fshort-enums'
+     Allocate to an `enum' type only as many bytes as it needs for the
+     declared range of possible values.  Specifically, the `enum' type
+     will be equivalent to the smallest integer type which has enough
+     room.
+
+     *Warning:* the `-fshort-enums' switch causes GCC to generate code
+     that is not binary compatible with code generated without that
+     switch.  Use it to conform to a non-default application binary
+     interface.
+
+`-fshort-double'
+     Use the same size for `double' as for `float'.
+
+     *Warning:* the `-fshort-double' switch causes GCC to generate code
+     that is not binary compatible with code generated without that
+     switch.  Use it to conform to a non-default application binary
+     interface.
+
+`-fshort-wchar'
+     Override the underlying type for `wchar_t' to be `short unsigned
+     int' instead of the default for the target.  This option is useful
+     for building programs to run under WINE.
+
+     *Warning:* the `-fshort-wchar' switch causes GCC to generate code
+     that is not binary compatible with code generated without that
+     switch.  Use it to conform to a non-default application binary
+     interface.
+
+`-fshared-data'
+     Requests that the data and non-`const' variables of this
+     compilation be shared data rather than private data.  The
+     distinction makes sense only on certain operating systems, where
+     shared data is shared between processes running the same program,
+     while private data exists in one copy per process.
+
+`-fno-common'
+     In C, allocate even uninitialized global variables in the data
+     section of the object file, rather than generating them as common
+     blocks.  This has the effect that if the same variable is declared
+     (without `extern') in two different compilations, you will get an
+     error when you link them.  The only reason this might be useful is
+     if you wish to verify that the program will work on other systems
+     which always work this way.
+
+`-fno-ident'
+     Ignore the `#ident' directive.
+
+`-fno-gnu-linker'
+     Do not output global initializations (such as C++ constructors and
+     destructors) in the form used by the GNU linker (on systems where
+     the GNU linker is the standard method of handling them).  Use this
+     option when you want to use a non-GNU linker, which also requires
+     using the `collect2' program to make sure the system linker
+     includes constructors and destructors.  (`collect2' is included in
+     the GCC distribution.)  For systems which _must_ use `collect2',
+     the compiler driver `gcc' is configured to do this automatically.
+
+`-finhibit-size-directive'
+     Don't output a `.size' assembler directive, or anything else that
+     would cause trouble if the function is split in the middle, and the
+     two halves are placed at locations far apart in memory.  This
+     option is used when compiling `crtstuff.c'; you should not need to
+     use it for anything else.
+
+`-fverbose-asm'
+     Put extra commentary information in the generated assembly code to
+     make it more readable.  This option is generally only of use to
+     those who actually need to read the generated assembly code
+     (perhaps while debugging the compiler itself).
+
+     `-fno-verbose-asm', the default, causes the extra information to
+     be omitted and is useful when comparing two assembler files.
+
+`-fvolatile'
+     Consider all memory references through pointers to be volatile.
+
+`-fvolatile-global'
+     Consider all memory references to extern and global data items to
+     be volatile.  GCC does not consider static data items to be
+     volatile because of this switch.
+
+`-fvolatile-static'
+     Consider all memory references to static data to be volatile.
+
+`-fpic'
+     Generate position-independent code (PIC) suitable for use in a
+     shared library, if supported for the target machine.  Such code
+     accesses all constant addresses through a global offset table
+     (GOT).  The dynamic loader resolves the GOT entries when the
+     program starts (the dynamic loader is not part of GCC; it is part
+     of the operating system).  If the GOT size for the linked
+     executable exceeds a machine-specific maximum size, you get an
+     error message from the linker indicating that `-fpic' does not
+     work; in that case, recompile with `-fPIC' instead.  (These
+     maximums are 16k on the m88k, 8k on the Sparc, and 32k on the m68k
+     and RS/6000.  The 386 has no such limit.)
+
+     Position-independent code requires special support, and therefore
+     works only on certain machines.  For the 386, GCC supports PIC for
+     System V but not for the Sun 386i.  Code generated for the IBM
+     RS/6000 is always position-independent.
+
+`-fPIC'
+     If supported for the target machine, emit position-independent
+     code, suitable for dynamic linking and avoiding any limit on the
+     size of the global offset table.  This option makes a difference
+     on the m68k, m88k, and the Sparc.
+
+     Position-independent code requires special support, and therefore
+     works only on certain machines.
+
+`-ffixed-REG'
+     Treat the register named REG as a fixed register; generated code
+     should never refer to it (except perhaps as a stack pointer, frame
+     pointer or in some other fixed role).
+
+     REG must be the name of a register.  The register names accepted
+     are machine-specific and are defined in the `REGISTER_NAMES' macro
+     in the machine description macro file.
+
+     This flag does not have a negative form, because it specifies a
+     three-way choice.
+
+`-fcall-used-REG'
+     Treat the register named REG as an allocable register that is
+     clobbered by function calls.  It may be allocated for temporaries
+     or variables that do not live across a call.  Functions compiled
+     this way will not save and restore the register REG.
+
+     It is an error to used this flag with the frame pointer or stack
+     pointer.  Use of this flag for other registers that have fixed
+     pervasive roles in the machine's execution model will produce
+     disastrous results.
+
+     This flag does not have a negative form, because it specifies a
+     three-way choice.
+
+`-fcall-saved-REG'
+     Treat the register named REG as an allocable register saved by
+     functions.  It may be allocated even for temporaries or variables
+     that live across a call.  Functions compiled this way will save
+     and restore the register REG if they use it.
+
+     It is an error to used this flag with the frame pointer or stack
+     pointer.  Use of this flag for other registers that have fixed
+     pervasive roles in the machine's execution model will produce
+     disastrous results.
+
+     A different sort of disaster will result from the use of this flag
+     for a register in which function values may be returned.
+
+     This flag does not have a negative form, because it specifies a
+     three-way choice.
+
+`-fpack-struct'
+     Pack all structure members together without holes.
+
+     *Warning:* the `-fpack-struct' switch causes GCC to generate code
+     that is not binary compatible with code generated without that
+     switch.  Additionally, it makes the code suboptimial.  Use it to
+     conform to a non-default application binary interface.
+
+`-finstrument-functions'
+     Generate instrumentation calls for entry and exit to functions.
+     Just after function entry and just before function exit, the
+     following profiling functions will be called with the address of
+     the current function and its call site.  (On some platforms,
+     `__builtin_return_address' does not work beyond the current
+     function, so the call site information may not be available to the
+     profiling functions otherwise.)
+
+          void __cyg_profile_func_enter (void *this_fn,
+                                         void *call_site);
+          void __cyg_profile_func_exit  (void *this_fn,
+                                         void *call_site);
+
+     The first argument is the address of the start of the current
+     function, which may be looked up exactly in the symbol table.
+
+     This instrumentation is also done for functions expanded inline in
+     other functions.  The profiling calls will indicate where,
+     conceptually, the inline function is entered and exited.  This
+     means that addressable versions of such functions must be
+     available.  If all your uses of a function are expanded inline,
+     this may mean an additional expansion of code size.  If you use
+     `extern inline' in your C code, an addressable version of such
+     functions must be provided.  (This is normally the case anyways,
+     but if you get lucky and the optimizer always expands the
+     functions inline, you might have gotten away without providing
+     static copies.)
+
+     A function may be given the attribute `no_instrument_function', in
+     which case this instrumentation will not be done.  This can be
+     used, for example, for the profiling functions listed above,
+     high-priority interrupt routines, and any functions from which the
+     profiling functions cannot safely be called (perhaps signal
+     handlers, if the profiling routines generate output or allocate
+     memory).
+
+`-fstack-check'
+     Generate code to verify that you do not go beyond the boundary of
+     the stack.  You should specify this flag if you are running in an
+     environment with multiple threads, but only rarely need to specify
+     it in a single-threaded environment since stack overflow is
+     automatically detected on nearly all systems if there is only one
+     stack.
+
+     Note that this switch does not actually cause checking to be done;
+     the operating system must do that.  The switch causes generation
+     of code to ensure that the operating system sees the stack being
+     extended.
+
+`-fstack-limit-register=REG'
+`-fstack-limit-symbol=SYM'
+`-fno-stack-limit'
+     Generate code to ensure that the stack does not grow beyond a
+     certain value, either the value of a register or the address of a
+     symbol.  If the stack would grow beyond the value, a signal is
+     raised.  For most targets, the signal is raised before the stack
+     overruns the boundary, so it is possible to catch the signal
+     without taking special precautions.
+
+     For instance, if the stack starts at absolute address `0x80000000'
+     and grows downwards, you can use the flags
+     `-fstack-limit-symbol=__stack_limit' and
+     `-Wl,--defsym,__stack_limit=0x7ffe0000' to enforce a stack limit
+     of 128KB.  Note that this may only work with the GNU linker.
+
+`-fargument-alias'
+`-fargument-noalias'
+`-fargument-noalias-global'
+     Specify the possible relationships among parameters and between
+     parameters and global data.
+
+     `-fargument-alias' specifies that arguments (parameters) may alias
+     each other and may alias global storage.
+     `-fargument-noalias' specifies that arguments do not alias each
+     other, but may alias global storage.
+     `-fargument-noalias-global' specifies that arguments do not alias
+     each other and do not alias global storage.
+
+     Each language will automatically use whatever option is required by
+     the language standard.  You should not need to use these options
+     yourself.
+
+`-fleading-underscore'
+     This option and its counterpart, `-fno-leading-underscore',
+     forcibly change the way C symbols are represented in the object
+     file.  One use is to help link with legacy assembly code.
+
+     *Warning:* the `-fleading-underscore' switch causes GCC to
+     generate code that is not binary compatible with code generated
+     without that switch.  Use it to conform to a non-default
+     application binary interface.  Not all targets provide complete
+     support for this switch.
+
+
+File: gcc.info,  Node: Environment Variables,  Next: Running Protoize,  Prev: Code Gen Options,  Up: Invoking GCC
+
+Environment Variables Affecting GCC
+===================================
+
+   This section describes several environment variables that affect how
+GCC operates.  Some of them work by specifying directories or prefixes
+to use when searching for various kinds of files.  Some are used to
+specify other aspects of the compilation environment.
+
+   Note that you can also specify places to search using options such as
+`-B', `-I' and `-L' (*note Directory Options::).  These take precedence
+over places specified using environment variables, which in turn take
+precedence over those specified by the configuration of GCC.  *Note
+Controlling the Compilation Driver `gcc': (gccint)Driver.
+
+`LANG'
+`LC_CTYPE'
+`LC_MESSAGES'
+`LC_ALL'
+     These environment variables control the way that GCC uses
+     localization information that allow GCC to work with different
+     national conventions.  GCC inspects the locale categories
+     `LC_CTYPE' and `LC_MESSAGES' if it has been configured to do so.
+     These locale categories can be set to any value supported by your
+     installation.  A typical value is `en_UK' for English in the United
+     Kingdom.
+
+     The `LC_CTYPE' environment variable specifies character
+     classification.  GCC uses it to determine the character boundaries
+     in a string; this is needed for some multibyte encodings that
+     contain quote and escape characters that would otherwise be
+     interpreted as a string end or escape.
+
+     The `LC_MESSAGES' environment variable specifies the language to
+     use in diagnostic messages.
+
+     If the `LC_ALL' environment variable is set, it overrides the value
+     of `LC_CTYPE' and `LC_MESSAGES'; otherwise, `LC_CTYPE' and
+     `LC_MESSAGES' default to the value of the `LANG' environment
+     variable.  If none of these variables are set, GCC defaults to
+     traditional C English behavior.
+
+`TMPDIR'
+     If `TMPDIR' is set, it specifies the directory to use for temporary
+     files.  GCC uses temporary files to hold the output of one stage of
+     compilation which is to be used as input to the next stage: for
+     example, the output of the preprocessor, which is the input to the
+     compiler proper.
+
+`GCC_EXEC_PREFIX'
+     If `GCC_EXEC_PREFIX' is set, it specifies a prefix to use in the
+     names of the subprograms executed by the compiler.  No slash is
+     added when this prefix is combined with the name of a subprogram,
+     but you can specify a prefix that ends with a slash if you wish.
+
+     If `GCC_EXEC_PREFIX' is not set, GCC will attempt to figure out an
+     appropriate prefix to use based on the pathname it was invoked
+     with.
+
+     If GCC cannot find the subprogram using the specified prefix, it
+     tries looking in the usual places for the subprogram.
+
+     The default value of `GCC_EXEC_PREFIX' is `PREFIX/lib/gcc-lib/'
+     where PREFIX is the value of `prefix' when you ran the `configure'
+     script.
+
+     Other prefixes specified with `-B' take precedence over this
+     prefix.
+
+     This prefix is also used for finding files such as `crt0.o' that
+     are used for linking.
+
+     In addition, the prefix is used in an unusual way in finding the
+     directories to search for header files.  For each of the standard
+     directories whose name normally begins with
+     `/usr/local/lib/gcc-lib' (more precisely, with the value of
+     `GCC_INCLUDE_DIR'), GCC tries replacing that beginning with the
+     specified prefix to produce an alternate directory name.  Thus,
+     with `-Bfoo/', GCC will search `foo/bar' where it would normally
+     search `/usr/local/lib/bar'.  These alternate directories are
+     searched first; the standard directories come next.
+
+`COMPILER_PATH'
+     The value of `COMPILER_PATH' is a colon-separated list of
+     directories, much like `PATH'.  GCC tries the directories thus
+     specified when searching for subprograms, if it can't find the
+     subprograms using `GCC_EXEC_PREFIX'.
+
+`LIBRARY_PATH'
+     The value of `LIBRARY_PATH' is a colon-separated list of
+     directories, much like `PATH'.  When configured as a native
+     compiler, GCC tries the directories thus specified when searching
+     for special linker files, if it can't find them using
+     `GCC_EXEC_PREFIX'.  Linking using GCC also uses these directories
+     when searching for ordinary libraries for the `-l' option (but
+     directories specified with `-L' come first).
+
+`LANG'
+     This variable is used to pass locale information to the compiler.
+     One way in which this information is used is to determine the
+     character set to be used when character literals, string literals
+     and comments are parsed in C and C++.  When the compiler is
+     configured to allow multibyte characters, the following values for
+     `LANG' are recognized:
+
+    `C-JIS'
+          Recognize JIS characters.
+
+    `C-SJIS'
+          Recognize SJIS characters.
+
+    `C-EUCJP'
+          Recognize EUCJP characters.
+
+     If `LANG' is not defined, or if it has some other value, then the
+     compiler will use mblen and mbtowc as defined by the default
+     locale to recognize and translate multibyte characters.
+
+Some additional environments variables affect the behavior of the
+preprocessor.
+
+`CPATH'
+`C_INCLUDE_PATH'
+`CPLUS_INCLUDE_PATH'
+`OBJC_INCLUDE_PATH'
+     Each variable's value is a list of directories separated by a
+     special character, much like `PATH', in which to look for header
+     files.  The special character, `PATH_SEPARATOR', is
+     target-dependent and determined at GCC build time.  For
+     Windows-based targets it is a semicolon, and for almost all other
+     targets it is a colon.
+
+     `CPATH' specifies a list of directories to be searched as if
+     specified with `-I', but after any paths given with `-I' options
+     on the command line.  The environment variable is used regardless
+     of which language is being preprocessed.
+
+     The remaining environment variables apply only when preprocessing
+     the particular language indicated.  Each specifies a list of
+     directories to be searched as if specified with `-isystem', but
+     after any paths given with `-isystem' options on the command line.
+
+`DEPENDENCIES_OUTPUT'
+     If this variable is set, its value specifies how to output
+     dependencies for Make based on the non-system header files
+     processed by the compiler.  System header files are ignored in the
+     dependency output.
+
+     The value of `DEPENDENCIES_OUTPUT' can be just a file name, in
+     which case the Make rules are written to that file, guessing the
+     target name from the source file name.  Or the value can have the
+     form `FILE TARGET', in which case the rules are written to file
+     FILE using TARGET as the target name.
+
+     In other words, this environment variable is equivalent to
+     combining the options `-MM' and `-MF' (*note Preprocessor
+     Options::), with an optional `-MT' switch too.
+
+`SUNPRO_DEPENDENCIES'
+     This variable is the same as the environment variable
+     `DEPENDENCIES_OUTPUT' (*note DEPENDENCIES_OUTPUT::), except that
+     system header files are not ignored, so it implies `-M' rather
+     than `-MM'.  However, the dependence on the main input file is
+     omitted.  *Note Preprocessor Options::.
+
+
+File: gcc.info,  Node: Running Protoize,  Prev: Environment Variables,  Up: Invoking GCC
+
+Running Protoize
+================
+
+   The program `protoize' is an optional part of GCC.  You can use it
+to add prototypes to a program, thus converting the program to ISO C in
+one respect.  The companion program `unprotoize' does the reverse: it
+removes argument types from any prototypes that are found.
+
+   When you run these programs, you must specify a set of source files
+as command line arguments.  The conversion programs start out by
+compiling these files to see what functions they define.  The
+information gathered about a file FOO is saved in a file named `FOO.X'.
+
+   After scanning comes actual conversion.  The specified files are all
+eligible to be converted; any files they include (whether sources or
+just headers) are eligible as well.
+
+   But not all the eligible files are converted.  By default,
+`protoize' and `unprotoize' convert only source and header files in the
+current directory.  You can specify additional directories whose files
+should be converted with the `-d DIRECTORY' option.  You can also
+specify particular files to exclude with the `-x FILE' option.  A file
+is converted if it is eligible, its directory name matches one of the
+specified directory names, and its name within the directory has not
+been excluded.
+
+   Basic conversion with `protoize' consists of rewriting most function
+definitions and function declarations to specify the types of the
+arguments.  The only ones not rewritten are those for varargs functions.
+
+   `protoize' optionally inserts prototype declarations at the
+beginning of the source file, to make them available for any calls that
+precede the function's definition.  Or it can insert prototype
+declarations with block scope in the blocks where undeclared functions
+are called.
+
+   Basic conversion with `unprotoize' consists of rewriting most
+function declarations to remove any argument types, and rewriting
+function definitions to the old-style pre-ISO form.
+
+   Both conversion programs print a warning for any function
+declaration or definition that they can't convert.  You can suppress
+these warnings with `-q'.
+
+   The output from `protoize' or `unprotoize' replaces the original
+source file.  The original file is renamed to a name ending with
+`.save' (for DOS, the saved filename ends in `.sav' without the
+original `.c' suffix).  If the `.save' (`.sav' for DOS) file already
+exists, then the source file is simply discarded.
+
+   `protoize' and `unprotoize' both depend on GCC itself to scan the
+program and collect information about the functions it uses.  So
+neither of these programs will work until GCC is installed.
+
+   Here is a table of the options you can use with `protoize' and
+`unprotoize'.  Each option works with both programs unless otherwise
+stated.
+
+`-B DIRECTORY'
+     Look for the file `SYSCALLS.c.X' in DIRECTORY, instead of the
+     usual directory (normally `/usr/local/lib').  This file contains
+     prototype information about standard system functions.  This option
+     applies only to `protoize'.
+
+`-c COMPILATION-OPTIONS'
+     Use  COMPILATION-OPTIONS as the options when running `gcc' to
+     produce the `.X' files.  The special option `-aux-info' is always
+     passed in addition, to tell `gcc' to write a `.X' file.
+
+     Note that the compilation options must be given as a single
+     argument to `protoize' or `unprotoize'.  If you want to specify
+     several `gcc' options, you must quote the entire set of
+     compilation options to make them a single word in the shell.
+
+     There are certain `gcc' arguments that you cannot use, because they
+     would produce the wrong kind of output.  These include `-g', `-O',
+     `-c', `-S', and `-o' If you include these in the
+     COMPILATION-OPTIONS, they are ignored.
+
+`-C'
+     Rename files to end in `.C' (`.cc' for DOS-based file systems)
+     instead of `.c'.  This is convenient if you are converting a C
+     program to C++.  This option applies only to `protoize'.
+
+`-g'
+     Add explicit global declarations.  This means inserting explicit
+     declarations at the beginning of each source file for each function
+     that is called in the file and was not declared.  These
+     declarations precede the first function definition that contains a
+     call to an undeclared function.  This option applies only to
+     `protoize'.
+
+`-i STRING'
+     Indent old-style parameter declarations with the string STRING.
+     This option applies only to `protoize'.
+
+     `unprotoize' converts prototyped function definitions to old-style
+     function definitions, where the arguments are declared between the
+     argument list and the initial `{'.  By default, `unprotoize' uses
+     five spaces as the indentation.  If you want to indent with just
+     one space instead, use `-i " "'.
+
+`-k'
+     Keep the `.X' files.  Normally, they are deleted after conversion
+     is finished.
+
+`-l'
+     Add explicit local declarations.  `protoize' with `-l' inserts a
+     prototype declaration for each function in each block which calls
+     the function without any declaration.  This option applies only to
+     `protoize'.
+
+`-n'
+     Make no real changes.  This mode just prints information about the
+     conversions that would have been done without `-n'.
+
+`-N'
+     Make no `.save' files.  The original files are simply deleted.
+     Use this option with caution.
+
+`-p PROGRAM'
+     Use the program PROGRAM as the compiler.  Normally, the name `gcc'
+     is used.
+
+`-q'
+     Work quietly.  Most warnings are suppressed.
+
+`-v'
+     Print the version number, just like `-v' for `gcc'.
+
+   If you need special compiler options to compile one of your program's
+source files, then you should generate that file's `.X' file specially,
+by running `gcc' on that source file with the appropriate options and
+the option `-aux-info'.  Then run `protoize' on the entire set of
+files.  `protoize' will use the existing `.X' file because it is newer
+than the source file.  For example:
+
+     gcc -Dfoo=bar file1.c -aux-info file1.X
+     protoize *.c
+
+You need to include the special files along with the rest in the
+`protoize' command, even though their `.X' files already exist, because
+otherwise they won't get converted.
+
+   *Note Protoize Caveats::, for more information on how to use
+`protoize' successfully.
+
+
+File: gcc.info,  Node: C Implementation,  Next: C Extensions,  Prev: Invoking GCC,  Up: Top
+
+C Implementation-defined behavior
+*********************************
+
+   A conforming implementation of ISO C is required to document its
+choice of behavior in each of the areas that are designated
+"implementation defined."  The following lists all such areas, along
+with the section number from the ISO/IEC 9899:1999 standard.
+
+* Menu:
+
+* Translation implementation::
+* Environment implementation::
+* Identifiers implementation::
+* Characters implementation::
+* Integers implementation::
+* Floating point implementation::
+* Arrays and pointers implementation::
+* Hints implementation::
+* Structures unions enumerations and bit-fields implementation::
+* Qualifiers implementation::
+* Preprocessing directives implementation::
+* Library functions implementation::
+* Architecture implementation::
+* Locale-specific behavior implementation::
+
+
+File: gcc.info,  Node: Translation implementation,  Next: Environment implementation,  Up: C Implementation
+
+Translation
+===========
+
+   * `How a diagnostic is identified (3.10, 5.1.1.3).'
+
+   * `Whether each nonempty sequence of white-space characters other
+     than new-line is retained or replaced by one space character in
+     translation phase 3 (5.1.1.2).'
+
+
+File: gcc.info,  Node: Environment implementation,  Next: Identifiers implementation,  Prev: Translation implementation,  Up: C Implementation
+
+Environment
+===========
+
+   The behavior of these points are dependent on the implementation of
+the C library, and are not defined by GCC itself.
+
+
+File: gcc.info,  Node: Identifiers implementation,  Next: Characters implementation,  Prev: Environment implementation,  Up: C Implementation
+
+Identifiers
+===========
+
+   * `Which additional multibyte characters may appear in identifiers
+     and their correspondence to universal character names (6.4.2).'
+
+   * `The number of significant initial characters in an identifier
+     (5.2.4.1, 6.4.2).'
+
+
+File: gcc.info,  Node: Characters implementation,  Next: Integers implementation,  Prev: Identifiers implementation,  Up: C Implementation
+
+Characters
+==========
+
+   * `The number of bits in a byte (3.6).'
+
+   * `The values of the members of the execution character set (5.2.1).'
+
+   * `The unique value of the member of the execution character set
+     produced for each of the standard alphabetic escape sequences
+     (5.2.2).'
+
+   * `The value of a `char' object into which has been stored any
+     character other than a member of the basic execution character set
+     (6.2.5).'
+
+   * `Which of `signed char' or `unsigned char' has the same range,
+     representation, and behavior as "plain" `char' (6.2.5, 6.3.1.1).'
+
+   * `The mapping of members of the source character set (in character
+     constants and string literals) to members of the execution
+     character set (6.4.4.4, 5.1.1.2).'
+
+   * `The value of an integer character constant containing more than
+     one character or containing a character or escape sequence that
+     does not map to a single-byte execution character (6.4.4.4).'
+
+   * `The value of a wide character constant containing more than one
+     multibyte character, or containing a multibyte character or escape
+     sequence not represented in the extended execution character set
+     (6.4.4.4).'
+
+   * `The current locale used to convert a wide character constant
+     consisting of a single multibyte character that maps to a member
+     of the extended execution character set into a corresponding wide
+     character code (6.4.4.4).'
+
+   * `The current locale used to convert a wide string literal into
+     corresponding wide character codes (6.4.5).'
+
+   * `The value of a string literal containing a multibyte character or
+     escape sequence not represented in the execution character set
+     (6.4.5).'
+
+
+File: gcc.info,  Node: Integers implementation,  Next: Floating point implementation,  Prev: Characters implementation,  Up: C Implementation
+
+Integers
+========
+
+   * `Any extended integer types that exist in the implementation
+     (6.2.5).'
+
+   * `Whether signed integer types are represented using sign and
+     magnitude, two's complement, or one's complement, and whether the
+     extraordinary value is a trap representation or an ordinary value
+     (6.2.6.2).'
+
+   * `The rank of any extended integer type relative to another extended
+     integer type with the same precision (6.3.1.1).'
+
+   * `The result of, or the signal raised by, converting an integer to a
+     signed integer type when the value cannot be represented in an
+     object of that type (6.3.1.3).'
+
+   * `The results of some bitwise operations on signed integers (6.5).'
+
+
+File: gcc.info,  Node: Floating point implementation,  Next: Arrays and pointers implementation,  Prev: Integers implementation,  Up: C Implementation
+
+Floating point
+==============
+
+   * `The accuracy of the floating-point operations and of the library
+     functions in `<math.h>' and `<complex.h>' that return
+     floating-point results (5.2.4.2.2).'
+
+   * `The rounding behaviors characterized by non-standard values of
+     `FLT_ROUNDS'  (5.2.4.2.2).'
+
+   * `The evaluation methods characterized by non-standard negative
+     values of `FLT_EVAL_METHOD' (5.2.4.2.2).'
+
+   * `The direction of rounding when an integer is converted to a
+     floating-point number that cannot exactly represent the original
+     value (6.3.1.4).'
+
+   * `The direction of rounding when a floating-point number is
+     converted to a narrower floating-point number (6.3.1.5).'
+
+   * `How the nearest representable value or the larger or smaller
+     representable value immediately adjacent to the nearest
+     representable value is chosen for certain floating constants
+     (6.4.4.2).'
+
+   * `Whether and how floating expressions are contracted when not
+     disallowed by the `FP_CONTRACT' pragma (6.5).'
+
+   * `The default state for the `FENV_ACCESS' pragma (7.6.1).'
+
+   * `Additional floating-point exceptions, rounding modes,
+     environments, and classifications, and their macro names (7.6,
+     7.12).'
+
+   * `The default state for the `FP_CONTRACT' pragma (7.12.2).'
+
+   * `Whether the "inexact" floating-point exception can be raised when
+     the rounded result actually does equal the mathematical result in
+     an IEC 60559 conformant implementation (F.9).'
+
+   * `Whether the "underflow" (and "inexact") floating-point exception
+     can be raised when a result is tiny but not inexact in an IEC
+     60559 conformant implementation (F.9).'
+
+
+
+File: gcc.info,  Node: Arrays and pointers implementation,  Next: Hints implementation,  Prev: Floating point implementation,  Up: C Implementation
+
+Arrays and pointers
+===================
+
+   * `The result of converting a pointer to an integer or vice versa
+     (6.3.2.3).'
+
+     A cast from pointer to integer discards most-significant bits if
+     the pointer representation is larger than the integer type,
+     sign-extends(1) if the pointer representation is smaller than the
+     integer type, otherwise the bits are unchanged.
+
+     A cast from integer to pointer discards most-significant bits if
+     the pointer representation is smaller than the integer type,
+     extends according to the signedness of the integer type if the
+     pointer representation is larger than the integer type, otherwise
+     the bits are unchanged.
+
+     When casting from pointer to integer and back again, the resulting
+     pointer must reference the same object as the original pointer,
+     otherwise the behavior is undefined.  That is, one may not use
+     integer arithmetic to avoid the undefined behavior of pointer
+     arithmetic as proscribed in 6.5.6/8.
+
+   * `The size of the result of subtracting two pointers to elements of
+     the same array (6.5.6).'
+
+
+   ---------- Footnotes ----------
+
+   (1) Future versions of GCC may zero-extend, or use a target-defined
+`ptr_extend' pattern.  Do not rely on sign extension.
+
+
+File: gcc.info,  Node: Hints implementation,  Next: Structures unions enumerations and bit-fields implementation,  Prev: Arrays and pointers implementation,  Up: C Implementation
+
+Hints
+=====
+
+   * `The extent to which suggestions made by using the `register'
+     storage-class specifier are effective (6.7.1).'
+
+   * `The extent to which suggestions made by using the inline function
+     specifier are effective (6.7.4).'
+
+
+
+File: gcc.info,  Node: Structures unions enumerations and bit-fields implementation,  Next: Qualifiers implementation,  Prev: Hints implementation,  Up: C Implementation
+
+Structures, unions, enumerations, and bit-fields
+================================================
+
+   * `Whether a "plain" int bit-field is treated as a `signed int'
+     bit-field or as an `unsigned int' bit-field (6.7.2, 6.7.2.1).'
+
+   * `Allowable bit-field types other than `_Bool', `signed int', and
+     `unsigned int' (6.7.2.1).'
+
+   * `Whether a bit-field can straddle a storage-unit boundary
+     (6.7.2.1).'
+
+   * `The order of allocation of bit-fields within a unit (6.7.2.1).'
+
+   * `The alignment of non-bit-field members of structures (6.7.2.1).'
+
+   * `The integer type compatible with each enumerated type (6.7.2.2).'
+
+
+
+File: gcc.info,  Node: Qualifiers implementation,  Next: Preprocessing directives implementation,  Prev: Structures unions enumerations and bit-fields implementation,  Up: C Implementation
+
+Qualifiers
+==========
+
+   * `What constitutes an access to an object that has
+     volatile-qualified type (6.7.3).'
+
+
+
+File: gcc.info,  Node: Preprocessing directives implementation,  Next: Library functions implementation,  Prev: Qualifiers implementation,  Up: C Implementation
+
+Preprocessing directives
+========================
+
+   * `How sequences in both forms of header names are mapped to headers
+     or external source file names (6.4.7).'
+
+   * `Whether the value of a character constant in a constant expression
+     that controls conditional inclusion matches the value of the same
+     character constant in the execution character set (6.10.1).'
+
+   * `Whether the value of a single-character character constant in a
+     constant expression that controls conditional inclusion may have a
+     negative value (6.10.1).'
+
+   * `The places that are searched for an included `<>' delimited
+     header, and how the places are specified or the header is
+     identified (6.10.2).'
+
+   * `How the named source file is searched for in an included `""'
+     delimited header (6.10.2).'
+
+   * `The method by which preprocessing tokens (possibly resulting from
+     macro expansion) in a `#include' directive are combined into a
+     header name (6.10.2).'
+
+   * `The nesting limit for `#include' processing (6.10.2).'
+
+   * `Whether the `#' operator inserts a `\' character before the `\'
+     character that begins a universal character name in a character
+     constant or string literal (6.10.3.2).'
+
+   * `The behavior on each recognized non-`STDC #pragma' directive
+     (6.10.6).'
+
+   * `The definitions for `__DATE__' and `__TIME__' when respectively,
+     the date and time of translation are not available (6.10.8).'
+
+
+
+File: gcc.info,  Node: Library functions implementation,  Next: Architecture implementation,  Prev: Preprocessing directives implementation,  Up: C Implementation
+
+Library functions
+=================
+
+   The behavior of these points are dependent on the implementation of
+the C library, and are not defined by GCC itself.
+
+
+File: gcc.info,  Node: Architecture implementation,  Next: Locale-specific behavior implementation,  Prev: Library functions implementation,  Up: C Implementation
+
+Architecture
+============
+
+   * `The values or expressions assigned to the macros specified in the
+     headers `<float.h>', `<limits.h>', and `<stdint.h>' (5.2.4.2,
+     7.18.2, 7.18.3).'
+
+   * `The number, order, and encoding of bytes in any object (when not
+     explicitly specified in this International Standard) (6.2.6.1).'
+
+   * `The value of the result of the sizeof operator (6.5.3.4).'
+
+
+
+File: gcc.info,  Node: Locale-specific behavior implementation,  Prev: Architecture implementation,  Up: C Implementation
+
+Locale-specific behavior
+========================
+
+   The behavior of these points are dependent on the implementation of
+the C library, and are not defined by GCC itself.
+
+
+File: gcc.info,  Node: C Extensions,  Next: C++ Extensions,  Prev: C Implementation,  Up: Top
+
+Extensions to the C Language Family
+***********************************
+
+   GNU C provides several language features not found in ISO standard C.
+(The `-pedantic' option directs GCC to print a warning message if any
+of these features is used.)  To test for the availability of these
+features in conditional compilation, check for a predefined macro
+`__GNUC__', which is always defined under GCC.
+
+   These extensions are available in C and Objective-C.  Most of them
+are also available in C++.  *Note Extensions to the C++ Language: C++
+Extensions, for extensions that apply _only_ to C++.
+
+   Some features that are in ISO C99 but not C89 or C++ are also, as
+extensions, accepted by GCC in C89 mode and in C++.
+
+* Menu:
+
+* Statement Exprs::     Putting statements and declarations inside expressions.
+* Local Labels::        Labels local to a statement-expression.
+* Labels as Values::    Getting pointers to labels, and computed gotos.
+* Nested Functions::    As in Algol and Pascal, lexical scoping of functions.
+* Constructing Calls::	Dispatching a call to another function.
+* Typeof::              `typeof': referring to the type of an expression.
+* Lvalues::             Using `?:', `,' and casts in lvalues.
+* Conditionals::        Omitting the middle operand of a `?:' expression.
+* Long Long::		Double-word integers---`long long int'.
+* Complex::             Data types for complex numbers.
+* Hex Floats::          Hexadecimal floating-point constants.
+* Zero Length::         Zero-length arrays.
+* Variable Length::     Arrays whose length is computed at run time.
+* Variadic Macros::	Macros with a variable number of arguments.
+* Escaped Newlines::    Slightly looser rules for escaped newlines.
+* Multi-line Strings::  String literals with embedded newlines.
+* Subscripting::        Any array can be subscripted, even if not an lvalue.
+* Pointer Arith::       Arithmetic on `void'-pointers and function pointers.
+* Initializers::        Non-constant initializers.
+* Compound Literals::   Compound literals give structures, unions
+                         or arrays as values.
+* Designated Inits::	Labeling elements of initializers.
+* Cast to Union::       Casting to union type from any member of the union.
+* Case Ranges::		`case 1 ... 9' and such.
+* Mixed Declarations::	Mixing declarations and code.
+* Function Attributes:: Declaring that functions have no side effects,
+                         or that they can never return.
+* Attribute Syntax::    Formal syntax for attributes.
+* Function Prototypes:: Prototype declarations and old-style definitions.
+* C++ Comments::        C++ comments are recognized.
+* Dollar Signs::        Dollar sign is allowed in identifiers.
+* Character Escapes::   `\e' stands for the character <ESC>.
+* Variable Attributes::	Specifying attributes of variables.
+* Type Attributes::	Specifying attributes of types.
+* Alignment::           Inquiring about the alignment of a type or variable.
+* Inline::              Defining inline functions (as fast as macros).
+* Extended Asm::        Assembler instructions with C expressions as operands.
+                         (With them you can define ``built-in'' functions.)
+* Constraints::         Constraints for asm operands
+* Asm Labels::          Specifying the assembler name to use for a C symbol.
+* Explicit Reg Vars::   Defining variables residing in specified registers.
+* Alternate Keywords::  `__const__', `__asm__', etc., for header files.
+* Incomplete Enums::    `enum foo;', with details to follow.
+* Function Names::	Printable strings which are the name of the current
+			 function.
+* Return Address::      Getting the return or frame address of a function.
+* Vector Extensions::   Using vector instructions through built-in functions.
+* Other Builtins::      Other built-in functions.
+* Target Builtins::     Built-in functions specific to particular targets.
+* Pragmas::             Pragmas accepted by GCC.
+* Unnamed Fields::      Unnamed struct/union fields within structs/unions.
+
+
+File: gcc.info,  Node: Statement Exprs,  Next: Local Labels,  Up: C Extensions
+
+Statements and Declarations in Expressions
+==========================================
+
+   A compound statement enclosed in parentheses may appear as an
+expression in GNU C.  This allows you to use loops, switches, and local
+variables within an expression.
+
+   Recall that a compound statement is a sequence of statements
+surrounded by braces; in this construct, parentheses go around the
+braces.  For example:
+
+     ({ int y = foo (); int z;
+        if (y > 0) z = y;
+        else z = - y;
+        z; })
+
+is a valid (though slightly more complex than necessary) expression for
+the absolute value of `foo ()'.
+
+   The last thing in the compound statement should be an expression
+followed by a semicolon; the value of this subexpression serves as the
+value of the entire construct.  (If you use some other kind of statement
+last within the braces, the construct has type `void', and thus
+effectively no value.)
+
+   This feature is especially useful in making macro definitions "safe"
+(so that they evaluate each operand exactly once).  For example, the
+"maximum" function is commonly defined as a macro in standard C as
+follows:
+
+     #define max(a,b) ((a) > (b) ? (a) : (b))
+
+But this definition computes either A or B twice, with bad results if
+the operand has side effects.  In GNU C, if you know the type of the
+operands (here let's assume `int'), you can define the macro safely as
+follows:
+
+     #define maxint(a,b) \
+       ({int _a = (a), _b = (b); _a > _b ? _a : _b; })
+
+   Embedded statements are not allowed in constant expressions, such as
+the value of an enumeration constant, the width of a bit-field, or the
+initial value of a static variable.
+
+   If you don't know the type of the operand, you can still do this,
+but you must use `typeof' (*note Typeof::).
+
+   Statement expressions are not supported fully in G++, and their fate
+there is unclear.  (It is possible that they will become fully supported
+at some point, or that they will be deprecated, or that the bugs that
+are present will continue to exist indefinitely.)  Presently, statement
+expressions do not work well as default arguments.
+
+   In addition, there are semantic issues with statement-expressions in
+C++.  If you try to use statement-expressions instead of inline
+functions in C++, you may be surprised at the way object destruction is
+handled.  For example:
+
+     #define foo(a)  ({int b = (a); b + 3; })
+
+does not work the same way as:
+
+     inline int foo(int a) { int b = a; return b + 3; }
+
+In particular, if the expression passed into `foo' involves the
+creation of temporaries, the destructors for those temporaries will be
+run earlier in the case of the macro than in the case of the function.
+
+   These considerations mean that it is probably a bad idea to use
+statement-expressions of this form in header files that are designed to
+work with C++.  (Note that some versions of the GNU C Library contained
+header files using statement-expression that lead to precisely this
+bug.)
+

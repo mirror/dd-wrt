@@ -1,0 +1,58 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    cma28x ;
+    template    stubs ;
+    package -hardware CYGPKG_HAL_POWERPC current ;
+    package -hardware CYGPKG_HAL_POWERPC_MPC8xx current ;
+    package -hardware CYGPKG_HAL_POWERPC_COGENT current ;
+    package -hardware CYGPKG_IO_SERIAL_POWERPC_COGENT current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_ISOINFRA current ;
+    package -template CYGPKG_IO current ;
+    package -template CYGPKG_IO_SERIAL current ;
+    package -template CYGPKG_ERROR current ;
+};
+
+cdl_option CYGBLD_BUILD_COMMON_GDB_STUBS {
+    user_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    user_value 1
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value ROM
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    inferred_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    inferred_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGSEM_ERROR_PER_THREAD_ERRNO {
+    inferred_value 0
+};
+
+

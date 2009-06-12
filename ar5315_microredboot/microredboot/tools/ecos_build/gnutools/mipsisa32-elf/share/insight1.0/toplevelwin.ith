@@ -1,0 +1,64 @@
+# TopLevelWin class definition for GDBtk.
+# Copyright 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class TopLevelWin {
+  inherit ManagedWin
+  
+  private variable frame ""
+
+  constructor {args} {
+    debug $itk_interior
+
+    # create a container frame
+    conFrame $itk_interior.container
+    pack $itk_interior.container -fill both -expand 1
+    
+    # set up bindings for group iconification/deiconification    
+    # NOT IMPLEMENTED YET
+    #set top [winfo toplevel [namespace tail $this]]
+    #bind_for_toplevel_only $top <Unmap> {
+    #     manage_iconify iconify
+    #}
+    #bind_for_toplevel_only $top <Map> {
+    #     manage_iconify deiconify
+    #}
+    incr numTopWins
+  }
+  
+  public method conFrame {win} {
+    set frame [cyg::panedwindow $win -height 5i]
+    return $frame.con
+  }
+
+  public method conAdd {child args} {
+    parse_args {{resizable 1}}
+    $frame add $child -margin 0 -resizable $resizable
+    return [$frame childsite $child].con
+  }
+
+  public method sizeWinByChild {child} {
+    if {[catch {$frame childsite $child} childWin]} {
+      debug "Could not find child $child"
+      return
+    }
+    set width [winfo reqwidth $childWin]
+    $frame configure -width $width
+    
+  }
+
+  destructor {
+    debug
+    incr numTopWins -1
+  }
+}

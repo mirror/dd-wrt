@@ -1,0 +1,12 @@
+version 0
+region ram 400000 28000 0 !
+section text 0 1 0 1 0 1 0 1 400000 400000 fini fini !
+section fini 0 1 0 1 0 1 0 1 rodata rodata !
+section rodata 0 1 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 1 0 1 0 1 0 1 fixup fixup !
+section fixup 0 1 0 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 1 0 1 0 1 0 1 int_fook_table int_hook_table !
+section int_fook_table 0 1 0 1 0 1 0 1  data data !
+section data 0 4 0 1 0 1 0 1 bss bss !
+section bss 0 4 0 1 0 1 0 0 !
+

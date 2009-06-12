@@ -1,0 +1,279 @@
+# ====================================================================
+#
+#      flash_amd_am29xxxxx.cdl
+#
+#      FLASH memory - Hardware support for AMD AM29xxxxx parts
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Contributors:   gthomas, jskov, Koichi Nagashima
+# Date:           2001-02-20
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_FLASH_AMD_AM29XXXXX {
+    display       "AMD AM29XXXXX FLASH memory support"
+    description   "FLASH memory device support for AMD AM29XXXXX"
+    parent        CYGPKG_IO_FLASH
+    active_if	  CYGPKG_IO_FLASH
+
+    active_if     CYGINT_DEVS_FLASH_AMD_AM29XXXXX_REQUIRED
+
+    implements    CYGHWR_IO_FLASH_DEVICE
+
+    include_dir   cyg/io
+
+    requires      { CYGINT_DEVS_FLASH_AMD_VARIANTS != 0 }
+
+    cdl_interface CYGINT_DEVS_FLASH_AMD_VARIANTS {
+        display   "Number of included variants"
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29F010 {
+        display       "AMD AM29F010 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29F010
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29F040B {
+        display       "AMD AM29F040B flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29F040B
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV128 {
+        display       "AMD AM29LV128 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV128
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV160 {
+        display       "AMD AM29LV160 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV160
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29PL160 {
+        display       "AMD AM29PL160 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29PL160
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV320D {
+        display       "AMD AM29LV320 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV320
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV200 {
+        display       "AMD AM29LV200 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV200
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_ST_M29W200B {
+        display       "ST M29W200B flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the ST M29W200B part. This
+            memory device is pin- and software compatible with the
+            AMD AM29LV200 device."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV640 {
+        display       "AMD AM29LV640 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV640
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29DL322D {
+        display       "AMD AM29DL322D flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AM29DL322D
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29DL323D {
+        display       "AMD AM29DL323D flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AM29DL323D
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29DL324D {
+        display       "AMD AM29DL324D flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AM29DL324D
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV400 {
+        display       "AMD AM29LV400 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AM29LV400
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29DL640D {
+        display       "AMD AM29DL640D flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AM29DL640D
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29F800 {
+        display       "AMD AM29F800 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AM29F800
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV800 {
+        display       "AMD AM29LV800 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AM29LV800
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_TC58FVB800 {
+        display       "Toshiba TC58FVB800 flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the Toshiba TC58FVB800."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV081B {
+        display       "AMD AM29LV081B flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV081B
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV017D {
+        display       "AMD AM29LV017D flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV017D
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV033C {
+        display       "AMD AM29LV033C flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV033C
+            part in the family."
+    }
+
+    cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV065D {
+        display       "AMD AM29LV065D flash memory support"
+        default_value 0
+        implements    CYGINT_DEVS_FLASH_AMD_VARIANTS
+        description   "
+            When this option is enabled, the AMD flash driver will be
+            able to recognize and handle the AMD29LV065D
+            part in the family."
+    }
+}

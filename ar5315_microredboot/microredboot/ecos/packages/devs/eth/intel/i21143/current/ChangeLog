@@ -1,0 +1,89 @@
+2001-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_i21143.c (MII_DELAY): Greatly reduce this, now it's
+	working, so that we can poll for link status changes.  I don't see
+	any other way to do this, since we would not necessarily be
+	transmitting (to get a link fail code) when a person re-plugs the
+	line.
+	(i21143_status_changed): New function; a quicker test for
+	negotiated line status changed.  Polled from the deliver routine.
+
+2001-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_i21143.c (i21143_ioctl): Implement SNMP statistics.
+	(i21143_can_send): Enable the "unsticking" poll of tx and rx
+	states; it seems not necessary, but it's also definitely not
+	harmful.
+	(generally): manage getting the link status better; it takes time
+	so cache the answer.  Reset the system if it changed between
+	_stop() and _start().
+
+2001-10-04  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_i21143.c (i21143_reset): Set the "store and forward" bit
+	so that we can keep up with large transmits at 100Mbit.  Otherwise
+	it underflows for packets of 700 bytes or so.
+
+2001-10-04  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_i21143.c: Got ESA filtering set up OK by using perfect
+	filtering instead, with all the broadcast address except one with
+	our true ESA.  Various changes to the debug printing too.
+
+2001-09-28  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_i21143.c (i21143_init): Read the good ESA (MAC address)
+	from the serial EEPROM (or ROM) and use it if valid.
+
+2001-09-28  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_i21143.c: Duh.  Fix dangerously aliased local variable.
+	Having a thing like int fred[0] on the stack tends to screw up
+	other random variables.
+
+2001-09-27  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/intel_i21143_eth_drivers.cdl: New file.
+
+	* src/if_i21143.c: New file.  Not working yet.
+	Reception only occurs if "Receive All" CSR_OPMODE_RA is set.
+	No transmission occurs to the wire though the machinery all works
+	beautifully.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

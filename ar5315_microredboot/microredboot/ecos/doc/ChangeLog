@@ -1,0 +1,146 @@
+2004-08-25  Bart Veer  <bartv@ecoscentric.com>
+
+	* sgml/doclist: add SPI documentation
+
+2004-06-20  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/doclist: Added flash API documentation.
+
+2004-06-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* sgml/makemakefile: Replace plusses with x'es in all entities.
+
+2004-04-19  John Dallaway  <jld@ecoscentric.com>
+
+	* sgml/doclist: Remove RedBoot documentation which is now built
+	separately.
+
+2004-04-14  Nick Garnett  <nickg@calivar.com>
+
+	* sgml/doclist: Added PPP package documentation.
+
+2003-11-25  Manu Sharma <manu.sharma@ascom.com>
+
+        * sgml/doclist: Add OpenBSD specific documentation.
+ 
+2003-11-22  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/doclist: Added ipsec packages documentation
+	* sgml/makemakefile: Added another set of man pages to the kludge.
+
+2003-11-08  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/user-guide/programming.sgml: Suggest Unix users may prefer
+	ecosconfig rather than the GUI.
+	* sgml/user-guide/makefile: Listed the other .sgml files so
+	dependency checking works
+	
+2003-09-11  Gary Thomas  <gary@mlbassoc.com>
+
+	* sgml/doclist: Add ethernet PHY documentation.
+
+2003-07-09  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* sgml/makemakefile: Update trademark info and sort.
+
+2003-05-01  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* sgml/jadetex.cfg: Add this to configure PDF output nicely with index
+	and coloured links.
+
+2003-03-23  Iztok Zupet  <iz@vsr.si>
+
+	* sgml/makemakefile: modified copyfiles to copy png-s instead of 
+	gif-s.
+	* sgml/README-PDF: Comment on pdfjadetext failure and workaround.
+
+2003-03-27  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * sgml/makemakefile: Modified to generate makefile that can
+        be used to build docs in arbitrary directory.
+
+2003-02-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/doclist: Added the simple network time protocol client
+	documentation.
+	
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* sgml/doclist: Reorder in a slightly more logical order with
+	related bits grouped together.
+	Add docs for power management, USB (slave, eth slave, and SA11x0
+	and NEC uPD8985xx drivers), and synthetic target HAL, eth and
+	watchdog drivers.
+
+	* sgml/.cvsignore: Add gifs and rename ecos.* to ecos-ref.*
+
+	* sgml/makemakefile: Rename ecos.sgml/html/etc. to ecos-ref.
+	Copy over GIFs where they exist.
+	Don't treat porting guide specially at the top... treat it only as
+	specially as the other special cases.
+	Update (C) holders.
+	Update licence/warranty blurb.
+
+2003-01-30  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/doclist: Added snmp-manpages.sgml 
+	* sgml/makemakefile: Extend the kludge to include snmp-manpages.sgml
+	
+2003-01-22  John Dallaway  <jld@ecoscentric.com>
+
+	* sgml/makemakefile: Allow eCos package version to be specified
+	(when not "current") as the first command line parameter.
+
+2003-01-04  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* sgml/makemakefile: Oops, use new entity consistently in generated
+	ecos.sgml.
+
+2003-01-03  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* sgml/makemakefile: Try to shorten generated entity names.
+	* sgml/doclist: add terminating LF.
+
+2002-12-22  Nick Garnett  <nickg@ecoscentric.com>
+
+	* sgml/doclist: Added HTTPD package documentation.
+
+	* sgml/.cvsignore: Added files generated during PDF build.
+
+2002-10-28  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/makemakefile: Removed the second OTHER_SGML which clobbers
+	the first correct definition, so stopping dependencies working.
+
+2002-10-15  Iztok Zupet <iz@vsr.si>
+
+	* sgml/README-PDF: added
+	* sgml/makemakefile: defined MAIN_PDF
+
+2002-10-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* sgml/makemakefile: Only put ecos.sgml in MAIN_SGML. Put all others
+	in OTHER_SGML. From Bart Veer.
+
+2002-09-02  Andrew Lunn  <andrew.lunn@ascom.ch
+
+	* sgml/tutorial/makefile: changed ecc to packages
+	* sgml/user-guide/makefile: changed ecc to packages
+	
+2002-08-15  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/doclist: Added the CPU load package documentation.
+
+2002-08-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/doclist: Added the CRC package documentation.
+
+2002-08-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/.cvsignore: Ignore the generated html files etc.
+
+2002-08-07  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* sgml/makemakefile: Replaced the old internal RedHat ecc
+	directory name with the new name "packages"
+

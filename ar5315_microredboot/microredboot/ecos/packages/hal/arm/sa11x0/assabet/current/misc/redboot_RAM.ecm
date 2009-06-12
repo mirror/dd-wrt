@@ -1,0 +1,128 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    assabet ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_ARM current ;
+    package -hardware CYGPKG_HAL_ARM_SA11X0 current ;
+    package -hardware CYGPKG_HAL_ARM_SA11X0_ASSABET current ;
+    package -hardware CYGPKG_IO_SERIAL_ARM_SA11X0 current ;
+    package -hardware CYGPKG_DEVS_PCMCIA_ASSABET current ;
+    package -hardware CYGPKG_DEVS_FLASH_STRATA current ;
+    package -hardware CYGPKG_DEVS_FLASH_ASSABET current ;
+    package -hardware CYGPKG_IO_USB current ;
+    package -hardware CYGPKG_IO_USB_SLAVE current ;
+    package -hardware CYGPKG_DEVS_USB_SA11X0 current ;
+    package -hardware CYGPKG_DEVICES_WATCHDOG_ARM_SA11X0 current ;
+    package -hardware CYGPKG_DEVS_ETH_CF current ;
+    package -hardware CYGPKG_DEVS_ETH_NS_DP83902A current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package -template CYGPKG_ISOINFRA current ;
+    package -template CYGPKG_LIBC_STRING current ;
+    package CYGPKG_NS_DNS current ;
+    package CYGPKG_IO_PCMCIA current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_IO_ETH_DRIVERS current ;
+    package CYGPKG_MEMALLOC current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+};
+
+cdl_option CYGBLD_BUILD_GDB_STUBS {
+    user_value 0
+};
+
+cdl_option CYGFUN_LIBC_STRING_BSD_FUNCS {
+    inferred_value 0
+};
+
+cdl_option CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE {
+    user_value 4096
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT {
+    inferred_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT {
+    inferred_value 0
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    inferred_value 0 0
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value RAM
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_component CYGPKG_REDBOOT_NETWORKING {
+    user_value 1
+};
+
+cdl_component CYGSEM_REDBOOT_FLASH_CONFIG {
+    user_value 1
+};
+
+cdl_component CYGSEM_REDBOOT_BSP_SYSCALLS {
+    inferred_value 1
+};
+
+cdl_option CYGHWR_REDBOOT_ARM_LINUX_EXEC_ADDRESS_DEFAULT {
+    inferred_value 0xC0008000
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_DNS_HEADER {
+    inferred_value 1 <cyg/ns/dns/dns.h>
+};
+
+cdl_option CYGPKG_NS_DNS_BUILD {
+    inferred_value 0
+};
+
+

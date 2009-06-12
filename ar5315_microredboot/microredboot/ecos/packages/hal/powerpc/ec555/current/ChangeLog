@@ -1,0 +1,130 @@
+2004-09-23  Bob Koninckx <bob.koninckx@o-3s.com>
+
+	* src/ec555.S: Updated memory controller settings for ethernet card. Now
+	it also works for redboot running out of internal FLASH, and with a longer
+	system bus.
+
+2004-04-19  Bob Koninckx <bob.koninckx@o-3s.com>
+	
+	* src/ec555.S: Corrected typo in initialisation of SYPCR to make sure
+	watchdog no longer ticks when FREEZE is asserted. Changed initialisation
+	of TBSCR to make sure timebase continues ticking when FREEZE is
+	asserted.
+	* src/ec555.S: Removed definition of memory segments. We do not need
+	them afterall.
+	* include/pkgconf/mlt_powerpc_ec555_f02_s01_ram.h:
+	* include/pkgconf/mlt_powerpc_ec555_f02_s01_ram.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_f02_s01_rom.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_f04_s02_ram.h:
+	* include/pkgconf/mlt_powerpc_ec555_f04_s02_ram.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_f04_s02_rom.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_f08_s04_ram.h:
+	* include/pkgconf/mlt_powerpc_ec555_f08_s04_ram.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_f08_s04_rom.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_f08_s08_ram.h:
+	* include/pkgconf/mlt_powerpc_ec555_f08_s08_ram.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_f08_s08_rom.ldi: Reserved a block of
+	64K at the beginning of external ram for use by RedBoot. Only really
+	necessary if network support is wanted.
+	* include/pkgconf/mlt_powerpc_ec555_ram.h:
+	* include/pkgconf/mlt_powerpc_ec555_ram.ldi:
+	* include/pkgconf/mlt_powerpc_ec555_rom.h:
+	* include/pkgconf/mlt_powerpc_ec555_rom.ldi: Permanently removed
+
+2004-04-08  Bob Koninckx <bob.koninckx@o-3s.com>
+	
+	* include/pkgconf/mlt_powerpc_ec555_f02_s01_ram.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f04_s02_ram.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s04_ram.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s08_ram.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f02_s01_ram.ldi: New file
+	* include/pkgconf/mlt_powerpc_ec555_f04_s02_ram.ldi: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s04_ram.ldi: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s08_ram.ldi: New file
+	* include/pkgconf/mlt_powerpc_ec555_f02_s01_rom.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f04_s02_rom.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s04_rom.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s08_rom.h: New file
+	* include/pkgconf/mlt_powerpc_ec555_f02_s01_rom.ldi: New file
+	* include/pkgconf/mlt_powerpc_ec555_f04_s02_rom.ldi: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s04_rom.ldi: New file
+	* include/pkgconf/mlt_powerpc_ec555_f08_s08_rom.ldi: New file
+	* cdl/hal_powerpc_ec555.cdl, src/ec555.S, plf_misc.c: Added support
+	for all four different variants of the ec555 board. Notice that we
+	had to change the memory map. 16 MB flashes simply did not fit in
+	the one we defined previously.
+
+2003-12-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: 
+	CYGNUM_FLASH_WORKSPACE_SIZE is no longer used.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_ec555.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-05-25  Bob Koninckx <bob.koninckx@mech.kuleuven.ac.be>
+
+    * include/plf_intr.h: Use the watchdog (if present) to reset the board
+
+2003-03-07  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_stub.h: Remove [confusing] platform specific include.
+
+2003-02-10  Nick Garnett  <nickg@calivar.com>
+
+	* misc/redboot_RAM.ecm: Brought up to date with ROM version.
+
+2002-11-11  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+
+    * src/ec555.S: Removed statements to disable processor serialization,
+    this is already done in the variant initialization code.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_ec555.cdl: Removed implemntation of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2002-04-24  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+
+	* New package.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

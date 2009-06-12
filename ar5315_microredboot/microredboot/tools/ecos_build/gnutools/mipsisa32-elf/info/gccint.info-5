@@ -1,0 +1,1205 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: RTL Classes,  Next: Accessors,  Prev: RTL Objects,  Up: RTL
+
+RTL Classes and Formats
+=======================
+
+   The various expression codes are divided into several "classes",
+which are represented by single characters.  You can determine the class
+of an RTX code with the macro `GET_RTX_CLASS (CODE)'.  Currently,
+`rtx.def' defines these classes:
+
+`o'
+     An RTX code that represents an actual object, such as a register
+     (`REG') or a memory location (`MEM', `SYMBOL_REF').  Constants and
+     basic transforms on objects (`ADDRESSOF', `HIGH', `LO_SUM') are
+     also included.  Note that `SUBREG' and `STRICT_LOW_PART' are not
+     in this class, but in class `x'.
+
+`<'
+     An RTX code for a comparison, such as `NE' or `LT'.
+
+`1'
+     An RTX code for a unary arithmetic operation, such as `NEG',
+     `NOT', or `ABS'.  This category also includes value extension
+     (sign or zero) and conversions between integer and floating point.
+
+`c'
+     An RTX code for a commutative binary operation, such as `PLUS' or
+     `AND'.  `NE' and `EQ' are comparisons, so they have class `<'.
+
+`2'
+     An RTX code for a non-commutative binary operation, such as
+     `MINUS', `DIV', or `ASHIFTRT'.
+
+`b'
+     An RTX code for a bit-field operation.  Currently only
+     `ZERO_EXTRACT' and `SIGN_EXTRACT'.  These have three inputs and
+     are lvalues (so they can be used for insertion as well).  *Note
+     Bit-Fields::.
+
+`3'
+     An RTX code for other three input operations.  Currently only
+     `IF_THEN_ELSE'.
+
+`i'
+     An RTX code for an entire instruction:  `INSN', `JUMP_INSN', and
+     `CALL_INSN'.  *Note Insns::.
+
+`m'
+     An RTX code for something that matches in insns, such as
+     `MATCH_DUP'.  These only occur in machine descriptions.
+
+`a'
+     An RTX code for an auto-increment addressing mode, such as
+     `POST_INC'.
+
+`x'
+     All other RTX codes.  This category includes the remaining codes
+     used only in machine descriptions (`DEFINE_*', etc.).  It also
+     includes all the codes describing side effects (`SET', `USE',
+     `CLOBBER', etc.) and the non-insns that may appear on an insn
+     chain, such as `NOTE', `BARRIER', and `CODE_LABEL'.
+
+   For each expression code, `rtl.def' specifies the number of
+contained objects and their kinds using a sequence of characters called
+the "format" of the expression code.  For example, the format of
+`subreg' is `ei'.
+
+   These are the most commonly used format characters:
+
+`e'
+     An expression (actually a pointer to an expression).
+
+`i'
+     An integer.
+
+`w'
+     A wide integer.
+
+`s'
+     A string.
+
+`E'
+     A vector of expressions.
+
+   A few other format characters are used occasionally:
+
+`u'
+     `u' is equivalent to `e' except that it is printed differently in
+     debugging dumps.  It is used for pointers to insns.
+
+`n'
+     `n' is equivalent to `i' except that it is printed differently in
+     debugging dumps.  It is used for the line number or code number of
+     a `note' insn.
+
+`S'
+     `S' indicates a string which is optional.  In the RTL objects in
+     core, `S' is equivalent to `s', but when the object is read, from
+     an `md' file, the string value of this operand may be omitted.  An
+     omitted string is taken to be the null string.
+
+`V'
+     `V' indicates a vector which is optional.  In the RTL objects in
+     core, `V' is equivalent to `E', but when the object is read from
+     an `md' file, the vector value of this operand may be omitted.  An
+     omitted vector is effectively the same as a vector of no elements.
+
+`0'
+     `0' means a slot whose contents do not fit any normal category.
+     `0' slots are not printed at all in dumps, and are often used in
+     special ways by small parts of the compiler.
+
+   There are macros to get the number of operands and the format of an
+expression code:
+
+`GET_RTX_LENGTH (CODE)'
+     Number of operands of an RTX of code CODE.
+
+`GET_RTX_FORMAT (CODE)'
+     The format of an RTX of code CODE, as a C string.
+
+   Some classes of RTX codes always have the same format.  For example,
+it is safe to assume that all comparison operations have format `ee'.
+
+`1'
+     All codes of this class have format `e'.
+
+`<'
+`c'
+`2'
+     All codes of these classes have format `ee'.
+
+`b'
+`3'
+     All codes of these classes have format `eee'.
+
+`i'
+     All codes of this class have formats that begin with `iuueiee'.
+     *Note Insns::.  Note that not all RTL objects linked onto an insn
+     chain are of class `i'.
+
+`o'
+`m'
+`x'
+     You can make no assumptions about the format of these codes.
+
+
+File: gccint.info,  Node: Accessors,  Next: Flags,  Prev: RTL Classes,  Up: RTL
+
+Access to Operands
+==================
+
+   Operands of expressions are accessed using the macros `XEXP',
+`XINT', `XWINT' and `XSTR'.  Each of these macros takes two arguments:
+an expression-pointer (RTX) and an operand number (counting from zero).
+Thus,
+
+     XEXP (X, 2)
+
+accesses operand 2 of expression X, as an expression.
+
+     XINT (X, 2)
+
+accesses the same operand as an integer.  `XSTR', used in the same
+fashion, would access it as a string.
+
+   Any operand can be accessed as an integer, as an expression or as a
+string.  You must choose the correct method of access for the kind of
+value actually stored in the operand.  You would do this based on the
+expression code of the containing expression.  That is also how you
+would know how many operands there are.
+
+   For example, if X is a `subreg' expression, you know that it has two
+operands which can be correctly accessed as `XEXP (X, 0)' and `XINT (X,
+1)'.  If you did `XINT (X, 0)', you would get the address of the
+expression operand but cast as an integer; that might occasionally be
+useful, but it would be cleaner to write `(int) XEXP (X, 0)'.  `XEXP
+(X, 1)' would also compile without error, and would return the second,
+integer operand cast as an expression pointer, which would probably
+result in a crash when accessed.  Nothing stops you from writing `XEXP
+(X, 28)' either, but this will access memory past the end of the
+expression with unpredictable results.
+
+   Access to operands which are vectors is more complicated.  You can
+use the macro `XVEC' to get the vector-pointer itself, or the macros
+`XVECEXP' and `XVECLEN' to access the elements and length of a vector.
+
+`XVEC (EXP, IDX)'
+     Access the vector-pointer which is operand number IDX in EXP.
+
+`XVECLEN (EXP, IDX)'
+     Access the length (number of elements) in the vector which is in
+     operand number IDX in EXP.  This value is an `int'.
+
+`XVECEXP (EXP, IDX, ELTNUM)'
+     Access element number ELTNUM in the vector which is in operand
+     number IDX in EXP.  This value is an RTX.
+
+     It is up to you to make sure that ELTNUM is not negative and is
+     less than `XVECLEN (EXP, IDX)'.
+
+   All the macros defined in this section expand into lvalues and
+therefore can be used to assign the operands, lengths and vector
+elements as well as to access them.
+
+
+File: gccint.info,  Node: Flags,  Next: Machine Modes,  Prev: Accessors,  Up: RTL
+
+Flags in an RTL Expression
+==========================
+
+   RTL expressions contain several flags (one-bit bit-fields) that are
+used in certain types of expression.  Most often they are accessed with
+the following macros, which expand into lvalues:
+
+`CONSTANT_POOL_ADDRESS_P (X)'
+     Nonzero in a `symbol_ref' if it refers to part of the current
+     function's constant pool.  For most targets these addresses are in
+     a `.rodata' section entirely separate from the function, but for
+     some targets the addresses are close to the beginning of the
+     function.  In either case GCC assumes these addresses can be
+     addressed directly, perhaps with the help of base registers.
+     Stored in the `unchanging' field and printed as `/u'.
+
+`CONST_OR_PURE_CALL_P (X)'
+     In a `call_insn', `note', or an `expr_list' for notes, indicates
+     that the insn represents a call to a const or pure function.
+     Stored in the `unchanging' field and printed as `/u'.
+
+`INSN_ANNULLED_BRANCH_P (X)'
+     In an `insn' in the delay slot of a branch insn, indicates that an
+     annulling branch should be used.  See the discussion under
+     `sequence' below.  Stored in the `unchanging' field and printed as
+     `/u'.
+
+`INSN_DEAD_CODE_P (X)'
+     In an `insn' during the dead-code elimination pass, nonzero if the
+     insn is dead.  Stored in the `in_struct' field and printed as `/s'.
+
+`INSN_DELETED_P (X)'
+     In an `insn', nonzero if the insn has been deleted.  Stored in the
+     `volatil' field and printed as `/v'.
+
+`INSN_FROM_TARGET_P (X)'
+     In an `insn' in a delay slot of a branch, indicates that the insn
+     is from the target of the branch.  If the branch insn has
+     `INSN_ANNULLED_BRANCH_P' set, this insn will only be executed if
+     the branch is taken.  For annulled branches with
+     `INSN_FROM_TARGET_P' clear, the insn will be executed only if the
+     branch is not taken.  When `INSN_ANNULLED_BRANCH_P' is not set,
+     this insn will always be executed.  Stored in the `in_struct'
+     field and printed as `/s'.
+
+`LABEL_OUTSIDE_LOOP_P (X)'
+     In `label_ref' expressions, nonzero if this is a reference to a
+     label that is outside the innermost loop containing the reference
+     to the label.  Stored in the `in_struct' field and printed as `/s'.
+
+`LABEL_PRESERVE_P (X)'
+     In a `code_label', indicates that the label is referenced by code
+     or data not visible to the RTL of a given function.  Labels
+     referenced by a non-local goto will have this bit set.  Stored in
+     the `in_struct' field and printed as `/s'.
+
+`LABEL_REF_NONLOCAL_P (X)'
+     In `label_ref' and `reg_label' expressions, nonzero if this is a
+     reference to a non-local label.  Stored in the `volatil' field and
+     printed as `/v'.
+
+`LINK_COST_FREE (X)'
+     In the `LOG_LINKS' `insn_list' during scheduling, nonzero when the
+     cost of executing an instruction through the link is zero, i.e.,
+     the link makes the cost free.  Stored in the `call' field and
+     printed as `/c'.
+
+`LINK_COST_ZERO (X)'
+     In the `LOG_LINKS' `insn_list' during scheduling, nonzero when the
+     cost of executing an instruction through the link varies and is
+     unchanged, i.e., the link has zero additional cost.  Stored in the
+     `jump' field and printed as `/j'.
+
+`MEM_IN_STRUCT_P (X)'
+     In `mem' expressions, nonzero for reference to an entire structure,
+     union or array, or to a component of one.  Zero for references to a
+     scalar variable or through a pointer to a scalar.  If both this
+     flag and `MEM_SCALAR_P' are clear, then we don't know whether this
+     `mem' is in a structure or not.  Both flags should never be
+     simultaneously set.  Stored in the `in_struct' field and printed
+     as `/s'.
+
+`MEM_KEEP_ALIAS_SET_P (X)'
+     In `mem' expressions, 1 if we should keep the alias set for this
+     mem unchanged when we access a component.  Set to 1, for example,
+     when we are already in a non-addressable component of an aggregate.
+     Stored in the `jump' field and printed as `/j'.
+
+`MEM_SCALAR_P (X)'
+     In `mem' expressions, nonzero for reference to a scalar known not
+     to be a member of a structure, union, or array.  Zero for such
+     references and for indirections through pointers, even pointers
+     pointing to scalar types.  If both this flag and `MEM_IN_STRUCT_P'
+     are clear, then we don't know whether this `mem' is in a structure
+     or not.  Both flags should never be simultaneously set.  Stored in
+     the `frame_related' field and printed as `/f'.
+
+`MEM_VOLATILE_P (X)'
+     In `mem' and `asm_operands' expressions, nonzero for volatile
+     memory references.  Stored in the `volatil' field and printed as
+     `/v'.
+
+`REG_FUNCTION_VALUE_P (X)'
+     Nonzero in a `reg' if it is the place in which this function's
+     value is going to be returned.  (This happens only in a hard
+     register.)  Stored in the `integrated' field and printed as `/i'.
+
+`REG_LOOP_TEST_P (X)'
+     In `reg' expressions, nonzero if this register's entire life is
+     contained in the exit test code for some loop.  Stored in the
+     `in_struct' field and printed as `/s'.
+
+`REG_POINTER (X)'
+     Nonzero in a `reg' if the register holds a pointer.  Stored in the
+     `frame_related' field and printed as `/f'.
+
+`REG_USERVAR_P (X)'
+     In a `reg', nonzero if it corresponds to a variable present in the
+     user's source code.  Zero for temporaries generated internally by
+     the compiler.  Stored in the `volatil' field and printed as `/v'.
+
+     The same hard register may be used also for collecting the values
+     of functions called by this one, but `REG_FUNCTION_VALUE_P' is zero
+     in this kind of use.
+
+`RTX_FRAME_RELATED_P (X)'
+     Nonzero in an `insn' or `set' which is part of a function prologue
+     and sets the stack pointer, sets the frame pointer, or saves a
+     register.  This flag should also be set on an instruction that
+     sets up a temporary register to use in place of the frame pointer.
+     Stored in the `frame_related' field and printed as `/f'.
+
+     In particular, on RISC targets where there are limits on the sizes
+     of immediate constants, it is sometimes impossible to reach the
+     register save area directly from the stack pointer.  In that case,
+     a temporary register is used that is near enough to the register
+     save area, and the Canonical Frame Address, i.e., DWARF2's logical
+     frame pointer, register must (temporarily) be changed to be this
+     temporary register.  So, the instruction that sets this temporary
+     register must be marked as `RTX_FRAME_RELATED_P'.
+
+     If the marked instruction is overly complex (defined in terms of
+     what `dwarf2out_frame_debug_expr' can handle), you will also have
+     to create a `REG_FRAME_RELATED_EXPR' note and attach it to the
+     instruction.  This note should contain a simple expression of the
+     computation performed by this instruction, i.e., one that
+     `dwarf2out_frame_debug_expr' can handle.
+
+     This flag is required for exception handling support on targets
+     with RTL prologues.
+
+`RTX_INTEGRATED_P (X)'
+     Nonzero in an `insn', `insn_list', or `const' if it resulted from
+     an in-line function call.  Stored in the `integrated' field and
+     printed as `/i'.
+
+`RTX_UNCHANGING_P (X)'
+     Nonzero in a `reg' or `mem' if the memory is set at most once,
+     anywhere.  This does not mean that it is function invariant.
+     Stored in the `unchanging' field and printed as `/u'.
+
+`SCHED_GROUP_P (X)'
+     During instruction scheduling, in an `insn', indicates that the
+     previous insn must be scheduled together with this insn.  This is
+     used to ensure that certain groups of instructions will not be
+     split up by the instruction scheduling pass, for example, `use'
+     insns before a `call_insn' may not be separated from the
+     `call_insn'.  Stored in the `in_struct' field and printed as `/s'.
+
+`SET_IS_RETURN_P (X)'
+     For a `set', nonzero if it is for a return.  Stored in the `jump'
+     field and printed as `/j'.
+
+`SIBLING_CALL_P (X)'
+     For a `call_insn', nonzero if the insn is a sibling call.  Stored
+     in the `jump' field and printed as `/j'.
+
+`STRING_POOL_ADDRESS_P (X)'
+     For a `symbol_ref' expression, nonzero if it addresses this
+     function's string constant pool.  Stored in the `frame_related'
+     field and printed as `/f'.
+
+`SUBREG_PROMOTED_UNSIGNED_P (X)'
+     Nonzero in a `subreg' that has `SUBREG_PROMOTED_VAR_P' nonzero if
+     the object being referenced is kept zero-extended and zero if it
+     is kept sign-extended.  Stored in the `unchanging' field and
+     printed as `/u'.
+
+`SUBREG_PROMOTED_VAR_P (X)'
+     Nonzero in a `subreg' if it was made when accessing an object that
+     was promoted to a wider mode in accord with the `PROMOTED_MODE'
+     machine description macro (*note Storage Layout::).  In this case,
+     the mode of the `subreg' is the declared mode of the object and
+     the mode of `SUBREG_REG' is the mode of the register that holds
+     the object.  Promoted variables are always either sign- or
+     zero-extended to the wider mode on every assignment.  Stored in
+     the `in_struct' field and printed as `/s'.
+
+`SYMBOL_REF_FLAG (X)'
+     In a `symbol_ref', this is used as a flag for machine-specific
+     purposes.  Stored in the `volatil' field and printed as `/v'.
+
+`SYMBOL_REF_USED (X)'
+     In a `symbol_ref', indicates that X has been used.  This is
+     normally only used to ensure that X is only declared external
+     once.  Stored in the `used' field.
+
+`SYMBOL_REF_WEAK (X)'
+     In a `symbol_ref', indicates that X has been declared weak.
+     Stored in the `integrated' field and printed as `/i'.
+
+   These are the fields to which the above macros refer:
+
+`call'
+     In the `LOG_LINKS' of an `insn_list' during scheduling, 1 means
+     that the cost of executing an instruction through the link is zero.
+
+     In an RTL dump, this flag is represented as `/c'.
+
+`frame_related'
+     In an `insn' or `set' expression, 1 means that it is part of a
+     function prologue and sets the stack pointer, sets the frame
+     pointer, saves a register, or sets up a temporary register to use
+     in place of the frame pointer.
+
+     In `reg' expressions, 1 means that the register holds a pointer.
+
+     In `symbol_ref' expressions, 1 means that the reference addresses
+     this function's string constant pool.
+
+     In `mem' expressions, 1 means that the reference is to a scalar.
+
+     In an RTL dump, this flag is represented as `/f'.
+
+`in_struct'
+     In `mem' expressions, it is 1 if the memory datum referred to is
+     all or part of a structure or array; 0 if it is (or might be) a
+     scalar variable.  A reference through a C pointer has 0 because
+     the pointer might point to a scalar variable.  This information
+     allows the compiler to determine something about possible cases of
+     aliasing.
+
+     In `reg' expressions, it is 1 if the register has its entire life
+     contained within the test expression of some loop.
+
+     In `subreg' expressions, 1 means that the `subreg' is accessing an
+     object that has had its mode promoted from a wider mode.
+
+     In `label_ref' expressions, 1 means that the referenced label is
+     outside the innermost loop containing the insn in which the
+     `label_ref' was found.
+
+     In `code_label' expressions, it is 1 if the label may never be
+     deleted.  This is used for labels which are the target of
+     non-local gotos.  Such a label that would have been deleted is
+     replaced with a `note' of type `NOTE_INSN_DELETED_LABEL'.
+
+     In an `insn' during dead-code elimination, 1 means that the insn is
+     dead code.
+
+     In an `insn' during reorg for an insn in the delay slot of a
+     branch, 1 means that this insn is from the target of the branch.
+
+     In an `insn' during instruction scheduling, 1 means that this insn
+     must be scheduled as part of a group together with the previous
+     insn.
+
+     In an RTL dump, this flag is represented as `/s'.
+
+`integrated'
+     In an `insn', `insn_list', or `const', 1 means the RTL was
+     produced by procedure integration.
+
+     In `reg' expressions, 1 means the register contains the value to
+     be returned by the current function.  On machines that pass
+     parameters in registers, the same register number may be used for
+     parameters as well, but this flag is not set on such uses.
+
+     In `symbol_ref' expressions, 1 means the referenced symbol is weak.
+
+     In an RTL dump, this flag is represented as `/i'.
+
+`jump'
+     In a `mem' expression, 1 means we should keep the alias set for
+     this mem unchanged when we access a component.
+
+     In a `set', 1 means it is for a return.
+
+     In a `call_insn', 1 means it is a sibling call.
+
+     In the `LOG_LINKS' of an `insn_list' during scheduling, 1 means the
+     cost of executing an instruction through the link varies and is
+     unchanging.
+
+     In an RTL dump, this flag is represented as `/j'.
+
+`unchanging'
+     In `reg' and `mem' expressions, 1 means that the value of the
+     expression never changes.
+
+     In `subreg' expressions, it is 1 if the `subreg' references an
+     unsigned object whose mode has been promoted to a wider mode.
+
+     In an `insn', 1 means that this is an annulling branch.
+
+     In a `symbol_ref' expression, 1 means that this symbol addresses
+     something in the per-function constant pool.
+
+     In a `call_insn', `note', or an `expr_list' of notes, 1 means that
+     this instruction is a call to a const or pure function.
+
+     In an RTL dump, this flag is represented as `/u'.
+
+`used'
+     This flag is used directly (without an access macro) at the end of
+     RTL generation for a function, to count the number of times an
+     expression appears in insns.  Expressions that appear more than
+     once are copied, according to the rules for shared structure
+     (*note Sharing::).
+
+     For a `reg', it is used directly (without an access macro) by the
+     leaf register renumbering code to ensure that each register is only
+     renumbered once.
+
+     In a `symbol_ref', it indicates that an external declaration for
+     the symbol has already been written.
+
+`volatil'
+     In a `mem' or `asm_operands' expression, it is 1 if the memory
+     reference is volatile.  Volatile memory references may not be
+     deleted, reordered or combined.
+
+     In a `symbol_ref' expression, it is used for machine-specific
+     purposes.
+
+     In a `reg' expression, it is 1 if the value is a user-level
+     variable.  0 indicates an internal compiler temporary.
+
+     In an `insn', 1 means the insn has been deleted.
+
+     In `label_ref' and `reg_label' expressions, 1 means a reference to
+     a non-local label.
+
+     In an RTL dump, this flag is represented as `/v'.
+
+
+File: gccint.info,  Node: Machine Modes,  Next: Constants,  Prev: Flags,  Up: RTL
+
+Machine Modes
+=============
+
+   A machine mode describes a size of data object and the
+representation used for it.  In the C code, machine modes are
+represented by an enumeration type, `enum machine_mode', defined in
+`machmode.def'.  Each RTL expression has room for a machine mode and so
+do certain kinds of tree expressions (declarations and types, to be
+precise).
+
+   In debugging dumps and machine descriptions, the machine mode of an
+RTL expression is written after the expression code with a colon to
+separate them.  The letters `mode' which appear at the end of each
+machine mode name are omitted.  For example, `(reg:SI 38)' is a `reg'
+expression with machine mode `SImode'.  If the mode is `VOIDmode', it
+is not written at all.
+
+   Here is a table of machine modes.  The term "byte" below refers to an
+object of `BITS_PER_UNIT' bits (*note Storage Layout::).
+
+`BImode'
+     "Bit" mode represents a single bit, for predicate registers.
+
+`QImode'
+     "Quarter-Integer" mode represents a single byte treated as an
+     integer.
+
+`HImode'
+     "Half-Integer" mode represents a two-byte integer.
+
+`PSImode'
+     "Partial Single Integer" mode represents an integer which occupies
+     four bytes but which doesn't really use all four.  On some
+     machines, this is the right mode to use for pointers.
+
+`SImode'
+     "Single Integer" mode represents a four-byte integer.
+
+`PDImode'
+     "Partial Double Integer" mode represents an integer which occupies
+     eight bytes but which doesn't really use all eight.  On some
+     machines, this is the right mode to use for certain pointers.
+
+`DImode'
+     "Double Integer" mode represents an eight-byte integer.
+
+`TImode'
+     "Tetra Integer" (?) mode represents a sixteen-byte integer.
+
+`OImode'
+     "Octa Integer" (?) mode represents a thirty-two-byte integer.
+
+`QFmode'
+     "Quarter-Floating" mode represents a quarter-precision (single
+     byte) floating point number.
+
+`HFmode'
+     "Half-Floating" mode represents a half-precision (two byte)
+     floating point number.
+
+`TQFmode'
+     "Three-Quarter-Floating" (?) mode represents a
+     three-quarter-precision (three byte) floating point number.
+
+`SFmode'
+     "Single Floating" mode represents a four byte floating point
+     number.  In the common case, of a processor with IEEE arithmetic
+     and 8-bit bytes, this is a single-precision IEEE floating point
+     number; it can also be used for double-precision (on processors
+     with 16-bit bytes) and single-precision VAX and IBM types.
+
+`DFmode'
+     "Double Floating" mode represents an eight byte floating point
+     number.  In the common case, of a processor with IEEE arithmetic
+     and 8-bit bytes, this is a double-precision IEEE floating point
+     number.
+
+`XFmode'
+     "Extended Floating" mode represents a twelve byte floating point
+     number.  This mode is used for IEEE extended floating point.  On
+     some systems not all bits within these bytes will actually be used.
+
+`TFmode'
+     "Tetra Floating" mode represents a sixteen byte floating point
+     number.  This gets used for both the 96-bit extended IEEE
+     floating-point types padded to 128 bits, and true 128-bit extended
+     IEEE floating-point types.
+
+`CCmode'
+     "Condition Code" mode represents the value of a condition code,
+     which is a machine-specific set of bits used to represent the
+     result of a comparison operation.  Other machine-specific modes
+     may also be used for the condition code.  These modes are not used
+     on machines that use `cc0' (see *note Condition Code::).
+
+`BLKmode'
+     "Block" mode represents values that are aggregates to which none of
+     the other modes apply.  In RTL, only memory references can have
+     this mode, and only if they appear in string-move or vector
+     instructions.  On machines which have no such instructions,
+     `BLKmode' will not appear in RTL.
+
+`VOIDmode'
+     Void mode means the absence of a mode or an unspecified mode.  For
+     example, RTL expressions of code `const_int' have mode `VOIDmode'
+     because they can be taken to have whatever mode the context
+     requires.  In debugging dumps of RTL, `VOIDmode' is expressed by
+     the absence of any mode.
+
+`QCmode, HCmode, SCmode, DCmode, XCmode, TCmode'
+     These modes stand for a complex number represented as a pair of
+     floating point values.  The floating point values are in `QFmode',
+     `HFmode', `SFmode', `DFmode', `XFmode', and `TFmode', respectively.
+
+`CQImode, CHImode, CSImode, CDImode, CTImode, COImode'
+     These modes stand for a complex number represented as a pair of
+     integer values.  The integer values are in `QImode', `HImode',
+     `SImode', `DImode', `TImode', and `OImode', respectively.
+
+   The machine description defines `Pmode' as a C macro which expands
+into the machine mode used for addresses.  Normally this is the mode
+whose size is `BITS_PER_WORD', `SImode' on 32-bit machines.
+
+   The only modes which a machine description must support are
+`QImode', and the modes corresponding to `BITS_PER_WORD',
+`FLOAT_TYPE_SIZE' and `DOUBLE_TYPE_SIZE'.  The compiler will attempt to
+use `DImode' for 8-byte structures and unions, but this can be
+prevented by overriding the definition of `MAX_FIXED_MODE_SIZE'.
+Alternatively, you can have the compiler use `TImode' for 16-byte
+structures and unions.  Likewise, you can arrange for the C type `short
+int' to avoid using `HImode'.
+
+   Very few explicit references to machine modes remain in the compiler
+and these few references will soon be removed.  Instead, the machine
+modes are divided into mode classes.  These are represented by the
+enumeration type `enum mode_class' defined in `machmode.h'.  The
+possible mode classes are:
+
+`MODE_INT'
+     Integer modes.  By default these are `BImode', `QImode', `HImode',
+     `SImode', `DImode', `TImode', and `OImode'.
+
+`MODE_PARTIAL_INT'
+     The "partial integer" modes, `PQImode', `PHImode', `PSImode' and
+     `PDImode'.
+
+`MODE_FLOAT'
+     Floating point modes.  By default these are `QFmode', `HFmode',
+     `TQFmode', `SFmode', `DFmode', `XFmode' and `TFmode'.
+
+`MODE_COMPLEX_INT'
+     Complex integer modes.  (These are not currently implemented).
+
+`MODE_COMPLEX_FLOAT'
+     Complex floating point modes.  By default these are `QCmode',
+     `HCmode', `SCmode', `DCmode', `XCmode', and `TCmode'.
+
+`MODE_FUNCTION'
+     Algol or Pascal function variables including a static chain.
+     (These are not currently implemented).
+
+`MODE_CC'
+     Modes representing condition code values.  These are `CCmode' plus
+     any modes listed in the `EXTRA_CC_MODES' macro.  *Note Jump
+     Patterns::, also see *Note Condition Code::.
+
+`MODE_RANDOM'
+     This is a catchall mode class for modes which don't fit into the
+     above classes.  Currently `VOIDmode' and `BLKmode' are in
+     `MODE_RANDOM'.
+
+   Here are some C macros that relate to machine modes:
+
+`GET_MODE (X)'
+     Returns the machine mode of the RTX X.
+
+`PUT_MODE (X, NEWMODE)'
+     Alters the machine mode of the RTX X to be NEWMODE.
+
+`NUM_MACHINE_MODES'
+     Stands for the number of machine modes available on the target
+     machine.  This is one greater than the largest numeric value of any
+     machine mode.
+
+`GET_MODE_NAME (M)'
+     Returns the name of mode M as a string.
+
+`GET_MODE_CLASS (M)'
+     Returns the mode class of mode M.
+
+`GET_MODE_WIDER_MODE (M)'
+     Returns the next wider natural mode.  For example, the expression
+     `GET_MODE_WIDER_MODE (QImode)' returns `HImode'.
+
+`GET_MODE_SIZE (M)'
+     Returns the size in bytes of a datum of mode M.
+
+`GET_MODE_BITSIZE (M)'
+     Returns the size in bits of a datum of mode M.
+
+`GET_MODE_MASK (M)'
+     Returns a bitmask containing 1 for all bits in a word that fit
+     within mode M.  This macro can only be used for modes whose
+     bitsize is less than or equal to `HOST_BITS_PER_INT'.
+
+`GET_MODE_ALIGNMENT (M)'
+     Return the required alignment, in bits, for an object of mode M.
+
+`GET_MODE_UNIT_SIZE (M)'
+     Returns the size in bytes of the subunits of a datum of mode M.
+     This is the same as `GET_MODE_SIZE' except in the case of complex
+     modes.  For them, the unit size is the size of the real or
+     imaginary part.
+
+`GET_MODE_NUNITS (M)'
+     Returns the number of units contained in a mode, i.e.,
+     `GET_MODE_SIZE' divided by `GET_MODE_UNIT_SIZE'.
+
+`GET_CLASS_NARROWEST_MODE (C)'
+     Returns the narrowest mode in mode class C.
+
+   The global variables `byte_mode' and `word_mode' contain modes whose
+classes are `MODE_INT' and whose bitsizes are either `BITS_PER_UNIT' or
+`BITS_PER_WORD', respectively.  On 32-bit machines, these are `QImode'
+and `SImode', respectively.
+
+
+File: gccint.info,  Node: Constants,  Next: Regs and Memory,  Prev: Machine Modes,  Up: RTL
+
+Constant Expression Types
+=========================
+
+   The simplest RTL expressions are those that represent constant
+values.
+
+`(const_int I)'
+     This type of expression represents the integer value I.  I is
+     customarily accessed with the macro `INTVAL' as in `INTVAL (EXP)',
+     which is equivalent to `XWINT (EXP, 0)'.
+
+     There is only one expression object for the integer value zero; it
+     is the value of the variable `const0_rtx'.  Likewise, the only
+     expression for integer value one is found in `const1_rtx', the only
+     expression for integer value two is found in `const2_rtx', and the
+     only expression for integer value negative one is found in
+     `constm1_rtx'.  Any attempt to create an expression of code
+     `const_int' and value zero, one, two or negative one will return
+     `const0_rtx', `const1_rtx', `const2_rtx' or `constm1_rtx' as
+     appropriate.
+
+     Similarly, there is only one object for the integer whose value is
+     `STORE_FLAG_VALUE'.  It is found in `const_true_rtx'.  If
+     `STORE_FLAG_VALUE' is one, `const_true_rtx' and `const1_rtx' will
+     point to the same object.  If `STORE_FLAG_VALUE' is -1,
+     `const_true_rtx' and `constm1_rtx' will point to the same object.
+
+`(const_double:M ADDR I0 I1 ...)'
+     Represents either a floating-point constant of mode M or an
+     integer constant too large to fit into `HOST_BITS_PER_WIDE_INT'
+     bits but small enough to fit within twice that number of bits (GCC
+     does not provide a mechanism to represent even larger constants).
+     In the latter case, M will be `VOIDmode'.
+
+`(const_vector:M [X0 X1 ...])'
+     Represents a vector constant.  The square brackets stand for the
+     vector containing the constant elements.  X0, X1 and so on are the
+     `const_int' or `const_double' elements.
+
+     The number of units in a `const_vector' is obtained with the macro
+     `CONST_VECTOR_NUNITS' as in `CONST_VECTOR_NUNITS (V)'.
+
+     Individual elements in a vector constant are accessed with the
+     macro `CONST_VECTOR_ELT' as in `CONST_VECTOR_ELT (V, N)' where V
+     is the vector constant and N is the element desired.
+
+     ADDR is used to contain the `mem' expression that corresponds to
+     the location in memory that at which the constant can be found.  If
+     it has not been allocated a memory location, but is on the chain
+     of all `const_double' expressions in this compilation (maintained
+     using an undisplayed field), ADDR contains `const0_rtx'.  If it is
+     not on the chain, ADDR contains `cc0_rtx'.  ADDR is customarily
+     accessed with the macro `CONST_DOUBLE_MEM' and the chain field via
+     `CONST_DOUBLE_CHAIN'.
+
+     If M is `VOIDmode', the bits of the value are stored in I0 and I1.
+     I0 is customarily accessed with the macro `CONST_DOUBLE_LOW' and
+     I1 with `CONST_DOUBLE_HIGH'.
+
+     If the constant is floating point (regardless of its precision),
+     then the number of integers used to store the value depends on the
+     size of `REAL_VALUE_TYPE' (*note Cross-compilation::).  The
+     integers represent a floating point number, but not precisely in
+     the target machine's or host machine's floating point format.  To
+     convert them to the precise bit pattern used by the target
+     machine, use the macro `REAL_VALUE_TO_TARGET_DOUBLE' and friends
+     (*note Data Output::).
+
+     The macro `CONST0_RTX (MODE)' refers to an expression with value 0
+     in mode MODE.  If mode MODE is of mode class `MODE_INT', it
+     returns `const0_rtx'.  If mode MODE is of mode class `MODE_FLOAT',
+     it returns a `CONST_DOUBLE' expression in mode MODE.  Otherwise,
+     it returns a `CONST_VECTOR' expression in mode MODE.  Similarly,
+     the macro `CONST1_RTX (MODE)' refers to an expression with value 1
+     in mode MODE and similarly for `CONST2_RTX'.  The `CONST1_RTX' and
+     `CONST2_RTX' macros are undefined for vector modes.
+
+`(const_string STR)'
+     Represents a constant string with value STR.  Currently this is
+     used only for insn attributes (*note Insn Attributes::) since
+     constant strings in C are placed in memory.
+
+`(symbol_ref:MODE SYMBOL)'
+     Represents the value of an assembler label for data.  SYMBOL is a
+     string that describes the name of the assembler label.  If it
+     starts with a `*', the label is the rest of SYMBOL not including
+     the `*'.  Otherwise, the label is SYMBOL, usually prefixed with
+     `_'.
+
+     The `symbol_ref' contains a mode, which is usually `Pmode'.
+     Usually that is the only mode for which a symbol is directly valid.
+
+`(label_ref LABEL)'
+     Represents the value of an assembler label for code.  It contains
+     one operand, an expression, which must be a `code_label' or a
+     `note' of type `NOTE_INSN_DELETED_LABEL' that appears in the
+     instruction sequence to identify the place where the label should
+     go.
+
+     The reason for using a distinct expression type for code label
+     references is so that jump optimization can distinguish them.
+
+`(const:M EXP)'
+     Represents a constant that is the result of an assembly-time
+     arithmetic computation.  The operand, EXP, is an expression that
+     contains only constants (`const_int', `symbol_ref' and `label_ref'
+     expressions) combined with `plus' and `minus'.  However, not all
+     combinations are valid, since the assembler cannot do arbitrary
+     arithmetic on relocatable symbols.
+
+     M should be `Pmode'.
+
+`(high:M EXP)'
+     Represents the high-order bits of EXP, usually a `symbol_ref'.
+     The number of bits is machine-dependent and is normally the number
+     of bits specified in an instruction that initializes the high
+     order bits of a register.  It is used with `lo_sum' to represent
+     the typical two-instruction sequence used in RISC machines to
+     reference a global memory location.
+
+     M should be `Pmode'.
+
+
+File: gccint.info,  Node: Regs and Memory,  Next: Arithmetic,  Prev: Constants,  Up: RTL
+
+Registers and Memory
+====================
+
+   Here are the RTL expression types for describing access to machine
+registers and to main memory.
+
+`(reg:M N)'
+     For small values of the integer N (those that are less than
+     `FIRST_PSEUDO_REGISTER'), this stands for a reference to machine
+     register number N: a "hard register".  For larger values of N, it
+     stands for a temporary value or "pseudo register".  The compiler's
+     strategy is to generate code assuming an unlimited number of such
+     pseudo registers, and later convert them into hard registers or
+     into memory references.
+
+     M is the machine mode of the reference.  It is necessary because
+     machines can generally refer to each register in more than one
+     mode.  For example, a register may contain a full word but there
+     may be instructions to refer to it as a half word or as a single
+     byte, as well as instructions to refer to it as a floating point
+     number of various precisions.
+
+     Even for a register that the machine can access in only one mode,
+     the mode must always be specified.
+
+     The symbol `FIRST_PSEUDO_REGISTER' is defined by the machine
+     description, since the number of hard registers on the machine is
+     an invariant characteristic of the machine.  Note, however, that
+     not all of the machine registers must be general registers.  All
+     the machine registers that can be used for storage of data are
+     given hard register numbers, even those that can be used only in
+     certain instructions or can hold only certain types of data.
+
+     A hard register may be accessed in various modes throughout one
+     function, but each pseudo register is given a natural mode and is
+     accessed only in that mode.  When it is necessary to describe an
+     access to a pseudo register using a nonnatural mode, a `subreg'
+     expression is used.
+
+     A `reg' expression with a machine mode that specifies more than
+     one word of data may actually stand for several consecutive
+     registers.  If in addition the register number specifies a
+     hardware register, then it actually represents several consecutive
+     hardware registers starting with the specified one.
+
+     Each pseudo register number used in a function's RTL code is
+     represented by a unique `reg' expression.
+
+     Some pseudo register numbers, those within the range of
+     `FIRST_VIRTUAL_REGISTER' to `LAST_VIRTUAL_REGISTER' only appear
+     during the RTL generation phase and are eliminated before the
+     optimization phases.  These represent locations in the stack frame
+     that cannot be determined until RTL generation for the function
+     has been completed.  The following virtual register numbers are
+     defined:
+
+    `VIRTUAL_INCOMING_ARGS_REGNUM'
+          This points to the first word of the incoming arguments
+          passed on the stack.  Normally these arguments are placed
+          there by the caller, but the callee may have pushed some
+          arguments that were previously passed in registers.
+
+          When RTL generation is complete, this virtual register is
+          replaced by the sum of the register given by
+          `ARG_POINTER_REGNUM' and the value of `FIRST_PARM_OFFSET'.
+
+    `VIRTUAL_STACK_VARS_REGNUM'
+          If `FRAME_GROWS_DOWNWARD' is defined, this points to
+          immediately above the first variable on the stack.
+          Otherwise, it points to the first variable on the stack.
+
+          `VIRTUAL_STACK_VARS_REGNUM' is replaced with the sum of the
+          register given by `FRAME_POINTER_REGNUM' and the value
+          `STARTING_FRAME_OFFSET'.
+
+    `VIRTUAL_STACK_DYNAMIC_REGNUM'
+          This points to the location of dynamically allocated memory
+          on the stack immediately after the stack pointer has been
+          adjusted by the amount of memory desired.
+
+          This virtual register is replaced by the sum of the register
+          given by `STACK_POINTER_REGNUM' and the value
+          `STACK_DYNAMIC_OFFSET'.
+
+    `VIRTUAL_OUTGOING_ARGS_REGNUM'
+          This points to the location in the stack at which outgoing
+          arguments should be written when the stack is pre-pushed
+          (arguments pushed using push insns should always use
+          `STACK_POINTER_REGNUM').
+
+          This virtual register is replaced by the sum of the register
+          given by `STACK_POINTER_REGNUM' and the value
+          `STACK_POINTER_OFFSET'.
+
+`(subreg:M REG BYTENUM)'
+     `subreg' expressions are used to refer to a register in a machine
+     mode other than its natural one, or to refer to one register of a
+     multi-part `reg' that actually refers to several registers.
+
+     Each pseudo-register has a natural mode.  If it is necessary to
+     operate on it in a different mode--for example, to perform a
+     fullword move instruction on a pseudo-register that contains a
+     single byte--the pseudo-register must be enclosed in a `subreg'.
+     In such a case, BYTENUM is zero.
+
+     Usually M is at least as narrow as the mode of REG, in which case
+     it is restricting consideration to only the bits of REG that are
+     in M.
+
+     Sometimes M is wider than the mode of REG.  These `subreg'
+     expressions are often called "paradoxical".  They are used in
+     cases where we want to refer to an object in a wider mode but do
+     not care what value the additional bits have.  The reload pass
+     ensures that paradoxical references are only made to hard
+     registers.
+
+     The other use of `subreg' is to extract the individual registers of
+     a multi-register value.  Machine modes such as `DImode' and
+     `TImode' can indicate values longer than a word, values which
+     usually require two or more consecutive registers.  To access one
+     of the registers, use a `subreg' with mode `SImode' and a BYTENUM
+     offset that says which register.
+
+     Storing in a non-paradoxical `subreg' has undefined results for
+     bits belonging to the same word as the `subreg'.  This laxity makes
+     it easier to generate efficient code for such instructions.  To
+     represent an instruction that preserves all the bits outside of
+     those in the `subreg', use `strict_low_part' around the `subreg'.
+
+     The compilation parameter `WORDS_BIG_ENDIAN', if set to 1, says
+     that byte number zero is part of the most significant word;
+     otherwise, it is part of the least significant word.
+
+     The compilation parameter `BYTES_BIG_ENDIAN', if set to 1, says
+     that byte number zero is the most significant byte within a word;
+     otherwise, it is the least significant byte within a word.
+
+     On a few targets, `FLOAT_WORDS_BIG_ENDIAN' disagrees with
+     `WORDS_BIG_ENDIAN'.  However, most parts of the compiler treat
+     floating point values as if they had the same endianness as
+     integer values.  This works because they handle them solely as a
+     collection of integer values, with no particular numerical value.
+     Only real.c and the runtime libraries care about
+     `FLOAT_WORDS_BIG_ENDIAN'.
+
+     Between the combiner pass and the reload pass, it is possible to
+     have a paradoxical `subreg' which contains a `mem' instead of a
+     `reg' as its first operand.  After the reload pass, it is also
+     possible to have a non-paradoxical `subreg' which contains a
+     `mem'; this usually occurs when the `mem' is a stack slot which
+     replaced a pseudo register.
+
+     Note that it is not valid to access a `DFmode' value in `SFmode'
+     using a `subreg'.  On some machines the most significant part of a
+     `DFmode' value does not have the same format as a single-precision
+     floating value.
+
+     It is also not valid to access a single word of a multi-word value
+     in a hard register when less registers can hold the value than
+     would be expected from its size.  For example, some 32-bit
+     machines have floating-point registers that can hold an entire
+     `DFmode' value.  If register 10 were such a register `(subreg:SI
+     (reg:DF 10) 1)' would be invalid because there is no way to
+     convert that reference to a single machine register.  The reload
+     pass prevents `subreg' expressions such as these from being formed.
+
+     The first operand of a `subreg' expression is customarily accessed
+     with the `SUBREG_REG' macro and the second operand is customarily
+     accessed with the `SUBREG_BYTE' macro.
+
+`(scratch:M)'
+     This represents a scratch register that will be required for the
+     execution of a single instruction and not used subsequently.  It is
+     converted into a `reg' by either the local register allocator or
+     the reload pass.
+
+     `scratch' is usually present inside a `clobber' operation (*note
+     Side Effects::).
+
+`(cc0)'
+     This refers to the machine's condition code register.  It has no
+     operands and may not have a machine mode.  There are two ways to
+     use it:
+
+        * To stand for a complete set of condition code flags.  This is
+          best on most machines, where each comparison sets the entire
+          series of flags.
+
+          With this technique, `(cc0)' may be validly used in only two
+          contexts: as the destination of an assignment (in test and
+          compare instructions) and in comparison operators comparing
+          against zero (`const_int' with value zero; that is to say,
+          `const0_rtx').
+
+        * To stand for a single flag that is the result of a single
+          condition.  This is useful on machines that have only a
+          single flag bit, and in which comparison instructions must
+          specify the condition to test.
+
+          With this technique, `(cc0)' may be validly used in only two
+          contexts: as the destination of an assignment (in test and
+          compare instructions) where the source is a comparison
+          operator, and as the first operand of `if_then_else' (in a
+          conditional branch).
+
+     There is only one expression object of code `cc0'; it is the value
+     of the variable `cc0_rtx'.  Any attempt to create an expression of
+     code `cc0' will return `cc0_rtx'.
+
+     Instructions can set the condition code implicitly.  On many
+     machines, nearly all instructions set the condition code based on
+     the value that they compute or store.  It is not necessary to
+     record these actions explicitly in the RTL because the machine
+     description includes a prescription for recognizing the
+     instructions that do so (by means of the macro
+     `NOTICE_UPDATE_CC').  *Note Condition Code::.  Only instructions
+     whose sole purpose is to set the condition code, and instructions
+     that use the condition code, need mention `(cc0)'.
+
+     On some machines, the condition code register is given a register
+     number and a `reg' is used instead of `(cc0)'.  This is usually the
+     preferable approach if only a small subset of instructions modify
+     the condition code.  Other machines store condition codes in
+     general registers; in such cases a pseudo register should be used.
+
+     Some machines, such as the Sparc and RS/6000, have two sets of
+     arithmetic instructions, one that sets and one that does not set
+     the condition code.  This is best handled by normally generating
+     the instruction that does not set the condition code, and making a
+     pattern that both performs the arithmetic and sets the condition
+     code register (which would not be `(cc0)' in this case).  For
+     examples, search for `addcc' and `andcc' in `sparc.md'.
+
+`(pc)'
+     This represents the machine's program counter.  It has no operands
+     and may not have a machine mode.  `(pc)' may be validly used only
+     in certain specific contexts in jump instructions.
+
+     There is only one expression object of code `pc'; it is the value
+     of the variable `pc_rtx'.  Any attempt to create an expression of
+     code `pc' will return `pc_rtx'.
+
+     All instructions that do not jump alter the program counter
+     implicitly by incrementing it, but there is no need to mention
+     this in the RTL.
+
+`(mem:M ADDR ALIAS)'
+     This RTX represents a reference to main memory at an address
+     represented by the expression ADDR.  M specifies how large a unit
+     of memory is accessed.  ALIAS specifies an alias set for the
+     reference.  In general two items are in different alias sets if
+     they cannot reference the same memory address.
+
+`(addressof:M REG)'
+     This RTX represents a request for the address of register REG.
+     Its mode is always `Pmode'.  If there are any `addressof'
+     expressions left in the function after CSE, REG is forced into the
+     stack and the `addressof' expression is replaced with a `plus'
+     expression for the address of its stack slot.
+

@@ -1,0 +1,873 @@
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/uitron.cdl: Update doc link.
+
+2002-05-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/uitron.cdl: Don't build C tests when C++ options selected.
+
+2002-05-22  Nick Garnett  <nickg@redhat.com>
+
+	* doc/uitron.sgml: Fixed dangling xref.
+
+2002-02-19  Mark Salter  <msalter@redhat.com>
+
+	* doc/uitron.sgml: Fixed typos and such.
+
+2002-02-14  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/uitron.sgml: General polishing... Tidied up broken emPHAsis
+	on closing parentheses of function lists.  Reduced line length of
+	same to fit real paper, I hope.  Added LITERAL tags all over
+	config option mentions.
+
+	New stuff... Added a whole new section "[u]ITRON Configuration
+	FAQ" based on some email answers I have given in the past in
+	support of customers.
+
+2002-02-13  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/uitron.sgml: NEW FILE: Make id tags qualified with
+	compat-uitron- and add a couple of tags; tidy up formatting of
+	some function listings; correct comment on using functions in your
+	own DSRs and ISRs.
+
+2002-01-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/uit_func.inl (ena_int, dis_int): Wrap
+	HAL_MASK_INTERRUPT/HAL_UNMASK_INTERRUPT in interrupt
+	disable/restore pairs.
+	* tests/testintr.cxx (detach_isr, attach_isr): Change order of
+	mask/unmask and disable/restore.
+
+2001-04-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/uit_objs.cxx: Workaround xscale tools preprocessor bug
+	by avoiding determining the stack size with the preprocessor.
+	* cdl/tasks.cdl (CYGDAT_UITRON_TASK_EXTERNS and 
+	CYGDAT_UITRON_TASK_INITIALISERS): Ditto
+
+2001-04-21  Bart Veer  <bartv@redhat.com>
+
+	* tests/testintr.cxx (task1):
+	Disable one of the tests on the synthetic target, it requires
+	consistent cpu timing that cannot be guaranteed.
+
+2000-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* include/uit_func.inl: CYG_SCHED_UNIQUE_PRIORITIES changed to
+	CYGINT_KERNEL_SCHEDULER_UNIQUE_PRIORITIES
+
+2000-09-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/uit_objs.hxx (CYG_UITRON_OBJS_INIT_PRIORITY): Define
+	with correct priority now.
+
+2000-08-03  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/uit_func.inl (ref_mpf): Compute used blocks from
+	bytes used / blocks size rather than now obsolete blockcount member
+
+2000-07-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/uit_func.inl: Update all memory pool related functions to
+	reflect the new interface to memory pools, and that they come from
+	the new CYGPKG_MEMALLOC package
+
+	* cdl/uitron.cdl: CYGPKG_UITRON_MEMPOOLFIXED and
+	CYGPKG_UITRON_MEMPOOLVAR require the CYGPKG_MEMALLOC package
+
+	* include/uit_objs.hxx: Update includes - memory pool implementations
+	are now in CYGPKG_MEMALLOC
+
+2000-06-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/uit_ifnc.h (CYGPRI_UITRON_SET_RETCODE): Always return
+	'HANDLED'.  This fixes some confusion when interrupt chaining.
+
+2000-05-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_ifnc.h (cyg_uitron_dsr): make this be extern "C"
+	always; it went wrong when uitron funcs are inline or C++.
+
+	* src/uit_ifnc.cxx (CYGIMP_UITRON_INLINE_FUNCS): When [re]defining
+	this, match what CDL defined.  Warnings--;
+
+2000-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* tests/testintr.cxx (attach_isr, detach_isr): Don't check for
+	clean vector after a detach when chaining is enabled.
+
+2000-03-28  Jesper Skov  <jskov@redhat.com>
+
+	* tests/testintr.cxx: Synchronize with clock before making timer
+	measurement.
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/uitron.cdl:
+
+	Adjust documentation URLs.
+
+2000-03-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/uit_ifnc.h (ret_int): Fix compiler warning.
+
+2000-03-13  Jesper Skov  <jskov@redhat.com>
+
+	* tests/testintr.cxx: Don't try to disable clock on PowerPC.
+
+2000-03-03  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testintr.cxx (task1): Only test ena_int() and dis_int()
+	for E_PAR if CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS.
+
+2000-02-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.h: add ena_int() and dis_int().
+
+	* include/uit_func.inl (dis_int): New function added.
+	(ena_int): New function added.
+
+	* tests/testintr.cxx (task1): Add a test of ena_int() and
+	dis_int(); easiest done here because we have an interrupt number -
+	for the clock - in our hands here already for the rest of the
+	test.
+
+2000-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* tests/testintr.cxx: Don't output DELAYLOCKSCHED quite so often
+	on synthetic target.
+
+2000-01-31  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testintr.cxx (CHECK_TID): Test that get_tid() returns 0 in
+	ISR context ie. non-task portion.
+
+	* include/uit_func.inl (get_tid): Check the sched lock for
+	non-task portions, ie. ISR/DSR will have the scheduler locked.
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * compat/uitron/current/cdl/uitron.cdl
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * compat/uitron/current/cdl/uitron.cdl
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/testintr.cxx (DELAYLOCKSCHED): When in long testing loops,
+	occasionally output a message to show the test is still alive
+
+2000-01-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: Add new option
+	CYGSEM_UITRON_TIME_IS_MILLISECONDS to control just what it says.
+
+	* include/uit_func.inl (CYG_UITRON_TIME_UIT_TO_SYS32): et al; new
+	macros optionally to convert to/from milliSeconds if option
+	CYGSEM_UITRON_TIME_IS_MILLISECONDS is set.
+
+	* src/uit_func.cxx: Initialize Cyg_Clock::converter type objects
+	if the time unit is set to milliSeconds.
+
+	* cdl/uitron.cdl: Add new option
+	CYGSEM_UITRON_TIME_IS_MILLISECONDS to control just what it says.
+
+	Add an include of the kernel config file to the generated
+	pkgconf/uitron.h: tests at the very least need it!  This is a
+	correct thing to do because the kernel config defines a lot of the
+	semantics of the uITRON layer, as well as being needed for
+	backward compatibility.
+
+	Also add uit_ifnc.cxx to the files that need compiling.  Due to
+	the previous screwup, no testing has been applied to the uITRON
+	system under CDL, because it thought the kernel was absent, so
+	this had not been detected.  Doh.
+
+2000-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/testintr.cxx (cyg_start): externC addded.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-11-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/uit_objs.cxx: Make the stack size failsafe be tested against
+	the minimum stack size, not the typical one.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/uitron.cdl: Define tests.
+
+1999-10-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/uitron.cdl: Specify radio buttons using CDL interfaces.
+
+1999-09-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/uit_objs.hxx (CYG_UITRON_OBJS_INIT_PRIORITY): Revert the
+	below change - we may still be shipping antiquated compilers to
+	customers. Sigh.
+
+1999-09-02  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_objs.hxx (CYG_UITRON_OBJS_INIT_PRIORITY): Enable
+	using init priority on uitron objects, now that the compilers all
+	support it fully.  AFAI can tell from a quite broad experiment.
+
+1999-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testintr.cxx (attach_isr): Make it all work: my chosen
+	default interrupt "level" of 0 means make no interrupts on the
+	tx39 ;-( oh well.  Made the whole test simulator-friendly ie. much
+	shorter, made the output more friendly to me.
+
+1999-08-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/uitron.cdl (CYGNUM_UITRON_ISR_ACTION_QUEUESIZE): add a
+	"default_value 32" - ooops.
+
+1999-08-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/uitron.cdl: Add configury for lovely new interrupt-safe
+	functions: just "try immediate execution" [is the sched lock one?]
+	and queue size.
+
+	* include/pkgconf/uitron.h: Add configury for lovely new
+	interrupt-safe functions: just "try immediate execution" [ie. if
+	the sched lock is one] and queue size.
+
+	* include/uit_ifnc.inl: Respond to general configury wrt the
+	presence of semas, flags, mboxes: only define the ixxx_yyy()
+	function if the corresponding xxx_yyy() func exists.  Remove the
+	static definitions of the configuration symbols.
+
+	* src/uit_ifnc.cxx: Respond to general configury wrt the presence
+	of semas, flags, mboxes: the functions called may not exist!
+
+1999-08-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_ifnc.h: New file.  Prototypes of interrupt-safe
+	ixxx_yyy() style functions as a porting/backwards-compatibility
+	aid.  Prototype of a suitable DSR to mate with an ISR that uses
+	them too.
+
+	* include/uit_ifnc.inl: New file.  Bodies for possible inlining of
+	the ixxx_yyy() style functions; organized much like the standard
+	uITRON functions.
+
+	* src/uit_ifnc.cxx: New file.  Implementation of the DSR provided,
+	plus concrete instantiations of the ixxx_yyy() style functions.
+
+	* tests/testintr.cxx: New file.  Test for the ixxx_yyy() functions
+	newly provided above.  Rather unpleasant: it is necessary to break
+	type-safety to get access to the kernel's interrupt object that
+	drives the realtime clock.  Perhaps a neater way will follow.
+
+	* tests/PKGconf.mak (TESTS): Add new testcase testintr.cxx
+	* src/PKGconf.mak (COMPILE): Add new source file uit_ifnc.cxx
+
+1999-08-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/uitron.cdl: Implement radio buttons using
+	"FIXME radio" hack in description field for now.
+
+1999-07-30  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/uitron.cdl: Tidy display string capitalisation.
+
+1999-05-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/testcx7.cxx: Include new stackmon header.
+
+1999-05-20  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testcx7.cxx (task1): Add some statistics dumping about
+	stack usage; since this is quite a long and arduous test.  This
+	just helps en passant with testing the interrupt stack work that's
+	been happening recently.  C++ only, so not for test7.
+
+1999-05-17  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/uit_func.inl (ter_tsk): Only up the priority of the
+	killee if priorities are not unique or we are not already
+	elevated.  This is to prevent asserts with the bitmap scheduler.
+	(chg_pri): Support a level X feature, pri zero => reset to the
+	thread's initial priority.
+
+1999-05-14  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/uit_objs.hxx: object array declaration macro now
+	contains constructor priority ordering rune; if 0'd out pending 
+	99r1 compiler cutover.
+
+1999-04-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testcx7.cxx: T2_MALLOC definition; only make it smaller
+	than the main consumer malloc if coaleasing is enabled, otherwise
+	the mempool cannot allocate blocks for the consumer for next time.
+	Fixes PR 18817 - only a random perm disable coalescence.
+
+	* tests/test7.c: Ditto.
+
+1999-04-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: Tidy display string capitalization.
+
+1999-04-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.inl (dis_dsp): Remove bad old code which used
+	to lock the scheduler to implement dis_dsp() and ena_dsp() - which
+	also stopped the clock, for example.  Instead change the calling
+	thread's priority to 0 internally so that it cannot be preempted
+	by uITRON threads at least, whose priorities are 1--N.  Same
+	applies to loc/unl_cpu().  Save the "real" priority in a static,
+	and take notice of it everywhere relevant, such as thread and
+	system state inquiries, changing (our own) priority, checking for
+	dispatch enabled in sleeping calls, and so on.
+
+	* src/uit_func.cxx: New variable cyg_uitron_dis_dsp_old_priority
+	for holding the "real" priority of a thread whilst we change our
+	priority to zero (the highest) to prevent dispatching in dis_dsp()
+	or loc_cpu().
+
+	* include/uit_func.inl (get_tid): Return 0 for the task id if not
+	in a uITRON thread, this is better conformance to the spec.
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/uit_objs.cxx: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-02-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/test1.c, tests/test2.c, tests/test3.c, tests/test4.c,
+	  tests/test5.c, tests/test6.c, tests/test7.c, tests/test8.c,
+	  tests/test9.c, tests/testcxx.cxx, tests/testcx2.cxx,
+	  tests/testcx3.cxx, tests/testcx4.cxx, tests/testcx5.cxx,
+	  tests/testcx6.cxx, tests/testcx7.cxx, tests/testcx8.cxx,
+	  tests/testcx9.cxx:
+	Change all non-applicable cases to use CYG_TEST_NA rather than
+	CYG_TEST_PASS/CYG_TEST_EXIT
+
+1999-02-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/uit_objs.cxx: Eeeek!  Previous fix was bogus: the override
+	was too late in the file to take effect.  The declaration of the
+	objects (including stacks) is moved to below the override CPP
+	runes.
+
+1999-02-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/uit_objs.cxx (CYG_UITRON_DECL):
+	Override CYGNUM_UITRON_STACK_SIZE if CYGNUM_HAL_MINIMUM_STACK_SIZE
+	demands it.
+
+	* include/pkgconf/uitron.h (CYGNUM_UITRON_STACK_SIZE): 
+	Document that this option can be overridden by HALs demands.
+
+1999-02-02  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18968
+	* tests/test2.c (task1): 
+	* tests/testcx2.cxx (task1): 
+	Reduce run time on SIM.
+
+1999-01-26  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18788
+	* tests/test4.c (task1): 
+	* tests/testcx4.cxx (task1): 
+	Extend timeouts when running on HW to avoid failures due to
+	overhead of GDB interaction.
+
+1999-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18576
+	* include/pkgconf/uitron.h (CYGDAT_UITRON_SEMA_INITIALIZERS): 
+	Let default initializers have values that don't cause tests to
+	fail.
+
+1998-11-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.inl (del_xxx &c):
+	Make error returns more consistent; E_NOEXS rather than E_OBJ if
+	the object disappeared during a race.
+
+1998-11-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/uit_func.cxx (SET_UP_PTRS): 
+	PR 17999; work around codegen bug on tx39 with -Os.
+	The code is better with the fix regardless, so it's got no
+	downside.  Explicitly condition whether to run a follow-on loop
+	rather than letting the for-loop sort it out itself.
+
+1998-11-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testcx7.cxx (check_waitstate): 
+	Add a routine to check the reported waiting state of the synch
+	object in question, and call it as necessary.  This only added to
+	the C++ version of the test for enhanced coverage, in case the
+	enquiry call perturbs the object state; having both versions
+	present is better.  This checks a very recent fix to
+	kernel...thread.cxx (1998-10-27).
+
+1998-10-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/uit_func.cxx: 
+	Provide weakly named dummies for task[1-4], which are the defaults
+	referred to by the task array, so that the uITRON system can be
+	initialized even when no uITRON tasks have been provided (so long
+	as no other changes to the task init configury have been made)
+	This does not pollute the namespace, for these are weak symbols.
+	Changing them to cyg_uitron_task... would be possible, but it
+	carries the false implication that those are cygnus names, when
+	they are really entirely up to the user.
+
+	* tests/test[123456789].c: 
+	* tests/testcxx.cxx: 
+	* tests/testcx[23456789].cxx: 
+	Undo the previous change: remove dummies for task[1-4] when we
+	decide not to test anything, they will be provided with weak names
+	regardles in src/uit_func.cxx.
+
+1998-10-20  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/test[123456789].c: 
+	* tests/testcxx.cxx: 
+	* tests/testcx[23456789].cxx: 
+	Provide dummies for task[1-4] when we decide not to test anything,
+	to encourage correct linking.
+
+1998-10-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testcx*.cxx (cyg_start): 
+	[all the C++ tests]
+	changed cyg_start to externC so that it truly does override the
+	default one; this is needed for handling the "I cannot test in
+	this configuration" failures.  Of course the C ones were C to
+	start with.
+	
+1998-10-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/test[123456789].c: 
+	* tests/testcxx.cxx: 
+	* tests/testcx[23456789].cxx: 
+	All tests are now much more self-configuring wrt turning off
+	if there are no uITRON objects of the right type to manipulate.
+	The huge (50-line) #if statement is arranged the way it is so that
+	clauses checking on each feature can be pasted in and out easily.
+	So yes, the "&& 1" at the end has a purpose.
+	
+	Here for the record is a table of feature versus test-used-in:
+	tsk  :: 1 2 3 4 5 6 7 8 9
+	sem  ::   2 3   5 6 7 8
+	flg  ::   2     5 6 7
+	mbx  ::   2     5 6 7
+	mpl  ::   2     5   7   9
+	mpf  ::   2     5   7   9
+	alm  ::       4
+	cyc  ::       4
+
+
+1998-10-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/test9.c: 
+	* tests/testcx9.cxx: 
+	New tests, test create and delete of memory pools
+
+1998-10-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: 
+	Add configury for create/delete of memory pools.
+	Tidy up naming of initializer macros to use for non-existent
+	(initially) uITRON objects.
+	Improve comments in CDL-- info fields.
+	
+	* include/uit_func.h: 
+	Add prototypes for cre/del_mpf/mpl().
+
+	* include/uit_func.inl: 
+	Implement cre/del_mpf/mpl().
+
+	* src/uit_objs.cxx: 
+	Support CYG_UIT_MEMPOOLFIXED_NOEXS/CYG_UIT_MEMPOOLVAR_NOEXS(...)
+	mempool construction macros for non-existent (initially) mempools.
+	Rename _NONE construction macros to _NOEXS which will make a lot
+	more sense to uITRON folks.
+
+1998-10-14  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: 
+	Add configury for create/delete of tasks.
+	
+	* include/uit_func.h: 
+	Add prototypes for cre/del_tsk(); correct comment in exd_tsk().
+	
+	* include/uit_func.inl: 
+	Implement cre/del_tsk() and complete exd_tsk().
+	Improve NULL/NADR checking on other cre/del calls.
+
+	* src/uit_func.cxx (cyg_uitron_start): 
+	Deal better with start tasks stuff, for task create/delete.
+
+	* src/uit_objs.cxx: 
+	Support CYG_UIT_TASK_NONE(...) task constructor for those tasks
+	which do not initially exist
+
+	* tests/PKGconf.mak:
+	Add new tests test8.c, testcx[678].cxx to the build.
+
+	* tests/test6.c:
+	Tidy comments, untabify.
+	
+	* tests/test7.c:
+	Tidy comments, untabify, test creation with NADR record pointer.
+	No impact from the new cre/del_tsk() functionality on test7, since
+	a task may only be deleted when it is dormant, so deletion is NOT
+	another way out of a waiting state.
+	
+	* tests/test8.c:
+	New test, tests cre_tsk() and del_tsk() and exd_tsk() ie. the
+	creation and deletion of tasks.
+
+	* tests/testcx6.cxx:
+	* tests/testcx7.cxx:
+	* tests/testcx8.cxx:
+	New tests, C++ versions of tests 6, 7, and 8.
+
+1998-10-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/test7.c: 
+	Test interactions with deleting objects (as applicable) and
+	killing, signalling and the like.  Also test killing the task
+	after other treatments more generically.
+
+	* tests/test6.c (task1): 
+	Change "N/A:" to "N/A" in the exit message when we didn't actually
+	do any testing due to create/delete being disabled for all object
+	types.
+
+1998-10-08  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	In general, these changes are to support create/delete of uITRON
+	objects; this requires that an object can be destroyed whilst
+	there are threads waiting on it, and that they shall be awoken
+	with a specific return code E_DLT.  The implementation uses an
+	array of pointers in addition to the array of objects: ptrs[N]
+	should either be NULL or &objs[N] in this version.  That
+	restriction is not checked, in order that in future, true dynamic
+	allocation can be used, and ptrs[N] could point anywhere.  The
+	implications of this are mainly in the area of getting the
+	addresses of objects, via the ptr array or from the object array?
+	The config of whether there is a ptr array is per object type.
+
+	* include/pkgconf/uitron.h: 
+	Configury of the existence or not of create/delete for object
+	type: initially only SEMAS, MBOXES, FLAGS.
+	Configury of the number of objects created initially, if cre/del
+	are enabled.
+
+	* tests/test6.c:
+	* tests/test7.c:
+	* tests/PKGconf.mak:
+	Two new test programs (duh!): test6 tests create and delete of
+	SEMAS, MBOXES, FLAGS explicitly, for bad params handling, ability
+	to use after deletion and recreation &c &c.  test7 tests the
+	semantics of sleeping on some synchronization primitive, permed
+	with suspension, signalling, killing, releasing and so forth.
+	Both will migrate into C++ versions also in future.
+
+	* include/uit_func.h:
+	Enable cre/del_{mbx,flg,sem} prototypes.
+
+	* include/uit_func.inl:
+	Implement cre/del_{mbx,flg,sem} depending on configury, and handle
+	the pointer arrays generally in other client routines.
+
+	* include/uit_objs.hxx:
+	Define the pointer arrays for access to created objects.
+
+	* include/uit_type.h:
+	Enable definitions of the structures used in create calls.
+	
+	* src/uit_func.cxx:
+	Initialization code for the pointer arrays, akin to the task
+	startup code.
+
+	* src/uit_objs.cxx:
+	Instantiate the pointer arrays themselves.
+
+
+1998-09-25  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/uitron.h:
+	PR 17482: added #ifdef protection. If CYGPKG_UITRON_MEMPOOLFIXED
+	is not defined then the contained option
+	CYGNUM_UITRON_MEMPOOLFIXED may not be defined either. Ditto for
+	CYGNUM_UITRON_MEMPOOLVAR which suffers from the same problem.
+	And ditto for CYGPKG_UITRON_SEMAS
+
+1998-09-20  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/uitron.h: added one or two CDL doc strings.
+
+Tue Sep 15 19:12:28 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: Cleaned up comments.
+
+1998-09-12  Mark Galassi  <rosalia@cygnus.com>
+small changes to the descriptive information in the uITRON CDL
+
+1998-09-12  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/uitron.h: small editing of the description
+	fields: renamed things like <name> to NAME, so that it does not
+	confuse SGML when incorporated into the documentation.
+	Also added various "doc" fields to the CFG_DATA comments.
+
+Wed Sep  9 18:36:15 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.inl: 
+	* include/uit_objs.hxx: 
+	* src/uit_objs.cxx: 
+	Condition features on CYGPKG_UITRON_SEMAS [for example] as well as
+ 	0 < CYG_UITRON_NUM( SEMAS ) so that we get warning free
+	compilation with no semas enabled.  Ditto for flags, mboxes,
+	mempools fixed and variable, alarms and cyclics.
+	
+	* include/pkgconf/uitron.h: 
+	Add a couple of requires statements from cyclics and alarms on the
+	kernel clock.
+	Also change some grammar after review.
+	Add an option (actually a pair, makes it better documentation IMO)
+	to require strict semantics from the kernel setup.
+	Add an option to control the optional sema initializer; it was
+	omitted since the editor way of configury used a #if 0.
+	
+Fri Sep  4 17:54:29 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: 
+	Remove redundant and now unnecessary defs of CYGPKG_UITRON.
+
+Wed Sep  2 19:06:17 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.inl: 
+	Memory pools and message boxes and flags
+	and cnt_sem2-type semaphores now all have absolute timeouts
+	instead of relative ones in the timely wait functions.
+	We add in the current time here first.
+
+Wed Sep  2 16:45:40 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/uitron.h (CYGDAT_UITRON_TASK_INITIALIZERS): 
+	Use the new kernel thread initializer with priority and thread
+	name in it.
+
+	* include/uit_func.inl: 
+	* include/uit_objs.hxx: 
+	* src/uit_func.cxx (cyg_uitron_start): 
+	* src/uit_objs.cxx: 
+	Our tasks are now Cyg_Threads rather than a derived class.
+  	Original priorities of tasks are held in an array.  An accessor
+ 	macro is used for the off-by-one nature of uitron IDs.  The array
+ 	of original priorities is set up in cyg_uitron_start(), and
+	created in uit_objs.cxx.
+	
+Wed Sep  2 15:15:26 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: 
+	Comment more strongly in the 'description' that the number of
+	initializers better match the number of things specified.
+
+Tue Sep  1 19:00:02 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/uit_objs.hxx: 
+	Do not include <cyg/kernel/kernel.h>; it is deprecated.
+	Instead, include only kernel headers that are needed.
+
+	* include/uit_func.inl (ref_sys): 
+	Use new kernel function Cyg_Interrupt::interrupts_enabled()
+	instead of a state variable.  Tidy up associated code.
+	Include kernel headers that are needed because they were not
+	included in uit_objs.hxx for tidiness.
+
+	* src/uit_func.cxx: 
+	Elide state variable that used to be used for tracking interrupt
+	enabledness state.
+
+	* tests/testcx5.cxx (task1): 
+	* tests/test5.c (task1): 
+	Test interrupt enable and disable stuff, and status reporting.
+
+Tue Sep  1 15:12:29 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.inl (ref_mpf): 
+	Change comment "ECC" to "eCos".
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/uit_func.inl:
+	* tests/test1.c, tests/test2.c, tests/test3.c, tests/test4.c,
+	tests/test5.c, tests/testcxx.cxx, tests/testcx2.cxx,
+	tests/testcx3.cxx, tests/testcx4.cxx, tests/testcx5.cxx:
+
+	Updated for new kernel configuration option symbol names
+
+
+Fri Aug 28 09:21:55 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/uit_func.cxx (cyg_uitron_start): 
+	Remove call to Cyg_Scheduler::start() and adjust comments to
+	explain where to call it from
+
+	* tests/test1.c, tests/test2.c, tests/test3.c, tests/test4.c, 
+	  tests/test5.c, tests/testcxx.cxx, tests/testcx2.cxx, 
+	  tests/testcx3.cxx, tests/testcx4.cxx, tests/testcx5.cxx:
+	Change the normal entry point at the top to be cyg_package_start()
+	under the new startup scheme. This overrides the default package
+	configuration and ensure cyg_uitron_start() gets called.
+	Change the "default" entry point at the bottom (when the test is
+	N/A for some reason) to cyg_start() under the new startup scheme.
+	
+Wed Aug 26 18:20:47 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: 
+	Initial version of cdl control statements for config options.
+	All very groovy, and looking good IMO.
+	A few FIX-MEs remain, no big deal.
+
+Mon Aug 24 19:05:52 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: 
+	Change the names of config options to helpful, positive sense, and
+	tidy some of the names for inclusion in the GUI tool.  Clean up
+	the namespace too.
+	
+	* include/uit_func.h: 
+	* include/uit_func.inl: 
+	* src/uit_func.cxx: 
+	* src/uit_objs.cxx: 
+	Configure according to new option names and object construction
+	macros.  Simple changes but widespread.
+
+	* tests/test[12345].c: 
+	* tests/testcx[x2345].cxx: 
+	Configure according to new option names.
+	Make it main( void ) to avoid a warning.
+
+Fri Aug 21 18:45:16 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/testcx4.cxx (task1): 
+	* tests/test4.c (task1): 
+	* include/uit_func.inl (def_alm): 
+	Tidy the alarm and timer funcs in the course of fixing a kernel
+	bug actually.  Test the functionality affected by the kernel
+	change a bit more.
+	
+Thu Aug 20 14:33:36 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/uit_func.inl (ref_alm): 
+	Elide an unused variable following the previous change.
+
+Mon Aug 17 15:45:07 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/uitron.h: 
+	Add the config option CYGSEM_UITRON_PARAMS_CHECK_NADR_ONLY.
+	
+	* tests/testcxx.cxx: 
+	* tests/testcx2.cxx: 
+	* tests/testcx4.cxx: 
+	Avoid testing with NULL as a bad parameter when only NADR is
+	checked.  (NADR does not cast to any-pointer in C++ so we don't
+	test it in these programs)  Check for NADR various places as well
+	as NULL.
+	
+	* tests/test1.c (task1): 
+	* tests/test2.c (task1): 
+	* tests/test4.c (task1): 
+	Avoid testing with NULL as a bad parameter when only NADR is
+ 	checked.  Check for NADR various places as well as NULL, and test
+ 	NADR as a bad param as well as NULL.
+
+
+Mon Aug 17 14:45:30 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.inl:
+	PR# 16536: Check for dormant tasks various places; E_OBJ
+	must be returned.  All this error checking rather bloats the code,
+	unfortunately.
+	
+	* tests/testcxx.cxx: 
+	* tests/test1.c: 
+	Test the new checks above.
+
+Fri Aug 14 17:41:35 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/uit_func.inl ([t]wai/pol_flg): 
+	Check for zero in a wait-for-flag operation; such a wait can never
+	be awakened, and so should return E_PAR.
+
+	* tests/testcx2.cxx (task1): 
+	* tests/test2.c (task1): 
+	Test the above new checking.
+
+Fri Jul 24 17:12:54 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	PR#15865
+	* include/uit_func.inl: return a bool (strictly 1 or 0) for wtsk
+ 	rather than -1 or zero as the spec implies.
+	ref_flg() ref_sem() only affected.
+
+Fri Jul 24 13:26:51 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	PR#16531
+	* include/uit_func.inl: return E_OBJ when (force)resuming a
+	non-suspended task.
+	* tests/test1.c: test for that error code.
+	* tests/testcxx.cxx: test for that error code.
+
+Fri Jul 24 13:02:46 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* Changelog: Initial ChangeLog entry.
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

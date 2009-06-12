@@ -1,0 +1,58 @@
+2003-03-18  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/integrator_serial_with_ints.c (integrator_serial_set_config): 
+	Flag for CYG_IO_SET_CONFIG_SERIAL_HW_RX_FLOW_THROTTLE is 32 bits.
+	
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/ser_arm_integrator.cdl: Remove irrelevant doc link.
+
+2002-03-06  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/ser_arm_integrator.cdl:
+	Disable testing of 57600 and 115200 baud rates. The CPUs we are
+	currently using (ARM7TDMI and ARM966E) have no cache and are too
+	slow to handle the higher baud rates in the FIFO-free UARTs we
+	have. In the future we may need to revisit this an make it
+	conditional on the CPU available.
+
+2001-10-30  Philippe Robin  <Philippe.Robin@arm.com>
+2001-10-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* New package for ARM Integrator serial driver derived from
+	ARM PID serial driver.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

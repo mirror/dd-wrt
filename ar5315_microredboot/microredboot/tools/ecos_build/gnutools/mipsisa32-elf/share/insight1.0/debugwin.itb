@@ -1,0 +1,469 @@
+# Debug window for GDBtk.
+# Copyright 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::constructor
+#	
+# SYNOPSIS:	constructor::args
+#
+# DESC:		Creates the debug window  
+#
+# ARGS:		None are used yet.
+# -----------------------------------------------------------------------------
+body DebugWin::constructor {args} {
+  debug $args
+  window_name "Insight Debug" "Debug"
+
+  build_win
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::destructor
+#	
+# SYNOPSIS:	Not called by hand
+#
+# DESC:		Destroys the debug window
+#
+# ARGS:		None
+# -----------------------------------------------------------------------------
+body DebugWin::destructor {} {
+  # notify debug code that window is going away
+  ::debug::debugwin ""
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::build_win
+#
+# SYNOPSIS:	build_win
+#	
+# DESC:		Creates the Debug Window. Reads the contents of the debug log
+#		file, if it exists. Notifies the debug functions in ::debug
+#		to send output here.
+# -----------------------------------------------------------------------------
+body DebugWin::build_win {} {
+  global gdb_ImageDir GDBTK_LIBRARY
+
+  set top [winfo toplevel $itk_interior]
+  
+  # initialize the gdbtk_de array
+  if {![info exists ::gdbtk_de]} {
+    set ::gdbtk_de(ALL) 1
+    set ::gdbtk_de(ERRORS_ONLY) 0
+    set ::gdbtk_de(others) 0
+    set ::gdbtk_de(filter_var) ALL
+  }
+
+  # create menubar
+  set menu [menu $itk_interior.m  -tearoff 0]
+  $menu add cascade -menu $menu.file -label "File" -underline 0
+  set m [menu $menu.file] 
+  $m add command -label "Clear" -underline 1 \
+    -command [code $this _clear]
+  $m add command -label "Mark Old" -underline 1 \
+    -command [code $this _mark_old]
+  $m add separator
+  $m add command -label "Save" -underline 0 \
+    -command [code $this _save_contents]
+  $m add separator
+  $m add command -label "Close" -underline 0 \
+    -command "::debug::debugwin {};delete object $this"
+  $menu add cascade -menu $menu.trace -label "Trace"
+  set m [menu $menu.trace]
+  $m add radiobutton -label Start -variable ::debug::tracing -value 1
+  $m add radiobutton -label Stop -variable ::debug::tracing -value 0
+  $menu add cascade -menu $menu.rs -label "ReSource"
+  set m [menu $menu.rs]
+  foreach f [lsort [glob [file join $GDBTK_LIBRARY *.itb]]] {
+    $m add command -label "Source [file tail $f]"\
+      -command [list source $f]
+  }
+  $m add separator
+  $m add command -label "Source ALL" -command [code $this _source_all]
+
+  $menu add cascade -menu $menu.opt -label "Options"
+  set m [menu $menu.opt]
+  $m add command -label "Display" -underline 0 \
+    -command [list ManagedWin::open DebugWinDOpts -over $this]
+  if {!$::debug::initialized} {
+    $menu entryconfigure 1 -state disabled
+    $menu add cascade -label "     Tracing Not Initialized" -foreground red \
+      -activeforeground red
+  }
+  $menu add cascade -menu $menu.help -label "Help" -underline 0
+  set m [menu $menu.help]
+  $m add command -label "Debugging Functions" -underline 0 \
+    -command {ManagedWin::open HtmlViewer -force -file debug.html \
+		-topics {{{"Debug Functions" debug.html}}}}
+
+  $top configure -menu $menu
+  
+  iwidgets::scrolledtext $itk_interior.s -hscrollmode static \
+    -vscrollmode static -wrap none -textbackground black -foreground white
+  set _t [$itk_interior.s component text]
+  pack $itk_interior.s -expand 1 -fill both
+
+  # define tags
+  foreach color $_colors {
+    $_t tag configure [lindex $color 0] -foreground [lindex $color 1]
+  }
+  $_t tag configure trace -foreground gray
+  $_t tag configure args -foreground blue
+  $_t tag configure marked -background grey20
+
+  loadlog
+
+  # now notify the debug functions to use this window
+  ::debug::debugwin $this
+
+  # override the window delete procedure so the messages are
+  # turned off first.
+  wm protocol $top WM_DELETE_WINDOW "::debug::debugwin {};destroy $top"
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::puts
+#	
+# SYNOPSIS:	puts {level cls func msg}
+#
+# DESC:		Writes debugging information into the DebugWin. A filter
+#		will be applied to determine if the message should be
+#		displayed or not.  
+#
+# ARGS:		level - priority level. See debug::dbug for details.
+#		cls   - class name of caller, for example "SrcWin"
+#		func  - function name of caller
+#		msg   - message to display
+# -----------------------------------------------------------------------------
+body DebugWin::puts {level cls func msg} {
+  # filter. check if we should display this message
+  # for now we always let high-level messages through
+  if {$level == "I"} {
+
+    # errors and warnings only
+    if {$::gdbtk_de(ERRORS_ONLY)} { return }
+
+    # ALL classes except those set
+    if {$::gdbtk_de(ALL)} {
+      if {[info exists ::gdbtk_de($cls)]} {
+	if {$::gdbtk_de($cls)} {
+	  return
+	}
+      } elseif {$::gdbtk_de(others)} {
+	return
+      }
+    }
+
+    # ONLY the classes set
+    if {!$::gdbtk_de(ALL)} {
+      if {[info exists ::gdbtk_de($cls)]} {
+	if {!$::gdbtk_de($cls)} {
+	  return
+	}
+      } elseif {!$::gdbtk_de(others)} {
+	return
+      }
+    }
+  }
+
+  if {$func != ""} {
+    append cls ::$func
+  }
+  $_t insert end "($cls) " {} "$msg\n" $level
+  $_t see insert
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::put_trace
+#	
+# SYNOPSIS:	put_trace {enter level func ar}
+#	
+# DESC:		Writes trace information into the DebugWin. A filter
+#		will be applied to determine if the message should be
+#		displayed or not.
+#
+# ARGS:		enter - 1 if this is a function entry, 0 otherwise.
+#		level - stack level
+#		func  - function name
+#		ar    - function arguments
+# -----------------------------------------------------------------------------
+body DebugWin::put_trace {enter level func ar} {
+  set x [expr {$level * 2 - 2}]
+  if {$enter} {
+    $_t insert end "[string range $_bigstr 0 $x]$func " trace "$ar\n" args
+  } else {
+    $_t insert end "[string range $_bigstr 0 $x]<- $func " trace "$ar\n" args
+  }
+  $_t see insert
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::loadlog
+#
+# SYNOPSIS:	loadlog
+#	
+# DESC:		Reads the contents of the debug log file, if it exists, into 
+#		the DebugWin. 
+# -----------------------------------------------------------------------------
+body DebugWin::loadlog {} {
+  $_t delete 0.0 end
+  # Now load in log file, if possible.
+  # this is rather rude, using the logfile variable in the debug namespace
+  if {$::debug::logfile != "" && $::debug::logfile != "stdout"} {
+    flush $::debug::logfile
+    seek $::debug::logfile 0 start
+    while {[gets $::debug::logfile line] >= 0} {
+      while {[catch {set f [lindex $line 0]} f]} {
+	# If the lindex failed its because the remainder of the
+	# list is on the next line.  Get it.
+	if {[gets $::debug::logfile line2] < 0} {
+	  break
+	}
+	append line \n $line2
+      }
+      if {$f == "T"} {
+	put_trace [lindex $line 1] [lindex $line 2] [lindex $line 3] \
+	  [lindex $line 4]
+      } else {
+	puts $f [lindex $line 1] [lindex $line 2] [lindex $line 3]
+      }
+    }
+  }
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::_source_all
+#
+# SYNOPSIS:	_source_all
+#	
+# DESC:		Re-sources all the .itb files.
+# -----------------------------------------------------------------------------
+body DebugWin::_source_all {} {
+  foreach f [glob [file join $::GDBTK_LIBRARY *.itb]] {
+    source $f
+  }
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::_clear
+#
+# SYNOPSIS:	_clear
+#	
+# DESC:		Clears out the content of the debug window.
+# -----------------------------------------------------------------------------
+body DebugWin::_clear {} {
+  $_t delete 1.0 end
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::_mark_old
+#
+# SYNOPSIS:	_mark_old
+#	
+# DESC:		Changes the background of the current contents of the window.
+# -----------------------------------------------------------------------------
+body DebugWin::_mark_old {} {
+  $_t tag add marked 1.0 "end - 1c"
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWin::_save_contents
+#
+# SYNOPSIS:	_save_contents
+#	
+# DESC:		Changes the background of the current contents of the window.
+# -----------------------------------------------------------------------------
+body DebugWin::_save_contents {} {
+  set file [tk_getSaveFile -title "Choose debug window dump file" \
+	      -parent [winfo toplevel $itk_interior]]
+  if {$file == ""} {
+    return
+  }
+
+  if {[catch {::open $file w} fileH]} {
+    tk_messageBox -type ok -icon error -message \
+      "Can't open file: \"$file\". \n\nThe error was:\n\n\"$fileH\""
+    return
+  }
+  ::puts $fileH [$_t get 1.0 end]
+
+}
+
+###############################################################################
+# -----------------------------------------------------------------------------
+# NAME:		DebugWinDOpts::constructor
+#
+# SYNOPSIS:	constructor
+#	
+# DESC:		Creates the Debug Window Options Dialog.
+# -----------------------------------------------------------------------------
+body DebugWinDOpts::constructor {args} {
+    window_name "Debug Window Options"
+    build_win
+    eval itk_initialize $args 
+}
+
+###############################################################################
+# -----------------------------------------------------------------------------
+# NAME:		DebugWinDOpts::destructor
+#
+# SYNOPSIS:	Not called by hand
+#	
+# DESC:		Destroys the Debug Window Options Dialog.
+# -----------------------------------------------------------------------------
+body DebugWinDOpts::destructor {} {
+}
+
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWinDOpts::build_win
+#
+# SYNOPSIS:	build_win
+#	
+# DESC:		Creates the Debug Window Options Dialog. This dialog allows the
+#		user to select which information is displayed in the debug 
+#		window and (eventually) how it looks.
+# -----------------------------------------------------------------------------
+body DebugWinDOpts::build_win {} {
+  wm title [winfo toplevel $itk_interior] "Debug Display Options"
+  # initialize here so we can resource this file and update the list
+  set _classes {DebugWin RegWin SrcBar SrcWin ToolBar WatchWin EmbeddedWin \
+		  ManagedWin GDBWin StackWin SrcTextWin VariableWin global \
+		  BpWin TargetSelection ModalDialog ProcessWin \
+		  GDBEventHandler MemWin}
+  set _classes [concat [lsort $_classes] others]
+
+  set f [frame $itk_interior.f]
+  set btns [frame $itk_interior.buttons]
+
+  iwidgets::Labeledframe $f.display -labelpos nw -labeltext {Classes}
+  set fr [$f.display childsite]
+  radiobutton $fr.0 -text "Messages from ALL classes EXCEPT those selected below" \
+    -variable ::gdbtk_de(filter_var) -value ALL -command [code $this _all]
+  radiobutton $fr.1 -text "Messages from ONLY those classes selected below" \
+    -variable ::gdbtk_de(filter_var) -value ONLY -command [code $this _all]
+  radiobutton $fr.2 -text "Only WARNINGS and ERRORS" \
+    -variable ::gdbtk_de(filter_var) -value ERRORS -command [code $this _all]
+
+  grid $fr.0 -sticky w -padx 5 -pady 5
+  grid $fr.1 -sticky w -padx 5 -pady 5
+  grid $fr.2 -sticky w -padx 5 -pady 5
+
+  iwidgets::Labeledframe $f.classes 
+  set fr [$f.classes childsite]
+
+  set i 0
+  foreach cls $_classes {
+    if {![info exists ::gdbtk_de($cls)]} {
+      set ::gdbtk_de($cls) 0
+    }
+    checkbutton $fr.$i -text $cls -variable ::gdbtk_de($cls)
+    incr i
+  }
+
+  set k [expr 3*(int($i/3))]
+  set more [expr $i - $k]
+  set j 0
+  while {$j < $k} {
+    grid $fr.$j $fr.[expr $j+1] $fr.[expr $j+2] -sticky w -padx 5 -pady 5
+    incr j 3
+  }
+  switch $more {
+    1 { grid $fr.$j x x -sticky w -padx 5 -pady 5}
+    2 { grid $fr.$j $fr.[expr $j+1] x -sticky w -padx 5 -pady 5}
+  }
+
+  pack $f.display -side top -expand 1 -fill both
+  pack $f.classes -side top -expand 1 -fill both
+
+  button $btns.ok -text [gettext OK] -width 7 -command [code $this _apply 1] \
+    -default active
+  button $btns.apply -text "Apply to All"  -width 7 \
+    -command [code $this _apply 0]
+  if {$::debug::logfile == "" || $::debug::logfile == "stdout"} {
+    $btns.apply configure -state disabled
+  }
+  button $btns.help -text [gettext Help] -width 10 -command [code $this help] \
+    -state disabled
+  standard_button_box $btns
+  bind $btns.ok <Return> "$btns.ok flash; $btns.ok invoke"
+  bind $btns.apply <Return> "$btns.apply flash; $btns.apply invoke"
+  bind $btns.help <Return> "$btns.help flash; $btns.help invoke"
+  
+  pack $btns $f -side bottom -expand 1 -fill both -anchor e
+  focus $btns.ok
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWinDOpts::_all
+#
+# SYNOPSIS:	_all
+#	
+# DESC:		Callback for selecting ALL classes. If the user selects ALL,
+#		deselect all the individual class checkbuttons.
+# -----------------------------------------------------------------------------
+body DebugWinDOpts::_all {} {
+  switch $::gdbtk_de(filter_var) {
+    ALL {
+      set ::gdbtk_de(ALL) 1
+      set ::gdbtk_de(ERRORS_ONLY) 0
+      #enable class buttons
+      set num 0
+      foreach class $_classes {
+	[$itk_interior.f.classes childsite].$num configure -state normal
+	incr num
+      }
+    }
+    ONLY {
+      set ::gdbtk_de(ALL) 0
+      set ::gdbtk_de(ERRORS_ONLY) 0
+      #enable class buttons
+      set num 0
+      foreach class $_classes {
+	[$itk_interior.f.classes childsite].$num configure -state normal
+	incr num
+      }
+    }
+    ERRORS {
+      set ::gdbtk_de(ALL) 0
+      set ::gdbtk_de(ERRORS_ONLY) 1
+      # disable class buttons
+      set num 0
+      foreach class $_classes {
+	[$itk_interior.f.classes childsite].$num configure -state disabled
+	incr num
+      }
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# NAME:		DebugWinDOpts::_apply
+#
+# SYNOPSIS:	_apply
+#	
+# DESC:		Callback for the "Apply" button. Loads the contents of the
+#		log file through the new filter into the debug window. The
+#		button is disabled if there is no log file.
+# -----------------------------------------------------------------------------
+body DebugWinDOpts::_apply { done } {
+  set dw [ManagedWin::find DebugWin]
+  debug $dw
+  if {$dw != ""} {
+    $dw loadlog
+  }
+  if {$done} {
+    delete object $this
+  }
+}

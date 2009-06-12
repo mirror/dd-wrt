@@ -1,0 +1,77 @@
+2003-09-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/viper_flash.c: Need <pkgconf.h> to make platform decisions!
+
+2003-08-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/viper_flash.c: Support new board layout which has 16bit
+	wide FLASH devices.
+	
+	* cdl/flash_viper.cdl: Add new 8MB device AM29LV640.
+
+2002-06-24  Gary Thomas  <gary@chez-thomas.org>
+
+	* cdl/flash_viper.cdl: Old devices use AM29LV800 chip.
+
+2002-06-20  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/flash_query.c: 
+	* src/flash_program_buf.c: 
+	* src/flash_erase_block.c: 
+	* src/flash.h: Removed file(s).
+
+	* src/viper_flash.c: 
+	* cdl/flash_viper.cdl: Update to use generic AMD FLASH drivers.
+
+2001-06-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/viper_flash.c: Remove dependency on printf() via user functions.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/flash_viper.cdl: Needs IO controller to copy functions to
+	RAM.
+
+2001-01-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/viper_flash.c: 
+	* src/flash_query.c: 
+	* src/flash_program_buf.c: 
+	* src/flash_erase_block.c: 
+	* src/flash.h: 
+	* cdl/flash_viper.cdl: New package/file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

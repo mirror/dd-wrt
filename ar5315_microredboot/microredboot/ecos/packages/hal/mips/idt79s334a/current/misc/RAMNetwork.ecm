@@ -1,0 +1,193 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    refIDT334 ;
+    template    default ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_IO current ;
+    package -template CYGPKG_IO_SERIAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_KERNEL current ;
+    package -template CYGPKG_MEMALLOC current ;
+    package -template CYGPKG_ISOINFRA current ;
+    package -template CYGPKG_LIBC current ;
+    package -template CYGPKG_LIBC_I18N current ;
+    package -template CYGPKG_LIBC_SETJMP current ;
+    package -template CYGPKG_LIBC_SIGNALS current ;
+    package -template CYGPKG_LIBC_STARTUP current ;
+    package -template CYGPKG_LIBC_STDIO current ;
+    package -template CYGPKG_LIBC_STDLIB current ;
+    package -template CYGPKG_LIBC_STRING current ;
+    package -template CYGPKG_LIBC_TIME current ;
+    package -template CYGPKG_LIBM current ;
+    package -template CYGPKG_IO_WALLCLOCK current ;
+    package -template CYGPKG_ERROR current ;
+    package -hardware CYGPKG_HAL_MIPS current ;
+    package -hardware CYGPKG_HAL_MIPS_IDT32334 current ;
+    package -hardware CYGPKG_HAL_MIPS_IDT32334_REFIDT334 current ;
+    package -hardware CYGPKG_IO_PCI current ;
+    package -hardware CYGPKG_DEVS_ETH_INTEL_I82559 current ;
+    package -hardware CYGPKG_DEVS_ETH_MIPS_REFIDT334 current ;
+    package -hardware CYGPKG_DEVS_FLASH_MIPS_REFIDT334 current ;
+    package -hardware CYGPKG_DEVS_FLASH_AMD_AM29XXXXX current ;
+    package -hardware CYGPKG_IO_SERIAL_MIPS_IDT79S334A current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_IO_FILEIO current ;
+    package CYGPKG_IO_ETH_DRIVERS current ;
+    package CYGPKG_NET current ;
+    package CYGPKG_NET_FREEBSD_STACK current ;
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    user_value 1 GDB_stubs
+};
+
+cdl_option CYGHWR_HAL_MIPS_CPU_FREQ {
+    user_value 75
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value RAM
+};
+
+cdl_option CYGBLD_ISO_CTYPE_HEADER {
+    inferred_value 1 <cyg/libc/i18n/ctype.inl>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    inferred_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILETYPES_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_STREAMS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILEACCESS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FORMATTED_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_CHAR_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_DIRECT_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_ERROR_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_STRCONV_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/atox.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_ABS_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/abs.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_DIV_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/div.inl>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    inferred_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_C_TIME_TYPES_HEADER {
+    inferred_value 1 <cyg/libc/time/time.h>
+};
+
+cdl_option CYGBLD_ISO_C_CLOCK_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/time/time.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_NUMBERS_HEADER {
+    inferred_value 1 <cyg/libc/signals/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_IMPL_HEADER {
+    inferred_value 1 <cyg/libc/signals/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SETJMP_HEADER {
+    inferred_value 1 <cyg/libc/setjmp/setjmp.h>
+};
+
+cdl_option CYGBLD_ISO_DIRENT_HEADER {
+    user_value 1 <cyg/fileio/dirent.h>
+};
+
+cdl_option CYGBLD_ISO_BSDTYPES_HEADER {
+    user_value 1 <sys/bsdtypes.h>
+};
+
+cdl_option CYGBLD_ISO_OPEN_MAX_HEADER {
+    user_value 1 <cyg/fileio/limits.h>
+};
+
+cdl_option CYGBLD_ISO_NAME_MAX_HEADER {
+    user_value 1 <cyg/fileio/limits.h>
+};
+
+cdl_option CYGBLD_ISO_NETDB_PROTO_HEADER {
+    user_value 1 <net/netdb.h>
+};
+
+cdl_option CYGBLD_ISO_NETDB_SERV_HEADER {
+    user_value 1 <net/netdb.h>
+};
+
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29F040B {
+    user_value 1
+};
+
+cdl_component CYGPKG_NET_TFTP {
+    user_value 0
+};
+
+cdl_component CYGPKG_NET_DHCP {
+    user_value 0
+};
+
+

@@ -1,0 +1,859 @@
+---------------------
+PatchSet 2938 
+Date: 2003/12/16 06:45:48
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Update the website
+
+Members: 
+	docs/uclibc.org/news.html:1.2->1.3 
+	docs/uclibc.org/products.html:1.1->1.2 
+
+---------------------
+PatchSet 2939 
+Date: 2003/12/16 06:47:27
+Author: andersen
+Branch: HEAD
+Tag: uClibc_0_9_24 
+Log:
+Update for release (no really this time ;-)
+
+Members: 
+	Changelog:1.23->1.24 
+	Changelog.full:1.17->1.18 
+
+---------------------
+PatchSet 2940 
+Date: 2003/12/16 07:11:11
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+fix grammer such it is possible to understand what is written...
+
+Members: 
+	docs/uclibc.org/news.html:1.3->1.4 
+
+---------------------
+PatchSet 2941 
+Date: 2003/12/16 08:00:28
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Add LEAF Bering-uClibc
+
+Members: 
+	docs/uclibc.org/products.html:1.2->1.3 
+
+---------------------
+PatchSet 2942 
+Date: 2003/12/17 04:23:42
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Add in the axis network cameras
+
+Members: 
+	docs/uclibc.org/products.html:1.3->1.4 
+
+---------------------
+PatchSet 2943 
+Date: 2003/12/17 06:41:20
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+When I switched from using stack allocated space for printf, I missed a case
+where a sizeof(foo) was changed to the sizeof a pointer.  This caused
+_dl_printf to complain a lot when debug is enabled (which itself revealed a bug
+since it should have exited on buffer overflow), and let me to find another
+bug, where memory failures would try to recursively call _dl_printf....
+What a mess.
+
+Members: 
+	ldso/ldso/readelflib1.c:1.52->1.53 
+
+---------------------
+PatchSet 2944 
+Date: 2003/12/17 07:57:31
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Patch from Paul Mundt <lethal@linux-sh.org>:
+
+The subject says it all.. optimized memset/memcpy/strcpy, lifted from SuperH's
+glibc tree.
+
+Members: 
+	libc/string/Makefile:1.58->1.59 
+	libc/string/sh64/Makefile:INITIAL->1.1 
+	libc/string/sh64/memcpy.S:INITIAL->1.1 
+	libc/string/sh64/memset.S:INITIAL->1.1 
+	libc/string/sh64/strcpy.S:INITIAL->1.1 
+
+---------------------
+PatchSet 2945 
+Date: 2003/12/17 08:05:40
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Patch from Paul Mundt <lethal@linux-sh.org>:
+
+For sh64 we need implicit access to the symtab, primarily to get at the
+->st_other value. This presently isn't possible, as PERFORM_BOOTSTRAP_RELOC()
+is invoked as such:
+
+        PERFORM_BOOTSTRAP_RELOC(rpnt, reloc_addr, symbol_addr, load_addr);
+
+while we can easily get the symtab_index value from rpnt->r_info, this still
+doesn't buy us easy access to the actual table. As such, I've modified
+PERFORM_BOOTSTRAP_RELOC() to take an additional SYMTAB argument. Most
+architectures aren't going to care about this, but unfortunately we don't
+have any other options for sh64.
+
+The following patch fixes up the API for what we need for sh64, and updates
+the other architectures appropriately.
+
+Members: 
+	ldso/ldso/ldso.c:1.75->1.76 
+	ldso/ldso/arm/ld_sysdep.h:1.6->1.7 
+	ldso/ldso/cris/ld_sysdep.h:1.2->1.3 
+	ldso/ldso/i386/ld_sysdep.h:1.8->1.9 
+	ldso/ldso/m68k/ld_sysdep.h:1.3->1.4 
+	ldso/ldso/mips/ld_sysdep.h:1.6->1.7 
+	ldso/ldso/powerpc/ld_sysdep.h:1.7->1.8 
+	ldso/ldso/sh/ld_sysdep.h:1.7->1.8 
+	ldso/ldso/sparc/ld_sysdep.h:1.4->1.5 
+
+---------------------
+PatchSet 2946 
+Date: 2003/12/17 08:07:14
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Patch from Paul Mundt <lethal@linux-sh.org>:
+
+Here's the patch for the ldso bits for sh64. This is still in need of a bunch
+of debugging, testing, etc. and is really only being submitted for general
+completeness. This assumes that the previous patches I've submitted have
+already been applied.
+
+I plan on playing with this and buildroot some more later, as I'd definitely
+like to see buildroot images for sh64.
+
+Members: 
+	extra/Configs/Config.sh:1.45->1.46 
+	ldso/ldso/sh64/boot1_arch.h:INITIAL->1.1 
+	ldso/ldso/sh64/elfinterp.c:INITIAL->1.1 
+	ldso/ldso/sh64/ld_syscalls.h:INITIAL->1.1 
+	ldso/ldso/sh64/ld_sysdep.h:INITIAL->1.1 
+	ldso/ldso/sh64/resolve.S:INITIAL->1.1 
+
+---------------------
+PatchSet 2947 
+Date: 2003/12/17 18:34:14
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Use PAGE_SIZE rather than hard coding 4096
+
+Members: 
+	ldso/include/ldso.h:1.1->1.2 
+	ldso/ldso/ldso.c:1.76->1.77 
+	ldso/ldso/readelflib1.c:1.53->1.54 
+	ldso/ldso/arm/elfinterp.c:1.16->1.17 
+
+---------------------
+PatchSet 2948 
+Date: 2003/12/19 11:45:21
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+dev systems updated
+
+Members: 
+	docs/uclibc.org/FAQ.html:1.23->1.24 
+	docs/uclibc.org/news.html:1.4->1.5 
+
+---------------------
+PatchSet 2949 
+Date: 2003/12/22 08:53:21
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Update the config used when building a .deb
+
+Members: 
+	debian/changelog:1.17->1.18 
+	debian/config:1.2->1.3 
+
+---------------------
+PatchSet 2950 
+Date: 2003/12/22 08:56:37
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Use 'sed -i -e' rather than 'sed -ie' since we don't want
+to leave backup files with "e" appended scattered all over
+the place.
+
+Members: 
+	debian/rules:1.27->1.28 
+
+---------------------
+PatchSet 2951 
+Date: 2003/12/22 09:17:19
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+That was awfully stupid.
+
+Members: 
+	debian/rules:1.28->1.29 
+
+---------------------
+PatchSet 2952 
+Date: 2003/12/22 10:47:04
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+In unistd.h, getpgrp() is redirected to __getpgid(), but
+we did not have a __getpgid().   Fix that.
+
+Members: 
+	libc/sysdeps/linux/common/syscalls.c:1.121->1.122 
+
+---------------------
+PatchSet 2953 
+Date: 2003/12/22 11:19:49
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+implement the worthless cuserid() function we claim to support.
+This isn't in SuSv3, but is expected by at least some apps such
+as emacs...
+
+Members: 
+	libc/unistd/getlogin.c:1.4->1.5 
+
+---------------------
+PatchSet 2954 
+Date: 2003/12/22 11:22:59
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+oops
+
+Members: 
+	libc/unistd/getlogin.c:1.5->1.6 
+
+---------------------
+PatchSet 2955 
+Date: 2003/12/27 23:30:30
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix a long-standing bug with pthreads.  A couple of linuxthreads files
+were including libc-lock.h which had a bunch of weak pragmas.  Also,
+uClibc supplied a number of no-op weak thread functions even though
+many weren't needed.  This combined result was that sometimes the
+functional versions of thread functions in pthread would not override
+the weaks in libc.
+
+While fixing this, I also prepended double-underscore to all necessary
+weak thread funcs in uClibc, and removed all unused weaks.
+
+I did a test build, but haven't tested this since these changes are
+a backport from my working tree.  I did test the changes there and
+no longer need to explicitly add -lpthread in the perl build for
+perl to pass its thread self tests.
+
+Members: 
+	include/pthread.h:1.3->1.4 
+	libc/inet/getnetent.c:1.4->1.5 
+	libc/inet/getproto.c:1.5->1.6 
+	libc/inet/getservice.c:1.5->1.6 
+	libc/inet/resolv.c:1.49->1.50 
+	libc/inet/rpc/create_xid.c:1.2->1.3 
+	libc/misc/dirent/closedir.c:1.5->1.6 
+	libc/misc/dirent/opendir.c:1.6->1.7 
+	libc/misc/dirent/readdir.c:1.8->1.9 
+	libc/misc/dirent/readdir64.c:1.9->1.10 
+	libc/misc/dirent/readdir64_r.c:1.3->1.4 
+	libc/misc/dirent/readdir_r.c:1.3->1.4 
+	libc/misc/dirent/rewinddir.c:1.5->1.6 
+	libc/misc/dirent/seekdir.c:1.5->1.6 
+	libc/misc/mntent/mntent.c:1.5->1.6 
+	libc/misc/pthread/weaks.c:1.3->1.4 
+	libc/misc/syslog/syslog.c:1.11->1.12 
+	libc/misc/time/time.c:1.18->1.19 
+	libc/misc/utmp/utent.c:1.9->1.10 
+	libc/misc/wchar/wstdio.c:1.4->1.5 
+	libc/pwd_grp/lckpwdf.c:1.4->1.5 
+	libc/pwd_grp/pwd_grp.c:1.4->1.5 
+	libc/stdio/stdio.c:1.73->1.74 
+	libc/stdlib/abort.c:1.13->1.14 
+	libc/stdlib/atexit.c:1.24->1.25 
+	libc/stdlib/random.c:1.4->1.5 
+	libc/stdlib/setenv.c:1.13->1.14 
+	libc/stdlib/malloc/heap.h:1.15->1.16 
+	libc/stdlib/malloc/malloc.h:1.17->1.18 
+	libc/stdlib/malloc-930716/malloc.c:1.13->1.14 
+	libc/stdlib/malloc-930716/memalign.c:1.3->1.4 
+	libc/stdlib/malloc-930716/realloc.c:1.4->1.5 
+	libc/sysdeps/linux/common/bits/uClibc_pthread.h:INITIAL->1.1 
+	libc/sysdeps/linux/common/bits/uClibc_stdio.h:1.14->1.15 
+	libpthread/linuxthreads/lockfile.c:1.2->1.3 
+	libpthread/linuxthreads/mutex.c:1.6->1.7 
+	libpthread/linuxthreads/specific.c:1.5->1.6 
+
+---------------------
+PatchSet 2956 
+Date: 2003/12/27 23:36:22
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Handle the app_fini stuff in exit without requiring atexit().
+This avoids pulling in all the malloc/free code for a simple true/false app.
+
+Members: 
+	libc/misc/internals/__uClibc_main.c:1.28->1.29 
+	libc/stdlib/atexit.c:1.25->1.26 
+
+---------------------
+PatchSet 2957 
+Date: 2003/12/28 00:25:31
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+remove unused file
+
+Members: 
+	libpthread/linuxthreads/Makefile:1.12->1.13 
+	libpthread/linuxthreads/weaks.c:1.3->1.4(DEAD) 
+
+---------------------
+PatchSet 2958 
+Date: 2003/12/28 07:41:24
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix whitespace
+
+Members: 
+	libc/inet/getservice.c:1.6->1.7 
+
+---------------------
+PatchSet 2959 
+Date: 2003/12/28 08:25:16
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix a really dumb bug introduced in version 1.4 of this file (a patch for ipv6
+support) which could cause things like EOF and read errors while reading
+/etc/services to always return a TRY_AGAIN.  The perl test suite would alloc a
+larger buffer and try again until all memory was exhausted.  When we get a read
+error, or EOF, it means we didn't get what we wanted, and so we should return
+an error.  Doing so fixes the failing perl 5.8.2 test.
+ -Erik
+
+Members: 
+	libc/inet/getservice.c:1.7->1.8 
+
+---------------------
+PatchSet 2960 
+Date: 2003/12/30 01:41:14
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Update and restore malloc-simple.  Slow as molasses, but trivially
+simple and releases memory immediately when asked to do so.
+ -Erik
+
+Members: 
+	libc/stdlib/malloc-simple/Makefile:1.11->1.12 
+	libc/stdlib/malloc-simple/alloc.c:1.11->1.12 
+
+---------------------
+PatchSet 2961 
+Date: 2003/12/30 10:40:47
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Rework malloc.  The new default implementation is based on dlmalloc from Doug
+Lea.  It is about 2x faster than the old malloc-930716, and behave itself much
+better -- it will properly release memory back to the system, and it uses a
+combination of brk() for small allocations and mmap() for larger allocations.
+ -Erik
+
+Members: 
+	debian/config:1.3->1.4 
+	extra/Configs/Config.in:1.41->1.42 
+	libc/stdlib/Makefile:1.54->1.55 
+	libc/stdlib/calloc.c:1.1->1.2(DEAD) 
+	libc/stdlib/malloc/Makefile:1.30->1.31 
+	libc/stdlib/malloc/calloc.c:1.3->1.4 
+	libc/stdlib/malloc-930716/Makefile:1.11->1.12(DEAD) 
+	libc/stdlib/malloc-930716/README:1.1->1.2(DEAD) 
+	libc/stdlib/malloc-930716/malloc.c:1.14->1.15(DEAD) 
+	libc/stdlib/malloc-930716/malloc.h:1.3->1.4(DEAD) 
+	libc/stdlib/malloc-930716/memalign.c:1.4->1.5(DEAD) 
+	libc/stdlib/malloc-930716/realloc.c:1.5->1.6(DEAD) 
+	libc/stdlib/malloc-simple/alloc.c:1.12->1.13 
+	libc/stdlib/malloc-standard/Makefile:INITIAL->1.1 
+	libc/stdlib/malloc-standard/calloc.c:INITIAL->1.1 
+	libc/stdlib/malloc-standard/free.c:INITIAL->1.1 
+	libc/stdlib/malloc-standard/mallinfo.c:INITIAL->1.1 
+	libc/stdlib/malloc-standard/malloc.c:INITIAL->1.1 
+	libc/stdlib/malloc-standard/malloc.h:INITIAL->1.1 
+	libc/stdlib/malloc-standard/mallopt.c:INITIAL->1.1 
+	libc/stdlib/malloc-standard/memalign.c:INITIAL->1.1 
+	libc/stdlib/malloc-standard/realloc.c:INITIAL->1.1 
+
+---------------------
+PatchSet 2962 
+Date: 2003/12/30 10:45:45
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Make sleep behave itself properly inthe presence of SIGCHLD
+
+Members: 
+	libc/unistd/sleep.c:1.6->1.7 
+	libc/unistd/usleep.c:1.1->1.2 
+
+---------------------
+PatchSet 2963 
+Date: 2003/12/30 10:57:16
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix the manditory typo in my last minute untested fix.
+ -Erik
+
+Members: 
+	libc/stdlib/malloc-standard/calloc.c:1.1->1.2 
+
+---------------------
+PatchSet 2964 
+Date: 2003/12/31 11:50:08
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Add extra checks for sigprocmask and rt_sigprocmask syscalls.
+The rt_sigprocmask syscall has broken error handling in 2.4.x
+kernels, while the sigprocmask syscall appears to get things
+right.  Regardless we should be extra careful, and add these
+checks.
+
+Members: 
+	libc/sysdeps/linux/common/syscalls.c:1.122->1.123 
+
+---------------------
+PatchSet 2965 
+Date: 2003/12/31 12:13:27
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Fir errno return when the file/path is NULL or points to an empty string.
+ -Erik
+
+Members: 
+	libc/sysdeps/linux/common/syscalls.c:1.123->1.124 
+
+---------------------
+PatchSet 2966 
+Date: 2004/01/02 07:00:29
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Kept the same approach, but rewrote the code for the most part.
+Fixed some minor issues plus (as I recall) one SUSv3 errno case.
+
+Members: 
+	libc/termios/ttyname.c:1.11->1.12 
+
+---------------------
+PatchSet 2967 
+Date: 2004/01/02 07:01:13
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Minor fix from upstream glibc.
+
+Members: 
+	libc/sysdeps/linux/common/bits/posix1_lim.h:1.1->1.2 
+
+---------------------
+PatchSet 2968 
+Date: 2004/01/02 07:11:35
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Rewrite popen for SUSv3 compliance.
+  Added a list of popen()'d to store pids and use waitpid() in pclose().
+  Loop on waitpid() failure due to EINTR as required.
+  Close parent's popen()'d FILEs in the {v}fork()'d child.
+  Fix failure exit code for failed execve().
+
+Members: 
+	libc/stdio/popen.c:1.8->1.9 
+
+---------------------
+PatchSet 2969 
+Date: 2004/01/02 08:44:58
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Redo the exec functions to comply with SUSv3.
+
+Members: 
+	libc/unistd/Makefile:1.35->1.36 
+	libc/unistd/exec.c:INITIAL->1.1 
+	libc/unistd/execl.c:1.4->1.5(DEAD) 
+	libc/unistd/execle.c:1.2->1.3(DEAD) 
+	libc/unistd/execlp.c:1.5->1.6(DEAD) 
+	libc/unistd/execv.c:1.2->1.3(DEAD) 
+	libc/unistd/execvep.c:1.2->1.3(DEAD) 
+	libc/unistd/execvp.c:1.3->1.4(DEAD) 
+
+---------------------
+PatchSet 2970 
+Date: 2004/01/02 08:47:22
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+The checking Erik added seems to be unnecessary.  Without it, I am not
+seeing any LTP failures.
+
+Members: 
+	libc/sysdeps/linux/common/syscalls.c:1.124->1.125 
+
+---------------------
+PatchSet 2971 
+Date: 2004/01/02 09:20:33
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Oops... temporarily support the old stdio code.
+
+Members: 
+	libc/stdio/popen.c:1.9->1.10 
+
+---------------------
+PatchSet 2972 
+Date: 2004/01/02 09:21:33
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix __freadable and __fwritable... were using '~' instead of '!'. (ugh)
+Fix (hopefully) a potential problem with failed freopen() calls.  The
+  fix isn't tested since I've been working on the replacement stdio
+  core code which will go in after the next release.
+
+Members: 
+	libc/stdio/stdio.c:1.74->1.75 
+
+---------------------
+PatchSet 2973 
+Date: 2004/01/02 10:52:38
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+rohde at soap dot adsl dot dk writes:
+
+The macro to do some floating point checks in libc/sysdeps/linux/powerpc/setjmp.S is incorrect.
+The following should fix it.
+
+Members: 
+	libc/sysdeps/linux/powerpc/setjmp.S:1.5->1.6 
+
+---------------------
+PatchSet 2974 
+Date: 2004/01/02 11:12:16
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+rohde at soap dot adsl dot dk writes:
+
+The macro to do some floating point checks in libc/sysdeps/linux/powerpc/setjmp.S is incorrect.
+The following should fix it.
+
+Same applies to uClibc/libc/sysdeps/linux/powerpc/__longjmp.S
+Hope there aren't other files I've missed :)
+
+Members: 
+	libc/sysdeps/linux/powerpc/__longjmp.S:1.2->1.3 
+
+---------------------
+PatchSet 2975 
+Date: 2004/01/02 11:59:28
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Cope with 2.6.x headers
+
+Members: 
+	extra/scripts/fix_includes.sh:1.9->1.10 
+	include/features.h:1.56->1.57 
+
+---------------------
+PatchSet 2976 
+Date: 2004/01/02 12:02:24
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Bump version, cleanup whitespace
+
+Members: 
+	Rules.mak:1.159->1.160 
+
+---------------------
+PatchSet 2977 
+Date: 2004/01/02 23:07:36
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Do not make tests depend on CC, since we no longer build a wrapper.
+
+Members: 
+	test/args/Makefile:1.5->1.6 
+	test/assert/Makefile:1.13->1.14 
+	test/crypt/Makefile:1.5->1.6 
+	test/ctype/Makefile:1.14->1.15 
+	test/malloc/Makefile:1.8->1.9 
+	test/math/Makefile:1.6->1.7 
+	test/misc/Makefile:1.7->1.8 
+	test/mmap/Makefile:1.5->1.6 
+	test/pthread/Makefile:1.3->1.4 
+	test/pwd_grp/Makefile:1.12->1.13 
+	test/setjmp/Makefile:1.5->1.6 
+	test/signal/Makefile:1.12->1.13 
+	test/silly/Makefile:1.16->1.17 
+	test/stat/Makefile:1.8->1.9 
+	test/stdlib/Makefile:1.21->1.22 
+	test/string/Makefile:1.23->1.24 
+	test/termios/Makefile:1.7->1.8 
+	test/unistd/Makefile:1.13->1.14 
+
+---------------------
+PatchSet 2978 
+Date: 2004/01/02 23:10:37
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Remove remnants of the gcc wrapper
+
+Members: 
+	test/Rules.mak:1.24->1.25 
+
+---------------------
+PatchSet 2979 
+Date: 2004/01/02 23:24:17
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Minor update of the debian packaging stuff
+
+Members: 
+	debian/changelog:1.18->1.19 
+	debian/control:1.16->1.17 
+	debian/rules:1.29->1.30 
+
+---------------------
+PatchSet 2980 
+Date: 2004/01/02 23:34:13
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Peter S. Mazinger writes:
+
+Hello Erik!
+
+I have made some cosmetical changes to the files, removed the added
+SCRT=-fPIC option from building the crt0.S file (but it is a requirement
+to build them with -fPIC), and changed some comments. I have left the
+ldso.c patch with PIE_SUPPORT ifdefs, but consider applying it w/o them
+(see some earlier comment from PaX Team on this issue, as it is considered
+a bug). To have it work correctly, you'll also need removing
+COMPLETELY_PIC.
+One thing is missing: PIE_SUPPORT should be usable only for i386 (for
+now).
+
+Also added the support for propolice protection (that works for me and
+catches memcpy/strcpy attacks (but needs a special gcc version).
+
+Thanks, Peter
+
+Members: 
+	debian/config:1.4->1.5 
+	extra/Configs/Config.in:1.42->1.43 
+	ldso/ldso/ldso.c:1.77->1.78 
+	libc/misc/internals/__uClibc_main.c:1.29->1.30 
+	libc/sysdeps/linux/common/Makefile:1.94->1.95 
+	libc/sysdeps/linux/common/ssp.c:INITIAL->1.1 
+	libc/sysdeps/linux/i386/Makefile:1.65->1.66 
+	libc/sysdeps/linux/i386/crt0.S:1.20->1.21 
+
+---------------------
+PatchSet 2981 
+Date: 2004/01/02 23:35:10
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+A useful/useless little malloc time test
+
+Members: 
+	test/malloc/time_malloc.c:INITIAL->1.1 
+
+---------------------
+PatchSet 2982 
+Date: 2004/01/03 05:52:34
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Minor changes
+
+Members: 
+	libc/sysdeps/linux/i386/clone.S:1.7->1.8 
+
+---------------------
+PatchSet 2983 
+Date: 2004/01/03 05:54:49
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+oops
+
+Members: 
+	libc/sysdeps/linux/i386/clone.S:1.8->1.9 
+
+---------------------
+PatchSet 2984 
+Date: 2004/01/03 08:49:04
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+And just like that, clone is now fixed....  Previously the
+error handling code was mostly broken.
+ -Erik
+
+Members: 
+	libc/sysdeps/linux/i386/clone.S:1.9->1.10 
+
+---------------------
+PatchSet 2985 
+Date: 2004/01/03 10:10:37
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Add ldflags where needed
+
+Members: 
+	test/dlopen/Makefile:1.5->1.6 
+
+---------------------
+PatchSet 2986 
+Date: 2004/01/03 10:18:08
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Be sure to fully clean 2.6 kernel headers on 'make clean'
+
+Members: 
+	Makefile:1.241->1.242 
+---------------------
+PatchSet 2987 
+Date: 2004/01/03 11:06:47
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Update for release
+
+Members: 
+	Changelog:1.24->1.25 
+	Changelog.full:1.18->1.19 
+	Changelog.full.last:1.2->1.3 
+	docs/uclibc.org/about.html:INITIAL->1.1 
+	docs/uclibc.org/header.html:1.2->1.3 
+	docs/uclibc.org/index.html:1.79->1.80 
+	docs/uclibc.org/news.html:1.5->1.6 
+
+---------------------
+PatchSet 2988 
+Date: 2004/01/03 11:17:11
+Author: andersen
+Branch: HEAD
+Tag: uClibc_0_9_25 
+Log:
+Fix up the news a bit
+
+Members: 
+	docs/uclibc.org/news.html:1.6->1.7 
+	docs/uclibc.org/oldnews.html:1.1->1.2 
+
+---------------------
+PatchSet 2989 
+Date: 2004/01/04 01:29:01
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+My mistake.  We do need some weak pthread_* funcs.  But we were previously
+missing one in the glibc abi, and including a number of extras (which I
+left in commented).
+Unfortunately, this brings back the perl pthread bug.  Fixing the incorrect
+weaks in libpthread wasn't sufficient to escape the shared loader bug.  :-(
+
+Members: 
+	libc/misc/pthread/weaks.c:1.4->1.5 
+
+

@@ -1,0 +1,1148 @@
+# ====================================================================
+#
+#      redboot.cdl
+#
+#      Redboot package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002, 2003, 2004 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:   Philippe Robin, Andrew Lunn, tkoeller
+# Date:           2000-05-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_REDBOOT {
+    display       "Redboot ROM monitor"
+    doc           ref/redboot.html
+    define_header redboot.h
+    description   "
+           This package supports the Redboot \[stand-alone debug monitor\]
+           using eCos as the underlying board support mechanism."
+
+    # Use of separate interrupt stack causes problems when running
+    # programs as they can end up trashing RedBoot's stack
+    requires { CYGIMP_HAL_COMMON_INTERRUPTS_USE_INTERRUPT_STACK == 0 }
+
+    # Since the CYGDAT_REDBOOT_CONSOLE_DEV setting ends up in the platform
+    # HAL header, we need to include that here (via hal.h).
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal.h>"
+    }
+
+    cdl_component CYGSEM_REDBOOT_ELF {
+        flavor bool
+        display       "Include support for ELF file format"
+        default_value 1
+
+        cdl_option CYGOPT_REDBOOT_ELF_VIRTUAL_ADDRESS {
+            display "Use the virtual address in the ELF headers"
+            flavor bool
+            default_value 0
+            description "
+                The ELF headers contain both a virtual and a physical address
+                for where code/data should be loaded. By default the physical
+                address is used but sometimes it is necassary to use the
+                virtual address because of bugy toolchains"
+        }
+    }
+
+
+    cdl_interface CYGINT_REDBOOT_LOAD_METHOD {
+        display "Methods of loading images using redboot"
+    }
+
+    cdl_component CYGBLD_BUILD_REDBOOT {
+        display "Build Redboot ROM ELF image"
+        default_value 0
+        requires CYGPKG_INFRA
+        requires CYGPKG_ISOINFRA
+
+        requires ! CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+        requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+        requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+        requires CYGSEM_HAL_VIRTUAL_VECTOR_SUPPORT
+
+        requires CYGINT_ISO_STRING_MEMFUNCS 
+        requires CYGINT_ISO_STRING_STRFUNCS
+        requires CYGINT_REDBOOT_LOAD_METHOD
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_GDB {
+            display       "Include GDB support in RedBoot"
+            no_define
+            default_value 0
+            active_if     CYGINT_HAL_DEBUG_GDB_STUBS
+            requires      CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires      CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            description "
+              RedBoot normally includes support for the GDB debugging protocols.
+              This option allows this to be disabled which may yield a substantial
+              savings in terms of code and memory usage by RedBoot."
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_THREADS {
+            display "Threads debugging support"
+            no_define
+            description "
+              Enabling this option will include special code in the GDB stubs to
+              support debugging of threaded programs.  In the case of eCos programs,
+              this support allows GDB to have complete access to the eCos threads
+              in the program."
+            active_if { CYG_HAL_STARTUP != "RAM" }
+            requires  CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+        }
+
+        cdl_option CYGDAT_REDBOOT_CUSTOM_VERSION {
+            display        "Customized version string"
+            flavor         booldata
+            default_value  0
+            description    "
+              Use this option to define a customized version \"string\" for
+              RedBoot.  Note: this value is only cosmetic, displayed by the
+              \"version\" command, but is useful for providing site specific
+              information about the RedBoot configuration."
+        }
+
+        cdl_option CYGNUM_REDBOOT_CMD_LINE_EDITING {
+            display          "Enable command line editing"
+            flavor           data
+            default_value    16
+            description      "
+               If this option is non-zero, RedBoot will remember the last N command
+               lines.  These lines may be reused.  Enabling this history will also
+               enable rudimentary editting of the lines themselves."
+        }
+
+        cdl_option CYGBLD_REDBOOT_CMD_LINE_HISTORY {
+            display        "Enable history command and expansion"
+            requires       { CYGNUM_REDBOOT_CMD_LINE_EDITING > 0 }
+            flavor         bool
+            default_value  1
+            description  "
+              Enabling this option will allow RedBoot to provide a history command
+              to list previous commands. Also enables history expansion via '!'
+              character similar to bash shell."
+        }
+
+        cdl_option CYGBLD_REDBOOT_MAX_MEM_SEGMENTS {
+            display        "Number of unique RAM segments on platform"
+            flavor         data
+            default_value  1
+            description  "
+              Change this option to be the number of memory segments which are
+              supported by the platform.  If the value is greater than 1, then
+              a platform specific function must provide information about the
+              additional segments."
+        }
+    
+        cdl_component CYGBLD_BUILD_REDBOOT_WITH_ZLIB {
+            display       "Include support gzip/zlib decompression"
+            active_if     CYGPKG_COMPRESS_ZLIB
+            default_value 0
+            implements    CYGINT_COMPRESS_ZLIB_LOCAL_ALLOC
+            compile       decompress.c
+
+            cdl_option CYGNUM_REDBOOT_LOAD_ZLIB_BUFFER {
+                display       "Size of zlib decompression buffer"
+                flavor        data
+                default_value 64
+                legal_values  5 to 256
+                description   "
+                    This is the size of the buffer filled with incoming data
+                    during load before calls are made to the decompressor
+                    function. For ethernet downloads this can be made bigger
+                    (at the cost of memory), but for serial downloads on slow
+                    processors it may be necessary to reduce the size to
+                    avoid serial overruns. zlib appears to bail out if less than
+                    five bytes are available initially so this is the minimum."
+            }
+    
+            cdl_option CYGPRI_REDBOOT_ZLIB_FLASH {
+                 display       "Support compression of Flash images"
+                 active_if     CYGPKG_REDBOOT_FLASH
+                 active_if     !CYGSEM_IO_FLASH_READ_INDIRECT
+                 calculated    1
+                 description   "
+                        This CDL indicates whether flash images can
+                        be decompressed from gzip/zlib format into RAM."
+            }
+        }
+
+	cdl_option CYGPRI_REDBOOT_7ZIP_FLASH {
+                 display       "Support 7zip compression of Flash images"
+                 active_if     CYGPKG_REDBOOT_FLASH
+                 active_if     !CYGSEM_IO_FLASH_READ_INDIRECT
+                 calculated    1
+                 description   "
+                        This CDL indicates whether flash images can
+                        be decompressed from 7zip format into RAM."
+	}
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_XYZMODEM {
+            display       "Include support for xyzModem downloads"
+            doc           ref/download-command.html
+            no_define
+            default_value 0
+            implements    CYGINT_REDBOOT_LOAD_METHOD
+            compile -library=libextras.a xyzModem.c
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_CKSUM {
+            display       "Include POSIX checksum command"
+            doc           ref/cksum-command.html
+            default_value 0
+            compile -library=libextras.a cksum.c
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_MFILL {
+            display       "Include memory fill command"
+            doc           ref/mfill-command.html
+            default_value 0
+            compile -library=libextras.a mfill.c
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_MCMP {
+            display       "Include memory compare command"
+            doc           ref/mcmp-command.html
+            default_value 0
+            compile -library=libextras.a mcmp.c
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_MCOPY {
+            display       "Include memory copy command"
+            doc           ref/mcopy-command.html
+            default_value 0
+            compile -library=libextras.a mcopy.c
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_DUMP {
+            display       "Include memory dump command"
+            doc           ref/dump-command.html
+            default_value 0
+            compile -library=libextras.a dump.c
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_CACHES {
+            display       "Include cache command"
+            doc           ref/cache-command.html
+            default_value 1
+            compile -library=libextras.a caches.c
+        }
+
+        cdl_option CYGBLD_BUILD_REDBOOT_WITH_EXEC {
+            display       "Include exec command"
+            doc           ref/exec-command.html
+            default_value 1
+            # Implemented within the platform HAL
+        }
+
+        no_define
+        description "This option enables the building of the Redboot ELF image.
+                     The image may require further relocation or symbol
+                     stripping before being converted to a binary image.
+                     This is handled by a rule in the target CDL."
+
+    
+        cdl_option CYGDBG_REDBOOT_TICK_GRANULARITY {
+            display          "Granularity of timer/ticks"
+            flavor           data
+            legal_values     { 50 100 250 500 1000 }	
+            default_value    250
+            description      "
+                This option controls the granularity of the timers.
+                Faster CPUs can afford higher granularity (lower values)
+                which should give higher network performance since the stack
+                is purely polled."
+        }
+
+        compile main.c
+        compile misc_funs.c io.c parse.c ticks.c syscall.c alias.c
+        compile -library=libextras.a load.c
+
+        make -priority 320 {
+            <PREFIX>/bin/redboot.elf : $(PREFIX)/lib/target.ld $(PREFIX)/lib/vectors.o $(PREFIX)/lib/libtarget.a $(PREFIX)/lib/libextras.a
+                    @sh -c "mkdir -p $(dir $@)"
+                    $(CC) -c $(INCLUDE_PATH) $(CFLAGS) -o $(PREFIX)/lib/version.o $(REPOSITORY)/$(PACKAGE)/src/version.c
+                    $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ $(PREFIX)/lib/version.o
+        }
+
+        cdl_component CYGPKG_REDBOOT_NETWORKING {
+            display       "Redboot Networking"
+            flavor        bool
+            active_if     CYGPKG_IO_ETH_DRIVERS
+            default_value 1
+            implements    CYGINT_REDBOOT_LOAD_METHOD
+            compile net/udp.c net/ip.c net/pktbuf.c net/cksum.c
+            compile net/enet.c net/icmp.c net/tcp.c net/timers.c net/arp.c
+            compile net/inet_addr.c
+            compile -library=libextras.a net/net_io.c 
+            description "This option includes networking support in RedBoot."
+            define_proc {
+                puts $::cdl_system_header "#define CYGNUM_HAL_VIRTUAL_VECTOR_AUX_CHANNELS 1"
+            }
+    
+            cdl_option CYGDBG_REDBOOT_NET_DEBUG {
+                display          "Print net debug information"
+                flavor           bool
+                default_value    0
+                description      "
+                    This option is overriden by the configuration stored in flash."
+            }
+    
+            cdl_option CYGSEM_REDBOOT_NET_TFTP_DOWNLOAD {
+                display          "Support TFTP for download"
+                flavor           bool
+                default_value    1
+                compile          -library=libextras.a net/tftp_client.c
+                description      "
+                    This option enables the use of the TFTP protocol for download"
+            }
+    
+            cdl_option CYGSEM_REDBOOT_NET_HTTP_DOWNLOAD {
+                display          "Support HTTP for download"
+                flavor           bool
+                default_value    1
+                compile          -library=libextras.a net/http_client.c
+                description      "
+                    This option enables the use of the HTTP protocol for download"
+            }
+    
+            cdl_component CYGDAT_REDBOOT_DEFAULT_IP_ADDR {
+                display          "Default IP address"
+                flavor           booldata
+                default_value    CYGSEM_REDBOOT_FLASH_CONFIG ? 0 : \
+                                    { "192, 168, 1, 1" }
+                description      "
+                    This IP address is the default used by RedBoot if a BOOTP/DHCP
+                    server does not respond. The numbers should be separated by
+                    *commas*, and not dots. If an IP address is configured into
+                    the Flash configuration, that will be used in preference."
+    
+                cdl_option CYGSEM_REDBOOT_DEFAULT_NO_BOOTP {
+                     display          "Do not try to use BOOTP"
+                     flavor           bool
+                     default_value    1
+                     description      "
+                         By default Redboot tries to use BOOTP to get an IP
+                         address. If there's no BOOTP server on your network
+                         use this option to avoid to wait until the
+                         timeout. This option is overriden by the
+                         configuration stored in flash."
+                }
+                cdl_option CYGDAT_REDBOOT_DEFAULT_BOOTP_SERVER_IP_ADDR {
+                     display           "Default bootp server"
+                     flavor            booldata
+                     default_value     CYGSEM_REDBOOT_FLASH_CONFIG ? 0 : \
+                                          { "0, 0, 0, 0" }
+                     description       "
+                          This IP address is the default server
+                          address used by RedBoot if a BOOTP/DHCP
+                          server does not respond. The numbers should
+                          be separated by *commas*, and not dots. If
+                          an IP address is configured into the Flash
+                          configuration, that will be used in
+                          preference."
+                }
+            }
+    
+            cdl_component CYGSEM_REDBOOT_NETWORKING_DHCP {
+                display          "Use DHCP to get IP information"
+                flavor           bool
+                default_value    0
+                description      "
+                    Use DHCP protocol to obtain pertinent IP addresses, such as
+                    the client, server, gateway, etc."
+            }
+    
+            cdl_component CYGSEM_REDBOOT_NETWORKING_USE_GATEWAY {
+                display          "Use a gateway for non-local IP traffic"
+                flavor           bool
+                default_value    0
+                requires         CYGSEM_REDBOOT_NETWORKING_DHCP
+                description      "
+                  Enabling this option will allow the RedBoot networking
+                stack to use a \[single\] gateway to reach a non-local
+                IP address.  If disabled, RedBoot will only be able to
+                reach nodes on the same subnet."
+    
+                cdl_component CYGDAT_REDBOOT_DEFAULT_GATEWAY_IP_ADDR {
+                    display          "Default gateway IP address"
+                    flavor           booldata
+                    default_value    CYGSEM_REDBOOT_FLASH_CONFIG ? 0 : \
+                                        { "0, 0, 0, 0" }
+                    description      "
+                        This IP address is the default used by RedBoot if a BOOTP/DHCP
+                        server does not respond. The numbers should be separated by
+                        *commas*, and not dots. If an IP address is configured into
+                        the Flash configuration, that will be used in preference."
+                }
+    
+                cdl_component CYGDAT_REDBOOT_DEFAULT_IP_ADDR_MASK {
+                    display          "Default IP address mask"
+                    flavor           booldata
+                    default_value    CYGSEM_REDBOOT_FLASH_CONFIG ? 0 : \
+                                        { "255, 255, 255, 0" }
+                    description      "
+                        This IP address mask is the default used by RedBoot if a BOOTP/DHCP
+                        server does not respond. The numbers should be separated by
+                        *commas*, and not dots. If an IP address is configured into
+                        the Flash configuration, that will be used in preference."
+                }
+            }
+    
+            cdl_option CYGNUM_REDBOOT_NETWORKING_TCP_PORT {
+                display          "TCP port to listen for incoming connections"
+                flavor           data
+                default_value    9000
+                description      "
+                   RedBoot will 'listen' on this port for incoming TCP connections.
+                   This allows outside connections to be made to the platform, either
+                   for GDB or RedBoot commands."
+            }
+    
+            cdl_option CYGNUM_REDBOOT_NETWORKING_MAX_PKTBUF {
+                display          "Number of \[network\] packet buffers"
+                flavor           data
+                default_value    4
+                legal_values     3 to 8
+                description      "
+                   RedBoot may need to buffer network data to support various connections.
+                   This option allows control over the number of such buffered packets,
+                   and in turn, controls the amount of memory used by RedBoot (which
+                   is not available to user applications).  Each packet buffer takes up
+                   about 1514 bytes.  Note: there is little need to make this larger
+                   than the default."
+            }
+    
+            cdl_component CYGPKG_REDBOOT_NETWORKING_DNS {
+                display         "DNS support"
+                default_value   0
+                active_if       CYGPKG_NS_DNS
+                requires        !CYGPKG_NS_DNS_BUILD
+                compile         net/dns.c
+                description     "
+                    When this option is enabled, RedBoot will be built with
+                    support for DNS, allowing use of hostnames on the command
+                    line."
+            
+                cdl_option CYGPKG_REDBOOT_NETWORKING_DNS_IP {
+                    display         "Default DNS IP"
+                    flavor          data
+                    active_if       !CYGSEM_REDBOOT_FLASH_CONFIG
+                    default_value   { "0.0.0.0" }
+                    description "
+                      This option sets the IP of the default DNS. The IP can be
+                      changed at runtime as well."
+                }
+    
+                cdl_option CYGNUM_REDBOOT_NETWORKING_DNS_TIMEOUT {
+                    display         "Timeout in DNS lookup"
+                    flavor          data
+                    default_value   10
+                    description "
+                      This option sets the timeout used when looking up an
+                      address via the DNS. Default is 10 seconds."
+                }
+    
+            }
+
+	    cdl_option CYGNUM_REDBOOT_DEFAULT_NETWORK_DEVICE {
+                display         "Default network device driver"
+                flavor          data
+                active_if       { !CYGSEM_REDBOOT_FLASH_CONFIG && CYGHWR_NET_DRIVERS > 1 }
+	        legal_values    0 to CYGHWR_NET_DRIVERS-1
+                default_value   0
+                description     "
+                    This is the index of the first network device driver that
+                    RedBoot will try to initialize."
+            }
+
+	    cdl_option CYGSEM_REDBOOT_NETWORK_INIT_ONE_DEVICE {
+                display         "Initialize only one net device"
+                flavor          bool
+                active_if       { CYGHWR_NET_DRIVERS > 1 }
+                default_value   0
+                description     "
+                    This option tells RedBoot to stop initializing network
+		    devices when it finds the first device which is
+                    successfully initialized. The default behavior causes
+                    all network devices to be initialized."
+            }
+        }
+    
+        cdl_option CYGPKG_REDBOOT_ANY_CONSOLE {
+            display       "Allow RedBoot to use any I/O channel for its console."
+            flavor        bool
+            default_value 1
+            description   "
+              If this option is enabled then RedBoot will attempt to use all
+              defined serial I/O channels for its console device.  Once input
+              arrives at one of these channels then the console will use only
+              that port."
+        }
+    
+        cdl_option CYGSEM_REDBOOT_VARIABLE_BAUD_RATE {
+            display       "Allow RedBoot to adjust the baud rate on the serial console."
+            flavor        bool
+            default_value 1
+            active_if     CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+            description   "
+              If this option is enabled then RedBoot will support commands to set
+              and query the baud rate on the selected console."     
+        }
+    
+        cdl_option CYGSEM_REDBOOT_PLF_STARTUP {
+            display       "Run a platform specific startup function."
+            flavor        bool
+            default_value 0
+            description   "
+              If this option is enabled then RedBoot will execute a platform
+              specific startup function before entering into its command line
+              processing.  This allows the platform to perform any special
+              setups before RedBoot actually starts running.  Note: the entire
+              RedBoot environment will already be initialized at this point."
+        }
+    
+        cdl_option CYGSEM_REDBOOT_PLF_ESA_VALIDATE {
+            display       "Run a platform specific ESA validation function."
+            flavor        bool
+            default_value 0
+            description   "
+              If this option is enabled then RedBoot will execute a platform
+              specific function to validate an ethernet ESA.  This would be
+              useful if the address must conform to standards set by the
+              hardware manufacturer, etc."
+        }
+    
+        cdl_option CYGPKG_REDBOOT_MAX_CMD_LINE {
+            display       "Maximum command line length"
+            flavor        data
+            default_value 256
+            description   "
+              This option allows control over how long the CLI command line
+              should be.  This space will be allocated statically
+              rather than from RedBoot's stack."
+        }
+    
+        cdl_option CYGNUM_REDBOOT_CLI_IDLE_TIMEOUT {
+            display       "Command processing idle timeout (ms)"
+            flavor        data
+            default_value 10
+            description   "
+              This option controls the timeout period before the
+              command processing is considered 'idle'.  Making this
+              number smaller will cause idle processing to take place
+              more often, etc.  The default value of 10ms is a reasonable
+              tradeoff between responsiveness and overhead."
+        }
+    
+        cdl_option CYGSEM_REDBOOT_VALIDATE_USER_RAM_LOADS {
+            display       "Validate RAM addresses during load"
+            flavor        bool
+            default_value 1
+            description   "
+              This option controls whether or not RedBoot will make sure that
+              memory being used by the \"load\" command is in fact in user RAM.
+              Leaving the option enabled makes for a safer environment, but this
+              check may not be valid on all platforms, thus the ability to
+              disable it.  ** Disable this only with great care **"
+        }
+    
+        cdl_component CYGPKG_REDBOOT_FLASH {
+            display       "Allow RedBoot to support FLASH programming"
+            flavor        bool
+            default_value 1
+            active_if     CYGHWR_IO_FLASH_DEVICE
+            description   "
+              If this option is enabled then RedBoot will provide commands
+              to manage images in FLASH memory.  These images can be loaded
+              into memory for execution or executed in place."
+            compile -library=libextras.a flash.c
+    
+            cdl_option CYGOPT_REDBOOT_FLASH_BYTEORDER {
+                display         "Byte order used to store info in flash."
+                flavor          data
+                default_value   { "NATURAL" }
+                legal_values    {"NATURAL" "MSBFIRST" "LSBFIRST" }
+                description "
+                    This option controls the byte ordering used to store
+                    the FIS directory info and flash config info."
+            }
+    
+            cdl_option CYGOPT_REDBOOT_FIS {
+                display         "RedBoot Flash Image System support"
+                default_value   1
+                doc             ref/flash-image-system.html
+                description "
+                    This option enables the Flash Image System commands
+                    and support within RedBoot.  If disabled, simple Flash
+                    access commands such as \"fis write\" will still exist.
+                    This option would be disabled for targets that need simple
+                    FLASH manipulation, but do not have the need or space for
+                    complete image management."
+            }
+
+            cdl_option CYGDAT_REDBOOT_FIS_MAX_FREE_CHUNKS {
+                display        "Max number of chunks of free space to manage"
+                flavor         booldata
+                default_value  32
+                description    "
+                  If this option is defined then \"fis free\" will rely on the
+                  FIS directory to determine what space is free within the FLASH.
+                  This option controls the maximum number of free segment which
+                  can be handled (typically this number is small).  If this option
+                  is not enabled, the the archaic behaviour of actually scanning
+                  the FLASH for erased sectors (unreliable) will be used to 
+                  determine what's free and what's not."
+            }
+    
+            cdl_component CYGPKG_REDBOOT_FIS_CONTENTS {
+                display       "Flash Image System default directory contents"
+                active_if     CYGOPT_REDBOOT_FIS
+                calculated    1
+    
+                cdl_option CYGNUM_REDBOOT_FIS_DIRECTORY_BLOCK {
+                    display         "Flash block containing the Directory"
+                    flavor          data
+                    default_value   (-1)
+                    description "
+                      Which block of flash should hold the directory 
+                      information. Positive numbers are absolute block numbers. 
+                      Negative block numbers count backwards from the last block.
+                      eg 2 means block 2, -2 means the last but one block."
+                }
+    
+                cdl_option CYGOPT_REDBOOT_FIS_RESERVED_BASE {
+                    display         "Pseudo-file to describe reserved area"
+                    active_if       { 0 != CYGNUM_REDBOOT_FLASH_RESERVED_BASE }
+                    default_value   1
+                    description "
+                        If an area of FLASH is reserved, it is informative to
+                        have a fis entry describing it.  This option controls
+                        creation of such an entry by default in the fis init
+                        command."
+                }
+    
+                cdl_option CYGOPT_REDBOOT_FIS_REDBOOT {
+                    display         "File to describe RedBoot boot image"
+                    default_value   1
+                    description "
+                        Normally a ROM-startup RedBoot image is first in the
+                        FLASH, and the system boots using that image.  This
+                        option controls creation of an entry describing it in
+                        the fis init command.  It might be disabled if a
+                        platform has an immutable boot image of its own, where
+                        we use a POST-startup RedBoot instead, which performs
+                        less board initialization."
+                }
+    
+                cdl_component CYGOPT_REDBOOT_FIS_REDBOOT_POST {
+                    display         "File to describe RedBoot POST-compatible image"
+                    default_value   !CYGOPT_REDBOOT_FIS_REDBOOT
+                    description "
+                        This option controls creation of an entry describing a
+                        POST-startup RedBoot image in the fis init command.
+                        Not all platforms support POST-startup.  A platform
+                        might have both for testing purposes, where the
+                        eventual user would substitute their own POST code for
+                        the initial ROM-startup RedBoot, and then jump to the
+                        POST-compatible RedBoot immediately following."
+                    cdl_option CYGNUM_REDBOOT_FIS_REDBOOT_POST_OFFSET {
+                        display    "Offset of POST image from FLASH start"
+                        flavor     booldata
+                        default_value 0
+                        requires   { CYGNUM_REDBOOT_FIS_REDBOOT_POST_OFFSET >= \
+                                     CYGBLD_REDBOOT_FLASH_BOOT_OFFSET }
+                        description "
+                        This option specifies the offset for a POST image from
+                        the start of FLASH.  If unset, then the fis entry
+                        describing the POST image will be placed where
+                        convenient."
+                    }
+                }   
+    
+                cdl_option CYGOPT_REDBOOT_FIS_REDBOOT_BACKUP {
+                    display         "File to describe RedBoot backup image"
+                    default_value   0
+                    description "
+                        This option controls creation of an entry describing a
+                        backup RedBoot image in the fis init command.
+                        Conventionally a RAM-startup RedBoot image is kept
+                        under this name for use in updating the ROM-based
+                        RedBoot that boots the board."
+                }
+    
+                cdl_option CYGOPT_REDBOOT_FIS_DIRECTORY_ARM_SIB_ID {
+                    display         "Include ARM SIB ID in FIS"
+                    default_value   0
+                    description "
+                      If set, this option will cause the last 5 words of
+                      the FIS to include the special ID needed for the
+                      flash to be recognized as a reserved area for RedBoot
+                      by an ARM BootRom monitor."
+                }
+    
+                cdl_option CYGNUM_REDBOOT_FIS_DIRECTORY_ENTRY_SIZE {
+                    display         "Size of FIS directory entry"
+                    flavor	    	data
+                    default_value   256
+                    description "
+                      The FIS directory is limited to one single flash
+                      sector. If your flash has tiny sectors, you may wish
+                      to reduce this value in order to get more slots in
+                      the FIS directory."
+                }
+    
+                cdl_option CYGNUM_REDBOOT_FIS_DIRECTORY_ENTRY_COUNT {
+                    display         "Number of FIS directory entries"
+                    flavor	    data
+                    default_value   8
+                    description "
+                      The FIS directory normally occupies a single flash
+                      sector. Adjusting this value can allow for more than
+                      one flash sector to be used, which is useful if your
+                      sectors are very small."
+                }
+    
+                cdl_option CYGBLD_REDBOOT_MIN_IMAGE_SIZE {
+                    display       "Minimum image size"
+                    flavor        data
+                    default_value 0x20000
+                    description "
+                      This option controls the minimum length of images kept by
+                      the FIS.  In particular, it should be large enough to hold
+                      the RedBoot primary image itself, as well as be a natural
+                      multiple of the FLASH erase block size."
+                }
+        
+                cdl_option CYGBLD_REDBOOT_FLASH_BOOT_OFFSET {
+                    display       "Offset from start of FLASH to RedBoot boot image"
+                    flavor        data
+                    default_value CYGNUM_REDBOOT_FLASH_RESERVED_BASE
+                    requires      { CYGNUM_REDBOOT_FLASH_RESERVED_BASE <= \
+                                    CYGBLD_REDBOOT_FLASH_BOOT_OFFSET }
+                    description "
+                      This option controls where the RedBoot boot image is located
+                      relative to the start of FLASH."
+                }
+        
+                cdl_option CYGNUM_REDBOOT_FLASH_RESERVED_BASE {
+                    display       "Size of reserved area at start of FLASH"
+                    flavor        data
+                    default_value 0
+                    description "
+                      This option reserves an area at the start of FLASH where RedBoot
+                      will never interfere; it is expected that this area contains
+                      (non-RedBoot-based) POST code or some other boot monitor that
+                      executes before RedBoot."
+                }
+            }
+    
+            cdl_option CYGSEM_REDBOOT_FLASH_LOCK_SPECIAL {
+                display       "Keep all RedBoot FLASH data blocks locked."
+                flavor        bool
+                default_value 1
+                active_if     { CYGHWR_IO_FLASH_BLOCK_LOCKING != 0 }
+                description "
+                  When this option is enabled, RedBoot will keep configuration
+                  data and the FIS directory blocks implicitly locked.  While
+                  this is somewhat safer, it does add overhead during updates."
+            }
+    
+            cdl_option CYGSEM_REDBOOT_FIS_CRC_CHECK {
+                display       "Use CRC checksums on FIS images."
+                flavor        bool
+                default_value 0
+                description "
+                  When this option is enabled, RedBoot will use CRC checksums
+                  when reading and writing flash images."
+            }
+    
+            cdl_interface CYGINT_REDBOOT_ARM_FLASH_SIB_SUPPORTED {
+                display       "ARM FLASH drivers support SIB flash block structure"
+                active_if     CYGPKG_HAL_ARM
+                description   "This interface is implemented by a flash driver
+                               to indicate that it supports the ARM SIB flash
+                               block structure"
+            }
+    
+            cdl_option CYGHWR_REDBOOT_ARM_FLASH_SIB {
+                display       "Use ARM SIB flash block structure"
+                flavor        bool
+                active_if     CYGINT_REDBOOT_ARM_FLASH_SIB_SUPPORTED
+                default_value 1
+                description "
+                  This option is used to interpret ARM Flash System information
+                  blocks."
+            }
+        }
+    
+        cdl_component CYGSEM_REDBOOT_FLASH_CONFIG {
+            display       "Keep RedBoot configuration data in FLASH"
+            flavor        bool
+            default_value { CYGPKG_IO_FLASH != 0 }
+            compile       fconfig.c
+            description "
+              When this option is enabled, RedBoot will keep configuration
+              data in a separate block of FLASH memory.  This data will
+              include such items as the node IP address or startup scripts."
+
+            cdl_option CYGNUM_REDBOOT_FLASH_CONFIG_SIZE {
+                display       "Length of configuration data in FLASH"
+                flavor        data
+                default_value 4096
+                description "
+                  This option is used to control the amount of memory and FLASH
+                  to be used for configuration options (persistent storage)."
+            }
+
+            cdl_option CYGHWR_REDBOOT_FLASH_CONFIG_MEDIA {
+                display       "Style of media used for persistent data storage"
+                flavor        data
+                legal_values  { "FLASH" "EEPROM" }
+                default_value { "FLASH" }
+#                requires      { ((CYGHWR_REDBOOT_FLASH_CONFIG_MEDIA == "FLASH") && CYGOPT_REDBOOT_FIS) ||
+#                                ((CYGHWR_REDBOOT_FLASH_CONFIG_MEDIA == "EEPROM") && !CYGOPT_REDBOOT_FIS) }
+                description "
+                  Persistent data storage can either be held in 'norma' FLASH
+                  or some other device (represented by the 'EEPROM' choice).
+                  The different styles utilize different access methods."
+            }
+
+            cdl_option CYGSEM_REDBOOT_FLASH_COMBINED_FIS_AND_CONFIG {
+                display       "Merged config data and FIS directory"
+                flavor        bool              
+                active_if     { CYGOPT_REDBOOT_FIS && (CYGHWR_REDBOOT_FLASH_CONFIG_MEDIA == "FLASH") }
+                default_value 1
+                description "
+                  If this option is set, then the FIS directory and FLASH 
+                  configuration database will be stored in the same physical
+                  FLASH block."
+            }
+
+            cdl_option CYGNUM_REDBOOT_FLASH_CONFIG_BLOCK {
+                display       "Which block of flash to use" 
+                flavor         data
+                default_value  (-2)
+                description "
+                  Which block of flash should hold the configuration 
+                  information. Positive numbers are absolute block numbers. 
+                  Negative block numbers count backwards from the last block.
+                  eg 2 means block 2, -2 means the last but one block."
+            }
+
+            cdl_option CYGSEM_REDBOOT_FLASH_ALIASES {
+                display       "Support simple macros/aliases in FLASH"
+                flavor        bool
+                default_value 1
+                description "
+                  This option is used to allow support for simple text-based
+                  macros (aliases).  These aliases are kept in the FLASH
+                  configuration data (persistent storage)."
+            }
+
+            cdl_option CYGNUM_REDBOOT_FLASH_STRING_SIZE {
+                display       "Length of strings in FLASH configuration data"
+                flavor        data
+                default_value 128
+                description "
+                  This option is used to control the amount of memory and FLASH
+                  to be used for string configuration options (persistent storage)."
+            }
+
+            cdl_option CYGNUM_REDBOOT_FLASH_SCRIPT_SIZE {
+                display       "Length of configuration script(s) in FLASH"
+                flavor        data
+                default_value 512
+                description "
+                  This option is used to control the amount of memory and FLASH
+                  to be used for configuration options (persistent storage)."
+            }
+
+            cdl_option CYGSEM_REDBOOT_FLASH_CONFIG_READONLY_FALLBACK {
+                display       "Fallback to read-only FLASH configuration"
+                flavor        bool
+                default_value { (CYGHWR_REDBOOT_FLASH_CONFIG_MEDIA == "FLASH") }
+                description "
+                  This option will cause the configuration information to
+                  revert to the readonly information stored in the FLASH.
+                  The option only takes effect after 
+                    1) the config_ok flag has been set to be true,
+                       indicating that at one time the copy in RAM was valid;
+                  and
+                    2) the information in RAM has been verified to be invalid"
+                  
+            }
+        }
+    
+        cdl_component CYGPKG_REDBOOT_FILEIO {
+            display       "Allow RedBoot to support fileio"
+            flavor        bool
+            default_value 0
+            active_if     CYGPKG_IO_FILEIO
+            description   "
+              If this option is enabled then RedBoot will provide commands
+              to load files from fileio file systems such as JFFS2."
+            compile -library=libextras.a fs/fileio.c
+
+            cdl_option CYGBLD_REDBOOT_FILEIO_WITH_LS {
+                display       "Include an ls command"
+                flavor        bool
+                default_value 1
+                description   "
+                   If this option is enabled a simple ls command will be
+                   included in redboot so the contents of a directory
+                   can be listed"
+            }
+        }
+
+        cdl_component CYGPKG_REDBOOT_DISK {
+            display       "Allow RedBoot to support disks"
+            flavor        bool
+            default_value 0
+            description   "
+              If this option is enabled then RedBoot will provide commands
+              to load disk files."
+
+            cdl_option CYGSEM_REDBOOT_DISK {
+                display   "Include Redboot commands for disk access"
+                default_value { CYGINT_REDBOOT_DISK_DRIVERS != 0 }
+                compile -library=libextras.a fs/disk.c
+            }
+
+            cdl_interface CYGINT_REDBOOT_DISK_DRIVERS {
+                display  "Hardware drivers for disk-type devices"
+            }
+    
+            cdl_option CYGNUM_REDBOOT_MAX_DISKS {
+                display       "Maximum number of supported disks"
+                flavor        data
+                default_value 4
+                description "
+                  This option controls the number of disks supported by RedBoot."
+            }
+    
+            cdl_option CYGNUM_REDBOOT_MAX_PARTITIONS {
+                display       "Maximum number of partitions per disk"
+                flavor        data
+                default_value 8
+                description "
+                  This option controls the maximum number of supported partitions per disk."
+            }
+    
+            cdl_component CYGSEM_REDBOOT_DISK_IDE {
+                display       "Support IDE disks."
+                flavor        bool
+                default_value 1
+                active_if     { CYGINT_HAL_PLF_IF_IDE != 0 }
+                description "
+                  When this option is enabled, RedBoot will support IDE disks."
+                compile -library=libextras.a fs/ide.c
+                implements    CYGINT_REDBOOT_DISK_DRIVERS
+
+                cdl_option CYGSEM_REDBOOT_DISK_IDE_VMWARE {
+                    display       "Work with VMware virtual disks"
+                    flavor        bool
+                    default_value 0
+                    description "
+			This option controls the disk driver beaviour at ide-init"
+		}
+            }
+    
+            cdl_component CYGSEM_REDBOOT_DISK_EXT2FS {
+                display       "Support Linux second extended filesystems."
+                flavor        bool
+                default_value 0
+                description "
+                  When this option is enabled, RedBoot will support IDE disks."
+                compile -library=libextras.a fs/e2fs.c
+            }
+    
+            cdl_component CYGSEM_REDBOOT_DISK_ISO9660 {
+                display       "Support ISO9660 filesystems."
+                flavor        bool
+                calculated    0
+                description "
+                  When this option is enabled, RedBoot will support ISO9660 filesystems."
+                compile -library=libextras.a fs/iso9660fs.c
+            }
+        }
+    
+        cdl_component CYGPKG_REDBOOT_BOOT_SCRIPT {
+            display         "Boot scripting"
+            doc             ref/persistent-state-flash.html
+            flavor          none
+            no_define
+            description     "
+                    This contains options related to RedBoot's boot script
+                    functionality."
+            
+            cdl_option CYGFUN_REDBOOT_BOOT_SCRIPT {
+                    display         "Boot scripting enabled"
+                    flavor          bool
+                    active_if       { CYGDAT_REDBOOT_DEFAULT_BOOT_SCRIPT || \
+                                      CYGSEM_REDBOOT_FLASH_CONFIG }
+                    calculated      1
+                    description "
+                      This option controls whether RedBoot boot script
+                      functionality is enabled." 
+            }
+    
+            cdl_option CYGDAT_REDBOOT_DEFAULT_BOOT_SCRIPT {
+                    display         "Use default RedBoot boot script"
+                    flavor          booldata
+                    default_value   0
+                    description "
+                      If enabled, this option will tell RedBoot to use the value of
+                      this option as a default boot script."
+            }
+    
+            cdl_option CYGNUM_REDBOOT_BOOT_SCRIPT_TIMEOUT_RESOLUTION {
+                display       "Resolution (in ms) for script timeout value."
+                flavor        data
+                default_value 1000
+                description "
+                  This option controls the resolution of the script timeout.
+                  The value is specified in milliseconds (ms), thus to have the
+                  script timeout be defined in terms of tenths of seconds, use 100."
+            }
+    
+            cdl_option CYGNUM_REDBOOT_BOOT_SCRIPT_DEFAULT_TIMEOUT {
+                display       "Script default timeout value"
+                flavor        data
+                default_value 10
+                description "
+                  This option is used to set the default timeout for startup
+                  scripts, when they are enabled."
+            }
+        }
+    
+        cdl_option CYGSEM_REDBOOT_RTC {
+            display      "Support RTC for time & date functions"
+            active_if    { CYGPKG_IO_WALLCLOCK }
+            default_value 1
+            description  "
+              When this option is enabled, RedBoot will support commands to
+              query and set the real time clock (time and date)"
+            compile -library=libextras.a time_date.cxx
+        }
+    
+        cdl_option CYGPRI_REDBOOT_ROM_MONITOR {
+            display      "Behave like a ROM monitor"
+            active_if    { CYG_HAL_STARTUP == "ROM" || CYG_HAL_STARTUP == "ROMRAM" }
+            requires     CYGSEM_HAL_ROM_MONITOR
+            calculated   0
+            no_define
+            description  "
+              Enabling this option will allow RedBoot to provide ROM monitor-style
+              services to programs which it executes."
+        }
+    
+        cdl_component CYGSEM_REDBOOT_BSP_SYSCALLS {
+            display       "Allow RedBoot to handle GNUPro application 'syscalls'."
+            flavor        bool
+            default_value 0
+            description   "
+              If this option is enabled then RedBoot will install a syscall handler
+              to support debugging of applications based on GNUPro newlib/bsp."
+    
+            cdl_option CYGSEM_REDBOOT_BSP_SYSCALLS_GPROF {
+                display	"Support additional syscalls for 'gprof' profiling"
+                flavor 	bool
+                default_value 0
+                active_if	{ 0 < CYGINT_REDBOOT_BSP_SYSCALLS_GPROF_SUPPORT }
+                description "
+                    Support additional syscalls to support a periodic callback
+                    function for histogram-style profiling, and an enquire/set
+                    of the tick rate.
+                    The application must use the GNUPro newlib facilities
+                    to set this up."
+            }
+    
+            cdl_interface CYGINT_REDBOOT_BSP_SYSCALLS_GPROF_SUPPORT {
+                display	"Does the HAL support 'gprof' profiling?"
+                no_define
+            }
+
+            cdl_option CYGOPT_REDBOOT_BSP_SYSCALLS_EXIT_WITHOUT_TRAP {
+                display "Do not raise SIGTRAP when program exits"
+                default_value 0
+                description "
+                    For some (single shot) newlib based programs,
+                    exiting and returning a termination status may be
+                    the normal expected behavior."
+            }
+        }
+    
+        cdl_component CYGOPT_REDBOOT_FIS_ZLIB_COMMON_BUFFER {
+            display     	"Use a common buffer for Zlib and FIS"
+            flavor	    	bool
+            active_if   	{ CYGBLD_BUILD_REDBOOT_WITH_ZLIB && \
+                              CYGOPT_REDBOOT_FIS }
+            default_value	0
+            description 	"
+                Use a common memory buffer for both the zlib workspace
+                and FIS directory operations. This can save a substantial
+                amount of RAM, especially when flash sectors are large."
+    
+            cdl_option CYGNUM_REDBOOT_FIS_ZLIB_COMMON_BUFFER_SIZE {
+                display 	    "Size of Zlib/FIS common buffer"
+                flavor  	    data
+                default_value   0xc000
+                legal_values    0x4000 to 0x80000000
+                description     "
+                    Size of common buffer to allocate. Must be at least the
+                    size of one flash sector."
+            }
+        }
+        cdl_option CYGNUM_REDBOOT_GETC_BUFFER {
+            display       "Buffer size in getc when loading images"
+            flavor        data
+            default_value { CYGPKG_REDBOOT_FILEIO ? 4096 : 256 }
+            description   "
+                When loading images a buffer is used between redboot and the
+                underlying storage medium, eg a filesystem, or a socket etc.
+                The size of this buffer can have a big impart on load speed."
+        }
+
+    }
+}
+
+# EOF redboot.cdl

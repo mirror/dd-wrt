@@ -1,0 +1,310 @@
+2003-11-05  Bob Koninckx <bob.koninckx@mech.kuleuven.ac.be>
+
+	* src/watchdog.cxx: 
+	* include/watchdog.hxx: 
+	* include/watchdog.h: New file - add "C" API for watchdog functions.
+
+2003-04-03  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+	* cdl/watchdog.cdl: Turned 'wallclock' into 'watchdog' in string.
+
+2003-04-02  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/watchdog.cdl: Watchdog implementation requirement should be
+	in package, not interface itself. *Note* must be requires, not
+	active_if otherwise turning off the emulated watchdog means you
+	can never turn it on again!
+
+2000-05-31  Jesper Skov  <jskov@redhat.com>
+
+	* tests/watchdog.cxx: fix comment.
+
+	* tests/watchdog2.cxx: 
+	* cdl/watchdog.cdl: 
+	watchdog2 tests timeout is not too fast (safe for both types of
+	watchdog semantics).
+	
+	* tests/watchdog_reset.cxx: 
+	* src/emulate.cxx:
+	* include/watchdog.hxx:
+	Fixed compile errors.
+
+	* cdl/watchdog.cdl: Only build test if the watchdog does not reset
+	the board.
+	Added build option for interactive reset test.
+
+2000-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* tests/watchdog_reset.cxx: 
+	* tests/watchdog.cxx: 
+	* src/emulate.cxx: 
+	* src/watchdog.cxx: 
+	* include/watchdog.hxx: 
+	* cdl/watchdog.cdl: 
+	Moved to io/watchdog.
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/watchdog.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/watchdog.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/watchdog.cdl: Define build options.
+
+1999-09-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h: Rename CYGPKG_HAL_MN10300_SIM to
+	CYGPKG_HAL_MN10300_AM31_SIM
+
+1999-09-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h:
+	* src/aeb1.cxx: [added]
+	* src/PKGconf.mak:
+	* tests/PKGconf.mak:
+	Added watchdog driver for AEB-1 board.
+
+1999-09-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PRs 20427, 20428, 20432
+	* tests/PKGconf.mak (TESTS): Clear on targets that reset the
+	board.
+
+1999-09-01  Jesper Skov  <jskov@cygnus.co.uk>
+	* cdl/watchdog.cdl: 
+	* include/pkgconf/watchdog.h: 
+	* src/PKGconf.mak: 
+	* src/sh.cxx: 
+	Added watchdog driver for SH.
+
+1999-08-27  Jesper Skov  <jskov@cygnus.co.uk>
+	* include/pkgconf/watchdog.h: 
+	* src/PKGconf.mak: 
+	* src/ebsa285.cxx: 
+	Added watchdog device for 21285.
+
+	* tests/watchdog_reset.cxx: 
+	* tests/PKGconf.mak (TESTS):
+	Added test for watchdog devices that reset the board.
+
+1999-08-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300.cxx: Turn watchdog off in Cyg_Watchdog::trigger() to
+	prevent it repeating.
+
+1999-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h: Made test for use of a non-emulated
+	watchdog more generic for MN10300 targets.
+
+	* src/emulate.cxx: 
+	* include/watchdog.hxx (class Cyg_Watchdog):
+	Added get_resolution() to return maximum time, in nanoseconds,
+	between calls to reset().
+
+	* tests/watchdog.cxx: 
+	Modified to use the value returned from get_resolution() to
+	control the timing of reset() calls.
+	
+	* src/mn10300.cxx: 
+	Added support for AM33 variant. Since the AM33 can only provide a
+	maximum watchdog cycle time of 621ms, this has motiviated the
+	addition of the get_resolution() call described above.
+
+1999-07-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/mn10300.cxx: 
+	* src/emulate.cxx: 
+	Include pkgconf/kernel.h.
+
+1999-04-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/watchdog.cxx: The 'keep alive' message was interfering
+	with the watchdog measurement.  Some rearrangement fixes this.
+
+1999-04-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/watchdog.cxx: 
+	Restrict number of loops, and number of seconds per loop when we
+	detect we are in a simulator. Do this instead of changing the
+	value of one_sec in the simulator, since this invalidates the test
+	somewhat.
+	Output occasional messages to reassure the user that the test is
+	still running.
+	Fix for PR 19865
+
+1999-04-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/watchdog.cxx (cyg_start): Added workaround for PR 17974.
+
+1999-04-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h: Add cdl_package doc attribute.
+
+1999-04-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/watchdog.cxx: PR 19773 - Loop over first test for better 
+	coverage. Print some additional messages, especially if failure 
+	detected.  Reset watchdog after installing handler.
+	(watchdog_thread): Capture fail time before printing message.
+
+1999-04-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19667
+	* tests/watchdog.cxx (cyg_start): 
+	Changed to use the new Cyg_Thread constructor.
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/watchdog.cxx: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/watchdog.cxx: 
+	Deal with CYGNUM_HAL_MINIMUM_STACK_SIZE requirement.
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h: Make package stand-alone (no "DEVICES")
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300.cxx: 
+	Change CYG_VECTOR_WATCHDOG to CYGNUM_HAL_INTERRUPT_WATCHDOG in line
+	with HAL changes.
+	General QA improvements
+
+1999-02-03  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19034
+	* tests/watchdog.cxx: Reduced run-time on SIM.
+
+1998-12-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/watchdog.cxx: Do NOP test if kernel RTC disabled.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/watchdog.cxx (cyg_start): Reduce test time on TX39 SIM.
+
+	* include/pkgconf/watchdog.h: Use emulatation code for MN10300
+	SIM.
+
+Tue Oct 20 15:52:46 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300.cxx: 
+	Include <pkgconf/watchdog.h> so that we get CYGIMP_WATCHDOG_EMULATE
+	defined appropriately
+
+	* src/PKGconf.mak:
+	Remove unnecessary override of PKGCONF_CXXFLAGS
+
+1998-09-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h:
+	PR17501: When using the emulation there is a requirement on the
+	kernel clock. This has been added to the configuration data. The
+	mn10300 hardware implementation does not have this requirement,
+	but there is no easy way to express this at present.
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h:
+	Added missing descriptions (PR 17184)
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/watchdog.h:
+	Added minimal configuration data.
+
+1998-09-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300.cxx:
+	Added include for <cyg/kernel/sched.inl>, for scheduler lock and
+	unlock functions.
+
+	* src/PKGconf.mak:
+	Added mn10300.cxx to COMPILE for mn10300.
+
+	* include/pkgconf/watchdog.h:
+	Default to using real hardware on MN10300.
+
+Fri Aug 28 09:42:26 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/watchdog.cxx:
+	Rename int main(argc, argv) to void cyg_start( void ) under the
+        new entry point system. Therefore also remove return code.
+
+Tue Aug 18 16:51:24 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/watchdog.cxx: 
+	Move inclusion of thread.inl to before sched.hxx to prevent inline
+	warnings
+
+1998-08-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/emulate.cxx:
+	Added include for cyg/kernel/sched.inl.
+
+1998-07-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Added mn10300.cxx to COMPILE list.
+
+	* src/mn10300.cxx:
+	Completed implementation using MN10300 watchdog timer.
+
+	* include/watchdog.hxx:
+	Renamed 'register' functions to 'install'. Added install() and
+	uninstall() to Cyg_Watchdog_Action class.
+
+	* include/pkgconf/watchdog.h:
+	Added this file to contain watchdog config options.
+
+1998-07-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/watchdog.hxx, src/emulate.cxx: 
+	Created initial versions of watchdog device.
+
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####

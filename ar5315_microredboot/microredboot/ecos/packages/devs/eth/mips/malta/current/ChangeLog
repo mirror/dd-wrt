@@ -1,0 +1,70 @@
+2001-07-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_mips_mips32_malta.inl: Removed ESA init
+	definition again now driver has been fixed.
+
+2001-07-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_mips_mips32_malta.inl
+	(CYGHWR_AMD_PCNET_BROKEN_ESA_INIT): Defined.
+
+2001-07-18  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/mips_mips32_malta_eth_drivers.cdl: Default to use eeprom ESA.
+
+2001-07-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_mips_mips32_malta.inl: Let driver find base and
+	interrupt details. Updated esa options.
+
+2001-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/mips_mips32_malta_eth_drivers.cdl: Implements net drivers.
+
+2001-04-23  Mark Salter  <msalter@redhat.com>
+
+	* include/devs_eth_mips_mips32_malta.inl: Adjust base address to
+	match changed PCI allocation base. This should really be gotten
+	at runtime from the PCI interface, not from a build time constant.
+
+2001-04-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/mips_mips32_malta_eth_drivers.cdl: Platform specific
+	information required to use the generic AMD PCNet driver for the
+	Malta platform.
+	* include/devs_eth_mips_mips32_malta.inl: Same.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

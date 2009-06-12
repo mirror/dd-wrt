@@ -1,0 +1,87 @@
+OUTPUT_ARCH(mips)
+ENTRY(_start)
+SECTIONS
+{
+  /* Read-only sections, merged into text segment: */
+  . = @@LOADADDR@@;
+  _load_addr = .;
+
+  . = @@TEXTADDR@@;
+  _text = .;
+  .text :
+  {
+    _start = . ;
+    *(.start)
+    *(.text)
+    *(.rodata)
+    *(.rodata1)
+    /* .gnu.warning sections are handled specially by elf32.em.  */
+    *(.gnu.warning)
+    payload.o
+    input_data = _binary_payload_gz_start;
+    input_data_end = _binary_payload_gz_end;
+    . = ALIGN(4);
+  } =0
+
+  . = ALIGN(16);                /* Exception table */
+  __start___ex_table = .;
+  __ex_table : { *(__ex_table) }
+  __stop___ex_table = .;
+
+  _etext = .;
+
+  .data :
+  {
+    *(.data)
+  }
+
+  _edata  =  .;
+
+  . = @@BSSADDR@@;
+  __bss_start = .;
+  /* NOLOAD would be preferable here, but doesn't seem to work, so
+   * using OVERLAY to prevent the BSS ending up in the raw binary
+   * image. The code will zero its own bss, so no need to worry
+   * about it.
+   */
+  .bss (OVERLAY):
+  {
+   *(.dynbss)
+   *(.bss)
+   *(COMMON)
+   .  = ALIGN(4);
+  _end = . ;
+  }
+
+
+  /* Sections to be discarded */
+  /DISCARD/ :
+  {
+	*(.reginfo)
+        *(.text.exit)
+        *(.data.exit)
+        *(.exitcall.exit)
+  }
+
+  /* This is the MIPS specific mdebug section.  */
+  .mdebug : { *(.mdebug) }
+  /* These are needed for ELF backends which have not yet been
+     converted to the new style linker.  */
+  .stab 0 : { *(.stab) }
+  .stabstr 0 : { *(.stabstr) }
+  /* DWARF debug sections.
+     Symbols in the .debug DWARF section are relative to the beginning of the
+     section so we begin .debug at 0.  It's not clear yet what needs to happen
+     for the others.   */
+  .debug          0 : { *(.debug) }
+  .debug_srcinfo  0 : { *(.debug_srcinfo) }
+  .debug_aranges  0 : { *(.debug_aranges) }
+  .debug_pubnames 0 : { *(.debug_pubnames) }
+  .debug_sfnames  0 : { *(.debug_sfnames) }
+  .line           0 : { *(.line) }
+  /* These must appear regardless of  .  */
+  .gptab.sdata : { *(.gptab.data) *(.gptab.sdata) }
+  .gptab.sbss : { *(.gptab.bss) *(.gptab.sbss) }
+  .comment : { *(.comment) }
+  .note : { *(.note) }
+}

@@ -1,0 +1,453 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Changing Power Modes</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Power Management Support"
+HREF="services-power.html"><LINK
+REL="PREVIOUS"
+TITLE="Power Management Information"
+HREF="power-info.html"><LINK
+REL="NEXT"
+TITLE="Support for Policy Modules"
+HREF="power-policy.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Power Management Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="power-info.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="power-policy.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="POWER-CHANGE"
+>Changing Power Modes</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN171"
+></A
+><H2
+>Name</H2
+>Changing Power Modes&nbsp;--&nbsp;reducing or increasing power consumption as needed</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN174"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN175"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/power/power.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    void power_set_mode
+  </CODE
+>(    PowerMode new_mode
+  );</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    void power_set_controller_mode
+  </CODE
+>(    PowerController* controller
+  ,     PowerMode new_mode
+  );</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    void power_set_controller_mode_now
+  </CODE
+>(    PowerController* controller
+  ,     PowerMode new_mode
+  );</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-CHANGE-GLOBAL"
+></A
+><H2
+>Changing the Global Power Mode</H2
+><P
+>The primary functionality supported by the power management package is
+to change the system's global power mode. This is achieved by calling
+the function <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> with a single
+argument, which should be one of <TT
+CLASS="LITERAL"
+>PowerMode_Active</TT
+>,
+<TT
+CLASS="LITERAL"
+>PowerMode_Idle</TT
+>, <TT
+CLASS="LITERAL"
+>PowerMode_Sleep</TT
+>
+or <TT
+CLASS="LITERAL"
+>PowerMode_Off</TT
+>. Typically this function will only
+be invoked in certain scenarios:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>A typical system will contain a policy module which is primarily
+responsible for initiating power mode changes, and a thread inside the
+power management package. The policy module will call
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>, which has the effect of
+manipulating some internal state in the power management package and
+waking up its thread. When this thread gets scheduled to run (its
+priority is controlled by a configuration option), it will iterate
+over the power controllers and invoke each controller to change its
+power mode. There is support for a <A
+HREF="power-policy.html#POWER-POLICY-CALLBACK"
+>callback function</A
+>, and for
+<A
+HREF="power-attached.html"
+>detached</A
+> power controllers.</P
+></LI
+><LI
+><P
+>After a call to <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> but before the
+power management thread has had a chance to iterate over all the
+controllers, or even before the thread has been rescheduled at all,
+the policy module may decide that a different power mode would be more
+appropriate for the current situation and calls
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> again. This has the effect of
+aborting the previous mode change, followed by the power management
+thread iterating over the power controllers again for the new mode.</P
+></LI
+><LI
+><P
+>If there is no single policy module responsible for power mode
+changes, any code can call <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>. If
+there are multiple calls in quick succession, earlier calls will
+be aborted and the system should end up in the power mode
+corresponding to the last call</P
+></LI
+><LI
+><P
+>As a special case, it is possible for a power controller to call
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> when invoked by the power
+management thread. For example a power controller could decide that it
+is inappropriate for the system to go to sleep because the device it
+is associated with is still busy. The effect is as if the policy
+module had called <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> again before 
+the mode change had completed.</P
+></LI
+></OL
+><P
+>If the power management package has been configured not to use a
+separate thread then obviously the behaviour is somewhat different.
+The call to <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> will now iterate over
+the various power controllers immediately, rather than leaving this to
+a separate thread, and the whole mode change completes before
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> returns. If some other thread or a
+DSR calls <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> concurrently the
+behaviour of the system is undefined. However, it is still legal for a
+power controller to call <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>:
+effectively this is a recursive call; it is detected by the system,
+and internal state is updated; the recursive
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> call now returns, and when the
+power controller returns back to the original
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> call it detects what has happened,
+aborts the previous mode change, and starts a new mode change as
+requested by the controller.</P
+><P
+><TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> is normally invoked from thread
+context. If a separate power management thread is used it can be
+invoked safely from DSR context. If the system is configured not to
+use such a thread, it may or may not be safe to invoke this function
+from DSR context: essentially the function just iterates through
+the various power controllers, and the documentation or source code of
+each controller present in the current system will have to be examined
+to determine whether or not this can happen safely in DSR context.
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> should never be invoked from
+ISR context.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-CHANGE-CONTROLLER"
+></A
+><H2
+>Manipulating an Individual Power Controller</H2
+><P
+>In some cases it is desirable to set the power mode of an individual
+controller separately from the mode for the system as a whole. For
+example if a device is not currently being used then the associated
+power controller could be set to <TT
+CLASS="LITERAL"
+>PowerMode_Off</TT
+>,
+even while the system as a whole is still active. This can be achieved
+by calling the function
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+>. It takes two
+arguments: the first identifies a particular controller; the second
+specifies the desired new power mode for that controller. The function
+operates in much the same way as <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>,
+for example if a separate power management thread is being used then
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> operates by
+manipulating some internal state and waking up that thread. The
+limitations are also much the same as for
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>, so for example
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> should not be invoked
+from inside ISRs.</P
+><P
+>Manipulating individual controllers is often used in conjunction with
+the function <A
+HREF="power-attached.html"
+><TT
+CLASS="FUNCTION"
+>power_set_controller_attached</TT
+></A
+>,
+allowing the policy module to specify which controllers are affected
+by global mode changes.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-CHANGE-CONTROLLER-NOW"
+></A
+><H2
+>Direct Manipulation of a Power Controller</H2
+><P
+>In exceptional circumstances it may be necessary to invoke a power
+controller directly, bypassing the power management thread and
+higher-level functionality such as <A
+HREF="power-policy.html#POWER-POLICY-CALLBACK"
+>callback functions</A
+>. The
+function <TT
+CLASS="FUNCTION"
+>power_set_controller_mode_now</TT
+> allows
+this. It takes two arguments, a controller and a mode, just like
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+>.</P
+><P
+>Use of <TT
+CLASS="FUNCTION"
+>power_set_controller_mode_now</TT
+> is
+dangerous. For example no attempt is made to synchronise with any
+other power mode changes that might be happening concurrently. A
+possible use is when the system gets woken up out of
+<SPAN
+CLASS="TYPE"
+>sleep</SPAN
+> mode: depending on the hardware, on which power
+controllers are present, and on the application code it may be
+necessary to wake up some power controllers immediately before the
+system as a whole is ready to run again.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="power-info.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="services-power.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="power-policy.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Power Management Information</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Support for Policy Modules</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

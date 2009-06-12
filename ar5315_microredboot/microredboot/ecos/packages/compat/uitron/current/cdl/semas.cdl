@@ -1,0 +1,115 @@
+# ====================================================================
+#
+#      semas.cdl
+#
+#      uITRON semaphore related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  hmt
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGNUM_UITRON_SEMAS {
+    display       "Number of semaphores"
+    flavor        data
+    legal_values  1 to 65535
+    default_value 3
+    description   "
+        The number of uITRON semaphores present in the system.
+        Valid semaphore object IDs will range from 1 to this value."
+}
+cdl_component CYGPKG_UITRON_SEMAS_CREATE_DELETE {
+    display       "Support create and delete"
+    flavor        bool
+    default_value 1
+    description   "
+        Support semaphore create and delete operations (cre_sem, del_sem).
+        Otherwise all semaphores are created, up to the number specified 
+        above."
+
+    cdl_option CYGNUM_UITRON_SEMAS_INITIALLY {
+        display       "Number of semaphores created initially"
+        flavor        data
+        legal_values  0 to 65535
+        default_value 3
+        description   "
+            The number of uITRON semaphores initially created.
+            This number should not be more than the number
+            of semaphores in the system, though setting it to a large
+            value to mean 'all' is acceptable.
+            Initially, only semaphores numbered 1 to this number exist;
+            higher numbered ones must be created before use.
+            It is only useful to initialize semaphores up to this number;
+            higher numbered ones must be created in order to use them,
+            and so they will be re-initialized."
+    }
+}
+cdl_component CYGPKG_UITRON_SEMAS_ARE_INITIALIZED {
+    display       "Initialize semaphore counts"
+    flavor        bool
+    default_value 0
+    description   "
+        Initialize semaphores to specific count values.
+        Otherwise semaphores are initialized with the count
+        set to zero."
+
+    cdl_option CYGDAT_UITRON_SEMA_INITIALIZERS {
+        display       "Static initializers"
+        parent        CYGPKG_UITRON_SEMAS_ARE_INITIALIZED
+        flavor        data
+        default_value {"CYG_UIT_SEMA(  0 ),\
+                        CYG_UIT_SEMA(  0 ),\
+                        CYG_UIT_SEMA(  0 )"}
+        description   "
+            A list of initializers separated by commas,
+            one per line.
+            An initializer is 'CYG_UIT_SEMA(INITIAL-COUNT)'
+            or 'CYG_UIT_SEMA_NOEXS' for slots above the number
+            initially to be created, when create and delete
+            operations are supported.
+            Note: this option is invoked in the context of a
+            C++ array initializer, between curly brackets.
+            Ensure that the number of initializers here exactly
+            matches the total number of semaphores specified."
+    }
+}

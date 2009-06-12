@@ -1,0 +1,134 @@
+<HTML>
+<HEAD>
+<TITLE>Tracepoint Dialogs Help</TITLE>
+</HEAD>
+<BODY>
+<H1>Tracepoint Dialogs</H1>
+<H3>Overview</H3>
+<P>There are two Tracepoint Dialogs which help users set tracepoints:
+The Tracepoint Dialog is used to view and add actions and The Actions
+Dialog is used to edit a particular action specified in the
+tracepoint's Action List.</P>
+
+<P>Tracepoint Dialogs topics:
+<UL>
+    <LI><A HREF="#tracedlg">The Tracepoint Dialog</A>
+        <UL>
+            <LI><A HREF="#t_experiment">Experiment Frame</A>
+            <LI><A HREF="#t_actions">Actions Frame</A>
+                 <UL>
+                     <LI><A HREF="#t_actions_passcount">Number of Passes</A>
+                     <LI><A HREF="#t_actions_add">Adding Actions</A>
+                     <LI><A HREF="#t_actions_modify">Modifying Actions</A>
+                 </UL>
+         </UL>
+     <LI><A HREF="#actionsdlg">The Actions Dialog</A>
+         <UL>
+             <LI><A HREF="#a_variables">Variables List</A>
+             <LI><A HREF="#a_collect">Collection List</A>
+             <LI><A HREF="#a_other">Other Entry</A>
+         </UL>
+</UL></P>
+
+<H3><A NAME="tracedlg">The Tracepoint Dialog</H3>
+The Tracepoint Dialog is the gateway to viewing and editing
+the properties of any tracepoint. The same dialog is used
+to add new tracepoints and edit and delete existing tracepoints,
+for both single tracepoints and ranges of tracepoints.
+
+<H4><A NAME="t_experiment">Experiment Frame</A></H4>
+The Experiment Frame displays information about the tracepoint's
+location in the program and its status. Specifically,
+<DL>
+    <DT>Number
+        <DD>The internal number for this tracepoint. New tracepoints
+            all have the number "-1". This number may be used to
+            refer to specific tracepoints when using the
+            <A HREF="console.html">Console Window</A>
+    <DT>Hit Count
+        <DD>The number of times the tracepoint has been hit
+    <DT>Thread
+        <DD>The thread in which the tracepoint exists. This
+            feature is not currently implemented.
+    <DT>Function
+        <DD>The function in which the tracepoint is set
+    <DT>File
+        <DD>The file in which the tracepoint is set
+    <DT>Line(s)
+        <DD>The line at which the tracepoint is set or the
+            lines which the tracepoint range affects
+</DL>
+<BR>
+
+<H4><A NAME="t_actions">Actions Frame</A></H4>
+The Actions Frame displays the user-settable properties of the
+tracepoint, including all actions and a pass count.
+
+<P>A pass count specifies the number of times that the tracepoint
+can be hit on the target before the tracing experiment ceases. A
+pass count of five means that this tracepoint will issue a silent
+"tstop" when it is hit the fifth time (after it has performed all
+it actions). A pass count of zero (0) means that the tracepoint
+will never causes the trace experiment to terminate on the target.</P>
+
+<P>To <A NAME="t_actions_add">add an action</A> for the tracepoint,
+select the appropriate action from the Action ComboBox and click
+"Add". The <A HREF="#actionsdlg">Action Dialog</A> appears to
+allow editing the action's properties.</P>
+
+<P>Currently, there are two actions: collect and while-stepping.
+Any number of collect actions may be added to specify that the
+target should collect variables, registers, and memory when
+it is hit. The while-stepping action may be used to collect
+data for a specified number of machine instructions. Only one
+while-stepping action may be specified for any tracepoint.</P>
+
+<P>To <A NAME="t_actions_modify">modify the actions</A> associated
+with a tracepoint, double-click the left mouse button on the action
+listed in the Action Frame, and the <A HREF="#actionsdlg">Actions
+Dialog</A> will appear.</P>
+
+<P>To accept the tracepoint as displayed, click the OK button. To abort
+installing or editing the tracepoint, click the CANCEL button. To delete
+the tracepoint (if it is not a new tracepoint), click the DELETE button.</P>
+
+<H3><A NAME="actionsdlg">The Actions Dialog</A></H3>
+The Actions Dialog is used to edit an action for the tracepoint. It
+consists of two lists, one containing all (uncollected) local variables
+(including function arguments) and registers, and one containing everything
+being collected.
+
+<P>The <A NAME="#a_variables">Variables List</A> lists all uncollected local variables,
+function arguments, and registers  and may also display the special indentifiers
+"All Locals", "All Arguments", and "All Registers". Global variables (and file static
+variables) do not appear on the Variable List.</P>
+
+<P>To move a variable from the Variables List to the Collection List, double-click
+the variable in the Variables List or select the variable in the Variable
+List and press the "<<< Collect" button. To specify a range of variables to be
+collected, select them in the Variables list and click the "<<< Collect" button.</P>
+
+<P><A NAME="a_collect">The Collection List displays all data being collected
+by the action, including the special types "All Locals", "All Registers", and
+"All Arguments", which specify that every local variable, every register, and
+every function argument will be collected, respectively. Specifying a local
+variable, for example, and "All Locals" will cause only the special identifier
+"All Locals" to be sent to the target. Analogously, "All Registers" and "All
+Arguments" also override any register or function argument specifically listed
+in the Collection List.</P>
+
+<P>To remove data from the Collection List, double-click any of the entries listed
+in the List, or select a range of data to be removed and press the "Ignore >>>"
+button. All local variables, function arguments, registers, and special identifiers
+will be returned to the Variable List, while any expression (memory ranges, globals)
+will simply "disappear". To add these again, use the <A HREF="#a_other">Other Entry</A>
+at the bottom of the display.</P>
+
+<P>The <A NAME="#a_other">Other Entry</A> can be used to move any variable listed in
+either the Collection List or the Variable List to the other list. It can also
+be used to specify expressions for collection, such as memory ranges and global variables.
+Simply enter the name of the global variable or the expression and press the enter key on
+the keyboard. If the expression is valid, it will be added/removed from the Collection
+List.</P>
+</BODY>
+</HTML>

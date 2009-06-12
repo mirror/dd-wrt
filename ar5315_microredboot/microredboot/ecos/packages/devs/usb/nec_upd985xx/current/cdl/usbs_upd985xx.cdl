@@ -1,0 +1,293 @@
+# ====================================================================
+#
+#      usbs_upd985xx.cdl
+#
+#      USB device driver for the NEC uPD985xx family of processors.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2002 Bart Veer
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  bartv
+# Contributors:
+# Date:           2001-05-22
+#
+#####DESCRIPTIONEND####
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_USB_UPD985XX {
+    display     "NEC uPD985xx USB Device Driver"
+    include_dir "cyg/io/usb"
+    parent      CYGPKG_USB
+    implements  CYGHWR_IO_USB_SLAVE
+    doc         ref/devs-usb-nec-upd985xx.html
+    
+    # Make sure that we are running on the right hardware.
+    requires CYGPKG_HAL_MIPS
+    requires CYGPKG_HAL_MIPS_UPD985XX
+    
+    description "
+        The NEC uPD985xx family of processors implements an
+        on-chip USB device controller, facilitating the use of this
+        processor in USB peripherals. This package provides a
+        suitable eCos device driver."
+
+    cdl_component CYGFUN_DEVS_USB_UPD985XX_EP0 {
+        display       "Support the control endpoint 0"
+        default_value CYGINT_IO_USB_SLAVE_CLIENTS
+        requires      CYGPKG_IO_USB CYGPKG_IO_USB_SLAVE
+        compile       usbs_upd985xx.c
+        compile       -library=libextras.a usbs_upd985xx_data.cxx
+        description "
+            Enable support for endpoint 0. If this support is disabled
+            then the entire USB port is unusable."
+    
+        cdl_option CYGVAR_DEVS_USB_UPD985XX_EP0_DEVTAB_ENTRY {
+            display       "Provide a devtab entry for endpoint 0"
+            default_value CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES
+            requires      CYGPKG_IO
+            description "
+               If endpoint 0 will only be accessed via the low-level
+               USB-specific calls then there is no need for an entry
+               in the device table, saving some memory. If the
+               application intends to access the endpoint by means
+               of open and ioctl calls then a devtab entry is needed.
+            "
+        }
+
+	cdl_option CYGNUM_DEVS_USB_UPD985XX_EP0_PKTSIZE {
+	    display	  "Size of endpoint 0 control packets"
+	    flavor        data
+	    default_value 8
+	    legal_values  { 8 16 32 64 }
+	    description "
+                Control messages on endpoint 0 are split into packets of
+                8, 16, 32 or 64 bytes - these are the values permitted by the
+                USB specification. The same packet size is used for both
+                receives and transmits. This value must also be used for the
+                max_packet_size field of the device descriptor in the
+                application's USB enumeration data.
+
+                According to section 5.5.5 of the USB specification, if a new
+                control message is received before the previous transaction
+                has completed then the previous transaction must be aborted.
+                If that transaction involved transferring data to the host
+                then there is a problem: that data may still be queued for
+                transmission and the NEC USB device appears to provide no way
+                of aborting that transmit. The problem is unlikely to arise
+                with normal usage, but may be detected by compliance
+                testsuites. Increasing the packet size to its maximum value
+                of 64 reduces the probability of failure.
+            "
+	}
+	
+	cdl_option CYGNUM_DEVS_USB_UPD985XX_EP0_TXBUFSIZE {
+	    display       "Size of statically-allocated endpoint 0 transmit buffer"
+	    flavor        data
+	    default_value 256
+	    requires      { CYGNUM_DEVS_USB_UPD985XX_EP0_TXBUFSIZE >= CYGNUM_DEVS_USB_UPD985XX_EP0_PKTSIZE }
+	    description "
+	        The implementation of the support for endpoint 0 uses
+	        a single static buffer to hold the response to the
+	        current control message. Typically this buffer can be
+	        fairly small since replies to control messages tend to
+	        be small: typically some tens of bytes for the enumeration
+	        data, perhaps a bit more for unicode-encoded string
+	        descriptors. However if some application-specific protocol
+	        depends on larger control messages then this buffer
+	        size may need to be increased.
+	    "
+	}
+
+	cdl_option CYGNUM_DEVS_USB_UPD985XX_EP0_RXBUFSIZE {
+	    display       "Size of statically-allocated endpoint 0 transmit buffer"
+	    flavor        data
+	    default_value 64
+	    requires      { CYGNUM_DEVS_USB_UPD985XX_EP0_RXBUFSIZE >= CYGNUM_DEVS_USB_UPD985XX_EP0_PKTSIZE }
+	    description "
+	        The implementation of the support for endpoint 0 uses
+	        a single static buffer to hold incoming control messages.
+	        Typically this buffer can be small: standard control messages
+	        involve an initial eight-byte header, sometimes followed by
+	        a small amount of additional data. However if some
+	        application-specific protocol depends on larger control
+	        messages then this buffer size may need to be increased.
+	    "
+	}
+    }    
+    cdl_component CYGPKG_DEVS_USB_UPD985XX_EP3 {
+        display       "Support endpoint 3, used for slave->host IN bulk transfers"
+        implements    CYGHWR_IO_USB_SLAVE_IN_ENDPOINTS
+        requires      CYGFUN_DEVS_USB_UPD985XX_EP0
+        default_value 0
+        description "
+            In the uPD985xx USB implementation endpoint 3 can only be
+            used for slave->host IN bulk transfers. If the intended application
+            only involves host->slave transfers then this endpoint is
+	    not relevant.
+
+	    By default this endpoint is disabled: according to NEC erratum
+	    U3 there may be problems when doing transfers of 192 bytes or
+	    greater. Instead the interrupt endpoint 5 is used, with
+	    software emulation of the bulk protocol. If the application
+	    involves only transfers of less than 192 bytes then endpoint
+	    3 can be enabled.
+	"
+
+        cdl_option CYGVAR_DEVS_USB_UPD985XX_EP3_DEVTAB_ENTRY {
+            display       "Provide a devtab entry for endpoint 3"
+            default_value CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES
+            requires      CYGPKG_IO 
+            description "
+                If endpoint 3 will only be accessed via the low-level
+                USB-specific calls then there is no need for an entry
+                in the device table, saving some memory. If the
+                application intends to access the endpoint by means
+                of open and read calls then a devtab entry is needed.
+            "
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_USB_UPD985XX_EP4 {
+        display       "Support endpoint 4, used for slave->host OUT bulk transfers"
+        implements    CYGHWR_IO_USB_SLAVE_OUT_ENDPOINTS
+        requires      CYGFUN_DEVS_USB_UPD985XX_EP0
+        default_value CYGFUN_DEVS_USB_UPD985XX_EP0
+        description "
+            In the uPD985xx USB implementation endpoint 4 can only be
+            used for host->slave OUT bulk transfers. If the intended application
+            only involves slave->host transfers then the support for
+            endpoint 4 can be disabled. Note that this does not affect
+            control messages which always go via endpoint 0."
+        
+        cdl_option CYGVAR_DEVS_USB_UPD985XX_EP4_DEVTAB_ENTRY {
+            display       "Provide a devtab entry for endpoint 4"
+            default_value CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES
+            requires      CYGPKG_IO
+            description "
+                If endpoint 4 will only be accessed via the low-level
+                USB-specific calls then there is no need for an entry
+                in the device table, saving some memory. If the
+                application intends to access the endpoint by means
+                of open and write calls then a devtab entry is needed."
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_USB_UPD985XX_EP5 {
+        display       "Support endpoint 5, used for slave->host IN transfers"
+        implements    CYGHWR_IO_USB_SLAVE_IN_ENDPOINTS
+        requires      CYGFUN_DEVS_USB_UPD985XX_EP0
+        default_value CYGFUN_DEVS_USB_UPD985XX_EP0
+        description "
+            In the uPD985xx USB implementation endpoint 5 can only be
+            used for slave->host communication. This endpoint is
+	    intended primarily for interrupt transfers, but can be
+	    used for bulk transfers given a small amount of additional
+	    software support."
+
+	cdl_option CYGIMP_DEVS_USB_UPD985XX_EP5_BULK {
+	    display       "Implement bulk transfers rather than interrupt transfers"
+	    default_value 1
+	    description "
+	        Endpoint 5 is normally used for interrupt transfers, which
+	        are limited to 64 bytes. However with a little bit of software
+	        support it is possible to implement bulk transfers instead.
+	        With some revisions of the silicon this provides a workaround
+	        for problems with endpoint 3 - NEC erratum U3 should be consulted
+	        for additional information."
+	}
+        
+        cdl_option CYGVAR_DEVS_USB_UPD985XX_EP5_DEVTAB_ENTRY {
+            display       "Provide a devtab entry for endpoint 5"
+            default_value CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES
+            requires      CYGPKG_IO
+            description "
+                If endpoint 5 will only be accessed via the low-level
+                USB-specific calls then there is no need for an entry
+                in the device table, saving some memory. If the
+                application intends to access the endpoint by means
+                of open and write calls then a devtab entry is needed.
+            "
+        }
+    }
+
+    cdl_option CYGDAT_DEVS_USB_UPD985XX_DEVTAB_BASENAME {
+        display       "Base name for devtab entries"
+        flavor        data
+        active_if     { CYGVAR_DEVS_USB_UPD985XX_EP0_DEVTAB_ENTRY ||
+                        CYGVAR_DEVS_USB_UPD985XX_EP3_DEVTAB_ENTRY ||
+                        CYGVAR_DEVS_USB_UPD985XX_EP4_DEVTAB_ENTRY
+        }
+        default_value { "\"/dev/usbs\"" }
+        description "
+            If the uPD985xx USB device driver package provides devtab
+            entries for any of the endpoints then this option gives
+            control over the names of these entries. By default the
+            endpoints will be called \"/dev/usbs0c\", \"/dev/usbs3w\"
+            and \"/dev/usbs4r\" (assuming all three endpoints are
+            enabled. The common part \"/dev/usbs\" is determined
+            by this configuration option. It may be necessary to
+            change this if there are multiple USB slave-side
+            devices on the target hardware to prevent a name clash.
+        "
+    }
+    
+    cdl_option CYGIMP_DEVS_USB_UPD985XX_IBUS_WRITE_LIMIT {
+	display       "Work around potential hardware problem with IBUS writes"
+	default_value 1
+	description "
+	    With some revisions of the silicon there may be problems if
+	    a device driver performs multiple writes to the IBUS in
+	    quick succession. By default this driver avoids such problems,
+	    at the cost of some cpu cycles and a small amount of extra code.
+	    NEC erratum S1 should be consulted for more details."
+    }
+
+    cdl_option CYGIMP_DEVS_USB_UPD985XX_SERIALIZE_TRANSMITS {
+	display       "Work around potential hardware problem with concurrent transmits"
+	default_value 1
+	description "
+	    With some revisions of the silicon there may be problems if
+	    the device driver is asked to perform concurrent slave->host
+	    transmissions on different endpoints, for example sending
+            a reply to a control message while there is a bulk transfer
+	    in progress. This option enables a workaround for the
+	    problem by ensuring that only one transmit operation is in
+	    progress at any one time. NEC errata U3 and U4 should be
+	    consulted for more details."
+    }
+}

@@ -1,0 +1,198 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mn10300_am31.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/mn10300_am31.ld:
+	Added .eh_frame to data section. This is a stopgap fix to allow
+	C++ programs that define exceptions to link and run. It does not
+	allow them to actually throw exceptions, since that depends on
+	compiler changes that have not been made. Further, more
+	far-reaching, linker script changes will also be needs when that
+	happens.	
+
+2003-03-14  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/mn10300_am31.ld: add entries for debug sections, needed by
+	current tools
+
+2002-05-21  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h (HAL_DCACHE_STORE): Fix warning.
+
+2001-10-15  Nick Garnett  <nickg@redhat.com>
+
+	* src/mn10300_am31.ld: Added test for __GNUC__ >= 3 so that
+	libsupc++.a can be included. Aparrently the mn10300 compiler is
+	now GCC3.
+
+2000-09-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc:
+	Added defines for CYGPKG_HAL_MN10300_INTC_DECODE_DEFINED.
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300_am31.ld:
+	Added extra underscore to _stext and _etext.
+	Switched to new table definition mechanism.
+
+2000-06-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300_am31.ld: Added extra underscore to ___NETDEVTAB__.
+
+2000-06-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300_am31.ld:
+	Added support for FSTAB, MTAB and NSTAB analogous to the DEVTAB
+	and NETDEVTAB support already present. Perhaps we should have a
+	macro to make this kind of thing tidier.
+
+2000-03-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/variant.inc (SAVED_CONTEXT_PC_OFFSET): New macro to give
+	variant-specific offset of PC within saved register context
+
+	* include/var_arch.h (HAL_SavedRegisters): Move here from architecture
+	HAL
+
+2000-03-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/var_misc.c (cyg_hal_dcache_store):
+	Substituted an assembly code version of this function to try and
+	deal with the problems with kcache2. See the embedded comment for
+	details.
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am31.cdl: removed fix me.
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/mn10300_am31.ld: Add support for network package.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/variant.inc: Rename CYG_HAL_USE_ROM_MONITOR_CYGMON ->
+	CYGSEM_HAL_USE_ROM_MONITOR_CygMon
+	Rename CYG_HAL_USE_ROM_MONITOR -> CYGSEM_HAL_USE_ROM_MONITOR
+
+	* cdl/hal_mn10300_am31.cdl: Ensure we "puts" to appropriate CDL header
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am31.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am31.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am31.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am31.cdl: Added.
+
+1999-10-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Don't create extras.o here any more
+
+1999-09-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/var_misc.c (cyg_hal_dcache_store): Condition on
+	CYG_HAL_MN10300_AM31_SIM rather than CYG_HAL_MN10300_SIM
+
+1999-09-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc: Added test to code that installs hardware
+	interrupt vectors so that it also works in the minimal simulator.
+	Also changed instance of CYG_HAL_MN10300_SIM to
+	CYGPKG_HAL_MN10300_AM31_SIM.
+
+1999-09-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300_am31.ld: Rename CYGPKG_HAL_MN10300_SIM to
+	CYGPKG_HAL_MN10300_AM31_SIM
+
+1999-08-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+        Copy entire package from hal/mn10300/am32
+
+	* include/pkgconf/hal_mn10300_am31.h: 
+	* include/variant.inc: 
+	* include/var_intr.h:
+	* include/var_arch.h:
+	* include/var_cache.h:
+	* src/PKGconf.mak: 
+	* src/mn10300_am31.ld
+	* src/var_misc.c:
+	Rename all files and contents of files that mention am32, to am31
+
+1999-08-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_intr.h: Fixed up some typos.
+
+	* include/variant.inc: Moved diagnostic data here into a macro.
+
+1999-08-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_am32.h:
+	reparent CYGPKG_HAL_MN10300_AM32 under CYGPKG_HAL_MN10300_VARIANTS
+
+1999-07-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_intr.h: Moved HAL_INTERRUPT_CONFIGURE() here since
+	it now has to be variant-specific.
+	Reorganized and renumbered exceptions.
+
+1999-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc: Changed all *_MIPS_* macros to *_MN10300_*.
+	Added definition of DCR_DE bit.
+
+1999-07-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc:
+	Added definitions of NMICR, DCR and ISR addresses.
+	Added hal_cpu_clear_nmid macro.
+
+1999-07-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc:
+	Added macros to get and set PSW in a CPU specific way.	
+
+1999-06-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/var_misc.c (cyg_hal_dcache_store):
+	changed name of symbol for testing for SIM build.
+
+	* include/variant.inc:
+	Added CPU register save and restore macros.
+
+1999-06-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_arch.h: 
+	* include/var_intr.h: 
+	* include/var_cache.h: 
+	* include/variant.inc: 
+	* include/pkgconf/hal_mn10300_am32.h:
+	* src/PKGconf.mak: 
+	* src/mn10300_am32.ld:
+	* src/var_misc.c:
+	Added these files to contain AM32 variant implementations of the
+	HAL.
+	
+	

@@ -1,0 +1,93 @@
+2004-05-31  Jani Monoses <jani@iv.ro>
+		
+	* src/vnc-server.c:
+	lwIP has network.h too so get rid of ifdefs.
+
+2004-02-17  Chris Garry  <cgarry@sweeneydesign.co.uk>
+	* src/vnc-server.c:
+	Remove prototypes for lwIP functions - now contained in lwIP
+	header files.
+
+2003-10-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/vnc-test.c: 
+	* src/vnc-server.c: 
+	* include/vnc-server.h: 
+	* cdl/vnc-server.cdl: Add support for 32 bit framebufer (0/8/8/8)
+
+2003-09-16  Chris Garry  <cgarry@sweeneydesign.co.uk>
+
+	* doc/vnc-server.html:
+	* src/vnc-server.c:
+	* include/vnc-server.h:
+	Added new function VncCopyBuffer2RectMask().
+
+	* tests/vnc-test.c:
+	Modifed to include a cursor.
+
+2003-09-02  Chris Garry  <cgarry@sweeneydesign.co.uk>
+
+	* tests/vnc-test.c:
+	* doc/vnc-server.html:
+	Modified for new BGR233 mode.
+
+2003-09-01  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/vnc-server.c: 
+	* include/vnc-server.h: 
+	* cdl/vnc-server.cdl: Add support for BGR233 (8 bit) mode, since
+	newer viewers support this on all displays.
+
+2003-08-31  Chris Garry  <cgarry@sweeneydesign.co.uk>
+
+	* src/vnc-server.c:
+	Always send colour data to client in big endian format.
+	When doing frame updates, do not call send command until there
+	if 1460 bytes of data unless the data is all that is left for the
+	cuurent frame update (huge improvement with lwIP stack).
+	Fixed bug where VncPrintf() did not handle characters not defined
+	for the selected font.
+	VncPrintf() does not mark tiles for update when do_print argument
+	is not set.
+	
+	* tests/vnc-test.c:
+	Modifed the test to use select() function.  Added more examples
+	of using the VNC server API.
+	
+2003-08-22  Chris Garry  <cgarry@sweeneydesign.co.uk>
+
+	* tests/vnc-test.c: 
+
+	* src/fonts/winFreeSystem14x16.c: 
+	* src/fonts/winFreeSansSerif11x13.c: 
+	* src/fonts/symbol.c: 
+	* src/fonts/rom8x8.c: 
+	* src/fonts/rom8x16.c: 
+	* src/fonts/helvR10.c: 
+	* src/fonts/helvB12.c: 
+	* src/fonts/helvB10.c: 
+	* src/fonts/device.h: 
+	* src/fonts/X6x13.c: 
+	* src/fonts/X5x7.c: 
+
+	* include/vnc-server.h: 
+
+	* cdl/vnc-server.cdl:
+	* doc/vnc-server.html:
+	
+	* src/init.cxx:
+	* src/vnc_kbd.c:
+	* src/vnc_mouse.c:
+	* src/vnc-server.c:
+	Created VNC Server package.
+	
+
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2000, 2001, 2002, 2003 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####

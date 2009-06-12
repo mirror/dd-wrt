@@ -1,0 +1,25 @@
+$Id: TODO.eCos,v 1.4 2003/11/28 11:15:56 dwmw2 Exp $
+
+ - Make symlinks work properly.
+
+ - Fill in the skeleton gcthread.c so it actually does something.
+
+ - Check and possibly fix locking of icache mangling in fs-ecos.c
+
+ - Check that os-ecos.h defines 'spin_lock()' to something appropriate.
+
+ - Fix unmount of root file system after chdir().
+
+ - Fix atomicity of renames. Why was the unlink added before rename?
+
+ - Further cleanup -- should the functions in dir-ecos.c take 'struct
+   dirsearch' instead of various components thereof, or should each of
+   those functions just be moved inside its only caller in fs-ecos.c?
+
+ - Improve mount time by using pointer directly into flash chip instead
+   of jffs2_flash_read() for the initial scan -- look at the #ifdef
+   __ECOS bit in scan.c for details.
+
+ - Reduce memory usage. There are fields marked for possible removal in
+   struct _inode, and there's the __totlen field in struct
+   jffs2_raw_node_ref as discussed recently.

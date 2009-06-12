@@ -1,0 +1,91 @@
+# ====================================================================
+#
+#      sh_dreamcast_rltk8139_eth_drivers.cdl
+#
+#      Ethernet drivers - support for Dreamcast BroadBandAdapter
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2004 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Yoshinori Sato
+# Contributors:
+# Date:           2004-04-22
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_SH_DREAMCAST_RLTK8139 {
+    display       "Dreamcast BbA driver"
+    description   "Ethernet driver for Dreamcast Broadband Adapter"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_HAL_SH_SH7750_DREAMCAST
+    compile       -library=libextras.a if_dreamcast.c
+
+    include_dir   cyg/io
+
+    # FIXME: This really belongs in the RealTek_8139 package ?
+    cdl_interface CYGINT_DEVS_ETH_RLTK_8139_REQUIRED {
+        display   "RealTek 8139 ethernet driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_RLTK_8139_INL <cyg/io/devs_eth_sh_dreamcast_rltk8139.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_RLTK_8139_CFG <pkgconf/devs_eth_sh_dreamcast_rltk8139.h>"
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_SH_DREAMCAST_RLTK8139_ETH0 {
+        display       "Ethernet port 0 driver"
+        flavor        bool
+        default_value 1
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH0
+        implements CYGINT_DEVS_ETH_RLTK_8139_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_SH_DREAMCAST_RLTK8139_ETH0_NAME {
+            display       "Device name for the ETH0 ethernet port 0 driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                RealTek 8139 ethernet port 0."
+        }
+    }
+}
+
+# EOF sh_dreamcast_rltk8139_eth_drivers.cdl

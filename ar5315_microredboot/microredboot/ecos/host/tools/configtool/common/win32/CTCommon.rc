@@ -1,0 +1,867 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "CTCommonres.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP2             BITMAP  DISCARDABLE     "res\\bitmap2.bmp"
+IDR_MLTBAR              BITMAP  DISCARDABLE     "res\\MLTbar.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_MLTBAR TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_EDIT_NEW_REGION
+    BUTTON      ID_EDIT_NEW_SECTION
+    BUTTON      ID_EDIT_DELETE_SECTION
+    BUTTON      ID_EDIT_PROPERTIES
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "CTCommonres.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_SECTION_GENERAL DLGINIT
+BEGIN
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3130, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3230, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3430, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3830, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3031, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3032, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3034, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3030, 0x3038, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3130, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3230, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3430, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3830, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3031, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3032, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3034, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3030, 0x3038, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3130, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3230, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3430, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3830, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3031, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3032, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3034, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3030, 0x3038, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3130, 0x3030, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3230, 0x3030, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3430, 0x3030, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3830, 0x3030, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3031, 0x3030, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3032, 0x3030, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3034, 0x3030, 0x3030, 0x3030, "\000" 
+    IDC_SECTION_GENERAL_ALIGNMENT, 0x403, 9, 0
+0x3038, 0x3030, 0x3030, 0x3030, "\000" 
+    0
+END
+
+IDD_FINDREPLACE DLGINIT
+BEGIN
+    IDC_SEARCHCOMBO, 0x403, 12, 0
+0x614d, 0x7263, 0x206f, 0x616e, 0x656d, 0x0073, 
+    IDC_SEARCHCOMBO, 0x403, 11, 0
+0x7449, 0x6d65, 0x6e20, 0x6d61, 0x7365, "\000" 
+    IDC_SEARCHCOMBO, 0x403, 19, 0
+0x6853, 0x726f, 0x2074, 0x6564, 0x6373, 0x6972, 0x7470, 0x6f69, 0x736e, 
+"\000" 
+    IDC_SEARCHCOMBO, 0x403, 7, 0
+0x6156, 0x756c, 0x7365, "\000" 
+    0
+END
+
+IDD_BUILD_OPTIONS_DIALOG DLGINIT
+BEGIN
+    IDC_COMBO1, 0x403, 7, 0
+0x4643, 0x414c, 0x5347, "\000" 
+    IDC_COMBO1, 0x403, 8, 0
+0x444c, 0x4c46, 0x4741, 0x0053, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CDL_TEMPLATES DIALOG DISCARDABLE  0, 0, 285, 212
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Templates"
+FONT 8, "MS Sans Serif"
+BEGIN
+    COMBOBOX        IDC_CDL_HARDWARE,14,20,256,50,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_CDL_HARDWARE_DESC,14,36,256,28,ES_MULTILINE | 
+                    ES_READONLY | WS_VSCROLL
+    COMBOBOX        IDC_CDL_TEMPLATE,14,91,129,51,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CDL_TEMPLATE_VER,145,91,66,51,CBS_DROPDOWN | 
+                    CBS_SORT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_CDL_TEMPLATE_DESC,14,107,197,28,ES_MULTILINE | 
+                    ES_READONLY | WS_VSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,227,82,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,227,99,50,14
+    GROUPBOX        "Hardware",IDC_STATIC,7,7,270,65
+    GROUPBOX        "Packages",IDC_STATIC,7,78,211,65
+    PUSHBUTTON      "&Details <<",IDC_DETAILS,228,129,50,14
+    LTEXT           "&Packages in selected templates:",
+                    IDC_CDL_TEMPLATE_PACKAGES_STATIC,7,150,214,8
+    EDITTEXT        IDC_CDL_TEMPLATE_PACKAGES,7,160,271,45,ES_MULTILINE | 
+                    ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
+END
+
+IDD_VIEW_PROPERTIES_DIALOG DIALOG DISCARDABLE  0, 0, 301, 265
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&Close",IDOK,244,244,50,14
+    LTEXT           "",IDC_VIEW_PROPERTIES_LIST,7,7,287,229,NOT WS_VISIBLE
+END
+
+IDD_RESOLVE_CONFLICTS_DIALOG DIALOG DISCARDABLE  0, 0, 323, 166
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Resolve Conflicts"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "",IDC_LIST1,7,25,309,52,NOT WS_VISIBLE
+    LTEXT           "Proposed fix:",IDC_STATIC1,7,90,197,8
+    CONTROL         "List3",IDC_LIST2,"SysListView32",LVS_REPORT | WS_BORDER | 
+                    WS_TABSTOP,7,101,309,58
+    PUSHBUTTON      "&All",IDC_RESET,266,83,50,14
+    DEFPUSHBUTTON   "&Continue",ID_RESOLVE_CONFLICTS_CONTINUE,212,7,50,14
+    PUSHBUTTON      "Cancel",ID_RESOLVE_CONFLICTS_CANCEL,266,7,50,14
+    PUSHBUTTON      "&None",IDC_CONFLICTS_NONE,212,83,50,14
+END
+
+IDD_REGION_GENERAL DIALOG DISCARDABLE  0, 0, 235, 156
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "General"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Name:",IDC_STATIC,7,9,22,8
+    EDITTEXT        IDC_REGION_GENERAL_NAME,57,7,171,12,ES_AUTOHSCROLL
+    LTEXT           "Start &address:",IDC_STATIC,7,25,48,8
+    EDITTEXT        IDC_REGION_GENERAL_START_ADDRESS,57,23,171,12,
+                    ES_AUTOHSCROLL
+    LTEXT           "&Size:",IDC_STATIC,7,41,42,8
+    EDITTEXT        IDC_REGION_GENERAL_SIZE,57,39,171,12,ES_AUTOHSCROLL
+    CONTROL         "&Read Only",IDC_REGION_GENERAL_READ_ONLY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,57,55,68,9
+END
+
+IDD_SECTION_GENERAL DIALOG DISCARDABLE  0, 0, 235, 156
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "General"
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Name",IDC_STATIC,7,7,221,64
+    CONTROL         "&Linker-defined:",
+                    IDC_SECTION_GENERAL_NAME_LINKER_DEFINED,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,13,21,63,12
+    CONTROL         "&User-defined:",IDC_SECTION_GENERAL_NAME_USER_DEFINED,
+                    "Button",BS_AUTORADIOBUTTON,13,35,62,11
+    COMBOBOX        IDC_SECTION_GENERAL_NAME_LINKER,81,19,141,130,
+                    CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_SECTION_GENERAL_NAME_USER,81,35,141,12,
+                    ES_AUTOHSCROLL | WS_DISABLED
+    CONTROL         "&Known size:",IDC_SECTION_GENERAL_KNOWN_SIZE,"Button",
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,81,53,54,8
+    EDITTEXT        IDC_SECTION_GENERAL_SIZE,138,51,84,12,ES_AUTOHSCROLL | 
+                    WS_DISABLED
+    GROUPBOX        "Final Location (VMA)",IDC_STATIC,7,84,221,65
+    CONTROL         "A&bsolute:",IDC_SECTION_GENERAL_FINAL_ABSOLUTE,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,13,100,44,8
+    CONTROL         "&Following:",IDC_SECTION_GENERAL_FINAL_RELATIVE,"Button",
+                    BS_AUTORADIOBUTTON,13,114,47,10
+    EDITTEXT        IDC_SECTION_GENERAL_FINAL_ABSOLUTE_ADDRESS,81,97,141,12,
+                    ES_AUTOHSCROLL
+    COMBOBOX        IDC_SECTION_GENERAL_FINAL_RELATIVE_NAME,81,113,141,65,
+                    CBS_DROPDOWNLIST | CBS_SORT | WS_DISABLED | WS_VSCROLL | 
+                    WS_TABSTOP
+    RTEXT           "&Alignment:",IDC_STATIC,73,132,42,8
+    COMBOBOX        IDC_SECTION_GENERAL_ALIGNMENT,121,130,102,49,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_SECTION_RELOCATION DIALOG DISCARDABLE  0, 0, 235, 156
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Relocation"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "&Relocate section",IDC_SECTION_RELOCATION_RELOCATES,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,17,81,8
+    GROUPBOX        "Initial Location (LMA)",IDC_STATIC,7,63,221,48
+    CONTROL         "&A&bsolute:",IDC_SECTION_RELOCATION_INITIAL_ABSOLUTE,
+                    "Button",BS_AUTORADIOBUTTON | WS_DISABLED,13,78,48,8
+    CONTROL         "&Following:",IDC_SECTION_RELOCATION_INITIAL_RELATIVE,
+                    "Button",BS_AUTORADIOBUTTON | WS_DISABLED,13,93,47,10
+    EDITTEXT        IDC_SECTION_RELOCATION_INITIAL_ABSOLUTE_ADDRESS,81,75,
+                    141,12,ES_AUTOHSCROLL | WS_DISABLED
+    COMBOBOX        IDC_SECTION_RELOCATION_INITIAL_RELATIVE_NAME,81,91,141,
+                    56,CBS_DROPDOWNLIST | CBS_SORT | WS_DISABLED | 
+                    WS_VSCROLL | WS_GROUP | WS_TABSTOP
+END
+
+IDD_NOTE DIALOG DISCARDABLE  0, 0, 235, 156
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Note"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_EDIT_NOTE,7,7,221,142,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_WANTRETURN | WS_VSCROLL | NOT WS_TABSTOP
+END
+
+IDD_FOLDER_DIALOG DIALOG DISCARDABLE  0, 0, 271, 63
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Choose Folder"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,214,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,214,25,50,14
+    EDITTEXT        IDC_FOLDER,6,43,202,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "&Browse...",IDC_FOLDER_DIALOG_BROWSE,214,43,50,14
+    LTEXT           "Static",IDC_STATIC_DESC,7,7,202,37
+END
+
+IDD_NEW_FOLDER_DIALOG DIALOG DISCARDABLE  0, 0, 186, 50
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Folder"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,72,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,7,50,14
+    EDITTEXT        IDC_NEW_FOLDER_EDIT,7,28,172,14,ES_AUTOHSCROLL
+END
+
+IDD_FINDREPLACE DIALOG DISCARDABLE  30, 73, 260, 79
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Find"
+FONT 8, "Helv"
+BEGIN
+    LTEXT           "Fi&nd what:",IDC_STATIC,7,8,34,8,NOT WS_GROUP
+    EDITTEXT        1152,47,7,142,12,ES_AUTOHSCROLL | WS_GROUP
+    CONTROL         "Match &whole word only",1040,"Button",BS_AUTOCHECKBOX | 
+                    WS_GROUP | WS_TABSTOP,7,27,89,10
+    CONTROL         "Match &case",1041,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    7,42,53,10
+    GROUPBOX        "Direction",1072,107,26,82,28
+    CONTROL         "&Up",1056,"Button",BS_AUTORADIOBUTTON | WS_GROUP | 
+                    WS_TABSTOP,112,36,25,12
+    CONTROL         "&Down",1057,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,
+                    151,36,33,12
+    DEFPUSHBUTTON   "&Find Next",IDOK,203,7,50,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,203,25,50,14,WS_GROUP
+    LTEXT           "&Search in:",IDC_STATIC,7,63,33,8
+    COMBOBOX        IDC_SEARCHCOMBO,47,61,72,54,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_CDL_PACKAGES DIALOG DISCARDABLE  0, 0, 319, 220
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Packages"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Available &packages:",IDC_STATIC,7,7,103,10
+    LISTBOX         IDC_ADDREMOVE_LIST1,7,17,119,107,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | 
+                    WS_HSCROLL | WS_TABSTOP
+    LTEXT           "&Use these packages:",IDC_STATIC,193,7,104,11
+    LISTBOX         IDC_ADDREMOVE_LIST2,193,17,119,107,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | 
+                    WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Add >>",IDC_ADDREMOVE_ADD,134,36,50,14
+    PUSHBUTTON      "<< &Remove",IDC_ADDREMOVE_REMOVE,134,58,50,14
+    LTEXT           "&Version:",IDC_STATIC,7,131,52,9
+    COMBOBOX        IDC_PACKAGE_VER,7,142,305,58,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_PACKAGE_DESC,7,163,305,28,ES_MULTILINE | ES_READONLY | 
+                    WS_VSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,204,199,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,262,199,50,14
+    LTEXT           "",IDC_ADDREMOVE_TEXT,138,106,45,8
+END
+
+IDD_BUILD_OPTIONS_DIALOG DIALOG DISCARDABLE  0, 0, 327, 197
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Category:",IDC_STATIC,7,9,31,8
+    COMBOBOX        IDC_COMBO1,39,7,72,70,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "&Packages:",IDC_STATIC,7,28,35,8
+    CONTROL         "Tree1",IDC_TREE1,"SysTreeView32",TVS_HASBUTTONS | 
+                    TVS_HASLINES | TVS_LINESATROOT | WS_BORDER | WS_TABSTOP,
+                    8,41,198,149
+    LTEXT           "&Flags:",IDC_STATIC,213,28,20,8
+    LISTBOX         IDC_BUILD_OPTIONS_LIST,213,41,107,149,
+                    LBS_NOINTEGRALHEIGHT | LBS_NOSEL | WS_VSCROLL | 
+                    WS_TABSTOP
+    DEFPUSHBUTTON   "Close",IDOK,270,7,50,14
+END
+
+IDD_ADDREMOVE_DIALOG DIALOG DISCARDABLE  0, 0, 312, 189
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "",IDC_ADDREMOVE_TEXT1,7,7,119,8
+    DEFPUSHBUTTON   "OK",IDOK,198,168,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,255,168,50,14
+    LISTBOX         IDC_ADDREMOVE_LIST1,7,19,116,107,LBS_NOINTEGRALHEIGHT | 
+                    LBS_EXTENDEDSEL | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_ADDREMOVE_TEXT2,186,7,119,8
+    LISTBOX         IDC_ADDREMOVE_LIST2,189,19,116,107,LBS_NOINTEGRALHEIGHT | 
+                    LBS_EXTENDEDSEL | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Add >>",IDC_ADDREMOVE_ADD,130,48,50,14
+    PUSHBUTTON      "<< &Remove",IDC_ADDREMOVE_REMOVE,130,77,50,14
+    EDITTEXT        IDC_PACKAGE_DESC,7,133,298,31,ES_MULTILINE | ES_READONLY | 
+                    WS_VSCROLL
+END
+
+IDD_TOOLS_OPTIONS_DIALOG DIALOG DISCARDABLE  0, 0, 234, 87
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Check for conflicts: ",IDC_STATIC,7,3,220,58
+    CONTROL         "&Automatically suggest fixes",IDC_SUGGEST_FIXES,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,14,43,100,10
+    PUSHBUTTON      "OK",IDOK,121,66,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,177,66,50,14
+    CONTROL         "After any item &changed",IDC_IMMEDIATE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,14,15,89,10
+    CONTROL         "Before &saving configuration",IDC_DEFERRED,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,14,29,102,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_VIEW_PROPERTIES_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 294
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 258
+    END
+
+    IDD_RESOLVE_CONFLICTS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 316
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 159
+    END
+
+    IDD_REGION_GENERAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 149
+    END
+
+    IDD_SECTION_GENERAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 149
+    END
+
+    IDD_SECTION_RELOCATION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 149
+    END
+
+    IDD_NOTE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 149
+    END
+
+    IDD_FOLDER_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 264
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 56
+    END
+
+    IDD_NEW_FOLDER_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 43
+    END
+
+    IDD_FINDREPLACE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 253
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 72
+    END
+
+    IDD_CDL_PACKAGES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 213
+    END
+
+    IDD_BUILD_OPTIONS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 320
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 190
+    END
+
+    IDD_ADDREMOVE_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 305
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 182
+    END
+
+    IDD_TOOLS_OPTIONS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 227
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 80
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_CONTROLVIEW_POPUP MENU DISCARDABLE 
+BEGIN
+    POPUP "Control View Popup"
+    BEGIN
+        MENUITEM "&What's This?",               ID_CV_WHATS_THIS
+        MENUITEM "P&roperties",                 ID_POPUP_PROPERTIES
+        MENUITEM "Restore &Defaults",           ID_RESTORE_DEFAULTS
+        MENUITEM "Visit Documentation",         ID_VIEW_URL
+        MENUITEM "View Header File",            ID_VIEW_HEADER
+        MENUITEM SEPARATOR
+        MENUITEM "&Unload Package...",          ID_UNLOAD_PACKAGE
+    END
+END
+
+IDR_MLTVIEW_POPUP MENU DISCARDABLE 
+BEGIN
+    POPUP "MLT View Popup"
+    BEGIN
+        MENUITEM "P&roperties",                 ID_POPUP_PROPERTIES
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_ECOS_HELP           "index.html"
+    IDS_REPOSITORY_REGKEY   "Software\\Red Hat\\eCos\\Common\\Repository"
+    IDS_REPOSITORY_REGVALUE "Folder"
+    IDC_RADIO_DESCRIPTIVE_NAMES 
+                            "Display descriptive names in the configuration view."
+    IDC_RADIO_DECIMAL       "View integer values in the configuration view in decimal."
+    IDC_RADIO_HEXADECIMAL   "View integer values in the configuration view in hexadecimal."
+    IDC_RADIO_MACRO_NAMES   "Display macro names in the configuration view."
+    IDC_CDL_HARDWARE        "Selects from the set of available hardware templates."
+    IDC_CDL_HARDWARE_DESC   "Gives a brief description of the currently selected hardware template."
+    IDC_CDL_TEMPLATE_VER    "Selects the version of the currently selected template."
+    IDC_CDL_TEMPLATE_PACKAGES 
+                            "Lists the packages contained in the currently selected template."
+    IDC_CDL_TEMPLATE_PACKAGES_STATIC 
+                            "Provides a description of the currently selected package."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_SECTION_RELOCATION_INITIAL_ABSOLUTE_ADDRESS 
+                            "The initial absolute address of the section (as a hexadecimal number) in bytes."
+    IDC_SECTION_RELOCATION_INITIAL_RELATIVE_NAME 
+                            "Specify a section which this section is to follow in the memory map."
+    IDC_SECTION_RELOCATION_RELOCATES 
+                            "Specifies that the section is relocatable."
+    IDC_SECTION_GENERAL_FINAL_ABSOLUTE 
+                            "Specifies that the address of the section is absolute."
+    IDC_SECTION_GENERAL_NAME_LINKER_DEFINED 
+                            "Chooses a link-defined section.  The name is selected in the adjacent drop-down list."
+    IDC_SECTION_GENERAL_NAME_USER_DEFINED 
+                            "Chooses a user-defined section.  The name is entered in the adjacent edit box."
+    IDC_SECTION_GENERAL_NAME_LINKER 
+                            "Chooses from a set of linker-defined names appropriate for the currently selected target architecture."
+    IDC_EDIT_NOTE           "Text to be associated with the region.  The text is saved with the memory layout in the build tree."
+    IDC_CT_EDIT             "Enter the text of a configuration item of type string.  The text may span multiple lines."
+    IDS_OUTPUT_VIEW_HELP    "redirect/output-pane.html"
+    IDS_PROPERTIES_VIEW_HELP "redirect/properties-table.html"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_RULES_VIEW_HELP     "redirect/rules-help.html"
+    IDS_BUILD_OPTIONS_PROCESSING "redirect/tool-options.html"
+    IDS_BUILD_OPTIONS_BUILD "redirect/build-tab.html"
+    IDS_VIEW_SETTINGS_VIEW  "redirect/view-settings.html"
+    IDS_CONFIGTOOL_HELP     "redirect/the-ecos-configuration-tool.html"
+    IDS_CONTROL_VIEW_HELP   "redirect/the-four-panes.html"
+    IDS_MLT_VIEW_HELP       "redirect/memory-layout.html"
+    IDS_MLT_REGION_HELP     "redirect/memory-regions.html"
+    IDS_MLT_SECTION_HELP    "redirect/memory-sections.html"
+    IDS_DESC_VIEW_HELP      "redirect/short-description-window.html"
+    IDS_NEW_REGION_SHEET_TITLE "New Region"
+    IDS_NEW_SECTION_SHEET_TITLE "New Section"
+    IDS_REGION_PROPERTIES_SHEET_TITLE "Region Properties"
+    IDS_ERR_MEMMAP_BASE     "No error"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    AFX_IDS_SCSIZE          "Changes the window size"
+    AFX_IDS_SCMOVE          "Changes the window position"
+    AFX_IDS_SCMINIMIZE      "Reduces the window to an icon"
+    AFX_IDS_SCMAXIMIZE      "Enlarges the window to full size"
+    AFX_IDS_SCNEXTWINDOW    "Switches to the next document window"
+    AFX_IDS_SCPREVWINDOW    "Switches to the previous document window"
+    AFX_IDS_SCCLOSE         "Closes the active window and prompts to save the documents"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    AFX_IDS_SCRESTORE       "Restores the window to normal size"
+    AFX_IDS_SCTASKLIST      "Activates Task List"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    AFX_IDS_PREVIEW_CLOSE   "Closes print preview mode\nCancel Preview"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_VALIDATE_SECTION_NAME_CLASH 
+                            "Please enter a section name which is not linker-defined."
+    IDS_OPEN                "Open"
+    IDS_SAVE_AS             "Save As"
+    IDS_OPEN_DESC           "Enter the location of the build tree.  You can type in a path or use the Browse button to navigate to a folder."
+    IDS_SAVE_AS_DESC        "Enter the location for the build tree.  You can type in a path or use the Browse button to navigate to a folder: if the folder name you provide does not exist, it will be created."
+    IDS_DEFAULT_FOLDER_DIALOG_DESC 
+                            "You may specify a folder which does not yet exist.  If you do so, the folder will be created."
+    IDS_COMPTOOLS_DLG_DESC  "Enter the location of the %s build tools folder, which should contain %sgcc.  You can type in a path or use the Browse button to navigate to a folder."
+    IDS_USERTOOLS_DLG_DESC  "Enter the location of the user tools folder, which should contain cat and ls.  You can type in a path or use the Browse button to navigate to a folder."
+    IDS_KEY_TOOLS_DIR       "Build Tools"
+    IDS_KEY_USER_DIR        "User Tools"
+    IDS_PATH                "PATH"
+    IDS_SHELL_NAME          "bash.exe"
+    IDS_PKGCONF_PACKAGE_HEADER_FILENAME "system.h"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_RESOLVE_CONFLICTS_CONTINUE 
+                            "Continues the current transaction, applying the selected solutions."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_RESOLVE_CONFLICTS_CANCEL 
+                            "Cancels the current transaction without applying any solutions."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_DETAILS             "Shows or hides a portion of the dialog that provides details of the contents of the currently selected template."
+    IDS_APPPATH_REGVALUE    "Path"
+    IDC_CONFLICTS_NONE      "Resets all fix checkboxes to the unchecked state."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_ERR_MEMMAP_REGION_NONAME "You must specify a region name."
+    IDS_ERR_MEMMAP_REGION_MAPSIZE 
+                            "The region does not lie within the memory map."
+    IDS_ERR_MEMMAP_REGION_INTERSECT 
+                            "The region intersects with another region."
+    IDS_ERR_MEMMAP_REGION_NAMEINUSE "The specified region name is not unique."
+    IDS_ERR_MEMMAP_REGION_NOTFOUND "The specified region does not exist."
+    IDS_ERR_MEMMAP_REGION_SIZE 
+                            "The specified region size is too small to contain the existing memory sections."
+    IDS_ERR_MEMMAP_ALLOC    "Memory allocation error."
+    IDS_ERR_MEMMAP_SECTION_NONAME "You must specify a section name."
+    IDS_ERR_MEMMAP_SECTION_NAMEINUSE 
+                            "The specified section name is not unique."
+    IDS_ERR_MEMMAP_SECTION_LMA_NOTINREGION 
+                            "The specified initial section location (LMA) does not lie within a single memory region."
+    IDS_ERR_MEMMAP_SECTION_VMA_NOTINREGION 
+                            "The specified final section location (VMA) does not lie within a single memory region."
+    IDS_ERR_MEMMAP_SECTION_LMA_ANCHORNOTFOUND 
+                            "The specified initial section anchor does not exist."
+    IDS_ERR_MEMMAP_SECTION_LMA_ANCHORNOTAVAIL 
+                            "The specified initial section anchor is not available."
+    IDS_ERR_MEMMAP_SECTION_VMA_ANCHORNOTFOUND 
+                            "The specified final section anchor does not exist."
+    IDS_ERR_MEMMAP_SECTION_VMA_ANCHORNOTAVAIL 
+                            "The specified final section anchor is not available."
+    IDS_ERR_MEMMAP_SECTION_NOTFOUND "The specified section does not exist."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_ERR_MEMMAP_SECTION_VMA_READONLY 
+                            "The specified final section location (VMA) does not lie within a read/write region. This is essential when the section is to be relocated."
+    IDS_ERR_MEMMAP_SECTION_LMA_READWRITE 
+                            "The specified initial section location (LMA) does not lie within a read-only region."
+    IDS_ERR_MEMMAP_SECTION_ILLEGAL_RELOCATION 
+                            "The section following the specified section does not relocate."
+    IDS_SECTION_PROPERTIES_SHEET_TITLE "Section Properties"
+    IDS_ERR_MEMMAP_SECTION_CREATE 
+                            "The new memory section could not be created."
+    IDS_ERR_MEMMAP_SECTION_MODIFY "The memory section could not be modified."
+    IDS_ERR_MEMMAP_REGION_CREATE "The new region could not be created."
+    IDS_ERR_MEMMAP_REGION_MODIFY "The memory region could not be modified."
+    IDS_VALIDATE_REGION_SIZE "Please enter a region size greater than zero."
+    IDS_VALIDATE_SECTION_NAME 
+                            "Please enter a section name.\n\nNames may not contain spaces or punctuation."
+    IDS_VALIDATE_SECTION_SIZE "Please enter a section size greater than zero."
+    IDS_VALIDATE_REGION_NAME 
+                            "Please enter a region name.\n\nNames may not contain spaces or punctuation."
+    IDS_VALIDATE_SECTION_ALIGNMENT 
+                            "Please enter a section alignment greater than zero."
+    IDS_VALIDATE_REGION_START_ADDRESS "Please enter a region start address."
+    IDS_VALIDATE_SECTION_START_ADDRESS "Please enter a section start address."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_VIEW_MACRO_NAMES    "Display macro names (as opposed to descriptive names) in the configuration view."
+    IDS_VIEW_HEX            "View integer values in the configuration view in hexadecimal (as opposed to decimal) format."
+    IDC_CDL_TEMPLATE        "Selects from the set of available package templates."
+    IDC_CDL_TEMPLATE_DESC   "Gives a brief description of the currently selected package template."
+    IDS_TOOLCHAINFOLDER_BROWSE "Browse for the toolchain folder."
+    IDS_TOOLCHAINFOLDER_FOLDER 
+                            "Selects the toolchain folder (the folder containing the build tools for the current architecture)."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_SEARCHCOMBO         "Selects the category in which the search is to take place."
+    IDC_PACKAGE_VER         "Displays the version of the selected packages."
+    IDC_COMBO1              "Selects the category of build flags for which options are to be displayed."
+    IDC_ADDREMOVE_LIST1     "Displays the list of packages available, but not currently loaded."
+    IDC_ADDREMOVE_LIST2     "Displays the list of packages currently loaded."
+    IDC_ADDREMOVE_ADD       "Add one or more packages to the list to be loaded."
+    IDC_ADDREMOVE_REMOVE    "Removes one or more packages to the list to be loaded."
+    IDC_PACKAGE_DESC        "Displays a description of the selected package (blank if more than one package is selected)."
+    IDC_LIST                "Displays the list of header files generated by the configuration.  If the configuration is saved, you can double-click on an item to view that header."
+    IDC_VIEW_PROPERTIES_LIST 
+                            "Displays the properties of the currently selected configuration item.  You can double-click on a URL property to navigate to that documentation page or on a File property to view that header file."
+    IDC_FOLDER_DIALOG_BROWSE "Browse for the folder."
+    IDC_REGION_GENERAL_NAME "Specifies the name of the region (must not contain spaces or punctuation characters)."
+    IDC_REGION_GENERAL_START_ADDRESS 
+                            "Specifies the start address (in hex) of the region."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_LIST1               "Displays the set of conflicts for which fixes are offered."
+    IDC_BUILD_OPTIONS_LIST  "Lists the flags defined for the package selected in the adjacent Packages window."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_FAILING_RULES_EDIT1 "Displays an explanation of the currently selected conflict."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_LIST2               "Displays fixes for the currently selected conflict.  Use the checkboxes to enable or disable each fix."
+    IDC_RESET               "Resets all fix checkboxes to the checked state."
+    IDC_FOLDER              "Selects the folder."
+    IDC_IMMEDIATE           "Check for configuration option conflicts after any configuration option value is changed."
+    IDC_DEFERRED            "Check for configuration option conflicts before saving the configuration."
+    IDC_NEVER               "Do not check for configuration option conflicts."
+    IDC_SUGGEST_FIXES       "When configuration conflicts are found, provide possible solutions."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_REGION_GENERAL_SIZE "Specifies the size (in hex) of the region."
+    IDC_REGION_GENERAL_READ_ONLY "Check if the region is to be read-only."
+    IDC_SECTION_GENERAL_NAME_USER 
+                            "Specifes the name of a user-defined section.  The name must not contain spaces or punctuation characters."
+    IDC_SECTION_GENERAL_KNOWN_SIZE 
+                            "Specifies that the size of the section is known."
+    IDC_SECTION_GENERAL_SIZE 
+                            "Specifies the size of the section (as a hexadecimal number) in bytes."
+    IDC_SECTION_GENERAL_ALIGNMENT "Specifies the section alignment."
+    IDC_SECTION_GENERAL_FINAL_RELATIVE 
+                            "Specifies that the section is relative to (follows) another in the memory map."
+    IDC_SECTION_GENERAL_FINAL_ABSOLUTE_ADDRESS 
+                            "The absolute address of the section (as a hexadecimal number) in bytes."
+    IDC_SECTION_GENERAL_FINAL_RELATIVE_NAME 
+                            "Specify a section which this section is to follow in the memory map."
+    IDC_SECTION_RELOCATION_INITIAL_ABSOLUTE 
+                            "Specifies that the address of the section is absolute."
+    IDC_SECTION_RELOCATION_INITIAL_RELATIVE 
+                            "Specifies that the section is relative to (follows) another in the memory map. The initial location of the preceding section must be located in a read-only memory region."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_NEW_FOLDER_EDIT     "Specify a folder to be created."
+    IDC_TREE1               "Displays a view of the packages currently included in the configuration."
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif //_WIN32
+#include "afxres.rc"         // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
