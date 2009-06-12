@@ -1,0 +1,272 @@
+2003-09-28  Michael Anburaj <michaelanburaj@hotmail.com>
+
+	* include/plf_io.h: Fixed implementation of
+         HAL_PCI_TRANSLATE_INTERRUPT
+	* include/plf_intr.h: Applied assembly safe fix
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_atlas.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-05-08  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_atlas.cdl: Change default_value of
+	CYGSEM_HAL_ROM_MONITOR to zero.
+
+2003-04-29  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_atlas.cdl: Changed default startup from ROM to
+	RAM.
+	Also fixed component description.
+
+2003-02-27  Nick Garnett  <nickg@calivar.com>
+
+	* include/plf_intr.h: Defined CYGNUM_HAL_INTERRUPT_RTC to
+	counter/compare register interrupt. Added implementations of
+	HAL_INTERRUPT_MASK, HAL_INTERRUPT_UNMASK, and
+	HAL_INTERRUPT_ACKNOWLEDGE that will work in eCos rather than just
+	RedBoot.
+
+	* src/plf_misc.c (hal_platform_init): Changed spelling of eCos for
+	the LED to match the official typography.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/ser16c550c.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2001-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mips_atlas.cdl: Indicate support of variable baud rates.
+
+2001-07-20  David Woodhouse  <dwmw2@redhat.com>
+
+	* src/redboot_cmds.c: Remove. Obsoleted by generic MIPS version.
+	* cdl/hal_mips_atlas.cdl: Remove reference to $1
+
+2001-04-27  Mark Salter  <msalter@redhat.com>
+
+	* include/platform.inc (hal_intc_decode): Recognize all external
+	interrupts.
+	* include/plf_intr.h: Add external interrupts to list of supported
+	interrupts.
+	* src/platform.S: Allocate space for new interrupt vectors.
+
+2001-03-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/redboot_cmds.c: Added (linux) exec command.
+	* cdl/hal_mips_atlas.cdl: Build redboot cmd file.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_atlas.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROM.ecm: Renamed from redboot_ROM.cfg
+
+	* misc/redboot_RAM.ecm: Renamed from redboot_RAM.cfg
+
+2001-02-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/ser16c550c.c (cyg_hal_plf_serial_isr): Removed enable of
+	interrupt under RedBoot, apparrently RedBoot already does this
+	itself.
+
+2001-02-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/ser16c550c.c (cyg_hal_plf_serial_isr): Added code to set up
+	ctrl-c interrupt when in RedBoot.
+
+	* src/platform.S:
+	Added interrupt vector tables.
+
+	* include/plf_io.h:
+	Moved interrupt controller defines here from plf_intr.h.
+
+	* include/plf_intr.h:
+	Renumbered interrupts to make them correspond to the bits in the
+	interrupt controller registers. Removed _MASK defines and
+	CYGNUM_HAL_INTERRUPT_MASK() macro - now done with a shift.
+	Moved intc register defines to plf_io.h.
+
+	* include/platform.inc:
+	Added INITIAL_SR_PLF to permit interrupts for INTN[0].
+	Added local interrupt decode and init macros.
+	
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_atlas.cdl: Respect channel configuration
+	constraints.
+
+2001-01-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/ser16c550c.c (cyg_hal_plf_serial_init_channel):
+	Added enable of RTS line so that it is compatible with YAMON,
+	which uses hardware flow control. The main effect of this is to
+	avoid having to switch flow control on the host during
+	development.
+
+	* misc/redboot_ROM.cfg:
+	* misc/redboot_RAM.cfg:
+	Removed requirement for MIPS32 package.
+	Enabled	CYGSEM_REDBOOT_BSP_SYSCALLS.
+
+	* cdl/hal_mips_atlas.cdl:
+	Reorganized define_proc so that we can choose the right value for
+	CYGBLD_HAL_TARGET_H depending on MIPS32 or MIPS64 target.
+	Moved build options out to relevant variant HALs.	
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2000-12-22  Bart Veer  <bartv@redhat.com>
+        (Patch supplied by Mark Salter)
+	* include/pkgconf/mlt_mips_atlas_*.h, *.mlt, *.ldi
+	More address changes.
+	
+2000-12-21  Mark Salter  <msalter@redhat.com>
+
+	* include/pkgconf/mlt_mips_atlas_ram.mlt:
+	Change ram origin and length.
+
+	* include/pkgconf/mlt_mips_atlas_ram.ldi: 
+	* include/pkgconf/mlt_mips_atlas_ram.h: 
+	Regenerated.
+	
+	* misc/redboot_RAM.cfg: New file.
+	* misc/redboot_ROM.cfg: New file.
+
+	* src/ser16c550c.c: Add support for
+	CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD
+
+	* include/plf_io.h: Add PCI support.
+	* src/platform.S: Ditto.
+	* src/plf_misc.c: Ditto.
+
+	* cdl/hal_mips_atlas.cdl: Add CYGPKG_REDBOOT_HAL_OPTIONS.
+	Add -msoft-float flag. Add RTC constants. Change default
+	baud to 115200.
+
+2000-12-05  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/platform.inc: Rewrite the memory controller initialization.
+	* include/plf_io.h: Ditto.
+	* src/platform.S: Ditto.
+
+	* cdl/hal_mips_atlas.cdl: Do not build the binary image.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mips_atlas_rom.mlt:
+	Reinstate padding to 0x40
+
+	* include/pkgconf/mlt_mips_atlas_rom.ldi:
+	Regenerated
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Move volatile keyword before type.
+	* src/hal_diag.c: Same.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mips_atlas_ram.mlt:
+	* include/pkgconf/mlt_mips_atlas_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_mips_atlas_ram.h:
+	* include/pkgconf/mlt_mips_atlas_rom.h:
+	* include/pkgconf/mlt_mips_atlas_ram.ldi:
+	* include/pkgconf/mlt_mips_atlas_rom.ldi:
+	Regenerated
+
+2000-08-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/plf_misc.c (__get_syscall_num): Only define this function if
+	CYGPKG_CYGMON is defined since Cygmon is the one providing syscall
+	handling in this case.
+
+2000-08-10  Drew Moseley  <dmoseley@redhat.com>
+
+	* cdl/hal_mips_atlas.cdl: Implement STUBS_BREAK and
+	CYGSEM_HAL_ROM_MONITOR.
+
+	* src/plf_misc.c: Cleanup.
+
+2000-07-21  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/platform.inc: Define CYGARC_START_FUNC_UNCACHED so vectors.S
+	will jump to _start at the uncached address.
+
+2000-07-21  Drew Moseley  <dmoseley@cygnus.com>
+
+	* src/plf_misc.c: Rearrange the linkage between Cygmon and HAL so
+	that Cygmon needs HAL but not vice-versa.  ie HAL no longer calls
+	any Cygmon functions.
+
+2000-07-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* cdl/hal_mips_atlas.cdl: New file.  New platform support
+	* include/hal_diag.h: Ditto.
+	* include/platform.inc: Ditto.
+	* include/plf_cache.h: Ditto.
+	* include/plf_intr.h: Ditto.
+	* include/plf_io.h: Ditto.
+	* include/plf_stub.h: Ditto.
+	* include/pkgconf/mlt_mips_atlas_ram.h: Ditto.
+	* include/pkgconf/mlt_mips_atlas_ram.ldi: Ditto.
+	* include/pkgconf/mlt_mips_atlas_ram.mlt: Ditto.
+	* include/pkgconf/mlt_mips_atlas_rom.h: Ditto.
+	* include/pkgconf/mlt_mips_atlas_rom.ldi: Ditto.
+	* include/pkgconf/mlt_mips_atlas_rom.mlt: Ditto.
+	* src/hal_diag.c: Ditto.
+	* src/makefile: Ditto.
+	* src/platform.S: Ditto.
+	* src/plf_misc.c: Ditto.
+	* src/ser16c550c.c: Ditto.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

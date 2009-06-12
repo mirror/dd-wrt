@@ -1,0 +1,450 @@
+2004-10-20  Per Hedblom  <perhedblom@abem.se>
+
+	* src/fs-ecos.c (jffs2_open): Call iput on dir node if
+	jffs2_create fails.
+	* src/fs-ecos.c (jffs2_umount): use jffs2_free_full_dirent instead
+	of free.
+
+2004-10-07  Knud Woehler <knud.woehler@microplex.de>
+
+	* src/fs-ecos.c (find_entry): jffs2_lookup may return error codes.
+	Check added.
+
+2004-09-16  Dirk Eibach  <eibach@gdsys.de>
+2004-09-19  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/jffs2.cdl: Fixed outdated definitions for compression options.
+	* src/fs-ecos.c: Added missing calls for jffs2_compressors_init()
+        and jffs2_compressors_exit() 
+
+2004-08-13  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/compr.h: Committed this file which if forgot yesterday.
+
+2004-08-12  Andrew Lunn <andrew.lunn@ascom.ch>
+	    Gary Thomas <gary@mlbassoc.com>
+
+	* Merge from public MTD.
+	
+2004-04-19  Oyvind Harboe <oyvind.harboe@zylin.com>
+	
+	* src/build.c: JFFS2 can now be used as a write-once, read many mode
+	for really small flash disks, e.g. configuration parameters.
+	
+2004-04-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/fs-ecos.c: Merge from public MTD - verify file position
+	after each operation (safety check).
+
+2004-04-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/fs-ecos.c (jffs2_extend_file): Fix creation of hole inode's
+	* src/fs-ecos.c (jffs2_fo_lseek): Allow seeking past EOF.
+	* tests/fseek1.c (main): fseek and simple test of a hole in a file
+	* cdl/jffs2.cdl: Added new test program fseek1.
+	
+2004-03-31  David Woodhouse  <dwmw2@infradead.org>
+
+	* src/fs-ecos.c (jffs2_fo_write): Set ri.isize so that non-append
+	writes don't truncate the file.
+	
+2004-03-03  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * src/fs-ecos.c: 
+	Make JFFS2 honor O_TRUNC flag (again) when opening files with read
+	Access.
+
+2004-03-17  Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* src/fs-ecos.c: 
+	With CYGOPT_FS_JFFS2_WRITE=1, file creation failed. The problem
+	was introduced in fs-ecos.c 1.20
+	
+2004-03-11  Oyvind Harboe <oyvind.harboe@zylin.com>
+	
+	* src/fs-ecos.c:
+	  Fixed umount memory leak. root->jffs2_i.dents where not freed.
+	
+2004-02-20  Vincent Catros  <Vincent.Catros@elios-informatique.fr>
+
+	* src/fs-ecos.c :
+	(jffs2_find) Policy to skip path separator is no longer
+	"if '/' then skip" but "while '/' then skip" allowing
+	multi '/' separators (i.e : /tmp////foo).
+	(find_entry) Policy to detect end of path is no longer
+	"if '\0' then end_of_path"
+	but "while '/' skip it and then if '\0' then end_of_path"
+	allowing path terminated with any number of '/'
+	(i.e : chdir(/tmp///)).
+
+2004-03-03  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+       * src/fs-ecos.c:
+       Make JFFS2 honor O_TRUNC flag when opening files /w read access.
+
+2004-02-17  David Woodhouse  <dwmw2@redhat.com>
+
+	* src/fs-ecos.c:
+	Don't re-initialise the already-locked f->sem. It makes eCos unhappy. 
+
+2004-01-27  David Woodhouse  <dwmw2@redhat.com>
+
+	* src/write.c: 
+	Fix bug noted by Howard Gray; dirents belong to, and should dirty, 
+	the _parent_inode, not the child (which may be zero in the case 
+	of an unlink).
+
+2004-01-09  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+       * src/fs-ecos.c: Fixed inode reference counting in jffs2_ops_link().
+
+2004-01-05  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+	* cdl/jffs2.cdl: Re-added CYGPKG_FS_JFFS2_CFLAGS_REMOVE that had been
+	removed by previous change.
+	
+2003-11-26  David Woodhouse  <dwmw2@redhat.com>
+
+	JFFS2 cleanup and import of newer code. Remove last vestiges of
+	Linuxisms such as 'struct inode' from the core code, leaving eCos
+	with no excuse, and renaming the eCos 'struct inode' to make that
+	point. Fix i_count handling throughout. Clean up remaining Linuxisms
+	such as 'struct qstr' to the point where jffs2port.h can be removed.
+	Add skeleton for background garbage-collect thread. Fix compression
+	so that it's actually called, and even with the right pointers. Turn
+	on -Werror again. Zero tolerance is a good thing. Make the i_mode
+	conversion functions non-inline to avoid warnings. Fix namespace
+	pollution (of all but ^jffs2_* at least). Move physical flash I/O
+	functions into separate file flashio.c for relatively easy
+	substitution. Various other cruftectomy.
+
+2003-11-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/fs-ecos.c: ARM gcc 3.2.3 is also broken. Complain with any
+	ARM gcc 3.2 compiler.
+
+2003-11-21  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * cdl/jffs2.cdl: Do not require zlib package if no
+	compression configured.
+
+2003-11-20  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * cdl/jffs2.cdl:
+        * src/malloc-ecos.c:
+        * src/fs-ecos.c: Allocate jffs2_raw_node_ref structs
+        from pool or malloc depending on a CDL configuration.
+
+2003-11-20  David Woodhouse <dwmw2@infradead.org>
+
+        * Rearrangement of the compression code into a cleaner API
+	which can be disabled under control from CDL.
+	
+2003-10-14  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * src/os-ecos.h: Made definition of CONFIG_JFFS2_FS_DEBUG
+        conditional, so it can be overwritten by a -D compiler
+        option.
+                                                                               
+2003-09-23  Thomas Koeller  <thomas.koeller@baslerweb.com>
+                                                                               
+        * src/fs-ecos.c: Another umount() fix.
+
+2003-09-23  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * src/fs-ecos.c: Added test to detect known broken ARM compiler
+
+2003-09-23  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * src/fs-ecos.c: Fixed broken hard link creation.
+        
+2003-09-23  Andrew Lunn     <andrew.lunn@ascom.ch>
+
+        * src/fs-ecos.c: Minor optimization of previous patch.
+        
+2003-09-21  Thomas Koeller  <thomas.koeller@baslerweb.com>
+            Andrew Lunn     <andrew.lunn@ascom.ch>
+
+        * src/fs-ecos.c: Do not decrement mount count for unsuccessful
+        umount attempts.
+
+2003-09-19  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * src/fs-ecos.c: Another inode number fix.
+
+2003-09-18  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * src/fs-ecos.c: Inode number returned by stat() was bogus.
+
+2003-07-27  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * src/os-ecos.h: Added new #defines require for the recent jffs2
+        import.
+
+2003-07-27  Michael Checky  <Michael_Checky@ThermoKing.com>
+ 
+        * src/fs-ecos.c: Changed the return error code to be negative as
+        expected by jffs2_flash_read() and jffs2_flash_write().
+        
+2003-04-23  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+
+        * src/fs-ecos.c: mtab -> cyg_mtab. Ditto cyg_mtab_end. 
+
+2003-03-25  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * src/fs-ecos.c
+        Fixed segmentation fault when unmounting file system.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+        * cdl/jffs2.cdl: Fix doc link.
+
+2003-02-05  Jonathan Larmour  <jifl@eCosCentric.com>
+
+        * cdl/jffs2.cdl: Remove unused flash geometry CDL options.
+
+2003-02-04  Gary Thomas  <gary@mlbassoc.com> on behalf of
+2003-02-04  David Woodhouse <dwmw2@cambridge.redhat.com>        
+
+        * src/write.c: 
+        * src/scan.c: 
+        * src/readinode.c: 
+        * src/read.c: 
+        * src/pushpull.h: 
+        * src/os-ecos.h: 
+        * src/nodemgmt.c: 
+        * src/nodelist.h: 
+        * src/nodelist.c: 
+        * src/malloc-ecos.c: 
+        * src/jffs2port.h: 
+        * src/gc.c: 
+        * src/file-ecos.c: 
+        * src/erase.c: 
+        * src/dir-ecos.c: 
+        * src/compr_zlib.c: 
+        * src/compr_rubin.c: 
+        * src/compr_rtime.c: 
+        * src/compr.c: 
+        * src/build.c: 
+        * cdl/jffs2.cdl: Update to latest public JFFS2 codebase.
+
+        * src/list.h: 
+        * src/jffs2_fs_sb.h: 
+        * src/jffs2_fs_i.h: 
+        * src/jffs2.h: 
+        * src/jffs2.c: 
+        * src/crc32.h: 
+        * src/background.c: Removed/renamed file(s).
+
+        * src/fs-ecos.c: 
+        * include/linux/jffs2_fs_sb.h: 
+        * include/linux/jffs2_fs_i.h: 
+        * include/linux/jffs2.h: New file(s).
+
+2002-12-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * cdl/jffs2.cdl: Implements the CYGINT_IO_FILEIO_FS interface.
+
+2002-10-11  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * src/crc32.h (crc32): Use the CRC package for crc calculation
+        * tests/romfileio1.c (main): Pass the name of the device to mount
+
+2002-05-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * src/LICENCE: New file. Contains license for JFFS2, now GPL+exception.
+        * src/background.c: Point at LICENSE file instead of existing text.
+        * src/build.c: Ditto.
+        * src/compr.c: Ditto.
+        * src/compr_rtime.c: Ditto.
+        * src/compr_rubin.c: Ditto.
+        * src/compr_zlib.c: Ditto.
+        * src/dir-ecos.c: Ditto.
+        * src/erase.c: Ditto.
+        * src/file-ecos.c: Ditto.
+        * src/gc.c: Ditto.
+        * src/jffs2.h: Ditto.
+        * src/list.h: Ditto.
+        * src/malloc-ecos.c: Ditto.
+        * src/nodelist.c: Ditto.
+        * src/nodelist.h: Ditto.
+        * src/nodemgmt.c: Ditto.
+        * src/os-ecos.h: Ditto.
+        * src/pushpull.h: Ditto.
+        * src/read.c: Ditto.
+        * src/readinode.c: Ditto.
+        * src/scan.c: Ditto.
+        * src/write.c: Ditto.
+
+2002-01-28  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * src/super-ecos.c: Removed.
+        * src/jffs2.c: Merge jffs2_write_super() and jffs2_put_super() into
+        the routines from which they were called, put jffs2_read_super()
+        in as a static function with a view to doing same RSN.
+        * src/jffs2port.h: Remove prototypes of functions that died.
+        * cdl/jffs2.cdl: Remove super-ecos.c
+        * src/dir-ecos.c src/write.c: Increase highest_version _before_
+        assigning to new node, not after.
+        
+2002-01-27  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * src/read.c (jffs2_read_inode_range): Deal correctly with
+        non-page-aligned read requests. We have to deal with the 
+        case where we want to read from somewhere other than the
+        beginning of a frag. 
+        * src/jffs2.c (jffs2_fo_read): Use jffs2_read_inode_range
+        instead of jffs2_readpage.
+
+2002-01-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * cdl/jffs2.cdl: We want CYGPKG_IO_FILEIO_INODE.
+        * src/dir-ecos.c (jffs2_symlink): Remove. eCos doesn't support symlinks.
+        (jffs2_mknod): Similar.
+        (jffs2_mkdir): Don't call d_instantiate - its a nop.
+        (jffs2_rename): Ditto.
+        * src/file-ecos.c (jffs2_commit_write): Don't set blocks.
+        * src/jffs2.c (jffs2_flash_writev): Rewrite to only write aligned
+        quantities to flash.
+        * src/jffs2port.h: Lots of decrufting.
+        * src/os-ecos.h: Ditto (a bit).
+        * src/readinode.c (jffs2_read_inode): Don't set blocks/blksize in inode.
+        * src/write.c (jffs2_new_inode): Ditto when __ECOS.
+        (jffs2_write_dnode): don't call writev with extra vectors
+        unnecessarily.
+        * src/super-ecos.c (jffs2_statfs): Remove - unused.
+
+2002-01-25  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * src/super-ecos.c: Cruftectomy.
+        * src/compr*.[ch] src/pushpull.h: Namespace cleanups merged from
+        mainstream sources. Bit push functions made inline.
+        * src/pushpull.c: Removed.
+        * cdl/jffs2.c: Remove reference to pushpull.c
+        * src/file-ecos.c: Cruftectomy. Lots of unused stuff here.
+        * src/jffs2.c src/jffs2port.h: Remove some functions from jffs2.c
+        which are no longer used, move some others to jffs2port.h as
+        inline functions so they don't pollute the namespace.
+
+2002-01-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * tests/fileio1.c: Check in listdir that the number of dirents is
+        correct, taking into account existing files in case it's live.
+
+        * src/dir-ecos.c (jffs2_readdir): move to....
+
+        * src/jffs2.c (jffs2_fo_dirread): here. And fix the return code
+        in the process so it now works.
+        (filldir): Make inline and simpler.
+        * src/jffs2port.h: remove filldir related stuff.
+
+2002-01-24  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * src/dir-ecos.c: Cruftectomy. Remove most of the stuff that was
+        commented out. Remove jffs2_do_{create,link,unlink} to write.c
+        * src/write.c: Add jffs2_do_{create,link,unlink} as in mainline.
+        * src/nodelist.h: Prototypes for the above.
+        * src/jffs2port.h: Don't include <pkgconf/kernel.h>. 
+        
+2002-01-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * src/jffs2.c (jffs2_mount): Allow multiple FSs, and integration
+        with flash block device.
+        (jffs2_flash_read): Use flash block device.
+        (jffs2_flash_erase): Ditto.
+        (jffs2_flash_write): Ditto.
+        (do_flash_init): Remove - now done by block device layer
+        * src/list.h: Remove and reimplement from scratch to avoid GPL.
+        * src/os-ecos.h: Keep flash block dev handle in superblock.
+        eCos does support obsoleting as it isn't NAND only.
+        * src/dir-ecos.c (jffs2_readdir): Return correct value on success.
+        Merge in changes mutatis mutandis from between v1.49 and v1.51 of
+        dir.c in main repository.
+        * cdl/jffs2.cdl: CYGPKG_MEMALLOC more accurately CYGINT_ISO_MALLOC.
+        Only jffs2.c needs to be in libextras.a
+        Requires Flash block devices as an alternative for hardcoding
+        the sector size, flash size and base address.
+        * src/super-ecos.c (jffs2_read_super): Use flash block device for
+        sector and flash sizes.
+        * tests/fileio1.c: mount using block device (defined by CDL).
+        No need to init here - done by flash block device layer.
+        
+2002-01-21  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * src/read.c: Obtain inode lock around reading symlink target.
+        * src/dir-ecos.c: Fix the long-standing up() without down() in
+        jffs2_readdir() when only the '.' and '..' entries are read, from
+        v1.52 of master dir.c. Merge copyright date change from v1.50 - note
+        that the portability cleanups from v1.51 aren't yet merged.
+        * src/os-ecos.h: Add jffs2_can_mark_obsolete() and the macros
+        for getting at generic inode fields from a struct jffs2_inode_info*
+        * src/nodemgmt.c: Remove an #ifndef __ECOS and use 
+        jffs2_can_mark_obsolete() instead.
+        * src/jffs2port.h: up() is cyg_drv_mutex_unlock() not _release()
+        * src/gc.c: Merge portability cleanups - get rid of a lot of
+        references to 'struct inode'. Also include the attempt at NAND
+        support in jffs2_garbage_collect_deletion_dirent().
+        
+2002-01-11  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * src/jffs2port.h: Switch semaphore emulation to cyg_drv_mutex_t,
+        remove some kernel includes which seem gratuitous.
+        * cdl/jffs2.cdl: Require CYGPKG_MEMALLOC
+        * src/compr_zlib.c src/compr.c: Merge changes from mainline code
+        to make mkfs.jffs2 compile again.
+        
+2002-01-10  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * src/jffs2.c: The 'mode' arg passed to jffs2_open() shouldn't
+        have been called 'mode'. It's 'oflags'. You have to make up a 
+        mode for the newly-created file yourself.
+        * src/nodelist.h src/read.c: Fix jffs2_getlink() so it takes
+        portable arguments, not a dentry. Move it to read.c and symlink.c
+        becomes obsolete.
+        * src/symlink-ecos.c: Removed.
+        * cdl/jffs2.cdl: Remove symlink-ecos.c
+
+2002-01-09  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+        * Import updated JFFS2 sources into eCos tree.
+
+2000-08-28  Dominic Ostrowski (dominic.ostrowski@3glab.com)
+
+        * started on port of JFFS2 using ramfs as a template
+        
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+        
+

@@ -1,0 +1,22 @@
+/* XPM */
+static char *stopbuild_xpm[] = {
+"16 15 4 1",
+" 	c None",
+".	c #800000",
+"X	c #808080",
+"o	c Black",
+"          ..X   ",
+"         ..XX   ",
+"   ...X ..XX    ",
+"    X....XX     ",
+"     X...X      ",
+"     X....      ",
+"     ..XX..     ",
+"    ..XX  ..    ",
+"oooo..Xoooo.ooo ",
+"o   .X        o ",
+"o o X o o o o o ",
+"o             o ",
+"o o o o o o o o ",
+"o             o ",
+"ooooooooooooooo "};

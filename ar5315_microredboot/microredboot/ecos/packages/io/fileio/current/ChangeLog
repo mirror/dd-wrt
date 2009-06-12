@@ -1,0 +1,754 @@
+2004-10-13  David Brennan  <eCos@brennanhome.com>
+
+	* include/fileio.h: 
+	* src/file.cxx: Added support for cyg_fs_fssync,
+	cyg_fs_get_attrib, and cyg_fs_set_attrib
+
+2004-10-13  David Brennan  <eCos@brennanhome.com>
+
+	* src/file.cxx: Added a check data ptr in LOCK_FS
+
+2004-10-06  David Brennan  <eCos@brennanhome.com>
+
+	* tests/pselect.c: Added check for POSIX signals while building
+	the test case.
+	* tests/select.c: Include sys/select.h to prevent a possible warning.
+	
+2004-10-01  Oyvind Harboe  <oyvind.harboe@zylin.com>
+
+        * src/select.cxx: place the CYGBLD_ATTRIB_INIT_PRI such that it
+	compiles for gcc 3.4.2 which is more picky about its placement.
+	
+2004-07-23 Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* src/select.cxx: now correctly returns from select() on
+	e.g. closed file pointers.
+
+2004-04-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/fileio1.c: include stdio.h for rename() prototype.
+
+2004-04-07  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/fd.cxx: Fix the assert just added. 0 is a valid fd.
+
+2004-03-25  Sebastien Couret  <sebastien.couret@elios-informatique.fr>
+
+	* src/fd.cxx: Added CYG_ASSERT bound checking for file descriptor
+	numbers (0<fd<CYGNUM_FILEIO_NFD).
+
+2004-03-12  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/fio.h: If no POSIX then CYG_FILEIO_DELIVER_SIGNALS
+	and CYG_FILEIO_SIGMASK_SET call CYG_UNUSED_PARAM on their
+	arguments to silence warnings.
+	* src/file.cxx (rename): Use a throw specifier to match
+	prototype.
+
+2004-02-16  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/io.cxx (readwritev): For EWOULDBLOCK and EAGAIN return
+	the number of bytes written if any have been written.
+
+2004-01-07  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/select.cxx: No need to make pselect() dependent on
+	CYGPKG_POSIX - that would depend on the arguments. Assert instead,
+	and more correctly make it contingent on CYGPKG_POSIX_SIGNALS.
+
+	* src/fio.h: Separate out signal functionality into its own separate
+	test.
+
+2003-12-21  Sandeep Kumar <sandeep@codito.com>
+
+	* src/dir.cxx (readdir_r): Handle NULL dirp argument and return
+	EBADF
+
+2003-12-03  Dan Jakubiec  <djakubiec@yahoo.com>
+
+	* src/select.cxx (pselect): Fixed the pselect() call to correctly
+	handle NULL timeout arguments.  The previous implementation would
+	cause a random timeout value to be used.
+
+2003-11-28  David Woodhouse  <dwmw2@redhat.com>
+
+	* include/fileio.h, include/sockio.h, src/dir.cxx, src/fd.cxx,
+	src/io.cxx: Don't include kernel headers if no kernel support.
+
+2003-10-23  Savin Zlobec  <savin@elatec.si>
+
+	* src/io.cxx: Added cyg_fs_fsetinfo and cyg_fs_fgetinfo functions.
+	
+	* src/file.cxx: Added cyg_fs_setinfo and cyg_fs_getinfo functions.
+	
+	* include/fileio.h: Added cyg_fs_fsetinfo, cyg_fs_fgetinfo,
+	cyg_fs_setinfo and cyg_fs_getinfo function prototypes.
+
+2003-10-16  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/socket.cxx (bind): Pass a copy of the socket address so the
+	stack can modify it without changing the users copy. Bug found by
+	reji@codito.com.
+
+2003-10-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/fio.h (CYG_FILEIO_SIGMASK_SET): Fixed a compiler warning
+	about an unused variable.
+
+2003-09-22 Eric Doenges <Eric.Doenges@DynaPel.com>
+	* src/devfs.cxx: prototype of dev_fo_select now matches
+	implementation
+	* include/fileio.h: changed definition of cyg_fileop_select to
+	return a cyg_bool instead of int to match current implementations
+	* src/misc.cxx: changed cyg_fileio_seltrue() to match prototype.
+
+2003-07-11  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/socket.cxx (socket): If there are no network stacks configured
+	return EAFNOSUPPORT when opening a socket.
+
+2003-04-11  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/socket.cxx: Give nstab_lock mutex a priority. Also it's
+	local, so make static.
+	Change nstab and nstab_end to cyg_nstab and cyg_nstab_end for
+	cleaner namespace.
+	* include/sockio.h: nstab -> cyg_nstab.
+	* src/misc.cxx, src/dir.cxx, src/fio.h, src/file.cxx: Change
+	fstab, fstab_end, mtab, mtab_end, cdir_dir, cdir_mtab_entry to
+	have cyg_ prefix for cleaner namespace.
+
+2003-03-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/devfs.cxx: Remove unnecessary checks for -EAGAIN (should
+	no longer happen in lower layers).
+
+2003-03-08  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/pselect.c (pthread_entry1): Allow for infrequent but
+	occasional off by one error due to race condition when
+	signalling.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/fileio.cdl: Add doc link.
+
+2003-02-20  Bart Veer  <bartv@ecoscentric.com>
+
+	* cdl/fileio.cdl: identify test binaries, not test sources
+
+2003-01-30  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/fileio.cdl: Added interface CYGINT_IO_FILEIO_FS which any
+	FS which FILEIO can use should implement. 
+
+2003-01-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/misc.cxx (cyg_mtab_lookup): Return an error if the current
+	directory is not known - happens if no file systems are mounted.
+
+2002-11-10  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/fio.h: Added macros to deal with signal handling. These will
+	call into the POSIX package if it is present, but are null if it
+	is not.
+
+	* src/select.cxx: Renamed original select() to cyg_pselect() and
+	added select() and pselect() routine from POSIX-200X to call
+	it. Reorganized code a little and added calls to macros to deal
+	with signal delivery and detection.
+
+	* cdl/fileio.cdl: 
+	* tests/pselect.c: New test added to verify the signal masking and
+	delivery behaviour of pselect().
+
+	* tests/select.c: Fixed up some printfs to make it a little tidier.
+
+2002-11-03  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/io.cxx: 
+	* cdl/fileio.cdl: Add readv()/writev() support.
+
+2002-08-08  Nick Garnett  <nickg@calivar.demon.co.uk>
+
+	* src/select.cxx (select): Changed mechanism for calculating
+	select timeout to avoid possible race conditions between this code
+	and the timer DSR.
+
+2002-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* tests/fileio1.c: Removed strcat definition. Rely on string.h to
+	provide it.
+
+2002-05-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/limits.h (NAME_MAX): Increase default to 64.
+	* cdl/fileio.cdl: Set CYGBLD_ISO_NAME_MAX_HEADER.
+
+2002-04-11  Nick Garnett  <nickg@redhat.com>
+
+	* doc/fileio.sgml: Added a section on writing a new
+	filesystem. This probably still needs more work, but it's better
+	than nothing.
+
+2002-04-05  Nick Garnett  <nickg@redhat.com>
+
+	* src/devfs.cxx: Changed test for EAGAIN in dev_fo_read() and
+	dev_fo_write() to negate value first. 
+
+2002-03-07  Nick Garnett  <nickg@redhat.com>
+
+	* doc/fileio.sgml: Added this file to contain documentation on
+	this package.
+
+2002-02-04  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/socket.c (main): 
+	* tests/select.c (main): sin_len field must be set.
+
+2002-01-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/fileio.cdl: Actually, don't bother to build testfs.c at all.
+
+2002-01-29  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/fileio.cdl: Added CYGPKG_FILEIO_BUILD_TESTS option and made
+	building of testfs dependant on it.
+
+2002-01-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/inode.h: New API defining a common generic inode type.
+	* src/inocache.cxx: Implement the inode cache functions.
+	* cdl/fileio.cdl: (Configurably) build it.
+
+2002-01-23  David Woodhouse  <dwmw2@redhat.com>
+2002-01-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/fileio.cdl: Remove select compilation and support to new
+	CYGFUN_IO_FILEIO_SELECT option conditional on the kernel
+	Ditto for DEVS and CYGPKG_IO_FILEIO_DEVFS_SUPPORT.
+	Make CYGPKG_IO_FILEIO_SOCKET_SUPPORT also conditional on kernel.
+	* src/fio.h: Define FILEIO_MUTEX_LOCK() and FILEIO_MUTEX_UNLOCK()
+	so that code doesn't need to care whether the kernel is included or
+	not.
+	* src/fd.cxx: Conditionalize mutex usage throughout on CYGPKG_KERNEL,
+	and FILEIO_MUTEX_LOCK()/UNLOCK().
+	* src/file.cxx: Ditto.
+	* src/misc.cxx: Ditto.
+	(cyg_timestamp): Only use Cyg_Clock implementation if CYGPKG_KERNEL.
+
+2002-01-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/misc.cxx: Initialize fileio_initializer at prio CYG_INIT_IO_FS
+	so it happens after the devices it depends on.
+	* src/file.cxx (getcwd_lock): Ditto.
+	* src/select.cxx (select_mutex): ditto.
+	(selwait): ditto.
+	* src/fd.cxx (fdlock): ditto
+	(file_lock): ditto.
+	* src/dir.cxx (readdir): Use FILEIO_RETURN_VALUE on exit.
+	(readdir_r): Ditto.
+	* src/devfs.cxx (dev_stat): Don't use handle for st_dev - it will
+	probably be truncated.
+
+2002-01-04  Wade Jensen <Wade_Jensen@inter-tel.com>
+2002-01-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/socket.cxx (recvfrom): Set msg.msg_namelen correctly for
+	NULL fromlen.
+
+2001-12-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.cxx (readwrite): Add missing check for return (errors).
+
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/file.cxx (chdir): Don't detach from current dir if unset.
+
+2001-11-02  Felix Wong  <felixwong@i-technologies.cc>
+2001-11-02  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/devfs.cxx (dev_fo_read): Support block devices.
+	(dev_fo_write): Ditto.
+
+2001-10-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/fio.h: Make cancellation point dependand on
+	CYGINT_ISO_PTHREAD_IMPL from <pkgconf/isoinfra.h> really.
+	* tests/select.c: Ditto.
+
+2001-10-09  Jesper Skov  <jskov@redhat.com>
+
+	* tests/select.c: Do NA check for posix threads.
+
+	* src/fio.h: Make cancellation point dependant on
+	CYGPKG_POSIX_PTHREAD as in the POSIX package.
+
+2001-07-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/fileio.cdl: Implements select().
+	* src/select.cxx: Include <sys/select.h> from isoinfra.
+
+2001-07-19  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/devfs.cxx (dev_fo_read): Treat non-blocking reads returning
+	EAGAIN correctly
+	(dev_fo_write): Ditto for writes.
+
+2001-06-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/fio.h (FILEIO_ENTRY): Don't use CYG_MACRO_START/END around
+	tracing macros.
+	Reported by Richard Panton.
+
+2001-06-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/socket.cxx (cyg_sock_unlock): Fix cyg_file_lock->cyg_file_unlock
+	thinko.
+
+2001-03-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/file.cxx (open): Check for required/valid open mode.
+
+2001-03-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/misc.cxx (cyg_mtab_lookup): check valid mtab entry
+	(umount): ditto.
+
+2001-03-14   Martin van Veen  <martin_van_veen@yahoo.com>
+
+	* src/misc.cxx (mount): Return error if mount fails.
+
+2001-03-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/misc.cxx (mount): Do implicit 'chdir()' in the
+	absence of any statically mounted file systems.
+	(cyg_fs_lock, cyg_fs_unlock): Add assertions.
+
+	* src/file.cxx (LOCK_FS):
+	* src/dir.cxx (LOCK_FS): Add assertions on 'mte'.
+
+2001-01-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/socket.c (main):
+	Added call to init_all_network_interfaces().
+
+2000-12-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/misc.cxx: Fixed some bugs in initialization of timestamp
+	function when Wallclock and POSIX packages are absent.
+
+2000-11-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/io.cxx (readwrite): Ensure we call FILEIO_RETURN_VALUE() to
+	get correct cleanup
+	(fpathconf): Ditto
+	(lseek): Ditto
+
+	* src/file.cxx (open): If applicable, refer to stdin, stdout and stderr
+	here to ensure they are pulled in, in case selective linking would
+	otherwise eliminate them. This is to ensure they get allocated to
+	fd's 0, 1 and 2.
+
+2000-10-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/io.cxx (readwrite): Merged both read() and write() functions
+	into this single common routine.  
+
+	* include/fileio.h: Introduced a common typedef for both read and
+	write operations.
+
+	* doc/fileio.txt: Added some text about getcwd() and tidied up
+	some other parts.
+
+2000-10-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/file.cxx: Added support for getcwd(). There are three
+	mechanisms provided here. The first is to use the FS_INFO_GETCWD
+	key on the filesystem to use any support it has for this. If that
+	fails it falls back on one of the two other mechanisms. If
+	CYGPKG_IO_FILEIO_TRACK_CWD is set then the current directory is
+	tracked textually in chdir() and the result of that is reported in
+	getcwd(). Otherwise an attempt is made to traverse the directory
+	tree to its root using ".." entries. This last option is
+	complicated and expensive, so the other two mechanisms are to be
+	preferred if possible.
+
+	* include/fileio.h: Added FS_INFO_GETCWD getinfo option and a
+	matching struct cyg_getcwd_info. These are used to access getcwd()
+	support in a filesystem.
+
+	* src/fio.h: Added initial support for POSIX API function entry
+	and return. 
+
+	* cdl/fileio.cdl: Added CYGPKG_IO_FILEIO_TRACK_CWD option to
+	enable current directory tracking.
+
+2000-09-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/select.cxx (cyg_selwakeup):
+	Removed test for whether the waiting thread is actually waiting
+	for this event. This lead to a race condition when the thread is
+	still polling other objects but has already checked this
+	event. Now all waiting selectors are woken up by each selectable
+	event.
+
+2000-09-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/select.cxx: Apply constructor prioritization to mutexes and
+	condition variables
+	* src/fd.cxx: Ditto
+
+2000-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/select.c: NA if no POSIX package
+
+	* cdl/fileio.cdl: Set CYGBLD_ISO_OPEN_MAX_HEADER to this package's
+	limits.h
+	* include/limits.h: New file to define OPEN_MAX (and other things in
+	future)
+
+2000-09-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/fileio.h:
+	Removed spaces from arguments to CYG_HAL_TABLE_ENTRY().
+
+2000-09-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/sockio.h (struct cyg_nstab_entry): Apply CYG_HAL_TABLE_TYPE
+	* include/fileio.h (struct cyg_mtab_entry): Ditto
+	(FSTAB_ENTRY): Ditto
+
+2000-08-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/select.cxx (select): Added scheduler unlock in timeout
+	return case.
+
+2000-08-22  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* doc/fileio.txt: Add Nick's text description of plug-in filesystems
+ 	and sockets here for now.
+
+2000-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/fileio.h: Added CYG_FAPPEND flag for preservation in
+	file object flags.
+	Added prototype for cyg_timestamp().
+
+	* src/misc.cxx: Fixed bug in cyg_mtab_lookup() when dealing with
+	empty mount table entries.
+	Added cyg_timestamp() to provide timestamp support to client
+	filesystems.
+
+2000-08-09  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/misc.cxx: Don't define own strcmp() function (which had a bug
+	anyway). Use string.h.
+	* cdl/fileio.cdl: requires ISO C string functions
+
+2000-08-01  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/misc.cxx: Use correct initializer for mtab_extra
+
+	* src/fio.h (FILEIO_RETURN_VOID): Surround in CYG_MACRO_START to
+	prevent problems when used with one-line if.
+	(FILEIO_RETURN_VALUE): Likewise
+
+	* include/fileio.h: Make getinfo/setinfo take void *bufs, not char *
+	for easier casting (and more correct)
+
+	* tests/testfs.c: Likewise
+
+	* src/devfs.cxx: Likewise.
+	Also fix bug with Nick's change below that set non-blocking mode
+	in all cases.
+
+2000-07-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/devfs.cxx (dev_open): Added support for O_NONBLOCK.
+
+2000-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/select.c: Wrapped include of pkgconf/io_serial.h in
+	#ifdef CYGPKG_IO_SERIAL.
+
+2000-07-25  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/select.c (main): Wrap call to init_all_network_interfaces()
+	in #ifdef TEST_NET
+
+2000-07-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/select.c (main): Added call to
+	init_all_network_interfaces(). 
+
+2000-07-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/fileio.h:
+	* src/file.cxx:
+	* src/devfs.cxx:
+	* tests/testfs.c:
+	Added support for link() API call. This was the only major file
+	operation omitted.
+
+2000-07-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/fileio.h: Added some modes for fsync().
+
+	* src/file.cxx: Added access() function.
+
+	* src/io.cxx: Added fdatasync() and isatty().
+
+	* src/devfs.cxx: Added fsync() support.
+
+	* tests/fileio1.c: Added calls to access() to check (non-)existence
+	of files where appropriate.
+
+2000-07-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/select.cxx (select): Fixed return value when timing out. Now
+	returns zero and no error, it used to return -1 and ETIMEDOUT.
+
+	* src/io.cxx: Fixed fsync() to match standard.
+
+	* src/devfs.cxx:
+	Added lseek() support - all devices are always at position
+	zero. Added [f]stat() support - currently just fills in the stat
+	buffer with some predefined values. When we have more
+	sophisticated devices this may need to be improved.
+
+	* tests/testfs.c (testfs_open): Added support for O_TRUNC open
+	flag.
+	
+	* tests/stdio.c: 
+	* cdl/fileio.cdl:
+	Added stdio.c to test C library IO integration. This does not test
+	the C library functionality, just that it works with the fileio
+	package in certain limited ways.
+
+2000-06-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/misc.cxx: Fixed definition of mtab_extra[] so that it gets
+	emitted correctly into the object file.
+
+	* tests/testfs.c:
+	Added support for dynamic mount()/umount().
+	Added testfs_dump() to report state of filesystem, and to do a
+	little consistency checking.
+
+	* tests/fileio1.c: Extended testing to mount() and maximum file
+	sizes.
+
+2000-06-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/dirent.h: Added this file to contain directory support
+	definitions.
+
+	* include/fileio.h:
+	Introduced separate typedefs for all operation functions.
+	Added CYG_FDIR to mark directory streams.
+	Added some default operation functions.
+
+	* src/fio.h (FILEIO_RETURN_VOID): Added this macro.
+
+	* src/dir.cxx: Added this file to contain directory listing API
+	functions.
+
+	* src/misc.cxx:
+	Added default operation functions.
+
+	* src/file.cxx:
+	Fixed mkdir() to have correct prototype.
+	Moved opendir() to dir.cxx.
+	Added support in chdir() for deregistering the current directory.
+
+	* cdl/fileio.cdl: Added dev.cxx to compile list. Added support for
+	dirent.h implementation.
+
+	* tests/testfs.c: Lots of changes towards a more complete
+	implementation.
+
+	* tests/select.c: Changed SHOW_RESULT() message a little. Fixed up
+	some warnings when no testing is possible.
+
+	* tests/fileio1.c:
+	Largely rewritten to do more complete testing.
+
+2000-06-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/select.cxx: Added selwake_count variable to count select
+	wakeups. This allows us to avoid sleeping when a selectee calls
+	cyg_selwakeup() while we are still scanning the FD sets.
+
+	* include/fileio.h:
+	* include/sockio.h: 
+	* src/misc.cxx: 
+	* src/socket.cxx: 
+	Converted tables to new mechanism.
+
+	* tests/select.c: Reduced buffer size to avoid buffer overflow in
+	serial devices. 
+	
+2000-06-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/fileio.h:
+	Added typedef for cyg_selinfo.
+	Added umount to fstab entry structure.
+	Added mount() and unmount() prototypes.
+	Added const in various places.
+	Changed some types from CYG_ADDRWORD to their ISO standard
+	equivalents.
+	Added si_thread field to cyg_selinfo structure, added
+	cyg_selinit() prototype.
+
+	* src/socket.cxx: Converted an errant LOCK_NS() into the
+	UNLOCK_NS() it should be.
+
+	* src/select.cxx:
+	Added cyg_selinit() which must be called by all selectees at
+	initialization to prepare a cyg_selinfo structure for use.
+	Modified cyg_selwakeup() to minimize the number for actual wakeup
+	operations it actually performs.
+
+	* src/misc.cxx:
+	Added mtab_extra[] to contain dynamic mount table entries,
+	modified startup scan of mtab to cope with this.
+	changed matchlen() to cope with "/" mountpoint, this function is
+	rapidly ceasing to be the neat bit of code it started out as.
+	Added implementations of mount() and umount().
+
+	* src/devfs.cxx: Added dev_umount, various minor tweaks.
+
+	* cdl/fileio.cdl: Added CYGNUM_FILEIO_MTAB_EXTRA to define how
+	many extra mount table entries should exist for dynamic mounts.
+	Added select.c to list of tests.
+
+	* tests/select.c: Added this file to test select() functionality
+	on both sockets and (serial) devices.
+
+	* tests/socket.c: Tidied some compilation warnings.
+
+	* tests/testfs.c: Added umount stub function.
+	
+2000-06-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sockio.h: 
+	* include/fileio.h:
+	* src/fio.h: 
+	* tests/testfs.c: 
+	* src/socket.cxx: 
+	* src/misc.cxx: 
+	* src/file.cxx: 
+	* src/fd.cxx: 
+	* src/io.cxx: 
+	* src/devfs.cxx: 
+	Tidied up and sorted out locking protocols and synchronization
+	mechanisms.
+
+2000-06-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/select.cxx: 
+	* src/devfs.cxx: 
+	* include/fileio.h:
+	* tests/testfs.c: 
+	Added select() support.
+
+	* src/socket.cxx: Fixed a resource management bug in accept().
+
+	* tests/socket.c: Extended to test that all API calls work, at
+	least minimally, as they should. Still some calls to add here.
+	
+2000-06-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/socket.c: Simple socket API test program. Needs much more
+	work to give full coverage.
+
+	* src/socket.cxx: Filled in some implementations. Changed some
+	type specifications.
+
+	* src/select.cxx: Added this file to contain select()
+	implementation. At present it does nothing.
+
+	* include/sockio.h:
+	Added definition of socklen_t for use when the NET package is
+	absent - just so this file compiles.
+	Added macro to generate an nstab entry.
+	Changed prototypes of socket operation ffunctions to better match
+	both API definition and BSD stack implementation.
+
+	* cdl/fileio.cdl: Added support for socket API. This is only
+	active if the NET package is present.
+	Added initial socket API test program.
+
+2000-06-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/socket.cxx:
+	Added this file to implement socket interface. This is still a
+	rough draft that has not yet been tested.
+
+	* src/misc.cxx: 
+	* src/io.cxx: 
+	* src/fio.h: Various minor changes and bug fixes.
+
+	* src/file.cxx: Various bug fixes. Added pathconf().
+
+	* src/fd.cxx: Various changes and bug fixes, mostly in the
+	handling of the locking mechanisms.
+
+	* src/devfs.cxx: Added this filesystem to interface to the device
+	IO subsystem. Not yet tested.
+
+	* include/sockio.h: Various minor changes prompted by
+	implementation.
+
+	* include/fileio.h:
+	Added macros to instantiate filesystem and mount table entries.
+	Added mode mask for setting up f_flags.
+	Changed file object types, added device type.
+
+	* cdl/fileio.cdl:
+	Added some extra files to compile. Some now go in libextras.
+	Added table maxima for fstab, mtab and nstab.
+	Added tests.
+
+	* tests/fileio1.c: Added this simple test for the fileio
+	infrastructure.
+
+	* tests/testfs.c:
+	Created this simple ROM filesystem to test out the fileio
+	infrastructure. This is not really usable for anything other than
+	this, and should not be used in "production" systems. Hence its
+	presence in tests rather than src.
+	At present this only has support for open(), close(), read(),
+	write(), lseek() and unlink(). Other parts will be implemented as
+	and when required.
+	
+2000-05-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/fio.h: 
+	* src/file.cxx: 
+	* src/io.cxx: 
+	* src/misc.cxx:
+	Roughed out most of the file IO infrastructure. While this code
+	compiles, none of it has actually been executed yet. A lot of this
+	was cut-and-paste-and-edit, so some minor blemishes are to be
+	expected.
+
+	* src/fd.cxx: Several modifications in response to implementing
+	rest of infrastructure. Added dup() and dup2() API routines.
+
+	* include/fileio.h: Many changes and tidies prompted by
+	infrastructure implementation.
+
+	* cdl/fileio.cdl: Added "implements" directives for isoinfra
+	interfaces. Extended compile to new files.
+
+2000-05-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/fileio.h:
+	* include/sockio.h:
+	* src/fd.cxx:
+	* cdl/fileio.cdl: 
+	Created these files as a start at defining the file IO package.
+	There is still a lot to do here, so expect radical changes to all
+	of these files in the near future.

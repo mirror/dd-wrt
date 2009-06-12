@@ -1,0 +1,785 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     introduction.sgml                                           -->
+<!--                                                                 -->
+<!--     eCos User Guide                                             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- Copyright (C) 2003 Nick Garnett                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part ID="user-guide-introduction">
+<TITLE>Introduction</TITLE>
+
+<!--
+<chapter ID="FOREWORD-WHATS-NEW">
+<TITLE>What's New?</TITLE>
+
+<para>
+XXXXX So what is new??? XXXXX
+</para>
+
+</chapter>
+-->
+
+<!-- ==================================================== -->
+
+<chapter ID="ecos-key-features">
+<TITLE>Key Features</TITLE>
+
+<itemizedlist>
+
+<listitem>
+<para><productname>eCos</productname> is distributed under the GPL
+license with an exception which permits proprietary application code
+to be linked with <productname>eCos</productname> without itself being
+forced to be released under the GPL. It is also royalty and buyout
+free.
+</para>
+</listitem>
+
+<listitem>
+<para>As an Open Source project, <productname>eCos</productname> is
+under constant improvement, with an active developer community, based
+around the <productname>eCos</productname> web site at <ULINK
+URL="http://ecos.sourceware.org/">http://ecos.sourceware.org/</ULINK>.
+</para>
+</listitem>
+
+<listitem>
+<para>Powerful GUI-based configuration system allowing both large and
+fine grained configuration of <productname>eCos</productname>. This
+allows the functionality of <productname>eCos</productname> to be
+customized to the exact requirements of the application.
+</para>
+</listitem>
+
+<listitem>
+<para>Full-featured, flexible, configurable, real time embedded
+kernel. The kernel provides thread scheduling, synchronization,
+timer, and communication primitives. It handles hardware resources
+such as interrupts, exceptions, memory and caches.
+</para>
+</listitem>
+
+<listitem>
+<para>The Hardware Abstraction Layer (HAL) hides the specific features
+of each supported CPU and platform, so that the kernel and other
+run-time components can be implemented in a portable fashion.
+</para>
+</listitem>
+
+<listitem>
+<para>Support for &micro;ITRON and POSIX Application Programmer
+Interfaces (APIs). It also includes a fully featured, thread-safe ISO
+standard C library and math library.
+</para>
+</listitem>
+
+<listitem>
+<para>Support for a wide variety of devices including many serial
+devices, ethernet controllers and FLASH memories. There is also
+support for PCMCIA, USB and PCI interconnects.
+</para>
+</listitem>
+
+<listitem>
+<para>A fully featured TCP/IP stack implementing IP, IPv6, ICMP, UDP
+and TCP over ethernet. Support for SNMP, HTTP, TFTP and FTP are also
+present.
+</para>
+</listitem>
+
+<listitem>
+<para>The RedBoot ROM monitor is an application that uses the
+<productname>eCos</productname> HAL for portability. It provides
+serial and ethernet based booting and debug services during
+development.
+</para>
+</listitem>
+
+<listitem>
+<para>Many components include test programs that validate the
+components behaviour. These can be used both to check that hardware is
+functioning correctly, and as examples of
+<productname>eCos</productname> usage.
+</para>
+</listitem>
+
+<listitem>
+<para><productname>eCos</productname> documentation included this User
+Guide, the Reference Manual and the Components Writer's Guide. These
+are being continually updated as the system develops.
+</para>
+</listitem>
+
+</itemizedlist>
+
+</chapter>
+
+<!-- ==================================================== -->
+
+<chapter ID="ecos-overview">
+<TITLE><productname>eCos</productname> Overview</TITLE>
+
+<PARA><productname>eCos</productname> is an open source, configurable,
+	portable, and royalty-free embedded real-time operating
+	system. The following text expands on these core aspects that
+	define <productname>eCos</productname>.</PARA>
+
+<PARA><productname>eCos</productname> is provided as an open source
+	runtime system supported by the GNU open source development
+	tools. Developers have full and unfettered access to all
+	aspects of the runtime system. No parts of it are proprietary
+	or hidden, and you are at liberty to examine, add to, and
+	modify the code as you deem necessary. These rights are
+	granted to you and protected by the GNU Public License (GPL).
+	An exception clause has been added to the eCos license which
+	limits the circumstances in which the license applies to other
+	code when used in conjunction with eCos. This exception grants
+	you the right to freely develop and distribute applications
+	based on <productname>eCos</productname>. You are not expected
+	or required to make your embedded applications or any
+	additional components that you develop freely available so
+	long as they are not derived from
+	<productname>eCos</productname> code. We of course welcome all
+	contributions back to <productname>eCos</productname> such as
+	board ports, device drivers and other components, as this
+	helps the growth and development of
+	<productname>eCos</productname>, and is of benefit to the
+	entire <productname>eCos</productname> community. See <XREF
+	LINKEND="ecos-licensing"> for more details.</PARA>
+
+<PARA>One of the key technological innovations in
+	<productname>eCos</productname> is the configuration
+	system. The configuration system allows the application writer
+	to impose their requirements on the run-time components, both
+	in terms of their functionality and implementation, whereas
+	traditionally the operating system has constrained the
+	application's own implementation. Essentially, this enables
+	<productname>eCos</productname> developers to create their own
+	application-specific operating system and makes
+	<productname>eCos</productname> suitable for a wide range of
+	embedded uses. Configuration also ensures that the resource
+	footprint of <productname>eCos</productname> is minimized as
+	all unnecessary functionality and features are removed. The
+	configuration system also presents
+	<productname>eCos</productname> as a component
+	architecture. This provides a standardized mechanism for
+	component suppliers to extend the functionality of
+	<productname>eCos</productname> and allows applications to be
+	built from a wide set of optional configurable run-time
+	components. Components can be provided from a variety of
+	sources including: the standard
+	<productname>eCos</productname> release; commercial third
+	party developers or open source contributors.</PARA>
+
+<PARA>The royalty-free nature of <productname>eCos</productname> means that you can develop and
+deploy your application using the standard <productname>eCos</productname> release without
+incurring any royalty charges. In addition, there are no up-front
+license charges for the <productname>eCos</productname> runtime source code and associated
+tools. We provide, without charge, everything necessary for basic
+embedded applications development.</PARA>
+
+<PARA><productname>eCos</productname> is designed to be portable to a
+wide range of target architectures and target platforms including 16,
+32, and 64 bit architectures, MPUs, MCUs and DSPs. The
+<productname>eCos</productname> kernel, libraries and runtime
+components are layered on the Hardware Abstraction Layer (HAL), and
+thus will run on any target once the HAL and relevant device drivers
+have been ported to the target's processor architecture and
+board. Currently <productname>eCos</productname> supports a large
+range of different target architectures:
+ </para>
+
+<itemizedlist>
+
+<listitem><para>ARM, Intel StrongARM and XScale</para></listitem>
+
+<listitem><para>Fujitsu FR-V</para></listitem>
+
+<listitem><para>Hitachi SH2/3/4</para></listitem>
+
+<listitem><para>Hitachi H8/300H </para></listitem>
+
+<listitem><para>Intel x86</para></listitem>
+
+<listitem><para>MIPS</para></listitem>
+
+<listitem><para>Matsushita AM3x</para></listitem>
+
+<listitem><para>Motorola PowerPC</para></listitem>
+
+<listitem><para>Motorola 68k/Coldfire</para></listitem>
+
+<listitem><para>NEC V850</para></listitem>
+
+<listitem><para>Sun SPARC</para></listitem>
+
+</itemizedlist>
+
+<para>
+including many of the popular variants of these architectures
+and evaluation boards.</PARA>
+
+<PARA><productname>eCos</productname> has been designed to support
+applications with real-time requirements, providing features such as
+full preemptability, minimal interrupt latencies, and all the
+necessary synchronization primitives, scheduling policies, and
+interrupt handling mechanisms needed for these type of
+applications. <productname>eCos</productname> also provides all the
+functionality required for general embedded application support
+including device drivers, memory management, exception handling, C,
+math libraries, etc. In addition to runtime support, the
+<productname>eCos</productname> system includes all the tools
+necessary to develop embedded applications, including
+<productname>eCos</productname> software configuration and build
+tools, and GNU based compilers, assemblers, linkers, debuggers, and
+simulators.</PARA>
+
+<PARA>To get the most out of <productname>eCos</productname> you
+should visit the <productname>eCos</productname> open source
+developers site: <ULINK
+URL="http://ecos.sourceware.org/">http://ecos.sourceware.org/</ULINK>.
+</para>
+
+<PARA>The site is dedicated to the <productname>eCos</productname>
+      developer community and contains a rich set of resources
+      including news, FAQ, online documentation, installation guide,
+      discussion and announcement mailing lists, and runtime and
+      development tools downloads. The site also supports anonymous
+      CVS and WEBCVS access to provide direct access to the latest
+      <productname>eCos</productname> source base. </PARA>
+
+<PARA><productname>eCos</productname> is released as open source
+      software because we believe that this is the most effective
+      software development model, and that it provides the greatest
+      benefit to the embedded developer community as a whole. As part
+      of this endeavor, we seek the input and participation of
+      <productname>eCos</productname> developers in its continuing
+      evolution. Participation can take many forms including:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>providing us with feedback on how <productname>eCos</productname> might be made more
+useful to you - by taking part in the ongoing mailing list discussions
+and by submitting problem reports covering bugs, documentation issues,
+and missing features</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>contributing bug fixes and enhancement patches</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>contributing new code including device drivers, board
+ports, libraries, and other runtime components</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+
+<PARA>Our long term aim is to make <productname>eCos</productname> a
+rich and ubiquitous standard infrastructure for the development of
+deeply embedded applications.  This will be achieved with the
+assistance of the <productname>eCos</productname> developer community
+cooperating to improve <productname>eCos</productname> for all. We
+would like to take this opportunity to extend our thanks to the many
+<productname>eCos</productname> developers who have already
+contributed feedback, ideas, patches, and code that have augmented and
+improved this release.</PARA>
+
+
+<para>
+<emphasis>The <productname>eCos</productname> Maintainers</emphasis>
+</para>
+
+</chapter>
+
+<!-- ==================================================== -->
+
+<chapter ID="ecos-licensing">
+<TITLE><productname>eCos</productname> Licence Overview</TITLE>
+
+<para>As of May 2002, <productname>eCos</productname> is released
+under a modified version of the well known <ulink
+url="http://www.gnu.org/copyleft/gpl.html">GNU General Public License
+(GPL)</ulink>, now making it an <ulink
+url="http://www.gnu.org/philosophy/license-list.html">official
+GPL-compatible Free Software License</ulink>. An exception clause has
+been added to the <productname>eCos</productname> license which limits
+the circumstances in which the license applies to other code when used
+in conjunction with <productname>eCos</productname>. The exception
+clause is as follows:</para>
+
+<programlisting width=72>
+ As a special exception, if other files instantiate templates or use macros
+ or inline functions from this file, or you compile this file and link it
+ with other works to produce a work based on this file, this file does not
+ by itself cause the resulting work to be covered by the GNU General Public
+ License. However the source code for this file must still be made
+ available in accordance with section (3) of the GNU General Public
+ License.
+
+ This exception does not invalidate any other reasons why a work based on
+ this file might be covered by the GNU General Public License.
+</programlisting>
+
+<para>The goal of the license is to serve the
+<productname>eCos</productname> user community as a whole. It allows
+all <productname>eCos</productname> users to develop products without
+paying anybody anything, no matter how many developers are working on
+the product or how many units will be shipped. The license also
+guarantees that the <productname>eCos</productname> source code will
+always be freely available. This applies not only to the core
+<productname>eCos</productname> code itself but also to any changes
+that anybody makes to the core. In particular, it should prevent any
+company or individual contributing code to the system and then later
+claiming that all <productname>eCos</productname> users are now guilty
+of copyright or patent infringements and have to pay royalties. It
+should also prevent any company from making some small improvements,
+calling the result a completely new system, and releasing this under a
+new and less generous license.</para>
+
+<para>The license does <emphasis>not</emphasis> require users to
+release the source code of any <emphasis>applications</emphasis> that
+are developed with <productname>eCos</productname>. However, if
+anybody makes any changes to code covered by the
+<productname>eCos</productname> license, or writes new files derived
+in any way from <productname>eCos</productname> code, then we believe
+that the entire user community should have the opportunity to benefit
+from this. The license stipulates that these changes must be made
+available in source code form to all recipients of binaries based on
+the modified code, either by including the sources along with the
+binaries you deliver (or with any device containing such binaries) or
+with a written offer to supply the source code to the general public
+for three years. It is perhaps most practical for
+<productname>eCos</productname> developers to make the source code
+available online and inform those who are receiving binaries
+containing <productname>eCos</productname> code, and probably also the
+<productname>eCos</productname> maintainers, about the location of the
+code. See the <ulink url="http://www.gnu.org/copyleft/gpl.html">full
+text of the GPL</ulink> for the most authoritative definition of the
+obligations.</para>
+
+<para>Although it is not strictly necessary to contribute the modified
+code back to the <productname>eCos</productname> open source project,
+we are always pleased to receive code contributions and hope that
+developers will also be keen to give back in return for what they
+received from the <productname>eCos</productname> project completely
+free of charge.  The <productname>eCos</productname> maintainers are
+responsible for deciding whether such contributions should be applied
+to the public repository. In addition, a <ulink
+url="http://ecos.sourceware.org/assign.html">copyright
+assignment</ulink> is required for any significant changes to the core
+<productname>eCos</productname> packages.</para>
+
+<para>The result is a royalty-free system with minimal obligations on
+the part of application developers. This has resulted in the rapid
+uptake of <productname>eCos</productname>. At the same time,
+<productname>eCos</productname> is fully open source with all the
+benefits that implies in terms of quality and innovation. We believe
+that this is a winning combination.</para>
+
+<sect1 id="ecos-licensing-qna">
+<title>Questions and answers</title>
+
+<para>The following queries provide some clarification as to the
+implications of the <productname>eCos</productname> license. They do
+not consititute part of the legal meaning of the license.</para>
+
+<para><emphasis>Q.</emphasis> What is the effect of the
+<productname>eCos</productname> license?</para>
+
+<para><emphasis>A.</emphasis> In the simplest terms, when you
+distribute anything containing <productname>eCos</productname> code,
+you must make the source code to <productname>eCos</productname>
+available under the terms of the GPL.</para>
+
+<para><emphasis>Q.</emphasis> What if I make changes to
+<productname>eCos</productname>, or write new code based on
+<productname>eCos</productname> code?</para>
+
+<para><emphasis>A.</emphasis> Then you must make those changes
+available as well.</para>
+
+<para><emphasis>Q.</emphasis> Do I have to distribute the source
+code to my application? Isn't the GPL "viral"?</para>
+
+<para><emphasis>A.</emphasis> You do not have to distribute any
+code under the terms of the GPL other than
+<productname>eCos</productname> code or code derived from
+<productname>eCos</productname>. For example, if you write a HAL port
+based on copying an existing <productname>eCos</productname> HAL in
+any way, you must make the source code available with the
+binary. However you would not need to make available any other code,
+such as the code of a wholly separate application linked with
+<productname>eCos</productname>.</para>
+
+<para><emphasis>Q.</emphasis> I would rather stick with the
+RHEPL code, but I updated my anonymous CVS checkout.</para>
+
+<para><emphasis>A.</emphasis> You can check out the final
+version of anonymous CVS before the license change using the CVS tag
+<literal>last-rhepl</literal>. See <ulink
+url="http://ecos.sourceware.org/anoncvs.html">the anonymous CVS
+access page</ulink>
+for details.</para>
+
+</sect1>
+
+<sect1 id="ecos-licensing-previous">
+<title>Previous License</title>
+
+<para>
+
+Prior to May 2002, <productname>eCos</productname> was released under
+the <ulink url="http://ecos.sourceware.org/old-license.html">Red
+Hat eCos Public License (RHEPL)</ulink>. The RHEPL required any
+modifications to <productname>eCos</productname> code to be made
+available under preferential terms to Red Hat and was therefore
+incompatible with code licensed under the GPL.  The use of
+<productname>eCos</productname> source code which was licensed under
+the RHEPL is not affected by the switch to the modified GPL for later
+revisions.
+</para>
+
+</sect1>
+
+</chapter>
+
+<!-- ==================================================== -->
+
+<chapter id="notation-and-conventions">
+<title>Notation and Conventions</title>
+
+<para>
+Since there are many supported target architectures, notation
+conventions are used in this manual to avoid repeating instructions
+that are very similar.
+</para>
+
+<SECT1 ID="GDB-AND-GCC-COMMAND-NOTATION"><!-- <index></index> --><!-- <xref> -->
+<TITLE>GDB and <!-- <index></index> -->GCC Command Notation</TITLE>
+
+<para>
+Cross-development commands like <COMMAND>gcc</COMMAND> and
+<COMMAND>gdb</COMMAND> will be shown with a
+<replaceable>TARGET-</replaceable> prefix. You need to replace
+<replaceable>TARGET-</replaceable> with the correct prefix before
+using the command. Just using <command>gcc</command> or
+<command>gdb</command> will use the tools for the host, which is not
+(usually) what you want.
+</para>
+
+<para>
+For example use <command>arm-elf-gcc</command> and
+<command>arm-elf-gdb</command> for ARM, Thumb, and StrongARM targets.
+Use <command>xscale-elf-gcc</command> and
+<command>xscale-elf-gdb</command> for Intel Xscale targets.
+Use <command>i386-elf-gcc</command> and
+<command>i386-elf-gdb</command> for IA32 targets. And so on, the exact
+prefix to use is shown in the documentation for each target.
+</para>
+
+<PARA>Note that some versions of the GCC cross compiler generate
+executable files with the <FILENAME>.exe</FILENAME> suffix on Windows,
+but not on Linux. The suffix <FILENAME>.exe</FILENAME> will be omitted
+from executable file names, so you will see <FILENAME>hello</FILENAME>
+instead of <FILENAME>hello.exe</FILENAME>.</PARA>
+
+</sect1>
+
+<SECT1 ID="DIRECTORY-AND-FILE-SYSTEM-CONVENTIONS"><!-- <index></index> -->
+<TITLE>Directory and File System Conventions</TITLE>
+
+<PARA>The default directory for installing
+<productname>eCos</productname> on Windows (usually
+<FILENAME>C:/Program Files/eCos</FILENAME>) is different from that on
+Linux (usually <FILENAME>/opt/ecos</FILENAME>).  Since many command
+line examples in the tutorials use these paths, this default (base)
+directory will be cited as <replaceable>BASE_DIR</replaceable>.</PARA>
+
+<PARA>Windows and Linux have a similar file system syntax, but the
+MS-DOS command interpreter on Windows uses the backslash character
+(\) as a path separator, while Linux and POSIX shells (including
+the Cygwin bash shell for windows) use the forward slash (/).</PARA>
+
+<PARA>This document will use the POSIX shell convention of forward
+slashes throughout.</PARA>
+
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 ID="VERSION-CONVENTIONS">
+<TITLE>Version Conventions</TITLE>
+
+<para>
+This manual does not refer explicitly to any particular version of
+<productname>eCos</productname>. However, version numbers form part of
+many file path names. In all of these places the version number will
+be shown like this: <replaceable>&Version;</replaceable>.
+</para>
+
+<para>
+If you have used anonymous CVS to check
+<productname>eCos</productname> out of the CVS repository, the version
+number will always be <literal>current</literal>, since that is the
+name of the directory in the repository. When a stable release is made
+this directory name is changed, in the release, to the number of the
+release, for example <literal>v2_0</literal> or
+<literal>v2_1</literal>.
+</para>
+
+</SECT1>
+
+
+</chapter>
+
+
+
+<chapter id="documentation-roadmap">
+<title>Documentation Roadmap</title>
+
+<para>
+The <productname>eCos</productname> documentation is divided into a
+three main parts:
+</para>
+
+<VARIABLELIST>
+<VARLISTENTRY>
+<TERM><EMPHASIS>User Guide</EMPHASIS></TERM>
+<LISTITEM>
+<PARA>This document. It includes the following sections:</PARA>
+
+  <VARIABLELIST>
+  <VARLISTENTRY>
+  <TERM>Installing <productname>eCos</productname></TERM>
+  <LISTITEM>
+  <para>
+  This section describes how to install the
+  <productname>eCos</productname> software, how to set up your
+  hardware and how to test that it is all working.
+  </para>
+  </listitem>
+  </varlistentry>
+
+  <VARLISTENTRY>
+  <TERM>Programming Under <productname>eCos</productname></TERM>
+  <LISTITEM>
+  <para>
+  This section describes how to write programs that run under
+  <productname>eCos</productname> by running through some examples.
+  </para>
+  </listitem>
+  </varlistentry>
+
+  <VARLISTENTRY>
+  <TERM>The <productname>eCos</productname> <application>Configuration Tool</application></TERM>
+  <LISTITEM>
+  <para>
+  This section describes the <productname>eCos</productname> graphical
+  configuration tool and how to use it to change how
+  <productname>eCos</productname> behaves.</para>
+  </listitem>
+  </varlistentry>
+
+  <VARLISTENTRY>
+  <TERM><productname>eCos</productname> Programming Concepts and Techniques</TERM>
+  <LISTITEM>
+  <PARA>An explanation of the <productname>eCos</productname> programming
+	    cycle, and a description of some debugging facilities that
+	    <productname>eCos</productname> offers.
+  </PARA>
+  </listitem>
+  </varlistentry>
+
+  <VARLISTENTRY>
+  <TERM>Configuration and the Package
+              Repository</TERM>
+  <LISTITEM>
+  <PARA>Information on how to configure <productname>eCos</productname>
+              manually, including a reference on the
+              <command>ecosconfig</command> command, memory layouts,
+              and information on how to manage a package repository
+              using the <productname>eCos</productname> Package Administration
+              Tool.
+            </PARA>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+
+  </variablelist>
+
+</LISTITEM>
+</VARLISTENTRY>
+
+<VARLISTENTRY>
+<TERM><EMPHASIS>Reference Guide</EMPHASIS></TERM>
+<LISTITEM>
+
+<PARA>The Reference Guide provides detailed documentation on various
+aspects of <productname>eCos</productname>. This document is being
+constantly updated, so the following list just mentions the more
+important sections, take a look at the guide itself for the full
+story.</PARA>
+
+  <variablelist>
+
+  <VARLISTENTRY>
+  <TERM>The <productname>eCos</productname> Kernel</TERM>
+  <LISTITEM>
+  <PARA>In-depth description of <productname>eCos</productname>&quot;s
+              native C kernel API Important considerations are given
+              for programming the <productname>eCos</productname>
+              kernel. The semantics for each kernel function are
+              described, including how they are affected by
+              configuration. </PARA>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>POSIX and &micro;ITRON APIs</TERM>
+  <LISTITEM>
+  <PARA>A description of the POSIX and &micro;ITRON APIs and how they
+  are supported under <productname>eCos</productname>.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>The <productname>eCos</productname> Hardware Abstraction Layer (HAL)</TERM>
+  <LISTITEM>
+  <PARA>A description of the structure and functionality of the
+  <productname>eCos</productname> HAL. This section also includes a
+  porting guide to help moving <productname>eCos</productname> to
+  different platforms.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>Device Drivers</TERM>
+  <LISTITEM>
+  <PARA>A description of the philosophy behind
+              <productname>eCos</productname> device drivers, as well as a
+              presentation of the C language APIs for using the current
+              device drivers. </PARA>
+  <para>
+    Device driver support includes serial, ethernet and FLASH devices,
+    and support for PCI, PCMCIA and USB interconnects.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>RedBoot User's Guide</TERM>
+  <LISTITEM>
+  <PARA>This describes RedBoot, which provides a complete bootstrap
+        environment for a range of embedded operating systems, such as
+        embedded Linux and <productname>eCos</productname>, and
+        includes facilities such as network downloading and
+        debugging. It also provides a simple flash file system for
+        boot images.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>TCP/IP Stack Support</TERM>
+  <LISTITEM>
+  <PARA>This describes the Common Networking for
+        <productname>eCos</productname> package, which provides
+        support for a complete TCP/IP networking stack. The design
+        allows for the actual stack to be modular and at the current
+        time two different implementations, one based on OpenBSD from
+        2000 and a new version based on FreeBSD, are available.
+  </para>
+  <para>Other components related to networking, including support for
+        SNMP, DNS, HTTP and FTP, are also described.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  </variablelist>
+
+</LISTITEM>
+</VARLISTENTRY>
+
+<VARLISTENTRY>
+<TERM><EMPHASIS>Component Writer's Guide</EMPHASIS></TERM>
+<LISTITEM>
+<PARA>The Component Writer's Guide is intended for developers who need
+to add or modify parts of <productname>eCos</productname> itself. It
+describes the following things:
+</PARA>
+
+  <VARIABLELIST>
+  <VARLISTENTRY>
+  <TERM>Overview</TERM>
+  <LISTITEM>
+  <PARA>An explanation of the configuration technology used in
+  <productname>eCos</productname>, why it is done this way, how it
+  works and the terminology used.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>Package Organization</TERM>
+  <LISTITEM>
+  <PARA>A description of the <productname>eCos</productname> package
+  repository, how it is organized and how packages themselves are
+  organized.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>The CDL Language</TERM>
+  <LISTITEM>
+  <PARA>A description of the CDL language and how it is used to
+  control the configuration of <productname>eCos</productname>
+  components. The document also contains a complete specification of
+  the language.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+  <TERM>The Build Process</TERM>
+  <LISTITEM>
+  <PARA>A description of what happens once a configuration has been
+  created and must be built into a set of executables.
+  </para>
+  </LISTITEM>
+  </VARLISTENTRY>
+
+  </variablelist>
+
+</LISTITEM>
+</VARLISTENTRY>
+</variablelist>
+
+</chapter>
+
+
+</part>

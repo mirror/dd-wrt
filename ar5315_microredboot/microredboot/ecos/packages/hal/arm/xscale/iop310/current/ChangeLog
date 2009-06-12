@@ -1,0 +1,491 @@
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_var_ints.h: hal_delay_us() is a C function.
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_xscale_iop310.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-02-04  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_iop310.h (IOP310_EARLY_PCI_SETUP): Fix ifdef test.
+	
+	* cdl/hal_arm_xscale_iop310.cdl: Remove CYGSEM_HAL_ARM_IOP310_BTB.
+
+2003-01-22  Mark Salter  <msalter@redhat.com>
+
+	* include/var_io.h: Remove unused duplicate code.
+	* include/hal_iop310.h: Add some more register definitions.
+	* src/iop310_pci.c (cyg_hal_plf_pci_init): Use new register
+	definitions.
+
+2002-11-13  Mark Salter  <msalter@redhat.com>
+
+	* src/iop310_pci.c (cyg_hal_plf_pci_init): Reorganize to deal with
+	early PCI setup. Also fix support for primary side bridges when
+	acting as PCI host.
+	
+	* include/hal_iop310.h (IOP310_EARLY_PCI_SETUP): Define asm macro to
+	be used by platform setup code to do early (pre-ECC scrub) PCI setup.
+
+2002-11-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/iop310_pci.c: 
+	* src/iop310_misc.c: 
+	* src/hal_diag.c: 
+	* include/var_io.h: 
+	* include/hal_var_ints.h: 
+	* include/hal_diag.h: 
+	* include/hal_iop310.h: Reorg variant (chipset) alongside other
+	Xscale versions.
+
+2002-09-19  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_misc.c (hal_hardware_init): Call hal_xscale_core_init.
+	(iq80310_program_new_stack): Remove.
+	Remove debug support which is now in xscale core package.
+	* misc/redboot_RAM.ecm: Add CYGPKG_HAL_ARM_XSCALE_CORE package.
+	* misc/redboot_RAMA.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_ROMA.ecm: Ditto.
+	* include/plf_io.h (CYGARC_PHYSICAL_ADDRESS): Define.
+	* include/hal_platform_setup.h (DCACHE_FLUSH_AREA): Remove define.
+	Remove debug unit init code.
+	* include/hal_iq80310.h (DCACHE_FLUSH_AREA): Define.
+	* cdl/hal_arm_iq80310.cdl: Remove HAL_ARCH_PROGRAM_NEW_STACK and
+	add CYGBLD_HAL_VAR_H.
+
+2002-08-29  Mark Salter  <msalter@redhat.com>
+
+	* include/plf_stub.h: Add HAL_STUB_HW_BREAKPOINT_LIST_SIZE and
+	HAL_STUB_HW_WATCHPOINT_LIST_SIZE.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_iq80310.cdl: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT ref.
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_RAM.ecm: Ditto.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/hal_diag.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-05-28  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_iq80310.cdl: Add Linux boot support.
+	* misc/redboot_RAM.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+
+	* include/hal_iq80310.h (CYGARC_HAL_MMU_OFF): Xscale has
+	special requirements for turning off MMU.
+
+2002-05-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_diag.c: Support dynamic getting and setting of baud rates.
+	* cdl/hal_arm_iq80310.cdl: implements
+	CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h (CYGARC_VIRT_TO_BUS, CYGARC_UNCACHED_ADDRESS):
+	Fixed compiler warnings.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_iq80310.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.	
+
+2002-04-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/redboot_RAM.ecm: Enable GDB remote file I/O support.
+	* misc/redboot_RAMA.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_ROMA.ecm: Ditto.
+
+2002-04-16  John Dallaway  <jld@redhat.com>
+
+	* cdl/hal_arm_iq80321.cdl: Use arm-elf toolchain by default.
+
+2002-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Added dns and zlib support.
+	* misc/redboot_ROM.ecm: Same.
+
+2002-02-22  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_misc.c (cyg_hal_plf_hw_breakpoint): Fix use of wrong reg.
+
+2002-02-06  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Fix condition of some I2C bit tests.
+
+2002-02-04  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Fix bad insns in I2C code.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/iq80310_misc.c (hal_hardware_init): Fix warning.
+
+	* cdl/hal_arm_iq80310.cdl: Removed explicit plf_io.h declaration.
+
+2002-01-16  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_platform_ints.h (HAL_CLOCK_REINITIALIZE): Better
+	names for macro args, and the freqency is now signed.  -ve means
+	don't set the clock, just tell me what you would do.
+
+	* src/iq80310_misc.c (hal_clock_reinitialize): Always return a
+	nearby good value; don't set h/w if <0.  Convoluted logic changes
+	to support that.
+
+2002-01-14  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_platform_ints.h (HAL_CLOCK_REINITIALIZE): New macro
+	which calls the below, also a prototype for it.
+
+	* src/iq80310_misc.c (hal_clock_reinitialize): New routine to
+	reset the clock to a different frequency.  This is for GPROF type
+	profiling use only; not general purpose eCos usage.
+
+2002-01-04  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Turn on ECC for uncached alias of RAM.
+
+2002-01-03  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_ROM.ecm: Use generic i82559 package.
+	* misc/redboot_ROMA.ecm: Ditto.
+	* misc/redboot_RAM.ecm: Ditto.
+	* misc/redboot_RAMA.ecm: Ditto.
+
+	* include/plf_io.h (CYGARC_UNCACHED_ADDRESS): New macro to return
+	uncached alias for a cached address.
+	(CYGARC_VIRT_TO_BUS): Macro to convert virtual to physical addresses.
+	* include/hal_platform_setup.h: Add uncached alias for first 128M of
+	SDRAM.
+
+2001-10-03  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/diag/io_utils.c: Switch to diag_printf from printf.
+	* src/diag/iq80310.h: Ditto.
+	* src/diag/memtest.c: Ditto, and don't define printf prototype.
+
+2001-08-27  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_iq80310.cdl (CYGSEM_HAL_ARM_IQ80310_BTB): New option.
+	(CYGSEM_HAL_ARM_IQ80310_CLEAR_PCI_RETRY) New option.
+	
+	* src/iq80310_pci.c (cyg_hal_plf_pci_init): Clear PCI retry based on
+	CYGSEM_HAL_ARM_IQ80310_CLEAR_PCI_RETRY.
+
+	* include/hal_platform_setup.h: Turn on BTB based on configure option.
+
+2001-08-24  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_misc.c (iq80310_program_new_stack): Convert to inline
+	asm so that code generation differences won't break it.
+
+2001-08-15  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_iq80310.h: Fix size of PATUSR, SATUSR, PSR, and SSR regs.
+	Make all register pointers volatile.
+
+	* src/diag/flash.c: First page of flash now remapped to 0xd0000000.
+
+2001-08-04  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Fix mapping so first MB of SDRAM has
+	ECC turned on. Now map first 4K of flash at 0xd0000000.
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* images/*: Remove. Don't bloat repository with things already on
+	the web.
+
+2001-04-30  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Remove #undef CYG_HAL_ROM_RESET_USES_JUMP
+	since this is no longer used.
+
+2001-04-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Override CYG_HAL_ROM_RESET_USES_JUMP
+	to avoid addressing problems with ROM startup mode.
+
+2001-04-17  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_iq80310.cdl: Implement CYGINT_HAL_ARM_MEM_REAL_REGION_TOP
+	(CYGBLD_GLOBAL_CFLAGS): Add -ffunction-sections and -fdata-sections.
+	* src/iq80310_misc.c (hal_arm_mem_real_region_top): New function.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_iq80310.cdl: Add CDL to describe CPU family.
+
+2001-04-10  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Turn on multi-bit RAM error reporting.
+
+2001-04-03  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/flash.c: Don't compile unless CYGPKG_IO_FLASH defined.
+	* src/diag/xscale_test.c (testMenu): Only add flash_test if
+	CYGPKG_IO_FLASH is defined.
+
+2001-03-31  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/xscale_test.c: Merge in latest changes from Cyclone.
+	* src/diag/iq80310.h: Ditto.
+	* src/diag/external_timer.c: Ditto.
+
+2001-03-30  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_RAM.ecm: Disable CYGSEM_REDBOOT_FIS_CRC_CHECK
+	and CYGSEM_IO_FLASH_VERIFY_PROGRAM.
+	* misc/redboot_RAMA.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+	* misc/redboot_ROMA.ecm: Ditto.
+
+	* include/pkgconf/mlt_arm_iq80310_rom.h: Fix heap1_SIZE.
+	* include/pkgconf/mlt_arm_iq80310_ram.h Ditto: 
+	* include/pkgconf/mlt_arm_iq80310_ram.mlt: Remove PCI window.
+
+	* include/hal_platform_setup.h: Fix page table comment.
+
+2001-03-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/iq80310_misc.c: Ensure case ranges have spaces around
+	identifiers to allow correct parsing by compiler.
+
+2001-02-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/diag/pci_bios.h: Remove CVS-unfriendly keyword substitutions
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h (HAL_FLASH_CACHES_OLD_MACROS):  This platform
+	uses deprecated cache handling macros.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROMA.ecm: Renamed from redboot_ROMA.cfg
+
+	* misc/redboot_RAMA.ecm: Renamed from redboot_RAMA.cfg
+
+	* misc/redboot_ROM.ecm: Renamed from redboot_ROM.cfg
+
+	* misc/redboot_RAM.ecm: Renamed from redboot_RAM.cfg
+
+2001-02-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/iq80310_misc.c (hal_IRQ_handler): 
+	Return CYGNUM_HAL_INTERRUPT_NONE for spurious interrupts.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-02-07  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/external_timer.c (counter_test): Fix printf format
+	string to work with stripped down RedBoot printf.(counter_test):
+
+2001-02-06  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/external_timer.c: Merged in Cyclone changes.
+	* src/diag/interrupts.c: Ditto.
+	* src/diag/memtest.c: Ditto.
+	* src/diag/xscale_test.c: Ditto.
+
+2001-02-02  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/xscale_test.c (seven_segment_display): Use volatile for
+	delay loop variable to avoid optimizing it away.
+
+	* src/diag/flash.c (flash_buffer): Change huge array (.bss) to a
+	pointer to scratchpad RAM above RedBoot.
+
+	* src/iq80310_misc.c (hal_hardware_init): Don't enable FIQ (for now).
+	(cyg_hal_plf_is_stopped_by_hardware): Check for stopped by BKPT insn.
+
+	* misc/redboot_ROM.cfg (CYGNUM_IO_ETH_DRIVERS_NUM_PKT): Set value to 2.
+	* misc/redboot_ROMA.cfg: Ditto.
+	* misc/redboot_RAM.cfg: Ditto.
+	* misc/redboot_RAMA.cfg: Ditto.
+
+2001-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_pci.c (__pci_abort_handler): Use naked attribute for
+	use as abort handler.
+
+	* src/iq80310_misc.c (_scrub_ecc): New function.
+	(hal_IRQ_handler): Fix switched sensing of FIQ/IRQ.
+	(hal_hardware_init): Install handlers for NMI FIQs. Fix	switched
+	installation of FIQ/IRQ ISRs.
+
+	* include/hal_iq80310.h (RFR_INIT_VAL): Double refresh interval.
+	Add more register definitions.
+
+	* include/hal_platform_setup.h: Add support for baterry test.
+	Enable Yavapai single-bit error correction.
+
+	* src/diag/*: Integrate latest Cyclone code. Add RHEPL to contributed
+	files.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_None
+
+	* include/hal_diag.h: Fix hal_delay_us declaration.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Moved reset macro to
+	* include/hal_platform_ints.h: this file.
+
+2001-01-11  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Remove hardcoded position dependencies
+	in page table setup.
+	
+	* cdl/hal_arm_iq80310.cdl (CYGSEM_HAL_ARM_IQ80310_ARMBOOT): New
+	bool option. If true, modifies ROM startup so that we coexist with
+	ARM bootloader.
+
+	* include/pkgconf/mlt_arm_iq80310_roma.mlt: New file. ROM statrup
+	with modified start address to coexist with ARM bootloader.
+	* include/pkgconf/mlt_arm_iq80310_roma.h: Regenerated.
+	* include/pkgconf/mlt_arm_iq80310_roma.ldi: Regenerated.
+
+	* misc/redboot_ROMA.cfg: RedBoot configuration for ROM startup by
+	ARM booloader in FLASH boot sector.
+	* misc/redboot_RAMA.cfg: RedBoot configuration for RAM startup with
+	ARM booloader in FLASH boot sector.
+
+2001-01-08  Mark Salter  <msalter@redhat.com>
+
+	* src/diag/diag.c (do_hdwr_diag): Turn off debug channel interrupt
+	and reset PCI bus before calling Cyclone diag code.
+
+	* src/diag/xscale_test.c (hdwr_diag): Uncomment call to
+	sys_pci_device_init.
+
+2001-01-05  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_misc.c (iq80310_program_new_stack): New function to
+	setup stack for programs called by RedBoot.
+	* cdl/hal_arm_iq80310.cdl: Add define for HAL_ARCH_PROGRAM_NEW_STACK.
+	(Merged from XScale branch).
+	
+	* cdl/hal_arm_iq80310.cdl: Add compile of Cyclone diag code.
+	* src/diag: New directory with IQ80310 hw diag code from Cyclone.
+
+2000-12-21  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_pci.c (cyg_hal_plf_pci_init): Play nice with PC BIOS.
+	(pci_config_cleanup): Don't use fixed bus numbers.
+
+	* include/plf_io.h (HAL_PCI_TRANSLATE_INTERRUPT): Don't use fixed
+	secondary bus number.
+
+	* include/hal_platform_setup.h: Increase reset delay to 60ms.
+	Remove dead code.
+
+2000-11-22  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_diag.c: Support 57600 baud.
+	* cdl/hal_arm_iq80310.cdl: Accept 57600 as legal baudrate.
+
+	* misc/redboot_RAM.cfg: Set CYGBLD_REDBOOT_MIN_IMAGE_SIZE to 0x40000.
+	* misc/redboot_ROM.cfg: Ditto.
+
+2000-11-19  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_misc.c (hal_clock_read): Fix timer bit juggling.
+
+2000-11-19  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_iq80310.cdl: Define CYGBLD_HAL_PLATFORM_IO_H.
+
+2000-11-16  Mark Salter  <msalter@redhat.com>
+
+	* src/iq80310_misc.c: Add support for external timer as RTC.
+	(nirq_ISR): Correct dispatch for X3 interrupts.
+
+	* include/hal_platform_ints.h (CYGNUM_HAL_INTERRUPT_RTC): Use ext timer.
+	(HAL_DELAY_US): Define.
+
+	* cdl/hal_arm_iq80310.cdl: Correct CYGNUM_HAL_RTC_PERIOD.
+
+2000-11-06  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_RAM.cfg: Turn on CYGSEM_REDBOOT_BSP_SYSCALLS.
+	* misc/redboot_ROM.cfg: Ditto.
+
+2000-11-04  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_RAM.cfg: Add in PCI and ethernet.
+	* misc/redboot_ROM.cfg: Ditto.
+
+	* include/plf_io.h: Fleshed out PCI support.
+
+	* cdl/hal_arm_iq80310.cdl: Add iq80310_pci.C for compile.
+	Change default baud to 115200.
+
+	* src/iq80310_pci.c: New file. HAL pci support.
+
+	* include/plf_stub.h: Reworked HW watchpoint/breakpoint support.
+
+	* src/iq80310_misc.c (hal_hardware_init): Remove DSU setup.
+	(cyg_hal_plf_hw_watchpoint): Support one range instead of two
+	single byte locations.
+	(cyg_hal_plf_is_stopped_by_hardware): Rework interface to return
+	reason for hardware stop and data address.
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Clear DSU state.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

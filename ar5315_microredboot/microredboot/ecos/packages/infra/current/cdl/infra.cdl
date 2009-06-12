@@ -1,0 +1,334 @@
+# ====================================================================
+#
+#      infra.cdl
+#
+#      Infrastructure configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  bartv,hmt
+# Contributors:
+# Date:           1999-06-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_INFRA {
+    display       "Infrastructure"
+    include_dir   cyg/infra
+    description   "
+        Common types and useful macros.
+        Tracing and assertion facilities.
+        Package startup options." 
+
+    compile startup.cxx prestart.cxx pkgstart.cxx userstart.cxx      \
+            dummyxxmain.cxx null.cxx simple.cxx fancy.cxx buffer.cxx \
+            diag.cxx tcdiag.cxx memcpy.c memset.c delete.cxx eprintf.c \
+	    pure.cxx
+
+
+    # ====================================================================
+#    cdl_component CYGPKG_INFRA_TYPES {
+#        display       "Common Types"
+#        flavor        none
+#        active_if     0               ;# Not yet configurable.
+#        description   "
+#            These types are used throughout the eCos source code.
+#            Currently there are no configuration options associated
+#            with the Common Types component; they are automatically
+#            set up according to the selected HAL."
+#    }
+
+    # ====================================================================
+    cdl_component CYGPKG_INFRA_DEBUG {
+        display       "Asserts & Tracing"
+        default_value 0
+        description   "
+            The eCos source code contains a significant amount of
+            internal debugging support, in the form of assertions and
+            tracing.
+            Assertions check at runtime that various conditions are as
+            expected; if not, execution is halted.
+            Tracing takes the form of text messages that are output
+            whenever certain events occur, or whenever functions are
+            called or return.
+            The most important property of these checks and messages is
+            that they are not required for the program to run.
+            It is prudent to develop software with assertions enabled,
+            but disable them when making a product release, thus
+            removing the overhead of that checking.
+            It is possible to enable assertions and tracing
+            independently.
+            There are also options controlling the exact behaviour of
+            the assertion and tracing facilities, thus giving users
+            finer control over the code and data size requirements."
+
+        script        debug.cdl
+    }
+
+    # ====================================================================
+    cdl_component CYGPKG_INFRA_STARTUP {
+        display       "Startup options"
+        flavor        none
+        description   "
+            Some packages require a startup routine to be called.
+            This can be carried out by application code, by supplying
+            a routine called cyg_package_start() which calls the
+            appropriate package startup routine(s).
+            Alternatively, this routine can be constructed automatically
+            and configured to call the startup routines of your choice."
+
+        script        startup.cdl
+    }
+
+    # ========================================================================
+    # memcpy()/memset() configuration
+    cdl_option CYGIMP_INFRA_PREFER_SMALL_TO_FAST_MEMCPY {
+        display       "Smaller slower memcpy()"
+        default_value 1
+        description   "
+            Enabling this option causes the implementation of
+            the standard memcpy() routine to reduce code
+            size at the expense of execution speed. This
+            option is automatically enabled with the use of
+            the -Os option to the compiler. Also note that
+            the compiler will try to use its own builtin
+            version of memcpy() if possible, ignoring the
+            implementation in this package, unless given
+            the -fno-builtin compiler option."
+    }
+
+    cdl_option CYGIMP_INFRA_PREFER_SMALL_TO_FAST_MEMSET {
+        display       "Smaller slower memset()"
+        default_value 1
+        description   "
+            Enabling this option causes the implementation of
+            the standard memset() routine to reduce code
+            size at the expense of execution speed. This
+            option is automatically enabled with the use of
+            the -Os option to the compiler. Also note that
+            the compiler will try to use its own builtin
+            version of memset() if possible, ignoring the
+            implementation in this package, unless given
+            the -fno-builtin compiler option."
+    }
+
+    # ========================================================================
+
+    cdl_option CYGFUN_INFRA_EMPTY_DELETE_FUNCTIONS {
+        display       "Provide empty C++ delete functions"
+        default_value 1
+        description   "
+            To deal with virtual destructors, where the correct delete()
+            function must be called for the derived class in question, the
+            underlying delete is called when needed, from destructors.  This
+            is regardless of whether the destructor is called by delete itself.
+            So there is a reference to delete() from all destructors.  The
+            default builtin delete() attempts to call free() if there is
+            one defined.  So, if you have destructors, and you have free(),
+            as in malloc() and free(), any destructor counts as a reference
+            to free().  So the dynamic memory allocation code is linked
+            in regardless of whether it gets explicitly called. This
+            increases code and data size needlessly.
+            
+            To defeat this undesirable behaviour, we define empty versions
+            of delete and delete[].  But doing this prevents proper use
+            of dynamic memory in C++ programs via C++'s new and delete
+            operators.
+            
+            Therefore, this option is provided
+            for explicitly disabling the provision of these empty functions,
+            so that new and delete can be used, if that is what is required."
+    }
+
+    # ========================================================================
+
+    cdl_option CYGFUN_INFRA_DUMMY_ABORT {
+        display       "Provide dummy abort() function"
+        requires      !CYGINT_ISO_EXIT
+        default_value { CYGINT_ISO_EXIT == 0 }
+        compile       abort.cxx
+        description   "
+            This option controls the inclusion of a dummy abort() function.
+            Parts of the C and C++ compiler runtime systems contain references
+            to abort(), particulary in the C++ exception handling code. It is
+            not possible to eliminate these references, so this dummy function
+            in included to satisfy them. It is not expected that this function
+            will ever be called, so its current behaviour is to simply loop."
+    }
+
+    # ========================================================================
+
+    cdl_option CYGSEM_INFRA_RESET_ON_TEST_EXIT {
+        display       "Reset platform at end of test case execution"
+        default_value 0
+        description   "
+            If this option is set then test case programs will reset the platform
+            when they terminate, as opposed to the default which is to just hang
+            in a loop."
+    }
+
+    # ========================================================================
+
+    cdl_option CYGFUN_INFRA_DUMMY_STRLEN {
+        display       "Provide dummy strlen() function"
+        requires      !CYGINT_ISO_STRING_STRFUNCS
+        default_value { CYGINT_ISO_STRING_STRFUNCS == 0 }
+        compile       strlen.cxx
+        description   "
+            This option controls the inclusion of a dummy strlen() function.
+            Parts of the C and C++ compiler runtime systems contain references
+            to strlen(), particulary in the C++ exception handling code. It is
+            not possible to eliminate these references, so this dummy function
+            in included to satisfy them. While it is not expected that this function
+            will ever be called, it is functional but uses the simplest, smallest
+            algorithm. There is a faster version of strlen() in the C library."
+    }
+    
+    # ========================================================================
+    # Debugging-related miscellania.
+
+    define_proc {
+        puts $::cdl_header "/***** proc output start *****/"
+        puts $::cdl_header "#include <pkgconf/system.h>"
+        puts $::cdl_header "/*****  proc output end  *****/"
+    }
+
+
+    # ========================================================================
+    # Global compiler option controls
+
+    cdl_option CYGBLD_INFRA_CFLAGS_WARNINGS_AS_ERRORS {
+        display       "Make all compiler warnings show as errors"
+        requires      { is_substr(CYGBLD_GLOBAL_CFLAGS, " -Werror") }
+        default_value 0
+        description   "
+            Enabling this option will cause all compiler warnings to show
+            as errors and bring the library build to a halt. This is used
+            to ensure that the code base is warning free, and thus ensure
+            that newly introduced warnings stand out and get fixed before
+            they show up as weird run-time behavior."
+    }
+
+    cdl_option CYGBLD_INFRA_CFLAGS_PIPE {
+        display       "Make compiler and assembler communicate by pipe"
+        requires      { is_substr(CYGBLD_GLOBAL_CFLAGS, " -pipe") }
+        default_value 0
+        description   "
+            Enabling this option will cause the compiler to feed the
+            assembly output the the assembler via a pipe instead of
+            via a temporary file. This normally reduces the build
+            time."
+    }
+
+    # ========================================================================
+    # Package compiler options
+
+    cdl_component CYGPKG_INFRA_OPTIONS {
+        display "Infra build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package."
+
+
+        cdl_option CYGPKG_INFRA_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the eCos infra package. These flags are used
+                in addition to the set of global flags."
+        }
+
+        cdl_option CYGPKG_INFRA_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the eCos infra package. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_INFRA_LDFLAGS_REMOVE {
+            display "Suppressed linker flags"
+            flavor  data
+            no_define
+            default_value { "-Wl,--gc-sections" }
+            description   "
+                This option modifies the set of linker flags for
+                building the eCos infra package tests. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_INFRA_LDFLAGS_ADD {
+            display "Additional linker flags"
+            flavor  data
+            no_define
+            default_value { "-Wl,--fatal-warnings" }
+            description   "
+                This option modifies the set of linker flags for
+                building the eCos infra package tests. These flags are added to
+                the set of global flags if present."
+        }
+
+        cdl_component CYGPKG_INFRA_TESTS {
+            display "Infra package tests"
+            flavor  data
+            no_define
+            calculated { "tests/cxxsupp" }
+
+            cdl_option CYGNUM_TESTS_RUN_COUNT {
+                display "Number of times a test runs"
+                flavor  data
+                default_value 1	
+                description "
+                    This option controls the number of times tests will execute their
+                    basic function.  Not all tests will honor this setting, but those
+                    that do will execute the test N times before terminating.  A value
+                    less than 0 indicates to run forever."
+            }
+        }
+
+    }
+}

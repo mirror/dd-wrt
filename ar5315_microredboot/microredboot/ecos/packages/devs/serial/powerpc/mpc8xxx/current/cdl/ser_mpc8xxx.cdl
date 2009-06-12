@@ -1,0 +1,513 @@
+# ====================================================================
+#
+#      ser_mpc8xxx.cdl
+#
+#      eCos serial PowerPC MPC8XXX (QUICC-II) configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002, 2003 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-07-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_IO_SERIAL_POWERPC_MPC8XXX {
+    display       "PowerPC MPC8XXX (QUICC-II) serial device drivers"
+
+    parent        CYGPKG_IO_SERIAL_DEVICES
+    active_if     CYGPKG_IO_SERIAL
+    active_if     CYGPKG_HAL_POWERPC_MPC8XXX
+
+    requires      CYGPKG_ERROR
+    include_dir   cyg/io
+    include_files ; # none _exported_ whatsoever
+    description   "
+           This option enables the serial device drivers for the
+           PowerPC MPC8XXX (QUICC-II) SMC/SCC."
+
+    compile       -library=libextras.a  mpc8xxx_serial.c
+
+    define_proc {
+        puts $::cdl_system_header "/***** serial driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_IO_SERIAL_DEVICE_HEADER <pkgconf/io_serial_powerpc_mpc8xxx.h>"
+        puts $::cdl_system_header "/*****  serial driver proc output end  *****/"
+    }
+
+cdl_component CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_SMC1 {
+    display       "PowerPC MPC8XXX/SMC serial port 1 driver"
+    flavor        bool
+    active_if     CYGNUM_HAL_MPC8XXX_SMC1
+    default_value 1
+    description   "
+        This option includes the serial device driver for the PowerPC 
+        MPC8XXX/SMC port 1."
+
+    cdl_option CYGDAT_IO_SERIAL_POWERPC_MPC8XXX_SMC1_NAME {
+        display       "Device name for PowerPC MPC8XXX/SMC serial port 1"
+        flavor        data
+        default_value {"\"/dev/ser1\""}
+        description   "
+            This option specifies the device name for the PowerPC 
+            MPC8XXX/SMC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC1_BAUD {
+        display       "Baud rate for the PowerPC MPC8XXX/SMC serial port 1"
+        flavor        data
+        legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400 3600
+                      4800 7200 9600 14400 19200 38400 57600 115200 230400
+        }
+        default_value 38400
+        description   "
+            This option specifies the default baud rate (speed) for the 
+            PowerPC MPC8XXX/SMC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC1_BUFSIZE {
+        display       "Buffer size for the PowerPC MPC8XXX/SMC serial port 1"
+        flavor        data
+        legal_values  0 to 8192
+        default_value 256
+        description   "
+            This option specifies the size of the internal buffers used
+            for the PowerPC MPC8XXX/SMC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC1_TxSIZE {
+        display       "Output buffer size for the PowerPC MPC8XXX/SMC serial port 1"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per 
+            transmit request to be used for the PowerPC MPC8XXX/SMC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC1_TxNUM {
+        display       "Number of output buffers for the PowerPC MPC8XXX/SMC serial port 1"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of output buffer packets
+            to be used for the PowerPC MPC8XXX/SMC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC1_RxSIZE {
+        display       "Input buffer size for the PowerPC MPC8XXX/SMC serial port 1"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per receive
+            request to be used for the PowerPC MPC8XXX/SMC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC1_RxNUM {
+        display       "Number of input buffers for the PowerPC MPC8XXX/SMC serial port 1"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of input buffer packets
+            to be used for the PowerPC MPC8XXX/SMC port 1."
+    }
+}
+
+cdl_component CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_SMC2 {
+    display       "PowerPC MPC8XXX/SMC serial port 2 driver"
+    flavor        bool
+    active_if     CYGNUM_HAL_MPC8XXX_SMC2
+    default_value 1
+    description   "
+        This option includes the serial device driver for the PowerPC 
+        MPC8XXX/SMC port 2."
+
+    cdl_option CYGDAT_IO_SERIAL_POWERPC_MPC8XXX_SMC2_NAME {
+        display       "Device name for PowerPC MPC8XXX/SMC serial port 2"
+        flavor        data
+        default_value {"\"/dev/ser2\""}
+        description   "
+            This option specifies the device name for the PowerPC 
+            MPC8XXX/SMC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC2_BAUD {
+        display       "Baud rate for the PowerPC MPC8XXX/SMC serial port 2"
+        flavor        data
+        legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400 3600
+                      4800 7200 9600 14400 19200 38400 57600 115200 230400
+        }
+        default_value 38400
+        description   "
+            This option specifies the default baud rate (speed) for the
+            PowerPC MPC8XXX/SMC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC2_BUFSIZE {
+        display       "Buffer size for the PowerPC MPC8XXX/SMC serial port 2"
+        flavor        data
+        legal_values  0 to 8192
+        default_value 256
+        description   "
+            This option specifies the size of the internal buffers used
+            for the PowerPC MPC8XXX/SMC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC2_TxSIZE {
+        display       "Output buffer size for the PowerPC MPC8XXX/SMC serial port 2"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per 
+            transmit request to be used for the PowerPC MPC8XXX/SMC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC2_TxNUM {
+        display       "Number of output buffers for the PowerPC MPC8XXX/SMC serial port 2"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of output buffer packets
+            to be used for the PowerPC MPC8XXX/SMC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC2_RxSIZE {
+        display       "Input buffer size for the PowerPC MPC8XXX/SMC serial port 2"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per receive
+            request to be used for the PowerPC MPC8XXX/SMC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SMC2_RxNUM {
+        display       "Number of output buffers for the PowerPC MPC8XXX/SMC serial port 2"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of input buffer packets
+            to be used for the PowerPC MPC8XXX/SMC port 2."
+    }
+}
+
+    cdl_component CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_OPTIONS {
+        display "Serial device driver build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building these serial device drivers. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building these serial device drivers. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}
+
+cdl_component CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_SCC1 {
+    display       "PowerPC MPC8XXX/SCC serial port 1 driver"
+    flavor        bool
+    active_if     CYGNUM_HAL_MPC8XXX_SCC1
+    default_value 1
+    description   "
+        This option includes the serial device driver for the PowerPC 
+        MPC8XXX/SCC port 1."
+
+    cdl_option CYGDAT_IO_SERIAL_POWERPC_MPC8XXX_SCC1_NAME {
+        display       "Device name for PowerPC MPC8XXX/SCC serial port 1"
+        flavor        data
+        default_value {"\"/dev/scc1\""}
+        description   "
+            This option specifies the device name for the PowerPC 
+            MPC8XXX/SCC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC1_BAUD {
+        display       "Baud rate for the PowerPC MPC8XXX/SCC serial port 1"
+        flavor        data
+        legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400 3600
+                      4800 7200 9600 14400 19200 38400 57600 115200 230400
+        }
+        default_value 38400
+        description   "
+            This option specifies the default baud rate (speed) for the 
+            PowerPC MPC8XXX/SCC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC1_BUFSIZE {
+        display       "Buffer size for the PowerPC MPC8XXX/SCC serial port 1"
+        flavor        data
+        legal_values  0 to 8192
+        default_value 256
+        description   "
+            This option specifies the size of the internal buffers used
+            for the PowerPC MPC8XXX/SCC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC1_TxSIZE {
+        display       "Output buffer size for the PowerPC MPC8XXX/SCC serial port 1"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per 
+            transmit request to be used for the PowerPC MPC8XXX/SCC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC1_TxNUM {
+        display       "Number of output buffers for the PowerPC MPC8XXX/SCC serial port 1"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of output buffer packets
+            to be used for the PowerPC MPC8XXX/SCC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC1_RxSIZE {
+        display       "Input buffer size for the PowerPC MPC8XXX/SCC serial port 1"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per receive
+            request to be used for the PowerPC MPC8XXX/SCC port 1."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC1_RxNUM {
+        display       "Number of input buffers for the PowerPC MPC8XXX/SCC serial port 1"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of input buffer packets
+            to be used for the PowerPC MPC8XXX/SCC port 1."
+    }
+}
+
+cdl_component CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_SCC2 {
+    display       "PowerPC MPC8XXX/SCC serial port 2 driver"
+    flavor        bool
+    active_if     CYGNUM_HAL_MPC8XXX_SCC2
+    default_value 1
+    description   "
+        This option includes the serial device driver for the PowerPC 
+        MPC8XXX/SCC port 2."
+
+    cdl_option CYGDAT_IO_SERIAL_POWERPC_MPC8XXX_SCC2_NAME {
+        display       "Device name for PowerPC MPC8XXX/SCC serial port 2"
+        flavor        data
+        default_value {"\"/dev/scc2\""}
+        description   "
+            This option specifies the device name for the PowerPC 
+            MPC8XXX/SCC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC2_BAUD {
+        display       "Baud rate for the PowerPC MPC8XXX/SCC serial port 2"
+        flavor        data
+        legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400 3600
+                      4800 7200 9600 14400 19200 38400 57600 115200 230400
+        }
+        default_value 38400
+        description   "
+            This option specifies the default baud rate (speed) for the 
+            PowerPC MPC8XXX/SCC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC2_BUFSIZE {
+        display       "Buffer size for the PowerPC MPC8XXX/SCC serial port 2"
+        flavor        data
+        legal_values  0 to 8192
+        default_value 256
+        description   "
+            This option specifies the size of the internal buffers used
+            for the PowerPC MPC8XXX/SCC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC2_TxSIZE {
+        display       "Output buffer size for the PowerPC MPC8XXX/SCC serial port 2"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per 
+            transmit request to be used for the PowerPC MPC8XXX/SCC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC2_TxNUM {
+        display       "Number of output buffers for the PowerPC MPC8XXX/SCC serial port 2"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of output buffer packets
+            to be used for the PowerPC MPC8XXX/SCC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC2_RxSIZE {
+        display       "Input buffer size for the PowerPC MPC8XXX/SCC serial port 2"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per receive
+            request to be used for the PowerPC MPC8XXX/SCC port 2."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC2_RxNUM {
+        display       "Number of input buffers for the PowerPC MPC8XXX/SCC serial port 2"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of input buffer packets
+            to be used for the PowerPC MPC8XXX/SCC port 2."
+    }
+}
+
+cdl_component CYGPKG_IO_SERIAL_POWERPC_MPC8XXX_SCC3 {
+    display       "PowerPC MPC8XXX/SCC serial port 3 driver"
+    flavor        bool
+    active_if     CYGNUM_HAL_MPC8XXX_SCC3
+    default_value 1
+    description   "
+        This option includes the serial device driver for the PowerPC 
+        MPC8XXX/SCC port 3."
+
+    cdl_option CYGDAT_IO_SERIAL_POWERPC_MPC8XXX_SCC3_NAME {
+        display       "Device name for PowerPC MPC8XXX/SCC serial port 3"
+        flavor        data
+        default_value {"\"/dev/scc3\""}
+        description   "
+            This option specifies the device name for the PowerPC 
+            MPC8XXX/SCC port 3."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC3_BAUD {
+        display       "Baud rate for the PowerPC MPC8XXX/SCC serial port 3"
+        flavor        data
+        legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400 3600
+                      4800 7200 9600 14400 19200 38400 57600 115200 230400
+        }
+        default_value 38400
+        description   "
+            This option specifies the default baud rate (speed) for the 
+            PowerPC MPC8XXX/SCC port 3."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC3_BUFSIZE {
+        display       "Buffer size for the PowerPC MPC8XXX/SCC serial port 3"
+        flavor        data
+        legal_values  0 to 8192
+        default_value 256
+        description   "
+            This option specifies the size of the internal buffers used
+            for the PowerPC MPC8XXX/SCC port 3."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC3_TxSIZE {
+        display       "Output buffer size for the PowerPC MPC8XXX/SCC serial port 3"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per 
+            transmit request to be used for the PowerPC MPC8XXX/SCC port 3."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC3_TxNUM {
+        display       "Number of output buffers for the PowerPC MPC8XXX/SCC serial port 3"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of output buffer packets
+            to be used for the PowerPC MPC8XXX/SCC port 3."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC3_RxSIZE {
+        display       "Input buffer size for the PowerPC MPC8XXX/SCC serial port 3"
+        flavor        data
+        legal_values  16 to 128
+        default_value 16
+        description   "
+            This option specifies the maximum number of characters per receive
+            request to be used for the PowerPC MPC8XXX/SCC port 3."
+    }
+
+    cdl_option CYGNUM_IO_SERIAL_POWERPC_MPC8XXX_SCC3_RxNUM {
+        display       "Number of input buffers for the PowerPC MPC8XXX/SCC serial port 3"
+        flavor        data
+        legal_values  2 to 16
+        default_value 4
+        description   "
+            This option specifies the number of input buffer packets
+            to be used for the PowerPC MPC8XXX/SCC port 3."
+    }
+}
+
+# EOF ser_mpc8xxx_smc.cdl

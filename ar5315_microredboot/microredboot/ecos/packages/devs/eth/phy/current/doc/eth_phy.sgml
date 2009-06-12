@@ -1,0 +1,173 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     eth_phy.sgml                                                -->
+<!--                                                                 -->
+<!--     eCos ethernet PHY device driver documentation               -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="io-eth-phy-generic">
+<title>Ethernet PHY Device Support</title>
+<chapter id="io-eth-phy-generic1">
+<title>Ethernet PHY Device Support</title>
+<sect1 id="io-eth-phy-api">
+<title>Ethernet PHY Device API</title>
+<para>
+Modern ethernet subsystems are often separated into two pieces, the
+media access controller (sometimes known as a MAC) and the physical
+device or line interface (often refered to as a PHY).  In this case,
+the MAC handles generating and parsing physical frames and the PHY
+handles how this data is actually moved to/from the wire.  The MAC 
+and PHY communicate via a special protocol, known as MII.  This MII
+protocol can handle control over the PHY which allows for selection
+of such transmission criteria as line speed, duplex mode, etc.
+</para>
+<para>
+In most cases, etnernet drivers only need to bother with the PHY during
+system initialization.  Since the details of the PHY are separate from
+the MAC, there are different drivers for each.  The drivers for the PHY
+are described by a set of exported functions which are commonly used by
+by the MAC.  The primary use of these functions currently is to initialize
+the PHY and determine the status of the line connection.
+</para>
+<para>
+The connection between the MAC and the PHY differs from MAC to MAC, so
+the actual routines to manipulate this data channel are a property of
+the MAC instance.  Furthermore, there are many PHY devices each with their
+own internal operations.  A complete MAC/PHY driver setup will be comprised
+of the MAC MII access functions and the PHY internal driver.
+</para>
+<para>
+A driver instance is contained within a
+<type>eth_phy_access_t</type>:
+<programlisting>
+
+#define PHY_BIT_LEVEL_ACCESS_TYPE 0
+#define PHY_REG_LEVEL_ACCESS_TYPE 1
+
+typedef struct {
+    int ops_type;  // 0 => bit level, 1 => register level
+    bool init_done;
+    void (*init)(void);
+    void (*reset)(void);
+    union {
+        struct {
+            void (*set_data)(int);
+            int  (*get_data)(void);
+            void (*set_clock)(int);
+            void (*set_dir)(int);
+        } bit_level_ops;
+        struct {
+            void (*put_reg)(int reg, int unit, unsigned short data);
+            bool (*get_reg)(int reg, int unit, unsigned short *data);
+        } reg_level_ops;
+    } ops;
+    int phy_addr;
+    struct _eth_phy_dev_entry *dev;  // Chip access functions
+} eth_phy_access_t;
+
+struct _eth_phy_dev_entry {
+    char          *name;
+    unsigned long  id;
+    bool         (*stat)(eth_phy_access_t *f, int *stat);
+};
+
+</programlisting>
+The <varname>dev</varname> element points to the PHY speficic support
+functions.  
+Currently, the only function which must be defined is <function>stat()</function>.
+</para>
+<para>
+The MAC-MII-PHY interface is a narrow connection, with commands and status
+moving between the MAC and PHY using a bit-serial protocol.
+Some MAC devices contain the intelligence to run this protocol, exposing
+a mechanism to access PHY registers one at a time.  Other MAC devices may only
+provide access to the MII data lines (or even still, this may be considered
+completely separate from the MAC).  In these cases, the PHY support layer 
+must handle the serial protocol.
+The choice between the access methods is in the 
+<varname>ops_type</varname> field.  
+If it has the value
+<varname>PHY_BIT_LEVEL_ACCESS_TYPE</varname>, then the PHY device layer will
+run the protocol, using the access functions
+<function>set_data()</function>,
+<function>get_data()</function>,
+<function>set_clock()</function>,
+<function>set_dir()</function> are used to control the MII signals and run
+the protocol.
+If <varname>ops_type</varname> has the value
+<varname>PHY_REG_LEVEL_ACCESS_TYPE</varname>,
+then the routines
+<function>put_reg()</function>, and
+<function>get_reg()</function>
+are used to access the PHY registers.
+</para>
+<para>
+Two additional functions may be defined.
+These are
+<function>init()</function>, and
+<function>reset()</function>.
+The purpose of these functions is for gross-level management of the 
+MII interface.
+The 
+<function>init()</function>
+function will be called once, at system initialization time.
+It should do whatever operations are necessary to prepare the
+MII channel.
+In the case of 
+<varname>PHY_BIT_LEVEL_ACCESS_TYPE</varname> devices,
+<function>init()</function> 
+should prepare the signals for use, i.e. set up the appropriate
+parallel port registers, etc.
+The 
+<function>reset()</function>
+function may be called by a driver to cause the PHY device to
+be reset to a known state.
+Not all drivers will require this and this function may not even
+be possible, so it's use and behaviour is somewhat target specific.
+</para>
+<para>
+Currently, the only function required of device specific drivers is
+<function>stat()</function>.
+This routine should query appropriate registers in the PHY and return
+a status bitmap indicating the state of the physical connection.
+In the case where the PHY can auto-negotiate a line speed and condition,
+this information may be useful to the MAC to indicate what spped it should
+provide data, etc.
+The status bitmask contains these bits:
+<programlisting>
+#define ETH_PHY_STAT_LINK  0x0001   // Link up/down
+#define ETH_PHY_STAT_100MB 0x0002   // Connection is 100Mb/10Mb
+#define ETH_PHY_STAT_FDX   0x0004   // Connection is full/half duplex
+</programlisting>
+Note: the usage here is that if the bit is set, then the condition
+exists.  For example, if the 
+<varname>ETH_PHY_STAT_LINK</varname>
+is set, then a physical link has been established.
+</para>
+</sect1>
+</chapter>
+</part>

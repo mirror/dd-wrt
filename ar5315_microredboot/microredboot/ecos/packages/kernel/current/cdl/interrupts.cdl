@@ -1,0 +1,129 @@
+# ====================================================================
+#
+#      interrupts.cdl
+#
+#      configuration data related to kernel interrupt handling
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  nickg
+# Contributors:
+# Date:           1999-06-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+# NOTE: the choice of list vs table should not be two separate
+# options. There is a single option which must have one of
+# two legal values.
+cdl_component CYGIMP_KERNEL_INTERRUPTS_DSRS {
+    display       "Use delayed service routines (DSRs)"
+    default_value 1
+    description   "
+        In eCos the recommended way to handle device interrupts is to
+        do a minimum amount of work inside the low level interrupt
+        handler itself, and instead do as much as possible in a
+        Delayed Service Routine or DSR. If an application does not
+        make use of DSRs directly or indirectly then it is possible
+        to disable the DSR support completely, which reduces the
+        overheads of context switches and interrupt handling. Note
+        that the kernel real-time clock makes use of DSRs, as do many
+        of the device drivers. "
+
+    cdl_interface CYGINT_KERNEL_INTERRUPTS_DSRS {
+        requires 1 == CYGINT_KERNEL_INTERRUPTS_DSRS
+        no_define
+    }
+
+    # NOTE: the choice of list vs table should not be two separate
+    # options. There is a single option which must have one of
+    # two legal values.
+    cdl_option CYGIMP_KERNEL_INTERRUPTS_DSRS_LIST {
+        display       "Use linked lists for DSRs"
+        default_value 1
+        implements    CYGINT_KERNEL_INTERRUPTS_DSRS
+        description   "
+            When DSR support is enabled the kernel must keep track of all
+            the DSRs that are pending. This information can be kept in a
+            fixed-size table or in a linked list. The list implementation
+            requires that the kernel disable interrupts for a very short
+            period of time outside interrupt handlers, but there is no
+            possibility of a table overflow occurring."
+    }
+
+    cdl_component CYGIMP_KERNEL_INTERRUPTS_DSRS_TABLE {
+        display       "Use fixed-size table for DSRs"
+        default_value 0
+        implements    CYGINT_KERNEL_INTERRUPTS_DSRS
+        description   "
+            When DSR support is enabled the kernel must keep track of all
+            the DSRs that are pending. This information can be kept in a
+            fixed-size table or in a linked list. The table
+            implementation involves a very small risk of overflow at
+            run-time if a given interrupt source is able to have more
+            than one pending DSR. However it has the advantage that
+            the kernel does not need to disable interrupts outside
+            interrupt handlers."
+
+        cdl_option CYGNUM_KERNEL_INTERRUPTS_DSRS_TABLE_SIZE {
+            display       "Number of entries in fixed-size DSR table"
+            flavor        data
+            legal_values  2 to 1024
+            default_value 32
+            description "
+            When DSR support is enabled the kernel must keep track of all
+            the DSRs that are pending. One approach involves a fixed-size
+            table, which involves a very small risk of overflow at
+            run-time. By increasing the table size it is possible to reduce
+            this risk."
+        }
+    }
+
+    cdl_option CYGIMP_KERNEL_INTERRUPTS_CHAIN {
+        display       "Chain all interrupts together"
+        requires      CYGIMP_HAL_COMMON_INTERRUPTS_CHAIN
+        default_value 0
+        description "
+            Interrupts can be attached to vectors either singly, or be
+            chained together. The latter is necessary if there is no way
+            of discovering which device has interrupted without
+            inspecting the device itself. It can also reduce the amount
+            of RAM needed for interrupt decoding tables and code."
+    }
+}

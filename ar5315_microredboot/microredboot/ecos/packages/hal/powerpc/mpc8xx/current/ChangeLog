@@ -1,0 +1,327 @@
+2004-09-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/var_misc.c (hal_variant_init): Remove [possibly incorrect]
+	parallel port initializations - leave them to the platform.
+
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_powerpc_mpc8xx.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: Define HAL_PLATFORM_CPU, based on
+	actual CPU type selection - simplifies platform CDL files.
+
+2003-10-15  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/var_regs.h: Changes to allow building with GCC-3.3.x
+	since the newest GAS doesn't like spaces in expressions :-(
+
+2003-08-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/var_misc.c: 
+	* include/var_cache.h: 
+	* cdl/hal_powerpc_mpc8xx.cdl: New variant 866T.
+
+2003-07-14  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/var_cache.h: Data cache flush on 850 fails when using 
+	cache SPR commands, so use brute force.  This fixes some problems
+	with network based debugging (RedBoot got lost because of cache
+	not being flushed properly).
+
+2003-06-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/var_intr.h (cyg_hal_interrupt_acknowledge): Don't 
+	inadvertently clear other interrupts when acknowledging the
+	intended int. Reported by Mark Retallack.
+
+2003-04-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/var_misc.c (hal_variant_init): Errata setup for MPC852T
+
+2003-03-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/var_intr.c: 
+	* include/var_intr.h: Clean up for new CDL (processor type) layout.
+
+	* src/var_misc.c: 
+	* include/var_cache.h: Better processor/variant support.
+
+	* cdl/hal_powerpc_mpc8xx.cdl: Rearrange options to handle processor
+	type more flexibly.
+
+2003-03-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/var_misc.c: Can only reset CPM if not relying on a ROM monitor.
+
+2003-03-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/var_misc.c (hal_variant_init): Reset CPM - always.
+
+2003-03-05  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/variant.inc: Don't let FP be set in MSR in common HAL.
+	Reported by Radu Cernea <rc@unusus.com>
+
+2003-01-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/variant.S: Be careful about using QUICC functions unless that
+	package is present (some MPC8xx platforms don't use it).
+
+2003-01-18  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/variant.S: _mpc8xx_reset caused build failures with current
+	tools.
+
+2002-12-02  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/variant.S (_mpc8xx_reset): New function, used to cause a
+	hardware reset of the platform.
+
+2002-11-25  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/var_regs.h: Add CICR definitions.
+
+2002-11-15  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/var_misc.c: Change in API for profile callback.
+
+2002-11-14  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/var_misc.c: 
+	* cdl/hal_powerpc_mpc8xx.cdl: Add support for profiling.
+
+2002-11-13  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/var_cache.h (HAL_DCACHE_WRITE_MODE): Define for support
+	of various modes (copyback/writethru)
+
+2002-06-27  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/var_regs.h: Allow platform to override certain assumptions,
+	e.g. the IMMR base, via <plf_regs.h>.
+
+2002-06-20  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/var_regs.h (MI_RPN_LPS): Fix define.
+
+2002-05-03  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/intr0.c: Fiddle to make this test run on all current MPC8xx
+	boards (the MBX is especially cranky).  The problem lies with the
+	fact that the timers used to run the test are very platform specific.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES
+	defined.
+
+2002-04-22  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/intr0.c: Only applicable if chained interrupts are *not*
+	turned on.  Also, change setup to be a little more intuitive.
+
+2002-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/intr0.c: Adjust counts on non-MBX platforms.  Note that
+	this test is highly subjective to how the hardware is setup and
+	that the test itself can't wholy determine the correct values
+	to use at runtime.  The chosen ones work for known platforms.
+
+2002-04-08  Gary Thomas  <gthomas@redhat.com>
+
+	* include/variant.inc: Need vectors for both ROM and ROMRAM mode.
+
+2002-01-23  Gary Thomas  <gthomas@redhat.com>
+
+	* include/var_regs.h (CYGARC_REG_IMM_BASE): Move to match
+	what EPPCbug uses (for Linux booting).
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/mpc8xxrev.c: Don't use printf(), but rather diag_printf().
+
+2001-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_intr.c: Include new arbiter header.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_intr.c: Moved hal_call_isr to hal_misc.h in common HAL.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: Get rid of
+	CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL options. They are replaced by
+	the CYGSEM_HAL_DIAG_MANGLER option.
+
+2000-11-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/var_intr.h: Export symbols used in assembly code.
+
+2000-06-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_regs.h: 
+	* include/variant.inc: 
+	* src/var_misc.c:
+	Make caches default to off when the MMU is disabled.
+
+2000-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_intr.c (hal_call_isr): Use driver API definitions.
+
+2000-06-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: Proper ROM_MONITOR hack.
+
+2000-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h: Include quicc definitions for ctrlc
+	support.
+
+2000-04-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c (hal_variant_init): Moved serialization disable
+	code to here.
+	* src/var_misc.c (hal_variant_idle_thread_action): Added.
+
+2000-04-11  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: Define VSR table location.
+
+2000-03-02  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: Further restrictions on
+	CYGSEM_HAL_USE_ROM_MONITOR.
+
+	* cdl/hal_powerpc_mpc8xx.cdl: 
+	* include/pkgconf/hal_powerpc_mpc8xx.h: 
+	Add config options for MPC823 and MPC850.
+
+2000-03-01  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_powerpc_mpc8xx.cdl (CYGSEM_HAL_USE_ROM_MONITOR): Default to
+	0 if CYGSEM_HAL_POWERPC_COPY_VECTORS enabled
+
+2000-03-01  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: 
+	Implement CYGINT_HAL_DIAG_DISABLE_GDB_PROTOCOL_SUPPORTED
+
+2000-03-01  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: CYGSEM_HAL_POWERPC_COPY_VECTORS
+	precludes CYGSEM_HAL_USE_ROM_MONITOR.
+
+	* include/variant.inc: Forgot conditionals on vector copy in last
+	checkin.
+
+2000-02-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/var_intr.c (hal_variant_IRQ_init): Fix spelling of option
+	which controls CPM initialization.
+
+2000-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Only copy vectors when required.
+
+2000-02-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: 
+	* src/mpc8xxrev.c: 
+	Added revnum dump tool.
+
+2000-02-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/variant.S: 
+	* include/variant.inc: use arch.inc instead of ppc.inc
+	Added empty variant save macros. Rely on mk_defs to provide
+	definitions.
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/hal_powerpc_mpc8xx.h: Fix nesting of
+	CYGSEM_HAL_POWERPC_MPC860_CPM_ENABLE option
+	paernt -> parent
+	CYGSEM_HAL_POWERPC_MPC860_CPM_LVL -> CYGHWR_HAL_POWERPC_MPC860_CPM_LVL
+	which also doesn't need to be a component, only an option
+	* cdl/hal_powerpc_mpc8xx.cdl: Similarly treat
+	CYGSEM_HAL_POWERPC_MPC860_CPM_LVL here
+
+2000-02-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/hal_powerpc_mpc8xx.h: Added simple config for
+	1st level arbiter.
+
+2000-02-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mpc8xx.cdl: legal range uses 'to' not '-'
+
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c: Moved MMU functions here.
+
+	* src/var_intr.c (Cyg_InterruptHANDLED): Mask out CALL_DSR flag
+	before return.
+
+	* tests/intr0.c: Moved here from arch.
+
+	* cdl/hal_powerpc_mpc8xx.cdl: Added simple config for 1st level
+	arbiter. Fix description.
+	* src/var_intr.c: 
+	* src/PKGconf.mak:
+	Move 860 arbiters to variant sources.
+	
+2000-02-11  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_powerpc_mpc8xx.cdl:
+
+	Tidy display strings.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h: Bad undef/define order fixed.
+
+	* include/variant.inc: Renamed default VSR handlers.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* Created.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 2003 Bart Veer
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,100 @@
+NAME
+       sendto - send a message from a socket
+
+SYNOPSIS
+       #include <network.h>
+
+       int sendto(int s, const void *msg, int len,  unsigned  int
+       flags, const struct sockaddr *to, int tolen);
+
+DESCRIPTION
+       Sendto is used to transmit  a  message
+       to  another socket.
+
+       The address of the target is given by to with tolen speci­
+       fying its size.  The length of the  message  is  given  by
+       len.   If  the  message  is  too  long  to pass atomically
+       through the underlying protocol,  the  error  EMSGSIZE  is
+       returned, and the message is not transmitted.
+
+       No indication of failure to deliver is implicit in a send.
+       Locally detected errors are indicated by a return value of
+       -1.
+
+       When  the message does not fit into the send buffer of the
+       socket, send normally blocks, unless the socket  has  been
+       placed  in non-blocking I/O mode.  In non-blocking mode it
+       would return EAGAIN in this case.  The select(2) call  may
+       be  used  to  determine  when  it is possible to send more
+       data.
+
+       The flags parameter may include one or more of the follow­
+       ing:
+
+              #define MSG_OOB           0x1     /* process out-of-band data */
+              #define MSG_DONTROUTE     0x4     /* bypass routing, use direct interface */
+              #define MSG_DONTWAIT      0x40    /* don't block */
+              #define MSG_NOSIGNAL      0x2000  /* don't raise SIGPIPE */
+
+       MSG_OOB
+              Sends out-of-band data on sockets that support this
+              notion (e.g.  SOCK_STREAM); the underlying protocol
+              must also support out-of-band data.
+
+       MSG_DONTROUTE
+              Bypasses  the  usual routing table lookup and sends
+              the packet directly to the interface  described  by
+              the  destination address. This is usually used only
+              by diagnostic or routing programs.
+
+       MSG_DONTWAIT
+              Enables non-blocking operation;  if  the  operation
+              would block, EAGAIN is returned.
+
+       MSG_NOSIGNAL
+              Requests  not  to  send SIGPIPE on errors on stream
+              oriented sockets when the other end breaks the con­
+              nection. The EPIPE error is still returned.
+
+       See recv(2) for a description of the msghdr structure. You
+       may send control information  using  the  msg_control  and
+       msg_controllen  members. The maximum control buffer length
+       the kernel can process is  limited  by  the  net.core.opt­
+       mem_max sysctl; see socket(4).
+
+RETURN VALUES
+       The  calls  return the number of characters sent, or -1 if
+       an error occurred.
+
+ERRORS
+       These are some standard errors  generated  by  the  socket
+       layer.  Additional  errors  may  be generated and returned
+       from the underlying protocol modules; see their respective
+       manual pages.
+
+       EBADF   An invalid descriptor was specified.
+
+       ENOTSOCK
+               The argument s is not a socket.
+
+       EMSGSIZE
+               The socket requires that message  be  sent  atomi­
+               cally, and the size of the message to be sent made
+               this impossible.
+
+       EAGAIN  The  socket  is  marked   non-blocking   and   the
+               requested operation would block.
+
+       ENOBUFS The system was unable to allocate an internal mem­
+               ory block.  The operation may succeed when buffers
+               become available.
+
+       EINTR   A signal occurred.
+
+       ENOMEM  No memory available.
+
+       EINVAL  Invalid argument passed.
+
+       EPIPE   The  local  end has been shut down on a connection
+               oriented socket.  In this case  the  process  will
+               also receive a SIGPIPE unless MSG_NOSIGNAL is set.

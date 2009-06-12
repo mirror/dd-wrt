@@ -1,0 +1,117 @@
+<html>
+<body>
+<pre>
+NAME
+       socket - create an endpoint for communication
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       int socket(int domain, int type, int protocol);
+
+DESCRIPTION
+       Socket creates an endpoint for communication and returns a
+       descriptor.
+
+       The domain parameter  specifies  a  communications  domain
+       within  which  communication will take place; this selects
+       the protocol family which should be used.  These  families
+       are  defined  in &lt;network.h&gt;.  The currently understood
+       formats include:
+
+       PF_INET
+              IPv4 Internet protocols; see ip(4)
+
+       The socket has the indicated  type,  which  specifies  the
+       semantics of communication.  Currently defined types are:
+
+       SOCK_STREAM
+              Provides  sequenced,  reliable, two-way connection-
+              based byte streams.  An out-of-band data  transmis-
+              sion mechanism may be supported.
+
+       SOCK_DGRAM
+              Supports datagrams (connectionless, unreliable mes-
+              sages of a fixed maximum length).
+
+       SOCK_SEQPACKET
+              Provides a sequenced, reliable, two-way connection-
+              based data transmission path for datagrams of fixed
+              maximum length; a consumer is required to  read  an
+              entire packet with each read system call.
+
+       SOCK_RAW
+              Provides raw network protocol access.
+
+       The  protocol  specifies  a particular protocol to be used
+       with the socket.  Normally only a single  protocol  exists
+       to  support a particular socket type within a given proto-
+       col family.  However, it is possible that  many  protocols
+       may  exist,  in  which  case a particular protocol must be
+       specified in this manner.  The protocol number to  use  is
+       particular to the "communication domain" in which communi-
+       cation is to take place; see  protocols(5).   See  getpro-
+       toent(3)  on  how to map protocol name strings to protocol
+       numbers.
+
+       Sockets of type SOCK_STREAM are full-duplex byte  streams,
+       similar  to pipes.  A stream socket must be in a connected
+       state before any data may be sent or received  on  it.   A
+       connection  to another socket is created with a connect(2)
+       call.  Once  connected,  data  may  be  transferred  using
+       read(2)  and write(2) calls or some variant of the send(2)
+       and recv(2) calls.  When a session has  been  completed  a
+       close(2)  may  be performed.  Out-of-band data may also be
+       transmitted  as  described  in  send(2)  and  received  as
+       described in recv(2).
+
+       The communications protocols which implement a SOCK_STREAM
+       ensure that data is not lost or duplicated.  If a piece of
+       data  for  which the peer protocol has buffer space cannot
+       be successfully transmitted within a reasonable length  of
+       time,  then the connection is considered When SO_KEEPALIVE
+       is enabled on the socket the protocol checks in  a  proto-
+       col-specific  manner  if  the other end is still alive.
+
+       SOCK_DGRAM and SOCK_RAW sockets allow sending of datagrams
+       to correspondents named in send(2) calls.   Datagrams  are
+       generally  received  with  recvfrom(2),  which returns the
+       next datagram with its return address.
+
+       When  the network signals an error condition to the proto-
+       col module (e.g.  using a ICMP message for IP) the pending
+       error  flag  is set for the socket.  The next operation on
+       this socket will return the  error  code  of  the  pending
+       error.  For some protocols it is possible to enable a per-
+       socket error queue to retrieve detailed information  about
+       the error; see IP_RECVERR in ip(4).
+
+       The  operation  of  sockets  is controlled by socket level
+       options.  These options  are  defined  in  <sys/socket.h>.
+       Setsockopt(2)  and  getsockopt(2)  are used to set and get
+       options, respectively.
+
+RETURN VALUES
+       -1 is returned if an error occurs;  otherwise  the  return
+       value is a descriptor referencing the socket.
+
+ERRORS
+       EPROTONOSUPPORT
+               The protocol type or the specified protocol is not
+               supported within this domain.
+
+       EMFILE  There are too many open files.
+
+       EACCES  Permission  to  create  a  socket of the specified
+               type and/or protocol is denied.
+
+       ENOBUFS or ENOMEM
+               Insufficient memory is available.  The socket can-
+               not  be  created  until  sufficient  resources are
+               freed.
+
+       EINVAL  Unknown protocol, or protocol  family  not  avail-
+               able.
+</pre>
+</body>
+</html>

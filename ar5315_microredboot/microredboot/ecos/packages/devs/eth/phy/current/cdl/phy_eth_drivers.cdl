@@ -1,0 +1,90 @@
+#====================================================================
+#
+#      phy_eth_drivers.cdl
+#
+#      API support for ethernet transcievers (PHY)
+#
+#====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2003 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:   gthomas
+# Date:           2003-08-01
+#
+#####DESCRIPTIONEND####
+#
+#====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_PHY {
+    display       "Ethernet transciever (PHY) support"
+    description   "API for ethernet PHY devices"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    requires      CYGSEM_HAL_VIRTUAL_VECTOR_SUPPORT
+
+    include_dir   cyg/io
+
+    compile eth_phy.c
+
+    cdl_option CYGINT_DEVS_ETH_PHY_AUTO_NEGOTIATION_TIME {
+        display       "Time period (seconds) to wait for auto-negotiation"
+        flavor        data
+        default_value 5
+        description "
+           The length of time to wait for auto-negotiation to complete
+           before giving up and declaring the link dead/missing."
+    }
+
+    cdl_option CYGHWR_DEVS_ETH_PHY_DP83847 {
+        display       "NSDP83847"
+        flavor        bool
+        default_value 0
+        compile       -library=libextras.a DP83847.c
+        description "
+          Include support for National Semiconductor DP83847 DsPHYTER II"
+    }
+
+    cdl_option CYGHWR_DEVS_ETH_PHY_AM79C874 {
+        display       "AMD 79C874"
+        flavor        bool
+        default_value 0
+        compile       -library=libextras.a AM79C874.c
+        description "
+          Include support for AMD 79C874 NetPHY"
+    }
+}

@@ -1,0 +1,293 @@
+# ====================================================================
+#
+#      hal_sparclite_sleb.cdl
+#
+#      SPARClite/SLEB target HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  hmt
+# Contributors:
+# Date:           1999-11-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_SPARCLITE_SLEB {
+    display  "SPARClite MB8683x evaluation board"
+    parent        CYGPKG_HAL_SPARCLITE
+    define_header hal_sparclite_sleb.h
+    include_dir   cyg/hal
+    description   "
+        The SPARClite evaluation board HAL package is provided for use
+        with the Fujitsu MB8683x boards."
+
+    compile       hal_priv.c hal_cygm.S hal_diag.c
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_sparclite.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_sparclite_sleb.h>"
+	puts $::cdl_header "#define CYGHWR_HAL_SPARCLITE_HAS_ASR17 /* true for SLEBs */"
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  {"RAM" "ROM"}
+        default_value {"RAM"}
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+           When targetting the SPARClite Evaluation Board it is possible to
+           build the system for either RAM bootstrap or ROM bootstrap. The
+           former generally requires that the board is equipped with ROMs
+           containing the Cygmon ROM monitor or equivalent software that
+           allows gdb to download the eCos application on to the board. The
+           latter typically requires that the eCos application be blown
+           into EPROMs or equivalent technology."
+    }
+
+    cdl_option CYGHWR_HAL_SPARCLITE_MULTIPLE_VECTOR_TRAPPING {
+        display       "Multiple vector trapping (MVT)"
+        default_value 0
+        description   "
+            Use Multiple Vector Trapping (MVT) rather than Single Vector
+            Trapping (SVT); SVT is a feature of SPARClite CPUs which saves
+            code RAM at a cost of perhaps slower interrupt and trap dispatch
+            time, depending on cache behavior.  This includes speed of
+            handling register window underflow and overflow, a feature of
+            deep function call stacks on SPARC.  MVT requires 4kB of code
+            space for trap vectors; in contrast SVT uses fewer than 20
+            instructions for trap decoding."
+    }
+
+    cdl_option CYGIMP_HAL_SPARCLITE_COPY_VECTORS_TO_RAM {
+        display       "Copy vectors to RAM"
+        default_value 0
+        description   "
+            Copy the vectors and trap code out of the executable image
+            to separate RAM.  With ROM startup, performance might be gained
+            by copying the vectors into RAM; this includes the code for
+            handling register window under/overflow.  Enable this with
+            RAM startup to simulate the code and data sizes of an eventual
+            ROM image.  Note: if MVT is not selected with ROM start, the
+            trap code (including register window handling) is copied
+            to RAM regardless; that code is small."
+    }
+
+
+    cdl_component CYG_HAL_USE_ROM_MONITOR_CYGMON {
+        display       "Use ROM monitor CygMon"
+        default_value 1
+        active_if     { CYG_HAL_STARTUP == "RAM" }
+        description   "
+            This is defined by default to allow interworking with
+            CygMon and thus GDB so that Breakpoints and ^C interrupts
+            and the like work.  Disable it if building to run with the
+            native Fujitsu boot proms (NOT CYGMON) ie. a
+            load-and-go type startup by means of
+             (gdb) target sparclite udp sleb0
+            or
+             (gdb) target sparclite serial /dev/ttyS0
+            as opposed to the CygMon way:
+             (gdb) set remotebaud 19200
+             (gdb) target remote /dev/ttyS0
+            Such builds will load-and-go when using CygMon, but
+            load-and-go is all the interaction you get."
+    
+        cdl_option CYG_KERNEL_DIAG_GDB {
+            display       "Output diag strings as \$O packets"
+            default_value 1
+            description   "
+                If using CygMon it's generally helpful to wrap output
+                characters in the GDB protocol as \$O packets; This
+                option enables this by means of calling into CygMon
+                through the vectors provided; this therefore also
+                works with eg. ethernet debugging.
+
+                Disable this option and output goes direct, in clear,
+                to serial port 0 (CON1)."
+        }
+
+        cdl_option CYG_KERNEL_DIAG_GDB_SERIAL_DIRECT {
+            display       "Output diag strings as \$O packets on serial"
+            active_if     CYG_KERNEL_DIAG_GDB
+            default_value 0
+            description   "
+                However, you might want to force GDB-encoded output to
+                the serial port NOT using CygMon to perform the
+                formatting; this is really only here as a debugging
+                option, in case GDB is behaving oddly.  Enable this
+                option to make GDB \$O packets come out the serial port
+                (CON1)"
+        }
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value 9999
+        }
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+
+        parent  CYGPKG_NONE
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "sparclite-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-msoft-float -mcpu=sparclite -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-msoft-float -mcpu=sparclite -g -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+    }
+
+    cdl_component CYGPKG_HAL_SPARCLITE_SLEB_OPTIONS {
+        display "SPARClite MB8683x build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_HAL_SPARCLITE_SLEB_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the SPARClite MB8683x HAL. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_HAL_SPARCLITE_SLEB_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the SPARClite MB8683x HAL. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_HAL_SPARCLITE_SLEB_TESTS {
+            display "SPARClite MB8683x tests"
+            flavor  data
+            no_define
+            calculated { "tests/slebstak tests/slebintr tests/slebtime" }
+            description   "
+                This option specifies the set of tests for the SPARClite MB8683x HAL."
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "sparclite_sleb_ram" : \
+                                                "sparclite_sleb_rom" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_sparclite_sleb_ram.ldi>" : \
+                                                    "<pkgconf/mlt_sparclite_sleb_rom.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_sparclite_sleb_ram.h>" : \
+                                                     "<pkgconf/mlt_sparclite_sleb_rom.h>" }
+        }
+    }
+}

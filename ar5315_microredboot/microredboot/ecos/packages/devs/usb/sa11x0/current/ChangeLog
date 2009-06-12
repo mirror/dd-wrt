@@ -1,0 +1,196 @@
+2003-02-25  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/usbs_sa11x0.sgml: Declare as <part> not <reference> to get
+	correct TOC numbering.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/usbs_sa11x0.cdl: Fix doc link.
+
+	* doc/usbs_sa11x0.sgml: Comment out DOCTYPE for now to allow building
+	with standard doc build.
+	Add an enclosing <reference> so it's structured better with standard
+	doc build.
+
+2002-02-11  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Add a handler for the SET_INTERFACE standard control message.
+	This should not be needed, but appears to avoid hardware problems
+	when a compliance testing program sends certain requests. Also
+	improve the handling of halted endpoints since the hardware
+	does not allow transfers to be aborted.
+
+2002-01-23  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Add missing assertions for non-NULL buffers
+	Try to improve the behaviour when the host sends data before
+	the target is ready. The hardware is not capable of handling
+	this situation, but some recovery is possible some of the time. 
+
+2001-09-14  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Update support for USB testing
+
+2001-08-06  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Add initial support for USB testing.
+
+2001-05-21  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c (usbs_sa11x0_ep2_dsr):
+	Fix the boundary condition where the transmission is an exact
+	multiple of 64 bytes. ep2_process_packet() already did the
+	right thing but was not getting called.
+	Also, some cosmetic changes to the receive code for the
+	same boundary condition. These actually have no effect
+	because of the hardware, but may be useful for other
+	people writing USB device drivers.
+
+2001-04-05  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c (usbs_sa11x0_ep0_fill_fifo):
+	Set the DATA_END and IN_READY bits in one operation.
+	This seems to avoid problems when the target needs to send
+	back a zero-length control packet.
+
+2001-02-02  Bart Veer  <bartv@redhat.com>
+
+	* cdl/usbs_sa11x0.cdl:
+	Add doc property to the html
+
+	* doc/usbs_sa11x0.sgml, devs-usbs-sa11x0.html:
+	Incorporate changes from docs department, regenerate html
+
+2001-01-25  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0_data.cxx:
+	* cdl/usbs_sa11x0.cdl:
+	Devtab entries were never actually being built - and did not
+	build... 
+
+	* cdl/usbs_sa11x0.cdl:
+	Sort out the dependencies for minimal environments such as
+	RedBoot. 
+
+2001-01-24  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Invoke additional platform-specific initialization, if defined
+	via <cyg/hal/hal_io.h> and CYGBLD_HAL_PLATFORM_IO_H
+
+2001-01-22  Bart Veer  <bartv@redhat.com>
+
+	* doc/usbs_sa11x0.sgml, doc/makefile:
+	Added documentation.
+
+2001-01-16  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Make sure that the resume interrupt source is enabled,
+	even when the USB bus is not suspended. For some reason
+	this makes it possible to disconnect and reconnect.
+	
+2001-01-16  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Use the HAL macros for virtual->physical address translation
+	Update poll() and start() to match the documentation
+	Fix the handling of control messages affecting endpoints 1 and 2
+	if those endpoints are not currently configured.
+
+
+2001-01-02  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Change ep2_tx_packet() to start the DMA operation after the
+	UDC packet-complete bit has been set. This avoids a very high
+	error rate. Add some scheduler locking to eliminate a resulting
+	race condition, and sort out the error handling to match.
+	Comment out some assertions relating to spurious interrupts, which
+	have been observed. Instead the code now recovers from these.
+
+2000-12-15  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Add debug code for tracking stats and simulating failures.
+	Change the EP1 code to switch between DMA channels A and B as
+	required, rather than always using channel A. This is more robust
+	and was needed for the failure simulation.
+	
+	Make the ep1 packet processing code robust in case an unexpected
+	failure occurs during its invocation. It is not clear how this
+	can ever happen, but on a couple of occasions it did and caused an
+	infinite loop.
+
+2000-11-30  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Fix DMA_CONTROL_CLEAR_ALL constant, it was ignoring START_B
+	In ep2_init(), separate out the fifo write and the IN_SIZE
+	write to avoid a hardware problem.
+
+2000-11-29  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Disable some debugging features and add retries when manipulating
+	certain DMA registers - needed with some Silicon revisions.
+
+2000-11-28  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	More rewriting, plus implementing the endpoint halt support.
+
+2000-11-24  Bart Veer  <bartv@redhat.com>
+
+	* src/usbs_sa11x0.c:
+	Clean up some of the debugging.
+	Largely rewrite the endpoint 2 support to try and get it working
+	Transmit a runt packet during initialization to work around
+	hardware problem.
+
+2000-11-22  Bart Veer  <bartv@redhat.com>
+
+	* include/usbs_sa11x0.h: Fix nested #include protection
+
+2000-11-21  Bart Veer  <bartv@redhat.com>
+
+	* First check-in of eCos USB support.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

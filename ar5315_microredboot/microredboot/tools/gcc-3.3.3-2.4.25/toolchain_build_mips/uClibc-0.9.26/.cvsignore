@@ -1,0 +1,11 @@
+libc.a       
+libcrt0.o
+uClibc.so*
+libuClibc.so*
+uClibc_config.h
+uClibc-0*
+libuClibc-0*
+lib
+_install
+build-stamp
+.config*

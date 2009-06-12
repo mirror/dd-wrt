@@ -1,0 +1,259 @@
+# ====================================================================
+#
+#      libm.cdl
+#
+#      Maths library configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  jlarmour
+# Contributors:
+# Date:           1999-06-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBM {
+    display       "Math library"
+    doc           ref/libc.html
+    description   "
+        ISO standard floating point mathematical library
+        containing many useful functions for mathematical
+        calculations."
+
+    compile       misc/matherr.c misc/standard.c misc/compatmode.cxx          \
+                  misc/infconst.c                                             \
+                                                                              \
+                  double/ieee754-core/e_acos.c double/ieee754-core/e_asin.c   \
+                  double/ieee754-core/e_atan2.c double/ieee754-core/e_cosh.c  \
+                  double/ieee754-core/e_exp.c double/ieee754-core/e_fmod.c    \
+                  double/ieee754-core/e_log.c double/ieee754-core/e_log10.c   \
+                  double/ieee754-core/e_pow.c                                 \
+                  double/ieee754-core/e_rem_pio2.c                            \
+                  double/ieee754-core/e_scalb.c double/ieee754-core/e_sinh.c  \
+                  double/ieee754-core/e_sqrt.c                                \
+                                                                              \
+                  double/ieee754-api/w_acos.c double/ieee754-api/w_asin.c     \
+                  double/ieee754-api/w_atan2.c double/ieee754-api/w_cosh.c    \
+                  double/ieee754-api/w_exp.c double/ieee754-api/w_fmod.c      \
+                  double/ieee754-api/w_log.c double/ieee754-api/w_log10.c     \
+                  double/ieee754-api/w_pow.c double/ieee754-api/w_scalb.c     \
+                  double/ieee754-api/w_sinh.c double/ieee754-api/w_sqrt.c     \
+                                                                              \
+                  double/internal/k_cos.c double/internal/k_rem_pio2.c        \
+                  double/internal/k_sin.c double/internal/k_tan.c             \
+                                                                              \
+                  double/portable-api/s_atan.c double/portable-api/s_ceil.c   \
+                  double/portable-api/s_copysign.c                            \
+                  double/portable-api/s_cos.c double/portable-api/s_expm1.c   \
+                  double/portable-api/s_fabs.c double/portable-api/s_finite.c \
+                  double/portable-api/s_floor.c double/portable-api/s_frexp.c \
+                  double/portable-api/s_isnan.c double/portable-api/s_ldexp.c \
+                  double/portable-api/s_rint.c double/portable-api/s_scalbn.c \
+                  double/portable-api/s_sin.c double/portable-api/s_tan.c     \
+                  double/portable-api/s_modf.c double/portable-api/s_tanh.c
+
+
+    # COMPATIBILITY-MODE RELATED CONFIGURATION OPTIONS
+    cdl_component CYGPKG_LIBM_COMPATIBILITY {
+        display       "Compatibility mode"
+        flavor        none
+        description   "
+            These options deal with behaviour related to
+            the various compatibility modes - POSIX, IEEE,
+            X/OPEN and SVID."
+
+        script        compat.cdl
+    }
+
+    # THREAD-SAFETY CONFIGURATION OPTIONS
+    cdl_component CYGPKG_LIBM_THREAD_SAFETY {
+        display       "Thread safety"
+        flavor        none
+        description   "
+            This option controls whether the C library has
+            support for thread safe operation in general.
+            This requires eCos kernel support for per-thread
+            data, and adjustment of the stack limit."
+
+        cdl_option CYGSEM_LIBM_THREAD_SAFE_COMPAT_MODE {
+            display       "Compatibility mode setting"
+            requires      !CYGSEM_LIBM_COMPAT_IEEE_ONLY
+            requires      CYGVAR_KERNEL_THREADS_DATA
+            default_value 0
+            description   "
+                This option makes the setting of the compatiblity
+                mode be a per-thread property. This directly
+                implies that it also becomes thread-safe."
+        }
+
+        cdl_option CYGSEM_LIBM_THREAD_SAFE_GAMMA_FUNCTIONS {
+            display       "gamma() and lgamma()"
+            requires      CYGVAR_KERNEL_THREADS_DATA
+            default_value 0
+            description   "
+                This option makes the gamma() and lgamma()
+                functions be thread-safe. Note that these
+                functions are identical - they take the log of
+                the absolute value of their argument. The sign
+                of the argument is stored in a variable called
+                signgam. Enabling this option makes signgam
+                a per-thread variable. Note there are also
+                gamma_r() and lgamma_r() alternatives that
+                allow signgam to be passed in by reference as
+                an argument."
+        }
+    }
+
+    # TRACING OPTIONS
+    cdl_component CYGPKG_LIBM_TRACE {
+        display       "Tracing output levels in math library"
+        flavor        bool
+        requires      CYGDBG_USE_TRACING
+        default_value 0
+        description   "
+            Tracing support is useful for debugging. Some
+            Math library modules can be configured with
+            different levels of tracing verbosity. These
+            levels can be configured here."
+
+
+        cdl_option CYGNUM_LIBM_COMPATMODE_TRACE_LEVEL {
+            display       "Compatibility mode get/set"
+            requires      CYGSEM_LIBM_THREAD_SAFE_COMPAT_MODE
+            flavor        data
+            legal_values  0 to 1
+            default_value 0
+            description   "
+                Trace level for debugging the getting and
+                setting of the compatibility mode when it is
+                configured to be thread-safe."
+        }
+
+        cdl_option CYGNUM_LIBM_SIGNGAM_TRACE_LEVEL {
+            display       "signgam variable access"
+            requires      CYGSEM_LIBM_THREAD_SAFE_GAMMA_FUNCTIONS
+            flavor        data
+            legal_values  0 to 1
+            default_value 0
+            description   "
+                Trace level for debugging all accesses to the
+                signgam variable in thread-safe mode."
+        }
+    }
+
+    # OTHER CONFIGURATION SETTINGS
+    cdl_option X_TLOSS {
+        display       "Bessel function limit of significance"
+        flavor        data
+        default_value 1.41484755040568800000e+16;  # pi*(2**52)
+        legal_values  1 to 1e308;  # FIXME
+        description   "
+            For the Bessel functions (j0(), j1(), jn(),
+            y0(), y1(), yn()) this option defines the
+            maximum absolute value of the ordinate
+            before we assume total loss of significance.
+            This number must be a floating-point number (e.g.
+            contains a decimal point), and should be
+            large."
+    }
+
+    define_proc {
+        puts $::cdl_header "/***** proc output start *****/"
+
+        puts $::cdl_header "#include <pkgconf/system.h>"
+
+        # TYPE DEFINITIONS
+        # Compatibility mode selector - required for default below
+
+        puts $::cdl_header "typedef enum {"
+        puts $::cdl_header "    CYGNUM_LIBM_COMPAT_UNINIT= 0,  // Default state. DO NOT set it to this"
+        puts $::cdl_header "    CYGNUM_LIBM_COMPAT_POSIX = 1,  // ANSI/POSIX 1003.1"
+        puts $::cdl_header "    CYGNUM_LIBM_COMPAT_IEEE  = 2,  // IEEE-754"
+        puts $::cdl_header "    CYGNUM_LIBM_COMPAT_XOPEN = 3,  // X/OPEN Portability guide issue 3"
+        puts $::cdl_header "                                   // (XPG3)"
+        puts $::cdl_header "    CYGNUM_LIBM_COMPAT_SVID  = 4   // System V Interface Definition 3rd"
+        puts $::cdl_header "                                   // edition"
+        puts $::cdl_header "} Cyg_libm_compat_t;"
+        puts $::cdl_header ""
+
+        puts $::cdl_header "/****** proc output end ******/"
+    }
+
+    cdl_component CYGPKG_LIBM_OPTIONS {
+        display "Math library build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBM_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { ((0 == CYGPKG_HAL_I386) && (0 == CYGPKG_HAL_SYNTH_I386)) ? "" : "-ffloat-store" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the math library. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBM_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the math library. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBM_TESTS {
+            display "Math library tests"
+            flavor  data
+            no_define
+            calculated { "tests/vectors/acos tests/vectors/asin tests/vectors/atan tests/vectors/atan2 tests/vectors/ceil tests/vectors/cos tests/vectors/cosh tests/vectors/exp tests/vectors/fabs tests/vectors/floor tests/vectors/fmod tests/vectors/frexp tests/vectors/ldexp tests/vectors/log tests/vectors/log10 tests/vectors/modf tests/vectors/pow tests/vectors/sin tests/vectors/sinh tests/vectors/sqrt tests/vectors/tan tests/vectors/tanh" }
+            description   "
+                This option specifies the set of tests for the math library."
+        }
+    }
+}

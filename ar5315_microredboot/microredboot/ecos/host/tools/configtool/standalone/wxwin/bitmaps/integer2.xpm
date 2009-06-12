@@ -1,0 +1,23 @@
+/* XPM */
+static char * integer2_xpm[] = {
+"16 16 4 1",
+" 	c None",
+".	c #808080",
+"X	c #008000",
+"o	c Black",
+"                ",
+".............   ",
+".           ..  ",
+".           . . ",
+".  XXX     X.ooo",
+". XX XX    XX  o",
+". XX XX XX XX  o",
+".  XXX  XX XX  o",
+".              o",
+". XX     XXX   o",
+". XX    XX XX  o",
+". XX XX XX XX  o",
+". XX XX  XoX   o",
+".              o",
+".oo    .oooo.  o",
+"   .oooo    o. o"};

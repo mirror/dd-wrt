@@ -1,0 +1,321 @@
+The network performance tests are split into two parts, one
+[nc6_test_master] which runs on a host (like Linux or FreeBSD) and the
+other [nc6_test_slave] which runs on the target platform.  Note that
+these tests supplant older versions (nc_test_XXX) which did not
+support IPv6 addressing.
+
+To run the tests, start the slave part first.  On the target hardware,
+run the program "nc6_test_slave".  It will display a set of information
+on the console (use serial console only as using a network console
+would severely impact the numbers) similar to this:
+
+    RedBoot> lo ipv6.test;g
+    Entry point: 0x00040040, address range: 0x00040000-0x000ae56c
+    [cyg_net_init] Init: mbinit(0x00000000)
+    [cyg_net_init] Init: cyg_net_init_devs(0x00000000)
+    Init device 'cs8900a_eth0'
+    [cyg_net_init] Init: loopattach(0x00000000)
+    [cyg_net_init] Init: ifinit(0x00000000)
+    IFP: 0x000acf1c, next: 0x00117a00
+    IFP: 0x00117a00, next: 0x00000000
+    eth0 XXX: driver didn't set ifq_maxlen
+    [cyg_net_init] Init: domaininit(0x00000000)
+    [cyg_net_init] Init: cyg_net_add_domain(0x000ad7f8)
+    New domain internet6 at 0x00000000
+    [cyg_net_init] Init: cyg_net_add_domain(0x000adfbc)
+    New domain internet at 0x00000000
+    [cyg_net_init] Init: cyg_net_add_domain(0x000ad314)
+    New domain route at 0x00000000
+    [cyg_net_init] Init: cyg_route_init(0x00000000)
+    [cyg_net_init] Init: ip6_init2(0x00000000)
+    [cyg_net_init] Done
+    Start Network Characterization - SLAVE
+    BOOTP[eth0] op: REQUEST
+           htype: Ethernet
+            hlen: 6
+            hops: 0
+             xid: 0xe194048b
+            secs: 0
+           flags: 0x80
+           hw_addr: 00:30:d3:03:04:8b
+         client IP: 0.0.0.0
+             my IP: 192.168.1.52
+         server IP: 192.168.1.101
+        gateway IP: 0.0.0.0
+            server: hermes.chez-thomas.org
+              file: /tftpboot/192.168.1.52/zImage
+      options:
+            DHCP message: 3 REQUEST
+            DHCP server id: 63.225.98.241
+            DHCP time 51: -1
+            DHCP time 58: 0
+            DHCP time 59: 0
+            subnet mask: 255.255.255.0
+                gateway: 192.168.1.101
+          domain server: 63.225.98.241, 206.196.128.1, 205.180.230.20, 205.180.230.21
+            domain name: chez-thomas.org
+           IP broadcast: 192.168.1.255
+            DHCP option: 37/55.9: 54 51 58 59 1 3 6 15 28
+            DHCP option: 39/57.2: 576
+            DHCP requested ip: 192.168.1.52
+    No load = 248826
+    Set background load = 20% 
+    Set background load = 0% 
+    High Load[20] = 192089 => 23% 
+    Set background load = 20% 
+    Set background load = 0% 
+    Load[10] = 220394 => 12% 
+    Set background load = 20% 
+    Set background load = 0% 
+    Load[15] = 206082 => 18% 
+    Set background load = 20% 
+    Set background load = 0% 
+    Final load[16] = 203142 => 19% 
+    Start test for eth0
+    Family: 2, Socket: 2, Addr: 0.0.0.0
+    Family: 28, Socket: 2, Addr: ::
+
+At this point, the slave is ready to accept commands.  The section with
+lines like "Set background load = 20%" are the slave test self-calibrating
+a background load level which is used later.
+
+Once the slave is started, then on your host system (Linux), run the
+'nc6_test_master' program like this:
+
+    [root@ebsa2 gthomas]# ./nc6_test_master 3ffe:302:11:2::192.168.1.52
+
+This command would test against the IPv6 slave.  You can also use an IPv4
+address.
+
+The master program will then run a sequence of tests.  Each test is accomplished
+by sending a command "packet" to the slave which initiates a sequence of
+I/O requests.  These are requests for UDP and TCP traffic patterns, adjusting
+the slave background load, etc.  The results are displayed by the master
+program as they are obtained.  For example:
+
+    ================== No load, master at 100% ========================
+    Start UDP echo [640,1024] - no delays
+    UDP echo - 1280 bufs of 1024 bytes in 2.03 seconds - 630.54 KB/S - 5.1654 Mbit/S (M = 10^6)
+       slave sent 640, recvd 640
+    Start UDP send [640,1024] - no delays
+    Packets out of sequence - recvd: 51, expected: 50
+    Packets out of sequence - recvd: 103, expected: 102
+    Packets out of sequence - recvd: 155, expected: 154
+    Packets out of sequence - recvd: 207, expected: 206
+    Packets out of sequence - recvd: 259, expected: 258
+    Packets out of sequence - recvd: 311, expected: 310
+    Packets out of sequence - recvd: 363, expected: 362
+    Packets out of sequence - recvd: 415, expected: 414
+    Packets out of sequence - recvd: 467, expected: 466
+    Packets out of sequence - recvd: 519, expected: 518
+    Packets out of sequence - recvd: 571, expected: 570
+    Packets out of sequence - recvd: 623, expected: 622
+    UDP send - 628 bufs of 1024 bytes in 1.46 seconds - 430.14 KB/S - 3.5237 Mbit/S (M = 10^6), 12 out of sequence
+       slave sent 628, recvd 0
+    Start UDP recv [640,1024] - no delays
+    UDP recv - 640 bufs of 1024 bytes in 0.05 seconds - 12800.00 KB/S - 104.8576 Mbit/S (M = 10^6)
+       slave sent 0, recvd 495
+    Start TCP echo [640,1024] - no delays
+    TCP echo - 1280 bufs of 1024 bytes in 2.16 seconds - 592.59 KB/S - 4.8545 Mbit/S (M = 10^6)
+       slave sent 640, recvd 640
+    Start TCP send [640,1024] - no delays
+    TCP send - 640 bufs of 1024 bytes in 0.80 seconds - 800.00 KB/S - 6.5536 Mbit/S (M = 10^6)
+       slave sent 640, recvd 0
+    Start TCP recv [640,1024] - no delays
+    TCP recv - 640 bufs of 1024 bytes in 0.65 seconds - 984.62 KB/S - 8.0660 Mbit/S (M = 10^6)
+       slave sent 0, recvd 640
+    Start TCP echo [64,10240] - no delays
+    TCP echo - 128 bufs of 10240 bytes in 3.80 seconds - 336.84 KB/S - 2.7594 Mbit/S (M = 10^6)
+       slave sent 64, recvd 64
+    
+    ====================== Various slave compute loads ===================
+    >>>>>>>>>>>> slave processing load at 0%
+    Start UDP echo [2048,1024] - no delays
+    UDP echo - 4096 bufs of 1024 bytes in 6.51 seconds - 629.19 KB/S - 5.1543 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    Start TCP echo [2048,1024] - no delays
+    TCP echo - 4096 bufs of 1024 bytes in 6.90 seconds - 593.62 KB/S - 4.8630 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    >>>>>>>>>>>> slave processing load at 10%
+    Start UDP echo [2048,1024] - no delays
+    UDP echo - 4096 bufs of 1024 bytes in 6.81 seconds - 601.47 KB/S - 4.9272 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    Start TCP echo [2048,1024] - no delays
+    TCP echo - 4096 bufs of 1024 bytes in 7.00 seconds - 585.14 KB/S - 4.7935 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    >>>>>>>>>>>> slave processing load at 20%
+    Start UDP echo [2048,1024] - no delays
+    UDP echo - 4096 bufs of 1024 bytes in 6.81 seconds - 601.47 KB/S - 4.9272 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    Start TCP echo [2048,1024] - no delays
+    TCP echo - 4096 bufs of 1024 bytes in 7.32 seconds - 559.56 KB/S - 4.5839 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    >>>>>>>>>>>> slave processing load at 30%
+    Start UDP echo [2048,1024] - no delays
+    UDP echo - 4096 bufs of 1024 bytes in 8.04 seconds - 509.45 KB/S - 4.1734 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    Start TCP echo [2048,1024] - no delays
+    TCP echo - 4096 bufs of 1024 bytes in 8.78 seconds - 466.51 KB/S - 3.8217 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    >>>>>>>>>>>> slave processing load at 40%
+    Start UDP echo [2048,1024] - no delays
+    UDP echo - 4096 bufs of 1024 bytes in 10.22 seconds - 400.78 KB/S - 3.2832 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    Start TCP echo [2048,1024] - no delays
+    TCP echo - 4096 bufs of 1024 bytes in 10.24 seconds - 400.00 KB/S - 3.2768 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    >>>>>>>>>>>> slave processing load at 50%
+    Start UDP echo [2048,1024] - no delays
+    UDP echo - 4096 bufs of 1024 bytes in 10.22 seconds - 400.78 KB/S - 3.2832 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    Start TCP echo [2048,1024] - no delays
+    TCP echo - 4096 bufs of 1024 bytes in 10.24 seconds - 400.00 KB/S - 3.2768 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    
+    ====================== Various master loads ===================
+    Testing IDLE for 10 seconds
+    IDLE - ticks: 1003, count: 1367315
+    Start UDP echo [2048,1024] - no delays
+    UDP echo - 4096 bufs of 1024 bytes in 10.22 seconds - 400.78 KB/S - 3.2832 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 1028, count: 641138, 45% idle
+    Start TCP echo [2048,1024] - no delays
+    TCP echo - 4096 bufs of 1024 bytes in 10.24 seconds - 400.00 KB/S - 3.2768 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 1330, count: 1004010, 55% idle
+    Start UDP echo [2048,1024] - 10ms delay after 10 packets
+    UDP echo - 4096 bufs of 1024 bytes in 13.01 seconds - 314.83 KB/S - 2.5791 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 1307, count: 1015862, 56% idle
+    Start TCP echo [2048,1024] - 10ms delay after 10 packets
+    TCP echo - 4096 bufs of 1024 bytes in 13.26 seconds - 308.90 KB/S - 2.5305 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 1633, count: 1410624, 63% idle
+    Start UDP echo [2048,1024] - 50ms delay after 10 packets
+    UDP echo - 4096 bufs of 1024 bytes in 21.00 seconds - 195.05 KB/S - 1.5978 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 2106, count: 2105817, 73% idle
+    Start TCP echo [2048,1024] - 50ms delay after 10 packets
+    TCP echo - 4096 bufs of 1024 bytes in 21.26 seconds - 192.66 KB/S - 1.5783 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 2434, count: 2471814, 74% idle
+    Start UDP echo [2048,1024] - 100ms delay after 10 packets
+    UDP echo - 4096 bufs of 1024 bytes in 31.28 seconds - 130.95 KB/S - 1.0727 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 3135, count: 3508880, 82% idle
+    Start TCP echo [2048,1024] - 100ms delay after 10 packets
+    TCP echo - 4096 bufs of 1024 bytes in 31.43 seconds - 130.32 KB/S - 1.0676 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 3451, count: 3859323, 82% idle
+    Start UDP echo [2048,1024] - 10ms delay after 1 packet
+    UDP echo - 4096 bufs of 1024 bytes in 40.94 seconds - 100.05 KB/S - 0.8196 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 4102, count: 4789770, 85% idle
+    Start TCP echo [2048,1024] - 10ms delay after 1 packet
+    TCP echo - 4096 bufs of 1024 bytes in 40.96 seconds - 100.00 KB/S - 0.8192 Mbit/S (M = 10^6)
+       slave sent 2048, recvd 2048
+    IDLE - ticks: 4407, count: 5147211, 85% idle
+    ... Done
+
+The slave will display lines like:
+    UDP echo - 640 buffers, 1024 bytes
+    UDP send - 640 buffers, 1024 bytes
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    sendto UDP data: No buffer space available
+    UDP recv - 640 buffers, 1024 bytes
+    Packets out of sequence - recvd: 508, expected: 492
+    Packets out of sequence - recvd: 528, expected: 510
+    recvfrom timeout, expecting seq #529
+    recvfrom timeout, expecting seq #530
+    recvfrom timeout, expecting seq #531
+    recvfrom timeout, expecting seq #532
+    recvfrom timeout, expecting seq #533
+    recvfrom timeout, expecting seq #534
+    ... giving up
+    TCP echo - 640 buffers, 1024 bytes
+    TCP - listen on IPv6/8770
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1085)
+    TCP send - 640 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1086)
+    TCP recv - 640 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1087)
+    TCP echo - 64 buffers, 10240 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1088)
+    Set background load = 0% 
+    Set background load = 0% 
+    UDP echo - 2048 buffers, 1024 bytes
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1089)
+    Set background load = 10% 
+    UDP echo - 2048 buffers, 1024 bytes
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1090)
+    Set background load = 20% 
+    UDP echo - 2048 buffers, 1024 bytes
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1091)
+    Set background load = 30% 
+    UDP echo - 2048 buffers, 1024 bytes
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1092)
+    Set background load = 40% 
+    UDP echo - 2048 buffers, 1024 bytes
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1093)
+    Set background load = 50% 
+    UDP echo - 2048 buffers, 1024 bytes
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1094)
+    Start IDLE thread
+    Stop IDLE thread
+    Start IDLE thread
+    UDP echo - 2048 buffers, 1024 bytes
+    Stop IDLE thread
+    Start IDLE thread
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1095)
+    Stop IDLE thread
+    Start IDLE thread
+    UDP echo - 2048 buffers, 1024 bytes
+    Stop IDLE thread
+    Start IDLE thread
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1096)
+    Stop IDLE thread
+    Start IDLE thread
+    UDP echo - 2048 buffers, 1024 bytes
+    Stop IDLE thread
+    Start IDLE thread
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1097)
+    Stop IDLE thread
+    Start IDLE thread
+    UDP echo - 2048 buffers, 1024 bytes
+    Stop IDLE thread
+    Start IDLE thread
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1098)
+    Stop IDLE thread
+    Start IDLE thread
+    UDP echo - 2048 buffers, 1024 bytes
+    Stop IDLE thread
+    Start IDLE thread
+    TCP echo - 2048 buffers, 1024 bytes
+    connection from 3ffe:302:11:2:290:27ff:fe8b:8e1d(1099)
+    Stop IDLE thread
+
+Notice that if the host and target are not well balanced (in this example,
+the host is a fairly fast P-II running with a very good 10/100Mb ethernet
+controller and the slave is a reasonable [not fast!] ARM board with a very
+simplistic [read "slow"] network adaptor), then the UDP tests can have
+synchronization problems.  This is the nature of UDP and is to be expected.

@@ -1,0 +1,168 @@
+2002-11-04  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/if_sc_lpe.c (do_delay): Fix problem with overloaded name 'ticks'.
+	n.b. the FreeBSD stack has this defined for it's own use.
+
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/if_sc_lpe.c: 
+	Need to include <pkgconf/io_eth_drivers.h> for proper configuration
+	of stand-alone (polled) vs. system (interrupt driven) mode.
+
+2002-05-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/if_sc_lpe.c: Conditionalize use of thread on CYGPKG_KERNEL
+	not CYGPKG_NET.
+
+2002-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Clean up warnings.
+
+2001-10-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_cf.inl: Added buffer parameters.
+
+2001-08-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c (sc_lpe_card_handler): Rework ESA discovery code.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_sc_lpe.c: Use generic DP83902A driver, only redefining
+	the init function to handle card details (which incidently do not
+	appear to be fully working).
+
+	* include/devs_eth_cf.inl: Device details moved here so the
+	generic driver can access them.
+
+	* cdl/cf_eth_drivers.cdl: Changes to use generic driver. Allow ESA
+	to be configured.
+	Require DP83902A package.
+
+	* src/dp8390.h: Deleted.
+
+2001-04-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c (sc_lpe_card_handler): Work around broken card(s)
+	which do not have valid ESA in config EPROM.
+
+2000-09-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Suppress noisy message which seems to sometimes
+	happen if the card is re-initialized from warm.
+
+2000-09-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Better recovery for bad devices [stand-alone].
+
+2000-09-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Fix handling of receive buffer overflow,
+	i.e. missed data.  [quietly ignored]
+
+	* src/dp8390.h: Update layout of Tx/Rx buffers.
+
+2000-09-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c (sc_lpe_card_handler): Handle case when card 
+	is warm (powered up from boot ROM).
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_sc_lpe.c (sc_lpe_init): Work with new fast net
+	thread to do all the copying work instead of loading up DSR time.
+	In detail:
+	 o New "deliver" function in the interface record.  It's the same
+	 function as the poll entry; sc_lpe_int().
+	 o In registering the interrupt handler, use eth_drv_dsr (from the
+	   logical driver) instead of sc_lpe_int.
+
+2000-08-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c (sc_lpe_recv): Better handling if upper layer
+	had no buffers [this routine called anyway].
+
+2000-08-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Better handling of "hot" cards (i.e. one
+	initialized by a debug environment).
+
+2000-08-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Add new function to return interrupt vector
+	used by interface.  Also, handle interrupts from interface even
+	if there is no kernel (CF callback).
+
+2000-08-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Ensure DSR locked while initializing hardware.
+
+	* cdl/cf_eth_drivers.cdl: Ethernet driver package hierarchy changed.
+
+2000-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: Update for new eth_drv interfaces (via *sc).
+
+2000-07-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c (sc_lpe_RxEvent): Handle case where chip gets lost
+	and keeps returning the same input packet (hardware bug?).
+
+2000-07-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c (sc_lpe_card_handler): Add initialization message and
+	timeout when running stand-alone.
+
+2000-07-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_sc_lpe.c: CF interrupts are now handled by the slot handler,
+	not directly in this code.
+
+2000-07-14  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/cf_eth_drivers.cdl: 
+	* src/if_sc_lpe.c: Support building in eCos and stand-alone modes.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

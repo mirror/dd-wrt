@@ -1,0 +1,3558 @@
+<!-- {{{ Banner                 -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     language.sgml                                               -->
+<!--                                                                 -->
+<!--     The CDL language.                                           -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2000, 2001, 2002 Red Hat, Inc.                    -->
+<!--                                                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2000/02/06                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<chapter id="language">
+<title>The CDL Language</title>
+
+<!-- {{{ Introit                -->
+
+<para>
+The &CDL; language is a key part of the &eCos; component framework.
+All packages must come with at least one &CDL; script, to describe
+that package to the framework. The information in that script includes
+details of all the configuration options and how to build the package.
+Implementing a new component or turning some existing code into an
+&eCos; component always involves writing corresponding &CDL;. This
+chapter provides a description of the &CDL; language. Detailed
+information on specific parts of the language can be found in <xref
+linkend="reference">.
+</para>
+
+<!-- }}} -->
+<!-- {{{ Language overview      -->
+
+<sect1 id="language.overview">
+<title>Language Overview</title>
+<para>
+A very simple &CDL; script would look like this:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_ERROR {
+    display       "Common error code support"
+    compile       strerror.cxx
+    include_dir   cyg/error
+    description   "
+        This package contains the common list of error and
+        status codes. It is held centrally to allow
+        packages to interchange error codes and status
+        codes in a common way, rather than each package
+        having its own conventions for error/status
+        reporting. The error codes are modelled on the
+        POSIX style naming e.g. EINVAL etc. This package
+        also provides the standard strerror() function to
+        convert error codes to textual representation."
+}
+</programlisting>
+<para>
+This describes a single package, the error code package, which does
+not have any sub-components or configuration options. The package has
+an internal name, <varname>CYGPKG_ERROR</varname>, which can be
+referenced in other &CDL; scripts using e.g.
+<literal>requires&nbsp;CYGPKG_ERROR</literal>. There will also be a
+<literal>#define</literal> for this symbol in a configuration header
+file. In addition to the package name, this script provides a number
+of properties for the package as a whole. The &display; property
+provides a short description. The &description; property involves a
+rather longer one, for when users need a bit more information. The
+&compile; and &include-dir; properties list the consequences of this
+package at build-time. The package appears to lack any on-line
+documentation. 
+</para>
+<para>
+Packages could be even simpler than this. If the package only provides
+an interface and there are no files to be compiled then there is no
+need for a &compile; property. Alternatively if there are no exported
+header files, or if the exported header files should go to the
+top-level of the <filename
+class="directory">install/include</filename> directory, then there is
+no need for an &include-dir; property. Strictly speaking the
+&description; and &display; properties are optional as well, although
+application developers would not appreciate the resulting lack of
+information about what the package is supposed to do.
+</para>
+<para>
+However many packages tend to be a bit more complicated than the error
+package, containing various sub-components and configuration options.
+These are also defined in the &CDL; scripts and in much the same way
+as the package. For example, the following excerpt comes from the
+infrastructure package:
+</para>
+<programlisting width=72>
+cdl_component CYGDBG_INFRA_DEBUG_TRACE_ASSERT_BUFFER {
+    display       "Buffered tracing"
+    default_value 1
+    active_if     CYGDBG_USE_TRACING
+    description   "
+        An output module which buffers output from tracing and
+        assertion events. The stored messages are output when an
+        assert fires, or CYG_TRACE_PRINT() (defined in
+        &lt;cyg/infra/cyg_trac.h&gt;) is called. Of course, there will
+        only be stored messages if tracing per se (CYGDBG_USE_TRACING)
+        is enabled above."
+
+    cdl_option CYGDBG_INFRA_DEBUG_TRACE_BUFFER_SIZE {
+        display       "Trace buffer size"
+        flavor        data
+        default_value 32
+        legal_values  5 to 65535
+        description   "
+            The size of the trace buffer. This counts the number of
+            trace records stored. When the buffer fills it either
+            wraps, stops recording, or generates output."
+    }
+
+    &hellip;
+}
+</programlisting>
+<para>
+Like a &cdl-package;, a &cdl-component; has a name and a body. The
+body contains various properties for that component, and may also
+contain sub-components or options. Similarly a &cdl-option; has a
+name and a body of properties. This example lists a number of
+new properties: &default-value;, &active-if;, &flavor; and
+&legal-values;. The meaning of most of these should be fairly obvious.
+The next sections describe the various &CDL; commands and properties. 
+</para>
+<para>
+There is one additional and very important point: &CDL; is not a
+completely new language; instead it is implemented as an extension of
+the existing &Tcl; scripting language. The syntax of a &CDL; script is
+&Tcl; syntax, which is described below. In addition some of the more
+advanced facilities of &CDL; involve embedded fragments of &Tcl; code,
+for example there is a &define-proc; property which specifies some
+code that needs to be executed when the component framework generates
+the configuration header files.
+</para>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ CDL commands           -->
+
+<sect1 id="language.commands">
+<title>CDL Commands</title>
+<para>
+There are four &CDL;-related commands which can occur at the top-level
+of a &CDL; script: &cdl-package;, &cdl-component;, &cdl-option; and
+&cdl-interface;. These correspond to the basic building blocks of the
+language (CDL interfaces are described in <xref
+linkend="language.interface">). All of these take the same basic form:
+</para>
+<programlisting width=72>
+cdl_package &lt;name&gt; {
+    &hellip;
+}
+
+cdl_component &lt;name&gt; {
+    &hellip;
+}
+
+cdl_option &lt;name&gt; {
+    &hellip;
+}
+
+cdl_interface &lt;name&gt; {
+    &hellip;
+}
+</programlisting>
+<para>
+The command is followed by a name and by a body of properties, the
+latter enclosed in braces. Packages and components can contain other
+entities, so the &cdl-package; and &cdl-component; can also have
+nested commands in their bodies. All names must be unique within a
+given configuration. If say the C library package and a TCP/IP stack
+both defined an option with the same name then it would not be
+possible to load both of them into a single configuration. There is a
+<link linkend="language.naming">naming convention</link> which should
+make accidental name clashes very unlikely.
+</para>
+<para>
+It is possible for two packages to use the same name if there are no
+reasonable circumstances under which both packages could be loaded at
+the same time. One example would be architectural HAL packages: a
+given &eCos; configuration can be used on only one processor, so the
+architectural HAL packages <varname>CYGPKG_HAL_ARM</varname> and
+<varname>CYGPKG_HAL_I386</varname> can re-use option names; in fact
+in some cases they are expected to.
+</para>
+<para>
+Each package has one top-level &CDL; script, which is specified in the
+packages <link
+linkend="language.database"><database>ecos.db</database> database
+entry</link>. Typically the name of this top-level script is related to
+the package, so the kernel package uses
+<filename>kernel.cdl</filename>, but this is just a convention. The
+first command in the top-level script should be &cdl-package;, and the
+name used should be the same as in the <database>ecos.db</database>
+database. There should be only one &cdl-package; command per package.
+</para>
+<para>
+The various &CDL; entities live in a hierarchy. For example the kernel
+package contains a scheduling component, a synchronization primitives
+component, and a number of others. The synchronization component
+contains various options such as whether or not mutex priority
+inheritance is enabled. There is no upper bound on how far components
+can be nested, but it is rarely necessary to go more than three or
+four levels deeper than the package level. Since the naming convention
+incorporates bits of the hierarchy, this has the added advantage of
+keeping the names down to a more manageable size.
+</para>
+<para>
+The hierarchy serves two purposes. It allows options to be controlled
+en masse, so disabling a component automatically disables all the
+options below it in the hierarchy. It also permits a much simpler
+representation of the configuration in the graphical configuration
+tool, facilitating navigation and modification.
+</para>
+<para>
+By default a package is placed at the top-level of the hierarchy, but
+it is possible to override this using a &parent; property. For example
+an architectural HAL package such as <varname>CYGPKG_HAL_SH</varname>
+typically re-parents itself below <varname>CYGPKG_HAL</varname>, and a
+platform HAL package would then re-parent itself below the
+architectural HAL. This makes it a little bit easier for users to
+navigate around the hierarchy. Components, options and interfaces can
+also be re-parented, but this is less common.
+</para>
+<para>
+All components, options and interfaces that are defined directly in
+the top-level script will be placed below the package in the hierarchy.
+Alternatively they can be nested in the body of the &cdl-package;
+command. The following two script fragments are equivalent:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_LIBC {
+    &hellip;
+}
+
+cdl_component CYGPKG_LIBC_STRING {
+    &hellip;
+}
+
+cdl_option CYGPKG_LIBC_CTYPE_INLINES {
+    &hellip;
+}
+</programlisting>
+<para>
+and:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_LIBC {
+    &hellip;
+
+    cdl_component CYGPKG_LIBC_STRING {
+        &hellip;
+    }
+
+    cdl_option CYGPKG_LIBC_CTYPE_INLINES {
+        &hellip;
+    }
+}
+</programlisting>
+<para>
+If a script defines options both inside and outside the body of the
+&cdl-package; then the ones inside will be processed first. Language
+purists may argue that it would have been better if all contained
+options and components had to go into the body, but in practice it is
+often convenient to be able to skip this level of nesting and the
+resulting behavior is still well-defined.
+</para>
+<para>
+Components can also contain options and other &CDL; entities, in fact
+that is what distinguishes them from options. These can be defined in
+the body of the &cdl-component; command:
+</para>
+<programlisting width=72>
+cdl_component CYGPKG_LIBC_STDIO {
+
+    cdl_component CYGPKG_LIBC_STDIO_FLOATING_POINT {
+        &hellip;
+    }
+
+    cdl_option CYGSEM_LIBC_STDIO_THREAD_SAFE_STREAMS {
+        &hellip;
+    }
+}
+</programlisting>
+<para>
+Nesting options inside the bodies of components like this is fine for
+simple packages with only a limited number of configuration options,
+but it becomes unsatisfactory as the number of options increases.
+Instead it is possible to split the &CDL; data into multiple &CDL;
+scripts, on a per-component basis. The &script; property should be
+used for this. For example, in the case of the C library all
+stdio-related configuration options could be put into
+<filename>stdio.cdl</filename>, and the top-level CDL script
+<filename>libc.cdl</filename> would contain the following:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_LIBC {
+    &hellip;
+
+    cdl_component CYGPKG_LIBC_STDIO {
+        &hellip;
+        script stdio.cdl
+    }
+}
+</programlisting>
+<para>
+The <varname>CYGPKG_LIBC_STDIO_FLOATING_POINT</varname> component and
+the <varname>CYGSEM_LIBC_STDIO_THREAD_SAFE_STREAMS</varname> option
+can then be placed at the top-level of <filename>stdio.cdl</filename>.
+It is possible to have some options nested in the body of a
+&cdl-component; command and other options in a separate file accessed
+by the &script; property. In such a case the nested options would be
+processed first, and then the other script would be read in. A script
+specified by a &script; property should only define new options,
+components or interfaces: it should not contain any additional
+properties for the current component.
+</para>
+<para>
+It is possible for a component's &CDL; script to have a sub-component
+which also has a &script; property, and so on. In practice excessive
+nesting like this is rarely useful. It is also possible to ignore the
+&CDL; language support for constructing hierarchies automatically and
+use the &parent; property explicitly for every single option and
+component. Again this is not generally useful.
+</para>
+<note>
+<para>
+At the time of writing interfaces cannot act as containers. This may
+change in a future version of the component framework. If the change
+is made then interfaces would support the &script; property, just like
+components.
+</para>
+</note>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ CDL properties         -->
+
+<!-- {{{ Introit                -->
+
+<sect1 id="language.properties">
+<title>CDL Properties</title>
+<para>
+Each package, component, option, and interface has a body of
+properties, which provide the component framework with information
+about how to handle each option. For example there is a property for a
+descriptive text message which can be displayed to a user who is
+trying to figure out just what effect manipulating the option would
+have on the target application. There is another property for the
+default value, for example whether a particular option should be
+enabled or disabled by default.
+</para>
+<para>
+All of the properties are optional, it is legal to define a
+configuration option which has an empty body. However some properties
+are more optional than others: users will not appreciate having to
+manipulate an option if they are not given any sort of description or
+documentation. Other properties are intended only for very specific
+purposes, for example &make-object; and &include-files;, and are used
+only rarely.
+</para>
+<para>
+Because different properties serve very different purposes, their
+syntax is not as uniform as the top-level commands. Some properties
+take no arguments at all. Other properties take a single argument such
+as a description string, or a list of arguments such as a &compile;
+property which specifies the file or files that should be compiled if
+a given option is active and enabled. The &define-proc; property takes
+as argument a snippet of &Tcl; code. The &active-if;, &calculated;,
+&default-value;, &legal-values; and &requires; properties take various
+expressions. Additional properties may be defined in future which take
+new kinds of arguments.
+</para>
+<para>
+All property parsing code supports options for every property,
+although at present the majority of properties do not yet take any
+options. Any initial arguments that begin with a hyphen character
+<literal>-</literal> will be interpreted as an option, for example:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_HAL_ARM {
+    &hellip;
+    make -priority 1 {
+        &hellip;
+    }
+}
+</programlisting>
+<para>
+If the option involves additional data, as for the
+<literal>-priority</literal> example above, then this can be written
+as either <literal>-priority=1</literal> or as
+<literal>-priority&nbsp;1</literal>. On occasion the option parsing
+code can get in the way, for example:
+</para>
+<programlisting width=72>
+cdl_option CYGNUM_LIBC_TIME_DST_DEFAULT_STATE {
+    &hellip;
+    legal_values -1 to 1
+    default_value -1
+}
+</programlisting>
+<para>
+Neither the &legal-values; nor the &default-value; property will
+accept <literal>-1</literal> as a valid option, so this will result in
+syntax errors when the &CDL; script is read in by the component
+framework. To avoid problems, the option parsing code will recognize
+the string <literal>--</literal> and will not attempt to interpret any
+subsequent arguments. Hence this option should be written as:
+</para>
+<programlisting width=72>
+cdl_option CYGNUM_LIBC_TIME_DST_DEFAULT_STATE {
+    &hellip;
+    legal_values  -- -1 to 1
+    default_value -- -1
+}
+</programlisting>
+<para>
+The property parsing code involves a recursive invocation of the Tcl
+interpreter that is used to parse the top-level commands. This means
+that some characters in the body of an option will be treated
+specially. The <literal>#</literal> character can be used for
+comments. The backslash character <literal>\</literal>, the
+dollar character <literal>$</literal>, square brackets
+<literal>[</literal> and <literal>]</literal>, braces
+<literal>{</literal> and <literal>}</literal>, and the quote character
+<literal>"</literal> may all receive special treatment. Most of the
+time this is not a problem because these characters are not useful for
+most properties. On occasion having a &Tcl; interpreter around
+performing the parser can be very powerful. For more details of
+how the presence of a &Tcl; interpreter can affect &CDL; scripts,
+see <xref linkend="language.tcl">.
+</para>
+<para>
+Many of the properties can be used in any of &cdl-package;,
+&cdl-component;, &cdl-option; or &cdl-interface;. Other properties are
+more specific. The &script; property is only relevant to components.
+The &define-header;, &hardware;, &include-dir;, &include-files;, and
+&library; properties apply to a package as a whole, so can only occur
+in the body of a &cdl-package; command. The &calculated;,
+&default-value;, &legal-values; and &flavor; properties are not
+relevant to packages, as will be explained later. The &calculated; and
+&default-value; properties are also not relevant to interfaces.
+</para>
+<para>
+This section lists the various properties, grouped by purpose. Each
+property also has a full reference page in <xref linkend="reference">.
+Properties related to values and expressions are described in more
+detail in <xref linkend="language.values">. Properties related to
+header file generation and to the build process are described in
+<xref linkend="build">.
+</para>
+
+<!-- }}} -->
+<!-- {{{ User-visible           -->
+
+<sect2 id="language.properties.user">
+<title>Information-providing Properties</title>
+<para>
+Users can only be expected to manipulate configuration options
+sensibly if they are given sufficient information about these options.
+There are three properties which serve to explain an option in plain
+text: the <link linkend="ref.display">&display;</link> property gives
+a textual alias for an option, which is usually more comprehensible
+than something like <literal>CYGPKG_LIBC_TIME_ZONES`</literal>; the
+<link linkend="ref.description">&description;</link> property gives a
+longer description, typically a paragraph or so; the <link
+linkend="ref.doc">&doc;</link> property specifies the location of
+additional on-line documentation related to a configuration option. In
+the context of a graphical tool the &display; string will be the
+primary way for users to identify configuration options; the
+&description; paragraph will be visible whenever the option is
+selected; the on-line documentation will only be accessed when the
+user explicitly requests it.
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_UITRON {
+    display       "uITRON compatibility layer"
+    doc           ref/ecos-ref.a.html
+    description   "
+        eCos supports a uITRON Compatibility Layer, providing
+        full Level S (Standard) compliance with Version 3.02 of
+        the uITRON Standard, plus many Level E (Extended) features.
+        uITRON is the premier Japanese embedded RTOS standard."
+    &hellip;
+}
+</programlisting>
+<para>
+All three properties take a single argument. For &display; and
+&description; this argument is just a string. For &doc; it should be a
+pointer to a suitable HTML file, optionally including an anchor within
+that page. If the <link linkend="package.hierarchy">directory layout
+conventions</link> are observed then the component framework will look
+for the HTML file in the package's <filename
+class="directory">doc</filename> sub-directory, otherwise the &doc;
+filename will be treated as relative to the package's top-level directory.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Hierarchy              -->
+
+<sect2 id="language.properties.hierarchy">
+<title>The Configuration Hierarchy</title>
+<para>
+There are two properties related to the hierarchical organization of
+components and options: <link linkend="ref.parent">&parent;</link> and
+<link linkend="ref.script">&script;</link>.
+</para>
+<para>
+The &parent; property can be used to move a &CDL; entity somewhere
+else in the hierarchy. The most common use is for packages, to avoid
+having all the packages appear at the top-level of the configuration
+hierarchy. For example an architectural HAL package such as
+<varname>CYGPKG_HAL_SH</varname> is placed below the common HAL
+package <varname>CYGPKG_HAL</varname> using a &parent; property.
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_HAL_SH {
+    display       "SH architecture"
+    parent        CYGPKG_HAL
+    &hellip;
+}
+</programlisting>
+<para>
+The &parent; property can also be used in the body of a
+&cdl-component;, &cdl-option; or &cdl-interface;, but this is less
+common. However care has to be taken since excessive re-parenting can
+be confusing. Care also has to be taken when reparenting below some
+other package that may not actually be loaded in a given
+configuration, since the resulting behavior is undefined.
+</para>
+<para>
+As a special case, if the parent is the empty string then the
+&CDL; entity is placed at the root of the hierarchy. This is useful
+for global preferences, default compiler flags, and other settings
+that may affect every package.
+</para>
+<para>
+The &script; property can only be used in the body of a
+&cdl-component; command. The property takes a single filename as
+argument, and this should be another &CDL; script containing
+additional options, sub-components and interfaces that should go below
+the current component in the hierarchy. If the <link
+linkend="package.hierarchy">directory layout conventions</link> are
+observed then the component framework will look for the specified file
+relative to the <filename class="directory">cdl</filename>
+subdirectory of the package, otherwise the filename will be treated as
+relative to the package's top-level directory.
+</para>
+<programlisting width=72>
+cdl_component CYGPKG_LIBC_STDIO {
+    display       "Standard input/output functions"
+    flavor        bool
+    requires      CYGPKG_IO
+    requires      CYGPKG_IO_SERIAL_HALDIAG
+    default_value 1
+    description   "
+        This enables support for standard I/O functions from &lt;stdio.h&gt;."
+
+    script        stdio.cdl
+}
+</programlisting>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Value                  -->
+
+<sect2 id="language.properties.value">
+<title>Value-related Properties</title>
+<para>
+There are seven properties which are related to option values and
+state: <link linkend="ref.flavor">&flavor;</link>,
+<link linkend="ref.calculated">&calculated;</link>,
+<link linkend="ref.default-value">&default-value;</link>,
+<link linkend="ref.legal-values">&legal-values;</link>,
+<link linkend="ref.active-if">&active-if;</link>,
+<link linkend="ref.implements">&implements;</link>, and
+<link linkend="ref.requires">&requires;</link>. More detailed
+information can be found in <xref linkend="language.values">.
+</para>
+<para>
+In the context of configurability, the concept of an option's value is
+somewhat non-trivial. First an option may or may not be loaded: it is
+possible to build a configuration which has the math library but not
+the kernel; however the math library's &CDL; scripts still reference
+kernel options, for example
+<varname>CYGSEM_LIBM_THREAD_SAFE_COMPAT_MODE</varname> has a
+&requires; constraint on
+<varname>CYGVAR_KERNEL_THREADS_DATA</varname>. Even if an option is
+loaded it may or may not be active, depending on what is happening
+higher up in the hierarchy: if the C library's
+<varname>CYGPKG_LIBC_STDIO</varname> component is disabled then some
+other options such as <varname>CYGNUM_LIBC_STDIO_BUFSIZE</varname>
+become irrelevant. In addition each option has both a boolean
+enabled/disabled flag and a data part. For many options only the
+boolean flag is of interest, while for others only the data part is of
+interest. The &flavor; property can be used to control this:
+</para>
+<variablelist>
+<varlistentry>
+<term><literal>flavor none</literal></term>
+<listitem>
+<para>
+This flavor indicates that neither the boolean nor the data parts are
+user-modifiable: the option is always enabled and the data is always
+set to <literal>1</literal>. The most common use for this is to have a
+component that just acts as a placeholder in the hierarchy, allowing
+various options to be grouped below it.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>flavor bool</literal></term>
+<listitem>
+<para>
+Only the boolean part of the option is user-modifiable. The data part
+is fixed at <literal>1</literal>.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>flavor data</literal></term>
+<listitem>
+<para>
+Only the data part of the option is user-modifiable. The boolean part
+is fixed at enabled.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>flavor booldata</literal></term>
+<listitem>
+<para>
+Both the boolean and the data part of the option are user-modifiable.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+<para>
+For more details of &CDL; flavors and how a flavor affects expression
+evaluation, and other consequences, see <xref
+linkend="language.values">. The &flavor; property cannot be used for a
+package because packages always have the <literal>booldata</literal>
+flavor. Options and components have the <literal>bool</literal> flavor
+by default, since most configuration choices are simple yes-or-no
+choices. Interfaces have the <literal>data</literal> flavor by default.
+</para>
+<para>
+The &calculated; property can be used for options which should not be
+user-modifiable, but which instead are fixed by the target hardware or
+determined from the current values of other options. In general
+&calculated; options should be avoided, since they can be confusing to
+users who need to figure out whether or not a particular option can
+actually be changed. There are a number of valid uses for &calculated;
+options, and quite a few invalid ones as well. The <link
+linkend="ref.calculated">reference packages</link> should be consulted
+for further details. The property takes an <link
+linkend="language.expression">ordinary &CDL; expression</link> as
+argument, for example:
+</para>
+<programlisting width=72>
+# A constant on some target hardware, perhaps user-modifiable on other
+# targets.
+cdl_option CYGNUM_HAL_RTC_PERIOD {
+    display       "Real-time clock period"
+    flavor        data
+    calculated    12500
+}
+</programlisting>
+<para>
+The &calculated; property cannot be used for packages or interfaces.
+The value of a package always corresponds to the version of that
+package which is loaded, and this is under user control. Interfaces
+are implicitly calculated, based on the number of active and enabled
+implementors.
+</para>
+<para>
+The &default-value; property is similar to &calculated;, but only
+specifies a default value which users can modify. Again this property
+is not relevant to packages or interfaces. A typical example would be:
+</para>
+<programlisting width=72>
+cdl_option CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT {
+    display       "Include GDB multi-threading debug support"
+    requires      CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+    default_value CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+    &hellip;
+}
+</programlisting>
+<para>
+The &legal-values; property imposes a constraint on the possible
+values of the data part of an option. Hence it is only applicable to
+options with the <literal>data</literal> or
+<literal>booldata</literal> flavors. It cannot be used for a package
+since the only valid value for a package is its version number. The
+arguments to the &legal-values; property should constitute a <link
+linkend="language.list-expression">&CDL; list expression</link>.
+</para>
+<programlisting width=72>
+cdl_option CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET {
+    display       "Default Standard Time offset"
+    flavor        data
+    legal_values  -- -90000 to 90000
+    default_value -- 0
+    &hellip;
+}
+</programlisting>
+<para>
+The &active-if; property does not relate directly to an option's
+value, but rather to its active state. Usually this is controlled via
+the configuration hierarchy: if the
+<varname>CYGPKG_LIBC_STDIO</varname> component is disabled then all
+options below it are inactive and do not have any consequences.
+In some cases the hierarchy does not provide sufficient control, for
+example an option should only be active if two disjoint sets of
+conditions are satisfied: the hierarchy could be used for one of these
+conditions, and an additional &active-if; property could be used for
+the other one. The arguments to &active-if; should constitute a
+<link linkend="language.goal-expression">&CDL; goal expression</link>.
+</para>
+<programlisting width=72>
+# Do not provide extra semaphore debugging if there are no semaphores
+cdl_option CYGDBG_KERNEL_INSTRUMENT_BINSEM {
+    active_if CYGPKG_KERNEL_SYNCH
+    &hellip;
+}
+</programlisting>
+<para>
+The &implements; property is related to the concept of <link
+linkend="language.interface">&CDL; interfaces</link>. If an option is
+active and enabled and it implements a particular interface then it
+contributes <literal>1</literal> to that interface's value.
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_NET_EDB7XXX_ETH_DRIVERS {
+    display       "Cirrus Logic ethernet driver"
+    implements    CYGHWR_NET_DRIVERS
+    implements    CYGHWR_NET_DRIVER_ETH0
+    &hellip;
+}
+</programlisting>
+<para>
+The &requires; property is used to impose constraints on the user's
+choices. For example it is unreasonable to expect the C library to
+provide thread-safe implementations of certain functions if the
+underlying kernel support has been disabled, or even if the kernel is
+not being used at all.
+</para>
+<programlisting width=72>
+cdl_option CYGSEM_LIBC_PER_THREAD_ERRNO {
+    display       "Per-thread errno"
+    doc           ref/ecos-ref.15.html
+    requires      CYGVAR_KERNEL_THREADS_DATA
+    default_value 1
+    &hellip;
+}
+</programlisting>
+<para>
+The arguments to the &requires; property should be a <link
+linkend="language.goal-expression">&CDL; goal expression</link>.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Header file generation -->
+
+<sect2 id="language.properties.define">
+<title>Generating the Configuration Header Files</title>
+<para>
+When creating or updating a build tree the component framework will
+also generate configuration header files, one per package. By default
+it will generate a <literal>#define</literal> for each option,
+component or interface that is active and enabled. For options with
+the <literal>data</literal> or <literal>booldata</literal> flavors the
+<literal>#define</literal> will use the option's data part, otherwise
+it will use the constant <literal>1</literal>. Typical output would
+include:
+</para>
+<programlisting width=72>
+#define CYGFUN_LIBC_TIME_POSIX 1
+#define CYGNUM_LIBC_TIME_DST_DEFAULT_STATE -1
+</programlisting>
+<para>
+There are six properties which can be used to control the header file
+generation process:
+<link linkend="ref.define-header">&define-header;</link>,
+<link linkend="ref.no-define">&no-define;</link>,
+<link linkend="ref.define-format">&define-format;</link>,
+<link linkend="ref.define">&define;</link>,
+<link linkend="ref.if-define">&if-define;</link>, and
+<link linkend="ref.define-proc">&define-proc;</link>.
+</para>
+<para>
+By default the component framework will generate a configuration
+header file for each package based on the package's name: everything
+up to and including the first underscore is discarded, the rest of the
+name is lower-cased, and a <literal>.h</literal> suffix is appended.
+For example the configuration header file for the kernel package
+<varname>CYGPKG_KERNEL</varname> is <filename
+class="headerfile">pkgconf/kernel.h</filename>. The &define-header;
+property can be used to specify an alternative filename. This applies
+to all the components and options within a package, so it can only be
+used in the body of a &cdl-package; command. For example the following
+specifies that the configuration header file for the SPARClite HAL
+package is <filename
+class="headerfile">pkgconf/hal_sparclite.h</filename>.
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_HAL_SPARCLITE {
+    display "SPARClite architecture"
+    parent        CYGPKG_HAL
+    hardware
+    define_header hal_sparclite.h
+    &hellip;
+}
+</programlisting>
+<note>
+<para>
+At present the main use for the &define-header; property is related 
+to hardware packages, see the <link linkend="ref.hardware">reference
+pages</link> for more details.
+</para>
+</note>
+<para>
+The &no-define; property is used to suppress the generation of the
+default <literal>#define</literal>. This can be useful if an option's
+consequences are all related to the build process or to constraints,
+and the option is never actually checked in any source code. It can
+also be useful in conjunction with the &define;, &if-define; or
+&define-proc; properties. The &no-define; property does not take any
+arguments. 
+</para>
+<programlisting width=72>
+cdl_component CYG_HAL_STARTUP {
+    display       "Startup type"
+    flavor        data
+    legal_values  { "RAM" "ROM" }
+    default_value {"RAM"}
+    no_define
+    define -file system.h CYG_HAL_STARTUP
+    &hellip;
+}
+</programlisting>
+<para>
+This example also illustrates the &define; property, which can be used
+to generate a <literal>#define</literal> in addition to the default
+one. It takes a single argument, the name of the symbol to be defined.
+It also takes options to control the configuration header file in
+which the symbol should be defined and the format to be used.
+</para>
+<para>
+The &define-format; property can be used to control how the value part
+of the default <literal>#define</literal> gets formatted. For example
+a format string of  <literal>"0x%04x"</literal> could be used to
+generate a four-digit hexadecimal number. 
+</para>
+<para>
+The &if-define; property is intended for use primarily to control
+assertions, tracing, and similar functionality. It supports a specific
+implementation model for these, allowing control at the grain of
+packages or even individual source files. The <link
+linkend="ref.if-define">reference pages</link> provide additional
+information.
+</para>
+<para>
+The &define-proc; property provides an escape mechanism for those
+cases where something special has to happen at configuration header
+file generation time. It takes a single argument, a fragment of &Tcl;
+code, which gets executed when the header file is generated. This code
+can output arbitrary data to the header file, or perform any other
+actions that might be appropriate.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Builds                 -->
+
+<sect2 id="language.properties.build">
+<title>Controlling what gets Built</title>
+<para>
+There are six properties which affect the build process:
+<link linkend="ref.compile">&compile;</link>,
+<link linkend="ref.make">&make;</link>,
+<link linkend="ref.make-object">&make-object;</link>,
+<link linkend="ref.library">&library;</link>,
+<link linkend="ref.include-dir">&include-dir;</link>, and
+<link linkend="ref.include-files">&include-files;</link>.
+The last three apply to a package as a whole, and can only occur in
+the body of a &cdl-package; command.
+</para>
+<para>
+Most of the source files that go into a package should simply be
+compiled with the appropriate compiler, selected by the target
+architecture, and with the appropriate flags, with an additional set
+defined by the target hardware and possible modifications on a
+per-package basis. The resulting object files will go into the library
+<filename>libtarget.a</filename>, which can then be linked against
+application code. The &compile; property is used to list these source
+files: 
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_ERROR {
+    display       "Common error code support"
+    compile       strerror.cxx
+    include_dir   cyg/error
+    &hellip;
+}
+</programlisting>
+<para>
+The arguments to the &compile; property should be one or more source
+files. Typically most of the sources will be needed for the package as
+a whole, and hence they will be listed in one or more &compile;
+properties in the body of the &cdl-package;. Some sources may be
+specific to particular configuration options, in other words there is
+no point in compiling them unless that option is enabled, in which
+case the sources should be listed in a &compile; property in the
+corresponding &cdl-option;, &cdl-component; or &cdl-interface; body.
+</para>
+<para>
+Some packages may have more complicated build requirements, for
+example they may involve a special target such as a linker script
+which should not end up in the usual library, or they may involve
+special build steps for generating an object file. The &make; and
+&make-object; properties provide support for such requirements, for
+example:
+</para>
+<programlisting>
+cdl_package CYGPKG_HAL_MN10300_AM33 {
+    display       "MN10300 AM33 variant"
+    &hellip;
+    make {
+        &lt;PREFIX&gt;/lib/target.ld: &lt;PACKAGE&gt;/src/mn10300_am33.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) \
+            $(CFLAGS) -o $@ $&lt;
+        @echo $@ ": \\" &gt; $(notdir $@).deps
+        @tail +2 target.tmp &gt;&gt; $(notdir $@).deps
+        @echo &gt;&gt; $(notdir $@).deps
+        @rm target.tmp
+    }
+}
+</programlisting>
+<para>
+For full details of custom build steps and the build process
+generally, see <xref linkend="build">.
+</para>
+<para>
+By default all object files go into the library
+<filename>libtarget.a</filename>. It is possible to override this at
+the package level using the &library; property, but this should be
+avoided since it complicates application development: instead of just
+linking with a single library for all &eCos;-related packages, it
+suddenly becomes necessary to link with several libraries.
+</para>
+<para>
+The &include-dir; and &include-files; properties relate to a package's
+exported header files. By default a package's header files will be
+exported to the <filename class="directory">install/include</filename>
+directory. This is the desired behavior for some packages like the C
+library, since headers like <filename
+class="headerfile">stdio.h</filename> should exist at that level.
+However if all header files were to end up in that directory then
+there would be a significant risk of a name clash. Instead it is
+better for packages to specify some sub-directory for their exported
+header files, for example:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_INFRA {
+    display       "Infrastructure"
+    include_dir   cyg/infra
+    &hellip;
+}
+</programlisting>
+<para>
+The various header files exported by the infrastructure, for example
+<filename class="headerfile">cyg_ass.h</filename> and <filename
+class="headerfile">cyg_trac.h</filename> will now end up in the
+<filename class="directory">install/include/cyg/infra</filename>
+sub-directory, where a name clash is very unlikely.
+</para>
+<para>
+For packages which follow the <link
+linkend="package.hierarchy">directory layout conventions</link> the
+component framework will assume that the package's
+<filename class="directory">include</filename> sub-directory contains
+all exported header files. If this is not the case, for example
+because the package is sufficiently simple that the layout convention
+is inappropriate, then the exported header files can be listed
+explicitly in an &include-files; property.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Miscellaneous          -->
+
+<sect2 id="language.properties.miscellaneous">
+<title>Miscellaneous Properties</title>
+<para>
+The <link linkend="ref.hardware">&hardware;</link> property is
+only relevant to packages. Some packages such as device drivers and
+HAL packages are hardware-specific, and generally it makes no sense to
+add such packages to a configuration unless the corresponding hardware
+is present on your target system. Typically hardware package selection
+happens automatically when you select your target. The &hardware;
+property should be used to identify a hardware-specific package, and
+does not take any arguments.
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_HAL_MIPS {
+    display "MIPS architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mips.h
+    &hellip;
+}
+</programlisting>
+<para>
+At present the &hardware; property is largely ignored by the component
+framework. This may change in future releases.
+</para>
+</sect2>
+
+<!-- }}} -->
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Naming conventions     -->
+
+<sect1 id="language.naming">
+<title>Option Naming Convention</title>
+<para>
+All the options in a given configuration live in the same namespace.
+Furthermore it is not possible for two separate options to have the
+same name, because this would make any references to those options in
+&CDL; expressions ambiguous. A naming convention exists to avoid
+problems. It is recommended that component writers observe some or all
+of this convention to reduce the probability of name clashes with
+other packages.
+</para>
+<para>
+There is an important restriction on option names. Typically the
+component framework will output a <literal>#define</literal> for every
+active and enabled option, using the name as the symbol being defined.
+This requires that all names are valid C preprocessor symbols, a
+limitation that is enforced even for options which have the
+&no-define; property. Preprocessor symbols can be any sequence of
+lower case letters <literal>a</literal>-<literal>z</literal>, upper
+case letters, <literal>A</literal>-<literal>Z</literal>, the
+underscore character <literal>_</literal>, and the digits
+<literal>0</literal>-<literal>9</literal>. The first character must be
+a non-digit. Using an underscore as the first character is
+discouraged, because that may clash with reserved language
+identifiers. In addition there is a convention that preprocessor
+symbols only use upper case letters, and some component writers may
+wish to follow this convention.
+</para>
+<para>
+A typical option name could be something like
+<varname>CYGSEM_KERNEL_SCHED_BITMAP</varname>. This name consists of
+several different parts:
+</para>
+<orderedlist>
+<listitem>
+<para>
+The first few characters, in this case the three letters
+<literal>CYG</literal>, are used to identify the organization that
+produced the package. For historical reasons packages produced by Red
+Hat tend to use the prefix <literal>CYG</literal> rather than
+<literal>RHAT</literal>. Component writers should use their own
+prefix: even when cutting and pasting from an existing &CDL; script
+the prefix should be changed to something appropriate to their
+organization. 
+</para>
+<para>
+It can be argued that a short prefix, often limited to upper case
+letters, is not sufficiently long to eliminate the possibility of
+name clashes. A longer prefix could be used, for example one based on
+internet domain names. However the C preprocessor has no concept of
+namespaces or <literal>import</literal> directives, so it would always
+be necessary to use the full option name in component source code
+which gets tedious - option names tend to be long enough as it is.
+There is a small increased risk of name clashes, but this risk is felt
+to be acceptable.
+</para>
+</listitem>
+<listitem>
+<para>
+The next three characters indicate the nature of the option, for
+example whether it affects the interface or just the implementation. A
+list of common tags is given below.
+</para>
+</listitem>
+<listitem>
+<para>
+The <literal>KERNEL_SCHED</literal> part indicates the location of the
+option within the overall hierarchy. In this case the option is part of
+the scheduling component of the kernel package. Having the hierarchy
+details as part of the option name can help in understanding
+configurable code and further reduces the probability of a name clash.
+</para>
+</listitem>
+<listitem>
+<para>
+The final part, <literal>BITMAP</literal>, identifies the option
+itself. 
+</para>
+</listitem>
+</orderedlist>
+<para>
+The three-character tag is intended to provide some additional
+information about the nature of the option. There are a number of
+pre-defined tags. However for many options there is a choice:
+options related to the platform should normally use
+<literal>HWR</literal>, but numerical options should normally use
+<literal>NUM</literal>; a platform-related numerical option such as
+the size of an interrupt stack could therefore use either tag.
+There are no absolute rules, and it is left to component writers to
+interpret the following guidelines:
+</para>
+<variablelist>
+<varlistentry>
+<term><literal>xxxARC_</literal></term>
+<listitem><para>
+The <literal>ARC</literal> tag is intended for options related
+to the processor architecture. Typically such options will only occur
+in architectural or variant HAL packages.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxHWR_</literal></term>
+<listitem><para>
+The <literal>HWR</literal> tag is intended for options related to
+the specific target board. Typically such options will only occur in
+platform HAL packages.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxPKG_</literal></term>
+<listitem><para>
+This tag is intended for packages or components, in other words
+options which extend the configuration hierarchy. Arguably a
+<literal>COM</literal> tag would be more appropriate for
+components, but this could be confusing because of the considerable
+number of computing terms that begin with com.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxGLO_</literal></term>
+<listitem><para>
+This is intended for global configuration options, especially
+preferences.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxDBG_</literal></term>
+<listitem><para>
+The <literal>DBG</literal> tag indicates that the option is in
+some way related to debugging, for example it may enable assertions in
+some part of the system.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxTST_</literal></term>
+<listitem><para>
+This tag is for testing-related options. Typically these do not
+affect actual application code, instead they control the interaction
+between target-side test cases and a host-side testing infrastructure.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxFUN_</literal></term>
+<listitem><para>
+This is for configuration options which affect the interface of a
+package. There are a number of related tag which are also
+interface-related. <literal>xxxFUN_</literal> is intended primarily
+for options that control whether or not one or more functions are
+provided by the package, but can also be used if none of the other
+interface-related tags is applicable.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxVAR_</literal></term>
+<listitem><para>
+This is analogous to <literal>FUN</literal> but controls the presence
+or absence of one or more variables or objects.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxCLS_</literal></term>
+<listitem><para>
+The <literal>CLS</literal> tag is intended only for packages that
+provide an object-oriented interface, and controls the presence or
+absence of an entire class.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxMFN_</literal></term>
+<listitem><para>
+This is also for object-orientated interfaces, and indicates the
+presence or absence of a member function rather than an entire class.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxSEM_</literal></term>
+<listitem><para>
+A <literal>SEM</literal> option does not affect the interface (or if
+does affect the interface, this is incidental). Instead it is used for
+options which have a fundamental effect on the semantic behavior of a
+package. For example the choice of kernel schedulers is semantic in
+nature: it does not affect the interface, in particular the function
+<function>cyg_thread_create</function> exists irrespective of which
+scheduler has been selected. However it does have a major impact on
+the system's behavior.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxIMP_</literal></term>
+<listitem><para>
+<literal>IMP</literal> is for implementation options. These do not
+affect either the interface or the semantic behavior (with the
+possible exception of timing-related changes). A typical
+implementation option controls whether or not a particular function or
+set of functions should get inlined.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxNUM_</literal></term>
+<listitem><para>
+This tag is for numerical options, for example the number of
+scheduling priority levels.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxDAT_</literal></term>
+<listitem><para>
+This is for data items that are not numerical in nature, for example a
+device name.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxBLD_</literal></term>
+<listitem><para>
+The <literal>BLD</literal> tag indicates an option that affects
+the build process, for example compiler flag settings.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxINT_</literal></term>
+<listitem><para>
+This should normally be used for &CDL; interfaces, which is a language
+construct that is largely independent from the interface exported by a
+package via its header files. For more details of &CDL; interfaces
+see <xref linkend="language.interface">.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxPRI_</literal></term>
+<listitem><para>
+This tag is not normally used for configuration options. Instead
+it is used by &CDL; scripts to pass additional private information to
+the source code via the configuration header files, typically inside a
+&define-proc; property.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>xxxSRC_</literal></term>
+<listitem><para>
+This tag is not normally used for configuration options. Instead
+it can be used by package source code to interact with such options,
+especially in the context of the &if-define; property.
+</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+There is one special case of a potential name clash that is worth
+mentioning here. When the component framework generates a
+configuration header file for a given package, by default it will use
+a name derived from the package name (the &define-header; property can
+be used to override this). The file name is constructed from the
+package name by removing everything up to and including the first
+underscore, converting the remainder of the name to lower case, and
+appending a <literal>.h</literal> suffix. For example the kernel
+package <varname>CYGPKG_KERNEL</varname> will involve a header file
+<filename class="headerfile">pkgconf/kernel.h</filename>. If a
+configuration contained some other package
+<varname>XYZPKG_KERNEL</varname> then this would attempt to use the
+same configuration header file, with unfortunate effects. Case
+sensitivity could introduce problems as well, so a package
+<varname>xyzpkg_kernel</varname> would involve the same problem. Even
+if the header file names preserved the case of the package name, not
+all file systems are case sensitive. There is no simple solution to
+this problem. Changing the names of the generated configuration header
+files would involve a major incompatible change to the interface, to
+solve a problem which is essentially hypothetical in nature.
+</para>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Introduction to Tcl    -->
+
+<sect1 id="language.tcl">
+<title>An Introduction to Tcl</title>
+
+<para>
+All &CDL; scripts are implemented as &Tcl; scripts, and are read in by
+running the data through a standard &Tcl; interpreter, extended with a
+small number of additional commands such as
+<literal>cdl_option</literal> and <literal>cdl_component</literal>.
+Often it is not necessary to know the full details of &Tcl; syntax.
+Instead it is possible to copy an existing script, perform some copy
+and paste operations, and make appropriate changes to names and to
+various properties. However there are also cases where an
+understanding of &Tcl; syntax is very desirable, for example:
+</para>
+
+<programlisting width=72>
+cdl_option CYGDAT_UITRON_MEMPOOLFIXED_EXTERNS {
+    display       "Externs for initialization"
+    flavor        data
+    default_value {"static char fpool1[ 2000 ], \\\n\
+	                        fpool2[ 2000 ], \\\n\
+	                        fpool3[ 2000 ];"}
+    &hellip;
+}
+</programlisting>
+
+<para>
+This causes the &cdl-option; command to be executed, which in turn
+evaluates its body in a recursive invocation of the &Tcl; interpreter.
+When the &default-value; property is encountered the braces around the
+value part are processed by the interpreter, stopping it from doing
+further processing of the braced contents (except for backslash
+processing at the end of a line, that is special). In particular it
+prevents command substitution for
+<literal>[&nbsp;2000&nbsp;]</literal>. A single argument will be
+passed to the &default-value; command which expects a &CDL;
+expression, so the expression parsing code is passed the following:
+</para>
+
+<screen width=72>
+"static char fpool1[ 2000 ], \\\n fpool2[ 2000 ], \\\n fpool3[ 2000 ];"
+</screen>
+
+<para>
+The &CDL; expression parsing code will treat this as a simple string
+constant, as opposed to a more complicated expression involving other
+options and various operators. The string parsing code will perform
+the usual backslash substitutions so the actual default value will be:
+</para>
+<screen width=72>
+static char fpool1[ 2000 ], \
+ fpool2[ 2000 ], \
+ fpool3[ 2000 ];
+</screen>
+
+<para>
+If the user does not modify the option's value then the following
+will be generated in the appropriate configuration header file:
+</para>
+<programlisting width=72>
+#define CYGDAT_UITRON_MEMPOOLFIXED_EXTERNS static char fpool1[ 2000 ], \
+ fpool2[ 2000 ], \
+ fpool3[ 2000 ];
+</programlisting>
+
+<para>
+Getting this desired result usually requires an understanding of both
+&Tcl; syntax and &CDL; expression syntax. Sometimes it is possible to
+substitute a certain amount of trial and error instead, but this may
+prove frustrating. It is also worth pointing out that many &CDL;
+scripts do not involve this level of complexity. On the other hand,
+some of the more advanced features of the &CDL; language involve
+fragments of &Tcl; code, for example the &define-proc; property. To
+use these component writers will need to know about the full &Tcl;
+language as well as the syntax.
+</para>
+<para>
+Although the current example may seem to suggest that &Tcl; is rather
+complicated, it is actually a very simple yet powerful scripting
+language: the syntax is defined by just eleven rules. On occasion this
+simplicity means that Tcl's behavior is subtly different from other
+languages, which can confuse newcomers.
+</para>
+<para>
+When the Tcl interpreter is passed some data such as
+<literal>puts&nbsp;Hello</literal>, it splits this data into a command
+and its arguments. The command will be terminated by a newline or by a
+semicolon, unless one of the quoting mechanisms is used. The command
+and each of its arguments are separated by white space. So in the
+following example:
+</para>
+<screen width=72>
+puts Hello
+set x 42
+</screen>
+<para>
+This will result in two separate commands being executed. The first
+command is <literal>puts</literal> and is passed a single argument,
+<literal>Hello</literal>. The second command is <literal>set</literal>
+and is passed two arguments, <literal>x</literal> and
+<literal>42</literal>. The intervening newline character serves to
+terminate the first command, and a semi-colon separator could be used
+instead: 
+</para>
+<screen width=72>
+puts Hello;set x 42
+</screen>
+<para>
+Any white space surrounding the semicolon is just ignored because it
+does not serve to separate arguments.
+</para>
+<para>
+Now consider the following:
+</para>
+<screen width=72>
+set x Hello world
+</screen>
+<para>
+This is not valid &Tcl;. It is an attempt to invoke the
+<literal>set</literal> command with three arguments:
+<literal>x</literal>, <literal>Hello</literal>, and
+<literal>world</literal>. The <literal>set</literal> only takes two
+arguments, a variable name and a value, so it is necessary to combine
+the data into a single argument by quoting:
+</para>
+<screen width=72>
+set x "Hello world"
+</screen>
+<para>
+When the &Tcl; interpreter encounters the first quote character it
+treats all subsequent data up to but not including the closing quote
+as part of the current argument. The quote marks are removed by the
+interpreter, so the second argument passed to the
+<literal>set</literal> command is just <literal>Hello world</literal>
+without the quote characters. This can be significant in the context
+of &CDL; scripts. For example:
+</para>
+<programlisting width=72>
+cdl_option CYG_HAL_STARTUP {
+    &hellip;
+    default_value "RAM"
+}
+</programlisting>
+<para>
+The &Tcl; interpreter strips off the quote marks so the &CDL;
+expression parsing code sees <literal>RAM</literal> instead of
+<literal>"RAM"</literal>. It will treat this as a reference to
+some unknown option <varname>RAM</varname> rather than as a string
+constant, and the expression evaluation code will use a value of
+<literal>0</literal> when it encounters an option that is not
+currently loaded. Therefore the option
+<varname>CYG_HAL_STARTUP</varname> ends up with a default value of
+<literal>0</literal>. Either braces or backslashes should be used to
+avoid this, for example
+<literal>default_value&nbsp;{&nbsp;"RAM"&nbsp;}</literal>. 
+</para>
+<note>
+<para>
+There are long-term plans to implement some sort of &CDL; validation
+utility <application class="software">cdllint</application> which
+could catch common errors like this one.
+</para>
+</note>
+<para>
+A quoted argument continues until the closing quote character is
+encountered, which means that it can span multiple lines. Newline or
+semicolon characters do not terminate the current command in such
+cases. &description; properties usually make use of this:
+</para>
+<programlisting width=72>
+cdl_package CYGPKG_ERROR {
+    description   "
+        This package contains the common list of error and
+        status codes. It is held centrally to allow
+        packages to interchange error codes and status
+        codes in a common way, rather than each package
+        having its own conventions for error/status
+        reporting. The error codes are modelled on the
+        POSIX style naming e.g. EINVAL etc. This package
+        also provides the standard strerror() function to
+        convert error codes to textual representation."
+    &hellip;
+}
+</programlisting>
+<para>
+The &Tcl; interpreter supports much the same forms of backslash
+substitution as other common programming languages. Some backslash
+sequences such as <literal>\n</literal> will be replaced by the
+appropriate character. The sequence <literal>\\</literal> will be
+replaced by a single backslash. A backslash at the very end of a line
+will cause that backslash, the newline character, and any white space
+at the start of the next line to be replaced by a single space. Hence
+the following two Tcl commands are equivalent:
+</para>
+<programlisting width=72>
+puts  "Hello\nworld\n"
+puts \
+"Hello
+world
+"
+</programlisting>
+<para>
+If a &description; string needs to contain quote marks or other
+special characters then backslash escapes can be used. In addition to
+quote and backslash characters, the Tcl interpreter treats square
+brackets, the <literal>$</literal> character, and braces specially.
+Square brackets are used for command substitution, for example:
+</para>
+<screen width=72>
+puts "The answer is [expr 6 * 9]"
+</screen>
+<para>
+When the Tcl interpreter encounters the square brackets it will treat
+the contents as another command that should be executed first, and the
+result of executing that is used when continuing to process the
+script. In this case the Tcl interpreter will execute the command
+<literal>expr 6 * 9</literal>, yielding a result of 42
+<footnote>
+<para>
+It is possible that some versions of the Tcl interpreter will instead
+produce a result of 54 when asked to multiply six by nine. Appropriate
+<ulink url="http://www.douglasadams.com/creations/hhgg.html">reference
+documentation</ulink> should be consulted for more information on why
+42 is in fact the correct answer.
+</para>
+</footnote>
+and then the
+Tcl interpreter will execute <literal>puts "The answer is 42"</literal>.
+It should be noted that the interpreter performs only one level
+of substitution: if the result of performing command substitution
+performs further special characters such as square brackets then these
+will not be treated specially.
+</para>
+<para>
+Command substitution will not prove useful for many &CDL; scripts,
+except for e.g. a &define-proc; property which involves a fragment of
+&Tcl; code. Potentially there are some interesting uses, for example
+to internationalize &display; strings. However care does have to be
+taken to avoid unexpected command substitution, for example if an
+option description involves square brackets then typically these would
+require backslash-escapes.
+</para>
+<para>
+The <literal>$</literal> character is used in Tcl scripts to perform
+variable substitution:
+</para>
+<programlisting width=72>
+set x [expr 6 * 9]
+puts "The answer is $x"
+</programlisting>
+<para>
+Variable substitution, like command substitution, is unlikely to
+prove useful for many &CDL; scripts except in the context of
+&Tcl; fragments. If it is necessary to have a <literal>$</literal>
+character then a backslash escape may have to be used.
+</para>
+<para>
+Braces are used to collect a sequence of characters into a single
+argument, just like quotes. The difference is that variable, command
+and backslash substitution do not occur inside braces (with the
+sole exception of backslash substitution at the end of a line).
+Therefore given a line in a &CDL; script such as:
+</para>
+<programlisting width=72>
+default_value {"RAM"}
+</programlisting>
+<para>
+The braces are stripped off by the &Tcl; interpreter, leaving
+<literal>"RAM"</literal> which will be handled as a string constant by
+the expression parsing code. The same effect could be achieved using
+one of the following:
+</para>
+<programlisting width=72>
+default_value \"RAM\"
+default_value "\"RAM\""
+</programlisting>
+<para>
+Generally the use of braces is less confusing. At this stage it is
+worth noting that the basic format of &CDL; data makes use of
+braces:
+</para>
+<programlisting width=72>
+cdl_option &lt;name&gt; {
+     &hellip;
+};
+</programlisting>
+<para>
+The &cdl-option; command is passed two arguments, a name and a body,
+where the body consists of everything inside the braces but not the
+braces themselves. This body can then be executed in a recursive
+invocation of the &Tcl; interpreter. If a &CDL; script contains
+mismatched braces then the interpreter is likely to get rather
+confused and the resulting diagnostics may be difficult to understand. 
+</para>
+<para>
+Comments in Tcl scripts are introduced by a hash character
+<literal>#</literal>. However, a hash character only introduces a
+comment if it occurs where a command is expected. Consider the
+following:
+</para>
+<programlisting width=72>
+# This is a comment
+puts "Hello" # world
+</programlisting>
+<para>
+The first line is a valid comment, since the hash character occurs
+right at the start where a command name is expected. The second line
+does not contain a comment. Instead it is an attempt to invoke the
+<literal>puts</literal> command with three arguments:
+<literal>Hello</literal>, <literal>#</literal> and
+<literal>world</literal>. These are not valid arguments for the
+<literal>puts</literal> command so an error will be raised.
+If the second line was rewritten as:
+</para>
+<programlisting width=72>
+puts "Hello"; # world
+</programlisting>
+<para>
+then this is a valid Tcl script. The semicolon identifies the end of
+the current command, so the hash character occurs at a point where the
+next command would start and hence it is interpreted as the start of a
+comment.
+</para>
+<para>
+This handling of comments can lead to subtle behavior. Consider the
+following:
+</para>
+<programlisting width=72>
+cdl_option WHATEVER {
+# This is a comment }
+    default_value 0
+    &hellip;
+}
+</programlisting>
+<para>
+Consider the way the Tcl interpreter processes this. The command name
+and the first argument do not pose any special difficulties. The
+opening brace is interpreted as the start of the next argument, which
+continues until a closing brace is encountered. In this case the
+closing brace occurs on the second line, so the second argument passed
+to <literal>cdl_option</literal> is
+<literal>\n&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;This&nbsp;is&nbsp;a&nbsp;comment
+</literal>. This second argument is processed in a recursive
+invocation of the Tcl interpreter and does not contain any commands,
+just a comment. Top-level script processing then resumes, and the next
+command that is encountered is <literal>default_value</literal>. Since
+the parser is not currently processing a configuration option this is
+an error. Later on the Tcl interpreter would encounter a closing brace
+by itself, which is also an error.
+</para>
+<para>
+For component writers who need more information about &Tcl;,
+especially about the language rather than the syntax, various
+resources are available. A reasonable starting point is the
+<ulink url="http://www.tcl.tk/scripting/">Scriptics developer
+web site</ulink>.
+</para>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Values and Expressions -->
+
+<sect1 id="language.values">
+<title>Values and Expressions</title>
+
+<!-- {{{ Introit                -->
+
+<para>
+It is fairly reasonable to expect that enabling or disabling a
+configuration option such as
+<varname>CYGVAR_KERNEL_THREADS_DATA</varname> in some way affects its
+<emphasis>value</emphasis>. This will have an effect on any
+expressions that reference this option such as
+<literal>requires&nbsp;CYGVAR_KERNEL_THREADS_DATA</literal>. It will
+also affect the consequences of that option: how it affects the build
+process and what happens to any constraints that
+<varname>CYGVAR_KERNEL_THREADS_DATA</varname> may impose (as opposed
+to constraints on this option imposed by others).
+</para>
+<para>
+In a language like C the handling of variables is relatively
+straightforward. If a variable <varname>x</varname> gets referenced in
+an expression such as <literal>if&nbsp;(x&nbsp;!=&nbsp;0)</literal>,
+and that variable is not defined anywhere, then the code will fail to
+build, typically with an unresolved error at link-time. Also in C
+a variable <varname>x</varname> does not live in any hierarchy, so its
+value for the purposes of expression evaluation is not affected by
+anything else. C variables also have a clear type such as
+<literal>int</literal> or <literal>long&nbsp;double</literal>. 
+</para>
+<para>
+In &CDL; things are not so straightforward.
+</para>
+
+<!-- }}} -->
+<!-- {{{ Option Values          -->
+
+<sect2 id="language.values.value">
+<!-- {{{ Introit       -->
+
+<title>Option Values</title>
+
+<para>
+There are four factors which go into an option's value:
+</para>
+<orderedlist>
+<listitem>
+<para>
+An option may or may not be loaded.
+</para>
+</listitem>
+<listitem>
+<para>
+If the option is loaded, it may or may not be active.
+</para>
+</listitem>
+<listitem>
+<para>
+Even if the option is active, it may or may not be enabled.
+</para>
+</listitem>
+<listitem>
+<para>
+If the option is loaded, active and enabled then it will have some
+associated data which constitutes its value.
+</para>
+</listitem>
+</orderedlist>
+
+<!-- }}} -->
+<!-- {{{ Loaded        -->
+
+<sect3 id="language.values.value.loaded">
+<title>Is the Option Loaded?</title>
+
+<para>
+At any one time a configuration will contain only a subset of all
+possible packages. In fact it is impossible to combine certain
+packages in a single configuration. For example architectural HAL
+packages should contain a set of options defining endianness, the
+sizes of basic data types and so on (many of which will of course be
+constant for any given architecture). Any attempt to load two
+architectural HAL packages into a configuration will fail because of
+the resulting name clash. Since &CDL; expressions can reference
+options in other packages, and often need to do so, it is essential to
+define the resulting behavior.
+</para>
+<para>
+One complication is that the component framework does not know about
+every single option in every single package. Obviously it cannot know
+about packages from arbitrary third parties which have not been
+installed. Even for packages which have been installed, the current
+repository database does not hold details of every option, only of the
+packages themselves. If a &CDL; expression contains a reference to
+some option <varname>CYGSEM_KERNEL_SCHED_TIMESLICE</varname> then the
+component framework will only know about this option if the kernel
+package is actually loaded into the current configuration. If the
+package is not loaded then theoretically the framework might guess
+that the option is somehow related to the kernel by examining the
+option name but this would not be robust: the option could easily be
+part of some other package that violates the naming convention.
+</para>
+<para>
+Assume that the user is building a minimal configuration which does
+not contain the kernel package, but does have other packages which
+contain the following constraints:
+</para>
+<programlisting width=72>
+    requires CYGPKG_KERNEL
+    requires CYGPKG_KERNEL_THREADS_DATA
+    requires !CYGSEM_KERNEL_SCHED_TIMESLICE
+</programlisting>
+<para>
+Clearly the first constraint is not satisfied because the kernel is
+not loaded. The second constraint is also not satisfied. The third
+constraint is trivially satisfied: if there is no kernel then the
+kernel's timeslicing support cannot possibly be enabled. 
+</para>
+<para>
+Any options which are not in the current configuration are handled as
+follows: 
+</para>
+<orderedlist>
+<listitem>
+<para>
+Any references to that option will evaluate to <literal>0</literal>,
+so <literal>requires&nbsp;!CYGSEM_KERNEL_SCHED_TIMESLICE</literal> will
+be satisfied but
+<literal>requires&nbsp;CYGSEM_KERNEL_THREADS_DATA</literal> will not
+be satisfied.
+</para>
+</listitem>
+<listitem>
+<para>
+An option that is not loaded has no consequences on the build process.
+It cannot directly result in any <literal>#define's</literal> in a
+configuration header file, nor in any files being compiled. This is
+only reasonable: if the option is not loaded then the component
+framework has no way of knowing about any &compile; or similar
+properties. An option that is not loaded can have indirect
+consequences by being referenced in &CDL; expressions.
+</para>
+</listitem>
+<listitem>
+<para>
+An option that is not loaded cannot impose any constraints on the rest
+of the configuration. Again this is the only reasonable behavior: if
+the option is not loaded then any associated &requires; or
+&legal-values; properties will not be known.
+</para>
+</listitem>
+</orderedlist>
+
+</sect3>
+
+<!-- }}} -->
+<!-- {{{ Active        -->
+
+<sect3 id="language.values.value.active">
+<title>Is the Option Active</title>
+
+<para>
+The next issue to consider is whether or not a particular option is
+active. Configuration options are organized in a hierarchy of
+components and sub-components. For example the C library package
+contains a component <varname>CYGPKG_LIBC_STDIO</varname> containing
+all the options related to standard I/O. If a user disables the
+component as a whole then all the options below it become inactive: it
+makes no sense to disable all stdio functionality and then manipulate
+the buffer sizes.
+</para>
+<para>
+Inactive is not quite the same as disabled, although the effects are
+similar. The value of an inactive option is preserved. If the user
+modifies a buffer size option, then disables the whole stdio
+component, the buffer size value remains in case the stdio component
+is re-enabled later on. Some tools such as the graphical configuration
+tool will treat inactive options specially, for example such options
+may be grayed out.
+</para>
+<para>
+The active or inactive state of an option may affect other packages.
+For example a package may use the <function>sprintf</function>
+function and require support for floating point conversions, a
+constraint that is not satisfied if the relevant option is inactive.
+It is necessary to define exactly what it means for an option to be
+inactive:
+</para>
+<orderedlist>
+<listitem>
+<para>
+An option is inactive if its parent is either inactive or disabled.
+For example if <varname>CYGPKG_LIBC_STDIO</varname> is disabled then
+all the options and sub-components become inactive; since
+<varname>CYGPKG_LIBC_STDIO_FLOATING_POINT</varname> is now inactive,
+<varname>CYGSEM_LIBC_STDIO_PRINTF_FLOATING_POINT</varname> is inactive
+as well.
+</para>
+</listitem>
+<listitem>
+<para>
+Options may also be inactive as a result of an &active-if; property.
+This is useful if a particular option is only relevant if two or more
+disjoint sets of conditions need to be satisfied, since the
+hierarchical structure can only cope with at most one such set.
+</para>
+</listitem>
+<listitem>
+<para>
+If an option is inactive then any references to that option in &CDL;
+expressions will evaluate to <literal>0</literal>. Hence a constraint
+of the form
+<literal>requires&nbsp;CYGSEM_LIBC_STDIO_PRINTF_FLOATING_POINT</literal>
+is not satisfied if the entire stdio component is disabled.
+</para>
+</listitem>
+<listitem>
+<para>
+An option that is inactive has no consequences on the build process.
+No <literal>#define</literal> will be generated. Any &compile; or
+similar properties will be ignored.
+</para>
+</listitem>
+<listitem>
+<para>
+An option that is inactive cannot impose any constraints on the rest
+of the configuration. For example
+<varname>CYGSEM_LIBC_STDIO_PRINTF_FLOATING_POINT</varname> has a
+dependency <literal>requires&nbsp;CYGPKG_LIBM</literal>, but if all of
+the stdio functionality is disabled then this constraint is ignored
+(although of course there may be other packages which have a
+dependency on <varname>CYGPKG_LIBM</varname>.
+</para>
+</listitem>
+</orderedlist>
+</sect3>
+
+<!-- }}} -->
+<!-- {{{ Enabled/data  -->
+
+<sect3 id="language.values.value.enabled">
+<title>Is the Option Enabled? What is the Data?</title>
+
+<para>
+The majority of configuration options are boolean in nature, so the
+user can either enable or disable some functionality. Some options are
+different. For example <varname>CYGNUM_LIBC_STDIO_BUFSIZE</varname> is
+a number, and <varname>CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE</varname> is
+a string corresponding to a device name. A few options like
+<varname>CYGDAT_UITRON_TASK_EXTERNS</varname> can get very
+complicated. &CDL; has to cope with this variety, and define the exact
+behavior of the system in terms of constraints and build-time
+consequences. 
+</para>
+<para>
+In &CDL; the value of an option consists of two parts. There is a
+boolean part, controlling whether or not the option is enabled. There
+is also a data part, providing additional information. For most
+options one of these parts is fixed, as controlled by the option's
+&flavor; property:
+</para>
+<informaltable frame="all" colsep=1 rowsep=1 pgwide=0 tocentry=0>
+<tgroup cols=3 colsep=1 rowsep=1 align=left>
+<thead>
+  <row>
+    <entry>Flavor</entry>
+    <entry>Enabled</entry>
+    <entry>Data</entry>
+  </row
+</thead>
+<tbody>
+  <row>
+    <entry><literal>none</literal></entry>
+    <entry>Always enabled</entry>
+    <entry><literal>1</literal>, not modifiable</entry>
+  </row>
+  <row>
+    <entry><literal>bool</literal></entry>
+    <entry>User-modifiable</entry>
+    <entry><literal>1</literal>, not modifiable</entry>
+  </row>
+  <row>
+    <entry><literal>data</literal></entry>
+    <entry>Always enabled</entry>
+    <entry>User-modifiable</entry>
+  </row>
+  <row>
+    <entry><literal>booldata</literal></entry>
+    <entry>User-modifiable</entry>
+    <entry>User-modifiable</entry>
+  </row>
+</tbody>
+</tgroup>
+</informaltable>
+<para>
+The effects of the boolean and data parts are as follows:
+</para>
+<orderedlist>
+<listitem>
+<para>
+If an option is disabled, in other words if the boolean part is false,
+then any references to that option in &CDL; expressions will evaluate
+to <literal>0</literal>. This is the same behavior as for inactive
+options. The data part is not relevant. The <literal>none</literal>
+and <literal>data</literal> flavors specify that the option is always
+enabled, in which case this rule is not applicable.
+</para>
+</listitem>
+<listitem>
+<para>
+If an option is enabled then any references to that option in &CDL;
+expressions will evaluate to the option's data part. For two of the
+flavors, <literal>none</literal> and <literal>bool</literal>, this
+data part is fixed to the constant <literal>1</literal> which
+generally has the expected result.
+</para>
+</listitem>
+<listitem>
+<para>
+If a component or package is disabled then all sub-components and
+options immediately below it in the hierarchy are inactive. By a
+process of recursion this will affect all the nodes in the subtree.
+</para>
+</listitem>
+<listitem>
+<para>
+If an option is disabled then it can impose no constraints on the rest
+of the configuration, in particular &requires; and &legal-values;
+properties will be ignored. If an option is enabled then its
+constraints should be satisfied, or the component framework will
+report various conflicts. Note that the &legal-values; constraint only
+applies to the data part of the option's value, so it is only useful
+with the <literal>data</literal> and <literal>booldata</literal>
+flavors. Options with the <literal>none</literal> and
+<literal>data</literal> flavors are always enabled so their
+constraints always have to be satisfied (assuming the option is
+active). 
+</para>
+</listitem>
+<listitem>
+<para>
+If an option is disabled then it has no direct consequences at
+build-time: no <literal>#define</literal> will be generated, no files
+will get compiled, and so on. If an option is active and enabled then
+all the consequences take effect. The option name and data part are
+used to generate the <literal>#define</literal> in the appropriate
+configuration header file, subject to various properties such as
+&no-define;, but the data part has no other effects on the build
+system. 
+</para>
+</listitem>
+</orderedlist>
+<para>
+By default all options and components have the <literal>bool</literal>
+flavor: most options are boolean in nature, so making this the default
+allows for slightly more compact &CDL; scripts. Packages have the
+<literal>booldata</literal> flavor, where the data part always
+corresponds to the version of the package that is loaded into the
+configuration: changing this value corresponds to unloading the old
+version and loading in a different one.
+</para>
+
+<note>
+<title>&CDL; Flavors</title>
+<para>
+The concept of &CDL; flavors tends to result in various discussions
+about why it is unnecessarily complicated, and would it not have been
+easier to do&nbsp;&hellip; However there are very good reasons why CDL
+works the way it does.
+</para>
+<para>
+The first common suggestion is that there is no need to have separate
+flavors <literal>bool</literal>, <literal>data</literal>, and so on. A
+boolean option could just be handled as a data option with legal
+values <literal>0</literal> and <literal>1</literal>. The counter
+arguments are as follows:
+</para>
+<orderedlist>
+<listitem>
+<para>
+It would actually make &CDL; scripts more verbose. By default all
+options and components have the <literal>bool</literal> flavor, since
+most options are boolean in nature. Without a <literal>bool</literal>
+flavor it would be necessary to indicate explicitly what the legal
+values are somehow, e.g. with a &legal-values; property.
+</para>
+</listitem>
+<listitem>
+<para>
+The boolean part of an option's value has a very different effect from
+the data part. If an option is disabled then it has no consequences at
+build time, and can impose no constraints. A <literal>data</literal>
+option always has consequences and can impose constraints. To get the
+desired effect it would be necessary to add &CDL; data indicating that
+a value of <literal>0</literal> should be treated specially. Arguably
+this could be made built-in default behavior, although that would
+complicate options where <literal>0</literal> is a perfectly legal
+number, for example
+<varname>CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET</varname>. 
+</para>
+</listitem>
+<listitem>
+<para>
+There would no replacement for a <literal>booldata</literal> option
+for which <literal>0</literal> is a valid value. Again some additional
+&CDL; syntax would be needed to express such a concept.
+</para>
+</listitem>
+</orderedlist>
+<para>
+Although initially it may seem confusing that an option's value has
+both a boolean and a data part, it is an accurate reflection of how
+configuration options actually work. The various alternatives would
+all make it harder to write &CDL; scripts.
+</para>
+<para>
+The next common suggestion is that the data part of a value should be
+typed in much the same way as C or C++ data types. For example it
+should be possible to describe
+<varname>CYGNUM_LIBC_STDIO_BUFSIZE</varname> as an integer value,
+rather than imposing &legal-values; constraints. Again there are very
+good reasons why this approach was not taken:
+</para>
+<orderedlist>
+<listitem>
+<para>
+The possible legal values for an integer are rarely correct for a
+&CDL; option. A constraint such as
+<literal>1&nbsp;to&nbsp;0x7fffffff</literal> is a bit more accurate,
+although if this option indicates a buffer size it is still not
+particularly good&nbsp;&mdash; very few targets will have enough
+memory for such a buffer. Forcing &CDL; writers to list the
+&legal-values; constraints explicitly should make them think a bit
+more about what values are actually sensible. For example
+<varname>CYGNUM_LIBC_TIME_DST_DEFAULT_OFFSET</varname> has legal
+values in the range <literal>-90000&nbsp;to&nbsp;90000</literal>,
+which helps the user to set a sensible value.
+</para>
+</listitem>
+<listitem>
+<para>
+Not all options correspond to simple data types such as integers.
+<varname>CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE</varname> is a C string,
+and would have to be expressed using something like
+<literal>char&nbsp;[]</literal>. This introduces plenty of
+opportunities for confusion, especially since square brackets may get
+processed by the &Tcl; interpreter for command substitution.
+</para>
+</listitem>
+<listitem>
+<para>
+Some configuration options can get very complicated indeed, for
+example the default value of
+<varname>CYGDAT_UITRON_TASK_INITIALIZERS</varname> is:
+</para>
+<programlisting width=72>
+CYG_UIT_TASK( "t1", 1, task1, &amp;stack1, CYGNUM_UITRON_STACK_SIZE ), \
+CYG_UIT_TASK( "t2", 2, task2, &amp;stack2, CYGNUM_UITRON_STACK_SIZE ), \ 
+CYG_UIT_TASK( "t3", 3, task3, &amp;stack3, CYGNUM_UITRON_STACK_SIZE ), \
+CYG_UIT_TASK( "t4", 4, task4, &amp;stack4, CYGNUM_UITRON_STACK_SIZE )
+</programlisting>
+<para>
+This would require &CDL; knowing about C macros, structures, arrays,
+static initializers, and so on. Adding such detailed knowledge about
+the C language to the component framework is inappropriate.
+</para>
+</listitem>
+<listitem>
+<para>
+&CDL; needs to be usable with languages other than C. At present this
+includes C++, in future it may include languages such as Java. Each
+language adds new data types and related complications, for example
+C++ classes and inheritance. Making &CDL; support a union of all data
+types in all possible languages is not sensible.
+</para>
+</listitem>
+</orderedlist>
+<para>
+The &CDL; approach of treating all data as a sequence of characters,
+possibly constrained by a &legal-values; property or other means, has
+the great advantage of simplicity. It also fits in with the &Tcl;
+language that underlies &CDL;.
+</para>
+</note>
+
+</sect3>
+
+<!-- }}} -->
+<!-- {{{ Examples      -->
+
+<sect3 id="language.values.value.examples">
+<title>Some Examples</title>
+
+<para>
+The following excerpt from the C library's &CDL; scripts can be used
+to illustrate how values and flavors work in practice:
+</para>
+<programlisting width=72>
+cdl_component CYGPKG_LIBC_RAND {
+    flavor        none
+    compile       stdlib/rand.cxx
+
+    cdl_option CYGSEM_LIBC_PER_THREAD_RAND {
+        requires      CYGVAR_KERNEL_THREADS_DATA
+        default_value 0
+    }
+
+    cdl_option CYGNUM_LIBC_RAND_SEED {
+        flavor        data
+        legal_values  0 to 0x7fffffff
+        default_value 1
+    }
+
+    cdl_option CYGNUM_LIBC_RAND_TRACE_LEVEL {
+        flavor        data
+        legal_values  0 to 1
+        default_value 0
+    }
+}
+</programlisting>
+<para>
+If the application does not require any C library functionality then
+it is possible to have a configuration where the C library is not
+loaded. This can be achieved by starting with the minimal template, or
+by starting with another template such as the default one and then
+explicitly unloading the C library package. If this package is not
+loaded then any references to the <varname>CYGPKG_LIBC_RAND</varname>
+component or any of its options will have a value of
+<literal>0</literal> for the purposes of expression evaluation. No
+<literal>#define's</literal> will be generated for the component or
+any of its options, and the file <filename>stdlib/rand.cxx</filename>
+will not get compiled. There is nothing special about the C library
+here, exactly the same would apply for say a device driver that does
+not correspond to any of the devices on the target hardware.
+</para>
+<para>
+Assuming the C library is loaded, the next thing to consider is
+whether or not the component and its options are active. The component
+is layered immediately below the C library package itself, so if the
+package is loaded then it is safe to assume that the package is also
+enabled. Therefore the parent of <varname>CYGPKG_LIBC_RAND</varname>
+is active and enabled, and in the absence of any &active-if;
+properties <varname>CYGPKG_LIBC_RAND</varname> will be active as well.
+</para>
+<para>
+The component <varname>CYGPKG_LIBC_RAND</varname> has the flavor
+<literal>none</literal>. This means the component cannot be disabled.
+Therefore all the options in this component have an active and enabled
+parent, and in the absence of any &active-if; properties they are all
+active as well.
+</para>
+<para>
+The component's flavor <literal>none</literal> serves to group
+together all of the configuration options related to random number
+generation. This is particularly useful in the context of the
+graphical configuration tool, but it also helps when it comes to
+naming the options: all of the options begin with
+<literal>CYGxxx_LIBC_RAND</literal>, giving a clear hint about both
+the package and the component within that package. The flavor means
+that the component is always enabled and has the value
+<literal>1</literal> for the purposes of expression evaluation. There
+will always be a single <literal>#define</literal> of the form:
+</para>
+<programlisting width=72>
+#define CYGPKG_LIBC_RAND 1
+</programlisting>
+<para>
+In addition the file <filename>stdlib/rand.cxx</filename> will always
+get built. If the component had the default <literal>bool</literal>
+flavor then users would be able to disable the whole component,
+and one less file would need to be built. However random number
+generation is relatively simple, so the impact on eCos build times are
+small. Furthermore by default the code has no dependencies on other
+parts of the system, so compiling the code has no unexpected side
+effects. Even if it was possible to disable the component, the
+sensible default for most applications would still leave it enabled.
+The net result is that the flavor <literal>none</literal> is probably
+the most sensible one for this component. For other components the
+default <literal>bool</literal> flavor or one of the other flavors
+might be more appropriate.
+</para>
+<para>
+Next consider option <varname>CYGSEM_LIBC_PER_THREAD_RAND</varname>
+which can be used to get a per-thread random number seed, possibly
+useful if the application needs a consistent sequence of random
+numbers. In the absence of a &flavor; property this option will be
+boolean, and the &default-value; property means that it is disabled by
+default&nbsp;&mdash; reasonable since few applications need this
+particular functionality, and it does impose a constraint on the rest
+of the system. If the option is left disabled then no
+<literal>#define</literal> will be generated, and if there were any
+&compile; or similar properties these would not take effect. If the
+option is enabled then a <literal>#define</literal> will be generated,
+using the option's data part which is fixed at <literal>1</literal>:
+</para>
+<programlisting width=72>
+#define CYGSEM_LIBC_PER_THREAD_RAND 1
+</programlisting>
+<para>
+The <varname>CYGSEM_LIBC_PER_THREAD_RAND</varname> option has a
+&requires; constraint on
+<varname>CYGVAR_KERNEL_THREADS_DATA</varname>. If the C library option
+is enabled then the constraint should be satisfied, or else the
+configuration contains a conflict. If the configuration does not
+include the kernel package then
+<varname>CYGVAR_KERNEL_THREADS_DATA</varname> will evaluate to
+<literal>0</literal> and the constraint is not satisfied. Similarly if
+the option is inactive or disabled the constraint will not be
+satisfied.
+</para>
+<para>
+<varname>CYGNUM_LIBC_RAND_SEED</varname> and
+<varname>CYGNUM_LIBC_RAND_TRACE_LEVEL</varname> both have the
+<literal>data</literal> flavor, so they are always enabled and the
+component framework will generate appropriate
+<literal>#define's</literal>:
+</para>
+<programlisting width=72>
+#define CYGNUM_LIBC_RAND_SEED 1
+#define CYGNUM_LIBC_RAND_SEED_1
+#define CYGNUM_LIBC_RAND_TRACE_LEVEL 0
+#define CYGNUM_LIBC_RAND_TRACE_LEVEL_0
+</programlisting>
+<para>
+Neither option has a &compile; or similar property, but any such
+properties would take effect. Any references to these options in &CDL;
+expressions would evaluate to the data part, so a hypothetical
+constraint of the form
+<literal>{&nbsp;requires&nbsp;CYGNUM_LIBC_RAND_SEED&nbsp;&gt;&nbsp;42&nbsp;}</literal>
+would not be satisfied with the default values. Both options use a
+simple constant for the &default-value; expression. It would be
+possible to use a more complicated expression, for example the default
+for <varname>CYGNUM_LIBC_RAND_TRACE_LEVEL</varname> could be
+determined from some global debugging option or from a debugging
+option that applies to the C library as a whole. Both options also
+have a &legal-values; constraint, which must be satisfied since the
+options are active and enabled. 
+</para>
+<note>
+<para>
+The value <literal>0</literal> is legal for both
+<varname>CYGNUM_LIBC_RAND_SEED</varname> and
+<varname>CYGNUM_LIBC_RAND_TRACE_LEVEL</varname>, so in a &CDL;
+expression there is no easy way of distinguishing between the options
+being absent or having that particular value. This will be addressed
+by future enhancements to the expression syntax.
+</para>
+</note>
+
+</sect3>
+
+<!-- }}} -->
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Expressions            -->
+
+<sect2 id="language.expression">
+<title>Ordinary Expressions</title>
+
+<para>
+Expressions in &CDL; follow a conventional syntax, for example:
+</para>
+<programlisting width=72>
+    default_value CYGGLO_CODESIZE &gt; CYGGLO_SPEED
+    default_value { (CYG_HAL_STARTUP == "RAM" &&
+                     !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS &&
+                     !CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED &&
+                     !CYGSEM_HAL_POWERPC_COPY_VECTORS) ? 1 : 0 }
+    default_value { "\"/dev/ser0\"" }
+</programlisting>
+<para>
+However there is a complication in that the various arguments to a
+&default-value; property will first get processed by a &Tcl;
+interpreter, so special characters like quotes and square brackets may
+get processed. Such problems can be avoided by enclosing non-trivial
+expressions in braces, as in the second example above. The way
+expression parsing actually works is as follows:
+</para>
+<orderedlist>
+<listitem>
+<para>
+The &Tcl; interpreter splits the line or lines into a command and its
+arguments. In the first &default-value; expression above the command
+is <literal>default_value</literal> and there are three arguments,
+<literal>CYGGLO_CODESIZE</literal>, <literal>&gt;</literal> and
+<literal>CYGGLO_SPEED</literal>. In the second and third examples
+there is just one argument, courtesy of the braces.
+</para>
+</listitem>
+<listitem>
+<para>
+Next option processing takes place, so any initial arguments that
+begin with a hyphen will be interpreted as options. This can cause
+problems if the expression involves a negative number, so the
+special argument <literal>--</literal> can be used to prevent option
+processing on the subsequent arguments.
+</para>
+</listitem>
+<listitem>
+<para>
+All of the arguments are now concatenated, with a single space in
+between each one. Hence the following two expressions are equivalent,
+even though they will have been processed differently up to this point.
+</para>
+<programlisting>
+    default_value CYGGLO_CODESIZE &gt; CYGGLO_SPEED
+    default_value {CYGGLO_CODESIZE &gt; CYGGLO_SPEED}
+</programlisting>
+</listitem>
+<listitem>
+<para>
+The expression parsing code now has a single string to process.
+</para>
+</listitem>
+</orderedlist>
+<para>
+&CDL; expressions consist of four types of element: references to
+configuration options, constant strings, integers, and floating point
+numbers. These are combined using a conventional set of operators: the
+unary operators <literal>-</literal>, <literal>~</literal> and
+<literal>!</literal>; the arithmetic operators <literal>+</literal>,
+<literal>-</literal>, <literal>*</literal>, <literal>/</literal> and
+<literal>%</literal>; the shift operators <literal>&lt;&lt;</literal>
+and <literal>&gt;&gt;</literal>; the comparison operators
+<literal>==</literal>, <literal>!=</literal>, <literal>&lt;</literal>,
+<literal>&lt;=</literal>, <literal>&gt;</literal> and
+<literal>&gt;=</literal>; the bitwise operators
+<literal>&amp;</literal>, <literal>^</literal> and
+<literal>|</literal>; the logical operators <literal>&&</literal> and
+<literal>||</literal>; the string concatenation operator
+<literal>.</literal>; and the ternary conditional operator
+<literal>A&nbsp;?&nbsp;B&nbsp;:&nbsp;C</literal>. There is also support for
+some less widely available operators for logical equivalence and
+implication, and for a set of function-style operations. Bracketed
+sub-expressions are supported, and the operators have the usual
+precedence:
+</para>
+<informaltable frame="all" pgwide=0 colsep=1 rowsep=1>
+<tgroup cols=3 align="left" colsep=1 rowsep=1>
+<colspec colnum=1 align="center">
+<colspec colnum=2 align="center">
+<colspec colnum=3 align="center">
+<thead>
+  <row>
+    <entry>Priority</entry>
+    <entry>Operators</entry>
+    <entry>Category</entry>
+  </row>
+</thead>
+<tbody>
+  <row>
+    <entry>16</entry>
+    <entry>references, constants</entry>
+    <entry>basic elements</entry>
+  </row>
+  <row>
+    <entry>15</entry>
+    <entry><literal>f(a, b, c)</literal></entry>
+    <entry>function calls</entry>
+  </row>
+  <row>
+    <entry>14</entry>
+    <entry><literal>~</literal></entry>
+    <entry>bitwise not</entry>
+  </row>
+  <row>
+    <entry>14</entry>
+    <entry><literal>!</literal></entry>
+    <entry>logical not</entry>
+  </row>
+  <row>
+    <entry>14</entry>
+    <entry><literal>-</literal></entry>
+    <entry>arithmetic negation</entry>
+  </row>
+  <row>
+    <entry>13</entry>
+    <entry><literal>* / %</literal></entry>
+    <entry>multiplicative arithmetic</entry>
+  </row>
+  <row>
+    <entry>12</entry>
+    <entry><literal>+ - .</literal></entry>
+    <entry>additive arithmetic and string concatenation</entry>
+  </row>
+  <row>
+    <entry>11</entry>
+    <entry><literal>&lt;&lt; &gt;&gt;</literal></entry>
+    <entry>bitwise shifts</entry>
+  </row>
+  <row>
+    <entry>10</entry>
+    <entry><literal>&lt;= &lt; &gt; &gt;=</literal></entry>
+    <entry>inequality</entry>
+  </row>
+  <row>
+    <entry>9</entry>
+    <entry><literal>== !=</literal></entry>
+    <entry>comparison</entry>
+  </row>
+  <row>
+    <entry>8</entry>
+    <entry><literal>&</literal></entry>
+    <entry>bitwise and</entry>
+  </row>
+  <row>
+    <entry>7</entry>
+    <entry><literal>^</literal></entry>
+    <entry>bitwise xor</entry>
+  </row>
+  <row>
+    <entry>6</entry>
+    <entry><literal>|</literal></entry>
+    <entry>bitwise or</entry>
+  </row>
+  <row>
+    <entry>5</entry>
+    <entry><literal>&&</literal></entry>
+    <entry>logical and</entry>
+  </row>
+  <row>
+    <entry>4</entry>
+    <entry><literal>||</literal></entry>
+    <entry>logical or</entry>
+  </row>
+  <row>
+    <entry>3</entry>
+    <entry><literal>xor, eqv</literal></entry>
+    <entry>logical equivalance</entry>
+  </row>
+  <row>
+    <entry>2</entry>
+    <entry><literal>implies</literal></entry>
+    <entry>logical implication</entry>
+  </row>
+  <row>
+    <entry>1</entry>
+    <entry><literal>? :</literal></entry>
+    <entry>conditional</entry>
+  </row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+Function calls have the usual format of a name, an opening bracket,
+one or more arguments separated by commas, and a closing bracket. For
+example:
+</para>
+<programlisting width=72>
+    requires { !is_substr(CYGBLD_GLOBAL_CFLAGS, " -fno-rtti") }
+</programlisting>
+<para>
+Functions will differ in the number of arguments and may impose
+restrictions on some or all of their arguments. For example it may be
+necessary for the first argument to be a reference to a configuration
+option. The available functions are described in <xref
+linkend="language.functions">. 
+</para>
+<para>
+The logical <literal>xor</literal> operator evaluates to true if
+either the left hand side or the right hand side but not both evaluate
+to true The logical <literal>eqv</literal> operator evaluates to true
+if both the left and right hand sides evaluate to true, or if both
+evaluate to false. The <literal>implies</literal> operator evaluates
+to true either if the left hand side is false or if the right hand
+side is true, in other words <literal>A&nbsp;implies&nbsp;B</literal>
+has the same meaning as <literal>!A&nbsp;||&nbsp;B</literal>. An
+example use would be:
+</para>
+<programlisting width=72>
+    requires { is_active(CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE) implies
+                   (CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE >= (16 * 1024)) }
+</programlisting>
+<para>
+This constraint would be satisfied if either the support for a main
+stack size is disabled, or if that stack is at least 16K. However if
+such a stack were in use but was too small, a conflict would be raised.
+</para>
+<para>
+A valid &CDL; identifier in an expression, for example
+<varname>CYGGLO_SPEED</varname>, will be interpreted as a reference to
+a configuration option by that name. The option does not have to be
+loaded into the current configuration. When the component framework
+evaluates the expression it will substitute in a suitable value that
+depends on whether or not the option is loaded, active, and enabled.
+The exact rules are described in <xref
+linkend="language.values.value">.
+</para>
+<para>
+A constant string is any sequence of characters enclosed in quotes.
+Care has to be taken that these quotes are not stripped off by the
+&Tcl; interpreter before the &CDL; expression parser sees them.
+Consider the following:
+</para>
+<programlisting width=72>
+    default_value "RAM"
+</programlisting>
+<para>
+The quote marks will be stripped before the &CDL; expression parser
+sees the data, so the expression will be interpreted as a reference to
+a configuration option <varname>RAM</varname>. There is unlikely to be
+such an option, so the actual default value will be
+<literal>0</literal>. Careful use of braces or other &Tcl; quoting
+mechanisms can be used to avoid such problems.
+</para>
+<para>		
+String constants consist of the data inside the quotes. If the data
+itself needs to contain quote characters then appropriate quoting is
+again necessary, for example:
+</para>
+<programlisting width=72>
+    default_value { "\"/dev/ser0\"" }
+</programlisting>
+<para>
+An integer constant consists of a sequence of digits, optionally
+preceeded with the unary <literal>+</literal> or <literal>-</literal>
+operators. As usual the sequence <literal>0x</literal> or
+<literal>0X</literal> can be used for hexadecimal data, and a leading
+<literal>0</literal> indicates octal data. Internally the component
+framework uses 64-bit arithmetic for integer data. If a constant is
+too large then double precision arithmetic will be used instead.
+Traditional syntax is also used for double precision numbers, for
+example <literal>3.141592</literal> or <literal>-3E6</literal>. 
+</para>
+<para>
+Of course this is not completely accurate: &CDL; is not a typed
+language, all data is treated as if it were a string. For example the
+following two lines are equivalent:
+</para>
+<programlisting width=72>
+    requires CYGNUM_UITRON_SEMAS > 10
+    requires { CYGNUM_UITRON_SEMAS > "10" }
+</programlisting>
+<para>
+When an expression gets evaluated the operators will attempt
+appropriate conversions. The <literal>&gt;</literal> comparison
+operator can be used on either integer or double precision numbers, so
+it will begin by attempting a string to integer conversion of both
+operands. If that fails it will attempt string to double conversions.
+If that fails as well then the component framework will report a
+conflict, an evaluation exception. If the conversions from string to
+integer are successful then the result will be either the string
+<literal>0</literal> or the string <literal>1</literal>, both of which
+can be converted to integers or doubles as required.
+</para>
+<para>
+It is worth noting that the expression
+<literal>CYGNUM_UITRON_SEMAS&nbsp;&gt;10</literal> is not ambiguous.
+&CDL; identifiers can never begin with a digit, so it is not possible
+for <literal>10</literal> to be misinterpreted as a reference to an
+identifier instead of as a string.
+</para>
+<para>
+Of course the implementation is slightly different again. The &CDL;
+language definition is such that all data is treated as if it were a
+string, with conversions to integer, double or boolean as and when
+required. The implementation is allowed to avoid conversions until
+they are necessary. For example, given
+<literal>CYGNUM_UITRON_SEMAS&nbsp;&gt;&nbsp;10</literal> the
+expression parsing code will perform an immediate conversion from
+string to integer, storing the integer representation, and there is no
+need for a conversion by the comparison operator when the expression
+gets evaluated. Given
+<literal>{&nbsp;CYGNUM_UITRON_SEMAS&nbsp;&gt;&nbsp;"10"&nbsp;}</literal>
+the parsing code will store the string representation and a conversion
+happens the first time the expression is evaluated. All of this is an
+implementation detail, and does not affect the semantics of the
+language. 
+</para>
+<para>
+Different operators have different requirements, for example the
+bitwise or operator only makes sense if both operands have an integer
+representation. For operators which can work with either integer or
+double precision numbers, integer arithmetic will be preferred.
+</para>
+<para>
+The following operators only accept integer operands:
+unary <literal>~</literal> (bitwise not), the shift operators
+<literal>&lt;&lt;</literal> and <literal>&gt;&gt;</literal>, and the
+bitwise operators <literal>&</literal>, <literal>|</literal> and
+<literal>^</literal>.
+</para>
+<para>
+The following operators will attempt integer arithmetic first, then
+double precision arithmetic: unary <literal>-</literal>,
+the arithmetic operators <literal>+</literal>, <literal>-</literal>,
+<literal>*</literal>, <literal>/</literal>, and <literal>%</literal>;
+and the comparision operators <literal>&lt;</literal>,
+<literal>&lt;=</literal>, <literal>&gt;</literal> and
+<literal>&gt;=</literal>. 
+</para>
+<para>
+The equality <literal>==</literal> and inequality
+<literal>!=</literal> operators will first attempt integer conversion
+and comparison. If that fails then double precision will be attempted
+(although arguably using these operators on double precision data is
+not sensible). As a last resort string comparison will be used.
+</para>
+<para>
+The operators <literal>!</literal>, <literal>&&</literal> and
+<literal>||</literal> all work with boolean data. Any string that can
+be converted to the integer <literal>0</literal> or the double
+<literal>0.0</literal> is treated as false, as is the empty string or
+the constant string <literal>false</literal>. Anything else is
+interpreted as true. The result is either <literal>0</literal> or
+<literal>1</literal>.
+</para>
+<para>
+The conditional operator <literal>?&nbsp;:</literal> will interpret
+its first operand as a boolean. It does not perform any processing on
+the second or third operands.
+</para>
+<para>
+In practice it is rarely necessary to worry about any of these
+details. In nearly every case &CDL; expressions just work as expected,
+and there is no need to understand the full details.
+</para>
+
+<note>
+<para>
+The current expression syntax does not meet all the needs of component
+writers. Some future enhancements will definitely be made, others are
+more controversial. The list includes the following:
+</para>
+<orderedlist>
+<listitem>
+<para>
+An option's value is determined by several different factors: whether
+or not it is loaded, whether or not it is active, whether or not it is
+enabled, and the data part. Currently there is no way of querying
+these individually. This is very significant in the context of options
+with the <literal>bool</literal> or <literal>booldata</literal>
+flavors, because there is no way of distinguishing between the option
+being absent/inactive/disabled or it being enabled with a data field
+of <literal>0</literal>. There should be unary operators that allow
+any of the factors to be checked.
+</para>
+</listitem>
+<listitem>
+<para>
+Only the <literal>==</literal> and <literal>!=</literal> operators can
+be used for string data. More string-related facilities are needed.
+</para>
+</listitem>
+<listitem>
+<para>
+An implies operator would be useful for many goal expression, where
+<literal>A&nbsp;implies&nbsp;B</literal> is equivalent to
+<literal>!A&nbsp;||B</literal>.
+</para>
+</listitem>
+<listitem>
+<para>
+Similarly there is inadequate support for lists. On occasion it would
+be useful to write expressions involving say the list of implementors
+of a given CDL interface, for example a sensible default value could
+be the first implementor. Associated with this is a need for an
+indirection operator.
+</para>
+</listitem>
+<listitem>
+<para>
+Arguably extending the basic &CDL; expression syntax with lots of new
+operators is unnecessary, instead expressions should just support
+&Tcl; command substitution and then component writers could escape
+into &Tcl; scripts for complicated operations. This has some major
+disadvantages. First, the inference engine would no longer have any
+sensible way of interpreting an expression to resolve a conflict.
+Second, the component framework's value propagation code keeps track
+of which options get referenced in which expressions and avoids
+unnecessary re-evaluation of expressions; if expressions can involve
+arbitrary &Tcl; code then there is no simple way to eliminate
+unnecessary recalculations, with a potentially major impact on
+performance.
+</para>
+</listitem>
+</orderedlist>
+</note>
+
+<note>
+<para>
+The current implementation of the component framework uses 64 bit
+arithmetic on all host platforms. Although this is adequate for
+current target architectures, it may cause problems in future. At some
+stage it is likely that an arbitrary precision integer arithmetic
+package will be used instead.
+</para>
+</note>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Functions              -->
+
+<sect2 id="language.functions">
+<title>Functions</title>
+
+<para>
+CDL expressions can contain calls to a set of built-in functions
+using the usual syntax, for example;
+</para>
+<programlisting width=72>
+    requires { !is_substr(CYGBLD_GLOBAL_CFLAGS, "-fno-rtti") }
+</programlisting>
+<para>
+The available function calls are as follows:
+</para>
+
+<variablelist>
+
+<!-- {{{ get_data()             -->
+
+  <varlistentry>
+    <term><literal>get_data(option)</literal></term>
+    <listitem>
+<para>
+This function can be used to obtain just the data part of a loaded
+configuration option, ignoring other factors such as whether or not
+the option is active and enabled. It takes a single argument which
+should be the name of a configuration option. If the specified option
+is not loaded in the current configuration then the function returns
+0, otherwise it returns the data part. Typically this function will
+only be used in conjunction with <function>is_active</function> and
+<function>is_enabled</function> for fine-grained control over the
+various factors that make up an option's value.
+</para>
+    </listitem>
+  </varlistentry>
+
+<!-- }}} -->
+<!-- {{{ is_active()            -->
+
+  <varlistentry>
+    <term><literal>is_active(option)</literal></term>
+    <listitem>
+<para>
+This function can be used to determine whether or not a particular
+configuration option is active. It takes a single argument which
+should be the name of an option, and returns a boolean. If the
+specified option is not loaded then the function will return false.
+Otherwise it will consider the state of the option's parents and
+evaluate any &active-if; properties, and return the option's current
+active state. A typical use might be:
+</para>
+<programlisting width=72>
+    requires { is_active(CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE) implies
+                   (CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE >= (16 * 1024)) }
+</programlisting>
+<para>
+In other words either the specified configuration option must be
+inactive, for example because the current application does not use
+any related C library or POSIX functionality, or the stack size must
+be at least 16K.
+</para>
+<para>
+The configuration system's inference engine can attempt to satisfy
+constraints involving <function>is_active</function> in various
+different ways, for example by enabling or disabling parent
+components, or by examining &active-if; properties and manipulating
+terms in the associated expressions.
+</para>
+    </listitem>
+  </varlistentry>
+
+<!-- }}} -->
+<!-- {{{ is_enabled()           -->
+
+  <varlistentry>
+    <term><literal>is_enabled(option)</literal></term>
+    <listitem>
+<para>
+This function can be used to determine whether or not a particular
+configuration option is enabled. It takes a single argument which
+should be the name of an option, and returns a boolean. If the
+specified option is not loaded then the function will return false.
+Otherwise it will return the current boolean part of the option's
+value. The option's active or inactive state is ignored. Typically
+this function will be used in conjunction with
+<function>is_active</function> and possibly
+<function>get_data</function> to provide fine-grained control over the
+various factors that make up an option's value.
+</para>
+    </listitem>
+  </varlistentry>
+
+<!-- }}} -->
+<!-- {{{ is_loaded()            -->
+
+  <varlistentry>
+    <term><literal>is_loaded(option)</literal></term>
+    <listitem>
+<para>
+This function can be used to determine whether or not a particular
+configuration option is loaded. It takes a single argument which
+should be the name of an option, and returns a boolean. If the
+argument is a package then the <function>is_loaded</function> function
+provides little or no extra information, for example the following two
+constraints are usually equivalent:
+</para>
+<programlisting width=72>
+    requires { CYGPKG_KERNEL }
+    requires { is_loaded(CYGPKG_KERNEL) }
+</programlisting>
+<para>
+However if the specified package is loaded but re-parented below a
+disabled component, or inactive as a result of an &active-if;
+property, then the first constraint would not be satisfied but the
+second constraint would. In other words the
+<function>is_loaded</function> makes it possible to consider in
+isolation one of the factors that are considered when CDL expressions
+are evaluated.
+</para>
+<para>
+The configuration system's inference engine will not automatically
+load or unload packages to satisfy <function>is_loaded</function>
+constraints. 
+</para>
+    </listitem>
+  </varlistentry>
+
+<!-- }}} -->
+<!-- {{{ is_substr()            -->
+
+  <varlistentry>
+    <term><literal>is_substr(haystack,&nbsp;needle)</literal></term>
+    <listitem>
+<para>
+This can be used to check whether or not a particular string is
+present in another string. It is used mainly for manipulating compiler
+flags. The function takes two arguments, both of which can be
+arbitrary expressions, and returns a boolean.
+</para>
+<para>
+<function>is_substr</function> has some understanding of word
+boundaries. If the second argument starts with a space character then
+that will match either a real space or the start of the string.
+Similarly if the second argument ends with a space character then that
+will match a real space or the end of the string. For example, all of
+the following conditions are satisfied:
+</para>
+<programlisting width=72>
+    is_substr("abracadabra", "abra")
+    is_substr("abracadabra", " abra")
+    is_substr("hocus pocus", " pocus")
+    is_substr("abracadabra", "abra ")
+</programlisting>
+<para>
+The first is an exact match. The second is a match because the leading
+space matches the start of the string. The third is an exact match,
+with the leading space matching an actual space. The fourth is a match
+because the trailing space matches the end of the string. However, the
+following condition is not satisfied.
+</para>
+<programlisting width=72>
+    is_substr("abracadabra", " abra ")
+</programlisting>
+<para>
+This fails to match at the start of the string because the trailing
+space is not matched by either a real space or the end of the string.
+Similarly it fails to match at the end of the string.
+</para>
+<para>
+If a constraint involving <function>is_substr</function> is not
+satisfied and the first argument is a reference to a configuration
+option, the inference engine will attempt to modify that option's
+value. This can be achieved either by appending the second argument to
+the current value, or by removing all occurrences of that argument
+from the current value.
+</para>
+<programlisting width=72>
+    requires { !is_substr(CYGBLD_GLOBAL_CFLAGS, " -fno-rtti ") }
+    requires { is_substr(CYGBLD_GLOBAL_CFLAGS, " -frtti ") }
+</programlisting>
+<para>
+When data is removed the leading and trailing spaces will be left. For
+example, given an initial value of
+<<varname>CYGBLD_GLOBAL_CFLAGS</varname> of
+<literal>-g&nbsp;-fno-rtti&nbsp;-O2</literal> the result will be
+<literal>-g&nbsp;&nbsp;-O2</literal> rather than <literal>-g-O2</literal>.
+</para>
+<para>
+If exact matches are needed, the function
+<function>is_xsubstr</function> can be used instead.
+</para>
+    </listitem>
+  </varlistentry>
+
+<!-- }}} -->
+<!-- {{{ is_xsubstr()           -->
+
+  <varlistentry>
+    <term><literal>is_xsubstr(haystack,&nbsp;needle)</literal></term>
+    <listitem>
+<para>
+This function checks whether or not the pattern string is an exact
+substring of the string being searched. It is similar to
+<function>is_substr</function> but uses exact matching only. In other
+words, leading or trailing spaces have to match exactly and will not
+match the beginning or end of the string being searched. The function
+takes two arguments, both of which can be arbitrary expressions, and
+returns a boolean. The difference between
+<function>is_substr</function> and <function>is_xsubstr</function> is
+illustrated by the following examples:
+</para>
+<programlisting width=72>
+    cdl_option MAGIC {
+        flavor data
+        default_value { "abracadabra" }
+    }
+    &hellip;
+    requires { is_substr(MAGIC,  " abra") }
+    requires { is_xsubstr(MAGIC, " abra") }
+</programlisting>
+<para>
+The first goal will be satisfied because the leading space in the
+pattern matches the beginning of the string. The second goal will not
+be satisfied initialy because there is no exact match, so the
+inference engine is likely to update the value of
+<varname>MAGIC</varname> to <literal>abracadabra abra</literal> which
+does give an exact match.
+</para>
+    </listitem>
+  </varlistentry>
+
+<!-- }}} -->
+<!-- {{{ version_cmp()          -->
+
+  <varlistentry>
+    <term><literal>version_cmp(A,&nbsp;B)</literal></term>
+    <listitem>
+<para>
+This function is used primarily to check that a sufficiently recent
+<link linkend="package.versions">version</link> of some other package
+is being used. It takes two arguments, both of which can be arbitrary
+expressions. In practice usually one of the arguments will be a
+reference to a package and the other will be a constant version
+string. The return value is -1 if the first argument is a more recent
+version then the second, 0 if the two arguments correspond to
+identical versions, and 1 if the first argument is an older version.
+For example the following constraint can be used to indicate that the
+current package depends on kernel functionality that only became
+available in version 1.3:
+</para>
+<programlisting width=72>
+    requires { version_cmp(CYGPKG_KERNEL, "v1.3") <= 0 }
+</programlisting>
+    </listitem>
+  </varlistentry>
+
+<!-- }}} -->
+
+
+</variablelist>
+<note>
+<para>
+At this time it is not possible to define new functions inside a CDL
+script. Instead functions can only be added at the C++ level, usually
+by extending libcdl itself. This is partly because there is more to
+CDL functions than simple evaluation: associated with most functions
+is support for the inference engine, so that if a constraint involving
+a function is not currently satisfied the system may be able to find a
+solution automatically.
+</para>
+</note>
+       
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Goal expressions       -->
+
+<sect2 id="language.goal-expression">
+<title>Goal Expressions</title>
+
+<para>
+The arguments to certain properties, notably &requires; and
+&active-if;, constitute a goal expression. As with an ordinary
+expression, all of the arguments get combined and then the expression
+parser takes over. The same care has to be taken with constant strings
+and anything else that may get processed by the Tcl interpreter, so
+often a goal expression is enclosed entirely in braces and the
+expression parsing code sees just a single argument.
+</para>
+<para>
+A goal expression is basically just a sequence of ordinary
+expressions, for example:
+</para>
+<programlisting width=72>
+    requires { CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+               !CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+               !CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT }
+</programlisting>
+<para>
+This consists of three separate expressions, all of which should
+evaluate to a non-zero result. The same expression could be written
+as: 
+</para>
+<programlisting width=72>
+    requires { CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS  &&
+               !CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT &&
+               !CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT }
+</programlisting>
+<para>
+Alternatively the following would have much the same effect:
+</para>
+<programlisting width=72>
+    requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+    requires !CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+    requires !CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+</programlisting>
+<para>
+Selecting between these alternatives is largely a stylistic choice.
+The first is slightly more concise than the others. The second is more
+likely to appeal to mathematical purists. The third is more amenable
+to cutting and pasting.
+</para>
+<para>
+The result of evaluating a goal expression is a boolean. If any part
+of the goal expression evaluates to the integer <literal>0</literal>
+or an equivalent string then the result is false, otherwise it is
+true. 
+</para>
+<para>
+The term &ldquo;goal&nbsp;expression&rdquo; relates to the component
+framework's inference engine: it is a description of a goal that
+should be satisfied for a conflict-free configuration. If a &requires;
+constraint is not satisfied then the inference engine will examine the
+goal expression: if there is some way of changing the configuration
+that does not introduce new conflicts and that will cause the goal
+expression to evaluate to true, the conflict can be resolved.
+</para>
+<para>
+The inference engine works with one conflict and hence one goal
+expression at a time. This means that there can be slightly different
+behavior if a constraint is specified using a single &requires;
+property or several different ones. Given the above example, suppose
+that none of the three conditions are satisfied. If a single goal
+expression is used then the inference engine might be able to satisfy
+only two of the three parts, but since the conflict as a whole cannot
+be resolved no part of the solution will be applied. Instead the user
+will have to resolve the entire conflict. If three separate goal
+expressions are used then the inference engine might well find
+solutions to two of them, leaving less work for the user. On the other
+hand, if a single goal expression is used then the inference engine
+has a bit more information to work with, and it might well find a
+solution to the entire conflict where it would be unable to find
+separate solutions for the three parts. Things can get very
+complicated, and in general component writers should not worry about
+the subtleties of the inference engine and how to manipulate its
+behavior. 
+</para>
+<para>
+It is possible to write ambiguous goal expressions, for example:
+</para>
+<programlisting width=72>
+    requires CYGNUM_LIBC_RAND_SEED -CYGNUM_LIBC_RAND_TRACE_LEVEL &gt; 5
+</programlisting>
+<para>
+This could be parsed in two ways:
+</para>
+<programlisting width=72>
+    requires ((CYGNUM_LIBC_RAND_SEED - CYGNUM_LIBC_RAND_TRACE_LEVEL) &gt; 5)
+    requires CYGNUM_LIBC_RAND_SEED &amp;&amp; ((-CYGNUM_LIBC_RAND_TRACE_LEVEL) &gt; 5)
+</programlisting>
+<para>
+The goal expression parsing code will always use the largest ordinary
+expression for each goal, so the first interpretation will be used.
+In such cases it is a good idea to use brackets and avoid possible
+confusion. 
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ List expressions       -->
+
+<sect2 id="language.list-expression">
+<title>List Expressions</title>
+
+<para>
+The arguments to the &legal-values; property constitute a goal
+expression. As with an ordinary and goal expressions, all of the
+arguments get combined and then the expression parser takes over. The
+same care has to be taken with constant strings and anything else that
+may get processed by the Tcl interpreter, so often a list expression
+is enclosed entirely in braces and the expression parsing code sees
+just a single argument.
+</para>
+<para>
+Most list expressions take one of two forms:
+</para>
+<programlisting width=72>
+    legal_values &lt;expr1&gt; &lt;expr2&gt; &lt;expr3&gt; ...
+    legal_values &lt;expr1&gt; to &lt;expr2&gt;
+</programlisting>
+<para>
+<literal>expr1</literal>, <literal>expr2</literal> and so on are
+ordinary expressions. Often these will be constants or references to
+calculated options in the architectural HAL package, but it is
+possible to use arbitrary expressions when necessary. The first syntax
+indicates a list of possible values, which need not be numerical. The
+second syntax indicates a numerical range: both sides of the
+<literal>to</literal> must evaluate to a numerical value; if either
+side involves a floating point number then any floating point number
+in that range is legal; otherwise only integer values are legal;
+ranges are inclusive, so <literal>4</literal> is a valid value given a
+list expression <literal>1&nbsp;to&nbsp;</literal>; if one or both
+sides of the <literal>to</literal> does not evaluate to a numerical
+value then this will result in a run-time conflict. The following
+examples illustrate these possibilities:
+</para>
+<programlisting width=72>
+    legal_values { "red" "green" "blue" }
+    legal_values 1 2 4 8 16
+    legal_values 1 to CYGARC_MAXINT
+    legal_values 1.0 to 2.0
+</programlisting>
+<para>
+It is possible to combine the two syntaxes, for example:
+</para>
+<programlisting width=72>
+    legal_values 1 2 4 to CYGARC_MAXINT -1024 -20.0 to -10
+</programlisting>
+<para>
+This indicates three legal values <literal>1</literal>,
+<literal>2</literal> and <literal>-1024</literal>, one
+integer range <literal>4&nbsp;to&nbsp;CYGARC_MAXINT</literal>, and one
+floating point range <literal>-20.0&nbsp;to&nbsp;-10.0</literal>. In
+practice such list expressions are rarely useful.
+</para>
+<para>
+The identifier <varname>to</varname> is not reserved, so it is
+possible to have a configuration option with that name (although it
+violates every naming convention). Using that option in a list
+expression may however give unexpected results.
+</para>
+<para>
+The graphical configuration tool uses the &legal-values; list
+expression to determine how best to let users manipulate the option's
+value. Different widgets will be appropriate for different lists, so
+<literal>{&nbsp;"red"&nbsp;"green"&nbsp;"blue"&nbsp;}</literal> might
+involve a pull-down option menu, and
+<literal>1&nbsp;to&nbsp;16</literal> could involve a spinner. The
+exact way in which &legal-values; lists get mapped on to GUI widgets
+is not defined and is subject to change at any time.
+</para>
+<para>
+As with goal expressions, list expressions can be ambiguous. Consider
+the following hypothetical example:
+</para>
+<programlisting width=72>
+    legal_values CYGNUM_LIBC_RAND_SEED -CYGNUM_LIBC_RAND_TRACE_LEVEL
+</programlisting>
+<para>
+This could be parsed in two ways:
+</para>
+<programlisting width=72>
+    legal_values (CYGNUM_LIBC_RAND_SEED - CYGNUM_LIBC_RAND_TRACE_LEVEL)
+    legal_values (CYGNUM_LIBC_RAND_SEED) (-CYGNUM_LIBC_RAND_TRACE_LEVEL)
+</programlisting>
+<para>
+Both are legal. The list expression parsing code will always use the
+largest ordinary expression for each element, so the first
+interpretation will be used. In cases like this it is a good idea to
+use brackets and avoid possible confusion.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Interfaces             -->
+
+<!-- FIXME: Maybe the use of interfaces in generic drivers should be
+used - if only because interfaces are not really a good solution for
+what we need there (the generic driver cannot contain the
+cdl_interface and be active_if on it, since it'll result in other
+packages not being able to implement the interface.) -->
+
+<sect1 id="language.interface">
+<title>Interfaces</title>
+
+<para>
+For many configurability requirements, options provide sufficient
+expressive power. However there are times when a higher level of
+abstraction is appropriate. As an example, suppose that some package
+relies on the presence of code that implements the standard kernel
+scheduling interface. However the requirement is no more stringent
+than this, so the constraint can be satisfied by the mlqueue
+scheduler, the bitmap scheduler, or any additional schedulers that may
+get implemented in future. A first attempt at expressing the
+dependency might be:
+</para>
+<programlisting width=72>
+    requires CYGSEM_KERNEL_SCHED_MLQUEUE || CYGSEM_KERNEL_SCHED_BITMAP
+</programlisting>
+<para>
+This constraint will work with the current release, but it is limited.
+Suppose there is a new release of the kernel which adds another
+scheduler such as a deadline scheduler, or suppose that there is a new
+third party package which adds such a scheduler. The package
+containing the limited constraint would now have to be updated and
+another release made, with possible knock-on effects.
+</para>
+<para>
+&CDL; interfaces provide an abstraction mechanism: constraints can be
+expressed in terms of an abstract concept, for example
+&ldquo;scheduler&rdquo;, rather than specific implementations such as
+<varname>CYGSEM_KERNEL_SCHED_MLQUEUE</varname> and
+<varname>CYGSEM_KERNEL_SCHED_BITMAP</varname>. Basically an interface
+is a calculated configuration option:
+</para>
+<programlisting width=72>
+cdl_interface CYGINT_KERNEL_SCHEDULER {
+    display  "Number of schedulers in this configuration"
+    &hellip;
+}
+</programlisting>
+<para>
+The individual schedulers can then implement this interface:
+</para>
+<programlisting width=72>
+cdl_option CYGSEM_KERNEL_SCHED_MLQUEUE {
+    display       "Multi-level queue scheduler"
+    default_value 1
+    implements    CYGINT_KERNEL_SCHEDULER
+    &hellip;
+}
+
+cdl_option CYGSEM_KERNEL_SCHED_BITMAP {
+    display       "Bitmap scheduler"
+    default_value 0
+    implements    CYGINT_KERNEL_SCHEDULER
+    &hellip;
+}
+</programlisting>
+<para>
+Future schedulers can also implement this interface. The value of an
+interface, for the purposes of expression evaluation, is the number of
+active and enabled options which implement this interface. Packages
+which rely on the presence of a scheduler can impose constraints such
+as:
+</para>
+<programlisting width=72>
+    requires CYGINT_KERNEL_SCHEDULER
+</programlisting>
+<para>
+If none of the schedulers are enabled, or if the kernel package is not
+loaded, then <varname>CYGINT_KERNEL_SCHEDULER</varname> will evaluate
+to <literal>0</literal>. If at least one scheduler is active and
+enabled then the constraint will be satisfied.
+</para>
+<para>
+Because interfaces have a calculated value determined by the
+implementors, the &default-value; and &calculated; properties are not
+applicable and should not appear in the body of a &cdl-interface;
+command. Interfaces have the <literal>data</literal> flavor by
+default, but the <literal>bool</literal> and
+<literal>booldata</literal> flavors may be specified instead. A
+<literal>bool</literal> interface is disabled if there are no active
+and enabled implementors, otherwise it is enabled. A
+<literal>booldata</literal> interface is disabled if there are no
+active and enabled implementors, otherwise it is enabled and has a
+value corresponding to the number of these implementors. Other
+properties such as &requires; and &compile; can be used as normal.
+</para>
+<para>
+Some component writers will not want to use interfaces in this way.
+The reasoning is that their code will only have been tested with the
+existing schedulers, so the &requires; constraint needs to be
+expressed in terms of those schedulers; it is possible that the
+component will still work with a new scheduler, but there are no
+guarantees. Other component writers may take a more optimistic view
+and assume that their code will work with any scheduler until proven
+otherwise. It is up to individual component writers to decide which
+approach is most appropriate in any given case.
+</para>
+<para>
+One common use for interfaces is to describe the hardware
+functionality provided by a given target. For example the &CDL;
+scripts for a TCP/IP package might want to know whether or not the
+target hardware has an ethernet interface. Generally it is not
+necessary for the TCP/IP stack to know exactly which ethernet hardware
+is present, since there should be a device driver which implements the
+appropriate functionality. In &CDL; terms the device drivers should
+implement an interface <varname>CYGHWR_NET_DRIVERS</varname>, and the
+&CDL; scripts for the TCP/IP stack can use this in appropriate
+expressions. 
+</para>
+<note>
+<para>
+Using the term <emphasis>interface</emphasis> for this concept is
+sometimes confusing, since the term has various other meanings as
+well. In practice, it is often correct. If there is a configuration
+option that implements a given &CDL; interface, then usually this
+option will enable some code that provides a particular interface at
+the C or C++ level. For example an ethernet device driver implements
+the &CDL; interface <varname>CYGHWR_NET_DRIVERS</varname>, and also
+implements a set of C functions that can be used by the TCP/IP stack.
+Similarly <varname>CYGSEM_KERNEL_SCHED_MLQUEUE</varname> implements
+the &CDL; interface <varname>CYGINT_KERNEL_SCHEDULER</varname> and
+also provides the appropriate scheduling functions.
+</para>
+</note>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Package database       -->
+
+<sect1 id="language.database">
+<title>Updating the <database>ecos.db</database> database</title>
+
+<para>
+The current implementation of the component framework requires that
+all packages be present in a single component repository and listed in
+that repository's <database>ecos.db</database> database. This is not
+generally a problem for application developers who can consider the
+component repository a read-only resource, except when adding or
+removing packages via the administration tool. However it means that
+component writers need to do their development work inside a
+component repository as well, and update the database with details of
+their new package or packages. Future enhancements to the component
+framework may allow new components to be developed outside a
+repository. 
+</para>
+<para>
+Like most files related to the component framework, the
+<database>ecos.db</database> database is actually a &Tcl; script.
+Typical package entries would look like this:
+</para>
+<programlisting width=72>
+package CYGPKG_LIBC {
+	alias		{ "C library" libc clib clibrary }
+	directory	language/c/libc
+	script		libc.cdl
+        description  "
+This package enables compatibility with the ISO C standard - ISO/IEC
+9899:1990. This allows the user application to use well known standard
+C library functions, and in eCos starts a thread to invoke the user
+function main()"
+}
+
+package CYGPKG_IO_PCI	{
+	alias		{ "PCI configuration library" io_pci }
+	directory	io/pci
+	script		io_pci.cdl
+	hardware
+        description "
+           This package contains the PCI configuration library."
+}
+</programlisting>
+<para>
+The <literal>package</literal> command takes two arguments, a name and
+a body. The name must be the same as in the &cdl-package; command in
+the package's top-level &CDL; script. The body can contain the
+following five commands: <literal>alias</literal>,
+<literal>directory</literal>, <literal>script</literal>,
+<literal>hardware</literal> and <literal>description</literal>.
+</para>
+
+<variablelist>
+<varlistentry>
+<term><literal>alias</literal></term>
+<listitem>
+<para>
+Each package should have one or more aliases. The first alias is
+typically used when listing the known packages, because a string like
+<literal>C&nbsp;library</literal> is a bit easier to read and
+understand than <varname>CYGPKG_LIBC</varname>. The other aliases are
+not used for output, but are accepted on input. For example the
+<application class="software">ecosconfig</application> command-line
+tool will accept <literal>add&nbsp;libc</literal> as an option, as well
+as <literal>add&nbsp;CYGPKG_LIBC</literal>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>directory</literal></term>
+<listitem>
+<para>
+This is used to specify the location of the package relative to the
+root of the component repository. It should be noted that in the
+current component framework this location cannot be changed in
+subsequent releases of the package: if for some reason it is desirable
+to install a new release elsewhere in the repository, all the old
+versions must first be uninstalled; the database cannot hold two
+separate locations for one package.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>script</literal></term>
+<listitem>
+<para>
+The <literal>script</literal> command specifies the location of the
+package's top-level &CDL; script, in other words the one containing the
+&cdl-package; definition. If the package follows the <link
+linkend="package.hierarchy">directory layout conventions</link> then
+this script will be in the <filename class="directory">cdl</filename>
+sub-directory, otherwise it will be relative to the package's top-level
+directory. Again once a release has been made this file should not
+change in later releases. In practice the top-level script is generally
+named after the package itself, so changing its name is unlikely to be
+useful. 
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>hardware</literal></term>
+<listitem>
+<para>
+Packages which are tied to specific hardware, for example device
+drivers and HAL packages, should indicate this in both the
+&cdl-package; command of the &CDL; script and in the database entry.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>description</literal></term>
+<listitem>
+<para>
+This should give a brief description of the package. Typically the
+text for the &description; property in the &cdl-package; command will
+be re-used.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<note>
+<para>
+Most of the information in the <database>ecos.db</database> file could
+be obtained by a relatively simple utility. This would be passed a
+single argument identifying a package's top-level &CDL; script. The
+directory path relative to the component repository root could be
+determined from the filename. The name, <literal>description</literal>
+and <literal>hardware</literal> fields could be obtained from the
+script's &cdl-package; command. The &display; property would supply
+the first alias, additional aliases could be obtained by extending the
+syntax of that property or by other means. Something along these lines
+may be provided by a future release of the component framework.
+</para>
+</note>
+<para>
+Currently the <database>ecos.db</database> database also holds
+information about the various targets. When porting to a new target it
+will be necessary to add information about the target to the database,
+as well as the details of the new platform HAL package and any related
+packages. 
+</para>
+
+</sect1>
+
+<!-- }}} -->
+
+</chapter>

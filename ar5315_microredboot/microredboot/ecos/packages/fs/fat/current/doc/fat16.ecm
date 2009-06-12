@@ -1,0 +1,57 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+
+    package CYGPKG_IO_FILEIO current ;
+    package CYGPKG_IO current ;
+    package CYGPKG_LIBC_STRING current ;
+
+    package CYGPKG_DEVS_DISK_ECOSYNTH current ;
+    package CYGPKG_IO_DISK current ;
+    package CYGPKG_BLOCK_LIB current ;
+    package CYGPKG_LINUX_COMPAT current ;
+    package CYGPKG_FS_FAT current ;
+
+    package CYGPKG_MEMALLOC current ;
+
+};
+
+
+cdl_component CYGVAR_DEVS_DISK_ECOSYNTH_DISK0 {
+    user_value   1
+};
+
+cdl_option CYGDAT_IO_DISK_ECOSYNTH_DISK0_NAME {
+    user_value {"/dev/disk0/"}
+};
+
+cdl_option CYGDAT_IO_DISK_ECOSYNTH_DISK0_FILENAME {
+    user_value {"/tmp/disk0.img"}
+};
+
+cdl_option CYGNUM_IO_DISK_ECOSYNTH_DISK0_SIZE {
+    user_value 10240000
+};
+
+cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR {
+    user_value 1
+};
+        
+cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_CYLINDERS {
+    user_value 100
+};
+        
+cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_HEADS {
+    user_value 5
+};
+       
+cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_SECTORS {
+    user_value 40
+};

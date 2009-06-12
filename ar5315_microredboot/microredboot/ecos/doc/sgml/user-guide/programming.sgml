@@ -1,0 +1,1340 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     programming.sgml                                            -->
+<!--                                                                 -->
+<!--     eCos User Guide                                             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- Copyright (C) 2003 Nick Garnett                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part ID="user-guide-programming">
+<TITLE>Programming With <productname>eCos</productname></TITLE>
+
+<CHAPTER ID="PROGRAMMING-WITH-ECOS">
+<TITLE>Programming With <productname>eCos</productname></TITLE>
+
+<PARA>The following chapters of this manual comprise a simple tutorial
+for configuring and building <productname>eCos</productname>, building and running <productname>eCos</productname> tests,
+and finally building three stand-alone example programs which use
+the  <productname>eCos</productname> API to perform some simple tasks.</PARA>
+
+<PARA>You will need a properly installed <productname>eCos</productname> system, with the correct
+versions of the GNU toolchain.<!-- <conditionaltext> --> On Windows
+you will be using the bash command line interpreter that comes with
+Cygwin, with the environment variables set as described in the
+toolchain documentation.</PARA>
+
+<SECT1 id="development-process">
+<TITLE>The Development Process</TITLE>
+
+<PARA>Most development projects using <productname>eCos</productname> would contain some (or
+most) of  the following:</PARA>
+
+<SECT2>
+<TITLE><productname>eCos</productname> Configuration</TITLE>
+
+<PARA><productname>eCos</productname> is configured to provide the desired API (the inclusion
+of libc, uitron, and the disabling of certain undesired funtions,
+etc.), and semantics (selecting scheduler, mutex behavior, etc.).
+See <XREF LINKEND="CONFIGURING-AND-BUILDING-ECOS-FROM-SOURCE">.</PARA>
+
+<PARA>It would normally make sense to enable <productname>eCos</productname> assertion checking
+at this time as well, to catch as many programming errors during
+the development phase as possible.</PARA>
+
+<PARA>Note that it should not be necessary to spend much time on
+<productname>eCos</productname> configuration initially. It may be important to perform fine
+tuning to reduce the memory footprint and to improve performance
+later when the product reaches a testable state.</PARA>
+</SECT2>
+
+<SECT2>
+<TITLE>    Integrity check of the <productname>eCos</productname> configuration</TITLE>
+
+<PARA>While we strive to thoroughly test <productname>eCos</productname>, the vast number
+of configuration permutations mean that the particular configuration
+parameters used for your project may not have been tested. Therefore,
+we advise running the <productname>eCos</productname> tests after the project's
+<productname>eCos</productname> configuration has been determined. See <XREF LINKEND="RUNNING-AN-ECOS-TEST-CASE">.</PARA>
+
+<PARA>Obviously, this should be repeated if the configuration changes
+later on in the development process.</PARA>
+</SECT2>
+
+<SECT2>
+<TITLE>    Application Development - Target Neutral Part</TITLE>
+
+<PARA>While your project is probably targeting a specific architecture
+and platform, possibly custom hardware, it may be possible to perform
+part of the application development using simulated or synthetic
+targets.</PARA>
+
+<PARA>There are three good reasons for doing this:</PARA>
+
+<ITEMIZEDLIST>
+
+<LISTITEM>
+<PARA>It may be possible by this means to perform application
+development in parallel with the design/implementation
+of the target hardware, thus providing more time for developing
+and testing functionality, and reducing time-to-market.</PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>The build-run-debug-cycle may be faster when the application
+does not have to be downloaded to a target via a serial interface.
+Debugging is also likely to be more responsive when you do not have to
+to communicate with the remote GDB stubs in RedBoot via serial. It
+also removes the need for manually or automatically resetting the
+target hardware.</PARA>
+</LISTITEM>
+
+<listitem>
+<para>
+New hardware can often be buggy. Comparing the behaviour of the
+program on the hardware and in the simulator or synthetic target may
+allow you to identify where the problems lie.
+</para>
+</listitem>
+
+</ITEMIZEDLIST>
+
+<PARA>This approach is possible because all targets (including
+simulators and synthetic ones) provide the same basic API: that
+is, kernel, libc, libm, uitron, infra, and to some extent, HAL and
+IO.</PARA>
+
+<PARA>Synthetic targets are especially suitable as they allow you
+to construct simulations of elaborate devices by interaction with
+the host system, where an IO device API can hide the details from
+the application. When switching to hardware later in the development
+cycle, the IO driver is properly implemented.
+</para>
+
+<para>
+Simulators can also do this, but it all depends on the
+design and capabilities of the simulator you use. Some, like
+<ULINK URL="http://sources.redhat.com/sid">SID</ULINK> or
+<ULINK URL="http://bochs.sourceforge.net/">Bochs</ULINK> provide
+complete hardware emulation, while others just support enough of the
+instruction set to run compiled code.
+</PARA>
+
+<PARA>Therefore, select a simulator or synthetic target and use
+it for as long as possible for application development. That is,
+configure for the selected target, build <productname>eCos</productname>, build the application
+and link with <productname>eCos</productname>, run and debug. Repeat the latter two steps until
+you are happy with it.</PARA>
+
+<PARA>Obviously, at some time you will have to switch to the intended
+target hardware, for example when adding target specific feature
+support, for memory footprint/performance characterization,
+and for final tuning of <productname>eCos</productname> and the application.</PARA>
+
+</SECT2>
+
+<SECT2>
+<TITLE>    Application Development - Target Specific Part</TITLE>
+
+<PARA>Repeat the build-run-debug-cycle while performing final tuning
+and debugging of application. Remember to disable <productname>eCos</productname> assertion
+checking if you are testing any performance-related aspects, it can
+make a big difference.</PARA>
+
+<PARA>It may be useful to switch between this and the previous step
+repeatedly through the development process; use the simulator/synthetic
+target for actual development, and use the target hardware to continually
+check memory footprint and performance. There should be little cost
+in switching between the two targets when using two separate build
+trees. </PARA>
+</SECT2>
+
+</SECT1>
+
+</CHAPTER>
+
+<!-- ==================================================== -->
+
+<CHAPTER ID="CONFIGURING-AND-BUILDING-ECOS-FROM-SOURCE"><!-- <conditionaltext> -->
+<TITLE><!-- <xref> --><!-- <index></index> -->Configuring and Building <productname>eCos</productname> from Source</TITLE>
+
+<PARA>This chapter documents the configuration of <productname>eCos</productname>. The process is
+the same for any of the supported targets: you may select a
+hardware target (if you have a board available), any one of the
+simulators, or a synthetic target (if your host platform has synthetic
+target support).</PARA>
+
+<!-- ==================================================== -->
+
+<SECT1 id="ecos-startup-configs">
+<TITLE><!-- <xref> --><productname>eCos</productname> Start-up Configurations</TITLE>
+
+<PARA>There are various ways to download an executable image to a
+target board, and these involve different ways of preparing the
+executable image. In the <productname>eCos</productname> Hardware Abstraction Layer (HAL package)
+there are configuration options to support the different download
+methods. <XREF LINKEND="user-guide-download-methods"> summarizes the
+ways in which an <productname>eCos</productname> image can be prepared for different types of
+download. This is not an exhaustive list, some targets define
+additional start-up types of their own. Where a ROM Monitor is
+mentioned, this will usually be RedBoot, although on some older, or
+low resource, targets you may need to use CygMon or the GDB stubs ROM,
+see the target documentation for details.</PARA>
+
+
+<TABLE id="user-guide-download-methods">
+<TITLE>Configuration for various download methods</TITLE>
+<TGROUP COLS="2">
+<THEAD>
+<ROW>
+<ENTRY>Download method</ENTRY>
+<ENTRY>HAL configuration</ENTRY>
+</ROW>
+</THEAD>
+<TBODY>
+<ROW>
+<ENTRY>Burn hardware ROM</ENTRY>
+<ENTRY>&nbsp;ROM or ROMRAM start-up</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>Download to ROM emulator</ENTRY>
+<ENTRY>&nbsp;ROM or ROMRAM start-up</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>Download to board with ROM Monitor</ENTRY>
+<ENTRY>&nbsp;RAM start-up</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>Download to simulator without ROM Monitor</ENTRY>
+<ENTRY>&nbsp;ROM start-up</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>Download to simulator with ROM Monitor</ENTRY>
+<ENTRY>&nbsp;RAM start-up</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>Download to simulator ignoring devices</ENTRY>
+<ENTRY>&nbsp;SIM configuration</ENTRY>
+</ROW>
+<ROW>
+<ENTRY>Run synthetic target</ENTRY>
+<ENTRY>&nbsp;RAM start-up</ENTRY>
+</ROW>
+</TBODY>
+</TGROUP>
+</TABLE>
+
+<CAUTION>
+
+<PARA>You cannot run an application configured for RAM start-up
+on the simulator directly: it will fail during start-up. You can
+only download it to the simulator if
+you are already running RedBoot in the simulator,
+as described in the toolchain documentation
+or you load through the 
+<EMPHASIS>SID </EMPHASIS>
+GDB debugging component.  This is not the same as the simulated
+stub, since it does not require a target program to be running to
+get GDB to talk to it.  It can be done before letting the simulator
+run
+or you use the ELF loader component to get a program into memory.</PARA>
+
+</CAUTION><!-- <label> --><!-- <conditionaltext> --><!-- NOTE</label> -->
+
+<NOTE>
+<PARA>Configuring <productname>eCos</productname>' HAL package for simulation should
+rarely be needed for real development; binaries built with such
+a kernel will not run on target boards at all,<!-- <conditionaltext> -->
+and the MN10300 and
+TX39 simulators can run binaries built for stdeval1 and jmr3904
+target boards.
+The main use for a ``simulation'' configuration
+is if you are trying to work around problems with the device drivers
+or with the simulator.  Also note that when using a TX39 system configured
+for simulator start-up you should then invoke the simulator with 
+the <OPTION>--board=jmr3904pal</OPTION>
+option instead of 
+<OPTION>--board=jmr3904</OPTION><!-- <conditionaltext> --></PARA>
+</NOTE>
+
+<NOTE>
+<PARA>If your chosen architecture does not have simulator support,
+then the combinations above that refer to the simulator do not apply.
+Similarly, if your chosen platform does not have RedBoot
+ROM support, the combinations listed above that use 
+RedBoot do not apply.</PARA>
+</NOTE>
+
+<PARA>The debugging environment for most developers will be either
+a hardware board or the simulator, in which case they will be able
+to select a single HAL configuration.</PARA>
+
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="using-configtool-windows-linux">
+<TITLE><!-- <index></index> -->
+Configuration Tool on Windows and Linux Quick Start</TITLE>
+
+<PARA><!-- <conditionaltext> --> 
+
+This section described the GUI based configuration tool. This
+tool is probably more suited to users who prefer GUI's. The next
+section describes a CLI based tool which Unix users may
+prefer. </PARA>
+
+<PARA>Note that the use of the <application>Configuration Tool</application>
+is described in detail in <XREF
+LINKEND="THE-ECOS-CONFIGURATION-TOOL">.</PARA>
+
+<PARA>The <application>Configuration Tool</application> (see <XREF LINKEND="PROGRAMMING-FIGURE-CONFIGURATION-TOOL">)
+has five main elements: the <EMPHASIS>configuration window</EMPHASIS>,
+the <emphasis>conflicts window</emphasis>,
+the <EMPHASIS>properties window</EMPHASIS>, the <!-- <xref> --><EMPHASIS>short
+description window</EMPHASIS>,
+and the <EMPHASIS>output window</EMPHASIS>.</PARA>
+
+<FIGURE ID="PROGRAMMING-FIGURE-CONFIGURATION-TOOL">
+<TITLE>Configuration Tool</TITLE><!-- <xref> -->
+<GRAPHIC ENTITYREF="programming-graphic1"></GRAPHIC>
+</FIGURE>
+
+<PARA>Start by opening the templates window via <GUIMENUITEM>Build-&#62;Templates</GUIMENUITEM>.
+Select the desired target (see <XREF LINKEND="FIGURE-TEMPLATE-SELECTION">).</PARA>
+
+<FIGURE ID="FIGURE-TEMPLATE-SELECTION">
+<TITLE>Template selection</TITLE><!-- <xref> -->
+<GRAPHIC ENTITYREF="programming-graphic2"></GRAPHIC>
+</FIGURE>
+
+<PARA>Make sure that the configuration is correct for the target
+in terms of endianness, CPU model, Startup type, etc. (see <XREF LINKEND="CONFIGURING-FOR-THE-TARGET">).</PARA>
+
+<FIGURE ID="CONFIGURING-FOR-THE-TARGET">
+<TITLE><!-- <conditionaltext> --><!-- <xref> -->Configuring
+for the target</TITLE>
+<GRAPHIC ENTITYREF="programming-graphic3"></GRAPHIC>
+</FIGURE>
+
+<PARA>Next, select the <EMPHASIS>Build-&#62;Library</EMPHASIS> menu
+item to start building <productname>eCos</productname> (see <XREF
+LINKEND="FIGURE-SELECTING-THE-BUILD-LIBRARY-MENU-ITEM">).  The
+application will configure the sources, prepare a build tree, and
+build the <FILENAME>libtarget.a</FILENAME> library, which contains the
+<productname>eCos</productname> kernel and other packages.</PARA>
+
+<FIGURE ID="FIGURE-SELECTING-THE-BUILD-LIBRARY-MENU-ITEM"><!-- <xref> -->
+<TITLE>Selecting the Build Library menu item</TITLE>
+<GRAPHIC ENTITYREF="programming-graphic4"></GRAPHIC>
+</FIGURE>
+
+
+<PARA>The <EMPHASIS>Save As</EMPHASIS> dialog box will appear, asking
+you to specify a directory in which to place your save file. You
+can use the default, but it is a good idea to make a subdirectory,
+called <filename>ecos-work</filename> for example. </PARA>
+
+<FIGURE>
+<TITLE>Save file dialog</TITLE>
+<GRAPHIC ENTITYREF="programming-graphic5"></GRAPHIC>
+</FIGURE>
+
+<PARA>The first time you build an <productname>eCos</productname> library for a specific
+architecture, the <application>Configuration Tool</application> may prompt
+you for the location of the appropriate build tools (including
+<command>make</command> and
+<command><replaceable>TARGET-</replaceable>gcc</command>) using a
+<EMPHASIS>Build Tools</EMPHASIS> dialog box (as shown in <XREF
+LINKEND="FIGURE-BUILD-TOOLS-DIALOG">). You can select a location from
+the drop down list, browse to the directory using the
+<EMPHASIS>Browse</EMPHASIS> button, or type in the location of the
+build tools manually.</PARA>
+
+<FIGURE ID="FIGURE-BUILD-TOOLS-DIALOG"><!-- <xref> -->
+<TITLE>Build tools dialog</TITLE>
+<GRAPHIC ENTITYREF="programming-graphic6"></GRAPHIC>
+</FIGURE>
+
+<PARA>The <application>Configuration Tool</application> may also prompt you
+for the location of the user tools (such as <command>cat</command> and
+<command>ls</command>) using a <emphasis>User Tools</emphasis> dialog
+box (as shown in <XREF LINKEND="FIGURE-USER-TOOLS-DIALOG">). As with
+the <EMPHASIS>Build Tools</EMPHASIS> dialog, you can select a location
+from the drop down list, browse to the directory using the
+<EMPHASIS>Browse</EMPHASIS> button, or type in the location of the
+user tools manually. Note that on Linux, this will often be
+unnecessary as the tools will already be on your PATH.</PARA>
+
+<FIGURE ID="FIGURE-USER-TOOLS-DIALOG"><!-- <xref> -->
+<TITLE>User tools dialog</TITLE>
+<GRAPHIC ENTITYREF="programming-graphic7"></GRAPHIC>
+</FIGURE>
+
+<PARA>When the tool locations have been entered, the <application>Configuration
+Tool</application> will configure the sources, prepare a build tree,
+and build the <filename>libtarget.a</filename> library, which contains
+the <productname>eCos</productname> kernel and other packages.</PARA>
+
+<PARA>The output from the configuration process and the building
+of <filename>libtarget.a</filename> will be shown in the output
+window.</PARA>
+
+<PARA>Once the build process has finished you will have a kernel
+with other packages in <FILENAME>libtarget.a</FILENAME>. You should
+now build the <productname>eCos</productname> tests for your particular configuration. </PARA>
+
+<PARA>You can do this by selecting <EMPHASIS>Build</EMPHASIS> -&#62; <EMPHASIS>Tests</EMPHASIS>.
+Notice that you could have selected <EMPHASIS>Tests</EMPHASIS> instead
+of <EMPHASIS>Library</EMPHASIS> in the earlier step and it would
+have built <EMPHASIS>both</EMPHASIS> the library and the tests,
+but this would increase the build time substantially, and if you
+do not need to build the tests it is unnecessary.</PARA>
+
+<FIGURE>
+<TITLE>Selecting the Build Tests menu item</TITLE>
+<GRAPHIC ENTITYREF="programming-graphic8"></GRAPHIC>
+</FIGURE>
+
+<PARA><XREF LINKEND="RUNNING-AN-ECOS-TEST-CASE"> will guide you through running one
+	    of the test cases you just built on the selected target,
+	    using GDB. </PARA>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 ID="USING-ECOSCONFIG-ON-LINUX">
+<TITLE><!-- <index></index> -->
+Ecosconfig on Windows and Linux Quick Start</TITLE>
+
+<PARA>As an alternative to using the graphical
+<application>Configuration Tool</application>, it is possible to
+configure and build a kernel by editing a configuration file manually
+and using the <command>ecosconfig</command> command. Users with a Unix
+background may find this tool more suitable than the GUI tool
+described in the previous section.</PARA>
+
+<para>
+Manual configuration and the <command>ecosconfig</command> command are
+described in detail in <XREF LINKEND="manual-configuration">.
+</para>
+
+<para>
+To use the <command>ecosconfig</command> command you need to start a
+shell. In Windows you need to start a
+<productname>CygWin</productname> <command>bash</command> shell, not a
+DOS command line.
+</para>
+
+<!--
+<para>
+XXXXX Need to know whether there will be a packaged shell entry in the
+start menu, and where XXXXX
+</para>
+-->
+
+<PARA>The following instructions assume that the
+<literal>PATH</literal> and <literal>ECOS_REPOSITORY</literal>
+environment variables have been setup correctly as described in <XREF
+LINKEND="user-guide-installation-linux">.  They also assume Linux
+usage but equally well apply to Windows running Cygwin.</PARA>
+
+<PARA>Before invoking <command>ecosconfig</command> you need to
+choose a directory in which to work. For the purposes of this tutorial,
+the default path will be <FILENAME><replaceable>BASE_DIR</replaceable>/ecos-work</FILENAME>.
+Create this directory and change to it by typing: </PARA>
+
+<PROGRAMLISTING>
+$ mkdir <replaceable>BASE_DIR</replaceable>/ecos-work
+$ cd <replaceable>BASE_DIR</replaceable>/ecos-work
+</PROGRAMLISTING>
+
+<PARA>To see what options can be used with <command>ecosconfig</command>,
+type: </PARA>
+
+<PROGRAMLISTING>$ ecosconfig --help</PROGRAMLISTING>
+
+<PARA>The available packages, targets and templates may be listed
+as follows:</PARA>
+
+<PROGRAMLISTING>
+$ ecosconfig list
+</PROGRAMLISTING>
+
+<PARA>Here is sample output from <command>ecosconfig</command> showing
+the usage message.</PARA>
+
+<EXAMPLE>
+<TITLE>Getting <!-- <index></index> --> help from ecosconfig</TITLE>
+
+<PROGRAMLISTING>
+$ ecosconfig --help
+Usage: ecosconfig [ qualifier ... ] [ command ]
+  commands are:
+    list                                       : list repository contents
+    new TARGET [ TEMPLATE [ VERSION ] ]        : create a configuration
+    target TARGET                              : change the target hardware
+    template TEMPLATE [ VERSION ]              : change the template
+    add PACKAGE [ PACKAGE ... ]                : add package(s)
+    remove PACKAGE [ PACKAGE ... ]             : remove package(s)
+    version VERSION PACKAGE [ PACKAGE ... ]    : change version of package(s)
+    export FILE                                : export minimal config info
+    import FILE                                : import additional config info
+    check                                      : check the configuration
+    resolve                                    : resolve conflicts
+    tree                                       : create a build tree
+  qualifiers are:
+    --config=FILE                              : the configuration file
+    --prefix=DIRECTORY                         : the install prefix
+    --srcdir=DIRECTORY                         : the source repository
+    --no-resolve                               : disable conflict
+resolution
+    --version                                  : show version and copyright
+$
+</PROGRAMLISTING>
+</EXAMPLE>
+
+<EXAMPLE>
+
+<TITLE>ecosconfig output &mdash; <!-- <index></index> -->
+list of available packages, targets and templates</TITLE>
+
+<PROGRAMLISTING>
+$ ecosconfig list
+Package CYGPKG_CYGMON (CygMon support via eCos): 
+aliases: cygmon 
+versions: &Version; 
+Package CYGPKG_DEVICES_WALLCLOCK_DALLAS_DS1742 (Wallclock driver for Dallas 1742): 
+aliases: devices_wallclock_ds1742 device_wallclock_ds1742 
+versions: &Version; 
+Package CYGPKG_DEVICES_WALLCLOCK_SH3 (Wallclock driver for SH3 RTC module): 
+aliases: devices_wallclock_sh3 device_wallclock_sh3 
+versions: &Version; 
+Package CYGPKG_DEVICES_WATCHDOG_ARM_AEB (Watchdog driver for ARM/AEB board): 
+aliases: devices_watchdog_aeb device_watchdog_aeb 
+versions: &Version; 
+Package CYGPKG_DEVICES_WATCHDOG_ARM_EBSA285 (Watchdog driver for ARM/EBSA285 board): 
+aliases: devices_watchdog_ebsa285 device_watchdog_ebsa285 
+versions: &Version; 
+&hellip;
+</PROGRAMLISTING>
+</EXAMPLE>
+
+
+<SECT2>
+<TITLE>Selecting a <!-- <index></index> --> Target</TITLE>
+
+<PARA>To configure for a listed target, type: </PARA>
+
+<PROGRAMLISTING>
+$ ecosconfig new &lt;target&#62;
+</PROGRAMLISTING>
+
+<PARA>For example, to configure for the ARM PID development board,
+type: </PARA>
+
+<PROGRAMLISTING>
+$ ecosconfig new pid
+</PROGRAMLISTING>
+
+<PARA>You can then edit the generated file,
+<FILENAME>ecos.ecc</FILENAME>, setting the options as required for the
+target (endianess, CPU model, Startup type, etc.).  For detailed
+information about how to edit the <filename>ecos.ecc</filename> file,
+see the <citetitle>CDL Writer's Guide</citetitle> and <XREF
+LINKEND="editing-an-ecos-savefile">.
+</PARA>
+
+<PARA>Create a build tree for the configured target by typing:</PARA>
+
+<PROGRAMLISTING>
+$ ecosconfig tree
+</PROGRAMLISTING>
+
+<para>
+If there are any problem with the configuration,
+<command>ecosconfig</command> will tell you. The most likely cause of
+this is mistakes when editing the <filename>ecos.ecc</filename> file.
+You can check whether the configuration you have made is correct,
+without building the tree with the following command:
+</para>
+
+<PROGRAMLISTING>
+$ ecosconfig check
+</PROGRAMLISTING>
+
+<para>
+If this reports any conflicts you can get
+<command>ecosconfig</command> to try and resolve them itself by typing:
+</para>
+
+<PROGRAMLISTING>
+$ ecosconfig resolve
+</PROGRAMLISTING>
+
+<para>
+See <XREF LINKEND="conflicts-and-constraints"> for more details.
+</para>
+
+<PARA>You can now run the command <command>make</command> or <command>make
+tests</command>, after which you will be at the same point you
+would be after running the <application>Configuration Tool</application>
+&mdash; you can start developing your own applications,
+following the steps in <XREF LINKEND="BUILDING-AND-RUNNING-SAMPLE-APPLIATIONS">. </PARA>
+
+<PARA>The procedure shown above allows you to do very coarse-grained
+configuration of the <productname>eCos</productname> kernel: you can select which packages
+to include in your kernel, and give target and start-up options.
+But you cannot select components within a package, or set the very
+fine-grained options. </PARA>
+
+<PARA>To select fine-grained configuration options you will need to
+edit the configuration file <filename>ecos.ecc</filename> in the
+current directory and regenerate the build tree.</PARA>
+
+<CAUTION>
+<PARA>You should follow the manual configuration process described
+above very carefully, and you should read the comments in each file
+to see when one option depends on other options or packages being
+enabled or disabled. If you do not, you might end up with an inconsistently
+configured kernel which could fail to build or might execute
+incorrectly.</PARA>
+</CAUTION>
+
+</SECT2>
+</SECT1>
+
+</CHAPTER>
+
+<!-- ==================================================== -->
+
+<CHAPTER ID="RUNNING-AN-ECOS-TEST-CASE">
+<TITLE>Running an <productname>eCos</productname> Test Case</TITLE>
+
+<PARA>In <XREF LINKEND="using-configtool-windows-linux"> or <XREF
+LINKEND="using-ecosconfig-on-linux"> you created the <productname>eCos</productname> test cases
+as part of the build process. Now it is time to try and run one.
+</para>
+
+<!-- ==================================================== -->
+
+<SECT1 id="using-configtool-testcase">
+<TITLE>Using the <application>Configuration Tool</application></TITLE>
+
+<PARA>Test executables that have been linked using the
+<emphasis>Build-&gt;Tests</emphasis> operation against the current
+configuration can be executed by selecting <EMPHASIS>Tools-&#62;Run
+Tests</EMPHASIS>.</PARA>
+
+<PARA>When a test run is invoked, a property sheet is displayed, see
+<xref linkend="programming-run-tests">. Press the <emphasis>Uncheck
+All</emphasis> button and then find and check just one test,
+<filename>bin_sem0</filename> for example.
+</para>
+
+<FIGURE id="programming-run-tests">
+<TITLE>Run tests</TITLE>
+<GRAPHIC ENTITYREF="graphic27"></GRAPHIC>
+</FIGURE>
+
+<para>
+Now press the <emphasis>Properties</emphasis> button to set up
+communications with the target. This will bring up a properties dialog
+shown in <xref linkend="programming-run-properties">. If you have
+connected the target board via a serial cable, check the
+<emphasis>Serial</emphasis> radio button, and select the serial port
+and baud rate for the board. If the target is connected via the
+network select the <emphasis>TCP/IP</emphasis> button and enter the IP
+address that the board has been given, and the port number (usually
+9000).
+</para>
+
+<FIGURE id="programming-run-properties">
+<TITLE>Properties dialog box</TITLE>
+<GRAPHIC ENTITYREF="graphic25"></GRAPHIC>
+</FIGURE>
+
+<para>
+Click OK on this dialog and go back to the <emphasis>Run
+Tests</emphasis> dialog. Press the <emphasis>Run</emphasis> button and
+the selected test will be downloaded and run. The
+<emphasis>Output</emphasis> tab will show you how this is
+progressing. If it seems to stop for a long time, check that the
+target board is correctly connected, and that <productname>eCos</productname> has been correctly
+configured -- especially the start-up type.
+</para>
+
+<para>
+When the program runs you should see a couple of line similar to this appear:
+</para>
+
+<PROGRAMLISTING>
+PASS:&lt;Binary Semaphore 0 OK&gt;
+EXIT:&lt;done&gt;
+</PROGRAMLISTING>
+
+<para>
+This indicates that the test has run successfully.
+</para>
+
+<PARA>See <xref linkend="config-tool-test-execution"> for
+further details.</PARA>
+
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="using-commandline-testcase">
+<TITLE>Using the command line</TITLE>
+
+<PARA>Start a command shell (such as a Cygwin shell window in Windows)
+with the environment variables set as described in the toolchain
+documentation.  Change to the directory in which you set up your build
+tree, and invoke <!-- <index></index> --> GDB on the test
+program.</PARA>
+
+<PARA>To run the <!-- <index></index> -->bin_sem0 test (which will
+test the kernel for the correct creation and destruction of binary
+semaphores) type: </PARA>
+
+<PROGRAMLISTING>
+$ <replaceable>TARGET-</replaceable>gdb -nw install/tests/kernel/<replaceable>&Version;</replaceable>/tests/bin_sem0
+</PROGRAMLISTING>
+
+<PARA>You should see output similar to the following in the command
+window:</PARA>
+
+<PROGRAMLISTING>
+GNU gdb THIS-GDB-VERSION
+Copyright 2001 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "--host=THIS-HOST --target=THIS-TARGET".
+(gdb)
+</PROGRAMLISTING>
+
+<PARA>If you are trying to run a synthetic target test on <!--
+<index></index> -->Linux, skip the following connection and download
+steps. Otherwise, connect to the target by typing: </PARA>
+
+<PROGRAMLISTING>
+(gdb) set remotebaud 38400
+(gdb) target remote /dev/ttyS0
+</PROGRAMLISTING>
+<PARA>on Linux or</PARA>
+<PROGRAMLISTING>
+(gdb) set remotebaud 38400
+(gdb) target remote com1
+</PROGRAMLISTING>
+<PARA>on Windows or</PARA>
+<PROGRAMLISTING>
+(gdb) target sim
+</PROGRAMLISTING>
+<para>to use a simulator in either host O/S.</para>
+
+<para>
+Check the documentation for the target board for the actual baud rate
+to use when connecting to real targets.
+</para>
+
+<PARA>
+You will see output similar to the following: </PARA>
+
+<programlisting width=72>
+Remote debugging using /dev/ttyS1
+0x0000d50c in ?? ()
+    at <replaceable>BASE_DIR</replaceable>/kernel/<replaceable>&Version;</replaceable>/src/common/kapi.cxx:345
+
+Current language:  auto; currently c++
+(gdb) 
+</programlisting>
+
+<para>
+Or if you are using the simulator:
+</para>
+
+<PROGRAMLISTING>
+Connected to the simulator.
+(gdb)
+</PROGRAMLISTING>
+
+<PARA>Now download the program to the target with</PARA>
+
+<PROGRAMLISTING>
+(gdb) load
+</PROGRAMLISTING>
+
+<PARA>You should see output similar to the following on your screen: </PARA>
+
+<PROGRAMLISTING>
+Loading section .text, size 0x4b04 lma 0x108000
+Loading section .rodata, size 0x738 lma 0x10cb08
+Loading section .data, size 0x1c0 lma 0x10d240
+Start address 0x108000, load size 21500
+Transfer rate: 24571 bits/sec, 311 bytes/write.
+(gdb)
+</PROGRAMLISTING>
+
+<PARA>You are now ready to run your program. If you type: </PARA>
+
+<PROGRAMLISTING>
+(gdb) continue
+</PROGRAMLISTING>
+
+<PARA>you will see output similar to the following: </PARA>
+
+<PROGRAMLISTING>
+Continuing.
+PASS:&lt;Binary Semaphore 0 OK&gt;
+EXIT:&lt;done&gt;
+</PROGRAMLISTING>
+
+<NOTE>
+<PARA> If you are using a simulator or the synthetic target rather
+	    than real hardware, you must use the GDB command
+	    &ldquo;run&rdquo; rather than &ldquo;continue&rdquo; to
+	    start your program.</PARA>
+</NOTE>
+
+<PARA>You can terminate your GDB session with
+<EMPHASIS>Control+C</EMPHASIS>, otherwise it will sit in the
+&ldquo;idle&rdquo; thread and use up CPU time. This is not a problem
+with real targets, but may have undesirable effects in simulated or
+synthetic targets. Type <command>quit</command> and you are
+done. </PARA>
+
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="testing-filters">
+<TITLE>Testing Filters</TITLE>
+
+<PARA>While most test cases today run solely in the target environment,
+some packages may require external testing infrastructure and/or
+feedback from the external environment to do complete testing.</PARA>
+
+<PARA>The serial package is an example of this. The network package
+also contains some tests that require programs to be run on a
+host. See the network <citetitle>Tests and Demonstrations</citetitle>
+section in the network documentation in the <citetitle><productname>eCos</productname> Reference
+Guide</citetitle>. Here we will concentrate on the serial tests since
+these are applicable to more targets.
+</para>
+
+<PARA>Since the serial line is also used for communication with
+GDB, a  filter is inserted in the communication pathway between
+GDB and the serial device which is connected to the hardware target.
+The filter forwards all communication between the two, but also
+listens for special commands embedded in the data stream from the
+target.</PARA>
+
+<PARA>When such a command is seen, the filter stops forwarding data
+to GDB from the target and enters a special mode. In this mode
+the test case running on the target is able to control the filter,
+commanding it to run various tests. While these tests run, GDB is
+isolated from the target.</PARA>
+
+<PARA>As the test completes (or if the filter detects a target crash)
+the communication path between GDB and the hardware target is re-established,
+allowing GDB to resume control.</PARA>
+
+<PARA>In theory, it is possible to extend the filter to provide
+a generic framework for other target-external testing components,
+thus decoupling the testing infrastructure from the (possibly limited)
+communication means provided by the target (serial, JTAG, Ethernet,
+etc). </PARA>
+
+<PARA>Another advantage is that the host tools do not need to
+know about the various testing environments required by the <productname>eCos</productname>
+packages, since all contact with the target continues to happen
+via GDB.</PARA>
+
+</sect1>
+
+</CHAPTER>
+
+
+<!-- ==================================================== -->
+
+<CHAPTER ID="BUILDING-AND-RUNNING-SAMPLE-APPLIATIONS"><!-- <conditionaltext> -->
+<TITLE><!-- <xref> -->Building and <!-- <index></index> -->Running Sample Applications</TITLE>
+
+<PARA>The example programs in this tutorial are included, along
+with a <filename>Makefile</filename>, in the <filename>examples</filename> directory
+of the <productname>eCos</productname> distribution. The first program you will run is a <EMPHASIS>hello
+world</EMPHASIS>-style application, then you will run a more complex
+application that demonstrates the creation of threads and the use
+of cyg_thread_delay(), and finally you will run
+one that uses clocks and alarm handlers.</PARA>
+
+<PARA>The <filename>Makefile</filename> depends on an externally
+defined variable to find the <productname>eCos</productname> library and header files. This
+variable is <literal>INSTALL_DIR</literal> and must be set to the
+pathname of the install directory created in <xref
+linkend="using-configtool-windows-linux">.
+</PARA>
+
+<para>
+<literal>INSTALL_DIR</literal> may be either be set in the shell
+environment or may be supplied on the command line. To set it in the
+shell do the following in a <command>bash</command> shell:
+</para>
+
+<programlisting width=72>
+$ export INSTALL_DIR=BASE_DIR/ecos-work/arm_install
+</programlisting>
+
+<para>
+You can then run <command>make</command> without any extra parameters
+to build the examples.
+</para>
+
+<para>
+Alternatively, if you can do the following:
+</para>
+
+<programlisting width=72>
+$ make INSTALL_DIR=BASE_DIR/ecos-work/arm_install
+</programlisting>
+
+<!-- ==================================================== -->
+
+<SECT1 id="ecos-hello-world">
+<TITLE><productname>eCos</productname> Hello World</TITLE>
+
+<PARA>The following code is found in the file <FILENAME><!-- <index></index> -->hello.c</FILENAME>
+in the <FILENAME>examples</FILENAME> directory: </PARA>
+
+<SECT2>
+<TITLE><productname>eCos</productname><!-- <index></index> --> hello world program listing</TITLE>
+
+<PROGRAMLISTING>
+/* this is a simple hello world program */
+#include &lt;stdio.h&#62;
+int main(void)
+{
+ printf("Hello, eCos world!\n");
+ return 0;
+}
+</PROGRAMLISTING>
+
+<PARA>To compile this or any other program that is not part of the
+<productname>eCos</productname> distribution, you can follow the procedures described below. Type
+this explicit compilation command (assuming your current working
+directory is also where you built the <productname>eCos</productname> kernel):</PARA>
+
+<PROGRAMLISTING>
+$ <replaceable>TARGET-</replaceable>gcc -g -I<replaceable>BASE_DIR</replaceable>/ecos-work/install/include hello.c -L<replaceable>BASE_DIR</replaceable>/ecos-work/install/lib -Ttarget.ld -nostdlib
+</PROGRAMLISTING>
+
+<PARA>The compilation command above contains some standard GCC
+options (for example, <OPTION>-g</OPTION> enables debugging), as well
+as some mention of paths
+(<OPTION>-I<replaceable>BASE_DIR</replaceable>/ecos-work/install/include</OPTION> allows files
+like <FILENAME>cyg/kernel/kapi.h</FILENAME> to be found, and
+<OPTION>-L<replaceable>BASE_DIR</replaceable>/ecos-work/install/lib</OPTION> allows the linker to
+find <OPTION>-Ttarget.ld</OPTION>). </PARA>
+
+<PARA>The executable program will be called <FILENAME>a.out</FILENAME>. </PARA>
+
+<NOTE>
+<PARA>Some target systems require special options to be passed to
+gcc to compile correctly for that system. Please examine the Makefile
+in the examples directory to see if this applies to your target.</PARA>
+</NOTE>
+
+<PARA>You can now run the resulting program using GDB in exactly the
+same the way you ran the test case before. The procedure will be the
+same, but this time run
+<command><replaceable>TARGET-</replaceable>gdb</command> specifying
+<option>-nw a.out</option> on the command line:</PARA>
+
+<PROGRAMLISTING>
+$ <replaceable>TARGET-</replaceable>gdb -nw a.out
+</PROGRAMLISTING>
+
+<PARA>For targets other than the synthetic linux target, you should
+now run the usual GDB commands described earlier. Once this is done,
+typing the command "continue" at the (gdb) prompt ("run" for
+simulators) will allow the program to execute and print the string
+"Hello, eCos world!" on your screen.</PARA>
+
+<PARA>On the synthetic linux target, you may use the "run" command
+immediately - you do not need to connect to the target, nor use the
+"load" command.<!-- <conditionaltext> --></PARA>
+
+</SECT2>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="sample-twothreads">
+<TITLE>A Sample Program with Two Threads</TITLE>
+
+<PARA>Below is a program that uses some of <productname>eCos</productname>' system calls. It
+creates two threads, each of which goes into an infinite loop in which
+it sleeps for a while (using cyg_thread_delay()).  This code is found
+in the file <filename><!-- <index></index> -->twothreads.c</filename>
+in the examples directory.</PARA>
+
+<SECT2>
+<TITLE><productname>eCos</productname> <!-- <index></index> -->two-threaded program listing</TITLE>
+
+<PROGRAMLISTING>
+#include &lt;cyg/kernel/kapi.h&#62;
+#include &lt;stdio.h&#62;
+#include &lt;math.h&#62;
+#include &lt;stdlib.h&#62;
+
+/* now declare (and allocate space for) some kernel objects,
+  like the two threads we will use */
+cyg_thread thread_s[2];	/* space for two thread objects */
+
+char stack[2][4096];	/* space for two 4K stacks */
+
+/* now the handles for the threads */
+cyg_handle_t simple_threadA, simple_threadB;
+
+/* and now variables for the procedure which is the thread */
+cyg_thread_entry_t simple_program;
+
+/* and now a mutex to protect calls to the C library */
+cyg_mutex_t cliblock;
+
+/* we install our own startup routine which sets up threads */
+void cyg_user_start(void)
+{
+ printf("Entering twothreads' cyg_user_start() function\n");
+
+ cyg_mutex_init(&amp;cliblock);
+
+ cyg_thread_create(4, simple_program, (cyg_addrword_t) 0,
+	"Thread A", (void *) stack[0], 4096,
+	&amp;simple_threadA, &amp;thread_s[0]);
+ cyg_thread_create(4, simple_program, (cyg_addrword_t) 1,
+	"Thread B", (void *) stack[1], 4096,
+	&amp;simple_threadB, &amp;thread_s[1]);
+
+ cyg_thread_resume(simple_threadA);
+ cyg_thread_resume(simple_threadB);
+}
+
+/* this is a simple program which runs in a thread */
+void simple_program(cyg_addrword_t data)
+{
+ int message = (int) data;
+ int delay;
+
+ printf("Beginning execution; thread data is %d\n", message);
+
+ cyg_thread_delay(200);
+
+ for (;;) {
+ delay = 200 + (rand() % 50);
+
+ /* note: printf() must be protected by a
+ call to cyg_mutex_lock() */
+ cyg_mutex_lock(&amp;cliblock); {
+ printf("Thread %d: and now a delay of %d clock ticks\n",
+	message, delay);
+ }
+ cyg_mutex_unlock(&amp;cliblock);
+ cyg_thread_delay(delay);
+ }
+}
+</PROGRAMLISTING>
+
+<PARA>
+When you run the program (by typing <command>continue</command> at
+the (<EMPHASIS>gdb</EMPHASIS>) prompt) the output should look like
+this:</PARA>
+
+<PROGRAMLISTING>
+Starting program: <replaceable>BASE_DIR</replaceable>/examples/twothreads.exe
+Entering twothreads' cyg_user_start()
+function
+Beginning execution; thread data is 0
+Beginning execution; thread data is 1
+Thread 0: and now a delay of 240 clock ticks
+Thread 1: and now a delay of 225 clock ticks
+Thread 1: and now a delay of 234 clock ticks
+Thread 0: and now a delay of 231 clock ticks
+Thread 1: and now a delay of 224 clock ticks
+Thread 0: and now a delay of 249 clock ticks
+Thread 1: and now a delay of 202 clock ticks
+Thread 0: and now a delay of 235 clock ticks
+</PROGRAMLISTING>
+
+<NOTE>
+<PARA>When running in a simulator the <!-- <index></index> -->
+delays might be quite long. On a hardware board (where the clock
+speed is 100 ticks/second) the delays should average to
+about 2.25 seconds. In simulation, the delay will depend on the
+speed of the host processor and will almost always be much slower than
+the actual board. You might want to reduce the delay parameter when running
+in simulation.
+</PARA>
+</NOTE>
+
+<PARA>
+<XREF LINKEND="FIGURE-TWOTHREADS-WITH-SIMPLE-PRINTS"> shows how this
+multitasking program executes.  Note that apart from the thread
+creation system calls, this program also creates and uses a
+<EMPHASIS><!-- <index></index> -->mutex</EMPHASIS> for synchronization
+between the <function>printf()</function> calls in the two
+threads. This is because the C library standard I/O (by default) is
+configured not to be thread-safe, which means that if more than one
+thread is using standard I/O they might corrupt each other. This is
+fixed by a mutual exclusion (or <EMPHASIS>mutex</EMPHASIS>) lockout
+mechanism: the threads do not call <function>printf()</function> until
+<function>cyg_mutex_lock()</function> has returned, which only happens
+when the other thread calls
+<function>cyg_mutex_unlock()</function>.</PARA>
+
+<PARA>You could avoid using the mutex by configuring the C library to
+be thread-safe (by selecting the component
+<LITERAL>CYGSEM_LIBC_STDIO_THREAD_SAFE_STREAMS</LITERAL>).</PARA>
+
+<FIGURE
+ID="FIGURE-TWOTHREADS-WITH-SIMPLE-PRINTS"><!-- <xref> --> <TITLE>Two
+threads with simple print statements after random delays</TITLE>
+<GRAPHIC ENTITYREF="programming-graphic9"></GRAPHIC>
+</FIGURE>
+
+</SECT2>
+
+</SECT1>
+
+</CHAPTER>
+
+<!-- ==================================================== -->
+
+<CHAPTER ID="CLOCKS-AND-ALARM-HANDLERS">
+<TITLE>More Features &mdash; <!-- <index></index> -->Clocks and Alarm
+Handlers</TITLE>
+
+<PARA>If a program wanted to execute a task at a given time, or
+periodically, it could do it in an inefficient way by sitting in a
+loop and checking the real-time clock to see if the proper amount of
+time has elapsed. But operating systems usually provide system calls
+which allow the program to be informed at the desired time.</PARA>
+
+<PARA><productname>eCos</productname> provides a rich timekeeping formalism, involving
+<EMPHASIS>counters</EMPHASIS>, <EMPHASIS>clocks</EMPHASIS>,
+<EMPHASIS>alarms</EMPHASIS>, and <EMPHASIS>timers</EMPHASIS>.  The
+precise definition, relationship, and motivation of these features is
+beyond the scope of this tutorial, but these examples illustrate how
+to set up basic periodic tasks.</PARA>
+
+<PARA><!-- <index></index> -->Alarms are events that happen at
+a given time, either once or periodically. A thread associates an
+alarm handling function with the alarm, so that the function will
+be invoked every time the alarm &ldquo;goes off&rdquo;.</PARA>
+
+<!-- ==================================================== -->
+
+<SECT1 id="sample-alarms">
+<TITLE>A Sample Program with Alarms</TITLE>
+
+<PARA><!-- <index></index> --><FILENAME>simple-alarm.c</FILENAME> (in
+the examples directory) is a short program that creates a thread that
+creates an alarm. The alarm is handled by the function
+<FUNCTION>test_alarm_func()</FUNCTION>, which sets a global
+variable. When the main thread of execution sees that the variable has
+changed, it prints a message.</PARA>
+
+<EXAMPLE>
+<TITLE>A sample <!-- <index></index> -->program that creates an alarm</TITLE>
+
+<PROGRAMLISTING>
+/* this is a very simple program meant to demonstrate
+ a basic use of time, alarms and alarm-handling functions  in eCos */
+
+#include &lt;cyg/kernel/kapi.h&#62;
+
+#include &lt;stdio.h&#62;
+
+#define NTHREADS 1
+#define STACKSIZE 4096
+
+static cyg_handle_t thread[NTHREADS];
+
+static cyg_thread thread_obj[NTHREADS];
+static char stack[NTHREADS][STACKSIZE];
+
+static void alarm_prog( cyg_addrword_t data );
+
+/* we install our own startup routine which sets up
+  threads and starts the scheduler */
+void cyg_user_start(void)
+{
+ cyg_thread_create(4, alarm_prog, (cyg_addrword_t) 0,
+	"alarm_thread", (void *) stack[0],
+	STACKSIZE, &amp;thread[0], &amp;thread_obj[0]);
+ cyg_thread_resume(thread[0]);
+}
+
+/* we need to declare the alarm handling function (which is
+ defined below), so that we can pass it to  cyg_alarm_initialize() */
+cyg_alarm_t test_alarm_func;
+
+/* alarm_prog() is a thread which sets up an alarm which is then
+ handled by test_alarm_func() */
+static void alarm_prog(cyg_addrword_t data)
+{
+ cyg_handle_t test_counterH, system_clockH, test_alarmH;
+ cyg_tick_count_t ticks;
+ cyg_alarm test_alarm;
+ unsigned how_many_alarms = 0, prev_alarms = 0, tmp_how_many;
+
+ system_clockH = cyg_real_time_clock();
+ cyg_clock_to_counter(system_clockH, &amp;test_counterH);
+ cyg_alarm_create(test_counterH, test_alarm_func,
+	(cyg_addrword_t) &amp;how_many_alarms,
+	&amp;test_alarmH, &amp;test_alarm);
+ cyg_alarm_initialize(test_alarmH, cyg_current_time()+200, 200);
+
+ /* get in a loop in which we read the current time and
+    print it out, just to have something scrolling by */
+ for (;;) {
+   ticks = cyg_current_time();
+   printf("Time is %llu\n", ticks);
+   /* note that we must lock access to how_many_alarms, since the
+   alarm handler might change it. this involves using the
+   annoying temporary variable tmp_how_many so that I can keep the
+   critical region short */
+   cyg_scheduler_lock();
+   tmp_how_many = how_many_alarms;
+   cyg_scheduler_unlock();
+   if (prev_alarms != tmp_how_many) {
+     printf(" --- alarm calls so far: %u\n", tmp_how_many);
+     prev_alarms = tmp_how_many;
+   }
+   cyg_thread_delay(30);
+ }
+}
+
+/* test_alarm_func() is invoked as an alarm handler, so
+   it should be quick and simple. in this case it increments
+   the data that is passed to it. */
+void test_alarm_func(cyg_handle_t alarmH, cyg_addrword_t data)
+{
+ ++*((unsigned *) data);
+}
+</PROGRAMLISTING>
+</EXAMPLE>
+
+<PARA>When you run this program (by typing <COMMAND>continue</COMMAND> at
+the (<EMPHASIS>gdb</EMPHASIS>) prompt) the output should look like
+this:</PARA>
+<SCREEN>
+Starting program: <replaceable>BASE_DIR</replaceable>/examples/simple-alarm.exe
+Time is 0
+Time is 30
+Time is 60
+Time is 90
+Time is 120
+Time is 150
+Time is 180
+Time is 210
+  --- alarm calls so far: 1
+Time is 240
+Time is 270
+Time is 300
+Time is 330
+Time is 360
+Time is 390
+Time is 420
+  --- alarm calls so far: 2
+Time is 450
+Time is 480
+</SCREEN>
+
+<NOTE>
+<PARA>When running in a simulator the <!-- <index></index> --> delays
+might be quite long. On a hardware board (where the clock speed is 100
+ticks/second) the delays should average to about 0.3 seconds (and 2
+seconds between alarms). In simulation, the delay will depend on the
+speed of the host processor and will almost always be much slower than
+the actual board. You might want to reduce the delay parameter when
+running in simulation.</PARA>
+</NOTE>
+
+<PARA>Here are a few things you might notice about this program:</PARA>
+
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>It used the <function>cyg_real_time_clock()</function> function;
+this always returns a handle to the default system real-time <!--
+<index></index> --> clock. </PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA><!-- <index></index> -->Clocks are based on <!-- <index></index>
+--> counters, so the function <function>cyg_alarm_create()</function>
+uses a counter handle. The program used the function
+<function>cyg_clock_to_counter()</function> to strip the clock handle
+to the underlying counter handle. </PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>Once the alarm is created it is <!-- <index></index> -->
+initialized with <function>cyg_alarm_initialize()</function>, which
+sets the time at which the alarm should go off, as well as the period
+for repeating alarms. It is set to go off at the current time and
+then to repeat every 200 ticks. </PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>The alarm handler function
+<function>test_alarm_func()</function> conforms to the guidelines for
+writing alarm handlers and other <!-- <index></index> --><!--
+<index></index> --> delayed service routines: it does not invoke any
+functions which might lock the scheduler.  This is discussed in detail
+in the <CITETITLE><productname>eCos</productname> Reference Manual</CITETITLE>, in the chapter
+<citetitle>The <productname>eCos</productname> Kernel</citetitle>.</PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>There is a <EMPHASIS>critical region</EMPHASIS> in this program:
+the variable <LITERAL>how_many_alarms</LITERAL> is accessed in the
+main thread of control and is also modified in the alarm handler. To
+prevent a possible (though unlikely) race condition on this variable,
+access to <LITERAL>how_many_alarms</LITERAL> in the principal thread
+is protected by calls to <FUNCTION>cyg_scheduler_lock()</FUNCTION> and
+<FUNCTION>cyg_scheduler_unlock()</FUNCTION>. When the scheduler is
+locked, the alarm handler will not be invoked, so the problem is
+averted. </PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT1>
+</CHAPTER>
+
+</part>
+

@@ -1,0 +1,1568 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     posix.sgml                                                  -->
+<!--                                                                 -->
+<!--     POSIX Compatibility                                         -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="posix-compatibility">
+<title>eCos POSIX compatibility layer</title>
+
+<chapter id="posix-standard-support">
+<title>POSIX Standard Support</title>
+
+<!-- {{{ Intro  -->
+
+    <para>
+      eCos contains support for the POSIX Specification (ISO&sol;IEC
+      9945-1)&lsqb;POSIX&rsqb;.
+    </para>
+    <para>
+      POSIX support is divided between the POSIX and the FILEIO
+      packages. The POSIX package provides support for threads,
+      signals, synchronization, timers and message queues. The FILEIO
+      package provides support for file and device I&sol;O. The two
+      packages may be used together or separately, depending on
+      configuration.
+    </para>
+    <para>
+      This document takes a functional approach to the POSIX
+      library. Support for a function implies that the data types and
+      definitions necessary to support that function, and the objects
+      it manipulates, are also defined. Any exceptions to this are
+      noted, and unless otherwise noted, implemented functions behave
+      as specified in the POSIX standard.
+    </para>
+    <para>
+      This document only covers the differences between the eCos
+      implementation and the standard; it does not provide complete
+      documentation. For full information, see the POSIX standard
+      &lsqb;POSIX&rsqb;. Online, the Open Group Single Unix
+      Specification &lsqb;SUS2&rsqb; provides complete documentation
+      of a superset of POSIX. If you have access to a Unix system with
+      POSIX compatibility, then the manual pages for this will be of
+      use.  There are also a number of books available.
+      &lsqb;Lewine&rsqb; covers the process, signal, file and I&sol;O
+      functions, while &lsqb;Lewis1&rsqb;, &lsqb;Lewis2&rsqb;,
+      &lsqb;Nichols&rsqb; and &lsqb;Norton&rsqb; cover Pthreads and
+      related topics (see Bibliography, xref). However, many of these
+      books are oriented toward using POSIX in non-embedded systems,
+      so care should be taken in applying them to programming under
+      eCos.
+    </para>
+    <para>
+      The remainder of this chapter broadly follows the structure
+      of the POSIX Specification. References to the appropriate
+      section of the Standard are included.
+    </para>
+    <para>
+      Omitted functions marked with &ldquo;&sol;&sol; TBA&rdquo;
+      are potential candidates for later implementation.
+    </para>
+
+<!-- }}} -->
+<!-- {{{ Process Primitives -->
+
+<sect1 id="posix-process-primitives">
+<title>Process Primitives &lsqb;POSIX Section 3&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int kill(pid&lowbar;t pid, int sig); 
+int pthread&lowbar;kill(pthread&lowbar;t thread, int sig); 
+int sigaction(int sig, const struct sigaction &ast;act,
+              struct sigaction &ast;oact); 
+int sigqueue(pid&lowbar;t pid, int sig, const union sigval value); 
+int sigprocmask(int how, const sigset&lowbar;t &ast;set,
+                sigset&lowbar;t &ast;oset); 
+int pthread&lowbar;sigmask(int how, const sigset&lowbar;t &ast;set,
+                    sigset&lowbar;t &ast;oset); 
+int sigpending(sigset&lowbar;t &ast;set);
+int sigsuspend(const sigset&lowbar;t &ast;set); 
+int sigwait(const sigset&lowbar;t &ast;set, int &ast;sig); 
+int sigwaitinfo(const sigset&lowbar;t &ast;set, siginfo&lowbar;t &ast;info); 
+int sigtimedwait(const sigset&lowbar;t &ast;set, siginfo&lowbar;t &ast;info,
+                 const struct timespec &ast;timeout); 
+int sigemptyset(sigset&lowbar;t &ast;set); 
+int sigfillset(sigset&lowbar;t &ast;set); 
+int sigaddset(sigset&lowbar;t &ast;set, int signo); 
+int sigdelset(sigset&lowbar;t &ast;set, int signo); 
+int sigismember(const sigset&lowbar;t &ast;set, int signo);
+unsigned int alarm( unsigned int seconds );
+int pause( void ); 
+unsigned int sleep( unsigned int seconds );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+
+<screen>
+pid&lowbar;t fork(void); 
+int execl( const char &ast;path, const char &ast;arg, ... ); 
+int execv( const char &ast;path, char &ast;const argv&lsqb;&rsqb; ); 
+int execle( const char &ast;path, const char &ast;arg, ... ); 
+int execve( const char &ast;path, char &ast;const argv&lsqb;&rsqb;,
+            char &ast;const envp&lsqb;&rsqb; ); 
+int execlp( const char &ast;path, const char &ast;arg, ... ); 
+int execvp( const char &ast;path, char &ast;const argv&lsqb;&rsqb; ); 
+int pthread&lowbar;atfork( void(&ast;prepare)(void),
+                    void (&ast;parent)(void),
+                    void (&ast;child)() );
+pid&lowbar;t wait( int &ast;stat&lowbar;loc );		    
+pid&lowbar;t waitpid( pid&lowbar;t pid, int &ast;stat&lowbar;loc,
+               int options ); 
+void &lowbar;exit( int status );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+<itemizedlist>
+  <listitem>
+    <para>
+    Signal handling may be enabled or disabled with the
+    CYGPKG&lowbar;POSIX&lowbar;SIGNALS option. Since signals are used
+    by other POSIX components, such as timers, disabling signals will
+    disable those components too.
+    </para>
+  </listitem>
+  
+  <listitem>
+    <para>
+    <emphasis>kill()</emphasis> and
+    <emphasis>sigqueue()</emphasis> may only take a 
+    <emphasis role="strong">pid</emphasis> argument of zero,
+    which maps to the current process.
+    </para>
+  </listitem>
+  
+  <listitem>
+    <para>
+    The <emphasis>SIGEV&lowbar;THREAD</emphasis> notification type is
+	    not currently implemented.
+    </para>
+  </listitem>
+  
+  <listitem>
+    <para>
+    Job Control and Memory Protection signals are
+	    not supported.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+    An extra implementation defined
+    <emphasis>si&lowbar;code</emphasis> value,
+    <emphasis>SI&lowbar;EXCEPT</emphasis>, is defined to
+    distinguish hardware generated exceptions from
+    others.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+    Extra signals are defined:
+    &lowbar;SIGTRAP&lowbar;,&lowbar;SIGIOT&lowbar;,
+    &lowbar;SIGEMT&lowbar;, and &lowbar;SIGSYS&lowbar;. These are
+    largely to maintain compatibility with the signal numbers used by
+    GDB.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+    Signal delivery may currently occur at unexpected places in some
+    API functions. Using <emphasis>longjmp()</emphasis> to transfer
+    control out of a signal handler may result in the interrupted
+    function not being able to complete properly. This may result in
+    later function calls failing or deadlocking.
+    </para>
+  </listitem>
+</itemizedlist>
+</sect2>
+
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Process Environment -->
+
+<sect1 id="posix-process-environment">
+<title>Process Environment &lsqb;POSIX Section 4&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int uname( struct utsname &ast;name ); 
+time&lowbar;t time( time&lowbar;t &ast;tloc ); 
+char &ast;getenv( const char &ast;name ); 
+int isatty( int fd );
+long sysconf( int name );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+<screen>
+pid&lowbar;t getpid( void ); 
+pid&lowbar;t getppid( void ); 
+uid&lowbar;t getuid( void ); 
+uid&lowbar;t geteuid( void ); 
+gid&lowbar;t getgid( void ); 
+gid&lowbar;t getegid( void ); 
+int setuid( uid&lowbar;t uid ); 
+int setgid( gid&lowbar;t gid ); 
+int getgroups( int gidsetsize, gid&lowbar;t grouplist&lsqb;&rsqb; ); 
+char &ast;getlogin( void ); 
+int getlogin&lowbar;r( char &ast;name, size&lowbar;t namesize ); 
+pid&lowbar;t getpgrp( void ); 
+pid&lowbar;t setsid( void );
+int setpgid( pid&lowbar;t pid, pid&lowbar;t pgid ); 
+char &ast;ctermid( char &ast;s); 
+char &ast;ttyname( int fd );                             &sol;&sol; TBA 
+int ttyname&lowbar;r( int fd, char &ast;name, size&lowbar;t namesize); &sol;&sol; TBA 
+clock&lowbar;t times( struct tms &ast;buffer );                 &sol;&sol; TBA
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+	<itemizedlist>
+	  <listitem>
+	    <para>The fields of the <emphasis>utsname</emphasis>
+	    structure are initialized as follows:
+            <screen>
+	    sysname	&ldquo;eCos&rdquo; 
+	    nodename	&ldquo;&rdquo;	(gethostname() is currently not available)
+	    
+	    release		Major version number of the kernel 
+	    version   		Minor version number of the kernel 
+	    machine	&ldquo;&rdquo; 	(Requires some config tool changes)
+            </screen>
+	    </para>
+	    <para>
+	    The sizes of these strings are defined by
+	    CYG&lowbar;POSIX&lowbar;UTSNAME&lowbar;LENGTH and
+	    CYG&lowbar;POSIX&lowbar;UTSNAME&lowbar;NODENAME&lowbar;LENGTH. The
+	    latter defaults to the value of the former, but may also
+	    be set independently to accommodate a longer node name.
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	    <para>
+	    The <emphasis>time()</emphasis> function is currently
+	    implemented in the C library.
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	    <para>A set of environment strings may be defined at configuration
+	    time with the CYGDAT&lowbar;LIBC&lowbar;DEFAULT&lowbar;ENVIRONMENT
+	    option. The application may also define an environment by direct
+	    assignment to the <emphasis role="strong">environ</emphasis>
+	    variable.
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	    <para>
+	    At present <emphasis>isatty()</emphasis> assumes that
+	    any character device is a tty and that all other devices are not
+	    ttys. Since the only kind of device that eCos currently supports
+	    is serial character devices, this is an adequate
+	    distinction.
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	    <para>
+	    All system variables supported by sysconf will yield a
+	    value. However, those that are irrelevant to eCos will
+	    either return the default minimum defined in
+	    <filename>&lt;limits.h&gt;</filename>,
+	    or zero.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Files and Directories -->
+
+<sect1 id="posix-files-and-directories">
+<title>Files and Directories &lsqb;POSIX Section 5&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+DIR &ast;opendir( const char &ast;dirname ); 
+struct dirent &ast;readdir( DIR &ast;dirp ); 
+int readdir&lowbar;r( DIR &ast;dirp, struct dirent &ast;entry,
+               struct dirent &ast;&ast;result ); 
+void rewinddir( DIR &ast;dirp ); 
+int closedir( DIR &ast;dirp ); 
+int chdir( const char &ast;path ); 
+char &ast;getcwd( char &ast;buf, size&lowbar;t size );
+int open( const char &ast; path , int oflag , ... ); 
+int creat( const char &ast; path, mode&lowbar;t mode ); 
+int link( const char &ast;existing, const char &ast;new ); 
+int mkdir( const char &ast;path, mode&lowbar;t mode ); 
+int unlink( const char &ast;path ); 
+int rmdir( const char &ast;path ); 
+int rename( const char &ast;old, const char &ast;new ); 
+int stat( const char &ast;path, struct stat &ast;buf ); 
+int fstat( int fd, struct stat &ast;buf ); 
+int access( const char &ast;path, int amode ); 
+long pathconf(const char &ast;path, int name); 
+long fpathconf(int fd, int name);
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+
+<screen>
+mode&lowbar;t umask( mode&lowbar;t cmask ); 
+int mkfifo( const char &ast;path, mode&lowbar;t mode ); 
+int chmod( const char &ast;path, mode&lowbar;t mode );			&sol;&sol; TBA 
+int fchmod( int fd, mode&lowbar;t mode );				&sol;&sol; TBA 
+int chown( const char &ast;path, uid&lowbar;t owner, gid&lowbar;t group ); 
+int utime( const char &ast;path, const struct utimbuf &ast;times );	&sol;&sol; TBA 
+int ftruncate( int fd, off&lowbar;t length );                          &sol;&sol; TBA
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+
+	<itemizedlist>
+	  <listitem>
+	    <para>
+	    If a call to <function>open()</function> or <function>creat()</function> supplies
+	    the third &lowbar;mode&lowbar; parameter, it will
+	    currently be ignored.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Most of the functionality of these functions depends on
+	    the underlying filesystem.
+	    </para>
+	    </listitem>
+	  <listitem>
+	    <para>
+	    Currently<emphasis> access()</emphasis> only checks the 
+	    <emphasis>F&lowbar;OK</emphasis> mode explicitly, the others are
+	    all assumed to be true by default.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    The maximum number of open files allowed is supplied by
+	    the CYGNUM&lowbar;FILEIO&lowbar;NFILE option. The maximum number
+	    of file descriptors is supplied by the CYGNUM&lowbar;FILEIO&lowbar;NFD
+	    option.  
+	    </para>
+	  </listitem>
+	</itemizedlist>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Input and Output -->
+
+<sect1 id="posix-input-and-output">
+<title>Input and Output &lsqb;POSIX Section 6&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int dup( int fd ); 
+int dup2( int fd, int fd2 ); 
+int close(int fd); 
+ssize&lowbar;t	read(int fd, void &ast;buf, size&lowbar;t nbyte); 
+ssize&lowbar;t	write(int fd, const void &ast;buf, size&lowbar;t nbyte); 
+int fcntl( int fd, int cmd, ... ); 
+off&lowbar;t lseek(int fd, off&lowbar;t offset, int whence); 
+int fsync( int fd );
+int fdatasync( int fd );</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+<screen>
+int pipe( int fildes&lsqb;2&rsqb; ); 
+int aio&lowbar;read( struct aiocb &ast;aiocbp );				&sol;&sol; TBA 
+int aio&lowbar;write( struct aiocb &ast;aiocbp );				&sol;&sol; TBA 
+int lio&lowbar;listio( int mode, struct aiocb &ast;const list&lsqb;&rsqb;,
+                int nent, struct sigevent &ast;sig);		&sol;&sol; TBA 
+int aio&lowbar;error( struct aiocb &ast;aiocbp );				&sol;&sol; TBA 
+int aio&lowbar;return( struct aiocb &ast;aiocbp );				&sol;&sol; TBA 
+int aio&lowbar;cancel( int fd, struct aiocb &ast;aiocbp );			&sol;&sol; TBA 
+int aio&lowbar;suspend( const struct aiocb &ast;const list&lsqb;&rsqb;,
+                 int nent, const struct timespec &ast;timeout );	&sol;&sol; TBA 
+int aio&lowbar;fsync( int op, struct aiocb &ast;aiocbp );
+&sol;&sol; TBA
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+        <itemizedlist>
+	  <listitem>
+	    <para>
+	    Only the <emphasis>F&lowbar;DUPFD</emphasis> command
+	    of <emphasis>fcntl()</emphasis> is currently implemented.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Most of the functionality of these functions depends on
+	    the underlying filesystem.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Device and Class Specific Functions -->
+
+<sect1 id="posix-device-and-class-specific-functions">
+<title>Device and Class Specific Functions &lsqb;POSIX Section 7&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+<screen>
+speed&lowbar;t cfgetospeed( const struct termios &ast;termios&lowbar;p ); 
+int cfsetospeed( struct termios &ast;termios&lowbar;p, speed&lowbar;t speed ); 
+speed&lowbar;t cfgetispeed( const struct termios &ast;termios&lowbar;p ); 
+int cfsetispeed( struct termios &ast;termios&lowbar;p, speed&lowbar;t speed ); 
+int tcgetattr( int fd, struct termios &ast;termios&lowbar;p ); 
+int tcsetattr( int fd, int optional&lowbar;actions,
+	       const struct termios &ast;termios&lowbar;p ); 
+int tcsendbreak( int fd, int duration ); 
+int tcdrain( int fd );
+int tcflush( int fd, int queue&lowbar;selector ); 
+int tcsendbreak( int fd, int action );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+
+<screen>
+pid&lowbar;t tcgetpgrp( int fd ); 
+int tcsetpgrp( int fd, pid&lowbar;t pgrp );</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+        <itemizedlist>
+	  <listitem>
+	    <para>
+	    Only the functionality relevant to basic serial device
+	    control is implemented. Only very limited support for
+	    canonical input is provided, and then only via the
+	    &ldquo;tty&rdquo; devices, not the &ldquo;serial&rdquo;
+	    devices. None of the functionality relevant to job
+	    control, controlling terminals and sessions is
+	    implemented.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Only <emphasis>MIN</emphasis> &equals; 0 and
+	    <emphasis>TIME</emphasis> &equals; 0 functionality is
+	    provided.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Hardware flow control is supported if the underlying
+	    device driver and serial port support it.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Support for break, framing and parity errors depends on
+	    the functionality of the hardware and device driver.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ C Language Services -->
+
+<sect1 id="posix-C-language-services">
+<title>C Language Services &lsqb;POSIX Section 8&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+<screen>
+char &ast;setlocale( int category, const char &ast;locale ); 
+int fileno( FILE &ast;stream ); 
+FILE &ast;fdopen( int fd, const char &ast;type ); 
+int getc&lowbar;unlocked( FILE &ast;stream); 
+int getchar&lowbar;unlocked( void ); 
+int putc&lowbar;unlocked( FILE &ast;stream ); 
+int putchar&lowbar;unlocked( void ); 
+char &ast;strtok&lowbar;r( char &ast;s, const char &ast;sep, 
+                char &ast;&ast;lasts ); 
+char &ast;asctime&lowbar;r( const struct tm &ast;tm, char &ast;buf ); 
+char &ast;ctime&lowbar;r( const time&lowbar;t &ast;clock, char &ast;buf ); 
+struct tm &ast;gmtime&lowbar;r( const time&lowbar;t &ast;clock,
+                     struct tm &ast;result ); 
+struct tm &ast;localtime&lowbar;r( const time&lowbar;t &ast;clock,
+                        struct tm &ast;result ); 
+int rand&lowbar;r( unsigned int &ast;seed );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+<screen>
+void flockfile( FILE &ast;file ); 
+int ftrylockfile( FILE &ast;file ); 
+void funlockfile( FILE &ast;file ); 
+int sigsetjmp( sigjmp&lowbar;buf env, int savemask );			&sol;&sol; TBA 
+void siglongjmp( sigjmp&lowbar;buf env, int val );			&sol;&sol; TBA 
+void tzset(void);                                                       &sol;&sol; TBA
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+	<itemizedlist>
+	  <listitem>
+	    <para>
+	    <emphasis>setlocale()</emphasis> is implemented in the C
+	    library Internationalization package.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Functions <emphasis>fileno()</emphasis> and
+	    <emphasis>fdopen()</emphasis> are implemented in the C
+	    library STDIO package.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Functions <emphasis>getc&lowbar;unlocked()</emphasis>, 
+	    <emphasis>getchar&lowbar;unlocked()</emphasis>,
+	    <emphasis>putc&lowbar;unlocked()</emphasis> and
+	    <emphasis>putchar&lowbar;unlocked()</emphasis> are defined
+	    but are currently identical to their non-unlocked
+	    equivalents.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    <emphasis>strtok&lowbar;r()</emphasis>, <emphasis>asctime&lowbar;r()</emphasis>, 
+	    <emphasis>ctime&lowbar;r()</emphasis>, <emphasis>gmtime&lowbar;r()</emphasis>, 
+	    <emphasis>localtime&lowbar;r()</emphasis> and
+	    <emphasis>rand&lowbar;r()</emphasis> are all currently in
+	    the C library, alongside their non-reentrant versions.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ System Databases -->
+
+<sect1 id="posix-system-databases">
+<title>System Databases &lsqb;POSIX Section 9&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+	
+<para>
+&lt;none&gt;
+</para>
+
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+
+<screen>
+struct group &ast;getgrgid( gid&lowbar;t gid ); 
+int getgrgid( gid&lowbar;t gid, struct group &ast;grp, char &ast;buffer, 
+	      size&lowbar;t bufsize, struct group &ast;&ast;result ); 
+struct group &ast;getgrname( const char &ast;name ); 
+int getgrname&lowbar;r( const char &ast;name, struct group &ast;grp,
+                 char &ast;buffer, size&lowbar;t bufsize, struct group &ast;&ast;result ); 
+struct passwd &ast;getpwuid( uid&lowbar;t uid ); 
+int getpwuid&lowbar;r( uid&lowbar;t uid, struct passwd &ast;pwd,
+                char &ast;buffer, size&lowbar;t bufsize, struct passwd &ast;&ast;result ); 
+struct passwd &ast;getpwnam( const char &ast;name ); 
+int getpwnam&lowbar;r( const char &ast;name, struct passwd &ast;pwd,
+                char &ast;buffer, size&lowbar;t bufsize, struct passwd &ast;&ast;result );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+        <itemizedlist>
+	  <listitem>
+	    <para>
+	    None of the functions in this section are implemented.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Data Interchange Format -->
+
+<sect1 id="posix-data-interchange-format">
+<title>Data Interchange Format &lsqb;POSIX Section 10&rsqb;</title>
+      
+<para>
+This section details <emphasis>tar</emphasis> and
+<emphasis>cpio</emphasis> formats. Neither of these is supported by
+eCos.
+</para>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Synchronization -->
+
+<sect1 id="posix-synchronization">
+<title>Synchronization &lsqb;POSIX Section 11&rsqb;</title>
+
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int sem&lowbar;init(sem&lowbar;t &ast;sem, int pshared, unsigned int value); 
+int sem&lowbar;destroy(sem&lowbar;t &ast;sem); 
+int sem&lowbar;wait(sem&lowbar;t &ast;sem); 
+int sem&lowbar;trywait(sem&lowbar;t &ast;sem); 
+int sem&lowbar;post(sem&lowbar;t &ast;sem);
+int sem&lowbar;getvalue(sem&lowbar;t &ast;sem, int &ast;sval); 
+int pthread&lowbar;mutexattr&lowbar;init( pthread&lowbar;mutexattr&lowbar;t &ast;attr); 
+int pthread&lowbar;mutexattr&lowbar;destroy( pthread&lowbar;mutexattr&lowbar;t &ast;attr); 
+int pthread&lowbar;mutex&lowbar;init(pthread&lowbar;mutex&lowbar;t &ast;mutex,
+	               const pthread&lowbar;mutexattr&lowbar;t &ast;mutex&lowbar;attr); 
+int pthread&lowbar;mutex&lowbar;destroy(pthread&lowbar;mutex&lowbar;t &ast;mutex); 
+int pthread&lowbar;mutex&lowbar;lock(pthread&lowbar;mutex&lowbar;t &ast;mutex); 
+int pthread&lowbar;mutex&lowbar;trylock(pthread&lowbar;mutex&lowbar;t &ast;mutex); 
+int pthread&lowbar;mutex&lowbar;unlock(pthread&lowbar;mutex&lowbar;t &ast;mutex); 
+int pthread&lowbar;condattr&lowbar;init(pthread&lowbar;condattr&lowbar;t &ast;attr); 
+int pthread&lowbar;condattr&lowbar;destroy(pthread&lowbar;condattr&lowbar;t &ast;attr); 
+int pthread&lowbar;cond&lowbar;init(pthread&lowbar;cond&lowbar;t &ast;cond, 
+	               const pthread&lowbar;condattr&lowbar;t &ast;attr); 
+int pthread&lowbar;cond&lowbar;destroy(pthread&lowbar;cond&lowbar;t &ast;cond); 
+int pthread&lowbar;cond&lowbar;signal(pthread&lowbar;cond&lowbar;t &ast;cond); 
+int pthread&lowbar;cond&lowbar;broadcast(pthread&lowbar;cond&lowbar;t &ast;cond); 
+int pthread&lowbar;cond&lowbar;wait(pthread&lowbar;cond&lowbar;t &ast;cond, 
+	               pthread&lowbar;mutex&lowbar;t &ast;mutex);
+int pthread&lowbar;cond&lowbar;timedwait(pthread&lowbar;cond&lowbar;t &ast;cond,
+	                   pthread&lowbar;mutex&lowbar;t &ast;mutex,
+	                   const struct timespec &ast;abstime);
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+
+<screen>
+sem&lowbar;t &ast;sem&lowbar;open(const char &ast;name, int oflag, ...);		&sol;&sol; TBA 
+int sem&lowbar;close(sem&lowbar;t &ast;sem);					&sol;&sol; TBA 
+int sem&lowbar;unlink(const char &ast;name);				&sol;&sol; TBA 
+int pthread&lowbar;mutexattr&lowbar;getpshared( const pthread&lowbar;mutexattr&lowbar;t &ast;attr,
+	                          int &ast;pshared );
+int pthread&lowbar;mutexattr&lowbar;setpshared( const pthread&lowbar;mutexattr&lowbar;t &ast;attr,
+	                          int pshared );
+int  pthread&lowbar;condattr&lowbar;getpshared( const pthread&lowbar;condattr&lowbar;t &ast;attr, 
+	                          int &ast;pshared);
+int  pthread&lowbar;condattr&lowbar;setpshared( const pthread&lowbar;condattr&lowbar;t &ast;attr,
+	                          int pshared);</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+        <itemizedlist>
+	  <listitem>
+	    <para>
+	    The presence of semaphores is controlled by the
+	    CYGPKG&lowbar;POSIX&lowbar;SEMAPHORES option. This in turn
+	    causes the &lowbar;POSIX&lowbar;SEMAPHORES feature test
+	    macro to be defined and the semaphore API to be made
+	    available.
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	    <para>
+	    The <emphasis role="strong">pshared</emphasis> argument to
+	    <emphasis>sem&lowbar;init()</emphasis> is not implemented,
+	    its value is ignored.
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	    <para>
+	    Functions <emphasis>sem&lowbar;open()</emphasis>, 
+	    <emphasis>sem&lowbar;close()</emphasis> and
+	    <emphasis>sem&lowbar;unlink()</emphasis> are present but
+	    always return an error (ENOSYS).
+	    </para>
+	  </listitem>
+
+	  <listitem>
+	    <para>
+	    The exact priority inversion protocols supported may be
+	    controlled with the
+	    &lowbar;POSIX&lowbar;THREAD&lowbar;PRIO&lowbar;INHERIT and
+	    &lowbar;POSIX&lowbar;THREAD&lowbar;PRIO&lowbar;PROTECT
+	    configuration options.
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	    <para>
+	    &lcub;&lowbar;POSIX&lowbar;THREAD&lowbar;PROCESS&lowbar;SHARED&rcub; is
+	    not defined, so the 
+	    <emphasis role="strong">process-shared</emphasis> mutex
+	    and condition variable attributes are not supported, and
+	    neither are the functions
+	    <emphasis>pthread&lowbar;mutexattr&lowbar;getpshared()</emphasis>,
+	    <emphasis>pthread&lowbar;mutexattr&lowbar;setpshared()</emphasis>, 
+	    <emphasis>pthread&lowbar;condattr&lowbar;getpshared()</emphasis> and 
+	    <emphasis>pthread&lowbar;condattr&lowbar;setpshared()</emphasis>. 
+	    </para>
+	  </listitem>
+	  
+	  <listitem>
+	  <para>
+	    Condition variables do not become bound to a particular
+	    mutex when
+	    <emphasis>pthread&lowbar;cond&lowbar;wait()</emphasis> is
+	    called. Hence different threads may wait on a condition
+	    variable with different mutexes. This is at variance with
+	    the standard, which requires a condition variable to
+	    become (dynamically) bound by the first waiter, and
+	    unbound when the last finishes. However, this difference
+	    is largely benign, and the cost of policing this feature
+	    is non-trivial.
+	  </para>
+	</listitem>
+	</itemizedlist>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Memory Management -->
+
+<sect1 id="posix-memory-management">
+<title>Memory Management &lsqb;POSIX Section 12&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+	
+<para>
+&lt;none&gt;
+</para>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+
+<screen>
+int mlockall( int flags ); 
+int munlockall( void ); 
+int mlock( const void &ast;addr, size&lowbar;t len ); 
+int munlock( const void &ast;addr, size&lowbar;t len ); 
+void mmap( void &ast;addr, size&lowbar;t len, int prot, int flags, 	 
+	   int fd, off&lowbar;t off ); 
+int munmap( void &ast;addr, size&lowbar;t len ); 
+int mprotect( const void &ast;addr, size&lowbar;t len, int prot ); 
+int msync( void &ast;addr, size&lowbar;t len, int flags ); 
+int shm&lowbar;open( const char &ast;name, int oflag, mode&lowbar;t mode ); 
+int shm&lowbar;unlink( const char &ast;name );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+<para>
+None of these functions are currently provided. Some may
+be implemented in a restricted form in the future.
+</para>
+
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Execution Scheduling -->
+
+<sect1 id="posix-execution-scheduling">
+<title>Execution Scheduling &lsqb;POSIX Section 13&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int sched&lowbar;yield(void); 
+int sched&lowbar;get&lowbar;priority&lowbar;max(int policy); 
+int sched&lowbar;get&lowbar;priority&lowbar;min(int policy); 
+int sched&lowbar;rr&lowbar;get&lowbar;interval(pid&lowbar;t pid, struct timespec &ast;t); 
+int pthread&lowbar;attr&lowbar;setscope(pthread&lowbar;attr&lowbar;t &ast;attr, int scope); 
+int pthread&lowbar;attr&lowbar;getscope(const pthread&lowbar;attr&lowbar;t &ast;attr, int &ast;scope); 
+int pthread&lowbar;attr&lowbar;setinheritsched(pthread&lowbar;attr&lowbar;t &ast;attr, int inherit); 
+int pthread&lowbar;attr&lowbar;getinheritsched(const pthread&lowbar;attr&lowbar;t &ast;attr, int &ast;inherit); 
+int pthread&lowbar;attr&lowbar;setschedpolicy(pthread&lowbar;attr&lowbar;t &ast;attr, int policy); 
+int pthread&lowbar;attr&lowbar;getschedpolicy(const pthread&lowbar;attr&lowbar;t &ast;attr, int &ast;policy);
+int pthread&lowbar;attr&lowbar;setschedparam( pthread&lowbar;attr&lowbar;t &ast;attr, const struct sched&lowbar;param &ast;param); 
+int pthread&lowbar;attr&lowbar;getschedparam( const pthread&lowbar;attr&lowbar;t &ast;attr,
+	                        struct sched&lowbar;param &ast;param); 
+int pthread&lowbar;setschedparam(pthread&lowbar;t thread, int policy,
+	                  const struct sched&lowbar;param &ast;param); 
+int pthread&lowbar;getschedparam(pthread&lowbar;t thread, int &ast;policy,
+	                  struct sched&lowbar;param &ast;param); 
+int pthread&lowbar;mutexattr&lowbar;setprotocol( pthread&lowbar;mutexattr&lowbar;t &ast;attr,
+                                   int protocol);
+int pthread&lowbar;mutexattr&lowbar;getprotocol( pthread&lowbar;mutexattr&lowbar;t &ast;attr,
+                                   int &ast;protocol); 
+int pthread&lowbar;mutexattr&lowbar;setprioceiling( pthread&lowbar;mutexattr&lowbar;t &ast;attr,
+                                      int prioceiling); 
+int pthread&lowbar;mutexattr&lowbar;getprioceiling( pthread&lowbar;mutexattr&lowbar;t &ast;attr,
+	                              int &ast;prioceiling);
+int pthread&lowbar;mutex&lowbar;setprioceiling( pthread&lowbar;mutex&lowbar;t &ast;mutex,
+	                          int prioceiling,
+	                          int &ast;old&lowbar;ceiling); 
+int pthread&lowbar;mutex&lowbar;getprioceiling( pthread&lowbar;mutex&lowbar;t &ast;mutex,
+                                  int &ast;prioceiling);
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+
+<screen>
+int sched&lowbar;setparam(pid&lowbar;t pid, const struct sched&lowbar;param &ast;param); 
+int sched&lowbar;getparam(pid&lowbar;t pid, struct sched&lowbar;param &ast;param); 
+int sched&lowbar;setscheduler(pid&lowbar;t pid, int policy,
+	               const struct sched&lowbar;param &ast;param); 
+int sched&lowbar;getscheduler(pid&lowbar;t pid);
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+        <itemizedlist>
+	<listitem>
+	  <para>
+	  The functions <emphasis>sched&lowbar;setparam()</emphasis>, 
+	  <emphasis>sched&lowbar;getparam()</emphasis>,
+	  <emphasis>sched&lowbar;setscheduler()</emphasis> and
+	  <emphasis>sched&lowbar;getscheduler()</emphasis> are present
+	  but always return an error.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	  The scheduler policy <emphasis>SCHED&lowbar;OTHER</emphasis> is
+	  equivalent to <emphasis>SCHED&lowbar;RR</emphasis>.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	  Only <emphasis>PTHREAD&lowbar;SCOPE&lowbar;SYSTEM</emphasis>
+	  is supported as a
+	  <emphasis role="strong">contentionscope</emphasis>
+	  attribute.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	  The default thread scheduling attributes are:
+	  <screen>
+	  contentionscope          PTHREAD&lowbar;SCOPE&lowbar;SYSTEM
+	  inheritsched             PTHREAD&lowbar;INHERIT&lowbar;SCHED
+	  schedpolicy              SCHED&lowbar;OTHER
+	  schedparam.sched	   0
+	  </screen>
+          </para>
+	</listitem>
+	<listitem>
+	  <para>
+	  Mutex priority inversion protection is controlled by a
+	  number of kernel configuration options.
+	  If CYGSEM&lowbar;KERNEL&lowbar;SYNCH&lowbar;MUTEX&lowbar;PRIORITY&lowbar;INVERSION&lowbar;PROTOCOL&lowbar;INHERIT
+	  is defined then
+	  &lcub;&lowbar;POSIX&lowbar;THREAD&lowbar;PRIO&lowbar;INHERIT&rcub;
+	  will be defined and PTHREAD&lowbar;PRIO&lowbar;INHERIT may
+	  be set as the protocol in a
+	  <emphasis>pthread&lowbar;mutexattr&lowbar;t</emphasis>
+	  object.
+	  If CYGSEM&lowbar;KERNEL&lowbar;SYNCH&lowbar;MUTEX&lowbar;PRIORITY&lowbar;INVERSION&lowbar;PROTOCOL&lowbar;CEILING
+	  is defined then
+	  &lcub;&lowbar;POSIX&lowbar;THREAD&lowbar;PRIO&lowbar;PROTECT&rcub;
+	  will be defined and PTHREAD&lowbar;PRIO&lowbar;PROTECT may
+	  be set as the protocol in a
+	  <emphasis>pthread&lowbar;mutexattr&lowbar;t</emphasis> object.
+          </para>
+	</listitem>
+	<listitem>
+	  <para>
+	  The default attribute values set by
+	  <emphasis>pthread&lowbar;mutexattr&lowbar;init()</emphasis>
+	  is to set the protocol attribute to
+	  PTHREAD&lowbar;PRIO&lowbar;NONE and the prioceiling
+	  attribute to zero.
+	  </para>
+	</listitem>
+	</itemizedlist>
+
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Clocks and Timers -->
+
+<sect1 id="posix-clocks-and-timers">
+<title>Clocks and Timers &lsqb;POSIX Section 14&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int clock&lowbar;settime( clockid&lowbar;t clock&lowbar;id,
+const struct timespec &ast;tp); 
+int clock&lowbar;gettime( clockid&lowbar;t clock&lowbar;id, struct timespec &ast;tp); 
+int clock&lowbar;getres( clockid&lowbar;t clock&lowbar;id, struct timespec &ast;tp); 
+int timer&lowbar;create( clockid&lowbar;t clock&lowbar;id, struct sigevent &ast;evp,
+	          timer&lowbar;t &ast;timer&lowbar;id);
+int timer&lowbar;delete( timer&lowbar;t timer&lowbar;id ); 
+int timer&lowbar;settime( timer&lowbar;t timerid, int flags,
+	           const struct itimerspec &ast;value,
+	           struct itimerspec &ast;ovalue ); 
+int timer&lowbar;gettime( timer&lowbar;t timerid, struct itimerspec &ast;value ); 
+int timer&lowbar;getoverrun( timer&lowbar;t timerid ); 
+int nanosleep( const struct timespec &ast;rqtp, struct timespec &ast;rmtp);
+</screen>
+
+</sect2>
+
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+	
+<para>
+&lt;none&gt;
+</para>
+
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+
+<itemizedlist>
+  <listitem>
+    <para>
+    Currently <emphasis>timer&lowbar;getoverrun()</emphasis> only
+    reports timer notifications that are delayed in the timer
+    subsystem.  If they are delayed in the signal subsystem, due to
+    signal masks for example, this is not counted as an overrun.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+    The option CYGPKG&lowbar;POSIX&lowbar;TIMERS allows the timer support to be
+    enabled or disabled, and causes &lowbar;POSIX&lowbar;TIMERS to be defined
+    appropriately. This will cause other parts of the POSIX system to
+    have limited functionality.
+    </para>
+  </listitem>
+
+</itemizedlist>
+
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Message Passing -->
+
+<sect1 id="posix-message-passing">
+<title>Message Passing &lsqb;POSIX Section 15&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+mqd&lowbar;t mq&lowbar;open( const char &ast;name, int  oflag, ... ); 
+int mq&lowbar;close( mqd&lowbar;t  mqdes ); 
+int mq&lowbar;unlink( const char &ast;name );
+int mq&lowbar;send( mqd&lowbar;t mqdes, const char &ast;msg&lowbar;ptr,
+	     size&lowbar;t msg&lowbar;len, unsigned int msg&lowbar;prio ); 
+ssize&lowbar;t mq&lowbar;receive( mqd&lowbar;t mqdes, char &ast;msg&lowbar;ptr,
+	            size&lowbar;t msg&lowbar;len, unsigned int &ast;msg&lowbar;prio );
+int mq&lowbar;setattr( mqd&lowbar;t mqdes, const struct mq&lowbar;attr &ast;mqstat,
+	        struct mq&lowbar;attr &ast;omqstat ); 
+int mq&lowbar;getattr( mqd&lowbar;t mqdes, struct mq&lowbar;attr &ast;mqstat ); 
+int mq&lowbar;notify( mqd&lowbar;t mqdes, const struct sigevent &ast;notification );
+</screen>
+<para>From POSIX 1003.1d draft: </para>
+<screen>
+int mq&lowbar;send( mqd&lowbar;t mqdes, const char &ast;msg&lowbar;ptr,
+	     size&lowbar;t msg&lowbar;len, unsigned int msg&lowbar;prio,
+             const struct timespec *abs_timeout ); 
+ssize&lowbar;t mq&lowbar;receive( mqd&lowbar;t mqdes, char &ast;msg&lowbar;ptr,
+	            size&lowbar;t msg&lowbar;len, unsigned int &ast;msg&lowbar;prio,
+             const struct timespec *abs_timeout );
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+	
+<para>
+&lt;none&gt;
+</para>
+
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+
+<itemizedlist>
+  <listitem>
+    <para>
+    The presence of message queues is controlled by the
+    CYGPKG&lowbar;POSIX&lowbar;MQUEUES option.  Setting this will
+    cause &lsqb;&lowbar;POSIX&lowbar;MESSAGE&lowbar;PASSING&rsqb; to
+    be defined and the message queue API to be made available.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+    Message queues are not currently filesystem objects. They live in
+    their own name and descriptor spaces.
+    </para>
+  </listitem>
+</itemizedlist>
+
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Thread Management -->
+
+<sect1 id="posix-thread-management">
+<title>Thread Management &lsqb;POSIX Section 16&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int pthread&lowbar;attr&lowbar;init(pthread&lowbar;attr&lowbar;t &ast;attr); 
+int pthread&lowbar;attr&lowbar;destroy(pthread&lowbar;attr&lowbar;t &ast;attr); 
+int pthread&lowbar;attr&lowbar;setdetachstate(pthread&lowbar;attr&lowbar;t &ast;attr,
+                                int detachstate); 
+int pthread&lowbar;attr&lowbar;getdetachstate(const pthread&lowbar;attr&lowbar;t &ast;attr,
+	                        int &ast;detachstate); 
+int pthread&lowbar;attr&lowbar;setstackaddr(pthread&lowbar;attr&lowbar;t &ast;attr,
+                              void &ast;stackaddr); 
+int pthread&lowbar;attr&lowbar;getstackaddr(const pthread&lowbar;attr&lowbar;t &ast;attr,
+	                      void &ast;&ast;stackaddr); 
+int pthread&lowbar;attr&lowbar;setstacksize(pthread&lowbar;attr&lowbar;t &ast;attr,
+                              size&lowbar;t stacksize); 
+int pthread&lowbar;attr&lowbar;getstacksize(const pthread&lowbar;attr&lowbar;t &ast;attr,
+	                      size&lowbar;t &ast;stacksize); 
+int pthread&lowbar;create( pthread&lowbar;t &ast;thread,
+                    const pthread&lowbar;attr&lowbar;t &ast;attr,
+	            void &ast;(&ast;start&lowbar;routine)(void &ast;),
+	            void &ast;arg);
+pthread&lowbar;t pthread&lowbar;self( void ); 
+int pthread&lowbar;equal(pthread&lowbar;t thread1, pthread&lowbar;t thread2); 
+void pthread&lowbar;exit(void &ast;retval); 
+int pthread&lowbar;join(pthread&lowbar;t thread, void &ast;&ast;thread&lowbar;return); 
+int pthread&lowbar;detach(pthread&lowbar;t thread); 
+int pthread&lowbar;once(pthread&lowbar;once&lowbar;t &ast;once&lowbar;control,
+	         void (&ast;init&lowbar;routine)(void));
+</screen>
+
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+	
+<para>
+&lt;none&gt;
+</para>
+
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+
+<itemizedlist>
+  <listitem>
+    <para>
+    The presence of thread support as a whole is controlled by the the
+    CYGPKG_POSIX_PTHREAD configuration option. Note that disabling
+    this will also disable many other features of the POSIX package,
+    since these are intimately bound up with the thread mechanism.
+    </para>
+  </listitem>
+  
+  <listitem>
+    <para>
+    The default (non-scheduling) thread attributes are:
+    </para>
+    <screen>
+    detachstate            PTHREAD&lowbar;CREATE&lowbar;JOINABLE
+    stackaddr              unset
+    stacksize              unset
+    </screen>
+  </listitem>
+  
+  <listitem>
+    <para>
+      Dynamic thread stack allocation is only provided if there is an
+      implementation of
+      <emphasis>malloc()</emphasis> configured (i.e. a package
+      implements the
+      CYGINT&lowbar;MEMALLOC&lowbar;MALLOC&lowbar;ALLOCATORS
+      interface). If there is no malloc() available, then the thread
+      creator must supply a stack. If only a stack address is supplied
+      then the stack is assumed to be PTHREAD&lowbar;STACK&lowbar;MIN
+      bytes long. This size is seldom useful for any but the most
+      trivial of threads.  If a different sized stack is used, both
+      the stack address and stack size must be supplied.
+    </para>
+  </listitem>
+  
+  <listitem>
+    <para>
+      The value of PTHREAD&lowbar;THREADS&lowbar;MAX is supplied by
+      the CYGNUM&lowbar;POSIX&lowbar;PTHREAD&lowbar;THREADS&lowbar;MAX
+      option. This defines the maximum number of threads allowed. The
+      POSIX standard requires this value to be at least 64, and this
+      is the default value set.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+    When the POSIX package is installed, the thread that calls 
+    <emphasis>main()</emphasis> is initialized as a POSIX thread. The
+    priority of that thread is controlled by the
+    CYGNUM&lowbar;POSIX&lowbar;MAIN&lowbar;DEFAULT&lowbar;PRIORITY option.
+    </para>
+  </listitem>
+</itemizedlist>
+
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Thread-Specific Data -->
+
+<sect1 id="posix-thread-specific-data">
+<title>Thread-Specific Data &lsqb;POSIX Section 17&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int pthread&lowbar;key&lowbar;create(pthread&lowbar;key&lowbar;t &ast;key,
+	               void (&ast;destructor)(void &ast;)); 
+int pthread&lowbar;setspecific(pthread&lowbar;key&lowbar;t key, const void &ast;pointer); 
+void &ast;pthread&lowbar;getspecific(pthread&lowbar;key&lowbar;t key); 
+int pthread&lowbar;key&lowbar;delete(pthread&lowbar;key&lowbar;t key);
+</screen>
+
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+<para>
+&lt;none&gt;
+</para>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+
+<itemizedlist>
+  <listitem>
+    <para>
+    The value of PTHREAD&lowbar;DESTRUCTOR&lowbar;ITERATIONS is
+    provided by the
+    CYGNUM&lowbar;POSIX&lowbar;PTHREAD&lowbar;DESTRUCTOR&lowbar;ITERATIONS
+    option. This controls the number of times that a key destructor
+    will be called while the data item remains non-NULL.
+    </para>
+  </listitem>
+  
+  <listitem>
+    <para>
+    The value of PTHREAD&lowbar;KEYS&lowbar;MAX is provided
+    by the CYGNUM&lowbar;POSIX&lowbar;PTHREAD&lowbar;KEYS&lowbar;MAX
+    option. This defines the maximum number of per-thread data items
+    supported. The POSIX standard calls for this to be a minimum of
+    128, which is rather large for an embedded system. The default
+    value for this option is set to 128 for compatibility but it
+    should be reduced to a more usable value.
+    </para>
+  </listitem>
+</itemizedlist>
+
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Thread Cancellation -->
+
+<sect1 id="posix-thread-cancellation">
+<title>Thread Cancellation &lsqb;POSIX Section 18&rsqb;</title>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Implemented</title>
+
+<screen>
+int pthread&lowbar;cancel(pthread&lowbar;t thread); 
+int pthread&lowbar;setcancelstate(int state, int &ast;oldstate); 
+int pthread&lowbar;setcanceltype(int type, int &ast;oldtype); 
+void pthread&lowbar;testcancel(void); 
+void pthread&lowbar;cleanup&lowbar;push( void (&ast;routine)(void &ast;),
+                           void &ast;arg); 
+void pthread&lowbar;cleanup&lowbar;pop( int execute);
+</screen>
+</sect2>
+
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Functions Omitted</title>
+<para>
+&lt;none&gt;
+</para>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+<para>
+Asynchronous cancellation is only partially implemented.  In
+particular, cancellation may occur in unexpected places in some
+functions. It is strongly recommended that only synchronous
+cancellation be used. 
+</para>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Non-POSIX Functions -->
+
+<sect1 id="posix-non-posix-functions">
+<title>Non-POSIX Functions</title>
+	
+<para>
+In addition to the standard POSIX functions defined above, the
+following non-POSIX functions are defined in the FILEIO package.
+</para>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>General I&sol;O Functions</title>
+<screen>
+int ioctl( int fd, CYG&lowbar;ADDRWORD com, CYG&lowbar;ADDRWORD data ); 
+int select( int nfd, fd&lowbar;set &ast;in, fd&lowbar;set &ast;out, fd&lowbar;set &ast;ex, struct timeval &ast;tv);
+</screen>
+</sect2>
+
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Socket Functions</title>
+<screen>
+int socket( int domain, int type, int protocol); 
+int bind( int s, const struct sockaddr &ast;sa, unsigned int len); 
+int listen( int s, int len); 
+int accept( int s, struct sockaddr &ast;sa, socklen&lowbar;t &ast;addrlen); 
+int connect( int s, const struct sockaddr &ast;sa, socklen&lowbar;t len); 
+int getpeername( int s, struct sockaddr &ast;sa, socklen&lowbar;t &ast;len); 
+int getsockname( int s, struct sockaddr &ast;sa, socklen&lowbar;t &ast;len); 
+int setsockopt( int s, int level, int optname, const void &ast;optval,
+	        socklen&lowbar;t optlen); 
+int getsockopt( int s, int level, int optname, void &ast;optval,
+	        socklen&lowbar;t &ast;optlen); 
+ssize&lowbar;t recvmsg( int s, struct msghdr &ast;msg, int flags); 
+ssize&lowbar;t recvfrom( int s, void &ast;buf, size&lowbar;t len, int flags, 
+	          struct sockaddr &ast;from, socklen&lowbar;t &ast;fromlen); 
+ssize&lowbar;t recv( int s, void &ast;buf, size&lowbar;t len, int flags); 
+ssize&lowbar;t sendmsg( int s, const struct msghdr &ast;msg, int flags); 
+ssize&lowbar;t sendto( int s, const void &ast;buf, size&lowbar;t len, int flags, 
+	        const struct sockaddr &ast;to, socklen&lowbar;t tolen); 
+ssize&lowbar;t send( int s, const void &ast;buf, size&lowbar;t len, int flags); 
+int shutdown( int s, int how);
+</screen>
+</sect2>
+
+<!-- =================================================================== -->
+
+<sect2>
+<title>Notes</title>
+<itemizedlist>
+  <listitem>
+   <para>
+   The precise behaviour of these functions depends mainly on the
+   functionality of the underlying filesystem or network stack to
+   which they are applied.
+   </para>
+  </listitem>
+</itemizedlist>
+</sect2>
+</sect1>
+
+<!-- }}} -->
+
+</chapter>
+
+<!-- {{{ Bibliography -->
+
+<bibliography id="posix-references-and-bibliography">
+<title>References and Bibliography</title>
+
+    <bibliomixed>
+      <bibliomisc>&lsqb;Lewine&rsqb;</bibliomisc>
+      <author>
+	<firstname>Donald</firstname>
+	<othername>A.</othername>
+	<surname>Lweine</surname>
+      </author>
+      <title>Posix Programmer&rsquo;s Guide: Writing Portable Unix
+	Programs With the POSIX.1 Standard O&rsquo;Reilly &amp;
+	Associates; ISBN: 0937175730.</title></bibliomixed>
+
+    <bibliomixed>
+      <bibliomisc>&lsqb;Lewis1&rsqb;</bibliomisc>
+      <author>
+	<firstname>Bil</firstname>
+	<surname>Lewis</surname>
+      </author>
+      <author>
+	<firstname>Daniel</firstname>
+	<othername>J.</othername>
+	<surname>Berg</surname>
+      </author>
+      <title>Threads Primer: A Guide to Multithreaded Programming</title>
+      <publishername>Prentice Hall</publishername>
+      <isbn>ISBN: 013443698</isbn>
+    </bibliomixed>
+
+    <bibliomixed>
+      <bibliomisc>&lsqb;Lewis2&rsqb;</bibliomisc>
+      <author>
+	<firstname>Bil</firstname>
+	<surname>Lewis</surname>
+      </author>
+      <author>
+	<firstname>Daniel</firstname>
+	<othername>J.</othername>
+	<surname>Berg</surname>
+      </author>
+      <title>Multithreaded Programming With Pthreads</title>
+      <publisher>
+	<publishername>Prentice Hall Computer Books</publishername>
+      </publisher>
+      <isbn>ISBN: 0136807291</isbn>
+    </bibliomixed>
+
+    <bibliomixed>
+      <bibliomisc>&lsqb;Nichols&rsqb;</bibliomisc>
+      <author>
+	<firstname>Bradford</firstname>
+	<surname>Nichols</surname>
+      </author>
+      <author>
+	<firstname>Dick</firstname>
+	<surname>Buttlar</surname>
+      </author>
+      <author>
+	<firstname>Jacqueline</firstname>
+	<othername>Proulx</othername>
+	<surname>Farrell</surname>
+      </author>
+      <title>Pthreads Programming: A POSIX Standard for Better
+	Multiprocessing (O&rsquo;Reilly Nutshell)</title>
+      <publisher><publishername>O&rsquo;Reilly &amp; Associates</publishername>
+      </publisher>
+      <isbn>ISBN: 1565921151</isbn>
+    </bibliomixed>
+
+    <bibliomixed>
+      <bibliomisc>&lsqb;Norton&rsqb;</bibliomisc>
+      <author>
+	<firstname>Scott</firstname>
+	<othername>J.</othername>
+	<surname>Norton</surname>
+      </author>
+      <author>
+	<firstname>Mark</firstname>
+	<othername>D.</othername>
+	<surname>Depasquale</surname>
+      </author>
+      <title>Thread Time: The MultiThreaded Programming Guide</title>
+      <publisher><publishername>Prentice Hall</publishername>
+      </publisher>
+      <isbn>ISBN: 0131900676</isbn></bibliomixed>
+
+
+    <bibliomixed>
+      <bibliomisc>&lsqb;POSIX&rsqb;</bibliomisc>
+      <title>Portable Operating System Interface(POSIX) -
+Part 1: System Application Programming Interface (API)&lsqb;C
+Language&rsqb;</title>
+      <corpauthor>ISO&sol;IEC 9945-1:1996, IEEE</corpauthor></bibliomixed>
+
+    <bibliomixed>
+      <bibliomisc>&lsqb;SUS2&rsqb;</bibliomisc>
+      <title>Open Group; Single Unix Specification, Version 2</title>
+      <bibliomisc><ulink
+      url="http://www.opengroup.org/public/pubs/online/7908799/index.html">http://www.opengroup.org/public/pubs/online/7908799/index.html</ulink></bibliomisc>
+    </bibliomixed>
+
+  </bibliography>
+
+<!-- }}} -->
+
+</part>

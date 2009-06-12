@@ -1,0 +1,247 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_rm7000_ocelot.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_rm7000_ocelot.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2001-08-31  David Woodhouse  <dwmw2@redhat.com>
+
+	* cfl/hal_mips_rm7000_ocelot.cdl: Fix compiler options to use
+	-mips2 for BE build, and make the LE options match the BE options
+	in all but endianness.
+
+2001-08-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/plf_intr.h: Move HAL_INTERRUPT_ interrupt controller
+	access macros to variant HAL as they are generic.
+
+2001-08-08  Chris Morrow  <cmorrow@YottaYotta.com>
+
+	* include/plf_intr.h (HAL_INTERRUPT_MASK): Use correct comparison
+	for determining when to use interrupt control register.
+	Also use cfc rather than mfc insns. Also simplify a fraction.
+	(HAL_INTERRUPT_UNMASK): Ditto.
+
+2001-08-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Removed obsolete and wrong
+	gdb_module build runes.
+
+2001-06-22  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Force 32k stack.
+	* misc/redboot_ROM.ecm: Same.
+
+2001-06-08  David Woodhouse <dwmw2@redhat.com>
+
+	* src/platform.S: Change CS bank 3 parameters to 8-bit.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Use generic AMD driver.
+	* misc/redboot_ROM.ecm: Same.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_cache.h:  Removed HAL_FLASH_CACHES_WANT_OPTIMAL. It
+	is now the default.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Respect channel configuration
+	constraints.
+
+	* src/ns16552.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-02-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S: Handle interrupt chaining.
+	* include/platform.inc: Same.
+	* include/plf_intr.h: Same.
+	* src/plf_mk_defs.c: Same.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/ns16552.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_None
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/ns16552.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2001-01-24  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Enable ethernet.
+	* misc/redboot_ROM.ecm: Same.
+
+	* include/plf_intr.h: PCI interrupt B is wired to i82559.
+
+2001-01-19  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Updated PCI space options
+	accordingly.
+
+	* src/platform.S: Add endian handling of memory init code.
+
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.h: Update address
+	space to 256MB. Add space for PCI access.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.mlt: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.ldi: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.h: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.mlt: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.ldi: Same.
+
+2001-01-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Enable PCI access to memory.
+	* include/plf_io.h: Clean up PCI space mappings.
+
+	* src/plf_misc.c: The Galileo PCI config is in little-endian mode
+	while all other devices are in big-endian mode. Cruft to deal with
+	that.
+	* include/plf_io.h: Same.
+
+2001-01-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Spacious PCI mappings.
+	* src/plf_misc.c (cyg_hal_plf_pci_init): Removed REMAP settings.
+
+	* include/plf_io.h: PCI memory changes.
+	* src/plf_misc.c (cyg_hal_plf_pci_init): Same. Doesn't seem to
+	make much of a difference though.
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: New toolchain again.
+
+2001-01-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S: Snuffed some more code from Mark to set the RAM
+	up properly. Not tested, and may not work with the full 512MB
+	[there was a mention of an Galileo errata]. We'll see.
+
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.h: Hacked to provide
+	PCI window [no .mlt update since it'll all have to change for
+	fixed memory init anyway].
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.ldi: Same.
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Added PCI memory window
+	options. Changed tools (again) which required some option hacking
+	as well. Fixed CPU clock / RTC rate issue.
+
+	* src/platform.S: Removed PCI init code.
+
+	* include/plf_io.h: Replace PCI macros with functions.
+	Added Galileo definitions.
+	* src/plf_misc.c: PCI functions. Code written by Mark
+	Salter.
+	
+	* cdl/hal_mips_rm7000_ocelot.cdl: Change tool prefix.
+
+2000-12-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S (hal_memc_setup_table): Only do one PCI access
+	retry.
+
+2000-12-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S: Named PCI config registers.
+
+	* include/plf_intr.h: Added bogus PCI vectors.
+
+	* include/plf_io.h: Added, cloned from VRC4373 file. Pretty bogus
+	though. Probably need timeout support like the vrc4373 as well.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Appears to only run at 150MHz.
+	Don't relocate RedBoot ELF image.
+
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.h: Changed to 16MB
+	size. Need to look into why the full 256/512MB is not accessible.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.ldi: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.mlt: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.h: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.ldi: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.mlt: Same.
+
+	* misc/redboot_RAM.ecm: Added.
+	* misc/redboot_ROM.ecm: Added.
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Produce .srec and .img files.
+
+	* include/plf_cache.h (HAL_FLASH_CACHES_WANT_OPTIMAL): Defined.
+
+2000-12-04  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.h: Proper sizes.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.ldi: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_ram.mlt: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.h: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.ldi: Same.
+	* include/pkgconf/mlt_mips_rm7000_ocelot_rom.mlt: Same.
+
+	* src/platform.S (hal_memc_setup_table): Fixed so it sets up SDRAM
+	correctly (only 256MB, though, I think - only uses banks 0 and 2).
+
+2000-12-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S: Initialization code. Still not working.
+
+	* cdl/hal_mips_rm7000_ocelot.cdl: Added CPU clock and RedBoot
+	options.
+
+2000-11-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/ns16552.c: Use uncached address space.
+
+	* Cloned from ref4955. Still stuff to clean out and stuff to add.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,136 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_vr4300_vrc4375.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2001-12-06  Nick Garnett  <nickg@redhat.com>
+
+	* images/ROMRAM/redboot.bin
+	* images/ROMRAM/redboot.elf
+	* images/ROMRAM/redboot.img
+	* images/ROMRAM/redboot.srec
+	Updated images.	
+
+2001-10-24  Nick Garnett  <nickg@redhat.com>
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.ldi:
+	Align BSS to 16 byte boundary.
+
+	* images/ROMRAM/redboot.bin:
+	* images/ROMRAM/redboot.elf:
+	* images/ROMRAM/redboot.img:
+	* images/ROMRAM/redboot.srec:
+	Update images. Note that only the ROMRAM images are needed.
+
+2001-10-11  Hugo Tyson  <hmt@redhat.com>
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.mlt:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.mlt:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.mlt:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.h:
+	Correct these all to reflect the truth about SDRAM size (32Mb).
+	[and remove debug version from unused ROM-startup files]
+
+2001-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* misc/redboot_ROM.ecm: (not used really AFAICS)
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROMRAM.ecm: 
+	Add the network driver to the template so that it leaps into life
+	in RedBoot.
+
+2001-10-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mips_vr4300_vrc4375.cdl: Define CPU as little-endian here.
+
+2001-09-17  Nick Garnett  <nickg@redhat.com>
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.ldi: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.h: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.h: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.ldi: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.ldi: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.h:
+	Added PCI window.
+
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROMRAM.ecm:
+	Added configury to support ethernet.
+	[Later] Disabled this temporarily.
+
+2001-09-10  Nick Garnett  <nickg@redhat.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_ROMRAM.ecm:
+	Added configury to support FLASH.
+
+2001-09-07  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/hal_mips_vr4300_vrc4375.cdl:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_ram.mlt:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_rom.mlt:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4375_romram.mlt:
+	* misc/redboot_RAM.ecm:
+	* misc/redboot_ROM.ecm:
+	* misc/redboot_ROMRAM.ecm:
+	This package added to provide configury for the VRC4375 platform.
+	
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

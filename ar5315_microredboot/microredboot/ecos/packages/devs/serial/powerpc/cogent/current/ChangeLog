@@ -1,0 +1,1196 @@
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/ser_powerpc_cogent.cdl: Remove irrelevant doc link.
+
+2001-09-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * cdl/ser_powerpc_cogent.cdl:        
+        Fix 234000->230400 typo.
+
+2000-10-12  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/ser_powerpc_cogent.cdl: Moved testing parameters here.
+
+2000-08-01  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/cogent_serial_with_ints.c (cogent_serial_set_config): Now use
+	keys to make more flexible.
+
+2000-06-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/<yournamehere>.cdl: Remove the comment on the empty
+	include_files directive; the tools now support this correctly.
+	This keeps internal include files internal.
+
+2000-04-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/ser_powerpc_cogent.cdl: Change the parent from CYGPKG_IO_SERIAL
+	(which is enabled most of the time) to CYGPKG_IO_SERIAL_DEVICES
+	(which is not...) thus allowing convenient control independent of
+	platform.  Also enable all individual devices by default, now, so
+	that they can be enabled simply by enabling the above new parent.
+
+2000-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ecos.db: Re-organize device packages.  This is a massive change
+	involving deleting all the sources for serial and ethernet drivers
+	from where they used to live in
+	    packages/io/serial/current/src/ARCH/PLATFORM.[ch]
+	    packages/net/drivers/eth/PLATFORM/current/src/...
+	and reinstating them in
+	    packages/devs/serial/ARCH/PLATFORM/current/src/...
+	    packages/devs/eth/ARCH/PLATFORM/current/src/...
+
+	All these new packages are properly defined in ecos.db, and are
+	all of type "hardware" so that a "target" can grab them.
+	
+	This directory layout is descriptive of the devices we have right
+	now, arch and platform are separate levels just to make it easier
+	to navigate in the filesystem and similar to the HAL structure in
+	the filesystem.
+
+	It is *not* prescriptive of future work; for example, the mythical
+	common highly-portable 16550 serial driver which works on many
+	targets would be called "devs/serial/s16550/current", or a serial
+	device for a particular board (cogent springs to mind) that can
+	work with different CPUs fitted is "devs/serial/cogent/current".
+
+	Changelogs have been preserved and replicated over all the new
+	packages, so that no history is lost.
+
+	The contents of individual source files are unchanged; they build
+	in just the same emvironment except for a very few cases where the
+	config file name changed in this movement.
+
+	Targets in ecos.db have been redefined to bring in all relevant
+	hardware packages including net and serial drivers (but the newly
+	included packages are only active if their desired parent is
+	available.)
+	
+	The names of CDL options (and their #defines of course) stay the
+	same for the serial drivers, for backward compatibility.
+
+	* templates/*/current.ect: these have had CYGPKG_IO_SERIAL added
+	rather than it being in (almost) all target definitions.
+	
+2000-04-05  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/common/tty.c (tty_read): CRLF conversion should use \r\n not \n\r
+	(tty_write): Similarly
+
+	* include/ttyio.h: Update CYG_TTY_IN_FLAGS_CRLF and
+	CYG_TTY_IN_FLAGS_CRLF to match
+
+2000-03-31  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/ser_sh_edk7708.cdl: Limit legal baud rate range.
+	* src/sh/sh_sci_serial.c: Use baud rate macro instead of hardwired
+	constants.
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/io_serial.cdl,
+	  cdl/ser_arm_aeb.cdl,
+	  cdl/ser_arm_cma230.cdl,
+	  cdl/ser_arm_edb7xxx.cdl,
+	  cdl/ser_arm_pid.cdl,
+	  cdl/ser_i386_pc.cdl,
+	  cdl/ser_mips_jmr3904.cdl,
+	  cdl/ser_mips_vrc4373.cdl,
+	  cdl/ser_mn10300.cdl,
+	  cdl/ser_powerpc_cogent.cdl,
+	  cdl/ser_quicc_smc.cdl,
+	  cdl/ser_sh_edk7708.cdl,
+	  cdl/ser_sparclite_sleb.cdl,
+	  cdl/tty.cdl:
+
+	Adjust documentation URLs.
+
+2000-03-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/ser_mips_jmr3904.cdl: Rename devices to match CDL naming.
+
+2000-02-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/serialio.h: Correct baud rate typo: 230400 rather than
+	234000. Thanks to Grant Edwards for the report.
+
+2000-02-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/powerpc/quicc_smc_serial.c: Use standard 'diag_dump_buf()'.
+
+2000-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* tests/ser_test_protocol.inl: Allow 115200 baud on Cogent
+	again. Fixed interrupt problem.
+
+2000-02-22  Jesper Skov  <jskov@redhat.com>
+
+	* tests/ser_test_protocol.inl: Don't use 115200 baud on
+	Cogent. Our slower boards can't keep up.
+
+2000-02-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/ser_powerpc_cogent.cdl: Fix incorrect dependency.
+
+2000-02-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h:
+	Added configury for PC serial device drivers.
+
+	* cdl/ser_i386_pc.cdl:
+	* src/i386/pc_serial.c:
+	* src/i386/pc_serial.h:
+	Added these files to implement PC serial line drivers.
+
+	* cdl/io_serial.cdl:
+	Added CYGPKG_IO_SERIAL_I386_PC.
+
+	* tests/ser_test_protocol.inl:
+	Added support for PC serial line testing.
+	
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh/sh_sci_7708.inl (DEVTAB_ENTRY): 
+	* src/sparclite/sleb_sdtr.c: 
+	serial_devio => cyg_io_serial_devio
+
+2000-02-10  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/mn10300/mn10300_serial.c: Ensure all CYG_HAL_MN10300_*
+	preprocessor conditionals use the correct CYGPKG_HAL_MN10300_AM3* form
+	now.	
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* src/powerpc/quicc_smc_serial.c: CYG_HAL_POWERPC_x->CYGPKG_...
+
+2000-02-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/arm/aeb_serial.h: Rename lower case register macros to REG_ upper
+	case macros
+
+	* src/arm/aeb_serial.c: Update to reflect above
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/common/tty.c (tty_read): Fix problem with backspace at start
+	of line (size must be 'signed' for compare to work).
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+2000-01-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/common/tty.c (tty_read): Avoid echoing "backspace/erase" at
+	start of line.
+
+2000-01-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/common/serial.c (serial_write): Avoid potential deadlock if
+	transmit start actually sends enough characters to signal cond wait.
+
+2000-01-03  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/serial.h: Fix namespace pollution - 
+	serial_devio => cyg_io_serial_devio
+	serial_callbacks => cyg_io_serial_callbacks
+
+	* src/mips/tx3904_serial.c: 
+	* src/mips/vrc4373_serial.c: 
+	* src/mn10300/mn10300_serial.c: 
+	* src/powerpc/quicc_smc_serial.c: 
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/sparclite/sleb_sdtr.c: 
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: 
+	* src/arm/edb7xxx_serial.c: 
+	* src/arm/cma230_serial.c: 
+	* src/arm/ebsa285_serial.c: 
+	* src/common/haldiag.c: 
+	* src/common/serial.c: Fix namespace pollution - 
+	serial_devio => cyg_io_serial_devio
+
+1999-12-06  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/arm/pid_serial_with_ints.c (pid_serial_DSR): Add loop to handle
+	case where an interrupt represents multiple events.
+
+1999-11-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/powerpc/quicc_smc_serial.c: Channel select for SMC2 was wrong.
+
+1999-11-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Remove mention of 7209/7212.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/io_serial.cdl: Define build options.
+
+1999-10-26  Jesper Skov  <jskov@cygnus.co.uk>
+	* tests/serial5.c (serial_test): Reduce speed in thumb mode.
+
+	* src/arm/pid_serial.h: Added BE support.
+
+	* src/PKGconf.mak: Use CYGPKG_<> instead of CYG_<> to control what
+	needs to be compiled.
+
+1999-10-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/arm/pid_serial.h (ISR_RxTO): Define - character received but
+	not handled "promptly".
+
+	* src/arm/pid_serial_with_ints.c (pid_serial_DSR): Handle rcv interrupts
+	properly (can't ignore them even with TO bit set).
+
+	* src/arm/cl7211_serial.c (cl7211_serial_rx_DSR): Need to handle all
+	input (empty input FIFO) otherwise characters get dropped.
+
+1999-10-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Removed AEB rev C change. Was bogus.
+
+1999-10-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Added configury for VR4300 testing.
+
+	* src/mips/vrc4373_serial.c: Added Bi-endian support.
+
+	* include/pkgconf/io_serial.h: Adjusted default baud rates to
+	38400.
+
+1999-10-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Run tests on AEB rev C as well.
+
+1999-09-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/powerpc/quicc_smc_serial.c (quicc_smc_serial_init): Correct
+	value supplied for interrupt priority - it may be unused, but it
+	is asserted for range.  Initialize the diagnostic channel if on an
+	MBX and if NOT using SMC1 ourselves, to ensure that diag output
+	and built-in stubs work correctly; otherwise reset the quicc and
+	ignore SMC1 as before.  Fix various warnings, mostly about
+	casting/arg-passing/assigning away volatile.
+
+1999-08-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Define dummy crash ID.
+
+1999-08-30  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Added crash information which
+	should help track down repeating errors.
+
+1999-08-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/README: Added.
+
+1999-08-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/tty1.c: 
+	* tests/tty2.c: 
+	* tests/serial1.c: 
+	* tests/serial2.c: 
+	* tests/serial3.c: 
+	* tests/serial4.c: 
+	* tests/serial5.c: 
+	* tests/PKGconf.mak:
+	Require kernel and kernel C API.
+	
+1999-08-17  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300/mn10300_serial.c: Added a simple implementation of a
+	receive FIFO to try and reduce the overhead of receiving bytes.
+
+1999-08-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	* src/mn10300/mn10300_serial.c:
+	* tests/ser_test_protocol.inl:
+	Rename all am32 -> am31
+
+1999-08-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	Imported following changes from development branch:
+	
+    1999-08-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/serial5.c: Modified config test for boards that need a lower
+	speed for this test.
+
+	* tests/ser_test_protocol.inl: Removed 14400 baud tests for all
+	MN10300 variants. The MN10300 cannot currently do this speed.
+
+	* src/mn10300/mn10300_serial.c: Tidied up the transmit interrupt
+	enable/disable code to be variant specific.
+
+	* include/pkgconf/io_serial.h: Undid Jonathan's change, since the
+	same options are used for all MN10300 variants.
+	
+    1999-08-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h:
+        Reparent CYGPKG_IO_SERIAL_MN10300 from under CYGPKG_HAL_MN10300 to
+        CYGPKG_HAL_MN10300_AM32_STDEVAL1 since it's stdeval1 specific
+
+    1999-08-04  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl:
+	Changed names of MN10300 defines tested. Added AM33 definitions.
+
+	* src/mn10300/mn10300_serial.c:
+	Modified driver to work on am33 too. This simply requires some
+	alternate definitions of things like register addresses and some
+	bits in them plus some extra parameterization of some register
+	values.
+
+	* src/PKGconf.mak:
+	Added am33 to list of architectures supporting serial lines.
+	
+1999-07-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Update descriptions to be more
+ 	generic (CL7x11 instead of CL7211).
+
+1999-07-28  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Correct typos in CDL description
+	for serial port 2 driver
+
+1999-07-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/arm/ebsa285_serial.c: New file: device driver for the serial
+	device of the Intel StrongARM EBSA-285 evaluation board.
+
+	* include/pkgconf/io_serial.h (CYGPKG_IO_SERIAL_ARM_EBSA285):
+	Config for it.
+
+	* src/PKGconf.mak (EXTRAS_COMPILE): Compile it.
+
+	* tests/ser_test_protocol.inl (TEST_SER_DEV): Enable testing of it.
+
+1999-07-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl (change_config): Changed implementation.
+
+1999-06-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/powerpc/quicc_smc_serial.c (quicc_smc_serial_init): More robust
+	initialization, with data cache disabled.  This seems to fix the
+	random failures described below.
+
+	* tests/ser_test_protocol.inl: Add configuration for QUICC/MBX860.
+	Added some delays in the configuration change code to make QUICC
+	happy [didn't help much although the manual says they are required].
+
+	* src/powerpc/quicc_smc_serial.h (UART_BITRATE): Rewrote macro to 
+	match what the Linux driver uses - still doesn't work well, though.
+
+	* src/powerpc/quicc_smc_serial.c: Lots of changes trying to get the
+	serial driver working and robust.  At this point it works quite well,
+	using the default buffer sizes.  Changing from the defaults seem to
+	easily break it though, certainly on input.  Also, changing the baud
+	rate seems to not work reliably.
+
+	* src/common/serial.c: Add some tracing/debug info to try and debug
+	problems with QUICC serial driver.  These are hard disabled with
+	"XX_" prepended to "CYGDBG_DIAG_BUF".  Enabling them gives information
+	about how/when data are delivered from the serial driver.
+
+	* include/pkgconf/io_serial.h: Adjust limits and defaults on number and
+	size of buffers with values that seem to work.
+
+1999-06-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh/sh_sci_serial.c: Rearranged inclusion of .inl file a bit
+	to avoid compiler warnings.
+
+1999-06-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Fix CDL for number of buffers.
+
+	* src/powerpc/quicc_smc_serial.c: Force number of buffers = 1.
+
+1999-06-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Some clean up (removed commented
+	obsolete CDL parenting structure).
+	Add support for Motorola PowerPC QUICC/SMC.
+
+	* src/arm/cma230_serial.c: 
+	* src/arm/cl7211_serial.c: 
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: Use #include to get 'diag_printf()'
+	prototypes.
+
+1999-06-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/arm/cl7211_serial.c (cl7211_serial_start_xmit): Fix race which
+	cause xmitter to get stuck.
+
+1999-06-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh/sh_serial.c:          [removed]
+	* src/sh/sh_sci_serial.c:      [added]
+	* src/sh/sh_sci_7708.inl:      [added]
+	* include/pkgconf/io_serial.h: 
+	* src/PKGconf.mak (EXTRAS_COMPILE): 
+	* tests/ser_test_protocol.inl: 
+	Renamed CDL options and restructered driver.
+	Fixed CDL typo.
+	
+1999-06-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Fixed CDL string for BAUD rate option.
+
+1999-06-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Disable testing at 115200
+	for Cogent CMA230 (ARM).
+
+	* src/arm/cma230_serial.c: Fix interrupt for port B.
+
+1999-05-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh/sh_serial.c: Fixed receive interrupts and added handler for
+	error interrupts.
+
+1999-05-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* io/serial/current/src/PKGconf.mak:
+	* io/serial/current/tests/ser_test_protocol.inl:
+	* include/pkgconf/io_serial.h: 
+	Renamed SH platform package to edk7708.
+
+1999-05-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Added ability to change options in
+	host software.
+
+1999-05-27  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300/mn10300_serial.c (mn10300_serial_config_port): 
+	Wait for the serial device to become acquiescent before disabling
+	it. This prevents cygmon's outgoing characters getting corrupted
+	due to transmission being disabled.
+	Fix for PR 20047
+	
+1999-05-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: 
+	* tests/ser_test_protocol.inl: Add Cogent CMA230 setup.
+	
+	* src/arm/cma230_serial.c: Make names compatible with Cogent
+	PowerPC board.
+
+1999-05-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Add Cirrus Logic CL7211 setup.
+1999-05-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh/sh_serial.c: Added more baud rate values. Disabled
+	interrupt driven receive. Fixed config_port to enable proper
+	interrupt flags.
+
+1999-05-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: 
+	Change all mentions of CYGPKG_HAL_TX39_JMR3904 to
+	CYGPKG_HAL_MIPS_TX39_JMR3904
+
+1999-05-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak (EXTRAS_COMPILE): Change CYG_HAL_TX39 to
+	CYG_HAL_MIPS_TX39
+1999-05-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Added sh entry.
+
+1999-05-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	* include/pkgconf/io_serial.h: 
+	* src/sh/sh_serial.c: 
+	Added sh driver.
+
+1999-05-18  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19926
+	* src/sparclite/sleb_sdtr.c (sleb_sdtr_rx_DSR): Only read chan if
+	there is one.
+
+1999-05-18  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19926
+	* src/arm/cl7211_serial.c (cl7211_serial_rx_DSR): Only read char
+	if there is one.
+
+1999-05-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/arm/cl7211_serial.c: Clean up, first working version.
+
+1999-05-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Removed workaround for spurious
+	Cogent reads.
+
+	* src/arm/aeb_serial.c:
+	* src/arm/aeb_serial.h: 
+	* src/arm/pid_serial_with_ints.c: 
+	* src/arm/pid_serial.h: 
+	* src/powerpc/cogent_serial.h: 
+	* src/powerpc/cogent_serial_with_ints.c:
+	Check for receive interrupt before reading.
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	The follow changes were made in a branch an have now been merged:
+
+    1999-04-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/mips/vrc4373_serial.c: Small changes to get working with
+	interrupts.
+	
+    1999-04-20  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Fix CYGPKG_IO_SERIAL_TX39_JMR3904
+	parent attribute.
+
+1999-05-11  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/arm/cl7211_serial.c: Fix compile problems from merged code.
+
+1999-05-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Tidied up a bit and added
+	description of protocol.
+
+1999-05-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/serial.c (serial_write, serial_read): Clear abort
+	flag at entry.
+
+1999-05-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/serial4.c (serial_test): Handle config fails correctly.
+
+	* tests/ser_test_protocol.inl: Better change_config
+	handling. Simple recovery and negotiation isn't timing
+	dependant. 
+
+1999-05-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/timeout.inl: Updated with the below changes.
+
+1999-05-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/timeout.inl (timeout): Timeouts are relative, but alarms 
+	need absolute time values.
+
+1999-05-04  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 20018
+	* tests/serial1.c (serial_test): Always PASS, regardless of
+	configuration.
+
+1999-05-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Reverse order of configurations -
+	run tests with slow baud rate first.
+	Only check CYG_KERNEL_DIAG_GDB_SERIAL_DIRECT for SLEB on RAM startup.
+
+1999-05-04  Jesper Skov  <jskov@cygnus.co.uk>
+ 	* src/mn10300/mn10300_serial.c:
+ 	Use interrupt enable/disable feature of serial port2 to allow
+ 	coexistence with CygMon/hal_diag.
+ 
+ 	* tests/ser_test_protocol.inl: Use port2 for MN10300.
+
+1999-04-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak (EXTRAS_COMPILE):
+	Use the new rules for generating libextras.a
+
+1999-04-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Add support for Cirrus Logic CL7211.
+
+
+1999-04-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: Fix default baud rate if unbuffered.
+1999-04-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Added some comments. Disabled 38400
+	for SLEB. Only run test on SLEB if CygMon isn't used for diag
+	output.
+	
+1999-04-15  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19752
+	* tests/serial3.c:
+	* tests/serial5.c:
+	Run these tests at a lower baud rate on ARM AEB.
+	
+1999-04-14  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19839
+	* src/mn10300/mn10300_serial.c: 
+	Fix compiler warnings.
+
+1999-04-14  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h:
+	Reparent the board-specific serial devices below the actual boards.
+	
+1999-04-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl:
+	NA when run from simulator.
+
+1999-04-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl:
+	Disabled 115200 for MN10300.
+	Reclaim interrupt vectors from CygMon when testing on SLEB.
+
+1999-04-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/serial.h: Change SERIAL_CHANNEL setup so all channels
+	have serial callbacks, regardless of buffering.
+
+1999-04-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/tty.c: 
+	* include/pkgconf/io_serial.h:
+	Added new ttydiag device layered on top of haldiag, so that tty0
+	can be layered on top of ser0.
+
+1999-04-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/tty1.c:                [added]
+	* tests/tty2.c:                [added]
+	* tests/PKGconf.mak: 
+	* tests/ser_test_protocol.inl:
+	Added two simple TTY tests.
+
+1999-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sparclite/sleb_sdtr.h: Include cyg/hal/hal_io.h for I/O
+	macros instead of hal_diag.h where they had evolved before.
+
+1999-04-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/serial4.c (serial_test): 
+	* tests/serial3.c (serial_test): 
+	Reduce packet sizes.
+
+1999-03-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Added remaining targets to the
+	test.
+
+1999-03-31  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/sparclite/sleb_sdtr.c (sleb_sdtr_start_xmit): Fix timing race
+	when enabling xmit interrupts.
+
+1999-03-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/sparclite/sleb_sdtr.c: Change how the port is set up.  The transmitter
+	is now always enabled, just the interrupts are masked/unmasked to control it.
+	This lets the serial driver cooperate with Cygmon on the port used for GDB.
+	Note that currently serial input does not work for CON1 since Cygmon is
+	taking all of the receive interrupts for itself.
+	(sleb_sdtr_tx_DSR): Need to keep track whether xmit interrupt should be
+ 	enabled - otherwise it can get enabled incorrectly and we get interrupted
+	to death!
+
+1999-03-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Send a DONE message after a no-echo
+	binary packet.
+
+1999-03-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/serial5.c: 
+	* tests/serial4.c:
+	* tests/serial3.c:
+	* tests/serial2.c:
+	* tests/serial1.c:
+	Make these build when no kernel present; include of testcase
+	was the wrong side of the ifdef.
+
+1999-03-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/serial5.c:
+	* tests/serial4.c:
+	* tests/serial3.c:
+	* tests/serial2.c:
+	* tests/serial1.c:
+	Moved NOP check to ser_test_protocol open call.
+	
+	* tests/ser_test_protocol.inl: Make sure the proper device is
+	selected for testing. Do NOP check in open call.
+
+1999-03-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: 
+	* misc/console.c: 
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: 
+	* src/common/tty.c: 
+	* src/mips/tx3904_serial.c: 
+	* src/mn10300/mn10300_serial.c: 
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/sparclite/sleb_sdtr.c: Update CDL to follow naming conventions.
+
+	* src/mips/tx3904_serial.c (tx3904_serial_config_port): 
+	Make sure port is enabled (CDL) before using it.
+
+	* src/mn10300/mn10300_serial.c (mn10300_serial_config_port): 
+	* src/powerpc/cogent_serial_with_ints.c (cogent_serial_config_port): 
+	* src/arm/aeb_serial.c (aeb_serial_config_port): 
+	* src/arm/pid_serial_with_ints.c (pid_serial_config_port): Change so that
+	the physical port is not modified unless the provided configuration is valid.
+
+	* src/sparclite/sleb_sdtr.c (sleb_sdtr_config_port): 
+	Using wrong config data.
+
+	* include/serialio.h: Add macros to support baud rate from CDL.
+
+	* include/pkgconf/io_serial.h: 
+	* src/mn10300/mn10300_serial.c: 
+	* src/mips/tx3904_serial.c (tx3904_serial_ISR): 
+	* src/sparclite/sleb_sdtr.c: 
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/arm/pid_serial_with_ints.c: 
+	* src/arm/aeb_serial.c: Add configury for baud rate and buffer size.
+
+1999-03-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips/tx3904_serial.c:
+	Now uses CYGHWR_HAL_MIPS_CPU_FREQ_ACTUAL to get CPU
+	frequency. This is a little more accurate than using
+	CYGHWR_HAL_MIPS_CPU_FREQ.
+
+1999-03-24  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/serialio.h (CYGNUM_SERIAL_BAUD_MIN/MAX): Add for completeness.
+
+	* src/arm/aeb_serial.c (aeb_serial_stop_xmit): 
+	* src/arm/pid_serial_with_ints.c (pid_serial_stop_xmit): Fix typo in comment.
+
+1999-03-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/ser_test_protocol.inl: Weeded out configs TX39 doesn't
+	like.
+
+	* src/powerpc/cogent_serial.h: 
+	Added copyright header.
+	
+	* tests/ser_test_protocol.inl: 
+	* tests/serial1.c: 
+	* tests/serial2.c: 
+	* tests/serial3.c: 
+	* tests/serial4.c: 
+	* tests/serial5.c: 
+	Don't try to run tests when no IO device has been specified.
+	
+1999-03-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial1.c, misc/serial2.c, misc/serial3.c, misc/serial4.c,
+	* misc/serial5.c, misc/ser_test_protocol.inl
+	Deleted.
+
+1999-03-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/PKGconf.mak: 
+	* tests/timeout.inl: 
+	* tests/PKGconf.mak:
+	* tests/serial1.c: 
+	* tests/serial2.c: 
+	* tests/serial3.c: 
+	* tests/serial4.c: 
+	* tests/serial5.c: 
+	* tests/ser_test_protocol.inl:
+	Moved the serial tests from the misc directory to the tests
+	directory.
+
+1999-03-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300/mn10300_serial.c: Now initially mask TX interrupts
+	at initialization and unmask/remask in start/stop xmit
+	routines. This has no real effect on the hardware, but the
+	simulator does not implement the LCR_TXE bit properly, resulting
+	in spurious TX interrupts during diagnostic output.
+	This was the cause of the slow output reported in PR 19559.
+
+1999-03-23  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Fix "display" strings to have appropriate
+	case - mostly lower case.
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* misc/console.c: 
+	* misc/serial.c: 
+	* misc/serial1.c: 
+	* misc/serial2.c: 
+	* misc/serial3.c: 
+	* misc/serial4.c: 
+	* misc/serial5.c: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-22  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/mn10300/mn10300_serial.c: 
+	* src/mips/tx3904_serial.c: Add CDL configury.
+
+	* include/pkgconf/io_serial.h: Update CDL to add device name
+	configurability for all devices.
+
+	* src/sparclite/sleb_sdtr.c: 
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: Use CDL configured device names.
+
+1999-03-22  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* misc/serial1.c:
+	* misc/serial2.c:
+	* misc/serial3.c:
+	* misc/serial4.c:
+	* misc/serial5.c:
+	Requires kernel as well.
+
+1999-03-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sparclite/sleb_sdtr.c:
+	Moved include statement to avoid warnings.
+
+1999-03-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/ser_test_protocol.inl:
+	* misc/serial5.c:
+	* misc/PKGconf.mak:
+	Replace complex and not very stable duplex test with a simpler
+	test that works better.
+	Added serial5 using that test.
+	
+1999-03-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/PKGconf.mak:
+	* misc/serial1.c:
+	* misc/serial2.c: 
+	Added API test and made serial2 do simple string output.
+	
+1999-03-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c: Changed ToDo comment.
+
+1999-03-19  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: 
+	Moved include statement to avoid warnings.
+
+1999-03-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: More CDL problems.
+
+1999-03-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Add CDL for SPARClite SLEB.
+
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/arm/pid_serial_with_ints.c: 
+	* src/arm/aeb_serial.c: Update device names to match CDL.
+
+	* include/pkgconf/io_serial.h: Change names for serial ports to
+	be CYGPKG_IO_SERIAL_<arch>_<platform>_<port>.
+
+1999-03-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/ser_test_protocol.inl: 
+	* misc/serial2.c: 
+	First stab at the duplex binary test. Still much fun to be had...
+
+1999-03-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/ser_test_protocol.inl: Added timeout for PING.
+
+1999-03-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/common/serial.c: Change ABORT functionality to be DSR safe.
+	(serial_get_config): Fix typo!
+
+	* include/pkgconf/io_serial.h: Small change in CDL to make serial
+	devices tied to the platform and not the serial I/O package.  This
+	means that only the devices appropriate to a given platform can be
+	enabled.
+
+	* misc/serial.c: Better use of alarms - only trigger at the time of
+	the next timeout.  Moved timeout functions to new file "timeout.inl".
+
+	* src/common/serial.c (serial_get_config): Add support for
+ 	CYG_IO_GET_CONFIG_SERIAL_INPUT_FLUSH and CYG_IO_GET_CONFIG_SERIAL_ABORT.
+	
+	* misc/serial.c: Add simple timeout mechanisms.
+
+1999-03-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: Conditionalize based on CDL.
+
+	* include/pkgconf/io_serial.h: Add some CDL configury - not perfect
+	because of current ~CDL limitations.
+
+1999-03-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c: Cleaned up a bit. Used for hacking new tests.
+
+1999-03-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/PKGconf.mak: 
+	* misc/ser_test_protocol.inl:
+	* misc/serial2.c:
+	* misc/serial3.c:
+	* misc/serial4.c:
+	Put testing protocol implementation in a separate file. Split the
+	tests in serial2 into separate files.
+
+1999-03-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300/mn10300_serial.c:	Fixed some compiler warnings.
+
+1999-03-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Change default configurations.
+	No serial drivers enabled for PID port A or AEB.
+
+	* src/sparclite/sleb_sdtr.c: 
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: 
+	* src/common/haldiag.c: 
+	* src/common/tty.c: 
+	* src/common/serial.c: Add 'CYGDBG_IO_INIT' for control of init 
+	messages.
+
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* src/sparclite/sleb_sdtr.c:
+	* src/arm/aeb_serial.c: 
+	* src/arm/pid_serial_with_ints.c: Don't include <cyg/kernel/kapi.h>
+
+1999-03-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c (serial_test): Fix use of strlen. Fix DONE part
+	of binary protocol.
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c: Play a bit with timing. Think I broke it :(
+	Added DONE to BINARY packet.
+	Proper call to DRAIN.
+
+1999-03-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips/tx3904_serial.c: Tidied away some debugging code.
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c: Removed bogus config changes.
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c (serial_test): Check for ser_filter on host (PING
+	packet).
+
+1999-03-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c: Added note.
+
+	* misc/serial2.c: 
+	Added (almost) proper configuration handling.
+	Run tests on varying configurations.
+
+1999-03-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips/tx3904_serial.c:
+	Many changes to get working.
+
+	* misc/console.c (console_test): Fixed compiler warning.
+
+	* misc/serial2.c:
+	Added device name for TX39 testing.
+	Fixed some bugs in Tcyg_io_write() macro.
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c: Added target specific test device name.
+
+1999-03-10  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Correct CDL description spelling.
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c: 
+	* misc/console.c: 
+	Fixed compiler warnings.
+
+1999-03-10  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Improve CDL descriptions.
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c (serial_test): Do some more tests with changed
+	baud rates.
+
+1999-03-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c (serial_test): Added workaround for spurious byte
+	problem. Added a few more tests to run.
+
+	* src/powerpc/cogent_serial_with_ints.c
+	(cogent_serial_config_port): Remove interrupt enabling.
+
+1999-03-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	* src/mips/tx3904_serial.c:
+	Added initial version of TX39 device driver. Currently untested
+	but eliminates PR19445.
+
+1999-03-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c: DRAIN function works now.
+
+1999-03-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/io_serial.h: Only enable one serial driver per
+	default.
+
+1999-03-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial2.c (serial_test): Be a bit more aggressive.
+
+	* src/powerpc/cogent_serial_with_ints.c: Check that configuration
+	is sensible.
+
+1999-03-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c: 
+	Added support for both ports.
+
+	* include/pkgconf/io_serial.h: Added simple defines for cogent
+	serial ports. No CDL yet.
+
+1999-03-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/serial.c: Removed PID references. Fixed compiler warnings.
+
+1999-03-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c: Cleaned up a
+	bit. Actually works now.
+
+1999-03-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/common/serial.c: Change in cyg_drv_cond_wait() behaviour
+	means DSR lock should be left alone.
+
+1999-03-08  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19400
+	* src/powerpc/cogent_serial_with_ints.c (cogent_serial_init): Set
+	valid interrupt priority.
+
+1999-03-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300/mn10300_serial.c (mn10300_serial_init):
+	Added extra test to avoid initializing serial 2 when CYGMON is
+	present.
+	Include hal_intr.h explicitly for use in non-kernel
+	configurations.
+
+	* src/common/serial.c:
+	Added extra test before calls to cyg_drv_cond_wait() to avoid race
+	condition. This is not, however, a complete solution to this
+	problem. A better solution will be forthcoming.
+
+	* include/serial.h:
+	Changed include files used to permit non-kernel configurations to
+	be built.	
+
+1999-03-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/common/haldiag.c: Removed diag_printf declaration.
+
+1999-03-05  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+       * src/mn10300/mn10300_serial.c:
+       Change CYG_VECTOR_* to CYGNUM_HAL_INTERRUPT_* to get it to compile!
+
+1999-03-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/powerpc/cogent_serial_with_ints.c (cogent_serial_config_port): 
+	Fix renaming of interrupt vectors.
+
+1999-03-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/arm/pid_serial_with_ints.c: Fix interrupt vectors.
+
+1999-03-03  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* serial/current/src/arm/pid_serial_with_ints.c: 
+	New [somewhat] configurable drivers for PID.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

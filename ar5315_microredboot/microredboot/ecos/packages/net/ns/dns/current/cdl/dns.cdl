@@ -1,0 +1,195 @@
+# ====================================================================
+#
+#      dns.cdl
+#
+#      DNS configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2003 Andrew Lunn <andrew.lunn@ascom.ch>   
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  jskov
+# Contributors:   andrew.lunn@ascom.ch
+# Date:           2001-09-18
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_NS_DNS {
+    display       "DNS client"
+    include_dir   cyg/ns/dns
+    doc           ref/net-ns-dns.html
+
+    cdl_option CYGPKG_NS_DNS_BUILD {
+        display       "Build DNS NS client package"
+        default_value 1
+        implements    CYGINT_ISO_DNS
+        requires      { CYGBLD_ISO_DNS_HEADER == "<cyg/ns/dns/dns.h>" }
+
+        requires      CYGPKG_NET
+        requires      CYGINT_ISO_CTYPE
+        requires      CYGINT_ISO_MALLOC
+        requires      CYGINT_ISO_STRING_STRFUNCS
+        requires      CYGSEM_KERNEL_THREADS_DESTRUCTORS_PER_THREAD
+
+        compile       dns.c
+    }
+
+    cdl_component CYGPKG_NS_DNS_DEFAULT {
+        display       "Provide a hard coded default server address"
+        flavor        bool
+        active_if     CYGPKG_NS_DNS_BUILD     
+        default_value 0
+        description   "     
+            This option controls the use of a default, hard coded DNS 
+            server. When this is enabled, the IPv4 or IPv6 address in 
+            the CDL option CYGDAT_NS_DNS_DEFAULT_SERVER is used in
+            init_all_network_interfaces() to start the resolver using 
+            the specified server. The DHCP client or user code may 
+            override this by restarting the resolver."
+
+        cdl_option CYGDAT_NS_DNS_DEFAULT_SERVER {
+            display       "IP address of the default DNS server"
+            flavor        data
+            default_value { "192.168.1.1" }
+        }
+    }
+    cdl_component CYGPKG_NS_DNS_DOMAINNAME {
+        display       "Provide a hard coded default domain name"
+        flavor        bool
+        active_if     CYGPKG_NS_DNS_BUILD     
+        default_value 0
+        description   "     
+            This option controls the use of a default, hard coded
+            domain name to be used when querying a DNS server. When
+            this is enabled, the name in the CDL option
+            CYGDAT_NS_DNS_DOMAINNAME_NAME is used in
+            init_all_network_interfaces() to set the domain name as
+            accessed by getdomainname()."
+
+        cdl_option CYGDAT_NS_DNS_DOMAINNAME_NAME {
+            display       "Domain name for this device"
+            flavor        data
+            default_value { "default.domain.com" }
+        }
+    }
+
+    cdl_option CYGNUM_NS_DNS_GETADDRINFO_ADDRESSES {
+        display "Max number of results for getaddrinfo"
+        flavor data
+        default_value 5
+        description "
+            This option controls the number of addresses the DNS client
+            can return to getaddrinfo and hence the size of the buffer
+            passed to the DNS client."
+    }       
+
+    cdl_option CYGOPT_NS_DNS_FIRST_FAMILY {
+        display       "AF_INET or AF_INET6 first in the getaddrinfo list"
+        active_if     CYGPKG_NET_INET6
+        flavor        data
+        default_value {"AF_INET6"}
+        legal_values  {"AF_INET4" "AF_INET6"}
+        description   "
+           This option controls the order DNS results will appear in the 
+           information returned by getaddrinfo. This will in turn control 
+           the order in which network clients try talking to servers,
+           ie does it try IPv6 or IPv4 addresses first when it has both 
+           types of addresses."
+    }
+
+    cdl_component CYGPKG_NS_DNS_OPTIONS {
+        display "DNS support build options"
+        flavor  none
+        no_define
+
+        cdl_option CYGPKG_NS_DNS_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the DNS package.
+                These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_NS_DNS_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the DNS package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+
+    cdl_option CYGPKG_NS_DNS_TESTS {
+        display "DNS test"
+        flavor  data
+        active_if CYGPKG_NS_DNS_BUILD
+        no_define
+        calculated { "tests/dns1" }
+
+        description   "
+            This option specifies the set of tests for the DNS package."
+    }
+
+    cdl_option CYGPKG_NS_DNS_TESTS_LUNN {
+        display        "Use Andrew Lunn's DNS server for tests"
+        default_value  1
+        description    "
+            Run the tests against Andrew Lunn's DNS server. Servers
+            come and go, IP addresses change, links are sometime down. 
+            So this may not work...."
+    }
+
+    cdl_option CYGPKG_NS_DNS_TESTS_ELSIS {
+        display        "Iztok Zupet DNS server at Elsis for tests"
+        default_value  1
+        description    "
+            Run the tests against Iztok Zupet DNS server at
+            Elsis. Servers come and go, IP addresses change, links are
+            sometime down.  So this may not work...."
+    }
+}
+# EOF dns.cdl
+

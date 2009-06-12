@@ -1,0 +1,94 @@
+MK_ROMFS - Make a ROMFS image
+=============================
+
+This program creates a ROMFS image that can be read by eCos.
+
+mk_romfs - Create an eCos ROMFS disk image from the files
+                      contained under a specified directory
+
+Usage: ../support/mk_romfs [options] <fs_root> <fs_file>
+ fs_root    is the directory containing the files to package into the ROMFS image
+ fs_file    is the name of the ROMFS image file to create
+          Options include:
+ -v / -q    increase / decrease verbosity
+ -n         do everything EXCEPT creating the output file
+ -b         write a big-endian image (default is little endian)
+ -l         collapse hard links to a single node
+
+-----------
+How to use.
+-----------
+
+For example, suppose you wish to access the following directories and files:
+	/
+	/etc	passwd, group
+	/dev
+	/mnt
+	/tmp	(for a RAMFS)
+	/var	(for a RAMFS)
+
+1. Create the required directories and files under a suitable root, eg. under
+   ~/rom:
+   	$ mkdir ~/rom
+	$ cd ~/rom
+	$ mkdir etc dev mnt tmp var
+	$ cp /etc/passwd /etc/group etc/
+		( remembering to edit these files....;-)
+
+2. Make the romfs image in a suitable place, eg /tftpboot for direct upload to
+   the RedBoot monitor.
+   	$ mk_romfs -v . /tftpboot/romfs.img
+	mk_romfs: Verbosity 2 little endian
+	Phase 1  - Build file list
+	Phase 2  - Calculate space allocation
+	Phase 2a -     * Directories
+	Phase 2b -     * Regular files
+	Phase 2c -     * Executable files
+	Phase 3  - Construct ROMFS image file (3 kb)
+	Phase 3a -     * Node table
+	Phase 3b -     * Data blocks
+	/tftpboot/romfs.img completed
+
+3. Connect to your target RedBoot monitor, and load the romfs image. You will
+   need to determine a suitable place in RAM to load the image into.
+	$ telnet xxx.xxx.xxx.xxx 1000
+	Trying xxx.xxx.xxx.xxx...
+	Connected to xxx.xxx.xxx.xxx.
+	Escape character is '^]'.
+	RedBoot> load romfs.img -r -v -b 0x1000000
+	Raw file loaded 0x01000000-0x0100093e
+	RedBoot>
+
+4. Determine where to load the romfs image in the ROM. See what's there...
+	RedBoot> fis list
+	Name              FLASH addr   Mem addr    Length    Entry point
+	RedBoot           0x50000000   0x50000000  0x020000  0x00000000
+	RedBoot[backup]   0x50020000   0x50020000  0x020000  0x00000000
+	RedBoot config    0x503C0000   0x503C0000  0x020000  0x00000000
+	FIS directory     0x503E0000   0x503E0000  0x020000  0x00000000
+	RedBoot> fis free
+	  0x50040000 .. 0x503C0000
+	RedBoot>
+   We can see that a suitable place would be 0x50040000.
+   Alternatively, you can let RedBoot determine the address itself...
+
+5. Copy the image from RAM to ROM...
+	RedBoot> fis create -b 0x1000000 -l 0x940 RomFs
+	... Erase from 0x50040000-0x50040940: .
+	... Program from 0x01000000-0x01000940 at 0x50040000: .
+	... Erase from 0x503e0000-0x50400000: .
+	... Program from 0x01fd0000-0x01ff0000 at 0x503e0000: .
+	RedBoot> fis list
+	Name              FLASH addr   Mem addr    Length    Entry point
+	RedBoot           0x50000000   0x50000000  0x020000  0x00000000
+	RedBoot[backup]   0x50020000   0x50020000  0x020000  0x00000000
+	RedBoot config    0x503C0000   0x503C0000  0x020000  0x00000000
+	FIS directory     0x503E0000   0x503E0000  0x020000  0x00000000
+	RomFs             0x50040000   0x01000000  0x000940  0x00000000
+	RedBoot>
+
+6. MAKE A NOTE OF THE ADDRESS IN FLASH THAT THE IMAGE IS LOADED AT.
+   The ROMFS option 'CYGNUM_FS_ROM_BASE_ADDRESS' needs to be set to this
+   value in order to access the filesystem.
+  
+

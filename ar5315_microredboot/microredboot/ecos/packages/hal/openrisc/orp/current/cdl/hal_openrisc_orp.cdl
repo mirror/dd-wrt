@@ -1,0 +1,325 @@
+# ====================================================================
+#
+#      hal_openrisc_orp.cdl
+#
+#      OpenRISC Reference Platform (ORP) HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      sfurman
+# Contributors:
+# Date:           2003-01-20
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_OPENRISC_ORP {
+    display  "OpenRISC Reference Platform"
+    parent        CYGPKG_HAL_OPENRISC
+    include_dir   cyg/hal
+    hardware
+    description   "
+           The ORP HAL package should be used when targetting the
+           OpenRISC Reference Platform."
+
+    compile       hal_diag.c hal_aux.c
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_openrisc.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_openrisc_orp.h>"
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  {"RAM" "ROM"}
+        default_value {"ROM"}
+        no_define
+        define -file system.h CYG_HAL_STARTUP
+        description   "
+            Selects whether code initially runs from ROM or RAM.  In the case of ROM startup,
+            it's possible for the code to be copied into RAM and executed there."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+        display       "Diagnostic serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 57600 115200 230400 460800 921600
+        default_value 115200
+        description   "
+            This option selects the baud rate used for the diagnostic console.
+            Note: this should match the value chosen for the GDB port if the
+            diagnostic and GDB port are the same.
+            Note: very high baud rates are useful during simulation."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_BAUD {
+        display       "GDB serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 57600 115200 230400 460800 921600
+        default_value 115200
+        description   "
+            This option controls the baud rate used for the GDB connection.
+            Note: very high baud rates are useful during simulation."
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value {CYGHWR_HAL_OPENRISC_CPU_FREQ * 1000000 / CYGNUM_HAL_RTC_DENOMINATOR}
+            description   "
+                The tick timer facility is used
+                to drive the eCos kernel RTC. The count register
+                increments at the CPU clock speed.  By default, 100 Hz"
+        }
+    }
+
+    cdl_option CYGBLD_BUILD_GDB_STUBS {
+        display "Build GDB stub ROM image"
+        default_value 0
+        parent CYGBLD_GLOBAL_OPTIONS
+        requires { CYG_HAL_STARTUP == "ROM" }
+        requires CYGSEM_HAL_ROM_MONITOR
+        requires CYGBLD_BUILD_COMMON_GDB_STUBS
+        requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires ! CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+        requires ! CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+        requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+        requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+        no_define
+        description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                binary data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+        make -priority 320 {
+            <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+            $(OBJCOPY) -O binary $< $@
+        }
+    }
+
+
+    cdl_option CYGNUM_HAL_BREAKPOINT_LIST_SIZE {
+        display       "Number of breakpoints supported by the HAL."
+        flavor        data
+        default_value 25
+        description   "
+            This option determines the number of breakpoints supported by the HAL."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+        display      "Number of communication channels on the board"
+        flavor       data
+        default_value  1
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+        display          "Debug serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           The ORP platform has at least one serial port, but it can potentially have several.
+           This option chooses which port will be used to connect to a host
+           running GDB."
+    }
+ 
+     cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+        display          "Diagnostic serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           The ORP platform has at least one serial port, but it can potentially have several.
+           This option chooses which port will be used for diagnostic output."
+     }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        description   "
+            Global build options including control over
+            compiler flags, linker flags and choice of toolchain."
+
+
+        parent  CYGPKG_NONE
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "or32-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-msoft-float -g -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "openrisc_orp_ram" : \
+                                                "openrisc_orp_rom" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_openrisc_orp_ram.ldi>" : \
+                                                    "<pkgconf/mlt_openrisc_orp_rom.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_openrisc_orp_ram.h>" : \
+                                                    "<pkgconf/mlt_openrisc_orp_rom.h>" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        bool
+        default_value { CYG_HAL_STARTUP == "RAM" ? 1 : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        description   "
+            Allow coexistence with ROM monitor (CygMon or GDB stubs) by
+            only initializing interrupt vectors on startup, thus leaving
+            exception handling to the ROM monitor."
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+
+    cdl_component CYGPKG_REDBOOT_HAL_OPTIONS {
+        display       "Redboot HAL options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_option CYGBLD_BUILD_REDBOOT_BIN {
+            display       "Build Redboot ROM binary image"
+            active_if     CYGBLD_BUILD_REDBOOT
+            default_value 1
+            no_define
+            description "This option enables the conversion of the Redboot ELF
+                         image to a binary image suitable for ROM programming."
+    
+            compile -library=libextras.a
+    
+            make -priority 325 {
+                <PREFIX>/bin/redboot.srec : <PREFIX>/bin/redboot.elf
+                $(OBJCOPY) --strip-all $< $(@:.srec=.img)
+                $(OBJCOPY) -O srec $< $@
+            }
+        }
+    }
+
+    define_proc {
+        puts $cdl_header "#define CYGHWR_HAL_VSR_TABLE    0"
+        puts $cdl_header "#define CYGHWR_HAL_VIRTUAL_VECTOR_TABLE 0xF00"
+    }
+}
+
+# EOF hal_openrisc_orp.cdl

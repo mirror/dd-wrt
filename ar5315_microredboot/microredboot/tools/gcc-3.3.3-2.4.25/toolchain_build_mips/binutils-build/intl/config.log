@@ -1,0 +1,53 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:562: checking for a BSD compatible install
+configure:616: checking how to run the C preprocessor
+configure:677: checking whether make sets ${MAKE}
+configure:706: checking for gcc
+configure:783: checking whether the C compiler (gcc -g -O2 ) works
+configure:797: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:817: checking whether the C compiler (gcc -g -O2 ) is a cross-compiler
+configure:822: checking whether we are using GNU C
+configure:846: checking whether gcc accepts -g
+configure:876: checking for ranlib
+configure:903: checking for POSIXized ISC
+configure:924: checking for ANSI C header files
+configure:1028: checking for working const
+configure:1103: checking for inline
+configure:1143: checking for off_t
+configure:1176: checking for size_t
+configure:1211: checking for working alloca.h
+configure:1244: checking for alloca
+configure:1441: checking for unistd.h
+configure:1480: checking for getpagesize
+configure:1533: checking for working mmap
+configure:1709: checking for argz.h
+configure:1709: checking for limits.h
+configure:1709: checking for locale.h
+configure:1709: checking for nl_types.h
+configure:1709: checking for malloc.h
+configure:1709: checking for string.h
+configure:1709: checking for unistd.h
+configure:1709: checking for values.h
+configure:1709: checking for sys/param.h
+configure:1749: checking for getcwd
+configure:1749: checking for munmap
+configure:1749: checking for putenv
+configure:1749: checking for setenv
+configure:1749: checking for setlocale
+configure:1749: checking for strchr
+configure:1749: checking for strcasecmp
+configure:1749: checking for __argz_count
+configure:1749: checking for __argz_stringify
+configure:1749: checking for __argz_next
+configure:1868: checking for LC_MESSAGES
+configure:1901: checking whether NLS is requested
+configure:1921: checking whether included gettext is requested
+configure:1940: checking for libintl.h
+configure:1967: checking for gettext in libc
+configure:2070: checking for msgfmt
+configure:2104: checking for dcgettext
+configure:2159: checking for gmsgfmt
+configure:2194: checking for xgettext
+configure:2234: gcc -o conftest -g -O2   conftest.c  1>&5

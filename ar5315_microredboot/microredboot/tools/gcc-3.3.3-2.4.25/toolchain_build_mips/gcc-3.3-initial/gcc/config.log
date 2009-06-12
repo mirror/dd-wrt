@@ -1,0 +1,624 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:633: checking LIBRARY_PATH variable
+configure:658: checking GCC_EXEC_PREFIX variable
+configure:886: checking host system type
+configure:907: checking target system type
+configure:925: checking build system type
+configure:973: checking for gcc
+configure:1086: checking whether the C compiler (gcc -g -O2 ) works
+configure:1102: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1128: checking whether the C compiler (gcc -g -O2 ) is a cross-compiler
+configure:1133: checking whether we are using GNU C
+configure:1161: checking whether gcc accepts -g
+configure:1194: checking whether gcc and cc understand -c and -o together
+configure:1264: checking for gnatbind
+configure:1329: checking for compiler driver that understands Ada
+configure:1371: checking whether gcc accepts -Wno-long-long
+configure:1385: gcc -c -Wno-long-long  conftest.c 1>&5
+configure:1430: checking how to run the C preprocessor
+configure:1510: checking for inline
+configure:1550: checking for volatile
+configure:1562: gcc -c -g -O2  conftest.c 1>&5
+configure:1584: checking for long double
+configure:1624: checking for long long int
+configure:1636: gcc -c -g -O2  conftest.c 1>&5
+configure:1656: checking for __int64
+configure:1668: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1664: error: '__int64' undeclared (first use in this function)
+configure:1664: error: (Each undeclared identifier is reported only once
+configure:1664: error: for each function it appears in.)
+configure:1664: error: expected ';' before 'i'
+configure: failed program was:
+#line 1661 "configure"
+#include "confdefs.h"
+
+int main() {
+__int64 i;
+; return 0; }
+configure:1689: checking for built-in _Bool
+configure:1701: gcc -c -g -O2  conftest.c 1>&5
+configure:1725: checking size of short
+configure:1741: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1737: error: duplicate case value
+configure:1737: error: previously used here
+configure: failed program was:
+#line 1731 "configure"
+#include "confdefs.h"
+#include "confdefs.h"
+#include <sys/types.h>
+
+
+int main() {
+switch (0) case 0: case (sizeof (short) == 4):;
+; return 0; }
+configure:1741: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1737: error: duplicate case value
+configure:1737: error: previously used here
+configure: failed program was:
+#line 1731 "configure"
+#include "confdefs.h"
+#include "confdefs.h"
+#include <sys/types.h>
+
+
+int main() {
+switch (0) case 0: case (sizeof (short) == 8):;
+; return 0; }
+configure:1741: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1737: error: duplicate case value
+configure:1737: error: previously used here
+configure: failed program was:
+#line 1731 "configure"
+#include "confdefs.h"
+#include "confdefs.h"
+#include <sys/types.h>
+
+
+int main() {
+switch (0) case 0: case (sizeof (short) == 1):;
+; return 0; }
+configure:1741: gcc -c -g -O2  conftest.c 1>&5
+configure:1764: checking size of int
+configure:1780: gcc -c -g -O2  conftest.c 1>&5
+configure:1803: checking size of long
+configure:1819: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1815: error: duplicate case value
+configure:1815: error: previously used here
+configure: failed program was:
+#line 1809 "configure"
+#include "confdefs.h"
+#include "confdefs.h"
+#include <sys/types.h>
+
+
+int main() {
+switch (0) case 0: case (sizeof (long) == 4):;
+; return 0; }
+configure:1819: gcc -c -g -O2  conftest.c 1>&5
+configure:1843: checking size of long long
+configure:1859: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1855: error: duplicate case value
+configure:1855: error: previously used here
+configure: failed program was:
+#line 1849 "configure"
+#include "confdefs.h"
+#include "confdefs.h"
+#include <sys/types.h>
+
+
+int main() {
+switch (0) case 0: case (sizeof (long long) == 4):;
+; return 0; }
+configure:1859: gcc -c -g -O2  conftest.c 1>&5
+configure:1925: checking execution character set
+configure:2315: checking whether make sets ${MAKE}
+configure:2343: checking whether a default assembler was specified
+configure:2355: checking whether a default linker was specified
+configure:2367: checking for GNU C library
+configure:2382: gcc -c -g -O2  conftest.c 1>&5
+configure:2408: checking for gawk
+configure:2438: checking whether ln works
+configure:2470: checking whether ln -s works
+configure:2504: checking for ranlib
+configure:2542: checking for a BSD compatible install
+configure:2593: checking for ANSI C header files
+configure:2697: checking whether time.h and sys/time.h may both be included
+configure:2732: checking for working stdbool.h
+configure:2744: gcc -c -g -O2  conftest.c 1>&5
+configure:2765: checking whether string.h and strings.h may both be included
+configure:2778: gcc -c -g -O2  conftest.c 1>&5
+configure:2799: checking for sys/wait.h that is POSIX.1 compatible
+configure:2847: checking for limits.h
+configure:2847: checking for stddef.h
+configure:2857: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2847: checking for string.h
+configure:2847: checking for strings.h
+configure:2847: checking for stdlib.h
+configure:2847: checking for time.h
+configure:2847: checking for fcntl.h
+configure:2847: checking for unistd.h
+configure:2847: checking for sys/file.h
+configure:2847: checking for sys/time.h
+configure:2847: checking for sys/mman.h
+configure:2847: checking for sys/resource.h
+configure:2847: checking for sys/param.h
+configure:2847: checking for sys/times.h
+configure:2857: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2847: checking for sys/stat.h
+configure:2847: checking for direct.h
+configure:2857: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2853:20: error: direct.h: No such file or directory
+configure: failed program was:
+#line 2852 "configure"
+#include "confdefs.h"
+#include <direct.h>
+configure:2847: checking for malloc.h
+configure:2847: checking for langinfo.h
+configure:2857: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2887: checking for thread.h
+configure:2897: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2893:20: error: thread.h: No such file or directory
+configure: failed program was:
+#line 2892 "configure"
+#include "confdefs.h"
+#include <thread.h>
+configure:2921: checking for pthread.h
+configure:2931: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2956: checking for CHAR_BIT
+configure:3029: checking byte ordering
+configure:3063: gcc -c -g -O2  conftest.c 1>&5
+configure:3102: checking floating point format
+configure:3137: gcc -c -g -O2  conftest.c 1>&5
+configure:3226: checking for mktemp
+configure:3265: checking for makeinfo
+configure:3294: checking for modern makeinfo
+configure:3300: version of makeinfo is 4.12
+configure:3328: checking for recent Pod::Man
+configure:3344: checking for flex
+configure:3381: checking for bison
+configure:3413: checking for collect2 libraries
+configure:3435: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccqWWmqq.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/gcc/configure:3431: undefined reference to `ldopen'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3424 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char ldopen();
+
+int main() {
+ldopen()
+; return 0; }
+configure:3435: gcc -o conftest -g -O2   conftest.c -lld 1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld: cannot find -lld
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3424 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char ldopen();
+
+int main() {
+ldopen()
+; return 0; }
+configure:3435: gcc -o conftest -g -O2   conftest.c -lmld 1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld: cannot find -lmld
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3424 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char ldopen();
+
+int main() {
+ldopen()
+; return 0; }
+configure:3435: gcc -o conftest -g -O2   conftest.c -L/usr/lib/cmplrs/cc2.11 -lmld 1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld: cannot find -lmld
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3424 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char ldopen();
+
+int main() {
+ldopen()
+; return 0; }
+configure:3435: gcc -o conftest -g -O2   conftest.c -L/usr/lib/cmplrs/cc3.11 -lmld 1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld: cannot find -lmld
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3424 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char ldopen();
+
+int main() {
+ldopen()
+; return 0; }
+configure:3461: checking for library containing exc_resume
+configure:3479: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/cc6XhSaF.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/gcc/configure:3475: undefined reference to `exc_resume'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3468 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char exc_resume();
+
+int main() {
+exc_resume()
+; return 0; }
+configure:3501: gcc -o conftest -g -O2   conftest.c -lexc   1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld: cannot find -lexc
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3490 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char exc_resume();
+
+int main() {
+exc_resume()
+; return 0; }
+configure:3531: checking for library containing ldexp
+configure:3549: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3542: warning: conflicting types for built-in function 'ldexp'
+configure:3600: checking for preprocessor stringizing operator
+configure:3638: checking for inttypes.h
+configure:3651: gcc -c -g -O2  conftest.c 1>&5
+configure:3678: checking for times
+configure:3678: checking for clock
+configure:3678: checking for dup2
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for kill
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for getrlimit
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for setrlimit
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for atoll
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for atoq
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccy5vDGg.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/gcc/configure:3700: undefined reference to `atoq'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3683 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char atoq(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char atoq();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_atoq) || defined (__stub___atoq)
+choke me
+#else
+atoq();
+#endif
+
+; return 0; }
+configure:3678: checking for sysconf
+configure:3678: checking for strsignal
+configure:3678: checking for putc_unlocked
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3690: warning: conflicting types for built-in function 'putc_unlocked'
+configure:3678: checking for fputc_unlocked
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3690: warning: conflicting types for built-in function 'fputc_unlocked'
+configure:3678: checking for fputs_unlocked
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3690: warning: conflicting types for built-in function 'fputs_unlocked'
+configure:3678: checking for fwrite_unlocked
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3690: warning: conflicting types for built-in function 'fwrite_unlocked'
+configure:3678: checking for fprintf_unlocked
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3690: warning: conflicting types for built-in function 'fprintf_unlocked'
+/tmp/cccGfkWV.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/gcc/configure:3700: undefined reference to `fprintf_unlocked'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3683 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char fprintf_unlocked(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char fprintf_unlocked();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_fprintf_unlocked) || defined (__stub___fprintf_unlocked)
+choke me
+#else
+fprintf_unlocked();
+#endif
+
+; return 0; }
+configure:3678: checking for getrusage
+configure:3678: checking for nl_langinfo
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for lstat
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for scandir
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for alphasort
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3678: checking for gettimeofday
+configure:3678: checking for mmap
+configure:3706: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3732: checking for ssize_t
+configure:3768: checking for uid_t in sys/types.h
+configure:3802: checking type of array argument to getgroups
+configure:3835: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:3830: warning: incompatible implicit declaration of built-in function 'exit'
+configure:3890: checking whether the printf functions support %p
+configure:3911: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3941: checking whether read-only mmap of a plain file works
+configure:3960: checking whether mmap from /dev/zero works
+configure:3986: checking for MAP_ANON(YMOUS)
+configure:4005: gcc -c -g -O2  conftest.c 1>&5
+configure:4023: checking whether mmap with MAP_ANON(YMOUS) works
+configure:4078: checking for pid_t
+configure:4112: checking for vfork.h
+configure:4147: checking for working vfork
+configure:4337: checking for iconv
+configure:4355: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:4398: checking for iconv declaration
+configure:4423: gcc -c -g -O2  conftest.c 1>&5
+configure:4461: checking whether getenv is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether atol is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether sbrk is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether abort is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether atof is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether getcwd is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether getwd is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure: In function 'main':
+configure:4475: warning: 'getwd' is deprecated (declared at /usr/include/unistd.h:490)
+configure:4461: checking whether strsignal is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether putc_unlocked is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether fputs_unlocked is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether fwrite_unlocked is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether fprintf_unlocked is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure: In function 'main':
+configure:4475: error: 'fprintf_unlocked' undeclared (first use in this function)
+configure:4475: error: (Each undeclared identifier is reported only once
+configure:4475: error: for each function it appears in.)
+configure: failed program was:
+#line 4466 "configure"
+#include "confdefs.h"
+#undef HAVE_DECL_FPRINTF_UNLOCKED
+#define HAVE_DECL_FPRINTF_UNLOCKED 1
+  
+#include "ansidecl.h"
+#include "system.h"
+
+int main() {
+#ifndef fprintf_unlocked
+char *(*pfn) = (char *(*)) fprintf_unlocked ;
+#endif
+; return 0; }
+configure:4461: checking whether strstr is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether errno is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether vasprintf is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether malloc is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether realloc is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether calloc is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether free is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether basename is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4461: checking whether getopt is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure: In function 'main':
+configure:4475: error: 'getopt' undeclared (first use in this function)
+configure:4475: error: (Each undeclared identifier is reported only once
+configure:4475: error: for each function it appears in.)
+configure: failed program was:
+#line 4466 "configure"
+#include "confdefs.h"
+#undef HAVE_DECL_GETOPT
+#define HAVE_DECL_GETOPT 1
+  
+#include "ansidecl.h"
+#include "system.h"
+
+int main() {
+#ifndef getopt
+char *(*pfn) = (char *(*)) getopt ;
+#endif
+; return 0; }
+configure:4461: checking whether clock is declared
+configure:4480: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4582: checking whether getrlimit is declared
+configure:4605: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4582: checking whether setrlimit is declared
+configure:4605: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4582: checking whether getrusage is declared
+configure:4605: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4657: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4674: checking whether times is declared
+configure:4697: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4731: checking for struct tms
+configure:4750: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4773: checking for clock_t
+configure:4789: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure:4810: checking for uchar
+configure:4826: gcc -c -g -O2 -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc -I/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3.3/gcc/../include  conftest.c 1>&5
+configure: In function 'main':
+configure:4821: error: 'uchar' undeclared (first use in this function)
+configure:4821: error: (Each undeclared identifier is reported only once
+configure:4821: error: for each function it appears in.)
+configure:4821: error: expected expression before ')' token
+configure: failed program was:
+#line 4815 "configure"
+#include "confdefs.h"
+
+#include "ansidecl.h"
+#include "system.h"
+
+int main() {
+if ((uchar *)0) return 0;
+ if (sizeof(uchar)) return 0;
+; return 0; }
+configure:4852: checking for .preinit_array/.init_array/.fini_array support
+configure:4862: gcc -o conftest conftest.c 1>&AS_MESSAGE_LOG_FD
+configure:4891: checking if mkdir takes one argument
+configure:4913: gcc -c -g -O2  conftest.c 1>&5
+configure:4953: checking for main in -lunwind
+configure:4968: gcc -o conftest -g -O2   conftest.c -lunwind   1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld: cannot find -lunwind
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 4961 "configure"
+#include "confdefs.h"
+
+int main() {
+main()
+; return 0; }
+configure:5246: checking for library containing strerror
+configure:5264: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5309: checking for working const
+configure:5384: checking for off_t
+configure:5417: checking for size_t
+configure:5452: checking for working alloca.h
+configure:5485: checking for alloca
+configure:5518: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5685: checking whether we are using the GNU C Library 2.1 or newer
+configure:5726: checking for argz.h
+configure:5736: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:5726: checking for limits.h
+configure:5726: checking for locale.h
+configure:5736: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:5726: checking for nl_types.h
+configure:5736: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:5726: checking for malloc.h
+configure:5726: checking for stddef.h
+configure:5726: checking for stdlib.h
+configure:5726: checking for string.h
+configure:5726: checking for unistd.h
+configure:5726: checking for sys/param.h
+configure:5767: checking for feof_unlocked
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for fgets_unlocked
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for getcwd
+configure:5767: checking for getegid
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for geteuid
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for getgid
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for getuid
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for mempcpy
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5779: warning: conflicting types for built-in function 'mempcpy'
+configure:5767: checking for munmap
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for putenv
+configure:5767: checking for setenv
+configure:5767: checking for setlocale
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for stpcpy
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5779: warning: conflicting types for built-in function 'stpcpy'
+configure:5767: checking for strchr
+configure:5767: checking for strcasecmp
+configure:5767: checking for strdup
+configure:5767: checking for strtoul
+configure:5767: checking for tsearch
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for __argz_count
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for __argz_stringify
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5767: checking for __argz_next
+configure:5795: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5836: checking for iconv
+configure:5897: checking for iconv declaration
+configure:5951: checking for nl_langinfo and CODESET
+configure:5963: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:5986: checking for LC_MESSAGES
+configure:5998: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:6019: checking whether NLS is requested
+configure:6492: checking for bison
+configure:6525: checking version of bison
+configure:6935: checking what assembler to use
+configure:7029: checking what linker to use
+configure:7122: checking what nm to use
+configure:7134: checking what objdump to use
+configure:7146: checking assembler alignment features
+configure:7194: checking assembler subsection support
+configure:7234: checking assembler weak support
+configure:7257: checking assembler hidden support
+configure:7323: checking assembler leb128 support
+configure:7368: checking assembler eh_frame optimization
+configure:7449: checking assembler section merging support
+configure:7472: checking assembler thread-local storage support
+configure:7944: checking assembler dwarf2 debug_line support
+configure:8001: checking assembler --gdwarf2 support
+configure:8030: checking assembler --gstabs support
+configure:8065: checking linker read-only and read-write section mixing
+configure:8103: checking linker PT_GNU_EH_FRAME support
+configure:8127: checking whether libgloss uses STARTUP directives consistently
+configure:8332: checking whether to enable maintainer-specific portions of Makefiles

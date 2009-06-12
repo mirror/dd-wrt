@@ -1,0 +1,1420 @@
+<!-- DOCTYPE reference  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     power.sgml                                                  -->
+<!--                                                                 -->
+<!--     Generic power management documentation.                     -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2001, 2002 Red Hat, Inc.                          -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2001/06/26                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+<part id="services-power">
+<!-- reference id="services-power" -->
+  <title>eCos Power Management Support</title>
+
+<!-- {{{ Intro                          -->
+
+<refentry id="power-intro">
+<refmeta>
+<refentrytitle>Introduction</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Introduction</refname>
+<refpurpose>eCos support for Power Management</refpurpose>
+</refnamediv>
+
+<!-- {{{ Intro                          -->
+
+<refsect1 id="power-intro-intro">
+<title>Introduction</title>
+<para>
+The eCos Power Management package provides a framework for
+incorporating power management facilities in an embedded application.
+However its functionality is deliberately limited.
+</para>
+<orderedlist>
+<listitem>
+<para>
+The package does not contain any support for controlling the current
+power mode of any given processor, device or board. Instead it is the
+responsibility of the appropriate HAL or device driver package to
+implement such support, by implementing <firstterm>power
+controllers</firstterm>. The power management package groups these
+power controllers together and provides an interface for manipulating
+them.
+</para>
+</listitem>
+<listitem>
+<para>
+The package does not contain any power management policy support.
+Specifically, including this package in an application does not by
+itself ever cause the system to go into low-power mode. Instead it is
+the responsibility of a separate policy module, provided by
+higher-level application code or by some other package, to decide when
+it would be appropriate to switch from one power mode to another. The
+power management package then provides the mechanisms for making it
+happen.
+</para>
+</listitem>
+</orderedlist>
+</refsect1>
+
+<!-- }}} -->
+<!-- {{{ including                      -->
+
+<refsect1 id="power-intro-include">
+<title>Including Power Management</title>
+<para>
+The power management package is never included automatically in an
+eCos configuration: it is not part of any target specification or of
+any template. Instead it must be added explicitly to a configuration
+if the intended application requires power management functionality.
+When using the command-line <command>ecosconfig</command> tool this
+can be achieved using a command such as:
+</para>
+<screen>
+$ ecosconfig add power
+</screen>
+<para>
+The generic eCos user documentation should be consulted for more
+information on how to use the various tools. The functionality
+provided by the power management package is defined in the header file
+<filename class="headerfile">cyg/power/power.h</filename>. This header
+file can be used by both C and C++ code.
+</para>
+
+</refsect1>
+
+<!-- }}} -->
+<!-- {{{ modes                          -->
+
+<refsect1 id="power-intro-modes">
+<title>Power Modes</title>
+<para>
+There are four defined modes of operation:
+</para>
+<variablelist>
+
+<varlistentry><term>active</term>
+<listitem>
+<para>
+The system is fully operational, and power consumption is expected to
+be high.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry><term>idle</term>
+<listitem>
+<para>
+There has been little or no activity for a short period of time. It is
+up to the policy module to determine what constitutes a short period
+of time, but typically it will be some tenths of a second or some
+small number of seconds. A possible action when entering idle mode is
+to reduce the system's clock speed, thus reducing the power drawn by
+the cpu.
+</para>
+<para>
+Note that typically this power mode is not entered automatically
+whenever the idle thread starts running. Instead it is entered when
+the policy module discovers that for a certain period of time the
+system has been spending most of its time in the idle thread.
+Theoretically it is possible to implement a policy module that would
+cause a switch to idle mode as soon as the idle thread starts running,
+but that could result in a great many power mode changes for no
+immediate benefit.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry><term>sleep</term>
+<listitem>
+<para>
+The system has been idle for a significant period of time, perhaps
+some tens of seconds. It is desirable to shut down any hardware that
+is drawing a significant amount of power, for example a screen
+backlight.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry><term>off</term>
+<listitem>
+<para>
+The system is powered down. Power consumption should be minimized.
+Some special action may be needed before the system comes back up, for
+example the user may need to press a specific button.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>
+The exact transitions that will happen are decided by the policy
+module. One policy module might include transitions from active to
+idle, from idle to sleep, from sleep to off, and from any of idle,
+sleep or off directly back to active. Another policy module might
+only use the active and off states, bypassing the intermediate ones.
+</para>
+
+</refsect1>
+
+<!-- }}} -->
+<!-- {{{ Power Controllers              -->
+
+<refsect1 id="power-intro-controllers">
+<title>Power Controllers</title>
+<para>
+The power management package operates primarily on power controllers.
+The main functionality provided by a power controller is to switch the
+power mode for some part of the system, for example the lcd display or
+the cpu. A power controller consists primarily of a function which
+will be invoked to switch the power mode for the part of the overall
+system being controlled, plus some auxiliary data. A typical system
+will include a number of different power controllers:
+</para>
+<orderedlist>
+<listitem>
+<para>
+Usually there will be one power controller
+<varname>power_controller_cpu</varname> associated with the processor
+or with the target platform, and provided by the corresponding HAL
+package. It is this controller which is responsible for switching off
+the system when entering the <type>off</type> mode, which makes it
+somewhat special: attempting to switch off the cpu before other
+devices like the lcd display does not make sense because the cpu would
+no longer be executing any instructions for the latter operation.
+Therefore this power controller has to be invoked last when switching
+to a lower-power mode, and similarly when switching back to a
+higher-power mode it will be invoked first.
+</para>
+<para>
+It should be noted that providing power management support is not a
+hard requirement when porting eCos to a new processor or platform, and
+many eCos ports predate the availability of power management support.
+Therefore for any given platform it is distinctly possible that
+<varname>power_controller_cpu</varname> is not yet provided, and if
+full power management functionality is desired then the appropriate
+HAL package would have to be extended first. System developers should
+examine the relevant HAL documentation and sources to determine what
+is actually available.
+</para>
+</listitem>
+<listitem>
+<para>
+Some or all of the device drivers will supply their own power
+controllers, as part of the device driver package. It is not required
+that all device drivers provide power controllers. In some cases,
+especially for devices that are integrated with the processor,
+<varname>power_controller_cpu</varname> will take care of the
+integrated devices as a side effect. In other cases the hardware may
+not provide any functionality that allows power consumption to be
+controlled. For any given device driver it is also possible that no
+power controller exists either because it was not required when the
+driver was written, or because the driver predates the availability of
+power management. Again the relevant documentation and sources should
+be consulted for further information.
+</para>
+</listitem>
+<listitem>
+<para>
+There may be power controllers which are not associated directly with
+any specific hardware. For example a TCP/IP stack could provide a
+power controller so that it gets informed when the system has been
+reactivated: by looking at the system clock it can determine for how
+long the system has been switched off; using this information it can
+then recover from expired dhcp leases, or even to shut down any stream
+connections that may have become invalid (although arguably the stack
+should have refused to go to <type>off</type> mode while there were
+open connections).
+</para>
+</listitem>
+</orderedlist>
+</refsect1>
+
+<!-- }}} -->
+<!-- {{{ Basic Operation                -->
+
+<refsect1 id="power-intro-operation">
+<title>Basic Operation</title>
+<para>
+By default the Power Management package creates a thread during
+initialization. It is also possible for the package to be used without
+such a thread, for example in configurations which do not include a
+full kernel, and this alternative is described below. When a separate
+thread is used the stacksize and priority for this thread can be
+controlled by configuration options
+<varname>CYGNUM_POWER_THREAD_STACKSIZE</varname> and
+<varname>CYGNUM_POWER_THREAD_PRIORITY</varname>. Typically the thread
+will just wait on a semaphore internal to the package, and will do
+nothing until some other part of the system requests a change to the
+power mode.
+</para>
+<para>
+At some point the policy module will decide that the system should
+move into a lower-power mode, for example from active to idle. This is
+achieved by calling the function <function>power_set_mode</function>,
+provided by the power management package and declared in <filename
+class="headerfile">cyg/power/power.h</filename>, with a single
+argument, <literal>PowerMode_Idle</literal>. This function manipulates
+some internal state and posts the semaphore, thus waking up the power
+management thread. Note that the function returns before the mode
+change has completed, and in fact depending on thread priorities this
+return may happen before any power controller has been invoked.
+</para>
+<para>
+When the power management thread wakes up it examines the internal
+state to figure out what it should be doing. In this case it is
+supposed to change the global power mode, so it will iterate over all
+the power controllers requesting each one to switch to the
+<type>idle</type> mode. It is up to each power controller to handle
+this request appropriately. Optionally the thread will invoke a
+callback function after processing each power controller, so that
+higher-level code such as the policy module can more easily keep
+track of the actual state of each controller. Once the thread has
+iterated through all the power controllers it will again wait on the
+internal semaphore for the next request to arrive.
+</para>
+<note>
+<para>
+At present the power management thread always runs at a single
+priority, which defaults to a low priority. A possible future
+enhancement would be to support two separate priorities. When
+switching to a lower-powered mode the thread would run at a low
+priority as before, thus allowing other threads to run and get a
+chance to cancel this mode change. When switching to a higher-powered
+mode the thread would run at a high priority. This could be especially
+important when moving out of the <type>off</type> state: for example
+it would ensure that all device drivers get a chance to wake up before
+ordinary application threads get to run again and possibly attempt I/O
+operations.
+</para>
+</note>
+<para>
+Although usually calls to <function>power_set_mode</function> will
+come from just one place in the policy module, this is not a hard
+requirement. It is possible for multiple threads to call this
+function, with no need for any synchronization. If the power
+management thread is in the middle of performing a mode change and a
+new request comes in, the thread will detect this, abort the current
+operation, and start iterating through the power controllers again
+with the new mode. This check happens between every power controller
+invocation. Usefully this makes it possible for power controllers
+themselves to manipulate power modes: a power controller is invoked to
+change mode; for some reason it determines that the new mode is
+inappropriate; it calls <function>power_set_mode</function> to move
+the system back to another mode; when the power controller returns
+this event will be detected; the power management thread will abort
+the current mode change, and start the new one.
+</para>
+<para>
+In addition to changing the power mode for the system as a whole,
+individual controllers can be manipulated using the function
+<function>power_set_controller_mode</function>. For example, while the
+system as a whole might be in <type>active</type> mode certain devices
+might be kept in <type>sleep</type> mode until they are explicitly
+activated. It is possible to mix concurrent calls to
+<function>power_set_mode</function> and
+<function>power_set_controller_mode</function>, and when a power
+controller is invoked it may use
+<function>power_set_controller_mode</function> to request further
+changes to its own or to another controller's mode as required.
+</para>
+<para>
+There are some scenarios where the power management package should not
+use its own thread. One scenario is if the configuration is
+specifically for a single-threaded application such as RedBoot.
+Another scenario is if the policy module already involves a separate
+thread: it may make more sense if the various power management
+operations are synchronous with respect to the calling thread. The use
+of a separate thread inside the power management package is controlled
+by the configuration option <varname>CYGPKG_POWER_THREAD</varname>,
+which is active only if the kernel package is present and enabled by
+default.
+</para>
+<para>
+If no separate power management thread is used then obviously the
+implementations of <function>power_set_mode</function> and
+<function>power_set_controller_mode</function> will be somewhat
+different: instead of waking up a separate thread to do the work,
+these functions will now manipulate the power controllers directly. If
+the system does still involve multiple threads then only one thread
+may call <function>power_set_mode</function> or
+<function>power_set_controller_mode</function> at a time: the power
+management package will not provide any synchronization, that must
+happen at a higher level. However when a power controller is invoked
+it can still call these functions as required.
+</para>
+</refsect1>
+
+<!-- }}} -->
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Power Management Info          -->
+
+<refentry id="power-info">
+<refmeta>
+<refentrytitle>Power Management Information</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Obtaining Power Management Information</refname>
+<refpurpose>finding out about the various power controllers in the system</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/power/power.h&gt;
+
+extern PowerController __POWER__[], __POWER_END__;
+extern PowerController power_controller_cpu;
+extern cyg_handle_t    power_thread_handle;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef>
+    PowerMode <function>power_get_mode</function>
+  </funcdef>
+  <void>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    PowerMode <function>power_get_desired_mode</function>
+  </funcdef>
+  <void>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    PowerMode <function>power_get_controller_mode</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    PowerMode <function>power_get_controller_desired_mode</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    const char* <function>power_get_controller_id</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+</funcprototype>
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id="power-info-access">
+<title>Accessing Power Controllers</title>
+<para>
+All the power controllers in a system are held in a table, filled in
+at link-time. The symbols <varname>__POWER__</varname> and
+<varname>__POWER_END</varname> can be used to iterate through this
+table, for example:
+</para>
+<programlisting>
+PowerController* controller;
+for (controller  = &amp;(__POWER__[0]);
+     controller != &amp;(__POWER_END__);
+     controller++) {
+
+     &hellip;
+}
+</programlisting>
+<para>
+Each controller has an associated priority, controlling the order in
+which they appear in the table. Typically a software-only component
+such as a TCP/IP stack would use a small number for the priority, so
+that it appears near the start of the table, whereas a device driver
+would be nearer the back of the table. When switching to a
+lower-powered mode the power management package will iterate through
+this table from front to back, thus ensuring that for example the
+TCP/IP stack gets a chance to shut down before the underlying ethernet
+or other hardware that the stack depends on. Similarly when switching
+to a higher-powered mode the power management package will iterate
+through this table from back to front.
+</para>
+<para>
+In most systems there will be one special controller,
+<varname>power_controller_cpu</varname>, which should be provided by
+one of the architectural, variant or platform HAL packages. This
+controller will always be the last entry in the table. It is
+responsible for the final power down operation when switching to
+<type>off</type> mode. Other packages such as device drivers may or
+may not declare variable identifiers for their power controllers,
+allowing those controllers to be accessed by name as well as by their
+entries in the global table.
+</para>
+</refsect1>
+
+<refsect1 id="power-info-global">
+<title>Global Power Modes</title>
+<para>
+The function <function>power_get_mode</function> can be called at any
+time to determine the current power mode for the system as a whole.
+The return value will be one of <literal>PowerMode_Active</literal>,
+<literal>PowerMode_Idle</literal>, <literal>PowerMode_Sleep</literal>
+or <literal>PowerMode_Off</literal>. In normal circumstances it is
+unlikely that <literal>PowerMode_Off</literal> would be returned since
+that mode generally means that the cpu is no longer running.
+</para>
+<para>
+The function <function>power_get_desired_mode</function> returns the
+power mode that the system should be running at. Most of the time this
+will be the same value as returned by
+<function>power_get_mode</function>. However a different value may be
+returned when in the middle of changing power modes. For example, if
+the current thread runs at a higher priority than the power management
+thread then the latter may have been pre-empted in the middle of a
+mode change: <function>power_get_mode</function> will return the mode
+the system was running at before the mode change started, and
+<function>power_get_desired_mode</function> will return the mode the
+system should end up in when the mode change completes, barring
+further calls to <function>power_set_mode</function>.
+</para>
+</refsect1>
+
+<refsect1 id="power-info-individual">
+<title>Individual Controller Power Modes</title>
+<para>
+The power management package keeps track of the current and desired
+modes for each power controller, as well as the modes for the system as
+a whole. The function <function>power_get_controller_mode</function>
+takes a single argument, a pointer to a power controller, and returns
+the power mode that controller is currently running at. Similarly
+<function>power_get_controller_desired_mode</function> returns the
+power mode that controller should be running at. Most of the time the
+current and desired modes for a given controller will be the same, and
+will also be the same as the global power mode. However if the power
+management thread is preeempted in the middle of a mode change then
+some of the controllers will have been updated to the desired global
+mode, whereas others will still be at the old mode. The power
+management package also provides functionality for manipulating
+<link linkend="power-change-controller">
+individual controllers</link>, and for <link
+linkend="power-attached">detaching</link> controllers from
+global mode changes.
+</para>
+</refsect1>
+
+<refsect1 id="power-info-ids">
+<title>Power Controller Identification</title>
+<para>
+In some scenarios the power management package will run completely
+automated, and there is no need to identify individual power
+controllers. Any form of identification such as a string
+description would serve no purpose, but would still consume memory in
+the final system. In other scenarios it may be very desirable to
+provide some means of identification. For example, while still
+debugging it may be useful to see a simple string when printing the
+contents of a power controller structure. Alternatively, if the
+application is expected to provide some sort of user interface that
+gives control over which parts of the system are enabled or disabled,
+a string identifier for each controller would be useful. To cope with
+these scenarios the power management package provides a configuration
+option <varname>CYGIMP_POWER_PROVIDE_STRINGS</varname>. When enabled,
+each power controller will contain a pointer to a constant string
+which can be accessed via a function
+<function>power_get_controller_id</function>. When disabled the system
+will not contain these strings, and the function will not be provided.
+The following code illustrates how to use this function.
+</para>
+<programlisting>
+#include &lt;stdio.h&gt;
+#include &lt;pkgconf/system.h&gt;
+#ifndef CYGPKG_POWER
+# error The power management package is not present.
+#endif
+#include &lt;pkgconf/power.h&gt;
+#ifndef CYGIMP_POWER_PROVIDE_STRINGS
+# error Power controller identifiers are not available.
+#endif
+#include &lt;cyg/power/power.h&gt;
+
+static const char*
+mode_to_string(PowerMode mode)
+{
+    const char* result;
+    switch(mode) {
+      case PowerMode_Active : result = "active"; break;
+      case PowerMode_Idle   : result = "idle"; break;
+      case PowerMode_Sleep  : result = "sleep"; break;
+      case PowerMode_Off    : result = "off"; break;
+      default               : result = "&lt;unknown&gt;"; break;
+    }
+    return result;
+}
+
+int
+main(int argc, char** argv)
+{
+    PowerController* controller;
+
+    for (controller = &amp;(__POWER__[0]);
+         controller != &amp;(__POWER_END__);
+         controller++) {
+        printf("Controller @ %p: %s, %s\n", controller,
+               power_get_controller_id(controller),
+               mode_to_string(power_get_controller_mode(controller)));
+    }
+    return 0;
+}
+</programlisting>
+</refsect1>
+<refsect1 id="power-info-thread">
+<title>The Power Management Thread</title>
+<para>
+If the power management package is configured to use a separate thread
+then a handle for that thread is made available to higher-level code
+via the variable <varname>power_thread_handle</varname>. This handle
+can be used for a variety of purposes, including manipulating that
+thread's priority.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Changing Power Modes           -->
+
+<refentry id="power-change">
+<refmeta>
+<refentrytitle>Changing Power Modes</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Changing Power Modes</refname>
+<refpurpose>reducing or increasing power consumption as needed</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/power/power.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef>
+    void <function>power_set_mode</function>
+  </funcdef>
+  <paramdef>
+    PowerMode <parameter>new_mode</parameter>
+  </paramdef>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    void <function>power_set_controller_mode</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+  <paramdef>
+    PowerMode <parameter>new_mode</parameter>
+  </paramdef>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    void <function>power_set_controller_mode_now</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+  <paramdef>
+    PowerMode <parameter>new_mode</parameter>
+  </paramdef>
+</funcprototype>
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id="power-change-global">
+<title>Changing the Global Power Mode</title>
+<para>
+The primary functionality supported by the power management package is
+to change the system's global power mode. This is achieved by calling
+the function <function>power_set_mode</function> with a single
+argument, which should be one of <literal>PowerMode_Active</literal>,
+<literal>PowerMode_Idle</literal>, <literal>PowerMode_Sleep</literal>
+or <literal>PowerMode_Off</literal>. Typically this function will only
+be invoked in certain scenarios:
+</para>
+<orderedlist>
+<listitem>
+<para>
+A typical system will contain a policy module which is primarily
+responsible for initiating power mode changes, and a thread inside the
+power management package. The policy module will call
+<function>power_set_mode</function>, which has the effect of
+manipulating some internal state in the power management package and
+waking up its thread. When this thread gets scheduled to run (its
+priority is controlled by a configuration option), it will iterate
+over the power controllers and invoke each controller to change its
+power mode. There is support for a <link
+linkend="power-policy-callback">callback function</link>, and for
+<link linkend="power-attached">detached</link> power controllers.
+</para>
+</listitem>
+<listitem>
+<para>
+After a call to <function>power_set_mode</function> but before the
+power management thread has had a chance to iterate over all the
+controllers, or even before the thread has been rescheduled at all,
+the policy module may decide that a different power mode would be more
+appropriate for the current situation and calls
+<function>power_set_mode</function> again. This has the effect of
+aborting the previous mode change, followed by the power management
+thread iterating over the power controllers again for the new mode.
+</para>
+</listitem>
+<listitem>
+<para>
+If there is no single policy module responsible for power mode
+changes, any code can call <function>power_set_mode</function>. If
+there are multiple calls in quick succession, earlier calls will
+be aborted and the system should end up in the power mode
+corresponding to the last call
+</para>
+</listitem>
+<listitem>
+<para>
+As a special case, it is possible for a power controller to call
+<function>power_set_mode</function> when invoked by the power
+management thread. For example a power controller could decide that it
+is inappropriate for the system to go to sleep because the device it
+is associated with is still busy. The effect is as if the policy
+module had called <function>power_set_mode</function> again before 
+the mode change had completed.
+</para>
+</listitem>
+</orderedlist>
+<para>
+If the power management package has been configured not to use a
+separate thread then obviously the behaviour is somewhat different.
+The call to <function>power_set_mode</function> will now iterate over
+the various power controllers immediately, rather than leaving this to
+a separate thread, and the whole mode change completes before
+<function>power_set_mode</function> returns. If some other thread or a
+DSR calls <function>power_set_mode</function> concurrently the
+behaviour of the system is undefined. However, it is still legal for a
+power controller to call <function>power_set_mode</function>:
+effectively this is a recursive call; it is detected by the system,
+and internal state is updated; the recursive
+<function>power_set_mode</function> call now returns, and when the
+power controller returns back to the original
+<function>power_set_mode</function> call it detects what has happened,
+aborts the previous mode change, and starts a new mode change as
+requested by the controller.
+</para>
+<para>
+<function>power_set_mode</function> is normally invoked from thread
+context. If a separate power management thread is used it can be
+invoked safely from DSR context. If the system is configured not to
+use such a thread, it may or may not be safe to invoke this function
+from DSR context: essentially the function just iterates through
+the various power controllers, and the documentation or source code of
+each controller present in the current system will have to be examined
+to determine whether or not this can happen safely in DSR context.
+<function>power_set_mode</function> should never be invoked from
+ISR context.
+</para>
+</refsect1>
+
+<refsect1 id="power-change-controller">
+<title>Manipulating an Individual Power Controller</title>
+<para>
+In some cases it is desirable to set the power mode of an individual
+controller separately from the mode for the system as a whole. For
+example if a device is not currently being used then the associated
+power controller could be set to <literal>PowerMode_Off</literal>,
+even while the system as a whole is still active. This can be achieved
+by calling the function
+<function>power_set_controller_mode</function>. It takes two
+arguments: the first identifies a particular controller; the second
+specifies the desired new power mode for that controller. The function
+operates in much the same way as <function>power_set_mode</function>,
+for example if a separate power management thread is being used then
+<function>power_set_controller_mode</function> operates by
+manipulating some internal state and waking up that thread. The
+limitations are also much the same as for
+<function>power_set_mode</function>, so for example
+<function>power_set_controller_mode</function> should not be invoked
+from inside ISRs.
+</para>
+<para>
+Manipulating individual controllers is often used in conjunction with
+the function <link
+linkend="power-attached"><function>power_set_controller_attached</function></link>,
+allowing the policy module to specify which controllers are affected
+by global mode changes.
+</para>
+</refsect1>
+
+<refsect1 id="power-change-controller-now">
+<title>Direct Manipulation of a Power Controller</title>
+<para>
+In exceptional circumstances it may be necessary to invoke a power
+controller directly, bypassing the power management thread and
+higher-level functionality such as <link
+linkend="power-policy-callback">callback functions</link>. The
+function <function>power_set_controller_mode_now</function> allows
+this. It takes two arguments, a controller and a mode, just like
+<function>power_set_controller_mode</function>.
+</para>
+<para>
+Use of <function>power_set_controller_mode_now</function> is
+dangerous. For example no attempt is made to synchronise with any
+other power mode changes that might be happening concurrently. A
+possible use is when the system gets woken up out of
+<type>sleep</type> mode: depending on the hardware, on which power
+controllers are present, and on the application code it may be
+necessary to wake up some power controllers immediately before the
+system as a whole is ready to run again.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Policy support                 -->
+
+<refentry id="power-policy">
+<refmeta>
+<refentrytitle>Support for Policy Modules</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Support for Policy Modules</refname>
+<refpurpose>closer integration with higher-level code</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/power/power.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef>
+    void <function>power_set_policy_callback</function>
+  </funcdef>
+  <paramdef>
+    void (*)(PowerController*, PowerMode, PowerMode, PowerMode, PowerMode) <parameter>callback</parameter>
+  </paramdef>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    void (*)(PowerController*, PowerMode, PowerMode, PowerMode, PowerMode) <function>power_get_policy_callback</function>
+  </funcdef>
+  <void>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    CYG_ADDRWORD <function>power_get_controller_policy_data</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    void <function>power_set_controller_policy_data</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+  <paramdef>
+    CYG_ADDRWORD <parameter>data</parameter>
+  </paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id="power-policy-callback">
+<title>Policy Callbacks</title>
+<para>
+The use of a separate thread to perform power mode changes in typical
+configurations can cause problems for some policy modules.
+Specifically, the policy module can request a mode change for the
+system as a whole or for an individual controller, but it does not
+know when the power management thread actually gets scheduled to run
+again and carry out the request. Although it would be possible for the
+policy module to perform some sort of polling, in general that is
+undesirable.
+</para>
+<para>
+To avoid such problems the policy module can install a callback
+function using <function>power_set_policy_callback</function>. The
+current callback function can be retrieved using
+<function>power_get_policy_callback</function>. If a callback function
+has been installed then it will be called by the power management
+package whenever a power controller has been invoked to perform a mode
+change. The callback will be called in the context of the power
+management thread, so usually it will have to make use of thread
+synchronisation primitives to interact with the main policy module. It
+is passed five arguments:
+</para>
+<orderedlist>
+<listitem>
+<para>
+The power controller that has just been invoked to perform a mode
+change. 
+</para>
+</listitem>
+<listitem>
+<para>
+The mode this controller was running at before the invocation.
+</para>
+</listitem>
+<listitem>
+<para>
+The current mode this controller is now running at.
+</para>
+</listitem>
+<listitem>
+<para>
+The desired mode before the power controller was invoked. Usually this
+will be the same as the current mode, unless the controller has
+decided for some reason that this was inappropriate.
+</para>
+</listitem>
+<listitem>
+<para>
+The current desired mode. This will differ from the previous argument
+only if there has was another call to
+<function>power_set_mode</function> or
+<function>power_set_controller_mode</function> while the power
+controller was being invoked, probably by the power controller itself.
+</para>
+</listitem>
+</orderedlist>
+<para>
+A simple example of a policy callback function would be:
+</para>
+<programlisting>
+static void
+power_callback(
+    PowerController* controller,
+    PowerMode old_mode,
+    PowerMode new_mode,
+    PowerMode old_desired_mode,
+    powerMode new_desired_mode)
+{
+    printf("Power mode change: %s, %s -> %d\n",
+        power_get_controller_id(controller),
+        mode_to_string(old_mode),
+        mode_to_string(new_mode));
+
+    CYG_UNUSED_PARAM(PowerMode, old_desired_mode);
+    CYG_UNUSED_PARAM(PowerMode, new_desired_mode);
+}
+
+int
+main(int argc, char** argv)
+{
+    &hellip;
+    power_set_policy_callback(&amp;power_callback);
+    &hellip;
+}
+</programlisting>
+<para>
+If <function>power_set_controller_mode_now</function> is used to
+manipulate an individual controller the policy callback will not be
+invoked. This function may get called from any context including DSRs,
+and even if there is already a call to the policy callback happening
+in some other context, so invoking the callback would usually be
+unsafe.
+</para>
+<para>
+If the power management package has not been configured to use a
+separate thread then <function>power_set_mode</function> and
+<function>power_set_controller_mode</function> will manipulate the
+power controllers immediately and invoke the policy callback
+afterwards. Therefore the policy callback will typically run in the
+same context as the main policy module.
+</para>
+</refsect1>
+
+<refsect1 id="power-policy-data">
+<title>Policy-specific Controller Data</title>
+<para>
+Some policy modules may want to associate some additional data with
+each power controller. This could be achieved by for example
+maintaining a hash table or similar data structure, but for
+convenience the power management package allows higher-level code,
+typically the policy module, to store and retrieve one word of data in
+each power controller. The function
+<function>power_set_controller_policy_data</function> takes two
+arguments, a pointer to a power controller and a
+<type>CYG_ADDRWORD</type> of data: by appropriate use of casts this
+word could be an integer or a pointer to some data structure. The
+matching function
+<function>power_get_controller_policy_data</function> retrieves the
+word previously installed, and can be cast back to an integer or
+pointer. The default value for the policy data is 0.
+</para>
+<para>
+For example the following code fragment stores a simple index value in
+each power controller. This could then be retrieved by the policy
+callback.
+</para>
+<programlisting>
+    unsigned int     i = 0;
+    PowerController* controller;
+
+    for (controller = &amp;(__POWER__[0]);
+         controller != &amp;(__POWER_END__);
+         controller++) {
+        power_set_controller_policy_data(controller, (CYG_ADDRWORD) i++);
+    }
+</programlisting>
+<para>
+Not all policy modules will require per-controller data. The
+configuration option
+<varname>CYGIMP_POWER_PROVIDE_POLICY_DATA</varname> can be used to
+control this functionality, thus avoiding wasting a small amount of
+memory inside each power controller structure.
+</para>
+
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Attached/detached controllers  -->
+
+<refentry id="power-attached">
+<refmeta>
+<refentrytitle>Attached and Detached Controllers</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Attached and Detached Controllers</refname>
+<refpurpose>control which power controllers are affected by global changes</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/power/power.h&gt;
+</funcsynopsisinfo>
+<funcprototype>
+  <funcdef>
+    cyg_bool <function>power_get_controller_attached</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+</funcprototype>
+<funcprototype>
+  <funcdef>
+    void <function>power_set_controller_attached</function>
+  </funcdef>
+  <paramdef>
+    PowerController* <parameter>controller</parameter>
+  </paramdef>
+  <paramdef>
+    cyg_bool <parameter>new_state</parameter>
+  </paramdef>
+</funcprototype>
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+<title>Detaching Power Controllers</title>
+<para>
+By default the global operation <function>power_set_mode</function>
+affects all power controllers. There may be circumstances when this is
+not desirable. For example if a particular device is not currently
+being used then it can be left switched off: the rest of the system
+could be moving between <type>active</type>, <type>idle</type> and
+<type>sleep</type> modes, but there is no point in invoking the power
+controller for the unused device. To support this the power management
+package supports the concept of attached and detached controllers. By
+default all controllers are attached, and hence will be affected by
+global mode changes. A specific controller can be detached using the
+function <function>power_set_controller_attached</function>. This
+function takes two arguments, one to specify a particular controller
+and another to specify the desired new state.
+<function>power_get_controller_attached</function> can be used to
+determine whether or not a specific controller is currently attached.
+</para>
+<para>
+The attached or detached state of a controller only affects what
+happens during a global mode change, in other words following a call
+to <function>power_set_mode</function>. It is still possible to
+manipulate a detached controller using
+<function>power_set_controller_mode</function> or
+<function>power_set_controller_mode_now</function>.
+</para>
+
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Implementing                   -->
+
+<refentry id="power-controller">
+<refmeta>
+<refentrytitle>Implementing a Power Controller</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Implementing a Power Controller</refname>
+<refpurpose>adding power management support to device drivers and
+other packages</refpurpose>
+</refnamediv>
+
+<refsect1>
+<title>Implementing a Power Controller</title>
+<para>
+A system will have some number of power controllers. Usually there
+will be one power controller for the cpu,
+<varname>power_controller_cpu</varname>, typically provided by one of
+the HAL packages and responsible for managing the processor itself and
+associated critical components such as memory. Some or all of the
+device drivers will provide power controllers, allowing the power
+consumption of the associated devices to be controlled. There may be
+some arbitrary number of other controllers present in the system. The
+power management package does not impose any restrictions on the
+number or nature of the power controllers in the system, other than
+insisting that at most one <varname>power_controller_cpu</varname> be
+provided.
+</para>
+<para>
+Each power controller involves a single data structure of type
+<structname>PowerController</structname>, defined in the header file
+<filename class="headerfile">cyg/power/power.h</filename>. These data
+structures should all be placed in the table
+<literal>__POWER__</literal>, so that the power management package and
+other code can easily locate all the controllers in the system. This
+table is constructed at link-time, avoiding code-size or run-time
+overheads. To facilitate this the package provides two macros which
+should be used to define a power controller,
+<literal>POWER_CONTROLLER()</literal> and
+<literal>POWER_CONTROLLER_CPU()</literal>.
+</para>
+<para>
+The macro <literal>POWER_CONTROLLER</literal> takes four arguments:
+</para>
+<orderedlist>
+<listitem>
+<para>
+A variable name. This can be used to access the power controller
+directly, as well as via the table.
+</para>
+</listitem>
+<listitem>
+<para>
+A priority. The table of power controllers is sorted, such that power
+controllers with a numerically lower priority come earlier in the
+table. The special controller <varname>power_controller_cpu</varname>
+always comes at the end of the table. When moving from a high-power
+mode to a lower-powered mode, the power management package iterates
+through the table from front to back. When moving to a higher-powered
+mode the reverse direction is used. The intention is that the power
+controller for a software-only package such as a TCP/IP stack should
+appear near the start of the table, whereas the controllers for the
+ethernet and similar devices would be near the end of the table. Hence
+when the policy module initiates a mode change to a lower-powered mode
+the TCP/IP stack gets a chance to cancel this mode change, before the
+devices it depends on are powered down. Similarly when moving to a
+higher-powered mode the devices will be re-activated before any
+software that depends on those devices.
+</para>
+<para>
+The header file <filename
+class="headerfile">cyg/power/power.h</filename> defines three
+priorities <literal>PowerPri_Early</literal>,
+<literal>PowerPri_Typical</literal> and
+<literal>PowerPri_Late</literal>. For most controllers one of these
+priorities, possibly with a small number added or subtracted, will
+give sufficient control. If an application developer is uncertain
+about the relative priorities of the various controllers, a simple
+<link linkend="power-info-ids">test program</link> that iterates over
+the table will quickly eliminate any confusion.
+</para>
+</listitem>
+<listitem>
+<para>
+A constant string identifier. If the system has been configured
+without support for such identifiers
+(<varname>CYGIMP_POWER_PROVIDE_STRINGS</varname>) then this identifer
+will be discarded at compile-time. Otherwise it will be made available
+to higher-level code using the function
+<function>power_get_controller_id</function>. 
+</para>
+</listitem>
+<listitem>
+<para>
+A function pointer. This will be invoked to perform actual mode
+changes, as described below.
+</para>
+</listitem>
+</orderedlist>
+<para>
+A typical example of the use of the
+<literal>POWER_CONTROLLER</literal> macro would be as follows:
+</para>
+<programlisting>
+#include &lt;pkgconf/system.h&gt;
+
+#ifdef CYGPKG_POWER
+# include &lt;cyg/power/power.h&gt;
+
+static void
+xyzzy_device_power_mode_change(
+    PowerController* controller,
+    PowerMode        desired_mode,
+    PowerModeChange  change)
+{
+   // Do the work
+}
+
+static POWER_CONTROLLER(xyzzy_power_controller, \
+                        PowerPri_Late,          \
+                        "xyzzy device",         \
+                        &amp;xyzzy_device_power_mode_change);
+#endif
+</programlisting>
+<para>
+This creates a variable <varname>xyzzy_power_controller</varname>,
+which is a power controller data structure that will end up near the
+end of the table of power controllers. Higher-level code can
+iterate through this table and report the string <literal>"xyzzy
+device"</literal> to the user. Whenever there is a mode change
+operation that affects this controller, the function
+<function>xyzzy_device_power_mode_change</function> will be invoked.
+The variable is declared static so this controller cannot be
+manipulated by name in any other code. Alternatively, if the variable
+had not been declared static other code could manipulate this
+controller by name as well as through the table, especially if the
+package for the xyzzy device driver explicitly declared this
+variable in an exported header file. Obviously exporting the variable
+involves a slight risk of a name clash at link time.
+</para>
+<para>
+The above code explicitly checks for the presence of the power
+management package before including that package's header file or
+providing any related functionality. Since power management
+functionality is optional, such checks are recommended.
+</para>
+<para>
+The macro <literal>POWER_CONTROLLER_CPU</literal> only takes two
+arguments, a string identifier and a mode change function pointer.
+This macro always instantiates a variable
+<varname>power_controller_cpu</varname> so there is no need to provide
+a variable name. The resulting power controller structure always
+appears at the end of the table, so there is no need to specify a
+priority. Typical usage of the <literal>POWER_CONTROLLER_CPU</literal>
+macro would be:
+</para>
+<programlisting>
+static void
+wumpus_processor_power_mode_change(
+    PowerController* controller,
+    PowerMode        desired_mode,
+    PowerModeChange  change)
+{
+   // Do the work
+}
+
+POWER_CONTROLLER_CPU("wumpus processor", \
+                     &amp;wumpus_processor_power_mode_change);
+</programlisting>
+<para>
+This defines a power controller structure
+<varname>power_controller_cpu</varname>. It should not be declared
+static since higher-level code may well want to manipulate the cpu's
+power mode directly, and the variable is declared by the power
+management package's header file.
+</para>
+<para>
+Some care has to be taken to ensure that the power controllers
+actually end up in the final executable. If a power controller
+variable ends up in an ordinary library and is never referenced
+directly then typically the linker will believe that the variable is
+not needed and it will not end up in the executable. For eCos packages
+this can be achieved in the CDL, by specifying that the containing
+source file should end up in <filename>libextras.a</filename> rather
+than the default <filename>libtarget.a</filename>:
+</para>
+<programlisting>
+cdl_package CYGPKG_HAL_WUMPUS_ARCH {
+    &hellip;
+    compile -library=libextras.a data.c
+}
+</programlisting>
+<para>
+If the file <filename>data.c</filename> instantiates a power
+controller this is now guaranteed to end up in the final executable,
+as intended. Typically HAL and device driver packages will already
+have some data that must not be eliminated by the linker, so they will
+already contain a file that gets built into
+<filename>libextras.a</filename>. For power controllers defined inside
+application code it is important that the power controllers end up in
+<filename>.o</filename> object files rather than in
+<filename>.a</filename> library archive files.
+</para>
+<para>
+All the real work of a power controller is done by the mode change
+function. If the power management package has been configured to use a
+separate thread then this mode change function will be invoked by that
+thread (except for the special case of <link
+linkend="power-change-controller-now"><function>power_set_controller_mode_now</function></link>). 
+If no separate thread is used then the mode change function will be
+invoked directly by <function>power_set_mode</function> or
+<function>power_set_controller_mode</function>.
+</para>
+<para>
+The mode change function will be invoked with three arguments. The
+first argument identifies the power controller. Usually this argument
+is not actually required since a given mode change function will only
+ever be invoked for a single power controller. For example,
+<function>xyzzy_device_power_mode_change</function> will only ever be
+used in conjunction with <varname>xyzzy_power_controller</varname>.
+However there may be some packages which contain multiple controllers,
+all of which can share a single mode change function, and in that case
+it is essential to identify the specific controller. The second
+argument specifies the mode the controller should switch to, if
+possible: it will be one of <literal>PowerMode_Active</literal>,
+<literal>PowerMode_Idle</literal>, <literal>PowerMode_Sleep</literal>
+or <literal>PowerMode_Off</literal>. The final argument will be one of
+<literal>PowerModeChange_Controller</literal>,
+PowerModeChange_ControllerNow, or
+<literal>PowerModeChange_Global</literal>, and identifies the call
+that caused this invocation. For example, if the mode change function
+was invoked because of a call to <function>power_set_mode</function>
+then this argument will be <literal>PowerModeChange_Global</literal>.
+It is up to each controller to decide how to interpret this final
+argument. A typical controller might reject a global request to switch
+to <type>off</type> mode if the associated device is still busy, but
+if the request was aimed specifically at this controller then it could
+instead abort any current I/O operations and switch off the device.
+</para>
+<para>
+The <structname>PowerController</structname> data structure contains
+one field, <structfield>mode</structfield>, that needs to be updated
+by the power mode change function. At all times it should indicate the
+current mode for this controller. When a mode change is requested the
+desired mode is passed as the second argument. The exact operation of
+the power mode change function depends very much on what is being
+controlled and the current circumstances, but some guidelines are
+possible:
+</para>
+<orderedlist>
+<listitem>
+<para>
+If the request can be satisfied without obvious detriment, do so and
+update the <structfield>mode</structfield> field. Reducing the power
+consumption of a device that is not currently being used is generally
+harmless.
+</para>
+</listitem>
+<listitem>
+<para>
+If a request is a no-op, for example if the system is switching
+from <type>idle</type> to <type>sleep</type> mode and the controller
+does not distinguish between these modes, simply act as if the request
+was satisfied.
+</para>
+</listitem>
+<listitem>
+<para>
+If a request is felt to be unsafe, for example shutting down a
+device that is still in use, then the controller may decide
+to reject this request. This is especially true if the request was a
+global mode change as opposed to one intended specifically for this
+controller: in the latter case the policy module should be given due
+deference. There are a number of ways in which a request can be
+rejected:
+</para>
+<orderedlist>
+<listitem>
+<para>
+If the request cannot be satisfied immediately but may be feasible in
+a short while, leave the <structfield>mode</structfield> field
+unchanged. Higher-level code in the policy module can interpret this
+as a hint to retry the operation a little bit later. This approach is
+also useful if the mode change can be started but will take some time
+to complete, for example shutting down a socket connection, and
+additional processing will be needed later on.
+</para>
+</listitem>
+<listitem>
+<para>
+If the request is felt to be inappropriate, for example switching off
+a device that is still in use, the mode change function can
+call <function>power_set_controller_mode</function> to reset the
+desired mode for this controller back to the current mode.
+Higher-level code can then interpret this as a hint that there is more
+activity in the system than had been apparent.
+</para>
+</listitem>
+<listitem>
+<para>
+For a global mode change, if the new mode is felt to be inappropriate
+then the power controller can call <function>power_set_mode</function>
+to indicate this. An example of this would be the policy module
+deciding to switch off the whole unit while there is still I/O
+activity.
+</para>
+</listitem>
+</orderedlist>
+</listitem>
+</orderedlist>
+<para>
+Mode change functions should not directly manipulate any other fields
+in the <structname>PowerController</structname> data structure. If it
+is necessary to keep track of additional data then static variables
+can be used.
+</para>
+<para>
+It should be noted that the above are only guidelines. Their
+application in any given situation may be unclear. In addition the
+detailed requirements of specific systems will vary, so even if the
+power controller for a given device driver follows the above
+guidelines exactly it may turn out that slightly different behaviour
+would be more appropriate for the actual system that is being
+developed. Fortunately the open source nature of
+<productname>eCos</productname> allows system developers to fine-tune
+power controllers to meet their exact requirements.
+</para>
+
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+
+<!-- /reference -->
+</part>

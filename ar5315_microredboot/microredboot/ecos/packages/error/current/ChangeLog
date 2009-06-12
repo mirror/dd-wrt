@@ -1,0 +1,111 @@
+2003-06-24  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/codes.h (ENOTEMPTY): Needed by the sysctl call in the
+	freeBSD stack.
+
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/errno.h: Don't use 'const' type qualifier any more. It
+	gives warnings in new compilers now.
+	* src/errno.cxx (cyg_error_get_errno_p): Ditto.
+
+2000-06-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/errno.h (errno): Added extern modifier to non-per-thread
+	instance of errno.
+
+2000-06-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/strerror.cxx: 
+	* include/codes.h: Added ESPIPE.
+
+2000-06-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/codes.h:
+	* src/strerror.cxx: Added some more codes.
+	
+2000-05-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/strerror.cxx: 
+	* include/codes.h:  Added EXDEV.
+
+2000-05-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/codes.h: Add EDEADLOCK synonym for EDEADLK
+	Add ENFILE
+	* src/strerror.cxx: Add blurb for ENFILE, ENOSPC, EDEADLK and ENOTSUP
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/codes.h: No need to conditionalize codes on CYGPKG_NET
+	Tidy a bit.
+	* src/errno.cxx: Move here from libc. Use kernel constant
+	per-thread data slot, not a dynamic one. Generally tidy.
+	* src/strerror.cxx: No need to conditionalize codes on CYGPKG_NET.
+	Tidy a bit.	
+
+2000-03-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/codes.h: Added some further codes.
+
+2000-01-11  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/strerror.cxx (_strerror): 
+	* include/codes.h: Add in additional errors require to support
+	networking.
+
+1999-04-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/error.h: Add cdl_package doc attribute.
+
+1998-09-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/error.h:
+	Sorting out dependencies for error package.
+
+Mon Aug 24 17:51:08 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/error.h: 
+	Add CDL for this package, for the configuration system.
+
+Wed Aug 12 11:04:27 BST 1998  Chris Provenzano  <proven@cygnus.com>
+
+        * Changelog: Initial ChangeLog entry.
+	* include/codes.h: #include <cyg/infra/cyg_type.h> for define
+	of externC.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+

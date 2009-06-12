@@ -1,0 +1,207 @@
+2002-04-18  H.J. Lu  (hjl@gnu.org)
+
+	* acinclude.m4: Removed.
+
+2002-03-26  H.J. Lu  (hjl@gnu.org)
+
+	* config.table (frags): Revert the mips*-*-linux* change.
+
+2002-01-31  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (libiberty_demanglers): Fix a typo.
+
+2001-10-21  H.J. Lu  (hjl@gnu.org)
+
+	* config.table (frags): Add ../../config/mh-mipspic for
+	mips*-*-linux* if shared library is enabled.
+
+2001-10-15  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (libiberty_demanglers): Lose Const-ify.
+
+2001-06-4  H.J. Lu  <hjl@gnu.org>
+
+	* cp-demangle.c (cp_demangle_type): Call demangling_new with
+	DMGL_GNU_V3.
+
+2001-04-24  H.J. Lu  <hjl@gnu.org>
+
+	* cplus-dem.c (dlopen): Mark them weak so that -ldl is not
+	requuired at the link time.
+	(dlsym): Likewise.
+	(dlerror): Likewise.
+
+2000-12-04  H.J. Lu  <hjl@gnu.org>
+
+	* cstamp-h.in: Removed.
+
+	* Makefile.in ($(srcdir)/config.in): Remove the target.
+	($(srcdir)/cstamp-h.in): Likewise.
+	($(srcdir)/aclocal.m4): Likewise.
+
+	* aclocal.m4: Don't rebuild by autolocal. Modify it by hand.
+
+	* config.in: Don't rebuild by autoheadr. Modify it by hand.
+
+	* configure.in: Don't rebuild by autoconf. Modify it by hand.
+	* configure: Rebuild.
+
+2000-09-02  H.J. Lu  <hjl@gnu.org>
+
+	* acinclude.m4: Renamed to ...
+	* aclibdl.m4: New. Here.
+
+	* acinclude.m4: Copied from aclocal.m4 in the FSF
+	binutils/libiberty. Include aclibdl.m4.
+
+	* aclocal.m4: Rebuild.
+
+	* configure: Rebuild.
+
+2000-06-20  Kenneth Block  <krblock@computer.org>
+
+	* cplus-dem.c (libiberty_demanglers): Add java.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* cplus-dem.c (usage): Fix a typo.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* cplus-dem.c: Updated from sourceware.
+	(cplus_demangle_new_abi_with_style_options): New functon.
+	(cplus_demangle_name_to_style): Renamed from o_style.
+	(libiberty_demanglers): Renamed from available_demanglers.
+	Add DMGL_GNU_NEW_ABI.
+	(cplus_demangle_set_style): New functon.
+	(cplus_demangle_name_to_mnemonic): Renamed from o_mnemonic.
+	Updated.
+	(init_demangler): Call get_demangler_list () first.
+	(get_demangler_list): New function to initialize the demangler
+	list and return a pointer to it.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* Makefile.in: Updated from sourceware.
+	* aclocal.m4: Likewise.
+	* config.in: Likewise.
+	* configure.in: Likewise.
+
+	* configure: Rebuild.
+
+Fri Feb 25 16:38:33 2000  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (available_demanglers): Move the ARM demangler
+	before HP.
+	(demangle_integral_value): Remove the extra declaration.
+	(demangle_arm_hp_template): Likewise.
+	(recursively_demangle): Likewise.
+	(flags): Unused. Removed.
+
+Fri Feb 25 15:51:36 2000  H.J. Lu  (hjl@gnu.org)
+
+	* Makefile.in (LOADLIBES): New.
+	(maintainer-clean-subdir): Pass $(FLAGS_TO_PASS) to subdir.
+
+	* testsuite/Makefile.in (test-filter): Add $(LOADLIBES).
+
+Fri Nov 19 09:47:39 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cstamp-h.in: Added.
+
+Tue Nov  2 17:59:22 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (init_demangler): Use "libcompaq_demangle.so"
+	insetead of "compaq/libcompaq_demangle.so".
+
+Mon Oct 11 15:15:01 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c: Check HAVE_DLOPEN, HAVE_WEAK_SYMBOL and
+	HAVE_DLFCN_H before using dlopen.
+
+	* Makefile.in (aclocal.m4): New target
+
+	* configure.in: Check HAVE_WEAK_SYMBOL and HAVE_DLOPEN.
+	* configure: Rebuilt.
+
+	* acinclude.m4: New.
+	* aclocal.m4: Generated.
+
+	* acconfig.h (HAVE_WEAK_SYMBOL): New.
+	* config.in: Rebuilt.
+
+Mon Oct 11 11:42:15 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (o_style): Use "available_demanglers".
+	(demangle_symbol_with_style_options): Support compaq style
+	only if dlopen is available.
+
+Mon Oct 11 10:37:32 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c: Updated from gcc as of Oct. 11, 1999.
+
+Mon Oct 11 10:27:47 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (internal_ada_demangle): Removed.
+	(demangler_function): Likewise.
+	(demangler_options): Likewise.
+	(available_demanglers): New. Arrary of available demanglers.
+	(cplus_demangle_with_style): New.
+	(cplus_demangle): Just call cplus_demangle_with_style () with
+	current_demangling_style.
+	(init_demangler): Initialize the demangler.
+	(demangle_symbol_with_style): New.
+	(demangle_symbol_with_style_options): New.
+
+Mon Oct 11 09:57:57 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (available_demanglers): New. Based on a patch
+	from Ken Block USG <block@zk3.dec.com> on Fri Oct  1 11:37:24
+	1999.
+
+Sun Oct 10 19:23:28 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (flags): Removed.
+	(main): Call init_demangler () with options for Java for "-j".
+	(demangle_it): Call demangle_symbol () instead of
+	cplus_demangle ().
+	(main): Likewise.
+
+Sun Oct 10 15:48:07 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (usage): Modified -s/--format. Added
+	-d/--demangler.
+	(long_options): Add demangler.
+	(main): Handle 'd'. Use o_style () for setting
+	current_demangling_style. Call init_demangler ().
+
+Sun Oct 10 10:46:41 1999  H.J. Lu  (hjl@gnu.org)
+
+	* configure.in (AC_CHECK_HEADERS): Added dlfcn.h.
+	* configure: Rebuilt.
+	* config.in: Likewise.
+
+	* Makefile.in (config.in): Added dependency.
+
+	* cplus-dem.c (demangle_symbol, demangle_symbol_with_options,
+	init_demangler): New prototypes.
+
+Sun Oct 10 09:40:30 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c: Updated from gcc as of Oct. 10, 1999.
+
+Fri Oct  1 08:15:24 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (gnat_demangle): Renamed from ada_demangle.
+	(internal_ada_demangle): New.
+	(cplus_demangle): Call internal_ada_demangle instead of
+	ada_demangle.
+
+Sun Feb 14 12:22:14 1999  H.J. Lu  (hjl@gnu.org)
+
+	Based on patch from Juergen.Pfeifer@t-online.de (Juergen
+	Pfeifer) on Tue, 09 Feb 1999 22:54:07:
+
+	* cplus-dem.c (ada_demangle): New.
+	(cplus_demangle): Call ada_demangle () if options & DMGL_GNAT
+	is not zero.

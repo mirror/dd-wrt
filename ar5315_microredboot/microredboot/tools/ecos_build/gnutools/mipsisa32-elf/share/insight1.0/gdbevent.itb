@@ -1,0 +1,205 @@
+# GDB event class implementations for Insight.
+# Copyright 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  get - Retrieve data about the event
+# ------------------------------------------------------------
+body BreakpointEvent::get {what} {
+
+  switch $what {
+    action       { return $action }
+    number       { return $number }
+    file         { return $_file }
+    function     { return $_function }
+    line         { return $_line }
+    address      { return $_address }
+    type         { return $_type }
+    enabled      { return $_enabled }
+    disposition  { return $_disposition }
+    ignore_count { return $_ignore_count }
+    commands     { return $_commands }
+    condition    { return $_condition }
+    thread       { return $_thread }
+    hit_count    { return $_hit_count }
+    user_specification { return $_user_specification }
+
+    default { error "unknown event data \"$what\": should be: action|number|file|function|line|address|type|enabled|disposition|ignore_count|commands|condition|thread|hit_count|user_specification" }
+  }
+}
+
+# ------------------------------------------------------------
+#  PRIVATE METHOD:  _init - Initialize all private data
+# ------------------------------------------------------------
+body BreakpointEvent::_init {} {
+  if {[catch {gdb_get_breakpoint_info $number} bpinfo]} {
+    set _file         {}
+    set _function     {}
+    set _line         {}
+    set _address      {}
+    set _type         {}
+    set _enabled      {}
+    set _disposition  {}
+    set _ignore_count {}
+    set _commands     {}
+    set _condition    {}
+    set _thread       {}
+    set _hit_count    {}
+    set _user_specification {}
+  } else {
+    lassign $bpinfo \
+      _file         \
+      _function     \
+      _line         \
+      _address      \
+      _type         \
+      _enabled      \
+      _disposition  \
+      _ignore_count \
+      _commands     \
+      _condition    \
+      _thread       \
+      _hit_count    \
+      _user_specification
+  }
+}
+
+# When the breakpoint number for the event changes,
+# update the private data in the event.
+configbody BreakpointEvent::number {
+  _init
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  get - Retrieve data about the event
+# ------------------------------------------------------------
+body TracepointEvent::get {what} {
+
+  switch $what {
+    action     { return $action }
+    number     { return $number }
+    file       { return $_file }
+    function   { return $_function }
+    line       { return $_line }
+    address    { return $_address }
+    enabled    { return $_enabled }
+    pass_count { return $_pass_count }
+    step_count { return $_step_count }
+    thread     { return $_thread }
+    hit_count  { return $_hit_count }
+    actions    { return $_actions }
+
+    default { error "unknown event data \"$what\": should be: action|number|file|function|line|address|pass_count|step_count|thread|hit_count|actions" }
+  }
+}
+
+# ------------------------------------------------------------
+#  PRIVATE METHOD:  _init - Initialize all private data
+# ------------------------------------------------------------
+body TracepointEvent::_init {} {
+  if {[catch {gdb_get_tracepoint_info $number} tpinfo]} {
+    set _file         {}
+    set _function     {}
+    set _line         {}
+    set _address      {}
+    set _enabled      {}
+    set _pass_count   {}
+    set _step_count   {}
+    set _thread       {}
+    set _hit_count    {}
+    set _actions      {}
+  } else {
+    lassign $tpinfo \
+      _file         \
+      _function     \
+      _line         \
+      _address      \
+      _enabled      \
+      _pass_count   \
+      _step_count   \
+      _thread       \
+      _hit_count    \
+      _actions
+  }
+}
+
+# When the tracepoint number for the event changes,
+# update the private data in the event.
+configbody TracepointEvent::number {
+  _init
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  get - Retrieve data about the event
+# ------------------------------------------------------------
+body TracepointEvent::get {what} {
+
+  switch $what {
+    action     { return $action }
+    number     { return $number }
+    file       { return $_file }
+    function   { return $_function }
+    line       { return $_line }
+    address    { return $_address }
+    enabled    { return $_enabled }
+    pass_count { return $_pass_count }
+    step_count { return $_step_count }
+    thread     { return $_thread }
+    hit_count  { return $_hit_count }
+    actions    { return $_actions }
+
+    default { error "unknown event data \"$what\": should be: action|number|file|function|line|address|pass_count|step_count|thread|hit_count|actions" }
+  }
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  get - Retrieve data about the event
+# ------------------------------------------------------------
+body SetVariableEvent::get {what} {
+
+  switch $what {
+    variable { return $variable }
+    value    { return $value }
+
+    default { error "unknown event data \"$what\": should be: variable|value" }
+  }
+}
+
+# ------------------------------------------------------------
+#  CONSTRUCTOR: Create an UpdateEvent
+# ------------------------------------------------------------
+body UpdateEvent::constructor {args} {
+  if {[catch {gdb_loc} loc]} {
+    dbug E "could not get current location: $loc"
+  } else {
+    lassign $loc _compile_filename _function _full_filename \
+      _line _frame_pc _pc _shlib
+  }
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  get - Retrieve data about the event
+# ------------------------------------------------------------
+body UpdateEvent::get {what} {
+
+  switch $what {
+    compile_filename { return $_compile_filename }
+    full_filename    { return $_full_filename }
+    function         { return $_function }
+    line             { return $_line }
+    frame_pc         { return $_frame_pc }
+    pc               { return $_pc }
+    shlib            { return $_shlib }
+
+    default { error "unknown event data \"$what\": should be: variable|value" }
+  }
+}

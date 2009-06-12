@@ -1,0 +1,518 @@
+2004-08-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_intr.h (HAL_PLATFORM_RESET): Added missing ;
+
+2004-08-04  Alexander Neundorf <alexander.neundorf@jenoptik.com>
+
+	* include/hal_io.h: Add cyg_hal_sys_mkdir() system call
+	* include/hal_intr.h: Add HAL_PLATFORM_RESET() macro
+
+2004-07-04  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/synth.ld: Added the 2ram section needed for flash devices
+
+2004-06-21  Alexander Neundorf <alexander.neundorf@jenoptik.com>
+
+	* include/hal_io.h: 
+	Add cyg_hal_sys_readdir(), cyg_hal_sys_lstat(), 
+        cyg_hal_sys_fstat() system call toegther with their 
+        accompanying data structures and file mode bits
+
+2004-06-18  William Donahue  <WDonahue@siriusradio.com>
+
+	* include/hal_io.h (CYG_HAL_SYS_FD_ZERO): Added misisng }
+
+2004-05-27  Alexander Neundorf <alexander.neundorf@jenoptik.com>
+
+	* include/hal_io.h: 
+	Fix the open/fcntl flags by prepending a leading 0 so that they
+	are interpreted correctly as octal instead of decimal.
+
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	* cdl/hal_synth.cdl :
+	Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_synth.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-07-05  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/synth_entry.c:
+	Add more dummy functions to cope with dependencies introduced by
+	various versions of g++.
+
+2003-06-27  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/synth.ld: Synthetic linux at least needs libgcc_eh.a in the
+	GROUP() to resolve exception handling symbols.
+
+2003-02-25  Iztok Zupet  <iz@vsr.si>
+
+	* doc/synth.sgml: Replaced .gif with .png to get PDF
+	output.
+	* doc/*.gif: Delete.
+	* doc/*.png: Replacements for .gifs added.
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/synth.ld: 
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2003-03-30  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/synth_intr.c (synth_auxiliary_xchgmsg): fix typo reported
+	by Savin Zlobec
+
+2003-03-26  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/synth_intr.c (synth_start_auxiliary): When an empty string
+	is found on the PATH, remember to move onto the next entry
+	otherwise we loop forever.
+ 
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/overview.gif, doc/overview.fig: renamed to
+	synth-io-overview.gif and synth-io-overview.fig.
+	* doc/synth.sgml: Add some missing "&gt;"s to header file names.
+	Comment out DOCTYPE for now to allow building with standard doc build.
+	overview.gif renamed as per above.
+
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/Makefile.am, host/Makefile.in, configure:
+	Regenerate after acinclude.m4 update
+
+2002-12-03  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/synth_entry.c:
+	Provide dummy versions of __cxa_atexit() and __dso_handle, to
+	satisfy requirements of recent versions of the compiler configured
+	for native Linux development.
+
+2002-09-22  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/configure.in:
+	If the installed version of Tcl is too old, issue a warning and
+	suppress the build, rather than fail. Other bits of the system,
+	e.g. the generic host-side tools, can still be built.
+	
+2002-09-21  Bart Veer  <bartv@ecoscentric.com>
+
+	* host/ecosynth.c:
+	Avoid const compatibility problems with Tcl 8.4
+
+2002-09-15  Bart Veer  <bartv@ecoscentric.com>
+
+	*  include/hal_io.h
+	   cdl/hal_synth.cdl
+	   src/synth_entry.c, src/synth_intr.c, src/synth_diag.c,
+	   src/synth_protocol.h
+	   doc/*
+	   host/*
+	   Add support for I/O via an I/O auxiliary
+
+2002-08-04  Bart Veer  <bartv@tymora.demon.co.uk>
+
+	* include/hal_io.h: added argv/argv/environ definitions
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_synth.cdl: Don't run cache tests.
+
+2002-04-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/synth.ld: Add RELOCS "section" and eh_frame section, plus
+	correct use of .gnu.linkonce sections.
+
+2002-02-28  Bart Veer  <bartv@redhat.com>
+
+	* doc/synth.sgml, doc/makefile, doc/*.html:
+	Documentation for the synthetic target HAL.
+
+2002-01-25  Bart Veer  <bartv@redhat.com>
+
+	* src/synth_intr.c (hal_interrupt_mask/unmask):
+	Add preconditions that interrupts are disabled on entry, rather
+	than disabling and reenabling the interrupts, since the
+	specification requires the former.
+
+2002-01-08  Jonathan Larmour  <jlarmour@redhat.com>
+2001-11-01  Andrew Lunn	<andrew.lunn@ascom.ch>
+
+	* include/hal_io.h: Support for mmap, lseek and open syscalls.
+	* include/hal_cache.h: Add HAL_ICACHE_IS_ENABLED and
+	HAL_DCACHE_IS_ENABLED.
+	
+2001-12-07  Bart Veer  <bartv@redhat.com>
+
+	* include/hal_io.h: Added cyg_hal_sys_getcwd()
+
+2001-08-02  Bart Veer  <bartv@redhat.com>
+
+	* include/hal_intr.h:
+	Note a subtle interaction between the interrupt handling
+	and the context switch handling, which are in the
+	architectural and variant HAL packages respectively.
+
+2001-04-27  Bart Veer  <bartv@redhat.com>
+
+	* All files
+	Major reorganization and clean-up of the synthetic target.
+
+2000-11-02  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/entry.c (_linux_entry): Extend memory using brk() syscall to
+	match memory layout
+
+	* src/syscall-i386-linux-1.0.S: Add brk syscall
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_i386_linux_ram.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_i386_linux_ram.h:
+	* include/pkgconf/mlt_i386_linux_ram.ldi:
+	Regenerated
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_i386_linux.cdl: Correct memory layout file name
+
+2000-03-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_i386_linux.cdl (CYGBLD_GLOBAL_COMMAND_PREFIX):
+
+	Revert most recent change for now to avoid breaking the
+	release system.
+
+2000-03-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_i386_linux.cdl (CYGBLD_GLOBAL_COMMAND_PREFIX): Use native
+	toolchain by default, and describe versions to be used
+
+2000-02-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h: Don't include kernel headers.
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c (hal_diag_write_char): Check that write call is
+	successful.
+
+2000-02-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc: Added missed copyright notice.
+
+2000-02-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc: 
+	* include/var_intr.h: 
+	* include/plf_intr.h: 
+	These files added to make this HAL consistent with PC
+	version. They also contains some code moved out of the
+	architecture HAL.
+	
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-21  Jesper Skov  <jskov@cygnus.co.uk>
+        CR 902062-CR
+	* src/hal_diag.c:
+	* src/syscall-i386-linux-1.0.S: 
+	Sync after write.
+	
+	* src/hal_startup.c: Make signals NODEFER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_i386_linux.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_i386_linux_ram.h: New file(s).
+
+1999-11-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_i386_linux.cdl: Added.
+	Use define_proc for const header defs.
+1999-10-05  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/linux_misc.c: Fix some really minor spelling typos
+
+	* src/hal_diag.c (hal_diag_read_char): Check if we were woken up by
+	the itimer alarm (which is used for rescheduling) - in which case
+	just read again.
+	
+
+1999-10-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386_linux.h: Changed to use REAL TIME as
+	default.
+
+        From Andrew Lunn (lunn@ma.tech.ascom.ch)
+	* src/PKGconf.mak: 
+	* src/linux_misc.c:  [added]
+	* src/syscall-i386-linux-1.0.S: 
+	Added idle thread action, reducing host load when eCos is idle.
+
+1999-08-16  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386_linux.h:
+
+	Proper case package display string.
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386_linux.h: Move RTC setup here.
+
+1999-05-14  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18956
+	* include/pkgconf/mlt_i386_linux_ram.mlt: 
+	* include/pkgconf/mlt_i386_linux_ram.ldi: 
+	Fixed problem with rel_got.
+	Encode . in section name as __.
+	
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_*.*: Use double underscore substitution
+	for period character in SECTION_* macro names (PR 19787)
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/linux.S: Added comment.
+	Doh! Managed to break compilation with a comment...	
+
+1999-03-16  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19483
+	* src/linux.S (cyg_hal_hardware_init): Fiddled some more with the
+	bits to no avail.
+
+	* src/hal_startup.c: 
+	Renamed hal_ to cyg_hal_.
+	Added exception handling.
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_startup.c (cyg_hal_isr_init): Initialize ISR table with
+	pointers to default ISR routine.
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19486
+	* src/linux.S (cyg_hal_hardware_init): Only enable zero divide
+	exceptions. 
+
+1999-03-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_startup.c: 
+	* src/entry.c:
+	Renamed hal_isr_init to cyg_hal_isr_init.
+	
+	* src/hal_startup.c: Also catch SIGFPE.
+
+	* src/entry.c: Call cyg_hal_hardware_init.
+
+	* src/linux.S:     [added]
+	* src/PKGconf.mak: 
+	Added file to hold startup assembly code.
+
+1999-03-11  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: add copyright notices
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_startup.c: 
+	Changed label used to access scheduler lock to one that is not
+	mangled by C++. This is intended to make support for interrupt
+	handling in non-kernel configurations easier.
+
+1999-02-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/syscall-i386-linux-1.0.S: Added copyright header.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_startup.c: 
+	Rename hal_interrupts_deffered -> hal_interrupts_deferred
+	Rename CYG_ISR/VSR_* -> CYGNUM_HAL_ISR/VSR_* in line with HAL changes
+	Rename CYG_VECTOR_RTC -> CYGNUM_HAL_INTERRUPT_RTC
+
+	* src/syscall-i386-linux-1.0.S:
+	Add a FIX ME
+
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/ram.mlt: New memory layout save file
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-01-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386_linux.h: Changed CDL type back to radio
+	to get consistent ConfigTool output.
+
+1999-01-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi: Commented out the rel_got change.
+
+1999-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi: Added rel.got section.
+
+1999-01-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_startup.c: Moved external declarations into top-level
+	scope to avoid compiler warning.
+
+1999-01-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386_linux.h: Removed startup
+	config. Changed linux entry to dummy instead of bool.
+
+1999-01-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386_linux.h: Added config for real-time
+	timer.
+
+1999-01-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Removed hal_diag_write_line.
+
+	* src/entry.c: Removed main/argv stuff.
+
+1999-01-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386_linux.h: Added.
+
+1999-01-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_startup.c (hal_default_vsr): 
+	* src/linux.ld (cyg_hal_sched_lock): 
+	Added C-symbol reference to the scheduler lock.
+
+1999-01-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_startup.c (hal_default_vsr): Allow interrupt disable
+	count to be bigger than 1.
+
+1999-01-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/linux.ld: Added fix me. Remember to clean up.
+
+	* src/hal_startup.c: Removed bogus include statement.
+	Added CYGPKG_KERNEL config handling.
+
+	* src/hal_diag.c: Removed bogus include statements and functions.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_startup.c (hal_isr_init): Use CYG_VECTOR_RTC rather than
+	hardcoded value.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/syscall-i386-linux-1.0.S:
+	* src/hal_diag.c: 
+	* src/PKGconf.mak:
+	Removed tabs & fixed comment style.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/PKGconf.mak: Cleaned up.
+
+	* src/entry.c: Added (from proven's crtbegin.c).
+
+	* src/linux.ld: Added.
+
+	* src/hal_startup.cxx: (Deleted)
+	* src/hal_startup.c:   (Added)
+	Changed code to C, cleaned up.
+
+1999-01-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Fixed warnings. Output chars in batches to avoid
+	problems with pkgtest - also improves performance.
+
+1999-01-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/syscall-i386-linux-1.0.S: Set behavior to match __ELF__.
+
+1998-12-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/syscall-i386-linux-1.0.S: 
+	* src/hal_startup.cxx: 
+	Fixed compiler warnings.
+
+Fri Dec  4 13:49:03 GMT 1998
+
+	* src/syscall-i386-linux-1.0.S: Fix to work with Bart's latest tools.
+	For some reason it doesn't define __ELF__ but, we really don't care.
+
+Mon Nov  9 15:18:11 GMT 1998   Chris Provenzano  <proven@cygnus.com>
+
+        Initial i386 linux port.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

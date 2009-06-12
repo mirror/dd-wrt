@@ -1,0 +1,385 @@
+# Memory display preferences window for Insight.
+# Copyright 1998, 1999, 2002 Red Hat
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ------------------------------------------------------------------
+#  METHOD:  constructor - build the dialog
+# ------------------------------------------------------------------
+body MemPref::constructor {args} {
+
+  window_name "Memory Preferences"
+
+  eval itk_initialize $args
+  
+  if {$float_size == ""} {
+    set float_size [gdb_eval sizeof(float)]
+    set double_size [gdb_eval sizeof(double)]
+  }
+  
+  if {[string compare $format f] == 0} {
+    set gformat x
+    set format_disabled 1
+    if {$size == $float_size} {
+      set gsize 3
+    } elseif {$size == $double_size} {
+      set gsize 5
+    }
+  } else {
+    set gsize $size
+    set gformat $format
+  }
+  
+  set gnumbytes $numbytes
+  set gbpr $bpr
+  set gascii $ascii
+  set gascii_char $ascii_char
+  
+  build_win
+  
+  if {$format_disabled} {
+    set format_disabled 0
+    disable_format
+  }
+  
+  wm resizable [winfo toplevel $itk_interior] 0 0
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  destructor - destroy the dialog
+# ------------------------------------------------------------------
+body MemPref::destructor {} {
+  trace vdelete [scope gnumbytes] w [code $this check_numbytes]
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  build_win - build the dialog
+# ------------------------------------------------------------------
+body MemPref::build_win {} {
+
+  frame $itk_interior.f
+  set f [frame $itk_interior.f.a]
+  frame $itk_interior.f.b
+
+  # SIZE
+  Labelledframe $f.f1 -anchor nw -text Size
+  set fr [$f.f1 get_frame]
+
+  set Widgets(rb-Byte) [radiobutton $fr.1 -variable [scope gsize] -text Byte \
+			  -value 1 -command [code $this enable_format]]
+  set Widgets(rb-half_word) [radiobutton $fr.2 -variable [scope gsize] -text "Half Word" \
+			       -value 2 -command [code $this enable_format]]
+  set Widgets(rb-word) [radiobutton $fr.4 -variable [scope gsize] -text Word \
+			  -value 4 -command [code $this enable_format]]
+  set Widgets(rb-d_word) [radiobutton $fr.8 -variable [scope gsize] -text "Double Word" \
+			    -value 8 -command [code $this enable_format]]
+  set Widgets(rb-float) [radiobutton $fr.f -variable [scope gsize] -text Float \
+			   -value 3 -command [code $this disable_format]]
+  set Widgets(rb-d_float) [radiobutton $fr.d -variable [scope gsize] -text "Double Float" \
+			     -value 5 -command [code $this disable_format]]
+  grid $fr.1 $fr.4 $fr.f -sticky w -padx 4
+  grid $fr.2 $fr.8 $fr.d -sticky w -padx 4
+
+  # FORMAT
+  Labelledframe $f.f2 -anchor nw -text Format
+  set fr [$f.f2 get_frame]
+  set Widgets(rb-binary) [radiobutton $fr.1 -variable [scope gformat] \
+			    -text Binary -value t]
+  set Widgets(rb-octal) [radiobutton $fr.2 -variable [scope gformat] \
+			   -text Octal -value o]
+  set Widgets(rb-hex) [radiobutton $fr.3 -variable [scope gformat] \
+			 -text Hex -value x]
+  set Widgets(rb-signed_dec) [radiobutton $fr.4 -variable [scope gformat] \
+				-text "Signed Decimal" -value d]
+  set Widgets(rb-unsign_dec) [radiobutton $fr.5 -variable [scope gformat] \
+				-text "Unsigned Decimal" -value u]
+
+  grid $fr.1 $fr.2 $fr.3 -sticky w -padx 4
+  grid $fr.4 $fr.5 x -sticky w -padx 4
+
+  # TOTAL BYTES
+  Labelledframe $f.fx -anchor nw -text "Number of Bytes"
+
+  if {$gnumbytes == 0} {
+    set gnumbytes $default_numbytes
+    set gvar 0
+  } else {
+    set gvar 1
+  }
+
+  set fr [$f.fx get_frame] 
+  set Widgets(rb-win_size) [radiobutton $fr.1 -variable [scope gvar] -text "Depends on window size" \
+			      -value 0 -command [code $this toggle_size_control]]
+  frame $fr.2
+  set Widgets(rb-fixed) [radiobutton $fr.2.b -variable [scope gvar] -text Fixed \
+			   -value 1 -command [code $this toggle_size_control]]
+
+  set old_numbytes $default_numbytes
+  set Widgets(e-numbytes) [entry $fr.2.e -textvariable [scope gnumbytes] -width 3]
+  set normal_background [$Widgets(e-numbytes) cget -background]
+
+  #
+  # Trace gnumbytes so it will always be a +'ve integer...  Have to set this
+  # trace AFTER the widget's textvariable is set so this trace will fire
+  # BEFORE the widget's trace.
+  #
+
+  trace variable [scope gnumbytes] w [code $this check_numbytes]
+
+  label $fr.2.l -text bytes
+  grid $fr.2.b $fr.2.e $fr.2.l -sticky we
+  grid $fr.1 x -sticky w -padx 4
+  grid $fr.2 x -sticky w -padx 4
+  grid columnconfigure $fr 1 -weight 1
+
+  # MISC
+  Labelledframe $f.1 -anchor nw -text "Miscellaneous"
+  set fr [$f.1 get_frame] 
+  frame $fr.1
+  label $fr.1.plabel -height 1 -width 1 -bg $color -relief raised  
+  set Widgets(b-color) [button $fr.1.pc -text "Change color..."  \
+			  -command [code $this pick $fr.1.plabel]]
+  grid $fr.1.plabel $fr.1.pc
+  frame $fr.2
+  label $fr.2.l -text "Bytes Per Row "
+  set Widgets(b-bytes_per_row) [::combobox::combobox $fr.2.c \
+				  -command [code $this set_bytes_per_row]  \
+				  -width 4 -editable 0 -font global/fixed]
+  $fr.2.c list insert end 4
+  $fr.2.c list insert end 8
+  $fr.2.c list insert end 16
+  $fr.2.c list insert end 32
+  $fr.2.c list insert end 64
+  $fr.2.c list insert end 128
+  $fr.2.c configure -value $gbpr
+
+  pack $fr.2.l -side left -anchor e
+  pack $fr.2.c -side right
+
+  set Widgets(cb-display_ascii) [checkbutton $fr.3 -variable [scope gascii] -text "Display ASCII"]
+  frame $fr.4
+  set Widgets(e-ascii_char) [entry $fr.4.e -textvariable [scope gascii_char] -width 1]
+  label $fr.4.l -text "Control Char"
+  grid $fr.4.e $fr.4.l -sticky we
+  grid $fr.2 x $fr.3 -sticky w -padx 4
+  grid $fr.4 -sticky w -padx 4
+  grid columnconfigure $fr 1 -weight 1
+
+  grid $f.f1 -padx 5 -pady 6 -sticky news
+  grid $f.f2 -padx 5 -pady 6 -sticky news
+  grid $f.fx -padx 5 -pady 6 -sticky news
+  grid $f.1 -padx 5 -pady 6 -sticky we
+
+
+  set Widgets(b-ok) [button $itk_interior.f.b.ok -text OK -command [code $this ok] -width 7 -default active]
+  focus $Widgets(b-ok)
+  
+  # If there is an OK button, set Return in the entry field to invoke it...
+  
+  bind $Widgets(e-numbytes) <KeyPress-Return> "$Widgets(b-ok) flash ; $Widgets(b-ok) invoke"
+  
+  set Widgets(b-cancel) [button $itk_interior.f.b.quit -text Cancel -command [code $this cancel] -width 7]
+  set Widgets(b-apply) [button $itk_interior.f.b.apply -text Apply -command [code $this apply] -width 7]
+  standard_button_box $itk_interior.f.b
+  
+  grid $itk_interior.f.a 
+  grid $itk_interior.f.b -sticky news
+  grid $itk_interior.f
+  
+  #
+  # Set the state of the window size entry here...
+  #
+  toggle_size_control
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  busy - make the widget unusable
+# ------------------------------------------------------------------
+body MemPref::busy {} {
+  set top [winfo toplevel $itk_interior]
+  $top configure -cursor watch
+  
+  # Disable all the radiobuttons and what not
+  foreach w [array names Widgets] {
+    set WidgetState($w) [$Widgets($w) cget -state]
+  }
+  foreach w [array names Widgets] {
+    $Widgets($w) configure -state disabled
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  idle - make the widget useable
+# ------------------------------------------------------------------
+body MemPref::idle {} {
+  set top [winfo toplevel $itk_interior]
+  $top configure -cursor {}
+
+  # Re-enable all widgets
+  foreach w [array names Widgets] {
+    $Widgets($w) configure -state $WidgetState($w)
+  }
+}
+# ------------------------------------------------------------------
+#  METHOD:  ok - apply and quit
+# ------------------------------------------------------------------
+body MemPref::ok {} {
+  apply
+  unpost
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  cancel - just close the dialog w/o saving changes
+# ------------------------------------------------------------------
+body MemPref::cancel {} {
+  unpost
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  check_numbytes - a trace to make sure gnumbytes is an int > 0
+# ------------------------------------------------------------------
+body MemPref::check_numbytes {var index mode} {
+  upvar \#0 $var true
+  if {($true != "") && ([catch {expr {(int($true) != double($true)) || $true <= 0}} val] 
+			|| $val)} {
+    bell
+    set true $old_numbytes
+  } else {
+    set old_numbytes $true
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  set_bytes_per_row - combobox callback to set the bytes per row
+# ------------------------------------------------------------------
+body MemPref::set_bytes_per_row {w value} {
+  set gbpr $value
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  toggle_size_control - toggle the state of the entry box as the
+#           control method changes
+# ------------------------------------------------------------------
+body MemPref::toggle_size_control {} {
+
+  if {$gvar} {
+    $Widgets(e-numbytes) configure -state normal \
+      -background $normal_background
+  } else {
+    $Widgets(e-numbytes) configure -state disabled -background lightgray
+    if {[info exists Widgets(b-ok)]} {
+      focus $Widgets(b-ok)
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  apply - apply changes to the parent window
+# ------------------------------------------------------------------
+body MemPref::apply {} {
+
+  busy
+  gdbtk_busy
+
+  if {$gvar == 0} {
+    set numbytes 0
+  } elseif {$gnumbytes == "" || $gnumbytes == 0} {
+    # Protect against the case where someone sets the
+    # entry field to an empty string, or pastes in a 0...
+    bell
+    set gnumbytes $default_numbytes
+    set numbytes $gnumbytes
+  } else {
+    set numbytes $gnumbytes
+  }
+  switch $gsize {
+    3 {
+      set size $float_size
+      set format f
+    }
+    5 {
+      set size $double_size
+      set format f
+    }
+    default {
+      set size $gsize
+      set format $gformat
+    }
+  }
+
+  # pass all the changed values back to parent
+  debug "$win configChange -size $size -numbytes $numbytes \
+	     -format $format -ascii $gascii \
+	     -ascii_char $gascii_char -bytes_per_row $gbpr \
+	     -color $color"
+  eval $win configure -size $size -numbytes $numbytes \
+    -format $format -ascii $gascii \
+    -ascii_char $gascii_char -bytes_per_row $gbpr \
+    -color $color
+  
+  $win reconfig
+
+  gdbtk_idle
+  idle
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  enable_format - turn on the format radio buttons 
+# ------------------------------------------------------------------
+body MemPref::enable_format {} {
+  if {!$format_disabled} {
+    return
+  }
+
+  foreach widget {rb-binary rb-octal rb-hex rb-signed_dec rb-unsign_dec} {
+    $Widgets($widget) configure -state normal
+  }
+  set format_disabled 0
+}
+
+
+# ------------------------------------------------------------------
+#  METHOD:  disable_format - turn off the format radio buttons 
+# ------------------------------------------------------------------
+body MemPref::disable_format {} {
+  if {$format_disabled} {
+    return
+  }
+
+  foreach widget {rb-binary rb-octal rb-hex rb-signed_dec rb-unsign_dec} {
+    $Widgets($widget) configure -state disabled
+  }
+  set format_disabled 1
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  pick - pick colors
+# ------------------------------------------------------------------
+body MemPref::pick {lab} {
+  set new_color [tk_chooseColor -initialcolor $color -title "Choose color"]
+  if {$new_color != $color && $new_color != ""} {
+    set color $new_color
+    $lab configure -bg $color
+  }
+}
+
+
+# ------------------------------------------------------------------
+#  METHOD:  reconfig - used when preferences change
+# ------------------------------------------------------------------
+body MemPref::reconfig {} {
+  # for now, just delete and recreate
+  destroy $itk_interior.f 
+  build_win
+}
+

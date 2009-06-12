@@ -1,0 +1,269 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Communication Protocol</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="PREVIOUS"
+TITLE="Example Host-side Device Driver"
+HREF="usbseth-host.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Support for Developing USB-ethernet Peripherals</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbseth-host.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBSETH-PROTOCOL"
+>Communication Protocol</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN281"
+></A
+><H2
+>Name</H2
+>Communication Protocol&nbsp;--&nbsp;Protocol used between the host-side device driver and the eCos
+USB-ethernet package </DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN284"
+></A
+><H2
+>Description</H2
+><P
+>There is a USB standard for the protocol to be used between the host
+and a class of communication devices, including ethernet. However, the
+eCos USB-ethernet package does not implement this protocol: the target
+hardware for which the package was first developed had certain
+limitations, and could not implement the standard. Instead, the package
+implements a simple new protocol.</P
+><P
+>A USB-ethernet peripheral involves bulk transfers on two endpoints:
+one endpoint will be used for packets from host to peripheral and the
+other will be used for the opposite direction. Transfers in both
+directions are variable length, with a lower limit of 16 bytes and an
+upper limit of 1516 bytes. The first two bytes of each transfer
+constitute a header specific to USB-ethernet. The next 14 bytes form
+the normal header for an ethernet frame: destination MAC address,
+source MAC address, and a protocol field. The remaining data, up to
+1500 bytes, are the payload. The first two bytes give the size of the
+ethernet frame, least significant byte first, with a value between 14
+and 1514.</P
+><P
+>For example an ARP request from host to peripheral involves an
+ethernet frame of 42 bytes (0x002A), with the usual 14-byte header and
+a 28-byte payload. The destination is the broadcast address
+0xFFFFFFFFFFFF. The source depends on the MAC address specified for
+the host in the call to <A
+HREF="usbseth-init.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+></A
+>, e.g.
+0x405D90A9BC02. The remaining data is as specified by the appropriate
+<A
+HREF="http://www.ietf.org"
+TARGET="_top"
+>IETF RFC's</A
+>. The actual bulk
+USB transfer involves the following sequence of 44 bytes:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>2a 00 ff ff ff ff ff ff 40 5d 90 a9 bc 02 08 06
+00 01 08 00 06 04 00 01 40 5d 90 a9 bc 02 0a 00
+00 01 00 00 00 00 00 00 0a 00 00 02</PRE
+></TD
+></TR
+></TABLE
+><P
+>In addition there are two control messages. These will be sent by the
+host to endpoint 0, the control endpoint, and by default they will
+be handled by <A
+HREF="usbseth-control.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_class_control_handler</TT
+></A
+>. If class-specific
+control messages are intercepted by other code then it is the
+responsibility of that code to invoke the USB-ethernet handler when
+appropriate.</P
+><P
+>The first control message can be used by the host to obtain a MAC
+address:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#define ECOS_USBETH_CONTROL_GET_MAC_ADDRESS         0x01</PRE
+></TD
+></TR
+></TABLE
+><P
+>The control message's type field should specify IN as the direction.
+The request field should be <TT
+CLASS="LITERAL"
+>0x01</TT
+>. The length fields
+should specify a size of 6 bytes. The remaining fields of the control
+message will be ignored by the USB-ethernet package. The response
+consists of the 6-byte MAC address supplied by the initialization call
+<A
+HREF="usbseth-init.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+></A
+>.</P
+><P
+>The second control message can be used by the host to enable or
+disable promiscuous mode.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#define ECOS_USBETH_CONTROL_SET_PROMISCUOUS_MODE    0x02</PRE
+></TD
+></TR
+></TABLE
+><P
+>This control message involves no further data so the length field
+should be set to 0. The value field should be non-zero to enable
+promiscuous mode, zero to disable it. The request field should be
+<TT
+CLASS="LITERAL"
+>0x02</TT
+>. The remaining fields in the control message
+will be ignored. It is the responsibility of the host-side device
+driver to keep track of whether or not promiscuous mode is currently
+enabled. It will be disabled when the peripheral changes to
+Configured state, typically at the point where the host-side device
+driver has been activated.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbseth-host.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Example Host-side Device Driver</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

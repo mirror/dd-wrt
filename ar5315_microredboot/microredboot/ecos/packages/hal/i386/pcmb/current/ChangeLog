@@ -1,0 +1,241 @@
+2003-09-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/pcmb_io.h: IDE init needs to return number of controllers found.
+
+2003-07-23  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/pcmb_serial.h: Fixed bogus test on
+	CYGSEM_HAL_I386_PCMB_SCREEN_SUPPORT defined to test
+	CYGINT_HAL_I386_PCMB_SCREEN_SUPPORT > 0 instead.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_i386_pcmb.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2002-08-14  Gary Thomas  <gthomas@ecoscentric.com>
+2002-08-14  Drew Moseley <drew.moseley@intel.com>	
+
+	* cdl/hal_i386_pcmb.cdl: 
+	* include/pcmb_io.h: Increase PCI space to include all possible
+	busses, slots, etc.  Required because defaults are often too small.	
+2002-04-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/pcmb_misc.c (hal_pcmb_init): Disable NMI at this point since
+	no real handlers are in place to handle it.  This fixes a problem
+	with manual reset code for IDE drivers which can cause NMI.
+
+2002-04-26  Bart Veer  <bartv@redhat.com>
+
+	* support/gfxmode.c:
+	A utility to find out what graphics modes are available on any
+	given PC.
+
+	* include/pcmb.inc:
+	Change the graphics mode during RedBoot startup, when configured
+	to do so.	
+
+	* cdl/hal_i386_pcmb.cdl:
+	Add new configuration option for changing the graphics mode
+	during RedBoot startup.
+
+2001-12-06  Nick Garnett  <nickg@redhat.com>
+
+	* include/pcmb_serial.h: 
+	* src/pcmb_serial.c:
+	Added a simple validation test for serial devices. If the status
+	register reads back all ones we decide that the device is absent
+	and mark it invalid. We test this elsewhere to avoid touching the
+	device again. This should help to cope with various problems with
+	PCs that come with only one serial port.
+
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/pcmb_screen.c: Restore sensible num lock behaviour after the
+	last change.
+	(KBScanTable): Fix scan table size.
+
+2001-11-29 Trenton D. Adams  <tadams@theone.dnsalias.com>
+
+	* src/pcmb_screen.c: Support numeric keypad and ctrl-alt-del for
+	rebooting.
+
+2001-11-23  Nick Garnett  <nickg@redhat.com>
+
+	* include/pcmb_io.h (PC_WRITE_SCREEN): Wrap positions beyond end
+	of screen back to start.
+	
+2001-11-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/pcmb_misc.c (hal_pcmb_init): Fix typo:
+	CYGPKG_HAL_I386_PCMB_HAL_MEMSIZE_BIOS -> 
+	CYGPKG_HAL_I386_PCMB_MEMSIZE_BIOS
+
+2001-10-19  Ian Campbell  <icampbell@arcom.co.uk>
+
+	* cdl/hal_i386_pcmb.cdl: Add cdl_options for
+	CYGPKG_HAL_I386_PCMB_MEMSIZE to allow configuration of how memory
+	is detected. Change CYGNUM_HAL_RTC_PERIOD to use default_value
+	rather than calculated (so it can be overridden in the platform).
+	* src/pcmb_misc.c: Implement CYGPKG_HAL_I386_PCMB_MEMSIZE
+	configuration options.
+	
+2001-10-16  Mark Salter  <msalter@redhat.com>
+
+	* src/pcmb_serial.c (cyg_hal_plf_serial_init): Use CDL to determine
+	how many serial ports to support.
+	* src/pcmb_screen.c (cyg_hal_plf_screen_init): Use CDL to determine
+	channel number for keyboard/screen.
+
+2001-10-01  Ian Campbell  <icampbell@arcom.co.uk>
+
+	* include/pcmb_io.h: Include CYGBLD_HAL_PLATFORM_H rather than
+	<pkgconf/hal_i386_pc.h>. Also include <pkgconf/system.h> so the
+	define is available.
+
+2001-09-14  Mark Salter  <msalter@redhat.com>
+
+	* include/pcmb_io.h (HAL_IDE_READ_ALTSTATUS): Add 2 for correct offset.
+	(HAL_IDE_WRITE_CONTROL): Ditto.
+
+2001-08-22  Nick Garnett  <nickg@redhat.com>
+
+	* src/pcmb_misc.c: Added spinlock to clock read operation.
+	
+	* include/pcmb_io.h (PC_WRITE_SCREEN_*): Added casts to make these
+	macros more universal.
+
+	* src/pcmb_smp.c: Added this file to contain all SMP related
+	code. This includes parsing the MP structures; initializing the
+	APIC and IOAPIC; starting the CPUs; interrupt mapping; inter-CPU
+	interrupts; and CPU synchronization in the event of a debuggable
+	exception.
+	Note: there is still a _lot_ of debugging code in here, mostly
+	disabled, which needs cleaning up. Also, if this code is to ever
+	be released to the public, it should probably be tidied up a bit
+	more.
+
+	* include/pcmb_intr.h: Added SMP support. This includes the
+	inter-CPU interrupt vectors, interrupt masking, acknowledge, and
+	CPU affinity via the APIC and IOAPIC.
+
+	* cdl/hal_i386_pcmb.cdl: Added configury to compile pcmb_smp.c
+	only when SMP is enabled. Also define HAL_PLATFORM_EXTRA to
+	contain the SMP-ness of the HAL, so that RedBoot can report it.
+
+2001-07-31  Mark Salter  <msalter@redhat.com>
+
+	* include/pcmb_io.h: Add IDE I/O macros.
+	* cdl/hal_i386_pcmb.cdl: Now implements CYGINT_HAL_PLF_IF_IDE.
+
+2001-07-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pcmb_intr.h: Fill in interrupt table descriptions.
+
+2001-07-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/pcmb_misc.c (hal_pcmb_init): Silence warning
+	* include/pcmb_intr.h: Revert below change - not relevant in this case	
+	for clobbers
+
+2001-07-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pcmb_intr.h: Be pedantic about register constraint syntax
+	to satisfy newer compilers
+
+2001-05-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/pcmb_misc.c (hal_pc_clock_initialize): Use mode 2 (rate generator)
+	instead of mode 3 (square wave).
+
+2001-05-03  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]	
+	* cdl/hal_i386_pcmb.cdl: Changed option
+	CYGIMP_HAL_I386_PCMB_SCREEN_SUPPORT to interface
+	CYGINT_HAL_I386_PCMB_SCREEN_SUPPORT.
+
+2001-03-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/pcmb_misc.c:
+	Added hal_pcmb_init() which currently extracts memory sizes out of
+	CMOS RAM.
+	Added hal_i386_mem_real_region_top() to return top of either base
+	or extended memory regions.	
+
+	* include/pcmb_io.h: Added CMOS RAM access macros.
+
+	* include/pcmb.inc: Removed memory size stuff.
+
+	* cdl/hal_i386_pcmb.cdl:
+	Added implement CYGINT_HAL_I386_MEM_REAL_REGION_TOP.
+
+2001-03-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* include/pcmb.inc: Removed redundant FPU code.
+
+2001-03-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* include/pcmb_intr.h: Rewrote HAL_INTERRUPT_ACKNOWLEDGE() and
+	reinstated as main acknowledge mechanism.
+
+2001-03-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]	
+	* cdl/hal_i386_pcmb.cdl:
+	* include/pcmb.inc:
+	* include/pcmb_intr.h:
+	* include/pcmb_io.h:
+	* include/pcmb_serial.h:
+	* src/pcmb_misc.c:
+	* src/pcmb_screen.c:
+	* src/pcmb_serial.c:
+	Created this package to provide the support needed to run eCos
+	binaries on an i386 PC using a standard motherboard. This package
+	provides support for the standard PC devices: timers, interrupt
+	controller, serial ports, ASCII display, keyboard, PCI bus
+	etc. that are found on all PC compatible platforms.  It does not
+	provide support for devices that may also be found on modern
+	motherboards, such as ethernet, sound and video devices. These are
+	supported by drivers elsewhere.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

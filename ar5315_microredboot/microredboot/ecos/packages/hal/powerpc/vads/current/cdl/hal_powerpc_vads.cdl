@@ -1,0 +1,383 @@
+# ====================================================================
+#
+#      hal_powerpc_vads.cdl
+#
+#      Motorola MPC8260 Voyager ADS board HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      wpd
+# Original data:  hmt
+# Contributors:
+# Date:           YYYY-MM-DD
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_POWERPC_VADS {
+    display       "MPC8260 VADS board"
+    parent        CYGPKG_HAL_POWERPC
+    requires      CYGPKG_HAL_POWERPC_MPC8260
+    define_header hal_powerpc_vads.h
+    include_dir   cyg/hal
+    description   "
+        The VADS HAL package provides the support needed to run
+        eCos on a Mototola MPC8260 VADS  board."
+
+    compile       hal_diag.c hal_aux.c vads.S
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+# removed by WPD for now
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+# added by WPD for now
+
+# Note: uncomment this to get old-style debug behaviour
+#   implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_powerpc_mpc8260.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_powerpc_vads.h>"
+
+	puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC MPC8260\""
+        puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"Voyager ADS\""
+        puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  {"RAM" "ROM"}
+        default_value {"RAM"}
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+           This option is used to control where the application program will
+           run, either from RAM or ROM (flash) memory.  ROM based applications
+           must be self contained, while RAM applications will typically assume
+           the existence of a debug environment, such as GDB stubs."
+
+        cdl_option DCSPRI_HAL_VADS_ROM_MLT {
+            display       "Memory Layout for ROM Startup"
+            flavor        data
+            legal_values  {"LOW" "HIGH" "RAM"}
+            default_value {"HIGH"}
+            description   "
+
+                This option selects which memory layout file should be
+		used when configuring the VADS board for ROM startup.
+		The LOW option selects the memory layout for an image
+		stored at the beginning of the FLASH.  It should be
+		used when the (hard reset) IP and boot memory space
+		are both mapped to address 0.
+
+		The HIGH option selects the memory layout for an image
+		stored in the last Megabyte of FLASH.  It should be
+		used when the (hard reset) IP maps the interrupt
+		vector base address to 0xFFF00000 and the boot memory
+		space to the last 32 Megabytes of FLASH.
+
+		The RAM option is a hack used to place the ROM image
+		in RAM in order to simplify the development of a ROM
+		monitor by using the existing ROM monitor to load it
+		into RAM, but pretend like it is in ROM."
+	}
+
+    }
+
+    cdl_option CYGHWR_HAL_POWERPC_DISABLE_MMU {
+        display       "DISABLE MMU"
+        flavor        bool
+        default_value 0
+	#        calculated    1
+        description   "
+            This option will disable the MMU enabled."
+    }
+
+    cdl_option CYGHWR_HAL_POWERPC_BOARD_SPEED {
+        display          "Development board clock speed (MHz)"
+        flavor           data
+        legal_values     45 60 66
+        default_value    66
+        description      "
+	   The Delphi TigerSHARC-6 board will probably run at either
+           45 or 60 MHz.  In the short term, however, we will be using
+           an MPC8260ADS board running at 66 MHz.  Select the clock
+           speed appropriate for your board so that the system can set
+           the serial baud rate correctly, amongst other things."
+   }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        description   "
+            Period is busclock/4/CYGNUM_HAL_RTC_DENOMINATOR.  VERIFY THIS!!!"
+        flavor        none
+        no_define
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+            description   "
+              This option selects the number of system clock 'ticks'
+              per second.  This rate is sometimes known as the heartbeat rate."
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value { (((CYGHWR_HAL_POWERPC_BOARD_SPEED*1000000)/4)/CYGNUM_HAL_RTC_DENOMINATOR) }
+        }
+    }
+    
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+
+        parent  CYGPKG_NONE
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "powerpc-eabi" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-msoft-float -mcpu=603e -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-msoft-float -mcpu=603e -g -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "ROM" }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+
+            requires CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+# We don't support GDB BREAK (yet)
+#            requires ! CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+# 
+            requires CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the platform CDL takes care of creating
+                an S-Record data file. -- This needs more work"
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) -O srec --srec-forceS3 $< $(@:.bin=.s19)
+                $(OBJCOPY) -O binary $< $@
+#            }
+# Changed the .srec extentsion to .txt for ease of downloading with hyperterm
+# Changed the .txt extentsion to .s19 for ease of downloading with OCD
+        }
+    }
+
+    cdl_component CYGPKG_HAL_POWERPC_VADS_OPTIONS {
+        display "MPC8260 VADS build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_HAL_POWERPC_VADS_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the VADS HAL. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_HAL_POWERPC_VADS_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the VADS HAL. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "powerpc_vads_ram" : \
+                                                "powerpc_vads_rom" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM"          ? "<pkgconf/mlt_powerpc_vads_ram.ldi>"     : \
+			 DCSPRI_HAL_VADS_ROM_MLT == "LOW"  ? "<pkgconf/mlt_powerpc_vads_romlow.ldi>"  : \
+			 DCSPRI_HAL_VADS_ROM_MLT == "HIGH" ? "<pkgconf/mlt_powerpc_vads_romhigh.ldi>" : \
+							     "<pkgconf/mlt_powerpc_vads_romram.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM"          ? "<pkgconf/mlt_powerpc_vads_ram.h>"     : \
+			 DCSPRI_HAL_VADS_ROM_MLT == "LOW"  ? "<pkgconf/mlt_powerpc_vads_romlow.h>"  : \
+			 DCSPRI_HAL_VADS_ROM_MLT == "HIGH" ? "<pkgconf/mlt_powerpc_vads_romhigh.h>" : \
+							     "<pkgconf/mlt_powerpc_vads_romram.h>" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        bool
+        default_value { (CYG_HAL_STARTUP == "RAM" &&
+                        !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS &&
+                        !CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED &&
+                        !CYGSEM_HAL_POWERPC_COPY_VECTORS) ? 1 : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        requires      ! CYGSEM_HAL_POWERPC_COPY_VECTORS
+        requires      ! CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires      ! CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED
+        description   "
+            Allow coexistence with ROM monitor (CygMon or GDB stubs) by
+            only initializing interrupt vectors on startup, thus leaving
+            exception handling to the ROM monitor."
+    }
+
+
+    # FIXME: the option above should be adjusted to select between monitor
+    #        variants
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs {
+        parent        CYGPKG_HAL_ROM_MONITOR
+        display "Bad CDL workaround"
+        calculated 1
+        active_if CYGSEM_HAL_USE_ROM_MONITOR
+    }
+
+
+    cdl_component CYGPKG_REDBOOT_HAL_OPTIONS {
+        display       "Redboot HAL options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+#            compile -library=libextras.a redboot_cmds.c
+    
+        cdl_option CYGBLD_BUILD_REDBOOT_BIN {
+            display       "Build Redboot ROM binary image"
+            active_if     CYGBLD_BUILD_REDBOOT
+            default_value 1
+            no_define
+            description "This option enables the conversion of the Redboot ELF
+                         image to a binary image suitable for ROM programming.
+			 This needs more work."
+
+            make -priority 325 {
+                <PREFIX>/bin/redboot.bin : <PREFIX>/bin/redboot.elf
+                $(OBJCOPY) --strip-debug $< $(@:.bin=.img) 
+                $(OBJCOPY) -O srec $< $(@:.bin=.srec)
+                $(OBJCOPY) -O srec --change-address=0x02040000 $< $(@:.bin=.ppcbug)
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+    }
+}

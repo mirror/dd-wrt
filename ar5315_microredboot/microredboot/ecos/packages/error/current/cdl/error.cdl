@@ -1,0 +1,157 @@
+# ====================================================================
+#
+#      error.cdl
+#
+#      Error package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv,jlarmour
+# Original data:  jlarmour
+# Contributors:   
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_ERROR {
+    display       "Common error code support"
+    compile       strerror.cxx errno.cxx
+    include_dir   cyg/error
+    implements    CYGINT_ISO_ERRNO_CODES
+    requires      { CYGBLD_ISO_ERRNO_CODES_HEADER == "<cyg/error/codes.h>" }
+    description   "
+        This package contains the common list of error and
+        status codes. It is held centrally to allow
+        packages to interchange error codes and status
+        codes in a common way, rather than each package
+        having its own conventions for error/status
+        reporting. The error codes are modelled on the
+        POSIX style naming e.g. EINVAL etc. This package
+        also provides the standard strerror() function to
+        convert error codes to textual representation, as
+        well as an implementation of the errno idiom."
+        
+# ====================================================================
+# ERRNO OPTIONS
+
+    cdl_component CYGPKG_ERROR_ERRNO {
+        display       "errno variable"
+        flavor        bool
+        implements    CYGINT_ISO_ERRNO
+        requires      { CYGBLD_ISO_ERRNO_HEADER == "<cyg/error/errno.h>" }
+        default_value 1
+        description   "
+            This package controls the behaviour of the
+            errno variable (or more strictly, expression)
+            from <errno.h>."
+
+        cdl_option CYGSEM_ERROR_PER_THREAD_ERRNO {
+            display       "Per-thread errno"
+            requires      CYGVAR_KERNEL_THREADS_DATA
+            default_value 1
+            description   "
+                This option controls whether the standard error
+                code reporting variable errno is a per-thread
+                variable, rather than global."
+        }
+
+        cdl_option CYGNUM_ERROR_ERRNO_TRACE_LEVEL {
+            display       "Tracing level"
+            flavor        data
+            legal_values  0 to 1
+            default_value 0
+            description   "
+                Trace verbosity level for debugging the errno
+                retrieval mechanism in errno.cxx. Increase this
+                value to get additional trace output."
+        }
+    }
+
+# ====================================================================
+# STRERROR OPTIONS
+
+    cdl_option CYGPKG_ERROR_STRERROR {
+        display       "strerror function"
+        flavor        bool
+        implements    CYGINT_ISO_STRERROR
+        requires      { CYGBLD_ISO_STRERROR_HEADER == "<cyg/error/strerror.h>" }
+        default_value 1
+        description   "
+            This package controls the presence and behaviour of the
+            strerror() function from <string.h>"
+    }
+
+# ====================================================================
+# BUILD OPTIONS
+    cdl_component CYGPKG_ERROR_OPTIONS {
+        display "Error package build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_ERROR_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the error package. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_ERROR_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the error package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}
+
+# ====================================================================
+# EOF error.cdl

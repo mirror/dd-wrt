@@ -1,0 +1,110 @@
+2004-02-17  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/i18n.cdl: Add newlib style ctype implementation.
+	CYGSEM_LIBC_I18N_PER_THREAD_MB can be inactive when no kernel.
+	* include/newlibctype.h: New file.
+	* src/newlibctype.cxx: New file.
+	* src/ctype.cxx: Don't define functions if newlib style ctype
+	chosen instead.
+
+	* src/wctomb.cxx (wctomb): Use correct thread data type.
+	* src/mbtowc.cxx (mbtowc): Ditto.
+	* src/mblen.cxx (mblen): Ditto.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/i18n.cdl: Fix doc link.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* tests/i18nmb.c: fix warning.
+
+2001-06-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/mbtowc_jp.cxx (__mbtowc_jp): Fix nasty bug for mblen(NULL, x);
+
+	Some other cleanups across the board to the below changes before
+	checking in.
+
+2001-06-08  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* cdl/i18n.cdl: Added implements CYGINT_ISO_STDLIB_MULTIBYTE. 
+	(CYGPKG_LIBC_I18N_LOCALES): New component
+	encompassing supported locales.
+	(CYGFUN_LIBC_I18N_LOCALE_C_JIS): New configuration
+	item to support the new "C-JIS" C/Japanese locale.  Option defines
+	CYGINT_LIBC_I18N_MB_REQUIRED.
+	(CYGFUN_LIBC_I18N_LOCALE_C_SJIS): Similar except it is "C-SJIS" locale.
+	(CYGFUN_LIBC_I18N_LOCALE_C_EUCJP): Ditto except it is "C-EUCJP" locale.
+	(CYGSEM_LIBC_I18N_PER_THREAD_MB): New option that determines
+	if multibyte functions will keep state data per thread or not.
+	(CYGNUM_LIBC_I18N_MAX_LOCALE_NAME_SIZE): Changed legal_values and
+	default_value to be dependent on whether the Japanese locales
+	were supported or not.
+	(CYGPKG_LIBC_I18N_TESTS): Add multibyte test.
+	* src/locale.cxx: Moved Cyg_libc_locale_t to internal.h.
+	Changed current ctype locale to be externally accessible variable.
+	Added MB_CUR_MAX value into locale as well as pointers to mbtowc
+	and wctomb functions.
+	[CYGINT_LIBC_I18N_MB_REQUIRED]: Added __mb_cur_max external variable.
+	(all_locales)[CYGFUN_LIBC_I18N_LOCALE_C_JIS]: New "C-JIS" locale 
+	added to list.
+	(all_locales)[CYGFUN_LIBC_I18N_LOCALE_C_SJIS]: New "C-SJIS"
+	locale.
+	(all_locales)[CYGFUN_LIBC_I18N_LOCALE_C_EUCJP]: New "C-EUCJP"
+	locale.
+	(setlocale)[CYGINT_LIBC_I18N_MB_REQUIRED]: Added setting of __mb_cur_max
+	when locale changes ctype category.
+	(__get_current_locale_mbtowc_fn): New function.
+	* src/mblen.cxx: New file.
+	* src/mbtowc.cxx: Ditto.
+	* src/mbstowcs.cxx: Ditto.
+	* src/wctomb.cxx: Ditto.
+	* src/wcstombs.cxx: Ditto.
+	* src/mbtowc_jp.cxx: Ditto.
+	* src/mbtowc_c.cxx: Ditto.
+	* src/internal.h: New internal header file.
+	* tests/i18nmb.c: New test case for multibyte functionality.
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* New package
+	Separated original libc out into separate packages on functional
+	boundaries.
+	Header files are now managed by isoinfra package
+	Plenty of cleanups done, but no major functionality changes
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,414 @@
+# ====================================================================
+#
+#      memalloc.cdl
+#
+#      Dynamic memory allocator services configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-06-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_MEMALLOC {
+    display       "Dynamic memory allocation"
+    description   "
+        This package provides memory allocator infrastructure required for
+        dynamic memory allocators, including the ISO standard malloc
+        interface. It also contains some sample implementations."
+    include_dir   cyg/memalloc
+    compile       dlmalloc.cxx memfixed.cxx memvar.cxx \
+                  sepmeta.cxx debug.c
+
+# ====================================================================
+
+    cdl_component CYGPKG_MEMALLOC_ALLOCATORS {
+        display       "Memory allocator implementations"
+        flavor        none
+        no_define
+        description   "
+            This component contains configuration options related to the 
+            various memory allocators available."
+
+        cdl_component CYGPKG_MEMALLOC_ALLOCATOR_FIXED {
+            display       "Fixed block allocator"
+            flavor        none
+            no_define
+            description   "
+                This component contains configuration options related to the 
+                fixed block memory allocator."
+
+            cdl_option CYGSEM_MEMALLOC_ALLOCATOR_FIXED_THREADAWARE {
+                display        "Make thread safe"
+                active_if      CYGPKG_KERNEL
+                default_value  1
+                description    "
+                    With this option enabled, this allocator will be
+                    made thread-safe. Additionally allocation functions
+                    are made available that allow a thread to wait
+                    until memory is available."
+            }
+        }
+
+        cdl_component CYGPKG_MEMALLOC_ALLOCATOR_VARIABLE {
+            display       "Simple variable block allocator"
+            flavor        none
+            no_define
+            description   "
+                This component contains configuration options related to the 
+                simple variable block memory allocator. This allocator is not
+                very fast, and in particular does not scale well with large
+                numbers of allocations. It is however very compact in terms of
+                code size and does not have very much overhead per allocation."
+
+            cdl_option CYGSEM_MEMALLOC_ALLOCATOR_VARIABLE_THREADAWARE {
+                display        "Make thread safe"
+                active_if      CYGPKG_KERNEL
+                default_value  1
+                description    "
+                    With this option enabled, this allocator will be
+                    made thread-safe. Additionally allocation functions
+                    are added that allow a thread to wait until memory
+                    are made available that allow a thread to wait
+                    until memory is available."
+            }
+
+            cdl_option CYGSEM_MEMALLOC_ALLOCATOR_VARIABLE_COALESCE {
+                display       "Coalesce memory"
+                default_value 1
+                description   "
+                    The variable-block memory allocator can perform coalescing
+                    of memory whenever the application code releases memory back
+                    to the pool. This coalescing reduces the possibility of
+                    memory fragmentation problems, but involves extra code and
+                    processor cycles."
+            }
+        }
+
+        cdl_component CYGPKG_MEMALLOC_ALLOCATOR_DLMALLOC {
+            display       "Doug Lea's malloc"
+            flavor        none
+            description   "
+                This component contains configuration options related to the 
+                port of Doug Lea's memory allocator, normally known as
+                dlmalloc. dlmalloc has a reputation for being both fast
+                and space-conserving, as well as resisting fragmentation well.
+                It is a common choice for a general purpose allocator and
+                has been used in both newlib and Linux glibc."
+
+            cdl_option CYGDBG_MEMALLOC_ALLOCATOR_DLMALLOC_DEBUG {
+                display       "Debug build"
+                requires      CYGDBG_USE_ASSERTS
+                default_value { 0 != CYGDBG_USE_ASSERTS }
+                description   "
+                    Doug Lea's malloc implementation has substantial amounts
+                    of internal checking in order to verify the operation
+                    and consistency of the allocator. However this imposes
+                    substantial overhead on each operation. Therefore this
+                    checking may be individually disabled."
+            }
+
+            cdl_option CYGIMP_MEMALLOC_ALLOCATOR_DLMALLOC_THREADAWARE {
+                display       "Make thread safe"
+                active_if     CYGPKG_KERNEL
+                requires      CYGPKG_KERNEL
+                default_value 1
+                description   "
+                    With this option enabled, this allocator will be
+                    made thread-safe. Additionally allocation functions
+                    are made available that allow a thread to wait
+                    until memory is available."
+            }
+        
+            cdl_option CYGIMP_MEMALLOC_ALLOCATOR_DLMALLOC_SAFE_MULTIPLE {
+                display       "Support more than one instance"
+                default_value 1
+                description   "
+                    Having this option disabled allows important
+                    implementation structures to be declared as a single
+                    static instance, allowing faster access. However this
+                    would fail if there is more than one instance of
+                    the dlmalloc allocator class. Therefore this option can
+                    be enabled if multiple instances are required. Note: as
+                    a special case, if this allocator is used as the
+                    implementation of malloc, and it can be determined there
+                    is more than one malloc pool, then this option will be
+                    silently enabled."
+            }
+
+           cdl_option CYGIMP_MEMALLOC_ALLOCATOR_DLMALLOC_USE_MEMCPY {
+                display       "Use system memcpy() and memset()"
+                requires      CYGPKG_ISOINFRA
+                default_value { 0 != CYGPKG_ISOINFRA }
+                description   "
+                    This may be used to control whether memset() and memcpy()
+                    are used within the implementation. The alternative is
+                    to use some macro equivalents, which some people report
+                    are faster in some circumstances."
+           }
+
+           cdl_option CYGNUM_MEMALLOC_ALLOCATOR_DLMALLOC_ALIGNMENT {
+                display       "Minimum alignment of allocated blocks"
+                flavor        data
+                legal_values  3 to 10
+                default_value 3
+                description   "
+                    This option controls the minimum alignment that the
+                    allocated memory blocks are aligned on, specified as
+                    2^N. Note that using large mininum alignments can lead
+                    to excessive memory wastage."
+           }
+        }
+
+        cdl_component CYGPKG_MEMALLOC_ALLOCATOR_SEPMETA {
+            display       "Variable block allocator with separate metadata"
+            flavor        none
+            no_define
+            description   "
+                This component contains configuration options related to the 
+                variable block memory allocator with separate metadata."
+
+            cdl_option CYGSEM_MEMALLOC_ALLOCATOR_SEPMETA_THREADAWARE {
+                display        "Make thread safe"
+                active_if      CYGPKG_KERNEL
+                default_value  1
+                description    "
+                    With this option enabled, this allocator will be
+                    made thread-safe. Additionally allocation functions
+                    are made available that allow a thread to wait
+                    until memory is available."
+            }
+        }
+    }
+
+    cdl_option CYGFUN_MEMALLOC_KAPI {
+        display       "Kernel C API support for memory allocation"
+        active_if     CYGPKG_KERNEL
+        default_value CYGFUN_KERNEL_API_C
+        description   "
+            This option must be enabled to provide the extensions required
+            to support integration into the kernel C API."
+        compile       kapi.cxx
+    }       
+
+    cdl_option CYGSEM_MEMALLOC_MALLOC_ZERO_RETURNS_NULL {
+        display       "malloc(0) returns NULL"
+        default_value 0
+        description   "
+            This option controls the behavior of malloc(0) ( or calloc with
+            either argument 0 ). It is permitted by the standard to return
+            either a NULL pointer or a unique pointer. Enabling this option
+            forces a NULL pointer to be returned."
+    }       
+
+    cdl_option CYGSEM_MEMALLOC_INVOKE_OUT_OF_MEMORY {
+        display       "Breakpoint site when running out of memory"
+        default_value 0
+        description   "
+            Whenever the system runs out of memory, it invokes this function
+            before either going to sleep waiting for memory to become 
+            available or returning failure."
+    }       
+
+    cdl_component CYGPKG_MEMALLOC_MALLOC_ALLOCATORS {
+        display      "malloc() and supporting allocators"
+        flavor        bool
+        active_if     CYGPKG_ISOINFRA
+        implements    CYGINT_ISO_MALLOC
+        implements    CYGINT_ISO_MALLINFO
+        default_value 1
+        compile       malloc.cxx
+        description   "
+            This component enables support for dynamic memory
+            allocation as supplied by the functions malloc(),
+            free(), calloc() and realloc(). As these
+            functions are often used, but can have quite an
+            overhead, disabling them here can ensure they
+            cannot even be used accidentally when static
+            allocation is preferred. Within this component are
+            various allocators that can be selected for use
+            as the underlying implementation of the dynamic
+            allocation functions."
+
+        make -priority 50 {
+            heapgeninc.tcl : <PACKAGE>/src/heapgen.cpp
+            $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,heapgen.tmp -E $< -o $@
+            @sed -e '/^ *\\/d' -e "s#.*: #$@: #" heapgen.tmp > $(notdir $@).deps
+            @rm heapgen.tmp
+        }
+    
+        # FIXME this should have a dependency on mlt_headers, but CDL doesn't
+        # permit custom build rules depending on phony targets
+        # FIXME we workaround an NT cygtclsh80 bug by cd'ing into the
+        # correct dir and running heapgen.tcl from there rather than passing
+        # an absolute path.
+        make -priority 50 {
+            heaps.cxx : heapgeninc.tcl <PACKAGE>/src/heapgen.tcl
+            XPWD=`pwd` ; cd $(REPOSITORY)/$(PACKAGE)/src ; sh heapgen.tcl "$(PREFIX)" "$$XPWD"
+            @cp heaps.hxx "$(PREFIX)"/include/pkgconf/heaps.hxx
+            @chmod u+w "$(PREFIX)"/include/pkgconf/heaps.hxx
+        }
+
+        make_object {
+            heaps.o.d : heaps.cxx
+            $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,heaps.tmp -c -o $(OBJECT_PREFIX)_$(notdir $(@:.o.d=.o)) $<
+            @sed -e '/^ *\\/d' -e "s#.*: #$@: #" heaps.tmp > $@
+            @rm heaps.tmp
+        }
+
+        cdl_component CYGBLD_MEMALLOC_MALLOC_EXTERNAL_HEAP_H {
+            display       "Use external heap definition"
+            flavor        booldata
+            default_value 0
+            description   "This option allows other components in the
+                           system to override the default system
+                           provision of heap memory pools. This should
+                           be set to a header which provides the equivalent
+                           definitions to <pkgconf/heaps.hxx>."
+        }
+
+        cdl_interface CYGINT_MEMALLOC_MALLOC_ALLOCATORS {
+            display       "malloc() allocator implementations"
+            requires      { CYGINT_MEMALLOC_MALLOC_ALLOCATORS == 1 }
+            no_define
+        }
+
+        cdl_option CYGBLD_MEMALLOC_MALLOC_IMPLEMENTATION_HEADER {
+            display       "malloc() implementation instantiation data"
+            flavor        data
+            description   "
+                Memory allocator implementations that are capable of being
+                used underneath malloc() must be instantiated. The code
+                to do this is set in this option. It is only intended to
+                be set by the implementation, not the user."
+            # default corresponds to the default allocator
+            default_value {"<cyg/memalloc/dlmalloc.hxx>"}
+        }
+
+        cdl_option CYGIMP_MEMALLOC_MALLOC_VARIABLE_SIMPLE {
+            display       "Simple variable block implementation"
+            description   "This causes malloc() to use the simple
+                           variable block allocator."
+            default_value 0
+            implements    CYGINT_MEMALLOC_MALLOC_ALLOCATORS
+            requires      { CYGBLD_MEMALLOC_MALLOC_IMPLEMENTATION_HEADER == \
+                            "<cyg/memalloc/memvar.hxx>" }
+            requires      CYGSEM_MEMALLOC_ALLOCATOR_VARIABLE_COALESCE
+        }
+
+        cdl_option CYGIMP_MEMALLOC_MALLOC_DLMALLOC {
+            display       "Doug Lea's malloc implementation"
+            description   "This causes malloc() to use a version of Doug Lea's
+                           malloc (dlmalloc) as the underlying implementation."
+            default_value 1
+            implements    CYGINT_MEMALLOC_MALLOC_ALLOCATORS
+            requires      { CYGBLD_MEMALLOC_MALLOC_IMPLEMENTATION_HEADER == \
+                            "<cyg/memalloc/dlmalloc.hxx>" }
+        }
+    }
+    cdl_option CYGNUM_MEMALLOC_FALLBACK_MALLOC_POOL_SIZE {
+        display       "Size of the fallback dynamic memory pool in bytes"
+        flavor        data
+        legal_values  32 to 0x7fffffff
+        default_value 16384
+        description   "
+            If *no* heaps are configured in your memory layout,
+            dynamic memory allocation by
+            malloc() and calloc() must be from a fixed-size,
+            contiguous memory pool (note here that it is the
+            pool that is of a fixed size, but malloc() is still
+            able to allocate variable sized chunks of memory
+            from it). This option is the size
+            of that pool, in bytes. Note that not all of
+            this is available for programs to
+            use - some is needed for internal information
+            about memory regions, and some may be lost to
+            ensure that memory allocation only returns
+            memory aligned on word (or double word)
+            boundaries - a very common architecture
+            constraint."
+    }
+# ====================================================================
+
+    cdl_component CYGPKG_MEMALLOC_OPTIONS {
+        display "Common memory allocator package build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+        cdl_option CYGPKG_MEMALLOC_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_MEMALLOC_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_MEMALLOC_TESTS {
+            display "Tests"
+            flavor  data
+            no_define
+            calculated { "tests/dlmalloc1 tests/dlmalloc2 tests/heaptest tests/kmemfix1 tests/kmemvar1 tests/malloc1 tests/malloc2 tests/malloc3 tests/malloc4 tests/memfix1 tests/memfix2 tests/memvar1 tests/memvar2 tests/realloc tests/sepmeta1 tests/sepmeta2" }
+            description   "
+                This option specifies the set of tests for this package."
+        }
+    }
+}
+
+# ====================================================================
+# EOF memalloc.cdl

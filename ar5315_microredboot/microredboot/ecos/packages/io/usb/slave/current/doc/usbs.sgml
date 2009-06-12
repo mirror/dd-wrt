@@ -1,0 +1,3540 @@
+<!-- DOCTYPE reference  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     usbs.sgml                                                   -->
+<!--                                                                 -->
+<!--     Generic USB-slave documentation.                            -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2001, 2002 Red Hat, Inc.                          -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2001/01/03                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="io-usb-slave">
+<!-- reference id="io-usb-slave" -->
+  <title>eCos USB Slave Support</title>
+
+<!-- {{{ Intro                          -->
+
+<refentry id="usbs-intro">
+<refmeta>
+<refentrytitle>Introduction</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Introduction</refname>
+<refpurpose>eCos support for USB slave devices</refpurpose>
+</refnamediv>
+
+<refsect1><title>Introduction</title>
+<para>
+The eCos USB slave support allows developers to produce USB
+peripherals. It consists of a number of different eCos packages:
+</para>
+<orderedlist>
+
+<listitem>
+<para>
+Device drivers for specific implementations of USB slave hardware, for
+example the on-chip USB Device Controller provided by the Intel SA1110
+processor. A typical USB peripheral will only provide one USB slave
+port and therefore only one such device driver package will be needed.
+Usually the device driver package will be loaded automatically when
+you create an eCos configuration for target hardware that has a USB
+slave device. If you select a target which does have a USB slave
+device but no USB device driver is loaded, this implies that no such
+device driver is currently available.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The common USB slave package. This serves two purposes. It defines the
+API that specific device drivers should implement. It also provides
+various utilities that will be needed by most USB device drivers and
+applications, such as handlers for standard control messages.
+Usually this package will be loaded automatically at the same time as
+the USB device driver.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The common USB package. This merely provides some information common
+to both the host and slave sides of USB, such as details of the
+control protocol. It is also used to place the other USB-related
+packages appropriately in the overall configuration hierarchy. Usually
+this package will be loaded at the same time as the USB device driver.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Class-specific USB support packages. These make it easier to develop
+specific classes of USB peripheral, such as a USB-ethernet device. If
+no suitable package is available for a given class of peripheral then
+the USB device driver can instead be accessed directly from
+application code. Such packages will never be loaded automatically
+since the configuration system has no way of knowing what class of USB
+peripheral is being developed. Instead developers have to add the
+appropriate package or packages explicitly.
+</para>
+</listitem>
+
+</orderedlist>
+
+<para>
+These packages only provide support for developing USB peripherals,
+not USB hosts.
+</para>
+</refsect1>
+
+<refsect1><title>USB Concepts</title>
+<para>
+Information about USB can be obtained from a number of sources
+including the <ulink url="http://www.usb.org/">USB Implementers Forum
+web site</ulink>. Only a brief summary is provided here.
+</para>
+<para>
+A USB network is asymmetrical: it consists of a single host, one or
+more slave devices, and possibly some number of intermediate hubs. The
+host side is significantly more complicated than the slave side.
+Essentially, all operations are initiated by the host. For example, if
+the host needs to receive some data from a particular USB peripheral
+then it will send an IN token to that peripheral; the latter should
+respond with either a NAK or with appropriate data. Similarly, when
+the host wants to transmit data to a peripheral it will send an OUT
+token followed by the data; the peripheral will return a NAK if it is
+currently unable to receive more data or if there was corruption,
+otherwise it will return an ACK. All transfers are check-summed and
+there is a clearly-defined error recovery process. USB peripherals can
+only interact with the host, not with each other.
+</para>
+<para>
+USB supports four different types of communication: control messages,
+interrupt transfers, isochronous transfers, and bulk transfers.
+Control messages are further subdivided into four categories:
+standard, class, vendor and a reserved category. All USB peripherals
+must respond to certain standard control messages, and usually this
+will be handled by the common USB slave package (for complicated
+peripherals, application support will be needed). Class and vendor
+control messages may be handled by an class-specific USB support
+package, for example the USB-ethernet package will handle control
+messages such as getting the MAC address or enabling/disabling
+promiscuous mode. Alternatively, some or all of these messages will
+have to be handled by application code.
+</para>
+<para>
+Interrupt transfers are used for devices which need to be polled
+regularly. For example, a USB keyboard might be polled once every
+millisecond. The host will not poll the device more frequently than
+this, so interrupt transfers are best suited to peripherals that
+involve a relatively small amount of data. Isochronous transfers are
+intended for multimedia-related peripherals where typically a large
+amount of video or audio data needs to be exchanged continuously.
+Given appropriate host support a USB peripheral can reserve some of
+the available bandwidth. Isochronous transfers are not reliable; if a
+particular packet is corrupted then it will just be discarded and
+software is expected to recover from this. Bulk transfers are used for
+everything else: after taking care of any pending control, isochronous
+and interrupt transfers the host will use whatever bandwidth remains
+for bulk transfers. Bulk transfers are reliable.
+</para>
+<para>
+Transfers are organized into USB packets, with the details depending
+on the transfer type. Control messages always involve an initial
+8-byte packet from host to peripheral, optionally followed by some
+additional packets; in theory these additional packets can be up to 64
+bytes, but hardware may limit it to 8 bytes. Interrupt transfers
+involve a single packet of up to 64 bytes. Isochronous transfers
+involve a single packet of up to 1024 bytes. Bulk transfers involve
+multiple packets. There will be some number, possibly zero, of 64-byte
+packets. The transfer is terminated by a single packet of less than 64
+bytes. If the transfer involves an exact multiple of 64 bytes than the
+final packet will be 0 bytes, consisting of just a header and checksum
+which typically will be generated by the hardware. There is no
+pre-defined limit on the size of a bulk transfer. Instead higher-level
+protocols are expected to handle this, so for a USB-ethernet
+peripheral the protocol could impose a limit of 1514 bytes of data
+plus maybe some additional protocol overhead.
+</para>
+<para>
+Transfers from the host to a peripheral are addressed not just to that
+peripheral but to a specific endpoint within that peripheral.
+Similarly, the host requests incoming data from a specific endpoint
+rather than from the peripheral as a whole. For example, a combined
+keyboard/touchpad device could provide the keyboard events on endpoint
+1 and the mouse events on endpoint 2. A given USB peripheral can have
+up to 16 endpoints for incoming data and another 16 for outgoing data.
+However, given the comparatively high speed of USB I/O this endpoint
+addressing is typically implemented in hardware rather than software,
+and the hardware will only implement a small number of endpoints.
+Endpoint 0 is generally used only for control messages.
+</para>
+<para>
+In practice, many of these details are irrelevant to application code
+or to class packages. Instead, such higher-level code usually just
+performs blocking <function>read</function> and
+<function>write</function>, or non-blocking USB-specific calls, to
+transfer data between host and target via a specific endpoint. Control
+messages are more complicated but are usually handled by existing
+code.
+</para>
+<para>
+When a USB peripheral is plugged into the host there is an initial
+enumeration and configuration process. The peripheral provides
+information such as its class of device (audio, video, etc.), a
+vendor id, which endpoints should be used for what kind of data, and
+so on. The host OS uses this information to identify a suitable host
+device driver. This could be a generic driver for a class of
+peripherals, or it could be a vendor-specific driver. Assuming a
+suitable driver is installed the host will then activate the USB
+peripheral and perform additional application-specific initialisation.
+For example for a USB-ethernet device this would involve obtaining an
+ethernet MAC address. Most USB peripherals will be fairly simple, but
+it is possible to build multifunction peripherals with multiple
+configurations, interfaces, and alternate interface settings.
+</para>
+<para>
+It is not possible for any of the eCos packages to generate all the
+enumeration data automatically. Some of the required information such
+as the vendor id cannot be supplied by generic packages; only by the
+application developer. Class support code such as the USB-ethernet
+package could in theory supply some of the information automatically,
+but there are also hardware dependencies such as which endpoints get
+used for incoming and outgoing ethernet frames. Instead it is the
+responsibility of the application developer to provide all the
+enumeration data and perform some additional initialisation. In
+addition, the common USB slave package can handle all the standard
+control messages for a simple USB peripheral, but for something like a
+multifunction peripheral additional application support is needed.
+</para>
+
+<note><para>
+The initial implementation of the eCos USB slave packages involved
+hardware that only supported control and bulk transfers, not
+isochronous or interrupt. There may be future changes to the USB
+code and API to allow for isochronous and interrupt transfers,
+especially the former. Other changes may be required to support
+different USB devices. At present there is no support for USB remote
+wakeups, since again it is not supported by the hardware.
+</para></note>
+
+</refsect1>
+
+<refsect1><title>eCos USB I/O Facilities</title>
+<para>
+For protocols other than control messages, eCos provides two ways of
+performing USB I/O. The first involves device table or devtab entries such
+as <link linkend="usbs-devtab"><literal>/dev/usb1r</literal></link>,
+with one entry per endpoint per USB device. It is possible to
+<function>open</function> these devices and use conventional blocking
+I/O functions such as <function>read</function> and
+<function>write</function> to exchange data between host and
+peripheral.
+</para>
+<para>
+There is also a lower-level USB-specific API, consisting of functions
+such as <link
+linkend="usbs-start-rx"><function>usbs_start_rx_buffer</function></link>.
+A USB device driver will supply a data structure for each endpoint,
+for example a <link
+linkend="usbs-data"><structname>usbs_rx_endpoint</structname></link>
+structure for every receive endpoint. The first argument to
+<function>usbs_start_rx_buffer</function> should be a pointer to such
+a data structure. The USB-specific API is non-blocking: the initial
+call merely starts the transfer; some time later, once the transfer
+has completed or has been aborted, the device driver will invoke a
+completion function.
+</para>
+<para>
+Control messages are different. With four different categories of
+control messages including application and vendor specific ones, the
+conventional
+<function>open</function>/<function>read</function>/<function>write</function>
+model of I/O cannot easily be applied. Instead, a USB device driver
+will supply a <link
+linkend="usbs-control"><structname>usbs_control_endpoint</structname></link>
+data structure which can be manipulated appropriately. In practice the
+standard control messages will usually be handled by the common USB
+slave package, and other control messages will be handled by
+class-specific code such as the USB-ethernet package. Typically,
+application code remains responsible for supplying the <link
+linkend="usbs-enum">enumeration data</link> and for actually <link
+linkend="usbs-start">starting</link> up the USB device.
+</para>
+</refsect1>
+
+<refsect1><title>Enabling the USB code</title>
+<para>
+If the target hardware contains a USB slave device then the
+appropriate USB device driver and the common packages will typically
+be loaded into the configuration automatically when that target is
+selected (assuming a suitable device driver exists). However, the
+driver will not necessarily be active. For example a processor might
+have an on-chip USB device, but not all applications using that
+processor will want to use USB functionality. Hence by default the USB
+device is disabled, ensuring that applications do not suffer any
+memory or other penalties for functionality that is not required.
+</para>
+<para>
+If the application developer explicitly adds a class support package
+such as the USB-ethernet one then this implies that the USB device is
+actually needed, and the device will be enabled automatically.
+However, if no suitable class package is available and the USB device
+will instead be accessed by application code, it is necessary to
+enable the USB device manually. Usually the easiest way to do this is
+to enable the configuration option
+<literal>CYGGLO_IO_USB_SLAVE_APPLICATION</literal>, and the USB device
+driver and related packages will adjust accordingly. Alternatively,
+the device driver may provide some configuration options to provide
+more fine-grained control.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Enumeration Data               -->
+
+<refentry id="usbs-enum">
+<refmeta>
+<refentrytitle>USB Enumeration Data</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Enumeration Data</refname>
+<refpurpose>The USB enumeration data structures</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+#include &lt;cyg/io/usb/usb.h&gt;
+#include &lt;cyg/io/usb/usbs.h&gt;
+
+typedef struct usb_device_descriptor {
+    &hellip;
+} usb_device_descriptor __attribute__((packed));
+
+typedef struct usb_configuration_descriptor {
+    &hellip;
+} usb_configuration_descriptor __attribute__((packed));
+
+typedef struct usb_interface_descriptor {
+    &hellip;
+} usb_interface_descriptor __attribute__((packed));        
+
+typedef struct usb_endpoint_descriptor {
+    &hellip;
+} usb_endpoint_descriptor;
+
+typedef struct usbs_enumeration_data {
+    usb_device_descriptor               device;
+    int                                 total_number_interfaces;
+    int                                 total_number_endpoints;
+    int                                 total_number_strings;
+    const usb_configuration_descriptor* configurations;
+    const usb_interface_descriptor*     interfaces;
+    const usb_endpoint_descriptor*      endpoints;
+    const unsigned char**               strings;
+} usbs_enumeration_data;
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>USB Enumeration Data</title>
+<para>
+When a USB host detects that a peripheral has been plugged in or
+powered up, one of the first steps is to ask the peripheral to
+describe itself by supplying enumeration data. Some of this data
+depends on the class of peripheral. Other fields are vendor-specific.
+There is also a dependency on the hardware, specifically which
+endpoints are available should be used. In general it is not possible
+for generic code to provide this information, so it is the
+responsibility of application code to provide a suitable
+<structname>usbs_enumeration_data</structname> data structure and
+install it in the endpoint 0 data structure during initialization.
+This must happen before the USB device is enabled by a call to
+<function>usbs_start</function>, for example:
+</para>
+<programlisting width=72>
+const usbs_enumeration_data usb_enum_data = {
+    &hellip;
+};
+
+int
+main(int argc, char** argv)
+{
+    usbs_sa11x0_ep0.enumeration_data = &amp;usb_enum_data;
+    &hellip;
+    usbs_start(&amp;usbs_sa11x0_ep0);
+    &hellip;
+}
+</programlisting>
+<para>
+For most applications the enumeration data will be static, although
+the <structname>usbs_enumeration_data</structname> structure can be
+filled in at run-time if necessary. Full details of the enumeration
+data can be found in the Universal Serial Bus specification obtainable
+from the <ulink url="http://www.usb.org/">USB Implementers Forum web
+site</ulink>, although the meaning of most fields is fairly obvious.
+The various data structures and utility macros are defined in the
+header files <filename class="headerfile">cyg/io/usb/usb.h</filename>
+and <filename class="headerfile">cyg/io/usb/usbs.h</filename>. Note
+that the example code below makes use of the gcc labelled element
+extension.
+</para>
+
+<refsect2><title><structname>usb_device_descriptor</structname></title>
+<para>
+The main information about a USB peripheral comes from a single
+<structname>usb_device_descriptor</structname> structure, which is
+embedded in the <structname>usbs_enumeration_data</structname>
+structure. A typical example might look like this:
+</para>
+<programlisting width=72>
+const usbs_enumeration_data usb_enum_data = {
+    {
+        length:                 USB_DEVICE_DESCRIPTOR_LENGTH,
+        type:                   USB_DEVICE_DESCRIPTOR_TYPE,
+        usb_spec_lo:            USB_DEVICE_DESCRIPTOR_USB11_LO,
+        usb_spec_hi:            USB_DEVICE_DESCRIPTOR_USB11_HI,
+        device_class:           USB_DEVICE_DESCRIPTOR_CLASS_VENDOR,
+        device_subclass:        USB_DEVICE_DESCRIPTOR_SUBCLASS_VENDOR,
+        device_protocol:        USB_DEVICE_DESCRIPTOR_PROTOCOL_VENDOR,
+        max_packet_size:        8,
+        vendor_lo:              0x42,
+        vendor_hi:              0x42,
+        product_lo:             0x42,
+        product_hi:             0x42,
+        device_lo:              0x00,
+        device_hi:              0x01,
+        manufacturer_str:       1,
+        product_str:            2,
+        serial_number_str:      0,
+        number_configurations:  1
+    },
+    &hellip;
+};
+</programlisting>
+<para>
+The length and type fields are specified by the USB standard. The
+<structfield>usb_spec_lo</structfield> and
+<structfield>usb_spec_hi</structfield> fields identify the particular
+revision of the standard that the peripheral implements, for example
+revision 1.1.
+</para>
+<para>
+The device class, subclass, and protocol fields are used by generic
+host-side USB software to determine which host-side device driver
+should be loaded to interact with the peripheral. A number of standard
+classes are defined, for example mass-storage devices and
+human-interface devices. If a peripheral implements one of the
+standard classes then a standard existing host-side device driver may
+exist, eliminating the need to write a custom driver. The value
+<literal>0xFF</literal> (<literal>VENDOR</literal>) is reserved for
+peripherals that implement a vendor-specific protocol rather than a
+standard one. Such peripherals will require a custom host-side device
+driver. The value <literal>0x00</literal>
+(<literal>INTERFACE</literal>) is reserved and indicates that the
+protocol used by the peripheral is defined at the interface level
+rather than for the peripheral as a whole.
+</para>
+<para>
+The <structfield>max_package_size</structfield> field specifies the
+maximum length of a control message. There is a lower bound of eight
+bytes, and typical hardware will not support anything larger because
+control messages are usually small and not performance-critical.
+</para>
+<para>
+The <structfield>vendor_lo</structfield> and
+<structfield>vendor_hi</structfield> fields specify a vendor id, which
+must be obtained from the USB Implementor's Forum. The numbers used in
+the code fragment above are examples only and must not be used in real
+USB peripherals. The product identifier is determined by the vendor,
+and different USB peripherals should use different identifiers. The
+device identifier field should indicate a release number in
+binary-coded decimal.
+</para>
+<para>
+The above fields are all numerical in nature. A USB peripheral can
+also provide a number of strings as described <link
+linkend="usbs-enum-strings">below</link>, for example the name of the
+vendor can be provided. The various <structfield>_str</structfield>
+fields act as indices into an array of strings, with index 0
+indicating that no string is available. 
+</para>
+<para>
+A typical USB peripheral involves just a single configuration. However
+more complicated peripherals can support multiple configurations. Only
+one configuration will be active at any one time, and the host will
+switch between them as appropriate. If a peripheral does involve
+multiple configurations then typically it will be the responsibility
+of application code to <link
+linkend="usbs-control-standard">handle</link> the standard
+set-configuration control message.
+</para>
+</refsect2>
+
+<refsect2><title><structname>usb_configuration_descriptor</structname></title>
+<para>
+A USB peripheral involves at least one and possible several different
+configurations. The <structname>usbs_enumeration_data</structname>
+structure requires a pointer to an array, possibly of length 1, of
+<structname>usb_configuration_descriptor</structname> structures.
+Usually a single structure suffices:
+</para>
+<programlisting width=72>
+const usb_configuration_descriptor usb_configuration = {
+    length:             USB_CONFIGURATION_DESCRIPTOR_LENGTH,
+    type:               USB_CONFIGURATION_DESCRIPTOR_TYPE,
+    total_length_lo:    USB_CONFIGURATION_DESCRIPTOR_TOTAL_LENGTH_LO(1, 2),
+    total_length_hi:    USB_CONFIGURATION_DESCRIPTOR_TOTAL_LENGTH_HI(1, 2),
+    number_interfaces:  1,
+    configuration_id:   1,
+    configuration_str:  0,
+    attributes:         USB_CONFIGURATION_DESCRIPTOR_ATTR_REQUIRED |
+                        USB_CONFIGURATION_DESCRIPTOR_ATTR_SELF_POWERED,
+    max_power:          50
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &hellip;
+    configurations:             &amp;usb_configuration,
+    &hellip;
+};
+</programlisting>
+<para>
+The values for the <structfield>length</structfield> and
+<structfield>type</structfield> fields are determined by the standard.
+The <structfield>total_length</structfield> field depends on the
+number of interfaces and endpoints used by this configuration, and
+convenience macros are provided to calculate this: the first argument
+to the macros specify the number of interfaces, the second the number
+of endpoints. The <structfield>number_interfaces</structfield> field
+is self-explanatory. If the peripheral involves multiple
+configurations then each one must have a unique id, and this will be
+used in the set-configuration control message. The id
+<literal>0</literal> is reserved, and a set-configuration control
+message that uses this id indicates that the peripheral should be
+inactive. Configurations can have a string description if required.
+The <structfield>attributes</structfield> field must have the
+<literal>REQUIRED</literal> bit set; the
+<literal>SELF_POWERED</literal> bit informs the host that the
+peripheral has its own power supply and will not draw any power over
+the bus, leaving more bus power available to other peripherals; the
+<literal>REMOTE_WAKEUP</literal> bit is used if the peripheral can
+interrupt the host when the latter is in power-saving mode. For
+peripherals that are not self-powered, the
+<structfield>max_power</structfield> field specifies the power
+requirements in units of 2mA.
+</para>
+</refsect2>
+
+<refsect2><title><structname>usb_interface_descriptor</structname></title>
+<para>
+A USB configuration involves one or more interfaces, typically
+corresponding to different streams of data. For example, one interface
+might involve video data while another interface is for audio.
+Multiple interfaces in a single configuration will be active at the
+same time.
+</para>
+<programlisting width=72>
+const usb_interface_descriptor usb_interface = {
+    length:             USB_INTERFACE_DESCRIPTOR_LENGTH,
+    type:               USB_INTERFACE_DESCRIPTOR_TYPE,
+    interface_id:       0,
+    alternate_setting:  0,
+    number_endpoints:   2,
+    interface_class:    USB_INTERFACE_DESCRIPTOR_CLASS_VENDOR,
+    interface_subclass: USB_INTERFACE_DESCRIPTOR_SUBCLASS_VENDOR,
+    interface_protocol: USB_INTERFACE_DESCRIPTOR_PROTOCOL_VENDOR,
+    interface_str:      0
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &hellip;
+    total_number_interfaces:    1,
+    interfaces:                 &amp;usb_interface,
+    &hellip;
+};
+</programlisting>
+<para>
+Again, the <structfield>length</structfield> and
+<structfield>type</structfield> fields are specified by the standard.
+Each interface within a configuration requires its own id. However, a
+given interface may have several alternate settings, in other words
+entries in the interfaces array with the same id but different
+<structfield>alternate_setting</structfield> fields. For example,
+there might be one setting which requires a bandwidth of 100K/s and
+another setting that only needs 50K/s. The host can use the standard
+set-interface control message to choose the most appropriate setting.
+The handling of this request is the responsibility of higher-level
+code, so the application may have to <link
+linkend="usbs-control-standard">install</link> its own handler.
+</para>
+<para>
+The number of endpoints used by an interface is specified in the
+<structfield>number_endpoints</structfield> field. Exact details of
+which endpoints are used is held in a separate array of endpoint
+descriptors. The class, subclass and protocol fields are used by
+host-side code to determine which host-side device driver should
+handle this specific interface. Usually this is determined on a
+per-peripheral basis in the
+<structname>usb_device_descriptor</structname> structure, but that can
+defer the details to individual interfaces. A per-interface string
+is allowed as well.
+</para>
+<para>
+For USB peripherals involving multiple configurations, the array of
+<structname>usb_interface_descriptor</structname> structures should
+first contain all the interfaces for the first configuration, then all
+the interfaces for the second configuration, and so on.
+</para>
+</refsect2>
+
+<refsect2><title id="usbs-enum-endpoint"><structname>usb_endpoint_descriptor</structname></title>
+<para>
+The host also needs information about which endpoint should be used
+for what. This involves an array of endpoint descriptors:
+</para>
+<programlisting width=72>
+const usb_endpoint_descriptor usb_endpoints[] = {
+    {
+        length:         USB_ENDPOINT_DESCRIPTOR_LENGTH,
+        type:           USB_ENDPOINT_DESCRIPTOR_TYPE,
+        endpoint:       USB_ENDPOINT_DESCRIPTOR_ENDPOINT_OUT | 1,
+        attributes:     USB_ENDPOINT_DESCRIPTOR_ATTR_BULK,
+        max_packet_lo:  64,
+        max_packet_hi:  0,
+        interval:       0
+    },
+    {
+        length:         USB_ENDPOINT_DESCRIPTOR_LENGTH,
+        type:           USB_ENDPOINT_DESCRIPTOR_TYPE,
+        endpoint:       USB_ENDPOINT_DESCRIPTOR_ENDPOINT_IN | 2,
+        attributes:     USB_ENDPOINT_DESCRIPTOR_ATTR_BULK,
+        max_packet_lo:  64,
+        max_packet_hi:  0,
+        interval:       0
+    }
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &hellip;
+    total_number_endpoints:     2,
+    endpoints:                  usb_endpoints,
+    &hellip;
+};
+</programlisting>
+<para>
+As usual the values for the <structfield>length</structfield> and
+<structfield>type</structfield> fields are specified by the standard.
+The <structfield>endpoint</structfield> field gives both the endpoint
+number and the direction, so in the above example endpoint 1 is used
+for OUT (host to peripheral) transfers and endpoint 2 is used for IN
+(peripheral to host) transfers. The
+<structfield>attributes</structfield> field indicates the USB protocol
+that should be used on this endpoint: <literal>CONTROL</literal>,
+<literal>ISOCHRONOUS</literal>, <literal>BULK</literal> or
+<literal>INTERRUPT</literal>. The
+<structfield>max_packet</structfield> field specifies the maximum size
+of a single USB packet. For bulk transfers this will typically be 64
+bytes. For isochronous transfers this can be up to 1023 bytes. For
+interrupt transfers it can be up to 64 bytes, although usually a
+smaller value will be used. The <structfield>interval</structfield>
+field is ignored for control and bulk transfers. For isochronous
+transfers it should be set to 1. For interrupt transfers it can be a
+value between 1 and 255, and indicates the number of milliseconds
+between successive polling operations.
+</para>
+<para>
+For USB peripherals involving multiple configurations or interfaces
+the array of endpoint descriptors should be organized sequentially:
+first the endpoints corresponding to the first interface of the first
+configuration, then the second interface in that configuration, and so
+on; then all the endpoints for all the interfaces in the second
+configuration; etc.
+</para>
+</refsect2>
+
+<refsect2><title id="usbs-enum-strings">Strings</title>
+<para>
+The enumeration data can contain a number of strings with additional
+information. Unicode encoding is used for the strings, and it is
+possible for a peripheral to supply a given string in multiple
+languages using the appropriate characters. The first two bytes of
+each string give a length and type field. The first string is special;
+after the two bytes header it consists of an array of 2-byte language
+id codes, indicating the supported languages. The language code
+0x0409 corresponds to English (United States). 
+</para>
+<programlisting width=72>
+const unsigned char* usb_strings[] = {
+    "\004\003\011\004",
+    "\020\003R\000e\000d\000 \000H\000a\000t\000"
+};
+
+const usbs_enumeration_data usb_enum_data = {
+    &hellip;
+    total_number_strings:       2,
+    strings:                    usb_strings,
+    &hellip;
+};
+</programlisting>
+<para>
+The default handler for standard control messages assumes that the
+peripheral only uses a single language. If this is not the case then
+higher-level code will have to handle the standard get-descriptor
+control messages when a string descriptor is requested.
+</para>
+</refsect2>
+
+<refsect2><title><structname>usbs_enumeration_data</structname></title>
+<para>
+The <structname>usbs_enumeration_data</structname> data structure
+collects together all the various descriptors that make up the
+enumeration data. It is the responsibility of application code to
+supply a suitable data structure and install it in the control
+endpoints's <structfield>enumeration_data</structfield> field before
+the USB device is started.
+</para>
+</refsect2>
+
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ usbs_start()                   -->
+
+<refentry id="usbs-start">
+<refmeta>
+<refentrytitle>Starting up a USB Device</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname><function>usbs_start</function></refname>
+<refpurpose>Starting up a USB Device</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/io/usb/usbs.h&gt;
+</funcsynopsisinfo>
+<funcprototype>
+<funcdef>void <function>usbs_start</function></funcdef>
+<paramdef>usbs_control_endpoint* <parameter>ep0</parameter></paramdef>
+</funcprototype>
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+Initializing a USB device requires some support from higher-level
+code, typically the application, in the form of enumeration data.
+Hence it is not possible for the low-level USB driver to activate a
+USB device itself. Instead the higher-level code has to take care of
+this by invoking <function>usbs_start</function>. This function takes
+a pointer to a USB control endpoint data structure. USB device drivers
+should provide exactly one such data structure for every USB device,
+so the pointer uniquely identifies the device.
+</para>
+<programlisting width=72>
+const usbs_enumeration_data usb_enum_data = {
+    &hellip;
+};
+
+int
+main(int argc, char** argv)
+{
+    usbs_sa11x0_ep0.enumeration_data = &amp;usb_enum_data;
+    &hellip;
+    usbs_start(&amp;usbs_sa11x0_ep0);
+    &hellip;
+}
+</programlisting>
+<para>
+The exact behaviour of <function>usbs_start</function> depends on the
+USB hardware and the device driver. A typical implementation would
+change the USB data pins from tristated to active. If the peripheral
+is already plugged into a host then the latter should detect this
+change and start interacting with the peripheral, including requesting
+the enumeration data. Some of this may happen before
+<function>usbs_start</function> returns, but given that multiple
+interactions between USB host and peripheral are required it is likely
+that the function will return before the peripheral is fully
+configured. Control endpoints provide a <link
+linkend="usbs-control-state">mechanism</link> for informing
+higher-level code of USB state changes.
+<function>usbs_start</function> will return even if the peripheral is
+not currently connected to a host: it will not block until the
+connection is established.
+</para>
+<para>
+<function>usbs_start</function> should only be called once for a given
+USB device. There are no defined error conditions. Note that the
+function affects the entire USB device and not just the control
+endpoint: there is no need to start any data endpoints as well.
+</para>
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Devtab Entries                 -->
+
+<refentry id="usbs-devtab">
+<refmeta>
+<refentrytitle>Devtab Entries</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Devtab Entries</refname>
+<refpurpose>Data endpoint data structure</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+/dev/usb0c
+/dev/usb1r
+/dev/usb2w
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Devtab Entries</title>
+<para>
+USB device drivers provide two ways of transferring data between host
+and peripheral. The first involves USB-specific functionality such as
+<link
+linkend="usbs-start-rx"><function>usbs_start_rx_buffer</function></link>.
+This provides non-blocking I/O: a transfer is started, and some time
+later the device driver will call a supplied completion function. The
+second uses the conventional I/O model: there are entries in the
+device table corresponding to the various endpoints. Standard calls
+such as <function>open</function> can then be used to get a suitable
+handle. Actual I/O happens via blocking <function>read</function> and
+<function>write</function> calls. In practice the blocking operations
+are simply implemented using the underlying non-blocking
+functionality.
+</para>
+<para>
+Each endpoint will have its own devtab entry. The exact names are
+controlled by the device driver package, but typically the root will
+be <literal>/dev/usb</literal>. This is followed by one or more
+decimal digits giving the endpoint number, followed by
+<literal>c</literal> for a control endpoint, <literal>r</literal> for
+a receive endpoint (host to peripheral), and <literal>w</literal> for
+a transmit endpoint (peripheral to host). If the target hardware
+involves more than one USB device then different roots should be used,
+for example <literal>/dev/usb0c</literal> and
+<literal>/dev/usb1_0c</literal>. This may require explicit
+manipulation of device driver configuration options by the application
+developer.
+</para>
+<para>
+At present the devtab entry for a control endpoint does not support
+any I/O operations. 
+</para>
+
+<refsect2><title><function>write</function> operations</title>
+<para>
+<function>cyg_io_write</function> and similar functions in
+higher-level packages can be used to perform a transfer from
+peripheral to host. Successive write operations will not be coalesced.
+For example, when doing a 1000 byte write to an endpoint that uses the
+bulk transfer protocol this will involve 15 full-size 64-byte packets
+and a terminating 40-byte packet. USB device drivers are not expected
+to do any locking, and if higher-level code performs multiple
+concurrent write operations on a single endpoint then the resulting
+behaviour is undefined.
+</para>
+<para>
+A USB <function>write</function> operation will never transfer less
+data than specified. It is the responsibility of higher-level code to
+ensure that the amount of data being transferred is acceptable to the
+host-side code. Usually this will be defined by a higher-level
+protocol. If an attempt is made to transfer more data than the host
+expects then the resulting behaviour is undefined.
+</para>
+<para>
+There are two likely error conditions. <literal>EPIPE</literal>
+indicates that the connection between host and target has been broken.
+<literal>EAGAIN</literal> indicates that the endpoint has been
+stalled, either at the request of the host or by other activity
+inside the peripheral.
+</para>
+</refsect2>
+
+<refsect2><title><function>read</function> operations</title>
+<para>
+<function>cyg_io_read</function> and similar functions in higher-level
+packages can be used to perform a transfer from host to peripheral.
+This should be a complete transfer: higher-level protocols should
+define an upper bound on the amount of data being transferred, and the
+<function>read</function> operation should involve at least this
+amount of data. The return value will indicate the actual transfer
+size, which may be less than requested.
+</para>
+<para>
+Some device drivers may support partial reads, but USB device drivers
+are not expected to perform any buffering because that involves both
+memory and code overheads. One technique that may work for bulk
+transfers is to exploit the fact that such transfers happen in 64-byte
+packets. It is possible to <function>read</function> an initial 64
+bytes, corresponding to the first packet in the transfer. These 64
+bytes can then be examined to determine the total transfer size, and
+the remaining data can be transferred in another
+<function>read</function> operation. This technique is not guaranteed
+to work with all USB hardware. Also, if the delay between accepting
+the first packet and the remainder of the transfer is excessive then
+this could cause timeout problems for the host-side software. For
+these reasons the use of partial reads should be avoided.
+</para>
+<para>
+There are two likely error conditions. <literal>EPIPE</literal>
+indicates that the connection between host and target has been broken.
+<literal>EAGAIN</literal> indicates that the endpoint has been
+stalled, either at the request of the host or by other activity
+inside the peripheral.
+</para>
+<para>
+USB device drivers are not expected to do any locking. If higher-level
+code performs multiple concurrent read operations on a single endpoint
+then the resulting behaviour is undefined.
+</para>
+</refsect2>
+
+<refsect2><title><function>select</function> operations</title>
+<para>
+Typical USB device drivers will not provide any support for
+<function>select</function>. Consider bulk transfers from the host to
+the peripheral. At the USB device driver level there is no way of
+knowing in advance how large a transfer will be, so it is not feasible
+for the device driver to buffer the entire transfer. It may be
+possible to buffer part of the transfer, for example the first 64-byte
+packet, and copy this into application space at the start of a
+<function>read</function>, but this adds code and memory overheads.
+Worse, it means that there is an unknown but potentially long delay
+between a peripheral accepting the first packet of a transfer and the
+remaining packets, which could confuse or upset the host-side
+software.
+</para>
+<para>
+With some USB hardware it may be possible for the device driver to
+detect OUT tokens from the host without actually accepting the data,
+and this would indicate that a  <function>read</function> is likely to
+succeed. However, it would not be reliable since the host-side I/O
+operation could time out. A similar mechanism could be used to
+implement <function>select</function> for outgoing data, but again
+this would not be reliable.
+</para>
+<para>
+Some device drivers may provide partial support for
+<function>select</function> anyway, possibly under the control of a
+configuration option. The device driver's documentation should be
+consulted for further information. It is also worth noting that the
+USB-specific non-blocking API can often be used as an alternative to
+<function>select</function>.
+</para>
+</refsect2>
+
+<refsect2><title><function>get_config</function> and
+<function>set_config</function> operations</title>
+<para>
+There are no <function>set_config</function> or
+<function>get_config</function> (also known as
+<function>ioctl</function>) operations defined for USB devices.
+Some device drivers may provide hardware-specific facilities this way. 
+</para>
+<note>
+<para>
+Currently the USB-specific functions related to <link
+linkend="usbs-halt">halted endpoints</link> cannot be accessed readily
+via devtab entries. This functionality should probably be made
+available via <function>set_config</function> and
+<function>get_config</function>. It may also prove useful to provide
+a <function>get_config</function> operation that maps from the
+devtab entries to the underlying endpoint data structures.
+</para>
+</note>
+</refsect2>
+
+<refsect2><title>Presence</title>
+<para>
+The devtab entries are optional. If the USB device is accessed
+primarily by class-specific code such as the USB-ethernet package and
+that package uses the USB-specific API directly, the devtab entries
+are redundant. Even if application code does need to access the USB
+device, the non-blocking API may be more convenient than the blocking
+I/O provided via the devtab entries. In these cases the devtab entries
+serve no useful purpose, but they still impose a memory overhead. It
+is possible to suppress the presence of these entries by disabling the
+configuration option
+<literal>CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES</literal>.
+</para>
+</refsect2>
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ usbs_start_rx_buffer()         -->
+
+<refentry id="usbs-start-rx">
+<refmeta>
+<refentrytitle>Receiving Data from the Host</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname><function>usbs_start_rx_buffer</function></refname>
+<refpurpose>Receiving Data from the Host</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/io/usb/usbs.h&gt;
+</funcsynopsisinfo>
+<funcprototype>
+<funcdef>void <function>usbs_start_rx_buffer</function></funcdef>
+<paramdef>usbs_rx_endpoint* <parameter>ep</parameter></paramdef>
+<paramdef>unsigned char* <parameter>buffer</parameter></paramdef>
+<paramdef>int <parameter>length</parameter></paramdef>
+<paramdef>void (*)(void*,int) <parameter>complete_fn</parameter></paramdef>
+<paramdef>void * <parameter>complete_data</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+<funcdef>void <function>usbs_start_rx</function></funcdef>
+<paramdef>usbs_rx_endpoint* <parameter>ep</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title><function>Description</function></title>
+<para>
+<function>usbs_start_rx_buffer</function> is a USB-specific function
+to accept a transfer from host to peripheral. It can be used for bulk,
+interrupt or isochronous transfers, but not for control messages.
+Instead those involve manipulating the <link
+linkend="usbs-control"><structname>usbs_control_endpoint</structname></link>
+data structure directly. The function takes five arguments:
+</para>
+<orderedlist>
+<listitem>
+<para>
+The first argument identifies the specific endpoint that should be
+used. Different USB devices will support different sets of endpoints
+and the device driver will provide appropriate data structures. The
+device driver's documentation should be consulted for details of which
+endpoints are available.
+</para>
+</listitem>
+<listitem>
+<para>
+The <parameter>buffer</parameter> and <parameter>length</parameter>
+arguments control the actual transfer. USB device drivers are not
+expected to perform any buffering or to support partial transfers, so
+the length specified should correspond to the maximum transfer that is
+currently possible and the buffer should be at least this large. For
+isochronous transfers the USB specification imposes an upper bound of
+1023 bytes, and a smaller limit may be set in the <link
+linkend="usbs-enum-endpoint">enumeration data</link>. Interrupt
+transfers are similarly straightforward with an upper bound of 64
+bytes, or less as per the enumeration data. Bulk transfers are more
+complicated because they can involve multiple 64-byte packets plus a
+terminating packet of less than 64 bytes, so there is no predefined
+limit on the transfer size. Instead it is left to higher-level
+protocols to specify an appropriate upper bound.
+</para>
+<para>
+One technique that may work for bulk transfers is to exploit the fact
+that such transfers happen in 64-byte packets: it may be possible to
+receive an initial 64 bytes, corresponding to the first packet in the
+transfer; these 64 bytes can then be examined to determine the total
+transfer size, and the remaining data can be transferred in another
+receive operation. This technique is not guaranteed to work with all
+USB hardware. Also, if the delay between accepting the first packet and
+the remainder of the transfer is excessive then this could cause
+timeout problems for the host-side software. For these reasons this
+technique should be avoided.
+</para>
+</listitem>
+<listitem>
+<para>
+<function>usbs_start_rx_buffer</function> is non-blocking. It merely
+starts the receive operation, and does not wait for completion. At
+some later point the USB device driver will invoke the completion
+function parameter with two arguments: the completion data defined by
+the last parameter and a result field. A result &gt;=
+<literal>0</literal> indicates a successful transfer of that many
+bytes, which may be less than the upper bound imposed by the
+<parameter>length</parameter> argument. A result &lt;
+<literal>0</literal> indicates an error. The most likely errors are
+<literal>-EPIPE</literal> to indicate that the connection between the
+host and the target has been broken, and <literal>-EAGAIN</literal>
+for when the endpoint has been <link
+linkend="usbs-halt">halted</link>. Specific USB device drivers may
+specify additional error conditions.
+</para>
+</listitem>
+</orderedlist>
+<para>
+The normal sequence of events is that the USB device driver will
+update the appropriate hardware registers. At some point after that
+the host will attempt to send data by transmitting an OUT token
+followed by a data packet, and since a receive operation is now in
+progress the data will be accepted and ACK'd. If there were no receive
+operation then the peripheral would instead generate a NAK. The USB
+hardware will generate an interrupt once the whole packet has been
+received, and the USB device driver will service this interrupt and
+arrange for a DSR to be called. Isochronous and interrupt transfers
+involve just a single packet. However, bulk transfers may involve
+multiple packets so the device driver has to check whether the packet
+was a full 64 bytes or whether it was a terminating packet of less
+than this. When the device driver DSR detects a complete transfer it
+will inform higher-level code by invoking the supplied completion
+function.
+</para>
+<para>
+This means that the completion function will normally be invoked by a
+DSR and not in thread context - although some USB device drivers may
+have a different implementation. Therefore the completion function is
+restricted in what it can do. In particular it must not make any
+calls that will or may block such as locking a mutex or allocating
+memory. The kernel documentation should be consulted for more details
+of DSR's and interrupt handling generally.
+</para>
+<para>
+It is possible that the completion function will be invoked before
+<function>usbs_start_rx_buffer</function> returns. Such an event would
+be unusual because the transfer cannot happen until the next time the
+host tries to send data to this peripheral, but it may happen if for
+example another interrupt happens and a higher priority thread is
+scheduled to run. Also, if the endpoint is currently halted then the
+completion function will be invoked immediately with
+<literal>-EAGAIN</literal>: typically this will happen in the current
+thread rather than in a separate DSR. The completion function is
+allowed to start another transfer immediately by calling
+<function>usbs_start_rx_buffer</function> again.
+</para>
+<para>
+USB device drivers are not expected to perform any locking. It is the
+responsibility of higher-level code to ensure that there is only one
+receive operation for a given endpoint in progress at any one time. If
+there are concurrent calls to
+<function>usbs_start_rx_buffer</function> then the resulting behaviour
+is undefined. For typical USB applications this does not present any
+problems, because only one piece of code will access a given endpoint
+at any particular time.
+</para>
+<para>
+The following code fragment illustrates a very simple use of
+<function>usbs_start_rx_buffer</function> to implement a blocking
+receive, using a semaphore to synchronise between the foreground
+thread and the DSR. For a simple example like this no completion data
+is needed.
+</para>
+<programlisting width=72>
+static int error_code = 0;
+static cyg_sem_t completion_wait;
+
+static void
+completion_fn(void* data, int result)
+{
+    error_code = result;
+    cyg_semaphore_post(&amp;completion_wait);
+}
+
+int
+blocking_receive(usbs_rx_endpoint* ep, unsigned char* buf, int len)
+{
+    error_code = 0;
+    usbs_start_rx_buffer(ep, buf, len, &amp;completion_fn, NULL);
+    cyg_semaphore_wait(&amp;completion_wait);
+    return error_code;
+}
+</programlisting>
+<para>
+There is also a utility function <function>usbs_start_rx</function>. This
+can be used by code that wants to manipulate <link
+linkend="usbs-data">data endpoints</link> directly, specifically the
+<structfield>complete_fn</structfield>,
+<structfield>complete_data</structfield>,
+<structfield>buffer</structfield> and
+<structfield>buffer_size</structfield> fields.
+<function>usbs_start_tx</function> just invokes a function
+supplied by the device driver.
+</para>
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ usbs_start_tx_buffer()         -->
+
+<refentry id="usbs-start-tx">
+<refmeta>
+<refentrytitle>Sending Data to the Host</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname><function>usbs_start_tx_buffer</function></refname>
+<refpurpose>Sending Data to the Host</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/io/usb/usbs.h&gt;
+</funcsynopsisinfo>
+<funcprototype>
+<funcdef>void <function>usbs_start_tx_buffer</function></funcdef>
+<paramdef>usbs_tx_endpoint* <parameter>ep</parameter></paramdef>
+<paramdef>const unsigned char* <parameter>buffer</parameter></paramdef>
+<paramdef>int <parameter>length</parameter></paramdef>
+<paramdef>void (*)(void*,int) <parameter>complete_fn</parameter></paramdef>
+<paramdef>void * <parameter>complete_data</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+<funcdef>void <function>usbs_start_tx</function></funcdef>
+<paramdef>usbs_tx_endpoint* <parameter>ep</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title><function>Description</function></title>
+<para>
+<function>usbs_start_tx_buffer</function> is a USB-specific function
+to transfer data from peripheral to host. It can be used for bulk,
+interrupt or isochronous transfers, but not for control messages;
+instead those involve manipulating the <link
+linkend="usbs-control"><structname>usbs_control_endpoint</structname></link>
+data structure directly. The function takes five arguments:
+</para>
+<orderedlist>
+<listitem>
+<para>
+The first argument identifies the specific endpoint that should be
+used. Different USB devices will support different sets of endpoints
+and the device driver will provide appropriate data structures. The
+device driver's documentation should be consulted for details of which
+endpoints are available.
+</para>
+</listitem>
+<listitem>
+<para>
+The <parameter>buffer</parameter> and <parameter>length</parameter>
+arguments control the actual transfer. USB device drivers are not
+allowed to modify the buffer during the transfer, so the data can
+reside in read-only memory. The transfer will be for all the data
+specified, and it is the responsibility of higher-level code to make
+sure that the host is expecting this amount of data. For isochronous
+transfers the USB specification imposes an upper bound of 1023 bytes,
+but a smaller limit may be set in the <link
+linkend="usbs-enum-endpoint">enumeration data</link>. Interrupt
+transfers have an upper bound of 64 bytes or less, as per the
+enumeration data. Bulk transfers are more complicated because they can
+involve multiple 64-byte packets plus a terminating packet of less
+than 64 bytes, so the basic USB specification does not impose an upper
+limit on the total transfer size. Instead it is left to higher-level
+protocols to specify an appropriate upper bound. If the peripheral
+attempts to send more data than the host is willing to accept then the
+resulting behaviour is undefined and may well depend on the specific
+host operating system being used.
+</para>
+<para>
+For bulk transfers, the USB device driver or the underlying hardware
+will automatically split the transfer up into the appropriate number
+of full-size 64-byte packets plus a single terminating packet, which
+may be 0 bytes.
+</para>
+</listitem>
+<listitem>
+<para>
+<function>usbs_start_tx_buffer</function> is non-blocking. It merely
+starts the transmit operation, and does not wait for completion. At
+some later point the USB device driver will invoke the completion
+function parameter with two arguments: the completion data defined by
+the last parameter, and a result field. This result will be either an
+error code &lt; <literal>0</literal>, or the amount of data
+transferred which should correspond to the
+<parameter>length</parameter> argument. The most likely errors are
+<literal>-EPIPE</literal> to indicate that the connection between the
+host and the target has been broken, and <literal>-EAGAIN</literal>
+for when the endpoint has been <link
+linkend="usbs-halt">halted</link>. Specific USB device drivers may
+define additional error conditions.
+</para>
+</listitem>
+</orderedlist>
+<para>
+The normal sequence of events is that the USB device driver will
+update the appropriate hardware registers. At some point after that
+the host will attempt to fetch data by transmitting an IN token. Since
+a transmit operation is now in progress the peripheral can send a
+packet of data, and the host will generate an ACK. At this point the
+USB hardware will generate an interrupt, and the device driver will
+service this interrupt and arrange for a DSR to be called. Isochronous
+and interrupt transfers involve just a single packet. However, bulk
+transfers may involve multiple packets so the device driver has to
+check whether there is more data to send and set things up for the
+next packet. When the device driver DSR detects a complete transfer it
+will inform higher-level code by invoking the supplied completion
+function.
+</para>
+<para>
+This means that the completion function will normally be invoked by a
+DSR and not in thread context - although some USB device drivers may
+have a different implementation. Therefore the completion function is
+restricted in what it can do, in particular it must not make any
+calls that will or may block such as locking a mutex or allocating
+memory. The kernel documentation should be consulted for more details
+of DSR's and interrupt handling generally.
+</para>
+<para>
+It is possible that the completion function will be invoked before
+<function>usbs_start_tx_buffer</function> returns. Such an event would
+be unusual because the transfer cannot happen until the next time the
+host tries to fetch data from this peripheral, but it may happen if,
+for example, another interrupt happens and a higher priority thread is
+scheduled to run. Also, if the endpoint is currently halted then the
+completion function will be invoked immediately with
+<literal>-EAGAIN</literal>: typically this will happen in the current
+thread rather than in a separate DSR. The completion function is
+allowed to start another transfer immediately by calling
+<function>usbs_start_tx_buffer</function> again.
+</para>
+<para>
+USB device drivers are not expected to perform any locking. It is the
+responsibility of higher-level code to ensure that there is only one
+transmit operation for a given endpoint in progress at any one time.
+If there are concurrent calls to
+<function>usbs_start_tx_buffer</function> then the resulting behaviour
+is undefined. For typical USB applications this does not present any
+problems because only piece of code will access a given endpoint at
+any particular time.
+</para>
+<para>
+The following code fragment illustrates a very simple use of
+<function>usbs_start_tx_buffer</function> to implement a blocking
+transmit, using a semaphore to synchronise between the foreground
+thread and the DSR. For a simple example like this no completion data
+is needed.
+</para>
+<programlisting width=72>
+static int error_code = 0;
+static cyg_sem_t completion_wait;
+
+static void
+completion_fn(void* data, int result)
+{
+    error_code = result;
+    cyg_semaphore_post(&amp;completion_wait);
+}
+
+int
+blocking_transmit(usbs_tx_endpoint* ep, const unsigned char* buf, int len)
+{
+    error_code = 0;
+    usbs_start_tx_buffer(ep, buf, len, &amp;completion_fn, NULL);
+    cyg_semaphore_wait(&amp;completion_wait);
+    return error_code;
+}
+</programlisting>
+<para>
+There is also a utility function <function>usbs_start</function>. This
+can be used by code that wants to manipulate <link
+linkend="usbs-data">data endpoints</link> directly, specifically the
+<structfield>complete_fn</structfield>,
+<structfield>complete_data</structfield>,
+<structfield>buffer</structfield> and
+<structfield>buffer_size</structfield> fields.
+<function>usbs_start_tx</function> just calls a function supplied by
+the device driver.
+</para>
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Halted endpoints               -->
+
+<refentry id="usbs-halt">
+<refmeta>
+<refentrytitle>Halted Endpoints</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Halted Endpoints</refname>
+<refpurpose>Support for Halting and Halted Endpoints</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+
+<funcsynopsisinfo>
+#include &lt;cyg/io/usb/usbs.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+<funcdef>cyg_bool <function>usbs_rx_endpoint_halted</function></funcdef>
+<paramdef>usbs_rx_endpoint* <parameter>ep</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>usbs_set_rx_endpoint_halted</function></funcdef>
+<paramdef>usbs_rx_endpoint* <parameter>ep</parameter></paramdef>
+<paramdef>cyg_bool <parameter>new_state</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>usbs_start_rx_endpoint_wait</function></funcdef>
+<paramdef>usbs_rx_endpoint* <parameter>ep</parameter></paramdef>
+<paramdef>void (*)(void*, int) <parameter>complete_fn</parameter></paramdef>
+<paramdef>void * <parameter>complete_data</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+<funcdef>cyg_bool
+<function>usbs_tx_endpoint_halted</function></funcdef>
+<paramdef>usbs_tx_endpoint* <parameter>ep</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>usbs_set_tx_endpoint_halted</function></funcdef>
+<paramdef>usbs_tx_endpoint* <parameter>ep</parameter></paramdef>
+<paramdef>cyg_bool <parameter>new_state</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>usbs_start_tx_endpoint_wait</function></funcdef>
+<paramdef>usbs_tx_endpoint* <parameter>ep</parameter></paramdef>
+<paramdef>void (*)(void*, int) <parameter>complete_fn</parameter></paramdef>
+<paramdef>void * <parameter>complete_data</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title><function>Description</function></title>
+<para>
+Normal USB traffic involves straightforward handshakes, with either an
+<literal>ACK</literal> to indicate that a packet was transferred
+without errors, or a <literal>NAK</literal> if an error occurred, or
+if a peripheral is currently unable to process another packet from the
+host, or has no packet to send to the host. There is a third form of
+handshake, a <literal>STALL</literal>, which indicates that the
+endpoint is currently <emphasis>halted</emphasis>.
+</para>
+<para>
+When an endpoint is halted it means that the host-side code needs to
+take some sort of recovery action before communication over that
+endpoint can resume. The exact circumstances under which this can
+happen are not defined by the USB specification, but one example would
+be a protocol violation if say the peripheral attempted to transmit
+more data to the host than was permitted by the protocol in use. The
+host can use the standard control messages get-status, set-feature and
+clear-feature to examine and manipulate the halted status of a given
+endpoint. There are USB-specific functions which can be used inside
+the peripheral to achieve the same effect. Once an endpoint has been
+halted the host can then interact with the peripheral using class or
+vendor control messages to perform appropriate recovery, and then the
+halted condition can be cleared.
+</para>
+<para>
+Halting an endpoint does not constitute a device state change, and
+there is no mechanism by which higher-level code can be informed
+immediately. However, any ongoing receive or transmit operations will
+be aborted with an <literal>-EAGAIN</literal> error, and any new
+receives or transmits will fail immediately with the same error.
+</para>
+<para>
+There are six functions to support halted endpoints, one set for
+receive endpoints and another for transmit endpoints, with both sets
+behaving in essentially the same way. The first,
+<function>usbs_rx_endpoint_halted</function>, can be used to determine
+whether or not an endpoint is currently halted: it takes a single
+argument that identifies the endpoint of interest. The second
+function, <function>usbs_set_rx_endpoint_halted</function>, can be
+used to change the halted condition of an endpoint: it takes two
+arguments; one to identify the endpoint and another to specify the new
+state. The last function
+<function>usbs_start_rx_endpoint_wait</function> operates in much the
+same way as <function>usbs_start_rx_buffer</function>: when the
+endpoint is no longer halted the device driver will invoke the
+supplied completion function with a status of 0. The completion
+function has the same signature as that for a transfer operation.
+Often it will be possible to use a single completion function and have
+the foreground code invoke either
+<function>usbs_start_rx_buffer</function> or
+<function>usbs_start_rx_endpoint_wait</function> depending on the
+current state of the endpoint.
+</para>
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Control Endpoint               -->
+
+<refentry id="usbs-control">
+<refmeta>
+<refentrytitle>Control Endpoints</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Control Endpoints</refname>
+<refpurpose>Control endpoint data structure</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+#include &lt;cyg/io/usb/usbs.h&gt;
+
+typedef struct usbs_control_endpoint {
+    *hellip;
+} usbs_control_endpoint;
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title><literal>usbs_control_endpoint</literal> Data Structure</title>
+<para>
+The device driver for a USB slave device should supply one
+<structname>usbs_control_endpoint</structname> data structure per USB
+device. This corresponds to endpoint 0 which will be used for all
+control message interaction between the host and that device. The data
+structure is also used for internal management purposes, for example
+to keep track of the current state. In a typical USB peripheral there
+will only be one such data structure in the entire system, but if
+there are multiple USB slave ports, allowing the peripheral to be
+connected to multiple hosts, then there will be a separate data
+structure for each one. The name or names of the data structures are
+determined by the device drivers. For example, the SA11x0 USB device
+driver package provides <literal>usbs_sa11x0_ep0</literal>.
+</para>
+<para>
+The operations on a control endpoint do not fit cleanly into a
+conventional open/read/write I/O model. For example, when the host
+sends a control message to the USB peripheral this may be one of four
+types: standard, class, vendor and reserved. Some or all of the
+standard control messages will be handled automatically by the common
+USB slave package or by the device driver itself. Other standard
+control messages and the other types of control messages may be
+handled by a class-specific package or by application code. Although
+it would be possible to have devtab entries such as
+<literal>/dev/usbs_ep0/standard</literal> and
+<literal>/dev/usbs_ep0/class</literal>, and then support read and
+write operations on these devtab entries, this would add significant
+overhead and code complexity. Instead, all of the fields in the
+control endpoint data structure are public and can be manipulated
+directly by higher level code if and when required. 
+</para>
+<para>
+Control endpoints involve a number of callback functions, with
+higher-level code installing suitable function pointers in the control
+endpoint data structure. For example, if the peripheral involves
+vendor-specific control messages then a suitable handler for these
+messages should be installed. Although the exact details depend on the
+device driver, typically these callback functions will be invoked at
+DSR level rather than thread level. Therefore, only certain eCos
+functions can be invoked; specifically, those functions that are
+guaranteed not to block. If a potentially blocking function such as a
+semaphore wait or a mutex lock operation is invoked from inside the
+callback then the resulting behaviour is undefined, and the system as
+a whole may fail. In addition, if one of the callback functions
+involves significant processing effort then this may adversely affect
+the system's real time characteristics. The eCos kernel documentation
+should be consulted for more details of DSR handling.
+</para>
+
+<refsect2><title>Initialization</title>
+<para>
+The <structname>usbs_control_endpoint</structname> data structure
+contains the following fields related to initialization.
+</para>
+<programlisting width=72>
+typedef struct usbs_control_endpoint {
+    &hellip;
+    const usbs_enumeration_data* enumeration_data;
+    void                         (*start_fn)(usbs_control_endpoint*);
+    &hellip;
+};
+</programlisting>
+<para>
+It is the responsibility of higher-level code, usually the
+application, to define the USB enumeration data. This needs to be
+installed in the control endpoint data structure early on during
+system startup, before the USB device is actually started and any
+interaction with the host is possible. Details of the enumeration data
+are supplied in the section <link linkend="usbs-enum">USB Enumeration
+Data</link>. Typically, the enumeration data is constant for a given
+peripheral, although it can be constructed dynamically if necessary.
+However, the enumeration data cannot change while the peripheral is
+connected to a host: the peripheral cannot easily claim to be a
+keyboard one second and a printer the next.
+</para>
+<para>
+The <structfield>start_fn</structfield> member is normally accessed
+via the utility <link
+linkend="usbs-start"><function>usbs_start</function></link> rather
+than directly. It is provided by the device driver and should be
+invoked once the system is fully initialized and interaction with the
+host is possible. A typical implementation would change the USB data
+pins from tristated to active. If the peripheral is already plugged
+into a host then the latter should detect this change and start
+interacting with the peripheral, including requesting the enumeration
+data.
+</para>
+</refsect2>
+
+<refsect2><title id="usbs-control-state">State</title>
+<para>
+There are three <structname>usbs_control_endpoint</structname> fields
+related to the current state of a USB slave device, plus some state
+constants and an enumeration of the possible state changes:
+</para>
+<programlisting width=72>
+typedef struct usbs_control_endpoint {
+    &hellip;
+    int     state;
+    void    (*state_change_fn)(struct usbs_control_endpoint*, void*,
+                               usbs_state_change, int);
+    void*   state_change_data;
+    &hellip;
+};
+
+#define USBS_STATE_DETACHED             0x01
+#define USBS_STATE_ATTACHED             0x02
+#define USBS_STATE_POWERED              0x03
+#define USBS_STATE_DEFAULT              0x04
+#define USBS_STATE_ADDRESSED            0x05
+#define USBS_STATE_CONFIGURED           0x06
+#define USBS_STATE_MASK                 0x7F
+#define USBS_STATE_SUSPENDED            (1 &lt;&lt; 7)
+
+typedef enum {
+    USBS_STATE_CHANGE_DETACHED          = 1,
+    USBS_STATE_CHANGE_ATTACHED          = 2,
+    USBS_STATE_CHANGE_POWERED           = 3,
+    USBS_STATE_CHANGE_RESET             = 4,    
+    USBS_STATE_CHANGE_ADDRESSED         = 5,
+    USBS_STATE_CHANGE_CONFIGURED        = 6,
+    USBS_STATE_CHANGE_DECONFIGURED      = 7,    
+    USBS_STATE_CHANGE_SUSPENDED         = 8,
+    USBS_STATE_CHANGE_RESUMED           = 9
+} usbs_state_change;
+</programlisting>
+<para>
+The USB standard defines a number of states for a given USB
+peripheral. The initial state is <emphasis>detached</emphasis>, where
+the peripheral is either not connected to a host at all or, from the
+host's perspective, the peripheral has not started up yet because the
+relevant pins are tristated. The peripheral then moves via
+intermediate <emphasis>attached</emphasis> and
+<emphasis>powered</emphasis> states to its default or
+<emphasis>reset</emphasis> state, at which point the host and
+peripheral can actually start exchanging data. The first message is
+from host to peripheral and provides a unique 7-bit address within the
+local USB network, resulting in a state change to
+<emphasis>addressed</emphasis>. The host then requests enumeration
+data and performs other initialization. If everything succeeds the
+host sends a standard set-configuration control message, after which
+the peripheral is <emphasis>configured</emphasis> and expected to be
+up and running. Note that some USB device drivers may be unable to
+distinguish between the <emphasis>detached</emphasis>,
+<emphasis>attached</emphasis> and <emphasis>powered</emphasis> states
+but generally this is not important to higher-level code.
+</para>
+<para>
+A USB host should generate at least one token every millisecond. If a
+peripheral fails to detect any USB traffic for a period of time then
+typically this indicates that the host has entered a power-saving
+mode, and the peripheral should do the same if possible. This
+corresponds to the <emphasis>suspended</emphasis> bit. The actual
+state is a combination of <emphasis>suspended</emphasis> and the
+previous state, for example <emphasis>configured</emphasis> and
+<emphasis>suspended</emphasis> rather than just
+<emphasis>suspended</emphasis>. When the peripheral subsequently
+detects USB traffic it would switch back to the
+<emphasis>configured</emphasis> state.
+</para>
+<para>
+The USB device driver and the common USB slave package will maintain
+the current state in the control endpoint's
+<structfield>state</structfield> field. There should be no need for
+any other code to change this field, but it can be examined whenever
+appropriate. In addition whenever a state change occurs the generic
+code can invoke a state change callback function. By default, no such
+callback function will be installed. Some class-specific packages such
+as the USB-ethernet package will install a suitable function to keep
+track of whether or not the host-peripheral connection is up, that is
+whether or not ethernet packets can be exchanged. Application code can
+also update this field. If multiple parties want to be informed of
+state changes, for example both a class-specific package and
+application code, then typically the application code will install its
+state change handler after the class-specific package and is
+responsible for chaining into the package's handler.
+</para>
+<para>
+The state change callback function is invoked with four arguments. The
+first identifies the control endpoint. The second is an arbitrary
+pointer: higher-level code can fill in the
+<structfield>state_change_data</structfield> field to set this. The
+third argument specifies the state change that has occurred, and the
+last argument supplies the previous state (the new state is readily
+available from the control endpoint structure).
+</para>
+<para>
+eCos does not provide any utility functions for updating or examining
+the <structfield>state_change_fn</structfield> or
+<structfield>state_change_data</structfield> fields. Instead, it is
+expected that the fields in the
+<structname>usbs_control_endpoint</structname> data structure will be
+manipulated directly. Any utility functions would do just this, but
+at the cost of increased code and cpu overheads.
+</para>
+</refsect2>
+
+<refsect2><title id="usbs-control-standard">Standard Control Messages</title>
+<programlisting width=88>
+typedef struct usbs_control_endpoint {
+    &hellip;
+    unsigned char       control_buffer[8];
+    usbs_control_return (*standard_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               standard_control_data;
+    &hellip;
+} usbs_control_endpoint;
+
+typedef enum {
+    USBS_CONTROL_RETURN_HANDLED = 0,
+    USBS_CONTROL_RETURN_UNKNOWN = 1,
+    USBS_CONTROL_RETURN_STALL   = 2
+} usbs_control_return;
+
+extern usbs_control_return usbs_handle_standard_control(struct usbs_control_endpoint*);
+</programlisting>
+<para>
+When a USB peripheral is connected to the host it must always respond
+to control messages sent to endpoint 0. Control messages always
+consist of an initial eight-byte header, containing fields such as a
+request type. This may be followed by a further data transfer, either
+from host to peripheral or from peripheral to host. The way this is
+handled is described in the <link
+linkend="usbs-control-buffer">Buffer Management</link> section below.
+</para>
+<para>
+The USB device driver will always accept the initial eight-byte
+header, storing it in the <structfield>control_buffer</structfield>
+field. Then it determines the request type: standard, class, vendor,
+or reserved. The way in which the last three of these are processed is
+described in the section <link linkend="usbs-control-other">Other
+Control Messages</link>. Some
+standard control messages will be handled by the device driver itself;
+typically the <emphasis>set-address</emphasis> request and the
+<emphasis>get-status</emphasis>, <emphasis>set-feature</emphasis> and
+<emphasis>clear-feature</emphasis> requests when applied to endpoints.
+</para>
+<para>
+If a standard control message cannot be handled by the device driver
+itself, the driver checks the
+<structfield>standard_control_fn</structfield> field in the control
+endpoint data structure. If higher-level code has installed a suitable
+callback function then this will be invoked with two argument, the
+control endpoint data structure itself and the
+<structfield>standard_control_data</structfield> field. The latter
+allows the higher level code to associate arbitrary data with the
+control endpoint. The callback function can return one of three
+values: <emphasis>HANDLED</emphasis> to indicate that the request has
+been processed; <emphasis>UNKNOWN</emphasis> if the message should be
+handled by the default code; or <emphasis>STALL</emphasis> to indicate
+an error condition. If higher level code has not installed a callback
+function or if the callback function has returned
+<emphasis>UNKNOWN</emphasis> then the device driver will invoke a
+default handler, <function>usbs_handle_standard_control</function>
+provided by the common USB slave package.
+</para>
+<para>
+The default handler can cope with all of the standard control messages
+for a simple USB peripheral. However, if the peripheral involves
+multiple configurations, multiple interfaces in a configuration, or
+alternate settings for an interface, then this cannot be handled by
+generic code. For example, a multimedia peripheral may support various
+alternate settings for a given data source with different bandwidth
+requirements, and the host can select a setting that takes into
+account the current load. Clearly higher-level code needs to be aware
+when the host changes the current setting, so that it can adjust the
+rate at which data is fed to or retrieved from the host. Therefore the
+higher-level code needs to install its own standard control callback
+and process appropriate messages, rather than leaving these to the
+default handler.
+</para>
+<para>
+The default handler will take care of the
+<emphasis>get-descriptor</emphasis> request used to obtain the
+enumeration data. It has support for string descriptors but ignores
+language encoding issues. If language encoding is important for the
+peripheral then this will have to be handled by an
+application-specific standard control handler.
+</para>
+<para>
+The header file <filename
+class="headerfile">&lt;cyg/io/usb/usb.h&gt;</filename> defines various
+constants related to control messages, for example the function codes
+corresponding to the standard request types. This header file is
+provided by the common USB package, not by the USB slave package,
+since the information is also relevant to USB hosts.
+</para>
+</refsect2>
+
+<refsect2><title id="usbs-control-other">Other Control Messages</title>
+<programlisting width=88>
+typedef struct usbs_control_endpoint {
+    &hellip;
+    usbs_control_return (*class_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               class_control_data;
+    usbs_control_return (*vendor_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               vendor_control_data;
+    usbs_control_return (*reserved_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               reserved_control_data;
+    &hellip;
+} usbs_control_endpoint;
+</programlisting>
+<para>
+Non-standard control messages always have to be processed by
+higher-level code. This could be class-specific packages. For example,
+the USB-ethernet package will handle requests for getting the MAC
+address and for enabling or disabling promiscuous mode. In all cases
+the device driver will store the initial request in the
+<structfield>control_buffer</structfield> field, check for an
+appropriate handler, and invoke it with details of the control
+endpoint and any handler-specific data that has been installed
+alongside the handler itself. The handler should return either
+<literal>USBS_CONTROL_RETURN_HANDLED</literal> to report success or
+<literal>USBS_CONTROL_RETURN_STALL</literal> to report failure. The
+device driver will report this to the host.
+</para>
+<para>
+If there are multiple parties interested in a particular type of
+control messages, it is the responsibility of application code to
+install an appropriate handler and process the requests appropriately. 
+</para>
+</refsect2>
+
+<refsect2><title id="usbs-control-buffer">Buffer Management</title>
+<programlisting width=76>
+typedef struct usbs_control_endpoint {
+    &hellip;
+    unsigned char*      buffer;
+    int                 buffer_size;
+    void                (*fill_buffer_fn)(struct usbs_control_endpoint*);
+    void*               fill_data;
+    int                 fill_index;
+    usbs_control_return (*complete_fn)(struct usbs_control_endpoint*, int);
+    &hellip;
+} usbs_control_endpoint;
+</programlisting>
+<para>
+Many USB control messages involve transferring more data than just the
+initial eight-byte header. The header indicates the direction of the
+transfer, OUT for host to peripheral or IN for peripheral to host.
+It also specifies a length field, which is exact for an OUT transfer
+or an upper bound for an IN transfer. Control message handlers can
+manipulate six fields within the control endpoint data structure to
+ensure that the transfer happens correctly.
+</para>
+<para>
+For an OUT transfer, the handler should examine the length field in
+the header and provide a single buffer for all the data. A
+class-specific protocol would typically impose an upper bound on the
+amount of data, allowing the buffer to be allocated statically.
+The handler should update the <structfield>buffer</structfield> and
+<structfield>complete_fn</structfield> fields. When all the data has
+been transferred the completion callback will be invoked, and its
+return value determines the response sent back to the host. The USB
+standard allows for a new control message to be sent before the
+current transfer has completed, effectively cancelling the current
+operation. When this happens the completion function will also be
+invoked. The second argument to the completion function specifies what
+has happened, with a value of 0 indicating success and an error code
+such as <literal>-EPIPE</literal> or <literal>-EIO</literal>
+indicating that the current transfer has been cancelled.
+</para>
+<para>
+IN transfers are a little bit more complicated. The required
+information, for example the enumeration data, may not be in a single
+contiguous buffer. Instead a mechanism is provided by which the buffer
+can be refilled, thus allowing the transfer to move from one record to
+the next. Essentially, the transfer operates as follows:
+</para>
+<orderedlist>
+<listitem>
+<para>
+When the host requests another chunk of data (typically eight bytes),
+the USB device driver will examine the
+<structfield>buffer_size</structfield> field. If non-zero then
+<structfield>buffer</structfield> contains at least one more byte of
+data, and then <structfield>buffer_size</structfield> is decremented.
+</para>
+</listitem>
+<listitem>
+<para>
+When <structfield>buffer_size</structfield> has dropped to 0, the
+<structfield>fill_buffer_fn</structfield> field will be examined. If
+non-null it will be invoked to refill the buffer.
+</para>
+</listitem>
+<listitem>
+<para>
+The <structfield>fill_data</structfield> and
+<structfield>fill_index</structfield> fields are not used by the
+device driver. Instead these fields are available to the refill
+function to keep track of the current state of the transfer.
+</para>
+</listitem>
+<listitem>
+<para>
+When <structfield>buffer_size</structfield> is 0 and
+<structfield>fill_buffer_fn</structfield> is NULL, no more data is
+available and the transfer has completed.
+</para>
+</listitem>
+<listitem>
+<para>
+Optionally a completion function can be installed. This will be
+invoked with 0 if the transfer completes successfully, or with an
+error code if the transfer is cancelled because of another control
+messsage. 
+</para>
+</listitem>
+</orderedlist>
+<para>
+If the requested data is contiguous then the only fields that need
+to be manipulated are <structfield>buffer</structfield> and
+<structfield>buffer_size</structfield>, and optionally
+<structfield>complete_fn</structfield>. If the requested data is not
+contiguous then the initial control message handler should update
+<structfield>fill_buffer_fn</structfield> and some or all of the other
+fields, as required. An example of this is the handling of the
+standard <emphasis>get-descriptor</emphasis> control message by
+<function>usbs_handle_standard_control</function>.
+</para>
+</refsect2>
+
+<refsect2><title>Polling Support</title>
+<programlisting width=72>
+typedef struct usbs_control_endpoint {
+    void                (*poll_fn)(struct usbs_control_endpoint*);
+    int                 interrupt_vector;
+    &hellip;
+} usbs_control_endpoint;
+</programlisting>
+<para>
+In nearly all circumstances USB I/O should be interrupt-driven.
+However, there are special environments such as RedBoot where polled
+operation may be appropriate. If the device driver can operate in
+polled mode then it will provide a suitable function via the
+<structfield>poll_fn</structfield> field, and higher-level code can
+invoke this regularly. This polling function will take care of all
+endpoints associated with the device, not just the control endpoint.
+If the USB hardware involves a single interrupt vector then this will
+be identified in the data structure as well.
+</para>
+</refsect2>
+
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Data Endpoints                 -->
+
+<refentry id="usbs-data">
+<refmeta>
+<refentrytitle>Data Endpoints</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Data Endpoints</refname>
+<refpurpose>Data endpoint data structures</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<synopsis>
+#include &lt;cyg/io/usb/usbs.h&gt;
+
+typedef struct usbs_rx_endpoint {
+    void                 (*start_rx_fn)(struct usbs_rx_endpoint*);
+    void                 (*set_halted_fn)(struct usbs_rx_endpoint*, cyg_bool);
+    void                 (*complete_fn)(void*, int);
+    void*                complete_data;
+    unsigned char*       buffer;
+    int                  buffer_size;
+    cyg_bool             halted;
+} usbs_rx_endpoint;
+
+typedef struct usbs_tx_endpoint {
+    void                 (*start_tx_fn)(struct usbs_tx_endpoint*);
+    void                 (*set_halted_fn)(struct usbs_tx_endpoint*, cyg_bool);
+    void                 (*complete_fn)(void*, int);
+    void*                complete_data;
+    const unsigned char* buffer;
+    int                  buffer_size;
+    cyg_bool             halted;
+} usbs_tx_endpoint;
+</synopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Receive and Transmit Data Structures</title>
+<para>
+In addition to a single <structname>usbs_control_endpoint</structname>
+data structure per USB slave device, the USB device driver should also
+provide receive and transmit data structures corresponding to the
+other endpoints. The names of these are determined by the device
+driver. For example, the SA1110 USB device driver package provides
+<literal>usbs_sa11x0_ep1</literal> for receives and
+<literal>usbs_sa11x0_ep2</literal> for transmits.
+</para>
+<para>
+Unlike control endpoints, the common USB slave package does provide a
+number of utility routines to manipulate data endpoints. For example
+<link
+linkend="usbs-start-rx"><function>usbs_start_rx_buffer</function></link>
+can be used to receive data from the host into a buffer. In addition
+the USB device driver can provide devtab entries such as
+<literal>/dev/usbs1r</literal> and <literal>/dev/usbs2w</literal>, so
+higher-level code can <function>open</function> these devices and then
+perform blocking <function>read</function> and
+<function>write</function> operations.
+</para>
+<para>
+However, the operation of data endpoints and the various
+endpoint-related functions is relatively straightforward. First
+consider a <structname>usbs_rx_endpoint</structname> structure. The
+device driver will provide the members
+<structfield>start_rx_fn</structfield> and
+<structfield>set_halted_fn</structfield>, and it will maintain the
+<structfield>halted</structfield> field. To receive data, higher-level
+code sets the <structfield>buffer</structfield>,
+<structfield>buffer_size</structfield>,
+<structfield>complete_fn</structfield> and optionally the
+<structfield>complete_data</structfield> fields. Next the
+<structfield>start_rx_fn</structfield> member should be called. When
+the transfer has finished the device driver will invoke the completion
+function, using <structfield>complete_data</structfield> as the first
+argument and a size field for the second argument. A negative size
+indicates an error of some sort: <literal>-EGAIN</literal> indicates
+that the endpoint has been halted, usually at the request of the host;
+<literal>-EPIPE</literal> indicates that the connection between the
+host and the peripheral has been broken. Certain device drivers may
+generate other error codes.
+</para>
+<para>
+If higher-level code needs to halt or unhalt an endpoint then it can
+invoke the <structfield>set_halted_fn</structfield> member. When an
+endpoint is halted, invoking <structfield>start_rx_fn</structfield>
+wit <structfield>buffer_size</structfield> set to 0 indicates that
+higher-level code wants to block until the endpoint is no longer
+halted; at that point the completion function will be invoked.
+</para>
+<para>
+USB device drivers are allowed to assume that higher-level protocols
+ensure that host and peripheral agree on the amount of data that will
+be transferred, or at least on an upper bound. Therefore there is no
+need for the device driver to maintain its own buffers, and copy
+operations are avoided. If the host sends more data than expected then
+the resulting behaviour is undefined.
+</para>
+<para>
+Transmit endpoints work in essentially the same way as receive
+endpoints. Higher-level code should set the
+<structfield>buffer</structfield> and
+<structfield>buffer_size</structfield> fields to point at the data to
+be transferred, then call <structfield>start_tx_fn</structfield>, and
+the device driver will invoked the completion function when the
+transfer has completed.
+</para>
+<para>
+USB device drivers are not expected to perform any locking. If at any
+time there are two concurrent receive operations for a given endpoint,
+or two concurrent transmit operations, then the resulting behaviour is
+undefined. It is the responsibility of higher-level code to perform
+any synchronisation that may be necessary. In practice, conflicts are
+unlikely because typically a given endpoint will only be accessed
+sequentially by just one part of the overall system.
+</para>
+
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Writing a USB Device Driver    -->
+
+<refentry id="usbs-writing">
+<refmeta>
+<refentrytitle>Writing a USB Device Driver</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Writing a USB Device Driver</refname>
+<refpurpose>USB Device Driver Porting Guide</refpurpose>
+</refnamediv>
+
+<refsect1><title>Introduction</title>
+<para>
+Often the best way to write a USB device driver will be to start with
+an existing one and modify it as necessary. The information given here
+is intended primarily as an outline rather than as a complete guide.
+</para>
+<note>
+<para>
+At the time of writing only one USB device driver has been
+implemented. Hence it is possible, perhaps probable, that some
+portability issues have not yet been addressed. One issue
+involves the different types of transfer, for example the initial
+target hardware had no support for isochronous or interrupt transfers,
+so additional functionality may be needed to switch between transfer
+types. Another issue would be hardware where a given endpoint number,
+say endpoint 1, could be used for either receiving or transmitting
+data, but not both because a single fifo is used. Issues like these
+will have to be resolved as and when additional USB device drivers are
+written.
+</para>
+</note>
+</refsect1>
+
+<refsect1><title>The Control Endpoint</title>
+<para>
+A USB device driver should provide a single <link
+linkend="usbs-control"><structname>usbs_control_endpoint</structname></link>
+data structure for every USB device. Typical peripherals will have
+only one USB port so there will be just one such data structure in the
+entire system, but theoretically it is possible to have multiple USB
+devices. These may all involve the same chip, in which case a single
+device driver should support multiple device instances, or they may
+involve different chips. The name or names of these data structures
+are determined by the device driver, but appropriate care should be
+taken to avoid name clashes. 
+</para>
+<para>
+A USB device cannot be used unless the control endpoint data structure
+exists. However, the presence of USB hardware in the target processor
+or board does not guarantee that the application will necessarily want
+to use that hardware. To avoid unwanted code or data overheads, the
+device driver can provide a configuration option to determine whether
+or not the endpoint 0 data structure is actually provided. A default
+value of <literal>CYGINT_IO_USB_SLAVE_CLIENTS</literal> ensures that
+the USB driver will be enabled automatically if higher-level code does
+require USB support, while leaving ultimate control to the user.
+</para>
+<para>
+The USB device driver is responsible for filling in the
+<structfield>start_fn</structfield>,
+<structfield>poll_fn</structfield> and
+<structfield>interrupt_vector</structfield> fields. Usually this can
+be achieved by static initialization. The driver is also largely
+responsible for maintaining the <structfield>state</structfield>
+field. The <structfield>control_buffer</structfield> array should be
+used to hold the first packet of a control message. The
+<structfield>buffer</structfield> and other fields related to data
+transfers will be managed <link
+linkend="usbs-control-buffer">jointly</link> by higher-level code and
+the device driver. The remaining fields are generally filled in by
+higher-level code, although the driver should initialize them to NULL
+values.
+</para>
+<para>
+Hardware permitting, the USB device should be inactive until the
+<structfield>start_fn</structfield> is invoked, for example by
+tristating the appropriate pins. This prevents the host from
+interacting with the peripheral before all other parts of the system
+have initialized. It is expected that the
+<structfield>start_fn</structfield> will only be invoked once, shortly
+after power-up.
+</para>
+<para>
+Where possible the device driver should detect state changes, such as
+when the connection between host and peripheral is established, and
+<link linkend="usbs-control-state">report</link> these to higher-level
+code via the <structfield>state_change_fn</structfield> callback, if
+any. The state change to and from configured state cannot easily be
+handled by the device driver itself, instead higher-level code such as
+the common USB slave package will take care of this.
+</para>
+<para>
+Once the connection between host and peripheral has been established,
+the peripheral must be ready to accept control messages at all times,
+and must respond to these within certain time constraints. For
+example, the standard set-address control message must be handled
+within 50ms. The USB specification provides more information on these
+constraints. The device driver is responsible for receiving the
+initial packet of a control message. This packet will always be eight
+bytes and should be stored in the
+<structfield>control_buffer</structfield> field. Certain standard
+control messages should be detected and handled by the device driver
+itself. The most important is set-address, but usually the get-status,
+set-feature and clear-feature requests when applied to halted
+endpoints should also be handled by the driver. Other standard control
+messages should first be passed on to the
+<structfield>standard_control_fn</structfield> callback (if any), and
+finally to the default handler
+<function>usbs_handle_standard_control</function> provided by the
+common USB slave package. Class, vendor and reserved control messages
+should always be dispatched to the appropriate callback and there is
+no default handler for these.
+</para>
+<para>
+Some control messages will involve further data transfer, not just the
+initial packet. The device driver must handle this in accordance with
+the USB specification and the <link
+linkend="usbs-control-buffer">buffer management strategy</link>. The
+driver is also responsible for keeping track of whether or not the
+control operation has succeeded and generating an ACK or STALL
+handshake. 
+</para>
+<para>
+The polling support is optional and may not be feasible on all
+hardware. It is only used in certain specialised environments such as
+RedBoot. A typical implementation of the polling function would just
+check whether or not an interrupt would have occurred and, if so, call
+the same code that the interrupt handler would.
+</para>
+</refsect1>
+
+<refsect1><title>Data Endpoints</title>
+<para>
+In addition to the control endpoint data structure, a USB device
+driver should also provide appropriate <link linkend="usbs-data">data
+endpoint</link> data structures. Obviously this is only relevant if
+the USB support generally is desired, that is if the control endpoint is
+provided. In addition, higher-level code may not require all the
+endpoints, so it may be useful to provide configuration options that
+control the presence of each endpoint. For example, the intended
+application might only involve a single transmit endpoint and of
+course control messages, so supporting receive endpoints might waste
+memory.
+</para>
+<para>
+Conceptually, data endpoints are much simpler than the control
+endpoint. The device driver has to supply two functions, one for
+data transfers and another to control the halted condition. These
+implement the functionality for
+<link linkend="usbs-start-rx"><function>usbs_start_rx_buffer</function></link>,
+<link linkend="usbs-start-tx"><function>usbs_start_tx_buffer</function></link>,
+<link linkend="usbs-halt"><function>usbs_set_rx_endpoint_halted</function></link> and
+<link linkend="usbs-halt"><function>usbs_set_tx_endpoint_halted</function></link>.
+The device driver is also responsible for maintaining the
+<structfield>halted</structfield> status.
+</para>
+<para>
+For data transfers, higher-level code will have filled in the
+<structfield>buffer</structfield>,
+<structfield>buffer_size</structfield>,
+<structfield>complete_fn</structfield> and
+<structfield>complete_data</structfield> fields. The transfer function
+should arrange for the transfer to start, allowing the host to send or
+receive packets. Typically this will result in an interrupt at the end
+of the transfer or after each packet. Once the entire transfer has
+been completed, the driver's interrupt handling code should invoke the
+completion function. This can happen either in DSR context or thread
+context, depending on the driver's implementation. There are a number
+of special cases to consider. If the endpoint is halted when the
+transfer is started then the completion function can be invoked
+immediately with <literal>-EAGAIN</literal>. If the transfer cannot be
+completed because the connection is broken then the completion
+function should be invoked with <literal>-EPIPE</literal>. If the
+endpoint is stalled during the transfer, either because of a standard
+control message or because higher-level code calls the appropriate
+<structfield>set_halted_fn</structfield>, then again the completion
+function should be invoked with <literal>-EAGAIN</literal>. Finally,
+the <<function>usbs_start_rx_endpoint_wait</function> and
+<function>usbs_start_tx_endpoint_wait</function> functions involve
+calling the device driver's data transfer function with a buffer size
+of 0 bytes.
+</para>
+<note><para>
+Giving a buffer size of 0 bytes a special meaning is problematical
+because it prevents transfers of that size. Such transfers are allowed
+by the USB protocol, consisting of just headers and acknowledgements
+and an empty data phase, although rarely useful. A future modification
+of the device driver specification will address this issue, although
+care has to be taken that the functionality remains accessible through
+devtab entries as well as via low-level accesses.
+</para></note>
+</refsect1>
+
+<refsect1><title>Devtab Entries</title>
+<para>
+For some applications or higher-level packages it may be more
+convenient to use traditional open/read/write I/O calls rather than
+the non-blocking USB I/O calls. To support this the device driver can
+provide a devtab entry for each endpoint, for example:
+</para>
+<programlisting width=72>
+#ifdef CYGVAR_DEVS_USB_SA11X0_EP1_DEVTAB_ENTRY
+
+static CHAR_DEVIO_TABLE(usbs_sa11x0_ep1_devtab_functions,
+                        &amp;cyg_devio_cwrite,
+                        &amp;usbs_devtab_cread,
+                        &amp;cyg_devio_bwrite,
+                        &amp;cyg_devio_bread,
+                        &amp;cyg_devio_select,
+                        &amp;cyg_devio_get_config,
+                        &amp;cyg_devio_set_config);
+
+static CHAR_DEVTAB_ENTRY(usbs_sa11x0_ep1_devtab_entry,
+                         CYGDAT_DEVS_USB_SA11X0_DEVTAB_BASENAME "1r",
+                         0,
+                         &amp;usbs_sa11x0_ep1_devtab_functions,
+                         &amp;usbs_sa11x0_devtab_dummy_init,
+                         0,
+                         (void*) &amp;usbs_sa11x0_ep1);
+#endif
+</programlisting>
+<para>
+Again care must be taken to avoid name clashes. This can be achieved
+by having a configuration option to control the base name, with a
+default value of e.g. <literal>/dev/usbs</literal>, and appending an
+endpoint-specific string. This gives the application developer
+sufficient control to eliminate any name clashes. The common USB slave
+package provides functions <function>usbs_devtab_cwrite</function> and
+<function>usbs_devtab_cread</function>, which can be used in the
+function tables for transmit and receive endpoints respectively. The
+private field <structfield>priv</structfield> of the devtab entry
+should be a pointer to the underlying endpoint data structure.
+</para>
+<para>
+Because devtab entries are never accessed directly, only indirectly,
+they would usually be eliminated by the linker. To avoid this the
+devtab entries should normally be defined in a separate source file
+which ends up the special library <filename>libextras.a</filename>
+rather than in the default library <filename>libtarget.a</filename>.
+</para>
+<para>
+Not all applications or higher-level packages will want to use the
+devtab entries and the blocking I/O facilities. It may be appropriate
+for the device driver to provide additional configuration options that
+control whether or not any or all of the devtab entries should be
+provided, to avoid unnecessary memory overheads.
+</para>
+</refsect1>
+
+<refsect1><title>Interrupt Handling</title>
+<para>
+A typical USB device driver will need to service interrupts for all of
+the endpoints and possibly for additional USB events such as entering
+or leaving suspended mode. Usually these interrupts need not be
+serviced directly by the ISR. Instead, they can be left to a DSR. If
+the peripheral is not able to accept or send another packet just yet,
+the hardware will generate a NAK and the host will just retry a little
+bit later. If high throughput is required then it may be desirable to
+handle the bulk transfer protocol largely at ISR level, that is take
+care of each packet in the ISR and only activate the DSR once the
+whole transfer has completed.
+</para>
+<para>
+Control messages may involve invoking arbitrary callback functions in
+higher-level code. This should normally happen at DSR level. Doing it
+at ISR level could seriously affect the system's interrupt latency and
+impose unacceptable constraints on what operations can be performed by
+those callbacks. If the device driver requires a thread anyway then it
+may be appropriate to use this thread for invoking the callbacks, but
+usually it is not worthwhile to add a new thread to the system just
+for this; higher-level code is expected to write callbacks that
+function sensibly at DSR level. Much the same applies to the
+completion functions associated with data transfers. These should also
+be invoked at DSR or thread level.
+</para>
+
+</refsect1>
+<refsect1><title>Support for USB Testing</title>
+<para>
+Optionally a USB device driver can provide support for the
+<link linkend="usbs-testing">USB test software</link>. This requires
+defining a number of additional data structures, allowing the
+generic test code to work out just what the hardware is capable of and
+hence what testing can be performed.
+</para>
+<para>
+The key data structure is
+<structname>usbs_testing_endpoint</structname>, defined in <filename
+class="headerfile">cyg/io/usb/usbs.h</filename>. In addition some
+commonly required constants are provided by the common USB package in
+<filename class="headerfile">cyg/io/usb/usb.h</filename>. One
+<structname>usbs_testing_endpoint</structname> structure should be
+defined for each supported endpoint. The following fields need to be
+filled in:
+</para>
+<variablelist>
+<varlistentry>
+  <term><structfield>endpoint_type</structfield></term>
+  <listitem><para>
+    This specifies the type of endpoint and should be one of
+    <literal>USB_ENDPOINT_DESCRIPTOR_ATTR_CONTROL</literal>,
+    <literal>BULK</literal>, <literal>ISOCHRONOUS</literal> or
+    <literal>INTERRUPT</literal>.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>endpoint_number</structfield></term>
+  <listitem><para>
+    This identifies the number that should be used by the host
+    to address this endpoint. For a control endpoint it should
+    be 0. For other types of endpoints it should be between
+    1 and 15.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>endpoint_direction</structfield></term>
+  <listitem><para>
+    For control endpoints this field is irrelevant. For other
+    types of endpoint it should be either
+    <literal>USB_ENDPOINT_DESCRIPTOR_ENDPOINT_IN</literal> or
+    <literal>USB_ENDPOINT_DESCRIPTOR_ENDPOINT_OUT</literal>. If a given
+    endpoint number can be used for traffic in both directions then
+    there should be two entries in the array, one for each direction.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>endpoint</structfield></term>
+  <listitem><para>
+    This should be a pointer to the appropriate
+    <structname>usbs_control_endpoint</structname>,
+    <structname>usbs_rx_endpoint</structname> or
+    <structname>usbs_tx_endpoint</structname> structure, allowing the
+    generic testing code to perform low-level I/O.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>devtab_entry</structfield></term>
+  <listitem><para>
+    If the endpoint also has an entry in the system's device table then
+    this field should give the corresponding string, for example
+    <literal>&quot;/dev/usbs1r&quot;</literal>. This allows the
+    generic testing code to access the device via higher-level
+    calls like <function>open</function> and <function>read</function>. 
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>min_size</structfield></term>
+  <listitem><para>
+    This indicates the smallest transfer size that the hardware can
+    support on this endpoint. Typically this will be one.
+  </para>
+  <note><para>
+    Strictly speaking a minimum size of one is not quite right since it
+    is valid for a USB transfer to involve zero bytes, in other words a
+    transfer that involves just headers and acknowledgements and an
+    empty data phase, and that should be tested as well. However current
+    device drivers interpret a transfer size of 0 as special, so that
+    would have to be resolved first.
+  </para></note>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>max_size</structfield></term>
+  <listitem><para>
+    Similarly, this specifies the largest transfer size. For control
+    endpoints the USB protocol uses only two bytes to hold the transfer
+    length, so there is an upper bound of 65535 bytes. In practice
+    it is very unlikely that any control transfers would ever need to
+    be this large, and in fact such transfers would take a long time
+    and probably violate timing constraints. For other types of endpoint
+    any of the protocol, the hardware, or the device driver may impose
+    size limits. For example a given device driver might be unable to
+    cope with transfers larger than 65535 bytes. If it should be
+    possible to transfer arbitrary amounts of data then a value of
+    <literal>-1</literal> indicates no upper limit, and transfer
+    sizes will be limited by available memory and by the capabilities
+    of the host machine.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>max_in_padding</structfield></term>
+  <listitem><para>
+    This field is needed on some hardware where it is impossible to
+    send packets of a certain size. For example the hardware may be
+    incapable of sending an empty bulk packet to terminate a transfer
+    that is an exact multiple of the 64-byte bulk packet size.
+    Instead the driver has to do some padding and send an extra byte,
+    and the host has to be prepared to receive this extra byte. Such a
+    driver should specify a value of <literal>1</literal> for the
+    padding field. For most drivers this field should be set to
+  <literal>0</literal>.
+  </para>
+  <para>
+    A better solution would be for the device driver to supply a
+    fragment of Tcl code that would adjust the receive buffer size
+    only when necessary, rather than for every transfer. Forcing
+    receive padding on all transfers when only certain transfers
+    will actually be padded reduces the accuracy of certain tests.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><structfield>alignment</structfield></term>
+  <listitem><para>
+    On some hardware data transfers may need to be aligned to certain
+    boundaries, for example a word boundary or a cacheline boundary.
+    Although in theory device drivers could hide such alignment
+    restrictions from higher-level code by having their own buffers and
+    performing appropriate copying, that would be expensive in terms of
+    both memory and cpu cycles. Instead the generic testing code will
+    align any buffers passed to the device driver to the specified
+    boundary. For example, if the driver requires that buffers be
+    aligned to a word boundary then it should specify an alignment
+    value of 4.
+  </para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+The device driver should provide an array of these structures
+<varname>usbs_testing_endpoints[]</varname>. The USB testing code
+examines this array and uses the information to perform appropriate
+tests. Because different USB devices support different numbers of
+endpoints the number of entries in the array is not known in advance,
+so instead the testing code looks for a special terminator
+<varname>USBS_TESTING_ENDPOINTS_TERMINATOR</varname>. An example
+array, showing just the control endpoint and the terminator, might
+look like this:
+</para>
+<programlisting width=72>
+usbs_testing_endpoint usbs_testing_endpoints[] = {
+    {
+        endpoint_type       : USB_ENDPOINT_DESCRIPTOR_ATTR_CONTROL, 
+        endpoint_number     : 0,
+        endpoint_direction  : USB_ENDPOINT_DESCRIPTOR_ENDPOINT_IN,
+        endpoint            : (void*) &amp;ep0.common,
+        devtab_entry        : (const char*) 0,
+        min_size            : 1,
+        max_size            : 0x0FFFF,
+        max_in_padding      : 0,
+        alignment           : 0
+    },
+    &hellip;,
+    USBS_TESTING_ENDPOINTS_TERMINATOR
+};
+</programlisting>
+
+<note>
+<para>
+The use of a single array <varname>usbs_testing_endpoints</varname>
+limits USB testing to platforms with a single USB device: if there
+were multiple devices, each defining their own instance of this array,
+then there would a collision at link time. In practice this should not
+be a major problem since typical USB peripherals only interact with a
+single host machine via a single slave port. In addition, even if a
+peripheral did have multiple slave ports the current USB testing code
+would not support this since it would not know which port to use.
+</para>
+</note>
+
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ USB Testing support            -->
+
+<refentry id="usbs-testing">
+<refmeta>
+<refentrytitle>Testing</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Testing</refname>
+<refpurpose>Testing of USB Device Drivers</refpurpose>
+</refnamediv>
+
+<refsect1><title>Introduction</title>
+<para>
+The support for USB testing provided by the eCos USB common slave
+package is somewhat different in nature from the kind of testing used
+in many other packages. One obvious problem is that USB tests cannot
+be run on just a bare target platform: instead the target platform
+must be connected to a suitable USB host machine, and that host
+machine must be running appropriate software for the test code to
+interact with. This is very different from say a kernel test which
+typically will have no external dependencies. Another important
+difference between USB testing and say a C library
+<function>strcmp</function> test is sensitivity to timing and to
+hardware boundary conditions: although a simple test case that just
+performs a small number of USB transfers is better than no testing at
+all, it should also be possible to run tests for hours or days on end,
+under a variety of loads. In order to provide the required
+functionality the basic architecture of the USB testing support is as
+follows: 
+</para>
+<orderedlist>
+  <listitem><para>
+    There is a single target-side program
+    <application>usbtarget</application>. By default when this is run
+    on a target platform it will appear to do nothing. In fact it is
+    waiting to be contacted by another program
+    <application>usbhost</application> which will tell it what test or
+    tests to run. <application>usbtarget</application> provides
+    mechanisms for running a wide range of tests.
+  </para></listitem>
+  <listitem><para>
+    <application>usbtarget</application> is a generic program, but USB
+    testing depends to some extent on the functionality provided by the
+    hardware. For example there is no point in testing bulk transmits
+    to endpoint 12 if the target hardware does not support an endpoint
+    12. Therefore each USB device driver should supply information about
+    what the hardware is actually capable of, in the form of an array of
+    <structname>usbs_testing_endpoint</structname> data structures.
+  </para></listitem>
+  <listitem><para>
+    There is a single host-side program
+    <application>usbhost</application>, which acts as a counterpart to
+    <application>usbtarget</application>. Again
+    <application>usbhost</application> has no built-in knowledge of
+    the test or tests that are supposed to run, it only provides
+    mechanisms for running a wide range of tests. On start-up
+    <application>usbhost</application> will search the USB bus for
+    hardware running the target-side program, specifically a USB device
+    that identifies itself as the product <literal>&quot;Red Hat eCos
+    USB test&quot;</literal>.
+  </para></listitem>
+  <listitem><para>
+    <application>usbhost</application> contains a Tcl interpreter, and
+    will execute any Tcl scripts specified on the command line
+    together with appropriate arguments. The Tcl interpreter has been
+    extended with various commands such as
+    <literal>usbtest::bulktest</literal>, so the script can perform
+    the desired test or tests.
+  </para></listitem>
+  <listitem><para>
+    Adding a new test simply involves writing a short Tcl script that
+    invokes the appropriate USB-specific commands. Running multiple
+    tests involves passing appropriate arguments to
+    <application>usbhost</application>, or alternatively writing a
+    single script that just invokes other scripts.
+  </para></listitem>
+</orderedlist>
+<para>
+The current implementation of <application>usbhost</application>
+depends heavily on functionality provided by the Linux kernel and in
+particular the usbdevfs support. It uses
+<filename>/proc/bus/usb/devices</filename> to find out what devices
+are attached to the bus, and will then access the device by opening
+<filename>/proc/bus/usb/xxx/yyy</filename> and performing
+<function>ioctl</function> operations. This allows USB testing to take
+place without having to write a new host-side device driver, but
+getting the code working on host machines not running Linux would
+obviously be problematical.
+</para>
+</refsect1>
+
+<refsect1><title>Building and Running the Target-side Code</title>
+<para>
+The target-side component of the USB testing software consists of a
+single program <application>usbtarget</application> which contains
+support for a range of different tests, under the control of host-side
+software. This program is not built by default alongside other eCos
+test cases since it will only operate in certain environments,
+specifically when the target board's connector is plugged into a Linux
+host, and when the appropriate host-side software has been installed
+on that host. Instead the user must enable a configuration option
+<literal>CYGBLD_IO_USB_SLAVE_USBTEST</literal> to add the program to
+the list of tests for the current configuration.
+</para>
+<para>
+Starting the <application>usbtarget</application> program does not
+require anything unusual, so it can be run in a normal
+<application>gdb</application> session just like any eCos application.
+After initialization the program will wait for activity from the host.
+Depending on the hardware, the Linux host will detect that a new USB
+peripheral is present on the bus either when the
+<application>usbtarget</application> initialization is complete or
+when the cable between target and host is connected. The host will
+perform the normal USB enumeration sequence and discover that the
+peripheral does not match any known vendor or product id and that
+there is no device driver for <literal>&quot;Red Hat eCos USB
+test&quot;</literal>, so it will ignore the peripheral. When the
+<application>usbhost</application> program is run on the host it will
+connect to the target-side software, and testing can now commence.
+</para>
+</refsect1>
+
+<refsect1><title>Building and Running the Host-side Code</title>
+<note><para>
+In theory the host-side software should be built when the package is
+installed in the component repository, and removed when a package
+is uninstalled. The current eCos administration tool does not provide
+this functionality.
+</para></note>
+<para>
+The host-side software should be built via the usual sequence of
+&quot;configure/make/make install&quot;. It can only be built on a
+Linux host and the <command>configure</command> script contains an
+explicit test for this. Because the eCos component repository should
+generally be treated as a read-only resource the configure script will
+also prevent you from trying to build inside the source tree. Instead
+a separate build tree is required. Hence a typical sequence for
+building the host-side software would be as follows:
+</para>
+<screen>
+$ mkdir usbhost_build
+$ cd usbhost_build
+$ &lt;repo&gt;packages/io/usb/slave/current/host/configure <co id="path"> <co id="version"> &lt;args&gt; <co id="args">
+$ make
+&lt;output from make&gt;
+$ su <co id="root">
+$ make install
+&lt;output from make install&gt;
+$
+</screen>
+<calloutlist>
+<callout arearefs="path">
+<para>
+The location of the eCos component repository should be substituted
+for <literal>&lt;repo&gt;</literal>.
+</para>
+</callout>
+<callout arearefs="version">
+<para>
+If the package has been obtained via CVS or anonymous CVS then the
+package version will be <filename>current</filename>, as per the
+example. If instead the package has been obtained as part of a full
+eCos release or as a separate <filename>.epk</filename> file then the
+appropriate package version should be used instead of
+<filename>current</filename>.
+</para>
+</callout>
+<callout arearefs="args">
+<para>
+The <command>configure</command> script takes the usual arguments such
+as <parameter>--prefix=</parameter> to specify where the executables
+and support files should be installed. The only other parameter that
+some users may wish to specify is the location of a suitable Tcl
+installation. By default <application>usbhost</application> will use
+the existing Tcl installation in <filename class="directory">/usr</filename>,
+as provided by your Linux distribution. An alternative Tcl
+installation can be specified using the parameter
+<parameter>--with-tcl=</parameter>, or alternatively using some
+combination of <parameter>--with-tcl-include</parameter>,
+<parameter>--with-tcl-lib</parameter> and
+<parameter>--with-tcl-version</parameter>. 
+</para>
+</callout>
+<callout arearefs="root">
+<para>
+One of the host-side executables that gets built,
+<application>usbchmod</application>, needs to be installed with suid
+root privileges. Although the Linux kernel makes it possible for
+applications to perform low-level USB operations such as transmitting
+bulk packets, by default access to this functionality is restricted to
+programs with superuser privileges. It is undesirable to run a complex
+program such as <application>usbhost</application> with such
+privileges, especially since the program contains a general-purpose
+Tcl interpreter. Therefore when <application>usbhost</application>
+starts up and discovers that it does not have sufficient access to the
+appropriate entries in <filename class="directory">/proc/bus/usb</filename>, 
+it spawns an instance of <application>usbchmod</application> to modify
+the permissions on these entries. <application>usbchmod</application>
+will only do this for a USB device <literal>&quot;Red Hat eCos USB
+test&quot;</literal>, so installing this program suid root should not
+introduce any security problems.
+</para>
+</callout>
+</calloutlist>
+
+<para>
+During <command>make install</command> the following actions will take
+place: 
+</para>
+<orderedlist>
+<listitem>
+<para>
+<application>usbhost</application> will be installed in <filename class="directory">/usr/local/bin</filename>,
+or some other <filename class="directory">bin</filename> directory if
+the default location is changed at configure-time using a
+<parameter>--prefix=</parameter> or similar option. It will be
+installed as the executable
+<application>usbhost_&lt;version&gt;</application>, for example
+<application>usbhost_current</application>, thus allowing several
+releases of the USB slave package to co-exist. For convenience a
+symbolic link from <filename>usbhost</filename> to this executable
+will be created, so users can just run <command>usbhost</command> to
+access the most recently-installed version.
+</para>
+</listitem>
+<listitem>
+<para>
+<application>usbchmod</application> will be installed in
+<filename class="directory">/usr/local/libexec/ecos/io_usb_slave_&lt;version&gt;</filename>.
+This program should only be run by <application>usbhost</application>,
+not invoked directly, so it is not placed in the <filename class="directory">bin</filename> 
+directory. Again the presence of the package version in the directory
+name allows multiple releases of the package to co-exist.
+</para>
+</listitem>
+<listitem>
+<para>
+A Tcl script <filename>usbhost.tcl</filename> will get installed in
+the same directory as <application>usbchmod</application>. This Tcl
+script is loaded automatically by the
+<application>usbhost</application> executable. 
+</para>
+</listitem>
+<listitem>
+<para>
+A number of additional Tcl scripts, for example
+<filename>list.tcl</filename> will get installed alongside
+<filename>usbhost.tcl</filename>. These correspond to various test
+cases provided as standard. If a given test case is specified on the
+command line and cannot be found relative to the current directory
+then <application>usbhost</application> will search the install
+directory for these test cases.
+</para>
+<note><para>
+Strictly speaking installing the <filename>usbhost.tcl</filename> and
+other Tcl scripts below the <filename class="directory">libexec</filename>
+directory deviates from standard practice: they are
+architecture-independent data files so should be installed below
+the <filename class="directory">share</filename> subdirectory. In
+practice the files are sufficiently small that there is no point in
+sharing them, and keeping them below <filename class="directory">libexec</filename>
+simplifies the host-side software somewhat.
+</para></note>
+</listitem>
+</orderedlist>
+
+<para>
+The <command>usbhost</command> should be run only when there is a
+suitable target attached to the USB bus and running the
+<application>usbtarget</application> program. It will search
+<filename>/proc/bus/usb/devices</filename> for an entry corresponding
+to this program, invoke <application>usbchmod</application> if
+necessary to change the access rights, and then interact with
+<application>usbtarget</application> over the USB bus.
+<command>usbhost</command> should be invoked as follows:
+</para>
+<screen>
+$ usbhost [-v|--version] [-h|--help] [-V|--verbose] &lt;test&gt; [&lt;test parameters&gt;]
+</screen>
+<orderedlist>
+<listitem>
+<para>
+The <parameter>-v</parameter> or <parameter>--version</parameter>
+option will display version information for
+<application>usbhost</application> including the version of the USB
+slave package that was used to build the executable.
+</para>
+</listitem>
+<listitem>
+<para>
+The <parameter>-h</parameter> or <parameter>--help</parameter> option
+will display usage information.
+</para>
+</listitem>
+<listitem>
+<para>
+The <parameter>-V</parameter> or <parameter>--verbose</parameter>
+option can be used to obtain more information at run-time, for example
+some output for every USB transfer. This option can be repeated
+multiple times to increase the amount of output.
+</para>
+</listitem>
+<listitem>
+<para>
+The first argument that does not begin with a hyphen specifies a test
+that should be run, in the form of a Tcl script. For example an
+argument of <parameter>list.tcl</parameter> will cause
+<application>usbhost</application> to look for a script with that
+name, adding a <filename>.tcl</filename> suffix if necessarary, and
+run that script. <application>usbhost</application> will look in the
+current directory first, then in the install tree for standard test
+scripts provided by the USB slave package.
+</para>
+</listitem>
+<listitem>
+<para>
+Some test scripts may want their own parameters, for example a
+duration in seconds. These can be passed on the command line after
+the name of the test, for example
+<command>usbhost&nbsp;mytest&nbsp;60</command>. 
+</para>
+</listitem>
+</orderedlist>
+</refsect1>
+
+<refsect1><title>Writing a Test</title>
+<para>
+Each test is defined by a Tcl script, running inside an interpreter
+provided by <application>usbhost</application>. In addition to the
+normal Tcl functionality this interpreter provides a number of
+variables and functions related to USB testing. For example there is a
+variable <varname>bulk_in_endpoints</varname> that lists all the
+endpoints on the target that can perform bulk IN operations, and a
+related array <varname>bulk_in</varname> which contains information
+such as the minimum and maximum packets sizes. There is a function
+<function>bulktest</function> which can be used to perform bulk tests
+on a particular endpoint. A simple test script aimed at specific
+hardware could ignore the information variables since it would know
+exactly what USB hardware is available on the target, whereas a
+general-purpose script would use the information to adapt to the
+hardware capabilities.
+</para>
+<para>
+To avoid namespace pollution all USB-related Tcl variables and
+functions live in the <varname>usbtest::</varname> namespace.
+Therefore accessing requires either explicitly including the
+namespace any references, for example
+<literal>$usbtest::bulk_in_endpoints</literal>, or by using Tcl's
+<function>namespace import</function> facility.
+</para>
+<para>
+A very simple test script might look like this:
+</para>
+<programlisting width=72>
+usbtest::bulktest 1 out 4000
+usbtest::bulktest 2 in  4000
+if { [usbtest::start 60] } {
+    puts "Test successful"
+} else
+    puts "Test failed"
+    foreach result $usbtest::results {
+        puts $result
+    }
+}
+</programlisting>
+<para>
+This would perform a test run involving 4000 bulk transfers from the
+host to the target's endpoint 1, and concurrently 4000 bulk transfers
+from endpoint 2. Default settings for packet sizes, contents, and
+delays would be used. The actual test would not start running until
+<filename>usbtest</filename> is invoked, and it is expected that the
+test would complete within 60 seconds. If any failures occur then they
+are reported.
+</para>
+</refsect1>
+
+<refsect1><title>Available Hardware</title>
+<para>
+Each target-side USB device driver provides information about the
+actual capabilities of the hardware, for example which endpoints are
+available. Strictly speaking it provides information about what is
+actually supported by the device driver, which may be a subset of what
+the hardware is capable of. For example, the hardware may support
+isochronous transfers on a particular endpoint but if there is no
+software support for this in the driver then this endpoint will not be
+listed. When <application>usbhost</application> first contacts the
+<application>usbtarget</application> program running on the target
+platform, it obtains this information and makes it available to test
+scripts via Tcl variables:
+</para>
+<variablelist>
+<varlistentry>
+  <term><varname>bulk_in_endpoints</varname></term>
+  <listitem><para>
+    This is a simple list of the endpoints which can support bulk IN
+    transfers. For example if the target-side hardware supports
+    these transfers on endpoints 3 and 5 then the value would be
+    <literal>&quot;3 5&quot;</literal> Typical test scripts would
+    iterate over the list using something like:
+  </para>
+  <programlisting width=72>
+  if { 0 != [llength $usbtest::bulk_in_endpoints] } {
+      puts"Bulk IN endpoints: $usbtest::bulk_in_endpoints"
+      foreach endpoint $usbtest:bulk_in_endpoints {
+          &hellip;
+      }
+  }
+  </programlisting>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>bulk_in()</varname></term>
+  <listitem><para>
+  This array holds additional information about each bulk IN endpoint.
+  The array is indexed by two fields, the endpoint number and one of
+  <literal>min_size</literal>, <literal>max_size</literal>,
+  <literal>max_in_padding</literal> and <literal>devtab</literal>:
+  </para>
+  <variablelist>
+  <varlistentry>
+    <term><literal>min_size</literal></term>
+    <listitem><para>
+    This field specifies a lower bound on the size of bulk transfers,
+    and will typically will have a value of 1.
+    </para>
+    <note><para>
+    The typical minimum transfer size of a single byte is not strictly
+    speaking correct, since under some circumstances it can make sense
+    to have a transfer size of zero bytes. However current target-side
+    device drivers interpret a request to transfer zero bytes as a way
+    for higher-level code to determine whether or not an endpoint is
+    stalled, so it is not actually possible to perform zero-byte
+    transfers. This issue will be addressed at some future point.
+    </para></note>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><literal>max_size</literal></term>
+    <listitem><para>
+    This field specifies an upper bound on the size of bulk transfers.
+    Some target-side drivers may be limited to transfers of say
+    0x0FFFF bytes because of hardware limitations. In practice the
+    transfer size is likely to be limited primarily to limit memory
+    consumption of the test code on the target hardware, and to ensure
+    that tests complete reasonably quickly. At the time of writing
+    transfers are limited to 4K.
+    </para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><literal>max_in_padding</literal></term>
+    <listitem><para>
+    On some hardware it may be necessary for the target-side device
+    driver to send more data than is actually intended. For example
+    the SA11x0 USB hardware cannot perform bulk transfers that are
+    an exact multiple of 64 bytes, instead it must pad such
+    transfers with an extra byte and the host must be ready to
+    accept and discard this byte. The
+    <literal>max_in_padding</literal> field indicates the amount of
+    padding that is required. The low-level code inside
+    <application>usbhost</application> will use this field
+    automatically, and there is no need for test scripts to adjust
+    packet sizes for padding. The field is provided for
+    informational purposes only.
+    </para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><literal>devtab</literal></term>
+    <listitem><para>
+    This is a string indicating whether or not the
+    target-side USB device driver supports access to this endpoint
+    via entries in the device table, in other words through
+    conventional calls like <function>open</function> and
+    <function>write</function>. Some device drivers may only
+    support low-level USB access because typically that is what gets
+    used by USB class-specific packages such as USB-ethernet.
+    An empty string indicates that no devtab entry is available,
+    otherwise it will be something like
+    <literal>&quot;/dev/usbs2w&quot;</literal>. 
+    </para></listitem>
+  </varlistentry>
+  </variablelist>
+  <para>
+  Typical test scripts would access this data using something like:
+  </para>
+  <programlisting width=72>
+  foreach endpoint $usbtest:bulk_in_endpoints {
+      puts "Endpoint $endpoint: "
+      puts "    minimum transfer size $usbtest::bulk_in($endpoint,min_size)"
+      puts "    maximum transfer size $usbtest::bulk_in($endpoint,max_size)"
+      if { 0 == $usbtest::bulk_in($endpoint,max_in_padding) } {
+          puts "    no IN padding required"
+      } else {
+          puts "    $usbtest::bulk_in($endpoint,max_in_padding) bytes of IN padding required"
+      }
+      if { "" == $usbtest::bulk_in($endpoint,devtab) } {
+          puts "    no devtab entry provided"
+      } else {
+          puts "    corresponding devtab entry is $usbtest::bulk_in($endpoint,devtab)"
+      }
+  }
+  </programlisting>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>bulk_out_endpoint</varname></term>
+  <listitem><para>
+    This is a simple list of the endpoints which can support bulk OUT
+    transfers. It is analogous to
+    <varname>bulk_in_endpoints</varname>.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>bulk_out()</varname></term>
+  <listitem><para>
+  This array holds additional information about each bulk OUT
+  endpoint. It can be accessed in the same way as
+  <varname>bulk_in()</varname>, except that there is no
+  <literal>max_in_padding</literal> field because that field only
+  makes sense for IN transfers.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>control()</varname></term>
+  <listitem><para>
+  This array holds information about the control endpoint. It contains
+  two fields, <literal>min_size</literal> and
+  <literal>max_size</literal>. Note that there is no variable
+  <varname>control_endpoints</varname> because a USB target always
+  supports a single control endpoint <literal>0</literal>. Similarly
+  the <varname>control</varname> array does not use an endpoint number
+  as the first index because that would be redundant.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>isochronous_in_endpoints</varname> and
+        <varname>isochronous_in()</varname></term>
+  <listitem><para>
+  These variables provide the same information as
+  <varname>bulk_in_endpoints</varname> and <varname>bulk_in</varname>,
+  but for endpoints that support isochronous IN transfers.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>isochronous_out_endpoints</varname> and
+        <varname>isochronous_out()</varname></term>
+  <listitem><para>
+  These variables provide the same information as
+  <varname>bulk_out_endpoints</varname> and <varname>bulk_out</varname>,
+  but for endpoints that support isochronous OUT transfers.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>interrupt_in_endpoints</varname> and
+        <varname>interrupt_in()</varname></term>
+  <listitem><para>
+  These variables provide the same information as
+  <varname>bulk_in_endpoints</varname> and <varname>bulk_in</varname>,
+  but for endpoints that support interrupt IN transfers.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><varname>interrupt_out_endpoints</varname> and
+        <varname>interrupt_out()</varname></term>
+  <listitem><para>
+  These variables provide the same information as
+  <varname>bulk_out_endpoints</varname> and <varname>bulk_out</varname>,
+  but for endpoints that support interrupt OUT transfers.
+  </para></listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+
+<refsect1><title>Testing Bulk Transfers</title>
+<para>
+The main function for initiating a bulk test is
+<function>usbtest::bulktest</function>. This takes three compulsory
+arguments, and can be given a number of additional arguments to
+control the exact behaviour. The compulsory arguments are:
+</para>
+<variablelist>
+<varlistentry>
+  <term>endpoint</term>
+  <listitem><para>
+    This specifies the endpoint to use. It should correspond to
+    one of the entries in
+    <varname>usbtest::bulk_in_endpoints</varname> or
+    <varname>usbtest::bulk_out_endpoints</varname>, depending on the
+    transfer direction.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term>direction</term>
+  <listitem><para>
+  This should be either <literal>in</literal> or <literal>out</literal>.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term>number of transfers</term>
+  <listitem><para>
+  This specifies the number of transfers that should take place. The
+  testing software does not currently support the concept of performing
+  transfers for a given period of time because synchronising this on
+  both the host and a wide range of targets is difficult. However it
+  is relatively easy to work out the approximate time a number of bulk
+  transfers should take place, based on a typical bandwidth of
+  1MB/second and assuming say a 1ms overhead per transfer.
+  Alternatively a test script could perform a small initial run to
+  determine what performance can actually be expected from a given
+  target, and then use this information to run a much longer test.
+  </para></listitem>
+</varlistentry>
+</variablelist>
+<para>
+Additional arguments can be used to control the exact transfer. For
+example a <parameter>txdelay+</parameter> argument can be used to
+slowly increase the delay between transfers. All such arguments involve
+a value which can be passed either as part of the argument itself,
+for example <literal>txdelay+=5</literal>, or as a subsequent
+argument, <literal>txdelay+ 5</literal>. The possible arguments fall
+into a number of categories: data, I/O mechanism, transmit size,
+receive size, transmit delay, and receive delay.
+</para>
+
+<refsect2><title>Data</title>
+<para>
+An obvious parameter to control is the actual data that gets sent.
+This can be controlled by the argument <parameter>data</parameter>
+which can take one of five values: <literal>none</literal>,
+<literal>bytefill</literal>, <literal>intfill</literal>,
+<literal>byteseq</literal> and <literal>wordseq</literal>. The default
+value is <literal>none</literal>.
+</para>
+<variablelist>
+<varlistentry>
+  <term><literal>none</literal></term>
+  <listitem><para>
+  The transmit code will not attempt to fill the buffer in any way,
+  and the receive code will not check it. The actual data that gets
+  transferred will be whatever happened to be in the buffer before
+  the transfer started.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><literal>bytefill</literal></term>
+  <listitem><para>
+  The entire buffer will be filled with a single byte, as per
+  <function>memset</function>. 
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><literal>intfill</literal></term>
+  <listitem><para>
+  The buffer will be treated as an array of 32-bit integers, and will
+  be filled with the same integer repeated the appropriate number of
+  times. If the buffer size is not a multiple of four bytes then
+  the last few bytes will be set to 0.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><literal>byteseq</literal></term>
+  <listitem><para>
+  The buffer will be filled with a sequence of bytes, generated by
+  a linear congruential generator. If the first byte in the buffer is
+  filled with the value <literal>x</literal>, the next byte will be
+  <literal>(m*x)+i</literal>. For example a sequence of slowly
+  incrementing bytes can be achieved by setting both the multiplier
+  and the increment to 1. Alternatively a pseudo-random number
+  sequence can be achieved using values 1103515245 and 12345, as
+  per the standard C library <function>rand</function> function.
+  For convenience these two constants are available as Tcl
+  variables <varname>usbtest::MULTIPLIER</varname> and
+  <varname>usbtest::INCREMENT</varname>.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><literal>wordseq</literal></term>
+  <listitem><para>
+  This acts like <literal>byteseq</literal>, except that the buffer is
+  treated as an array of 32-bit integers rather than as an array of
+  bytes. If the buffer is not a multiple of four bytes then the last
+  few bytes will be filled with zeroes.
+  </para></listitem>
+</varlistentry>
+</variablelist>
+<para>
+The above requires three additional parameters
+<parameter>data1</parameter>, <parameter>data*</parameter> and
+<parameter>data+</parameter>. <parameter>data1</parameter> specifies
+the value to be used for byte or word fills, or the first number when
+calculating a sequence. The default value is <literal>0</literal>.
+<parameter>data*</parameter> and <parameter>data+</parameter> specify
+the multiplier and increment for a sequence, and have default values
+of <literal>1</literal> and <literal>0</literal> respectively. For
+example, to perform a bulk transfer of a pseudo-random sequence of
+integers starting with 42 the following code could be used:
+</para>
+<programlisting width=72>
+bulktest 2 IN 1000 data=wordseq data1=42 \
+    data* $usbtest::MULTIPLIER data+ $usbtest::INCREMENT
+</programlisting>
+<para>
+The above parameters define what data gets transferred for the first
+transfer, but a test can involve multiple transfers. The data format
+will be the same for all transfers, but it is possible to adjust the
+current value, the multiplier, and the increment between each
+transfer. This is achieved with parameters <parameter>data1*</parameter>,
+<parameter>data1+</parameter>, <parameter>data**</parameter>,
+<parameter>data*+</parameter>, <parameter>data+*</parameter>, and
+<parameter>data++</parameter>, with default values of 1 for each
+multiplier and 0 for each increment. For example, if the multiplier
+for the first transfer is set to <literal>2</literal> using
+<parameter>data*</parameter>, and arguments
+<literal>data**&nbsp;2</literal> and <literal>data*+&nbsp;-1</literal> are also
+supplied, then the multiplier for subsequent transfers will be
+<literal>3</literal>, <literal>5</literal>, <literal>9</literal>,
+&hellip;.
+</para>
+
+<note><para>
+Currently it is not possible for a test script to send specific data,
+for example a specific sequence of bytes captured by a protocol analyser
+that caused a problem. If the transfer was from host to target then
+the target would have to know the exact sequence of bytes to expect,
+which means transferring data over the USB bus when that data is known
+to have caused problems in the past. Similarly for target to host
+transfers the target would have to know what bytes to send. A possible
+future extension of the USB testing support would allow for bounce
+operations, where a given message is first sent to the target and then
+sent back to the host, with only the host checking that the data was
+returned correctly.
+</para></note>
+</refsect2>
+
+<refsect2><title>I/O Mechanism</title>
+<para>
+On the target side USB transfers can happen using either low-level
+USB calls such as <function>usbs_start_rx_buffer</function>, or by
+higher-level calls which go through the device table. By default the
+target-side code will use the low-level calls. If it is desired to
+test the higher-level calls instead, for example because those are
+what the application uses, then that can be achieved with an
+argument <parameter>mechanism=devtab</parameter>.
+</para>
+</refsect2>
+
+<refsect2><title>Transmit Size</title>
+<para>
+The next set of arguments can be used to control the size of the
+transmitted buffer: <parameter>txsize1</parameter>,
+<parameter>txsize&gt;=</parameter>, <parameter>txsize&lt;=</parameter>
+<parameter>txsize*</parameter>, <parameter>txsize/</parameter>,
+and <parameter>txsize+</parameter>.
+</para>
+<para>
+<parameter>txsize1</parameter> determines the size of the first
+transfer, and has a default value of 32 bytes. The size of the next
+transfer is calculated by first multiplying by the
+<parameter>txsize*</parameter> value, then dividing by the
+<parameter>txsize/</parameter> value, and finally adding the
+<parameter>txsize+</parameter> value. The defaults for these are
+<literal>1</literal>, <literal>1</literal>, and <literal>0</literal>
+respectively, which means that the transfer size will remain
+unchanged. If for example the transfer size should increase by
+approximately 50 per cent each time then suitable values might be
+<literal>txsize*&nbsp;3</literal>, <literal>txsize/&nbsp;2</literal>,
+and <literal>txsize+&nbsp;1</literal>. 
+</para>
+<para>
+The <parameter>txsize&gt;=</parameter> and
+<parameter>txsize&lt;=</parameter> arguments can be used to impose
+lower and upper bounds on the transfer. By default the
+<literal>min_size</literal> and <literal>max_size</literal> values
+appropriate for the endpoint will be used. If at any time the
+current size falls outside the bounds then it will be normalized.
+</para>
+</refsect2>
+
+<refsect2><title>Receive Size</title>
+<para>
+The receive size, in other words the number of bytes that either host
+or target will expect to receive as opposed to the number of bytes
+that actually get sent, can be adjusted using a similar set of
+arguments: <parameter>rxsize1</parameter>,
+<parameter>rxsize&gt;=</parameter>,
+<parameter>rxsize&lt;=</parameter>,
+<parameter>rxsize*</parameter>, <parameter>rxsize/</parameter> and
+<parameter>rxsize+</parameter>. The current receive size will be
+adjusted between transfers just like the transmit size. However when
+communicating over USB it is not a good idea to attempt to receive
+less data than will actually be sent: typically neither the hardware
+nor the software will be able to do anything useful with the excess,
+so there will be problems. Therefore if at any time the calculated
+receive size is less than the transmit size, the actual receive will
+be for the exact number of bytes that will get transmitted. However
+this will not affect the calculations for the next receive size.
+</para>
+<para>
+The default values for <parameter>rxsize1</parameter>,
+<parameter>rxsize*</parameter>, <parameter>rxsize/</parameter> and
+<parameter>rxsize+</parameter> are <literal>0</literal>,
+<literal>1</literal>, <literal>1</literal> and <literal>0</literal>
+respectively. This means that the calculated receive size will always
+be less than the transmit size, so the receive operation will be for
+the exact number of bytes transmitted. For some USB protocols this
+would not accurately reflect the traffic that will happen. For example
+with USB-ethernet transfer sizes will vary between 16 and 1516 bytes,
+so the receiver will always expect up to 1516 bytes. This can be
+achieved using <literal>rxsize1&nbsp;1516</literal>, leaving the
+other parameters at their default values.
+</para>
+<para>
+For target hardware which involves non-zero
+<literal>max_in_padding</literal>, on the host side the padding will
+be added automatically to the receive size if necessary.
+</para>
+</refsect2>
+
+<refsect2><title>Transmit and Receive Delays</title>
+<para>
+Typically during the testing there will be some minor delays between
+transfers on both host and target. Some of these delays will be caused
+by timeslicing, for example another process running on the host, or a
+concurrent test thread running inside the target. Other delays will be
+caused by the USB bus itself, for example activity from another device
+on the bus. However it is desirable that test cases be allowed to
+inject additional and somewhat more controlled delays into the system,
+for example to make sure that the target behaves correctly even if the
+target is not yet ready to receive data from the host.
+</para>
+<para>
+The transmit delay is controlled by six parameters:
+<parameter>txdelay1</parameter>, <parameter>txdelay*</parameter>,
+<parameter>txdelay/</parameter>, <parameter>txdelay+</parameter>,
+<parameter>txdelay&gt;=</parameter> and
+<parameter>txdelay&lt;=</parameter>. The default values for these are
+<literal>0</literal>, <literal>1</literal>, <literal>1</literal>,
+<literal>0</literal>, <literal>0</literal> and
+<literal>1000000000</literal> respectively, so that by default
+transmits will happen as quickly as possible. Delays are measured in
+nanoseconds, so a value of <literal>1000000</literal> would correspond
+to a delay of 0.001 seconds or one millisecond. By default delays have
+an upper bound of one second. Between transfers the transmit delay is
+updated in much the same was as the transfer sizes.
+</para>
+<para>
+The receive delay is controlled by a similar set of six parameters:
+<parameter>rxdelay1</parameter>, <parameter>rxdelay*</parameter>,
+<parameter>rxdelay/</parameter>, <parameter>rxdelay+</parameter>,
+<parameter>rxdelay&gt;=</parameter> and
+<parameter>rxdelay&lt;=</parameter>. The default values for these are
+the same as for transmit delays.
+</para>
+<para>
+The transmit delay is used on the side which sends data over the USB
+bus, so for a bulk IN transfer it is the target that sends data and
+hence sleeps for the specified transmit delay, while the host receives
+data sleeps for the receive delay. For an OUT transfer the positions
+are reversed.
+</para>
+<para>
+It should be noted that although the delays are measured in
+nanoseconds, the actual delays will be much less precise and are
+likely to be of the order of milliseconds. The exact details will
+depend on the kernel clock speed.
+</para>
+</refsect2>
+
+</refsect1>
+
+<refsect1><title>Other Types of Transfer</title>
+<para>
+Support for testing other types of USB traffic such as isochronous
+transfers is not yet implemented.
+</para>
+</refsect1>
+
+<refsect1><title>Starting a Test and Collecting Results</title>
+<para>
+A USB test script should prepare one or more transfers using
+appropriate functions such as <function>usbtest::bulktest</function>.
+Once all the individual tests have been prepared they can be started
+by a call to <function>usbtest::start</function>. This takes a single
+argument, a maximum duration measured in seconds. If all transfers
+have not been completed in the specified time then any remaining
+transfers will be aborted.
+</para>
+<para>
+<function>usbtest::start</function> will return <literal>1</literal>
+if all the tests have succeeded, or <literal>0</literal> if any of
+them have failed. More detailed reports will be stored in the
+Tcl variable <varname>usbtests::results</varname>, which will be a
+list of string messages.
+</para>
+</refsect1>
+
+<refsect1><title>Existing Test Scripts</title>
+<para>
+A number of test scripts are provided as standard. These are located
+in the <filename class="directory">host</filename> subdirectory of the
+common USB slave package, and will be installed as part of the process
+of building the host-side software. When a script is specified on the
+command line <application>usbhost</application> will first search for
+it in the current directory, then in the install tree. Standard
+test scripts include the following:
+</para>
+<variablelist>
+  <varlistentry><term><filename>list.tcl</filename></term>
+    <listitem><para>
+      This script simply displays information about the capabilities
+      of the target platform, as provided by the target-side USB
+      device driver. It can help with tracking down problems, but its
+      primary purpose is to let users check that everything is working
+      correctly: if running <command>usbhost list.tcl</command>
+      outputs sensible information then the user knows that the
+      target side is running correctly and that communication between
+      host and target is possible.
+    </para></listitem>
+  </varlistentry>
+  <varlistentry><term><filename>verbose.tcl</filename></term>
+    <listitem><para>
+      The target-side code can provide information about what
+      is happening while tests are prepared and run. This facility
+      should not normally be used since the extra I/O involved will
+      significantly affect the behaviour of the system, but in some
+      circumstances it may prove useful. Since an eCos application
+      cannot easily be given command-line arguments the target-side
+      verbosity level cannot be controlled using
+      <parameter>-V</parameter> or <parameter>--verbose</parameter>
+      options. Instead it can be controlled from inside
+      <application>gdb</application> by changing the integer
+      variable <varname>verbose</varname>. Alternatively it can
+      be manipulated by running the test script
+      <filename>verbose.tcl</filename>. This script takes a single
+      argument, the desired verbosity level, which should be a small
+      integer. For example, to disable target-side run-time logging
+      the command <command>usbhost&nbsp;verbose&nbsp;0</command> can
+      be used.
+    </para></listitem>
+  </varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1><title>Possible Problems</title>
+<para>
+If all transfers succeed within the specified time then both host and
+target remain in synch and further tests can be run without problem.
+However, if at any time a failure occurs then things get more
+complicated. For example, if the current test involves a series of
+bulk OUT transfers and the target detects that for one of these
+transfers it received less data than was expected then the test has
+failed, and the target will stop accepting data on this endpoint.
+However the host-side software may not have detected anything wrong
+and is now blocked trying to send the next lot of data.
+</para>
+<para>
+The test code goes to considerable effort to recover from problems
+such as these. On the host-side separate threads are used for
+concurrent transfers, and on the target-side appropriate asynchronous
+I/O mechanisms are used. In addition there is a control thread on the
+host that checks the state of all the main host-side threads, and the
+state of the target using private control messages. If it discovers
+that one side has stopped sending or receiving data because of an
+error and the other side is blocked as a result, it will set certain
+flags and then cause one additional transfer to take place. That
+additional transfer will have the effect of unblocking the other side,
+which then discovers that an error has occurred by checking the
+appropriate flags. In this way both host and target should end up back
+in synch, and it is possible to move on to the next set of tests.
+</para>
+<para>
+However, the above assumes that the testing has not triggered any
+serious hardware conditions. If instead the target-side hardware has
+been left in some strange state so that, for example, it will no
+longer raise an interrupt for traffic on a particular endpoint then
+recovery is not currently possible, and the testing software will just
+hang.
+</para>
+<para>
+A possible future enhancement to the testing software would allow the
+host-side to raise a USB reset signal whenever a failure occurs, in
+the hope that this would clear any remaining problems within the
+target-side USB hardware.
+</para>
+
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+
+</part>
+<!-- /reference -->

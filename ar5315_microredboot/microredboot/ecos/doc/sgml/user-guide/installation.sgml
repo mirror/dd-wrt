@@ -1,0 +1,250 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     installation.sgml                                           -->
+<!--                                                                 -->
+<!--     eCos User Guide                                             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- Copyright (C) 2003 Nick Garnett                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part ID="user-guide-installation">
+<TITLE>Installing <productname>eCos</productname></TITLE>
+
+<!-- {{{ System Requirements            -->
+
+<chapter id="user-guide-installation-requirements">
+<title>System Requirements</title>
+
+<ITEMIZEDLIST>
+
+<LISTITEM>
+<PARA><!-- <conditionaltext> -->Standard Intel architecture PC running
+ Linux (tested on recent Red Hat, SuSE and Debian distributions),
+ Microsoft Windows NT (no earlier than 4.0 + SP6a), Windows 2000 and
+ Windows XP. Linux distributions from other vendors may also work, but
+ are currently untested. </PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>Enough <!-- <index></index> --> disk space for the installed
+distribution. The <productname>eCos</productname> installation process
+will detail the various components of <productname>eCos</productname>
+and the compiler toolkit that can be installed, and their disk space
+requirements.</PARA>
+</LISTITEM>
+
+<LISTITEM>
+<PARA>64MB of RAM and a 350MHz or faster Pentium processor.</PARA><!-- <conditionaltext> -->
+</LISTITEM>
+
+</ITEMIZEDLIST>
+
+<PARA>If you are downloading the <productname>eCos</productname>
+release distribution from <ULINK
+URL="http://ecos.sourceware.org">ecos.sourceware.org</ULINK>,
+you will also need space to store that image and to compile the
+toolchain and <productname>eCos</productname> from source.</PARA>
+
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Installation on Linux          -->
+
+<chapter id="user-guide-installation-linux">
+<title>Installation on Linux</title>
+
+<para>
+Full instructions for the <ULINK
+URL="http://ecos.sourceware.org/getstart.html">downloading and
+installation of eCos</ULINK> on Linux hosts are provided on the eCos
+website.
+</para>
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Installation on Windows        -->
+
+<chapter id="user-guide-installation-windows">
+<title>Installation on Windows</title>
+
+<para>
+Full instructions for the <ULINK
+URL="http://ecos.sourceware.org/getstart.html">downloading and
+installation of eCos</ULINK> on Windows hosts are provided on the
+eCos website.
+</para>
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Target Setup                   -->
+
+<chapter id="user-guide-installation-target">
+<title>Target Setup</title>
+
+<PARA>While <productname>eCos</productname> supports a variety of
+targets, communication with all the targets happens in one of four
+ways. These are described in general below. Any details or variations
+from these descriptions will be found in the
+<productname>eCos</productname> documentation for a specific target,
+in the appendix.</PARA>
+
+<SECT1 id="connecting-target-serial">
+<TITLE><!-- <index></index> -->Connecting Via Serial Line</TITLE>
+
+<PARA>Most targets will have RedBoot or GDB Stubs installed.
+These normally waits for GDB to connect at 38400 baud, using 8 data
+bit, no parity bit and 1 stop-bit and no hardware flow control. Check
+the documentation for your target to ensure it uses this speed. If not,
+adjust the following instructions accordingly.</PARA>
+
+<PARA>The following instructions depend on your having selected
+the appropriate serial port on the host. That is, the serial port
+which connects to the target's (primary) serial port. On
+Linux this could be <FILENAME>/dev/ttyS0</FILENAME>,
+while the same port on Windows would be named COM1.
+Substitute the proper serial port name in the below.</PARA>
+
+<PARA>Connect to the target by issuing the following commands in
+GDB console mode:</PARA>
+
+<PROGRAMLISTING>
+(gdb) set remotebaud 38400    <!-- <conditionaltext> -->
+(gdb) target remote /dev/ttyS0
+</PROGRAMLISTING>
+
+<PARA>In Insight, connect by opening the <EMPHASIS>File-&#62;Target
+Settings</EMPHASIS> window and enter:</PARA>
+
+<PROGRAMLISTING>
+Target: Remote/Serial     
+Baud Rate: 38400     
+Port: /dev/ttyS0
+</PROGRAMLISTING>
+
+<PARA>Set other options according to preference, close the window
+and select 
+<EMPHASIS>Run-&#62;Connect to target</EMPHASIS>.
+</PARA>
+
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="connecting-target-ethernet">
+<TITLE><!-- <index></index> -->Connecting Via Ethernet</TITLE>
+
+<PARA>Some targets allow GDB to connect via Ethernet - if so, it will
+be mentioned in the document describing the target. Substitute the
+target's assigned IP address or hostname for &lt;hostname&#62; in the
+following. Depending on how RedBoot has been configured, it will
+either have this address allocated statically, or will acquire it via
+BOOTP. In both cases RedBoot will report the IP address it is
+listening on in its startup message printed on the serial port. The
+&lt;port&#62; is the TCP port which RedBoot is listening on, usually
+9000. It is also listed in the target document.</PARA>
+
+<PARA>Connect to the target by issuing the following command in
+GDB console mode:</PARA>
+
+<PROGRAMLISTING>
+(gdb) target remote &lt;hostname&#62;:&lt;port&#62;
+</PROGRAMLISTING>
+
+<PARA>In Insight, connect by opening the <EMPHASIS>File-&#62;Target
+Settings</EMPHASIS> window and enter:</PARA>
+
+<PROGRAMLISTING>
+Target: Remote/TCP     
+Hostname: &lt;hostname&#62;     
+Port: &lt;port&#62;
+</PROGRAMLISTING>
+
+<PARA><!-- <conditionaltext> -->Set other options according to
+preference, close the window and select <EMPHASIS>Run-&#62;Connect to
+target</EMPHASIS>.</PARA>
+
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="connecting-target-sim">
+<TITLE><!-- <index></index> -->Using A Simulator Target</TITLE>
+
+<PARA>GDB connects to all simulator targets using the same basic
+command, although each simulator may require additional options.
+These are listed in the document describing the target, and should
+be used when connecting.</PARA>
+
+<PARA>Connect to the target by issuing the following command in
+GDB console mode:</PARA>
+
+<PROGRAMLISTING>
+(gdb) target sim [target specific options]
+</PROGRAMLISTING>
+
+<PARA>In Insight, connect by opening the <EMPHASIS>File-&#62;Target
+Settings</EMPHASIS> window and enter:</PARA>
+
+<PROGRAMLISTING>
+Target: Simulator     
+Options: [target specific options]
+</PROGRAMLISTING>
+
+<PARA>Set other options according to preference, close the window and
+select <EMPHASIS>Run-&#62;Connect to target</EMPHASIS>.</PARA>
+
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="connecting-target-synth">
+<TITLE>Using A Synthetic Target</TITLE>
+
+<PARA>Synthetic targets are special in that the built tests and
+applications actually run as native applications on the host. This
+means that there is no target to connect to. The test or application
+can be run directly from the GDB console using:</PARA>
+
+<PROGRAMLISTING>
+(gdb) run
+</PROGRAMLISTING>
+
+<PARA>or from Insight by pressing the <EMPHASIS>Run</EMPHASIS> icon.
+There is therefore no need to connect to the target or download the
+application, so you should ignore GDB &ldquo;target&rdquo; and
+&ldquo;load&rdquo; commands in any instructions found in other places
+in the documentation.</PARA>
+</SECT1>
+
+</chapter>
+
+<!-- }}} -->
+
+</part>
+

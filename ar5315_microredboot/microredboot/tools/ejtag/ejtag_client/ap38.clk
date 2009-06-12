@@ -1,0 +1,9 @@
+REM Clear AHB error registers
+dml bc003070 1
+dml bc003078 1
+
+REM Set AR5312 Clock Control registers
+REM (No impact on AR5311)
+REM AJP XXX comment below out!
+mml bc003064 0x0915
+mml bc003068 0x0011

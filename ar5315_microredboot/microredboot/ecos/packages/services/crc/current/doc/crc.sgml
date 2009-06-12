@@ -1,0 +1,97 @@
+<PART ID="services-crc">
+<TITLE>CRC Algorithms</TITLE>
+<PARTINTRO>
+<PARA>
+The CRC package provides implementation of CRC algorithms. This
+includes the POSIX CRC calculation which produces the same result as
+the cksum command on Linux, another 32 bit CRC by Gary S. Brown and a
+16bit CRC. The CRC used for Ethernet FCS is also implemented.
+</PARA>
+</PARTINTRO>
+<CHAPTER id="crc-functions">
+<TITLE>CRC Functions</TITLE>
+<SECT1 id="services-crc-api">
+<TITLE>CRC API</TITLE>
+<para>
+The package implements a number of CRC functions as described below.
+The API to these functions is in the include file
+<filename>cyg/crc/crc.h</filename>.
+</para>
+<sect2 id="services-crc-api-cyg-posix-crc32">
+<title>cyg_posix_crc32</title>
+<para>
+This function implements a 32 bit CRC which is compliant to the POSIX
+1008.2 Standard. This is the same as the Linux cksum program.
+</para>
+<programlisting>
+cyg_uint32 cyg_posix_crc32(unsigned char &ast; s, int len);
+</programlisting>
+<para>
+The CRC calculation is run over the data pointed to by
+<parameter>s</parameter>, of length <parameter>len</parameter>. The
+CRC is returned as an unsigned long.</para>
+</sect2>
+
+<sect2 id="services-crc-api-cyg-crc32">
+<title>cyg_crc32</title>
+<para>
+These functions implement a 32 bit CRC by Gary S. Brown. They use the
+polynomial
+X^32+X^26+X^23+X^22+X^16+X^12+X^11+X^10+X^8+X^7+X^5+X^4+X^2+X^1+X^0.
+</para>
+<programlisting>
+cyg_uint32 cyg_crc32(unsigned char &ast; s, int len);
+cyg_uint32 cyg_crc32_accumulate(cyg_uint32 crc, unsigned char &ast; s, int len);
+</programlisting>
+<para>
+The CRC calculation is run over the data pointed to by
+<parameter>s</parameter>, of length <parameter>len</parameter>. The
+CRC is returned as an unsigned long.</para> 
+
+<para> The CRC can be calculated over data separated into multiple
+buffers by using the function <parameter> cyg_crc32_accumulate()
+</parameter>. The parameter <parameter>crc</parameter> should be the
+result from the previous CRC calculation.
+</para>
+</sect2>
+
+<sect2 id="services-crc-api-cyg-ether-crc32">
+<title>cyg_ether_crc32</title>
+<para>
+These functions implement the 32 bit CRC used by the Ethernet FCS word.
+</para>
+<programlisting>
+cyg_uint32 cyg_ether_crc32(unsigned char &ast; s, int len);
+cyg_uint32 cyg_ether_crc32_accumulate(cyg_uint32 crc, unsigned char &ast; s, int len);
+</programlisting>
+<para>
+The CRC calculation is run over the data pointed to by
+<parameter>s</parameter>, of length <parameter>len</parameter>. The
+CRC is returned as an unsigned long.</para> 
+
+<para> The CRC can be calculated over data separated into multiple
+buffers by using the function <parameter> cyg_ether_crc32_accumulate()
+</parameter>. The parameter <parameter>crc</parameter> should be the
+result from the previous CRC calculation.
+</para>
+</sect2>
+
+<sect2 id="services-crc-api-cyg-crc16">
+<title>cyg_crc16</title>
+<para>
+This function implements a 16 bit CRC. It uses the polynomial
+x^16+x^12+x^5+1.
+</para>
+<programlisting>
+cyg_uint16 cyg_crc16(unsigned char &ast; s, int len);
+</programlisting>
+<para>
+The CRC calculation is run over the data pointed to by
+<parameter>s</parameter>, of length <parameter>len</parameter>. The
+CRC is returned as an unsigned short.</para>
+</sect2>
+
+</SECT1>
+</CHAPTER>
+</PART>
+

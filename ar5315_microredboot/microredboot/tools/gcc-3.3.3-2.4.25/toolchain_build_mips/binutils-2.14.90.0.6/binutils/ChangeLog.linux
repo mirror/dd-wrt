@@ -1,0 +1,105 @@
+2002-09-18  H.J. Lu <hjl@gnu.org>
+
+	* cxxfilt.c: Updated from
+
+	Sun Oct 10 19:23:28 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (flags): Removed.
+	(main): Call init_demangler () with options for Java for "-j".
+	(demangle_it): Call demangle_symbol () instead of
+	cplus_demangle ().
+	(main): Likewise.
+
+	Sun Oct 10 15:48:07 1999  H.J. Lu  (hjl@gnu.org)
+
+	* cplus-dem.c (usage): Modified -s/--format. Added
+	-d/--demangler.
+	(long_options): Add demangler.
+	(main): Handle 'd'. Use o_style () for setting
+	current_demangling_style. Call init_demangler ().
+
+2002-07-05  H.J. Lu <hjl@gnu.org>
+
+	* budemang.c (demangle): Call demangle_symbol instead of
+	cplus_demangle.
+
+2001-10-21  H.J. Lu <hjl@gnu.org>
+
+	* configure: Rebuid for ../libtool.m4 change.
+
+2000-09-02  H.J. Lu  <hjl@gnu.org>
+
+	* acinclude.m4: Include ../libiberty/aclibdl.m4 instead of
+	../libiberty/acinclude.m4.
+
+	* aclocal.m4: Rebuild.
+	* configure: Likewise.
+
+2000-06-16  H.J. Lu  <hjl@gnu.org>
+
+	* objcopy.c (copy_section): Undo all changes made on
+	2000-06-15.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* addr2line.c (usage): Call get_demangler_list () for the
+	demangler list.
+	* nm.c (usage): Likewise.
+	* objdump.c (usage): Likewise.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* objcopy.c (copy_section): Limit adjusting relocations to
+	i386 and from PE to ELF.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* objcopy.c (copy_section): Call bfd_adjust_relocation () to
+	adjust relocations when copying a relocatable object file
+	between two different formats.
+
+Mon Oct 11 15:23:43 1999  H.J. Lu  (hjl@gnu.org)
+
+	* configure.in: Check HAVE_WEAK_SYMBOL before checking dlopen.
+	Define HAVE_DLOPEN.
+	* configure: Rebuilt.
+	* config.in: Likewise.
+
+	* acinclude.m4: Include ../libiberty/acinclude.m4.
+	* aclocal.m4: Rebuilt.
+
+Sun Oct 10 10:02:51 1999  H.J. Lu  (hjl@gnu.org)
+
+	* addr2line.c (OPTION_DEMANGLER, OPTION_STYLE): New.
+	(long_options): Add entries for OPTION_DEMANGLER and
+	OPTION_STYLE.
+	(usage): Add "[--demangler=dso:function]" and
+	"[--style={gnu,lucid,arm,hp,edg,gnat,compaq}]".
+	(translate_addresses): Call demangle_symbol () instead of
+	cplus_demangle.
+	(main): Handle OPTION_DEMANGLER and OPTION_STYLE. Call
+	init_demangler ().
+	* nm.c: Likewise.
+	* objdump.c: Likewise.
+
+	* configure.in (AC_CHECK_HEADERS): Added dlfcn.h.
+	(AC_SEARCH_LIBS): Use "m" instead of "-lm". Added dlopen/dl.
+	* configure: Rebuilt.
+	* config.in: Likewise.
+
+	* addr2line.c: Undo the change made on Tue Feb 16 11:21:18 1999.
+	* nm.c: Likewise.
+	* objdump.c: Likewise.
+
+Tue Feb 16 11:21:18 1999  H.J. Lu  (hjl@gnu.org)
+
+	* addr2line.c (demangle_lang): New. Initialized to
+	"DMGL_ANSI | DMGL_PARAMS".
+	(OPTION_LANG): New.
+	(long_options): Add an entry for OPTION_LANG.
+	(usage): Add "[--lang=language]".
+	(translate_addresses): Call cplus_demangle () with "demangle_lang"
+	instead of "DMGL_ANSI | DMGL_PARAMS".
+	(main): Handle OPTION_LANG.
+	* nm.c: Likewise.
+	* objdump.c: Likewise.

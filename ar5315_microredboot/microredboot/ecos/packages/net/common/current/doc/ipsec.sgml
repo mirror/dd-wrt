@@ -1,0 +1,87 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     ipsec.sgml                                                  -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (c) 2003 Andrew Lunn                                  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART ID="net-ipsec-common">
+  <TITLE>IPSEC for eCos</TITLE>
+  <PARTINTRO>
+    <PARA>
+    The FreeBSD network stack which is part of
+    <productname>eCos</productname> can be configured to use IPSEC to
+    provide more secure communications between Internet hosts. IPSEC
+    can be used with both IPv4 and IPv6.
+    </PARA>
+  </PARTINTRO>
+  <CHAPTER id="net-ipsec-common-installation">
+    <TITLE>Installation and Configuration</TITLE>
+    <PARA>
+    Due to the restrictions imposed by various countries on the
+    exportation and importation of cryptographic software, it has been
+    decided to distribute the crypto parts of FreeBSD IPSEC separately
+    from the rest of eCos. Before IPSEC can be enabled the eCos
+    package bsd_crypto must be installed. This package can be found on
+    the eCosCentric server at
+    <ulink url="ftp://ftp.ecoscentric.com:/pub/contrib">
+    ftp.ecoscentric.com:/pub/contrib</ulink>. Once the package has been
+    downloaded it must be installed using the
+    <LITERAL>ecosadmin.tcl</LITERAL> script.
+    </PARA>
+
+    <PARA>
+    When the bsd_crypto package has been installed, the building of
+    IPSEC will automatically be enabled when the FreeBSD stack is
+    used. It can be disabled using the configuration option
+    <LITERAL>CYGPKG_NET_IPSEC</LITERAL>. There are no other
+    configuration options for IPSEC as a whole.
+    </PARA>
+
+    <PARA>
+    In order to use IPSEC, connections must be configured. This can be
+    performed using <FUNCTION>setsockopt()</FUNCTION> calls. A more
+    convenient way is the use the <LITERAL>libipsec</LITERAL> library
+    from the <PRODUCTNAME>KAME</PRODUCTNAME> distribution. eCos
+    contains a snapshot of this library, which is documented else
+    where. The aim is to also port the
+    <PRODUCTNAME>racoon</PRODUCTNAME> daemon to eCos in the near
+    future.
+    </PARA>
+
+    <PARA>
+    It should be noted that the FreeBSD stack in eCos is quite
+    old. IPSEC and IPv6 have continued to develop. It is quite
+    possible there could be interoperabilty problems when using the
+    IPSEC implementation in eCos with more modern implementations.
+    </PARA>
+
+    <PARA>
+    It should also be noted that IPSEC, libipsec etc are currently
+    work in progress items.
+    </PARA>
+  </CHAPTER>
+  &net-ipsec-libipsec-libipsec-manpages-sgml;
+</PART>

@@ -1,0 +1,701 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_sparclite.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/sparclite.ld: 
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2002-04-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S:
+	* src/vec_xvsr.S:
+	* src/vec_ivsr.S:
+	Don't use .file as it can confuse debugging since the .file
+	doesn't contain the path and therefore the debugger will never
+	know where it lives! This conflicts with using -Wa,--gstabs.
+
+2000-10-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_arch.h (CYGARC_JMP_BUF_SIZE): Define hal_jmp_buf in
+	terms of this.
+
+2000-08-07  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/sparclite.ld: Remove extra underscore from below. It was
+	correct before.
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/basetype.h:
+	Removed definition of CYG_LABEL_NAME(). Now dealt with by default
+	definition in cyg_type.h.
+
+	* src/sparclite.ld:
+	Added extra underscore to _stext and _etext.
+	Switched over to new table creation mechanism.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h (CYGARC_HAL_SAVE_GP, CYGARC_HAL_RESTORE_GP):
+	Added.
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: 
+	* src/hal_boot.c: 
+	CYG_HAL_SPARCLITE_ > CYGPKG_HAL_SPARCELITE_
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sparclite.cdl: removed fix me
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/sparclite.ld: Add support for network package.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_sparclite.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_sparclite.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_sparclite.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_sparclite.cdl: Define build options.
+
+1999-11-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_sparclite.cdl: Addded.
+
+1999-10-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vectors.S (not_window_overflow): Actually the dispatcher
+	into exception VSRs.  Bugfix: wrong number was placed in %l3 for
+	call to xvsr, so for *some* types of trap, including user traps
+	other than those handled directly in-HAL, a vector way off the end
+	of the array would be used.  Apparently those other types of trap
+	never happen, but just in case...
+
+1999-10-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vectors.S: Optionally implement Multiple (rather than
+	Single) Vector Trapping.  The config options to control this are
+	in the platform HAL because some SPARCs do not support SVT, where
+	it is optional the platform says so.  This demands a variable
+	sized region be reserved for trampoline code or the vectors in
+	RAM, which is done via section .ram_vectors, defined herein.
+
+	* src/sparclite.ld: Define SECTION_ram_vectors(...) to deal with
+	the new .ram_vectors section.  This is to provide a variable sized
+	area at the start of RAM to hold either trampoline code when SVT
+	is selected, or a fill 4k + handlers of vectors when MVT is
+	selected.  Previously this was bodged by pretending RAM starts at
+	0x4000200 in ROM startup builds.
+	(comment from the example .ldi files...)
+	The ram_vectors section is to allow some free space to copy
+	vectors into from the ROM.  This is required to be variable size
+	to accomodate SVT or MVT; 80 bytes vs 4kB.  Copying is not
+	necessary with MVT, but it is optional because it may offer
+	performance gains.  Copying is required for SVT because the
+	(aligned) start of ROM contains initialization instructions.  RAM
+	copy is used rather than leave a big gap in the ROM to get an
+	aligned address for the trampoline code.  For RAM startup,
+	ram_vectors will usually be of size zero, unless MVT and copying
+	are enabled for memory estimation reasons.
+
+1999-09-29  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	[src/vectors.S: needed no change!]
+	
+	* include/vectors.h: Potentially accept a register window count
+	from the platform HAL, or according to platform selection.  Make
+	more of the dependent macros computed.
+
+	* src/vec_ivsr.S (hal_default_interrupt_vsr): Handle other register
+	window sizes correctly; particularly when handling underflow trap
+	by hand.
+
+	* src/vec_xvsr.S (hal_default_exception_vsr): Handle other register
+	window sizes correctly; particularly when handling underflow trap
+	by hand.
+
+	* src/context.S (hal_thread_load_context): Handle other register
+	window sizes correctly.
+
+	* src/icontext.c (cyg_hal_sparc_get_gdb_regs): Handle other register
+	window sizes correctly; set up initial context differently.
+
+1999-06-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h (hal_jmp_buf): force this to be 64-bit
+	aligned so that std ops in hal_setjmp(), hal_longjmp() work.
+
+1999-06-03  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_boot.c: Add a dummy __gccmain() to prevent ctors being
+	called twice.  This seems to be a recent compiler change:
+	[from gcc/ChangeLog]
+	Sat May 22 18:18:43 1999  Jason Merrill  <jason@yorick.cygnus.com>
+           * sparc/liteelf.h: Handle ctors like MIPS crosses.
+           * sparc/lite.h (STARTFILE_SPEC, LIB_SPEC): Define to "".
+           * configure.in: Don't use libgloss.h on sparclite-elf.
+           Use collect2 on sparclite-aout.
+
+1999-05-20  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_INTERRUPT_STACK_CALL_PENDING_DSRS): 
+	Define this if CYGIMP_HAL_COMMON_INTERRUPTS_USE_INTERRUPT_STACK;
+	ie. we are running a separate interrupt stack.  Also define
+	symbols for it so that we can monitor its usage easily.
+
+	* src/vec_ivsr.S (hal_interrupt_stack_call_pending_DSRs): Add this
+	function to run DSRs on the interrupt stack (if using it).  Switch
+	over to executing on the interrupt stack when needed.
+
+	* src/vectors.S (cyg_interrupt_stack_base): Define the interrupt
+	stack either if we need it as an interrupt stack or if we need it
+	as a bootup stack (simulator); if it's there, use it as a bootup
+	stack anyway.
+
+	* src/context.S (hal_thread_load_context): Install the PSR that
+	was saved in its entirety, including the interrupt and trap enable
+	state.  This is needed for running a separate interrupt stack, but
+	harmless when not so doing.
+
+	* src/icontext.c (hal_thread_init_context): Install an initial PSR
+	which includes ET, S and PS (Enable traps, Supermode, prevSuper)
+	and a PIL (processor interrupt level) of 15 (maximum)
+	so that a context switch which preserves interrupt mode will work.
+
+1999-05-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h (HAL_THREAD_INIT_CONTEXT): Align stack
+	(rather conservatively) before use.
+
+1999-04-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Remove the -n argument to tail, it does not appear to be required
+	on any supported host and causes problems with some
+	implementations of tail.
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sparclite.ld: Define __bss_end at the end of the BSS
+	* src/hal_boot.c (hal_zero_bss): Stop at __bss_end rather than _end
+	when clearing BSS
+	
+	These fix PR 19750
+
+1999-04-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak (EXTRAS): Don't generate extras.o here any more
+	But do define EXTRAS every time for the linker script.
+
+1999-04-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_RESTORE_INTERRUPTS et al): Put in 3 nops
+	after any writes to the psr; TBH I don't think they're strictly
+	necessary when not altering the window state, but for complete
+	safety and adherence to the book of words....
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/*.ld: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_io.h: If not the simulator, get hal_hwio.h too -
+	which describes board-and-CPUvariant-specific IO needs.
+
+1999-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_VSR_SET_TO_ECOS_HANDLER): Define this
+	macro for use in tests that are interested in exception diddling.
+	Redefine CYGNUM_HAL_ISR_MIN to describe the number of interrupt
+	sources; while there are XSRs too, this definition is better for
+	the error checking in kernel interrupt stuff.  Changed the symbols
+	used for defining tables sizes to match, since there are still 27
+	VSRs and ISRs/XSRs and their data.
+
+	* src/hal_intr.c: Use the correct symbol for the size of the
+	isr/vsr/their-data tables.
+
+1999-03-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/sparc_ex.c (cyg_[user_]start):
+	If there is no kernel, cyg_user_start() is never called, main gets
+	in and steals the CPU.  So we hang.  So if there is no kernel,
+	define cyg_start() instead to wrest control.
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h (CYGNUM_HAL_STACK_SIZE_TYPICAL): 
+	And this time make the edit correctly ;-/
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vectors.S (rom_vectors_end, rom_vectors): Add two new
+	symbols for copying trampoline code into RAM in ROM startup.  This
+	keeps ROM startup as similar as possible to RAM, for simplicity;
+	no re-ordering of vectors.S's contents.
+
+	* src/hal_boot.c (hal_copy_data): Copy in long sized units rather
+	than long longs, better to cope with ROM data alignment.
+	Also add some LED output (if SLEB hardware) for startup to help
+	with debugging ROM start.
+
+1999-03-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/PKGconf.mak: Remove dependence on echo '-e' switch.
+
+1999-03-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vectors.S (genuine_reset): Add a little extra debug to SLEB
+	LEDs, and use the genuine top-of-memory stack when running on
+	hardware; only define cyg_bootup_stack in the simulator case.
+
+	* src/sparclite.ld: Define rom_data_start, regardless of start
+	type, no harm is done.
+
+1999-03-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_sparclite.h: 
+	* include/hal_arch.h: Moved definition of 'CYGNUM_HAL_MINIMUM_STACK_SIZE'
+
+1999-03-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/icontext.c (cyg_hal_sparc_[gs]et_gdb_regs): 
+	Two new routines to communicate our nice, optimized stack save
+	states to a reg list for GDB.  My maximal register saves are not
+	really suitable for passing to GDB in any case, they're for humans
+	to debug the interrupt code more than anything else, and my
+	minimal save sets naturally contain pointers and ways of finding
+	the rest of the reg set, but it depends on whether it's an
+	interrupt save or a synchronous one, and given the SPARClite's
+	stack layout, it's a bit hairy.
+
+	* src/vec_ivsr.S (hal_default_interrupt_vsr): 
+	Do save %g0 even in a minimal context, so that the code for
+	communicating register state with GDB can tell it's a minimum
+	context.  Costs one store cycle per interrupt.
+
+	* include/hal_arch.h (HAL_[GS]ET_GDB_REGISTERS): 
+	Define and call routines cyg_hal_sparc_[gs]et_gdb_regs for 
+	communicating register state of a thread to GDB.
+
+	* src/vectors.S (real_vector): Reinstate the anullment of the
+	instructions that were blamed for register corruption earlier;
+	they are correct and safe.
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_INTERRUPT_IN_USE): Added.
+
+1999-03-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_boot.c: Added missing <cyg/infra/cyg_type.h> include file.
+
+1999-03-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/sparclite.ld: 
+	* src/PKGconf.mak: Clean up I/O package changes.
+
+1999-03-04  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sparclite.ld: 
+	Unconditionalize use of libextras.a and add to GROUP()
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	* src/sparclite.ld: New I/O package support.
+
+	* src/vectors.S: Fix register corruption problem - stems from
+	use of annulled instructions in window overflow/underflow code.
+
+1999-02-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	These log entries from 1999-02-22 to 1999-02-24 were executed in
+	a branch; this change is a merge of that branch into the trunk.
+
+	(1999-02-24  Hugo Tyson  <hmt@cygnus.co.uk>)
+
+	* tests/sparc_ex.c (sparc_ex_main): 
+	For all traps except the USER_TRAP, install the default VSR
+	hal_default_exception_vsr(); this is so that this test catches
+	exception ie. is able to work, even when we are playing nice with
+	CygMon and GDB.  The USER_TRAP is left so that breakpoints work,
+	for the test infrastructure.
+
+	(1999-02-22  Hugo Tyson  <hmt@cygnus.co.uk>)
+
+	* src/vectors.S (real_vector): Remove old testing code.  Add delay
+	NOPs after writes to %wim and %psr for safety.  Leave installing
+	the trap vector to platform-specific code, along with RAM control
+	and cache initialization.
+
+	* src/vec_ivsr.S (hal_default_interrupt_vsr): Add delay NOPs after
+	writing the %wim before doing a restore; that was a bug that was.
+
+	* src/vec_xvsr.S (hal_default_exception_vsr): same change.
+
+	* src/hal_intr.c: Remove platform-specific clock period variable; it
+	happens that both platforms sim and sleb have one, but it's not a
+	requirement of the target architecture.
+
+	* src/hal_boot.c (cyg_hal_start): Move diddling the sim-specific
+	watchdog into platform-specific startup code viz. new routines
+	hal_board_{pre/post}start().
+
+	* src/context.S: a couple of extra NOPs to ensure that %wim and
+	%psr changes work on real hardware.
+
+	(1999-02-22  Hugo Tyson  <hmt@cygnus.co.uk>)
+
+	* include/hal_arch.h (HAL_SET_GDB_REGISTERS): 
+	Remove warning about unused var 'cos of the incompleteness of
+	these macros; gdb interworking is not yet supported.
+
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/vectors.h:
+	Changed label used to access scheduler lock to one that is not
+	mangled by C++. This is intended to make support for interrupt
+	handling in non-kernel configurations easier.	
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	QA improvements
+	
+	* include/hal_intr.h:
+	Reorganise vector/interrupt/exception names according to purpose
+	Rename exception_handler() -> cyg_hal_exception_handler()
+	QA improvements
+
+	* src/hal_intr.c:
+	Rename exception_handler() -> cyg_hal_exception_handler()
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	Rename CYG_ISR_COUNT -> CYGNUM_HAL_ISR_COUNT
+	QA improvements
+
+	* src/vec_ivsr.S:
+	* src/vec_xvsr.S:
+	Rename CYG_ISR_COUNT -> CYGNUM_HAL_ISR_COUNT
+	QA improvements
+
+	* tests/sparc_ex.c:
+	Rename CYG_EXCEPTION_* -> CYGNUM_HAL_EXCEPTION_*
+	Rename CYG_VECTOR_UNALIGNED -> CYGNUM_HAL_VECTOR_UNALIGNED
+
+1999-02-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/context.S (hal_thread_load_context, hal_setjmp):
+	Disable interrupts (but not traps) while doing the flush of all my
+	callers and their callers' callers register sets to the stack.
+	There is evidence that the inconsistency in the stack during this
+	is a bad thing, though I have to admit that I don't see exactly
+	how it goes wrong.  Partly, it's impossible to debug, so if the
+	problem I saw (a SEGV in instrumentation of interrupt_end()) is
+	reproduced with this change, I'll have more to go on.  This is a
+	conservative change in that sense.
+	
+	* include/hal_arch.h (HAL_FLUSH_REGISTERS_TO_STACK): 
+	Disable interrupts but not traps while doing this.  Ditto.
+
+1999-02-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/hal_sparclite.h (CYGNUM_HAL_MINIMUM_STACK_SIZE):
+	Define a minimal sensible stack size for apps to use.  Note that
+	this file is included by hal_arch.h and so is available to all HAL
+	users, and in fact almost everyone by default.
+
+1999-02-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_intr.c (exception_handler): 
+	Include <cyg/infra/cyg_ass.h> so that the CYG_FAIL() in some
+	configurations actually compiles (actually: links).
+	combo{22,18,10,6} were thus afflicted.
+
+1999-02-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/sparc_ex.c (do_test): Make the test run for much less time
+	when CYG_USE_TRACING and in any case bleat periodically about how
+	successful it is to prevent testing system timeouts.  Also move
+	the test routines (those which provoke the exception) to the end
+	so that (ever helpful) -O3 cannot inline them and then "optimize"
+	the result and thus spoil the whole damned test too.
+
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_sparclite.h: Correct capitalization of
+	'SPARClite'.
+
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/sparclite.ld: New MLT-compatible linker script
+	* src/PKGconf.mak: Add build rules for sparclite.ld
+
+1999-02-04  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vec_ivsr.S (hal_default_interrupt_vsr): Preserve global
+	registers over interrupts, and implement support for
+	CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT ie. save a
+	minimal register set rather than a maximal.  Create a saved
+	register set whose address is passed to the interrupt handler
+	(though it may well be mostly empty).
+	[also tidied up trailing tabs and long blank lines]
+
+	* src/vec_xvsr.S (hal_default_exception_vsr): Preserve all
+	registers over interrupts; create a saved register set whose
+	address is passed to the exception handler so it can modify it.
+	[also tidied up trailing tabs and long blank lines]
+
+	* src/context.S( hal_setjmp, hal_longjmp):
+	(hal_thread_switch_context,hal_thread_load_context): Implement
+	CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM support; ie. save a minimal
+	register set rather than a maximal.
+	
+	* include/hal_arch.h (HAL_FLUSH_REGISTERS_TO_STACK): New macro
+	useful for writing exception handlers, for example.
+	(HAL_GET_GDB_REGISTERS, HAL_SET_GDB_REGISTERS): provided initial
+	dummy versions of these.
+
+	* tests/sparc_ex.c: A test of the exception mechanism:
+	deliberately cause unaligned accesses of various sizes and check
+	we get exactly one trap and correctly step over it by modifying
+	the saved register set whose address the exception ISR is handed.
+	This test should be regarded as documentation for the exception
+	handler API/ABI.
+	
+	* tests/PKGconf.mak (TESTS): Build sparc_ex.
+
+1999-02-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vectors.S (genuine_reset): 
+	Include <cyg/hal/halboot.si> to set up RAM controllers, cache and
+	the like - this is rather platform dependant.
+
+1999-02-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_TRANSLATE_VECTOR): 
+	Include a definition of this important macro.  Not.
+	It's used when interrupt chaining is selected, BUT we the HAL make
+	no distinction, it's up to the kernel to look after things.  So
+	this macro is an assignment.
+
+1999-01-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_intr.h: 
+	Get interrupt controller definitions from a board-specific file:
+	#include <cyg/hal/hal_xpic.h>
+	Get clock control definitions from a board-specific file:
+	#include <cyg/hal/hal_clock.h>
+	Delete the original definitions from this central file.
+	
+	* include/hal_cache.h: REMOVED to the simulator tree in the first
+	instance; more generally to various board-specific files.
+
+
+1999-01-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_DCACHE_ENABLE) (and its friends):
+	Define initial empty placeholder versions of these so that cache
+	tests build.  Well it's a start.
+	
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_boot.c (cyg_hal_invoke_constructors): 
+	Add code to deal with CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG
+	Tidy up and update description header
+	Shorten needlessly long lines
+	Remove all traces of non-CYG_KERNEL_USE_INIT_PRIORITY code
+
+1999-01-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vectors.S (genuine_reset): Set the RAM size to 4MB in the
+	erc32 simulator.
+
+	* include/hal_io.h: New file; macros to access IO space, really a
+	place holder at present.
+
+	* include/hal_intr.h: Do not define WATCHDOG() macro.
+
+	* src/hal_intr.c (hal_default_isr): Do not mess with the watchdog
+	in the the default interrupt handler.
+
+	* src/hal_boot.c (hal_zero_bss): use an efficient 8-byte zero.
+	(hal_copy_data): use an efficient 8-byte copy.
+	(cyg_hal_start): turn off the ERC32 watchdog timer before we start
+	anything very time consuming.
+
+	NB: the 8-byte copy changes require alignment in the linker
+	script: see the Changelog in hal/sparclite/sim/... for details.
+
+1999-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	Modified files in arch:
+	* include/hal_arch.h
+	* include/hal_intr.h
+	* src/PKGconf.mak
+	* src/context.S
+	* src/hal_intr.c
+	* src/vec_ivsr.S
+	* src/vec_xvsr.S
+	* src/vectors.S
+
+	New files in arch:
+	* src/hal_boot.c	(bss initialization, constructors &c)
+	* include/hal_cache.h	(empty but required header)
+
+	Modified files in sim:
+	* include/hal_diag.h
+
+	Lots more progress; essentially, everything now works.
+
+	Simulator's treatment of stdio is poor though, it doesn't work
+	under pkgtest.  This has been slowing me up.
+
+1999-01-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ecc/ecc/hal/sparclite/...:
+
+	Initial checkin of SPARClite HAL; it doesn't work yet, except the
+	most trivial of tests - timer and interrupt manipulation stuff is
+	entirely absent.
+
+	Here's some documentation of the initial checkin tree; this will
+	change, as platform dependent stuff moves correctly into the sim
+	or <board> directories.
+
+	arch/current/include:
+		basetype.h	nothing much here.
+		vectors.h	definitions of symbols shared between the
+			various vector code assembler files, can be
+			included in both C and assembler.
+		hal_intr.h	various macros for clock and interrupt
+			control plus the eCos vector numbering scheme; we
+			map thus:
+			what	SPARC trap type	    eCos vector numbers
+			-----------------------------------------------
+			(not used)   ---                0	
+			interrupts (17-31)		1-15
+			user traps (128-255)		16
+			exceptions (1-9,36==4)		17-25
+			others	   (10,?)		26
+			-----------------------------------------------
+			Trap types 5 and 6 which would be eCos vectors 21
+			and 22 are handled in the trampoline code in
+			file src/vectors.S
+		hal_arch.h	definition of a thread context, plus
+			macros for thread switching and the like.  Some
+			ancillary bit twiddling macros and cache barriers
+			too.
+
+	arch/current/include/pkgconf:
+		hal_sparclite.h 	pkgconf config/header file.
+	
+	arch/current/src:
+		vectors.S	boot-up stuff, trampoline code that hangs
+			on the interrupt/trap vector, handlers for window
+			under/overflow.  Saves some state in registers
+			then jumps to the interrupt or exception VSR
+	   		respectively.
+			Also instantiates the VSR table.
+		vec_ivsr.S	the default interrupt VSR; it establishes
+			a C calling environment (ie. anticipates a window
+			overflow) then locks the scheduler, calls the ISR
+			with appropriate arguments, and then interrupt_end()
+			before undoing that environment, anticipating
+			window underflow and returning to the interrupted
+			instruction.
+		vec_xvsr.S	the default exception AKA trap VSR; does
+			the same as the interrupt one but without the
+			scheduler lock or interrupt end.
+		hal_intr.c	instantiates the ISR table used by the
+			code above.
+		context.S	context switch code, saves and loads up a
+			whole register state, coroutine or longjump-like.
+		icontext.c	initializes a context to "jump" to in
+			context.S at the birth of a new thread.
+
+	sim/current/include:
+		hal_diag.h	macros to deal with debugging output via a
+			fake serial device of some kind; initially empty,
+			but definitely board/sim dependent.
+
+	sim/current/include/pkgconf:
+		hal_sparclite_sim.h 	pkgconf config/header file.
+
+	sim/current/src:
+		sim.ld		linker script bits for "sim" target.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+
+//EOF ChangeLog

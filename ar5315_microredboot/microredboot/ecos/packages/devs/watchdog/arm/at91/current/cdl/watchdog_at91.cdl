@@ -1,0 +1,138 @@
+# ====================================================================
+#
+#      watchdog_at91.cdl
+#
+#      eCos watchdog for ARM AT91 driver configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2003 Nick Garnett <nickg@calivar.com>
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      tkoeller
+# Contributors:   tkoeller, nickg
+# Date:           2000-05-05
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVICES_WATCHDOG_ARM_AT91 {
+    parent        CYGPKG_IO_WATCHDOG
+    active_if     CYGPKG_IO_WATCHDOG
+    display       "ARM AT91 watchdog driver"
+    requires      CYGPKG_HAL_ARM_AT91
+    requires      CYGPKG_KERNEL
+    hardware
+    define_header devs_watchdog_arm_at91.h
+    compile       watchdog_at91.cxx
+    implements    CYGINT_WATCHDOG_HW_IMPLEMENTATIONS
+    active_if     CYGIMP_WATCHDOG_HARDWARE
+    description   "
+      This package uses the watchdog device integrated
+      in the AT91 to execute a predefined action if the
+      application fails to call the reset function for
+      longer than a given timeout interval. This package
+      currently only supports the AT91x408xx, AT91M55800A and Diopsis
+      devices found on the Atmel EB40, EB40A, EB55 and JTST evaluation
+      boards. The AT91M42800 found on the EB42 is not supported
+      since it uses a totally different watchdog device."
+
+    cdl_option CYGIMP_WATCHDOG_HARDWARE {
+        parent	      CYGPKG_IO_WATCHDOG_IMPLEMENTATION
+        display       "Hardware watchdog"
+        calculated    1
+        implements    CYGINT_WATCHDOG_IMPLEMENTATIONS
+    }
+    
+    cdl_option CYGNUM_DEVS_WATCHDOG_ARM_AT91_DESIRED_TIMEOUT_MS {
+      	display       	"Desired timeout value"
+	flavor        	data
+	legal_values  	1 to 2047
+	default_value 	100
+	description "
+	    This parameter controls the watchdog timeout interval.
+	    Note that you may not get the exact value requested
+	    here, the timeout interval may have to be adjusted
+	    because of hardware limitations. The actual timeout
+	    used will be the smallest possible value that is not
+	    less than this parameter."
+    }
+    
+    cdl_option CYGSEM_DEVS_WATCHDOG_ARM_AT91_RESET {
+      	display       "Generate reset on watchdog expiration"
+	flavor	      bool
+	default_value 1
+      	implements    CYGINT_WATCHDOG_RESETS_ON_TIMEOUT
+	description   "
+	  Enabling this option changes the watchdog operation mode
+	  to generate a system reset upon expiration instead of
+	  invoking an application-defined action."
+    }
+
+    cdl_component CYGPKG_DEVICES_WATCHDOG_ARM_AT91_OPTIONS {
+        display       "AT91 watchdog build options"
+        flavor	      none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+        cdl_option CYGPKG_DEVICES_WATCHDOG_ARM_AT91_CFLAGS_ADD {
+            display   	  "Additional compiler flags"
+            flavor    	  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the watchdog device. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_DEVICES_WATCHDOG_ARM_AT91_CFLAGS_REMOVE {
+            display   	  "Suppressed compiler flags"
+            flavor    	  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the watchdog device. These flags are removed from
+                the set of global flags if present."
+        }
+
+    }
+}
+
+# EOF watchdog_at91.cdl

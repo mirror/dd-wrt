@@ -1,0 +1,164 @@
+# ====================================================================
+#
+#      hal_arm_sa11x0.cdl
+#
+#      ARM SA11x0 architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:
+# Date:           2000-05-08
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_ARM_SA11X0 {
+    display       "ARM SA11X0 architecture"
+    parent        CYGPKG_HAL_ARM
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm_sa11x0.h
+    description   "
+        This HAL variant package provides generic
+        support for the Intel StrongARM SA11x0 processors. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    implements    CYGINT_HAL_ARM_ARCH_STRONGARM
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+    implements    CYGINT_PROFILE_HAL_TIMER
+
+    # Let the architectural HAL see this variant's interrupts file -
+    # the SA11x0 has no variation between targets here.
+    define_proc {
+        puts $::cdl_header "#define CYGBLD_HAL_VAR_INTS_H <cyg/hal/hal_var_ints.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_ARM_VAR_IO_H"
+
+        puts $::cdl_header "#define CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES 1000000"
+    }
+
+    compile       hal_diag.c sa11x0_misc.c
+
+    cdl_option CYGHWR_HAL_ARM_SA11X0_PROCESSOR_CLOCK {
+        display       "Processor clock rate"
+        active_if     { CYG_HAL_STARTUP == "ROM" }
+        flavor        data
+        legal_values  59000 73700 88500 103200 118000 132700 147500 162200 176900 191700 206400 221200
+        default_value { CYGHWR_HAL_ARM_SA11X0_PROCESSOR_CLOCK_OVERRIDE_DEFAULT ?
+                        CYGHWR_HAL_ARM_SA11X0_PROCESSOR_CLOCK_OVERRIDE_DEFAULT : 221200}
+        description   "
+           The SA-1100 processor can run at various frequencies.
+           These values are expressed in KHz.  Note that there are
+           several steppings of the SA-1100 rated to run at different
+           maximum frequencies.  Check the specs to make sure that your
+           particular processor can run at the rate you select here."
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants"
+        flavor        none
+        no_define
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+            description   "
+              This option selects the heartbeat rate for the real-time clock.
+              The rate is specified in ticks per second.  Change this value
+              with caution - too high and your system will become saturated
+              just handling clock interrupts, too low and some operations
+              such as thread scheduling may become sluggish."
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value (3686400/CYGNUM_HAL_RTC_DENOMINATOR)        ;# Clock for OS Timer is 3.6864MHz
+        }
+    }
+
+    # Control over hardware layout.  
+    cdl_interface     CYGHWR_HAL_ARM_SA11X0_UART1 {
+        display   "UART1 available as diagnostic/debug channel"
+        description "
+	  The SA11x0 chip has multiple serial channels which may be
+          used for different things on different platforms.  This
+          interface allows a platform to indicate that the specified
+          serial port can be used as a diagnostic and/or debug channel."
+    }
+
+    cdl_interface     CYGHWR_HAL_ARM_SA11X0_UART3 {
+        display   "UART3 available as diagnostic/debug channel"
+        description "
+	  The SA11x0 chip has multiple serial channels which may be
+          used for different things on different platforms.  This
+          interface allows a platform to indicate that the specified
+          serial port can be used as a diagnostic and/or debug channel."
+    }
+
+    cdl_option CYGPKG_HAL_ARM_SA11X0_TESTS {
+	display "SA11x0 HAL tests"
+	flavor  data
+	no_define
+	calculated { "tests/mmap_test" }
+	description   "
+	This option specifies the set of tests for the SA11x0 HAL."
+    }
+
+
+    cdl_component CYGPKG_REDBOOT_HAL_SA11X0_OPTIONS {
+        display       "Redboot HAL variant options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+
+        # RedBoot details
+        requires { CYGHWR_REDBOOT_ARM_LINUX_EXEC_ADDRESS_DEFAULT == 0xc0008000 }
+        define_proc {
+            puts $::cdl_header "#define CYGHWR_REDBOOT_ARM_TRAMPOLINE_ADDRESS 0x00001f00"
+        }
+    }
+}

@@ -1,0 +1,166 @@
+2003-06-27  Manu Sharma  <manu.sharma@ascom.ch>
+
+	* src/usbsethdrv.c (usbs_ethdrv_ioctl): Return 0 when we handle
+	ETH_DRV_GET_IF_STATS* otherwise the caller thinks we don't support
+	these ioctl calls.
+
+2003-03-23  Iztok Zupet <iz@vsr.si>
+
+	* doc/usbseth.sgml: Remove .eps and .gif and introduce .png for
+	for PDF output.
+	* doc/simple.gif, doc/tcpip.gif: Delete.
+	* doc/simple.png, doc/tcpip.png: New files to replace GIFs.
+
+2003-04-19  Bart Veer  <bartv@ecoscentric.com>
+
+	* cdl/usbs_eth.cdl: Add per-package compiler flag support and
+	default to -D_KERNEL and -D__ECOS for use with the new network
+	stack.
+
+2003-04-17  Bart Veer  <bartv@ecoscentric.com>
+
+	* doc/usbseth.sgml: Fix typo reported by Patrick Doyle
+
+2003-02-25  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/usbseth.sgml: Declare as <part> not <reference> to get
+	correct TOC numbering.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/usbs_eth.cdl: Fix doc link.
+
+	* doc/usbseth.sgml: Comment out DOCTYPE for now to allow building
+	with standard doc build.
+
+2002-07-26  David Smith  <dsmith@redhat.com>
+
+	* host/ecos_usbeth.c (ecos_usbeth_probe):
+	Two changes to the code that checks to see if this is the correct
+	driver for the USB peripheral that was just loaded.  Fixed a bug
+	that was comparing the product id of the peripheral to the vendor
+	id.  Supports multiple implementations (vendor id/product id sets)
+	so that the same driver could be used for several devices.
+
+2001-07-10  Bart Veer  <bartv@redhat.com>
+
+	* doc/usbseth.sgml, doc/*.html:
+	Document the below changes.
+
+	* cdl/usbs_eth.cdl:
+	The USB-ethernet device now registers itself as either eth0 or
+	eth1 by default, depending on what else is present in the system.
+	Also bootp/dhcp support is prohibited for this network device on
+	the ground that it is rather unlikely that a host will provide
+	a dhcp service for a network device that does not exist until the
+	host-target connection has been fully established.
+	
+
+2001-07-02  Bart Veer  <bartv@redhat.com>
+
+	* host/ecos_usbeth.c (ecos_usbeth_probe):
+	Determine the endpoints to use for transmits and receives
+	from the descriptors supplied by the device.
+
+2001-06-28  Bart Veer  <bartv@redhat.com>
+
+	* include/usbs_eth.h, src/usbsethdrv.c, src/usbseth.c:
+	Align receive boundaries to cacheline boundaries, and
+	always transfer a multiple of the cacheline size. This
+	avoids problems with some USB device drivers.
+	
+2001-05-21  Bart Veer  <bartv@redhat.com>
+
+	* host/ecos_usbeth.c (ecos_usbeth_start_tx):
+	Cope with targets that have problems receiving zero-byte
+	packets.
+
+2001-02-02  Bart Veer  <bartv@redhat.com>
+
+	* cdl/usbs_eth.cdl:
+	Add doc property to point at the HTML
+
+	* doc/usbseth.sgml, doc/*.html:
+	Incorporate changes from docs department, regenerate HTML
+
+2001-01-26  Bart Veer  <bartv@redhat.com>
+
+	* src/usbsethdrv.c (usbs_ethdrv_ioctl):
+	Change chipset specification to null, since there is no real
+	hardware involved, plus SNMP cleanup.
+
+2001-01-22  Bart Veer  <bartv@redhat.com>
+
+	* doc/usbseth.sgml, doc/makefile, doc/simple.fig, doc/tcpip.fig:
+	Added documentation.
+
+2000-12-15  Bart Veer  <bartv@redhat.com>
+
+	* src/usbsethdrv.c:
+	Enable poll functions.
+
+2000-11-29  Bart Veer  <bartv@redhat.com>
+
+	* host/ecos_usbeth.c:
+	Remove debugging and fix the MTU
+
+2000-11-28  Bart Veer  <bartv@redhat.com>
+
+	* cdl/usbs_eth.cdl
+	* include/usbs_eth.h
+	* src/usbseth.c
+	* src/usbsethdrv
+	Clean-up, adding missing functionality such as SNMP support,
+	update to current USB API.
+
+2000-11-24  Bart Veer  <bartv@redhat.com>
+
+	* host/ecos_usbeth.c:
+	Ignore runt packets, cope with the confusion between
+	CRC errors and timeouts.
+
+	* include/usbs_eth.h, src/usbseth.c
+	Clean up alignments.
+
+2000-11-22  Bart Veer  <bartv@redhat.com>
+
+	* include/usbs_eth.h: Fix nested #include protection
+
+2000-11-21  Bart Veer  <bartv@redhat.com>
+
+	* First check-in of eCos USB support.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

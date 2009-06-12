@@ -1,0 +1,27 @@
+#
+# A configuration for building a GDB stub ROM for the DDB-VRC4373 board.
+#
+# To build the ROMs:
+# 1. Create a build directory and cd into it.
+# 2. Run: permtest.tcl --srcdir=<sourcedir> <sourcedir>/hal/mips/vrc4373/current/misc/stubrom.perm
+#    Where <sourcedir> is the path to your source repository.
+# 3. Run: make
+# 4. Run: make -C hal/common/current/src/stubrom
+#
+# The file hal/common/current/src/stubrom/stubrom will be an ELF excutable of the ROM.
+# Use objcopy to convert this to the appropriate format for your PROM burner.
+# Enjoy!
+#
+
+pkgconf --target=mips_vr4300 --platform=vrc4373 --startup=romram --disable-kernel --disable-uitron --disable-libc --disable-libm --disable-io --disable-io_serial --disable-wallclock --disable-watchdog
+
+header hal.h {
+	enable  CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+	enable  CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+	disable CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+	enable  CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+
+	enable  CYGSEM_HAL_ROM_MONITOR
+}
+
+

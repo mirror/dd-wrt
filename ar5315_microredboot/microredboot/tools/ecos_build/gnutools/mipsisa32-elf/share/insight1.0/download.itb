@@ -1,0 +1,284 @@
+# Download class implementation for Insight.
+# Copyright 1999, 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ----------------------------------------------------------------------
+# Download window and associated procs
+#
+# ----------------------------------------------------------------------
+
+body Download::constructor {args} {
+  global gdb_pretty_name
+  debug $args
+  eval itk_initialize $args
+  window_name "Download Status" "Download"
+  add_hook download_progress_hook "$this update_download"
+
+  label $itk_interior.dload -text "Downloading $filename to $gdb_pretty_name"
+
+  label $itk_interior.stat
+  set f [frame $itk_interior.f]
+
+  set i 0
+  while {$i <$num_sections} {
+    iwidgets::feedback $f.meter$i -steps $num_steps -fraction 0.0
+    grid forget [$f.meter$i component percentage]
+    label $f.sec$i -text [lindex $section(names) $i] -anchor w
+    label $f.num$i -text $bytes($i) -anchor e
+    grid $f.sec$i $f.meter$i $f.num$i -padx 4 -pady 4 -sticky news
+    incr i
+  }
+  grid columnconfigure $f 1 -weight 1
+
+  button $itk_interior.cancel -text Cancel -command "$this cancel" \
+    -state active -width 10
+
+  pack $itk_interior.dload -padx 5 -pady 5 -side top -fill x -expand yes
+  pack $itk_interior.stat -padx 5 -pady 5 -expand yes
+  pack $itk_interior.f -padx 5 -pady 5 -fill x -expand yes
+
+  pack $itk_interior.cancel -padx 5 -pady 5 -side bottom
+  ::update idletasks
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  update_download - update the download meters
+# ------------------------------------------------------------------
+body Download::update_download { sec num tot } {
+
+  # Loop through all the sections, marking each as either done or
+  # updating its meter. This will mark all previous sections prior to
+  # SEC as complete. 
+  foreach s $section(names) {
+    set i $section($s)
+
+    if {$s == $sec} {
+      set f [expr {$num / $bytes($i)}]
+      $itk_interior.f.meter$i configure -fraction $f
+      break
+    } else {
+      $itk_interior.f.meter$i configure -fraction 1.0
+    }
+  }
+
+  ::update
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  done - notification that the download is really complete
+# ------------------------------------------------------------------
+body Download::done { {msg ""} } {
+  bell
+
+  if {$msg == ""} {
+    # download finished
+    set secs [expr {[clock seconds] - $::download_start_time}]
+    if {$secs == 0} { incr secs }
+    $itk_interior.cancel config -state disabled
+    set bps [expr {8 * $total_bytes / $secs / 1000}]
+    $itk_interior.stat config -text "$total_bytes bytes in $secs seconds ($bps kbps)"
+    
+    # set all indicators to FULL
+    foreach sec $section(names) {
+      set i $section($sec)
+      $itk_interior.f.meter$i configure -fraction 1.0
+    }
+  } else {
+    # download failed
+    if {$msg != "CANCEL"} {
+      $itk_interior.stat config -text $msg
+    }
+  }
+  
+  # enable OK button
+  $itk_interior.cancel config -state active -text OK -command "delete object $this"
+  ::update
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  cancel - cancel the download
+# ------------------------------------------------------------------
+body Download::cancel {} {
+  debug "canceling the download"
+  set ::download_cancel_ok 1
+}
+
+# ------------------------------------------------------------------
+#  DESTRUCTOR - destroy window containing widget
+# ------------------------------------------------------------------
+body Download::destructor {} {
+  remove_hook download_progress_hook "$this update_download"
+}
+
+body Download::do_download_hooks {} {
+  set ::download_timer(ok) 1
+}
+
+body Download::download_hash { section num } {
+  global download_timer
+  debug "sec=$section num=$num tot=$total_bytes ok=$::download_cancel_ok"
+  ::update
+  # Only run the timer at discrete times...
+  if {[info exists download_timer(timer)]} {
+    after cancel $download_timer(timer)
+  }
+  
+  set download_timer(timer) [after 100 Download::do_download_hooks]
+  if {![info exists download_timer(ok)] || $download_timer(ok)} {
+    run_hooks download_progress_hook $section $num $total_bytes
+    ::update
+    unset download_timer(timer)
+    set download_timer(ok) 0
+  }
+  
+  return $::download_cancel_ok
+}
+
+# Download the executable. Return zero for success, and non-zero for error.
+body Download::download_it { } {
+  global gdb_exe_name gdb_downloading gdb_loaded
+  global gdb_target_name gdb_pretty_name
+  global gdb_running
+  global tcl_platform
+
+  debug "exe=$gdb_exe_name downloading=$gdb_downloading"
+  debug "    loaded=$gdb_loaded target=$gdb_target_name running=$gdb_running"
+
+  if {$gdb_downloading || $gdb_exe_name == ""} {
+    return 0
+  }
+
+  set gdb_downloading 1
+  set gdb_loaded 0
+  # Make sure the source window has had time to be created
+  ::update
+
+  gdbtk_busy
+
+  # Only places that load files should do set_exe
+  #set_exe
+  switch [set_target] {
+    ERROR {
+      # target command failed
+      set gdb_downloading 0
+      gdbtk_idle
+      return 0
+    }
+    CANCELED {
+      # command cancelled by user
+      set gdb_downloading 0
+      if {$gdb_running} {
+	# Run the idle hooks (free the UI)
+	gdbtk_update
+	gdbtk_idle
+      } else {
+	gdbtk_idle
+      }
+      return 1
+    }
+  }
+
+  if {[string compare $tcl_platform(platform) "windows"] == 0} {
+    set f [ide_cygwin_path to_win32 $gdb_exe_name]
+  } else {
+    set f $gdb_exe_name
+  }
+  if {! [file exists $f]} {
+    tk_messageBox -icon error -title GDB -type ok \
+      -message "Request to download non-existent executable $gdb_exe_name"
+    set gdb_downloading 0
+    gdbtk_idle
+    return 0
+  }
+
+  debug "downloading $gdb_exe_name"
+
+  set target $gdb_target_name
+
+  # get load info and total up number of bytes
+  if {[catch {gdb_load_info $gdb_exe_name} val]} {
+    set result "$gdb_exe_name: $val"
+    tk_dialog .load_warn "" "$result"  error 0 Ok
+    return 0
+  }
+  set i 0
+  set total_bytes 0
+  set section(names) {}
+  foreach x $val {
+    set s [lindex $x 0]
+    lappend section(names) $s
+    set section($s) $i
+    set b [lindex $x 1]
+    set bytes($i) [expr {double($b)}]
+    incr total_bytes $b
+    incr i
+  }
+  set num_sections $i
+
+  set ::download_cancel_ok 0
+  set ::download_start_time [clock seconds]
+
+  if {[pref getd gdb/load/$target-verbose] == "1"} {
+    # open a detailed download dialog window
+    set download_dialog [ManagedWin::open Download -transient -filename $gdb_exe_name]
+  } else {
+    # raise source windows
+    foreach src [ManagedWin::find SrcWin] {
+      $src reveal
+      $src toolbar downloading
+    }
+    set download_dialog ""
+  }
+
+  set download_error ""
+  debug "starting load"
+  ::update idletasks
+  if {[catch {gdb_cmd "load $gdb_exe_name"} errTxt]} {
+    debug "load returned $errTxt"
+    if {[regexp -nocase cancel $errTxt]} {
+      set download_error "CANCEL"
+    } else {
+      set download_error $errTxt
+    }
+    set ::download_cancel_ok 1
+  }
+
+  debug "Done loading"
+
+  set gdb_downloading 0
+  if {$::download_cancel_ok} {
+    set gdb_loaded 0
+    if {$download_dialog != ""} {
+      catch {$download_dialog done $download_error}
+    }
+  } else {
+    set gdb_loaded 1
+    if {$download_dialog != ""} {
+      catch {$download_dialog done}
+    }
+  }
+
+  foreach src [ManagedWin::find SrcWin] {
+    if {$download_error == "CANCEL"} {
+      $src download_progress CANCEL 1 1
+    } else {
+      $src download_progress DONE 0 $total_bytes $download_error
+    }
+  }
+
+  set ::download_cancel_ok 0
+  set download_dialog ""
+
+  gdbtk_idle
+  return 0
+}

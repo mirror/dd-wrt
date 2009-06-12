@@ -1,0 +1,109 @@
+# ====================================================================
+#
+#      hal_mips_idt32334.cdl
+#
+#      MIPS/IDT32334 variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      tmichals
+# Original data:  tmichals
+# Contributors:
+# Date:           2003-02-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_IDT32334 {
+    display       "MIPS IDT32334 variant HAL"
+    parent        CYGPKG_HAL_MIPS
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mips_idt32334.h
+    description   "
+           The IDT32334 variant HAL package provides generic support
+           for platforms based on this variant. It is also necessary to
+           select a specific target platform HAL package."
+
+        cdl_option CYGHWR_HAL_MIPS_FPU {
+            display    "Variant FPU support"
+            calculated 0
+        }
+
+        cdl_option CYGPKG_HAL_MIPS_MSBFIRST {
+            display    "CPU Variant big-endian"
+            calculated 1
+        }
+
+    implements    CYGINT_HAL_MIPS_VARIANT    
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_mips.h>"
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_CPU_FREQ_ACTUAL {
+        display       "Actual CPU frequency"
+        calculated    (CYGHWR_HAL_MIPS_CPU_FREQ * 1000000)
+        requires      ((CYGHWR_HAL_MIPS_CPU_FREQ==50) || (CYGHWR_HAL_MIPS_CPU_FREQ==66) || (CYGHWR_HAL_MIPS_CPU_FREQ==75))
+        flavor data
+        description "
+            Only the frequencies 50MHz, 66MHz and 75MHzare supported for this
+            CPU variant."
+    } 
+
+
+    compile       var_misc.c var_intr.c
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/mips_idt32334.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/mips_idt32334.ld" }
+    }
+}
+
+# EOF hal_mips_idt32334.cdl

@@ -1,0 +1,312 @@
+# ====================================================================
+#
+#      instrument.cdl
+#
+#      configuration data related to the kernel instrumentation
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg
+# Contributors:
+# Date:           1999-07-05
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGVAR_KERNEL_INSTRUMENT_EXTERNAL_BUFFER {
+    display       "Use buffer provided by the application"
+    flavor        bool
+    default_value 0
+    description "
+          In most circumstances the kernel should provide the
+          instrumentation circular buffer itself. Occasionally
+          application code may wish to provide the buffer instead,
+          giving the application code more convenient access to the
+          buffer. This also makes it possible to put the circular
+          buffer in special areas of memory, for example a region that
+          is shared with the host."
+}
+
+cdl_option CYGNUM_KERNEL_INSTRUMENT_BUFFER_SIZE {
+    display       "Size of instrumentation buffer size"
+    flavor        data
+    legal_values  16 to 0x100000
+    default_value 256
+    description   "
+        If kernel instrumentation is enabled then the instrumentation
+        data goes into a circular buffer. A larger buffer allows
+        more data to be stored, but at a significant cost in memory.
+        The value of this option corresponds to the number of entries
+        in the table, and typically each entry will require 16 bytes
+        of memory."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_BUFFER_WRAP {
+    display       "Wrap instrument buffer"
+    default_value 1
+    description   "
+        When the instrumentation buffer is full it can either be restarted
+        from the beginning, overwriting older data, or it can stop at the
+        end. The former is useful if you want to look at the last entries
+        made while the latter is useful if you want to look at the first
+        few."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_FLAGS {
+    display       "Perform selective instrumentation"
+    default_value 1
+    description   "
+        The kernel can either collect all instrumentation events, or
+        it can filter out events at runtime based on a set of flags.
+        For example it would be possible to decide at runtime that
+        only scheduler and interrupt instrumentation flags are of
+        interest and that all other flags should be ignored. This
+        flag mechanism involves extra code and processor cycle
+        overhead in the instrumentation code, so it can be disabled
+        if the application developer is interested in all
+        instrumentation events."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_SCHED {
+    display       "Instrument the scheduler"
+    default_value 1
+    active_if     CYGPKG_KERNEL_SCHED
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the scheduling code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_THREAD {
+    display       "Instrument thread operations"
+    default_value 1
+    active_if     CYGPKG_KERNEL_THREADS
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the code that manipulates threads."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_INTR {
+    display       "Instrument interrupts"
+    default_value 1
+    active_if     CYGPKG_KERNEL_INTERRUPTS
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the interrupt handling code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_MUTEX {
+    display       "Instrument mutex operations"
+    default_value 1
+    active_if     CYGPKG_KERNEL_SYNCH
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the mutex code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_CONDVAR {
+    display       "Instrument condition variable operations"
+    default_value 1
+    active_if     CYGPKG_KERNEL_SYNCH
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the condition variable code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_BINSEM {
+    display       "Instrument binary semaphore operations"
+    default_value 1
+    active_if     CYGPKG_KERNEL_SYNCH
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the binary semaphore code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_CNTSEM {
+    display       "Instrument counting semaphore operations"
+    default_value 1
+    active_if     CYGPKG_KERNEL_SYNCH
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the counting semaphore code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_MBOXT {
+    display       "Instrument message box operations"
+    default_value 1
+    active_if     CYGPKG_KERNEL_SYNCH
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the message box code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_CLOCK {
+    display       "Instrument clock operations"
+    default_value 1
+    active_if     CYGVAR_KERNEL_COUNTERS_CLOCK
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the real-time clock code."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_ALARM {
+    display       "Instrument alarm-related operations"
+    default_value 1
+    active_if     CYGVAR_KERNEL_COUNTERS_CLOCK
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the code related to alarm operations."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_SMP {
+    display       "Instrument SMP-related operations"
+    default_value 1
+    active_if     CYGVAR_KERNEL_COUNTERS_CLOCK
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not instrumentation support is compiled into
+        the code related to SMP operations."
+}
+
+cdl_option CYGDBG_KERNEL_INSTRUMENT_USER {
+    display       "Support application-level instrumentation"
+    default_value 1
+    description   "
+        It is possible to perform selective instrumentation at
+        run-time. It is also possible to disable instrumentation
+        in various kernel components at compile-time, thus
+        reducing the code size overheads. This option controls
+        whether or not application-level instrumentation gets
+        compiled in."
+}
+
+cdl_component CYGDBG_KERNEL_INSTRUMENT_MSGS {
+    display       "Print user friendly instrument messages"
+    default_value 1
+    description   "
+        Include code which will convert the instrument type field 
+        into a more human understandable string"
+        
+    cdl_option  CYGDBG_KERNEL_INSTRUMENT_MSGS_BUILD_HEADERFILE {
+	display   "Rebuild the header file"
+	default_value 0
+	description "
+
+	Make (using a shell script) include/cyg/kernel/instrument_desc.h in
+	your build tree; this is normally simply copied from the repository.
+	If you make a permanent change to include/instrmnt.h, such that
+	instrument_desc.h needs updating, it's up to you to first delete the
+	master file
+	ECOS_REPOSITORY/kernel/VERSION/include/instrument_desc.h
+	in your source repository, make the new version by enabling this
+	option then copy the new file
+        back from your build place to its source in
+	ECOS_REPOSITORY/kernel/VERSION/include/instrument_desc.h
+	and/or commit this to any version control system that you use."
+
+	make -priority 50 {
+	    <PREFIX>/include/cyg/kernel/instrument_desc.h: <PACKAGE>/include/instrmnt.h <PACKAGE>/cdl/instrument.cdl
+	    sh $(REPOSITORY)/$(PACKAGE)/host/instr/instrument.sh $< > $@
+	}
+    }
+
+    cdl_component CYGDBG_KERNEL_INSTRUMENT_BUILD_HOST_DUMP {
+	display       "Build the host tool to print out a dump"
+	default_value 0
+	description   "
+        Generate a host program which can dump the instrumentation
+        data in a human readable format. You have to somehow get the
+        instrumentation buffer into a file on the host. 'Exercise for
+        the reader' as university lecturers tend to say."
+
+	make -priority 51 {
+	    <PREFIX>/bin/dump_instr: <PREFIX>/include/cyg/kernel/instrument_desc.h <PACKAGE>/cdl/instrument.cdl
+	    @mkdir -p $(dir $@)
+            @mkdir -p tempinc
+            @cp -r $(PREFIX)/include/cyg tempinc
+            @cp -r $(PREFIX)/include/pkgconf tempinc
+	    cc -I./tempinc $(REPOSITORY)/$(PACKAGE)/host/instr/dump_instr.c -o $(PREFIX)/bin/dump_instr
+            @rm -rf tempinc
+	}
+    }
+}
+
+# EOF instrument.cdl

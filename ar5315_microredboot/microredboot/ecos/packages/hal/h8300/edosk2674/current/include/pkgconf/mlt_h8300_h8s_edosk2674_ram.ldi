@@ -1,0 +1,29 @@
+// eCos memory layout - Fri Oct 20 08:25:16 2000
+
+// This is a generated file - do not edit
+
+#include <cyg/infra/cyg_type.inc>
+
+OUTPUT_FORMAT("elf32-h8300")
+OUTPUT_ARCH(h8300s)
+
+MEMORY
+{
+    ram : ORIGIN = 0x400000, LENGTH = 0x30000
+    iram : ORIGIN = 0xff4000, LENGTH = 0x8000
+}
+
+SECTIONS
+{
+    SECTIONS_BEGIN
+    SECTION_text (ram, 0x400000, LMA_EQ_VMA)
+    SECTION_fini (ram, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_rodata (ram, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_rodata1 (ram, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_fixup (ram, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_gcc_except_table (ram, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_data (ram, ALIGN (0x4),LMA_EQ_VMA)
+    SECTION_bss (ram, ALIGN (0x4),LMA_EQ_VMA)
+    SECTION_int_hook_table (iram, CYGHWR_HAL_H8300_VECTOR_ADDRESS, FOLLOWING(.data))
+    SECTIONS_END
+}

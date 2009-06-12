@@ -1,0 +1,307 @@
+# ====================================================================
+#
+#      hal_mn10300_am33_stb.cdl
+#
+#      AM33/STB board HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nick, bartv
+# Contributors:
+# Date:           1999-11-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MN10300_AM33_STB {
+    display  "stb evaluation board"
+    parent        CYGPKG_HAL_MN10300
+    requires      CYGPKG_HAL_MN10300_AM33
+    define_header hal_mn10300_am33_stb.h
+    include_dir   cyg/hal
+    description   "
+           The STB HAL package should be used when targetting the
+           actual hardware for the AM33 STB evaluation board."
+
+    compile       hal_diag.c plf_stub.c plf_misc.c
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+
+    requires CYGSEM_HAL_UNCACHED_FLASH_ACCESS == 1;
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_mn10300_am33.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_mn10300_am33_stb.h>"
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  {"RAM" "ROM"}
+        default_value {"RAM"}
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+           When targetting the STB board it is possible to build
+           the system for either RAM bootstrap or ROM bootstrap. The
+           former generally requires that the board is equipped with
+           GDB stub ROMs or equivalent software
+           that allows gdb to download the eCos application
+           on to the board. The latter typically requires that the
+           eCos application be blown into EPROMs or equivalent
+           technology. If a JTAG debugger is avaiable, it is also
+           possible to download ROM executables into either SDRAM cards
+           or program them into a FLASH ROM."
+    }
+
+    cdl_option CYGBLD_ROM_SLOT {
+        display          "ROM startup slot"
+        flavor data
+        legal_values     {"ROM" "SRAM1"}
+        default_value    {"ROM"}
+        description      "
+           This option can be used to request that the image is to be
+           linked to be run from the SRAM1 SLOT (0x82400000) rather than
+           the system boot ROM slot (0x40000000).
+	   "
+   }
+
+    cdl_option CYGHWR_HAL_MN10300_AM33_STB_DIAG_PORT {
+        display          "Diagnostic Serial Port"
+        flavor data
+        legal_values     0 1
+        default_value    0
+        description      "
+           The STB board has three separate serial ports, of which only
+           ports 0 and 2 are brought out to the front panel. This option
+           chooses which of these ports will be used for diagnostic output.
+           At present only port 0 is supported."
+   }
+
+   cdl_option CYGHWR_HAL_MN10300_AM33_STB_DIAG_BAUD {
+       display          "Diagnostic Serial Port Baud Rate"
+       flavor data
+       legal_values     9600 19200 38400 115200
+       default_value    38400
+       define           CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD
+       description      "
+           This option selects the baud rate used for the diagnostic port.
+           Note: this should match the value chosen for the GDB port if the
+           diagnostic and GDB port are the same."
+   }
+
+   cdl_option CYGHWR_HAL_MN10300_AM33_STB_GDB_PORT {
+       display          "GDB Serial Port"
+       flavor data
+       legal_values     0 1
+       default_value    0
+       description      "
+           The VRC4373 board has two separate serial ports.  This option
+           chooses which of these ports will be used to connect to a host
+           running GDB."
+   }
+
+   cdl_option CYGHWR_HAL_MN10300_AM33_STB_GDB_BAUD {
+       display          "GDB Serial Port Baud Rate"
+       flavor data
+       legal_values     9600 19200 38400 115200
+       default_value    38400
+       description      "
+           This option controls the baud rate used for the GDB connection."
+   }
+
+    cdl_option CYGSEM_HAL_AM33_PLF_USES_SERIAL0 {
+        display       "ASB2303 uses AM33 SERIAL0"
+        flavor        bool
+        default_value 1
+        description   "
+            Enable this option if AM33 SERIAL0 is to be used as a virtual vector
+            communications channel."
+    }
+
+    cdl_option CYGSEM_HAL_AM33_PLF_USES_SERIAL1 {
+        display       "ASB2303 uses AM33 SERIAL1"
+        flavor        bool
+        default_value 1
+        description   "
+            Enable this option if AM33 SERIAL1 is to be used as a virtual vector
+            communications channel."
+    }
+
+
+    # Real-time clock/counter specifics
+    cdl_option CYGHWR_HAL_MN10300_PROCESSOR_OSC_DEFAULT {
+        display       "Processor clock rate"
+        calculated    30375000
+        flavor        data
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        parent  CYGPKG_NONE
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "mn10300-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-mam33 -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-mam33 -g -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "ROM" }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires ! CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            requires ! CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                binary data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+    }
+
+    cdl_option CYGNUM_HAL_BREAKPOINT_LIST_SIZE {
+        display       "Number of breakpoints supported by the HAL."
+        flavor        data
+        default_value 25
+        description   "
+            This option determines the number of breakpoints supported by the HAL."
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "mn10300_am33_stb_ram" : \
+                     CYGBLD_ROM_SLOT == "ROM" ? "mn10300_am33_stb_rom" : \
+                                                "mn10300_am33_stb_sram1" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_mn10300_am33_stb_ram.ldi>" : \
+                         CYGBLD_ROM_SLOT == "ROM" ? "<pkgconf/mlt_mn10300_am33_stb_rom.ldi>" : \
+                                                    "<pkgconf/mlt_mn10300_am33_stb_sram1.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_mn10300_am33_stb_ram.h>" : \
+                         CYGBLD_ROM_SLOT == "ROM" ? "<pkgconf/mlt_mn10300_am33_stb_rom.h>" : \
+                                                    "<pkgconf/mlt_mn10300_am33_stb_sram1.h>" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        booldata
+        legal_values  { "GDB_stubs" }
+        default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        description   "
+            Support can be enabled for boot ROMs or ROM monitors which contain
+            GDB stubs. This support changes various eCos semantics such as
+            the encoding of diagnostic output, and the overriding of hardware
+            interrupt vectors."
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+}

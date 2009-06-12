@@ -1,0 +1,285 @@
+2004-06-08  Chris Garry <cgarry@sweeneydesign.co.uk>
+
+        * src/ecos/ecos_app.c:  Remove 'strdup' definition.
+        Now provided in string.h.
+
+2003-10-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/drivers/scr_vnc_ecos.c: Support true color (32 bit) 0888 format.
+
+	* src/demos/nanox/ntetris.c (main): Start with a good known
+	state (by zeroing) - otherwise, the results are unpredictable
+	and often crash.
+
+2003-09-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/ecos/nanox_thread.c (nanox_thread): Fill in program
+	name - also from Eric Doenges.
+
+	* src/drivers/kbd_vnc_ecos.c (vnc_GetModifierInfo): 
+	Protect against null [curmodifiers] pointer.  Reported
+	by Eric Doenges <Eric.Doenges@DynaPel.com>
+
+2003-09-01  Chris Garry <cgarry@sweeneydesign.co.uk>
+
+	* src/ecos/ecos_app.c:
+	* src/ecos/ecos_init.c:
+	Do not use ARM display hardware setup routines when VNC server
+	drivers are used.
+
+2003-09-01  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/nanox/client.c: 
+	* src/mwin/wingdi.c: 
+	* src/engine/devopen.c: 
+	* src/engine/devfont.caching.c: 
+	* src/engine/devfont.c: 
+	* src/engine/devdraw.c: 
+	* src/drivers/scr_vnc_ecos.c: 
+	* src/demos/nanox/ntetris.c: 
+	* src/Configs/config.ecos: 
+	* include/microwin/mwtypes.h: 
+	* include/microwin/device.h: Support BGR233 mode which is used by
+	the VNC server.
+
+2003-08-30  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/ecos/world_thread.c: 
+	* src/ecos/ntetris_thread.c: 
+	* src/ecos/nanox_thread.c: 
+	* src/ecos/nanowm_thread.c: 
+	* src/ecos/ecos_app.c: Use tables to define threads within
+	the actual application.
+
+	* src/demos/nanox/ntetris.h: 
+	* src/demos/nanox/ntetris.c: Adapt to eCos threaded environment.
+
+	* include/microwin/ecos_mw_app.h: New file - define table
+	driven API for plug-in MicroWindows applications under eCos.
+
+	* cdl/microwindows.cdl: Add support for building complete
+	application via CDL.  Also better selection of demos to run.
+
+2003-08-22  Chris Garry <cgarry@sweeneydesign.co.uk>
+
+	* cdl/microwindows.cdl
+	Added support for VNC server.
+	
+	* src/include/device.h:
+	Remove COLOR2PIXEL555 hack for strongarm lcd when VNC server screen
+	driver is used.
+	
+	* src/nanox/clientfb.c:
+	Removed assumption that CYGPKG_HAL_ARM means target is a strongarm
+	lcd when VNC server is used.
+	
+	* src/drivers/kbd_vnc_ecos.c:
+	* src/drivers/mou_vnc_ecos.c:
+	* src/drivers/scr_vnc_ecos.c:
+	New keyboard, mouse and screen drivers for VNC server.
+
+2003-07-21  Chris Garry <cgarry@sweeneydesign.co.uk>
+
+	* src/nanox/client.c
+	Set the length field in the sockaddr_in structure name before
+	trying to connect to the server.
+
+2003-06-13  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/microwindows.cdl: eCos Microwindows requires an IPv4 stack.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/microwindows.cdl: There's no docs so don't supply CDL.
+
+2002-04-30  Bart Veer  <bartv@redhat.com>
+
+	* cdl/microwindows.cdl:
+	Replace description properties with display properties.
+
+2002-04-26  Bart Veer  <bartv@redhat.com>
+
+	* src/drivers/scr_ecospcsvga.c:
+	New screen driver for PC hardware.
+
+	* src/nanox/srvmain.c:
+	Change #ifdef's for new PC screen driver
+
+	* src/nanox/clientfb.c:
+	Get a framebuffer address for x86 hardware
+
+	* src/ecos/ecos_app.c:
+	Only build keyboard widget when needed. PC hardware has a real
+	keyboard. 
+
+	* cdl/microwindows.cdl:
+	Add configuration options for PC graphics. Automatically
+	build the files which instantiate eCos threads for the various
+	microwindows applications.
+
+2002-04-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/demos/nanox/world.c (MAPFILE): Load from current directory.
+
+2002-04-12  Bart Veer  <bartv@redhat.com>
+
+	* src/nanox/srvmain.c:
+	Use a new main loop for PC/VGA. The default loop with
+	networking enabled assumes you can select() on the
+	mouse and keyboard, which is not currently implemented.
+
+	* src/ecos/ecos_init.c:
+	Add some conditional compilation. Only check for
+	a logo file when there is a file system. Don't bother
+	with touchscreen calibration on a PC without a
+	touch-sensitive screen.
+
+	* cdl/microwindows.cdl:
+	Add configury for building on a PC.
+
+	* src/drivers/ps2kbdmou_ecos.c:
+	Driver for PC PS/2 keyboard and mouse. Only tested against
+	a Japanese Dell Inspiron laptop.
+
+2002-04-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/drivers/scr_ecos.c (gen_getscreeninfo): Return proper
+	fbdriver ptr.
+	(set_portrait_mode): Update psd->portrait variable.
+
+	* src/demos/nanox/world.c: Removed load hack. Problem was due to
+	truncated jffs2 fs.
+
+2002-04-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/microwin/nano-X.h: Silence warning by including kapi.h
+
+2002-04-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/microwindows.cdl: Build Map demo if required. Require it for
+	the ARM targets.
+
+	* src/demos/nanox/world.c (load): Hacked to do nothing.
+	(main): renamed to app_main.
+
+2002-03-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/drivers/scr_ecos.c (gen_getscreeninfo): Fill in correct
+	color layout based on pixel format. Now the animation renders
+	correctly.
+
+	* drivers/scr_ecos.c (gen_getscreeninfo): Fill in all
+	parameters. At least the missing potrait mode cause
+	problems. fbdriver parameter is probably wrong, but needs to be
+	non-zero.
+
+2002-03-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/microwindows.cdl: Renamed CYGBLD_MICROWINDOWS_ARM9_DRIVERS
+	to CYGBLD_MICROWINDOWS_ARM_DRIVERS and added ipaq/aaed hacks.
+
+	* Moved sources to services/gfx/mw with help from Gary. Moved
+	src/include directory to include/microwin.
+
+	* cdl/microwindows.cdl: Added CDL build	support.
+	* src/demos/nanowm/nanowm.c: Rename main() for eCos builds.
+	* src/demos/nxkbd/nxkbd.c: Same.
+	* src/nanox/srvmain.c: Same.
+
+	* src/ecos/ecos_init.c: Fix some warnings, use redhat.logo for IO
+	testing.
+	
+2002-03-22  Bart Veer  <bartv@redhat.com>
+
+	* Configs/config.ecosvga:
+	New config file for eCos on a PC using the VGA driver.
+
+	* Arc.rules, makefile.rules, config, */Makefile */*/Makefile
+	Add build support for x86 eCos, and allow builds outside the
+	source tree.
+	
+	* nanox/clientfb.c:
+	Only assume LCD display when compiling for ARM.
+	<cyg/hal/lcd_support.h> etc. do not exist when building for PC.
+
+	* ecos/ecos_app.c:
+	Add missing #include's
+	Fix type ecos_nx_setup() vs. ecos_nx_init()
+
+	* drivers/vgaplan4.h:
+	Define the appropriate out?() macros for eCos
+
+	* drivers/vgainit.c:
+	Set up to access hardware directly. 
+	Use HAL macro to peek I/O port
+	Fix one of the initial values for the VGA registers, which I
+	believe was leaving all planes disabled.
+	
+	* drivers/scr_ecos.c:
+	This is not used by all eCos targets, e.g. PC using the
+	microwindows VGA driver. For now conditionalize on CYGPKG_HAL_ARM. 
+
+	* drivers/memplan4.c, drivers/scr_bios.c, 
+	Set up to access hardware directly under eCos.
+
+	* drivers/kbd_null.c:
+	Declaration of NUL_Read() did not match definition.
+
+2002-03-14  Jesper Skov  <jskov@redhat.com>
+
+	* Makefile: Fix typo.
+
+	* nanox/Makefile: Build clientfb.c
+	* nanox/clientfb.c: Hacked for eCos.
+
+	* nanox/client.c (nxErrorStrings): Define for eCos.
+	* nanox/srvevent.c (nxErrorStrings): Don't define for eCos.
+
+2002-03-13  Jesper Skov  <jskov@redhat.com>
+
+	* ecos/Makefile: Require 'DEMO=Y' and 'AGDEMO=Y' to build old or
+	agdemo respectively.
+	* ecos/ecos_app.c: Wrap img_demo stuff in USE_IMG_DEMO.
+
+	* ecos/img_demo.c: Added. (older version)
+
+	* Makefile.rules (clean): Don't blow away everything if there's no
+	bin directory.
+
+	* Makefile: Added ecos build rule. Create bin and lib.
+
+	* Makefile.rules (CPPFLAGS): Include $(INCLUDEDIRS) for proper
+	dependencies on ecos headers.
+
+	* ecos/ecos_init.c (ecos_nx_init): Use portrait_right mode for
+	IPAQ.
+	* drivers/scr_ecos.c (set_portrait_mode): Added. Cleaned up
+	portrait switch handling.
+
+	* ChangeLog.MW: Moved the original ChangeLog to ChangeLog.MW
+
+	Changes made by Gary Thomas <gthomas@redhat.com>. Diff against
+	branch MW_0_89_pre8:
+	* src/Arch.rules: Updated for building ag_demo.
+	* src/Configs/config.ecos: Changed tools prefix to arm-elf- and
+	screen pixel type. Also added JPEG support and disabled potrait
+	mode.
+	* src/config: copy of Configs/config.ecos
+	* src/drivers/Makefile: Added portrait files to the eCos build
+	rule.
+	* src/drivers/kbd_ipaq.c: various tweaks.
+	* src/drivers/scr_ecos.c: hacks to get portrait mode working on
+	iPAQ.
+	* src/ecos/Makefile: Build tweaks for ag_demo.
+	* src/ecos/ecos_app.c: mount jffs2, include image demo.
+	* src/ecos/ecos_init.c: ag_demo tweaks.
+	* src/engine/devimage.c: build tweak for HAVE_MMAP
+	* src/include/device.h: COLOR2PIXEL555 hack for strongarm lcd.
+	* src/include/nano-X.h: Fix regfdset typo.
+	* src/include/swap.h: __ECOS hacks.
+	* src/jpeg-6b: imported jpeg support.
+	* src/nanox/Makefile: eCos build tweaks.
+	* src/nanox/client.c: eCos ACCESS_PER_THREAD_DATA tweak.
+	* src/nanox/serv.h: additional Gr->SVR_Gr definitions.
+	* src/nanox/srvnet.c: __ECOS hack (print error string instead of
+	value).

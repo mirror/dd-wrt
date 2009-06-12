@@ -1,0 +1,148 @@
+##############################################################################
+# Microwindows Architecture rules Makefile
+# Copyright (c) 2000, 2002 Martin Jolicoeur, Greg Haerr
+#
+# This makefile should be placed at the top of a project hierarchy
+#
+# NOTE: The TOP environment variable should be set to that top directory
+##############################################################################
+
+# Platform dependent flags & definitions
+
+ifeq ($(ARCH), FREEBSD-X86)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX =
+DEFINES += -DLINUX=1 -DUNIX=1
+CFLAGS += -Wall $(OPTFLAGS)
+LDFLAGS +=
+endif
+
+
+ifeq ($(ARCH), LINUX-NATIVE)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX =
+DEFINES += -DLINUX=1 -DUNIX=1
+CFLAGS += -Wall $(OPTFLAGS)
+LDFLAGS +=
+# include the following line for static libraries
+#LDFLAGS += -static
+endif
+
+ifeq ($(ARCH), LINUX-ARM)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX = $(ARMTOOLSPREFIX)
+DEFINES += -DLINUX=1 -DUNIX=1
+CFLAGS += -Wall $(OPTFLAGS) -mstructure-size-boundary=8
+LDFLAGS +=
+endif
+
+ifeq ($(ARCH), LINUX-MIPS)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX = $(MIPSTOOLSPREFIX)
+DEFINES += -DLINUX=1 -DUNIX=1
+CFLAGS += -msoft-float -Wall $(OPTFLAGS)
+ifneq ($(DEBUG), Y)
+CFLAGS += -s
+endif
+LDFLAGS +=
+endif
+
+ifeq ($(ARCH), LINUX-POWERPC)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX = $(POWERPCTOOLSPREFIX)
+DEFINES += -DLINUX=1 -DUNIX=1
+CFLAGS += -msoft-float -Wall $(OPTFLAGS)
+ifneq ($(DEBUG), Y)
+CFLAGS += -s
+endif
+LDFLAGS +=
+endif
+
+ifeq ($(ARCH), LINUX-SH)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX =$(SHTOOLSPREFIX)
+DEFINES += -DLINUX=1 -DUNIX=1
+CFLAGS += -m1 -m3 -Wall $(OPTFLAGS)
+LDFLAGS +=
+endif
+
+ifeq ($(ARCH), SOLARIS)
+# may require using cc if gcc not installed:
+COMPILER = gcc
+HOSTCC = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX =
+DEFINES += -DUNIX=1 -DBIGENDIAN=1
+CFLAGS += $(OPTFLAGS)
+LDFLAGS += -lsocket -lnsl -lrt
+endif
+
+ifeq ($(ARCH), ELKS)
+COMPILER = bcc
+HOSTCC = gcc
+CXX_COMPILER =
+TOOLSPREFIX =
+INCLUDEDIRS += -I/usr/bcc/include -I/home/greg/net/elks/include
+DEFINES += -DELKS=1 -DUNIX=1 -Dconst= -Dvolatile=
+CFLAGS += -0 -ansi -O
+LDFLAGS +=
+endif
+
+ifeq ($(ARCH), DJGPP)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX =
+DEFINES += -DDOS_DJGPP=1 -D_NAIVE_DOS_REGS=1 -DMSDOS=1
+CFLAGS += -Wall $(OPTFLAGS)
+LDFLAGS +=
+endif
+
+ifeq ($(ARCH), RTEMS)
+COMPILER = gcc
+CXX_COMPILER = g++
+TOOLSPREFIX = $(RTEMSTOOLSPREFIX)
+INCLUDEDIRS += -I$(RTEMS_BUILD)/$(RTEMS_BSP)/lib/include \
+-I$(RTEMS_BUILD)/$(RTEMS_BSP)/lib/include/networking \
+-I$(RTEMS_BUILD)/$(RTEMS_BSP)/lib/include/sys
+DEFINES += -DUNIX=1
+CFLAGS += -O4 -Wall -Wno-unused -fasm -g \
+-B$(RTEMS_BUILD)/$(RTEMS_BSP)/lib/ -specs bsp_specs -qrtems
+endif
+
+ifeq ($(ARCH), ECOS)
+  COMPILER = gcc
+  CXX_COMPILER = g++
+  DEFINES += -D__ECOS -DUNIX=1
+  CFLAGS += -Wall -ffunction-sections -fdata-sections -O2 -g
+  LDFLAGS += -nostdlib
+  MW_BASE = /home/bartv/ecc/add-ons/microwindows/microwin
+
+  ifeq (,$(ECOSTARGET))
+    $(error ECOSTARGET should be defined in the config file)
+  else
+    export ECOSTARGET
+    ifeq (PCVGA,$(ECOSTARGET))
+      TOOLSPREFIX = i386-elf-
+      #TOOLSPREFIX =
+      ECOS_PREFIX = /local/bartv/pkgobj/pc/install
+    endif
+
+    ifeq (IPAQ,$(ECOSTARGET))
+      TOOLSPREFIX = arm-elf-
+      ECOS_PREFIX = /local/bartv/pkgobj/ipaq/install
+      CFLAGS += -mcpu=arm9 -msoft-float
+    endif
+
+    ifeq (,$(ECOS_PREFIX))
+      $(error eCos target $(ECOS_TARGET) not recognised)
+    endif
+  endif
+
+  INCLUDEDIRS += -I$(ECOS_PREFIX)/include
+endif

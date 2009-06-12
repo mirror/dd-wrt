@@ -1,0 +1,185 @@
+# PluginWindow
+# Copyright 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# ----------------------------------------------------------------------
+# Implements a menu and a toolbar that are attached to a source window.
+#
+#   PUBLIC ATTRIBUTES:
+#
+#
+#   METHODS:
+#
+#     configure ....... used to change public attributes
+#
+#   PRIVATE METHODS
+#
+#   X11 OPTION DATABASE ATTRIBUTES
+#
+#
+# ----------------------------------------------------------------------
+
+class PluginWindow {
+  inherit ManagedWin GDBEventHandler
+
+  # ------------------------------------------------------------------
+  #  CONSTRUCTOR - create widget
+  # ------------------------------------------------------------------
+  constructor {args} {
+
+    # Create a menu widget for the plug-in window
+    set menubar [GDBMenuBar $itk_interior.menubar]
+
+    # Create a toolbar widget for the plug-in window
+    set toolbar [GDBToolBar $itk_interior.toolbar]
+
+    # Pack the toolbar
+    pack $toolbar -expand 1 -fill both
+
+    # Create a frame for the subclass to use
+    set child [frame $itk_interior.child]
+
+    # Pack the childsite
+    pack $child -expand 1 -fill both
+
+    eval itk_initialize $args
+    add_hook gdb_no_inferior_hook [code $this no_inferior]
+  }
+
+  # ------------------------------------------------------------------
+  #  DESTRUCTOR - destroy window containing widget
+  # ------------------------------------------------------------------
+  destructor {
+    remove_hook gdb_no_inferior_hook [code $this no_inferior]
+
+    #destroy $this
+  }
+
+  # ------------------------------------------------------------------
+  #  ACCESSOR METHOD - Retrieve childsite
+  # ------------------------------------------------------------------
+  public method childsite {} {
+    return $child
+  }
+
+  # Don't automatically reload plugins.
+  protected method _ignore_on_save {} { return 1 }
+
+  ####################################################################
+  #
+  # State control methods used by both the menu and the toolbar
+  # 
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  #  METHOD:  idle - handle IdleEvent
+  # ------------------------------------------------------------------
+  protected method idle {event} {
+    debug "PluginWindow::idle"
+    enable_ui 1
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  busy - BusyEvent handler
+  #             Invoked when gdb is going to run the inferior
+  # ------------------------------------------------------------------
+  public method busy {event} {
+    debug "PluginWindow::busy"
+    enable_ui 0
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  no_inferior
+  #             Invoked when gdb detects the inferior is gone 
+  # ------------------------------------------------------------------
+  protected method no_inferior {} {
+    debug 
+    enable_ui 2
+  }
+
+  ####################################################################
+  # The following method enables/disables both menus and buttons.
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  # METHOD:  enable_ui - enable/disable the appropriate buttons and menus
+  # Called from the busy, idle, and no_inferior hooks.
+  #
+  # on must be:
+  # value      Control    Other     State
+  #   0          off       off      gdb is busy
+  #   1          on        on       gdb has inferior, and is idle
+  #   2          off       on       gdb has no inferior, and is idle
+  # ------------------------------------------------------------------
+  public method enable_ui {on} {
+    global tcl_platform
+    debug "$on"
+
+    # Do the enabling so that all the disabling happens first, this way if a
+    # button belongs to two groups, enabling takes precedence, which is
+    #  probably right.
+
+    switch $on {
+      0 {
+        # Busy
+	set enable_list {Control disabled \
+			   Other disabled}
+      }
+      1 {
+        # Idle, with inferior
+	set enable_list {Control normal \
+			   Other normal}
+      }
+      2 {
+        # Idle, no inferior
+	set enable_list {Control disabled \
+			   Other normal}
+      }
+      default {
+	debug "Unknown type: $on in enable_ui"
+	return
+      }
+    }
+
+    $menubar set_class_state $enable_list
+    $toolbar set_class_state $enable_list
+  }
+
+  ####################################################################
+  #
+  #  PRIVATE DATA
+  #
+  ####################################################################
+
+  # The childsite
+  private variable child
+
+  ####################################################################
+  #
+  #  PROTECTED DATA
+  #
+  ####################################################################
+
+  # The GdbMenuBar component
+  protected variable menubar
+
+  # The GdbToolBar component
+  protected variable toolbar
+
+  ####################################################################
+  #
+  #  PUBLIC DATA
+  #
+  ####################################################################
+
+  # None.
+}

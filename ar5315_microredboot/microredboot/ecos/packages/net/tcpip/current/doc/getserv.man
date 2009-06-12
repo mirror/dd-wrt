@@ -1,0 +1,48 @@
+NAME
+       getservent, getservbyname, getservbyport - get service entry
+
+SYNOPSIS
+       #include <network.h>
+
+       struct servent *getservbyname(const char *name, const char *proto);
+
+       struct servent *getservbyport(int port, const char *proto);
+
+DESCRIPTION
+       The  getservbyname()  function returns a servent structure
+       for the line from /etc/services that matches  the  service
+       name using protocol proto.
+
+       The  getservbyport()  function returns a servent structure
+       for the line that matches the port port given  in  network
+       byte order using protocol proto.
+
+       The servent structure is defined in <netdb.h> as follows:
+
+              struct servent {
+                      char    *s_name;        /* official service name */
+                      char    **s_aliases;    /* alias list */
+                      int     s_port;         /* port number */
+                      char    *s_proto;       /* protocol to use */
+              }
+
+       The members of the servent structure are:
+
+       s_name The official name of the service.
+
+       s_aliases
+              A zero terminated list of alternative names for the
+              service.
+
+       s_port The  port  number  for the service given in network
+              byte order.
+
+       s_proto
+              The name of the protocol to use with this  service.
+
+RETURN VALUE
+       The   getservbyname()  and  getservbyport()
+       functions return the servent structure, or a NULL  pointer
+       if an error occurs.
+
+

@@ -1,0 +1,60 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    excalibur_arm9 ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_ARM current ;
+    package -hardware CYGPKG_HAL_ARM_ARM9 current ;
+    package -hardware CYGPKG_HAL_ARM_ARM9_EXCALIBUR current ;
+    package -hardware CYGPKG_DEVS_FLASH_INTEL_28FXXX current ;
+    package -hardware CYGPKG_DEVS_FLASH_ARM_EXCALIBUR current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_ISOINFRA current ;
+    package CYGPKG_MEMALLOC current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+};
+
+cdl_option CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE {
+    user_value 6144
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    inferred_value 0 0
+};
+
+cdl_option CYGPKG_HAL_ARM_ARM9_ARM922T {
+    inferred_value 1
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_option CYGHWR_DEVS_FLASH_INTEL_28F320C3 {
+    inferred_value 1
+};
+
+

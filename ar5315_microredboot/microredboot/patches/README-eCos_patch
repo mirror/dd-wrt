@@ -1,0 +1,1193 @@
+Atheros Linux Software Development Kit 1.0 for AR531X Access Points
+
+This document describes the Atheros Linux Software Development Kit 1.0 ("LSDK")
+for AR531X Access Points.  The LSDK 1.0 provides a starting point that allows
+you to build Linux-based Access Point software for use with Atheros Reference
+Boards.  This document describes each of the software components and how they
+relate to each other.  It describes how to obtain source code for the
+components, how to build object code from source, how to install the various
+objects, and how to use them.
+
+The reader is assumed to be a software engineer who is familiar with software
+development and, in particular, with Linux and related software and build
+procedures.  The reader should also generally understand software licensing and 
+the legal implications of Open Source licenses.  The main intent of this
+document is to familiarize you with the tools and build procedures that you
+will need to use in order to begin work on an Access Point based on Linux and
+MADWiFi.
+
+WARNING: Some of the procedures used here involve erasing and writing to
+non-volatile flash memory on your board.  It is possible for mistakes to
+happen that will cause the IRRECOVERABLE LOSS OF CRITICAL DATA (such as
+configuration and radio calibration data) that is stored in flash.  This will
+render the board useless!  So you should NOT attempt any of these procedures
+unless you have the equipment (e.g. an ICE), experience, and software (e.g. ART)
+that is needed to recover from this situation.  [The recovery tools and
+procedures are NOT included in the LSDK.]
+
+Prerequisites
+All of the "build work" described here is assumed to take place on an x86-based
+system running Linux (e.g. Red Hat 8.0).  It is possible to use other build
+environments, but you may have to make appropriate adjustments to these
+instructions.  NOTE: there have been problems reported with the use of
+Cygwin to build some of the components.  It is recommended that you avoid
+the use of Cygwin for this project.
+
+The instructions are written for users of sh/bash/ksh shells.  You can build
+with other shells (csh, tcsh, etc.); but you may have to make small
+adjustments to these instructions.  For instance
+  export A="B"       becomes       setenv A "B"
+  . cmdfile          becomes       source cmdfile
+
+Please be aware that Linux is case-sensitive.  You must be certain to use
+upper-case and lower-case characters exactly as in this document.
+
+You should start with at least 1GB of free disk space.
+
+It is assumed that you have root access.  (It's not strictly necessary, but
+helpful.)
+
+For the remainder of these instructions, we assume that your target board (also
+called the "Access Point") is (or will be) at 192.168.1.20.  We also assume
+that you have access to a system at 192.168.1.100 which runs both an FTP server 
+and a TFTP server.  That system could be your Linux build machine or some other 
+machine that your build machine can access.  You will put binary files on
+192.168.1.100, then fetch them over ethernet from your Access Point at
+192.168.1.20.
+
+Although it is not strictly necessary, you will find that an ICE
+(e.g. VisionICE) is helpful for debugging and to recover from errors.  If
+your board does not already have a working bootrom (e.g. vxWorks bootrom),
+then an ICE is mandatory.
+
+Hardware
+The AR531X LSDK supports Atheros reference boards that are based on either
+   the AR5312 Wireless System On a Chip (WiSoC) OR
+   the AR2313 WiSoc.
+
+LSDK 1.0 has been tested with these Atheros reference design boards: AP30,
+AP43, and AP48.  Here is some brief information about each of these boards:
+  AP30:
+	AR5312 WiSoC
+	MIPs R4Kc CPU, running at 220MHz
+	2 AR5212 Wireless MACs ("WMACs")
+	2 AR5112 Radios (the first for 5.0GHz, the second for 2.4GHz)
+	2MB of SST 39VF160 x16 Flash
+	16MB of by-32 SDRAM
+	Marvell M88E6060 Ethernet Phy Switch with 5 Ethernet phy ports
+	ethernet MAC0 controls Phy Switch
+	ethernet MAC1 unused
+
+  AP43: 
+	AR2313 WiSoC
+	MIPs R4Kc CPU, running at 180MHz
+	1 AR5212 Wireless MAC ("WMAC")
+	1 AR2112 Radio (AR5112-compatible, 2.4GHz-only)
+	2MB of MX 29LV160ATTC x16 Flash
+	8MB of by-16 SDRAM
+	Marvell M88E6060 Ethernet Phy Switch with 5 Ethernet phy ports
+	ethernet MAC1 controls Phy Switch
+	ethernet MAC0 used for Phy control
+
+  AP48:
+	AR2313 WiSoC
+	MIPs R4Kc CPU, running at 180MHz
+	1 AR5212 Wireless MAC ("WMAC")
+	1 AR5112 Radio (AR5112-compatible, 2.4GHz-only)
+	2MB of MX 29LV160ATTC x16 Flash
+	8MB of by-16 SDRAM
+	Kendin KS8721B Ethernet Phy port
+	ethernet MAC1 controls Phy port
+	ethernet MAC0 used for Phy control
+	
+Software Components
+The main software components that you will build include:
+	Linux kernel
+	RedBoot bootrom
+	root file system
+	busybox applications
+	MADWiFi wireless modules
+
+Formally, the Atheros LSDK 1.0 does not include large bodies of source for
+components that are readily available elsewhere.  Rather, this document tells
+you how to obtain source and how to modify it to work in the desired
+environment.  That allows you to upgrade or to substitute components as desired.
+But we generally included a "snapshot" of source, just to help you bootstrap
+your Linux effort.
+
+For each software component, we may provide:
+	A pointer to the original source provider
+	A method (e.g. patch files) to construct source for our reference boards
+	Brief instructions to build the component
+	For reference, our object code for each component
+	Instructions to install the component
+	Instructions to test the component
+	Other information such as NOTEs, and WARNINGs
+
+We also provide instructions on how to obtain and install the various tools
+that are needed to build components.
+
+Overview of the Build Procedure 
+It is most helpful to build and verify components incrementally.  To that
+end, we will reach the final objective of "an Access Point" in PHASES.  The
+more complex PHASES are further decomposed into TASKS and STEPS.
+
+In order to obtain source, you may choose to obtain it yourself over the web,
+or you may choose to use the snapshot that we provide.  We tell you how to
+do both of these; but for you first build, we recommend that you use our
+version (marked as SHORTCUT in this documentation).
+
+In order to build object code, you have a choice between building it yourself
+or using our pre-built binaries.  We recommend that you try to build object code
+yourself.  [That is, after all, the focus of this documentation.]
+
+NOTE: Please realize that the binaries that we provide as part of LSDK 1.0 are
+intended to assist you during test and debug.  They are NOT to be shipped as
+part of any product!
+
+Throughout this document, the environment variable, "$LSDK", is assumed to
+be set to the directory that contains this Atheros Linux Software Development
+Kit.  You should set that environment variable now.
+    export LSDK="path to wherever LSDK is installed"
+
+PHASE   I:  Preparation
+Phase  II:  Build a Linux kernel that doesn't support wireless, which uses a
+            RAMDISK root file system.  We'll boot it over ethernet using the
+            vxWorks bootrom.
+Phase III:  Build a RedBoot bootrom, and use it to boot the kernel built above.
+Phase  IV:  Build wireless modules for the kernel.
+Phase   V:  Configure the bootrom to boot the kernel from flash
+Phase  VI:  Build a flash-based file system to replace the RAMDISK file system.
+Appendix A: Debugging Linux with kgdb
+Appendix B: Special /proc files
+Appendix C: Useful debugging notes
+Appendix D: VisionClick files
+Appendix E: How to build busybox
+
+It is possible to fully automate the build process; but it is in your best
+interest to understand each of the build steps so that you can customize
+as appropriate.
+
+Phase I: Preparation
+STEP I-1: Obtain and validate a board
+We assume that you have obtained a standard, calibrated AP30, AP43, or AP48
+board.  Verify that it is fully functional by running the pre-installed
+vxWorks bootrom.  Load and execute a vxWorks image over ethernet.  Verify
+that wireless services work as expected.
+
+STEP I-2: Back up your flash contents
+If at all possible, you should back up the "EEPROM Radio Configuration Data"
+as well as the "Board Configuration Data" before you begin.  The ART software
+(not covered in this documentation) is used to backup EEPROM Radio
+Configuration Data.  The "S" command from the vxWorks bootrom can be used to
+display Board Configuration Data, which you can capture to a file.
+
+In THEORY, these two critical pieces of data will not be effected by any of
+the procedures described here.  But you should back them up as a defensive 
+measure.  Really!
+
+Step I-3: Create a directory for your work
+For the purposes of these instructions, we will assume that all of your work
+is under a directory, "/work", in which you have write permission.  Obviously,
+you can put components elsewhere, but you may need to adjust these instructions 
+and a few scripts accordingly.  After you have created your directory, change
+to it:
+   cd /work
+
+Phase  II: Build and Boot a Basic Linux Kernel
+TASK  II-A: Setup the build environment
+STEP II-A-1: Obtain a MIPS BigEndian ELF gcc-compatible toolchain.
+A toolchain includes compiler, linker, and other tools that are needed to
+create object code from source.  Your toolchain must run on your build machine,
+and it must be capable of cross-compiling for your target board, which is a
+MIPs BigEndian ELF R4Kc target.  The subject of MIPS toolchains is covered here:
+   http://www.linux-mips.org/toolchain.html
+
+Here is the toolchain that we have used:
+  ftp://ftp.mips.com/pub/tools/software/sde-for-linux/sdelinux-5.01-4eb.i386.rpm
+
+SU'ed as root, install this RPM
+  rpm -i sdelinux-5.01-4eb.i386.rpm
+
+# SHORTCUT
+# We provide a copy of the toolchain RPM:
+#   rpm -i $LSDK/sdelinux-5.01-4eb.i386.rpm
+
+You now have an appropriate toolchain at /usr/local/bin/mips-linux-*.
+WARNING: Remember to exit "su" and return to your own user ID.
+
+STEP II-A-2: Modify your PATH environment variable to include these MIPS tools
+  export PATH="/usr/local/bin:$PATH"
+
+TASK  II-B: Create a kernel source tree
+STEP II-B-1: Obtain source code for the most recent MIPS kernel
+These command will create a directory, "linux", and they will fetch the
+most recent MIPS kernel source into that directory:
+    cvs -d :pserver:cvs@ftp.linux-mips.org:/home/cvs login    (password "cvs")
+    cvs -d :pserver:cvs@ftp.linux-mips.org:/home/cvs co -r linux_2_4 linux
+Note that this source tree undergoes constant change; so at any particular
+moment in time it may not be functional.  For the most part, though, this
+is where you find the best and most recent Linux-for-MIPS 2.4 kernel.
+
+# SHORTCUT
+# We provide a "snapshot" of the Linux-for-MIPS 2.4 kernel.
+#     tar xvzf $LSDK/Linux.Mips.tgz
+# Also, see SHORTCUT, below.
+
+Now change directories into the linux directory that you just created.
+All further steps in Phase II occur in the linux directory.
+    cd linux
+
+STEP II-B-2: Obtain AR531X-specific code for Linux
+To run Linux on AR531X-based systems, you need the Atheros Linux Board
+Support Package (LBSP):
+  cd arch/mips
+  tar xvzf $LSDK/LBSP.AR531X.tgz
+  cd ../..
+This places the LBSP at linux/arch/mips/ar531x.
+
+STEP II-B-3: Patch the Linux kernel with AR531X-specific support
+This step will make certain changes to the generic Linux code that will
+allow Linux to run on AR531X.
+    for i in arch/mips/ar531x/DIFFS/*.diff
+    do
+       patch -p1 < $i
+    done
+If the base version of Linux matches the snapshot of Linux that is
+distributed as part of the LSDK, then this step should complete cleanly (i.e.
+no "rejection" messages).  However, if you used a different (i.e. more recent)
+version of Linux, then you may have to resolve some minor patch issues.
+
+# SHORTCUT
+# We provide a "snapshot" of the Linux-for-MIPS 2.4 kernel with AR531X
+# support included.
+#     tar xvzf $LSDK/Linux.AR531X.tgz
+#     cd linux
+
+
+You now have established a Linux kernel source tree for AR531X.
+
+TASK II-C: Setup a RAMDISK image.
+In order to boot from a ramdisk root file system image, you will first create
+a root directory structure in the "rootdir" directory.  Then you will convert
+the directory structure into a compressed root file system image.  Finally,
+you will copy this image into your kernel source tree and remake the kernel.
+The ramdisk image is then built into the kernel.  When the kernel starts, it
+will uncompress the RAMDISK image into RAM, where it will be used as a root
+file system.
+
+STEP II-C-1: Setup Makefile
+To begin, change directories to the RAMDISK directory
+   cd arch/mips/ar531x/RAMDISK
+
+If necessary, modify Makefile so that the variable KERNEL_SOURCE points to
+your linux source tree.  NOTE: This step is probably not necessary.  It is
+useful to be aware of, though, in case you decide to use a single RAMDISK
+directory for multiple Linux source trees.
+
+STEP II-C-2: Setup a root file system image
+Copy whatever files/directories/links you'd like to under the existing
+directory, "rootdir".  Note that you're limited to CONFIG_BLK_DEV_RAM_SIZE
+1KB blocks, as specified in your linux/.config file.
+
+Most users will want to use "busybox" with this system; so there are special
+hooks in the RAMDISK Makefile to deal with busybox.  You will build busybox at
+a later time, using the instructions provided in an appendix of this
+documentation.  For now, it's probably best to just copy the pre-built binary:
+   cp $LSDK/busybox rootdir/bin
+   chmod 755 rootdir/bin/busybox
+   cp $LSDK/busybox.links .
+
+STEP II-C-3: Create the RAMDISK
+Login as root (use the "su" command).
+Then,
+   make
+Now logout from root and return to your user ID.
+
+You have just created the file "ramdisk.gz", which is a compressed RAMDISK
+root file system that will be linked into your Linux image.
+
+STEP II-C-4: Install the RAMDISK into your Linux source tree
+The ramdisk.gz file must be installed into the linux source tree at
+arch/mips/ramdisk/ramdisk.gz.  To copy it there, type
+   make install
+
+Change directories back to the linux directory:
+   cd ../../../..
+
+# SHORTCUT
+# Use the pre-built RAMDISK image
+#    cp $LSDK/ramdisk.1.gz arch/mips/ramdisk/ramdisk.gz
+
+You now have a RAMDISK root file system that is ready to be included into
+the Linux kernel image.  
+
+TASK II-D: Setup a default Linux configuration
+Step II-D-1: Copy the default linux configuration to the linux directory
+   cp arch/mips/ar531x/defconfig-ar531x .config
+
+Step II-D-2: Review and modify the Linux configuration
+You may want to review the configuration to insure that it makes sense
+for your usage.  In particular, you may want CONFIG_RUNTIME_DEBUG and
+CONFIG_KGDB to be enabled for debugging, but disabled in a "production" build.
+Edit the .config file and make any changes that you feel are necessary.  If
+you are not thoroughly familiar with the process, it is suggested that you 
+skip this step and simply use the default.
+
+Step II-D-3: "Activate" the Linux configuration
+   make oldconfig
+Note: If you used the "snapshot" of Linux provided with the LSDK, this step
+should complete with no issues.  If you used a different (i.e. more recent)
+version of Linux, then you may be asked some configuration questions.
+
+TASK II-E: Build the Linux kernel.
+In this task, you will finally build the Linux kernel.
+
+STEP II-E-1: Build "dependencies"
+   make dep
+
+STEP II-E-2: Build the Linux kernel
+   make
+NOTE: It is normal to see some warnings during the build process.
+
+The finished BigEndian 32-bit MIPs ELF Linux object file is in "vmlinux".
+
+# SHORTCUT
+# Use the pre-built RAMDISK-based Linux image in $LSDK/vmlinux.1
+
+TASK II-F: Test the Linux kernel.
+You should be able to boot this vmlinux image over ethernet from the pre-loaded 
+vxWorks bootrom on your Access Point board.  If you are able to get to a shell
+prompt and execute a command (like "ls"), then the kernel is working correctly.
+
+NOTE: At this point, we have not yet included any wireless support, so don't
+expect wireless communications to work.  You'll add wireless in a later step.
+
+Phase III: Build a RedBoot bootrom
+In this phase, we will eliminate the vxWorks bootrom from flash and replace it
+with an Open Source bootrom called "RedBoot".  RedBoot is based on the eCos
+operating system and build environment, so it uses a different set of build
+tools and conventions than you may be used to.
+
+To begin, move out of your linux directory back to your main work directory:
+   cd /work
+
+TASK III-A: Obtain eCos source tree and build tools
+Follow the instructions at the eCos web site:
+   http://ecos.sourceware.org/getstart.html
+Those instructions tell you to fetch
+   ftp://ecos.sourceware.org/pub/ecos/ecos-install.tcl
+and then execute it with
+   sh ecos-install.tcl
+
+NOTE: Choose any distribution site.
+NOTE: For the installation directory, use /work/ecos.
+NOTE: For GNU tools, choose "mipsisa32-elf"
+
+# SHORTCUT
+# We provide a copy of the ECOS source tree, but it doesn't include
+# the eCos toolchain.  We recommend that you run the ecos-install.tcl script
+# rather than use this tar image:
+#    tar xvzf $LSDK/ecos.v2_0.tgz
+
+At the end of this step, you have a directory under /work/ecos that contains
+generic eCos source and build tools.
+
+TASK III-B: Apply AR531X-specific files
+In this step, you will add files and overwrite existing eCos files with
+versions of the files that support AR531X hardware.  NOTE: If the version of
+eCos that you are using is the one provided with the LSDK, then you can simply
+overwrite the old files.  But if you chose to use some other (i.e. more recent)
+version of eCos, then you may have to merge files rather than overwrite them.
+
+   tar xvzf $LSDK/ecos.AR531X.tgz
+   cd ecos/ecos-2.0/packages
+   for i in hal/mips/ar5312/v2_0/DIFFS/*.diff
+   do
+       patch -p1 < $i
+   done
+   cd /work
+
+# SHORTCUT
+# We provide a version of ECOS source that has been patched for use with
+# AR531X.
+#     tar xvzf $LSDK/ecos.patched.tgz
+
+TASK III-C: Create a RedBoot build area
+STEP III-C-1: Setup the environment
+   cd ecos
+   mkdir buildROM
+Examine ecosenv.sh to verify that the hardcoded paths are correct.
+Then:
+   . ./ecosenv.sh
+   cd buildROM
+Set a $TGTAP ("Target Access Point") environment variable according to the
+target board that you're building for.  Valid choices are:
+   export TGTAP=ap30    OR
+   export TGTAP=ap43    OR
+   export TGTAP=ap48
+NOTE: $TGTAP is not used in any scripts, it's just used in this documentation;
+it is case-sensitive.
+
+Step III-C-2: Setup for RedBoot
+Create a base RedBoot configuration
+   ecosconfig new atheros_$TGTAP redboot
+NOTE: A message about "new inferred value" is OK.
+
+Step III-C-3: Modify the base configuration for use as a bootrom
+   ecosconfig import $ECOS_REPOSITORY/hal/mips/$TGTAP/v2_0/misc/redboot_ROM.ecm
+NOTE: In order to create a downloadable RAM-based version of RedBoot, simply
+replace "ROM" with "RAM" in the "ecosconfig import" line, above.  The RAM
+version of RedBoot is used for testing and it is needed to write a new ROM
+version of RedBoot into flash.  YOU CANNOT USE the ROM version of RedBoot to
+write a newer ROM version into flash!  [The system will hang if you try, and
+you will need an ICE to recover.]  You'll be instructed to build the RAM
+version later.
+NOTE: A message about "new inferred value" is OK.
+
+Now use ecos' configtool to modify anything in the RedBoot configuration that
+needs modification.  In particular, you MUST ADD "-mlong-calls" to the
+"Global compiler flags" under "Global build options".  Once you have added
+-mlong-calls, hit return, then File->save, then File->exit.
+   configtool ecos.ecc
+
+STEP III-C-4: Create the build tree
+   ecosconfig tree
+
+TASK III-D: Build RedBoot
+Simply type
+   make
+This leaves the RedBoot bootloader ELF image in install/bin/redboot.elf.
+
+# SHORTCUT
+# Use the pre-built redboot ROM ELF image at $LSDK/redboot.rom.elf.$TGTAP,
+# if it is available for your platform.
+
+TASK III-E: Convert the RedBoot ELF image into a flashable image
+   cd install/bin
+   mipsisa32-elf-objcopy -O binary redboot.elf redboot.rom
+
+# SHORTCUT
+# Use the pre-built redboot ROM binary image at $LSDK/redboot.rom.bin.$TGTAP,
+# if it is available for your platform.
+
+TASK III-F: Flash the RedBoot image
+WARNING: In this task, you will DESTROY the pre-loaded vxWorks bootrom that is
+stored in flash on your board!  If anything goes wrong, your board will be
+DEAD until you use an ICE to recover.
+
+STEP III-F-1: Build a RedBoot RAM image
+The best way to flash a RedBoot ROM image is from a RedBoot RAM image.
+   cd /work/ecos
+   mkdir buildRAM
+   cd buildRAM
+Now re-do TASKS III-C-2 through III-D, replacing every occurrence of "ROM"
+in these instructions with "RAM".
+
+# SHORTCUT
+# Use the pre-built redboot RAM ELF image at $LSDK/redboot.ram.elf.$TGTAP,
+# if it is available for your platform.
+
+You should now have a RAM version of Redboot in
+   ecos/buildRAM/install/bin/redboot.elf
+and a flashable ROM image at
+   ecos/buildROM/install/bin/redboot.rom
+
+STEP III-F-2: Execute the RAM version of RedBoot
+Copy the redboot.elf RAM image to your TFTP directory on 192.168.1.100.
+Copy the redboot.rom ROM image to your TFTP directory on 192.168.1.100.
+
+Use the vxWorks bootrom -- or your ICE -- to load and execute the RAM version
+of RedBoot.  You will see a message about "FLASH configuration checksum error", 
+and it may take 30 seconds or so before you get to a RedBoot prompt.
+
+STEP III-F-3: Load the ROM version of RedBoot into memory
+At the RedBoot prompt, setup your local and host IP addresses:
+   ip_address -l 192.168.1.20 -h 192.168.1.100
+
+Initialize and erase flash:
+   fis init -f               /* answer 'y' */
+
+Load the redboot.rom image into memory:
+   load -r -b %{FREEMEMLO} redboot.rom
+NOTE: You must have the TFTP server running on 192.168.1.100 in order to fetch
+the redboot.rom image.
+
+STEP III-F-4: Copy the RedBoot ROM image into flash
+   fis create -l 0x50000 -e 0xbfc00000 RedBoot    /* answer 'y' */
+
+TASK III-G: Reset
+Simply reset the system (you can use RedBoot's "reset" command), and you will
+begin to run the redboot.rom image directly from flash.  The starting address
+is 0xbfc00000, as required by the MIPS architecture.  Once again, you will see
+a message about "FLASH configuration checksum error" and once again you may
+find that it takes about 30 seconds for RedBoot to get to a prompt.
+
+TASK III-H: Configure RedBoot
+Use the "fconfig" command to configure non-volatile parameters for RedBoot
+on your system.
+   fconfig
+
+In particular, you may want to set
+   Use BOOTP for network configuration    to    false
+   Local IP address                       to    192.168.1.20
+   Local IP address mask:                 to    0xffffff00
+   Default server IP address              to    192.168.1.100
+Answer "y" to
+   Update RedBoot non-volatile configuration - continue (y/n)?
+
+Reset again and you'll find that RedBoot very quickly reaches a prompt.
+NOTE: It's so much faster now because RedBoot no longer waits for DHCP
+to timeout.
+
+TASK III-I: Test RedBoot
+In this task, we will verify that your RedBoot ROM image can boot a vmlinux
+elf image and that it can also boot a RedBoot RAM image.
+
+STEP III-I-1: Setup your vmlinux image
+Copy the vmlinux image that you built earlier to your TFTP directory on
+192.168.1.100.
+
+STEP III-I-2: Reset the system
+Reset the system and get to a RedBoot prompt.
+
+STEP III-I-3: Load the vmlinux image into memory
+   load vmlinux
+
+STEP III-I-4: Execute the vmlinux image
+   go
+
+You should see Linux startup messages, and you should reach a shell prompt.
+
+Phase  IV: Build MADWiFi wireless modules for the kernel.
+MADWiFi wireless support for AR531X comprises three modules:
+   wlan.o
+   ath_hal.o
+   ath_driver.o
+The first two of these modules are built from Open Source software, but the
+third piece -- ath_hal.o -- is built from code that is under an Atheros
+License.  It is NOT open source, and it IS NOT freely distributable.
+
+NOTE: These instructions assume that you are an Atheros Licensee.
+
+TASK  IV-A: Create a MADWiFi source tree
+
+STEP IV-A-1: Obtain the most recent MADWiFi source code
+These commands will create a directory, "madwifi", and they will fetch the
+most recent MADWiFi source into that directory:
+    cd /work
+    cvs -d :pserver:anonymous@cvs.sourceforge.net:/cvsroot/madwifi co madwifi
+        (pw=NULL)
+Note that this source tree undergoes constant change; so at any particular
+moment in time it may not be functional.
+
+# SHORTCUT
+#     tar xvzf $LSDK/madwifi.tgz
+# This provides a "snapshot" of the Open Source portions of MADWIFI source.
+
+You now have source for the two Open Source modules of MADWiFi.
+
+Now change directories into the madwifi directory that you just created.
+All further steps in Phase IV occur in the madwifi directory.
+    cd madwifi
+
+STEP IV-A-2: Eliminate the hal directory
+The MADWiFi source contains pieces of hal code that you will not use for
+two reasons:
+  -The HAL code only supports PCI-connected WMACs (which does not apply
+   to AR531X-based platforms) and
+  -As an Atheros Licensee you have access to MADWiFi HAL source code, which
+   you will build yourself.
+
+So remove the piece that you don't need:
+    rm -rf hal
+
+STEP IV-A-3: Obtain the most recent MADWiFi HAL source code
+NOTE: Instructions may be provided elsewhere.
+The MADWiFi HAL source code should be placed at /work/madwifi/hal.
+
+# SHORTCUT
+# This provides a "snapshot" of the MADWiFi HAL source.
+#     tar xvzf $LSDK/ATHEROS_LICENSE/madwifi.hal.tgz
+
+STEP IV-A-4: Obtain AR531X-specific code for MADWiFi
+To run MADWiFi on AR531X-based systems, you need the Atheros AR531X
+MADWiFi patches.
+  tar xvzf $LSDK/MADWIFI.DIFFS.tgz
+This creates a directory of patch files at /work/madwifi/MADWIFI.DIFFS
+  tar xvzf $LSDK/ATHEROS_LICENSE/MADWIFI.HAL.DIFFS.tgz
+This creates a directory of patch files at /work/madwifi/MADWIFI.HAL.DIFFS
+
+STEP IV-A-3: Patch the MADWiFi source with AR531X-specific support
+This step will make changes to the generic MADWiFi code that will allow it
+to run on AR531X.
+NOTE: Once these patches have been applied, the source will no longer build
+any other version of MADWiFi code.  It will only build the AR531X version of
+MADWiFi.
+    for i in MADWIFI.DIFFS/* MADWIFI.HAL.DIFFS/*
+    do
+       patch -p1 < $i
+    done
+If the base version of MADWiFi matches the snapshot of MADWiFi that is
+distributed as part of the LSDK, then this step should complete cleanly (i.e.
+no "rejection" messages).  However, if you used a different (i.e. more recent)
+version of MADWiFi, then you may have to resolve some minor patch issues.
+
+# SHORTCUT
+# This provides a "snapshot" of MADWiFi (including the HAL) with AR531X
+# support included.
+#     tar xvzf $LSDK/ATHEROS_LICENSE/madwifi.AR531X.tgz
+#     cd madwifi
+
+You now have established a MADWiFi source tree for AR531X.
+
+TASK  IV-B: Build MADWiFi object
+STEP IV-B-1: Setup environment variables
+Set your KERNEL_PATH environment variable to point to your linux tree:
+    export KERNEL_PATH=/work/linux
+Set the TARGET environment variable to indicate that we want to build for
+MIPS, using the Instruction Set Architecture (ISA) known as ISA32, for a
+BigEndian (BE) target, and producing an Extended Linker Format (ELF) object
+file:
+    export TARGET=mipsisa32-be-elf
+
+STEP IV-B-2: Build the MADWiFi HAL
+NOTE: In order to build MADWiFi, your build system must have the standard
+utilities "uuencode" and "uudecode" installed.  If you don't already have
+these, please get them now.  Install the standard "sharutils" RPM now.
+    cd hal/linux
+    make
+    make release
+    cd ../..
+
+STEP IV-B-3: Build the other MADWiFi modules
+    make
+
+You now have the three MADWiFi modules needed for wireless support on
+AR531X/AR2313 platforms:
+    /work/madwifi/driver/ath_driver.o
+    /work/madwifi/ath_hal/ath_hal.o
+    /work/madwifi/wlan/wlan.o
+
+TASK IV-C: Install the MADWiFi object code
+You can now install the three MADWiFi modules on your RAMDISK
+   cd /work/linux/arch/mips/ar531x/RAMDISK
+   mkdir rootdir/modules
+   cp /work/madwifi/driver/ath_driver.o rootdir/modules
+   cp /work/madwifi/ath_hal/ath_hal.o rootdir/modules
+   cp /work/madwifi/wlan/wlan.o rootdir/modules
+
+# SHORTCUT
+# Use the pre-built MADWiFi modules
+#   cd /work/linux/arch/mips/ar531x/RAMDISK
+#   mkdir rootdir/modules
+#   cp $LSDK/ath_driver.o rootdir/modules
+#   cp $LSDK/ath_hal.o rootdir/modules
+#   cp $LSDK/wlan.o rootdir/modules
+
+Now rebuild your RAMDISK and linux kernel, following earlier instructions:
+   As root: make
+   As yourself: make install
+                cd ../../../..
+                make
+
+# SHORTCUT
+# The file $LSDK/ramdisk.2.gz is a suitable RAMDISK file system image
+# that includes the /modules directory with the three wireless modules.
+# The file $LSDK/vmlinux.2 is a Linux kernel image that includes the
+# ramdisk.2.gz file system image.
+
+You may now test the image and verify that wireless works.  See $LSDK/rcS
+for examples of how to configure wireless.
+
+Note: When you "insmod" the wireless modules, they should be added in
+the order used by the sample rcS file: First wlan.o, then ath_hal.o,
+and then ath_driver.o.
+
+Example to test 11G operation on wlan1 (with no bridge):
+  insmod /modules/wlan.o
+  insmod /modules/ath_hal.o
+  insmod /modules/ath_driver.o
+  echo 3 > /proc/net/wlan1/opmode
+  echo 3 > /proc/net/wlan1/mode
+  echo -n "Linux Madwifi AP" > essid
+  ifconfig ath1 192.168.1.20 up
+
+Phase   V: Configure the bootrom to boot the kernel from flash
+You can configure RedBoot so that it boots a compressed Linux kernel image
+from flash.
+TASK   V-A: Create the compressed Linux image
+Convert the vmlinux image that you created earlier:
+   mips-linux-objcopy -O binary -g vmlinux vmlinux.bin
+Compress the vmlinux.bin file
+   gzip vmlinux.bin
+This creates a file, vmlinux.bin.gz, which contains the compressed linux image.
+
+# SHORTCUT
+# Use the pre-built compressed linux binary image at $LSDK/vmlinux.2.bin.gz.
+# This image corresponds to the vmlinux.2 ELF image.
+
+TASK   V-B: Setup your compressed Linux image
+Copy the vmlinux.bin.gz image to the TFTP directory on 192.168.1.100.
+Reset the target board.
+
+TASK   V-C: Copy compressed Linux image to flash
+STEP   V-C-1: Determine the Linux entry point
+The command (executed on your linux build machine)
+   mips-linux-objdump -f vmlinux | grep start
+shows the entry point, which we'll call ENTRY.
+
+STEP   V-C-2: Determine the load point
+There are several ways to do this, but this is probably the easiest:
+   mips-linux-nm vmlinux | grep _ftext
+We'll call this value MEMADDR.
+
+STEP   V-C-3: Load the image into memory
+At a RedBoot prompt, type:
+   load -r -b %{FREEMEMLO} vmlinux.bin.gz
+NOTE: DO type the percent sign and the braces.
+
+STEP   V-C-4: Copy the compressed image from memory to flash
+   fis create -f 0xbe050000 -e ENTRY -r MEMADDR vmlinux.bin.gz
+NOTE: Substitute the hex values the you determined earlier for ENTRY and
+MEMADDR.  Example: "fis create -e 0x8012a040 -r 0x80002000 vmlinux.bin.gz".
+This ENTRY address may change every time you build you Linux kernel, so be
+sure to update it each time you put a new image into flash.
+
+This causes RedBoot to create a new named flash segment, vmlinux.bin.gz,
+which holds the compressed Linux image.  RedBoot also remembers where the
+image should be loaded and where to begin execution.  You can verify the
+flash segment data with the command
+   fis list
+
+STEP   V-C-5: Test the ability to load from flash
+Reset the target board and get to a RedBoot prompt.
+Load the compressed Linux image from flash with:
+   fis load -d vmlinux.bin.gz
+Now execute the image that you just loaded with
+   go
+
+STEP   V-C-6: Configure RedBoot to automatically load/execute from flash
+We will set up a boot script that automatically loads your linux image from
+flash and begins execution.  You can specify how long RedBoot should wait
+before it loads and executes the Linux image.
+
+At a Redboot prompt, type:
+   fconfig
+You will then be prompted for a number of values to change.
+Set
+        Run script at boot                         to  true
+
+As your boot script, enter:
+   fis load -d vmlinux.bin.gz
+   go
+NOTE: Hit RETURN one more time to end the boot script definition.
+Then set the number of seconds to wait before booting linux:
+        Boot script timeout (1000ms resolution)    to  5
+Hit RETURN a bunch of times until you get a chance to "Update RedBoot
+non-volatile configuration".  Answer "y".
+
+Now you can reset, and your linux image will automatically boot
+after a 5-second delay.
+
+Phase  VI: Build a flash-based file system to replace the RAMDISK file system.
+The RAMDISK -- compiled into Linux -- is convenient during testing; but for
+production it's desirable to separate the root file system image from the
+Linux image.  It's preferable to store the root file system in flash as a
+JFFS2 file system.  [Of course, there are other possibilities, too.]
+
+JFFS2 is a bit less space-efficient than a compressed RAMDISK, so you will
+feel pressure to minimize the contents of your root file system; especially
+if your board supports only the standard 2MB of flash.  Some advantages that
+JFFS2 offers:
+   -It is understood by both Linux and RedBoot
+   -It compresses all files
+   -It is intended for use with flash media
+   -It permits both read and writes to the file system (if it's mounted
+    for writing, of course)
+
+TASK  VI-A: Build Linux without the RAMDISK
+STEP  VI-A-1: Reconfigure Linux
+You can use the default JFFS2 Linux configuration configuration file
+   cd /work/linux
+   cp arch/mips/ar531x/defconfig-ar531x.JFFS2 .config
+
+STEP  VI-A-2: "Activate" the new configuration
+   make oldconfig
+
+STEP  VI-A-3: Build Linux object
+   make
+
+You now have a new vmlinux that does NOT include a RAMDISK; but it DOES know
+how to handle a JFFS2 flash-based root file system.
+
+# SHORTCUT
+# Use the pre-built JFFS2-based linux kernel with wireless at $LSDK/vmlinux.3
+
+Copy your vmlinux image to the TFTP server on 192.168.1.100.
+NOTE: Later, you will convert this vmlinux to a compressed binary image
+and load it into flash.
+
+TASK  VI-B: Create a JFFS2 root image
+In order to create the JFFS2 root file system image, you will use the
+mkfs.jffs2 application that is distributed as part of the Open Source
+MTD utilities.
+
+Start at the top of your workarea:
+   cd /work
+
+STEP  VI-B-1: Obtain MTD utilities
+cvs -d :pserver:anoncvs@cvs.infradead.org:/home/cvs login
+(password: "anoncvs")
+cvs -d :pserver:anoncvs@cvs.infradead.org:/home/cvs co mtd
+
+# SHORTCUT
+# We provide a snapshot of the MTD source code.
+# tar xvzf $LSDK/mtd.tgz .
+
+This will create a source directory called mtd.
+Change into the mtd/util subdirectory:
+   cd mtd/util
+
+STEP  VI-B-2: Patch the mkfs.jffs2.c source
+Patch the mkfs.jffs2.c file:
+   patch -p1 < $LSDK/mkfs.jffs2.c.diff
+Note: This will complete with no issues, if you used the version of mtd utils
+that come with the LSDK.  If you used a different (i.e. more recent) version
+of the MTD utils, then you may have to resolve patch problems.
+
+STEP  VI-B-3: Create the mkfs.jffs2 binary
+First compile
+   make mkfs.jffs2
+NOTE: Warnings are normal.
+
+Then, become root (su) and copy the resulting binary to /usr/local/bin.
+   cp mkfs.jffs2 /usr/local/bin
+NOTE: Don't forget to exit "su" and go back to your own login.
+
+You now have the utility that you need to use in order to create the JFFS2
+root file system.
+
+# SHORTCUT
+# Use the pre-built mkfs.jffs2 binary:
+#   cp $LSDK/mkfs.jffs2 /usr/local/bin
+
+STEP  VI-B-4: Create the JFFS2 file system image
+Change to the rootdir directory that you used earlier for your RAMDISK
+   cd /work/linux/arch/mips/ar531x/RAMDISK/rootdir
+
+This is a good opportunity to make any changes to the file system image
+that you might want to make.  For instance, you might want to copy the rcS
+file from $LSDK/rcS to etc/rc.d/rcS:
+   cp $LSDK/rcS etc/rc.d/rcS
+Note: rcS is a good sample for an AP30, which has two radios.  If you are
+using a different test board you may need to modify rcS.
+
+Now, to create the file system image type
+   mkfs.jffs2 -r . -o /tmp/jffs2.bin -b --squash --pad=0xe0000 --eraseblock=0x1000
+This creates the file system image in /tmp/jffs2.bin.
+
+# SHORTCUT
+# Use the pre-built JFFS2 root image from $LSDK/jffs2.bin
+
+You should now move the JFFS2 root file system image to the TFTP directory
+on 192.168.1.100.
+
+TASK  VI-C: Put the JFFS2 root image on flash
+Reset the target board and get to a RedBoot prompt.
+
+STEP  VI-C-1:
+Load the JFFS2 root file system image into memory:
+   load -r -b %{FREEMEMLO} jffs2.bin
+
+STEP  VI-C-2:
+Delete the old vmlinux.bin.gz image.  It's too large to fit into flash along
+with the JFFS2 root file system.
+   fis delete vmlinux.bin.gz
+Now copy the root file system image from memory into flash:
+   fis create -f 0xbe0e0000 -e 0 rootfs
+NOTE: This may take about 20 seconds; be patient.
+
+You can use the "fis list" command to verify that the rootfs entry looks
+like this:
+rootfs            0xBE0E0000  0xBE0E0000  0x000F0000  0x00000000
+
+TASK  VI-D: Test that the JFFS2 root file system works
+Boot the JFFS2 Linux kernel that you built earlier (TASK VI-A):
+   load vmlinux
+   exec -c "root=/dev/mtdblock3"
+NOTE: You need to tell the Linux kernel where to find the root file system.
+In our case, it's on the third MTD device, "/dev/mtdblock3".
+MTD0 is the whole flash.  MTD1 holds RedBoot, MTD2 holds vmlinux.bin.gz,
+and MTD3 holds rootfs.  The Linux kernel is configured to read the RedBoot
+flash segment table, and segments are numbered in order of flash address.
+If there were an empty area in the flash address space (based on the ctart
+addresses and lengths printed out by "fis list"), then the empty segment would
+consume another Linux block device number.
+
+As a future enhancement, it would be convenient to specify the root file
+system by RedBoot partition NAME, as in "root=/dev/mtd/rootfs".
+
+NOTE: To use a different bootrom loader (i.e. something other than RedBoot),
+your kernel should be configured without CONFIG_MTD_REDBOOT_PARTS.  Instead,
+you would store the start flash address and length of the root file system
+can be stored in the physmap_partitions table in
+linux/drivers/mtd/maps/physmap.c.
+
+TASK  VI-E: Commit the new vmlinux image to flash
+Just as you did earlier, convert the vmlinux ELF file to vmlinux.bin:
+   mips-linux-objcopy -O binary -g vmlinux vmlinux.bin
+Compress the vmlinux.bin file
+   gzip vmlinux.bin
+
+# SHORTCUT
+# Use the pre-built compressed JFFS2 Linux image at $LSDK/vmlinux.3.bin.gz.
+
+Move the vmlinux.bin.gz file to the TFTP directory on 192.168.1.100.
+Load it into memory on the target
+   load -r -b %{FREEMEMLO} vmlinux.bin.gz
+Commit the new vmlinux.bin.gz image to flash
+   fis create -l 0x90000 -f 0xbe050000 -e ENTRY -r MEMADDR vmlinux.bin.gz
+NOTE: Remember to substitute the actual ENTRY and MEMADDR values, just
+like you did earlier.  The values may be different now.
+EXAMPLE:
+  fis create -l 0x90000 -f 0xbe050000 -e 0x80134040 -r 0x80002000 vmlinux.bin.gz
+
+TASK  VI-F: Update the non-volatile RedBoot configuration
+We have to update the RedBoot script so that it passes the root device as
+a command-line argument to Linux.  Use RedBoot's fconfig command again, and
+use this as the script:
+   fis load -d vmlinux.bin.gz
+   exec -c "root=/dev/mtdblock3"
+
+You now have a board with an Open Source RedBoot bootrom loader and a JFFS2
+compressed flash file system and a compressed Linux image.  The bootrom 
+automatically uncompresses, loads and executes the linux image on power up.
+
+You can tune the startup script on your root file system at
+rootdir/etc/rc.d/rcS so that Linux automatically loads and links wireless
+modules from the /modules directory on the flash file system, and you can
+add script to configure network services (wireless, bridge, etc.) as desired.
+An example is at $LSDK/rcS (which you may already have on your rootfs).
+
+NOTE: By default, the root file system is mounted read-only.  You can make
+it writable with:
+   mount -t jffs2 -o remount +w /
+
+
+
+
+
+
+APPENDIX A: Debugging Linux with kgdb
+The kgdb source-level debugger is a great tool for debugging, and it works
+well with the AR531X platform.  A complete discussion of kgdb is beyond the
+scope of this document.  But we include a quick setup guide.  Start by
+fetching the kgdb executable on your x86 Linux build machine:
+   cp $LSDK/kgdb /usr/local/bin
+   chmod +x /usr/local/bin/kgdb
+NOTE: You'll probably need to "su" to root in order to do this.
+
+If you would rather build kgdb and other components from source, you can find
+them on the web.
+
+The AR531X boards have only a single serial port; but you'll want the debugger
+to hold a conversation with the kernel over a serial port, and you'll also
+want independent console output over that serial port.  The way to achieve this
+is with mux/demux software such as kgdb_demux.pl (installed in /usr/local/bin).
+   cd /usr/local/bin
+   tar xvzf $LSDK/kdmx-1.02.tgz
+
+Attach the target board's serial port to your x86 linux box.
+
+Test that it works using your favorite terminal emulator (e.g. minicom, which
+you can find on the web).
+
+Exit the emulator, and start kgdb_demux.pl, giving it the name of the special
+file that represents the serial port that your board is attached to.
+kgdb_demux.pl then creates two pseudo-ports, usually /dev/ttya1 and /dev/ttya2.
+/dev/ttya1 is used for kgdb communications, while /dev/ttya2 is used for
+console communications.
+
+Start your terminal emulator (e.g. minicom) on /dev/ttya2, and verify that
+console input/output works normally.
+
+Then start "kgdb vmlinux".
+
+In order to connect to the target board, you have to tell the kernel that
+you want it to talk with the debugger:
+   echo 1 > /proc/ar531x/debug
+
+You now see a message that the kernel is waiting for the debugger to connect.
+In the kgdb window, type "target remote /dev/ttya1".  You should be able to
+say "cont" to continue execution.  To give control back to kgdb, type ^A
+in the CONSOLE window.  You can set breakpoints, single step, decode
+instructions, read and write registers and memory, and generally do anything
+that kgdb permits.
+
+If you need to debug a problem that occurs early on (before reaching a
+shell prompt), you can configure the kernel to enable kgdb debugging as early
+as possible.  To do this, turn on CONFIG_EARLY_STOP in the linux configuration.
+
+NOTE: There have been problems debugging modules with kgdb.  To simplify
+debugging, you may want to statically link all modules (e.g. MADWiFi modules)
+into the kernel.  Of course, you may not be able to distribute the resulting
+statically linked kernel due to licensing issues.  It's just for debugging.
+
+
+APPENDIX B: Special /proc files
+Several special files are used for feature control.
+
+/proc/ar531x/debug -- When you write to this file, the kernel prepares itself
+to be debugged via kgdb.  It waits for a kgdb debugger to form a serial port
+connection.  It is expected that you will write to this file at most once.
+Example:  echo 1 > /proc/ar531x/debug
+
+/proc/ar531x/watchdog -- You can write a number of milliseconds to this file,
+and it will start a hardware watchdog timer at the specified frequency.  If
+you write a 0, it turns off the watchdog timer.  If you read this file, it
+returns the lowest value yet reached by the watchdog timer since the most
+recent write to the watchdog file.
+
+NOTE: When you read the watchdog timer, the value returned is in "system clock"
+units, not milliseconds.
+
+NOTE: If watchdog functionality is disabled by board configuration, then
+writing to the watchdog file has no effect, and reading it always returns 0.
+
+Example: echo 4000 > /proc/ar531x/watchdog
+Example: cat /proc/ar531x/watchdog
+
+/proc/net/wlan0/debug -- You can enable/disable debugging for wlan0 by writing
+                         non-zero to enable or zero to disable debugging.
+
+Example: echo 0 > /proc/net/wlan0/debug
+
+
+/proc/net/wlan0/opmode -- You can specify whether to use 11A, 11B, or 11G.
+                         IFM_IEEE80211_11A is 1
+                         IFM_IEEE80211_11B is 2
+                         IFM_IEEE80211_11G is 3
+Example: echo 1 > /proc/net/wlan0/opmode
+Example: echo 2 > /proc/net/wlan1/opmode
+NOTE: There may be hardware restrictions that override your selection.
+
+/proc/net/wlan0/turbo -- You can enable or disable turbo mode
+Example: echo 1 > /proc/net/wlan0/turbo
+
+/proc/net/wlan0/freq -- You can specify a frequency to use.
+Example: echo 5180 > /proc/net/wlan0/freq
+Example: echo 2412 > /proc/net/wlan1/freq
+
+/proc/net/wlan0/mode -- You should always specify IW_MODE_MASTER (3) for
+                        AP mode.
+Example: echo 3 > /proc/net/wlan0/mode
+Example: echo 3 > /proc/net/wlan1/mode
+
+/proc/net/wlan0/essid -- You can specify an "SSID" to use.
+Example: echo -n "Linux Madwifi AP" > /proc/net/wlan0/essid
+
+
+
+APPENDIX C: Useful debugging notes
+When debugging with kgdb, you may find it useful to link all modules (e.g.
+wireless modules) into the kernel rather than attempt to use the kgdb Module
+Debugging features.  The kgdb Module Debugging features seem to have some
+problems.  Of course, you must never ship a linux kernel that has closed-source
+modules statically linked into it; this is purely for debugging.
+
+In order to debug JFFS2 issues, you may find it useful to configure a kernel
+that uses a RAMDISK root file system, and also supports JFFS2.  That way, you
+can boot your kernel using the RAMDISK, and examine flash block devices such as
+/dev/mtdblock3 (e.g. using "od -x /dev/mtdblock3" | head).   You can also test
+mount your JFFS2 file system under /mnt.  It may also be useful to know that a
+JFFS2 file system that consists of completely ERASED flash IS mountable.  You
+can use RedBoot commands to erase a section of flash. [But be careful not to
+erase configuration data towards the end of flash!]
+
+
+
+
+APPENDIX D: VisionClick files
+If you are using VisionClick and a VisionICE, you can find the Emulator
+Register Initialization File at
+   /work/ecos/ecos-2.0/packages/hal/mips/ar5312/v2_0/misc/ar531x.reg
+
+You can find Auto-playback
+Initialization files for each of the boards in the eCos source under
+   /work/ecos/ecos-2.0/packages/hal/mips/$TGTAP/v2_0/misc/*.ini.
+
+
+
+
+APPENDIX E: How to build busybox
+NOTE: Before you can build busybox, you need to have a Linux kernel source tree
+in place, because busybox uses some kernel header files.
+
+Start in your /work directory:
+   cd /work
+
+Source and documentation for busybox is at
+   http://busybox.net/downloads/
+
+# SHORTCUT
+#  tar xvzf $LSDK/busybox-1.00-pre4.tgz
+
+In order to compile the version of busybox that we use with the version of
+kernel that we use and the version of compiler that we use, you'll need a
+patch.  If you use other versions (busybox, kernel, or compilers), you can
+skip this patch and resolve compilation problems yourself.
+   cd /work/busybox-1.00-pre4
+   patch -p1 < $LSDK/bb.patch
+
+If you want to include the brctl (bridge control command), you need to apply
+another patch.  [You probably do want this patch for an AP.]
+   cd /work/busybox-1.00-pre4
+   patch -p1 < $LSDK/bb-brctl.patch
+NOTE: Thanks to whoever originally created this patch (it's available on
+the web).
+
+You need to configure which busybox components to include in your build using
+"make config".  If you choose to include too much, it will not fit in the
+RAMDISK space that you've configured in your linux/.config file.  Even if it
+does fit in RAMDISK, you may have trouble fitting it into flash on the JFFS2
+file system.  So try to be as minimal as possible.
+
+As a starting point, you can use this configuration:
+   cp $LSDK/busybox.config .config
+   make oldconfig
+
+You need a MIPs glibc development environment.  You can build glibc-devel from
+source (not described here), or you can use a pre-built image:
+   cd /work
+   tar xvzf $LSDK/glibc.tgz
+NOTE: This version of glibc came from glibc-devel-2.2.5-42.1.mips.rpm
+
+The busybox source at $LSDK/busybox.tgz, includes a snapshot of busybox plus
+bb.patch plus bb-brctl.patch plus a basic -- not minimal, but good for
+debugging -- .config file.
+
+# SHORTCUT
+#   cd /work
+#   tar xvzf $LSDK/busybox.tgz
+#   cd busybox-1.00-pre4
+
+Whew!  Now that you have a busybox source tree and environment, build it
+like this:
+   make dep
+   make glue.o
+   make
+NOTE: It is normal to get some warnings during the build process.
+
+You now have a MIPS BigEndian ELF image, "busybox", as well as a text file,
+"busybox.links", which you can use in a RAMDISK root file system image and
+a JFFS2 image.
+
+# SHORTCUT
+# We include pre-built busybox at
+#   $LSDK/busybox and
+#   $LSDK/busybox.links
+
+After you copy busybox to your rootdir, remember to include execute access
+on busybox:
+   chmod +x busybox

@@ -1,0 +1,861 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_i386.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_misc.c: Only declare __mem_fault_handler if GDB stubs
+	are included (and it will be used).
+
+2003-07-23  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/hal_intr.h: Tidied up some compiler warnings.
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/i386.ld:
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2003-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Let generic syscall code
+	handle exit.
+
+2002-11-28  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/vectors.S: Added GRUB startup option to tests for IDT
+	initialization. Added call to breakpoint() before cyg_start(),
+	controlled by CYGDBG_HAL_DEBUG_GDB_INITIAL_BREAK.
+
+2002-05-17  Nick Garnett  <nickg@redhat.com>
+
+	* src/vectors.S: Rearranged interrupt stack definitions to make it
+	work correctly in SMP case. The #ifdefs were improperly nested.
+
+2002-04-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S:
+	Don't use .file as it can confuse debugging since the .file
+	doesn't contain the path and therefore the debugger will never
+	know where it lives! This conflicts with using -Wa,--gstabs.
+
+2002-04-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Add extra sig argument to
+	__do_syscall.
+
+2002-01-08  Nick Garnett  <nickg@redhat.com>
+
+	* include/hal_arch.h:
+	Removed consideration of lazy FPU context switching in determining
+	the size of CYGNUM_HAL_STACK_CONTEXT_SIZE, since it does not
+	actually make any difference - and previously resulted in too
+	small a value for CYGNUM_HAL_STACK_SIZE_MINIMUM.
+
+2002-01-07  Nick Garnett  <nickg@redhat.com>
+
+	* src/vectors.S (__fpu_switch_vsr): Fixed register usage bug.
+
+2001-12-19  Mark Salter  <msalter@redhat.com>
+
+	* include/arch.inc: Use fnsave instead of fsave.
+	* src/vectors.S: Ditto.
+
+2001-12-11  Nick Garnett  <nickg@redhat.com>
+
+	* src/i386.ld (SECTION_rel__got): Added entry for
+	.rel.gnu.linkonce* that more recent versions of the compiler seem
+	to generate.
+
+2001-12-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/i386.ld: Add missing close bracket.
+
+2001-12-06  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/i386.ld: Add .rel.text and .rel.data sections to avoid
+	linker warnings, which can cause the linker to then get confused.
+	(From nickc)
+
+2001-11-21  Mark Salter  <msalter@redhat.com>
+
+	* src/i386_stub.c (__do_read_msr): Add mem_fault handling.
+	(__do_write_msr): Ditto.
+
+2001-10-19  Ian Campbell  <icampbell@arcom.co.uk>
+
+	* include/hal_cache.h: Provide HAL_DCACHE_IS_ENABLED and
+	HAL_ICACHE_IS_ENABLED macros.
+
+2001-10-15  Mark Salter  <msalter@redhat.com>
+
+	* src/i386_stub.c (hal_get_gdb_registers): Save idt/gdt in GDB regs.
+	({put,get}_register_as_bytes): Support idt/gdt.
+
+2001-10-12  Mark Salter  <msalter@redhat.com>
+
+	* include/i386_stub.h: Add support for FPU and other regs.
+	* src/i386_stub.c: Ditto.
+
+	* src/vectors.S: Add SSE support.
+	* include/i386.inc: Ditto.
+	* include/arch.inc: Ditto.
+	* include/hal_arch.h: Add SSE state to HAL_FPU_Context.
+	* cdl/hal_i386.cdl: Add CYGHWR_HAL_I386_PENTIUM and
+	CYGHWR_HAL_I386_PENTIUM_SSE.
+	* cdl/hal_i386.cdl: Add CYGHWR_HAL_I386_PENTIUM_GDB_REGS.
+
+2001-10-08  Ian Campbell  <icampbell@arcom.co.uk>
+
+	* cdl/hal_i386.cdl: move CYGBLD_BUILD_I386_ROMBOOT and
+	CYGBLD_BUILD_REDBOOT_BIN_ROM to pc package.
+	* src/romboot.S: Moved to pc package
+	* src/romboot.ld: Moved to pc package
+
+2001-10-11  Fabrice Gautier  <Fabrice_Gautier@sdesigns.com>
+
+	* include/hal_io.h: Add _STRING variants of I/O macros to allow
+	writing of consecutive items to the same registers.
+
+2001-10-10  Fabrice Gautier  <Fabrice_Gautier@sdesigns.com>
+2001-10-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S: Don't use apostrophes in comments as it can confuse
+	preprocessors sometimes.
+
+2001-10-05  Mark Salter  <msalter@redhat.com>
+
+	* src/vectors.S: Support separate stub stack.
+	(__syscall_tramp): Trampoline for GNUPRo syscalls (int $0x80).
+
+	* src/i386_stub.c (__is_bsp_syscall): New function.
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Add mem fault handling.
+
+	* cdl/hal_i386.cdl: Add hal_syscalls.c to compile list.
+
+	* src/hal_syscall.c: New file. Support GNUPro syscalls.
+
+2001-10-01  Ian Campbell  <icampbell@arcom.co.uk>
+
+	* src/vectors.S: include CYGBLD_HAL_PLATFORM_H rather than
+	<pkgconf/hal_i386_pc.h>
+
+2001-09-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S (__default_interrupt_vsr): Adjust saved stack pointer
+	for the hardware and trampoline saved data.
+	(__default_exception_vsr): Ditto.
+
+2001-08-31  Nick Garnett  <nickg@redhat.com>
+
+	* include/arch.inc: Clean up typo in stack switching macros.
+
+2001-08-22  Nick Garnett  <nickg@redhat.com>
+
+	* include/hal_io.h: Added some macros to do in-memory data
+	accesses for memory mapped devices.
+
+	* include/hal_arch.h: Attempted to make some sense out of the
+	stack size macros.
+
+	* include/hal_intr.h: Extended VSR table to its full 256 entries.
+
+	* src/vectors.S: Lots of changes to incorporate SMP support.
+
+	* src/i386.ld: Added SMP related data, that must be shared between
+	RedBoot and applications, for example.
+
+	* include/hal_smp.h: Added this file to define SMP related HAL
+	interfaces.
+
+	* include/arch.inc: Added SMP support. This includes explicit SMP
+	macros and stack-switching macros that have single CPU and SMP
+	variants. Some SMP modifications to the lazy FPU switching code
+	leave it functional in the single CPU case, but do not yet work in
+	the SMP case. Lazy FPU switching is currently disabled for SMP in
+	the CDL.
+
+	* cdl/hal_i386.cdl: Added SMP configury.
+
+2001-07-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_misc.c: Fix "implicit decl of diag_printf" warning.
+
+2001-07-13  Nick Garnett  <nickg@redhat.com>
+
+	* include/arch.inc:
+	Added code to clear CR0:TS bit in hal_fpu_init macro. If this bit
+	is not clear, then the following finit might trap, and we don't
+	want that.
+	Added a compare to hal_fpu_push_exc macro for a zero fpu state
+	owner. The code was assuming the move set the condition codes,
+	which it doesn't.
+
+2001-07-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_arch.h (HAL_THREAD_INIT_FPU_CONTEXT): Fix indirection to
+	fpucontext members.
+
+2001-07-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_intr.h (HAL_RESTORE_INTERRUPTS): Don't change name
+	for clobbers.
+
+2001-07-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_intr.h: Be pedantic about register constraint syntax
+	to satisfy newer compilers
+	* include/hal_io.h: Ditto
+
+2001-06-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_i386.cdl: Default to enabling FPU support since gcc assumes
+	a hardware FPU anyway. Also default to lazy FPU switching since
+	this is cheapest in the modal case.
+
+2001-05-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]	
+	* src/context.S: Fixed bug in hal_setjmp() that corrupted EBX.
+
+2001-04-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* include/hal_intr.h:
+	Tidied up mapping of exceptions to vectors. Added implementation
+	of HAL_VSR_SET_TO_ECOS_HANDLER().
+
+2001-04-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/vectors.S (__default_exception_vsr):
+	Disabled ROM monitor stack switching here. There are problems with
+	this that I do not have time to worry about now. 
+
+2001-03-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/romboot.S: Added code to call video BIOS to initialize
+	display.
+
+	* src/vectors.S: Added code to copy data section from ROM to RAM
+	in ROM booted systems.
+
+2001-03-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/romboot.S:
+	* src/romboot.ld:
+	Added these files to build 256 byte realmode bootstrap at the top
+	of ROM.
+	(This is work in progress and is not yet complete.)
+	
+	* cdl/hal_i386.cdl:
+	Added options for building a bootstrap ROM.
+	(This is work in progress and is not yet complete.)
+	
+	* include/basetype.h:
+	Returned alignment to 32 bytes, now that I have discovered, the
+	hard way, why it was that value in the first place.
+
+	* src/i386.ld: Force alignment of tables to 32 bytes.
+
+	* include/hal_arch.h (HAL_THREAD_INIT_FPU_CONTEXT_SPACE): Fixed
+	compiler warning.
+
+2001-03-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/vectors.S:
+	Removed memory size stuff.
+	Moved BSS zero code here to avoid doing a procedure call. The
+	interrupt stack is in the BSS so zeroing it would blow the return
+	address away.
+	Moved interrupt stack to BSS.
+
+	* src/hal_misc.c: Removed hal_zero_bss(), hal_lsbit_index() and
+	hal_msbit_index() functions.
+
+	* include/hal_arch.h:
+	Replaced hal_[lm]sbit_index() functions with inline assembler
+	using the bsf and bsr instructions.
+	Added support for dynamic memory size finder.	
+
+	* cdl/hal_i386.cdl:
+	Added interface CYGINT_HAL_I386_MEM_REAL_REGION_TOP.
+
+2001-03-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/vectors.S: Enabled FPU support.
+	Added FPU state save and restore macros to default exception and
+	interrupt VSRs.
+	Added __fpu_switch_vsr to perform lazy context switch of FPU
+	state.
+	Made use of i386reg_xxx definitions.
+
+	* src/context.S: Added FPU save and restore macros to thread
+	switch code. Made use of i386reg_xxx definitions.
+
+	* include/hal_arch.h: Added HAL_FPU_Context structure to contain
+	FPU state. Added code to HAL_THREAD_INIT_CONTEXT() to create
+	FPU context.
+
+	* include/i386.inc: Updated savestate format in line with hal_arch.h
+
+	* include/arch.inc: Added macros to implement FPU initialization,
+	save and restore for threads, exceptions and interrupts.
+
+	* cdl/hal_i386.cdl: Added initial FPU configuration options.
+
+2001-03-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/vectors.S:
+	Added support for use of interrupt stack, together with support
+	for running DSRs on it.
+	Added instrumentation support to default interrupt VSR.
+	Miscellaneous tidies to code and comments.
+
+	* src/context.S:
+	Rewrote context switch code to permit preservation of the
+	interrupt disable state of a thread. This is to support use of an
+	interrupt stack, calling DSRs on it and brings the i386 HAL in
+	line with other HALs.
+
+	* include/hal_intr.h:
+	Added HAL_INTERRUPT_STACK_CALL_PENDING_DSRS(),
+	HAL_INTERRUPT_STACK_BASE and HAL_INTERRUPT_STACK_TOP.
+
+	* include/i386.inc: 
+	* include/hal_arch.h:
+	* src/i386_stub.c:
+	Changed naming of last two HAL_SavedRegisters fields.
+	Modified HAL_THREAD_INIT_CONTEXT() to match new context switch
+	code.
+
+2001-03-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* src/vectors.S: Eliminated some unnecessary code. Tidied up some
+	comments.
+
+	* include/hal_intr.h:
+	Moved common exception vector definitions here.
+	Moved CPU interrupt enable/disable macros here.
+	
+	* include/hal_arch.h:
+	* src/i386_stub.c: 
+	Converted arguments to hal_[g|s]et_gdb_registers() to CYG_ADDRWORD
+	from target_register_t.
+
+	* include/arch.inc:
+	Moved FPU control stuff here - this still needs a lot of work to
+	get running.
+	Moved A20 gate enable macro here. Since the A20 gate stuff is part
+	of all recent CPUs, this has become an architectural feature.
+
+2001-03-06  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]	
+	* include/hal_arch.h: Added CYGARC_CACHED_ADDRESS() and friends.
+
+2001-03-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]	
+	* src/hal_misc.c (hal_arch_default_isr): Restored diag_printf() in
+	here. Without the reference, RedBoot does not include anything
+	from infra/diag.cxx, does not call HAL_DIAG_INIT() and will not
+	mangle diagnostic output. 
+
+2001-03-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	Some of these changes here were initially made by Fabrice Gautier
+	and then liberally modified by me.
+	
+	* src/vectors.S:
+	Removed Synthetic target support - this is moving to its own HAL.
+	Added __default_exception_vsr to capture exceptions.
+	Renamed hal_pc_generic_interrupt to __default_interrupt_vsr in
+	line with other HALs. Generally tidied and polished.
+	Added VSR entry trampolines.
+	Added interrupt stack definition.
+
+	* src/i386_stub.c: Removed a lot of unnecessary stuff.
+
+	* src/i386.ld: Added absolute defines for IDT, VSR and virtual
+	vector tables.
+
+	* src/hal_misc.c: Tidied up and added eCos exception support.
+
+	* src/context.S:
+	Modified to save and restore context in new format.
+
+	* include/i386_stub.h:
+	Added definition of HAL_STUB_PLATFORM_STUBS_FIXUP() macro.
+
+	* include/hal_io.h: Implemented these macros as inline assembler.
+
+	* include/hal_intr.h: Various changes to interrupt and VSR table
+	handling macros.
+
+	* include/hal_arch.h: 
+	* include/i386.inc:
+	Redfined HAL_SavedRegisters structure and init macro. Now all
+	contexts consist of a full register set, vector number, and
+	PC,CS,EFLAGS as pushed by the hardware.
+
+	* include/basetype.h: Changed alignment to 4 bytes.
+
+2000-11-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S (hal_pc_irq): Use correct register for ISR return value
+	when calling interrupt_end()
+	Thanks to Phil Hinton for reporting.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S (_start): call constructors after initializing
+	stub so that they can be debugged. Reported to work okay
+	by Fabrice Gautier.
+
+2000-09-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/basetype.h: Use 32-byte alignment
+
+2000-08-14  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	From Fabrice Gautier:
+	* src/hal_misc.c (hal_zero_bss): Use __bss_end not _end
+	* src/i386.ld: Add __bss_end symbol to end of SECTION_bss
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/i386_stub.c: Removed use of CYG_LABEL_NAME() and added
+	underscore to _breakinst.
+
+	* src/i386.ld: Switched to new table definition mechanism.
+
+	* include/basetype.h: Removed definition of CYG_LABEL_NAME().
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h (CYGARC_HAL_SAVE_GP, CYGARC_HAL_RESTORE_GP):
+	Added.
+
+2000-03-27  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/basetype.h: Let cyg_halbool revert to the system default
+	(i.e. a word)
+
+2000-03-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/basetype.h: Define bool type since it's only 8 bits.
+	(cyg_halbool): always unsigned char.
+
+2000-03-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Comment out since
+	it's unimplemented
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/i386_stub.c: CYG_HAL_I386 -> CYGPKG_HAL_I386
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_i386.cdl: remove fix mes.
+
+2000-02-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h: Merged PC platform support changes
+	contributed by Patrick O'Grady (pjo)(patrick@softprocess.com).
+
+	* include/hal_intr.h: Moved Linux specific support out to its own
+	var_intr.h.
+
+	* src/context.S: Added FP switch code from pjo, suitably
+	protected.
+
+	* src/PKGconf.mak: Added i386_stub.c to COMPILE list.
+
+	* cdl/hal_i386.cdl: Added i386_stub.c to compile list.
+
+	* src/i386_stub.c:
+	* include/arch.inc: Files added.
+
+	* src/hal_misc.c: Added hal_zero_bss().
+
+	* src/vectors.S: Added PC support code.
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/i386.ld: Add support for network package.
+
+2000-01-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_INTERRUPT_MASK, HAL_INTERRUPT_UNMASK): 
+	Define.
+
+	(HAL_INTERRUPT_ACKNOWLEDGE): 
+	(HAL_CLOCK_RESET): 
+	Let acknowledge clear pending flag, but leave unblocking to
+	clients of the interrupt (i.e., RTC).
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_i386.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_i386.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_i386.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_i386.cdl: Added.
+
+1999-10-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/i386.ld: Add asterisks to input section names to make them more
+	tolerant of subtle differences
+
+1999-10-05  Jesper Skov  <jskov@cygnus.co.uk>
+        From Andrew Lunn (lunn@ma.tech.ascom.ch)
+	* include/hal_arch.h (HAL_IDLE_THREAD_ACTION): Defined.
+
+1999-05-14  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18956
+	* src/i386.ld: Fixed problem with rel_got.
+	Encode . in section name as __.
+
+1999-05-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h (HAL_THREAD_INIT_CONTEXT): Align stack
+	(rather conservatively) before use.
+
+1999-04-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	Remove the -n argument to tail, it does not appear to be required
+	on any supported host and causes problems with some
+	implementations of tail.
+
+1999-04-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak (EXTRAS): Don't generate extras.o here any more
+	But do define EXTRAS every time for the linker script
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/*.ld: Use double underscore substitution for period
+	character in SECTION_* macro names (PR 19787)
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/*.ld: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_arch.h: Added stack values.
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: 
+	* include/hal_intr.h:
+	Changed CYG_HAL_ to CYGPKG_HAL_
+
+	* include/hal_intr.h:
+	Include the hal_i386_linux header file. 
+
+1999-03-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: 
+	* include/hal_arch.h: 
+	Cleaned up some FIX MEs.
+
+1999-03-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/PKGconf.mak: Remove dependence on echo '-e' switch.
+
+1999-03-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: 
+	Cleaned up macros. 
+	Renamed hal_ to	cyg_hal_. 
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Default contents of vector table changed.
+
+1999-03-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_arch.h: Add definition of 'CYGNUM_HAL_MINIMUM_STACK_SIZE'
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_INTERRUPT_IN_USE): Added.
+
+1999-03-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/i386.ld:
+	Added alignment before definition of __DEVTAB__.
+
+1999-03-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/i386.ld: 
+	* src/PKGconf.mak: Clean up I/O package changes.
+
+1999-03-04  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/i386.ld: 
+	Add INPUT(libextras.a), add libextras.a to GROUP() and include
+	new section for device driver table
+
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/i386.ld:
+	Removed alias for Cyg_Scheduler::sched_lock, since this is now
+	handled elsewhere.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Rename deliver_exception -> cyg_hal_deliver_exception
+
+	* include/hal_intr.h:
+	Reorganise vector/interrupt/exception names according to purpose
+	QA improvements
+
+	* src/hal_misc.c:
+	Rename deliver_exception -> cyg_hal_deliver_exception
+	Rename exception_handler -> cyg_hal_exception_handler
+
+1999-02-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Always allocate space for at least one
+	exception vector.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/i386.ld: Add LMA_EQ_VMA macro definition.
+
+1999-01-29  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18966
+	* src/hal_misc.c (cyg_hal_invoke_constructors): Added
+	cyg_hal_stop_constructors code.
+
+1999-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/i386.ld: Added rel.got section. Cleaned up a bit.
+
+1999-01-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_misc.c: Moved external declarations into top-level
+	scope to avoid compiler warning.
+
+1999-01-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	* src/context.S: 
+	Added setjmp/longjmp support.
+
+	* src/hal_misc.c: Removed bogus setjmp/longjmp functions.
+
+1999-01-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/context.S: 
+	* include/hal_arch.h:
+	* include/i386.inc: [added]
+	Rewrote the context switch code.
+
+1999-01-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/i386.ld (SECTION_bss): Added align statement.
+
+1999-01-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_misc.c: Add bogus setjmp & longjmp functions to prevent
+	compiler error.
+
+1999-01-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Made virtual timer the default.
+
+1999-01-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_CLOCK_LATENCY): Return the clock read
+	value.
+
+1999-01-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Made all Linux stuff CYG_HAL_I386_LINUX
+	conditional.
+
+	* include/hal_cache.h: Added HAL_DCACHE_UNLOCK_ALL (empty) macro.
+
+1999-01-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_i386.h: Added.
+
+1999-01-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_arch.h: Fix HAL_SavedRegisters struct definition.
+
+	* include/hal_intr.h: Made interrupt enable/disable macros behave
+	more like the macros used for real HW CPUs.
+
+1999-01-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Removed IN_OUT target conditional.
+
+1999-01-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: 
+	* include/hal_io.h: 
+	Cleaned up some more.
+
+	* include/hal_diag.h: Moved to i386/linux
+
+	* include/hal_arch.h: 
+	* include/basetype.h: 
+	Comment fix.
+
+1999-01-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/basetype.h (CYG_LABEL_NAME): Added.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_CLOCK_INITIALIZE): Use _period_
+	argument.
+	Added CYG_VECTOR_ definitions.
+	Added choice for real/virtual time (no config yet).
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: 
+	* src/hal_misc.c: 
+	* src/context.S: 
+	* include/hal_io.h: 
+	* include/hal_cache.h: 
+	* include/hal_arch.h: 
+	* include/basetype.h: 
+	* include/hal_diag.h: 
+	Changed comment style & removed tabs.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_invoke_constructors): Match new link
+	behavior.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Added. Simple stub for now.
+
+	* src/crt_end.c:
+	* src/crtbegin.c:
+	Removed.
+
+	* src/PKGconf.mak:
+	* include/hal_intr.h:
+	Cleaned up.
+
+1999-01-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/crtbegin.c: 
+	* src/crt_end.c: 
+	* include/hal_intr.h:
+	* include/hal_diag.h:
+	* include/hal_arch.h:
+	Fixed remaining warnings.
+
+	* include/hal_intr.h (HAL_CLOCK_INITIALIZE): Changed timeout
+	value.
+
+1999-01-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Move extern declarations into global scope,
+	extern"C" doesn't work in sub-scopes.
+	* include/hal_arch.h: Use CYG_MACRO_START/END, not HAL_...
+
+1998-12-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: 
+	* include/hal_arch.h:
+        Fixed compiler warnings.
+        Use CYG_MACRO_START/END.
+        Added new HAL macros.
+
+Wed Dec  9 14:09:47 GMT 1998   Chris Provenzano  <proven@cygnus.com>
+
+	* src/crtbegin.c: Added.
+	* src/crt_begin.c: Removed.
+	* src/PKGconf.mak: Compile crtbegin.c to create the correct file 
+        for linking. This is to turn on init-priority for i386 linux target.
+
+        The default i386 linker script looks for the file named crtbegin.o
+        and then looks for the .ctors section within that file to
+        determine where to put the sorted constructors.
+	
+Mon Nov  9 15:18:11 GMT 1998   Chris Provenzano  <proven@cygnus.com>
+
+	Initial i386 linux port.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

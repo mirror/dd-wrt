@@ -1,0 +1,386 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_sh_sh2.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/sh2_scif.c: 
+	* src/sh2_sci.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh2.cdl: Select variant 7044 by default.
+
+2002-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh2_sci.c: Register renaming.
+	* src/sh2_scif.c: Register renaming.
+
+	* include/sh2_scif.h (_REG_SCSSR): Define.
+
+	* include/mod_regs_ser.h: Register renaming. SCI registers now
+	contain _SCI_, SCIF registers contain _SCIF_.
+
+2002-04-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h: Renumber the 7044 vectors to get rid of the
+	gaps. CYGHWR_HAL_SH_SH2_CUSTOM_INTERRUPT_LAYOUT now takes care of
+	the translation from HW interrupt vectors to the eCos vector
+	numbers.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_adc.h: Added.
+
+	* include/var_regs.h: Include adc header.
+
+	* include/mod_7044.h (CYGARC_SH_MOD_ADC): Added.
+
+2002-04-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_wdt.h (CYGARC_REG_RSTCSR_W_RSTx_MAGIC,
+	CYGARC_REG_RSTCSR_W_WOVF_MAGIC): set 5 lsb.
+	* include/mod_regs_wdt_2.h (CYGARC_REG_RSTCSR_W_RSTx_MAGIC,
+	CYGARC_REG_RSTCSR_W_WOVF_MAGIC): set 5 lsb.
+	Also define CYGARC_REG_WTCNT_W.
+
+	* include/var_intr.h (HAL_PLATFORM_RESET): Fixed. Set WTIT flag.
+
+	* src/var_misc.c (hal_interrupt_mask, hal_interrupt_unmask): Add
+	range for INTC=2 and error for undefined to catch such a bobo
+	easier next time.
+
+	* include/var_intr.h: Fix access size typos.
+
+	* include/sh2_sci.h: Fix offsets.
+
+	* include/mod_regs_pfc_2.h (CYGARC_REG_PEDR): Added.
+
+2002-04-18  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_regs.h: Include BSC header according to type.
+	* include/mod_regs_pfc_2.h (CYGARC_REG_PADRH, CYGARC_REG_PADRL): Added.
+	* include/mod_regs_bsc_2.h: Added.
+	* include/mod_7044.h: BSC Type 2.
+	* include/mod_7615.h: BSC Type 1.
+
+	* include/variant.inc: Only disable UBC if type defined. Fix INTC
+	type 1/2 mixup.
+	* include/var_regs.h: Include watchdog header according to type.
+	* include/mod_regs_wdt_2.h: Added.
+	* include/mod_7615.h: WDT type 1.
+	* include/mod_7044.h: WDT type 2.
+
+	* src/var_misc.c (cyg_var_enable_caches): Only set mode if the
+	feature is present.
+	* include/variant.inc: CYGARC_REG_CCR is 16bit in type 2 CAC
+	module.
+	* src/variant.S: Support for type 2 cache.
+	* include/var_regs.h: Include cache header according to type.
+	* include/mod_7615.h (CYGARC_SH_MOD_CAC): Type 1.
+	* include/var_cache.h: Support for type 2.
+	* include/mod_regs_cac_2.h: Added.
+	* include/mod_7044.h (CYGARC_SH_MOD_CAC): Type 2.
+	Also define cache array addresses.
+
+	* src/var_misc.c (hal_interrupt_update_level): 7044 support.
+
+	* include/var_intr.h: Fall-back
+	CYGPRI_HAL_INTERRUPT_UPDATE_LEVEL_PLF is variant specific.
+
+2002-04-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_mk_defs.c: Adjustment for 7044.
+	* src/variant.S: Same.
+
+	* src/var_misc.c: Most of the functions update to handle INTC type
+	2. Some still to do. Added hal_delay_us for CMT.
+
+	* include/variant.inc: Clear CMT on init, and clear INTC type 2
+	registers.
+
+	* include/var_regs.h: Allow different headers for INT and
+	PFC. Also include CMT header.
+
+	* include/var_intr.h: Some adjustments for 7044, and vectors for
+	it. Also define CMT style RTC support.
+
+	* include/sh2_sci.h: Removed error.
+	* src/sh2_sci.c: Same.
+
+	* include/mod_regs_intc_2.h: Added.
+	* include/mod_regs_pfc_2.h: Added.
+	* include/mod_regs_cmt.h: Added.
+
+	* include/mod_regs_cpg.h: Handle type 2.
+
+	* include/mod_7044.h: Enable more modules. No cache windows in
+	memory map.
+
+	* cdl/hal_sh_sh2.cdl: Added 7044 clock options.
+	Added 7044 variant option.	
+
+	* include/mod_regs_ser.h: Fixed SCI definitions.
+
+	* include/mod_7044.h: Added.
+
+2002-03-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_eth.h (CYGARC_REG_CNDCR): Added more
+	definitions.
+
+2002-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh2_scif.c: Added cyg_hal_plf_scif_sync_rxtx that allows
+	switching mode at runtime. Changed code to respect setting.
+	* include/sh2_scif.h: Same.
+
+	* cdl/hal_sh_sh2.cdl: Added CYGHWR_HAL_SH_SH2_SCIF_ASYNC_RXTX to
+	control RX/TX enabling. In async mode (when set), only one of TX
+	or RX will be set at the same time.
+
+2002-03-01  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh2.cdl: Added 
+	CYGHWR_HAL_SH_SH2_SCIF_IRDA_TXRX_COMPENSATION option to control
+	IrDA TX/RX kludge.
+	* src/sh2_scif.c: Use above option. Don't force 9600 baud in IrDA
+	mode.
+
+2002-02-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh2_scif.c (cyg_hal_plf_scif_putc): In IrDA mode, eat the
+	spurious received character after TX has completed.
+
+2002-02-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh2_scif.c: Force 9600 baud for IrDA mode
+	initialization. Disable transmitter when not used in IrDA
+	mode. Check transmitter state instead of FIFO count for
+	determining when to cease transmission.
+
+2002-02-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_eth.h: More definitions.
+
+2002-02-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_regs.h: Include ethernet definitions.
+
+	* include/mod_7615.h: Has ethernet module.
+
+	* include/mod_regs_eth.h: Added more definitions.
+
+	* include/mod_regs_wdt.h: Added some more definitions.
+
+	* include/var_intr.h (HAL_PLATFORM_RESET): Defined (doesn't work
+	though).
+
+	* include/mod_7615.h: Disable UBC for now since software emulation
+	works just fine.
+
+2002-02-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h: Added HAL_CLOCK_VAR_INITIALIZE which does
+	partial FRT initialization so it can be used from
+	hal_delay_us. Updated other timer macros.
+	(HAL_CLOCK_READ): Fix typo.
+
+	* include/mod_regs_frt.h: Renamed 16bit access registers.
+
+	* src/var_misc.c (hal_delay_us): Fixed.
+	Call HAL_CLOCK_VAR_INITIALIZE from hal_variant_init.
+
+	* include/mod_regs_bsc.h: Changed register locations and made
+	flags be 32bit constants.
+
+2002-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c (hal_delay_us): Fixed typo. Increasy dummy loop
+	since the typo didn't fix the problem.
+
+	* include/mod_regs_pcm.h: Added.
+
+	* include/var_regs.h: Include PCM.
+
+	* include/mod_7615.h: Added DMA and PCM defs.
+
+2002-02-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_frt.h: Fix comment.
+
+2002-02-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh2_scif.c: Set SC2SSR in initialization. Clear errors in
+	getc function.
+
+	* include/mod_regs_cpg.h (CYGARC_REG_FMR_INIT): Define as value
+	provided by platform.
+
+	* cdl/hal_sh_sh2.cdl: Variant is big-endian only.
+
+2002-01-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_eth.h: Added.
+
+	* include/mod_regs_pfc.h: Updated for SH7615.
+
+2002-01-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh2.cdl: Set as type1 clock module.
+
+	* src/sh2_scif.c: Added IrDA mode support.
+	* include/sh2_scif.h: Same.
+
+	* include/mod_regs_dma.h: Updated for SH7615.
+
+	* include/mod_regs_ser.h: Fixed a typo.
+
+2002-01-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh2_sci.c: Added #error about not being updated.
+	* src/sh2_sci.h: Updated for SH2 naming.
+	* src/sh2_scif.h: Updated for SH2 naming, and registers.
+	* src/sh2_scif.c: Updated for changed register names.
+	* include/mod_regs_ser.h: Updated SCIF register names/values.
+
+	* src/var_misc.c (hal_delay_us): Added.
+
+	* include/variant.inc: Fixed some bade conditional code.
+
+	* include/var_intr.h (HAL_CLOCK_INITIALIZE): Fix typos. Guard
+	against too large period.
+
+	* include/mod_regs_ubc.h: Updated to match SH7615 (type 2).
+
+	* include/mod_7615.h (CYGARC_SH_MOD_UBC): Is type 2.
+
+2002-01-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_regs_ubc.h: Partially updated.
+
+	* include/mod_regs_wdt.h: Added.
+	* include/var_regs.h: Include WDT header.
+
+	* src/var_misc.c (hal_interrupt_set_vectors): Updated vector
+	names.
+
+	* src/variant.S (cyg_hal_ILVL_table): Changed for SH2.
+
+	* src/var_mk_defs.c: Added more interrupt defs.
+
+	* include/var_intr.h (CYGPRI_HAL_INTERRUPT_UPDATE_LEVEL_PLF):
+	Ignore LVLs 0-3 since they overlap with IRQs
+	0-3. hal_interrupt_update_level contains code to handle according
+	to configuration.
+
+	* include/mod_regs_intc.h: Added def.
+
+	* src/var_misc.c: Interrupt configury updated for 7615.
+
+	* include/var_intr.h: Add module identifier to vector names. Set
+	RTC vector.
+
+2002-01-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_mk_defs.c: Removed some defs.
+
+	* src/var_misc.c: Cache init fixed and compiler warnings + typos
+	fixed.
+
+	* src/sh2_scif.c: Renamed for SH2.
+	* src/sh2_sci.c: Same.
+
+	* include/var_regs.h: TMU header inclusion removed.
+
+	* include/var_intr.h: Shift vectors down one (to make room for NMI
+	as vector 0).
+
+	* include/mod_regs_ser.h: Protect SCI defs by CYGARC_SH_MOD_SCI.
+
+	* include/mod_regs_cpg.h: No magic here - CDL provides a hardwired
+	constant to use.
+
+	* include/mod_regs_bsc.h: Updated to match SH7615.
+
+	* include/mod_7615.h (CYGARC_SH_MOD_BCN): Is type 2.
+
+	* cdl/hal_sh_sh2.cdl: Added CYGHWR_HAL_SH_RTC_PRESCALE.
+
+	* include/mod_regs_frt.h: Added.
+
+	* include/var_intr.h: Added support for eCos RTC driven by FRT module.
+
+	* include/mod_7615.h (CYGARC_SH_MOD_FRT): Added.
+	* include/var_regs.h: Include FRT header. Removed RTC header inclusion.
+
+	* src/var_misc.c (hal_interrupt_set_vectors): Set VCRx registers
+	to map the module interrupt sources to specific HWR_EXC vectors.
+
+	* include/var_intr.h: Added SH7615 vectors.
+
+	* cdl/hal_sh_sh2.cdl: Select INTR model header.
+
+	* include/mod_regs_intc.h: Added stuff for 7615 INTC.
+
+	* include/mod_7615.h: Does update the IP on exception. All modules
+	are type 1.
+
+2002-01-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh2.cdl: Added exception model header definitions.
+
+	* include/variant.inc: Fixed assembler warning. Change CYG_SR.
+
+2002-01-11  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh2.cdl: Changed the clock setup some.
+
+2002-01-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh2.cdl: Changed to match SH2 caching details.
+	* src/var_misc.c: Same.
+	* include/var_cache.h: Same.
+	* src/variant.S: Same.
+
+	* include/mod_7615.h: Added some 7615 details.
+
+	Cloned from SH3 HAL.
+	
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

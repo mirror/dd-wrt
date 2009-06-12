@@ -1,0 +1,309 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>USB-ethernet State Handling</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="PREVIOUS"
+TITLE="USB-ethernet Data Transfers"
+HREF="usbseth-data.html"><LINK
+REL="NEXT"
+TITLE="Network Device for the eCos TCP/IP Stack"
+HREF="usbseth-netdev.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Support for Developing USB-ethernet Peripherals</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbseth-data.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbseth-netdev.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBSETH-CONTROL"
+>USB-ethernet State Handling</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN163"
+></A
+><H2
+>Name</H2
+>USB-ethernet State Handling&nbsp;--&nbsp;Maintaining the USB-ethernet connection with the host</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN166"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN167"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/io/usb/usbs_eth.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>usbs_control_return usbs_eth_class_control_handler</CODE
+>(usbs_control_endpoint* ep0, void* callback_data);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_eth_state_change_handler</CODE
+>(usbs_control_endpoint* ep0, void* callback_data, usbs_state_change change, int old_state);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_eth_disable</CODE
+>(usbs_eth* usbseth&#62;);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_eth_enable</CODE
+>(usbs_eth* usbseth&#62;);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN197"
+></A
+><H2
+>Description</H2
+><P
+>When the USB-ethernet package is initialized by a call to <A
+HREF="usbseth-init.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+></A
+> it
+installs <TT
+CLASS="FUNCTION"
+>usbs_eth_state_change_handler</TT
+> to handle
+USB state changes. This allows the package to detect when the
+connection between the host and the peripheral is established or
+broken, resulting in internal calls to
+<TT
+CLASS="FUNCTION"
+>usbs_eth_enable</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_eth_disable</TT
+> respectively. This is
+appropriate if no other code needs to access the USB device. However,
+if there is other code, either other USB-related packages or the
+application itself, that needs to perform I/O over the USB bus, then
+typically the USB-ethernet package should not have exclusive access to
+state change events. Instead, the assumption is that higher-level
+code, typically provided by the application, will install an
+alternative state change handler in the control endpoint data
+structure after the call to <TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+>. This
+alternative handler will either chain into
+<TT
+CLASS="FUNCTION"
+>usbs_eth_state_change_handler</TT
+> when appropriate,
+or else it will invoke <TT
+CLASS="FUNCTION"
+>usbs_eth_enable</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_eth_disable</TT
+> directly. For further details of
+state change handlers and control endpoints generally, see the
+documentation for the common USB-slave package.</P
+><P
+>Similarly, <TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+> will install
+<TT
+CLASS="FUNCTION"
+>usbs_eth_class_control_handler</TT
+> in the control
+endpoint data structure as the appropriate handler for class-specific
+USB control messages. This code will handle the ethernet-specific
+<A
+HREF="usbseth-protocol.html"
+>control messages </A
+>, for example
+requests by the host to enable or disable promiscuous mode or to
+obtain the MAC address. If the USB device is not shared with any other
+code then this is both necessary and sufficient. However, if other code
+is involved and if that code also needs to process certain control
+messages, higher-level code should install its own handler and chain
+to the USB-ethernet one when appropriate. It should be noted that the
+request code is encoded in just a single byte, so there is a real
+possibility that exactly the same number will be used by different
+protocols for different requests. Any such problems will have to be
+identified and resolved by application developers, and may involve
+modifying the source code for the USB-ethernet package.</P
+><P
+>As an alternative to chaining the state change handler, higher-level
+code can instead call <TT
+CLASS="FUNCTION"
+>usbs_eth_disable</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_eth_enable</TT
+> directly. These functions may
+also be called if the USB-ethernet package should become inactive for
+reasons not related directly to events on the USB bus. The main effect
+of <TT
+CLASS="FUNCTION"
+>usbs_eth_enable</TT
+> is to restart receive
+operations and to allow transmits. The main effect of
+<TT
+CLASS="FUNCTION"
+>usbs_eth_disable</TT
+> is to block further transmits:
+any current receive operations need to be aborted at the USB level,
+for example by halting the appropriate endpoint.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbseth-data.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbseth-netdev.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>USB-ethernet Data Transfers</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Network Device for the eCos TCP/IP Stack</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

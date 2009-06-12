@@ -1,0 +1,61 @@
+# ====================================================================
+#
+#      ar531x_eth_driver.cdl
+#
+#      Ethernet drivers - platform dependent enet support for Atheros'
+#                         AR531X-based boards.
+#
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Atheros Communications, Inc.
+# Original data:  
+# Contributors:   Atheros engineering
+# Date:           2003-10-22
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_MIPS32_AR531X {
+    display       "Atheros AE531X Ethernet Driver"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_HAL_MIPS_AR5312 || CYGPKG_HAL_MIPS_AR2316
+    requires      {CYGNUM_USE_ENET_PHY == "icplus" || 
+                   CYGNUM_USE_ENET_PHY == "kendin" ||
+                   CYGNUM_USE_ENET_PHY == "marvell" ||
+		   CYGNUM_USE_ENET_PHY == "athrs26" ||
+                   CYGNUM_USE_ENET_PHY == "admtek"}
+
+    implements    CYGHWR_NET_DRIVERS
+    implements    CYGHWR_NET_DRIVER_ETH0
+    include_dir   .
+    include_files ;
+    description   "Ethernet driver for Atheros AR531X boards."
+    compile       -library=libextras.a ae531xecos.c ae531xmac.c
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AR531X_OPTIONS {
+        display "Atheros AE531X ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AR531X_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Atheros AR531X ethernet driver package.
+                These flags are used in addition to the set of global
+		flags."
+        }
+    }
+    cdl_option CYGNUM_PHY_TRAILER_SIZE {
+	display		"Phy trailer size in bytes"
+	flavor		data
+	default_value	{CYGNUM_USE_ENET_PHY == "marvell" ? 4 : 0}
+	description	"Size of trailer from phy"
+    }
+}

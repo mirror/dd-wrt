@@ -1,0 +1,235 @@
+# ====================================================================
+#
+#      debug.cdl
+#
+#      Infrastructure debugging configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  bartv,hmt
+# Contributors:
+# Date:           1999-07-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+# If global debugging is enabled then by default all assertions
+# are enabled. Tracing is not enabled by default because it
+# involves excessive overheads, for example on some targets
+# it requires sending a string down a serial line for every
+# function call. Both assertions and tracing are controlled
+# by the following lines.
+
+cdl_component CYGDBG_USE_ASSERTS {
+    display       "Use asserts"
+    default_value 1
+    requires      { 1 == CYGINT_INFRA_DEBUG_TRACE_IMPL }
+    description   "
+        If this option is defined, asserts in the code are tested.
+        Assert functions (CYG_ASSERT()) are defined in
+        'include/cyg/infra/cyg_ass.h' within the 'install' tree.
+        If it is not defined, these result in no additional
+        object code and no checking of the asserted conditions."
+
+    script        assert.cdl
+}
+
+cdl_component CYGDBG_USE_TRACING {
+    display       "Use tracing"
+    default_value 0
+    requires      { 1 == CYGINT_INFRA_DEBUG_TRACE_IMPL }
+    description   "
+        If this option is defined, tracing operations
+        result in output or logging, depending on other options.
+        This may have adverse effects on performance, if the time
+        taken to output message overwhelms the available CPU
+        power or output bandwidth.
+        Trace functions (CYG_TRACE()) are defined in
+        'include/cyg/infra/cyg_trac.h' within the 'install' tree.
+        If it is not defined, these result in no additional
+        object code and no trace information."
+
+
+    # The eCos system uses two types of tracing mechanisms. The most common
+    # type traces events, for example an event could be logged whenever
+    # an interrupt occurs or whenever a context switch takes place. The
+    # second type of tracing mechanism records every function entry and
+    # exit. It is possible to disable this second type of tracing while
+    # leaving the main tracing facility enabled.
+    cdl_option CYGDBG_INFRA_DEBUG_FUNCTION_REPORTS {
+        display       "Trace function reports"
+        default_value 1
+        description   "
+            This option allows individual control of
+            function entry/exit tracing, independent of
+            more general tracing output.
+            This may be useful to remove clutter from a
+            trace log."
+    }
+
+    cdl_option CYGDBG_INFRA_DEBUG_TRACE_MESSAGE {
+        display       "Use trace text"
+        default_value 1
+        description   "
+            All trace calls within eCos contain a text message
+            which should give some information about the circumstances.
+            These text messages will end up being embedded in the
+            application image and hence there is a significant penalty
+            in terms of image size.
+            It is possible to suppress the use of these messages by
+            disabling this option.
+            This results in smaller code size, but there is less
+            human-readable information available in the trace output,
+            possibly only filenames and line numbers."
+    }
+}
+
+cdl_interface CYGINT_INFRA_DEBUG_TRACE_IMPL {
+    display "Trace output implementations"
+}
+
+cdl_option CYGDBG_INFRA_DEBUG_TRACE_ASSERT_NULL {
+    display       "Null output"
+    default_value 0
+    implements    CYGINT_INFRA_DEBUG_TRACE_IMPL
+    description   "
+        A null output module which is useful when
+        debugging interactively; the output routines
+        can be breakpointed rather than have them actually
+        'print' something."
+}
+cdl_option CYGDBG_INFRA_DEBUG_TRACE_ASSERT_SIMPLE {
+    display          "Simple output"
+    default_value 0
+    implements    CYGINT_INFRA_DEBUG_TRACE_IMPL
+    description   "
+        An output module which produces simple output
+        from tracing and assertion events."
+}
+cdl_option CYGDBG_INFRA_DEBUG_TRACE_ASSERT_FANCY {
+    display       "Fancy output"
+    default_value 0
+    implements    CYGINT_INFRA_DEBUG_TRACE_IMPL
+    description "
+        An output module which produces fancy output
+        from tracing and assertion events."
+}
+cdl_component CYGDBG_INFRA_DEBUG_TRACE_ASSERT_BUFFER {
+    display       "Buffered tracing"
+    default_value 1
+    implements    CYGINT_INFRA_DEBUG_TRACE_IMPL
+    description   "
+        An output module which buffers output
+        from tracing and assertion events. The stored
+        messages are output when an assert fires, or
+        CYG_TRACE_PRINT() (defined in <cyg/infra/cyg_trac.h>)
+        is called.
+        Of course, there will only be stored messages
+        if tracing per se (CYGDBG_USE_TRACING)
+        is enabled above."
+
+    cdl_option CYGDBG_INFRA_DEBUG_TRACE_BUFFER_SIZE {
+        display       "Trace buffer size"
+        flavor        data
+	active_if     CYGDBG_USE_TRACING
+        default_value 32
+        legal_values  5 to 65535
+        description   "
+            The size of the trace buffer. This counts the number
+            of trace records stored. When the buffer fills it
+            either wraps, stops recording, or generates output."
+    }
+    # FIXME: The below options should be mutually exclusive.
+    cdl_option CYGDBG_INFRA_DEBUG_TRACE_BUFFER_WRAP {
+        display       "Wrap trace buffer when full"
+	active_if     CYGDBG_USE_TRACING
+        default_value 1
+        #          type             radio
+        description   "
+            When the trace buffer has filled with records it
+            starts again at the beginning. Hence only the last
+            CYGDBG_INFRA_DEBUG_TRACE_BUFFER_SIZE messages will
+            be recorded."
+    }
+    cdl_option CYGDBG_INFRA_DEBUG_TRACE_BUFFER_HALT {
+        display       "Halt trace buffer when full"
+	active_if     CYGDBG_USE_TRACING
+        default_value 0
+        #          type             radio
+        description   "
+            When the trace buffer has filled with records it
+            stops recording. Hence only the first
+            CYGDBG_INFRA_DEBUG_TRACE_BUFFER_SIZE messages will
+            be recorded."
+    }
+    cdl_option CYGDBG_INFRA_DEBUG_TRACE_BUFFER_PRINT {
+        display       "Print trace buffer when full"
+	active_if     CYGDBG_USE_TRACING
+        default_value 0
+        #          type             radio
+        description   "
+            When the trace buffer has filled with records it
+            prints the contents of the buffer. The buffer is then
+            emptied and the system continues."
+    }
+    cdl_option CYGDBG_INFRA_DEBUG_TRACE_BUFFER_PRINT_ON_ASSERT {
+        display       "Print trace buffer on assert fail"
+	active_if     CYGDBG_USE_TRACING
+        default_value 1
+        description   "
+            When an assertion fails the trace buffer will be 
+            printed to the default diagnostic device."
+    }
+}
+
+cdl_option CYGDBG_INFRA_DEBUG_FUNCTION_PSEUDOMACRO {
+    display       "Use function names"
+    default_value 1
+    description   "
+        All trace and assert calls within eCos contain a
+        reference to the builtin macro '__PRETTY_FUNCTION__',
+        which evaluates to a string containing
+        the name of the current function.
+        This is useful when reading a trace log.
+        It is possible to suppress the use of the function name
+        by disabling this option.
+        This results in smaller code size, but there is less
+        human-readable information available in the trace output,
+        possibly only filenames and line numbers."
+}

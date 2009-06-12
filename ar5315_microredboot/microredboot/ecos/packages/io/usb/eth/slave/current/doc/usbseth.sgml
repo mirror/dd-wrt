@@ -1,0 +1,810 @@
+<!-- DOCTYPE reference  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     usbseth.sgml                                                -->
+<!--                                                                 -->
+<!--     USB slave-side ethernet support package.                    -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2001, 2002 Red Hat, Inc.                          -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2001/01/13                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="io-usb-slave-eth">
+<!-- reference id="io-usb-slave-eth" -->
+  <title>eCos Support for Developing USB-ethernet Peripherals</title>
+
+<!-- {{{ Intro                          -->
+
+<refentry id="usbseth-intro">
+<refmeta>
+<refentrytitle>Introduction</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Introduction</refname>
+<refpurpose>eCos support for developing USB ethernet peripherals</refpurpose>
+</refnamediv>
+
+<refsect1><title>Introduction</title>
+<para>
+The eCos USB-ethernet package provides additional support for USB
+peripherals that involve some sort of ethernet-style network. This can
+be a traditional ethernet, or it can involve some other networking
+technology that uses ethernet frames as a unit of transfer. It
+provides functions to transfer ethernet frames over the USB bus,
+handles certain control messages from the host, and optionally it can
+provide a network device driver for use by the eCos TCP/IP stack.
+The package comes with an example host-side device driver.
+</para>
+<para>
+The USB-ethernet package is not tied to any specific hardware. It
+requires the presence of USB hardware and a suitable device driver,
+but not all USB peripherals involve ethernet communications. Hence the
+configuration system cannot load the package automatically for
+specific targets, in the way that a USB device driver or an ethernet
+driver can be loaded automatically. Instead, the package has to be
+added explicitly. When using the command line tools this will involve
+an operation like the following:
+</para>
+<screen width=72 format=linespecific>
+$ ecosconfig add usbs_eth
+</screen>
+<para>
+Typically, this will automatically cause the USB device driver to
+become active. Loading the USB-ethernet package automatically provides
+functionality for <link linkend="usbseth-init">initialization</link>,
+<link linkend="usbseth-data">data transfer</link>, and the handling of
+<link linkend="usbseth-control">control messages</link> and state
+changes. If the current configuration includes the eCos TCP/IP stack
+then the <link linkend="usbseth-netdev">network device driver</link>
+support will be enabled as well by default, allowing the stack to
+exchange ethernet frames over the USB bus.
+</para>
+<para>
+There is a USB standard for a class of communication devices including
+ethernet. The package does not implement this standard, due to
+limitations in the hardware for which the package was first developed.
+Instead, the package uses its own <link
+linkend="usbseth-protocol">protocol</link> between USB
+<link linkend="usbseth-host">host device driver</link> and the
+peripheral. 
+</para>
+</refsect1>
+
+<refsect1><title id="usbseth-intro-scenarios">Usage Scenarios</title>
+<para>
+The USB-ethernet package can be used several different scenarios. In
+a simple scenario, the peripheral serves only to connect the USB host
+to a suitable network:
+</para>
+<informalfigure PgWide=1>
+<mediaobject>
+<imageobject>
+<imagedata fileref="simple.png" Align="Center">
+</imageobject>
+</mediaobject>
+</informalfigure>
+<para>
+After initialization, and once the USB connection between host and
+peripheral has been established, higher-level code needs to detect
+packets that are intended for the host, and to forward these. This can
+be achieved by the low-level <function>usbs_eth_start_tx</function>
+function. Similarly, higher-level code needs to detect packets coming
+from the host, using <function>usbs_eth_start_rx</function>, and to
+forward these using the real network. As far as the host is concerned
+it is connected directly to the network. In this scenario there is no
+confusion about addresses: there is a single MAC address for the
+host/peripheral combination, corresponding to the connection to the
+real network, and it is this address which should be supplied during
+<link linkend="usbseth-init">initialization</link>.
+</para>
+<para>
+In a more complicated scenario, there is a TCP/IP stack running inside
+the peripheral.
+</para>
+<informalfigure PgWide=1>
+<mediaobject>
+<imageobject>
+<imagedata fileref="tcpip.png" Align="Center">
+</imageobject>
+</mediaobject>
+</informalfigure>
+<para>
+This involves the USB-ethernet package providing a service both to the
+host and to the eCos TCP/IP stack. It achieves the latter by acting as
+an eCos network device. Typically, the TCP/IP stack will be configured
+to act as a network bridge. The USB peripheral needs to examine the
+packets arriving over the real network. Some of these packets will be
+intended for the host, while others will be intended for the
+peripheral itself. To distinguish between these two scenarios, two
+distinct MAC addresses are needed: one for the host, and one for the
+peripheral. Similarly, packets sent by the host may have to be
+forwarded via the real network, or they may be intended for the TCP/IP
+stack inside the peripheral. Packets generated inside the peripheral's
+TCP/IP stack may need to be sent via the real network or over the USB
+bus. The network bridge software will have to take care of all these
+possibilities. Unusually for a network bridge, one of the network
+segments being bridged will only ever have one machine attached.
+</para>
+<para>
+There are other possible usage scenarios. For example, the peripheral
+might not be attached to a real network at all. Instead it could be
+the USB host that acts as a network bridge, allowing a TCP/IP stack
+inside the peripheral to communicate with the outside world. The
+various details will depend on the exact type of peripheral being
+developed. 
+</para>
+</refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Initialization                 -->
+
+<refentry id="usbseth-init">
+<refmeta>
+<refentrytitle>Initializing the USB-ethernet Package</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname><function>usbs_eth_init</function></refname>
+<refpurpose>Initializing the USB-ethernet Package</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/io/usb/usbs_eth.h&gt;
+</funcsynopsisinfo>	
+<funcprototype>
+<funcdef>void <function>usbs_eth_init</function></funcdef>
+<paramdef>usbs_eth* <parameter>usbeth</parameter></paramdef>
+<paramdef>usbs_control_endpoint* <parameter>ep0</parameter></paramdef>
+<paramdef>usbs_rx_endpoint* <parameter>ep1</parameter></paramdef>
+<paramdef>usbs_tx_endpoint* <parameter>ep2</parameter></paramdef>
+<paramdef>unsigned char* <parameter>mac_address</parameter></paramdef>
+</funcprototype>
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The USB-ethernet package is not tied to any specific hardware. It
+requires certain functionality: there must be USB-slave hardware
+supported by a device driver; there must also be two endpoints for
+bulk transfers between host and peripheral, one for each direction;
+there must also be a control endpoint, although of course that is
+implicit with any USB hardware.
+</para>
+<para>
+However, USB-slave hardware may well provide more endpoints than the
+minimum required for ethernet support. Some of those endpoints might
+be used by other packages, while other endpoints might be used
+directly by the application, or might not be needed for the peripheral
+being built. There is also the possibility of a USB peripheral that
+supports multiple configurations, with the ethernet support active in
+only some of those configurations. The USB-ethernet package has no
+knowledge about any of this, so it relies on higher-level code to tell
+it which endpoints should be used and other information. This is the
+purpose of the <function>usbs_eth_init</function> function.
+</para>
+<para>
+The first argument identifies the specific
+<structname>usbs_eth</structname> data structure that is affected. It
+is expected that the vast majority of affected applications will only
+provide a single USB-ethernet device to a single host, and the package
+automatically provides a suitable data structure
+<literal>usbs_eth0</literal> to support this. If multiple
+<structname>usbs_eth</structname> structures are needed for some
+reason then these need to be instantiated by other code, and each one
+needs to be initialised by a call to
+<function>usbs_eth_init()</function>. 
+</para>
+<para>
+The next three arguments identify the endpoints that should be used
+for USB communications: a control endpoint, a receive endpoint for
+ethernet packets coming from the host to the peripheral, and a
+transmit endpoint for ethernet packets going in the other direction.
+Obviously all three endpoints should be provided by the same USB
+hardware. The USB-ethernet package assumes that it has sole access to
+the receive and transmit endpoints, subject to the use of
+<function>usbs_eth_disable</function> and
+<function>usbs_eth_enable</function> control functions. The package
+also assumes that no other code is interested in USB state changes or
+class control messages: it installs handlers
+<link linkend="usbseth-control"><function>usbs_eth_state_change_handler</function></link>
+and
+<link linkend="usbseth-control"><function>usbs_eth_class_control_handler</function></link>
+in the control endpoint. If any other code does need to handle USB
+state changes or class control messages then replacement handlers
+should be installed after the call to
+<function>usbs_eth_init</function>, and those replacements should
+invoke the USB-ethernet ones when appropriate.
+</para>
+<para>
+The final argument to <function>usbs_eth_init</function> specifies 
+the MAC address (or Ethernet Station Address) that should be provided
+to the host-side device driver. Since the USB-ethernet package does not
+interact directly with a real ethernet device it cannot obtain the MAC
+address from any hardware. Instead, it must be supplied by higher-level
+code. The details depend on the <link
+linkend="usbseth-intro-scenarios">scenario</link> in which the
+USB-ethernet package is being used.
+</para>
+<para>
+The call to <function>usbs_eth_init</function> should normally happen
+after the enumeration data has been provided but before the underlying
+USB device driver has been started. If the USB device were to be
+started first then a connection between host and peripheral could be
+established immediately, and the host-side device driver would attempt
+to contact the USB-ethernet package for information such as the MAC
+address. 
+</para>
+<programlisting width=72>
+int
+main(int argc, char** argv)
+{
+    unsigned char host_MAC[6] = { 0x40, 0x5d, 0x90, 0xa9, 0xbc, 0x02 };
+
+    usbs_sa11x0_ep0.enumeration_data    = &amp;usb_enum_data;
+    &hellip;
+    usbs_eth_init(&amp;usbs_eth0, &amp;usbs_sa11x0_ep0, &amp;usbs_sa11x0_ep1, &amp;usbs_sa11x0_ep2, host_MAC);
+    &hellip;
+    usbs_start(&amp;usbs_sa11x0_ep0);
+    &hellip;
+}
+</programlisting>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Data Transfer                  -->
+
+<refentry id="usbseth-data">
+<refmeta>
+<refentrytitle>USB-ethernet Data Transfers</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>USB-ethernet Data Transfers</refname>
+<refpurpose>Exchanging ethernet packets with the USB host</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/io/usb/usbs_eth.h&gt;
+</funcsynopsisinfo>	
+
+<funcprototype>
+<funcdef>void <function>usbs_eth_start_rx</function></funcdef>
+<paramdef>usbs_eth* <parameter>usbseth</parameter></paramdef>
+<paramdef>unsigned char* <parameter>buffer</parameter></paramdef>
+<paramdef>void (*)(usbs_eth*, void*, int) <parameter>complete_fn</parameter></paramdef>
+<paramdef>void* <parameter>complete_data</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+<funcdef>void <function>usbs_eth_start_tx</function></funcdef>
+<paramdef>usbs_eth* <parameter>usbseth</parameter></paramdef>
+<paramdef>unsigned char* <parameter>buffer</parameter></paramdef>
+<paramdef>void (*)(usbs_eth*, void*, int) <parameter>complete_fn</parameter></paramdef>
+<paramdef>void* <parameter>complete_data</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+The USB-ethernet package provides two main modes of operation. In the
+first mode it provides a <link linkend="usbseth-netdev">network device
+driver</link> for use by a TCP/IP stack running inside the USB
+peripheral. All incoming ethernet packets should be passed up the
+TCP/IP stack, and only the stack will generate outgoing packets. Apart
+from <link linkend="usbseth-init">initialization</link> and possibly
+certain <link linkend="usbseth-control">control operations</link>,
+higher-level code will not interact with the USB-ethernet package
+directly.
+</para>
+<para>
+In the second mode there is no TCP/IP stack running inside the USB
+peripheral. For example, a simple USB-ethernet converter has an
+ethernet chip and a USB port: ethernet packets received by the
+ethernet chip need to be forwarded to the USB host, and ethernet
+packets sent by the USB host need to be sent out of the ethernet chip.
+<function>usbs_eth_start_rx</function> and
+<function>usbs_eth_start_tx</function> allow for this lower-level
+access to the USB-ethernet package.
+</para>
+<para>
+The two modes of operation are mutually exclusive. If the network
+device driver mode is enabled then application code should communicate
+at the TCP/IP level, and not by using the lower-level functions.
+Instead, it is the network device driver that will make use of these
+functions, and it assumes that it has exclusive access. The package
+does not perform any locking.
+</para>
+<para>
+The transmit and receive functions work in much the same way. The
+first argument identifies the <structname>usbs_eth</structname>
+structure that should be used. For the majority of applications this
+will be <literal>usbs_eth0</literal>. The second argument specifies
+the location of the ethernet packet; outgoing for
+<function>usbs_eth_start_tx</function> and incoming for
+<function>usbs_eth_start_rx</function>. This buffer should correspond
+to the <link linkend="usbseth-protocol">protocol</link>:
+</para>
+<orderedlist>
+<listitem>
+<para>
+Outgoing packets can consist of up to 1516 bytes, consisting of a
+two-byte header specific to USB-ethernet followed by a standard
+ethernet frame (a header with 6-byte destination address, 6-byte
+source address and a further two bytes, followed by a payload of
+up to 1500 bytes). The two-byte USB-ethernet header consists simply of
+the size of the ethernet frame, i.e. the size of the rest of the
+packet not including the USB-ethernet header, with the least
+significant byte first.
+</para>
+</listitem>
+<listitem>
+<para>
+For incoming packets the supplied buffer should usually be at least
+1516 bytes. There may be special circumstances in which a smaller
+buffer might be safe; for example, if the host-side device driver is
+modified to support only smaller packets. Once the packet has been
+received the buffer will contain a two-byte header specific to
+USB-ethernet, followed by a normal ethernet frame. The header
+gives the size of the ethernet frame, excluding the header, with the
+least significant byte first.
+</para>
+</listitem>
+</orderedlist>
+<para>
+Both <function>usbs_eth_start_tx</function> and
+<function>usbs_eth_start_rx</function> are asynchronous: the transfer
+is started and, some time later, a completion function will be invoked.
+The third and fourth arguments to both
+<function>usbs_eth_start_tx</function> and
+<function>usbs_eth_start_rx</function> supply the completion function
+and an argument to that function respectively. The completion function
+will be invoked with three arguments: a pointer to the
+<structname>usbs_eth</structname> data structure, usually
+<literal>usbs_eth0</literal>; the supplied completion data ; and a
+return code field. A negative value indicates that an error occurred,
+for example <literal>-EPIPE</literal> if the connection between USB
+host and peripheral has been broken, or <literal>-EAGAIN</literal> if
+an endpoint has been halted. A positive value indicates the total size
+of the transfer, which should correspond to the size in the
+USB-ethernet header plus an additional two bytes for the header
+itself.
+</para>
+<para>
+If the data transfer is succesful then the completion function will
+typically be invoked in DSR context rather than in thread context,
+although this depends on the implementation of the underlying USB
+device driver. Therefore the completion function is restricted in what
+it can do; in particular, it must not make any calls that will or may
+block such as locking a mutex or allocating memory. The kernel
+documentation should be consulted for more details of DSR's and
+interrupt handling generally. Note that if the transfer finishes
+quickly then the completion function may be invoked before
+<function>usbs_eth_start_rx</function> or
+<function>usbs_eth_start_tx</function> returns. This is especially
+likely to happen if the current thread is descheduled after starting
+the data transfer but before returning from these functions.
+</para>
+<para>
+For transmit operations, it is possible for
+<function>usbs_eth_start_tx</function> to invoke the completion
+function immediately. If there is no current connection between host
+and target then the transmit will fail immediately with
+<literal>-EPIPE</literal>. In addition the USB-ethernet package will
+check the destination MAC address and make sure that the ethernet
+frame really is intended for the host: either it must be for the
+address specified in the initialization call <link
+linkend="usbseth-init"><function>usbs_eth_init</function></link>, or
+it must be a broadcast packet, or the host must have enabled
+promiscuous mode. 
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ State and Control Messages     -->
+
+<refentry id="usbseth-control">
+<refmeta>
+<refentrytitle>USB-ethernet State Handling</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>USB-ethernet State Handling</refname>
+<refpurpose>Maintaining the USB-ethernet connection with the host</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;cyg/io/usb/usbs_eth.h&gt;
+</funcsynopsisinfo>	
+
+<funcprototype>
+<funcdef>usbs_control_return <function>usbs_eth_class_control_handler</function></funcdef>
+<paramdef>usbs_control_endpoint* <parameter>ep0</parameter></paramdef>
+<paramdef>void* <parameter>callback_data</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+<funcdef>void <function>usbs_eth_state_change_handler</function></funcdef>
+<paramdef>usbs_control_endpoint* <parameter>ep0</parameter></paramdef>
+<paramdef>void* <parameter>callback_data</parameter></paramdef>
+<paramdef>usbs_state_change <parameter>change</parameter></paramdef>
+<paramdef>int <parameter>old_state</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+<funcdef>void <function>usbs_eth_disable</function></funcdef>
+<paramdef>usbs_eth* <parameter>usbseth></parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>usbs_eth_enable</function></funcdef>
+<paramdef>usbs_eth* <parameter>usbseth></parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+When the USB-ethernet package is initialized by a call to <link
+linkend="usbseth-init"><function>usbs_eth_init</function></link> it
+installs <function>usbs_eth_state_change_handler</function> to handle
+USB state changes. This allows the package to detect when the
+connection between the host and the peripheral is established or
+broken, resulting in internal calls to
+<function>usbs_eth_enable</function> and
+<function>usbs_eth_disable</function> respectively. This is
+appropriate if no other code needs to access the USB device. However,
+if there is other code, either other USB-related packages or the
+application itself, that needs to perform I/O over the USB bus, then
+typically the USB-ethernet package should not have exclusive access to
+state change events. Instead, the assumption is that higher-level
+code, typically provided by the application, will install an
+alternative state change handler in the control endpoint data
+structure after the call to <function>usbs_eth_init</function>. This
+alternative handler will either chain into
+<function>usbs_eth_state_change_handler</function> when appropriate,
+or else it will invoke <function>usbs_eth_enable</function> and
+<function>usbs_eth_disable</function> directly. For further details of
+state change handlers and control endpoints generally, see the
+documentation for the common USB-slave package.
+</para>
+<para>
+Similarly, <function>usbs_eth_init</function> will install
+<function>usbs_eth_class_control_handler</function> in the control
+endpoint data structure as the appropriate handler for class-specific
+USB control messages. This code will handle the ethernet-specific
+<link linkend="usbseth-protocol">control messages </link>, for example
+requests by the host to enable or disable promiscuous mode or to
+obtain the MAC address. If the USB device is not shared with any other
+code then this is both necessary and sufficient. However, if other code
+is involved and if that code also needs to process certain control
+messages, higher-level code should install its own handler and chain
+to the USB-ethernet one when appropriate. It should be noted that the
+request code is encoded in just a single byte, so there is a real
+possibility that exactly the same number will be used by different
+protocols for different requests. Any such problems will have to be
+identified and resolved by application developers, and may involve
+modifying the source code for the USB-ethernet package.
+</para>
+<para>
+As an alternative to chaining the state change handler, higher-level
+code can instead call <function>usbs_eth_disable</function> and
+<function>usbs_eth_enable</function> directly. These functions may
+also be called if the USB-ethernet package should become inactive for
+reasons not related directly to events on the USB bus. The main effect
+of <function>usbs_eth_enable</function> is to restart receive
+operations and to allow transmits. The main effect of
+<function>usbs_eth_disable</function> is to block further transmits:
+any current receive operations need to be aborted at the USB level,
+for example by halting the appropriate endpoint.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ netdev device                  -->
+
+<refentry id="usbseth-netdev">
+<refmeta>
+<refentrytitle>Network Device for the eCos TCP/IP Stack</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Network Device</refname>
+<refpurpose>USB-ethernet support for the eCos TCP/IP Stack</refpurpose>
+</refnamediv>
+
+<refsect1><title>Description</title>
+<para>
+If the USB peripheral involves running the eCos TCP/IP stack and that
+stack needs to use USB-ethernet as a transport layer (or as one of the
+transports), then the USB-ethernet package can provide a suitable
+network device driver. It is still necessary for higher-level code to
+perform appropriate initialization by calling <link
+linkend="usbseth-init"><function>usbs_eth_init</function></link>, but
+after that it will be the TCP/IP stack rather than application code
+that transmits or receives ethernet frames.
+</para>
+<para>
+Not all peripherals involving the USB-ethernet package will require a
+TCP/IP stack. Hence the provision of the network device is controlled
+by a configuration option <literal>CYGPKG_USBS_ETHDRV</literal>. By
+default this will be enabled if the TCP/IP package
+<literal>CYGPKG_NET</literal> is loaded, and disabled otherwise. 
+</para>
+<para>
+There are a number of other configuration options related to the
+network device. <literal>CYGFUN_USBS_ETHDRV_STATISTICS</literal>
+determines whether or not the package will maintain statistics, mainly
+intended for SNMP: by default this will be enabled if the SNMP support
+package <literal>CYGPKG_SNMPAGENT</literal> is loaded, and disabled
+otherwise. The name of the ethernet device is controlled by
+<literal>CYGDATA_USBS_ETHDRV_NAME</literal>, and has a default value
+of either <literal>eth0</literal> or <literal>eth1</literal>
+depending on whether or not there is another network device driver
+present in the configuration.
+</para>
+<para>
+Usually eCos network device drivers default to using DHCP for
+obtaining necessary information such as IP addresses. This is not
+appropriate for USB-ethernet devices. On the host-side the
+USB-ethernet network device will not exist until the USB peripheral
+has been plugged in and communication has been established. Therefore
+any DHCP daemon on the host would not be listening on that network
+device at the point that eCos requests its IP and other information. A
+related issue is that the use of DHCP would imply the presence of a
+DHCP daemon on every affected host machine, as opposed to a single
+daemon (plus backups) for the network as a whole. For these reasons
+the USB-ethernet package precludes the use of DHCP as a way of setting
+the IP address, instead requiring alternatives such as manual
+configuration.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ ecos_usbeth                    -->
+
+<refentry id="usbseth-host">
+<refmeta>
+<refentrytitle>Example Host-side Device Driver</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Example Host-side Device Driver</refname>
+<refpurpose>Provide host-side support for the eCos USB-ethernet package</refpurpose>
+</refnamediv>
+
+<refsect1><title>Description</title>
+<para>
+The USB-ethernet package is supplied with a single host-side device
+driver. This driver has been developed against the Linux kernel
+2.2.16-22, as shipped with Red Hat 7. The driver is provided as is and
+should not be considered production quality: for example it only
+checks for a bogus vendor id <literal>0x4242</literal> rather than an
+official vendor id supplied by the <ulink
+url="http://www.usb.org/">USB Implementers Forum</ulink>. Also, if the
+peripheral involves multiple configurations or multiple interfaces, it
+will fail to detect this. However, the driver can be used for simple
+testing and as the basis of a full device driver. Details of the
+protocol used between host and peripheral can be found in the <link
+linkend="usbseth-protocol">Communication Protocol</link> section.
+</para>
+<para>
+The host-side device driver can be found in the <filename
+class="directory">host</filename> subdirectory of the USB-ethernet
+package, specifically the file <filename>ecos_usbeth.c</filename>, and
+comes with a <filename>Makefile</filename>. Both files may need
+to be modified for specific applications. For example, the vendor id
+table <literal>ecos_usbeth_implementations</literal> may need to be
+updated for the specific USB peripheral being built. The
+<filename>Makefile</filename> assumes that the Linux kernel sources
+reside in <filename class="directory">/usr/src/linux</filename>, and
+that the kernel has already been configured and built. Assuming this
+is the case, the device driver can be built simply by invoking
+<command>make</command> with no additional arguments. This will result
+in a dynamically loadable kernel module,
+<filename>ecos_usbeth.o</filename>, in the current directory.
+</para>
+<note>
+<para>
+As normal for Linux kernel builds, the generated files such as
+<filename>ecos_usbeth.o</filename> live in the same directory as the
+source tree. This is very different from eCos where the source tree
+(or component repository) is kept separate from any builds. There may
+be problems if the component repository is kept read-only or if it is
+put under source code control. Any such problems can be avoided by
+making a copy of the <filename class="directory">host</filename>
+subdirectory and building that copy.
+</para>
+</note>
+<para>
+Loading the kernel module into the current system requires root
+privileges. If the generic USB support is also a loadable module and
+has not been loaded already, this must happen first:
+</para>
+<screen width=72 format=linespecific>
+# insmod usb-uhci
+Using /lib/modules/2.2.16-22/usb/usb-uhci.o
+</screen>
+<para>
+Depending on the host hardware, the <literal>uhci</literal> or
+<literal>usb-ohci</literal> modules may be more appropriate. Loading
+the generic USB module will typically result in a number of messages
+to the logfile <filename>/var/log/messages</filename>, giving details
+of the specific host-side hardware that has been detected plus any
+hubs. The next step is to load the USB-ethernet module:
+</para>
+<screen width=72 format=linespecific>
+# insmod ecos_usbeth.o
+</screen>
+<para>
+This should result in a number of additional diagnostics in the
+logfile:
+</para>
+<screen width=72 format=linespecific>
+Apr 1 18:01:08 grumpy kernel: eCos USB-ethernet device driver
+Apr 1 18:01:08 grumpy kernel: usb.c: registered new driver ecos_usbeth
+</screen>
+<para>
+If a suitable USB peripheral is now connected the host will detect
+this, assign an address in the local USB network, obtain enumeration
+data, and find a suitable device driver. Assuming the peripheral and
+device driver agree on the supported vendor ids, the
+<filename>ecos_usbeth.o</filename> module will be selected and this
+will be reported in the system log:
+</para>
+<screen width=86 format=linespecific>
+Apr 1 18:04:12 grumpy kernel: usb.c: USB new device connect, assigned device number 3
+Apr 1 18:04:12 grumpy kernel: eCos-based USB ethernet peripheral active at eth1
+</screen>
+<para>
+What can happen next depends very much on the software that is running
+on top of the USB-ethernet package inside the peripheral. For example,
+if there is a TCP/IP stack then it should be possible to bring up a
+network connection between host and peripheral using
+<command>ifconfig</command>.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Protocol                       -->
+
+<refentry id="usbseth-protocol">
+<refmeta>
+<refentrytitle>Communication Protocol</refentrytitle>
+</refmeta>
+<refnamediv>
+<refname>Communication Protocol</refname>
+<refpurpose>Protocol used between the host-side device driver and the eCos
+USB-ethernet package </refpurpose>
+</refnamediv>
+
+<refsect1><title>Description</title>
+<para>
+There is a USB standard for the protocol to be used between the host
+and a class of communication devices, including ethernet. However, the
+eCos USB-ethernet package does not implement this protocol: the target
+hardware for which the package was first developed had certain
+limitations, and could not implement the standard. Instead, the package
+implements a simple new protocol.
+</para>
+<para>
+A USB-ethernet peripheral involves bulk transfers on two endpoints:
+one endpoint will be used for packets from host to peripheral and the
+other will be used for the opposite direction. Transfers in both
+directions are variable length, with a lower limit of 16 bytes and an
+upper limit of 1516 bytes. The first two bytes of each transfer
+constitute a header specific to USB-ethernet. The next 14 bytes form
+the normal header for an ethernet frame: destination MAC address,
+source MAC address, and a protocol field. The remaining data, up to
+1500 bytes, are the payload. The first two bytes give the size of the
+ethernet frame, least significant byte first, with a value between 14
+and 1514.
+</para>
+<para>
+For example an ARP request from host to peripheral involves an
+ethernet frame of 42 bytes (0x002A), with the usual 14-byte header and
+a 28-byte payload. The destination is the broadcast address
+0xFFFFFFFFFFFF. The source depends on the MAC address specified for
+the host in the call to <link
+linkend="usbseth-init"><function>usbs_eth_init</function></link>, e.g.
+0x405D90A9BC02. The remaining data is as specified by the appropriate
+<ulink url="http://www.ietf.org">IETF RFC's</ulink>. The actual bulk
+USB transfer involves the following sequence of 44 bytes:
+</para>
+<screen width=72 format=linespecific>
+2a 00 ff ff ff ff ff ff 40 5d 90 a9 bc 02 08 06
+00 01 08 00 06 04 00 01 40 5d 90 a9 bc 02 0a 00
+00 01 00 00 00 00 00 00 0a 00 00 02
+</screen>
+<para>
+In addition there are two control messages. These will be sent by the
+host to endpoint 0, the control endpoint, and by default they will
+be handled by <link linkend="usbseth-control"><function>
+usbs_eth_class_control_handler</function></link>. If class-specific
+control messages are intercepted by other code then it is the
+responsibility of that code to invoke the USB-ethernet handler when
+appropriate.
+</para>
+<para>
+The first control message can be used by the host to obtain a MAC
+address:
+</para>
+<programlisting width=72>
+#define ECOS_USBETH_CONTROL_GET_MAC_ADDRESS         0x01
+</programlisting>
+<para>
+The control message's type field should specify IN as the direction.
+The request field should be <literal>0x01</literal>. The length fields
+should specify a size of 6 bytes. The remaining fields of the control
+message will be ignored by the USB-ethernet package. The response
+consists of the 6-byte MAC address supplied by the initialization call
+<link
+linkend="usbseth-init"><function>usbs_eth_init</function></link>.
+</para>
+<para>
+The second control message can be used by the host to enable or
+disable promiscuous mode.
+</para>
+<programlisting width=72>
+#define ECOS_USBETH_CONTROL_SET_PROMISCUOUS_MODE    0x02
+</programlisting>
+<para>
+This control message involves no further data so the length field
+should be set to 0. The value field should be non-zero to enable
+promiscuous mode, zero to disable it. The request field should be
+<literal>0x02</literal>. The remaining fields in the control message
+will be ignored. It is the responsibility of the host-side device
+driver to keep track of whether or not promiscuous mode is currently
+enabled. It will be disabled when the peripheral changes to
+Configured state, typically at the point where the host-side device
+driver has been activated.
+</para>
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+
+</part>
+<!-- /reference -->

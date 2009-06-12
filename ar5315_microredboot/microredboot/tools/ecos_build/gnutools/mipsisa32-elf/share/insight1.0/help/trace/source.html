@@ -1,0 +1,371 @@
+<HTML>
+<HEAD>
+<TITLE>Source Window Help</TITLE>
+</HEAD>
+<BODY>
+<CENTER><H1>The Source Window</H1></CENTER>
+<H3>Overview</H3>
+<BR>
+The Source Window is the primary interface between the user and the
+debugger; it is automatically opened when the debugger starts.
+The Source Window displays the status of the trace experiment, controls
+navigation of the trace buffer, and allows visualization of the program
+execution.
+
+<P>Source Window topics:
+<UL>
+    <LI><UL><A HREF="#menus">Menus</A>
+            <LI><A HREF="#menus_file">File Menu</A>
+            <LI><A HREF="#menus_run">Run Menu</A>
+            <LI><A HREF="#menus_view">View Menu</A>
+            <LI><A HREF="#menus_trace">Trace Menu</A>
+            <LI><A HREF="#menus_prefs">Preferences Menu</A>
+        </UL>
+    <LI><UL><A HREF="#toolbar">Toolbar</A>
+            <LI><A HREF="#toolbar_exec">Trace Control Buttons</A>
+            <LI><A HREF="#toolbar_window">Window Buttons</A>
+            <LI><A HREF="#toolbar_frame">Frame Control</A>
+        </UL>
+    <LI><UL><A HREF="#display">Source Window Display</A>
+            <LI><A HREF="#display_balloon">Variable Balloons</A>
+            <LI><A HREF="#display_popup">Source Pop-up Mens</A>
+        </UL>
+    <LI><UL><A HREF="#status">Source Window Status Bars</A>
+            <LI><A HREF="#status_bar">Program Status Bar</A>
+            <LI><A HREF="#status_mode">Source Display Status Bar</A>
+        </UL>
+    <LI><A HREF="#search">Search Entry</A>
+</UL></P>
+
+<H3><A NAME="menus">Menus</A></H3>
+<H4><A NAME="menus_file">File Menu</A></H4>
+The File menu contains the following items:
+<DL>
+    <DT>Open
+        <DD>Opens a file selection dialog to select the executable to debug
+    <DT>Target Settings...
+        <DD>Opens the <A HREF="target.html">Target Selection Dialog</A>
+            to edit target settings
+    <DT>Page Setup
+        <DD>(Windows only) Opens the Windows Page Setup dialog to
+            configure printing
+    <DT>Print
+        <DD>(Windows only) Print the contents of the Source Window Display
+    <DT>Exit
+        <DD>Exits the debugger
+</DL>
+
+<H4><A NAME="menus_run">Run Menu</A></H4>
+The Run menu contains the following items:
+<DL>
+    <DT>Connect to target
+        <DD>Establish a connection to a target. This option will open
+            the <A HREF="target.html">Target Selection Dialog</A> if no
+            previous connection has been established in the current
+            session.
+    <DT>Begin Collection
+        <DD>Start collecting trace data on the target
+    <DT>End Collection
+        <DD>Stop collecting trace data on the target
+    <DT>Disconnect
+        <DD>Disconnect the debugger from the target
+</DL>
+
+<H4><A NAME="menus_view">View Menu</A></H4>
+The View menu contains the following items:
+<DL>
+    <DT>Stack
+        <DD>Open a <A HREF="stack.html">Stack Window</A>
+    <DT>Registers
+        <DD>Open a <A HREF="register.html">Register Window</A>
+    <DT>Memory
+        <DD>Open a <A HREF="memory.html">Memory Window</A>
+    <DT>Watch Expressions
+        <DD>Open a <A HREF="watch.html">Watch Window</A>
+    <DT>Local Variables
+        <DD>Open a <A HREF="locals.html">Locals Window</A>
+    <DT>Tracepoints
+        <DD>Open a <A HREF="tp.html">Tracepoint Window</A>
+    <DT>Tdump
+        <DD>Open a <A HREF="tdump.html">Tracepoint Dump Window</A>
+    <DT>Console
+        <DD>Open a <A HREF="console.html">Console Window</A>
+</DL>
+
+<H4><A NAME="menus_trace">Trace Menu</A></H4>
+The Trace Menu contains the following items:
+<DL>
+    <DT>Next Hit
+        <DD>Update all displays with the next tracepoint in the
+            tracepoint buffer
+    <DT>Previous Hit
+        <DD>Go to the previous tracepoint in the buffer
+    <DT>First Hit
+        <DD>View the first tracepoint in the buffer
+    <DT>Next Line Hit
+        <DD>Go to the next tracepoint in the buffer in the same
+            frame as the current tracepoint
+    <DT>Next Hit Here
+        <DD>Jump to the next reference of the current tracepoint
+            in the buffer
+    <DT>Tfind Line...
+        <DD>Opens a dialog allowing the user to specify which source
+            line to inpect in the tracepoint buffer
+    <DT>Tfind PC...
+        <DD>Opens a dialog allowing the user to specify the PC of the
+            tracepoint to view
+    <DT>Tfind Tracepoint...
+        <DD>Opens a dialog allowing the user to specify which tracepoint
+            to view (by number). This option is most commonly used in
+            conjunction with the <A HREF="console.html">Console Window</A>.
+</DL>
+
+<H4><A NAME="menus_prefs">Preferences Menu</A></H4>
+The Preferences menu contains the following items:
+<DL>
+    <DT>Global
+        <DD>Opens the <A HREF="gbl_pref.html">Global Preferences Dialog</A>
+            and allows editing of global settings
+    <DT>Source
+        <DD>Opens the <A HREF="src_pref.html">Source Preferences Dialog</A>
+            and allows editing of Source Window settings
+    <DT>Register
+        <DD>Opens the <A HREF="reg_pref.html">Register Preferences Dialog</A>
+            and allows editing of Register Window settings
+</DL>
+
+<H3><A NAME="toolbar">Toolbar</A></H3>
+The Source Window toolbar consists of three functional sections: trace
+control buttons, debugger window buttons, and stack frame control buttons.
+<BR>
+
+<H4><A NAME="toolbar_exec">Tracing Control Buttons</A></H4>
+These convenience buttons provide on-screen access to the most important
+debugger tracing control functions:
+<DL>
+    <DT><A NAME="run_button"><IMG SRC="%run"> TStart</A> or
+        <A NAME="stop_button"><IMG SRC="%stop"></A> TStop
+         <DD>The TStart Button causes the target to start collecting trace data
+         <DD>The TStop Button causes the target to stop collecting trace data
+    <DT>Next Hit
+        <DD>Update all displays with the next tracepoint in the
+            tracepoint buffer
+    <DT>Previous Hit
+        <DD>Go to the previous tracepoint in the buffer
+    <DT>First Hit
+        <DD>View the first tracepoint in the buffer
+    <DT>Next Line Hit
+        <DD>Go to the next tracepoint in the buffer in the same
+            frame as the current tracepoint
+    <DT>Next Hit Here
+        <DD>Jump to the next reference of the current tracepoint
+            in the buffer
+</DL>
+
+<H4><A NAME="toolbar_window">Window Buttons</A></H4>
+The Debugger Window buttons give instant access to the Debugger's
+auxillary windows:
+<DL>
+    <DT><A NAME="register_button"><IMG SRC="%register"></A> Registers
+        <DD>Open a <A HREF="register.html">Register Window</A>
+    <DT><A NAME="memory_button"><IMG SRC="%memory"></A> Memory
+        <DD>Open a <A HREF="memory.html">Memory Window</A>
+    <DT><A NAME="stack_button"><IMG SRC="%stack"></A> Stack
+        <DD>Open a <A HREF="stack.html">Stack Window</A>
+    <DT><A NAME="watch_button"><IMG SRC="%watch"></A> Watch Expressions
+        <DD>Open a <A HREF="watch.html">Watch Window</A>
+    <DT><A NAME="locals_button"><IMG SRC="%locals"></A> Local Variables
+        <DD>Open a <A HREF="locals.html">Locals Window</A>
+    <DT><A NAME="tracepoints_button">Tracepoints</A>
+        <DD>Open a <A HREF="tp.html">Tracepoint Window</A>
+    <DT>Tracepoint Dump Window
+        <DD>Open a <A HREF="tdump.html">Tdump Window</A>
+    <DT><A NAME="console_button"><IMG SRC="%console"></A> Console
+        <DD>Open a <A HREF="console.html">Console Window</A>
+</DL>
+
+<H4><A NAME="toolbar_frame">Frame Control</A></H4>
+The Frame Control area of the toolbar displays information about the PC of
+the current frame, and the frame control buttons may be used to navigate
+through the call stack. Whenever any of these buttons are used, both the
+Source Window Display and the <A HREF="stack.html">Stack Window</A> will
+show the selected frame. In order to use the Stack Window in tracing mode,
+the stack pointer must be collected.
+<DL>
+    <!-- is this a problem for windows? no file join? -->
+    <DT><IMG SRC="images/frame_info.gif"> Frame Information Display
+        <DD>The left half of the frame information display shows the
+            value of the PC in the current frame. The right half shows
+            the line number of the PC in the source file, if available.
+    <DT><A NAME="up_button"><IMG SRC="%up"></A> Up
+        <DD>Select and view the stack frame that called this one
+    <DT><A NAME="down_button"><IMG SRC="%down"></A> Down
+        <DD>Select and view the stack frame called by this one
+    <DT><A NAME="bottom_button"><IMG SRC="%bottom"></A> Bottom
+        <DD>Select and view the bottom-most stack frame
+</DL>
+
+<H3><A NAME="display">Source Display</A></H3>
+The Source Display is used for many things: browsing source code, setting,
+editing, and deleting tracepoints, and a few other special functions.
+Executable lines (those for which executable code was generated by the
+compiler) are denoted with a marker (a dash, "-") in the first column of
+the display.
+
+<P>The debugger highlights the PC in the current frame in either green,
+indicating that the PC is in the current tracepoint, or gold, indicating
+that the PC is contained in a frame that is not the current tracepoint, i.e.,
+as part of a stack backtrace. A blue highlight is used by the debugger to
+indicate a browsing position. All highlight colors
+are user-selectable in the <A HREF="src_pref.html">Source Preferences</A>.</P>
+<BR>
+
+<H4><A NAME="setting_a_tracepoint">Setting a Tracepoint</A></H4>
+Moving the mouse pointer over the "hot spot" of an executable line will change
+the mouse cursor to a large dot. Clicking the left mouse button will then allow
+tracepoint to be inserted at this line. If no tracepoint exists, the
+<A HREF="tracedlg.html">Add Tracepoint Dialog</A> will appear. If a tracepoint
+is installed, the dash in the left margin will change into a magenta breakdot.
+If a tracepoint exists, the <A HREF="tracedlg.html">Edit Tracepoint Dialog</A>
+appears, allowing either modification of the tracepoint or deletion of the
+tracepoint. If the tracepoint is deleted, the breakdot will revert to a dash.</P>
+
+<P>The executable line marker shows the status of each line: an empty marker
+(the dash) indicates that no tracepoint is set at the line. A colored breakdot
+indicates that a tracepoint exists at the line.</P>
+
+<P>The display will attempt to show the value of variables in
+<A NAME="display_balloon">variable balloons</A>. To activate a
+variable balloon, simply hold the mouse cursor over the name of
+a variable in the Source Display for a second or two: the debugger displays the
+name of the variable, its type, and its value in a pop-up balloon. If the
+variable was not collected, the Variable Balloon will show a memory-access error.</P>
+<BR>
+
+<H4><A NAME="display_popup">Source Pop-up Menus</A></H4>
+The Source Display has two pop-up menus. One is activated by clicking the
+right mouse button when the mouse cursor is over an executable line marker's
+hot spot. This pop-up menu provides access to:
+<DL>
+    <DT>Set Tracepoint
+        <DD>Opens the <A HREF="#tracedlg">Add/Edit Tracepoint Dialog</A>,
+            which allows new tracepoints to be set and modification and
+            deletion of existing tracepoints.
+</DL>
+
+<P>The other pop-up menu is activated by clicking the right mouse button
+anywhere else in the Source Display. It is only available when a variable
+or number in the display lies below the mouse cursor or is selected
+(by clicking the left mouse button and dragging the mouse to highlight
+the variable/number). The pop-up menu allows users to:
+<DL>
+    <DT><A NAME="add_to_watch">Add <I>expr</I> to Watch</A>
+        <DD>Adds the selected expression to the <A HREF="watch.html">Watch
+            Window</A>, opening it, if necessary.
+    <DT>Dump Memory at <I>expr</I>
+        <DD>Opens a new <A HREF="memory.html">Memory Window</A> at the
+            selected expression. If the expression is a variable, then
+            the Memory Window is opened with memory addresses starting
+            at the value of the variable.
+    <DT>Set Tracepoint Range
+        <DD>This option is only available when a range of lines is highlighted
+            in the Source Display. It allows tracepoints with the same
+            properties to be set at every executable line in the range. If
+            any tracepoints exist in the range already, the debugger will
+            ask if the properties of the existing tracepoint should be
+            replaced with the properties of the range.
+</DL>
+</P>
+
+<H4><A NAME="status">Source Window Status Bars</A></H4>
+The Source Window has two status bars which inform the user of the
+status of the program (the "status bar") and the status of the Source
+Window.
+
+<P>The <A NAME="status_bar">Program Status Bar</A> (or simply "Status Bar")
+displays the status of the program. Common messages seen here include:
+<DL>
+    <DT>No program loaded.
+        <DD>No program has been loaded into target memory.
+    <DT>Inspecting trace at <I>line/address</I>
+        <DD>The debugger is inspecting the tracepoint at line
+            <I>line</I> or address <I>address</I>. Use the
+            <A HREF="#toolbar_exec">Tracing Control Buttons</A>
+            to navigate through the trace buffer.
+</DL>
+<P>The Status Bar also displays some help information. For instance,
+the Status Bar will show the function of a button on the toolbar or
+the Source Display Status Bar as well as any keyboard shortcut for this
+button.</P>
+<BR>
+
+<H4><A NAME="status_mode">Source Display Status Bar</A></H4>
+current state of the Source Window: the name of the file displayed in
+the Display, the name of the function in the Display which contains
+the PC for the current frame (if any), and the display mode.
+
+<P>The <A NAME="file_selector">Source File Selector</A> is a dropdown
+menu which contains the names of all the files that were compiled into
+the program being debugged.</P>
+
+<P>Normally, the File Selector displays the name of the file currently being
+viewed, but any file from the dropdown menu may be selected for browsing.
+Simply select the file to view from the available choices (or type it directly
+into the File Selector) and the Source Window will load that file into
+the Display. To return to the current tracepoint, simply press the
+<A HREF="#bottom_button">Bottom Frame Control Button</A>.</P>
+
+<P>The <A NAME="function_selector">Source Function Selector</A> displays the
+name of the function containing the Source Window's PC, if one exists, but it
+may be used to browse any function in the current file. Simply type the name
+of the desired function into the Function Selector or select it from the
+dropdown menu. The Source Window's PC is updated to point at this function.
+To return to the current tracepoint, simply press the
+<A HREF="#bottom_button">Bottom Frame Control Button</A>.</P>
+
+<P>The <A NAME="mode_selector">Source Display Mode Selector</A> displays
+the viewing mode of the current file/function shown in the Source
+Window Display.</P>
+
+<P>The Display Mode Selector may be used to change the view of the current
+source file. The available display modes are
+<DL>
+    <DT>SOURCE
+        <DD>The contents of the Display are shown as source code.
+            If source code is not available (either because no debugging
+            information is available or the source file is not found),
+            the Source Window will revert the Display Mode to "ASSEMBLY".
+    <DT>ASSEMBLY
+        <DD>A disassembly of the target's memory is shown in the Display.
+            Even assembly source files show a disassembly of target memory;
+            to see the assembly source code, use the SOURCE mode. Note that the
+            debugger can only display assmebly code on a function-by-function
+            basis. It cannot display all the instructions generated from a single
+            source file.
+    <DT>MIXED
+        <DD>The Display shows source code mixed with the assembler
+            instructions which were generated for those lines by the 
+            compiler for the current funtion. Note that the addresses
+            of the assembly lines is not necessarily monotonically
+            increasing. If the source file associated with the function
+            cannot be found, the Source Window will revert to ASSEMBLY mode.
+    <DT>SRC+ASM
+        <DD>The Source Window Display is divided into two panes: an
+            assembly pane and a source pane. Tracepoints may be set/cleared
+            in either pane.
+</DL>
+<BR>
+
+<H3><A NAME="search">Search Entry</A></H3>
+The Search Entry facilitates searching for text in the Source Window Display. Simply enter the
+text to be found into the Search Entry and press the Enter key on the keyboard to search
+forwards in the Source Window Display (hold down ths Shift key to search backwards). If
+a match is found, it is highlighted in the Source Window and the Program Status Bar
+displays information about where the match was found.
+
+<P>The Search Entry can also jump the Source Window to a specific line. Enter the line
+number preceeded by an at-sign (@) into the Search Entry and press enter. If entered
+line number is greater than the total number of lines in the Source Window Display,
+the Display will jump to the end of the current file.</P>
+</BODY>
+</HTML>

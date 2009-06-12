@@ -1,0 +1,448 @@
+# ====================================================================
+#
+#      stdio.cdl
+#
+#      C library stdio related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBC_STDIO {
+    display       "ISO C library standard input/output functions"
+    description   "
+        This package provides standard input/output functions associated
+        with the header file <stdio.h> as specified by the
+        ISO C standard - ISO/IEC 9899:1990."
+    doc           ref/libc.html
+    include_dir   cyg/libc/stdio
+    parent        CYGPKG_LIBC
+    requires      CYGPKG_IO
+    requires      CYGPKG_LIBC_I18N
+    implements    CYGINT_ISO_STDIO_FILETYPES
+    implements    CYGINT_ISO_STDIO_FILEACCESS
+    implements    CYGINT_ISO_STDIO_FILEPOS
+    implements    CYGINT_ISO_STDIO_FILEOPS
+    implements    CYGINT_ISO_STDIO_FORMATTED_IO
+    implements    CYGINT_ISO_STDIO_CHAR_IO
+    implements    CYGINT_ISO_STDIO_DIRECT_IO
+    implements    CYGINT_ISO_STDIO_ERROR
+    implements    CYGINT_ISO_STDIO_STREAMS
+    requires      { (CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE == "\"/dev/ttydiag\"" ? \
+                  CYGPKG_IO_SERIAL_HALDIAG : 1) }
+    requires      { CYGBLD_ISO_STDIO_FILETYPES_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_FILEACCESS_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_FILEPOS_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_FILEOPS_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_FORMATTED_IO_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_CHAR_IO_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_DIRECT_IO_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_ERROR_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      { CYGBLD_ISO_STDIO_STREAMS_HEADER == \
+                    "<cyg/libc/stdio/stdio.h>" }
+    requires      CYGPKG_ISOINFRA
+    requires      CYGINT_ISO_ERRNO_CODES
+    requires      CYGINT_ISO_ERRNO
+    requires      CYGINT_ISO_STRERROR
+    requires      CYGINT_ISO_STRING_STRFUNCS
+    requires      CYGINT_ISO_STRING_MEMFUNCS
+    # The following is for scanf only. We could express this better,
+    # particularly since scanf is also dependent on the optional ungetc.
+    requires      CYGINT_ISO_STDLIB_STRCONV
+
+    compile       common/fflush.cxx       common/feof.cxx        \
+                  common/freopen.cxx      common/setvbuf.cxx     \
+                  common/snprintf.cxx     common/sprintf.cxx     \
+                  common/sscanf.cxx       common/stderr.cxx      \
+                  common/stdin.cxx        common/stdiofiles.cxx  \
+                  common/fseek.cxx        common/stdioinlines.cxx\
+                  common/stdiosupp.cxx    common/stdout.cxx      \
+                  common/stream.cxx       common/streambuf.cxx   \
+                  common/ungetc.cxx       common/vsnprintf.cxx   \
+                  common/vsscanf.cxx      common/fileops.cxx     \
+                                                                 \
+                  input/fgetc.cxx         input/fgets.cxx        \
+                  input/fread.cxx         input/fscanf.cxx       \
+                  input/gets.cxx          input/scanf.cxx        \
+                  input/vfscanf.cxx                              \
+                                                                 \
+                  output/fnprintf.cxx     output/fprintf.cxx     \
+                  output/fputc.cxx        output/fputs.cxx       \
+                  output/fwrite.cxx       output/printf.cxx      \
+                  output/vfnprintf.cxx
+
+# ====================================================================
+
+    cdl_option CYGIMP_LIBC_STDIO_INLINES {
+        display       "Inline versions of <stdio.h> functions"
+        default_value 1
+        description   "
+            This option chooses whether some of the
+            particularly simple functions from
+            <stdio.h> are available as inline
+            functions. This may improve performance, and as
+            the functions are small, may even improve code
+            size."
+    }
+    
+    cdl_option FOPEN_MAX {
+        display       "Permitted number of open files"
+        flavor        data
+        legal_values  3 to 0x7fffffff
+        default_value 8
+        description   "
+            This option controls the guaranteed minimum
+            number of simultaneously open files. The ISO
+            C standard requires it to be defined (para
+            7.9.1), and if strictly compliant, it must be
+            at least 8 (para 7.9.3). In practice it can be
+            as low as 3 - for stdin, stdout and stderr."
+    }
+    
+    cdl_option FILENAME_MAX {
+        display       "Maximum length of filename"
+        flavor        data
+        legal_values  1 to 0x7fffffff
+        default_value 16
+        description   "
+            This option defines the maximum allowed size of
+            a filename in characters. The ISO C standard
+            requires it to be defined (para 7.9.1)."
+    }
+    
+    cdl_option L_tmpnam {
+        display       "Maximum length of filenames for temporary files"
+        flavor        data
+        legal_values  4 to 0x7fffffff
+        default_value 16
+        description   "
+            This option defines the maximum allowed size of
+            filenames for temporary files as generated by
+            tmpnam(). It is measured in characters, and the
+            ISO C standard requires it to be defined (para 
+            7.9.1)."
+    }
+    
+    cdl_option TMP_MAX {
+        display       "Unique file names generated by tmpnam()"
+        flavor        data
+        legal_values  1 to 0x7fffffff
+        default_value 25
+        description   "
+            This option defines the minimum number of
+            unique file names generated by tmpnam(). The
+            ISO C standard requires it to be defined (para
+            7.9.1) and for ISO compliance it should be at least
+            25. Note that TMP_MAX names may not be generated
+            if L_tmpnam is too small."
+    }
+    
+    cdl_component CYGSEM_LIBC_STDIO_WANT_BUFFERED_IO {
+        display       "Buffered I/O"
+        flavor        bool
+        default_value 1 
+        description   "
+            This option controls whether input/output
+            through the <stdio.h> functions is buffered.
+            This may save some memory per file. It
+            is equivalent to putting every file into
+            non-buffered mode (_IONBF) through setvbuf(),
+            except now it can never be altered back to
+            buffered mode. Disabling buffering is strictly 
+            non-compliant with the ISO C standard."
+    
+        cdl_option CYGNUM_LIBC_STDIO_BUFSIZE {
+            display        "Default buffer size"
+            flavor         data
+            legal_values   1 to 0x7fffffff
+            default_value  256
+            description    "
+                This option defines the default size of buffer
+                used with calls to setbuf(), and is the default
+                size for buffered streams that have not had
+                either setbuf() or setvbuf() invoked on them.
+                It is exactly equivalent to the standard
+                constant BUFSIZ, except that it is 0 if
+                CYGSEM_LIBC_STDIO_WANT_BUFFERED_IO is disabled.
+                The ISO C standard requires this to be defined
+                (para 7.9.1), and says it must be at least 256
+                (para 7.9.2)."
+        }
+        
+        cdl_option CYGSEM_LIBC_STDIO_DYNAMIC_SETVBUF {
+            display       "setbuf()/setvbuf() allows dynamic setting"
+            default_value 1
+            description   "
+                This option controls whether I/O buffers are
+                implemented dynamically within the stdio
+                implementation. Otherwise they will be static,
+                and cannot be changed by setbuf()/setvbuf(). If
+                they are static (i.e. this option is disabled),
+                any attempt to use an arbitrary buffer size, or
+                to pass a user-supplied buffer to setbuf() or
+                setvbuf() will fail - the buffer is implemented
+                internally as a static array taking the size
+                of the configuration option BUFSIZ. The only
+                exception is if a user buffer is not supplied,
+                and the buffer size requested is less than
+                BUFSIZ. In this case, the buffer will
+                be configured to only use that amount of
+                buffering. However the unused memory left over
+                will NOT be freed. If this option is enabled,
+		then setvbuf() can be used to assign a user supplied
+                buffer to the stream.
+                Either setting can be considered to
+                be compliant with the ISO C standard."
+        }
+
+        cdl_option CYGSEM_LIBC_STDIO_SETVBUF_MALLOC {
+            display       "setbuf()/setvbuf() uses malloc()"
+            requires      CYGINT_ISO_MALLOC
+            requires      CYGSEM_LIBC_STDIO_DYNAMIC_SETVBUF
+            default_value { 0 != CYGINT_ISO_MALLOC }
+            description   "
+		This option controls whether buffers set by setbuf() and
+		setvbuf() may be allocated using malloc()."
+        }
+
+    }
+    # Define BUFSIZ with same value as ..._BUFSIZE or 0
+    cdl_option BUFSIZ {
+        display       "Default buffer size (BUFSIZ)"
+        flavor        data
+        calculated    CYGSEM_LIBC_STDIO_WANT_BUFFERED_IO \
+                       ? "CYGNUM_LIBC_STDIO_BUFSIZE" : 0
+    }
+    
+    cdl_option CYGFUN_LIBC_STDIO_ungetc {
+        display       "Support for ungetc()"
+        default_value   1
+        description   "
+            This option controls whether ungetc() is
+            supported. If not, then some space can be
+            saved, and speed is improved. Note that you
+            MUST have this defined if you want to use the
+            scanf() family of functions."
+    }
+    
+    cdl_component CYGPKG_LIBC_STDIO_OPEN {
+        display       "Dynamic opening/closing of files"
+        requires      CYGINT_ISO_MALLOC
+        default_value { 0 != CYGINT_ISO_MALLOC }
+        compile       common/fopen.cxx common/fclose.cxx
+        description   "
+            fopen() and fclose() use dynamic memory
+            allocation routines to allocate memory for
+            new FILE structure pointers. If a malloc
+            implementation is available, this option
+            may be enabled to use
+            fopen() and fclose(). If disabled, only the
+            default console streams - stdin, stdout and
+            stderr - will be available."
+
+        cdl_option CYGFUN_LIBC_STDIO_OPEN_POSIX_FDFUNCS {
+            display       "POSIX fdopen/fileno functions"
+            active_if     CYGPKG_LIBC_STDIO_FILEIO
+            implements    CYGINT_ISO_STDIO_POSIX_FDFUNCS
+            calculated    1
+            description   "This identifies to the rest of the system
+                           whether the POSIX fdopen() and
+                           fileno() functions are implemented."
+        }
+    }
+    
+    cdl_option CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE {
+        display       "Default console device"
+        flavor        data
+        default_value { CYGDAT_IO_SERIAL_TTY_CONSOLE ? CYGDAT_IO_SERIAL_TTY_CONSOLE : "\"/dev/null\"" }
+        description   "
+            This option allows you to choose the
+            default console device. In the current
+            implementation, all these devices begin
+            with the prefix /dev/ and are followed by
+            the name of a device. The name of the device
+            depends on the device drivers you have
+            configured in your system. For example,
+            /dev/ttydiag could be the HAL diagnostic output
+            pseudo-device, or /dev/tty0 could be your
+            first serial driver, depending on your
+            configuration."
+    }
+    
+    cdl_component CYGPKG_LIBC_STDIO_FLOATING_POINT {
+        display       "Floating point support"
+        flavor        none
+        description   "
+            This component allows floating point support
+            to be enabled in certain standard I/O
+            functions."
+    
+        cdl_option CYGSEM_LIBC_STDIO_PRINTF_FLOATING_POINT {
+            display       "printf() family"
+            requires      CYGPKG_LIBM
+            default_value { 0 != CYGPKG_LIBM }
+            description   "
+                This option enables the use of floating point
+                number output in the printf() family (i.e.
+                printf(), sprintf(), vprintf(), etc.) of
+                functions. A substantial amount of code space
+                can be saved if this option is disabled. If it
+                is disabled then floating point specifiers
+                (%e, %f, %g) are ignored, and nothing is
+                output."
+        }
+    
+        cdl_option CYGSEM_LIBC_STDIO_SCANF_FLOATING_POINT {
+            display       "scanf() family"
+            requires      CYGPKG_LIBM
+            requires      CYGINT_ISO_STDLIB_STRCONV_FLOAT
+            default_value { 0 != CYGPKG_LIBM &&
+                            0 != CYGINT_ISO_STDLIB_STRCONV_FLOAT }
+            description   "
+                This option enables the use of floating point
+                number conversion in the scanf() family (i.e.
+                scanf(), sscanf(), vscanf(), etc.) of
+                functions. A substantial amount of code space
+                can be saved if this option is disabled. If it
+                is disabled then floating point specifiers
+                (%e, %f, %g) are ignored, and nothing is
+                converted."
+        }
+    }
+
+    cdl_option CYGFUN_LIBC_STDIO_LONGLONG {
+        display       "Long long support"
+        requires      CYGFUN_LIBC_STDLIB_CONV_LONGLONG
+        default_value 1
+        description   "
+                This option allows various functions in the C Standard I/O
+                library to support the 'long long' datatype. Doing so
+                will come with a noticeable code size penalty however."
+    }
+    
+    cdl_option CYGSEM_LIBC_STDIO_THREAD_SAFE_STREAMS {
+        display       "Thread safe I/O streams"
+        doc           ref/libc-thread-safety.html
+        active_if     CYGPKG_KERNEL
+        default_value 1
+        description   "
+            This option controls whether standard I/O streams
+            are thread-safe. Having this option set allows
+            the streams to be locked when accessed by
+            multiple threads simultaneously."
+    }
+    
+
+# ====================================================================
+
+    cdl_option CYGPKG_LIBC_STDIO_FILEIO {
+	display "Enable use of FILEIO package for IO operations."
+	active_if CYGPKG_IO_FILEIO
+	requires CYGSEM_LIBC_STDIO_WANT_BUFFERED_IO
+	calculated 1
+        description "
+                This CDL exists to control how the standard I/O functions
+                interface to the underlying I/O system. Either using the
+                File I/O package, or the generic I/O package which is used
+                by fewer devices."
+    }
+}
+
+# ====================================================================
+
+    cdl_component CYGPKG_LIBC_STDIO_OPTIONS {
+        display "C library stdio functions build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBC_STDIO_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBC_STDIO_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBC_STDIO_TESTS {
+            display "C library stdio function tests"
+            flavor  data
+            no_define
+            calculated { 
+                "tests/sprintf1 tests/sprintf2 tests/sscanf tests/stdiooutput " 
+                . ((CYGPKG_IO_FILEIO && CYGPKG_FS_RAM) ? "tests/fileio " : "")
+            }
+            description   "
+                This option specifies the set of tests for the C library
+                stdio functions."
+        }
+    }
+
+# ====================================================================
+# EOF stdio.cdl

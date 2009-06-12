@@ -1,0 +1,345 @@
+2004-10-04  Oyvind Harboe  <oyvind.harboe@zylin.com>
+
+	* src/dlmalloc.cxx (resize_alloc): No longer invoke
+	 cyg_memalloc_alloc_fail() on failure to resize. It is not an out
+	 of memory condition, it just means the current memory allocation
+	 could not be expanded. realloc() will try allocating a completely
+	 new block of memory and only if that fails do we have an out of
+	 memory condition.
+
+2004-10-01  Oyvind Harboe  <oyvind.harboe@zylin.com>
+
+	* heapgen.tcl: place the CYGBLD_ATTRIB_INIT_PRI such that it
+	compiles for gcc 3.4.2 which is more picky about its placement.
+
+2004-06-24  Oyvind Harboe  <oyvind.harboe@zylin.com>
+
+	* Added cyg_memalloc_alloc_fail() fn which is invoked before 
+	return NULL from failed allocations. Useful breakpoint site.
+	Andrew Lunn wrote some of the code and pointed out various
+	wrinkles to be ironed out.
+
+2004-02-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/kapi.h: Add throw specifications throughout.
+	* src/kapi.cxx: Ditto.
+
+2003-10-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/dlmalloc.cxx (Cyg_Mempool_dlmalloc_Implementation): Fixed
+	compiler warning added by previous patch.
+
+2003-09-30  Eric Doenges <Eric.Doengea@DynaPel.com>
+
+	* cdl/memalloc.cdl, src/dlmalloc.cxx: Make the minimum memory
+	alignment a configuration option for Doug Lea's memory allocator.
+
+2003-02-05  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/memjoin.inl: Don't use default arg in definition.
+
+2003-02-04  John Dallaway  <jld@ecoscentric.com>
+
+	* src/heapgen.tcl: Accommodate POSIX-style arguments
+	under Cygwin.
+
+2003-01-29  John Dallaway  <jld@ecoscentric.com>
+
+	* src/heapgen.tcl: Accommodate latest Cygwin Tcl shell
+	(tclsh83.exe)
+
+2002-05-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/heaptest.c (test_pat): Make failure messages clearer.
+	(cyg_start): Output what failures mean.
+
+2002-04-24  Yoshinori Sato  <qzb04471@nifty.ne.jp>
+
+	* src/memfixed.cxx (resize_alloc): Don't set default args in func
+	definition.
+
+2002-01-30  Bart Veer  <bartv@redhat.com>
+
+	* tests/malloc4.cxx:
+	Never call realloc() with a new size of 0, which frees the buffer.
+	Fix the volatility of ptr.p
+
+2002-01-23  Jesper Skov  <jskov@redhat.com>
+
+	* tests/malloc4.cxx (myrand): Fix overflow.
+
+2002-01-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/malloc4.cxx (myrand): Fix so that it really treats the limit
+	as a limit.
+
+2001-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/sepmetaimpl.inl: CYGINT_ISO_STRING_MEMFUNCS checks
+	changed to ifdef.
+
+2001-10-11  Jesper Skov  <jskov@redhat.com>
+
+	* tests/testaux.hxx (new_thread): Fixed allocation: increase
+	counter before starting threads which have been allocated
+	resources.
+
+2001-10-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/memalloc.cdl: Only build malloc.cxx and kapi.cxx when needed.
+
+2001-09-20  Jesper Skov  <jskov@redhat.com>
+
+	* tests/heaptest.c: Fix failure reporting.
+
+2001-09-07  Jesper Skov  <jskov@redhat.com>
+
+	* tests/heaptest.c: Added some extra output on failures.
+
+2001-08-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/sepmetaimpl.inl: Define check_free_memdq and
+	check_alloced_memdq as inlines.
+
+	* cdl/memalloc.cdl: Add new allocator supporting separate metadata,
+	and the associated config options, and build sepmeta.cxx and tests.
+	Build heapgeninc.tcl with macros that work with both gcc2 and gcc3.
+	Ditto for heaps.o.
+	Add CYGBLD_MEMALLOC_MALLOC_EXTERNAL_HEAP_H to allow external entities
+	to define the heap.
+	* src/malloc.cxx: Include CYGBLD_MEMALLOC_MALLOC_EXTERNAL_HEAP_H if
+	defined instead of default heap definition.
+	* include/sepmeta.hxx, include/sepmetaimpl.hxx, include/sepmetaimpl.inl,
+	src/sepmeta.cxx, tests/sepmeta1.cxx, tests/sepmeta2.cxx:
+	New files for seperated metadata allocator.
+
+2001-07-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/heapgen.tcl: Use constructor priority of CYG_INIT_MEMALLOC
+	for heap objects in generated heaps.cxx.
+
+2001-07-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/malloc1.c (main): Accoutn for allocators that do allocate
+	space for allocs of 0.
+	Test that allocating all space works.
+	* src/dlmalloc.cxx (get_status): Correct again calculation of maxfree
+
+2001-06-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/memjoin.inl (~Cyg_Mempool_Joined): free even when asserts
+	disabled.
+
+	* include/memvar.hxx (class Cyg_Mempool_Variable): Comment out argument
+	names for consistency.
+	* include/memfixed.hxx (class Cyg_Mempool_Fixed): Ditto.
+	* include/memjoin.hxx (class Cyg_Mempool_Joined): Ditto.
+
+2001-06-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/mvarimpl.inl (get_status): Correct calculation of maxfree
+	by taking into account metadata.
+
+2001-06-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/memalloc.cdl: Add heaptest test.
+
+	* tests/heaptest.c: New test to do a memory check of all of heap.
+
+	* src/dlmalloc.cxx (get_status): Correct maxfree and totalfree
+	by accounting for block headers.
+
+	* tests/realloc.c (cyg_start): Remove warning from declaration.
+	* tests/malloc1.c (cyg_start): Ditto.
+	* tests/malloc2.c (cyg_start): Ditto.
+	* tests/malloc3.c (cyg_start): Ditto.
+	* tests/malloc4.cxx (cyg_start): Ditto. Also add DEBUGTEST define
+	and fix comment.
+
+	* tests/testaux.hxx (STACKSIZE): Double.
+
+2001-05-02  Hugo Tyson  <hmt@redhat.com>
+
+	* src/dlmalloc.cxx (Cyg_Mempool_dlmalloc_Implementation): Fix
+	previous change; "top" is a pseudo variable via a NULL pointer if
+	the heap is not initialized, so you can't use it as a flag for "no
+	mem here"; and a typo, the comparison was reversed.  The two hid
+	each other, so the check for "no mem here" usually said "OK".
+
+2001-05-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/mvarimpl.inl (try_alloc): Allow zero sized heaps.
+	(Cyg_Mempool_Variable_Implementation): Ditto.
+	* src/dlmalloc.cxx (try_alloc): Ditto.
+	(Cyg_Mempool_dlmalloc_Implementation): Ditto.
+
+2001-04-12  Hugo Tyson  <hmt@redhat.com>
+
+	* include/memjoin.inl (resize_alloc): Fix typo so it compiles.
+	This only applies if you configure multiple heaps.
+
+2001-03-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/memalloc.cdl: Specify explicit output file when preprocessing
+	heapgen.cpp. Improves portability.
+
+2001-02-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/malloc4.cxx: Use semaphores to sync startup order.
+
+2000-11-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/heapgen.tcl: Don't use cygpath -s for now as not all cygwins
+	have it yet.
+
+2000-11-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/memalloc.cdl: Make sure PWD variable doesn't clash with bash PWD
+	by renaming to XPWD
+
+2000-11-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/memalloc.cdl: Invoke heapgen.tcl with build directory
+	surrounded by quotes (and do so in a portable way).
+
+	* src/heapgen.tcl: recurse back in on cygwin with correct quoting
+	to allow directories containing spaces. Also in a Solaris shell
+	compatible way.
+
+2000-11-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/memalloc.cdl (CYGSEM_MEMALLOC_MALLOC_ZERO_RETURNS_NULL): 
+	New option.
+	* src/malloc.cxx (malloc): Use above option to decide if NULL should
+	be returned on malloc(0).
+
+2000-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* tests/realloc.c (main): Use reasonable factor when making too
+	large realloc (targets with 64MB would cause an overflow).
+
+2000-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/testaux.hxx: Prototype cyg_hal_invoke_constructors()
+	[ Forgot to check this in at the same time as below ]
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/dlmalloc1.cxx:
+	* tests/dlmalloc2.cxx:
+	* tests/malloc4.cxx:
+	* tests/memfix1.cxx:
+	* tests/memfix2.cxx:
+	* tests/memvar1.cxx:
+	* tests/memvar2.cxx:
+	Make sure default priority constructors have been invoked.
+
+2000-09-14  Jesper Skov  <jskov@redhat.com>
+
+	* tests/realloc.c (main): fix warning.
+	* tests/malloc1.c (main): Same.
+	* tests/malloc2.c (main): Same.
+	* tests/malloc3.c (main): Same.
+
+2000-08-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/memalloc.cdl: Make dlmalloc the default malloc implementation now.
+	Also add info to the variable block and dlmalloc descriptions to
+	describe the pros and cons of these allocators.
+
+2000-08-09  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/malloc4.cxx (thrfree): Don't yield at loop end - actually delay
+	(thrrealloc): Ditto
+	(thrcalloc): Ditto
+	(thrmalloc): Ditto
+
+2000-08-08  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/malloc4.cxx: Make output more frequent
+
+2000-08-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/dlmalloc1.cxx (STACKSIZE): Define larger than default.
+
+2000-08-03  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/dlmallocimpl.hxx (class Cyg_Mempool_dlmalloc_Implementation):
+	Ensure typedefs are public so dlmalloc.cxx can use them at outer level.
+
+2000-08-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/heapgen.tcl: Fix tclsh invocation quoting problems
+
+2000-07-31  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/heapgen.tcl: Allow builddir to be specified on command-line
+	* cdl/memalloc.cdl: Work around NT cygtclsh80 bug by cd'ing into
+	heapgen.tcl's directory before running it
+
+2000-07-26  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/malloc4.cxx: Call rand_r() rather than rand, and use a seed
+	var in each thread.
+
+2000-07-25  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/malloc4.cxx (thrfree): Get mem size here. Tidy output.
+	(thrmalloc): Get mem size in thrfree instead
+
+	* src/heapgen.tcl: Refine search for user-defined name to cope with
+	use of CYG_LABEL_DEFN macro
+
+2000-07-19  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/memalloc.cdl (CYGIMP_MEMALLOC_ALLOCATOR_DLMALLOC_SAFE_MULTIPLE):
+	Default to 1
+
+	* include/mvarimpl.inl (resize_alloc): Remember to adjust other
+	freelist entries when extending block
+
+2000-07-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* CYGPKG_MEMALLOC:
+
+	Created as new package, merging existing memory allocator related stuff
+	from the kernel and libc. Many bug fixes to existing stuff, as
+	well as performance improvements, and extra features such as
+	a port of dlmalloc, and the ability to support multiple disjoint
+	heaps, possibly with run-time configurable size.
+	There's even a bit of documentation, and some new tests
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

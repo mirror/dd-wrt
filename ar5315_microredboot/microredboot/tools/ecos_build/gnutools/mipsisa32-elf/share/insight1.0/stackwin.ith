@@ -1,0 +1,46 @@
+# Stack window class definition for GDBtk.
+# Copyright 1997, 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ----------------------------------------------------------------------
+# Implements stack window for gdb
+# ----------------------------------------------------------------------
+
+class StackWin {
+  inherit EmbeddedWin GDBWin
+
+  private {
+    variable maxwidth 40
+    variable Running 0
+    variable protect_me 0
+    method build_win {}
+    method cursor {glyph}
+    method change_frame {}
+    method no_inferior {}
+  }
+
+  public {
+    method reconfig {}
+    method constructor {args} 
+    method destructor {}
+
+    #
+    # GDB Events
+    #
+    method busy {event}
+    method idle {event}
+    method update {event}
+  }
+
+}
+

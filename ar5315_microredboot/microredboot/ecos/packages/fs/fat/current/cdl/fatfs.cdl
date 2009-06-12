@@ -1,0 +1,128 @@
+# ====================================================================
+#
+#      fatfs.cdl
+#
+#      FAT Filesystem configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Savin Zlobec <savin@elatec.si> 
+# Contributors:   
+# Date:           2003-06-25
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_FS_FAT {
+    display         "FAT filesystem"
+    include_dir     cyg/fs
+
+    requires        CYGPKG_IO_FILEIO
+
+    requires        CYGPKG_ISOINFRA
+    requires        CYGINT_ISO_ERRNO
+    requires        CYGINT_ISO_ERRNO_CODES
+    requires        CYGPKG_MEMALLOC
+    requires        CYGPKG_BLOCK_LIB
+
+    implements      CYGINT_IO_FILEIO_FS
+    
+    compile         -library=libextras.a fatfs.c        \
+                                         fatfs_supp.c   \
+                                         fatfs_ncache.c 
+
+    cdl_option      CYGNUM_FS_FAT_NODE_HASH_TABLE_SIZE {
+        display         "Node hash table size"
+        flavor          data
+        default_value   32
+        legal_values    1 to 9999999999
+        description     "This option controls the number of slots in the 
+                         hash table used to store file nodes using filenames 
+                         as keys."
+    }
+
+    cdl_option      CYGNUM_FS_FAT_NODE_POOL_SIZE {
+        display         "Node pool size"
+        flavor          data
+        default_value   { (CYGNUM_FILEIO_NFILE + 2) }
+        legal_values    1 to 9999999999
+        requires        { CYGNUM_FS_FAT_NODE_POOL_SIZE >= (CYGNUM_FILEIO_NFILE+2) }
+        description     "This option controls the size of the node pool used
+                         for storing file nodes. This value should be set to
+                         the maximum required number of simultaneously open 
+                         files plus the desired size of unused node cache."
+    }
+   
+    cdl_option      CYGNUM_FS_FAT_BLOCK_CACHE_MEMSIZE {
+        display         "FAT block cache memory size"
+        flavor          data
+        default_value   10240 
+        legal_values    1 to 9999999999
+        description     "This option controls the amount of memory used for 
+                         the block cache."
+    }
+
+    cdl_option      CYGDBG_FS_FAT_NODE_CACHE_EXTRA_CHECKS {
+        display         "Node cache extra checks"
+        flavor          bool
+        default_value   1
+        active_if       CYGPKG_INFRA_DEBUG && CYGDBG_USE_ASSERTS
+        description     "This option controls the inclusion of extra
+                         sanity checks in node cache code."
+    }
+    
+    cdl_option      CYGCFG_FS_FAT_USE_ATTRIBUTES {
+        display         "Support for FAT FS file attributes"
+        flavor          bool
+        default_value   0
+        description     "This option controls if the FAT filesystem supports
+                         or honors the FAT filesystem file attributes."
+    }
+    
+    # --------------------------------------------------------------------
+    
+    cdl_option      CYGPKG_FS_FAT_TESTS {
+        display         "FAT FS tests"
+        flavor          data
+        no_define
+        calculated      { "tests/fileio1.c" }
+        description     "This option specifies the set of tests for the 
+                         FAT FS package."
+    }
+}
+
+# ====================================================================
+# End of fatfs.cdl

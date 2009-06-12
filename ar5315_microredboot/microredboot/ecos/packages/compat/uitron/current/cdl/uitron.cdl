@@ -1,0 +1,437 @@
+# ====================================================================
+#
+#      uitron.cdl
+#
+#      uITRON configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  hmt
+# Contributors:
+# Date:           1999-06-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_UITRON {
+    display       "uITRON compatibility layer"
+    include_dir   cyg/compat/uitron
+    doc           ref/compat-uitron.html
+    requires      CYGPKG_KERNEL
+    description   "
+        eCos supports a uITRON Compatibility Layer, providing
+        full Level S (Standard) compliance with Version 3.02 of
+        the uITRON Standard, plus many Level E (Extended) features.
+        uITRON is the premier Japanese embedded RTOS standard."
+
+    compile       uit_func.cxx uit_ifnc.cxx uit_objs.cxx
+
+    # ------------------------------------------------------------------------
+    #                       Conformance check
+    # ------------------------------------------------------------------------
+    cdl_interface CYGINT_UITRON_CONFORMANCE {
+        requires 1 == CYGINT_UITRON_CONFORMANCE
+    }
+
+    cdl_option CYGIMP_UITRON_STRICT_CONFORMANCE {
+        display       "Check strict uITRON standards conformance"
+        default_value 0
+        requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+        requires      CYGSEM_KERNEL_SCHED_MLQUEUE
+        requires      !CYGSEM_KERNEL_SCHED_TIMESLICE
+        requires      CYGFUN_KERNEL_THREADS_TIMER
+	implements    CYGINT_UITRON_CONFORMANCE
+        description   "
+            Require the rest of the system configuration
+            to match the needs of strict uITRON standards conformance.
+            This option can only be set if the rest of the system is
+            configured correctly for uITRON semantics, for example
+            there must be a realtime clock, a suitable scheduler, and no
+            timeslicing.
+            Of course a system without this selected can be completely
+            conformant; this is here to help you check."
+    }
+    cdl_option CYGIMP_UITRON_LOOSE_CONFORMANCE {
+        display       "System configuration overrides uITRON"
+        default_value 1
+        implements    CYGINT_UITRON_CONFORMANCE
+        description   "
+            Do not require the rest of the system configuration
+            to match the needs of strict uITRON standards conformance.
+            For example a bitmap scheduler, or timeslicing, can be used
+            with the uITRON functions, but such an environment is not
+            strictly conformant with the uITRON specification.
+            Of course a system with this selected can be completely
+            conformant; but it is up to you to configure it correctly."
+    }
+
+    # ------------------------------------------------------------------------
+    #                       uITRON FUNCTION CALLS
+    # ------------------------------------------------------------------------
+    cdl_option CYGIMP_UITRON_INLINE_FUNCS {
+        display       "Inline functions"
+        default_value 0
+        description   "
+            If compiling your application with a C++ compiler,
+            uITRON functions can be inline: set this to make it so.
+            Inlining functions often increases execution speed,
+            though possibly at the cost of a larger executable,
+            depending on what functions are used.
+            Do NOT set this if compiling your application
+            in plain C."
+    }
+
+    cdl_option CYGIMP_UITRON_CPP_OUTLINE_FUNCS {
+        display       "C++ function names"
+        default_value 0
+        description   "
+            If compiling your application with a C++ compiler,
+            uITRON functions can be given C++ style mangled names:
+            set this to make it so.
+            This option may make debugging your program easier,
+            depending on your development environment.
+            Do NOT set this if compiling your application
+            in plain C."
+    }
+
+    cdl_option CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS {
+        display       "Return error codes for bad params"
+        default_value 1
+        description   "
+            When an application is fully debugged there is no need
+            to check for bad parameters on every system call, for those
+            parameters which are typically pointers or constants.
+            Removing the checking code saves space
+            and improves performance: set this to make it so.
+            When this option is set, the correctness of parameters
+            is asserted using CYG_ASSERT() which compiles to
+            nothing in a non-debug configuration."
+    }
+
+    cdl_option CYGSEM_UITRON_PARAMS_NULL_IS_GOOD_PTR {
+        display       "NULL is a good pointer"
+        default_value 0
+        description   "
+            uITRON deliberately defines the constant NADR (-1) for
+            use as an invalid memory address.
+            The value -1 is chosen to allow working in microcontrollers
+            which have real memory at address zero, the traditional 'C'
+            NULL pointer.
+            By default, uITRON functions check for both NULL and NADR as
+            bad addresses: set this option to prevent checking for
+            NULL and allow pointers to address zero to be used."
+    }
+
+    # ------------------------------------------------------------------------
+    #                      uITRON KERNEL OBJECTS
+    # ------------------------------------------------------------------------
+    cdl_component CYGPKG_UITRON_SEMAS {
+        display       "Semaphores"
+        flavor        bool
+        default_value 1
+        description   "
+            uITRON Semaphore objects are used with functions
+            named xxx_sem(); they support traditional semaphore
+            semantics."
+
+        script        semas.cdl
+    }
+
+    cdl_component CYGPKG_UITRON_MBOXES {
+        display       "Mailboxes"
+        flavor        bool
+        default_value 1
+        description   "
+            uITRON Mailbox objects are used with functions
+            named xxx_msg() and xxx_mbx(); they support
+            passing addresses (of 'messages') between tasks
+            in a safe manner."
+
+        script        mboxes.cdl
+    }
+
+    cdl_component CYGPKG_UITRON_FLAGS {
+        display       "Eventflags"
+        flavor        bool
+        default_value 1
+        description   "
+            uITRON Eventflag objects are used with functions
+            named xxx_flg(); they support communication between
+            tasks by means of setting and clearing bits in a word
+            or flag value.
+            Waiting for all or any of a set of bits is supported."
+
+        script        flags.cdl
+    }
+
+    # ------------------------------------------------------------------------
+    #                            uITRON TASKS
+    # ------------------------------------------------------------------------
+    cdl_component CYGPKG_UITRON_TASKS {
+        display      "Tasks"
+        flavor        none
+        description   "
+            uITRON Tasks are the basic blocks of multi-tasking
+            in the uITRON world; they are threads or lightweight
+            processes, sharing the address space and the CPU.
+            They communicate using the primitives outlined above.
+            Each has a stack, an entry point (a C or C++ function),
+            and (where appropriate) a scheduling priority."
+
+        script        tasks.cdl
+    }
+
+    # ------------------------------------------------------------------------
+    # Memory Pools, both fixed and variable block
+    # ------------------------------------------------------------------------
+    cdl_component CYGPKG_UITRON_MEMPOOLFIXED {
+        display       "Fixed-size memorypools"
+        flavor        bool
+        default_value 1
+        requires      CYGPKG_MEMALLOC
+        description   "
+            uITRON supports memory pools for dynamic, task-safe
+            memory allocation.
+            Two kinds are supported, fixed-size and variable-size.
+            There may be multiple of each
+            type of pool, each with differing characteristics.
+            This option controls whether there are any fixed-size
+            memorypools in the system.
+            A fixed-size memorypool allocates blocks of memory of
+            its preset fixed size and none other."
+
+        script        mempoolfixed.cdl
+    }
+
+    cdl_component CYGPKG_UITRON_MEMPOOLVAR {
+        display       "Variable-size memorypools"
+        flavor        bool
+        default_value 1
+        requires      CYGPKG_MEMALLOC
+        description   "
+            uITRON supports memory pools for dynamic, task-safe
+            memory allocation.
+            Two kinds are supported, fixed-size and variable-size.
+            There may be multiple of each
+            type of pool, each with differing characteristics.
+            This option controls whether there are any variable-size
+            memorypools in the system.
+            A variable-size memorypool allocates blocks of memory of
+            any size requested, resources permitting."
+
+        script        mempoolvar.cdl
+    }
+
+    # ------------------------------------------------------------------------
+    # One-shot Alarm and Cyclic Alarm handlers:
+    # ------------------------------------------------------------------------
+
+    cdl_option CYGSEM_UITRON_TIME_IS_MILLISECONDS {
+	display       "uITRON time unit is mS"
+        flavor        bool
+        default_value 0
+	active_if     CYGVAR_KERNEL_COUNTERS_CLOCK
+        description   "
+	    Setting this option enables a conversion feature so that
+	    time parameters to uITRON APIs are converted from milliSeconds
+	    to whatever the eCos kernel real-time clock's units are,
+            or vice versa.
+	    If this option is not set, time parameters are expressed in
+	    kernel clock ticks."
+    }
+
+    cdl_component CYGPKG_UITRON_ALARMS {
+        display       "Alarm handlers"
+        flavor        bool
+        default_value 1
+        requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+        description   "
+            uITRON Alarm Handlers are used with functions
+            named def_alm() and ref_alm(); they support
+            simple timing, with a function callback
+            at the end of the timed period."
+
+
+        cdl_option CYGNUM_UITRON_ALARMS {
+            display       "Number of alarm handlers"
+            flavor        data
+            legal_values  1 to 65535
+            default_value 3
+            description   "
+                The number of uITRON alarm
+                handlers present in the system.
+                Valid alarm handler numbers will range
+                from 1 to this value."
+        }
+    }
+
+    cdl_component CYGPKG_UITRON_CYCLICS {
+        display       "Cyclic handlers"
+        flavor        bool
+        default_value 1
+        requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+        description   "
+            uITRON Cyclic Handlers are used with functions
+            named xxx_cyc(); they support timing
+            with a periodic function callback that
+            can be dynamically turned on or off, and
+            resynchronized with external events."
+
+        cdl_option CYGNUM_UITRON_CYCLICS {
+            display       "Number cyclic handlers"
+            flavor        data
+            legal_values  1 to 65535
+            default_value 3
+            description   "
+                The number of uITRON cyclics
+                handlers present in the system.
+                Valid cyclic handler numbers will range
+                from 1 to this value."
+        }
+    }
+
+    # ------------------------------------------------------------------------
+    # Interrupt-safe functions [ixxx_yyy()]:
+    # ------------------------------------------------------------------------
+    cdl_component CYGPKG_UITRON_INTERRUPT_FUNCTIONS {
+        display		"Interrupt-safe functions"
+	flavor		none
+	description "The uITRON system provides some functions which may
+		 safely be used within interrupt handlers.  In eCos, this
+		 means within ISRs, providing that the corresponding DSR is
+		 associated with that interrupt.  These functions are
+		 typically named ixxx_yyy(), according to the uITRON
+		 specification, for example isig_sem() corresponds to normal
+		 function sig_sem()."
+
+        cdl_option CYGSEM_UITRON_ISRFUNCS_TRY_IMMEDIATE_EXECUTION {
+	    display          "Execute in ISR if safe"
+	    parent           CYGPKG_UITRON_INTERRUPT_FUNCTIONS
+	    flavor           bool
+            default_value    1
+ 	    description	     "
+		     These functions of necessity maintain a queue of
+		     operations requested for deferred execution.  However,
+		     during an interrupt, it may be safe to perform scheduling
+		     operations.  If this option is set, the interrupt-safe
+		     functions will have effect there and then if it is indeed
+		     safe, rather than queueing a request to perform the
+		     operation in the DSR."
+	}
+	cdl_option CYGNUM_UITRON_ISR_ACTION_QUEUESIZE {
+	    display          "Deferred operation queue size"
+	    parent           CYGPKG_UITRON_INTERRUPT_FUNCTIONS
+	    flavor           data
+	    legal_values     4 8 16 32 64 128 256
+            default_value    32
+	    description "These functions of necessity maintain a queue of
+		     operations requested for deferred execution.  This option
+		     controls the queue size.  It must be a power of two for
+		     implementation reasons."
+	}
+    }
+
+    # ------------------------------------------------------------------------
+    #                      uITRON VERSION INFORMATION
+    # ------------------------------------------------------------------------
+    cdl_component CYGPKG_UITRON_VERSION {
+        display       "Version information"
+        flavor        none
+        description   "
+            The get_ver() uITRON system call returns
+            several version related values describing
+            the vendor, product and CPU in question
+            as well as the version of the uITRON
+            standard supported.
+            These values may be specified here."
+
+        script        version.cdl
+    }
+
+    define_proc {
+        puts $::cdl_header "/***** proc output start *****/"
+        puts $::cdl_header "#include <pkgconf/system.h>"
+        puts $::cdl_header "#include <pkgconf/kernel.h>"
+        puts $::cdl_header "/*****  proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_UITRON_OPTIONS {
+        display "uITRON build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+        cdl_option CYGPKG_UITRON_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the uITRON compatibility layer. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_UITRON_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the uITRON compatibility layer. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_UITRON_TESTS {
+            display "uITRON tests"
+            flavor  data
+            no_define
+            calculated {
+                "tests/testcxx tests/testcx2 tests/testcx3 tests/testcx4 tests/testcx5 tests/testcx6 tests/testcx7 tests/testcx8 tests/testcx9"
+                . ((!CYGIMP_UITRON_INLINE_FUNCS && !CYGIMP_UITRON_CPP_OUTLINE_FUNCS) ?
+                " tests/test1 tests/test2 tests/test3 tests/test4 tests/test5 tests/test6 tests/test7 tests/test8 tests/test9 tests/testintr" : "")
+            }
+            description   "
+                This option specifies the set of tests for the uITRON compatibility layer."
+        }
+    }
+}

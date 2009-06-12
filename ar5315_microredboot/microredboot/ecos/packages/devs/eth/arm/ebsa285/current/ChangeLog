@@ -1,0 +1,459 @@
+2002-10-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/devs_eth_ebsa285.inl: EBSA has the ethernet devices
+	multiplexed onto one interrupt. This got losted when generalising
+	the driver.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_ebsa285.inl: Fix warnings.
+
+2001-11-19  Hugo Tyson  <hmt@redhat.com>
+2001-11-19  Anssi Pulkkinen <Anssi.Pulkkinen@ascom.ch>
+
+	* src/if_ebsa285.c (TxMachine): The test to see if there is a new
+	tx to start must also say "go" if the tx queue is full.  Normally,
+	if the txqueue is full, a tx will be occurring at all times - so
+	one will complete soon, so the tx queue full flag will soon be
+	cleared, and this condition will recover.  I suspect a subtle race
+	which effectively means a new tx is queued and fills the queue in
+	between two tx's, so no TxDone() follows, causes the hang which we
+	get without this extra test under high load.  [CASE 106686]
+
+2001-08-31  Hugo Tyson  <hmt@redhat.com>
+2001-08-31  Sanjay Bisen <sanjay.bisen@ascom.ch>
+
+	* src/if_ebsa285.c (TxDone): Check from prev change is moved to
+	the logical driver.  Also, we zero the key in global state before
+	the callback - this should make no difference, but again it's good
+	practice, and ASCOM's tests indicate a benefit for CASE 106059.
+	
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_ebsa285.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-06-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_ebsa285.c (TxDone): Defensive programming: only call
+	tx_done with new/unique key values.
+
+2001-03-12  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_ebsa285.c: Make device config more consistent with that
+	used in other 82559 platforms, and fix a typo.
+
+2001-02-20  Hugo Tyson  <hmt@redhat.com>
+2001-02-15  Martin Buck  <martin.buck@ascom.ch>
+
+	* src/if_ebsa285.c: Configure i82559 not to drop oversized frames.
+	This is required for VLAN support (because the maximum frame size
+	including the VLAN tag is 1518 instead of 1514) and shouldn't
+	hurt otherwise. To do this, we now always configure the chip when
+	i82559_start is called, instead of relying on the default
+	configuration if promiscuous mode is off. Another advantage is that
+	we're now able to turn promiscuous mode off again after it was
+	enabled once.
+
+2001-01-02  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_ebsa285.c (find_82559s_match_func): New func to match
+	complex PCI device requirements.
+	(pci_init_find_82559s): Use it, and the new PCI API to correctly
+	match a disparate bunch of devices on the one board.
+
+2000-12-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_ebsa285.c (pci_init_find_82559s): Also check for the PCI
+	device whose name is ... 0x1209; "82559ER".  Thanks to Martin Buck
+	<martin.buck@ascom.ch> for the ID for that.
+
+2000-11-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_ebsa285.c (pci_init_find_82559s): Intel has at least
+	two devices equivalent to the 82559.  Support both (0x1229, 0x01030).
+
+2000-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_ebsa285.c: Deal with device interrupts in a nested
+	fashion - disable/restore is the semantics now, rather than
+	unconditionally unmasking.  Also go directly to the 21285 PIC's
+	interrupt control registers to gain atomicity for these.  Poll for
+	ready received packets when acknowledging an interrupt in the
+	tranmitting world; a race here could lose an Rx interrupt.  Which
+	doesn't matter on a busy system, but in quieter times...  there
+	will always be such a race because of the vague way the i82559's
+	status bits reflect how it's yanking the interrupt line; you have
+	to poll until the interrupt is gone before returning else spurious
+	interrupt failures occur.  The issue is to close the window as
+	tightly as possible, which this change achieves at a minor cost in
+	performance - because of the time spent polling when not required.
+
+2000-09-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (i82559_poll): Only diddle the interface we
+	were asked to.  This is more correct in terms of the intent of the
+	API, though it shouldn't really be necessary.
+
+2000-09-06  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (pci_init_find_82559s): Add asserts and an
+	unconditional check that the PCI window as configured matches the
+	address and size of the pci_window region from the MLT.  This is
+	here because at present the MLT and CT cannot intercommunicate
+	enough.  The separation of the PCI window is needed because
+	otherwise the malloc heap will eat all memory.  [This is related
+	to CR 902624-CR, "MLT needs to be configuration aware"]
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* OVERVIEW: This is part of the change to the network stack to
+	greatly reduce latencies both of (other) DSRs and of thread
+	scheduling.  All the work that the network stack *and* individual
+	ether drivers used to do in DSRs (including alarm callbacks and
+	data copies to/from the device memory) is moved into a "fast
+	network thread" instead.  It calls a device's "deliver" function
+	to do the work that was previously in the DSR.  This is a separate
+	thread so that it can be set higher priority than application
+	threads in order to minimize packet loss (depending on the
+	driver), if required (the application threads presumed to be
+	higher priority in turn than the network thread).  A crucial
+	consequence of this is that we are no longer locking against DSRs,
+	so a plain mutex can be used rather than the global scheduler
+	lock, thus simplifying all the splfoo/splx() style functions.
+
+	* src/if_ebsa285.c: Minor: fix the big assert in i82559_send()
+	which suffered a race condition when called from the fast thread
+	rather than from a DSR.  Major: Add a "deliver" entry to the
+	interface record for the "fast thread" implementation of the
+	network internal comms system.  Provide a pass-up DSR to the
+	logical ether driver's DSR and appropriate delivery routine(s).
+	i82559_poll() now calls i82559_deliver() rather than the DSR.  Add
+	valid data for mux'd DSR to pass on up.
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/test_net_realtime.h: Tighten up the latency requirements
+	by a factor of 5; it all seems happy, so committed.
+
+2000-08-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (i82559_ioctl): A little further diddling; have
+	a bool to say whether the dot3 info is filled in.
+
+2000-08-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl: Do not export a symbol for the
+	device info file (include/ebsa285_info.h) since nobody needs
+	(portably) to include it now.
+
+	* src/if_ebsa285.c (i82559_ioctl): Handle new ioctl calls
+	ETH_DRV_GET_IF_STATS_UD and ETH_DRV_GET_IF_STATS to get loads of
+	statistical information out.  _UD means update.  The nonUD one can
+	be used instead mostly, if we find the performance hit too large.
+	This should allow SNMP (a) to not explode, (b) to get useful info
+	out of other device implementations than this one.
+
+	* include/ebsa285_info.h: Remove all the macro cruft for feature
+	detecting of lots of individual statistics; we now just have a
+	catch-all struct that SNMP uses, defined in the common ether
+	driver environment.
+
+2000-08-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (PacketRxReady): Put back the check for very
+	small packets into the driver; the layer above checks for that
+	(defensive programming) but only *after* asserting that the size
+	is large enough, to help detect that scenario from other drivers.
+	I believe we only have struct ether_header available if CYGPKG_NET
+	but I could be wrong.
+	[CASE 104353]
+
+2000-08-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (eth_set_promiscuous_mode):
+	- ccs->config_bytes[18]=0x70;
+	+ ccs->config_bytes[18]=0x72; // Keep the Padding Enable bit
+	...otherwise short frame sends don't work in promisc mode.
+	[CASE 104289]
+
+2000-08-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_ebsa285.c (pciwindow_mem_alloc): Take out very noisy debug.
+
+2000-08-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_ebsa285.c: Changes for stand-alone mode.
+
+	* cdl/ebsa285_eth_drivers.cdl: Ethernet driver package hierarchy changed.
+	Add option to control number of interfaces.
+
+2000-07-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (PacketRxReady): Do not attempt to forward
+	short packets; eth_drv.c assumes there is at least a header there.
+	(i82559_recv): Also be more careful and ASSERTive about -ve buffer
+	sizes; be more defensive about sglists.  [CASE 104206]
+
+2000-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_ebsa285.c: Update for new eth_drv interfaces.
+
+2000-07-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (i82559_poll): Fill in the flesh of this, it
+	just calls ISR and DSR repeatedly.
+	(i82559_start): Look in the device record for promiscuous mode
+	flag; it should be passed though the common layer, but it's not
+	[yet] - this change from Andrew Lunn/ASCOM.  Also a fix and delay
+	to the promisc mode code per se.
+
+2000-07-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (i82559_poll): New function, just to fill in
+	the interface record; not used.
+
+2000-06-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl: Add sesquipedalian option
+	CYGDBG_DEVS_ETH_ARM_EBSA285_KEEP_82559_STATISTICS in (now)
+	component CYGDBG_DEVS_ETH_ARM_EBSA285_KEEP_STATISTICS to control
+	keeping (well, harvesting really) the i82559's internal stats.
+	Reputedly, it doesn't service the net whilst this is happening, so
+	it could be viewed a bad thing.  Hence the option.
+
+	* include/ebsa285_info.h: Only describe the I82559_COUNTERS
+	i82559_counters[2]; structs if full stats are to be kept.
+
+	* src/if_ebsa285.c (update_statistics): Only include this if full
+	stats are to be kept.
+
+2000-06-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (ResetRxRing): Re-do the management of the
+	RxRing; have an end-of-list flag (EL) in the last entry, and as
+	you unload filled slots, drag it round after you.
+
+2000-06-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl: Add option to control statistics
+	keeping.
+
+	* include/ebsa285_info.h: Act on it.
+
+2000-06-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl: Properly include the new header
+	file and define symbols to allow client code to get at it without
+	knowing the particular device driver name.
+
+	* include/ebsa285_info.h: New file: export various statistics
+	information about the driver for use by monitoring and
+	network-management systems.  This requires exposing the
+	(otherwise) internal structures of the driver.
+
+	* src/if_ebsa285.c: remove a lot of structure definitions &c that
+	are now necessarily in the new header; add a couple of new
+	routines which provide status and update statistics from the
+	device into memory; tidy up control of whether stats-keeping is
+	enabled.
+
+2000-06-06  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl (define_proc): Add #define of
+	CYGDAT_DEVS_ETH_DESCRIPTION in the config file for information.
+
+2000-05-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/test_net_realtime.h (tnr_print_activity): New routine to
+	check the system is working, tidied up the API.  It works!
+
+2000-05-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl: Added export of the test header
+	below, and config opts for controlling EEPROM writing and all the
+	status chatter as the device starts up.
+
+	* src/if_ebsa285.c: Reworked the code for reading and setting the
+	EEPROM that holds the MAC address.  This is very ugly, but now
+	more reliable.  Also tidied up printing cruft with neater
+	configury, and made it an option (for safety) whether it's
+	possible to write the EEPROM at all.
+
+	* tests/test_net_realtime.h: New file - it is intended to be used
+	by networking tests to verify that latency is not compromised by
+	the stack and driver.  It's very platform specific, hence the
+	location in here.  This is a preliminary version only.
+
+2000-04-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c: A serious re-write.  This cuts out a lot of
+	code from the old version and improves the performance greatly.
+
+	The cruft was mainly doing lots of explicit event communication
+	between the ISR and DSR, when in fact all the state needed is
+	present in the tx/rx rings.  So both ISRs and DSRs regard their
+	call as an opportunity to progress everything they can, rather
+	than only dealing with one interrupt cause at a time; the
+	connection between them is now rather looser.
+
+	Interrups can now be re-enabled after the ISR (in other words they
+	are not masked in the ISR), no need to wait for the DSR, but in
+	consequence some DSR code must mask/unmask intrs as it works.
+
+	The 82559 appears to be a little slow in reacting to commands and
+	state changes, so some interrupts were being lost - or persisting
+	beyond their desired life - so there's some kinda polling code to
+	deal with that also.  We also rely on the foreground to kind of
+	poll in the same way, in the send/can_send calls - we know the
+	stack will re-try if necessary, though this is rare.
+
+	The driver now works (albeit at much reduced performance) with as
+	few as 6 rx and tx buffers - in other words the "queue full/out of
+	rx buffers" states have been tested and all is well.  It works
+	generally fine with 8 buffers of each kind.
+
+	The mux ISR and DSR are now rather more polled than the old
+	versions; we just try to do things with both devices (if active)
+	by simply calling each unitary ISR/DSR respectively.
+
+	I also re-ordered some of the code, moving utilities to the end of
+	the file and grouping together Tx and Rx machines a bit better.
+
+2000-04-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c: Attribution to Ron Spence, Pacific Softworks
+	added as a contributor.
+
+2000-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ecos.db: Re-organize device packages.  This is a massive change
+	involving deleting all the sources for serial and ethernet drivers
+	from where they used to live in
+	    packages/io/serial/current/src/ARCH/PLATFORM.[ch]
+	    packages/net/drivers/eth/PLATFORM/current/src/...
+	and reinstating them in
+	    packages/devs/serial/ARCH/PLATFORM/current/src/...
+	    packages/devs/eth/ARCH/PLATFORM/current/src/...
+
+	All these new packages are properly defined in ecos.db, and are
+	all of type "hardware" so that a "target" can grab them.
+	
+	This directory layout is descriptive of the devices we have right
+	now, arch and platform are separate levels just to make it easier
+	to navigate in the filesystem and similar to the HAL structure in
+	the filesystem.
+
+	It is *not* prescriptive of future work; for example, the mythical
+	common highly-portable 16550 serial driver which works on many
+	targets would be called "devs/serial/s16550/current", or a serial
+	device for a particular board (cogent springs to mind) that can
+	work with different CPUs fitted is "devs/serial/cogent/current".
+
+	Changelogs have been preserved and replicated over all the new
+	packages, so that no history is lost.
+
+	The contents of individual source files are unchanged; they build
+	in just the same emvironment except for a very few cases where the
+	config file name changed in this movement.
+
+	Targets in ecos.db have been redefined to bring in all relevant
+	hardware packages including net and serial drivers (but the newly
+	included packages are only active if their desired parent is
+	available.)
+	
+	The names of CDL options (and their #defines of course) stay the
+	same for the serial drivers, for backward compatibility.
+
+	* templates/*/current.ect: these have had CYGPKG_IO_SERIAL added
+	rather than it being in (almost) all target definitions.
+	
+2000-03-29  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (i82559_recv): Be happy with NULLs in the
+	SGlist; it means the caller is out of memory so drop the packet on
+	the floor.  Also remove a completely redundant test.
+
+2000-03-06  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (i82559_can_send): Update net driver to new
+	interface style.  This is incomplete wrt promiscuous mode, but
+	that's probably about all.
+
+2000-02-14  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl: Update CDL to indicate multiple 
+	interface support.
+
+2000-02-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (pci_init_find_82559s): Tidy comments somewhat
+	and set debug and stats collecting defines to most friendly
+	settings.
+
+2000-02-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c (PacketRxReady): Fix bug; current descriptor
+	was not being write back for the callback to use.  Hence asserts
+	on state of rfd were firing in busy times - that leading rfd had
+	already been drained.
+
+	Also rationalized meaning of DEBUG printy symbols a bit - it's now
+	chatty during startup/foreground manipulations but not in any
+	performance related activities ie. rx or tx.
+
+2000-02-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/ebsa285_eth_drivers.cdl:
+
+	Reparent under CYGPKG_NET_ETH_DRIVERS and tidy display strings.
+
+2000-02-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_ebsa285.c: New File.
+	* cdl/ebsa285_eth_drivers.cdl: New File.
+
+	Initial Checkin of EBSA285 Ethernet driver.
+
+	It's one monolithic file at present, and should be split up into a
+	more generic Intel 82559 driver plus platform-specific parts (PCI
+	et al) plus eCos/Red-Hat-BSD-stack parts.
+	
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

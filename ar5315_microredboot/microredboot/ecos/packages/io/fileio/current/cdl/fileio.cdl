@@ -1,0 +1,243 @@
+# ====================================================================
+#
+#      fileio.cdl
+#
+#      FILEIO layer configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Nick Garnett
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Contributors:
+# Date:           2000-5-25
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_IO_FILEIO {
+    display        "POSIX File IO compatibility layer"
+    description    "This package enables the POSIX compatibility
+                    layer that implements IEEE 1003.1 file IO."
+    include_dir    cyg/fileio
+    doc            ref/fileio.html
+    
+    requires       CYGPKG_ISOINFRA
+    requires       CYGPKG_ERROR
+    requires       CYGINT_ISO_ERRNO
+    requires       CYGINT_ISO_ERRNO_CODES
+    requires       CYGINT_ISO_STRING_STRFUNCS
+
+    implements	   CYGINT_ISO_FCNTL
+    implements     CYGINT_ISO_OPEN
+    implements     CYGINT_ISO_DIRENT
+
+    requires       { CYGBLD_ISO_DIRENT_HEADER == "<cyg/fileio/dirent.h>" }
+    requires       { CYGBLD_ISO_OPEN_MAX_HEADER == "<cyg/fileio/limits.h>" }
+    requires       { CYGBLD_ISO_NAME_MAX_HEADER == "<cyg/fileio/limits.h>" }
+
+    compile 	   fd.cxx file.cxx io.cxx dir.cxx
+    compile        -library=libextras.a misc.cxx
+
+    cdl_interface     CYGINT_IO_FILEIO_FS {
+        display       "Filesystems interfacing to FILEIO"
+        no_define
+        description "
+           Each filesystem driver which FILEIO can use implements
+           this interface. You can use this to determine if there are
+           any filesystems configured in the system." 
+    }
+
+    cdl_option CYGFUN_IO_FILEIO_SELECT {
+	display          "Enable support for select()"
+	active_if        CYGPKG_KERNEL
+        implements       CYGINT_ISO_SELECT
+	default_value    1
+	description      "
+	    This option enables support for select()."
+
+	compile          select.cxx
+    }
+
+    cdl_option CYGPKG_IO_FILEIO_DEVFS_SUPPORT {
+	display          "Enable devfs support"
+        active_if        CYGPKG_IO
+	default_value    { CYGPKG_REDBOOT ? 0 : 1 }
+	description      "
+	    This option enables support for the devfs file system."
+
+	compile           -library=libextras.a devfs.cxx
+    }
+
+    cdl_option CYGPKG_IO_FILEIO_SOCKET_SUPPORT {
+	display          "Enable socket support"
+	active_if        CYGPKG_NET
+	active_if        CYGPKG_KERNEL
+	default_value    1
+	description      "
+	    This option enables support for the socket interface. It is
+	    only present if the NET package is included."
+
+	compile          socket.cxx
+    }
+    
+    cdl_option CYGNUM_FILEIO_NFILE {
+	display          "Maximum number of open files"
+	flavor           data
+	default_value    16
+	legal_values     1 to 9999999
+	description      "This option controls the number of open files
+	                  that are allowed for all filesystems."
+    }
+
+    cdl_option CYGNUM_FILEIO_NFD {
+	display          "Maximum number of open file descriptors"
+	flavor           data
+	default_value    16
+	legal_values     CYGNUM_FILEIO_NFILE to 9999999
+	description      "This option controls the number of open file descriptors
+	                  that are allowed for all filesystems."
+    }
+
+    cdl_option CYGNUM_FILEIO_FSTAB_MAX {
+	display          "Maximum number of installed filesystems"
+	flavor           data
+	default_value    4
+	legal_values     1 to 9999999
+	description      "This option controls the maximum number of filesystems
+			  that can be handled by the fileio system."
+
+    }
+
+    cdl_option CYGNUM_FILEIO_MTAB_MAX {
+	display          "Maximum number of mounted filesystems"
+	flavor           data
+	default_value    8
+	legal_values     CYGNUM_FILEIO_MTAB_EXTRA to 9999999
+	description      "This option controls the maximum number of mounted
+			  filesystems that can be handled by the fileio system."
+
+    }
+
+    cdl_option CYGNUM_FILEIO_MTAB_EXTRA {
+	display          "Number of dynamically mounted filesystems"
+	flavor           data
+	default_value    8
+	legal_values     0 to 9999999
+	description      "This option controls the number of mounted
+			  filesystems that can be created dynamically."
+    }
+
+    cdl_option CYGNUM_FILEIO_NSTAB_MAX {
+	display          "Maximum number of installed network stacks"
+	flavor           data
+	default_value    1
+	legal_values     1 to 9999999
+	description      "This option controls the maximum number of installed
+			  network stacks that can be handled by the fileio system."
+    }
+
+    cdl_option CYGPKG_IO_FILEIO_TRACK_CWD {
+	display          "Enable current directory tracking"
+	flavor           bool
+	default_value    1
+	description      "This option enables tracking of the name of the current
+	                  directory in the FILEIO package, to support the getcwd()
+	                  function. When this option is enabled the FILEIO package
+	                  will attempt to maintain a string that names the current
+	                  directory. It does this textually, dealing with \".\" and
+	                  \"..\" entries by textual manipulation. While this should
+	                  always provide a path for the current directory, it may not
+	                  be the best, if symbolic links are present. This tracked CWD
+	                  is only used if a filesystem does not support the
+	                  FS_INFO_GETCWD key. "
+    }
+
+    cdl_component CYGPKG_IO_FILEIO_INODE {
+        display          "Generic inode support"
+        flavor           bool
+        description      "This option enables generic inode support useful to
+                          some filesystems. Not all filesystems require this
+                          so it is not enabled by default."
+        default_value    0
+        requires         CYGINT_ISO_MALLOC
+        compile          inocache.cxx
+
+        cdl_option CYGNUM_IO_FILEIO_MAX_INODE_CACHE_DEAD {
+            display          "Maximum space for unused cached inodes"
+            flavor           data
+            default_value    10
+            description      "The inode cache allows a maximum limit to be set
+                              for the number of unused inodes still in the
+                              cache before they are freed. It may be set to 0
+                              to indicate no dead inode caching should be
+                              provided."
+        }
+    }
+
+    cdl_option CYGNUM_FILEIO_IOVEC_MAX {
+	display          "Maximum size of iovec used by readv/writev"
+	flavor           data
+	default_value    16
+	legal_values     1 to 9999999
+	description      "This option controls the maximum size of the iovec
+                          structure that can be used by readv()/writev().  This
+                          limit is required because the iovec structure must be
+                          invariant (to the user), thus a copy needs to be made
+                          by the interface routines.  The limit is merely a 
+                          control over the amount of stack space used by the
+                          readv()/writev() functions."
+
+    }
+
+    # ----------------------------------------------------------------
+    # Tests
+
+        cdl_option CYGPKG_IO_FILEIO_TESTS {
+            display "Fileio tests"
+            flavor  data
+            no_define
+            calculated { "tests/fileio1 tests/socket tests/select tests/stdio tests/pselect" }
+            description   "
+                This option specifies the set of tests for the FileIO package."
+        }
+}
+
+# ====================================================================
+# End of fileio.cdl
+
+

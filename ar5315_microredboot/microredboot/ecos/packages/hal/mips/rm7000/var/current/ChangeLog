@@ -1,0 +1,111 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_rm7000.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/mips_rm7000.ld: 
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2003-04-09  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/mips_rm7000.ld:
+        Fix .gnulinkonce.s -> .gnu.linkonce.s typo.
+
+2001-08-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/var_intr.h: Move HAL_INTERRUPT_ interrupt controller
+	access macros here from Ocelot HAL.
+
+2001-06-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h: Default definition for
+	CYGHWR_HAL_MIPS_RM7000_CACHE_SCRUB_BASE.
+	* src/var_mk_defs.c: export CYGHWR_HAL_MIPS_RM7000_CACHE_SCRUB_BASE.
+	* include/variant.inc: Use CYGHWR_HAL_MIPS_RM7000_CACHE_SCRUB_BASE.
+
+2001-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Scrub cache according to erratum #31.
+
+	* src/var_mk_defs.c: Added.
+
+	* cdl/hal_mips_rm7000.cdl: Make var_defs.inc.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* src/mips_rm7000.ld: Added .2ram handling.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Remove hal_intc_decode macro since it's a
+	change needed in arch.
+
+2001-01-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Added hal_intc_decode macro which masks the
+	cause register with the status register. Works around what would
+	appear to be a HW bug.
+	
+2001-01-19  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c (hal_variant_init): Enable caches.
+
+	* include/variant.inc: Fixed typos in icache clear code.
+
+2001-01-10  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_rm7000.cdl: Fix typo.
+
+2000-12-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/var_misc.c (hal_variant_init): Disable caches until flash
+	stuff is working.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/mips_rm7000.ld: Include extras.o regardless of CYGPKG_IO
+	presence.
+
+	* src/var_misc.c: Enable caches.
+
+2000-11-30  Jesper Skov  <jskov@redhat.com>
+
+	* Cloned from hal/mips/tx49
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

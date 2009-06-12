@@ -1,0 +1,516 @@
+#ifndef CYGONCE_HAL_HALBOOT_SI /* -*-asm-*- */
+#define CYGONCE_HAL_HALBOOT_SI
+// ====================================================================
+//
+//	<platform>/halboot.si
+//
+//	HAL bootup platform-oriented code (assembler)
+//
+// ====================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+// ====================================================================
+//#####DESCRIPTIONBEGIN####
+//
+// Author(s): 	        hmt
+// Contributors:	hmt
+// Date:	        1999-02-01
+// Purpose:	        Bootup code, platform oriented.
+// Description:
+//
+//####DESCRIPTIONEND####
+//
+// ====================================================================
+
+// External Platform Initial Setup
+//
+// This should set up RAM and caches, and calm down any external
+// interrupt sources.
+//
+// It is just plain included in vectors.S
+//
+// RAM has not yet been touched at all; in fact all you have is a
+// register window selected.
+
+	
+#ifdef CYG_HAL_STARTUP_RAM
+	! Hit the entry point instructions in situ
+#ifndef CYGIMP_HAL_SPARCLITE_COPY_VECTORS_TO_RAM
+	! *unless* we are going to copy into a different RAM area anyway:
+	! copy the real instructions into the vector:	
+	rd	%tbr, %g1
+	andn	%g1, 0xfff, %g1		! clear non-address bits
+	set	real_vector_instructions, %l0
+	ld	[ %l0 ], %l1
+	st	%l1, [ %g1 ]		! into the vector
+	ld	[ %l0 + 4 ], %l1
+	st	%l1, [ %g1 + 4 ]	! into the vector
+	! then invalidate the instruction cache:
+	set	3, %l0
+	set	0x00001000, %l1
+	set	0x80001000, %l2
+	sta	%l0, [ %l1 ] 0x0c
+	sta	%l0, [ %l2 ] 0x0c
+	! and the data cache
+	sta	%l0, [ %l1 ] 0x0e
+	sta	%l0, [ %l2 ] 0x0e
+	nop
+	nop
+	nop
+	nop				! should be enough
+#endif // !CYGIMP_HAL_SPARCLITE_COPY_VECTORS_TO_RAM
+#endif // CYG_HAL_STARTUP_RAM
+	
+
+#include <cyg/hal/hal_cpu.h>		// a copy of CygMon~s cpu.h
+	
+
+/* Address of clock switch */
+#define CLKSW_ADDR  0x01000003
+
+/* Address of SW1 */
+#define SW1_ADDR  0x02000003
+
+/* Address of LED bank */
+#define LED_ADDR  0x02000003
+
+#define SRAM_BASE 0x30000000
+#define SRAM_END  0x30080000
+
+
+#define DRAM_BASE      0x04000000	/* base of system DRAM */
+#define CS3_BASE       0x00000000       /* base of internal resource regs */
+#define CS3_ASI        7                /* ASI of internal resource regs  */
+
+// DRAM_BASE2 is defined so that we run the same RAM-sizing code in both
+// RAM and ROM startup versions; but the RAM startup one starts RAM sizing
+// at 0x043ff000 ie. 4k down from the top of the 4M available.
+	
+#ifdef CYG_HAL_STARTUP_RAM
+#define DRAM_BASE2 DRAM_BASE + 0x00400000 - 0x1000
+#else
+#define DRAM_BASE2 DRAM_BASE
+#endif
+	
+        .macro led val
+        sethi   %hi(LED_ADDR),%l7
+        set     \val,%l6
+	not	%l6, %l6
+        stb     %l6,[%l7 + %lo(LED_ADDR)]
+        .endm
+
+	/*
+	 * First, setup chip selects.
+	 *
+	 * NB: The AMR_VAL macro actually inverts the mask bits. For me, it is
+	 *     more natural to write a 1 bit where I want the address compared.
+	 *     The sparc registers use 0 bits, instead.
+	 */
+	
+	/* -CS0 ADDR_MASK:0xfc000000 ASI_MASK:0xfc */
+	set	AMR_VAL(0xfc,0xfc000000),%l0
+	mov	AMR0,%l1
+	sta	%l0,[%l1] 1
+	
+	/* -CS1	BASE:0x10000000 ASI:4 */
+	set	ARSR_VAL(4,0x10000000),%l0
+	mov	ARSR1,%l1
+	sta	%l0,[%l1] 1
+	/* -CS1 ADDR MASK:0xf0000000 ASI MASK:0x7 */
+	set	AMR_VAL(7,0xf0000000),%l0
+	mov	AMR1,%l1
+	sta	%l0,[%l1] 1
+	
+	/* -CS2	BASE:0x20000000 ASI:4 */
+	set	ARSR_VAL(4,0x20000000), %l0
+	mov	ARSR2,%l1
+	sta	%l0,[%l1] 1
+	/* -CS2 ADDR MASK:0xf0000000 ASI MASK:0x7 */
+	set	AMR_VAL(7,0xf0000000),%l0
+	mov	AMR2,%l1
+	sta	%l0,[%l1] 1
+	
+	/* -CS3	BASE:CS3_BASE ASI:CS3_ASI */
+	set	ARSR_VAL(CS3_ASI,CS3_BASE),%l0
+	mov	ARSR3,%l1
+	sta	%l0,[%l1] 1
+	/* -CS3 ADDR MASK:0xffff0000 ASI MASK:0x7 */
+	set	AMR_VAL(7,0xffff0000),%l0
+	mov	AMR3,%l1
+	sta	%l0,[%l1] 1
+	
+	/* -CS4 BASE: DRAM_BASE ASI:0xb */
+	set	ARSR_VAL(0xb,DRAM_BASE),%l0
+	mov	ARSR4,%l1
+	sta	%l0,[%l1] 1
+	/* -CS4 ADDR MASK:0xfc000000 ASI MASK:0xfc */
+	set	AMR_VAL(0xfc,0xfc000000),%l0
+	mov	AMR4,%l1
+	sta	%l0,[%l1] 1
+	
+	/* -CS5 BASE:0x30000000 ASI:0xb */
+	set	ARSR_VAL(0xb,0x30000000),%l0
+	mov	ARSR5,%l1
+	sta	%l0,[%l1] 1
+	/* -CS5 ADDR MASK:0xfff80000 ASI MASK:0xfc */
+	set	AMR_VAL(0xfc,0xfff80000),%l0
+	mov	AMR5,%l1
+	sta	%l0,[%l1] 1
+
+	
+	/*
+	 * Setup wait states. Each wait state register sets the wait states for
+	 * a pair of chip selects. The lower bits hold the wait state info for
+	 * the lower numbered chip select.
+	 */
+
+	/* -CS0: 5 wait states,  -CS1: 7 wait states */
+//	set	WSSR_VAL(7,7,WSSR_WAITEN,5,5,WSSR_WAITEN),%l0
+//	set	WSSR_VAL(4,4,WSSR_WAITEN,5,5,WSSR_WAITEN),%l0 // FOUR -> CS1
+	set	WSSR_VAL(10,10,WSSR_WAITEN,5,5,WSSR_WAITEN),%l0 // TEN -> CS1
+	mov	WSSR0,%l1
+	sta	%l0,[%l1] 1
+
+	/* -CS2: wait states disabled,  -CS3: wait states disabled */
+	set	WSSR_VAL(0,0,0,0,0,0),%l0
+	mov	WSSR1,%l1
+	sta	%l0,[%l1] 1
+
+	/* -CS4: wait states disabled,  -CS5: 0 wait states */
+	set	WSSR_VAL(0,0,WSSR_WAITEN|WSSR_OVERRIDE,0,0,0),%l0
+	mov	WSSR2,%l1
+	sta	%l0,[%l1] 1
+
+	led	0x10
+
+	/* clear cache/BIU control register */
+	mov	CBIR,%l1
+	sta	%g0,[%l1] 1
+
+	/* Read clock switch to determine the value of the refresh timer */
+	sethi	%hi(CLKSW_ADDR),%l1
+	ldub	[%l1 + %lo(CLKSW_ADDR)],%l0
+	btst	0x80,%l0
+	bne,a	1f
+	mov	10,%l0		/* force to 10MHz if CLKSW-8 is ON */
+    1:
+	umul	%l0,15,%l0
+	mov	DRLD,%l1
+	sta	%l0,[%l1] 1
+	mov	REFTMR,%l1
+	sta	%l0,[%l1] 1
+
+	/* read SW1 to get DRAM page size */
+	sethi	%hi(SW1_ADDR),%l1
+	ldub	[%l1 + %lo(SW1_ADDR)],%l0
+	btst	0x10,%l0
+	be,a	1f
+	 mov	0x0e,%l0	/* 1K page if branch taken (SW1-5 is OFF) */
+	mov	0x06,%l0	/* 2K page (SW1-5 is OFF) */
+    1:
+	mov	SPGMR,%l1
+	sta	%l0,[%l1] 1
+
+	led	0x20
+
+#ifdef CYG_HAL_STARTUP_ROM
+	/* Turn on all system services */	
+	mov	SSCR_TIMER|SSCR_WAIT|SSCR_CS|SSCR_SAMEPG,%l0
+	mov	SSCR,%l1
+	sta	%l0,[%l1] 1
+	nop
+	nop
+	nop
+	nop
+	
+#endif
+
+	led	0x30
+	
+	/*
+	 * Initialize caches.
+	 */
+	sethi	%hi(0x1000),%l0		/* bank 1 invalidate */
+	sethi	%hi(0x80000000),%l1	/* bank 2 invalidate */
+	mov	3,%l2			/* clear lock, lru, and valid bits */ 
+	sta	%l2,[%l0] 0xc		/* do it - icache bank 1 */
+	sta	%l2,[%l0] 0xe		/* do it - dcache bank 1 */
+	sta	%l2,[%l0 + %l1] 0xc	/* do it - icache bank 2 */
+	sta	%l2,[%l0 + %l1] 0xe	/* do it - dcache bank 2 */
+	
+	/* now, enable caches and buffers */
+	mov	CBIR_ICEN|CBIR_DCEN|CBIR_PBEN|CBIR_WBEN,%l0
+	mov	CBIR,%l1
+	sta	%l0,[%l1] 1
+	nop 
+	nop 
+	nop 
+	nop
+	
+	/* enable data and insn bursts */
+	mov	BCR_IBE|BCR_DBE,%l0
+	mov	BCR,%l1
+	sta	%l0,[%l1] 1
+	nop 
+	nop 
+	nop 
+	nop
+
+	/*
+	 * DRAM setup/test.
+	 */
+	led 0x40
+
+	/*
+	 * Test SW1-7 to determine normal or EDO mode.
+	 *   SW1-7 ON  = EDO
+	 *   SW1-7 OFF = Normal.
+	 */
+	sethi	%hi(SW1_ADDR),%l1
+	ldub	[%l1 + %lo(SW1_ADDR)],%l7
+	mov	DBANKR_SA04,%l0		/* DRAM starts at 0x04000000 */
+	btst	0x40,%l7
+	bne	1f			/* branch if SW1-7 is OFF */
+	 mov	SSCR_DRAM,%l1
+	/* EDO DRAM, enable burst in SSCR and EDO in DBANKR */
+	or	%l1,SSCR_BURST,%l1
+	or	%l0,DBANKR_EDO,%l0
+    1:
+	/*
+	 * Now, test SW1 to get DRAM page and bank size.
+	 *   SW1-5 ON  = 2k page, 16MB bank. (up to 64MB total)
+	 *   SW1-5 OFF = 1k page, 4MB bank.  (up to 16MB total)
+	 */
+	btst	0x10,%l7
+	bne,a	1f				/* branch if OFF */
+	or	%l0,DBANKR_4M|DBANKR_CA10,%l0  /* 1K page */
+	or	%l0,DBANKR_16M|DBANKR_CA11,%l0 /* 2K page */
+    1:
+	mov	CS3_BASE+DBANKR,%l2
+	sta	%l0,[%l2] CS3_ASI
+	
+	mov	DTIMR_RPS2|DTIMR_CBR3|DTIMR_CAS2|DTIMR_RP2,%l0
+	mov	CS3_BASE+DTIMR,%l2
+	sta	%l0,[%l2] CS3_ASI
+	
+	mov	SSCR,%l2
+	lda	[%l2] 1, %l0
+	or	%l0,%l1,%l0
+	sta	%l0,[%l2] 1
+
+	/*
+	 * Test SW1 to get potential DRAM limit.
+	 *   SW1-5 ON  = 2k page, up to 64MB total
+	 *   SW1-5 OFF = 1k page, up to 16MB total
+	 */
+	btst	0x10,%l7
+	bne,a	1f				/* branch if OFF */
+	 sethi	%hi(DRAM_BASE + 16*1024*1024),%l0
+	sethi	%hi(DRAM_BASE + 64*1024*1024),%l0
+    1:
+
+	/* subtract 4 to get last valid DRAM address */
+	add	%l0,-4,%l0
+		
+	/* Assume maximim memory and fill with pattern */	
+	set	DRAM_BASE2,%l2
+	set	0xaaaaaaaa,%l3
+    1:
+	st	%l3,[%l2]
+	cmp	%l2,%l0
+	blt	1b
+	 add	%l2,4,%l2
+
+	/*
+	 * Go back, read data and compare with written data.
+	 * Fill in with zero as we go along.
+	 */
+	set	DRAM_BASE2,%l2
+    1:
+	ld	[%l2],%l4
+	cmp	%l4,%l3
+	bne	2f
+	 st	%g0,[%l2]
+	cmp	%l2,%l0
+	blt,a	1b
+	 add	%l2,4,%l2
+    2:
+	led	0x50
+	
+	sub	%l2,64,%i6
+	sethi	%hi(DRAM_BASE),%l1
+	sub	%l2,%l1,%l0
+	st	%l0,[%i6]
+
+// NOTE that here, the frame pointer is set up to the top of RAM minus a
+// little bit with the size of RAM at %fp (%i6)
+#ifdef CYGIMP_HAL_SPARCLITE_COPY_VECTORS_TO_RAM
+
+	led	0x58
+	
+	! copy the trampoline code into the base of RAM (__ram_vectors_start)
+	! including the two ~rogue~ instructions...
+
+	.extern __ram_vectors_start
+	! Using the true address here for the copy makes a badly-aligned
+	! __ram_vectors less likely to hide as an obscure failure:
+	set     __ram_vectors_start, %l0 ! get the start of RAM
+	set	rom_vectors, %l1	! get the start of the trampoline
+	set	rom_vectors_end, %l2	! ...and its end.
+33:
+	ldd	[ %l1 ], %l4		! also uses %l5
+	std	%l4, [ %l0 ]
+	inc	8, %l1
+	inc	8, %l0
+	cmp	%l1, %l2
+	bl	33b
+	 nop
+
+	led	0x59
+
+	sethi	%hi(__ram_vectors_start), %g1	! get the start of RAM
+	andn	%g1, 0xfff, %g1
+	set	real_vector_instructions, %l0
+	ld	[ %l0 ], %l1
+	st	%l1, [ %g1 ]		! into the vector
+	ld	[ %l0 + 4 ], %l1
+	st	%l1, [ %g1 + 4 ]	! into the vector
+
+	led	0x5a
+
+	! then invalidate the instruction cache:
+	set	3, %l0
+	set	0x00001000, %l1
+	set	0x80001000, %l2
+	sta	%l0, [ %l1 ] 0x0c
+	sta	%l0, [ %l2 ] 0x0c
+
+	led	0x5b	
+	
+	! and the data cache
+	sta	%l0, [ %l1 ] 0x0e
+	sta	%l0, [ %l2 ] 0x0e
+	nop
+	nop
+	nop
+	nop				! should be enough
+
+	led	0x5c
+	
+	! and (re)set the tbr, finally.
+	sethi	%hi(__ram_vectors_start), %g1
+	andn	%g1, 0xfff, %g1
+	wr	%g1, %tbr		! Traps are at RAM start
+	nop				! (__ram_vectors_start)
+	nop
+	nop
+	
+	led	0x5d
+
+#else	
+
+	led	0x5f
+
+#endif // CYGIMP_HAL_SPARCLITE_COPY_VECTORS_TO_RAM (was CYG_HAL_STARTUP_ROM)
+
+	! turn on caches - copied from the book	
+#define	set_size	64
+#define ini_tag		0
+#define	adr1		0x00000000
+#define	adr2		0x80000000
+#define step		16
+#define CTL_BITS	0x35
+
+	set	set_size, %l7
+	set	adr1, %o1
+	set	adr2, %o2
+	set	ini_tag, %l0
+10:
+	sta	%l0, [ %o1 ] 0x0c
+	sta	%l0, [ %o1 ] 0x0e
+	sta	%l0, [ %o2 ] 0x0c
+	sta	%l0, [ %o2 ] 0x0e
+	add	%o1, step, %o1
+	subcc	%l7, 1, %l7
+	bne	10b
+	add	%o2, step, %o2
+
+	set	0, %l1
+	set	CTL_BITS, %l2
+	sta	%l2, [ %l1 ] 0x01
+	nop
+	nop
+	nop
+	nop	! delay to let caches stabilize
+	
+	led	0x60
+
+	// Now set up the 86940
+	
+#define TRGM0	0
+#define TRGM1	4	    
+#define REQSNS  8
+#define REQCLR 12
+#define IMASK  16
+#define IRLAT  20
+#define IMODE  24
+	
+	sethi	%hi( 0x10000000 ), %l1	! base address of the 86940 companion
+
+	set	0xfffe0000, %l4		! mask all intrs
+	add	%l1, IMASK, %l3
+	sta	%l4, [ %l3 ] 4
+	
+	set	0x11400000, %l6		! Channels 14,12,11 into Active Low
+	add	%l1, TRGM0, %l3
+	sta	%l6, [ %l3 ] 4
+	
+	set	0x05100000, %l6		! Channels 5,4,2 into Active Low
+	add	%l1, TRGM1, %l3
+	sta	%l6, [ %l3 ] 4
+
+	add	%l1, REQCLR, %l3	! clear all pending intrs
+	sta	%l4, [ %l3 ] 4
+
+	set	0x00100000, %l6		! clear the latch
+	add	%l1, IRLAT, %l3
+	sta	%l6, [ %l3 ] 4
+
+	nop
+	nop
+	nop
+
+	led	0x70
+	
+#endif  /* CYGONCE_HAL_HALBOOT_SI */
+/* EOF halboot.si */

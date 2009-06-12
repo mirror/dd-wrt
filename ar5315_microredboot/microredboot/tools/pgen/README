@@ -1,0 +1,18 @@
+Here is a Linux/Cygwin test program for upsd and wme.
+
+Type "make" to build the test programs.
+
+Type "man ./pgen.1" to get a man page with more
+details and examples than this README file.
+Alternatively, copy pgen.1 to /usr/man/man1 to install the man page.
+
+It is possible to experiment with the program on ethernet.
+All you need is two Linux/Cygwin boxes connected by ethernet.
+
+Otherwise one system will be associated to a wireless AP
+and the other system will be attached to an ethernet connected
+to the AP.
+
+Initial connectivity is tested by running "pgen" on one system
+and "pget" on the other.  See the man page for more details.
+

@@ -1,0 +1,928 @@
+---------------------
+PatchSet 2873 
+Date: 2003/11/13 12:45:50
+Author: andersen
+Branch: HEAD
+Tag: uClibc_0_9_23 
+Log:
+Prepare for release
+
+Members: 
+	Changelog:1.21->1.22 
+	Changelog.full:1.15->1.16 
+	Changelog.full.last:INITIAL->1.1 
+	docs/uclibc.org/FAQ.html:1.19->1.20 
+	docs/uclibc.org/index.html:1.75->1.76 
+
+---------------------
+PatchSet 2874 
+Date: 2003/11/16 04:50:49
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix a build problem when using 2.2.x kernel headers.
+
+Members: 
+	libc/sysdeps/linux/common/syscalls.c:1.120->1.121 
+
+---------------------
+PatchSet 2875 
+Date: 2003/11/16 15:58:33
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Don't install shadow.h if shadow password support is disabled.
+
+Members: 
+	Makefile:1.237->1.238 
+
+---------------------
+PatchSet 2876 
+Date: 2003/11/16 16:26:34
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Patch from Jeffrey Baitis <baitisj@evolution.com> for mips arch tuning.
+
+Members: 
+	Rules.mak:1.155->1.156 
+	extra/Configs/Config.mips:1.38->1.39 
+
+---------------------
+PatchSet 2877 
+Date: 2003/11/16 21:10:07
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+I forgot to update the thread locking in the last dst fix.
+
+Members: 
+	libc/misc/time/time.c:1.16->1.17 
+
+---------------------
+PatchSet 2878 
+Date: 2003/11/17 01:24:07
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+If __NR_ftruncate64 isn't defined, do the best we can.
+
+Members: 
+	libc/sysdeps/linux/common/ftruncate64.c:1.9->1.10 
+
+---------------------
+PatchSet 2879 
+Date: 2003/11/18 19:57:05
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Kill ARCH_HAS_NO_MMU and use HAS_FPU only.  Wether floating point ops
+are implemented in hardware or via kernel emulation doesn't matter to
+the libc code.
+
+Members: 
+	extra/Configs/Config.alpha:1.14->1.15 
+	extra/Configs/Config.arm:1.39->1.40 
+	extra/Configs/Config.cris:1.9->1.10 
+	extra/Configs/Config.e1:1.5->1.6 
+	extra/Configs/Config.h8300:1.17->1.18 
+	extra/Configs/Config.i386:1.36->1.37 
+	extra/Configs/Config.i960:1.13->1.14 
+	extra/Configs/Config.in.arch:1.11->1.12 
+	extra/Configs/Config.m68k:1.34->1.35 
+	extra/Configs/Config.microblaze:1.4->1.5 
+	extra/Configs/Config.sh:1.40->1.41 
+	extra/Configs/Config.v850:1.6->1.7 
+
+---------------------
+PatchSet 2880 
+Date: 2003/11/19 07:21:10
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix the return value for fputs when passed an empty string.
+Indirectly detected by gmp-4.1.2 self-tests and reported by
+"Peter S. Mazinger" <ps.m@gmx.net>.
+
+Members: 
+	libc/stdio/stdio.c:1.72->1.73 
+
+---------------------
+PatchSet 2881 
+Date: 2003/11/20 14:35:06
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Fixup dependancies to ensure arch specific string functions
+will always win
+
+Members: 
+	libc/string/Makefile:1.56->1.57 
+
+---------------------
+PatchSet 2882 
+Date: 2003/11/20 14:40:50
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Make certain that the arch specific stuff is always compiled last
+
+Members: 
+	libc/sysdeps/linux/Makefile:1.19->1.20 
+
+---------------------
+PatchSet 2883 
+Date: 2003/11/20 14:42:42
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Make certain that arch specific stuff is compiled last
+
+Members: 
+	libm/Makefile:1.38->1.39 
+
+---------------------
+PatchSet 2884 
+Date: 2003/11/20 15:05:27
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Lets try that one again...
+
+Members: 
+	libc/sysdeps/linux/Makefile:1.20->1.21 
+
+---------------------
+PatchSet 2885 
+Date: 2003/11/20 15:20:22
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Add an initial set of arm optimized string functions.  These
+do seem to make noticable speed improvement...
+ -Erik
+
+Members: 
+	libc/string/Makefile:1.57->1.58 
+	libc/string/arm/Makefile:INITIAL->1.1 
+	libc/string/arm/_memcpy.S:INITIAL->1.1 
+	libc/string/arm/bcopy.S:INITIAL->1.1 
+	libc/string/arm/bzero.S:INITIAL->1.1 
+	libc/string/arm/memcmp.S:INITIAL->1.1 
+	libc/string/arm/memcpy.S:INITIAL->1.1 
+	libc/string/arm/memmove.S:INITIAL->1.1 
+	libc/string/arm/memset.S:INITIAL->1.1 
+	libc/string/arm/strcmp.S:INITIAL->1.1 
+	libc/string/arm/strlen.S:INITIAL->1.1 
+	libc/string/arm/strncmp.S:INITIAL->1.1 
+
+---------------------
+PatchSet 2886 
+Date: 2003/11/20 15:28:24
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Don't depend on BSD naming
+
+Members: 
+	libc/string/arm/_memcpy.S:1.1->1.2 
+
+---------------------
+PatchSet 2887 
+Date: 2003/11/20 17:13:53
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Always include locale.h, which was included by libintl.h only when
+optimizing.
+
+Members: 
+	libc/misc/gnu/obstack.c:1.3->1.4 
+
+---------------------
+PatchSet 2888 
+Date: 2003/11/20 20:05:53
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Add missing weak alias for bcmp
+
+Members: 
+	libc/string/arm/memcmp.S:1.1->1.2 
+
+---------------------
+PatchSet 2889 
+Date: 2003/11/21 07:47:43
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+prevent some needless warnings when building w/2.6.x kernel headers
+
+Members: 
+	include/features.h:1.55->1.56 
+
+---------------------
+PatchSet 2890 
+Date: 2003/11/22 04:42:22
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Make sure the utils build gets the setting for CROSS.
+
+Members: 
+	Makefile:1.238->1.239 
+
+---------------------
+PatchSet 2891 
+Date: 2003/11/22 06:51:17
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix arm detection for libfloat.
+
+Members: 
+	utils/Makefile:1.3->1.4 
+
+---------------------
+PatchSet 2892 
+Date: 2003/11/22 18:11:47
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Oops.  Only enable debug when debugging...
+
+Members: 
+	ldso/ldso/Makefile:1.49->1.50 
+
+---------------------
+PatchSet 2893 
+Date: 2003/11/22 18:32:59
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Only enable debugging when SUPPORT_LD_DEBUG is enabled, not DEBUGGING
+
+Members: 
+	ldso/ldso/Makefile:1.50->1.51 
+
+---------------------
+PatchSet 2894 
+Date: 2003/11/22 21:21:39
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Remove SAFECFLAGS.  It was a workaround for failures in old awk script
+used to generate the crti.S and crtn.S files.  Since we don't use that
+anymore, keeping the workaround makes no sense.
+
+Furthermore, in most cases, SAFECFLAGS was not picking up all the
+needed flags, causing crti.o and crtn.o to not be built PIC.
+Which is very bad.  Removing SAFECFLAGS and using CFLAGS fixes
+that as well.
+
+Members: 
+	libc/sysdeps/linux/alpha/Makefile:1.10->1.11 
+	libc/sysdeps/linux/arm/Makefile:1.50->1.51 
+	libc/sysdeps/linux/cris/Makefile:1.11->1.12 
+	libc/sysdeps/linux/e1/Makefile:1.5->1.6 
+	libc/sysdeps/linux/h8300/Makefile:1.10->1.11 
+	libc/sysdeps/linux/i386/Makefile:1.63->1.64 
+	libc/sysdeps/linux/i960/Makefile:1.7->1.8 
+	libc/sysdeps/linux/m68k/Makefile:1.31->1.32 
+	libc/sysdeps/linux/microblaze/Makefile:1.4->1.5 
+	libc/sysdeps/linux/mips/Makefile:1.34->1.35 
+	libc/sysdeps/linux/powerpc/Makefile:1.27->1.28 
+	libc/sysdeps/linux/sh/Makefile:1.28->1.29 
+	libc/sysdeps/linux/sh64/Makefile:1.4->1.5 
+	libc/sysdeps/linux/sparc/Makefile:1.18->1.19 
+	libc/sysdeps/linux/v850/Makefile:1.17->1.18 
+
+---------------------
+PatchSet 2895 
+Date: 2003/11/23 18:45:12
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Protect against quoting changes.
+
+Members: 
+	utils/Makefile:1.4->1.5 
+
+---------------------
+PatchSet 2896 
+Date: 2003/11/23 18:46:00
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Hopefully this is correct for cris.
+
+Members: 
+	utils/ldd.c:1.2->1.3 
+
+---------------------
+PatchSet 2897 
+Date: 2003/11/23 18:47:56
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Make sure we use the right CC setting when building utils.
+Not doing so was breaking the buildroot softfloat arm build.
+
+Members: 
+	Makefile:1.239->1.240 
+
+---------------------
+PatchSet 2898 
+Date: 2003/11/23 20:24:30
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Ok.. this fixes the buildroot soft-float arm build.
+Also try to make sure the build breaks if we want soft float but
+don't know how to request it.
+
+Members: 
+	Rules.mak:1.156->1.157 
+	utils/Makefile:1.5->1.6 
+
+---------------------
+PatchSet 2899 
+Date: 2003/11/24 04:23:31
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Don't bother checking, since we want an error if -msoft-float doesn't work.
+
+Members: 
+	utils/Makefile:1.6->1.7 
+
+---------------------
+PatchSet 2900 
+Date: 2003/11/24 04:24:31
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Add -msoft-float to CPU_CFLAGS instead of CFLAGS, since ldso and libdl
+Makefiles ignore CFLAGS.
+
+Members: 
+	Rules.mak:1.157->1.158 
+
+---------------------
+PatchSet 2901 
+Date: 2003/11/28 18:28:39
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Add sysmips(), based on a patch by Atsushi Nemoto <anemo@mba.ocn.ne.jp>.
+
+Members: 
+	libc/sysdeps/linux/mips/Makefile:1.35->1.36 
+	libc/sysdeps/linux/mips/sysmips.c:INITIAL->1.1 
+	libc/sysdeps/linux/mips/sys/sysmips.h:1.1->1.2 
+
+---------------------
+PatchSet 2902 
+Date: 2003/11/28 19:39:51
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Another missing mips function, needed by the boehm garbage collector.
+
+Members: 
+	libc/sysdeps/linux/mips/Makefile:1.36->1.37 
+	libc/sysdeps/linux/mips/_test_and_set.c:INITIAL->1.1 
+
+---------------------
+PatchSet 2903 
+Date: 2003/11/29 02:17:24
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Patch by "Bradley D. LaRonde" <brad@ltc.com> for boehm garbage collector.
+
+Members: 
+	libc/sysdeps/linux/mips/crt0.S:1.10->1.11 
+
+---------------------
+PatchSet 2904 
+Date: 2003/11/29 20:48:18
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Minor update... Config no longer used.
+
+Members: 
+	.cvsignore:1.8->1.9 
+
+---------------------
+PatchSet 2905 
+Date: 2003/11/29 21:23:42
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Minor typo fix.
+
+Members: 
+	extra/scripts/fix_includes.sh:1.8->1.9 
+
+---------------------
+PatchSet 2906 
+Date: 2003/12/02 04:58:41
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Put in a dummy reference to main so busybox will link.
+
+Members: 
+	libc/sysdeps/linux/cris/crt0.c:1.4->1.5 
+
+---------------------
+PatchSet 2907 
+Date: 2003/12/02 17:58:24
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Avoid a potentially undefined operation with a veriable++ in a macro
+
+Members: 
+	libc/inet/rpc/bindresvport.c:1.8->1.9 
+
+---------------------
+PatchSet 2908 
+Date: 2003/12/02 17:59:06
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Add function versions of ntohl and friends
+
+Members: 
+	libc/inet/Makefile:1.41->1.42 
+	libc/inet/ntohl.c:INITIAL->1.1 
+
+---------------------
+PatchSet 2909 
+Date: 2003/12/02 19:06:31
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Add a syscall() implementation using a hacked version of the syscall6 macro.
+Untested, but syscall() is needed by busybox for pivot_root at least.
+
+Members: 
+	libc/sysdeps/linux/sh/Makefile:1.29->1.30 
+	libc/sysdeps/linux/sh/syscall.c:INITIAL->1.1 
+
+---------------------
+PatchSet 2910 
+Date: 2003/12/02 20:37:08
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Include Rules.mk for consistency.  Trying not to was simply too painful.
+
+Members: 
+	utils/Makefile:1.7->1.8 
+
+---------------------
+PatchSet 2911 
+Date: 2003/12/02 23:16:59
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Disable pthreads for sh64 for the time being (since it is not
+currently supported)
+
+Members: 
+	extra/Configs/Config.sh:1.41->1.42 
+
+---------------------
+PatchSet 2912 
+Date: 2003/12/03 02:35:36
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+force enable FORCE_SHAREABLE_TEXT_SEGMENTS for sh4
+
+Members: 
+	extra/Configs/Config.sh:1.42->1.43 
+
+---------------------
+PatchSet 2913 
+Date: 2003/12/03 20:12:45
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Rob McMullen writes:
+There is code in ldconfig that checks to see if a shared library is named
+either ``lib*'' or ``ld-*'' before ldconfig -l will work on it. gawk uses this
+feature of ldconfig to make /lib/rcscripts/filefuncs.so, so the build fails.
+
+Members: 
+	utils/ldconfig.c:1.1->1.2 
+
+---------------------
+PatchSet 2914 
+Date: 2003/12/03 20:36:49
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+remove some garbage
+
+Members: 
+	libc/sysdeps/linux/mips/vfork.c:1.1->1.2 
+
+---------------------
+PatchSet 2915 
+Date: 2003/12/03 21:35:01
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Eliminate some static buffers based on a patch from Tobias Anderberg
+
+Members: 
+	ldso/ldso/readelflib1.c:1.50->1.51 
+
+---------------------
+PatchSet 2916 
+Date: 2003/12/03 23:03:59
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Paul Mundt <lethal@linux-sh.org> writes:
+
+Nothing overly interesting here, this renames Hitachi/Mitsubishi to Renesas
+for the relevant platforms (in this case, h8, sh, and m32r). The same changes
+have already been going on in gcc/binutils/gdb/glibc/etc.
+
+Members: 
+	extra/Configs/Config.sh:1.43->1.44 
+	include/elf.h:1.9->1.10 
+	utils/readelf.c:1.1->1.2 
+
+---------------------
+PatchSet 2917 
+Date: 2003/12/03 23:07:50
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Patch from lethal, adding syscall() to the sh64 port
+
+Members: 
+	libc/sysdeps/linux/sh64/Makefile:1.5->1.6 
+	libc/sysdeps/linux/sh64/syscall.c:INITIAL->1.1 
+
+---------------------
+PatchSet 2918 
+Date: 2003/12/03 23:12:11
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Lethal noticed that the generated file gmon-start.S was not
+being cleaned up.
+
+Members: 
+	libc/sysdeps/linux/arm/Makefile:1.51->1.52 
+	libc/sysdeps/linux/i386/Makefile:1.64->1.65 
+	libc/sysdeps/linux/powerpc/Makefile:1.28->1.29 
+	libc/sysdeps/linux/sh/Makefile:1.30->1.31 
+
+---------------------
+PatchSet 2919 
+Date: 2003/12/03 23:28:33
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Joakim Tjernlund writes:
+
+This is just a wild guess, but you could try this to see if it fixes
+Richards problem:
+
+Members: 
+	ldso/ldso/powerpc/elfinterp.c:1.28->1.29 
+
+---------------------
+PatchSet 2920 
+Date: 2003/12/03 23:38:43
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Henrik Grindal Bakken writes:
+
+The patch touches a minor (well, not that minor, but perhaps only
+rarely encountered) bug in the powerpc dynamic linker.
+
+The problem is that addi is called in inline assembly, but there is no
+restriction on the second argument.  In powerpc assembler, if the
+second argument to addi is r0, it is taken as the value 0, not the
+contents of r0.  This happened to me, making the stack pointer 0 on
+the invocation on the application.
+
+The patch is against 0.9.22, but there didn't seem to be any changes
+to the relevant section in 0.9.23.
+
+Members: 
+	ldso/ldso/powerpc/ld_sysdep.h:1.6->1.7 
+
+---------------------
+PatchSet 2921 
+Date: 2003/12/04 06:36:51
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Building of iconv.o was accidently always disabled.
+Also, build the iconv app in utils.
+
+Members: 
+	libc/misc/wchar/Makefile:1.8->1.9 
+	utils/.cvsignore:1.1->1.2 
+	utils/Makefile:1.8->1.9 
+
+---------------------
+PatchSet 2922 
+Date: 2003/12/04 06:37:34
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Don't download the local data if we have it already.
+
+Members: 
+	Makefile:1.240->1.241 
+
+---------------------
+PatchSet 2923 
+Date: 2003/12/04 18:25:36
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Set the default stdio buffer size to 4096, rather then 256.
+256 is fine of course, but many applications use this value
+and expect it to be larger.
+
+Members: 
+	extra/Configs/Config.in:1.40->1.41 
+
+---------------------
+PatchSet 2924 
+Date: 2003/12/04 22:07:51
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix arm profiling support, which was accidentally removed
+
+Members: 
+	libc/sysdeps/linux/arm/Makefile:1.52->1.53 
+
+---------------------
+PatchSet 2925 
+Date: 2003/12/04 22:57:32
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix infinite loop in putgrent (forgotten increment).
+
+Members: 
+	libc/pwd_grp/pwd_grp.c:1.3->1.4 
+
+---------------------
+PatchSet 2926 
+Date: 2003/12/05 20:24:26
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+move _dl_fixup so staticly linked apps using dlopen have a
+chance of actually working
+
+Members: 
+	ldso/ldso/ldso.c:1.74->1.75 
+	ldso/ldso/readelflib1.c:1.51->1.52 
+
+---------------------
+PatchSet 2927 
+Date: 2003/12/05 20:39:51
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Paul Mundt <lethal@linux-sh.org> writes:
+
+This patch adds the libpthread backend bits for sh64. As noted previously,
+we can't inline things like the testandset() in pt-machine.h as we need to
+use a completely different ISA / CFLAGS in order for this to work.
+
+As a result, this patch is somewhat of a RFC as well to see what people think
+of the libpthread/linuxthreads/sysdeps Makefile approach, etc. The approach
+I've taken currently has been to provide a sysdeps/Makefile with a note that
+TARGET_ARCHs that want build rules can simply add themselves into the list of
+matching architectures to add to the subdir rule for. This probably isn't
+the cleanest solution, but it's quite transparent and works quite well.
+
+Members: 
+	extra/Configs/Config.sh:1.44->1.45 
+	libc/sysdeps/linux/sh64/bits/mman.h:INITIAL->1.1 
+	libpthread/linuxthreads/Makefile:1.11->1.12 
+	libpthread/linuxthreads/sysdeps/Makefile:INITIAL->1.1 
+	libpthread/linuxthreads/sysdeps/sh64/Makefile:INITIAL->1.1 
+	libpthread/linuxthreads/sysdeps/sh64/pt-machine.c:INITIAL->1.1 
+	libpthread/linuxthreads/sysdeps/sh64/pt-machine.h:INITIAL->1.1 
+
+---------------------
+PatchSet 2928 
+Date: 2003/12/08 21:18:40
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Prepare for uClibc 0.9.24 release
+
+Members: 
+	Changelog:1.22->1.23 
+	Changelog.full:1.16->1.17 
+	Changelog.full.last:1.1->1.2 
+	Rules.mak:1.158->1.159 
+
+---------------------
+PatchSet 2929 
+Date: 2003/12/11 07:16:11
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+Rework the website
+
+Members: 
+	docs/uclibc.org/FAQ.html:1.20->1.21 
+	docs/uclibc.org/cvs_anon.html:1.5->1.6 
+	docs/uclibc.org/cvs_howto.html:INITIAL->1.1 
+	docs/uclibc.org/cvs_write.html:1.3->1.4 
+	docs/uclibc.org/download.html:INITIAL->1.1 
+	docs/uclibc.org/footer.html:INITIAL->1.1 
+	docs/uclibc.org/header.html:INITIAL->1.1 
+	docs/uclibc.org/index.html:1.76->1.77 
+	docs/uclibc.org/lists.html:INITIAL->1.1 
+	docs/uclibc.org/news.html:INITIAL->1.1 
+	docs/uclibc.org/old-news.html:1.16->1.17(DEAD) 
+	docs/uclibc.org/oldnews.html:INITIAL->1.1 
+	docs/uclibc.org/other_libs.html:INITIAL->1.1 
+	docs/uclibc.org/products.html:INITIAL->1.1 
+	docs/uclibc.org/robots.txt:1.2->1.3(DEAD) 
+	docs/uclibc.org/toolchains.html:INITIAL->1.1 
+
+---------------------
+PatchSet 2930 
+Date: 2003/12/11 07:41:48
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+more minor cleanups
+
+Members: 
+	docs/uclibc.org/FAQ.html:1.21->1.22 
+	docs/uclibc.org/index.html:1.77->1.78 
+
+---------------------
+PatchSet 2931 
+Date: 2003/12/11 07:42:05
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+mjn3 found a url for the darwin C lib
+
+Members: 
+	docs/uclibc.org/other_libs.html:1.1->1.2 
+
+---------------------
+PatchSet 2932 
+Date: 2003/12/11 07:54:56
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+fixup some silly html bugs
+
+Members: 
+	docs/uclibc.org/FAQ.html:1.22->1.23 
+	docs/uclibc.org/footer.html:1.1->1.2 
+	docs/uclibc.org/header.html:1.1->1.2 
+	docs/uclibc.org/index.html:1.78->1.79 
+	docs/uclibc.org/news.html:1.1->1.2 
+	docs/uclibc.org/other_libs.html:1.2->1.3 
+
+---------------------
+PatchSet 2933 
+Date: 2003/12/11 07:55:13
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+add image for validator
+
+Members: 
+	docs/uclibc.org/images/vh40.gif:INITIAL->1.1 
+
+---------------------
+PatchSet 2934 
+Date: 2003/12/11 08:18:42
+Author: andersen
+Branch: HEAD
+Tag: (none) 
+Log:
+fix a cut-n-paste typo
+
+Members: 
+	docs/uclibc.org/cvs_write.html:1.4->1.5 
+
+---------------------
+PatchSet 2935 
+Date: 2003/12/14 19:10:23
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix a couple of 'declaration after statement' errors.
+
+Members: 
+	libc/misc/locale/locale.c:1.17->1.18 
+	libc/stdio/scanf.c:1.32->1.33 
+
+---------------------
+PatchSet 2936 
+Date: 2003/12/14 23:51:30
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Fix some dst issues in _time_mktime().
+  Normalize the tm_isdst value to -1, 0, or 1.
+  If no dst for this timezone, then reset tm_isdst to 0.
+
+Members: 
+	libc/misc/time/time.c:1.17->1.18 
+
+---------------------
+PatchSet 2937 
+Date: 2003/12/14 23:52:57
+Author: mjn3
+Branch: HEAD
+Tag: (none) 
+Log:
+Link ldconfig with the appropriate libraries.
+
+Members: 
+	utils/Makefile:1.9->1.10 
+

@@ -1,0 +1,288 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/pkgconf/mlt_v85x_v850_ceb_ram.ldi:
+	Added SECTION_ram_vectors().
+
+2002-05-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_platform_setup.h: Correctly calculate wait states based
+	on external RAM/ROM timing.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl: CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES
+	defined.
+
+2001-10-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl (CYGBLD_GLOBAL_CFLAGS): Always use
+	-mv850 just in case we're using tools that don't do that by default.
+
+2001-06-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl (CYGHWR_MEMORY_LAYOUT_H): Fix name for
+	flash startup.
+	
+	* include/pkgconf/mlt_v85x_v850_ceb_flash.h:
+	* include/pkgconf/mlt_v85x_v850_ceb_flash.ldi:
+	* include/pkgconf/mlt_v85x_v850_ceb_flash.mlt:
+	* include/pkgconf/mlt_v85x_v850_ceb_flashromram.h:
+	* include/pkgconf/mlt_v85x_v850_ceb_flashromram.ldi:
+	* include/pkgconf/mlt_v85x_v850_ceb_flashromram.mlt:
+	* include/pkgconf/mlt_v85x_v850_ceb_ram.h:
+	* include/pkgconf/mlt_v85x_v850_ceb_ram.ldi:
+	* include/pkgconf/mlt_v85x_v850_ceb_ram.mlt:
+	* include/pkgconf/mlt_v85x_v850_ceb_rom.h:
+	* include/pkgconf/mlt_v85x_v850_ceb_rom.ldi:
+	* include/pkgconf/mlt_v85x_v850_ceb_rom.mlt:
+	* include/pkgconf/mlt_v85x_v850_ceb_romram.h:
+	* include/pkgconf/mlt_v85x_v850_ceb_romram.ldi:
+	* include/pkgconf/mlt_v85x_v850_ceb_romram.mlt:
+	Resize RAM to 0x3c000 long (i.e. top of RAM is 0xffc000).
+	This avoids problems with variable sizes of internal RAM.
+
+2001-05-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl: Change tools back to v850-elf now.
+
+2001-05-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl: Change default tools to v850e-elf, and
+	compile with -mv850 flag
+
+2001-04-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl: Embryonic attempt at diag output via
+	ICE failed, but checked in for posterity anyway.
+	* src/v850flash.S: Use standard Cosmo flash image
+	* images/v850flash.img: Regenerate
+	* images/v850flash.hex: Regenerate
+	* images/v850sa1/gdb_module.*: Regenerate
+	* images/v850sb1/16mhz/gdb_module.*: Regenerate
+	* images/v850sb1/8mhz/gdb_module.*: Regenerate
+
+2001-03-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl: Support choice between V850/SA1 and
+	V850/SB1, and adjust descriptions accordingly.
+	Support ROMRAM startup.
+	Support booting from FLASH.
+	Use generic V850 diag driver.
+	Allow setting of CPU frequency.
+	Add extra baud rates.
+	Build SREC GDB stub images as well as binary images.
+
+	* include/hal_diag.h: We only support virtual vectors now.
+
+	* include/hal_platform_setup.h: Comment better.
+	Support different wait states for different CPU speeds.
+
+	* include/plf_cache.h: Just empty now - defaults are in variant HAL.
+	* include/plf_intr.h: Ditto.
+	* include/plf_io.h: Ditto.
+	
+	* include/plf_sections.h: Support V850/SB1 differences, and
+	add __allow_nmi as per recent arch HAL vectors.S change.
+
+	* src/plf_misc.c: Update register names with new versions defined
+	in variant HAL.
+
+	* src/plf_stub.c: Remove unnecessary includes. Add some comments.
+	* include/v850_regs.h: Remove. Content moved to v850 HAL.
+
+	* src/hal_diag.c: Remove. Consolidated into v850 HAL.
+
+	* src/v850flash.S: Sample image to program into flash for EPROM
+	startup.
+
+	* include/pkgconf/mlt_v85x_v850_ceb_flash.h:
+        * include/pkgconf/mlt_v85x_v850_ceb_flash.ldi:
+        * include/pkgconf/mlt_v85x_v850_ceb_flash.mlt:
+        * include/pkgconf/mlt_v85x_v850_ceb_flashromram.h:
+        * include/pkgconf/mlt_v85x_v850_ceb_flashromram.ldi:
+        * include/pkgconf/mlt_v85x_v850_ceb_flashromram.mlt:
+        * include/pkgconf/mlt_v85x_v850_ceb_romram.h:
+        * include/pkgconf/mlt_v85x_v850_ceb_romram.ldi:
+        * include/pkgconf/mlt_v85x_v850_ceb_romram.mlt:
+	Create.
+
+        * include/pkgconf/mlt_v85x_v850_ceb_ram.h:
+        * include/pkgconf/mlt_v85x_v850_ceb_ram.ldi:
+        * include/pkgconf/mlt_v85x_v850_ceb_ram.mlt:
+        * include/pkgconf/mlt_v85x_v850_ceb_rom.h:
+        * include/pkgconf/mlt_v85x_v850_ceb_rom.ldi:
+        * include/pkgconf/mlt_v85x_v850_ceb_rom.mlt:
+	Support new ram_vectors section, and fix ram region size (don't
+	allow the use of I/O space).
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_None
+	* cdl/hal_v85x_ceb_v850.cdl: Same.
+	* src/hal_diag.c: Get rid of CYGPRI_HAL_IMPLEMENTS_IF_SERVICES
+	checks.
+
+2001-01-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET): Move to arch HAL
+	hal_intr.h
+	(HAL_STUB_PLATFORM_RESET_ENTRY): Ditto
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_v85x_v850_ceb_ram.mlt:
+	* include/pkgconf/mlt_v85x_v850_ceb_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_v85x_v850_ceb_ram.h:
+	* include/pkgconf/mlt_v85x_v850_ceb_rom.h:
+	* include/pkgconf/mlt_v85x_v850_ceb_ram.ldi:
+	* include/pkgconf/mlt_v85x_v850_ceb_rom.ldi:
+	Regenerated
+
+2000-06-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: calling i/f macro changes.
+
+2000-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Fix compiler warnings.
+
+	* src/plf_stub.c: 
+	* src/hal_diag.c:
+	* include/plf_stub.h: 
+	* include/plf_intr.h: 
+	* include/hal_diag.h:
+	Moved Ctrl-c handling to driver code. Use new comms procs
+	semantics. 
+
+2000-06-17  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_intr.h: 
+	* include/plf_stub.h: 
+	* include/hal_diag.h: 
+	* include/plf_sections.h: 
+	* src/hal_diag.c: 
+	* src/plf_stub.c: 
+	* src/plf_misc.c: 
+	* cdl/hal_v85x_ceb_v850.cdl: Support new virtual vector ROM mode.
+
+2000-05-25  John Dallaway  <jld@redhat.com>
+
+	* cdl/hal_v85x_ceb_v850.cdl: Tidy display strings.
+
+2000-05-25  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_intr.h: Interrupt mappings now are in this file.
+
+2000-05-24  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_sections.h: 
+	* include/v850_regs.h: New file(s).
+
+2000-05-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c (hal_diag_write_char): Work around which fixes ^C
+	handling - GCC function __builtin_return_address() doesn't work.
+
+2000-04-25  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_nec_ceb_v850.cdl: Parent this package under the
+	V85X architecture package.
+
+2000-04-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/plf_stub.c (hal_plf_stub_init): Use watchdog timer to
+	emulate a breakpoint since this hardware doesn't have one.
+
+2000-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/plf_stub.c (hal_plf_get_char): Use LED for "interesting"
+	display during GDB I/O.
+
+	* src/hal_diag.c (hal_diag_write_char): Disable interrupts
+	while sending character - necessary because there is no way to
+	determine that a character has been sent other than to see that
+	there is an interrupt pending.
+
+	* cdl/hal_nec_ceb_v850.cdl: Add implementation of "GDB protocol
+	suppressed" functionality.
+
+2000-03-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c (hal_diag_write_char): GDB break support only
+	present if GDB stubs in place.
+
+2000-03-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/plf_stub.c: 
+	* include/plf_stub.h: Adding GDB break support.
+
+	* include/plf_intr.h: Remove garbage left over from cut&paste.
+
+	* include/plf_cache.h: Add missing INVALIDATE macros.
+
+2000-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c: Remove ROM startup messages.
+
+	* include/pkgconf/mlt_nec_v850_ceb_rom.mlt: 
+	* include/pkgconf/mlt_nec_v850_ceb_rom.ldi: 
+	* include/pkgconf/mlt_nec_v850_ceb_rom.h: Use proper RAM layout.
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET): Add board reset.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

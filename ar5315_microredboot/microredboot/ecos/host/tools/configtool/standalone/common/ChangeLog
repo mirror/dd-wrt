@@ -1,0 +1,115 @@
+2003-03-26  Bart Veer  <bartv@ecoscentric.com>
+
+	* ecosconfig.cxx: remove TRANSLATE_PATH() support, no longer
+	needed and causes confusion because you end up with repositories
+	containing a : character that now gets interpreted as a path
+	separator. Also fix a couple of bugs related to template
+	versioning.
+
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* Makefile.in, configure:
+	Regenerate after acinclude.m4 update
+
+2003-02-11  Bart Veer  <bartv@ecoscentric.com>
+
+	* ecosconfig.cxx:
+	With tcl 8.4 on a windows platform it is now necessary to call
+	Tcl_FindExecutable(). Otherwise Tcl does not get properly
+	initialized, and can end up indirecting through a NULL function
+	pointer.
+
+2002-02-05  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx, cdl_exec.hxx, ecosconfig.cxx:
+	Add new options --enable-debug and --disable-debug
+
+2002-01-14  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx:
+	Add missing <sys/param.h> under cygwin, needed for MAXPATHLEN.
+	Reported by Jifl.
+
+2001-12-29  Bart Veer  <bartv@redhat.com>
+
+	* ecosconfig.cxx, cdl_exec.cxx, cdl_exec.hxx
+	Add new option -n to suppress modifications to the file system,
+	especially ecos.ecc. Suggested by Patrick Doyle
+	(wpd@delcomsys.com)
+
+2001-12-06  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx (report_conflicts):
+	Report possible solutions correctly (bug 56232).
+
+2001-10-25  Julian Smart  <julians@redhat.com>
+
+	* cdl_exec.cxx: added calls to mount -f /ecos-x under Cygwin,
+    in tree command. This, along with use of /ecos-x paths in the
+    makefiles, ensures that compilation is done in text mode.
+
+2001-06-20  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx (set_verbose_mode):
+	Make the ecosconfig -v verbosity flag control libcdl database
+	verbosity as well.
+
+2001-05-16  Bart Veer  <bartv@redhat.com>
+
+	* ecosconfig.cxx: clean up cygwin->windows path translations
+
+	* Makefile.am: use new compiler flag support
+
+	* configure, Makefile.in, testsuite/Makefile.in: regenerate
+
+2001-04-27  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx (cdl_exec::cmd_new):
+	Make sure transactions get cleaned up properly if a CDL script
+	fails to load.
+
+2000-07-07  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx (transaction_callback):
+	Output the correct value irrespective of the option flavor.
+
+2000-06-28  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx, cdl_exec.hxx, ecosconfig.cxx:
+	Fix up the reporting of conflicts, inference engine changes, etc. 
+
+2000-04-10  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx:
+	Add diagnostic callbacks to database initialization.
+
+2000-03-08  Bart Veer  <bartv@redhat.com>
+
+	* configure.in (cyg_ac_infra_libdir):
+	Fix typo detected by Solaris build
+
+2000-01-20  Bart Veer  <bartv@redhat.com>
+
+	* cdl_exec.cxx:
+	Allow for libcdl interface change to CdlConfigurationBody::add()
+
+1999-11-11  Bart Veer  <bartv@redhat.co.uk>
+
+	* configure.in
+	* configure
+	* Makefile.am
+	* Makefile
+	Fixed VC++ build problems
+
+1999-11-10  Bart Veer  <bartv@redhat.co.uk>
+
+	* acinclude.m4
+	* configure.in
+	* Makefile.am
+	* aclocal.m4
+	* configure
+	* Makefile.in
+	Created
+
+	* ChangeLog
+	Created

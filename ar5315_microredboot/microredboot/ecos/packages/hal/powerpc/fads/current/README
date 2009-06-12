@@ -1,0 +1,89 @@
+The FADS MPC860 board port for eCos was contributed by Kevin Hester
+<khester@opticworks.com> and is partly based on the files from Motorola's
+"Example Software Initializing the SMC as a UART" package (smc2.zip)
+available at:
+ http://www.mot.com/SPS/RISC/netcomm/tools/index.html#MPC860_table
+
+The eCos FADS board port is provided on an "as is" basis as unsupported code.
+Red Hat does not maintain this code and does not guarantee its functionality
+in any way.
+
+All inquiries about this port should be directed to the 'ecos-discuss'
+mailing list (see http://sourceware.cygnus.com/ecos/intouch.html for
+details).
+
+
+A few comments from Kevin:
+----------------------------------------------------------------------------
+
+GDB support is untested and I didn't include the GDB 'interrupt' via
+the serial port support.  It would be straightforward for someone to
+add this.  
+
+You can also pass on that is was very easy to write this HAL - it only
+took a day starting from the Cogent PPC HAL.
+
+I can't promise support, but I will occasionally download from the CVS
+database and run it on our card.
+
+Usage notes:
+
+- The startup code in fads.S assumes that the build has been downloaded by
+  the mpc8bug tool included with the FADS board.  An example usage would be:
+  - build a FADS build (RAM build, GDB support off)
+  - link your application with the kernel you previously built
+  - run the Motorola mpc8bug tool.
+  - issue a mcp8bug "LOAD foo.elf" command where foo is the application you
+    have linked
+  - issue a mpc8bug "GO" command 
+  - your program should now be running, the diag port is the upper serial
+    port (SMC2)
+
+- I haven't tried to run a "ROM" build.  The "RAM" build works great.  The
+  ROM build will need to have fads.S setup more of the memory controller.
+
+- I haven't tested the GDB interface - I have successfully run using the
+  diag serial port and the example programs (such as "hello world").  GDB
+  support should work, with the exception of interrupt support.
+
+- The basic serial driver I added is based on the free Motorolla sample code
+  included with the MPC860 board.  It assumes the link to the development
+  station is via the SMC 2 port (the top serial port on the FADS board). This
+  code in quicc_smc.c should be generalized to support any SMC port.
+
+----------------------------------------------------------------------------
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

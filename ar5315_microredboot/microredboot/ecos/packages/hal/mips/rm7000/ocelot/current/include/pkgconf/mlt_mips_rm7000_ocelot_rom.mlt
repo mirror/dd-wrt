@@ -1,0 +1,30 @@
+version 0
+region ram 80000000 10000000 0 !
+region rom bfc00000 80000 1 !
+section reserved_vectors 200 1 0 0 1 1 1 1 80000000 80000000 reserved_vsr_table reserved_vsr_table !
+section reserved_vsr_table 100 10 0 0 0 1 0 1 reserved_virtual_table reserved_virtual_table !
+section reserved_virtual_table 100 10 0 0 0 1 0 0 data !
+section data 0 10 1 1 0 1 0 1 data1 data1 !
+section data1 0 8 1 1 0 1 0 1 eh_frame eh_frame !
+section eh_frame 0 8 1 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 8 1 1 0 1 0 1 ctors ctors !
+section ctors 0 8 1 1 0 1 0 1 dtors dtors !
+section dtors 0 8 1 1 0 1 0 1 devtab devtab !
+section devtab 0 8 1 1 0 1 0 1 got got !
+section got 0 8 1 1 0 1 0 1 dynamic dynamic !
+section dynamic 0 8 1 1 0 1 0 1 sdata sdata !
+section sdata 0 8 1 1 0 1 0 1 lit8 lit8 !
+section lit8 0 8 1 1 0 1 0 1 lit4 lit4 !
+section lit4 0 8 1 1 0 1 0 0 sbss !
+section sbss 0 8 0 1 0 1 0 1 bss bss !
+section bss 0 8 0 1 0 1 0 1 heap1 heap1 !
+section heap1 0 8 0 0 0 0 0 0 !
+section pci_window 100000 1 0 0 1 0 1 0 8ff00000 8ff00000 !
+section rom_vectors 0 1 0 1 1 1 1 1 bfc00000 bfc00000 ROMISC ROMISC !
+section ROMISC 0 8 0 1 0 1 0 1 RELOCS RELOCS !
+section RELOCS 0 8 0 1 0 1 0 1 init init !
+section init 0 8 0 1 0 1 0 1 text text !
+section text 0 8 0 1 0 1 0 1 fini fini !
+section fini 0 8 0 1 0 1 0 1 rodata rodata !
+section rodata 0 8 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 8 0 1 0 0 0 1 data !

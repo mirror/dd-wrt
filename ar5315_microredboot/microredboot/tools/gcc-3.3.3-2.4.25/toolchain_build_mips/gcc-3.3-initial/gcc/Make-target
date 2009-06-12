@@ -1,0 +1,64 @@
+# fp-bit and dp-bit are really part of libgcc1, but this will cause
+# them to be built correctly, so... [taken from t-sparclite]
+# We want fine grained libraries, so use the new code to build the
+# floating point emulation libraries.
+FPBIT = fp-bit.c
+DPBIT = dp-bit.c
+
+dp-bit.c: $(srcdir)/config/fp-bit.c
+	echo '#ifdef __MIPSEL__' > dp-bit.c
+	echo '#define FLOAT_BIT_ORDER_MISMATCH' >> dp-bit.c
+	echo '#endif' >> dp-bit.c
+	cat $(srcdir)/config/fp-bit.c >> dp-bit.c
+
+fp-bit.c: $(srcdir)/config/fp-bit.c
+	echo '#define FLOAT' > fp-bit.c
+	echo '#ifdef __MIPSEL__' >> fp-bit.c
+	echo '#define FLOAT_BIT_ORDER_MISMATCH' >> fp-bit.c
+	echo '#endif' >> fp-bit.c
+	cat $(srcdir)/config/fp-bit.c >> fp-bit.c
+# Build a shared libgcc library for ELF with symbol versioning
+# with the GNU linker.
+
+SHLIB_EXT = .so
+SHLIB_SOLINK = @shlib_base_name@.so
+SHLIB_SONAME = @shlib_so_name@.so.1
+SHLIB_NAME = @shlib_dir@@shlib_so_name@.so.1
+SHLIB_MAP = @shlib_map_file@
+SHLIB_OBJS = @shlib_objs@
+SHLIB_SLIBDIR_QUAL = @shlib_slibdir_qual@
+SHLIB_LC = -lc
+
+SHLIB_LINK = $(GCC_FOR_TARGET) $(LIBGCC2_CFLAGS) -shared -nodefaultlibs \
+	-Wl,--soname=$(SHLIB_SONAME) \
+	-Wl,--version-script=$(SHLIB_MAP) \
+	-o $(SHLIB_NAME) @multilib_flags@ $(SHLIB_OBJS) $(SHLIB_LC) && \
+	rm -f $(SHLIB_SOLINK) && \
+	$(LN_S) $(SHLIB_NAME) $(SHLIB_SOLINK)
+# $(slibdir) double quoted to protect it from expansion while building
+# libgcc.mk.  We want this delayed until actual install time.
+SHLIB_INSTALL = \
+	$$(SHELL) $$(srcdir)/mkinstalldirs $$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL); \
+	$(INSTALL_DATA) $(SHLIB_NAME) \
+	  $$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SONAME); \
+	rm -f $$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SOLINK); \
+	$(LN_S) $(SHLIB_SONAME) \
+	  $$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SOLINK)
+SHLIB_MKMAP = $(srcdir)/mkmap-symver.awk
+SHLIB_MAPFILES = $(srcdir)/libgcc-std.ver
+# Don't run fixproto
+STMP_FIXPROTO =
+
+# Compile crtbeginS.o and crtendS.o with pic.
+CRTSTUFF_T_CFLAGS_S = $(CRTSTUFF_T_CFLAGS) -fPIC
+# Compile libgcc2.a with pic.
+TARGET_LIBGCC2_CFLAGS = -fPIC
+
+# Override t-slibgcc-elf-ver to export some libgcc symbols with
+# the symbol versions that glibc used.
+SHLIB_MAPFILES += $(srcdir)/config/libgcc-glibc.ver
+
+# Use unwind-dw2-fde-glibc
+LIB2ADDEH = $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde-glibc.c \
+  $(srcdir)/unwind-sjlj.c $(srcdir)/unwind-c.c
+LIB2ADDEHDEP = unwind.inc unwind-dw2-fde.h unwind-dw2-fde.c

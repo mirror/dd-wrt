@@ -1,0 +1,1200 @@
+# SrcBar
+# Copyright 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# ----------------------------------------------------------------------
+# Implements a menu and a toolbar that are attached to a source window.
+#
+#   PUBLIC ATTRIBUTES:
+#
+#
+#   METHODS:
+#
+#     configure ....... used to change public attributes
+#
+#   PRIVATE METHODS
+#
+#   X11 OPTION DATABASE ATTRIBUTES
+#
+#
+# ----------------------------------------------------------------------
+
+class SrcBar {
+  inherit itk::Widget GDBEventHandler
+
+  # ------------------------------------------------------------------
+  #  CONSTRUCTOR - create widget
+  # ------------------------------------------------------------------
+  constructor {src args} {
+    set source $src
+
+    # Load the images to be used in toolbar buttons
+    _load_images
+    _load_src_images
+
+    # Create a menu widget for the Source Window
+    set Menu [GDBMenuBar $itk_interior.menubar]
+
+    # Fill it with the initial set of entries
+    if {! [create_menu_items]} {
+      destroy $this
+    } else {
+      # We do not pack the menu, but make it the menu of the toplevel window
+      $Menu show
+    }
+
+    # Create a toolbar widget for the Source Window
+    set Tool [GDBToolBar $itk_interior.toolbar]
+
+    # Now create the Source Window initial set of toolbar buttons
+    # First give the necessary info about each button and their position
+    create_buttons
+    # Then effectively create the tollbar widget
+    $Tool show
+
+    # Pack the toolbar
+    pack $Tool -expand 1 -fill both
+
+    # Set the srcbar's initial state
+    enable_ui 2
+
+    eval itk_initialize $args
+    add_hook gdb_no_inferior_hook "$this enable_ui 2"
+    add_hook gdb_trace_find_hook "$this handle_trace_find_hook"
+  }
+
+  # ------------------------------------------------------------------
+  #  DESTRUCTOR - destroy window containing widget
+  # ------------------------------------------------------------------
+  destructor {
+    global GDBSrcBar_state
+
+    unset GDBSrcBar_state($this)
+    remove_hook gdb_no_inferior_hook "$this enable_ui 2"
+    remove_hook gdb_trace_find_hook "$this handle_trace_find_hook"
+
+    #destroy $this
+  }
+
+  # ------------------------------------------------------------------
+  #  NAME:         private method SrcBar::_post
+  #  DESCRIPTION:  Post the given menu
+  #
+  #  ARGUMENTS:
+  #                what  - which menu to post
+  #  RETURNS:      Nothing
+  # ------------------------------------------------------------------
+  private method _post {what} {
+
+    switch $what {
+      file {
+	_update_file_menu
+      }
+    }
+  }
+
+
+  ####################################################################
+  # The next set of functions create the common menu groupings that
+  # are used in gdb menus.
+  # Private.  Used at contruction time.
+  # These were previously at the GDBToolBar...
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_menu_items - Add some menu items to the menubar.
+  #                               Returns 1 if any items added.
+  # ------------------------------------------------------------------
+  private method create_menu_items {} {
+
+    create_file_menu
+
+    create_run_menu
+
+    create_view_menu
+
+    if {[pref get gdb/control_target]} {
+      create_control_menu
+    }
+
+    if {[pref get gdb/mode]} {
+      create_trace_menu
+    }
+
+    create_plugin_menu
+
+    create_pref_menu
+    
+    create_help_menu
+
+    return 1
+  }
+
+  # ------------------------------------------------------------------
+  #  PRIVATE METHOD:  _update_file_menu - update the file menu
+  #                    Used really only to update the session list.
+  # ------------------------------------------------------------------
+  private method _update_file_menu {} {
+    global enable_external_editor tcl_platform gdb_exe_name
+
+    # Clear the File menu
+    $Menu clear file
+
+    if {[info exists enable_external_editor] && $enable_external_editor} {
+      $Menu add command None "Edit Source" \
+	[code $source edit]
+    }
+
+    $Menu add command Other "Open..."  \
+      "_open_file" -underline 0 -accelerator "Ctrl+O"
+
+    if {$gdb_exe_name == ""} {
+      set state disabled
+    } else {
+      set state normal
+    }
+    $Menu add command Other "Close" \
+      "_close_file" -underline 0 -accelerator "Ctrl+W" -state $state
+
+    $Menu add command Other "Source..." \
+      "source_file" -underline 0
+
+    set sessions [Session::list_names]
+    if {[llength $sessions]} {
+      $Menu add separator
+      set i 1
+      foreach item $sessions {
+	$Menu add command Other "$i $item" \
+	  [list Session::load $item] \
+	  -underline 0
+	incr i
+      }
+    }
+
+    $Menu add separator
+
+    if {$tcl_platform(platform) == "windows"} {
+      $Menu add command None "Page Setup..." \
+	[format {
+	  set top %s
+	  ide_winprint page_setup -parent $top
+	} [winfo toplevel [namespace tail $this]]] \
+	-underline 8
+    }
+
+    $Menu add command None "Print Source..." \
+      [code $source print] \
+      -underline 0 -accelerator "Ctrl+P"
+
+    $Menu add separator
+
+    $Menu add command Other "Target Settings..." \
+      "set_target_name" -underline 0
+
+    $Menu add separator
+
+    $Menu add command None "Exit" gdbtk_quit -underline 1
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_file_menu - Creates the standard file menu. 
+  # ------------------------------------------------------------------
+  
+  private method create_file_menu {} {
+
+    $Menu add menubutton file "File" 0 -postcommand [code $this _post file]
+    _update_file_menu
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_run_menu - Creates the standard run menu, 
+  #  or reconfigures it if it already exists.
+  # ------------------------------------------------------------------
+  
+  private method create_run_menu {} {
+
+    if {![$Menu exists Run]} {
+      set run_menu [$Menu add menubutton run "Run" 0]
+    } else {
+      set run_menu [$Menu clear Run]
+    }
+    
+    set is_native [TargetSelection::native_debugging]
+
+    # If we are on a Unix target, put in the attach options.  "ps" doesn't
+    # give me the Windows PID yet, and the attach also seems flakey, so 
+    # I will hold off on the Windows implementation for now.
+
+    if {$is_native} {
+      if {[string compare $::tcl_platform(platform) windows] != 0} {
+	$Menu add command Attach "Attach to process" \
+	  [code $this do_attach $run_menu] \
+	  -underline 0 -accelerator "Ctrl+A"
+      }
+    } else {
+      $Menu add command Other "Connect to target" \
+	"$this do_connect $run_menu" -underline 0
+    }
+
+    if {[pref get gdb/control_target]} {
+      if {!$is_native} {
+	$Menu add command Other "Download" Download::download_it \
+	  -underline 0 -accelerator "Ctrl+D"
+      }
+      $Menu add command Other "Run" [code $source inferior run] \
+        -underline 0 -accelerator R
+    }
+
+    if {$is_native} {
+      if {[string compare $::tcl_platform(platform) windows] != 0} {
+	$Menu add command Detach "Detach" \
+          [code $this do_detach $run_menu] \
+	  -underline 0 -state disabled
+      }
+    } else {
+      $Menu add command Other "Disconnect"  \
+	[code $this do_disconnect $run_menu] -underline 0 -state disabled
+    }
+
+    if {$is_native} {
+      $Menu add separator
+      $Menu add command Control "Kill" \
+        [code $this do_kill $run_menu] \
+	-underline 0 -state disabled
+    }
+
+    if { [pref get gdb/mode] } {
+      $Menu add separator 
+
+      $Menu add command Other "Start collection" "$this do_tstop" \
+	-underline 0 -accelerator "Ctrl+B"
+         
+      $Menu add command Other "Stop collection" "$this do_tstop" \
+	-underline 0  -accelerator "Ctrl+E" -state disabled
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_view_menu - Creates the standard view menu
+  # ------------------------------------------------------------------
+  
+  private method create_view_menu {} {
+
+    $Menu add menubutton view "View" 0
+
+    $Menu add command Other "Stack" {ManagedWin::open StackWin} \
+      -underline 0 -accelerator "Ctrl+S" 
+      
+    $Menu add command Other "Registers" {ManagedWin::open RegWin} \
+      -underline 0 -accelerator "Ctrl+R" 
+      
+    $Menu add command Other "Memory" {ManagedWin::open MemWin} \
+      -underline 0 -accelerator "Ctrl+M" 
+      
+    $Menu add command Other "Watch Expressions" \
+      {ManagedWin::open WatchWin} \
+      -underline 0 -accelerator "Ctrl+T" 
+    $Menu add command Other "Local Variables" \
+      {ManagedWin::open LocalsWin} \
+      -underline 0 -accelerator "Ctrl+L" 
+
+    if {[pref get gdb/control_target]} {
+      $Menu add command Other "Breakpoints" \
+	{ManagedWin::open BpWin -tracepoints 0} \
+	-underline 0 -accelerator "Ctrl+B" 
+    }
+
+    if {[pref get gdb/mode]} {
+      $Menu add command Other "Tracepoints" \
+        {ManagedWin::open BpWin -tracepoints 1} \
+	-underline 0 -accelerator "Ctrl+T"
+      $Menu add command Other "Tdump" {ManagedWin::open TdumpWin} \
+	-underline 2 -accelerator "Ctrl+U"
+    }
+
+    $Menu add command Other "Console" {ManagedWin::open Console} \
+      -underline 2 -accelerator "Ctrl+N" 
+      
+    $Menu add command Other "Function Browser" \
+      {ManagedWin::open BrowserWin} \
+      -underline 1 -accelerator "Ctrl+F" 
+    $Menu add command Other "Thread List" \
+      {ManagedWin::open ProcessWin} \
+      -underline 0 -accelerator "Ctrl+H"
+    if {[info exists ::env(GDBTK_DEBUG)] && $::env(GDBTK_DEBUG)} {
+      $Menu add separator
+      $Menu add command Other "Debug Window" \
+        {ManagedWin::open DebugWin} \
+	-underline 3 -accelerator "Ctrl+U"
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_control_menu - Creates the standard control menu
+  # ------------------------------------------------------------------
+  
+  private method create_control_menu {} {
+
+    $Menu add menubutton cntrl "Control" 0
+    
+    $Menu add command Control "Step" [code $source inferior step] \
+      -underline 0 -accelerator S
+    
+    $Menu add command Control "Next" [code $source inferior next] \
+      -underline 0 -accelerator N
+    
+    $Menu add command Control "Finish" \
+      [code $source inferior finish] \
+      -underline 0 -accelerator F
+    
+    $Menu add command Control "Continue" \
+      [code $source inferior continue] \
+      -underline 0 -accelerator C
+    
+    $Menu add separator
+    $Menu add command Control "Step Asm Inst" \
+      [code $source inferior stepi] \
+      -underline 1 -accelerator S
+    
+    $Menu add command Control "Next Asm Inst" \
+      [code $source inferior nexti] \
+      -underline 1 -accelerator N
+    
+    # $Menu add separator
+    # $Menu add command Other "Automatic Step" auto_step
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_trace_menu - Creates the standard trace menu
+  # ------------------------------------------------------------------
+  
+  private method create_trace_menu {} {
+
+    $Menu add menubutton trace "Trace" 0
+    
+    $Menu add command Other "Save Trace Commands..." \
+      "save_trace_commands" \
+      -underline 0
+
+    $Menu add separator
+
+    $Menu add command Trace "Next Hit" {tfind_cmd tfind} \
+      -underline 0 -accelerator N
+    
+    $Menu add command Trace "Previous Hit" {tfind_cmd "tfind -"} \
+      -underline 0 -accelerator P
+    
+    $Menu add command Trace "First Hit" {tfind_cmd "tfind start"} \
+      -underline 0 -accelerator F
+    
+    $Menu add command Trace "Next Line Hit" \
+      {tfind_cmd "tfind line"} \
+      -underline 5 -accelerator L
+    
+    $Menu add command Trace "Next Hit Here" \
+      {tfind_cmd "tfind tracepoint"} \
+      -underline 9 -accelerator H
+    
+    $Menu add separator
+    $Menu add command Trace "Tfind Line..." \
+      "ManagedWin::open TfindArgs -Type LN" \
+      -underline 9 -accelerator E
+    
+    $Menu add command Trace "Tfind PC..." \
+      "ManagedWin::open TfindArgs -Type PC" \
+      -underline 7 -accelerator C
+    
+    $Menu add command Trace "Tfind Tracepoint..." \
+      "ManagedWin::open TfindArgs -Type TP" \
+      -underline 6 -accelerator T
+
+    $Menu add command Trace "Tfind Frame..." \
+      "ManagedWin::open TfindArgs -Type FR" \
+      -underline 6 -accelerator F
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_plugin_menu - Creates the optional plugin menu
+  # ------------------------------------------------------------------  
+  private method create_plugin_menu {} {
+    global gdb_plugins
+
+    $Menu add menubutton plugin "PlugIn" 4
+    set plugins_available 0
+    foreach plugin_dir $gdb_plugins {
+      if {[catch {source [file join $plugin_dir plugins.tcl]} txt]} {
+	dbug E $txt
+      }
+    }
+
+    if {! $plugins_available} {
+      # No plugins are available for this configuration,
+      # so remove the menu
+      debug "No plugins configured, go remove the PlugIn menu..."
+      $Menu delete plugin
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_pref_menu - Creates the standard preferences menu
+  # ------------------------------------------------------------------  
+  private method create_pref_menu {} {
+
+    $Menu add menubutton pref "Preferences" 0
+    
+    $Menu add command Other "Global..." \
+      "ManagedWin::open GlobalPref -transient" -underline 0
+    
+    $Menu add command Other "Source..." \
+      "ManagedWin::open SrcPref -transient" -underline 0
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_help_menu - Creates the standard help menu
+  # ------------------------------------------------------------------  
+  private method create_help_menu {} {
+
+    $Menu add menubutton help "Help" 0
+    $Menu add command Other "Help Topics" \
+      {HtmlViewer::open_help index.html} \
+      -underline 0
+    $Menu add separator
+    $Menu add command Other "About GDB..." \
+      {ManagedWin::open About -transient} \
+      -underline 0
+  }
+
+  ####################################################################
+  # The next set of functions are the generic button groups that gdb uses.
+  # Private.  Used at contruction time.
+  # These were previously at the GDBToolBar...
+  ####################################################################
+  
+  # ------------------------------------------------------------------
+  #  METHOD:  create_buttons - Add some buttons to the toolbar.
+  #                         Returns list of buttons in form acceptable
+  #                         to standard_toolbar.
+  # ------------------------------------------------------------------
+  private  method create_buttons {} {
+    global enable_external_editor
+
+    $Tool add button stop None {} {}
+    _set_runstop
+
+    if {[pref get gdb/mode]} {
+      $Tool add button tstop Control \
+                         [list $this do_tstop] "Start Collection" \
+	                 -image Movie_on_img
+
+      $Tool add button view Other [list $this set_control_mode 1] \
+	                 "Switch to Browse Mode" -image watch_movie_img
+
+      $Tool add separator
+
+    }
+
+    if {[pref get gdb/control_target]} {
+      create_control_buttons
+      if {[pref get gdb/mode]} {
+	create_trace_buttons 0
+      }
+    } elseif {[get pref gdb/mode]} {
+
+      #
+      # If we don't control the target, then we might as well
+      # put a copy of the trace controls on the source window.
+      #
+      create_trace_buttons 1
+   }
+
+    $Tool add separator
+
+    create_window_buttons
+
+    # Random bits of obscurity...
+    $Tool itembind reg   <Button-3> "ManagedWin::open RegWin -force"
+    $Tool itembind mem   <Button-3> "ManagedWin::open MemWin -force"
+    $Tool itembind watch <Button-3> \
+      "ManagedWin::open WatchWin -force"
+    $Tool itembind vars  <Button-3> \
+      "ManagedWin::open LocalsWin -force"
+
+    $Tool add separator
+
+    if {[info exists enable_external_editor] && $enable_external_editor} {
+      $Tool add button edit Other [code $source edit] "Edit Source" \
+	                      -image edit_img
+
+      $Tool add separator
+    }
+
+    # Add find in file entry box.
+    $Tool add label findlabel "Find:" "" -anchor e -font global/fixed
+    $Tool add custom searchbox entry "Search in editor" \
+       -bd 3 -font global/fixed -width 10
+
+    set callback [code $source search]
+    $Tool itembind searchbox <Return> \
+	    "$callback forwards \[eval %W get\]"
+    $Tool itembind searchbox <Shift-Return> \
+            "$callback backwards \[eval %W get\]"
+
+    $Tool add separator
+
+    $Tool toolbar_button_right_justify
+
+    create_stack_buttons
+
+    # This feature has been disabled for now.
+    # checkbutton $ButtonFrame.upd -command "$this _toggle_updates" \
+    #   -variable GDBSrcBar_state($this)
+    # lappend button_list $ButtonFrame.upd
+    # global GDBSrcBar_state
+    # ::set GDBSrcBar_state($this) $updatevalue
+    # balloon register $ButtonFrame.upd "Toggle Window Updates"
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_control_buttons - Creates the step, continue, etc buttons.
+  # ------------------------------------------------------------------
+  
+  private method create_control_buttons {} {
+    $Tool add button step Control [code $source inferior step] \
+      "Step (S)" -image step_img
+    
+    $Tool add button next Control [code $source inferior next] \
+      "Next (N)" -image next_img
+    
+    $Tool add button finish Control [code $source inferior finish] \
+      "Finish (F)" -image finish_img
+    
+    $Tool add button continue Control [code $source inferior continue] \
+      "Continue (C)" -image continue_img
+    
+    # A spacer before the assembly-level items looks good.  It helps
+    # to indicate that these are somehow different.
+    $Tool add separator
+    
+    $Tool add button stepi Control [code $source inferior stepi] \
+      "Step Asm Inst (S)" -image stepi_img
+    
+    $Tool add button nexti Control [code $source inferior nexti] \
+      "Next Asm Inst (N)" -image nexti_img
+    
+    _set_stepi
+
+    set Run_control_buttons {step next finish continue -stepi nexti}
+    
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_trace_buttons - Creates the next hit, etc.
+  # ------------------------------------------------------------------
+  
+  private method create_trace_buttons {{show 0}} {
+
+    if {$show} {
+      set command "add button"
+    } else {
+      set command "create"
+    }
+
+    $Tool $command tfindstart Trace {tfind_cmd "tfind start"} "First Hit <F>" \
+      -image rewind_img
+    
+    $Tool $command tfind Trace {tfind_cmd tfind} "Next Hit <N>" -image next_hit_img
+    
+    $Tool $command tfindprev Trace {tfind_cmd "tfind -"} "Previous Hit <P>" \
+      -image prev_hit_img
+    
+    $Tool $command tfindline Trace {tfind_cmd "tfind line"} "Next Line Hit <L>" \
+      -image next_line_img
+    
+    $Tool $command tfindtp Trace { tfind_cmd "tfind tracepoint"} \
+      "Next Hit Here <H>" -image next_check_img
+
+    set Trace_control_buttons {tfindstart tfind tfindprev tfindline tfindtp}
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_window_buttons - Creates the registers, etc, buttons
+  # ------------------------------------------------------------------
+  
+  private method create_window_buttons {} {
+    $Tool add button reg Other {ManagedWin::open RegWin} \
+                           "Registers (Ctrl+R)" -image reg_img
+
+    $Tool add button mem Other {ManagedWin::open MemWin} \
+                           "Memory (Ctrl+M)" -image memory_img
+
+    $Tool add button stack Other {ManagedWin::open StackWin} \
+                             "Stack (Ctrl+S)" -image stack_img
+
+    $Tool add button watch Other {ManagedWin::open WatchWin} \
+                             "Watch Expressions (Ctrl+W)" -image watch_img
+
+    $Tool add button vars Other {ManagedWin::open LocalsWin} \
+                            "Local Variables (Ctrl+L)" -image vars_img
+
+    if {[pref get gdb/control_target]} {
+      $Tool add button bp Other {ManagedWin::open BpWin} \
+                            "Breakpoints (Ctrl+B)" -image bp_img
+    }
+
+    if {[pref get gdb/mode]} {
+      $Tool add button tp Other \
+        {ManagedWin::open BpWin -tracepoints 1} \
+	"Tracepoints (Ctrl+T)" -image tp_img
+      
+      $Tool add button tdump Trace {ManagedWin::open TdumpWin} \
+                               "Tdump (Ctrl+D)" -image tdump_img
+    }
+
+    $Tool add button con Other {ManagedWin::open Console} \
+                           "Console (Ctrl+N)" -image console_img
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  create_stack_buttons - Creates the up down bottom stack buttons
+  # ------------------------------------------------------------------
+  
+  private method create_stack_buttons {} {
+
+    $Tool add button down {Trace Control} \
+      [code $source stack down] \
+      "Down Stack Frame" -image down_img
+
+    $Tool add button up {Trace Control} \
+      [code $source stack up] \
+      "Up Stack Frame" -image up_img
+
+    $Tool add button bottom {Trace Control} \
+      [code $source stack bottom] \
+      "Go to Bottom of Stack" -image bottom_img
+
+  }
+
+  ####################################################################
+  #
+  # Auxiliary methods used by the toolbar
+  # 
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  #  METHOD:  _load_images - Load standard images.  Private method.
+  # ------------------------------------------------------------------
+  public method _load_images { {reconfig 0} } {
+    global gdb_ImageDir
+    if {!$reconfig && $_loaded_images} {
+      return
+    }
+    set _loaded_images 1
+
+    lappend imgs console reg stack vmake vars watch memory bp
+    foreach name $imgs {
+      image create photo ${name}_img -file [file join $gdb_ImageDir ${name}.gif]
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  _load_src_images - Load standard images.  Private method.
+  # ------------------------------------------------------------------
+  method _load_src_images { {reconf 0} } {
+    global gdb_ImageDir
+
+    if {!$reconf && $_loaded_src_images} {
+      return
+    }
+    set _loaded_src_images 1
+
+    foreach name {run stop step next finish continue edit \
+		    stepi nexti up down bottom Movie_on Movie_off \
+		    next_line next_check next_hit rewind prev_hit \
+		  watch_movie run_expt tdump tp} {
+      image create photo ${name}_img -file [file join $gdb_ImageDir ${name}.gif]
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  _set_runstop - Set state of run/stop button.
+  #
+  #  busy        - Run button becomes disabled
+  #  running     - Stop button appears, allowing user to stop executing target
+  #  downloading - Stop button appears, allowing user to interrupt downloading
+  #  normal      - Run button appears, allowing user to run/re-run exe
+  # ------------------------------------------------------------------
+  public method _set_runstop {} {
+    dbug I $runstop
+
+    switch $runstop {
+      busy {
+	$Tool itemconfigure stop -state disabled
+      }
+      downloading {
+	$Tool itemconfigure stop -state normal -image stop_img \
+	  -command [code $this cancel_download]
+	$Tool itemballoon stop "Stop"
+      }
+      running {
+	$Tool itemconfigure stop -state normal -image stop_img \
+	  -command [code $source inferior stop]
+	$Tool itemballoon stop "Stop"
+      }
+      normal {
+	$Tool itemconfigure stop -state normal -image run_img \
+	  -command [code $source inferior run]
+	$Tool itemballoon stop "Run (R)"
+      }
+      default {
+	dbug W "unknown state $runstop"
+      }
+    }
+  }
+
+
+  # ------------------------------------------------------------------
+  #  METHOD:  _set_stepi - Set state of stepi/nexti buttons.
+  # ------------------------------------------------------------------
+  public method _set_stepi {} {
+    
+    # Only do this in synchronous mode
+    if {!$Tracing} {
+      # In source-only mode, disable these buttons.  Otherwise, enable
+      # them.
+      if {$displaymode == "SOURCE"} {
+	set state disabled
+      } else {
+	set state normal
+      }
+      $Tool itemconfigure stepi -state $state
+      $Tool itemconfigure nexti -state $state
+    }
+  }
+
+
+  ####################################################################
+  #
+  # State control methods used by both the menu and the toolbar
+  # 
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  #  METHOD:  handle_trace_find_hook - response to the tfind command.
+  #             If the command puts us in a new mode, then switch modes...
+  # ------------------------------------------------------------------
+  method handle_trace_find_hook {mode from_tty} {
+    debug "mode: $mode, from_tty: $from_tty, Browsing: $Browsing"
+    if {[string compare $mode -1] == 0} {
+      if {$Browsing} {
+	set_control_mode 0
+      }
+    } else {
+      if {!$Browsing} {
+	set_control_mode 1
+      }
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  set_control_mode - sets up the srcbar for browsing 
+  #  a trace experiment.
+  #   mode: 1 => browse mode
+  #         0 => control mode
+  # ------------------------------------------------------------------
+  method set_control_mode  {mode} {
+    debug "set_control_mode called with mode $mode"
+    if {$mode} {
+      set Browsing 1
+      $Tool itemconfigure view -image run_expt_img \
+                            -command "$this set_control_mode 0"
+      $Tool itemballoon view "Switch to Control mode"
+      # Now swap out the buttons...
+      $Tool toolbar_swap_button_lists $Trace_control_buttons \
+                                      $Run_control_buttons
+      enable_ui 1
+    } else {
+      if {$Browsing} {
+	tfind_cmd {tfind none}
+      }
+      set Browsing 0
+      $Tool itemconfigure view -image watch_movie_img \
+                            -command "$this set_control_mode 1"
+      $Tool itemballoon view "Switch to Browse mode"
+      # Now swap out the buttons...
+      $Tool toolbar_swap_button_lists $Run_control_buttons \
+                                      $Trace_control_buttons
+      enable_ui 1
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  reconfig - reconfigure the srcbar
+  #                      used when preferences change
+  # ------------------------------------------------------------------
+  public method reconfig {} {
+    debug
+    _load_src_images 1
+    _load_images 1
+    # FIXME: Must Check if we are Tracing and set the buttons accordingly.
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  set_variable - run when user enters a `set' command.
+  #
+  #  FIXME: Should not be accessing the base class internal data
+  #         As the spec says, one must clear the menu and recreate it.
+  # ------------------------------------------------------------------  
+  public method set_variable {event} {
+    set varname [$event get variable]
+    set value   [$event get value]
+    debug "Got $varname = $value"
+
+    if {$varname == "os"} {
+      # Make current_menu pointer point to the View Menu.
+      # FIXME: Should not be accessing the base class internal data directly
+      set view_menu [menu_find View]
+      # Restore the current_menu pointer.
+      set save_menu [$Menu menubar_set_current_menu $view_menu]
+      set title "Kernel Objects"
+
+      # Look for the KOD menu entry...
+      if {[catch {$view_menu index $title} index]} {
+	set index none
+      }
+
+      # FIXME: This assumes that the KOD menu is the last one as it does not
+      # adjust the index information kept by the GDBMenuBar class.
+      if {$value == ""} {
+	# No OS, so remove KOD from View menu.
+	if {$index != "none"} {
+          # FIXME: Should not be accessing the base class internal data
+	  $view_menu delete $index
+	}
+      } else {
+	# Add KOD to View menu, but only if it isn't already there.
+	if {$index == "none"} {
+	  $Menu add command Other $title \
+            {ManagedWin::open KodWin} \
+	    -underline 0 -accelerator "Ctrl+K"
+	}
+      }
+
+      # Restore the current_menu pointer.
+      $Menu menubar_set_current_menu $save_menu
+
+      global gdb_kod_cmd
+      set gdb_kod_cmd $value
+    }
+  }
+
+  ####################################################################
+  # The following method enables/disables both menus and buttons.
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  # METHOD:  enable_ui - enable/disable the appropriate buttons and menus
+  # Called from the busy, idle, and no_inferior hooks.
+  #
+  # on must be:
+  # value      Control    Other    Trace    State
+  #   0          off       off      off     gdb is busy
+  #   1          on        on       off     gdb has inferior, and is idle
+  #   2          off       on       off     gdb has no inferior, and is idle
+  # ------------------------------------------------------------------
+  public method enable_ui {on} {
+    global tcl_platform
+    debug "$on - Browsing=$Browsing"
+
+    # Do the enabling so that all the disabling happens first, this way if a
+    # button belongs to two groups, enabling takes precedence, which is
+    #  probably right.
+
+    switch $on {
+      0 {
+        # Busy
+	set enable_list {Control disabled \
+			   Other disabled \
+			   Trace disabled \
+			   Attach disabled \
+			   Detach disabled}
+      }
+      1 {
+        # Idle, with inferior
+	if {!$Browsing} {
+	  set enable_list {Trace disabled \
+			     Control normal \
+			     Other normal \
+			     Attach disabled \
+			     Detach normal }
+	  # set the states of stepi and nexti correctly
+	  _set_stepi
+	} else {
+	  set enable_list {Control disabled Other normal Trace normal}
+	}
+
+      }
+      2 {
+        # Idle, no inferior
+	set enable_list {Control disabled \
+			   Trace disabled \
+			   Other normal \
+			   Attach normal \
+			   Detach disabled }
+      }
+      default {
+	debug "Unknown type: $on in enable_ui"
+	return
+      }
+    }
+
+    $Menu set_class_state $enable_list
+    $Tool set_class_state $enable_list
+  }
+
+  ####################################################################
+  #
+  # Execute actions corresponding to menu events
+  # 
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  # METHOD:  do_attach: attach to a running target
+  # ------------------------------------------------------------------
+  method do_attach {menu} {
+      gdbtk_attach_native
+  }
+
+  # ------------------------------------------------------------------
+  # METHOD:  do_detach: detach from a running target
+  # ------------------------------------------------------------------
+  method do_detach {menu} {
+    gdbtk_disconnect
+    gdbtk_idle
+  }
+
+  # ------------------------------------------------------------------
+  # METHOD:  do_kill: kill the current target
+  # ------------------------------------------------------------------
+  method do_kill {menu} {
+    gdb_cmd "kill"
+    run_hooks gdb_no_inferior_hook
+  }
+  
+  # ------------------------------------------------------------------
+  # METHOD:  do_connect: connect to a remote target 
+  #                      in asynch mode if async is 1
+  # ------------------------------------------------------------------
+  method do_connect {menu {async 0}} {
+
+    set successful [gdbtk_connect $async]
+
+    if {$successful} {
+      $menu entryconfigure "Connect to target" -state disabled
+      $menu entryconfigure "Disconnect" -state normal
+    } else {
+      $menu entryconfigure "Connect to target" -state normal
+      $menu entryconfigure "Disconnect" -state disabled
+    }
+
+    # Make the menu reflect this change
+    ::update idletasks
+  }
+
+  # ------------------------------------------------------------------
+  # METHOD:  do_disconnect: disconnect from a remote target 
+  #                               in asynch mode if async is 1.   
+  #   
+  # ------------------------------------------------------------------
+  method do_disconnect {menu {async 0}} {
+    debug "$menu $async"
+    #
+    # For now, these are the same, but they might be different...
+    # 
+
+    gdbtk_disconnect $async
+
+    $menu entryconfigure "Connect to target" -state normal
+    $menu entryconfigure "Disconnect" -state disabled
+  }
+
+  ####################################################################
+  #
+  # Execute actions corresponding to toolbar events
+  # 
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  #  METHOD:  _toggle_updates - Run when the update checkbutton is
+  #                             toggled.  Private method.
+  # ------------------------------------------------------------------
+  public method _toggle_updates {} {
+    global GDBSrcBar_state
+    if {$updatecommand != ""} {
+      uplevel \#0 $updatecommand $GDBSrcBar_state($this)
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  cancel_download
+  # ------------------------------------------------------------------
+  public method cancel_download {} {
+    global download_dialog download_cancel_ok
+
+    if {"$download_dialog" != ""} {
+      $download_dialog cancel
+    } else {
+      set download_cancel_ok 1
+    }
+  }
+
+  ####################################################################
+  #
+  # Execute actions that can be activated by both menu entries and
+  # toolbar buttons
+  # 
+  ####################################################################
+
+  # ------------------------------------------------------------------
+  # METHOD:  do_tstop: Change the GUI state, then do the tstop or
+  #                    tstart command, whichever is appropriate.   
+  #   
+  # ------------------------------------------------------------------
+  method do_tstop {} {
+    debug "do_tstop called... Collecting is $Collecting"
+
+    if {!$Collecting} {
+      #
+      # Start the trace experiment
+      #
+
+      if {$Browsing} {
+	set ret [tk_messageBox -title "Warning" -message \
+"You are currently browsing a trace experiment. 
+This command will clear the results of that experiment.
+Do you want to continue?" \
+		   -icon warning -type okcancel -default ok]
+	if {[string compare $ret cancel] == 0} {
+	  return
+	}
+	set_control_mode 1
+      }
+      if {[tstart]} {
+        # FIXME: Must enable the Stop Collection menu item and
+        # disable the Start Collection item
+        $Tool itemconfigure tstop -image Movie_off_img
+        $Tool itemballoon tstop "End Collection"
+	set Collecting 1
+      } else {
+	tk_messageBox -title Error \
+          -message "Error downloading tracepoint info" \
+	  -icon error -type ok
+      }
+    } else {
+      #
+      # Stop the trace experiment
+      #
+
+      if {[tstop]} {	
+        # FIXME: Must enable the Stop Collection menu item and
+        # disable the Start Collection item
+        $Tool itemconfigure tstop -image Movie_on_img
+        $Tool itemballoon tstop "Start Collection"
+	set Collecting 0
+     }
+    }
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  busy - BusyEvent handler
+  # ------------------------------------------------------------------
+  method busy {event} {
+    enable_ui 0
+  }
+
+  # ------------------------------------------------------------------
+  #  METHOD:  idle - IdleEvent handler
+  # ------------------------------------------------------------------
+  method idle {event} {
+    enable_ui 1
+  }
+
+  ####################################################################
+  #
+  #  PRIVATE DATA
+  #
+  ####################################################################
+
+  # This is a handle on our parent source window.
+  private variable source {}
+
+  # The GdbMenuBar component
+  private variable Menu
+
+  # The GdbToolBar component
+  private variable Tool
+
+  # FIXME - Need to break the images into the sets needed for
+  # each button group, and load them when the button group is
+  # created.
+
+  # This is set if we've already loaded the standard images.
+  private common _loaded_images 0
+
+  # This is set if we've already loaded the standard images.  Private
+  # variable.
+  private common _loaded_src_images 0
+
+  # These buttons go in the control area when we are browsing
+  protected variable Trace_control_buttons 
+
+  # And these go in the control area when we are running
+  protected variable Run_control_buttons
+
+  ####################################################################
+  #
+  #  PUBLIC DATA
+  #
+  ####################################################################
+
+  # This is the command that should be run when the `update'
+  # checkbutton is toggled.  The current value of the checkbutton is
+  # appended to the command.
+  public variable updatecommand {}
+
+  # This controls whether the `update' checkbutton is turned on or
+  # off.
+  public variable updatevalue 0 {
+    global GDBSrcBar_state
+    ::set GDBSrcBar_state($this) $updatevalue
+  }
+
+  # This holds the source window's display mode.  Valid values are
+  # SOURCE, ASSEMBLY, SRC+ASM, and MIXED.
+  public variable displaymode SOURCE {
+    _set_stepi
+  }
+
+  # This indicates what is the inferior state.
+  # Possible values are: {busy running downloading normal}
+  public variable runstop normal {
+    dbug I "configuring runstop $runstop"
+
+    # Set the Run/Stop button accordingly
+    _set_runstop
+  }
+
+  # The next three determine the state of the application when Tracing is enabled.
+
+  public variable Tracing 0     ;# Is tracing enabled for this gdb?
+  public variable Browsing   0  ;# Are we currently browsing a trace experiment?
+  public variable Collecting 0  ;# Are we currently collecting a trace experiment?
+}

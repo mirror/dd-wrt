@@ -1,0 +1,62 @@
+2003-04-03  Patrick Doyle  <wpd@delcomsys.com>
+
+	* include/var_cache.h (HAL_DCACHE_SYNC): Step through twice the
+	number of lines in order to ensure that dirty lines in the first
+	16Kbytes of memory are flushed.
+
+2003-03-04  Paul Fine <pfine@delcomsys.com>
+	
+	* include/var_cache.h: Modify the HAL_DCACHE_SYNC macro to look
+	like the MACRO defined in the PPC60x HAL.
+	
+
+2002-12-12  Gary Thomas  <gthomas@ecoscentric.com>
+2002-12-12  Patrick Doyle <wpd@delcomsys.com>
+
+	* src/variant.S: 
+	* src/var_misc.c: 
+	* src/var_intr.c: 
+	* src/quicc2_diag.c: 
+	* include/variant.inc: 
+	* include/var_regs.h: 
+	* include/var_intr.h: 
+	* include/var_cache.h: 
+	* include/mpc8260.h: 
+	* cdl/hal_powerpc_mpc8260.cdl: New package - variant support for
+	Motorola MPC8260 based systems.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+// Copyright (C) 2002 Gary Thomas
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

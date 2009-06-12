@@ -1,0 +1,164 @@
+# ====================================================================
+#
+#      tasks.cdl
+#
+#      uITRON task related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  hmt
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGNUM_UITRON_TASKS {
+    display       "Number of tasks"
+    flavor        data
+    legal_values  1 to 65535
+    default_value 4
+    description   "
+        The number of uITRON tasks present in the system.
+        Valid task object IDs will range from 1 to this value."
+}
+cdl_option CYGNUM_UITRON_START_TASKS {
+    display       "Start tasks"
+    flavor        data
+    legal_values  0 to 65535
+    default_value 1
+    description   "
+        The number of uITRON tasks to start automatically.
+        Tasks from 1 to this value will be started
+        at the beginning of application execution.
+        A value of zero here means to start them all.
+        Tasks started in this way have a start code of
+        zero, as if they were started by sta_tsk(i,0).
+        If create and delete operations are supported,
+        this number should be no greater than the number
+        of tasks created initially."
+}
+cdl_component CYGPKG_UITRON_TASKS_CREATE_DELETE {
+    display       "Support create and delete"
+    flavor        bool
+    default_value 1
+    description   "
+        Support task create and delete operations (cre_tsk, del_tsk).
+        Otherwise all tasks are created, up to the number specified above."
+
+    cdl_option CYGNUM_UITRON_TASKS_INITIALLY {
+        display       "Number of tasks created initially"
+        flavor        data
+        legal_values  1 to 65535
+        default_value 4
+        description   "
+            The number of uITRON tasks initially created.
+            This number should not be more than the number
+            of tasks in the system, though setting it to a large
+            value to mean 'all' is acceptable.
+            Initially, only tasks numbered 1 to this number exist;
+            higher numbered ones must be created before use."
+    }
+}
+cdl_option CYGNUM_UITRON_STACK_SIZE {
+    display       "Default stack size"
+    flavor        data
+    legal_values  128 to 0x7FFFFFFF
+    default_value 2048
+    description   "
+        Define a default stack size for uITRON tasks,
+        for use in the initialization options below.
+        This will be overridden where it is used if the
+        architectural HAL requires a minimum stack size
+        to handle interrupts correctly."
+}
+cdl_option CYGDAT_UITRON_TASK_EXTERNS {
+    display       "Externs for initialization"
+    flavor        data
+    default_value {"extern \"C\" void task1( unsigned int ); \\\n\
+                    extern \"C\" void task2( unsigned int ); \\\n\
+                    extern \"C\" void task3( unsigned int ); \\\n\
+                    extern \"C\" void task4( unsigned int ); \\\n\
+                    static char stack1[ MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ], \\\n\
+                    stack2[ MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ], \\\n\
+                    stack3[ MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ], \\\n\
+                    stack4[ MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ];"}
+    description   "
+        Task initializers may refer to external objects
+        such as memory for stack or functions to call.
+        Use this option to define or declare any external
+        objects needed by the task static initializer below.
+        Example: create some memory for a stack using
+        'static char stack1\[CYGNUM_UITRON_STACK_SIZE\];'
+        to set up a chunk of memory of the default stack size.
+        Note: this option is invoked in the 'outermost' context
+        of C++ source, where global/static objects are created;
+        it should contain valid, self-contained, C++ source."
+}
+cdl_option CYGDAT_UITRON_TASK_INITIALIZERS {
+    display       "Static initializers"
+    flavor        data
+    default_value {"CYG_UIT_TASK( \"t1\", 1, task1, &stack1, MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ), \\\n\
+                    CYG_UIT_TASK( \"t2\", 2, task2, &stack2, MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ), \\\n\
+                    CYG_UIT_TASK( \"t3\", 3, task3, &stack3, MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ), \\\n\
+                    CYG_UIT_TASK( \"t4\", 4, task4, &stack4, MAX(CYGNUM_UITRON_STACK_SIZE, CYGNUM_HAL_STACK_SIZE_MINIMUM) ),"}
+    description   "
+        Tasks must be statically
+        initialized: enter a list of initializers
+        separated by commas, one per line.
+        An initializer is
+        'CYG_UIT_TASK(NAME,PRIO,FUNC,STACK,SIZE)'
+        where name is a quoted string to name the task,
+        prio is the initial priority of the task,
+        func is the name of the entry point,
+        stack is the address of the task's stack,
+        and size is the size of the task's stack.
+        When create and delete operations are supported,
+        'CYG_UIT_TASK_NOEXS(NAME,STACK,SIZE)' should be
+        used for tasks which are not initially created,
+        in order to tell the system what memory to use
+        for stacks when these tasks are created later on.
+        Using 'CYGNUM_UITRON_STACK_SIZE' for size
+        is recommended, to use the option defined above,
+        so long as that truly is the size of your stack(s).
+        Note: this option is invoked in the context of a
+        C++ array initializer, between curly brackets.
+        Ensure that the number of initializers here exactly
+        matches the number of tasks specified."
+}

@@ -1,0 +1,130 @@
+# ====================================================================
+#
+#      h8300_h8max_eth_drivers.cdl
+#
+#      Ethernet drivers - support for DP83902A(RTL8019AS) 
+#      ethernet controller on the H8MAX board.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s): ysato     
+# Contributors: ysato  
+# Date: 2002-08-10          
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_H8300_H8MAX {
+    display       "H8MAX board ethernet driver"
+    description   "
+          	Ethernet driver for H8MAX" 
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_HAL_H8300_H8300H_H8MAX
+    compile       -library=libextras.a if_h8max.c
+
+    include_dir   cyg/io
+
+    # FIXME: This really belongs in the NS DP83902A package
+    cdl_interface CYGINT_DEVS_ETH_NS_DP83902A_REQUIRED {
+        display   "NS dp83902a ethernet driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_NS_DP83902A_INL <cyg/io/devs_eth_h8300_h8max.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_NS_DP83902A_CFG <pkgconf/devs_eth_h8300_h8max.h>"
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_H8300_H8MAX_ETH0 {
+        display       "Ethernet port 0 driver"
+        flavor        bool
+        default_value 1
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH0
+
+        implements CYGINT_DEVS_ETH_NS_DP83902A_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_H8300_H8MAX_ETH0_NAME {
+            display       "Device name for the ETH0 ethernet port 0 driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                RTL8019AS ethernet port 0."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_H8300_H8MAX_ETH0_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+	    default_value 0
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA."
+            
+            cdl_option CYGDAT_DEVS_ETH_H8300_H8MAX_ETH0_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x08, 0x00, 0x00, 0x00, 0x00, 0x01}"}
+                description   "The ethernet station address"
+            }
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_H8300_AKI3068NET_OPTIONS {
+        display "PCMCIA ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_CF_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the PCMCIA ethernet driver package.
+                These flags are used in addition
+                to the set of global flags."
+        }
+    }
+}

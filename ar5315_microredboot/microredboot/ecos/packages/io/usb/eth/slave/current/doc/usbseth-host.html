@@ -1,0 +1,328 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Example Host-side Device Driver</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="PREVIOUS"
+TITLE="Network Device for the eCos TCP/IP Stack"
+HREF="usbseth-netdev.html"><LINK
+REL="NEXT"
+TITLE="Communication Protocol"
+HREF="usbseth-protocol.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Support for Developing USB-ethernet Peripherals</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbseth-netdev.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbseth-protocol.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBSETH-HOST"
+>Example Host-side Device Driver</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN242"
+></A
+><H2
+>Name</H2
+>Example Host-side Device Driver&nbsp;--&nbsp;Provide host-side support for the eCos USB-ethernet package</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN245"
+></A
+><H2
+>Description</H2
+><P
+>The USB-ethernet package is supplied with a single host-side device
+driver. This driver has been developed against the Linux kernel
+2.2.16-22, as shipped with Red Hat 7. The driver is provided as is and
+should not be considered production quality: for example it only
+checks for a bogus vendor id <TT
+CLASS="LITERAL"
+>0x4242</TT
+> rather than an
+official vendor id supplied by the <A
+HREF="http://www.usb.org/"
+TARGET="_top"
+>USB Implementers Forum</A
+>. Also, if the
+peripheral involves multiple configurations or multiple interfaces, it
+will fail to detect this. However, the driver can be used for simple
+testing and as the basis of a full device driver. Details of the
+protocol used between host and peripheral can be found in the <A
+HREF="usbseth-protocol.html"
+>Communication Protocol</A
+> section.</P
+><P
+>The host-side device driver can be found in the <TT
+CLASS="FILENAME"
+>host</TT
+> subdirectory of the USB-ethernet
+package, specifically the file <TT
+CLASS="FILENAME"
+>ecos_usbeth.c</TT
+>, and
+comes with a <TT
+CLASS="FILENAME"
+>Makefile</TT
+>. Both files may need
+to be modified for specific applications. For example, the vendor id
+table <TT
+CLASS="LITERAL"
+>ecos_usbeth_implementations</TT
+> may need to be
+updated for the specific USB peripheral being built. The
+<TT
+CLASS="FILENAME"
+>Makefile</TT
+> assumes that the Linux kernel sources
+reside in <TT
+CLASS="FILENAME"
+>/usr/src/linux</TT
+>, and
+that the kernel has already been configured and built. Assuming this
+is the case, the device driver can be built simply by invoking
+<B
+CLASS="COMMAND"
+>make</B
+> with no additional arguments. This will result
+in a dynamically loadable kernel module,
+<TT
+CLASS="FILENAME"
+>ecos_usbeth.o</TT
+>, in the current directory.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>As normal for Linux kernel builds, the generated files such as
+<TT
+CLASS="FILENAME"
+>ecos_usbeth.o</TT
+> live in the same directory as the
+source tree. This is very different from eCos where the source tree
+(or component repository) is kept separate from any builds. There may
+be problems if the component repository is kept read-only or if it is
+put under source code control. Any such problems can be avoided by
+making a copy of the <TT
+CLASS="FILENAME"
+>host</TT
+>
+subdirectory and building that copy.</P
+></BLOCKQUOTE
+></DIV
+><P
+>Loading the kernel module into the current system requires root
+privileges. If the generic USB support is also a loadable module and
+has not been loaded already, this must happen first:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+># insmod usb-uhci
+Using /lib/modules/2.2.16-22/usb/usb-uhci.o</PRE
+></TD
+></TR
+></TABLE
+><P
+>Depending on the host hardware, the <TT
+CLASS="LITERAL"
+>uhci</TT
+> or
+<TT
+CLASS="LITERAL"
+>usb-ohci</TT
+> modules may be more appropriate. Loading
+the generic USB module will typically result in a number of messages
+to the logfile <TT
+CLASS="FILENAME"
+>/var/log/messages</TT
+>, giving details
+of the specific host-side hardware that has been detected plus any
+hubs. The next step is to load the USB-ethernet module:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+># insmod ecos_usbeth.o</PRE
+></TD
+></TR
+></TABLE
+><P
+>This should result in a number of additional diagnostics in the
+logfile:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>Apr 1 18:01:08 grumpy kernel: eCos USB-ethernet device driver
+Apr 1 18:01:08 grumpy kernel: usb.c: registered new driver ecos_usbeth</PRE
+></TD
+></TR
+></TABLE
+><P
+>If a suitable USB peripheral is now connected the host will detect
+this, assign an address in the local USB network, obtain enumeration
+data, and find a suitable device driver. Assuming the peripheral and
+device driver agree on the supported vendor ids, the
+<TT
+CLASS="FILENAME"
+>ecos_usbeth.o</TT
+> module will be selected and this
+will be reported in the system log:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>Apr 1 18:04:12 grumpy kernel: usb.c: USB new device connect, assigned device number 3
+Apr 1 18:04:12 grumpy kernel: eCos-based USB ethernet peripheral active at eth1</PRE
+></TD
+></TR
+></TABLE
+><P
+>What can happen next depends very much on the software that is running
+on top of the USB-ethernet package inside the peripheral. For example,
+if there is a TCP/IP stack then it should be possible to bring up a
+network connection between host and peripheral using
+<B
+CLASS="COMMAND"
+>ifconfig</B
+>.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbseth-netdev.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbseth-protocol.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Network Device for the eCos TCP/IP Stack</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Communication Protocol</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

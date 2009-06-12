@@ -1,0 +1,226 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     dns.sgml                                                    -->
+<!--                                                                 -->
+<!--     eCos TCP/IP Stacks                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- Copyright (c) 2003 Andrew Lunn                                  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART ID="net-ns-dns">
+<TITLE>DNS for eCos and RedBoot</TITLE>
+<PARTINTRO>
+<PARA>
+<productname>eCos</productname> and
+<productname>RedBoot</productname>
+can both use the DNS package to perform network name lookups.
+</PARA>
+</PARTINTRO>
+<CHAPTER id="net-ns-dns-api">
+<TITLE>DNS</TITLE>
+<SECT1 id="net-ns-dns-api1">
+<TITLE>DNS API</TITLE>
+<PARA>The DNS client uses the normal BSD API for performing lookups:
+<function>gethostbyname(),</function>
+<FUNCTION>gethostbyaddr()</FUNCTION>,
+<FUNCTION>getaddrinfo()</function>,
+<FUNCTION>getnameinfo()</function>. 
+</PARA>
+<PARA>There are a few restrictions:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>If the DNS server returns multiple authoritive records
+for a host name to <function>gethostbyname</function>, the hostent will only contain a record for the
+first entry. If multiple records are desired, use 
+<function>getaddrinfo</function>, which will return multiple results.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The code has been made thread safe. ie multiple threads
+may call 
+<FUNCTION>gethostbyname()</FUNCTION>
+ without causing problems to the hostent structure returned. What
+is not safe is one thread using both 
+<FUNCTION>gethostbyname()</FUNCTION>
+ and 
+<FUNCTION>gethostbyaddr()</FUNCTION>.
+A call to one will destroy the results from the previous call
+to the other function. <FUNCTION>getaddrinfo()</FUNCTION> and
+<FUNCTION>getnameinfo()</FUNCTION> are thread
+safe and so these are the preferred interfaces. They are also address
+family independent so making it easier to port code to IPv6.</PARA>
+</LISTITEM>
+<LISTITEM><PARA>The DNS client will only return IPv4 addresses to
+RedBoot. At the moment this is not really a limitation,
+since RedBoot only supports IPv4 and not IPv6.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>To initialise the DNS client the following function must be
+called:</PARA>
+<PROGRAMLISTING>#include &lt;network.h&gt;
+int cyg_dns_res_start(char * dns_server)</PROGRAMLISTING>
+
+<PARA>Where dns_server is the address of the DNS server. The address
+must be in numeric form and can be either an IPv4 or an IPv6 address.
+</PARA>
+<PARA>There also exists a deprecated function to start the DNS
+client:</PARA>
+<PROGRAMLISTING>
+int cyg_dns_res_init(struct in_addr *dns_server)</PROGRAMLISTING>
+<PARA>where dns_server is the address of the DNS server
+the client should query. The address should be in network order and
+can only be an IPv4 address.
+</PARA>
+
+<PARA> On error both this function returns -1, otherwise
+0 for success. If lookups are attemped before this function has
+been called, they will fail and return NULL, unless numeric host addresses
+are passed. In this cause, the address will be converted and returned
+without the need for a lookup.</PARA>
+
+<PARA>A default, hard coded, server may be specified in the CDL option
+<literal>CYGDAT_NS_DNS_DEFAULT_SERVER</literal>. The use of this is
+controlled by <literal>CYGPKG_NS_DNS_DEFAULT</literal>. If this is
+enabled, <literal>init_all_network_interfaces()</literal> will
+initialize the resolver with the hard coded address. The DHCP client
+or user code my override this address by calling
+<literal>cyg_dns_res_init</literal> again. </PARA>
+
+<PARA>The DNS client understands the concepts of the target being
+in a domain. By default no domain will be used. Host name lookups
+should be for fully qualified names. The domain name can be set
+and retrieved using the functions:
+<funcsynopsis>
+  <funcprototype>
+    <funcdef>int <function>getdomainname</function></funcdef>
+    <paramdef>char *<parameter>name</parameter></paramdef>
+    <paramdef>size_t <parameter>len</parameter></paramdef>
+  </funcprototype>
+  <funcprototype>
+    <funcdef>int <function>setdomainname</function></funcdef>
+    <paramdef>const char *<parameter>name</parameter></paramdef>
+    <paramdef>size_t <parameter>len</parameter></paramdef>
+  </funcprototype>
+</funcsynopsis>
+</para>
+
+<PARA>Alternatively, a hard coded domain name can be set using CDL.
+The boolean <literal>CYGPKG_NS_DNS_DOMAINNAME</literal> enables this
+and the domain name is taken from
+<literal>CYGPKG_NS_DNS_DOMAINNAME_NAME</literal>.</PARA>
+
+<PARA>Once set, the DNS client will use some simple heuristics when
+      deciding how to use the domainname. If the name given to the
+      client ends with a "." it is assumed to be a FQDN and the domain
+      name will not be used. If the name contains a "." somewhere
+      within it, first a lookup will be performed without the
+      domainname. If that fails the domainname will be appended and
+      looked up. If the name does not contain a ".", the domainname is
+      appended and used for the first query. If that fails, the
+      unadorned name is lookup.
+</PARA>
+      <PARA>The <FUNCTION>getaddrinfo</FUNCTION> will return both IPv4 and
+        IPv6 addresses for a given host name, when IPv6 is enabled in
+        the eCos configuration.  The CDL option
+        <LITERAL>CYGOPT_NS_DNS_FIRST_FAMILY</LITERAL> controls the order
+        IPv6 and IPv4 addresses are returned in the linked list of
+        <LITERAL>addrinfo</LITERAL> structures. If the value
+        <LITERAL>AF_INET</LITERAL> is used, the IPv4 addresses will be
+        first. If the value <LITERAL>AF_INET6</LITERAL>, which is the
+        default, is used, IPv6 address will be first. This ordering will
+        control how clients attempt to connect to servers, ie using IPv6
+        or IPv4 first. 
+      </PARA>
+    </SECT1>
+    <SECT1 id="net-ns-dns-testing">
+      <TITLE>DNS Client Testing</TITLE> 
+      
+      <PARA>The DNS client has a test program, dns1.c, which tests many of
+        the features of the DNS client and the functions
+        <FUNCTION>gethostbyname(),</FUNCTION>
+        <FUNCTION>gethostbyaddr()</FUNCTION>,
+        <FUNCTION>getaddrinfo()</FUNCTION>,
+        <FUNCTION>getnameinfo()</FUNCTION>.
+      </PARA>
+      <PARA>In order for this test to work, a DNS server must be configured
+        with a number of names and addresses. The following is an example
+        forward address resolution database for bind v9, which explains the
+        requirements.</para>
+      
+      <PROGRAMLISTING>
+        $TTL            680400
+        @               IN      SOA     lunn.org.       andrew.lunn.lunn.org (
+        2003041801      ; serial
+        10800           ; refresh
+        1800            ; retry
+        3600000         ; expire
+        259200)         ; mimimum
+        IN      NS      londo.lunn.org.
+        
+        hostnamev4      IN      A       192.168.88.1
+        cnamev4         IN      CNAME   hostnamev4
+        hostnamev6      IN      AAAA    fec0::88:4:3:2:1
+        cnamev6         IN      CNAME   hostnamev6
+        hostnamev46     IN      A       192.168.88.2
+        hostnamev46     IN      AAAA    fec0::88:4:3:2:2
+        cnamev46        IN      CNAME   hostnamev46
+      </PROGRAMLISTING>
+      <PARA>The actual names and addresses do not matter, since they are
+        configurable in the test. What is important is the relationship
+        between the names and the addresses and there family. ie
+        hostnamev4 should map to one IPv4 address. hostnamev46 should
+        map to both an IPv4 and an IPv6 address. cnamev4 should be a
+        CNAME record for hostname4. Reverse lookup information is also
+        needed by the test.
+      </PARA>
+      <PARA>The information placed into the DNS server is also need in the
+        test case. A structure is defined to hold this
+        information:</PARA>
+      <PROGRAMLISTING>
+        struct test_info_s {
+            char * dns_server_v4;
+            char * dns_server_v6;
+            char * domain_name;
+            char * hostname_v4;
+            char * cname_v4;
+            char * ip_addr_v4;
+            char * hostname_v6;
+            char * cname_v6;
+            char * ip_addr_v6;
+            char * hostname_v46;
+            char * cname_v46;
+            char * ip_addr_v46_v4;
+            char * ip_addr_v46_v6;
+        };
+        </PROGRAMLISTING>
+      <PARA>The test program may hold a number of such structures for
+        different DNS server. The test will use each structure in turn
+        to perform the tests.  If IPv6 is not enabled in the eCos
+        configuration, the entries which use IPv6 may be assigned to
+        NULL.
+        </PARA>
+    </SECT1>
+  </CHAPTER>
+</PART>

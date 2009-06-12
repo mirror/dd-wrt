@@ -1,0 +1,1225 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Option Index,  Next: Index,  Prev: Contributors,  Up: Top
+
+Option Index
+************
+
+   GCC's command line options are indexed here without any initial `-'
+or `--'.  Where an option has both positive and negative forms (such as
+`-fOPTION' and `-fno-OPTION'), relevant entries in the manual are
+indexed under the most appropriate form; it may sometimes be useful to
+look up both forms.
+
+* Menu:
+
+* ###:                                   Overall Options.
+* $:                                     Preprocessor Options.
+* A:                                     Preprocessor Options.
+* a:                                     Debugging Options.
+* A-:                                    Preprocessor Options.
+* ansi <1>:                              Non-bugs.
+* ansi <2>:                              Other Builtins.
+* ansi <3>:                              Preprocessor Options.
+* ansi <4>:                              C Dialect Options.
+* ansi:                                  Standards.
+* aux-info:                              C Dialect Options.
+* b:                                     Target Options.
+* B:                                     Directory Options.
+* bcopy-builtin:                         PDP-11 Options.
+* c:                                     Link Options.
+* C:                                     Preprocessor Options.
+* c:                                     Overall Options.
+* D:                                     Preprocessor Options.
+* d:                                     Debugging Options.
+* da:                                    Debugging Options.
+* dA:                                    Debugging Options.
+* dB:                                    Debugging Options.
+* db:                                    Debugging Options.
+* dC:                                    Debugging Options.
+* dc:                                    Debugging Options.
+* dD <1>:                                Preprocessor Options.
+* dD:                                    Debugging Options.
+* dd:                                    Debugging Options.
+* dE:                                    Debugging Options.
+* de:                                    Debugging Options.
+* dF:                                    Debugging Options.
+* df:                                    Debugging Options.
+* dG:                                    Debugging Options.
+* dg:                                    Debugging Options.
+* dh:                                    Debugging Options.
+* dI:                                    Preprocessor Options.
+* di:                                    Debugging Options.
+* dj:                                    Debugging Options.
+* dk:                                    Debugging Options.
+* dL:                                    Debugging Options.
+* dl:                                    Debugging Options.
+* dM:                                    Preprocessor Options.
+* dm:                                    Debugging Options.
+* dM:                                    Debugging Options.
+* dN <1>:                                Preprocessor Options.
+* dN:                                    Debugging Options.
+* dn:                                    Debugging Options.
+* do:                                    Debugging Options.
+* dP:                                    Debugging Options.
+* dp:                                    Debugging Options.
+* dR:                                    Debugging Options.
+* dr:                                    Debugging Options.
+* dS:                                    Debugging Options.
+* ds:                                    Debugging Options.
+* dt:                                    Debugging Options.
+* dumpmachine:                           Debugging Options.
+* dumpspecs:                             Debugging Options.
+* dumpversion:                           Debugging Options.
+* dv:                                    Debugging Options.
+* dw:                                    Debugging Options.
+* dx:                                    Debugging Options.
+* dX:                                    Debugging Options.
+* dy:                                    Debugging Options.
+* dz:                                    Debugging Options.
+* E <1>:                                 Link Options.
+* E:                                     Overall Options.
+* EB <1>:                                ARC Options.
+* EB:                                    MIPS Options.
+* EL <1>:                                ARC Options.
+* EL:                                    MIPS Options.
+* falign-functions:                      Optimize Options.
+* falign-jumps:                          Optimize Options.
+* falign-labels:                         Optimize Options.
+* falign-loops:                          Optimize Options.
+* fallow-single-precision:               C Dialect Options.
+* falt-external-templates <1>:           Template Instantiation.
+* falt-external-templates:               C++ Dialect Options.
+* fargument-alias:                       Code Gen Options.
+* fargument-noalias:                     Code Gen Options.
+* fargument-noalias-global:              Code Gen Options.
+* fbounds-check:                         Optimize Options.
+* fbranch-probabilities:                 Optimize Options.
+* fcall-saved <1>:                       Interoperation.
+* fcall-saved:                           Code Gen Options.
+* fcall-used:                            Code Gen Options.
+* fcaller-saves:                         Optimize Options.
+* fcheck-new:                            C++ Dialect Options.
+* fcond-mismatch:                        C Dialect Options.
+* fconserve-space:                       C++ Dialect Options.
+* fconstant-string-class:                Objective-C Dialect Options.
+* fcse-follow-jumps:                     Optimize Options.
+* fcse-skip-blocks:                      Optimize Options.
+* fdata-sections:                        Optimize Options.
+* fdelayed-branch:                       Optimize Options.
+* fdelete-null-pointer-checks:           Optimize Options.
+* fdiagnostics-show-location:            Language Independent Options.
+* fdollars-in-identifiers <1>:           Interoperation.
+* fdollars-in-identifiers:               C++ Dialect Options.
+* fdump-class-hierarchy:                 Debugging Options.
+* fdump-translation-unit:                Debugging Options.
+* fdump-tree:                            Debugging Options.
+* fdump-unnumbered:                      Debugging Options.
+* fexceptions:                           Code Gen Options.
+* fexpensive-optimizations:              Optimize Options.
+* fexternal-templates <1>:               Template Instantiation.
+* fexternal-templates:                   C++ Dialect Options.
+* ffast-math:                            Optimize Options.
+* ffixed:                                Code Gen Options.
+* ffloat-store <1>:                      Disappointments.
+* ffloat-store:                          Optimize Options.
+* ffor-scope:                            C++ Dialect Options.
+* fforce-addr:                           Optimize Options.
+* fforce-mem:                            Optimize Options.
+* ffreestanding <1>:                     Function Attributes.
+* ffreestanding <2>:                     C Dialect Options.
+* ffreestanding:                         Standards.
+* ffunction-sections:                    Optimize Options.
+* fgcse:                                 Optimize Options.
+* fgcse-lm:                              Optimize Options.
+* fgcse-sm:                              Optimize Options.
+* fgnu-runtime:                          Objective-C Dialect Options.
+* fhosted:                               C Dialect Options.
+* finhibit-size-directive:               Code Gen Options.
+* finline-functions:                     Optimize Options.
+* finline-limit:                         Optimize Options.
+* finstrument-functions <1>:             Function Attributes.
+* finstrument-functions:                 Code Gen Options.
+* fkeep-inline-functions <1>:            Inline.
+* fkeep-inline-functions:                Optimize Options.
+* fkeep-static-consts:                   Optimize Options.
+* fleading-underscore:                   Code Gen Options.
+* fmem-report:                           Debugging Options.
+* fmessage-length:                       Language Independent Options.
+* fmove-all-movables:                    Optimize Options.
+* fms-extensions:                        C++ Dialect Options.
+* fnext-runtime:                         Objective-C Dialect Options.
+* fno-access-control:                    C++ Dialect Options.
+* fno-asm:                               C Dialect Options.
+* fno-branch-count-reg:                  Optimize Options.
+* fno-builtin <1>:                       Other Builtins.
+* fno-builtin:                           C Dialect Options.
+* fno-common <1>:                        Variable Attributes.
+* fno-common:                            Code Gen Options.
+* fno-const-strings:                     C++ Dialect Options.
+* fno-cprop-registers:                   Optimize Options.
+* fno-default-inline <1>:                Inline.
+* fno-default-inline <2>:                Optimize Options.
+* fno-default-inline:                    C++ Dialect Options.
+* fno-defer-pop:                         Optimize Options.
+* fno-elide-constructors:                C++ Dialect Options.
+* fno-enforce-eh-specs:                  C++ Dialect Options.
+* fno-for-scope:                         C++ Dialect Options.
+* fno-function-cse:                      Optimize Options.
+* fno-gnu-keywords:                      C++ Dialect Options.
+* fno-gnu-linker:                        Code Gen Options.
+* fno-guess-branch-probability:          Optimize Options.
+* fno-ident:                             Code Gen Options.
+* fno-implement-inlines <1>:             C++ Interface.
+* fno-implement-inlines:                 C++ Dialect Options.
+* fno-implicit-inline-templates:         C++ Dialect Options.
+* fno-implicit-templates <1>:            Template Instantiation.
+* fno-implicit-templates:                C++ Dialect Options.
+* fno-inline:                            Optimize Options.
+* fno-math-errno:                        Optimize Options.
+* fno-nonansi-builtins:                  C++ Dialect Options.
+* fno-operator-names:                    C++ Dialect Options.
+* fno-optional-diags:                    C++ Dialect Options.
+* fno-peephole:                          Optimize Options.
+* fno-peephole2:                         Optimize Options.
+* fno-rtti:                              C++ Dialect Options.
+* fno-sched-interblock:                  Optimize Options.
+* fno-sched-spec:                        Optimize Options.
+* fno-show-column:                       Preprocessor Options.
+* fno-signed-bitfields:                  C Dialect Options.
+* fno-stack-limit:                       Code Gen Options.
+* fno-trapping-math:                     Optimize Options.
+* fno-unsigned-bitfields:                C Dialect Options.
+* fno-weak:                              C++ Dialect Options.
+* fnon-call-exceptions:                  Code Gen Options.
+* fomit-frame-pointer:                   Optimize Options.
+* foptimize-register-move:               Optimize Options.
+* foptimize-sibling-calls:               Optimize Options.
+* fpack-struct:                          Code Gen Options.
+* fpcc-struct-return <1>:                Incompatibilities.
+* fpcc-struct-return:                    Code Gen Options.
+* fpermissive:                           C++ Dialect Options.
+* fPIC:                                  Code Gen Options.
+* fpic:                                  Code Gen Options.
+* fprefetch-loop-arrays:                 Optimize Options.
+* fpreprocessed:                         Preprocessor Options.
+* fpretend-float:                        Debugging Options.
+* fprofile-arcs <1>:                     Other Builtins.
+* fprofile-arcs:                         Debugging Options.
+* freduce-all-givs:                      Optimize Options.
+* freg-struct-return:                    Code Gen Options.
+* fregmove:                              Optimize Options.
+* frename-registers:                     Optimize Options.
+* frepo <1>:                             Template Instantiation.
+* frepo:                                 C++ Dialect Options.
+* frerun-cse-after-loop:                 Optimize Options.
+* frerun-loop-opt:                       Optimize Options.
+* fsched-spec-load:                      Optimize Options.
+* fsched-spec-load-dangerous:            Optimize Options.
+* fsched-verbose:                        Debugging Options.
+* fschedule-insns:                       Optimize Options.
+* fschedule-insns2:                      Optimize Options.
+* fshared-data:                          Code Gen Options.
+* fshort-double:                         Code Gen Options.
+* fshort-enums <1>:                      Non-bugs.
+* fshort-enums <2>:                      Type Attributes.
+* fshort-enums:                          Code Gen Options.
+* fshort-wchar:                          Code Gen Options.
+* fsigned-bitfields <1>:                 Non-bugs.
+* fsigned-bitfields:                     C Dialect Options.
+* fsigned-char:                          C Dialect Options.
+* fsingle-precision-constant:            Optimize Options.
+* fssa:                                  Optimize Options.
+* fssa-ccp:                              Optimize Options.
+* fssa-dce:                              Optimize Options.
+* fstack-check:                          Code Gen Options.
+* fstack-limit-register:                 Code Gen Options.
+* fstack-limit-symbol:                   Code Gen Options.
+* fstats:                                C++ Dialect Options.
+* fstrength-reduce:                      Optimize Options.
+* fstrict-aliasing:                      Optimize Options.
+* fsyntax-only:                          Warning Options.
+* ftabstop:                              Preprocessor Options.
+* ftemplate-depth:                       C++ Dialect Options.
+* ftest-coverage:                        Debugging Options.
+* fthread-jumps:                         Optimize Options.
+* ftime-report:                          Debugging Options.
+* ftrapv:                                Optimize Options.
+* funroll-all-loops:                     Optimize Options.
+* funroll-loops <1>:                     Non-bugs.
+* funroll-loops:                         Optimize Options.
+* funsafe-math-optimizations:            Optimize Options.
+* funsigned-bitfields <1>:               Non-bugs.
+* funsigned-bitfields:                   C Dialect Options.
+* funsigned-char:                        C Dialect Options.
+* funwind-tables:                        Code Gen Options.
+* fuse-cxa-atexit:                       C++ Dialect Options.
+* fverbose-asm:                          Code Gen Options.
+* fvolatile:                             Code Gen Options.
+* fvolatile-global:                      Code Gen Options.
+* fvolatile-static:                      Code Gen Options.
+* fvtable-gc:                            C++ Dialect Options.
+* fwritable-strings <1>:                 Incompatibilities.
+* fwritable-strings:                     C Dialect Options.
+* G <1>:                                 System V Options.
+* G <2>:                                 MIPS Options.
+* G <3>:                                 RS/6000 and PowerPC Options.
+* G:                                     M32R/D Options.
+* g:                                     Debugging Options.
+* gcc:                                   Preprocessor Options.
+* gcoff:                                 Debugging Options.
+* gdwarf:                                Debugging Options.
+* gdwarf+:                               Debugging Options.
+* gdwarf-2:                              Debugging Options.
+* gen-decls:                             Objective-C Dialect Options.
+* ggdb:                                  Debugging Options.
+* gstabs:                                Debugging Options.
+* gstabs+:                               Debugging Options.
+* gvms:                                  Debugging Options.
+* gxcoff:                                Debugging Options.
+* gxcoff+:                               Debugging Options.
+* H:                                     Preprocessor Options.
+* h:                                     Preprocessor Options.
+* help <1>:                              Preprocessor Options.
+* help:                                  Overall Options.
+* I <1>:                                 Directory Options.
+* I:                                     Preprocessor Options.
+* I- <1>:                                Directory Options.
+* I-:                                    Preprocessor Options.
+* idirafter:                             Preprocessor Options.
+* imacros:                               Preprocessor Options.
+* include:                               Preprocessor Options.
+* iprefix:                               Preprocessor Options.
+* isystem:                               Preprocessor Options.
+* iwithprefix:                           Preprocessor Options.
+* iwithprefixbefore:                     Preprocessor Options.
+* L:                                     Directory Options.
+* l:                                     Link Options.
+* lobjc:                                 Link Options.
+* M:                                     Preprocessor Options.
+* m1:                                    SH Options.
+* m10:                                   PDP-11 Options.
+* m128bit-long-double:                   i386 and x86-64 Options.
+* m16-bit:                               CRIS Options.
+* m2:                                    SH Options.
+* m210:                                  MCore Options.
+* m29000:                                AMD29K Options.
+* m29050:                                AMD29K Options.
+* m3:                                    SH Options.
+* m31:                                   S/390 and zSeries Options.
+* m32 <1>:                               i386 and x86-64 Options.
+* m32:                                   SPARC Options.
+* m32-bit:                               CRIS Options.
+* m32032:                                NS32K Options.
+* m32081:                                NS32K Options.
+* m32332:                                NS32K Options.
+* m32381:                                NS32K Options.
+* m32532:                                NS32K Options.
+* m32r:                                  M32R/D Options.
+* m32rx:                                 M32R/D Options.
+* m340:                                  MCore Options.
+* m386:                                  i386 and x86-64 Options.
+* m3dnow:                                i386 and x86-64 Options.
+* m3e:                                   SH Options.
+* m4:                                    SH Options.
+* m4-nofpu:                              SH Options.
+* m4-single:                             SH Options.
+* m4-single-only:                        SH Options.
+* m40:                                   PDP-11 Options.
+* m45:                                   PDP-11 Options.
+* m4650:                                 MIPS Options.
+* m486:                                  i386 and x86-64 Options.
+* m4byte-functions:                      MCore Options.
+* m5200:                                 M680x0 Options.
+* m64 <1>:                               S/390 and zSeries Options.
+* m64 <2>:                               i386 and x86-64 Options.
+* m64:                                   SPARC Options.
+* m68000:                                M680x0 Options.
+* m68020:                                M680x0 Options.
+* m68020-40:                             M680x0 Options.
+* m68020-60:                             M680x0 Options.
+* m68030:                                M680x0 Options.
+* m68040:                                M680x0 Options.
+* m68060:                                M680x0 Options.
+* m6811:                                 M68hc1x Options.
+* m6812:                                 M68hc1x Options.
+* m68881:                                M680x0 Options.
+* m68hc11:                               M68hc1x Options.
+* m68hc12:                               M68hc1x Options.
+* m8-bit:                                CRIS Options.
+* m88000:                                M88K Options.
+* m88100:                                M88K Options.
+* m88110:                                M88K Options.
+* m96bit-long-double:                    i386 and x86-64 Options.
+* mabi-mmixware:                         MMIX Options.
+* mabi=32:                               MIPS Options.
+* mabi=64:                               MIPS Options.
+* mabi=altivec:                          RS/6000 and PowerPC Options.
+* mabi=eabi:                             MIPS Options.
+* mabi=gnu:                              MMIX Options.
+* mabi=n32:                              MIPS Options.
+* mabi=no-altivec:                       RS/6000 and PowerPC Options.
+* mabi=o64:                              MIPS Options.
+* mabicalls:                             MIPS Options.
+* mabort-on-noreturn:                    ARM Options.
+* mabshi:                                PDP-11 Options.
+* mac0:                                  PDP-11 Options.
+* maccumulate-outgoing-args:             i386 and x86-64 Options.
+* mads:                                  RS/6000 and PowerPC Options.
+* maix-struct-return:                    RS/6000 and PowerPC Options.
+* maix32:                                RS/6000 and PowerPC Options.
+* maix64:                                RS/6000 and PowerPC Options.
+* malign-300:                            H8/300 Options.
+* malign-double:                         i386 and x86-64 Options.
+* malign-int:                            M680x0 Options.
+* malignment-traps:                      ARM Options.
+* malpha-as:                             DEC Alpha Options.
+* maltivec:                              RS/6000 and PowerPC Options.
+* mam33:                                 MN10300 Options.
+* maout:                                 CRIS Options.
+* mapcs:                                 ARM Options.
+* mapcs-26:                              ARM Options.
+* mapcs-32:                              ARM Options.
+* mapcs-frame:                           ARM Options.
+* mapp-regs:                             SPARC Options.
+* march <1>:                             CRIS Options.
+* march <2>:                             HPPA Options.
+* march <3>:                             i386 and x86-64 Options.
+* march <4>:                             MIPS Options.
+* march:                                 ARM Options.
+* margcount:                             Convex Options.
+* masm-compat:                           Intel 960 Options.
+* masm-optimize:                         D30V Options.
+* masm=DIALECT:                          i386 and x86-64 Options.
+* mauto-incdec:                          M68hc1x Options.
+* mauto-pic:                             IA-64 Options.
+* mb:                                    SH Options.
+* mb-step:                               IA-64 Options.
+* mbackchain:                            S/390 and zSeries Options.
+* mbase-addresses:                       MMIX Options.
+* mbcopy:                                PDP-11 Options.
+* mbig <1>:                              TMS320C3x/C4x Options.
+* mbig:                                  RS/6000 and PowerPC Options.
+* mbig-endian <1>:                       Xtensa Options.
+* mbig-endian <2>:                       IA-64 Options.
+* mbig-endian <3>:                       MCore Options.
+* mbig-endian <4>:                       RS/6000 and PowerPC Options.
+* mbig-endian:                           ARM Options.
+* mbig-memory:                           TMS320C3x/C4x Options.
+* mbig-pic:                              M88K Options.
+* mbig-switch <1>:                       V850 Options.
+* mbig-switch:                           HPPA Options.
+* mbigtable:                             SH Options.
+* mbit-align:                            RS/6000 and PowerPC Options.
+* mbitfield <1>:                         NS32K Options.
+* mbitfield:                             M680x0 Options.
+* mbk:                                   TMS320C3x/C4x Options.
+* mbooleans:                             Xtensa Options.
+* mbranch-cheap:                         PDP-11 Options.
+* mbranch-cost:                          D30V Options.
+* mbranch-expensive:                     PDP-11 Options.
+* mbranch-predict:                       MMIX Options.
+* mbroken-saverestore:                   SPARC Options.
+* mbsd:                                  ARM Options.
+* mbuild-constants:                      DEC Alpha Options.
+* mbw:                                   AMD29K Options.
+* mbwx:                                  DEC Alpha Options.
+* mc1:                                   Convex Options.
+* mc2:                                   Convex Options.
+* mc300:                                 Clipper Options.
+* mc32:                                  Convex Options.
+* mc34:                                  Convex Options.
+* mc38:                                  Convex Options.
+* mc400:                                 Clipper Options.
+* mc68000:                               M680x0 Options.
+* mc68020:                               M680x0 Options.
+* mca:                                   Intel 960 Options.
+* mcall-aix:                             RS/6000 and PowerPC Options.
+* mcall-gnu:                             RS/6000 and PowerPC Options.
+* mcall-lib-mul:                         RT Options.
+* mcall-linux:                           RS/6000 and PowerPC Options.
+* mcall-netbsd:                          RS/6000 and PowerPC Options.
+* mcall-prologues:                       AVR Options.
+* mcall-solaris:                         RS/6000 and PowerPC Options.
+* mcall-sysv:                            RS/6000 and PowerPC Options.
+* mcall-sysv-eabi:                       RS/6000 and PowerPC Options.
+* mcall-sysv-noeabi:                     RS/6000 and PowerPC Options.
+* mcallee-super-interworking:            ARM Options.
+* mcaller-super-interworking:            ARM Options.
+* mcallgraph-data:                       MCore Options.
+* mcc-init:                              CRIS Options.
+* mcf:                                   Intel 960 Options.
+* mcheck-zero-division:                  M88K Options.
+* mcix:                                  DEC Alpha Options.
+* mcmodel=embmedany:                     SPARC Options.
+* mcmodel=kernel:                        i386 and x86-64 Options.
+* mcmodel=large:                         i386 and x86-64 Options.
+* mcmodel=medany:                        SPARC Options.
+* mcmodel=medium:                        i386 and x86-64 Options.
+* mcmodel=medlow:                        SPARC Options.
+* mcmodel=medmid:                        SPARC Options.
+* mcmodel=small:                         i386 and x86-64 Options.
+* mcode-align:                           Intel 960 Options.
+* mcode-model=large:                     M32R/D Options.
+* mcode-model=medium:                    M32R/D Options.
+* mcode-model=small:                     M32R/D Options.
+* mcomplex-addr:                         Intel 960 Options.
+* mcond-exec:                            D30V Options.
+* mconst-align:                          CRIS Options.
+* mconstant-gp:                          IA-64 Options.
+* mcpu <1>:                              CRIS Options.
+* mcpu <2>:                              ARC Options.
+* mcpu <3>:                              TMS320C3x/C4x Options.
+* mcpu <4>:                              DEC Alpha Options.
+* mcpu <5>:                              i386 and x86-64 Options.
+* mcpu <6>:                              MIPS Options.
+* mcpu <7>:                              RS/6000 and PowerPC Options.
+* mcpu <8>:                              ARM Options.
+* mcpu:                                  SPARC Options.
+* mcpu32:                                M680x0 Options.
+* mcypress:                              SPARC Options.
+* MD:                                    Preprocessor Options.
+* mdalign:                               SH Options.
+* mdata:                                 ARC Options.
+* mdata-align:                           CRIS Options.
+* mdb:                                   TMS320C3x/C4x Options.
+* mdebug:                                S/390 and zSeries Options.
+* mdec-asm:                              PDP-11 Options.
+* mdensity:                              Xtensa Options.
+* mdisable-fpregs:                       HPPA Options.
+* mdisable-indexing:                     HPPA Options.
+* mdiv:                                  MCore Options.
+* mdouble-float:                         MIPS Options.
+* mdp-isr-reload:                        TMS320C3x/C4x Options.
+* mdw:                                   AMD29K Options.
+* mdwarf2-asm:                           IA-64 Options.
+* meabi:                                 RS/6000 and PowerPC Options.
+* melf <1>:                              MMIX Options.
+* melf:                                  CRIS Options.
+* melinux:                               CRIS Options.
+* melinux-stacksize:                     CRIS Options.
+* memb:                                  RS/6000 and PowerPC Options.
+* membedded-data:                        MIPS Options.
+* membedded-pic:                         MIPS Options.
+* mentry:                                MIPS Options.
+* mep:                                   V850 Options.
+* mepsilon:                              MMIX Options.
+* metrax100:                             CRIS Options.
+* metrax4:                               CRIS Options.
+* mexplicit-relocs:                      DEC Alpha Options.
+* mextmem:                               D30V Options.
+* mextmemory:                            D30V Options.
+* MF:                                    Preprocessor Options.
+* mfast-fix:                             TMS320C3x/C4x Options.
+* mfast-indirect-calls:                  HPPA Options.
+* mfaster-structs:                       SPARC Options.
+* mfix:                                  DEC Alpha Options.
+* mfix7000:                              MIPS Options.
+* mfixed-range:                          IA-64 Options.
+* mflat:                                 SPARC Options.
+* mfloat-ieee:                           DEC Alpha Options.
+* mfloat-vax:                            DEC Alpha Options.
+* mfloat32:                              PDP-11 Options.
+* mfloat64:                              PDP-11 Options.
+* mflush-func:                           MIPS Options.
+* mfmovd:                                SH Options.
+* mfp:                                   ARM Options.
+* mfp-arg-in-fpregs:                     RT Options.
+* mfp-arg-in-gregs:                      RT Options.
+* mfp-reg:                               DEC Alpha Options.
+* mfp-rounding-mode:                     DEC Alpha Options.
+* mfp-trap-mode:                         DEC Alpha Options.
+* mfp32:                                 MIPS Options.
+* mfp64:                                 MIPS Options.
+* mfpa:                                  M680x0 Options.
+* mfpe:                                  ARM Options.
+* mfpu <1>:                              PDP-11 Options.
+* mfpu:                                  SPARC Options.
+* mfull-fp-blocks:                       RT Options.
+* mfull-toc:                             RS/6000 and PowerPC Options.
+* mfused-madd <1>:                       Xtensa Options.
+* mfused-madd <2>:                       MIPS Options.
+* mfused-madd:                           RS/6000 and PowerPC Options.
+* mg:                                    VAX Options.
+* MG:                                    Preprocessor Options.
+* mgas <1>:                              DEC Alpha Options.
+* mgas <2>:                              HPPA Options.
+* mgas:                                  MIPS Options.
+* mgnu:                                  VAX Options.
+* mgnu-as:                               IA-64 Options.
+* mgnu-ld:                               IA-64 Options.
+* mgotplt:                               CRIS Options.
+* mgp32:                                 MIPS Options.
+* mgp64:                                 MIPS Options.
+* mgpopt:                                MIPS Options.
+* mh:                                    H8/300 Options.
+* mhalf-pic:                             MIPS Options.
+* mhandle-large-shift:                   M88K Options.
+* mhard-float <1>:                       Xtensa Options.
+* mhard-float <2>:                       S/390 and zSeries Options.
+* mhard-float <3>:                       MIPS Options.
+* mhard-float <4>:                       RS/6000 and PowerPC Options.
+* mhard-float <5>:                       ARM Options.
+* mhard-float:                           SPARC Options.
+* mhard-quad-float:                      SPARC Options.
+* mhardlit:                              MCore Options.
+* mhc-struct-return <1>:                 Interoperation.
+* mhc-struct-return:                     RT Options.
+* mhimem:                                NS32K Options.
+* mhitachi:                              SH Options.
+* mic-compat:                            Intel 960 Options.
+* mic2.0-compat:                         Intel 960 Options.
+* mic3.0-compat:                         Intel 960 Options.
+* midentify-revision:                    M88K Options.
+* mieee <1>:                             SH Options.
+* mieee:                                 DEC Alpha Options.
+* mieee-conformant:                      DEC Alpha Options.
+* mieee-fp:                              i386 and x86-64 Options.
+* mieee-with-inexact:                    DEC Alpha Options.
+* mimpure-text:                          AMD29K Options.
+* min-line-mul:                          RT Options.
+* minit-stack:                           AVR Options.
+* minline-all-stringops:                 i386 and x86-64 Options.
+* minline-divide-max-throughput:         IA-64 Options.
+* minline-divide-min-latency:            IA-64 Options.
+* mint16:                                PDP-11 Options.
+* mint32 <1>:                            PDP-11 Options.
+* mint32:                                H8/300 Options.
+* mint64:                                MIPS Options.
+* mintel-asm:                            Intel 960 Options.
+* mips1:                                 MIPS Options.
+* mips16:                                MIPS Options.
+* mips2:                                 MIPS Options.
+* mips3:                                 MIPS Options.
+* mips4:                                 MIPS Options.
+* misize:                                SH Options.
+* mjump-in-delay:                        HPPA Options.
+* mka:                                   Intel 960 Options.
+* mkb:                                   Intel 960 Options.
+* mkernel-registers:                     AMD29K Options.
+* mknuthdiv:                             MMIX Options.
+* ml:                                    SH Options.
+* mlarge:                                AMD29K Options.
+* mlarge-data:                           DEC Alpha Options.
+* mleaf-procedures:                      Intel 960 Options.
+* mlibfuncs:                             MMIX Options.
+* mlinker-opt:                           HPPA Options.
+* mlinux:                                CRIS Options.
+* mlittle:                               RS/6000 and PowerPC Options.
+* mlittle-endian <1>:                    Xtensa Options.
+* mlittle-endian <2>:                    IA-64 Options.
+* mlittle-endian <3>:                    MCore Options.
+* mlittle-endian <4>:                    RS/6000 and PowerPC Options.
+* mlittle-endian <5>:                    ARM Options.
+* mlittle-endian:                        SPARC Options.
+* mlive-g0:                              SPARC Options.
+* mlong-calls <1>:                       V850 Options.
+* mlong-calls <2>:                       MIPS Options.
+* mlong-calls:                           ARM Options.
+* mlong-double-64:                       Intel 960 Options.
+* mlong-load-store:                      HPPA Options.
+* mlong32 <1>:                           MIPS Options.
+* mlong32:                               Convex Options.
+* mlong64 <1>:                           MIPS Options.
+* mlong64:                               Convex Options.
+* mlongcalls:                            Xtensa Options.
+* mloop-unsigned:                        TMS320C3x/C4x Options.
+* MM:                                    Preprocessor Options.
+* mmac16:                                Xtensa Options.
+* mmad:                                  MIPS Options.
+* mmangle-cpu:                           ARC Options.
+* mmax:                                  DEC Alpha Options.
+* mmax-stack-frame:                      CRIS Options.
+* mmc:                                   Intel 960 Options.
+* mmcu:                                  AVR Options.
+* MMD:                                   Preprocessor Options.
+* mmemcpy:                               MIPS Options.
+* mmemory-latency:                       DEC Alpha Options.
+* mmemparm:                              TMS320C3x/C4x Options.
+* mminimal-toc:                          RS/6000 and PowerPC Options.
+* mminimum-fp-blocks:                    RT Options.
+* mminmax:                               Xtensa Options.
+* mmips-as:                              MIPS Options.
+* mmips-tfile:                           MIPS Options.
+* mmmx:                                  i386 and x86-64 Options.
+* mmpyi:                                 TMS320C3x/C4x Options.
+* mmul16:                                Xtensa Options.
+* mmul32:                                Xtensa Options.
+* mmult-bug:                             MN10300 Options.
+* mmulti-add:                            NS32K Options.
+* mmultiple:                             RS/6000 and PowerPC Options.
+* mmvcle:                                S/390 and zSeries Options.
+* mmvme:                                 RS/6000 and PowerPC Options.
+* mnbw:                                  AMD29K Options.
+* mndw:                                  AMD29K Options.
+* mnew-mnemonics:                        RS/6000 and PowerPC Options.
+* mno-3dnow:                             i386 and x86-64 Options.
+* mno-4byte-functions:                   MCore Options.
+* mno-abicalls:                          MIPS Options.
+* mno-abshi:                             PDP-11 Options.
+* mno-ac0:                               PDP-11 Options.
+* mno-align-double:                      i386 and x86-64 Options.
+* mno-align-int:                         M680x0 Options.
+* mno-align-stringops:                   i386 and x86-64 Options.
+* mno-alignment-traps:                   ARM Options.
+* mno-altivec:                           RS/6000 and PowerPC Options.
+* mno-am33:                              MN10300 Options.
+* mno-app-regs:                          SPARC Options.
+* mno-asm-optimize:                      D30V Options.
+* mno-backchain:                         S/390 and zSeries Options.
+* mno-base-addresses:                    MMIX Options.
+* mno-bit-align:                         RS/6000 and PowerPC Options.
+* mno-bk:                                TMS320C3x/C4x Options.
+* mno-booleans:                          Xtensa Options.
+* mno-branch-predict:                    MMIX Options.
+* mno-bwx:                               DEC Alpha Options.
+* mno-callgraph-data:                    MCore Options.
+* mno-check-zero-division:               M88K Options.
+* mno-cix:                               DEC Alpha Options.
+* mno-code-align:                        Intel 960 Options.
+* mno-complex-addr:                      Intel 960 Options.
+* mno-const-align:                       CRIS Options.
+* mno-crt0:                              MN10300 Options.
+* mno-data-align:                        CRIS Options.
+* mno-db:                                TMS320C3x/C4x Options.
+* mno-debug:                             S/390 and zSeries Options.
+* mno-density:                           Xtensa Options.
+* mno-div:                               MCore Options.
+* mno-dwarf2-asm:                        IA-64 Options.
+* mno-eabi:                              RS/6000 and PowerPC Options.
+* mno-embedded-data:                     MIPS Options.
+* mno-embedded-pic:                      MIPS Options.
+* mno-ep:                                V850 Options.
+* mno-epsilon:                           MMIX Options.
+* mno-explicit-relocs:                   DEC Alpha Options.
+* mno-fancy-math-387:                    i386 and x86-64 Options.
+* mno-fast-fix:                          TMS320C3x/C4x Options.
+* mno-faster-structs:                    SPARC Options.
+* mno-fix:                               DEC Alpha Options.
+* mno-flat:                              SPARC Options.
+* mno-float32:                           PDP-11 Options.
+* mno-float64:                           PDP-11 Options.
+* mno-fp-in-toc:                         RS/6000 and PowerPC Options.
+* mno-fp-regs:                           DEC Alpha Options.
+* mno-fp-ret-in-387:                     i386 and x86-64 Options.
+* mno-fpu:                               SPARC Options.
+* mno-fused-madd <1>:                    Xtensa Options.
+* mno-fused-madd <2>:                    MIPS Options.
+* mno-fused-madd:                        RS/6000 and PowerPC Options.
+* mno-gnu-as:                            IA-64 Options.
+* mno-gnu-ld:                            IA-64 Options.
+* mno-gotplt:                            CRIS Options.
+* mno-gpopt:                             MIPS Options.
+* mno-half-pic:                          MIPS Options.
+* mno-hardlit:                           MCore Options.
+* mno-ieee-fp:                           i386 and x86-64 Options.
+* mno-impure-text:                       AMD29K Options.
+* mno-int16:                             PDP-11 Options.
+* mno-int32:                             PDP-11 Options.
+* mno-interrupts:                        AVR Options.
+* mno-knuthdiv:                          MMIX Options.
+* mno-leaf-procedures:                   Intel 960 Options.
+* mno-libfuncs:                          MMIX Options.
+* mno-long-calls <1>:                    V850 Options.
+* mno-long-calls <2>:                    MIPS Options.
+* mno-long-calls:                        ARM Options.
+* mno-longcalls:                         Xtensa Options.
+* mno-loop-unsigned:                     TMS320C3x/C4x Options.
+* mno-mac16:                             Xtensa Options.
+* mno-mad:                               MIPS Options.
+* mno-max:                               DEC Alpha Options.
+* mno-memcpy:                            MIPS Options.
+* mno-minmax:                            Xtensa Options.
+* mno-mips-tfile:                        MIPS Options.
+* mno-mips16:                            MIPS Options.
+* mno-mmx:                               i386 and x86-64 Options.
+* mno-mpyi:                              TMS320C3x/C4x Options.
+* mno-mul16:                             Xtensa Options.
+* mno-mul32:                             Xtensa Options.
+* mno-mult-bug:                          MN10300 Options.
+* mno-multiple:                          RS/6000 and PowerPC Options.
+* mno-multm:                             AMD29K Options.
+* mno-mvcle:                             S/390 and zSeries Options.
+* mno-nsa:                               Xtensa Options.
+* mno-ocs-debug-info:                    M88K Options.
+* mno-ocs-frame-position:                M88K Options.
+* mno-optimize-arg-area:                 M88K Options.
+* mno-parallel-insns:                    TMS320C3x/C4x Options.
+* mno-parallel-mpy:                      TMS320C3x/C4x Options.
+* mno-pic:                               IA-64 Options.
+* mno-power:                             RS/6000 and PowerPC Options.
+* mno-power2:                            RS/6000 and PowerPC Options.
+* mno-powerpc:                           RS/6000 and PowerPC Options.
+* mno-powerpc-gfxopt:                    RS/6000 and PowerPC Options.
+* mno-powerpc-gpopt:                     RS/6000 and PowerPC Options.
+* mno-powerpc64:                         RS/6000 and PowerPC Options.
+* mno-prolog-function:                   V850 Options.
+* mno-prologue-epilogue:                 CRIS Options.
+* mno-prototype:                         RS/6000 and PowerPC Options.
+* mno-push-args:                         i386 and x86-64 Options.
+* mno-register-names:                    IA-64 Options.
+* mno-regnames:                          RS/6000 and PowerPC Options.
+* mno-relax-immediate:                   MCore Options.
+* mno-relocatable:                       RS/6000 and PowerPC Options.
+* mno-relocatable-lib:                   RS/6000 and PowerPC Options.
+* mno-reuse-arg-regs:                    AMD29K Options.
+* mno-rnames:                            MIPS Options.
+* mno-rptb:                              TMS320C3x/C4x Options.
+* mno-rpts:                              TMS320C3x/C4x Options.
+* mno-sched-prolog:                      ARM Options.
+* mno-sdata <1>:                         IA-64 Options.
+* mno-sdata:                             RS/6000 and PowerPC Options.
+* mno-serialize-volatile <1>:            Interoperation.
+* mno-serialize-volatile <2>:            Xtensa Options.
+* mno-serialize-volatile:                M88K Options.
+* mno-sext:                              Xtensa Options.
+* mno-short-load-bytes:                  ARM Options.
+* mno-short-load-words:                  ARM Options.
+* mno-side-effects:                      CRIS Options.
+* mno-slow-bytes:                        MCore Options.
+* mno-small-exec:                        S/390 and zSeries Options.
+* mno-soft-float:                        DEC Alpha Options.
+* mno-space-regs:                        HPPA Options.
+* mno-split:                             PDP-11 Options.
+* mno-split-addresses:                   MIPS Options.
+* mno-sse:                               i386 and x86-64 Options.
+* mno-stack-align:                       CRIS Options.
+* mno-stack-bias:                        SPARC Options.
+* mno-stack-check:                       AMD29K Options.
+* mno-stats:                             MIPS Options.
+* mno-storem-bug:                        AMD29K Options.
+* mno-strict-align <1>:                  Intel 960 Options.
+* mno-strict-align <2>:                  RS/6000 and PowerPC Options.
+* mno-strict-align:                      M680x0 Options.
+* mno-string:                            RS/6000 and PowerPC Options.
+* mno-sum-in-toc:                        RS/6000 and PowerPC Options.
+* mno-svr3-shlib:                        i386 and x86-64 Options.
+* mno-symrename:                         ARM Options.
+* mno-tablejump:                         AVR Options.
+* mno-tail-call:                         Intel 960 Options.
+* mno-target-align:                      Xtensa Options.
+* mno-text-section-literals:             Xtensa Options.
+* mno-toc:                               RS/6000 and PowerPC Options.
+* mno-toplevel-symbols:                  MMIX Options.
+* mno-unaligned-doubles:                 SPARC Options.
+* mno-underscores:                       M88K Options.
+* mno-uninit-const-in-rodata:            MIPS Options.
+* mno-update:                            RS/6000 and PowerPC Options.
+* mno-volatile-asm-stop:                 IA-64 Options.
+* mno-wide-bitfields:                    MCore Options.
+* mno-xl-call:                           RS/6000 and PowerPC Options.
+* mno-zero-extend:                       MMIX Options.
+* mnoargcount:                           Convex Options.
+* mnobitfield <1>:                       NS32K Options.
+* mnobitfield:                           M680x0 Options.
+* mnohc-struct-return:                   RT Options.
+* mnohimem:                              NS32K Options.
+* mnomacsave:                            SH Options.
+* mnomulti-add:                          NS32K Options.
+* mnop-fun-dllimport:                    ARM Options.
+* mnoregparam:                           NS32K Options.
+* mnormal:                               AMD29K Options.
+* mnosb:                                 NS32K Options.
+* mnsa:                                  Xtensa Options.
+* mnumerics:                             Intel 960 Options.
+* mocs-debug-info:                       M88K Options.
+* mocs-frame-position:                   M88K Options.
+* mold-align:                            Intel 960 Options.
+* mold-mnemonics:                        RS/6000 and PowerPC Options.
+* momit-leaf-frame-pointer:              i386 and x86-64 Options.
+* monchip:                               D30V Options.
+* moptimize-arg-area:                    M88K Options.
+* MP:                                    Preprocessor Options.
+* mpa-risc-1-0:                          HPPA Options.
+* mpa-risc-1-1:                          HPPA Options.
+* mpa-risc-2-0:                          HPPA Options.
+* mpadstruct:                            SH Options.
+* mparallel-insns:                       TMS320C3x/C4x Options.
+* mparallel-mpy:                         TMS320C3x/C4x Options.
+* mparanoid:                             TMS320C3x/C4x Options.
+* mpcrel:                                M680x0 Options.
+* mpdebug:                               CRIS Options.
+* mpe:                                   RS/6000 and PowerPC Options.
+* mpentium:                              i386 and x86-64 Options.
+* mpentiumpro:                           i386 and x86-64 Options.
+* mpic-register:                         ARM Options.
+* mpoke-function-name:                   ARM Options.
+* mportable-runtime:                     HPPA Options.
+* mpower:                                RS/6000 and PowerPC Options.
+* mpower2:                               RS/6000 and PowerPC Options.
+* mpowerpc:                              RS/6000 and PowerPC Options.
+* mpowerpc-gfxopt:                       RS/6000 and PowerPC Options.
+* mpowerpc-gpopt:                        RS/6000 and PowerPC Options.
+* mpowerpc64:                            RS/6000 and PowerPC Options.
+* mprefergot:                            SH Options.
+* mpreferred-stack-boundary:             i386 and x86-64 Options.
+* mprolog-function:                      V850 Options.
+* mprologue-epilogue:                    CRIS Options.
+* mprototype:                            RS/6000 and PowerPC Options.
+* mpush-args:                            i386 and x86-64 Options.
+* MQ:                                    Preprocessor Options.
+* mregister-names:                       IA-64 Options.
+* mregnames:                             RS/6000 and PowerPC Options.
+* mregparam:                             NS32K Options.
+* mregparm <1>:                          TMS320C3x/C4x Options.
+* mregparm:                              i386 and x86-64 Options.
+* mrelax <1>:                            SH Options.
+* mrelax <2>:                            H8/300 Options.
+* mrelax <3>:                            MN10300 Options.
+* mrelax:                                MN10200 Options.
+* mrelax-immediate:                      MCore Options.
+* mrelocatable:                          RS/6000 and PowerPC Options.
+* mrelocatable-lib:                      RS/6000 and PowerPC Options.
+* mreuse-arg-regs:                       AMD29K Options.
+* mrnames:                               MIPS Options.
+* mrodata:                               ARC Options.
+* mrptb:                                 TMS320C3x/C4x Options.
+* mrpts:                                 TMS320C3x/C4x Options.
+* mrtd <1>:                              Function Attributes.
+* mrtd <2>:                              NS32K Options.
+* mrtd <3>:                              i386 and x86-64 Options.
+* mrtd:                                  M680x0 Options.
+* ms:                                    H8/300 Options.
+* ms2600:                                H8/300 Options.
+* msa:                                   Intel 960 Options.
+* msb <1>:                               NS32K Options.
+* msb:                                   Intel 960 Options.
+* mschedule:                             HPPA Options.
+* msda:                                  V850 Options.
+* msdata <1>:                            IA-64 Options.
+* msdata:                                RS/6000 and PowerPC Options.
+* msdata-data:                           RS/6000 and PowerPC Options.
+* msdata=default:                        RS/6000 and PowerPC Options.
+* msdata=eabi:                           RS/6000 and PowerPC Options.
+* msdata=none <1>:                       RS/6000 and PowerPC Options.
+* msdata=none:                           M32R/D Options.
+* msdata=sdata:                          M32R/D Options.
+* msdata=sysv:                           RS/6000 and PowerPC Options.
+* msdata=use:                            M32R/D Options.
+* mserialize-volatile <1>:               Xtensa Options.
+* mserialize-volatile:                   M88K Options.
+* msext:                                 Xtensa Options.
+* mshort <1>:                            M68hc1x Options.
+* mshort:                                M680x0 Options.
+* mshort-data:                           M88K Options.
+* mshort-load-bytes:                     ARM Options.
+* mshort-load-words:                     ARM Options.
+* msim <1>:                              Xstormy16 Options.
+* msim:                                  RS/6000 and PowerPC Options.
+* msingle-float:                         MIPS Options.
+* msingle-pic-base:                      ARM Options.
+* msize:                                 AVR Options.
+* mslow-bytes:                           MCore Options.
+* msmall <1>:                            TMS320C3x/C4x Options.
+* msmall:                                AMD29K Options.
+* msmall-data:                           DEC Alpha Options.
+* msmall-exec:                           S/390 and zSeries Options.
+* msmall-memory:                         TMS320C3x/C4x Options.
+* msoft-float <1>:                       Xtensa Options.
+* msoft-float <2>:                       PDP-11 Options.
+* msoft-float <3>:                       S/390 and zSeries Options.
+* msoft-float <4>:                       NS32K Options.
+* msoft-float <5>:                       DEC Alpha Options.
+* msoft-float <6>:                       Intel 960 Options.
+* msoft-float <7>:                       HPPA Options.
+* msoft-float <8>:                       i386 and x86-64 Options.
+* msoft-float <9>:                       MIPS Options.
+* msoft-float <10>:                      RS/6000 and PowerPC Options.
+* msoft-float <11>:                      ARM Options.
+* msoft-float <12>:                      AMD29K Options.
+* msoft-float <13>:                      SPARC Options.
+* msoft-float:                           M680x0 Options.
+* msoft-quad-float:                      SPARC Options.
+* msoft-reg-count:                       M68hc1x Options.
+* mspace <1>:                            V850 Options.
+* mspace:                                SH Options.
+* msparclite:                            SPARC Options.
+* msplit:                                PDP-11 Options.
+* msplit-addresses:                      MIPS Options.
+* msse:                                  i386 and x86-64 Options.
+* mstack-align:                          CRIS Options.
+* mstack-bias:                           SPARC Options.
+* mstack-check:                          AMD29K Options.
+* mstats:                                MIPS Options.
+* mstorem-bug:                           AMD29K Options.
+* mstrict-align <1>:                     Intel 960 Options.
+* mstrict-align <2>:                     RS/6000 and PowerPC Options.
+* mstrict-align:                         M680x0 Options.
+* mstring:                               RS/6000 and PowerPC Options.
+* mstructure-size-boundary:              ARM Options.
+* msupersparc:                           SPARC Options.
+* msvr3:                                 M88K Options.
+* msvr3-shlib:                           i386 and x86-64 Options.
+* msvr4:                                 M88K Options.
+* msvr4-struct-return:                   RS/6000 and PowerPC Options.
+* MT:                                    Preprocessor Options.
+* mtail-call:                            Intel 960 Options.
+* mtarget-align:                         Xtensa Options.
+* mtda:                                  V850 Options.
+* mtext:                                 ARC Options.
+* mtext-section-literals:                Xtensa Options.
+* mthreads:                              i386 and x86-64 Options.
+* mthumb:                                ARM Options.
+* mthumb-interwork:                      ARM Options.
+* mti:                                   TMS320C3x/C4x Options.
+* mtiny-stack:                           AVR Options.
+* mtoc:                                  RS/6000 and PowerPC Options.
+* mtoplevel-symbols:                     MMIX Options.
+* mtpcs-frame:                           ARM Options.
+* mtpcs-leaf-frame:                      ARM Options.
+* mtrap-large-shift:                     M88K Options.
+* mtrap-precision:                       DEC Alpha Options.
+* mtune <1>:                             CRIS Options.
+* mtune <2>:                             DEC Alpha Options.
+* mtune <3>:                             MIPS Options.
+* mtune <4>:                             RS/6000 and PowerPC Options.
+* mtune <5>:                             ARM Options.
+* mtune:                                 SPARC Options.
+* munaligned-doubles:                    SPARC Options.
+* muninit-const-in-rodata:               MIPS Options.
+* munix:                                 VAX Options.
+* munix-asm:                             PDP-11 Options.
+* mupdate:                               RS/6000 and PowerPC Options.
+* muse-div-instruction:                  M88K Options.
+* muser-registers:                       AMD29K Options.
+* musermode:                             SH Options.
+* mv8:                                   SPARC Options.
+* mv850:                                 V850 Options.
+* mversion-03.00:                        M88K Options.
+* mvms-return-codes:                     DEC Alpha/VMS Options.
+* mvolatile-asm-stop:                    IA-64 Options.
+* mvolatile-cache:                       Convex Options.
+* mvolatile-nocache:                     Convex Options.
+* mvxworks:                              RS/6000 and PowerPC Options.
+* mwarn-passed-structs:                  M88K Options.
+* mwide-bitfields:                       MCore Options.
+* mwords-little-endian:                  ARM Options.
+* mxl-call:                              RS/6000 and PowerPC Options.
+* mxopen:                                ARM Options.
+* myellowknife:                          RS/6000 and PowerPC Options.
+* mzda:                                  V850 Options.
+* mzero-extend:                          MMIX Options.
+* no-crt0:                               MIPS Options.
+* no-integrated-cpp:                     C Dialect Options.
+* no-red-zone:                           i386 and x86-64 Options.
+* noasmopt:                              Interoperation.
+* nocpp:                                 MIPS Options.
+* nodefaultlibs:                         Link Options.
+* nostartfiles:                          Link Options.
+* nostdinc:                              Preprocessor Options.
+* nostdinc++ <1>:                        Preprocessor Options.
+* nostdinc++:                            C++ Dialect Options.
+* nostdlib:                              Link Options.
+* o:                                     Preprocessor Options.
+* O:                                     Optimize Options.
+* o:                                     Overall Options.
+* O0:                                    Optimize Options.
+* O1:                                    Optimize Options.
+* O2:                                    Optimize Options.
+* O3:                                    Optimize Options.
+* Os:                                    Optimize Options.
+* P:                                     Preprocessor Options.
+* p:                                     Debugging Options.
+* param:                                 Optimize Options.
+* pass-exit-codes:                       Overall Options.
+* pedantic <1>:                          Warnings and Errors.
+* pedantic <2>:                          Alternate Keywords.
+* pedantic <3>:                          C Extensions.
+* pedantic <4>:                          Preprocessor Options.
+* pedantic <5>:                          Warning Options.
+* pedantic:                              Standards.
+* pedantic-errors <1>:                   Warnings and Errors.
+* pedantic-errors <2>:                   Non-bugs.
+* pedantic-errors <3>:                   Actual Bugs.
+* pedantic-errors <4>:                   Preprocessor Options.
+* pedantic-errors <5>:                   Warning Options.
+* pedantic-errors:                       Standards.
+* pg:                                    Debugging Options.
+* pipe:                                  Overall Options.
+* print-file-name:                       Debugging Options.
+* print-libgcc-file-name:                Debugging Options.
+* print-multi-directory:                 Debugging Options.
+* print-multi-lib:                       Debugging Options.
+* print-prog-name:                       Debugging Options.
+* print-search-dirs:                     Debugging Options.
+* pthread:                               RS/6000 and PowerPC Options.
+* Q:                                     Debugging Options.
+* Qn:                                    System V Options.
+* Qy:                                    System V Options.
+* remap:                                 Preprocessor Options.
+* s:                                     Link Options.
+* S <1>:                                 Link Options.
+* S:                                     Overall Options.
+* save-temps:                            Debugging Options.
+* shared:                                Link Options.
+* shared-libgcc:                         Link Options.
+* sim:                                   CRIS Options.
+* sim2:                                  CRIS Options.
+* specs:                                 Directory Options.
+* static:                                Link Options.
+* static-libgcc:                         Link Options.
+* std <1>:                               Non-bugs.
+* std <2>:                               Other Builtins.
+* std <3>:                               C Dialect Options.
+* std:                                   Standards.
+* std=:                                  Preprocessor Options.
+* symbolic:                              Link Options.
+* target-help <1>:                       Preprocessor Options.
+* target-help:                           Overall Options.
+* time:                                  Debugging Options.
+* traditional <1>:                       Non-bugs.
+* traditional <2>:                       Incompatibilities.
+* traditional <3>:                       Preprocessor Options.
+* traditional <4>:                       C Dialect Options.
+* traditional:                           Standards.
+* traditional-cpp:                       C Dialect Options.
+* trigraphs <1>:                         Preprocessor Options.
+* trigraphs:                             C Dialect Options.
+* u:                                     Link Options.
+* U:                                     Preprocessor Options.
+* undef:                                 Preprocessor Options.
+* V:                                     Target Options.
+* v <1>:                                 Preprocessor Options.
+* v:                                     Overall Options.
+* version <1>:                           Preprocessor Options.
+* version:                               Overall Options.
+* W:                                     Incompatibilities.
+* w:                                     Preprocessor Options.
+* W:                                     Warning Options.
+* w:                                     Warning Options.
+* Wa:                                    Assembler Options.
+* Wabi:                                  C++ Dialect Options.
+* Waggregate-return:                     Warning Options.
+* Wall <1>:                              Standard Libraries.
+* Wall <2>:                              Preprocessor Options.
+* Wall:                                  Warning Options.
+* Wbad-function-cast:                    Warning Options.
+* Wcast-align:                           Warning Options.
+* Wcast-qual:                            Warning Options.
+* Wchar-subscripts:                      Warning Options.
+* Wcomment <1>:                          Preprocessor Options.
+* Wcomment:                              Warning Options.
+* Wcomments:                             Preprocessor Options.
+* Wconversion <1>:                       Protoize Caveats.
+* Wconversion:                           Warning Options.
+* Wctor-dtor-privacy:                    C++ Dialect Options.
+* Wdisabled-optimization:                Warning Options.
+* Wdiv-by-zero:                          Warning Options.
+* Weffc++:                               C++ Dialect Options.
+* Werror <1>:                            Preprocessor Options.
+* Werror:                                Warning Options.
+* Werror-implicit-function-declaration:  Warning Options.
+* Wfloat-equal:                          Warning Options.
+* Wformat <1>:                           Function Attributes.
+* Wformat:                               Warning Options.
+* Wformat-nonliteral <1>:                Function Attributes.
+* Wformat-nonliteral:                    Warning Options.
+* Wformat-security:                      Warning Options.
+* Wformat=2:                             Warning Options.
+* Wimplicit:                             Warning Options.
+* Wimplicit-function-declaration:        Warning Options.
+* Wimplicit-int:                         Warning Options.
+* Wimport:                               Preprocessor Options.
+* Winline <1>:                           Inline.
+* Winline:                               Warning Options.
+* Wl:                                    Link Options.
+* Wlarger-than:                          Warning Options.
+* Wlong-long:                            Warning Options.
+* Wmain:                                 Warning Options.
+* Wmissing-braces:                       Warning Options.
+* Wmissing-declarations:                 Warning Options.
+* Wmissing-format-attribute:             Warning Options.
+* Wmissing-noreturn:                     Warning Options.
+* Wmissing-prototypes:                   Warning Options.
+* Wmultichar:                            Warning Options.
+* Wnested-externs:                       Warning Options.
+* Wno-deprecated:                        C++ Dialect Options.
+* Wno-deprecated-declarations:           Warning Options.
+* Wno-div-by-zero:                       Warning Options.
+* Wno-format-extra-args:                 Warning Options.
+* Wno-format-y2k:                        Warning Options.
+* Wno-import:                            Warning Options.
+* Wno-long-long:                         Warning Options.
+* Wno-multichar:                         Warning Options.
+* Wno-non-template-friend:               C++ Dialect Options.
+* Wno-pmf-conversions <1>:               Bound member functions.
+* Wno-pmf-conversions:                   C++ Dialect Options.
+* Wno-protocol:                          Objective-C Dialect Options.
+* Wnon-virtual-dtor:                     C++ Dialect Options.
+* Wold-style-cast:                       C++ Dialect Options.
+* Woverloaded-virtual:                   C++ Dialect Options.
+* Wp:                                    Preprocessor Options.
+* Wpacked:                               Warning Options.
+* Wpadded:                               Warning Options.
+* Wparentheses:                          Warning Options.
+* Wpointer-arith <1>:                    Pointer Arith.
+* Wpointer-arith:                        Warning Options.
+* Wredundant-decls:                      Warning Options.
+* Wreorder <1>:                          Warning Options.
+* Wreorder:                              C++ Dialect Options.
+* Wreturn-type:                          Warning Options.
+* Wselector:                             Objective-C Dialect Options.
+* Wsequence-point:                       Warning Options.
+* Wshadow:                               Warning Options.
+* Wsign-compare:                         Warning Options.
+* Wsign-promo:                           C++ Dialect Options.
+* Wstrict-prototypes:                    Warning Options.
+* Wswitch:                               Warning Options.
+* Wsynth:                                C++ Dialect Options.
+* Wsystem-headers <1>:                   Preprocessor Options.
+* Wsystem-headers:                       Warning Options.
+* Wtraditional <1>:                      Preprocessor Options.
+* Wtraditional:                          Warning Options.
+* Wtrigraphs <1>:                        Preprocessor Options.
+* Wtrigraphs:                            Warning Options.
+* Wundef <1>:                            Preprocessor Options.
+* Wundef:                                Warning Options.
+* Wuninitialized:                        Warning Options.
+* Wunknown-pragmas:                      Warning Options.
+* Wunreachable-code:                     Warning Options.
+* Wunused:                               Warning Options.
+* Wunused-function:                      Warning Options.
+* Wunused-label:                         Warning Options.
+* Wunused-parameter:                     Warning Options.
+* Wunused-value:                         Warning Options.
+* Wunused-variable:                      Warning Options.
+* Wwrite-strings:                        Warning Options.
+* x <1>:                                 Preprocessor Options.
+* x:                                     Overall Options.
+* Xlinker:                               Link Options.
+* Ym:                                    System V Options.
+* YP:                                    System V Options.
+

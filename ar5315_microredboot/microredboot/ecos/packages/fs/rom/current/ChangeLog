@@ -1,0 +1,152 @@
+2004-10-04  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/romfs.c (romfs_mount): Avoid a compiler warning about punned
+	types.
+
+2004-08-08  Bart Veer  <bartv@ecoscentric.com>
+
+	* cdl/romfs.cdl: generate both little-endian and big-endian image
+	files.
+
+	* tests/fileio1.c: include either a little-endian or a big-endian
+	image. Totally fail the test early on if the file system cannot be
+	mounted.
+
+2004-06-14  John Dallaway  <jld@ecoscentric.com>
+
+	* cdl/romfs.cdl: Specify the test executable file name for
+	compatibility with the eCos Configuration Tool.
+
+2004-02-20  Vincent Catros  <Vincent.Catros@elios-informatique.fr>
+
+	* src/fs-ecos.c :
+	(jffs2_find) Policy to skip path separator is no longer
+	"if '/' then skip" but "while '/' then skip" allowing
+	multi '/' separators (i.e : /tmp////foo).
+	(find_entry) Policy to detect end of path is no longer
+	"if '\0' then end_of_path"
+	but "while '/' skip it and then if '\0' then end_of_path"
+	allowing path terminated with any number of '/'
+	(i.e : chdir(/tmp///)).
+
+2003-12-11  Sandeep Kumar <sandeep@codito.com>
+
+	* src/romfs.c (romfs_mount) : function wrongly returns ENOENT even
+	if fste->data isn't NULL.
+
+2003-09-25  Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* src/romfs.c (romfs_mount): If a mount fails, make sure we leave
+	all state information in such a way we can try again.
+
+2003-07-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+        
+	* support/mk_romfs.c: S_I[RWX]{USR|GRP|OTH} etc changed to match
+	the changes in sys/stat.h
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/romfs.cdl: Fix doc link.
+
+2003-01-30  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/romfs.cdl: Implements the CYGINT_IO_FILEIO_FS interface.
+
+2003-01-29  John Dallaway  <jld@ecoscentric.com>
+
+	* support/file2c.tcl: Accommodate latest Cygwin Tcl shell
+	(tclsh83.exe)
+
+2002-04-15  Bart Veer  <bartv@redhat.com>
+
+	* support/file2c.tcl:
+	Do not use an alignment attribute, since it is not honoured on
+	all targets.
+	
+	* src/romfs.c:
+	Remove alignment restrictions, since they are not actually needed
+	yet and alignment is hard to guarantee on all targets.
+
+2002-01-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* support/mk_romfs.c: Open image file in binary mode (for cygwin).
+	Spotted by Warren Jasper.
+
+2001-11-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/romfs.cdl (CYGTST_ROMFS_BUILD_TESTS): Try gcc and cc if $HOST_CC
+	doesn't exist or has a problem.
+
+2001-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/romfs.cdl: Use HOST_CC instead of 'cc'.
+
+2001-10-17  Drew Moseley  <dmoseley@redhat.com>
+2001-10-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* support/mk_romfs.c: Open input files in binary mode (for cygwin).
+	* cdl/romfs.cdl: Work around cygwin path problems by copying files
+	into build tree.
+
+2001-07-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/fileio1.c (main): Get this to actually pass! Remove
+	kernel dependency.
+	* cdl/fileio.cdl: Get CDL dependencies better. Don't use
+	fixed base address. Make test building an option. Build mk_romfs
+	and use it to construct a test romfs.
+	* support/mk_romfs.c: fix trivial typo
+	* tests/testromfs: Directory hierarchy added for constructing test
+	ROMFS.
+
+2001-07-13  Richard Panton (richard.panton@3glab.com)
+
+	* support/mk_romfs.c: Convert between host FS file modes and eCos
+	ones.
+
+2000-10-25  Richard Panton (richard.panton@3glab.com)
+
+	* cdl/romfs.cdl:
+	* src/romfs.c:
+	* support/mk_romfs.c:
+	* tests/fileio1.c:
+	A sample ROM filesystem implementation
+
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+

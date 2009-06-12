@@ -1,0 +1,834 @@
+2004-04-14  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/double/ieee754-core/e_cosh.c (__ieee754_cosh): 
+	* src/double/ieee754-core/e_sinh.c (__ieee754_sinh): Make use of
+	the CYG_LIBM_LO() macro which does not generate a compiler warning.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/libm.cdl: Fix doc link.
+
+2001-09-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/double/portable-api/s_expm1.c (expm1): Init c before it's used.
+
+2001-07-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/double/portable-api/s_expm1.c: Reimport from newlib
+	* src/double/ieee754-core/e_pow.c: Ditto.
+	* src/mathincl/fdlibm.h: Define macros and types required for
+	newlib versions	of libm files.
+
+2001-04-25  Bart Veer  <bartv@redhat.com>
+
+	* cdl/libm.cdl:
+	Ensure -ffloat-store is also used for the updated synthetic target
+	when running on x86 hardware.
+
+2000-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/misc/infconst.c: Revert below two changes - the gcc problem
+	that provoked it is now fixed.
+
+2000-09-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/misc/infconst.c: Silence warning about number of brackets
+
+2000-08-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/math.h: Declare cyg_libm_infinity as an array type for correct
+	relocations
+	* src/misc/infconst.c: Define it likewise
+
+2000-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/sys/ieeefp.h: Undo below change.
+
+2000-05-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/sys/ieeefp.h: Support FPU double-LE layout in BE mode.
+	Fix paste bug.
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* tests/vectors/vector_support.h:
+	Update startup configury to reflect changes in libc startup. 
+	Use default stacksize of CYGNUM_HAL_STACK_SIZE_TYPICAL rather than 32K
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/libm.cdl:
+
+	Adjust documentation URLs.
+
+2000-03-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/libm.cdl (CYGPKG_LIBM_CFLAGS_ADD): Add -ffloat-store for i386
+	targets. The math library implementation relies on accurate IEEE FP.
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-28  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/libm.cdl: Don't need to compile with -O1 any more
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-11-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: Cooperate with permtest combo10 setting
+	an intermediate variable CYGNUM_LIBM_COMPAT_DEFAULT directly.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/libm.cdl: Define tests.
+
+1999-10-18  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/libm.cdl:
+	Parent CYGPKG_LIBM_CFLAGS_ADD and CYGPKG_LIBM_CFLAGS_REMOVE
+        under a CDL component.
+
+1999-10-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/libm.cdl:
+	Define CYGPKG_LIBM_CFLAGS_ADD and CYGPKG_LIBM_CFLAGS_REMOVE.
+
+1999-10-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/compat.cdl: Specify radio buttons using CDL interfaces.
+
+1999-08-24  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Optimize by default everywhere, except when compiling
+	e_pow.c, in which case use -fno-schedule-insns
+
+1999-08-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/compat.cdl:
+
+	Implement radio buttons using "FIXME radio" hack in
+	description field for now.
+
+1999-08-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/compat.cdl:
+	Change CYGNUM_LIBM_COMPATIBILITY flavor to 'booldata'.
+
+1999-08-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/libm.cdl, cdl/compat.cdl:
+	Take advantage of MACRONAME_ENUMVAL macros output by CDL.
+
+1999-06-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Disable optimization completely until CR 100802 is
+	fixed
+
+1999-06-07  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mathincl/fdlibm.h: Fix for alias problem
+	Fix for PR 19698
+	* src/PKGconf.mak: workaround no longer needed
+
+1999-06-04  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	Only use -fno-strict-aliasing if we have enough a recent toolchain
+	Default is that we have
+	
+1999-06-03  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	Finally found the option to do the right workaround:
+	-fno-strict-aliasing
+
+1999-06-02  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak (SPECIAL_FLAGS): Don't use -fschedule-insns[2] on
+	mn10300
+
+1999-05-27  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak (SPECIAL_FLAGS): Add workaround flags for new
+	toolchains for all targets
+
+1999-05-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/PKGconf.mak: Same workaround for sh.
+
+1999-05-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Make below workaround be the other way around by
+	using -O1 and adding more explicit -O2 optimizations, just so we
+	don't lose very many optimizations. This is for sparclite
+
+1999-05-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Make below workaround be the other way around by
+	using -O1 and adding more explicit -O2 optimizations, just so we
+	don't lose very many optimizations. This is for ARM
+
+1999-05-18  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: For the sparclite, prevent insn scheduling -
+	workaround for PR 19698
+
+1999-05-18  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: For the ARM, change from -O1 to just prevent insn
+	scheduling - workaround for PR 19698
+
+1999-04-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: Tidy display string capitalization.
+
+1999-04-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19442
+	* tests/vectors/vector_support.h: Make an occasional chirp to keep
+	the testing infra interested.
+
+1999-04-06  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/PKGconf.mak: More brute-force fix for ARM compiler
+	problems - PR 19772
+
+1999-03-31  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: Remove unnecessary define
+	Fix for PR 19423
+
+1999-03-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/PKGconf.mak: Add special compile options to work around ARM
+	compiler bugs.
+
+1999-02-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mathincl/fdlibm.h: 
+	Change definition of CYG_LIBM_HI/CYG_LIBM_LO to use inline
+	function
+	Fix for PR 18859
+
+1999-01-28  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/signgam.cxx: 
+	* src/misc/compatmode.cxx: 
+	Include <pkgconf/kernel.h> if we use kernel header files
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h (doTestVec): Makes more
+	sense to output vector number than array index
+
+	* src/double/portable-api/s_ceil.c: Fix comment s/+inf/-inf/
+
+1999-01-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h (doTestVec): 
+	Add output to let you know which vectors failed
+
+1999-01-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/mathincl/fdlibm.h: 
+	* include/sys/ieeefp.h: Add different structure layouts for
+	machines that have doubles that aren't pure big/little endian.
+
+Fri Oct 23 19:27:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h (START_TEST): 
+	Ensure that dummy START_TEST (the one used when the test should
+	*not* be run) does have a reference to the test function. And
+	make sure that there is a default one if there's no C API
+
+	* src/mathincl/fdlibm.h: 
+	Add matherr() prototype if no namespace pollution
+
+	Fixes for PR 17972
+
+1998-10-22  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17925
+
+	* include/pkgconf/libm.h: 
+	* src/misc/matherr.c:
+	Removed the CYGFUN_LIBM_matherr config. The function is already
+	weakly defined so shouldn't need to be configured out.
+
+1998-10-19  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/libm.h: updated the doc URL
+
+Thu Oct 15 21:36:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/compatmode.cxx, src/misc/signgam.cxx:
+	Only include kernel headers if we want thread-safe operation
+	Required for PR 17229
+
+Wed Oct 14 17:24:46 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Make CYGPKG_LIBM_COMPATIBILITY_DEFAULT require CYGPKG_LIBC
+	rather than all of libm, and put a check (with #error) that
+	this is the case
+
+	* src/double/ieee754-api/w_scalb.c:
+	Only include errno.h if we aren't IEEE-only
+
+	* src/double/portable-api/s_ldexp.c, src/misc/standard.c:
+	Make the error checking in s_ldexp.c more like every other libm
+	sources by putting the actual error handling into standard.c.
+	The error handling is just like scalb
+
+	* tests/vectors/acos.c, tests/vectors/asin.c,
+	  tests/vectors/atan.c, tests/vectors/atan2.c,
+ 	  tests/vectors/ceil.c, tests/vectors/cos.c, tests/vectors/cosh.c,
+ 	  tests/vectors/exp.c, tests/vectors/fabs.c,
+ 	  tests/vectors/floor.c, tests/vectors/fmod.c,
+ 	  tests/vectors/frexp.c, tests/vectors/ldexp.c,
+ 	  tests/vectors/log.c, tests/vectors/log10.c,
+ 	  tests/vectors/modf.c, tests/vectors/pow.c, tests/vectors/sin.c,
+ 	  tests/vectors/sinh.c, tests/vectors/sqrt.c, tests/vectors/tan.c,
+ 	  tests/vectors/tanh.c:
+	Remove unnecessary include of <errno.h>
+
+	* tests/vectors/vector_support.h:
+	Only include errno.h if we aren't IEEE-only.
+	If we don't have Cyg_ErrNo, just use a cyg_int32 instead, to
+	make sure that the fields are still correct for the input
+	test vector.
+	In doTestVec(), before checking errno, check if we're
+	in IEEE mode (either compiled in or set at runtime) because if
+	so, and errno is set in the errno field of the input test
+	vector, then we have to skip this, since we can't validate the
+	output.
+	In all modes, if errno is set in the input test vector, don't
+	bother checking the actual values
+
+	All of the above changes are for PR 17503
+	
+	* tests/vectors/pow.c:
+	Remove requirement of being in POSIX mode, as the change to
+	vector_support.h should make this work better now.
+
+
+Sun Sep 27 20:46:09 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* include/pkgconf/libm.h:
+	PR 17515: Corrected notcdl doc string.
+
+1998-09-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/libm.h:
+	PR 17503: there are uses of errno in a couple of places in libm,
+	and errno will only be available if the C library is present.
+	Therefore libm requires libc.
+	
+
+Fri Sep 25 19:00:35 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/compatmode.cxx: 
+	Make sure CYGNUM_LIBM_COMPATMODE_TRACE_LEVEL is defined before
+	we attempt tracing, otherwise set trace level to 0 i.e. never
+
+	* src/misc/signgam.cxx: 
+	Make sure CYGNUM_LIBM_SIGNGAM_TRACE_LEVEL is defined before
+	we attempt tracing, otherwise set trace level to 0 i.e. never
+	Fix for PR 17478
+
+	* include/pkgconf/libm.h: 
+	Define trace levels only if parent CYGPKG_LIBM_TRACE is defined
+	for consistency with Configuration Tool
+
+Fri Sep 25 18:25:02 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Only check valid compatibility setting if we aren't IEEE-only
+	mode
+	Fix for PR 17481
+
+Fri Sep 25 18:13:24 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mathincl/fdlibm.h: 
+	* src/double/ieee754-core/e_scalb.c: 
+	* src/double/ieee754-api/w_scalb.c: 
+	Use CYGFUN_LIBM_SVID3_scalb for whether 2nd arg of scalb is
+	double or int, rather than _SCALB_INT.
+	Fix for PR 17479
+
+Wed Sep 23 08:07:48 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/pow.c (test): 
+	Make pow test conditional on being in POSIX compatibility mode.
+	This is the only mode that can set errno correctly, in
+	relation to what the tests expect.
+	Fix for PR 16933
+
+1998-09-20  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/libm.h: updated CDL doc strings.
+
+Thu Sep 17 17:10:47 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h (checkErrorAcceptable): 
+	Move check for signed-ness after all of the special cases
+	Fix for PR 16933
+
+Tue Sep 15 19:26:32 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Updated descriptions and a few other minor things after review
+
+1998-09-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/libm.h:
+	Sorting out dependencies for error package.
+
+Fri Sep  4 14:20:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Fix thread-safe modes "requires" lines not to be associated
+	with the dummy parent package, but with the options themselves.
+	Also we don't need "requires CYGPKG_KERNEL" if we already require
+	a particular kernel option anyway.
+
+Thu Sep  3 09:50:20 1998  Tim Goodwin  <tgoodwin@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h
+	Change to cyg_thread_create() interface.
+
+Wed Sep  2 14:41:54 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Add default define for CYGPKG_LIBM_COMPATIBILITY_DEFAULT,
+	and shorten some display texts
+
+Wed Sep  2 13:15:43 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/double/ieee754-core/e_pow.c: 
+	Fix bug for when x is negative and y isn't an integer. A CYGNUS
+	LOCAL change got it wrong when casting a signed integer to
+	unsigned before right shifting.
+	
+	Reformat for 76 columns
+
+	* src/double/ieee754-api/w_pow.c: 
+	Reformat for 76 columns
+	
+
+Wed Sep  2 12:30:11 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Default tracing to off
+	Reformat for 76 columns
+
+	* tests/vectors/vector_support.h: 
+	Align '{'s and "verbs" on the same line. Tidy to 76 columns
+
+Mon Aug 31 13:38:25 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Require infra tracing support to allow tracing
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/libm.h:
+	* src/misc/compatmode.cxx, src/misc/signgam.cxx:
+	* tests/vectors/vector_support.h
+
+	Updated for new kernel configuration option symbol names
+
+Fri Aug 28 09:07:07 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h: 
+	Change START_TEST macro, adjust config options and add
+	cyg_package_start() to get tests working correctly with new entry
+	point mechanism, including cyg_iso_c_start() if available
+
+Wed Aug 26 20:25:36 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Remove #define CYGPKG_LIBM is that is meant to live in
+	<pkgconf/system.h> after all
+
+
+Wed Aug 26 19:38:54 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	More fixes to CDL stuff to make it work better, and look better on
+	the screen
+
+Tue Aug 25 20:23:25 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Make some fixes after running the ConfigTool
+
+Tue Aug 25 16:59:11 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Turns out the nesting wasn't quite right. Correct it, and replace
+	the "not" prefix on CFG_DATA, which slipped in to the previous change.
+
+Tue Aug 25 16:53:03 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Ensure there is a default compatibility mode and fix the
+	ifdef nesting for the compat modes
+
+Tue Aug 25 15:24:51 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Tidy up CDL stuff prior to checking if it all actually works!
+
+Tue Aug 25 05:17:55 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h: 
+	Do a first pass of CDLification of configuration data
+
+	* include/pkgconf/libm.h, src/misc/matherr.c: 
+	Rename CYGFUN_LIBC_matherr to CYGFUN_LIBM_matherr
+
+Wed Aug 19 19:35:16 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/acos.c, tests/vectors/cosh.c, tests/vectors/ldexp.c,
+	  tests/vectors/sinh.c, tests/vectors/asin.c, tests/vectors/exp.c,
+	  tests/vectors/log.c, tests/vectors/sqrt.c, tests/vectors/atan.c,
+   	  tests/vectors/fabs.c, tests/vectors/log10.c, tests/vectors/tan.c,
+	  tests/vectors/atan2.c, tests/vectors/floor.c, tests/vectors/modf.c,
+   	  tests/vectors/tanh.c, tests/vectors/ceil.c, tests/vectors/fmod.c,
+   	  tests/vectors/pow.c, tests/vectors/cos.c, tests/vectors/frexp.c,
+  	  tests/vectors/sin.c
+
+	* tests/vectors/vector_support.h (doTestVec): 
+	Remove "register" on variable
+
+Wed Aug 19 18:59:47 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/double/ieee754-core/e_gamma.c,
+	  src/double/ieee754-core/e_lgamma.c,
+	  src/double/ieee754-api/w_gamma.c,
+	  src/double/ieee754-api/w_lgamma.c:
+	Remove direct reference to extern int signgam and include <math.h>
+	instead
+
+Mon Jul 27 23:47:52 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/math.h, include/pkgconf/libm.h,
+	  src/double/ieee754-api/w_acos.c, src/double/ieee754-api/w_acosh.c,
+	  src/double/ieee754-api/w_asin.c, src/double/ieee754-api/w_atan2.c,
+	  src/double/ieee754-api/w_atanh.c, src/double/ieee754-api/w_cosh.c,
+	  src/double/ieee754-api/w_exp.c, src/double/ieee754-api/w_fmod.c,
+	  src/double/ieee754-api/w_gamma.c,
+	  src/double/ieee754-api/w_gamma_r.c,
+	  src/double/ieee754-api/w_hypot.c, src/double/ieee754-api/w_j0.c,
+	  src/double/ieee754-api/w_j1.c, src/double/ieee754-api/w_jn.c,
+	  src/double/ieee754-api/w_lgamma.c,
+	  src/double/ieee754-api/w_lgamma_r.c,
+	  src/double/ieee754-api/w_log.c,
+	  src/double/ieee754-api/w_log10.c, src/double/ieee754-api/w_pow.c,
+	  src/double/ieee754-api/w_remainder.c,
+	  src/double/ieee754-api/w_scalb.c, src/double/ieee754-api/w_sinh.c,
+	  src/double/ieee754-api/w_sqrt.c, src/double/ieee754-core/e_acos.c,
+	  src/double/ieee754-core/e_acosh.c,
+	  src/double/ieee754-core/e_asin.c,
+	  src/double/ieee754-core/e_atan2.c,
+	  src/double/ieee754-core/e_atanh.c,
+	  src/double/ieee754-core/e_cosh.c,
+	  src/double/ieee754-core/e_exp.c, src/double/ieee754-core/e_fmod.c,
+	  src/double/ieee754-core/e_gamma.c,
+	  src/double/ieee754-core/e_gamma_r.c,
+	  src/double/ieee754-core/e_hypot.c, src/double/ieee754-core/e_j0.c,
+	  src/double/ieee754-core/e_j1.c, src/double/ieee754-core/e_jn.c,
+	  src/double/ieee754-core/e_lgamma.c,
+	  src/double/ieee754-core/e_lgamma_r.c,
+	  src/double/ieee754-core/e_log.c, src/double/ieee754-core/e_log10.c,
+	  src/double/ieee754-core/e_pow.c,
+	  src/double/ieee754-core/e_rem_pio2.c,
+	  src/double/ieee754-core/e_remainder.c,
+	  src/double/ieee754-core/e_scalb.c,
+	  src/double/ieee754-core/e_sinh.c,
+	  src/double/ieee754-core/e_sqrt.c, src/double/internal/k_cos.c,
+	  src/double/internal/k_rem_pio2.c, src/double/internal/k_sin.c,
+	  src/double/internal/k_tan.c, src/double/portable-api/s_asinh.c,
+	  src/double/portable-api/s_atan.c, src/double/portable-api/s_cbrt.c,
+	  src/double/portable-api/s_ceil.c,
+	  src/double/portable-api/s_copysign.c,
+	  src/double/portable-api/s_cos.c, src/double/portable-api/s_erf.c,
+	  src/double/portable-api/s_expm1.c,
+	  src/double/portable-api/s_fabs.c,
+	  src/double/portable-api/s_finite.c,
+	  src/double/portable-api/s_floor.c,
+	  src/double/portable-api/s_frexp.c,
+	  src/double/portable-api/s_ilogb.c,
+	  src/double/portable-api/s_isnan.c,
+	  src/double/portable-api/s_ldexp.c,
+	  src/double/portable-api/s_log1p.c,
+	  src/double/portable-api/s_logb.c,
+	  src/double/portable-api/s_modf.c,
+	  src/double/portable-api/s_nextafter.c,
+	  src/double/portable-api/s_rint.c,
+	  src/double/portable-api/s_scalbn.c,
+	  src/double/portable-api/s_significand.c,
+	  src/double/portable-api/s_sin.c, src/double/portable-api/s_tan.c,
+	  src/double/portable-api/s_tanh.c, src/mathincl/fdlibm.h,
+	  src/misc/standard.c:
+
+	Untabify
+
+Mon Jul 27 22:52:24 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h (doTestVec): 
+	Remove "register" when declaring variable i
+
+	* host/acosgen.c, host/cosgen.c, host/fmodgen.c, host/modfgen.c,
+   	  host/tangen.c, host/asingen.c, host/coshgen.c, host/frexpgen.c,
+  	  host/powgen.c, host/tanhgen.c, host/atan2gen.c, host/expgen.c,
+    	  host/ldexpgen.c, host/singen.c, host/atangen.c, host/fabsgen.c,
+   	  host/log10gen.c, host/sinhgen.c, host/ceilgen.c, host/floorgen.c,
+  	  host/loggen.c, host/sqrtgen.c:
+	Remove "register" when declaring variable "int x"
+
+Mon Jul 27 22:45:01 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/vector_support.h (checkErrorAcceptable): 
+	Add extra check for tolerance acceptance so it behaves correctly with
+	underflow and overflow
+
+	Also reverse sense of checkErrorAcceptable() so it now returns
+	false on success and true on failure, as suggested by hmt. Change
+	this in doTestVec() (which is where it is called) too.
+
+	* tests/vectors/vector_support.h: 
+	Remove #if 0'd shift_double() function
+
+Mon Jul 27 21:55:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mathincl/fdlibm.h: 
+	Rename CYGONCE_LIBM_FDLIBM_H to CYGONCE_LIBM_MATHINCL_FDLIBM_H as per
+	code review comments
+
+Fri Jul 24 22:20:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/math.h, include/pkgconf/libm.h,
+	  src/double/ieee754-api/w_acos.c, src/double/ieee754-api/w_acosh.c,
+	  src/double/ieee754-api/w_asin.c, src/double/ieee754-api/w_atan2.c,
+	  src/double/ieee754-api/w_atanh.c, src/double/ieee754-api/w_cosh.c,
+	  src/double/ieee754-api/w_exp.c, src/double/ieee754-api/w_fmod.c,
+	  src/double/ieee754-api/w_gamma.c, src/double/ieee754-api/w_gamma_r.c,
+	  src/double/ieee754-api/w_hypot.c, src/double/ieee754-api/w_j0.c,
+	  src/double/ieee754-api/w_j1.c, src/double/ieee754-api/w_jn.c,
+	  src/double/ieee754-api/w_lgamma.c,
+	  src/double/ieee754-api/w_lgamma_r.c, src/double/ieee754-api/w_log.c,
+	  src/double/ieee754-api/w_log10.c, src/double/ieee754-api/w_pow.c,
+	  src/double/ieee754-api/w_remainder.c,
+	  src/double/ieee754-api/w_scalb.c, src/double/ieee754-api/w_sinh.c,
+	  src/double/ieee754-api/w_sqrt.c, src/mathincl/fdlibm.h,
+	  src/misc/compatmode.cxx, src/misc/matherr.c, src/misc/signgam.cxx,
+	  src/misc/standard.c:
+
+	Rename libm config option names as per the libm coding standard
+	review. Chiefly ensuring that CYGXXX_ prefixes are correct
+
+	* src/misc/matherr.c, include/pkgconf/libm.h:
+	Add new CYGFUN_LIBC_matherr config option to prevent inclusion of
+	default matherr
+
+Mon Jul 20 18:07:31 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/infconst.c: 
+	Oops. Don't let cyg_libm_infinity be static!
+
+Thu Jul 16 20:07:26 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/math.h, include/sys/ieeefp.h, src/misc/infconst.c:
+	Remove union Cyg_libm_int_double from math.h, which was used to
+	define infinity, and replace with use of
+	Cyg_libm_ieee_double_shape_type from ieeefp.h
+
+	That type (which is a union) is now reordered so that it can be
+	initialised in terms of two int's
+
+Mon Jul 13 21:55:06 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/double/ieee754-api/w_acos.c, src/double/ieee754-api/w_acosh.c,
+	  src/double/ieee754-api/w_asin.c, src/double/ieee754-api/w_atan2.c,
+	  src/double/ieee754-api/w_atanh.c, src/double/ieee754-api/w_cosh.c,
+	  src/double/ieee754-api/w_exp.c, src/double/ieee754-api/w_fmod.c,
+	  src/double/ieee754-api/w_gamma.c, src/double/ieee754-api/w_gamma_r.c,
+ 	  src/double/ieee754-api/w_hypot.c, src/double/ieee754-api/w_j0.c,
+ 	  src/double/ieee754-api/w_j1.c, src/double/ieee754-api/w_jn.c,
+ 	  src/double/ieee754-api/w_lgamma.c,
+ 	  src/double/ieee754-api/w_lgamma_r.c, src/double/ieee754-api/w_log.c,
+ 	  src/double/ieee754-api/w_log10.c, src/double/ieee754-api/w_pow.c,
+ 	  src/double/ieee754-api/w_remainder.c,
+ 	  src/double/ieee754-api/w_scalb.c, src/double/ieee754-api/w_sinh.c,
+ 	  src/double/ieee754-api/w_sqrt.c, src/double/ieee754-core/e_acos.c,
+ 	  src/double/ieee754-core/e_acosh.c, src/double/ieee754-core/e_asin.c,
+ 	  src/double/ieee754-core/e_atan2.c, src/double/ieee754-core/e_atanh.c,
+ 	  src/double/ieee754-core/e_cosh.c, src/double/ieee754-core/e_exp.c,
+ 	  src/double/ieee754-core/e_fmod.c, src/double/ieee754-core/e_gamma.c,
+ 	  src/double/ieee754-core/e_gamma_r.c,
+ 	  src/double/ieee754-core/e_hypot.c, src/double/ieee754-core/e_j0.c,
+ 	  src/double/ieee754-core/e_j1.c, src/double/ieee754-core/e_jn.c,
+ 	  src/double/ieee754-core/e_lgamma.c,
+ 	  src/double/ieee754-core/e_lgamma_r.c,
+ 	  src/double/ieee754-core/e_log.c, src/double/ieee754-core/e_log10.c,
+ 	  src/double/ieee754-core/e_pow.c,
+ 	  src/double/ieee754-core/e_rem_pio2.c,
+ 	  src/double/ieee754-core/e_remainder.c,
+ 	  src/double/ieee754-core/e_scalb.c, src/double/ieee754-core/e_sinh.c,
+ 	  src/double/ieee754-core/e_sqrt.c, src/double/internal/k_cos.c, 
+	  src/double/internal/k_rem_pio2.c, src/double/internal/k_sin.c,
+ 	  src/double/internal/k_tan.c, src/double/portable-api/s_asinh.c,
+ 	  src/double/portable-api/s_atan.c, src/double/portable-api/s_cbrt.c,
+ 	  src/double/portable-api/s_ceil.c,
+ 	  src/double/portable-api/s_copysign.c,
+ 	  src/double/portable-api/s_cos.c, src/double/portable-api/s_erf.c,
+ 	  src/double/portable-api/s_expm1.c, src/double/portable-api/s_fabs.c,
+ 	  src/double/portable-api/s_finite.c,
+ 	  src/double/portable-api/s_floor.c, src/double/portable-api/s_frexp.c,
+ 	  src/double/portable-api/s_ilogb.c, src/double/portable-api/s_isnan.c,
+ 	  src/double/portable-api/s_ldexp.c, src/double/portable-api/s_log1p.c,
+ 	  src/double/portable-api/s_logb.c, src/double/portable-api/s_modf.c,
+ 	  src/double/portable-api/s_nextafter.c,
+ 	  src/double/portable-api/s_rint.c, src/double/portable-api/s_scalbn.c,
+ 	  src/double/portable-api/s_significand.c,
+	  src/double/portable-api/s_sin.c, src/double/portable-api/s_tan.c,
+ 	  src/double/portable-api/s_tanh.c, src/misc/standard.c:
+
+	Make #ifdef __STDC__ bits compulsory and remove the associated #else
+	clause. We know that gcc is ISO C compatible!
+
+Tue Jul  7 16:05:48 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/compatmode.cxx:
+	Fix conditionalisation to prevent unused variable warning for tracing
+
+Thu Jun 25 04:58:21 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/vectors/acos.c, tests/vectors/acos.h, tests/vectors/asin.c,
+	  tests/vectors/asin.h, tests/vectors/atan.c, tests/vectors/atan.h,
+	  tests/vectors/atan2.c, tests/vectors/atan2.h, tests/vectors/ceil.c,
+	  tests/vectors/ceil.h, tests/vectors/cos.c, tests/vectors/cos.h,
+	  tests/vectors/cosh.c, tests/vectors/cosh.h, tests/vectors/exp.c,
+	  tests/vectors/exp.h, tests/vectors/fabs.c, tests/vectors/fabs.h,
+	  tests/vectors/floor.c, tests/vectors/floor.h, tests/vectors/fmod.c,
+	  tests/vectors/fmod.h, tests/vectors/frexp.c, tests/vectors/frexp.h,
+	  tests/vectors/ldexp.c, tests/vectors/ldexp.h, tests/vectors/log.c,
+	  tests/vectors/log.h, tests/vectors/log10.c, tests/vectors/log10.h,
+	  tests/vectors/modf.c, tests/vectors/modf.h, tests/vectors/pow.c,
+	  tests/vectors/pow.h, tests/vectors/sin.c, tests/vectors/sin.h,
+	  tests/vectors/sinh.c, tests/vectors/sinh.h, tests/vectors/sqrt.c,
+	  tests/vectors/sqrt.h, tests/vectors/tan.c, tests/vectors/tan.h,
+	  tests/vectors/tanh.c, tests/vectors/tanh.h,
+	  tests/vectors/vector_support.h:
+	Add math library tests for functions specified in the ISO standard.
+	These are based on precomputed test vectors
+
+	* tests/PKGconf.mak:
+	Create with above files being built
+
+	* host/acosgen.c, host/asingen.c, host/atan2gen.c, host/atangen.c,
+	  host/ceilgen.c, host/cosgen.c, host/coshgen.c, host/expgen.c,
+	  host/fabsgen.c, host/floorgen.c, host/fmodgen.c, host/frexpgen.c,
+	  host/ldexpgen.c, host/log10gen.c, host/loggen.c, host/modfgen.c,
+	  host/powgen.c, host/singen.c, host/sinhgen.c, host/sqrtgen.c,
+	  host/tangen.c, host/tanhgen.c:
+	Host-side (and currently linux-specific) sources to automatically
+	generate test vector data used by the above tests.
+
+	* include/pkgconf/libm.h:
+	Ensure the kernel C API is available if we want thread safety
+
+Wed Jun 24 15:42:31 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/standard.c:
+	Fix typo in ifdef
+
+Wed Jun 24 13:04:30 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/standard.c:
+	Fix #defines for IEEE mode, revealed by permutation testing
+
+Mon Jun 22 14:42:50 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/infconst.c:
+	Fix compiler warning
+
+Sun Jun 21 04:42:18 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/sys/ieeefp.h:
+	Add this to allow bitfield break down of IEEE floating point doubles
+
+Wed Jun 17 08:55:21 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libm.h:
+	Make the use of stderr for messages _not_ the default
+	Make thread safety the default
+
+	* src/misc/standard.c:
+	Change alternative for fprintf(stderr,...) _not_ being used from
+	"CYG_EMPTY_STATEMENT" to just "0" to placate compiler.
+
+Mon Jun 15 19:59:36 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/compatmode.cxx:
+	Fix typo in compatibility mode name
+
+Fri Jun  5 16:31:26 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/misc/signgam.cxx, src/misc/compatmode.cxx:
+	Fix some minor typos when thread safety is turned on
+
+	* src/misc/matherr.c
+	Correct syntax of weak attribute
+
+Fri Jun  5 07:07:03 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Initial check-in of all math library sources. Based on fdlibm-5.2.
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

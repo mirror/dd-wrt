@@ -1,0 +1,12 @@
+ROMFS - A rom filesystem plug-in module for eCos
+================================================
+
+You can use this module if you have flash ROM available to install the
+filesystem into. Instructions are given for creating and installing a
+rom filesystem into a RedBoot monitor.
+
+See mk_romfs for instructions for making the filesystem.
+
+See romfs.c for comments about the filesystem structure.
+
+

@@ -1,0 +1,166 @@
+# ====================================================================
+#
+#      synthdisk.cdl
+#
+#      Synthetic target disk package.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2003 Savin Zlobec 
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      savin
+# Contributors:
+# Date:           2003-06-18
+#
+#####DESCRIPTIONEND####
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_DISK_ECOSYNTH {
+    display     "Synthetic target disk driver"
+    
+    parent      CYGPKG_IO_DISK_DEVICES
+    active_if   CYGPKG_IO_DISK
+    active_if   CYGPKG_HAL_SYNTH
+
+    cdl_component CYGVAR_DEVS_DISK_ECOSYNTH_DISK0 {
+    	display         "Provide disk 0 device"
+        flavor          bool
+        default_value   0
+        description     "Synthetic disk 0 driver."
+        
+        cdl_option CYGDAT_IO_DISK_ECOSYNTH_DISK0_NAME {
+            display       "Device name for ecosynth disk 0 device"
+            flavor        data
+            default_value {"\"/dev/disk0/\""}
+            description   "This is the device name used to access this
+                           device in eCos. Note that the trailing slash
+                           character must be present."
+        }
+
+        cdl_option CYGDAT_IO_DISK_ECOSYNTH_DISK0_FILENAME {
+            display       "Linux file name for ecosynth disk 0 device"
+            flavor        data
+            default_value {"\"disk0.img\""}
+            description   "This is the name of the file in the Linux filesystem that
+                           the driver will use to simulate a real disk. It should have
+                           been formatted with a DOS filesystem image before being used.
+                           The driver may also be pointed at real devices. For example
+                           setting this option to \"/dev/fd\" will cause the driver to access
+                           any real floppy disk inserted in the host's floppy drive."
+        }
+
+        cdl_option CYGNUM_IO_DISK_ECOSYNTH_DISK0_SIZE {
+            display       "Size in bytes for ecosynth disk 0"
+            flavor        data
+            default_value 10240000
+            legal_values  512 to 99999999
+            requires      { (CYGNUM_IO_DISK_ECOSYNTH_DISK0_SIZE % 512) == 0 }
+            description   "
+                This option specifies the size in bytes used
+                for the ecosynth disk 0 device."
+        }
+
+        cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR {
+            display       "Expect MBR in synth disk 0 image"
+            flavor        bool
+            default_value 0
+            description   "
+                This option controls the scanning of MBR in synthetic
+                disk 0 image."
+        }
+        
+        cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_CYLINDERS {
+            display       "Number of cylinders on synth disk 0"
+            flavor        data
+            default_value 0
+            active_if     CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR
+            description   "
+                This option controls the number of cylinders on
+                synthetic disk 0. It is only needed if
+                CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR is set."
+        }
+        
+        cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_HEADS {
+            display       "Number of heads on synth disk 0"
+            flavor        data
+            default_value 0
+            active_if     CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR
+            description   "
+                This option controls the number of heads on
+                synthetic disk 0. It is only needed if
+                CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR is set."
+        }
+       
+        cdl_option CYGIMP_IO_DISK_ECOSYNTH_DISK0_SECTORS {
+            display       "Number of sectors per track on synth disk 0"
+            flavor        data
+            default_value 0
+            active_if     CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR
+            description   "
+                This option controls the number of sectors per track on
+                synthetic disk 0.It is only needed if
+                CYGIMP_IO_DISK_ECOSYNTH_DISK0_MBR is set."
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_DISK_ECOSYNTH_OPTIONS {
+    	display     "Build options"
+	    active_if   { CYGVAR_DEVS_DISK_ECOSYNTH_DISK0 }
+	    flavor      none
+	    compile     -library=libextras.a synthdisk.c
+	    description "
+	        Package-specific build options including control over compiler
+	        flags used only in building this package."
+
+	    cdl_option CYGPKG_DEVS_DISK_ECOSYNTH_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are used in addition
+                to the set of global flags."
+	    }
+        cdl_option CYGPKG_DEVS_DISK_ECOSYNTH_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}

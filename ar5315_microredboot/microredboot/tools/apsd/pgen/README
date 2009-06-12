@@ -1,0 +1,13 @@
+Here is a Linux test program for upsd and wme.
+
+Type "make" to build the test programs.
+
+Type "man ./pgen.1" to get a man page.
+Or copy pgen.1 to /usr/man/man1 to install the man page.
+
+It is possible to experiment with the program on ethernet.
+All you need is two Linux boxes connected by ethernet.
+
+For exercising upsd, have a wireless Linux box run the "phone"
+program.   Have an ethernet Linux box on the ethernet side
+of the AP running the "ap" program.

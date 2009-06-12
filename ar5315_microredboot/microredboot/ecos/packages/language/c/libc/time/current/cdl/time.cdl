@@ -1,0 +1,342 @@
+# ====================================================================
+#
+#      time.cdl
+#
+#      C library time related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBC_TIME {
+    display       "ISO C library date and time functions"
+    description   "
+        This package provides time functions specified by the
+        ISO C standard - ISO/IEC 9899:1990."
+    doc           ref/libc.html
+    include_dir   cyg/libc/time  
+    parent        CYGPKG_LIBC
+    implements    CYGINT_ISO_C_TIME_TYPES
+    implements    CYGINT_ISO_C_CLOCK_FUNCS
+    requires      { CYGBLD_ISO_C_TIME_TYPES_HEADER == "<cyg/libc/time/time.h>" }
+    requires      { CYGBLD_ISO_C_CLOCK_FUNCS_HEADER == \
+                       "<cyg/libc/time/time.h>" }
+    requires      CYGPKG_ISOINFRA
+    requires      CYGINT_ISO_DIV
+    requires      CYGINT_ISO_ABS
+
+    # Note: the POSIX files asctime_r,ctime_r,gmtime_r and
+    # localtime_r should be built all the time, not just in
+    # CYGFUN_LIBC_TIME_POSIX because the internal definitions
+    # are used by the ISO C functions regardless. Otherwise we
+    # get problems with certain inlining combinations. [Bug 1000001]
+
+    compile       asctime.cxx       clock.cxx      \
+                  ctime.cxx         difftime.cxx   \
+                  gmtime.cxx        localtime.cxx  \
+                  mktime.cxx        settime.cxx    \
+                  strftime.cxx      time.cxx       \
+                  timeutil.cxx      asctime_r.cxx  \
+                  ctime_r.cxx       gmtime_r.cxx   \
+                  localtime_r.cxx 
+
+
+# ====================================================================
+
+    cdl_option CYGSEM_LIBC_TIME_CLOCK_WORKING {
+        display       "Working clock() function"
+        requires      CYGFUN_KERNEL_THREADS_TIMER
+        requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+        default_value 1
+        description   "
+            This option controls whether clock() will
+            actually try and determine the process time
+            usage. With this option disabled, clock() does
+            not disappear, but will permanently return
+            (clock_t)-1 as mandated by the ISO C standard."
+    }
+    
+    cdl_option CYGSEM_LIBC_TIME_TIME_WORKING {
+        display       "Working time() function"
+        requires      CYGPKG_IO_WALLCLOCK
+        default_value 1
+        description   "
+            This option controls whether time() will
+            actually try and determine the current calendar
+            time. With this option disabled, time() does
+            not disappear, but will permanently return
+            (time_t)-1 as mandated by the ISO C standard."
+    }
+    
+    cdl_option CYGSEM_LIBC_TIME_SETTIME_WORKING {
+        display       "Working cyg_libc_time_settime() function"
+        requires      CYGPKG_IO_WALLCLOCK
+        default_value 1
+        description   "
+            This option controls whether cyg_libc_time_settime()
+            will actually try and set the current calendar
+            time. With this option disabled,
+            cyg_libc_time_settime() does not disappear, but
+            will permanently return an error."
+    }
+    
+    cdl_option CYGFUN_LIBC_TIME_POSIX {
+        display       "POSIX time functions"
+        default_value 1
+        requires      CYGINT_ISO_STRING_BSD_FUNCS
+        compile       strptime.cxx
+        description   "
+            Enabling this option allows the use of the
+            following functions defined in POSIX 1003.1:
+            asctime_r(), ctime_r(), gmtime_r(), strptime(), and
+            localtime_r()."
+    }
+
+    cdl_option CYGFUN_LIBC_TIME_SUS_EXTNS {
+	display       "Single UNIX extensions"
+	default_value 0
+	description   "
+            Enabling this option allows the use of
+            certain additional conversion specifiers
+            in the strftime function."
+    }
+
+    cdl_component CYGPKG_LIBC_TIME_ZONES {
+        display       "Time zone offsets"
+        flavor        none
+        description   "
+            These options control the default STandarD (STD)
+            and Daylight Savings Time (DST)
+            time offsets so that dates can be set correctly
+            for the local environment."
+        
+        cdl_option CYGNUM_LIBC_TIME_DST_DEFAULT_STATE {
+            display       "Default Daylight Savings Time state"
+            flavor        data
+            legal_values  -- -1 to 1
+            default_value -- -1
+            description   "
+                This option controls whether the initial
+                time environment is set up as STD, DST or
+                unknown. Use the value 1 for DST, 0 for STD, 
+                and (-1) for unknown. This can also be set at
+                runtime using the cyg_libc_time_setdst()
+                function."
+        }
+    
+        cdl_option CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET {
+            display       "Default Standard Time offset"
+            flavor        data
+            legal_values  -- -90000 to 90000
+            default_value -- 0
+            description   "
+                This option controls the offset from UTC in
+                seconds when in local Standard Time. This
+                value can be positive or negative. It
+                can also be set at run time using the
+                cyg_libc_time_setzoneoffsets() function."
+        }
+    
+        cdl_option CYGNUM_LIBC_TIME_DST_DEFAULT_OFFSET {
+            display       "Default Daylight Savings Time offset"
+            flavor        data
+            legal_values  -- -90000 to 90000
+            default_value -- 3600
+            description   "
+                This option controls the offset from UTC in
+                seconds when in local Daylight Savings Time. This
+                value can be positive or negative. It
+                can also be set at run time using the
+                cyg_libc_time_setzoneoffsets() function."
+        }
+    }        
+    
+    cdl_component CYGPKG_LIBC_TIME_INLINES {
+        display       "Inline functions"
+        flavor        none
+        description   "
+            These options control whether certain functions
+            are available in inline form. This may lead to
+            faster code at the expense of code space. But for
+            some functions, or some functions with constant
+            arguments, it may in fact lead to smaller code."
+    
+        cdl_option CYGIMP_LIBC_TIME_ASCTIME_INLINE {
+            display       "asctime()"
+            default_value 1
+            description   "
+                Allow the asctime() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_CTIME_INLINE {
+            display       "ctime()"
+            default_value 1
+            description   "
+                Allow the ctime() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_DIFFTIME_INLINE {
+            display       "difftime()"
+            default_value 1
+            description   "
+                Allow the difftime() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_GMTIME_INLINE {
+            display       "gmtime()"
+            default_value 1
+            description   "
+                Allow the gmtime() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_LOCALTIME_INLINE {
+            display       "localtime()"
+            default_value 1
+            description   "
+                Allow the localtime() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_MKTIME_INLINE {
+            display       "mktime()"
+            default_value 1
+            description   "
+                Allow the mktime() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_ASCTIME_R_INLINE {
+            display       "asctime_r()"
+            requires      CYGFUN_LIBC_TIME_POSIX
+            default_value 1
+            description   "
+                Allow the asctime_r() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_CTIME_R_INLINE {
+            display       "ctime_r()"
+            requires      CYGFUN_LIBC_TIME_POSIX
+            default_value 1
+            description   "
+                Allow the ctime_r() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_GMTIME_R_INLINE {
+            display       "gmtime_r()"
+            requires      CYGFUN_LIBC_TIME_POSIX
+            default_value 1
+            description   "
+                Allow the gmtime_r() function to be inlined"
+        }
+    
+        cdl_option CYGIMP_LIBC_TIME_LOCALTIME_R_INLINE {
+            display       "localtime_r()"
+            requires      CYGFUN_LIBC_TIME_POSIX
+            default_value 1
+            description   "
+                Allow the localtime_r() function to be inlined"
+        }
+    }
+# FIXME: Also want "inline all" and "don't inline any" options which requires
+# (or not) all the above, but
+# if we do that then we will require the ones that also depend on
+# CYGFUN_LIBC_TIME_POSIX :-( Wait for full CDL to fix this
+    
+    cdl_option CYGNUM_LIBC_TIME_CLOCK_TRACE_LEVEL {
+        display       "clock() tracing level"
+        flavor        data
+        legal_values  0 to 1
+        default_value 0
+        description   "
+            Trace verbosity level for debugging the clock()
+            function. Increase this value to get
+            additional trace output when tracing is enabled."
+    }
+
+    cdl_component CYGPKG_LIBC_TIME_OPTIONS {
+        display "C library time functions build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBC_TIME_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-Wno-format" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBC_TIME_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBC_TIME_TESTS {
+            display "C library time and date function tests"
+            flavor  data
+            no_define
+            calculated { 
+                "tests/asctime tests/clock tests/ctime tests/gmtime tests/localtime tests/mktime tests/strftime tests/time " 
+                . (CYGFUN_LIBC_TIME_POSIX ? "tests/strptime" : "")
+            }
+            description   "
+                This option specifies the set of tests for the C library
+                time and date functions."
+        }
+    }
+}
+
+# ====================================================================
+# EOF time.cdl

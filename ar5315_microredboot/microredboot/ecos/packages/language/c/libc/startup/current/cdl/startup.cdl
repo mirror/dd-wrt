@@ -1,0 +1,362 @@
+# ====================================================================
+#
+#      startup.cdl
+#
+#      ISO environment startup/termination related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBC_STARTUP {
+    display       "ISO environment startup/termination"
+    description   "
+            This package manages the control of the
+            environment (in the general sense) that an
+            application would require for full ISO C / POSIX
+            compatibility, including a main() entry point
+            supplied with arguments and an environment
+            (as retrievable by the getenv() function).
+            It also includes at the other end of things,
+            what happens when main() returns or exit() is
+            called."
+    doc           ref/c-library-startup.html
+    include_dir   cyg/libc/startup
+    parent        CYGPKG_LIBC
+    requires      CYGPKG_ISOINFRA
+    requires      { CYGINT_LIBC_STARTUP_CONTEXT == 1 }
+    implements    CYGINT_ISO_EXIT
+    implements    CYGINT_ISO_MAIN_STARTUP
+    implements    CYGINT_ISO_ENVIRON
+
+    compile       _exit.cxx      abort.cxx      atexit.cxx     \
+                  environ.cxx    exit.cxx       invokemain.cxx \
+                  main.cxx       mainthread.cxx
+
+    compile       -library=libextras.a cstartup.cxx
+
+# ====================================================================
+
+    cdl_interface CYGINT_LIBC_STARTUP_EXTERNAL_INVOKE_MAIN_POSSIBLE {
+        display       "main() can be invoked elsewhere"
+        description   "Implementors of this interface show that they
+                       allow main() to be invoked elsewhere."
+        flavor        bool
+        no_define
+    }
+
+    cdl_option CYGDAT_LIBC_ARGUMENTS {
+        display       "Arguments to main()"
+        flavor        data
+        default_value {"{\"\", NULL}"}
+        description   "
+            This option allows the setting of the arguments
+            to the main function. This only has any effect
+            when cyg_iso_c_start() is used to start the
+            ISO C compatibility. This will automatically
+            invoke main() in an ISO C compatible fashion.
+            This option is in fact used as argv, and so is
+            an n-tuple of string constants. The final
+            entry must be NULL. Conventionally if argv\[0\]
+            is supplied, it is used to inform the program
+            of its name."
+    }
+    
+
+    cdl_component CYGPKG_LIBC_STARTUP_CONTEXT {
+        display       "Startup context for main()"
+        flavor        none
+        no_define
+        description   "This component describes the options available for
+                       what context main() is invoked in, such as in a thread
+                       etc."
+
+        cdl_interface CYGINT_LIBC_STARTUP_CONTEXT {
+            display       "Startup context implementors"
+            no_define
+        }
+
+
+        cdl_option    CYGSEM_LIBC_STARTUP_MAIN_INITCONTEXT {
+            display       "Invoked from initialization context"
+            description   "With this option selected, main() will be
+                           called via cyg_user_start() (unless the program
+                           overrides the default cyg_user_start()). This
+                           means it is run in the context of the system
+                           initialization code, without the eCos kernel
+                           scheduler running, and using the startup stack.
+                           This means that any functions that may require 
+                           interactions with a running kernel will not
+                           work (including libc functions, if configured
+                           to be thread safe for example), so you should
+                           restrict yourself to only calling fully
+                           re-entrant functions from within main() in
+                           this case."
+            flavor        bool
+            default_value { 0 == CYGPKG_KERNEL && 0 == 
+                            CYGINT_LIBC_STARTUP_EXTERNAL_INVOKE_MAIN_POSSIBLE }
+            implements    CYGINT_LIBC_STARTUP_CONTEXT
+            implements    CYGINT_LIBC_STARTUP_MAIN_NO_STACK_SIZE
+        }
+
+        cdl_component CYGSEM_LIBC_STARTUP_MAIN_THREAD {
+            display       "Invoked as eCos thread"
+            requires      CYGPKG_KERNEL
+            flavor        bool
+            default_value { 0 != CYGPKG_KERNEL && 0 == \
+                            CYGINT_LIBC_STARTUP_EXTERNAL_INVOKE_MAIN_POSSIBLE }
+            implements    CYGINT_LIBC_STARTUP_CONTEXT
+            description   "
+                With this option selected, main() is invoked from an eCos
+                thread."
+        
+            cdl_option CYGSEM_LIBC_MAIN_STACK_FROM_SYSTEM {
+                display        "System provides stack for main()'s thread"
+                description    "
+                    This option controls whether the stack of
+                    main()'s thread is provided by the application or
+                    provided by the system. When disabled, the
+                    application must declare a pointer variable
+                    cyg_libc_main_stack which is a pointer to an
+                    appropriately aligned region of memory. The
+                    application must also declare a variable of
+                    type `int' called cyg_libc_main_stack_size
+                    which contains the size of the stack in bytes.
+                    This must be a multiple of 8."
+                flavor         bool
+                default_value  1
+            }
+
+            cdl_option CYGNUM_LIBC_MAIN_THREAD_PRIORITY {
+                display         "Priority of main()'s thread"
+                description     "
+                    This option is used to provide the thread
+                    priority which main()'s thread runs at. Be
+                    sure to check that this number is appropriate
+                    for the kernel scheduler chosen. Different
+                    kernel schedulers impose different restrictions
+                    on the usable priorities."
+                flavor          data
+                legal_values    0 to 0x7fffffff
+                default_value   10
+            }
+        }
+
+        cdl_option    CYGSEM_LIBC_STARTUP_MAIN_OTHER {
+            display       "Invoked elsewhere"
+            description   "With this option selected, main() must be
+                           invoked by a separate package, or by the user."
+            flavor        bool
+            default_value { 0 != \
+                            CYGINT_LIBC_STARTUP_EXTERNAL_INVOKE_MAIN_POSSIBLE }
+            requires      CYGINT_LIBC_STARTUP_EXTERNAL_INVOKE_MAIN_POSSIBLE
+            implements    CYGINT_LIBC_STARTUP_CONTEXT
+        }
+    }
+    
+    cdl_interface CYGINT_LIBC_STARTUP_MAIN_NO_STACK_SIZE {
+        display        "Don't allow main()'s stack size to be set"
+        description    "This interface describes whether the stack size
+                        value set in this package is supported by the
+                        implementation that invokes main. If not, that
+                        option is disabled."
+        flavor         bool
+        no_define
+    }
+        
+    cdl_option CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE {
+        display        "main()'s default thread stack size"
+        flavor         data
+        legal_values   16 to 0x7fffffff
+        default_value  8192
+        active_if      !CYGINT_LIBC_STARTUP_MAIN_NO_STACK_SIZE
+        description    "
+            This option sets the size of the stack used
+            in the context that invokes main(). For example,
+            with an eCos kernel, when the cyg_iso_c_start()
+            function is used to invoke the user-supplied
+            main() function in an ISO C compatible fashion,
+            a separate thread is created to call main().
+            This option controls the size of that thread's
+            stack, which is allocated in the BSS. It
+            must be a multiple of 8. Note, a low number
+            here may be overriden by the HAL if there is
+            a minimum requirement to process interrupts
+            etc. This option cannot be set if the implementation
+            that invokes main() does not use it."
+    }
+
+    cdl_component CYGFUN_LIBC_ATEXIT {
+        display        "Include atexit() function"
+        flavor         bool
+        default_value  1
+        description    "
+            This option enables the use of the atexit()
+            function, and ensure that the atexit handlers
+            are invoked from within exit() as defined in
+            the ISO C standard."
+    
+        cdl_option CYGNUM_LIBC_ATEXIT_HANDLERS {
+            display        "Number of functions atexit() supports"
+            flavor         data
+            legal_values   1 to 0x7fffffff
+            default_value  32
+            description    "
+                This option sets the number of functions
+                that atexit() has room for. In other words,
+                the number of separate atexit() calls that
+                can be made before calling exit() or returning
+                from main() ( in an environment controlled by
+                cyg_iso_c_start() ). For strict compliance
+                with the ISO C standard this should be at
+                least 32."
+        }
+    }
+    
+    cdl_option CYGSEM_LIBC_EXIT_CALLS_FFLUSH {
+        display        "Make exit() call fflush()"
+        requires       CYGINT_ISO_STDIO_FILEACCESS
+        default_value  { 0 != CYGINT_ISO_STDIO_FILEACCESS }
+        description    "
+            This option will ensure that all output
+            streams are flushed when exitting using
+            exit() as prescribed by the ISO C standard."
+    }
+    
+    cdl_option CYGSEM_LIBC_EXIT_STOPS_SYSTEM {
+        display        "_exit() stops all threads"
+        requires       CYGPKG_KERNEL
+        default_value  0
+        description    "
+            If this option is enabled then _exit(),
+            which is called from exit() which itself is
+            called on return from main(), stops the eCos
+            scheduler. For strict POSIX 1003.1
+            compatibility this would be the normal
+            behaviour. To allow the thread to simply
+            exit, without affecting other threads, simply
+            leave this option disabled. If there is no eCos
+            scheduler, then _exit() simply loops
+            irrespective of the setting of this option."
+    }
+    
+    cdl_option CYGDAT_LIBC_DEFAULT_ENVIRONMENT {
+        display       "Default environment"
+        flavor        data
+        default_value {"{ NULL }"}
+        description   "
+            This option allows the setting of the default
+            contents of the environment. This is in fact
+            the contents of the global environment pointer
+            char **environ defined by POSIX 1003.1. Strings
+            must be of the form NAME=VALUE, and the final
+            entry must be NULL."
+    }
+    
+    cdl_option CYGSEM_LIBC_INVOKE_DEFAULT_STATIC_CONSTRUCTORS {
+        display        "Invoke default static constructors"
+        requires       CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG
+        requires       { CYGSEM_LIBC_STARTUP_MAIN_THREAD || \
+                  (CYGSEM_LIBC_STARTUP_MAIN_OTHER && CYGPKG_POSIX_PTHREAD) }
+        default_value  0
+        description    "
+            This option causes the C library to call
+            static constructors with default priority
+            from within the context of the main() thread,
+            working with the co-operation of the HAL.
+            This may be needed for environments that
+            expect static constructors to be run in a
+            thread context. Note that this uses an object
+            with priority 65534. Therefore do not use
+            priority 65534 for any other static objects
+            with this option enabled."
+    }
+        
+    
+# ====================================================================
+
+    cdl_component CYGPKG_LIBC_STARTUP_OPTIONS {
+        display       "ISO environment startup/termination build options"
+        flavor        none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBC_STARTUP_CFLAGS_ADD {
+            display       "Additional compiler flags"
+            flavor        data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBC_STARTUP_CFLAGS_REMOVE {
+            display       "Suppressed compiler flags"
+            flavor        data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBC_STARTUP_TESTS {
+            display       "ISO environment startup/termination tests"
+            flavor        data
+            no_define
+            calculated    { "tests/atexit" }
+            description   "
+                This option specifies the set of tests for this package."
+        }
+    }
+}
+
+# ====================================================================
+# EOF startup.cdl

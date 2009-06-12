@@ -1,0 +1,38 @@
+# Example GRUB boot menu configuration file for eCos
+
+default 0
+timeout 30
+
+# eCos tm_basic test from dd0
+title eCos - tm_basic fd0
+root (fd0)
+kernel /boot/tm_basic
+
+# eCos tm_basic test from hd0
+title eCos - tm_basic hd0
+root (hd0,0)
+kernel /boot/tm_basic
+
+# eCos tcp_echo test from fd0
+title eCos - tcp_echo fd0
+root (fd0)
+kernel /boot/tcp_echo
+
+# eCos tcp_echo test from hd0
+title eCos - tcp_echo hd0
+root (hd0)
+kernel /boot/tcp_echo
+
+# eCos nc_test_slave test from fd0
+title eCos - nc_test_slave fd0
+root (fd0)
+kernel /boot/nc_test_slave
+
+# eCos nc_test_slave test from hd0
+title eCos - nc_test_slave hd0
+root (hd0)
+kernel /boot/nc_test_slave
+
+#end
+
+

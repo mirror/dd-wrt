@@ -1,0 +1,131 @@
+2004-03-17  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* include/hal_diag.h
+	fix warning.
+
+2004-03-02  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* include/platform.inc
+	add h8300_save_vectors macro.
+	
+2004-02-24  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* cdl/hal_h8300_h8300h_aki3068net.cdl
+	add Linker flags "-mrelax"
+	move CYGSEM_HAL_H8300_VECTOR_HOOK to hal_h8300.cdl
+
+2004-01-16  Yoichi Koyanagi <yk@tinywillow.com>,Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* src/plf_ide.c  
+	HAL_IDE_INIT return to enumerate controlers.
+	aki3068net_read_command fix 16bit mode access.
+
+2003-12-26  Yoichi Koyanagi <yk@tinywillow.com>,Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* src/plf_ide.c  
+	16bit bus mode fix.
+
+2003-12-04  Yoshinori Sato  <ysato@users.sourceforge.jp>
+	* include/pkgconf/mlt_h8300_h8300h_aki3068net_rom.ldi
+	fix vector location from CYGSEM_HAL_H8300_VECTOR_HOOK == 0
+	
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_h8300_h8300h_aki3068net.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-09  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* cdl/hal_h8300_h8300h_aki3068net.cdl
+	* src/hal_diag.c
+	CYGHAL_PLF_SCI_BASE add.
+
+2003-02-28  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* cdl/hal_h8300_h8300h_aki3068net.cdl
+	* src/plf_ide.c
+	* include/plf_io.h
+	* include/platform.inc
+	IDE I/F Support.
+
+2003-01-29  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* include/platform.inc
+	DRAM setup delay fix.
+
+2002-11-26  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* include/platform.inc
+	Buscontroler setting tuneing.
+	* cdl/hal_h8300_h8300h_aki3068net.cdl
+	CYGBLD_GLOBAL_LDFLAGS option "-mint32" add.
+	* include/plf_intr.h
+	delay_us scale fix.
+	* src/delay_us.S
+	timing tune.
+	
+2002-10-15  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* include/pkgconf/mlt_h8300_h8300h_aki3068net_rom.ldi
+	typo fixed.
+
+2002-10-15  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* cdl/hal_h8300_h8300h_aki3068net.cdl
+	CYGSEM_HAL_H8300_VECTOR_HOOK,CYGHWR_HAL_H8300_VECTOR_ADDRESS add.
+	* include/pkgconf/mlt_h8300_h8300h_aki3068net_ram.cdl
+	typo fixed.
+
+2002-05-31  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* src/hal_diag.c
+	delete hal_delay_us function.
+
+2002-04-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/delay_us.S:
+	Don't use .file as it can confuse debugging since the .file
+	doesn't contain the path and therefore the debugger will never
+	know where it lives! This conflicts with using -Wa,--gstabs.
+
+2002-04-24  Yoshinori Sato  <qzb04471@nifty.ne.jp>
+
+	* New package.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

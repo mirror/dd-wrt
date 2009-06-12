@@ -1,0 +1,243 @@
+# ====================================================================
+#
+#      jffs2.cdl
+#
+#      JFFS2 Filesystem configuration data
+#
+#      $Id: jffs2.cdl,v 1.15 2004/04/21 18:50:52 gthomas Exp $
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      David Woodhouse, Dominic Ostrowski
+# Original data:  ported from JFFS2 by David Woodhouse
+# Contributors:   dominic.ostrowski@3glab.com
+# Date:           2000-08-28
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_FS_JFFS2 {
+    display        "JFFS2 filesystem"
+    doc            ref/fileio.html
+    include_dir    ""
+
+    requires       CYGPKG_IO_FILEIO
+    requires       CYGPKG_IO_FLASH
+    requires       CYGINT_ISO_MALLOC
+
+    requires       CYGPKG_ISOINFRA
+    requires       CYGPKG_ERROR
+    requires       CYGINT_ISO_ERRNO
+    requires       CYGINT_ISO_ERRNO_CODES
+    requires       CYGPKG_IO_FLASH_BLOCK_DEVICE
+    requires       CYGPKG_IO_FILEIO_INODE
+    requires       CYGPKG_LINUX_COMPAT
+    requires       CYGPKG_CRC
+
+    implements     CYGINT_IO_FILEIO_FS      
+
+    compile        -library=libextras.a fs-ecos.c
+    compile        build.c scan.c malloc-ecos.c nodelist.c nodemgmt.c readinode.c dir-ecos.c read.c compr.c
+    # This could be overridden by an alternative direct I/O method.
+    compile        flashio.c
+
+    cdl_option CYGOPT_FS_JFFS2_GCTHREAD {
+	display         "Support garbage-collection background thread"
+	flavor          bool
+	compile         gcthread.c
+# Leave this off till it's been implemented. And don't implement it till
+# icache locking has been made thread-safe.
+ 	requires        CYGPKG_KERNEL && 0
+        description     "
+            Enable background garbage collection thread, for making 
+	    free space ahead of time."
+    }
+
+    cdl_option CYGOPT_FS_JFFS2_WRITE {
+	display         "Include write support for JFFS2"
+	flavor          bool
+	compile		gc.c write.c erase.c
+	default_value   1
+        description     "
+            Enable writing to JFFS2 file systems; not only reading."
+    }
+
+    cdl_option CYGOPT_FS_JFFS2_NAND {
+	display         "Support for NAND flash"
+	flavor          bool
+	define          CONFIG_JFFS2_FS_NAND
+	compile         wbuf.c
+        requires        0
+        description     "
+            Enable support for JFFS2 on NAND flash."
+    }
+
+    cdl_option CYGOPT_FS_JFFS2_DEBUG {
+	display         "Debug level"
+	flavor          data
+        default_value   0
+        legal_values    0 to 2
+	define          CONFIG_JFFS2_FS_DEBUG
+        description     "
+            Debug verbosity of JFFS2 code. Zero is normal operation
+            without debugging. Level 1 adds extra sanity checks and
+            fairly verbose output. Level 2 is insanely loquacious."
+    }
+
+    cdl_component CYGOPT_FS_JFFS2_COMPRESS {
+        display         "Compress data"
+        flavor          bool
+        define          JFFS2_COMPRESSION
+        default_value   1
+        description     "
+            Compression and decompression are entirely handled by the file
+            system and are fully transparent to applications. However,
+            selecting this option increases the amount of RAM required and
+            slows down read and write operations considerably if you have a
+            slow CPU."
+
+        cdl_option CYGOPT_FS_JFFS2_COMPRESS_ZLIB {
+            display         "Compress data using zlib"
+            flavor          bool
+            define          CONFIG_JFFS2_ZLIB
+            requires        CYGPKG_COMPRESS_ZLIB
+            compile         compr_zlib.c
+            default_value   1
+            description     "
+                Use zlib for compression of data. This is the slowest of the
+                compression options available but the most effective."
+        }
+
+        cdl_option CYGOPT_FS_JFFS2_COMPRESS_RTIME {
+            display         "Compress data using rtime"
+            flavor          bool
+            define          CONFIG_JFFS2_RTIME
+            compile         compr_rtime.c
+            default_value   1
+            description     "
+                Use the rtime algorithm for compression of data. This 
+                simple algorithm often manages to squeeze and extra few
+                bytes from data already compressed with gzip."
+        }
+
+        cdl_option CYGOPT_FS_JFFS2_COMPRESS_RUBIN {
+            display         "Compress data using rubin"
+            flavor          bool
+            define          CONFIG_JFFS2_RUBIN
+            requires        CYGOPT_FS_JFFS2_COMPRESS
+            compile         compr_rubin.c
+            description     "
+                Use the rubin algorithm for compression of data. This 
+                simple algorithm is faster than zlib but not quite as
+                effective."
+        }
+        cdl_option CYGOPT_FS_JFFS2_COMPRESS_CMODE {
+            display         "Set the default compression mode"
+            flavor          data
+            default_value   { "PRIORITY" }
+            legal_values    { "NONE" "PRIORITY" "SIZE" }
+            define          CONFIG_JFFS2_CMODE
+            description     "
+                You can set here the default compression mode of JFFS2 from 
+                the avaiable compression modes. NONE causes no compression to
+                be performed. PRIORITY tries the compressors in a predefined
+                order and chooses the first successfull one. SIZE tries all 
+                compressors and chooses the one which has the smallest result"
+        }
+    }
+    cdl_option CYGNUM_FS_JFFS2_RAW_NODE_REF_CACHE_POOL_SIZE {
+        display         "Memory pool size"
+        flavor          data
+        default_value   0
+        description     "
+            In order to manage data stored in flash, the file system
+            needs to use data structures (jffs2_raw_node_ref) allocated
+            in RAM. You can specify here the maximum number of such
+            structures you expect to be used, which will then be allocated
+            statically. If this option is set to 0, the structures will
+            be allocated dynamically via malloc(), which may incur some
+            memory overhead depending on the particular malloc()
+            implementation used."
+    }
+
+    cdl_option CYGPKG_FS_JFFS2_CFLAGS_ADD {
+	display "Additional compiler flags"
+	flavor  data
+	no_define
+	# We add '-D__ECOS' to trigger eCos-specific code in places.
+	# We add '-nostdinc -iwithprefix include' to avoid picking up
+	#    native <linux/*.h> include files when building on Linux.
+	default_value { "-D__ECOS -nostdinc -iwithprefix include" }
+	description   "
+	    This option modifies the set of compiler flags for
+            building the JFFS2 package.
+            These flags are used in addition
+            to the set of global flags."
+        }
+
+     cdl_option CYGPKG_FS_JFFS2_CFLAGS_REMOVE {
+         display "Suppressed compiler flags"
+         flavor  data
+         no_define
+         default_value { "" }
+         description   "
+             This option modifies the set of compiler flags for
+             building the JFFS2 package. These flags are removed from
+             the set of global flags if present."
+     }
+
+    # ----------------------------------------------------------------
+    # Tests
+
+    cdl_option CYGPKG_FS_JFFS2_TESTS {
+	display "JFFS2 FS tests"
+	flavor  data
+	no_define
+	calculated { "tests/fileio1.c tests/fseek1.c" }
+            description   "
+                This option specifies the set of tests for the JFFS2 FS package."
+        }
+    
+}
+
+# End of jffs2.cdl
+
+
+
+
+

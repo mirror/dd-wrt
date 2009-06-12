@@ -1,0 +1,311 @@
+# ====================================================================
+#
+#      hal_arm_xscale_ixdp425.cdl
+#
+#      Intel XScale IXDP425 Network Processor Eval Board HAL package
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      msalter
+# Contributors:   msalter
+# Date:           2002-12-10
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_ARM_XSCALE_IXDP425 {
+    display       "Intel XScale IXDP425 Network Processor Development Platform"
+    parent        CYGPKG_HAL_ARM_XSCALE
+    implements    CYGINT_HAL_ARM_BIGENDIAN
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm_xscale_ixdp425.h
+    description   "
+        This HAL platform package provides support for
+        the Intel XScale IXDP425 board."
+
+    compile       ixdp425_misc.c ixdp425_pci.c
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_arm.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_VARIANT_H  <pkgconf/hal_arm_xscale_ixp425.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_arm_xscale_ixdp425.h>"
+        puts $::cdl_header "#define CYGBLD_HAL_PLF_INTS_H <cyg/hal/hal_plf_ints.h>"
+	puts $::cdl_header "#define HAL_PLATFORM_CPU    \"XScale\""
+        puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"IXDP425 Development Platform\""
+        puts $::cdl_header "#ifdef CYGHWR_HAL_ARM_BIGENDIAN"
+        puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"BE\""
+        puts $::cdl_header "#else"
+        puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"LE\""
+        puts $::cdl_header "#endif"
+        puts $::cdl_header "#define HAL_PLATFORM_MACHINE_TYPE  245"
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        default_value {"RAM"}
+        legal_values  {"RAM" "ROM" "ROMRAM" }
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+           When targeting the IXDP425 eval board it is possible to build
+           the system for either RAM bootstrap or ROM bootstrap(s). Select
+           'ram' when building programs to load into RAM using onboard
+           debug software such as RedBoot or eCos GDB stubs. Select 'romram'
+           when building a stand-alone application which will be put
+           into ROM, but execute from RAM."
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        no_define
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+        parent  CYGPKG_NONE
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "arm-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { CYGHWR_HAL_ARM_BIGENDIAN ? "-mbig-endian -mcpu=xscale -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -mapcs-frame" :
+	                    "-mcpu=xscale -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -mapcs-frame" }
+            description   "
+                This option controls the global compiler flags which are used to
+                compile all packages by default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { CYGHWR_HAL_ARM_BIGENDIAN ? "-mbig-endian -mcpu=xscale -Wl,--gc-sections -Wl,-static -g -O2 -nostdlib" :
+	                    "-mcpu=xscale -Wl,--gc-sections -Wl,-static -g -O2 -nostdlib " }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "ROM" || CYG_HAL_STARTUP == "ROMRAM" }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            requires CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                binary data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) --remove-section=.fixed_vectors -O binary $< $@
+            }
+        }
+    }
+
+    cdl_component CYGPKG_HAL_ARM_XSCALE_IXDP425_OPTIONS {
+        display "Intel XScale Ixdp425 build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+        cdl_option CYGPKG_HAL_ARM_XSCALE_IXDP425_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the XScale Ixdp425 HAL. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_HAL_ARM_XSCALE_IXDP425_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the XScale Ixdp425 HAL. These flags are removed from
+                the set of global flags if present."
+        }
+
+	cdl_option CYGNUM_HAL_BREAKPOINT_LIST_SIZE {
+            display       "Number of breakpoints supported by the HAL."
+            flavor        data
+            default_value 32
+            description   "
+                This option determines the number of breakpoints supported by the HAL."
+        }
+    }
+
+    cdl_option CYGSEM_HAL_IXP425_PLF_USES_UART1 {
+        display       "IXDP425 uses IXP425 high-speed UART"
+        flavor        bool
+        default_value 1
+        description   "
+            Enable this option if the IXP425 high-speed UART is used
+            as a virtual vector communications channel."
+    }
+
+    cdl_option CYGSEM_HAL_IXP425_PLF_USES_UART2 {
+        display       "IXDP425 uses IXP425 console UART"
+        flavor        bool
+        default_value 1
+        description   "
+            Enable this option if the IXP425 console UART is to be used
+	    as a virtual vector communications channel."
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "arm_xscale_ixdp425_ram" : \
+                     CYG_HAL_STARTUP == "ROM" ? "arm_xscale_ixdp425_rom" : \
+					"arm_xscale_ixdp425_romram" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_xscale_ixdp425_ram.ldi>" : \
+                         CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_xscale_ixdp425_rom.ldi>" : \
+                                                    "<pkgconf/mlt_arm_xscale_ixdp425_romram.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_xscale_ixdp425_ram.h>" : \
+                         CYG_HAL_STARTUP == "ROM" ? "<pkgconf/mlt_arm_xscale_ixdp425_rom.h>" : \
+                                                    "<pkgconf/mlt_arm_xscale_ixdp425_romram.h>" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" || CYG_HAL_STARTUP == "ROMRAM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+         display       "Work with a ROM monitor"
+         flavor        booldata
+         legal_values  { "Generic" "GDB_stubs" }
+         default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+         parent        CYGPKG_HAL_ROM_MONITOR
+         requires      { CYG_HAL_STARTUP == "RAM" }
+         description   "
+             Support can be enabled for different varieties of ROM monitor.
+             This support changes various eCos semantics such as the encoding
+             of diagnostic output, or the overriding of hardware interrupt
+             vectors.
+             Firstly there is \"Generic\" support which prevents the HAL
+             from overriding the hardware vectors that it does not use, to
+             instead allow an installed ROM monitor to handle them. This is
+             the most basic support which is likely to be common to most
+             implementations of ROM monitor.
+             \"GDB_stubs\" provides support when GDB stubs are included in
+             the ROM monitor or boot ROM."
+     }
+
+    cdl_component CYGPKG_REDBOOT_HAL_OPTIONS {
+        display       "Redboot HAL options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_option CYGBLD_BUILD_REDBOOT_BIN {
+            display       "Build Redboot ROM binary image"
+            active_if     CYGBLD_BUILD_REDBOOT
+            default_value 1
+            no_define
+            description "This option enables the conversion of the Redboot ELF
+                         image to a binary image suitable for ROM programming."
+
+            make -priority 325 {
+                <PREFIX>/bin/redboot.bin : <PREFIX>/bin/redboot.elf
+                $(OBJCOPY) --strip-debug $< $(@:.bin=.img) 
+                $(OBJCOPY) -O srec $< $(@:.bin=.srec)
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+    }
+}

@@ -1,0 +1,371 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; I; Linux 2.2.14 ppc) [Netscape]">
+</head>
+<body>
+
+<center>
+<h1>
+Sample Networking Program</h1></center>
+
+<p><br>This example is derived from the test program <tt>".../net/tcpip/v1_3_1/tests/ping_test.c"</tt>.
+<br>&nbsp;
+<blockquote><tt><font size=-1>//==========================================================================</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tests/ping_test.c</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Simple test of PING
+(ICMP) and networking support</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>//==========================================================================</font></tt>
+<br><tt><font size=-1>//####BSDCOPYRIGHTBEGIN####</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>// -------------------------------------------</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>// Portions of this software may have been derived
+from OpenBSD or other sources,</font></tt>
+<br><tt><font size=-1>// and are covered by the appropriate copyright disclaimers
+included herein.</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>// -------------------------------------------</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>//####BSDCOPYRIGHTEND####</font></tt>
+<br><tt><font size=-1>//==========================================================================</font></tt>
+<br><tt><font size=-1>//#####DESCRIPTIONBEGIN####</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>// Author(s):&nbsp;&nbsp;&nbsp; gthomas</font></tt>
+<br><tt><font size=-1>// Contributors: gthomas</font></tt>
+<br><tt><font size=-1>// Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+2000-01-10</font></tt>
+<br><tt><font size=-1>// Purpose:</font></tt>
+<br><tt><font size=-1>// Description:</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>//####DESCRIPTIONEND####</font></tt>
+<br><tt><font size=-1>//</font></tt>
+<br><tt><font size=-1>//==========================================================================</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>// PING test code</font></tt><b><tt><font size=-1></font></tt></b>
+<p><b><tt><font size=-1>#include &lt;network.h></font></tt></b></blockquote>
+This single include directive is all that is required to pick up the networking
+support, including complete configuration information.
+<blockquote><tt><font size=-1>#define STACK_SIZE CYGNUM_HAL_STACK_SIZE_TYPICAL</font></tt>
+<br><tt><font size=-1>static char stack[STACK_SIZE];</font></tt>
+<br><tt><font size=-1>static cyg_thread thread_data;</font></tt>
+<br><tt><font size=-1>static cyg_handle_t thread_handle;</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>#define NUM_PINGS 16</font></tt>
+<br><tt><font size=-1>#define MAX_PACKET 4096</font></tt>
+<br><tt><font size=-1>static unsigned char pkt1[MAX_PACKET], pkt2[MAX_PACKET];</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>#define UNIQUEID 0x1234</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>void</font></tt>
+<br><tt><font size=-1>cyg_test_exit(void)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; diag_printf("... Done\n");</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; while (1) ;</font></tt>
+<br><tt><font size=-1>}</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>void</font></tt>
+<br><tt><font size=-1>pexit(char *s)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; perror(s);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; cyg_test_exit();</font></tt>
+<br><tt><font size=-1>}</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>// Compute INET checksum</font></tt>
+<br><tt><font size=-1>int</font></tt>
+<br><tt><font size=-1>inet_cksum(u_short *addr, int len)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; register int nleft = len;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; register u_short *w = addr;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; register u_short answer;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; register u_int sum = 0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; u_short odd_byte = 0;</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Our algorithm is
+simple, using a 32 bit accumulator (sum),</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; we add sequential
+16 bit words to it, and at the end, fold</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; back all the carry
+bits from the top 16 bits into the lower</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; 16 bits.</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; while( nleft > 1 )&nbsp; {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sum +=
+*w++;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nleft
+-= 2;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>&nbsp;&nbsp;&nbsp; /* mop up an odd byte, if necessary
+*/</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; if( nleft == 1 ) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *(u_char
+*)(&amp;odd_byte) = *(u_char *)w;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sum +=
+odd_byte;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; * add back carry outs from
+top 16 bits to low 16 bits</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; sum = (sum >> 16) + (sum &amp;
+0x0000ffff); /* add hi 16 to low 16 */</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; sum += (sum >> 16);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* add carry */</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; answer = ~sum;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* truncate to 16 bits */</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; return (answer);</font></tt>
+<br><tt><font size=-1>}</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>static int</font></tt>
+<br><tt><font size=-1>show_icmp(unsigned char *pkt, int len,</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+struct sockaddr_in *from, struct sockaddr_in *to)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; cyg_tick_count_t *tp, tv;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; struct ip *ip;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; struct icmp *icmp;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; tv = cyg_current_time();</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; ip = (struct ip *)pkt;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; if ((len &lt; sizeof(*ip)) ||
+ip->ip_v != IPVERSION) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diag_printf("%s:
+Short packet or not IP! - Len: %d, Version: %d\n",</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+inet_ntoa(from->sin_addr), len, ip->ip_v);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return
+0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; icmp = (struct icmp *)(pkt + sizeof(*ip));</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; len -= (sizeof(*ip) + 8);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; tp = (cyg_tick_count_t *)&amp;icmp->icmp_data;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; if (icmp->icmp_type != ICMP_ECHOREPLY)
+{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diag_printf("%s:
+Invalid ICMP - type: %d\n",</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+inet_ntoa(from->sin_addr), icmp->icmp_type);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return
+0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; if (icmp->icmp_id != UNIQUEID)
+{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diag_printf("%s:
+ICMP received for wrong id - sent: %x, recvd: %x\n",</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+inet_ntoa(from->sin_addr), UNIQUEID, icmp->icmp_id);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; diag_printf("%d bytes from %s:
+", len, inet_ntoa(from->sin_addr));</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; diag_printf("icmp_seq=%d", icmp->icmp_seq);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; diag_printf(", time=%dms\n", (int)(tv
+- *tp)*10);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; return (from->sin_addr.s_addr
+== to->sin_addr.s_addr);</font></tt>
+<br><tt><font size=-1>}</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>static void</font></tt>
+<br><tt><font size=-1>ping_host(int s, struct sockaddr_in *host)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; struct icmp *icmp = (struct icmp
+*)pkt1;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; int icmp_len = 64;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; int seq, ok_recv, bogus_recv;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; cyg_tick_count_t *tp;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; long *dp;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; struct sockaddr_in from;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; int i, len, fromlen;</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>&nbsp;&nbsp;&nbsp; ok_recv = 0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; bogus_recv = 0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; diag_printf("PING server %s\n",
+<b>inet_ntoa(host->sin_addr)</b>);</font></tt></blockquote>
+This function takes an IP address and returns a string representation.&nbsp;
+Useful for printing the address.
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp; for (seq = 0;&nbsp; seq
+&lt; NUM_PINGS;&nbsp; seq++) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Build
+ICMP packet</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; icmp->icmp_type
+= ICMP_ECHO;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; icmp->icmp_code
+= 0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; icmp->icmp_cksum
+= 0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; icmp->icmp_seq
+= seq;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; icmp->icmp_id
+= 0x1234;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Set
+up ping data</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tp = (cyg_tick_count_t
+*)&amp;icmp->icmp_data;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *tp++
+= cyg_current_time();</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dp = (long
+*)tp;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (i
+= sizeof(*tp);&nbsp; i &lt; icmp_len;&nbsp; i += sizeof(*dp)) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*dp++ = i;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Add
+checksum</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; icmp->icmp_cksum
+= inet_cksum( (u_short *)icmp, icmp_len+8);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Send
+it off</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>if
+(sendto(s, icmp, icmp_len+8, 0, (struct sockaddr *)host, sizeof(*host))
+&lt; 0) {</b></font></tt></blockquote>
+This function sends a single packet, in this case via the ICMP protocol.&nbsp;
+The destination address is specified by the <tt>host</tt> argument.
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+perror("sendto");</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+continue;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Wait
+for a response</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fromlen
+= sizeof(from);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>len
+= recvfrom(s, pkt2, sizeof(pkt2), 0, (struct sockaddr *)&amp;from, &amp;fromlen);</b></font></tt></blockquote>
+This function waits for a packet to be sent to this interface.&nbsp; Note:
+this operation can fail if no packet is received with a given amount of
+time (this timeout value is setup in the <tt>ping_test()</tt> routine below).
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (len &lt; 0) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+perror("recvfrom");</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else
+{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (show_icmp(pkt2, len, &amp;from, host)) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ok_recv++;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+} else {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+bogus_recv++;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; diag_printf("Sent %d packets,
+received %d OK, %d bad\n", NUM_PINGS, ok_recv, bogus_recv);</font></tt>
+<br><tt><font size=-1>}</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>static void</font></tt>
+<br><tt><font size=-1>ping_test(struct bootp *bp)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; struct protoent *p;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; struct timeval tv;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; struct sockaddr_in host;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; int s;</font></tt><tt><font size=-1></font></tt>
+<p><tt><font size=-1>&nbsp;&nbsp;&nbsp; <b>if ((p = getprotobyname("icmp"))
+== (struct protoent *)0) {</b></font></tt></blockquote>
+This function gets information about the ICMP protocol.&nbsp; This will
+be used below to set up the "socket" (the handle to a network connection).
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+perror("getprotobyname");</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; <b>s = socket(AF_INET, SOCK_RAW,
+p->p_proto);</b></font></tt></blockquote>
+Create the socket "s".&nbsp; A socket is an abstract object (sometimes
+called a handle or endpoint).&nbsp; Sockets come in many flavors, RAW sockets
+are used for communicating with non-structured protocols.&nbsp; DATAGRAM
+sockets are used for packet oriented protocols, such as UDP.&nbsp; STREAM
+sockets are used for reliable, sequenced byte streams, such as those provided
+by TCP.
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp; if (s &lt; 0) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; perror("socket");</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; tv.tv_sec = 1;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; tv.tv_usec = 0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; <b>setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+&amp;tv, sizeof(tv));</b></font></tt></blockquote>
+This function instructs the system that receive operations (see <tt>ping_host()</tt>
+above) must complete within 1 second or issue a timed out error condition.
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp; // Set up host address</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; host.sin_family = AF_INET;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; host.sin_addr = bp->bp_siaddr;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; host.sin_port = 0;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; ping_host(s, &amp;host);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; // Now try a bogus host</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; host.sin_addr.s_addr = htonl(ntohl(host.sin_addr.s_addr)
++ 32);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; ping_host(s, &amp;host);</font></tt>
+<br><tt><font size=-1>}</font></tt>
+<br><tt><font size=-1></font></tt>&nbsp;</blockquote>
+This function drives the test.
+<blockquote><tt><font size=-1>void</font></tt>
+<br><tt><font size=-1>net_test(cyg_addrword_t p)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; diag_printf("Start PING test\n");</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; <b>init_all_network_interfaces();</b></font></tt></blockquote>
+This is a call to the network initialization code.&nbsp; Note that it must
+be executed from a thread context, thus we can't put it in the <tt>cyg_start()
+</tt>function which follows.&nbsp; The <tt>init_all_network_interfaces()</tt>
+routine will cause the networking system to be initialized and any hardware
+interfaces will be set up.&nbsp; Using the system configuration information,
+an interface can be started using either <b>BOOTP</b>,&nbsp; or a predefined
+configuration with static IP information.&nbsp; It is also possible to
+indicate that an interface will be configured by the user code, outside
+of "<tt>init_all_network_interfaces()</tt>".
+<br><tt><font size=-1>&nbsp;</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; #ifdef CYGHWR_NET_DRIVER_ETH0</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (eth0_up)
+{</font></tt>
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ping_test(&amp;eth0_bootp_data);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>#endif</font></tt></blockquote>
+Notice that there is a BOOTP information structure kept about all hardware
+interfaces.&nbsp; This is created and initialized by the call to <tt>init_all_network_interfaces()</tt>,
+unless manual configuration is selected.&nbsp; This information can be
+used by the application to learn things such as the local IP address, server
+name, etc.
+<blockquote><tt><font size=-1>#ifdef CYGHWR_NET_DRIVER_ETH1</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; if (eth1_up) {</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ping_test(&amp;eth1_bootp_data);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-1>#endif</font></tt></blockquote>
+Multiple hardware interfaces can be supported, depending on the hardware
+platform.&nbsp; If the platform provides a single ethernet device then&nbsp;
+<b><tt>CYGHWR_NET_DRIVER_ETH0 </tt></b>will be defined.&nbsp; If there
+is a second interface, then will <b><tt>CYGHWR_NET_DRIVER_ETH1 </tt></b>be
+defined.
+<blockquote><tt><font size=-1>&nbsp;&nbsp;&nbsp; cyg_test_exit();</font></tt>
+<br><tt><font size=-1>}</font></tt>
+<br><tt><font size=-1></font></tt>&nbsp;</blockquote>
+The following function creates an initial thread which runs the program.&nbsp;
+This could just as easily be done by naming the <tt>net_test()</tt> function
+<tt>main()</tt>.
+<blockquote><tt><font size=-1>void</font></tt>
+<br><tt><font size=-1>cyg_start(void)</font></tt>
+<br><tt><font size=-1>{</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; // Create a main thread, so we
+can run the scheduler and have time 'pass'</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; cyg_thread_create(10,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+// Priority - just a number</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+net_test,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // entry</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+// entry parameter</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Network test",&nbsp;&nbsp;&nbsp; // Name</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&amp;stack[0],&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Stack</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+STACK_SIZE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Size</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&amp;thread_handle,&nbsp;&nbsp;&nbsp; // Handle</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&amp;thread_data&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Thread data structure</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+);</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; cyg_thread_resume(thread_handle);&nbsp;
+// Start it</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp; cyg_scheduler_start();</font></tt>
+<br><tt><font size=-1>}</font></tt></blockquote>
+
+</body>
+</html>

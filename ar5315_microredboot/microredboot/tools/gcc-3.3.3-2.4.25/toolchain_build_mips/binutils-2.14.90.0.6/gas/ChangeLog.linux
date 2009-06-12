@@ -1,0 +1,8 @@
+2002-06-18  H.J. Lu <hjl@gnu.org>
+
+	* dwarf2dbg.c (dwarf2_finish): Output dwarf debug info only
+	when needed.
+
+2001-10-21  H.J. Lu <hjl@gnu.org>
+
+	* configure: Rebuid for ../libtool.m4 change.

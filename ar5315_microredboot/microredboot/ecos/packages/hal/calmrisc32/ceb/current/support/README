@@ -1,0 +1,23 @@
+
+The support directory provides a tool for downloading code to the calmRISC
+board. This simple application communicates over a serial line (57600-8-N-1)
+with the MDSChip board which in turn controls the core eval board.
+
+Building the tool:
+
+  % gcc -g -O2 calmbreaker.c -o calmbreaker
+
+Using the tool:
+
+  calmbreaker [--reset] [--run] [-p serialdev] [--srec-code | --srec-data]
+              [-f filename]
+
+     --reset      ==> Reset the board. Stops the core.
+     --run        ==> Start the core running at the reset vector
+     -p           ==> Specify the serial device
+     --srec-code  ==> Download s-records to program memory
+     --srec-date  ==> Download s-records to data memory
+     -f           ==> Specify s-record file. If -f is missing, use
+                      stdin.
+
+

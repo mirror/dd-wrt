@@ -1,0 +1,310 @@
+# ====================================================================
+#
+#      hal_sh.cdl
+#
+#      SH architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2003 Nick Garnett 
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  jskov, nickg
+# Contributors:
+# Date:           1999-10-29
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_SH {
+    display       "SH architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_sh.h
+    description   "
+        The SH (SuperH) architecture HAL package provides generic
+        support for this processor architecture. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    compile       hal_misc.c context.S sh_stub.c
+
+    # The "-o file" is a workaround for CR100958 - without it the
+    # output file would end up in the source directory under CygWin.
+    # n.b. grep does not behave itself under win32
+    make -priority 1 {
+        <PREFIX>/include/cyg/hal/sh_offsets.inc : <PACKAGE>/src/hal_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,sh_offsets.tmp -o hal_mk_defs.tmp -S $<
+        fgrep .equ hal_mk_defs.tmp | sed s/#// > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 sh_offsets.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm sh_offsets.tmp hal_mk_defs.tmp
+    }
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/sh.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_interface CYGINT_HAL_SH_DMA_CHANNELS {
+        display       "Number of DMA channels"
+    }
+
+    cdl_interface CYGINT_HAL_SH_DMA_CHANNELS_USED {
+        display       "Number of requested DMA channels"
+        requires      CYGINT_HAL_SH_DMA_CHANNELS_USED <= CYGINT_HAL_SH_DMA_CHANNELS
+        description   "
+            Various drivers may request use of a DMA channel, but only
+            so many are available. These interfaces make sure the
+            DMA resources are not overcommitted."
+    }
+
+    cdl_component CYGPKG_HAL_SH_CPU {
+        display          "CPU type and endian mode controls"
+        flavor     none
+        no_define
+        description      "
+            CPU type and endian mode can be selected using these option."
+
+        cdl_interface CYGINT_HAL_SH_VARIANT {
+            display  "Number of variant implementations in this configuration"
+            no_define
+            requires 1 == CYGINT_HAL_SH_VARIANT
+        }
+
+        cdl_option CYGHWR_HAL_SH_FPU {
+            display       "Variant FPU support"
+            default_value 0
+        }
+
+        cdl_option CYGHWR_HAL_SH_NO_FPU {
+            display       "Variant has no FPU support"
+            calculated    !CYGHWR_HAL_SH_FPU
+        }
+
+        cdl_option CYGHWR_HAL_SH_FPU_REGS {
+            display       "Variant FPU register count"
+            flavor        data
+            active_if     CYGHWR_HAL_SH_FPU
+            default_value 16
+            legal_values  { 16 32 }
+            description   "Number of FPU registers present. The SH3 has
+                           16 registers in one bank. The SH4 has 32
+                           registers in two banks."
+        }
+
+        cdl_option CYGHWR_HAL_SH_BIGENDIAN {
+            display          "Use big-endian mode"
+            default_value    { (CYGINT_HAL_SH_PLF_BIGENDIAN_DEFAULT != 0) \
+                                ? 1 : 0 }
+            description      "
+                Use the CPU in big-endian mode."
+        }
+
+        cdl_interface CYGINT_HAL_SH_PLF_BIGENDIAN_DEFAULT {
+            display          "Platform wants default BE"
+            no_define
+            description      "
+                This interface is set by the platform, not by the user,
+                to indicate what the default endianness should be."
+        }
+    }
+    
+    cdl_component CYGPKG_HAL_SH_CACHE {
+        display          "Cache controls"
+        flavor     none
+        no_define
+        description      "
+            Initial cache settings can be specified using these options."
+
+        cdl_option CYGHWR_HAL_SH_CACHE_ENABLE {
+            display       "Enable cache on startup"
+            default_value 1
+            description "
+                Controls whether caches should be enabled on startup."
+        }
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        description   "
+            The NUMERATOR divided by the DENOMINATOR gives the number of
+            nanoseconds per tick. The PERIOD is the divider to be programmed
+            into a hardware timer that is driven from an appropriate hardware
+            clock, such that the timer overflows once per tick (normally
+            generating a CPU interrupt to mark the end of a tick). The tick
+            rate is typically 100Hz.
+            The SH HAL uses TMU counter 0 for driving the real-time
+            clock."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value { CYGHWR_HAL_SH_ONCHIP_PERIPHERAL_SPEED/CYGNUM_HAL_RTC_DENOMINATOR / CYGHWR_HAL_SH_RTC_PRESCALE }
+        }
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/sh.ld" }
+    }
+
+    cdl_option CYGPKG_HAL_SH_TESTS {
+        display "SH tests"
+        flavor  data
+        no_define
+        calculated { "tests/intr0" }
+        description   "
+            This option specifies the set of tests for the SH HAL."
+    }
+
+    cdl_component CYGBLD_HAL_SH_BSP_SYSCALL {
+        display       "Build BSP syscall support file"
+        default_value 1
+        active_if     CYGSEM_REDBOOT_BSP_SYSCALLS
+        description   "
+            When the RedBoot option for supporting syscalls is enabled,
+            build the SH architecture support file."
+
+        compile       hal_syscall.c
+    }
+
+    cdl_component CYGPKG_REDBOOT_SH_OPTIONS {
+        display       "Redboot for SuperH options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_component CYGSEM_REDBOOT_SH_LINUX_BOOT {
+            active_if      CYGBLD_BUILD_REDBOOT_WITH_EXEC
+            display        "Support booting Linux via RedBoot"
+            flavor         bool
+            default_value  1
+            description    "
+               This option enables RedBoot to support booting of a Linux kernel."
+            compile -library=libextras.a redboot_linux_exec.c
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_ENTRY {
+                display        "Default kernel entry address"
+                flavor         data
+                default_value  0x8c102000
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_BASE_ADDR {
+                display        "Default parameter block address"
+                flavor         data
+                default_value  0x8c101000
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_MOUNT_RDONLY {
+                display        "Default MOUNT_RDONLY"
+                flavor         data
+                default_value  0
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_RAMDISK_FLAGS {
+                display        "Default RAMDISK_FLAGS"
+                flavor         data
+                default_value  0
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_ORIG_ROOT_DEV {
+                display        "Default ORIG_ROOT_DEV"
+                flavor         data
+                default_value  0
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_LOADER_TYPE {
+                display        "Default LOADER_TYPE"
+                flavor         data
+                default_value  0
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_INITRD_START {
+                display        "Default INITRD_START"
+                flavor         data
+                default_value  0
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_INITRD_SIZE {
+                display        "Default INITRD_SIZE"
+                flavor         data
+                default_value  0
+            }
+
+            cdl_option CYGDAT_REDBOOT_SH_LINUX_BOOT_COMMAND_LINE {
+                display        "Default COMMAND_LINE"
+                flavor         data
+                default_value  { "console=ttySC1,38400" }
+            }
+        }
+    }
+}
+

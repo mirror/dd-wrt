@@ -1,0 +1,100 @@
+# Target selection dialog class definition for GDBtk.
+# Copyright 1997, 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class TargetSelection {
+  inherit ModalDialog ManagedWin
+
+  private {
+    variable f
+    variable fr
+    variable target
+    variable saved_baud
+    variable saved_port
+    variable saved_main
+    variable saved_exit
+    variable saved_check
+    variable saved_verb
+    variable saved_portname
+    variable saved_hostname
+    variable saved_attach
+    variable saved_load
+    variable saved_run
+    variable saved_cont
+    variable saved_options
+    variable saved_after_attaching
+    variable _after_entry
+    variable changes 0
+    variable target_list ""
+
+    common db_inited    0
+    common prefs_inited 0
+    common trace_inited 0
+
+    # The Connection frame has three "sections"; the first contains
+    # a combobox with all the targets. The second can either be
+    # a combobox listing available baud rates or an entry for specifying
+    # the hostname of a TCP connection. The actual widget mapped onto the
+    # screen is saved in MAPPED1. The third section contains either a
+    # combobox for the serial port or an entry for the portnumber. The
+    # widget actually mapped onto the screen is saved in MAPPED2.
+    variable mapped1
+    variable mapped2
+    
+    variable Width 20
+    variable MoreButton
+    variable MoreFrame
+    variable MoreLabel
+
+    variable RunMethod
+    
+    proc _init_prefs {}
+    proc default_port {}
+
+    method build_win {}
+    method cancel {}
+    method change_baud {w {baud ""}}    
+    method change_target {w {name ""}}
+    method config_dialog {t}
+    method fill_rates {}
+    method fill_targets {}
+    method get_target {name}
+    method help {}
+    method _init {}
+    method _init_target {}
+    method port_list {}
+    method save {}
+    method set_check_button {name}
+    method set_run {check_which}
+    method set_saved {}
+    method target_trace {variable index op}
+    method toggle_more_options {}
+    method valid_target {target}
+    method write_saved {}
+  }
+
+  public {
+    variable exportcancel 0
+
+    method constructor {args} 
+    method reconfig {}
+
+    proc get_target_list {}
+    proc native_debugging {}
+    proc getname {target name}
+    proc init_target_db {}
+  }
+
+  protected common gdb_target
+
+}

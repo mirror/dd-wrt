@@ -1,0 +1,357 @@
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-02-13  Patrick Doyle  <wpd@delcomsys.com>
+	* src/assabet_misc.c: Replaced explicit prototype of memset with
+	#include <string.h>.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_ROM.ecm: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT.
+	* misc/redboot_RAM.ecm: Ditto.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/assabet_misc.c: Fixed warning.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+
+2002-03-05  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Updated. Added zlib+dns packages.
+	* misc/redboot_ROM.ecm: Same.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-10-20  Nicolas Pitre <nico@cam.org>
+
+	* include/hal_platform_setup.h:	Wake up from deep sleep mode.
+
+2001-07-28  Stefan Eletzhofer <schuehle@t-online.de>
+
+	* include/hal_platform_setup.h: 
+	* cdl/hal_arm_sa11x0_assabet.cdl: Support additional timing setup
+	when Neponset board is available.
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* images/redboot*: Remove. Don't bloat repository with things already
+	on the web.
+
+2001-04-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Remove redundant -Wl,-N from link
+	flags
+
+2001-04-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lcd_support.c: Frame pointer was right before.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Make check for sscanf() consistent.
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: 
+	Define machine type for Linux bootstrap.
+
+	* src/redboot_linux_exec.c: 
+	Removed - now handled by SA11x0 variant code.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_RAM.ecm: Renamed from redboot_RAM.cfg
+
+	* misc/redboot_ROM.ecm: Renamed from redboot_ROM.cfg
+
+2001-02-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c: Add new tagged parameter support for
+	latest Linux kernel.
+
+2001-02-20  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Change Linux boot support.
+
+	* src/redboot_linux_exec.c: New file - replaces redboot_cmds.c
+	Supports booting Linux kernel, including image relocation and
+	passing additional info to kernel such as ramdisk size/location.
+	
+	* src/redboot_cmds.c: Depreciated.
+
+2001-02-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lcd_support.c: Warning cleanup.
+	Access frame buffer through volatile correctly.
+	Use isoinfra to identify presence of sscanf
+
+2001-02-20  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Use new CDL to control
+	available serial ports - CYGHWR_HAL_ARM_SA11X0_UART1.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Respect channel configuration
+	constraints.
+
+2001-02-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Fix for building standalone (no "C" library).
+
+2001-01-05  Hugo Tyson  <hmt@redhat.com>
+
+	* include/plf_mmap.h: New file.  Statically defined macros for
+	translation from virtual to physical and back, and to get an
+	uncached address for a normally-cached object.  HAL_MM_PAGESIZE()
+	HAL_VIRT_TO_PHYS_ADDRESS() HAL_PHYS_TO_VIRT_ADDRESS()
+	HAL_VIRT_TO_UNCACHED_ADDRESS().  This included by the variant
+	hal's hal_cache.h for convenience and proximity to other memory
+	and cache features.
+
+2000-12-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/assabet_misc.c: Use <cyg/hal/hal_mm.h> from the variant HAL
+	for definitions of all MM tables and so on.
+
+	* include/hal_platform_ints.h: Removed; it was the same in all
+	platforms so is now in the common variant hal, "hal_var_ints.h"
+	and accessible as CYGBLD_HAL_VAR_INTS_H <cyg/hal/hal_var_ints.h>
+	
+2000-12-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Build redboot_cmds.c in the
+	right place.
+
+2000-11-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_cmds.c (do_exec): Use new _GETS_xxx return codes.
+
+2000-11-28  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/redboot_RAM.cfg: Implement CYGSEM_REDBOOT_BSP_SYSCALLS.
+	* misc/redboot_ROM.cfg: Ditto.
+
+	* src/assabet_misc.c (assabet_program_new_stack): New function
+	for switching to an application stack when running a program under
+	a ROM monitor.
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Define HAL_ARCH_PROGRAM_NEW_STACK.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.mlt:
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.h:
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.h:
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.ldi:
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.ldi:
+	Regenerate
+
+2000-10-17  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Don't initialize "static" control
+	registers - power up value works and the values used kill latest boards.
+
+2000-10-09  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Fix compile error if no kernel present.
+
+2000-09-17  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/lcd_test.c: Add simple "glass tty" driver for LCD.
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Add platform/cpu identification strings.
+
+2000-09-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/assabet_misc.c: Set up for LCD - configure [pin] signals.
+
+	* misc/lcd_test.c: Adding more glitz, turn on light, etc.
+
+	* include/assabet.h: LCD pixel size was wrong in docs(?)
+
+2000-09-13  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot.xpm: New file.
+
+	* misc/lcd_test.c: Update LCD demo - add RedBoot splash.
+
+2000-09-10  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redhat.xpm: 
+	* misc/escw.xpm: 
+	* misc/eCos.xpm: 
+	* misc/lcd_test.c: Simple test of LCD.
+
+	* include/assabet.h: Add more BCR defines (cosmetic).
+
+	* src/redboot_cmds.c: 
+	* cdl/hal_arm_sa11x0_assabet.cdl: Add RedBoot command to execute
+	code with MMU off (for booting Linux).
+
+2000-08-28  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Define default console [even
+	though there is no real choice].  This is required to support
+	network debug connections.
+
+2000-08-25  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* misc/cf_test.c: Delete. Not needed any more.
+
+2000-08-24  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.mlt:
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.ldi: Expand reserved space.
+
+	* src/assabet_misc.c (hal_mmu_init): Increase ROM space to 32M.
+
+2000-07-14  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Add rules for building RedBoot.
+
+2000-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Cleanup channel options.
+
+2000-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Changed PORT values.
+
+2000-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_ints.h: Removed Ctrl-c handling.
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Removed ROM_DEBUG_CHANNEL option.
+
+2000-06-19  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Adding virtual vector support.
+
+	* include/assabet.h: Adding LCD registers.  Update BCR register.
+
+	* include/hal_platform_ints.h: Changes for virtual vector support.
+
+	* include/hal_platform_setup.h: Updated vectors - fixed stuff
+	now handled elsewhere.
+
+	* misc/cf_test.c: New program to experiment with Compact Flash
+	interface(s).
+
+	* src/assabet_misc.c (plf_hardware_init): Added new function
+	to perform platform specific initializations.
+
+2000-06-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.mlt: 
+	Incorporate new fixed vectors (used on all ARM platforms).
+
+2000-06-05  Gary Thomas  <gthomas@redhat.com>
+
+	* src/assabet_misc.c (assabet_BCR): New function used to 
+	safely manipulate the board control register (write only).
+
+	* include/assabet.h: Flush out board control register.
+
+	* include/hal_platform_ints.h: Add missing GPIO interrupts.
+
+2000-06-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: 
+	* src/assabet_misc.c: 'sa1100' stuff renamed to 'sa11x0'.
+
+	* include/hal_platform_setup.h: Set power supply to full on.  Move
+	board control stuff to <hal/assabet.h>.  Also define "fixed" vectors
+	which will contain board control shadow and other items potentially
+	shared by stubs, CygMon, etc.
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: Update build options for GDB stubs.
+	Necessary when 'fixed_vectors' are present.
+
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.h: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_rom.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.h: 
+	* include/pkgconf/mlt_arm_sa11x0_assabet_ram.ldi: Improve layout to
+	match real hardware.  Add 'fixed_vectors' at 0x40.
+
+2000-06-01  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl: 
+	* include/hal_platform_setup.h: Add ROM startup code.
+
+	* src/assabet_misc.c: New file.
+
+2000-05-12  John Dallaway  <jld@redhat.com>
+
+	* cdl/hal_arm_sa11x0_assabet.cdl:
+
+	Fix calculation of CYGHWR_MEMORY_LAYOUT.
+
+2000-05-10  Gary Thomas  <gthomas@redhat.com>
+
+	* current/include/pkgconf/mlt_arm_sa11x0_assabet_ram.mlt: 
+	* current/include/pkgconf/mlt_arm_sa11x0_assabet_rom.h: 
+	* current/include/pkgconf/mlt_arm_sa11x0_assabet_rom.ldi: 
+	* current/include/pkgconf/mlt_arm_sa11x0_assabet_ram.h: 
+	* current/include/pkgconf/mlt_arm_sa11x0_assabet_ram.ldi: 
+	* current/include/pkgconf/mlt_arm_sa11x0_assabet_rom.mlt: 
+	* current/include/hal_platform_ints.h: 
+	* current/include/hal_platform_setup.h: 
+	* current/cdl/hal_arm_sa11x0_assabet.cdl: New file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

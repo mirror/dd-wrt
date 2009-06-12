@@ -1,0 +1,47 @@
+ld/
+
+2003-05-22  H.J. Lu <hongjiu.lu@intel.com>
+
+	* genscripts.sh: Create tmpdir/libpath.exp.
+
+ld/testsuite/
+
+2003-05-22  H.J. Lu <hongjiu.lu@intel.com>
+
+	* config/default.exp: Load tmpdir/libpath.exp.
+	(gcc_ld_flag): Set from $libpath.
+
+--- ld/genscripts.sh.link	2003-02-27 11:27:17.000000000 -0800
++++ ld/genscripts.sh	2003-05-22 09:23:37.000000000 -0700
+@@ -119,6 +119,15 @@ fi
+ 
+ LIB_SEARCH_DIRS=`echo ${LIB_PATH} | sed -e 's/:/ /g' -e 's/\([^ ][^ ]*\)/SEARCH_DIR(\\"\1\\");/g'`
+ 
++# We need it for testsuite.
++case " $EMULATION_LIBPATH " in
++  *" ${EMULATION_NAME} "*)
++    test -d tmpdir || mkdir tmpdir
++    rm -f tmpdir/libpath
++    echo "set libpath \"${LIB_PATH}\"" | sed -e 's/:/ /g' > tmpdir/libpath.exp
++    ;;
++esac
++
+ # Generate 5 or 6 script files from a master script template in
+ # ${srcdir}/scripttempl/${SCRIPT_NAME}.sh.  Which one of the 5 or 6
+ # script files is actually used depends on command line options given
+--- ld/testsuite/config/default.exp.link	2003-05-19 08:23:00.000000000 -0700
++++ ld/testsuite/config/default.exp	2003-05-22 09:22:40.000000000 -0700
+@@ -69,6 +69,13 @@ if {![file isdirectory tmpdir/ld]} then 
+ }
+ set gcc_ld_flag "-B[pwd]/tmpdir/ld/"
+ 
++# load the linker path
++load_lib tmpdir/libpath.exp
++
++foreach dir $libpath {
++    set gcc_ld_flag "$gcc_ld_flag -L$dir"
++}
++
+ # The mips64-*-linux-gnu compiler defaults to the N32 ABI after
+ # installed, but to the O32 ABI in the build tree, because of some
+ # specs-file hacks.  Make sure we use an ABI that is compatible with

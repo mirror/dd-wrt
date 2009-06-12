@@ -1,0 +1,8 @@
+hello
+hello.o
+hello_glibc
+hello_glibc.o
+testmalloc
+testmalloc.o
+testmalloc_glibc
+testmalloc_glibc.o

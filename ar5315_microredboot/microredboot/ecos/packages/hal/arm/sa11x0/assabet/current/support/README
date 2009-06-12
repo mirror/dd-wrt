@@ -1,0 +1,6 @@
+This directory contains programs/files obtained from the Intel
+developer's website - http://developer.intel.com/
+
+SA1110Jflash.tgz - A set of tools for updating the flash devices
+                   on the Assabet board in place using a parallel
+                   port on either Linux or Windows.

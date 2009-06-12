@@ -1,0 +1,273 @@
+# ====================================================================
+#
+#      hal_arm_xscale_mpc50.cdl
+#
+#      MPC 5.0 platform HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+# -------------------------------------------
+# This file is part of eCos, the Embedded Configurable Operating System.
+# Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# eCos is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 or (at your option) any later version.
+#
+# eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with eCos; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+#
+# As a special exception, if other files instantiate templates or use macros
+# or inline functions from this file, or you compile this file and link it
+# with other works to produce a work based on this file, this file does not
+# by itself cause the resulting work to be covered by the GNU General Public
+# License. However the source code for this file must still be made available
+# in accordance with section (3) of the GNU General Public License.
+#
+# This exception does not invalidate any other reasons why a work based on
+# this file might be covered by the GNU General Public License.
+#
+# Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+# at http://sources.redhat.com/ecos/ecos-license
+# -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      <knud.woehler@microplex.de>
+# Date:           2003-01-06
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_ARM_XSCALE_MPC50 {
+	display       "MPC 5.0"
+	parent        CYGPKG_HAL_ARM_PXA2X0
+	hardware
+	include_dir   cyg/hal
+	define_header hal_arm_xscale_mpc50.h
+	description   "
+		This HAL platform package provides support for the MPC 5.0
+		printer controller"
+    compile       mpc50_misc.c
+
+	implements    CYGINT_HAL_DEBUG_GDB_STUBS
+	implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+	implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+	implements    CYGINT_HAL_ARM_ARCH_XSCALE
+	implements    CYGINT_HAL_ARM_MEM_REAL_REGION_TOP
+	implements    CYGHWR_HAL_ARM_PXA2X0_FFUART
+
+
+	define_proc {
+		puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H		<pkgconf/hal_arm.h>"
+		puts $::cdl_system_header "#define CYGBLD_HAL_VARIANT_H		<pkgconf/hal_arm_xscale_pxa2x0.h>"
+		puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H	<pkgconf/hal_arm_xscale_mpc50.h>"
+		puts $::cdl_header "#define HAL_PLATFORM_CPU    			\"XScale\""
+		puts $::cdl_header "#define HAL_PLATFORM_BOARD  			\"MPC 5.0\""
+		puts $::cdl_header "#define HAL_PLATFORM_EXTRA  			\"\""
+		puts $::cdl_header "#define HAL_ARCH_PROGRAM_NEW_STACK 		mpc50_program_new_stack"
+	}
+
+	cdl_component CYG_HAL_STARTUP {
+		display       "Startup type"
+		flavor        data
+		default_value {"ROM"}
+		legal_values  {"RAM" "ROM"}
+		no_define
+		define -file system.h CYG_HAL_STARTUP
+		description   ""
+	}
+
+	cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT {
+		display      "Console channel."
+		flavor       data
+		calculated   0
+	}
+
+	cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+		display      "Number of communication channels on the board"
+		flavor       data
+		calculated   1
+	}
+
+	cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+		display          "Debug serial port"
+		flavor data
+		calculated    0
+	}
+
+	cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+		display          "Diagnostic serial port"
+		flavor data
+		calculated    0
+	}
+
+	cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+		display       "Diagnostic serial port baud rate"
+		flavor        data
+		legal_values  9600 19200 38400 57600 115200
+		default_value 115200
+		description   "
+			This option selects the baud rate used for the diagnostic port."
+    }
+
+	cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_BAUD {
+		display       "GDB serial port baud rate"
+		flavor        data
+		calculated    CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD
+		description   "
+			This option selects the baud rate used for the GDB port."
+	}
+
+	cdl_component CYGBLD_GLOBAL_OPTIONS {
+		display "Global build options"
+		flavor  none
+		no_define
+		description   "
+			Global build options including control over
+			compiler flags, linker flags and choice of toolchain."
+
+        parent  CYGPKG_NONE
+        
+		cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+			display "Global command prefix"
+			flavor  data
+			no_define
+			default_value { "arm-elf" }
+			description "
+				This option specifies the command prefix used when
+				invoking the build tools."
+        }
+
+		cdl_option CYGBLD_GLOBAL_CFLAGS {
+			display "Global compiler flags"
+			flavor  data
+			no_define
+            default_value { "-mcpu=xscale -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -mapcs-frame" }
+			description   "
+				This option controls the global compiler flags which are used to
+				compile all packages by default. Individual packages may define
+				options which override these global flags."
+		}
+
+		cdl_option CYGBLD_GLOBAL_LDFLAGS {
+			display "Global linker flags"
+			flavor  data
+			no_define
+			default_value { "-mcpu=xscale -Wl,--gc-sections -Wl,-static -g -O2 -nostdlib" }
+			description   "
+				This option controls the global linker flags. Individual
+				packages may define options which override these global flags."
+		}
+
+		cdl_component CYGPKG_HAL_ARM_PXA2X0_MPC50_OPTIONS {
+			display "Intel PXA250/MPC50 build options"
+			flavor  none
+			no_define
+			description   "
+				Package specific build options including control over
+				compiler flags used only in building this package,
+				and details of which tests are built."
+				
+			cdl_option CYGPKG_HAL_ARM_PXA2X0_MPC50_CFLAGS_ADD {
+				display "Additional compiler flags"
+				flavor  data
+				no_define
+				default_value { "" }
+				description   ""
+			}
+			
+			cdl_option CYGPKG_HAL_ARM_PXA2X0_MPC50_CFLAGS_REMOVE {
+				display "Suppressed compiler flags"
+				flavor  data
+				no_define
+				default_value { "" }
+				description   ""
+			}
+		}
+		
+		cdl_component CYGHWR_MEMORY_LAYOUT {
+			display "Memory layout"
+			flavor data
+			no_define
+			calculated { CYG_HAL_STARTUP == "RAM" ? "arm_pxa2x0_mpc50_ram" : \
+													"arm_pxa2x0_mpc50_rom" }
+
+			cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+				display "Memory layout linker script fragment"
+				flavor data
+				no_define
+				define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+				calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_pxa2x0_mpc50_ram.ldi>" : \
+														"<pkgconf/mlt_arm_pxa2x0_mpc50_rom.ldi>" }
+			}
+
+			cdl_option CYGHWR_MEMORY_LAYOUT_H {
+				display "Memory layout header file"
+				flavor data
+				no_define
+				define -file system.h CYGHWR_MEMORY_LAYOUT_H
+				calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_pxa2x0_mpc50_ram.h>" : \
+														"<pkgconf/mlt_arm_pxa2x0_mpc50_rom.h>" }
+			}
+		}
+
+		cdl_option CYGSEM_HAL_ROM_MONITOR {
+			display       "Behave as a ROM monitor"
+			flavor        bool
+			default_value 0
+			parent        CYGPKG_HAL_ROM_MONITOR
+			requires      { CYG_HAL_STARTUP == "ROM" }
+			description   ""
+		}
+
+		cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+			display       "Work with a ROM monitor"
+			flavor        booldata
+			legal_values  { "Generic" "GDB_stubs" }
+			default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+			parent        CYGPKG_HAL_ROM_MONITOR
+			requires      { CYG_HAL_STARTUP == "RAM" }
+			description   ""
+		}
+		
+		cdl_component CYGPKG_REDBOOT_HAL_OPTIONS {
+			display       "Redboot HAL options"
+			flavor        none
+			no_define
+			parent        CYGPKG_REDBOOT
+			active_if     CYGPKG_REDBOOT
+			description   "
+				This option lists the target's requirements for a valid Redboot
+				configuration."
+				    
+				    
+			cdl_option CYGBLD_BUILD_REDBOOT_BIN {
+				display       "Build Redboot ROM binary image"
+				active_if     CYGBLD_BUILD_REDBOOT
+				default_value 1
+				no_define
+				description "This option enables the conversion of the Redboot ELF
+							image to a binary image suitable for ROM programming."
+
+				compile -library=libextras.a
+            
+				make -priority 325 {
+					<PREFIX>/bin/redboot.bin : <PREFIX>/bin/redboot.elf
+					$(OBJCOPY) --strip-debug $< $(@:.bin=.img) 
+					$(OBJCOPY) -O srec $< $(@:.bin=.srec)
+					$(OBJCOPY) -O binary $< $@
+				}
+			}
+        }
+	}
+}
+

@@ -1,0 +1,331 @@
+2004-10-06  Andrea Michelotti <amichelotti@atmel.com>
+
+	* include/var_io.h: protected PDC/SPI DMA registers from redefinition.
+	The HAL may of already defined them.
+	
+2004-10-05  Savin Zlobec <savin@elatec.si>
+
+	* include/var_io.h: Added definitions for AT91M55800A SPI and PIO
+	pins.
+
+2004-09-17  Andrea Michelotti <amichelotti@atmel.com>
+
+	* cdl/hal_arm_at91.cdl: 
+	* src/at91_misc.c:
+	* include/var_io.h:
+	* include/var_arch.h: added jtst target
+	
+2004-09-16  Andrea Michelotti <amichelotti@atmel.com>
+
+	* cdl/hal_arm_at91.cdl:
+	* src/at91_misc.c:
+	* include/var_io.h: Support FIQ as a high priority interrupt using 
+	the normal mechanism. This is controlled by the CDL option 
+	CYGHWR_HAL_ARM_AT91_FIQ and uses the interrupt number 
+	CYGHWR_HAL_ARM_AT91_FIQ which is common to all platforms using
+	this HAL variant. 
+		
+2004-08-30  Thomas Koeller <thomas.koeller@baslerweb.com>
+
+	* cdl/hal_arm_at91.cdl: Reversed change of 2004-02-12 that move
+	seemingly 'common' options from the platform to the variant. This
+	was breaking some platform HALs.
+
+2004-08-12  Jani Monoses <jani@iv.ro>
+
+	* src/at91_misc.c: Mask all interrupts before calling 
+	hal_if_init() not after, so if it creates interrupts
+	they do not get disabled.
+
+2004-05-24  Gratian Crisan <nelu@iv.ro>
+
+	* include/var_io.h: Added waveform mode definitions for 
+	timer/counter.
+
+2004-02-19  Daniel Néri  <daniel.neri@sigicom.se>
+ 
+        * cdl/hal_arm_at91.cdl (CYGBLD_GLOBAL_CFLAGS): Honour CYGHWR_THUMB
+        and CYGBLD_ARM_ENABLE_THUMB_INTERWORK.
+	* cdl/hal_arm_at91.cdl (CYGBLD_GLOBAL_LDFLAGS): Ditto.
+ 
+2004-02-18  Daniel Néri  <daniel.neri@sigicom.se>
+
+	* cdl/hal_arm_at91.cdl: Define CYGNUM_HAL_ARM_AT91_CLOCK_SPEED with
+	a default_value so it can be overridden in the platform HAL.
+	* src/hal_diag.c (cyg_hal_plf_serial_control): Properly terminate
+	variable argument processing.
+	* include/hal_diag.h: prototype for hal_at91_set_leds() to avoid
+	compiler warning.
+	
+2004-02-12  Jani Monoses <jani@iv.ro>
+
+	* cdl/hal_arm_at91.cdl: Put configuration options common to all
+	variants here. Replace
+	CYGNUM_HAL_VIRTUAL_VECTOR_CHANNELS_DEFAULT_BAUD with the two
+	separate options for console and debug channels as used by most
+	HALs.
+	* src/hal_diag.c: Implement
+	CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT so baudrate is
+	changeable from RedBoot.
+	
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-12-02  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+	* include/var_io.h: Improved accuracy for baud rate divider
+	computation.
+
+2003-10-23  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+	* src/at91_misc.c: Fixed recognition of spurious
+	interrupts.
+	
+2003-08-21  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * include/var_io.h:
+        Fixed minor typo.
+	
+2003-08-20  Daniel Néri  <daniel.neri@sigicom.se>
+
+	* include/var_io.h: Fix typos (duplicates) from last change.
+
+2003-08-18  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+        * include/var_io.h:
+        Added bitmask definitions for PIO.
+	
+2003-08-06  Daniel Néri  <daniel.neri@sigicom.se>
+
+	* src/at91_misc.c (hal_clock_reset):
+	Don't acknowledge interrupt here (this is handled
+	in Cyg_RealTimeClock::isr).
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_at91.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-06-25  Daniel Néri  <daniel.neri@sigicom.se>
+
+	* src/at91_misc.c (hal_interrupt_set_level): Fix assert condition;
+	AT91 interrupt priority levels are between 0 and 7.
+
+2003-06-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/var_io.h: Remove not seemingly useful AT91_PMC_SCER_CPU.
+
+	* cdl/hal_arm_at91.cdl: We have a var_arch.h so define
+	CYGBLD_HAL_ARM_VAR_ARCH_H.
+
+	* include/var_arch.h: New file containing
+	overrides for hal_arch.h.
+	(HAL_IDLE_THREAD_ACTION): override here by defining power saving modes
+	for idle actions.
+
+2003-06-04  Daniel Néri  <daniel.neri@sigicom.se>
+
+	* src/at91_misc.c (hal_hardware_init): Make sure the AIC internal
+	priority level stack is flushed.
+	(hal_IRQ_handler): Calculate active interrupt by dummy read from
+	the IVR, which has the side-effect of updating ISR with the
+	current interrupt source number.
+	(hal_interrupt_acknowledge): Write to ICCR is not needed, as
+	interrupt deassertion is taken care of by read of IVR in
+	hal_IRQ_handler.
+
+2003-05-27  Daniel Néri  <daniel.neri@sigicom.se>
+
+	* include/var_io.h: Add missing USART register defines.
+	Fix cut'n'paste typos in AT91_PS defines.
+
+2003-05-16  Daniel Néri  <daniel.neri@sigicom.se>
+
+	* include/var_io.h: Add missing PIO register defines. Add
+	CPU clock disable command bit.
+
+2003-05-15  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+	* include/hal_diag.h:
+	* src/at91_misc.c: Added function to generate a hardware reset
+	using the watchdog.
+	
+2003-05-15  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/at91_misc.c (hal_delay_us): Added calculation to better
+	approximate the number of timer ticks for a given number of
+	microseconds. This code also now adjust to the actual CPU clock
+	speed on different platforms.
+
+2003-05-12  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/at91_misc.c: Change definition of hal_IRQ_handler() to be
+	variant-indepenendent, and to use HAL_LSBIT_INDEX() rather than an
+	explicit scan of the ipr bits. Tidied up file a little to make
+	more readable.
+
+	* include/var_io.h: Reorganized to allow platform HALs to define
+	base addresses of on-chip devices if they differ from the defaults
+	defined here. Added variant definitions of Power Management
+	devices for different parts.
+
+	* cdl/hal_arm_at91.cdl:	Calculate CYGNUM_HAL_RTC_PERIOD from
+	CYGNUM_HAL_ARM_AT91_CLOCK_SPEED, which is defined by the platform.
+	Added CYGHWR_HAL_ARM_AT91 to define the specific Atmel AT91 part
+	being supported. This must be defined by the platform HAL.
+	Added define_proc to generate CYGBLD_HAL_ARM_VAR_IO_H.
+
+	* src/hal_diag.c (hal_diag_led): Now calls hal_at91_set_leds().
+
+2002-07-14  Tim Drury <tdrury@siliconmotorsports.com>
+
+	* cdl/hal_arm_at91.cdl: moved clock speed parameter to platform specific cdl
+	* include/var_io.h: added PIO_PDSR register
+	* src/hal_diag.c: added hal_diag_led()
+
+2002-05-28  Thomas Koeller  <Thomas.Koeller@baslerweb.com>
+
+	* include/plf_io.h: Add watchdog definitions.
+
+2002-05-08  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROMRAM.ecm:
+	* misc/redboot_ROM.ecm: Disable 'fconfig' since the FLASH is too small.
+
+2001-08-17  George Hampton <george.hampton@intel.com>
+2001-08-17  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_ints.h (CYGNUM_HAL_ISR_COUNT): PR 22864
+	Don't adjust by "min" value if not doing translations.
+	
+2001-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/at91_misc.c (hal_clock_initialize): 
+	* cdl/hal_arm_at91.cdl: Increase system clock (RTC) to run at 1MHz for
+	better timing resolution.  CAUTION! this means that the system clock tick
+	can never be more than 64ms.
+
+2001-07-23  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_at91_eb40_romram.mlt: 
+	* include/pkgconf/mlt_arm_at91_eb40_romram.ldi: 
+	* include/pkgconf/mlt_arm_at91_eb40_romram.h: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.mlt: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.ldi: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.h: 
+	* cdl/hal_arm_at91.cdl: Fix MLT files (names, layout).
+
+2001-07-20  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_io.h: Add UART interrupt definitions.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_control): Enable ^C support.
+
+	* src/at91_misc.c (hal_clock_initialize): Add clock/rtc implementation.
+
+	* include/pkgconf/mlt_arm_at91_eb40_romram.ldi: 
+	Replace missing 'fixed vectors'.
+
+2001-07-19  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROMRAM.ecm: New exported config.
+
+	* include/pkgconf/mlt_arm_at91_eb40_romram.ldi: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.mlt: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.ldi: 
+	* include/hal_platform_setup.h: Fix ROMRAM startup mode.  Note: I
+	can't get the onboard SRAM at 0x00100000 to work, so for now, this
+	will just have to go in low external RAM.  Thus the change for the
+	RAM base address in startup=RAM mode.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_getc_timeout): Remove debug code.
+
+	* src/at91_misc.c (set_leds): LEDs are on D4/D2/D1.
+
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: Exported configurations.
+
+	* include/pkgconf/mlt_arm_at91_eb40_romram.mlt: 
+	* include/pkgconf/mlt_arm_at91_eb40_romram.ldi: 
+	* include/pkgconf/mlt_arm_at91_eb40_romram.h: New startup type.
+	
+	* include/pkgconf/mlt_arm_at91_eb40_rom.h: Fix heap layout.
+
+	* include/pkgconf/mlt_arm_at91_eb40_ram.mlt: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.ldi: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.h: 
+	Fix heap layout.  Move RAM load address to leave room for RedBoot/GDB.
+
+	* include/plf_io.h: Add definitions for PIO, EBI and PS.
+
+	* include/hal_platform_setup.h: ROM startup mode now works.
+	First attempt at ROMRAM startup - not yet working.
+
+	* cdl/hal_arm_at91.cdl: Add ROMRAM startup mode.
+
+2001-07-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c: More complete initialization.
+
+	* src/at91_misc.c: Support interrupt controller, delay_us().
+
+	* include/plf_io.h: Add interrupt controller, timer definitions.
+
+	* cdl/hal_arm_at91.cdl: Fix clock speed, number I/O channels.
+
+2001-07-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c: 
+	* src/at91_misc.c: 
+	* include/pkgconf/mlt_arm_at91_eb40_rom.mlt: 
+	* include/pkgconf/mlt_arm_at91_eb40_rom.ldi: 
+	* include/pkgconf/mlt_arm_at91_eb40_rom.h: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.mlt: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.ldi: 
+	* include/pkgconf/mlt_arm_at91_eb40_ram.h: 
+	* include/plf_stub.h: 
+	* include/plf_io.h: 
+	* include/hal_platform_setup.h: 
+	* include/hal_platform_ints.h: 
+	* include/hal_diag.h: 
+	* include/hal_cache.h: 
+	* cdl/hal_arm_at91.cdl: New port - cloned from E7T.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

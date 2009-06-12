@@ -1,0 +1,131 @@
+<HTML>
+<HEAD>
+<TITLE>Debugging Help</TITLE>
+</HEAD>
+<BODY>
+<H2>GDBTK Debugging Functions</H2>
+<H4>Overview</H4>
+<P> This describes the basic internal functions for debugging GDBTK.</P> 
+
+<H4>Environment Variables</H4>
+<P><BOLD>GDBTK_DEBUG</BOLD> - Setting this variable controls the Debug
+window.</P>
+<P><BOLD>GDBTK_DEBUG</BOLD> may have the following values:</P>
+<DL>
+<DT>0 or unset</DT>
+<DD>The Debug window is not opened and not listed on the menu. (You
+may still open it by typing Ctrl-U in the source window.)</DD>
+<DT>1</DT>
+<DD>The Debug window is listed on the menu, but not opened.</DD>
+<DT>2</DT>
+<DD>The Debug window is opened at startup.</DD>
+</DL>
+
+<HR>
+<P><BOLD>GDBTK_TRACE</BOLD> - This variable determines if tracing is enbabled.
+Tracing may only be enabled at GDBTK startup.  Changing <BOLD>GDBTK_TRACE</BOLD> 
+while GDBTK is running has no effect.</P>
+<P><BOLD>GDBTK_TRACE</BOLD> may have the following values:</P>
+<DL>
+<DT>0 or unset</DT>
+<DD>Tracing is not enabled.</DD>
+<DT>1</DT>
+<DD>Tracing is enabled, but not started.  To start tracing, you need to do
+so in the Debug Window or from the console. (The command to do this is "tk
+::debug::trace_start).</DD>
+<DT>2</DT>
+<DD>Tracing is enabled and started immediately.</DT>
+</DL>
+
+<P><BOLD>GDBTK_DEBUGFILE</BOLD> - This variable contains an optional filename
+where GDBTK will write all debugging information. This information will include
+the output of all "debug" and "dbug" commands, as well as tracing, if it is 
+enabled. The value of
+<BOLD>GDBTK_DEBUGFILE</BOLD> will not change what is displayed in the Debug
+Window, with one exception; when the Debug Window is opened, it will read
+the contents of <BOLD>GDBTK_DEBUGFILE</BOLD> (if it is set and not "stdout").
+<P><BOLD>GDBTK_DEBUGFILE</BOLD> may have the following values:</P>
+<DL>
+<DT>unset</DT>
+<DD>No information will be logged.</DD>
+<DT><italic>filename</italic></DT>
+<DD>Debugging information will be logged to <italic>filename</italic>.
+<DT>"stdout"</DT>
+<DD>Debugging information will be written to stdout</DD>
+</DL>
+<HR>
+<H4>Tcl Debugging Functions</H4>
+<P> All debugging functions have been moved into debug.tcl in the ::debug 
+namespace. "debug" and "dbug" are imported into the global namespace.</P>
+<P> The following are the standard debug message functions.</P>
+<code> 
+# -----------------------------------------------------------------------------
+# NAME:		debug::debug
+#
+# SYNOPSIS:	debug { {msg ""} }
+#
+# DESC:		Writes a message to the proper output. The priority of the 
+#		message is assumed to be "I" (informational). This function
+#		is provided for compatibility with the previous debug function.
+#		For higher priority messages, use dbug.
+#
+# ARGS:		msg - Message to be displayed. 
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# NAME:		debug::dbug
+#
+# SYNOPSIS:	dbug { level msg }
+#
+# DESC:		Writes a message to the proper output. Unlike debug, this
+#		function take a priority level.
+#
+# ARGS:		msg   - Message to be displayed.
+#		level - One of the following:
+#				"I" - Informational only 
+#				"W" - Warning
+#				"E" - Error
+#				"X" - Fatal Error
+# ----------------------------------------------------------------------------
+</code>
+<P> These next functions are used to trace variables, which should not be
+confused with the functions tracing.<P>
+<code>
+# ----------------------------------------------------------------------------
+# NAME:		debug::trace_var
+# SYNOPSIS:	debug::trace_var {varName mode}
+# DESC:		Sets up variable trace.  When the trace is activated, 
+#		debugging messages will be displayed.
+# ARGS:		varName - the variable name
+#		mode - one of more of the following letters
+#			r - read
+#			w - write
+#			u - unset
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# NAME:		debug::remove_trace
+# SYNOPSIS:	debug::remove_trace {var mode}
+# DESC:		Removes a trace set up with "trace_var".
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# NAME:		debug::remove_all_traces
+# SYNOPSIS:	debug::remove_all_traces
+# DESC:		Removes all traces set up with "trace_var".
+# ----------------------------------------------------------------------------
+</code>
+<P> The following two functions may be used to start and stop tracing 
+programmatically.</P>
+<code>
+# -----------------------------------------------------------------------------
+# NAME:		::debug::trace_start
+# SYNOPSIS:	::debug::trace_start
+# DESC:		Starts logging of function trace information.
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# NAME:		::debug::trace_stop
+# SYNOPSIS:	::debug::trace_stop
+# DESC:		Stops logging of function trace information.
+# -----------------------------------------------------------------------------
+</code>
+</BODY>
+</HTML>

@@ -1,0 +1,760 @@
+<!-- DOCTYPE part  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     sh4_202_md.sgml                                             -->
+<!--                                                                 -->
+<!--     MicroDev platform HAL documentation.                         -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2003 Nick Garnett .                         -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   nickg                                              -->
+<!-- Contact(s):  nickg                                              -->
+<!-- Date:        2003/09/08                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="hal-sh4-microdev-part"><title>SuperH SH4-202 MicroDev Board Support</title>
+
+<!-- {{{ Overview                       -->
+
+<refentry id="sh4-microdev">
+  <refmeta>
+    <refentrytitle>Overview</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>eCos Support for the SuperH SH4-202 MicroDev Board</refname>
+    <refpurpose>Overview</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="sh4-microdev-description"><title>Description</title>
+    <para>
+The SuperH SH4-202 MicroDev board (henceforth just "MicroDev") has
+an SH4-202 processor, 64MB of external SDRAM, 32MB of external flash
+memory, an SMSC LAN91C111 ethernet controller and connectors plus
+required support chips for all the on-chip peripherals.
+    </para>
+    <para>
+For typical eCos development, a RedBoot image is programmed into the
+flash memory, and the board will boot this image from reset. RedBoot
+provides gdb stub functionality so it is then possible to download and
+debug stand-alone and eCos applications via the gdb debugger. This can
+happen over either a serial line or over ethernet.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-hardware"><title>Supported Hardware</title>
+    <para>
+The flash memory consists of 128 blocks of 256k bytes each.
+In a typical setup, the first 
+flash block is used for the ROM RedBoot image
+and the second is used to store a version of RedBoot that can run out of
+RAM. The topmost two blocks are used to manage the flash and hold RedBoot fconfig
+values. The remaining 124 blocks between 0xA0080000 and 0xA1F7FFFF can be
+used by application code.
+    </para>
+    <para>
+The board is fitted with a PLCC socket suitable for an EEPROM (or PROM) such as
+the 1Mbit ST M29WO10B. This is enabled by toggling two DIP switches, after which
+the EEPROM is mapped into the same address as the flash memory. Therefore,
+the flash is not accessible if booting from the EEPROM.
+    </para>
+    <para>
+There is a serial driver <varname>CYGPKG_DEVS_SERIAL_SH_SCIF</varname>
+which supports the on-chip serial device. This device
+can be used by RedBoot for communication with the host. If this device
+is needed by the application, either directly or via the serial
+driver, then it cannot also be used for RedBoot communication. Another
+communication channel such as ethernet should be used instead. The
+serial driver package is loaded automatically when configuring for the
+MicroDev target.
+    </para>
+    <para>
+There is an ethernet driver <varname>CYGPKG_DEVS_ETH_SH_MICRODEV</varname>
+for the on-chip ethernet device. This driver is also loaded
+automatically when configuring for the MicroDev target.
+    </para>
+    <para>
+eCos manages the on-chip interrupt controller. Timer 0 is used to
+implement the eCos system clock, and timer 1 is used to implement a
+microsecond delay function. Timer 2 is unused and
+left for the application. Other on-chip devices (FEMI, EMI, INTC, TMU,
+CAC, UBC) are initialized only as far as is necessary for eCos to
+run. Other devices (eg RTC, DMAC, etc) are not touched.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-tools"><title>Tools</title>
+    <para>
+The MicroDev port is intended to work with GNU tools configured for an
+sh-elf target. The original port was done using sh-elf-gcc version
+3.2.1, sh-elf-gdb version 5.3, and binutils version 2.13.1.
+    </para>
+<!-- DOES THIS APPLY?
+    <para>
+By default, eCos is built using the compiler flag
+<option>-fomit-frame-pointer</option>. Omitting the frame pointer
+eliminates some work on every function call and makes another register
+available, so the code should be smaller and faster. However, without a
+frame pointer, sh-elf-gdb is not always able to identify stack
+frames, so it may be unable to provide accurate backtrace information.
+Removing this compiler flag from the configuration option
+<varname>CYGBLD_GLOBAL_CFLAGS</varname> avoids such debug problems.
+    </para>
+-->
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Hardware setup                 -->
+
+<refentry id="sh4-microdev-setup">
+  <refmeta>
+    <refentrytitle>Setup</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Setup</refname>
+    <refpurpose>Preparing the MicroDev board for eCos Development</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="sh4-microdev-setup-overview"><title>Overview</title>
+    <para>
+In a typical development environment, the MicroDev board boots from
+flash into the RedBoot ROM monitor. eCos applications are configured
+for RAM startup and then downloaded and run on the board via the
+debugger sh-elf-gdb. Preparing the board therefore usually involves
+programming a suitable RedBoot image into flash memory. Alternatively
+RedBoot may be programmed into a PLCC EEPROM and inserted into socket U21,
+although in that case, the flash memory is not accessible.
+    </para>
+    <para>
+The following RedBoot configurations are supported:
+    </para>
+    <informaltable frame="all">
+      <tgroup cols="4" colsep="1" rowsep="1" align="left">
+        <thead>
+          <row>
+            <entry>Configuration</entry>
+            <entry>Description</entry>
+            <entry>Use</entry>
+            <entry>File</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>ROM</entry>
+            <entry>RedBoot running from the board's flash</entry>
+            <entry>redboot_ROM.ecm</entry>
+            <entry>redboot_ROM.bin</entry>
+          </row>
+          <row>
+            <entry>EEPROM</entry>
+            <entry>RedBoot running from the board's socketed EEPROM</entry>
+            <entry>redboot_EEPROM.ecm</entry>
+            <entry>redboot_EEPROM.bin</entry>
+          </row>
+          <row>
+            <entry>RAM</entry>
+            <entry>Used for upgrading ROM version</entry>
+            <entry>redboot_RAM.ecm</entry>
+            <entry>redboot_RAM.bin</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>
+For serial communications, all versions run with 8 bits, no parity, and
+1 stop bit at 38400 baud. This baud rate can be changed via the
+configuration option
+<varname>CYGNUM_HAL_SH_SH4_SCIF_BAUD_RATE</varname> and rebuilding
+RedBoot. RedBoot also supports ethernet communication and flash
+management.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-setup-first"><title>Initial Installation</title>
+   <refsect2 id="sh4-microdev-flash"><title>Flash Installation</title>
+    <para>
+This process assumes that the board is connected to a SuperH Micro
+Probe. The Micro Probe should be set up as described in Appendix A of
+the "SH4 Development Tools User Guide". You should also have access to
+the SuperH development tools since it is necessary to use the version
+of GDB that comes with those tools to access the Micro Probe,
+<command>sh-elf-gdb</command> will not work.
+    </para>
+    <para>
+Programming the RedBoot ROM monitor into flash memory requires an
+application that can manage flash blocks. RedBoot itself has this
+capability. Rather than have a separate application that is used only
+for flash management during the initial installation, a special
+RAM-resident version of RedBoot is loaded into memory and run. This
+version can then be used to load the normal flash-resident version of
+RedBoot and program it into the flash.
+    </para>
+    <para>
+The first step is to connect an RS232 null modem cable between the MicroDev
+serial port and the host PC. Next start a terminal emulation application such as
+HyperTerminal or minicom on the host PC and set the serial
+communication parameters to 38400 baud, 8 data bits, no parity, 1 stop
+bit (8N1) and no flow control (handshaking). 
+    </para>
+    <para>
+Now run the <command>sh4gdb</command> command, giving it the name of
+the RAM redboot ELF file, connect to the Micro Probe, load the
+executable and run it. The entire session should look like this:
+    </para>
+    <screen>
+$ <userinput>sh4gdb redboot_RAM.elf</userinput>
+GNU gdb 5.2.1
+Copyright 2002 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "--host=i686-pc-linux-gnu --target=sh-superh-elf"...
+(gdb) <userinput>sh4si superh</userinput>
+The target is assumed to be little endian
+The target architecture is assumed to be sh4
+0xa0000000 in ?? ()
+(gdb) <userinput>load</userinput>
+Loading section .vectors, size 0x9e0 lma 0x88010000
+Loading section .text, size 0x1ab20 lma 0x880109e0
+Loading section .rodata, size 0x3e6c lma 0x8802b500
+Loading section .data, size 0xf30 lma 0x8802f370
+Start address 0x88010000, load size 131740
+Transfer rate: 351306 bits/sec, 433 bytes/write.
+(gdb) <userinput>cont</userinput>
+Continuing.
+    </screen>
+    <para>
+The required <filename>redboot_RAM.elf</filename> file is normally
+supplied with the eCos release in the <filename
+class="directory">loaders</filename> directory. If it needs to be
+rebuilt then instructions for this are supplied <link
+linkend="sh4-microdev-setup-rebuild">below</link>.
+    </para>
+    <para>
+If this sequence fails in any way then check the setup and connections
+of the Micro Probe. It if is successful then you should see the
+following printed out on the serial line:
+    </para>
+    <screen>
++FLASH configuration checksum error or invalid key
+... waiting for BOOTP information
+Ethernet eth0: MAC address 00:08:ee:00:0b:37                                   
+Can't get BOOTP info for device!
+                                                                                
+RedBoot(tm) bootstrap and debug environment [RAM]                               
+Non-certified release, version UNKNOWN - built 14:28:55, Sep  8 2003            
+                                                                                
+Copyright (C) 2000, 2001, 2002, Red Hat, Inc.                                   
+                                                                                
+RAM: 0x88000000-0x8c000000, 0x8812cca0-0x8bfb1000 available                     
+FLASH: 0xa0000000 - 0xa2000000, 128 blocks of 0x00040000 bytes each.
+RedBoot&gt;
+    </screen>
+    <para>
+If the ethernet cable is not plugged in there may be a fairly long
+wait after the "... waiting for BOOTP information" message.
+At this stage the RedBoot flash management initialization has not yet
+happened so the warning about the configuration checksum error is
+expected. To perform this initialization use the
+<command>fis&nbsp;init&nbsp;-f</command> command:
+    </para>
+    <screen>
+RedBoot&gt; <userinput>fis init -f</userinput>
+About to initialize [format] FLASH image system - continue (y/n)? <userinput>y</userinput>
+*** Initialize FLASH Image System                                               
+... Unlock from 0xa1fc0000-0xa2000000: .                                        
+... Erase from 0xa1fc0000-0xa2000000: .                                         
+... Program from 0x8bfbf000-0x8bfff000 at 0xa1fc0000: .                         
+... Lock from 0xa1fc0000-0xa2000000: .                                         
+RedBoot&gt;
+    </screen>
+    <para>
+At the end, the block of flash at
+location 0xA1FC0000 holds information about the various flash blocks,
+allowing other flash management operations to be performed. The next
+step is to set up RedBoot's non-volatile configuration values:
+    </para>
+    <screen>
+RedBoot&gt; <userinput>fconfig -i</userinput>
+Initialize non-volatile configuration - continue (y/n)? <userinput>y</userinput>
+Run script at boot: false                                                       
+Use BOOTP for network configuration: true                                       
+Console baud rate: 38400                                                        
+DNS server IP address:                                                          
+Set eth0 network hardware address [MAC]: false                                  
+GDB connection port: 9000                                                       
+Force console for special debug messages: false                                 
+Network debug at boot time: false                                               
+Update RedBoot non-volatile configuration - continue (y/n)? <userinput>y</userinput>
+... Unlock from 0xa1f80000-0xa1f81000: .                                        
+... Erase from 0xa1f80000-0xa1f81000: .                                         
+... Program from 0x8bfb2000-0x8bfb3000 at 0xa1f80000: .                         
+... Lock from 0xa1f80000-0xa1f81000: .
+RedBoot&gt;
+    </screen>
+    <para>
+For most of these configuration variables, the default value is
+correct. If there is no suitable BOOTP service running on the local
+network then BOOTP should be disabled and, instead, RedBoot will prompt
+for a fixed IP address, netmask, and addresses for the local gateway
+and DNS server.
+    </para>
+    <para>
+It is now possible to load the flash-resident version of RedBoot.
+Because of the way that flash chips work, it is better to first load it
+into RAM and then program it into flash.
+    </para>
+    <screen>
+RedBoot&gt; <userinput>load -r -m xmodem -b %{freememlo}</userinput>
+    </screen>
+    <para>
+The file <filename>redboot_ROM.bin</filename> should now be uploaded
+using the terminal emulator. The file is a raw binary and should be
+transferred using the X-modem protocol.
+    </para>
+    <screen>
+Raw file loaded 0x8812d000-0x8814e32f, assumed entry at 0x8812d000              
+xyzModem - CRC mode, 1064(SOH)/0(STX)/0(CAN) packets, 2 retries
+RedBoot&gt;
+    </screen>
+    <para>
+Once RedBoot has been loaded into RAM it can be programmed into flash:
+    </para>
+    <screen>
+RedBoot&gt; <userinput>fis create RedBoot -b %{freememlo}</userinput>
+An image named 'RedBoot' exists - continue (y/n)? <userinput>y</userinput>
+... Erase from 0xa0000000-0xa0040000: .                                         
+... Program from 0x8812d000-0x8816d000 at 0xa0000000: .                         
+... Unlock from 0xa1fc0000-0xa2000000: .                                        
+... Erase from 0xa1fc0000-0xa2000000: .                                         
+... Program from 0x8bfbf000-0x8bfff000 at 0xa1fc0000: .                         
+... Lock from 0xa1fc0000-0xa2000000: .                                          
+RedBoot&gt;
+    </screen>
+    <para>
+The flash-resident version of RedBoot has now been programmed at location
+0xA0000000, and the flash info block at 0xA1FC0000 has been updated.
+The initial setup is now complete. Power off the Micro Probe and reset
+the MicroDev board using S6. You should see the following:
+
+    </para>
+    <screen>
++... waiting for BOOTP information                                     
+Ethernet eth0: MAC address 00:08:ee:00:0b:37                                    
+Can't get BOOTP info for device!                                                
+                                                                                
+RedBoot(tm) bootstrap and debug environment [ROM]                               
+Non-certified release, version UNKNOWN - built 14:22:57, Sep  8 2003            
+                                                                                
+Copyright (C) 2000, 2001, 2002, Red Hat, Inc.                                   
+                                                                                
+RAM: 0x88000000-0x8c000000, 0x8800db98-0x8bfb1000 available                     
+FLASH: 0xa0000000 - 0xa2000000, 128 blocks of 0x00040000 bytes each.
+RedBoot&gt;
+    </screen>
+    <para>
+When RedBoot issues its prompt, it is also ready to accept connections
+from sh-elf-gdb, allowing applications to be downloaded and
+debugged.
+    </para>
+    <para>
+Occasionally it may prove necessary to update the installed RedBoot
+image. This can be done simply by repeating the above process, using
+the Micro Probe. Alternatively, the existing
+RedBoot install can be used to load the RAM-resident version. You can
+even install the RAM resident RedBoot in the "RedBoot[backup]" flash
+region. See the RedBoot documentation for instruction on how to do this.
+    </para>
+    </refsect2>
+    <refsect2 id="sh4-microdev-eeprom"><title>EEPROM Installation</title>
+      <para>
+The board has a 32-pin PLCC socket suitable for an EEPROM, silk screened U21.
+To use RedBoot running from EEPROM, you must first program the file
+<filename>redboot_EEPROM.bin</filename> (normally supplied with the eCos release
+in the <filename class="directory">loaders</filename> directory) into the
+EEPROM using an appropriate programmer. No byte swapping is required. If RedBoot
+needs to be rebuilt, then instructions for this are supplied <link
+linkend="sh4-microdev-setup-rebuild">below</link>, and the import file
+<filename>redboot_EEPROM.ecm</filename> should be used.
+      </para>
+      <para>
+To configure the board to boot from the EEPROM instead of flash, you must
+power off the board and change the following DIP switch settings, which may
+both be found on DIP switch 2 (silk screened S2): switch 2 (silk
+screened FEMI SIZ1) should be set to ON, which will change the access
+width for FEMI area 0 from 32-bit to 8-bit; switch 6 (silk screened
+FPGA SW3) should be set to OFF to configure the FPGA to map memory
+accesses for FEMI area 0 to point at the EEPROM instead of flash. In
+this mode, it is no longer possible to access flash memory as the EEPROM
+is mapped into the same area in the address space.
+      </para>
+      <para>
+Note that it is usually preferable to boot from flash instead of EEPROM as
+flash is accessed 32-bits at a time, whereas the EEPROM is accessed 8-bits
+at a time, which therefore affects performance as this requires 4 times as
+many read cycles.
+      </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-setup-rebuild"><title>Rebuilding RedBoot</title>
+    <para>
+Should it prove necessary to rebuild a RedBoot binary, this is done
+most conveniently at the command line. The steps needed to rebuild the
+RAM version of RedBoot are:
+    </para>
+    <screen>
+$ mkdir redboot_ram
+$ cd redboot_ram
+$ ecosconfig new sh4_202_md redboot
+$ ecosconfig import $ECOS_REPOSITORY/hal/sh/sh4_202_md/v2_0_2/misc/redboot_RAM.ecm
+$ ecosconfig resolve
+$ ecosconfig tree
+$ make
+    </screen>
+    <para>
+At the end of the build the <filename
+class="directory">install/bin</filename> subdirectory should contain
+the file <filename>redboot.bin</filename>.
+    </para>
+    <para>
+Rebuilding the ROM versions involves basically the same
+process. The ROM version uses the file
+<filename>redboot_ROM.ecm</filename> and generates a file
+<filename>redboot.bin</filename>. Make sure you don't mix up the
+different redboot.bin files; rename them to something more memorable
+such as <filename>redboot_RAM.bin</filename> and
+<filename>redboot_ROM.bin</filename>.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Config                         -->
+
+<refentry id="sh4-microdev-config">
+  <refmeta>
+    <refentrytitle>Configuration</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Configuration</refname>
+    <refpurpose>Platform-specific Configuration Options</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="sh4-microdev-config-overview"><title>Overview</title>
+    <para>
+The MicroDev platform HAL package is loaded automatically when eCos is
+configured for an <literal>sh4_202_md</literal> target. It should
+never be necessary to load this package explicitly. Unloading the
+package should only happen as a side effect of switching target
+hardware.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-config-startup"><title>Startup</title>
+    <para>
+The MicroDev platform HAL package supports two separate startup types:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>RAM</term>
+        <listitem><para>
+This is the startup type which is normally used during application
+development. The board has RedBoot programmed into flash at location
+0xA0000000 and boots from that location.
+<application>sh-elf-gdb</application> is then used to load a RAM
+startup application into memory and debug it. It is assumed that the
+hardware has already been initialized by RedBoot. By default the
+application will use the eCos virtual vectors mechanism to obtain certain
+services from RedBoot, including diagnostic output.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>ROM</term>
+        <listitem><para>
+This startup type can be used for finished applications which will
+be programmed into flash at location 0xA0000000. The application will
+be self-contained with no dependencies on services provided by other
+software. eCos startup code will perform all necessary hardware
+initialization.
+        </para></listitem>
+      </varlistentry>
+    </variablelist>
+
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-config-redboot"><title>RedBoot and Virtual Vectors</title>
+    <para>
+If the application is intended to act as a ROM monitor, providing
+services for other applications, then the configuration option
+<varname>CYGSEM_HAL_ROM_MONITOR</varname> should be set. Typically
+this option is set only when building RedBoot.
+    </para>
+    <para>
+If the application is supposed to make use of services provided by a
+ROM monitor, via the eCos virtual vector mechanism, then the
+configuration option <varname>CYGSEM_HAL_USE_ROM_MONITOR</varname>
+should be set. By default this option is enabled when building for a
+RAM startup, disabled otherwise. It can be manually disabled for a RAM
+startup, making the application self-contained, as a testing step
+before switching to ROM startup.
+    </para>
+    <para>
+If the application does not rely on a ROM monitor for diagnostic
+services then the serial port will be claimed for HAL
+diagnostics.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-config-flash"><title>Flash Driver</title>
+    <para>
+The MicroDev board contains 32Mb of Intel StrataFlash, specifically,
+two E28F128 parts in parallel. The
+<varname>CYGPKG_DEVS_FLASH_STRATA</varname> package contains all the
+code necessary to support these parts and the
+<varname>CYGPKG_DEVS_FLASH_SH_MICRODEV</varname> package contains
+definitions that customize the driver to the MicroDev board.
+    </para>
+    <para>
+Note that if booting from EEPROM instead of flash, the flash driver will
+not be able to detect or use the flash parts.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-config-eth"><title>Ethernet Driver</title>
+    <para>
+The MicroDev board contains an SMSC LAN91C111 ethernet device.
+The
+<varname>CYGPKG_DEVS_ETH_SMSC_LAN91CXX</varname> package contains all the
+code necessary to support this part and the
+<varname>CYGPKG_DEVS_ETH_SH_MICRODEV</varname> package contains
+definitions that customize the driver to the MicroDev board.
+    </para>
+  </refsect1>
+
+
+  <refsect1 id="sh4-microdev-config-clock"><title>System Clock</title>
+    <para>
+By default, the system clock interrupts once every 10ms, corresponding
+to a 100Hz clock. This can be changed by the configuration option
+<varname>CYGNUM_HAL_RTC_DENOMINATOR</varname> which corresponds to the
+clock frequency. Other clock-related settings are recalculated
+automatically if the denominator is changed.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-config-flags"><title>Compiler Flags</title>
+    <para>
+The platform HAL defines the default compiler and linker flags for all
+packages, although it is possible to override these on a per-package
+basis. Most of the flags used are the same as for other architectures
+supported by eCos. There are two flags specific to this port:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><option>-m4</option></term>
+        <listitem><para>
+The <application>sh-elf-gcc</application> compiler supports many
+variants of the SH architecture, from the SH2 onwards.
+A <option>-m</option> option should be used to select the specific
+variant in use, and with current tools <option>-m4</option> is the
+correct option for the SH4-202.
+        </para></listitem>
+      </varlistentry>
+<!-- DOES THIS APPLY?
+      <varlistentry>
+        <term><option>-fomit-frame-pointer</option></term>
+        <listitem><para>
+Traditionally the <varname>R14</varname> register was used as a
+dedicated frame pointer, and the compiler was expected to keep it up
+to date
+on procedure entry and exit. These days
+the compiler is perfectly capable of generating working code without a
+frame pointer, so omitting the frame pointer often saves some work
+during procedure entry and exit and makes another register available
+for optimization. However without a frame pointer register the
+<application>sh-elf-gdb</application> debugger is not always able to
+interpret a thread stack, so it cannot reliably give a backtrace.
+Removing <option>-fomit-frame-pointer</option> from the default flags
+will make debugging easier, but the generated code may be worse.
+        </para></listitem>
+      </varlistentry>
+-->
+    </variablelist>
+  </refsect1>
+ 
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Port                           -->
+
+<refentry id="sh4-microdev-port">
+  <refmeta>
+    <refentrytitle>The HAL Port</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>HAL Port</refname>
+    <refpurpose>Implementation Details</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="sh4-microdev-port-overview"><title>Overview</title>
+    <para>
+This documentation explains how the eCos HAL specification has been
+mapped onto the MicroDev hardware, and should be read in conjunction
+with that specification. The MicroDev platform HAL package complements
+the SH architectural HAL and the SH4 variant HAL. It provides
+functionality which is specific to the target board.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-port-startup"><title>Startup</title>
+    <para>
+Following a hard or soft reset the HAL will initialize or
+reinitialize most of the on-chip peripherals. There is an exception
+for RAM startup applications which depend on a ROM monitor for certain
+services.
+    </para>
+    <para>
+For ROM startup, the HAL will perform additional initialization,
+setting up the external DRAM and programming the various internal
+registers. The values used for most of these registers are assigned
+fixed values from a table in the header <filename
+class="headerfile">cyg/hal/platform.inc</filename>.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-port-linker"><title>Linker Scripts and Memory Maps</title>
+    <para>
+The platform HAL package provides the memory layout information needed
+to generate the linker script. The key memory locations are as follows:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>off-chip Flash</term>
+        <listitem><para>
+This is located at address 0x00000000 of the physical memory space and is
+therefore accessible in the P1 region at location 0x80000000. An
+uncached shadow of this memory is available in the P2 region at 0xA0000000.
+The contents of the flash are organized as described earlier.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>off-chip EEPROM</term>
+        <listitem>
+        <para>
+If selected by the DIP switches, this occupies the same addresses as the
+off-chip flash, and the flash is no longer visible.
+        </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>external SDRAM</term>
+        <listitem>
+        <para>
+This is located at address 0x08000000 of the physical memory space and is
+therefore accessable in the P1 region at location 0x88000000. An
+uncached shadow of this memory is available in the P2 region at 0xA8000000. The
+first 256 bytes are used for hardware exception vectors. The next 256
+bytes are normally used for the eCos virtual vectors, allowing
+RAM-based applications to use services provided by the ROM
+monitor. For ROM startup, all remaining SDRAM is available. For RAM
+startup, available SDRAM starts at location 0x80100000, with the bottom
+1MB reserved for use by RedBoot.
+        </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>on-chip peripherals</term>
+        <listitem><para>
+These are accessible  via the P4 region at location 0xE0000000 onwards.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>off-chip peripherals</term>
+        <listitem><para>
+The ethernet device is located at 0xA7500000. The FPGA interrupt
+controller is located at 0x06110000. These are the only
+off-chip peripherals accessed by eCos. All others are left
+untouched.
+        </para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-port-clock"><title>Clock Support</title>
+    <para>
+The platform HAL provides configuration options for the eCos system
+clock. This always uses the hardware timer 0, which should not be used
+directly by application code. Timer 1 is used to implement a
+microsecond resolution busy delay service. Timer 2 is not used by eCos
+so application code is free to manipulate this as required. The
+actual HAL macros for managing the clock are provided by the SH architecture
+processor HAL.
+    </para>
+    <para>
+There is a software model of the structure of the SH family clock
+supply subsystem which performs the correct calculations to yield not
+only the inputs for the CPU clock but also the peripheral clocks fed
+to the serial device, memory controllers and other devices. The values
+for the master crystal, the PLL multipliers and various dividers are
+supplied by the platform HAL. Some care must be taken in defining
+these since wrong values will cause the timers and the SCIF baud rate
+to be miscalculated. If the OSCAR chip switches are changed from the
+default then the value of <varname>CYGHWR_HAL_SH_OOC_XTAL</varname>
+must be changed to match.
+    </para>
+  </refsect1>
+
+  <refsect1 id="sh4-microdev-port-other-hal"><title>Other Issues</title>
+    <para>
+The MicroDev platform HAL does not affect the implementation of other
+parts of the eCos HAL specification. The
+SH4 variant HAL, and the SH architectural HAL documentation
+should be consulted for further details.
+    </para>
+    <para>
+It should be noted that the floating point support in the SH HAL has a
+caveat that, if the FPSCR register is changed, it may get reverted at a
+later stage by certain operations performed by the GCC compiler. This
+behaviour is intentional as the alternative would be to update the GCC
+compiler's internal state about the FPSCR at every context switch which
+would be expensive for a feature that is unlikely to be used frequently.
+If the FPSCR is to be changed by the application, the developer
+should call the function <function>__set_fpscr(int)</function>, passing it
+the new FPSCR value.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+
+</part>

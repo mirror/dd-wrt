@@ -1,0 +1,367 @@
+Feb 24, 2001
+
+These are the original notes, based on the contribution from
+Richard Panton at 3G Labs, Inc.
+
+eCOS For The Compaq iPAQ H3600 Series Handheld PC
+=================================================
+
+Intro
+-----
+
+IMPORTANT - this current version does not allow the construction of a
+_bootable_ ROM image for the iPAQ. However, it DOES allow the creation
+of ROM and RAM based images.
+
+You will need:
+	A Compaq iPAQ h3600 series.
+	The SERIAL docking cradle.
+
+You can use:
+	The CF-Card expansion sleeve.
+	A Socket LP-E CF Ethernet card.
+
+In order to load any Free Software onto the iPAQ, the Flash ROM must be
+reprogrammed with the Linux Bootloader. Please see the instructions
+at >>> www.handhelds.org <<< for installing the 'stable' bootloader. Note
+that installing the bootloader will erase WinCE from the Flash ROMs, and
+that ..
+	
+     .. IT MAY NOT BE POSSIBLE TO RE-INSTALL WinCE AFTER THIS.
+
+
+(You WILL be able to load ARMLinux, however ;-)
+
+The rest of this document assumes that you have a working bootloader on
+your iPAQ, such that when you boot, the 'boot>' prompt comes out of the
+serial port.
+
+As the bootloader resides at address 0x0000 in the ROM, and we do not
+wish to overwrite the bootloader (dangerous - this would turn the iPAQ
+into what is colloquially known as a 'brick'), the eCOS Redboot image
+must be loaded at some other address. In order to make memory mapping
+simpler, eCOS/Redboot must be loaded onto a 1Mb boundary - i.e. at
+address 0x00x00000, where x is 1,2,3...f. The eCOS startup code has been
+adjusted for iPAQ to allow this. To minimise the changes to the memory
+map, the MMU will map the correct 1Mb section to the start of ROM space
+at 0x50000000 so that the rest of the image can run unchanged.
+
+Patches to existing code
+------------------------
+
+Two patches to code are required:
+
+$ECOS_REPOSITORY/hal/arm/arch/current/src/vectors.S:
+    148c148,149
+    <         ldr     pc,.reset_vector                // 0x00
+    ---
+    >         //ldr     pc,.reset_vector                // 0x00
+    > 	b	vectors				// 0x00
+    161c162,163
+    < UNMAPPED_PTR(reset_vector)                      // 0x20
+    ---
+    > //UNMAPPED_PTR(reset_vector)                      // 0x20
+    > 	b	reset_vector
+
+[This patch changes the reset vector to be position independant.]
+
+
+
+and to $ECOS_REPOSITORY/hal/arm/sa11x0/var/current/src/hal_diag.c
+    116,117c116
+    < 
+    <     // Set UART to 8N1 (8 data bits, no partity, 1 stop bit)
+    ---
+    >     // Set UART to 8N1 (8 data bits, no parity, 1 stop bit)
+    182a182,187
+    > #if defined(CYGPKG_HAL_ARM_SA11X0_IPAQ)
+    > static channel_data_t ser_channels[2] = {
+    >     { (volatile struct sa11x0_serial*)SA11X0_UART3_BASE, 1000, CYGNUM_HAL_INTERRUPT_UART3 },
+    >     { (volatile struct sa11x0_serial*)SA11X0_UART1_BASE, 1000, CYGNUM_HAL_INTERRUPT_UART1 }
+    > };
+    > #else
+    186a192
+    > #endif
+
+[This patch makes the iPAQ use UART3 for debugging rather than UART1]
+
+
+Flash Support
+-------------
+
+The iPAQ uses the same flash devices as the Intel Assabet board, and
+uses the same eCOS package, CYGPKG_DEVS_FLASH_ASSABET.
+
+To enable the iPAQ HAL to use the Assabet flash driver, you must edit
+the file:
+    $ECOS_REPOSITORY/devs/flash/arm/assabet/current/cdl/flash_assabet.cdl
+
+changing the line:
+    requires  CYGPKG_HAL_ARM_SA11X0_ASSABET
+
+to:
+    requires  CYGPKG_HAL_ARM_SA11X0_ASSABET || CYGPKG_HAL_ARM_SA11X0_IPAQ
+
+This change allows the assabet flash package to be used with this iPAQ
+HAL.
+
+When running RedBoot, it is important to execute the command:
+
+    RedBoot> egpio -s 1
+
+(which will turn on the programming power supply) before attempting to
+program any flash area.
+
+VERY IMPORTANT: Do NOT attempt to re-program any flash memory between
+addresses 0x00000000 and 0x000fffff with RedBoot, since that is where
+the iPAQ Linux bootloader resides.
+
+
+
+Packages
+--------
+hal_ipaq-v1_0_0.epk	CYGPKG_HAL_ARM_SA11X0_IPAQ
+	Basic support for the iPAQ platform.
+	
+pcmcia_ipaq-v1_0_0.epk	CYGPKG_DEVS_PCMCIA_IPAQ
+	PCMCIA and CF card support for the iPAQ. Allows the use of the
+	Socket LP-E Ethernet CF card for network and debugging.
+
+
+
+Compiling and installing RedBoot
+--------------------------------
+
+As a concrete example (stuff you type is highlighted like this)
+                                                          ^^^^
+
+    $ ecosconfig new ipaq redboot
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    U CYGSEM_HAL_USE_ROM_MONITOR, new inferred value 0
+    U CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT, new inferred value 1
+    U CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT, new inferred value 0
+    U CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM, new inferred value 0
+    U CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS, new inferred value 1
+    $ ecosconfig import \
+      ^^^^^^^^^^^^^^^^^^^
+    > $ECOS_REPOSITORY/hal/arm/sa11x0/ipaq/current/misc/redboot_ROM.cfg
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you see an error here relating to unresolved FLASH components, then you
+should edit the flash_assabet.cdl file as described above.
+
+    $ ecosconfig resolve
+      ^^^^^^^^^^^^^^^^^^
+    $ ecosconfig tree
+      ^^^^^^^^^^^^^^^
+    $ make
+      ^^^^
+      ...
+      ...
+      [ creates install/bin/redboot.* ]
+    $   
+
+You can now power up the iPAQ and connect to it via the serial port by using,
+for example, minicom, at 115200 baud (8 data bits, 1 stop bit, no parity).
+You should see the 'boot>' prompt if you press space/return a couple of times.
+
+    @000002BC
+    F
+    *MTST
+      ...
+      ... [ loads of status and copyright info here ]
+      ...
+    booting flash...
+    no boot image in flash
+    boot>
+    boot> load flash 0x00100000
+	  ^^^^^^^^^^^^^^^^^^^^^
+Now start an XMODEM send of install/bin/redboot.bin
+When the download is complete, you should see the following:
+
+    programming flash...erasing ...                                                 
+    Erasing sector 00100000                                                         
+      len=00019500                                                                  
+    writing flash..                                                                 
+    addr: 00100000 data: EA000006                                                   
+    addr: 00110000 data: E3530006                                                   
+    verifying ... done.                                                             
+    boot>
+
+[ You may find that the iPAQ bootloader times out before you get the chance
+to start the XMODEM send. In this case, use a script to perform the download
+- this also will ensure that you never type the incorrect address. A sample
+script for minicom can be found below in appendix A.]
+
+In order to see the RedBoot start-up messages, it is a good idea to change
+the baudrate used by the Linx bootloader now.
+
+    boot> set baudrate 38400
+	  ^^^^^^^^^^^^^^^^^^
+      setting param=baudrate to value=38400
+    update_baudrate:  new baudrate=00009600
+      CSRBASE=42000000
+      l_ubrlcr=00000005
+      m_ubrlcr=00000000
+      h_ubrlcr=00000000
+     baudrate changed to 0x00009600
+    boot>
+
+The final part of this message will be corrupted (since you are listening
+at 115200 baud). Change your communications program to work at 38400 baud
+and hit return a couple of times.
+    
+To make this change permanent (recommended), execute the following command:
+    
+    boot> params save
+	  ^^^^^^^^^^^
+    bootldr: set baudrate 0x00009600
+
+    programming flash...erasing ...
+    Erasing sector 000C0000
+      len=00000084
+    writing flash..
+    addr: 000C0000 data: 746F6F62
+    verifying ... done.
+    boot>
+
+
+
+Assuming that the download and flash programming have been successful, you
+will now be able to launch RedBoot by issuing the following command to the
+iPAQ bootloader:
+
+    boot> jump 0x00100000
+	  ^^^^^^^^^^^^^^^
+    Calling fcn=00100000
+      a0=00000000
+      a1=00000000
+      a2=00000000
+      a3=0......j
+		 +
+    RedBoot(tm) debug environment - built 14:56:04, Dec  7 2000
+    Platform: Compaq iPaq handheld PC (StrongARM 1110)         
+    This port Copyright (C) 2000, 3G Lab Ltd.          
+    Copyright (C) 2000, Red Hat, Inc.        
+				 
+    RAM: 0x00000000-0x02000000
+    FLASH: 0x50000000 - 0x51000000, 64 blocks of 0x00040000 bytes each.
+    FLASH configuration checksum error or invalid key                  
+    ... Waiting for network card: .Ready!            
+
+    Socket Communications, Inc: Low Power Ethernet CF Revision C 5V/3.3V 08/27/98
+    IP: 192.168.0.106, Default server: 192.168.0.1                               
+    RedBoot>
+
+
+
+Hints and Tips
+--------------
+
+Set the iPAQ Linux bootloader to operate at 38400 (ie. the same as GDB). This
+means you don't have to switch baud rate when starting RedBoot.
+
+Don't load a Linux kernel into flash, otherwise it may be booted
+automatically before you get the chance to get to the boot> prompt.
+
+Use Ethernet if possible!
+
+Flash support WILL NOT WORK unless you have modified the flash_assabet.cdl
+file as described above.
+
+
+
+Extended RedBoot Commands
+-------------------------
+
+Four new commands have been added to RedBoot to aid system development.
+
+1)	gpio [-s <word>] [-c <word>]
+
+	gpio		will display the current state of the GPIO pins.
+	 -s <word>	will set the bits that are set in <word>, leaving
+	 		other bits unchanged.
+	 -c <word>	will clear the bits that are set in <word>, leaving
+	 		other bits unchanged. -s and -c may be used in the
+			same command.
+
+2)	egpio [-s <word>] [-c <word>]
+	egpio		will display the current state of the EGPIO pins.
+	 -s <word>	will set the bits that are set in <word>, leaving
+	 		other bits unchanged.
+	 -c <word>	will clear the bits that are set in <word>, leaving
+	 		other bits unchanged. -s and -c may be used in the
+			same command.
+	    [ In particular, "egpio -s 1" will enable flash programming ].
+
+3)	physaddr <virtual_address>
+			will manually walk the translation and page tables
+			to determine which physical address is referenced
+			by the given <virtual_address>. Also printed are
+			the page size (section, large (64k) page, or
+			small (4k) page), the ARM domain, and the access
+			permissions. Invalid mappings will be indicated
+			with an error message explaining WHY the mapping
+			is invalid.
+
+4)	mem [-a <address>] [-b|-h] <word>
+			Stores the value given by <word> at the address
+			given by <address>. <Address> defaults to the
+			last address used if not supplied.
+	 -b		indicates a byte store (8 bits only).
+	 -h		indicates a half-word store (16 bits only).
+			Default is a word store (all 32 bits).
+
+
+Appendix A - A sample minicom script to download images to flash
+----------------------------------------------------------------
+
+<<<<----------- CUT HERE ----------->>>>
+getipaq:
+	send " \c"
+	expect {
+	    "boot>" goto gotit
+	    " " goto tryenter
+	    timeout 1 goto getipaq
+	}
+tryenter:
+	send ""
+	expect {
+	    "boot>" goto gotit
+	    timeout 1 goto getipaq
+	}
+gotit:
+	send "load flash 0x00100000"
+	! sx install/bin/redboot.bin
+
+<<<<----------- CUT HERE ----------->>>>
+
+
+
+Appendix B - Differences between the Assabet and iPAQ source code
+-----------------------------------------------------------------
+
+memory map - Allocated space for LCD buffer at 0x8000. Use space at
+0x0400 - 0x3fff for page tables.
+
+hal_platform_setup.h - EGPIO word and initialisation. Skip memory
+controller initialisation (for now).
+
+redboot_cmds.c - Extra RedBoot commands as described above.
+
+lcd_support.c - various changes for the iPAQ display.
+
+ipaq_misc.c - Corrected descriptor structures. Added macros for setting
+up page tables as well as sections. Use of domains. LCD is switched on
+during plf_hardware_init(). phys_addr() function to perform translation
+table walk under software control.
+
+References
+----------
+
+ARM Architecture Reference Manual
+	(Prentice-Hall ISBN 0-13-736299-4)
+
+Compaq iPAQ H3600 Hardware Design Specification (Version 0.2f)
+    
+[ later versions of these documents may be available ].

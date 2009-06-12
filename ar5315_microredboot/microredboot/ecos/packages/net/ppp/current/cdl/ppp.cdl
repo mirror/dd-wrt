@@ -1,0 +1,338 @@
+# ====================================================================
+#
+#      ppp.cdl
+#
+#      PPP configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2003, 2004 eCosCentric Limited
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Original data:  nickg
+# Contributors:   
+# Date:           2002-10-15
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_PPP {
+    display       "PPP daemon"
+    parent        CYGPKG_NET
+    doc           ref/net-ppp.html
+    include_dir   cyg/ppp
+    requires      CYGPKG_IO
+    requires      CYGPKG_IO_SERIAL
+
+    requires      CYGPKG_IO_SERIAL_DEVICES
+    requires      CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING
+    requires      CYGPKG_NET
+    requires      CYGPKG_IO_SERIAL_FLOW_CONTROL
+    
+    description "PPP support for eCos. This package contains the PPP
+                 daemon functionality, BSD kernel device drivers for
+                 the network stack, plus other parts of the PPP
+                 infrastructure."
+
+    compile pppd.c sys-ecos.c ppp_io.c
+    compile auth.c ccp.c fsm.c magic.c
+    compile cbcp.c ipcp.c lcp.c 
+
+    compile if_ppp.c slcompress.c
+
+    cdl_option CYGNUM_PPP_PPPD_THREAD_PRIORITY {
+        display "PPP thread priority"
+        flavor data
+        default_value { CYGNUM_KERNEL_SCHED_PRIORITIES/2 }
+        legal_values 0 to CYGNUM_KERNEL_SCHED_PRIORITIES
+        description "The PPP system contains two threads, One is used for receiving
+                     data from the link and processing control packets.
+                     The other is used to transmit data asynchronously to the link
+                     when it cannot be completed synchronously. The receive thread
+                     runs at the priority given here, and the transmit thread
+                     runs at the next lower priority.
+                     The exact priority needed here depends on the importance of the
+                     PPP subsystem relative to the rest of the system. The default
+                     is to put it in the middle of the priority range to provide
+                     reasonable response without impacting genuine high
+                     priority threads."
+    }
+
+    cdl_component CYGPKG_PPP_DEBUG_WARN_ONLY {
+        display   "PPP protocol debug error only"
+        default_value 1
+        description "The runtime debug option enables logging of high
+                     level debug messages. Too many of these can interfere
+                     with the PPP device and may result in missed messages.
+                     This is because these messages are emitted via the diag_printf()
+                     mechanism, which disables interrupts while it prints.
+                     By default, therefore, we only report errors and warnings, and not
+                     all events. Setting this option to zero will enable the logging of
+                     all events."
+    }
+    
+    cdl_component CYGPKG_PPP_AUTH {
+        display "PPP authentication defaults"
+        flavor none
+        no_define
+        
+        cdl_option CYGPKG_PPP_AUTH_DEFAULT_USER {
+            display "Default user name"
+            flavor data
+            default_value {"\"eCos\""}
+            description "This option gives the default value
+                         for the user name used to intialize
+                         the user field in the PPP options."
+        }
+
+        cdl_option CYGPKG_PPP_AUTH_DEFAULT_PASSWD {
+            display "Default password"
+            flavor data
+            default_value {"\"secret\""}
+            description "This option gives the default value
+                         for the password used to intialize
+                         the passwd field in the PPP options."
+        }
+        
+    }
+
+    cdl_option CYGPKG_PPP_DEFAULT_DIALUP_NUMBER {
+        display "Default dialup number"
+        flavor data
+        default_value { "\"5551234\""}
+        description "This option provides a default dialup number for use in
+                     chat scripts. This value is not used anywhere
+                     in the PPP package, but is provided to complete the information
+                     needed, alongside the user name and password, for accessing a
+                     typical dialup server."
+    }
+    
+    cdl_component CYGPKG_PPP_PAP {
+        display "PAP support"
+        default_value 1
+        description "This component enables the inclusion of PAP authentication
+                     support."
+        compile upap.c
+
+    }
+
+    cdl_component CYGPKG_PPP_CHAP {
+        display "CHAP support"
+        default_value 1
+        description "This component enables the inclusion of CHAP authentication
+                     support."
+
+        compile chap.c chap_ms.c
+
+    }
+
+    cdl_component CYGPKG_PPP_COMPRESSION {
+        display "PPP compression options"
+        default_value 0
+        description "This component provides control over
+                     PPP compression features. WARNING: at
+                     present there are problems with BSD and ZLIB,
+                     and the compression code needs to allocate large
+                     amounts of memory. Hence this is all currently
+                     disabled."
+        
+        cdl_option PPP_BSDCOMP {
+            display "Enable BSD compression"
+            default_value 0
+            compile bsd_comp.c 
+            description "This option enables inclusion of BSD
+                         compression into the PPP protocol."
+        }
+
+        cdl_option PPP_DEFLATE {
+            display "Enable ZLIB compression"
+            default_value 0
+            compile ppp_deflate.c zlib.c
+            description "This option enables inclusion of ZLIB
+                         compression into the PPP protocol."
+        }
+        
+        cdl_option PPP_INHIBIT_OLD_VJ_COMPRESSION {
+			display			"Inhibit older-style VJ compression"
+			flavor			bool
+			default_value	0
+			description		"This option prevents the IPCP state machine
+			                 from negotiating the pre-RFC1332 Van Jacobson 
+			                 compression.  Checking this option could
+			                 improve IPCP negotiation time at the expense
+			                 of compatibility."
+		}            
+    }
+
+    cdl_component CYGPKG_PPP_CHAT {
+        display "Chat script support"
+        default_value 1
+        description "This component enables the inclusion of a
+                     simple scripting system to bring up PPP connections.
+                     It implements a subset of the CHAT scripting language."
+
+        compile chat.c
+        
+        cdl_option CYGNUM_PPP_CHAT_ABORTS_MAX {
+            display "Maximum number of ABORT strings"
+            flavor data
+            default_value 10
+            legal_values 5 to 500
+            description "This option defines the maximum number of ABORT
+                         strings that the CHAT system will store."
+        }
+
+        cdl_option CYGNUM_PPP_CHAT_ABORTS_SIZE {
+            display "Maximum size of each ABORT string"
+            flavor data
+            default_value 20
+            legal_values 10 to 100
+            description "This option defines the maximum size of each ABORT
+                         strings that the CHAT system will store."
+        }
+
+        cdl_option CYGNUM_PPP_CHAT_STRING_LENGTH {
+            display "Maximum size of CHAT strings"
+            flavor data
+            default_value 256
+            legal_values 32 to 32768
+            description "This option defines the maximum size of any
+                         expect or reply strings that the CHAT system
+                         will be given."
+        }
+        
+    }
+
+
+    cdl_component CYGPKG_PPP_OPTIONS {
+        display "PPP build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_PPP_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the PPP package.
+	        These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_PPP_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the PPP package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+
+    cdl_option CYGPKG_PPP_TESTS {
+        display "PPP tests"
+        flavor  data
+        no_define
+        calculated { "tests/ppp_up "         .
+                     "tests/ppp_updown "     .
+                     "tests/chat "           .
+                     "tests/ppp_auth "       .
+                     ((CYGPKG_PPP_TESTS_ALL) ?
+                      "tests/isp "           .
+                      "tests/tcp_echo "      .
+                      "tests/nc_test_slave "
+                     :
+                      "" )
+                   }
+            description   "
+             This option specifies the set of tests
+             for the PPP package."
+        }
+
+    cdl_option CYGPKG_PPP_TESTS_ALL {
+        display "Include all PPP tests"
+        default_value 0
+        description "This option enables the inclusion of extra PPP tests
+                     that are not normally suitable for automated testing."
+    }
+    
+    cdl_option CYGPKG_PPP_TEST_DEVICE {
+        display "PPP test device"
+        flavor data
+        default_value { "\"/dev/ser0\"" }
+        description "This is the name of the device used by the PPP tests
+                     to make the PPP connection."
+    }
+
+    cdl_component CYGPKG_PPP_TESTS_AUTOMATE {
+        display "PPP test automation"
+        default_value 1
+        description "This component controls the automation of PPP tests using the
+                     test_server.sh script to control the remote end. Without this
+                     option, PPP tests are configured to run stand-alone. With this
+                     option they emit control strings to change the line baud rate
+                     and announce the test being performed."
+
+        cdl_option CYGDAT_PPP_TEST_BAUD_RATES {
+            display "PPP test automation baud rates"
+            flavor data
+            default_value { "CYGNUM_SERIAL_BAUD_19200," .
+                            "CYGNUM_SERIAL_BAUD_38400," .
+                            "CYGNUM_SERIAL_BAUD_57600," .
+                            "CYGNUM_SERIAL_BAUD_115200"
+                          }
+            description "This option gives the set of baud rates for which some
+                         tests will execute."
+        }
+    }
+        cdl_option CYGBLD_PPP_WINDOWS_TELNET_APP {
+            display  "Build complete eCos PPP client interfacing to Windows PPP server"
+            default_value 0
+            make -priority 320 {
+                <PREFIX>/bin/windows_telnet.elf : $(PREFIX)/lib/target.ld $(PREFIX)/lib/vectors.o $(PREFIX)/lib/libtarget.a $(PREFIX)/lib/libextras.a $(REPOSITORY)/$(PACKAGE)/tests/windows_telnet.c
+                        @sh -c "mkdir -p $(dir $@)"
+                        $(CC) -c $(INCLUDE_PATH) $(CFLAGS) -o $(PREFIX)/lib/windows_telnet.o $(REPOSITORY)/$(PACKAGE)/tests/windows_telnet.c
+                        $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ $(PREFIX)/lib/windows_telnet.o
+			$(OBJCOPY) -O binary $@ $(PREFIX)/bin/windows_telnet.bin			
+            }
+            
+        }
+
+}
+
+# EOF ppp.cdl

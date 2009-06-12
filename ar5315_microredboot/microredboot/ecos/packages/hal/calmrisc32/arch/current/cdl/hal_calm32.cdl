@@ -1,0 +1,101 @@
+# ====================================================================
+#
+#      hal_calm32.cdl
+#
+#      CalmRISC32 architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      msalter
+# Original data:  bartv, nickg
+# Contributors:
+# Date:           1999-11-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_CALM32 {
+    display "CalmRISC32 architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_calm32.h
+    description   "
+        The CalmRISC32 architecture HAL package provides generic support
+        for this processor architecture. It is also necessary to
+        select a CPU variant and a specific target platform HAL
+        package."
+
+    cdl_interface CYGINT_HAL_CALM32_VARIANT {
+        display  "Number of variant implementations in this configuration"
+        requires 1 == CYGINT_HAL_CALM32_VARIANT
+    }
+
+    compile       hal_misc.c context.S calm32-stub.c hal_syscall.c
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+
+    cdl_option CYGHWR_HAL_CALM32_CPU_FREQ {
+        display "CPU frequency"
+        flavor  data
+        legal_values 0 to 1000000
+        default_value 50
+        description "
+           This option contains the frequency of the CPU in MegaHertz.
+           Choose the frequency to match the processor you have. This
+           may affect thing like serial device, interval clock and
+           memory access speed settings."
+    }
+
+    cdl_option CYGDBG_HAL_CALM32_DEBUG_GDB_CTRLC_SUPPORT {
+        display "Architecture GDB CTRLC support"
+        calculated { CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT || CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT }
+        active_if { CYGINT_HAL_DEBUG_GDB_CTRLC_UNSUPPORTED == 0 }
+        description "
+            If either the CTRLC or BREAK support options in hal.h are set
+            then set our own option to turn on shared generic support for
+            control C handling."
+    }
+}

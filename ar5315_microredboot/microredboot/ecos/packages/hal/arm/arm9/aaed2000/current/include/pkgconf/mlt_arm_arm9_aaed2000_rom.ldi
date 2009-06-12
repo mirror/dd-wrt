@@ -1,0 +1,30 @@
+// eCos memory layout - Mon Nov 12 14:25:25 2001
+
+// This is a generated file - do not edit
+
+#include <cyg/infra/cyg_type.inc>
+
+MEMORY
+{
+    ram : ORIGIN = 0, LENGTH = 0x2000000
+    rom : ORIGIN = 0x60000000, LENGTH = 0x200000
+}
+
+SECTIONS
+{
+    SECTIONS_BEGIN
+    SECTION_rom_vectors (rom, 0x60000000, LMA_EQ_VMA)
+    SECTION_text (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_RELOCS (rom, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_fini (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata1 (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_got (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fixup (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_gcc_except_table (rom, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fixed_vectors (ram, 0x20, LMA_EQ_VMA)
+    SECTION_data (ram, 0x8000, FOLLOWING (.gcc_except_table))
+    SECTION_bss (ram, ALIGN (0x4), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__heap1) = ALIGN (0x8);
+    SECTIONS_END
+}

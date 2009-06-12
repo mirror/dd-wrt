@@ -1,0 +1,32 @@
+
+LEON/TSIM Support
+=================
+
+See <http://www.gaisler.com> for information about the TSIM
+simulator and Leon project per se.
+
+The simulator TSIM can be run "as one" with GDB by using the
+script do-gdb-sim in this directory.  The script can be used in
+automated testing systems to run as if it were embedded within
+GDB.  It contains:
+
+----------------------------------------------------------------
+#! /bin/csh
+tsim-leon -nfp -gdb >& /dev/stdout &
+sparc-rtems-gdb -nw -nx $*:q
+----------------------------------------------------------------
+
+which simply runs tsim in background, directing its output to the
+common stdout.
+
+The command to connect to the simulator target will be
+
+        (gdb) target remote localhost:1234
+
+This fully described in the TSIM documentation from
+  (home)        <http://www.gaisler.com/tsim.html>
+  (flyer)       <http://www.gaisler.com/doc/tsim-erc32.pdf>
+  (doc)         <http://www.gaisler.com/doc/tsim-1.0.18.pdf>
+
+
+

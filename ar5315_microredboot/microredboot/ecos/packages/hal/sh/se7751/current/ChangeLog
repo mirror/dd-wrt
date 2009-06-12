@@ -1,0 +1,145 @@
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/ser16c550c.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Serial register renaming.
+
+2001-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_sh_sh7751_se7751.cdl: Indicate support of variable baud rates.
+
+2001-09-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h: Removed dummy
+	CYGPRI_HAL_INTERRUPT_ACKNOWLEDGE_PLF and
+	CYGPRI_HAL_INTERRUPT_CONFIGURE_PLF definitions.
+
+2001-07-24  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Clear interrupt controller registers on startup.
+
+	* include/plf_io.h (HAL_PCI_TRANSLATE_INTERRUPT): Rotate interrupts.
+
+	* include/plf_intr.h (CYGPRI_HAL_INTERRUPT_UPDATE_LEVEL_PLF):
+	Added handling for IRL vectors. Name IRL vectors.
+
+	* src/ser16c550c.c: Changed interrupt vector (still unclear if
+	it's the right one).
+
+2001-07-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7751_se7751.cdl: Create .eprom.srec version for
+	broken Hitachi loader.
+
+	* misc/redboot_ROM.ecm: Enable caching.
+	* misc/redboot_RAM.ecm: Same.
+
+	* src/plf_misc.c (hal_platform_init): Initialize
+	interrupt controller.
+	* include/plf_io.h (HAL_PCI_TRANSLATE_INTERRUPT): Use PCIA-D
+	interrupts.
+	* include/plf_intr.h: Put in a few guessed interrupts. Probably
+	not right.
+
+2001-07-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Remove unused variables.
+
+	* src/m1543c.c (cyg_hal_init_superIO): Try to init PCI->ISA
+	bridge. Not that it makes any sense - I don't see any device 2 in
+	the config space, but that's what the Hitachi monitor is
+	fiddling. Doesn't make a change though.
+
+2001-07-13  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c (cyg_hal_plf_comms_init): Leave out superIO init
+	until it's working.
+
+	* src/ser16c550c.c: Adjust offsets.
+
+	* src/m1543c.c (cyg_hal_init_superIO): More setup code.
+
+	* misc/redboot_RAM.ecm: Added eth driver.
+
+2001-07-11  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h (HAL_PCI_ALLOC_BASE_IO): Moved to 0x2000.
+	Scan all busses.
+
+	* include/platform.inc: Fix warning.
+
+2001-07-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_sh_sh7751_se7751_ram.ldi: Hack in a PCI window.
+	* include/pkgconf/mlt_sh_sh7751_se7751_ram.mlt: Hack in a PCI window.
+	* include/pkgconf/mlt_sh_sh7751_se7751_ram.h: Hack in a PCI window.
+
+	* include/plf_io.h (HAL_PCI_PHYSICAL_IO_BASE): zeroed since all IO
+	happens via functions.
+
+	* cdl/hal_sh_sh7751_se7751.cdl: Want LE configurations.
+
+	* include/plf_io.h: Leave PCI IO space for super IO controller.
+
+	* cdl/hal_sh_sh7751_se7751.cdl: Compile m1543c file.
+	* src/m1543c.c: added.
+
+	* src/ser16c550c.c: Changed addresses and setup code (still not
+	working).
+
+	* src/plf_misc.c (hal_platform_init): Init super IO
+	controller. Init PCI.
+
+	* src/hal_diag.c (cyg_hal_plf_comms_init): Also set up COM2.
+
+	* src/plf_misc.c: Call PCI init during startup.
+
+	* include/plf_io.h: Added PCI definitions.
+
+2001-07-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7751_se7751.cdl: Removed superIO file, set default
+	mode.
+
+2001-07-09  Jesper Skov  <jskov@cambridge.redhat.com>
+
+	* New platform HAL.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,141 @@
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* Makefile.in: Regenerate after acinclude.m4 update
+
+2002-08-03  Bart Veer  <bartv@ecoscentric.com>
+
+	* acinclude.m4, configure.in, Makefile.am:
+	Rework host-side autoconf support
+
+2001-10-15  Julian Smart <julians@redhat.com>
+
+    * Mounts /ecos-x now, not /x
+    * Fixed invocation of 'mount' when about to build
+
+2001-07-26  Julian Smart <julians@redhat.com>
+
+    * Only use Registry functions if building a GUI Configtool.
+    * ecosconfig.exe doesn't now get built when building the GUI
+      Configtool.
+
+2001-07-09  Julian Smart <julians@redhat.com>
+
+    * Fixed (I hope) a long-term bug in both versions of the Configtool,
+    whereby conflicts involving bool-data values weren't
+    resolved.
+
+2001-06-18  Julian Smart <julians@redhat.com>
+
+    * Added possible fix for Tcl crash bug under Windows 9x, by
+    using the wxWindows Mkdir function instead of Tcl's mkdir.
+
+2001-06-04  Julian Smart <julians@redhat.com>
+
+    * Changed cygpath in build.cxx to use /cygdrive notation,
+    checking in the registry first in case the user has customized
+    the /cygdrive mount point.
+
+2001-05-23  Julian Smart <julians@redhat.com>
+
+    * Added Srdjan Sobajic's most excellent host/README improvements,
+    and listed the directories more clearly with a brief reference
+    to the new Configtool and its own readme.
+
+2001-05-16  Bart Veer  <bartv@redhat.com>
+
+	* acinclude.m4 :
+	Update compiler flag handling with g++ to use -O0 rather than
+	-O2. The extra run-time performance is not worth the build
+	overheads. Also sort out the Tcl macro for VC++ builds.
+
+	* configure.in : clean up some old cruft
+
+	aclocal.m4, configure, Makefile.in: regenerate
+
+2001-01-29  Andreas Schuldei  <andreas@schuldei.org>
+
+	* acinclude.m4 (CYG_AC_PATH_TCL): Simplify Tcl installation searching
+
+2000-10-23  Jesper Skov  <jskov@redhat.com>
+
+	* configure: Disable ser_filter magic for now - properly this time!
+	* configure.in: Ditto.
+
+2000-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* configure: Disable ser_filter magic for now.
+	* configure.in: Ditto.
+
+2000-09-15  Jesper Skov  <jskov@redhat.com>
+
+	* Makefile.in: Added ser_filter rules.
+	* configure: Ditto.
+	* configure.in: Ditto.
+
+2000-09-12  Bart Veer  <bartv@redhat.com>
+
+	* README
+	Clarify which configure script should be used.
+
+2000-08-18  Bart Veer  <bartv@redhat.com>
+
+	* configure.in:
+	Allow cross-compilation
+
+	* Makefile.in, configure:
+	Regenerate
+
+2000-03-13  John Dallway  <jld@cygnus.co.uk>
+
+	* README:
+	Mention use of the short form of the path to the configure
+	script under Windows.
+
+2000-03-12  Bart Veer  <bartv@redhat.com>
+
+	* acinclude.m4, and lots of other files:
+	Change the CYG_AC_PATH_TCL macro to use tclConfig.sh, make
+	appropriate adjustments elsewhere. Also, add dependencies
+	such that the commands now depend on the libraries.
+
+2000-03-08  Bart Veer  <bartv@redhat.com>
+
+	* README:
+	Updated.
+
+	* configure.in (ECOS_DIRS):
+	Use the infrastructure and Tcl macros at the toplevel, so that
+	configure --help gives the right information.
+	
+	* configure.in (ECOS_DIRS):
+	Look for the file tools/ecostest/common/configure, rather than
+	just the directory.
+
+2000-03-01  Bart Veer  <bartv@redhat.com>
+
+	* Create toplevel ChangeLog for the eCos host-side.
+
+//####COPYRIGHTBEGIN####
+//                                                                          
+// ----------------------------------------------------------------------------
+// Copyright (C) 2000, 2001 Red Hat, Inc.
+//
+// This file is part of the eCos host tools.
+//
+// This program is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU General Public License as published by the Free 
+// Software Foundation; either version 2 of the License, or (at your option) 
+// any later version.
+// 
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+// more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this program; if not, write to the Free Software Foundation, Inc., 
+// 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+//
+// ----------------------------------------------------------------------------
+//                                                                          
+//####COPYRIGHTEND####

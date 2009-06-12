@@ -1,0 +1,142 @@
+<HTML>
+<HEAD>
+<TITLE>Memory Window Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Memory Window</H1>
+<H2>Overview</H2>
+<P>The Memory Window allows users to display the contents of collected
+memory. The Memory Window Preferences controls all of the display
+characteristics of the Memory Window.</P>
+
+<P>Memory Window topics:
+<UL>
+    <LI><UL><A HREF="#menus">Address Menu</A>
+            <LI><A HREF="#menus_auto">Auto Update</A>
+            <LI><A HREF="#menus_now">Update Now</A>
+            <LI><A HREF="#menus_prefs">Preferences</A>
+        </UL>
+    <LI><UL><A HREF="#display">Memory Display</A>
+            <LI><A HREF="#display_nav">Navigating the Memory Window</A>
+            <LI><A HREF="#display_popup">Memory Pop-up Menu</A>
+        </UL>
+    <LI><UL><A HREF="#prefs">Memory Window Preferences</A>
+            <LI><A HREF="#prefs_size">Size of the Display Cell</A>
+            <LI><A HREF="#prefs_fmt">Format of the Display Cell</A>
+            <LI><A HREF="#prefs_bytes">Size of the Memory Window</A>
+            <LI><A HREF="#prefs_misc">Miscellaneous</A>
+        </UL>
+</UL></P>
+
+<H3><A NAME="menus">Address Menu</A></H3>
+<DL>
+    <DT><A NAME="menus_auto">Auto Update</A>
+        <DD>When selected, casues the Memory Window to update the Display.
+    <DT><A NAME="menus_now">Update Now</A>
+        <DD>Forces the Memory Window to update the Display.
+    <DT><A NAME="menus_prefs">Preferences</A>
+        <DD>Opens the Memory Window Preferences dialog.
+</DL>
+
+<H3><A NAME="display">Memory Display</A></H3>
+Like the <A HREF="register.html">Register Window</A>, the Memory Window
+Display is organized into a spreadsheet. The address of any cell in the
+Display can be determined by appeding the row and column headers for the
+cell. Optionally, an ASCII display of the memory appears at the right.
+Any non-ASCII-representable byte in memory will appear in the ASCII Display
+as a control character (a dot, ".", by default). The <A HREF="#pref">Memory
+Preferences Dialog</A> may be used to alter the appearance of the
+Memory Window. Any uncollected memory will appear as "N/A", indicating that
+this memory was not collected when the trace experiment was run.
+
+<P><A NAME="display_nav">To navigate the Memory Window</A>, use the mouse
+and click the cell of interest. As an alternative, pressing the TAB key on
+the keyboard will focus successive cells, from left to right, top to bottom.
+The focus will wrap from the bottom of the Display to the top.</P>
+<BR>
+
+<H4><A NAME="display_popup">Memory Pop-up Menu</A></H4>
+Clicking the right mouse button while the mouse cursor lies within the
+bounds of any cell will allow users to:
+<DL>
+    <DT>Auto Update
+        <DD>When selected, the Memory Window will track changes in
+            memory shown in the Display. Cells in which changes have
+            occured will be highlighted. When not selected, the Memory
+            Window is "frozen", representing a "snapshot" of memory.
+    <DT>Update Now
+        <DD>Causes the Memory Window to update all the cells shown.
+    <DT>Go To <I>address</I>
+        <DD>The Memory Window Display is updated to show memory starting
+            at address <I>address</I>.
+    <DT>Open New Window at <I>address</I>
+        <DD>A new Memory Window is opened, displaying memory at address
+            <I>address</I>
+    <DT>Memory Preferences...
+        <DD>Opens the Memory Window Preferences for editing the appearance
+            of the Memory Window Display.
+</DL>
+<BR>
+
+<H3><A NAME="prefs">Memory Window Preferences</A></H3>
+Memory Window Preference Dialog governs the appearance of the Memory Window:
+the total number of bytes displayed, the size of each cell, ASCII control
+character.
+<BR>
+
+<H4><A NAME="prefs_size">Size of the Display Cells</A></H4>
+This attribute controls how many bytes appear in each cell. Valid cell
+sizes in the Memory Window may be:
+<DL>
+    <DT>Byte
+        <DD>Each cell is exactly one byte
+    <DT>Half Word
+        <DD>Cells are displayed with two bytes
+    <DT>Word
+        <DD>Each cell contains four bytes
+    <DT>Double Word
+        <DD>Cells contain eight bytes
+    <DT>Float
+        <DD>Each cell contains four bytes, displayed as a floating point
+            number
+    <DT>Double Float
+        <DD>Cells are displayed as floating point, eight bytes each
+</DL>
+<BR>
+
+<H4><A NAME="prefs_fmt">Format of the Display Cells</A></H4>
+The Format option of the Memory Preferences Dialog governs how the debugger
+represents the memory. Possible representations include:
+
+<DL>
+    <DT>Binary
+        <DD>The values are shown as binary numbers
+    <DT>Signed Decimal
+        <DD>The values are shown as signed decimal numbers
+    <DT>Octal
+        <DD>Each cell is represented as an octal number
+    <DT>Unsigned Decimal
+        <DD>Values are displayed as unsigned decimals
+    <DT>Hex
+        <DD>Memory is displayed as a hexadecimal number. This is
+            the default.
+</DL>
+<BR>
+
+<H4><A NAME="prefs_bytes">Size of the Memory Window</A></H4>
+The size of the memory window determines how much memory is actually
+presented to the user. The total number of bytes shown can either be
+determined by the size of the window, in which case resizing the Memory
+Window will cause more or less memory to be displayed, or fixed at some
+specified number of bytes. By default, the Memory Window shows 128 bytes
+of memory.
+<BR>
+
+<H4><A NAME="prefs_misc">Miscellaneous</A></H4>
+Miscellaneous memory preferences include the option to display the ASCII
+representation of the memory, including what character to use for non-ASCII
+bytes (the "control" character). Additionally, users may specify the number
+of bytes per row, either four, eight, sixteen, or thirty-two. The default is
+sixteen bytes per row.
+</BODY>
+</HTML>

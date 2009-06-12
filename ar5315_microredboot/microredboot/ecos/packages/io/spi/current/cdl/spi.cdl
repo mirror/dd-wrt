@@ -1,0 +1,90 @@
+# ====================================================================
+#
+#      spi.cdl
+#
+#      Generic SPI package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2004 eCosCentric Limited
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):     bartv
+# Date:          2004-04-24
+#
+#####DESCRIPTIONEND####
+#========================================================================
+
+cdl_package CYGPKG_IO_SPI {
+    display		"SPI support"
+    requires		CYGPKG_INFRA CYGPKG_HAL
+    hardware
+    include_dir		cyg/io
+    compile		spi.c
+    
+    description "
+        The generic SPI package provides an API for accessing devices
+        attached to an SPI bus. It also provides support for writing
+        bus drivers and for defining SPI device structures."
+
+    
+    cdl_component CYGPKG_IO_SPI_OPTIONS {
+        display "SPI build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_IO_SPI_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the serial device drivers. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_IO_SPI_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the serial device drivers. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}

@@ -1,0 +1,183 @@
+# ====================================================================
+#
+#      hal_frv.cdl
+#
+#      FUJITSU architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  gthomas
+# Contributors:
+# Date:           2001-09-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_FRV {
+    display       "FUJITSU architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_frv.h
+    description   "
+        The FUJITSU architecture HAL package provides generic
+        support for this processor architecture. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    compile       hal_diag.c hal_misc.c context.S frv_stub.c hal_syscall.c
+
+    # special rule used to build any include files, etc, used by assembly code
+    make -priority 1 {
+        frv.inc : <PACKAGE>/src/hal_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,frv.tmp -o hal_mk_defs.tmp -S $<
+        fgrep .equ hal_mk_defs.tmp | sed s/#// | sed s/\\.equ/#define/ > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 frv.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm frv.tmp hal_mk_defs.tmp
+    }
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/frv.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_interface CYGINT_HAL_FRV_ARCH_FR400 {
+        display "The CPU architecture supports the FR400 architecture"
+    }
+
+    cdl_interface CYGINT_HAL_FRV_ARCH_FR500 {
+        display "The CPU architecture supports the FR500 architecture"
+    }
+
+    cdl_option CYGHWR_HAL_FRV_CPU_FAMILY {
+        display       "FUJITSU CPU family"
+        flavor        data
+        legal_values  { (CYGINT_HAL_FRV_ARCH_FR400 != 0) ? "FR400" : ""
+                        (CYGINT_HAL_FRV_ARCH_FR500 != 0) ? "FR500" : ""
+                        "" }
+        default_value  { (CYGINT_HAL_FRV_ARCH_FR400 != 0) ? "FR400" : 
+                         (CYGINT_HAL_FRV_ARCH_FR500 != 0) ? "FR500" : 
+                         "unknown" }
+        no_define
+        description   "
+             It is possible to optimize code for different
+             FUJITSU CPU families. This option selects which CPU to
+             optimize for on boards that support multiple CPU types."
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/frv.ld" }
+    }
+
+    cdl_interface CYGINT_HAL_FRV_MEM_REAL_REGION_TOP {
+        display  "Implementations of hal_frv_mem_real_region_top()"
+    }
+
+    cdl_option CYGNUM_HAL_BREAKPOINT_LIST_SIZE {
+        display       "Number of breakpoints supported by the HAL."
+        flavor        data
+        default_value 32
+	compile       hal_breakpoint.c
+        active_if     CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        description   "
+            This option determines the number of breakpoints supported by the HAL."
+    }
+
+    cdl_option CYGSEM_HAL_FRV_USE_BREAK_INSTRUCTION {
+        display       "Use 'break' for breakpoints."
+        flavor        bool
+        default_value 0
+	active_if     { CYGINT_HAL_FRV_ARCH_FR500 != 0 }
+        requires      CYGNUM_HAL_BREAKPOINT_LIST_SIZE 
+        description   "
+            Select this option to use the 'break' instruction for breakpoints.
+            This option can only be used if the GDB stubs use local breakpoints."
+    }
+
+    cdl_component CYGPKG_REDBOOT_FRV_OPTIONS {
+        display       "Redboot for FR-V options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+                                                                                                                           
+        cdl_component CYGSEM_REDBOOT_FRV_LINUX_BOOT {
+            active_if      CYGBLD_BUILD_REDBOOT_WITH_EXEC
+            display        "Support booting Linux via RedBoot"
+            flavor         bool
+            default_value  1
+            description    "
+               This option allows RedBoot to support booting of a Linux kernel."
+            compile -library=libextras.a redboot_linux_exec.c
+ 
+            cdl_option CYGDAT_REDBOOT_FRV_LINUX_BOOT_ENTRY {
+                display        "Default kernel entry address"
+                flavor         data
+                default_value  0xff040000
+            }
+ 
+            cdl_option CYGDAT_REDBOOT_FRV_LINUX_BOOT_COMMAND_LINE {
+                display        "Default COMMAND_LINE"
+                flavor         data
+                default_value  { "" }
+            }
+        }
+    }
+
+}

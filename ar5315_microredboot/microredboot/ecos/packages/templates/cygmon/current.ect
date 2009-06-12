@@ -1,0 +1,98 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration template_stubs {
+    description "
+This is the eCos CygMon configuration. It is used when building CygMon." ;
+    package     CYGPKG_HAL current ;
+    package     CYGPKG_INFRA current ;
+    package     CYGPKG_IO current ;
+    package     CYGPKG_IO_SERIAL current ;
+    package     CYGPKG_ERROR current ;
+    package     CYGPKG_CYGMON current ;
+    package     CYGPKG_KERNEL current ;
+    package     CYGPKG_ISOINFRA current ;
+    package     CYGPKG_LIBC current ;
+    package     CYGPKG_LIBC_STRING current ;
+    package     CYGPKG_LIBC_SETJMP current ;
+    package     CYGPKG_LIBC_I18N current ;
+    package     CYGPKG_MEMALLOC current ;
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    user_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT {
+    user_value 0
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    user_value 1
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value ROM
+};
+
+cdl_option CYGBLD_BUILD_CYGMON {
+    user_value 1
+};
+
+cdl_option CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT {
+    user_value 0
+};
+
+cdl_option CYGBLD_ISO_CTYPE_HEADER {
+    user_value 1 <cyg/libc/i18n/ctype.inl>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    user_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    user_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    user_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    user_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_SETJMP_HEADER {
+    user_value 1 <cyg/libc/setjmp/setjmp.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};

@@ -1,0 +1,224 @@
+#==========================================================================
+#
+#      ks32c5000_eth.cdl
+#
+#      Ethernet drivers for Samsung KS32C5000/S3C4510
+#
+#==========================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Jonathan Larmour
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+#==========================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):    gthomas
+# Contributors: gthomas, jskov
+#               Grant Edwards <grante@visi.com>
+# Date:         2001-07-31
+# Purpose:      
+# Description:  
+#
+#####DESCRIPTIONEND####
+#
+#========================================================================*/
+
+
+cdl_package CYGPKG_DEVS_ETH_ARM_KS32C5000 {
+    display       "Samsung KS32C5000/S3C4510 ethernet driver"
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_IO_ETH_DRIVERS
+    implements    CYGHWR_NET_DRIVERS
+    implements    CYGHWR_NET_DRIVER_ETH0
+    requires      (CYGPKG_CRC || (!(CYG_HAL_CPUTYPE == \"KS32C5000A\" )))
+    requires      (CYGINT_DEVS_ETH_ARM_KS32C5000_PHY <= 1)
+
+    include_dir   net
+    description   "Ethernet driver for Samsung KS32C5000"
+    compile       -library=libextras.a ks5000_ether.c
+    
+
+
+    cdl_component CYGPKG_DEVS_ETH_ARM_KS32C5000_OPTIONS {
+        display "Samsung ethernet driver build options"
+        flavor  none
+        no_define
+
+        cdl_interface CYGINT_DEVS_ETH_ARM_KS32C5000_PHY {
+            display     "PHY Station Management support"
+        }
+        
+        cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_DEBUG_LEVEL {
+            display "KS32C5000 device driver debug output level"
+            flavor  data
+            legal_values {0 1 2}
+            default_value 1
+            description   "
+                This option specifies the level of debug data output by the
+                KS32C5000 device driver. A value of 0 signifies no debug data
+                output; 1 signifies normal debug data output; and 2 signifies
+                maximum debug data output (not suitable when GDB and
+                application are sharing an ethernet port)."
+        }
+        
+        cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_ICS1890 {
+            display     "ICS1890 PHY support"
+            flavor bool
+            default_value 0
+            implements CYGINT_DEVS_ETH_ARM_KS32C5000_PHY
+            compile -library=libextras.a ics1890.c
+            description "This component provides support for the ICS1890 and
+                         ICS1893AF PHY"
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_LXT970 {
+            display     "LXT970 PHY support"
+            flavor bool
+            default_value 1
+            implements CYGINT_DEVS_ETH_ARM_KS32C5000_PHY
+            compile -library=libextras.a lxt970.c
+        }
+
+        cdl_component CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_LXT972 {
+            display     "LXT972 PHY support"
+            flavor bool
+            default_value 0
+            implements CYGINT_DEVS_ETH_ARM_KS32C5000_PHY
+            compile -library=libextras.a lxt972.c
+            no_define
+            
+            cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_LXT972_LED1 {
+                display "LED 1 mode"
+                flavor  data
+                legal_values {"LINK_SPEED" "TX_ACTIVITY" "RX_ACTIVITY" "COLLISION_STATUS" "LINK_STATUS" "DUPLEX_STATUS"
+                              "LINK_ACTIVITY" "LINK_STATUS_RX_STATUS_COMBINED" "LINK_STATUS_LINK_ACTIVITY_COMBINED"
+                              "DUPLEX_STATUS_COLLISION_STATUS_COMBINED" "TEST_ON" "TEST_OFF" "TEST_BLINK_FAST"
+                              "TEST_BLINK_SLOW"}
+                default_value {"LINK_STATUS"}
+            }
+                
+            cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_LXT972_LED2 {
+                display "LED 2 mode"
+                flavor  data
+                legal_values {"LINK_SPEED" "TX_ACTIVITY" "RX_ACTIVITY" "COLLISION_STATUS" "LINK_STATUS" "DUPLEX_STATUS"
+                              "LINK_ACTIVITY" "LINK_STATUS_RX_STATUS_COMBINED" "LINK_STATUS_LINK_ACTIVITY_COMBINED"
+                              "DUPLEX_STATUS_COLLISION_STATUS_COMBINED" "TEST_ON" "TEST_OFF" "TEST_BLINK_FAST"
+                              "TEST_BLINK_SLOW"}
+                default_value {"LINK_SPEED"}
+            }
+
+            cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_LXT972_LED3 {
+                display "LED 3 mode"
+                flavor  data
+                legal_values {"LINK_SPEED" "TX_ACTIVITY" "RX_ACTIVITY" "COLLISION_STATUS" "LINK_STATUS" "DUPLEX_STATUS"
+                              "LINK_ACTIVITY" "LINK_STATUS_RX_STATUS_COMBINED" "LINK_STATUS_LINK_ACTIVITY_COMBINED"
+                              "DUPLEX_STATUS_COLLISION_STATUS_COMBINED" "TEST_ON" "TEST_OFF" "TEST_BLINK_FAST"
+                              "TEST_BLINK_SLOW"}
+                default_value {"LINK_ACTIVITY"}
+            }
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_RTL8201 {
+            display     "RTL8201 PHY support"
+            flavor bool
+            default_value 0
+            implements CYGINT_DEVS_ETH_ARM_KS32C5000_PHY
+            compile -library=libextras.a rtl8201.c
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHYADDR {
+            display "PHY MII address"
+            flavor  data
+            legal_values 0 to 31
+            default_value 1
+            description   "This option specifies the MII address of the PHY"
+        }
+
+        cdl_component CYGPKG_DEVS_ETH_ARM_KS32C5000_REDBOOT_HOLDS_ESA {
+        display         "RedBoot manages ESA initialization data"
+        flavor          bool
+        default_value   0
+    
+        active_if     CYGSEM_HAL_VIRTUAL_VECTOR_SUPPORT
+        active_if     (CYGPKG_REDBOOT || CYGSEM_HAL_USE_ROM_MONITOR)
+
+        description   "Enabling this option will allow the ethernet
+        station address to be acquired from RedBoot's configuration data,
+        stored in flash memory.  It can be overridden individually by the
+        'Set the ethernet station address' option for each interface."
+
+            cdl_component CYGPKG_DEVS_ETH_ARM_KS32C5000_REDBOOT_HOLDS_ESA_VARS {
+                display        "Export RedBoot command to set ESA in FLASH config"
+                flavor         none
+                no_define
+    
+                description "
+                This component contains options which, when enabled, allow
+                RedBoot to support the setting of the ESA in the FLASH
+                configuration. This can then subsequently be accessed by
+                applications using virtual vector calls if those applications
+                are also built with
+                CYGPKG_DEVS_ETH_ARM_KS32C5000_REDBOOT_HOLDS_ESA enabled."
+    
+                cdl_option CYGSEM_DEVS_ETH_ARM_KS32C5000_REDBOOT_HOLDS_ESA_ETH0 {
+                    display         "RedBoot manages ESA for eth0"
+                    flavor          bool
+                    default_value   1
+                    active_if       CYGSEM_REDBOOT_FLASH_CONFIG
+                    active_if       CYGPKG_REDBOOT_NETWORKING
+                }
+            }
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_MACADDR {
+            display "Ethernet station (MAC) address for eth0"
+            flavor  data
+            default_value {"0x08, 0x88, 0x12, 0x34, 0x56, 0x78"}
+            description   "The default ethernet station address. This is the
+                           MAC address used when no value is found in the
+                           RedBoot FLASH configuration field."
+        }
+
+        cdl_option  CYGPKG_DEVS_ETH_ARM_KS32C5000_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Samsung KS32C5000 ethernet driver package. 
+                These flags are used in addition to the set of global flags."
+        }
+    }
+}
+
+# EOF ks32c5000_eth.cdl

@@ -1,0 +1,631 @@
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_mbx.cdl: 
+	HAL_PLATFORM_CPU now defined by MPC8xx variant CDL.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-08-28  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c: Obsolete file - removed.
+
+	* src/plf_redboot_linux_exec.c: New file - platform specifics
+	for booting Linux kernel from RedBoot.
+
+	* cdl/hal_powerpc_mbx.cdl: Linux booting from RedBoot is 
+	now supported at the architecture level.  Changes to support 
+	architecture/platform layering.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_mbx.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_mbx.cdl: New option for setting processor type.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Call eth_drv_stop as necessary.
+
+2003-03-07  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_stub.h: Remove [confusing] platform specific include.
+
+2002-12-02  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/plf_intr.h: Use MPC8xx variant RESET support.
+
+2002-11-26  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Move platform defines to platform package.
+
+2002-11-25  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Add new CDL which describes port layout.
+
+2002-08-02  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* cdl/hal_powerpc_mbx.cdl: Redboot exec command can now be disabled 
+	  by CDL
+	
+2002-06-27  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/plf_regs.h: New file - platform overrides.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Removed implemntation of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2002-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_cache.h: Cache control is in hal/common CDL.
+
+2002-01-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Better match for EPPCbug
+	environment, necessary for Linux boot.
+
+	* src/hal_aux.c: Move IMMR to match what Motorola EPPCbug uses.
+
+2002-01-16  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Added CYGSEM_REDBOOT_HAL_LINUX_BOOT to
+	enable Linux booting support.
+
+	* src/redboot_linux_exec.c: Added this file to contain Linux exec
+	command.
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* images/*: Remove. Don't bloat repository with things already on
+	the web.
+
+2001-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: 
+	Disable CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED since most
+	installations will now use RedBoot.
+
+2001-05-05  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROM_40.ecm: 
+	* misc/redboot_RAM_40.ecm: New configuration - 40MHz boards.
+
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: Update for latest RedBoot, include compression.
+
+	* src/hal_diag.c: 
+	* include/plf_stub.h: 
+	* include/plf_intr.h: 
+	* cdl/hal_powerpc_mbx.cdl: Fix copyrights.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Does not guarantee virtual vector
+	support.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_RAM.ecm: Renamed from redboot_RAM.cfg
+
+	* misc/redboot_ROM.ecm: Renamed from redboot_ROM.cfg
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_cache.h (HAL_FLASH_CACHES_WANT_OPTIMAL): Added.
+	Removed again.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Respect channel configuration
+	constraints.
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_GDB/None
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Moved reset macro to
+	* include/plf_intr.h: this file.
+
+2001-01-19  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_diag.h: Remove unwarranted disclaimer [commentary].
+
+2001-01-03  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Let RTC [heartbeat] rate be user
+	specified.
+
+2000-10-20  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.h: 
+	Increase reserved memory - required by RedBoot.
+
+	* misc/redboot_ROM.cfg: 
+	* misc/redboot_RAM.cfg: 
+	* images/redboot_ROM.srec: 
+	* images/redboot_ROM.img: 
+	* images/redboot_ROM.bin: 
+	* images/redboot_RAM.bin: 
+	* images/redboot_RAM.img: 
+	* images/redboot_RAM.srec: New file(s).
+
+	* cdl/hal_powerpc_mbx.cdl: Add RedBoot configuration rules.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/mbxtime.cxx: Ensure default priority constructors
+	are called.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_mbx_ram.h:
+	* include/pkgconf/mlt_powerpc_mbx_rom.h:
+	* include/pkgconf/mlt_powerpc_mbx_ram.ldi:
+	* include/pkgconf/mlt_powerpc_mbx_rom.ldi:
+	Regenerated with updated host tools
+
+2000-10-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_mbx_ram.h: Added heap1 label.
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt: Same.
+	* include/pkgconf/mlt_powerpc_mbx_ram.ldi: Same.
+	* include/pkgconf/mlt_powerpc_mbx_rom.h: Same.
+	* include/pkgconf/mlt_powerpc_mbx_rom.mlt: Same.
+	* include/pkgconf/mlt_powerpc_mbx_rom.ldi: Same.
+
+2000-09-17  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Add platform/cpu identification strings.
+
+2000-08-28  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Fix startup type description - was
+	totally bogus stuff copied from a different HAL.
+
+2000-08-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/mbx.S: Use actual ROM layout instead of magic numbers.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_diag.h: 
+	* src/hal_diag.c: 
+	Cleanup.
+
+2000-06-22  John Dallaway  <jld@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.mlt:
+
+	Synchronize with mlt_powerpc_mbx_rom.ldi.
+
+2000-06-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Provide comms_init function, initializing the
+	serial device. Changed quicc calls to provide eppc_base.
+
+	* include/plf_stub.h: 
+	* include/hal_diag.h:
+	Changed defines to match new procs table handling of IO.
+
+2000-06-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.h: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.h: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt: 
+	Updated.
+
+	* src/hal_aux.c: Fix warning.
+
+	* include/hal_diag.h: Fix typo. Moved diag-inclusion decision
+	expression to common HAL.
+	Only define HAL_PLF_DIAG routines when necessary.
+
+	* cdl/hal_powerpc_mbx.cdl: Last CDL tweaks.
+
+2000-06-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Move reset stuff out of INCLUDE_STUBS
+	config. It really should live in the platform equivalent of
+	hal_arch.h...
+
+	* include/hal_diag.h: 
+	* src/hal_diag.c: 
+	Changes to use the common virtual vector code for diagnostics.
+
+2000-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET_ENTRY): Use an
+	absolute address.
+
+	* src/hal_aux.c (hal_platform_init): Added.
+
+	* include/plf_stub.h: Cleaned up reset definitions.
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.ldi: 
+	* include/pkgconf/mlt_powerpc_mbx_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt:
+	Reserve space for virtual table.
+	
+	* cdl/hal_powerpc_mbx.cdl: Added support for virtual
+	vectors. Change stub requirements accordingly.
+
+2000-03-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET): Jump to stub
+	entry-point on GDB kill.
+
+2000-03-04  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_aux.c (_mbx_init_i2c): I2C now working from eCos/GDB.
+
+2000-03-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_aux.c (_mbx_fetch_VPD): New function - reads EEPROM and
+	builds a queryable database.
+
+2000-03-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Fix typo.
+
+2000-02-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: Support option to suppress GDB protocol on
+	the diag/serial device.
+
+2000-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Remove hardcoded copy_vectors
+	definition.
+
+2000-02-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/mbx.S: use arch.inc instead of ppc.inc
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_powerpc_mbx.cdl (CYGBLD_BUILD_GDB_STUBS): When building
+	stubs, define every dependency required here rather than in the
+	template
+
+2000-02-17  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/hal_powerpc_mbx.h: Fix MPC860 -> MPC8xx typo
+	* cdl/hal_powerpc_mbx.cdl: likewise
+	
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_aux.c: Cleaned up includes.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: 
+	Removed HAL_STUB_PLATFORM_STUBS_INIT.
+
+	* misc/STUBS_config: [added]
+	Removed stubs as a legal startup type.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_mbx_rom.mlt: 
+	Fixed some typos.
+
+	* src/mbx.S: Use CYGHWR_HAL_POWERPC_BOARD_SPEED.
+
+	* include/pkgconf/mlt*.*: Use new exception scheme.	
+	* include/pkgconf/hal_powerpc_mbx.h: Use
+	CYGHWR_HAL_POWERPC_BOARD_SPEED. Use MPC8xx variant code.
+
+
+	* cdl/hal_powerpc_mbx.cdl: Use MPC8xx variant code. Fix some CDL
+	bugs. Use CYGHWR_HAL_POWERPC_BOARD_SPEED
+	Specify CPU options in linker flags.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: CYG_HAL_POWERPC_x->CYGPKG_...
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Generate S-record version of stub.
+	Implements stubs.
+	
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Moved part of stubs build rule to
+	common HAL.  Changed description.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_cache.h: Added.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_mbx.cdl: Fix display string.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+	* cdl/hal_powerpc_mbx.cdl: Add stubs build rule.
+	* src/mbx.S: Depend on CYGSEM_HAL_ROM_MONITOR instead of
+	CYG_HAL_ROM_MONITOR.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_powerpc_mbx.cdl: Ensure we "puts" to appropriate CDL header
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_powerpc_mbx.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.h: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.h: New file(s).
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_powerpc_mbx.cdl: Define build options.
+
+1999-10-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Call new hal_stub.h macro
+	CYG_HAL_GDB_ENTER_CRITICAL_IO_REGION() instead of simply disabling
+	interrupts, ditto for enable.  This provides atomicity wrt single
+	stepping and watching variables when this code to output a whole
+	GDB $O packet is entered.
+
+1999-09-20  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_mbx.h:
+	(CYGHWR_HAL_POWERPC_MBX_BOOT_32BIT_FLASH) new config option to
+	control chip select initialization.
+	
+	* src/mbx.S: Take notice of CYGHWR_HAL_POWERPC_MBX_BOOT_32BIT_FLASH.
+
+	* misc/stubrom.perm: Reference the new option for folks who want
+	to boot from the 32-bit flash.
+
+1999-09-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_mbx.h (CYGHWR_HAL_POWERPC_BOARD_SPEED): 
+	Missing default value (wouldn't build sans ConfigTool).
+
+1999-09-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_mbx.h (CYGHWR_HAL_POWERPC_MBX_BOARD_SPEED): 
+	Rename CDL option to avoid a name clash.
+
+1999-07-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mbx.S: Fix typo in PLL setup value.  Reported from the net.
+
+1999-06-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_init): Fix a "default type" warning.
+
+1999-06-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Only gobble the GDB ACK
+	characters if there is no pre-ISR polling call to look for ^C
+	chars to interrupt the prog.  (CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+	- should not be enabled if devices are in use)
+
+1999-06-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mbx.S (__upmtbl_start): We do not trust rewriting the UPMs
+	for DRAM timing whilst running out of that very DRAM.  So only
+	init UPMs in ROM start (including when making a stub rom).
+
+1999-06-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: Support buffering of diagnostic data for later
+	display.  Controlled by CYGDBG_DIAG_BUF.  Also, turn on code to
+	handle GDB ACK characters when stubs are enabled.
+
+1999-06-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mbx.S (__upmtbl_start): depending on CYG_HAL_ROM_MONITOR, we
+	use the OLD TABLES if making a stub rom.  For greatest commonality
+	of startup code between RAM startup development binaries and ROM
+	startup "product" binaries we completely re-initialize the UPMs
+	that control DRAM timing even in RAM start when executing out of
+	that very DRAM.
+	
+	It appears that it is OK to rewrite the UPMs with the new timing
+	data when already running with the old timing data, but not OK to
+	update from new to new.  So we use the old timing data when
+	building stubs.
+
+	An alternative would be to conditionally not perform the UPM
+	initialization in RAM startup, but that would weaken the testing
+	value of RAM startup programs.
+
+1999-06-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mbx.S (__upmtbl_start): Use the new tables recently supplied
+	by email from Motorola; without them, the cache-line-zero
+	operation only zeros 12 bytes rather than 16.  [PR 20226]
+
+1999-06-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_INIT_BREAK_IRQ): Define
+	this (empty) for it is required if HAL_DEBUG_GDB_BREAK_SUPPORT is
+	enabled.  Improve HAL_STUB_PLATFORM_SET_BAUD_RATE.
+
+1999-06-18  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt:
+	Fix MLT save files to match the default linker script
+	fragments.
+
+1999-06-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt:
+	Initial attempt at getting these to match the reality of the
+	linker script fragment; we'll have to see whether they're right.
+
+1999-06-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mbx.S: Data cache setup in hal_hardware_init: set
+	force-writethrough mode and explicitly disable little-endian swap
+	mode, whatever _that_ is.  Force-writethrough is required if you
+	are to enable the data cache, it crashes otherwise.  Cause
+	unknown, could be the memory system doesn't support whatever
+	access regime is used, or caching problems with loading code
+	through the stubs?  In any case, this is a fine workaround.
+	
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): Enable caching of the ROM;
+	seems to do no harm, and helps ROM-based performance.
+
+1999-06-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_mbx.h: Fixed CDL description.
+
+1999-06-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* misc/stubrom.perm: New file: a perm for creating an eCos stub
+	ROM for the MBX.  Pro tem, ^C to break is not supported, so the
+	feature must remain disabled.
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_INIT): Diddle the LEDs if
+	ROM start to distinguish eCos stub ROM from CygMon ROM from eCos
+	app running/internal stubs.
+
+1999-06-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.ldi: Move RAM usage in ROM
+	startup to 2000 so that we can build stubs that don't fight with
+	RAM started apps' RAM use from 10000.
+
+1999-06-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/PKGconf.mak: New file, to build that below.
+
+	* tests/mbxtime.cxx: New file, a simple test of the system timer
+	for a human to check it's roughly seconds.
+
+	* include/pkgconf/mlt_powerpc_mbx_rom.ldi: ROM startup supported.
+
+	* include/pkgconf/hal_powerpc_mbx.h
+	(CYGHWR_HAL_POWERPC_MBX_BOARD_SPEED): Add this config option to
+	select 40MHz or 50MHz system clock speed.
+
+	* src/mbx.S (hal_hardware_init): Complete system init for ROM
+	start; move return address to inside the ROM from wherever we
+	booted.  Proper board clock speed selection.
+
+	* src/hal_diag.c (hal_diag_write_char_serial): Do not encode
+	packets for GDB if using ROM start.
+
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): Map the ROM correctly so
+	that ROM start works.
+
+1999-06-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mbx.S (hal_hardware_init): Add full ROM-type startup code
+	and some useful LED-diddling routines and macro, to assist in
+	debugging ROM startup.
+	
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): Enable memory mapping to
+	the LED control register so that we can treak them with mem mgt
+	enabled ie. in a normal execution context.	
+
+1999-06-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mbx.S (hal_hardware_init): Set up the base address of the
+	control registers in IMMR to 0xff000000 (as defined in arch).
+	Turn off external interrupts, initialize the decrementer.
+
+	* src/PKGconf.mak: Build the new file.
+
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): New file, to define this
+	object for per-platform table-driven memory map initialization.
+	The table used to be in hal_misc.c in the architectural HAL; this
+	is platform dependent so better and cleaner here.
+
+1999-06-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ChangeLog: Component created, based partly on the FADS work and
+	on CygMon's serial IO code for the MBX860, to support the Motorola
+	MBX860 development board.  Actual serial support lies in
+	neighbouring component HAL_QUICC [hal/powerpc/quicc/...]
+
+	* include/hal_diag.h
+	* include/plf_stub.h
+	* include/pkgconf/hal_powerpc_mbx.h
+	* include/pkgconf/mlt_powerpc_mbx_ram.ldi
+	* include/pkgconf/mlt_powerpc_mbx_ram.mlt
+	* include/pkgconf/mlt_powerpc_mbx_rom.ldi
+	* include/pkgconf/mlt_powerpc_mbx_rom.mlt
+	* src/PKGconf.mak
+	* src/hal_diag.c
+	* src/mbx.S
+	New files.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,167 @@
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/ser_sh_sci.cdl: Remove irrelevant doc link.
+
+2002-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_sci_serial.c: Register renaming.
+
+2002-04-23  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_sci_serial.c: Compute register offsets from register
+	definitions. Don't define SCI base.
+
+2001-02-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_sci_serial.c (sh_serial_er_DSR): Enable interrupts on
+	exit.
+
+2000-09-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/ser_sh_sci.cdl: Minor hack to allow both SCI and SCIF
+	packages to be used at the same time.
+	* src/sh_sci_serial.c: Same.
+
+2000-09-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_sci_serial.c: Moved to generic SH SCI package.
+	* ChangeLog: Removed all non-SCI related references.
+	
+2000-08-01  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/sh_sci_serial.c (sh_serial_set_config): Now use keys to make
+	more flexible.
+
+2000-06-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/<yournamehere>.cdl: Remove the comment on the empty
+	include_files directive; the tools now support this correctly.
+	This keeps internal include files internal.
+
+2000-04-11  Hugo Tyson	<hmt@cygnus.co.uk>
+
+	* cdl/ser_sh_edk7708.cdl: Change the parent from CYGPKG_IO_SERIAL
+	(which is enabled most of the time) to CYGPKG_IO_SERIAL_DEVICES
+	(which is not...) thus allowing convenient control independent of
+	platform.  Also enable all individual devices by default, now, so
+	that they can be enabled simply by enabling the above new parent.
+
+2000-04-11  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/ser_sh_edk7708.cdl: Move compile statement into a
+	sub-component.
+
+2000-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ecos.db: Re-organize device packages.  This is a massive change
+	involving deleting all the sources for serial and ethernet drivers
+	from where they used to live in
+	    packages/io/serial/current/src/ARCH/PLATFORM.[ch]
+	    packages/net/drivers/eth/PLATFORM/current/src/...
+	and reinstating them in
+	    packages/devs/serial/ARCH/PLATFORM/current/src/...
+	    packages/devs/eth/ARCH/PLATFORM/current/src/...
+
+	All these new packages are properly defined in ecos.db, and are
+	all of type "hardware" so that a "target" can grab them.
+	
+	This directory layout is descriptive of the devices we have right
+	now, arch and platform are separate levels just to make it easier
+	to navigate in the filesystem and similar to the HAL structure in
+	the filesystem.
+
+	It is *not* prescriptive of future work; for example, the mythical
+	common highly-portable 16550 serial driver which works on many
+	targets would be called "devs/serial/s16550/current", or a serial
+	device for a particular board (cogent springs to mind) that can
+	work with different CPUs fitted is "devs/serial/cogent/current".
+
+	Changelogs have been preserved and replicated over all the new
+	packages, so that no history is lost.
+
+	The contents of individual source files are unchanged; they build
+	in just the same emvironment except for a very few cases where the
+	config file name changed in this movement.
+
+	Targets in ecos.db have been redefined to bring in all relevant
+	hardware packages including net and serial drivers (but the newly
+	included packages are only active if their desired parent is
+	available.)
+	
+	The names of CDL options (and their #defines of course) stay the
+	same for the serial drivers, for backward compatibility.
+
+	* templates/*/current.ect: these have had CYGPKG_IO_SERIAL added
+	rather than it being in (almost) all target definitions.
+	
+2000-03-31  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/ser_sh_edk7708.cdl: Limit legal baud rate range.
+	* src/sh/sh_sci_serial.c: Use baud rate macro instead of hardwired
+	constants.
+
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh/sh_sci_7708.inl (DEVTAB_ENTRY): 
+	serial_devio => cyg_io_serial_devio
+
+1999-06-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh/sh_serial.c:          [removed]
+	* src/sh/sh_sci_serial.c:      [added]
+	* src/sh/sh_sci_7708.inl:      [added]
+	Renamed CDL options and restructered driver.
+	Fixed CDL typo.
+	
+1999-05-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh/sh_serial.c: Fixed receive interrupts and added handler for
+	error interrupts.
+
+1999-05-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh/sh_serial.c: Added more baud rate values. Disabled
+	interrupt driven receive. Fixed config_port to enable proper
+	interrupt flags.
+
+1999-05-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	* include/pkgconf/io_serial.h: 
+	* src/sh/sh_serial.c: 
+	Added sh driver.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

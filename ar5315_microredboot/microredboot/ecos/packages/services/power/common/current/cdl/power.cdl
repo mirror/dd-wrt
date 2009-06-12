@@ -1,0 +1,167 @@
+# ====================================================================
+#
+#      power.cdl
+#
+#      Generic power management support
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  bartv
+# Contributors:
+# Date:           2001-06-12
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_POWER {
+    display     "Generic power management support"
+    doc         ref/services-power.html
+    parent      CYGPKG_IO
+    include_dir "cyg/power"
+    compile     power.cxx
+    compile     -library=libextras.a power_data.cxx
+    
+    cdl_option CYGIMP_POWER_PROVIDE_STRINGS {
+	display        "Provide a string for every power controller"
+	doc            ref/power-info.html#POWER-MANAGEMENT-INFO_IDS
+	default_value  1
+	description "
+            Optionally each power controller can contain a string identifying
+            the hardware or functionality it is associated with. This string
+            is not required by the generic power management, but may be
+            useful when presenting the current state of each controller to
+            the user.
+        "
+    }
+
+    cdl_option CYGIMP_POWER_PROVIDE_POLICY_DATA {
+	display        "Reserve space in each power controller for use by the policy manager"
+	doc            ref/power-policy.html#POWER-POLICY-DATA
+	default_value  1
+	description "
+	    Optionally each power controller can provide a word of data
+	    for use by the policy manager, for example to store a pointer
+	    to some data structure controlled by the policy manager. If
+	    the policy manager has no need for such additional data this
+	    option can be safely disabled, saving a small amount of memory.
+	"
+    }
+    
+    cdl_component CYGPKG_POWER_THREAD {
+	display        "Run a separate thread within the power management package"
+	doc            ref/power-intro.html#POWER-INTRO-OPERATION
+	active_if      CYGPKG_KERNEL
+	default_value  1
+	description "
+            Optionally the power management code can run in its own thread. This
+            can be useful if state changes can be requested from any code,
+            including DSRs. If on the other hand the power management policy code
+            runs in its own thread and is the only part of the system that
+            makes power management calls, a separate thread is redundant.
+        "
+
+	cdl_option CYGNUM_POWER_THREAD_STACKSIZE {
+	    display             "Stack size for the power management thread"
+	    default_value       { is_loaded(CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE) ? CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE :
+                                  (2 * CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE) }
+	    flavor              data
+	    description "
+                If a separate power management thread is being used then this
+                option allows the stack size to be controlled. If any power
+                controllers require an unusually large amount of stack then
+                they may impose a lower bound on this value, or alternatively
+                the user may need to increase the stack.
+            "
+	}
+
+	cdl_option CYGNUM_POWER_THREAD_PRIORITY {
+	    display       "Thread priority to use"
+	    active_if     { CYGNUM_KERNEL_SCHED_PRIORITIES > 2 }
+	    default_value 1
+	    flavor        data
+	    description "
+                This is the priority for the power management thread.
+                Typically it defaults to a high priority, thus ensuring
+                that when the system wakes up from a sleep state all of
+                the power controllers are activated early on and by the
+                time other threads run they do not have to worry about
+                various devices still being asleep.
+            "
+	}
+    }
+
+    cdl_component CYGPKG_POWER_OPTIONS {
+        display "Power management build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_POWER_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the power management package. These flags are
+                used in addition to the set of global flags."
+        }
+
+        cdl_option CYGPKG_POWER_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the power management package. These flags are
+	        removed from the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_POWER_TESTS {
+            display "Power management tests"
+            flavor  data
+            no_define
+            calculated { "tests/powertest" }
+	}
+    }
+}

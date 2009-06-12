@@ -1,0 +1,808 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: C Dialect Options,  Next: C++ Dialect Options,  Prev: Invoking G++,  Up: Invoking GCC
+
+Options Controlling C Dialect
+=============================
+
+   The following options control the dialect of C (or languages derived
+from C, such as C++ and Objective-C) that the compiler accepts:
+
+`-ansi'
+     In C mode, support all ISO C89 programs.  In C++ mode, remove GNU
+     extensions that conflict with ISO C++.
+
+     This turns off certain features of GCC that are incompatible with
+     ISO C89 (when compiling C code), or of standard C++ (when
+     compiling C++ code), such as the `asm' and `typeof' keywords, and
+     predefined macros such as `unix' and `vax' that identify the type
+     of system you are using.  It also enables the undesirable and
+     rarely used ISO trigraph feature.  For the C compiler, it disables
+     recognition of C++ style `//' comments as well as the `inline'
+     keyword.
+
+     The alternate keywords `__asm__', `__extension__', `__inline__'
+     and `__typeof__' continue to work despite `-ansi'.  You would not
+     want to use them in an ISO C program, of course, but it is useful
+     to put them in header files that might be included in compilations
+     done with `-ansi'.  Alternate predefined macros such as `__unix__'
+     and `__vax__' are also available, with or without `-ansi'.
+
+     The `-ansi' option does not cause non-ISO programs to be rejected
+     gratuitously.  For that, `-pedantic' is required in addition to
+     `-ansi'.  *Note Warning Options::.
+
+     The macro `__STRICT_ANSI__' is predefined when the `-ansi' option
+     is used.  Some header files may notice this macro and refrain from
+     declaring certain functions or defining certain macros that the
+     ISO standard doesn't call for; this is to avoid interfering with
+     any programs that might use these names for other things.
+
+     Functions which would normally be built in but do not have
+     semantics defined by ISO C (such as `alloca' and `ffs') are not
+     built-in functions with `-ansi' is used.  *Note Other built-in
+     functions provided by GCC: Other Builtins, for details of the
+     functions affected.
+
+`-std='
+     Determine the language standard.  This option is currently only
+     supported when compiling C.  A value for this option must be
+     provided; possible values are
+
+    `c89'
+    `iso9899:1990'
+          ISO C89 (same as `-ansi').
+
+    `iso9899:199409'
+          ISO C89 as modified in amendment 1.
+
+    `c99'
+    `c9x'
+    `iso9899:1999'
+    `iso9899:199x'
+          ISO C99.  Note that this standard is not yet fully supported;
+          see `http://gcc.gnu.org/gcc-3.1/c99status.html' for more
+          information.  The names `c9x' and `iso9899:199x' are
+          deprecated.
+
+    `gnu89'
+          Default, ISO C89 plus GNU extensions (including some C99
+          features).
+
+    `gnu99'
+
+    `gnu9x'
+          ISO C99 plus GNU extensions.  When ISO C99 is fully
+          implemented in GCC, this will become the default.  The name
+          `gnu9x' is deprecated.
+
+     Even when this option is not specified, you can still use some of
+     the features of newer standards in so far as they do not conflict
+     with previous C standards.  For example, you may use
+     `__restrict__' even when `-std=c99' is not specified.
+
+     The `-std' options specifying some version of ISO C have the same
+     effects as `-ansi', except that features that were not in ISO C89
+     but are in the specified version (for example, `//' comments and
+     the `inline' keyword in ISO C99) are not disabled.
+
+     *Note Language Standards Supported by GCC: Standards, for details
+     of these standard versions.
+
+`-aux-info FILENAME'
+     Output to the given filename prototyped declarations for all
+     functions declared and/or defined in a translation unit, including
+     those in header files.  This option is silently ignored in any
+     language other than C.
+
+     Besides declarations, the file indicates, in comments, the origin
+     of each declaration (source file and line), whether the
+     declaration was implicit, prototyped or unprototyped (`I', `N' for
+     new or `O' for old, respectively, in the first character after the
+     line number and the colon), and whether it came from a declaration
+     or a definition (`C' or `F', respectively, in the following
+     character).  In the case of function definitions, a K&R-style list
+     of arguments followed by their declarations is also provided,
+     inside comments, after the declaration.
+
+`-fno-asm'
+     Do not recognize `asm', `inline' or `typeof' as a keyword, so that
+     code can use these words as identifiers.  You can use the keywords
+     `__asm__', `__inline__' and `__typeof__' instead.  `-ansi' implies
+     `-fno-asm'.
+
+     In C++, this switch only affects the `typeof' keyword, since `asm'
+     and `inline' are standard keywords.  You may want to use the
+     `-fno-gnu-keywords' flag instead, which has the same effect.  In
+     C99 mode (`-std=c99' or `-std=gnu99'), this switch only affects
+     the `asm' and `typeof' keywords, since `inline' is a standard
+     keyword in ISO C99.
+
+`-fno-builtin'
+`-fno-builtin-FUNCTION (C and Objective-C only)'
+     Don't recognize built-in functions that do not begin with
+     `__builtin_' as prefix.  *Note Other built-in functions provided
+     by GCC: Other Builtins, for details of the functions affected,
+     including those which are not built-in functions when `-ansi' or
+     `-std' options for strict ISO C conformance are used because they
+     do not have an ISO standard meaning.
+
+     GCC normally generates special code to handle certain built-in
+     functions more efficiently; for instance, calls to `alloca' may
+     become single instructions that adjust the stack directly, and
+     calls to `memcpy' may become inline copy loops.  The resulting
+     code is often both smaller and faster, but since the function
+     calls no longer appear as such, you cannot set a breakpoint on
+     those calls, nor can you change the behavior of the functions by
+     linking with a different library.
+
+     In C++, `-fno-builtin' is always in effect.  The `-fbuiltin'
+     option has no effect.  Therefore, in C++, the only way to get the
+     optimization benefits of built-in functions is to call the function
+     using the `__builtin_' prefix.  The GNU C++ Standard Library uses
+     built-in functions to implement many functions (like
+     `std::strchr'), so that you automatically get efficient code.
+
+     With the `-fno-builtin-FUNCTION' option, not available when
+     compiling C++, only the built-in function FUNCTION is disabled.
+     FUNCTION must not begin with `__builtin_'.  If a function is named
+     this is not built-in in this version of GCC, this option is
+     ignored.  There is no corresponding `-fbuiltin-FUNCTION' option;
+     if you wish to enable built-in functions selectively when using
+     `-fno-builtin' or `-ffreestanding', you may define macros such as:
+
+          #define abs(n)          __builtin_abs ((n))
+          #define strcpy(d, s)    __builtin_strcpy ((d), (s))
+
+`-fhosted'
+     Assert that compilation takes place in a hosted environment.  This
+     implies `-fbuiltin'.  A hosted environment is one in which the
+     entire standard library is available, and in which `main' has a
+     return type of `int'.  Examples are nearly everything except a
+     kernel.  This is equivalent to `-fno-freestanding'.
+
+`-ffreestanding'
+     Assert that compilation takes place in a freestanding environment.
+     This implies `-fno-builtin'.  A freestanding environment is one
+     in which the standard library may not exist, and program startup
+     may not necessarily be at `main'.  The most obvious example is an
+     OS kernel.  This is equivalent to `-fno-hosted'.
+
+     *Note Language Standards Supported by GCC: Standards, for details
+     of freestanding and hosted environments.
+
+`-trigraphs'
+     Support ISO C trigraphs.  The `-ansi' option (and `-std' options
+     for strict ISO C conformance) implies `-trigraphs'.
+
+`-no-integrated-cpp'
+     Invoke the external cpp during compilation.  The default is to use
+     the integrated cpp (internal cpp).  This option also allows a
+     user-supplied cpp via the `-B' option.  This flag is applicable in
+     both C and C++ modes.
+
+     We do not guarantee to retain this option in future, and we may
+     change its semantics.
+
+`-traditional'
+     Attempt to support some aspects of traditional C compilers.
+     Specifically:
+
+        * All `extern' declarations take effect globally even if they
+          are written inside of a function definition.  This includes
+          implicit declarations of functions.
+
+        * The newer keywords `typeof', `inline', `signed', `const' and
+          `volatile' are not recognized.  (You can still use the
+          alternative keywords such as `__typeof__', `__inline__', and
+          so on.)
+
+        * Comparisons between pointers and integers are always allowed.
+
+        * Integer types `unsigned short' and `unsigned char' promote to
+          `unsigned int'.
+
+        * Out-of-range floating point literals are not an error.
+
+        * Certain constructs which ISO regards as a single invalid
+          preprocessing number, such as `0xe-0xd', are treated as
+          expressions instead.
+
+        * String "constants" are not necessarily constant; they are
+          stored in writable space, and identical looking constants are
+          allocated separately.  (This is the same as the effect of
+          `-fwritable-strings'.)
+
+        * All automatic variables not declared `register' are preserved
+          by `longjmp'.  Ordinarily, GNU C follows ISO C: automatic
+          variables not declared `volatile' may be clobbered.
+
+        * The character escape sequences `\x' and `\a' evaluate as the
+          literal characters `x' and `a' respectively.  Without
+          `-traditional', `\x' is a prefix for the hexadecimal
+          representation of a character, and `\a' produces a bell.
+
+     This option is deprecated and may be removed.
+
+     You may wish to use `-fno-builtin' as well as `-traditional' if
+     your program uses names that are normally GNU C built-in functions
+     for other purposes of its own.
+
+     You cannot use `-traditional' if you include any header files that
+     rely on ISO C features.  Some vendors are starting to ship systems
+     with ISO C header files and you cannot use `-traditional' on such
+     systems to compile files that include any system headers.
+
+     The `-traditional' option also enables `-traditional-cpp'.
+
+`-traditional-cpp'
+     Attempt to support some aspects of traditional C preprocessors.
+     See the GNU CPP manual for details.
+
+`-fcond-mismatch'
+     Allow conditional expressions with mismatched types in the second
+     and third arguments.  The value of such an expression is void.
+     This option is not supported for C++.
+
+`-funsigned-char'
+     Let the type `char' be unsigned, like `unsigned char'.
+
+     Each kind of machine has a default for what `char' should be.  It
+     is either like `unsigned char' by default or like `signed char' by
+     default.
+
+     Ideally, a portable program should always use `signed char' or
+     `unsigned char' when it depends on the signedness of an object.
+     But many programs have been written to use plain `char' and expect
+     it to be signed, or expect it to be unsigned, depending on the
+     machines they were written for.  This option, and its inverse, let
+     you make such a program work with the opposite default.
+
+     The type `char' is always a distinct type from each of `signed
+     char' or `unsigned char', even though its behavior is always just
+     like one of those two.
+
+`-fsigned-char'
+     Let the type `char' be signed, like `signed char'.
+
+     Note that this is equivalent to `-fno-unsigned-char', which is the
+     negative form of `-funsigned-char'.  Likewise, the option
+     `-fno-signed-char' is equivalent to `-funsigned-char'.
+
+`-fsigned-bitfields'
+`-funsigned-bitfields'
+`-fno-signed-bitfields'
+`-fno-unsigned-bitfields'
+     These options control whether a bit-field is signed or unsigned,
+     when the declaration does not use either `signed' or `unsigned'.
+     By default, such a bit-field is signed, because this is
+     consistent: the basic integer types such as `int' are signed types.
+
+     However, when `-traditional' is used, bit-fields are all unsigned
+     no matter what.
+
+`-fwritable-strings'
+     Store string constants in the writable data segment and don't
+     uniquize them.  This is for compatibility with old programs which
+     assume they can write into string constants.  The option
+     `-traditional' also has this effect.
+
+     Writing into string constants is a very bad idea; "constants"
+     should be constant.
+
+`-fallow-single-precision'
+     Do not promote single precision math operations to double
+     precision, even when compiling with `-traditional'.
+
+     Traditional K&R C promotes all floating point operations to double
+     precision, regardless of the sizes of the operands.   On the
+     architecture for which you are compiling, single precision may be
+     faster than double precision.   If you must use `-traditional',
+     but want to use single precision operations when the operands are
+     single precision, use this option.   This option has no effect
+     when compiling with ISO or GNU C conventions (the default).
+
+
+File: gcc.info,  Node: C++ Dialect Options,  Next: Objective-C Dialect Options,  Prev: C Dialect Options,  Up: Invoking GCC
+
+Options Controlling C++ Dialect
+===============================
+
+   This section describes the command-line options that are only
+meaningful for C++ programs; but you can also use most of the GNU
+compiler options regardless of what language your program is in.  For
+example, you might compile a file `firstClass.C' like this:
+
+     g++ -g -frepo -O -c firstClass.C
+
+In this example, only `-frepo' is an option meant only for C++
+programs; you can use the other options with any language supported by
+GCC.
+
+   Here is a list of options that are _only_ for compiling C++ programs:
+
+`-fno-access-control'
+     Turn off all access checking.  This switch is mainly useful for
+     working around bugs in the access control code.
+
+`-fcheck-new'
+     Check that the pointer returned by `operator new' is non-null
+     before attempting to modify the storage allocated.  The current
+     Working Paper requires that `operator new' never return a null
+     pointer, so this check is normally unnecessary.
+
+     An alternative to using this option is to specify that your
+     `operator new' does not throw any exceptions; if you declare it
+     `throw()', G++ will check the return value.  See also `new
+     (nothrow)'.
+
+`-fconserve-space'
+     Put uninitialized or runtime-initialized global variables into the
+     common segment, as C does.  This saves space in the executable at
+     the cost of not diagnosing duplicate definitions.  If you compile
+     with this flag and your program mysteriously crashes after
+     `main()' has completed, you may have an object that is being
+     destroyed twice because two definitions were merged.
+
+     This option is no longer useful on most targets, now that support
+     has been added for putting variables into BSS without making them
+     common.
+
+`-fno-const-strings'
+     Give string constants type `char *' instead of type `const char
+     *'.  By default, G++ uses type `const char *' as required by the
+     standard.  Even if you use `-fno-const-strings', you cannot
+     actually modify the value of a string constant, unless you also use
+     `-fwritable-strings'.
+
+     This option might be removed in a future release of G++.  For
+     maximum portability, you should structure your code so that it
+     works with string constants that have type `const char *'.
+
+`-fdollars-in-identifiers'
+     Accept `$' in identifiers.  You can also explicitly prohibit use of
+     `$' with the option `-fno-dollars-in-identifiers'.  (GNU C allows
+     `$' by default on most target systems, but there are a few
+     exceptions.)  Traditional C allowed the character `$' to form part
+     of identifiers.  However, ISO C and C++ forbid `$' in identifiers.
+
+`-fno-elide-constructors'
+     The C++ standard allows an implementation to omit creating a
+     temporary which is only used to initialize another object of the
+     same type.  Specifying this option disables that optimization, and
+     forces G++ to call the copy constructor in all cases.
+
+`-fno-enforce-eh-specs'
+     Don't check for violation of exception specifications at runtime.
+     This option violates the C++ standard, but may be useful for
+     reducing code size in production builds, much like defining
+     `NDEBUG'.  The compiler will still optimize based on the exception
+     specifications.
+
+`-fexternal-templates'
+     Cause `#pragma interface' and `implementation' to apply to
+     template instantiation; template instances are emitted or not
+     according to the location of the template definition.  *Note
+     Template Instantiation::, for more information.
+
+     This option is deprecated.
+
+`-falt-external-templates'
+     Similar to `-fexternal-templates', but template instances are
+     emitted or not according to the place where they are first
+     instantiated.  *Note Template Instantiation::, for more
+     information.
+
+     This option is deprecated.
+
+`-ffor-scope'
+`-fno-for-scope'
+     If `-ffor-scope' is specified, the scope of variables declared in
+     a for-init-statement is limited to the `for' loop itself, as
+     specified by the C++ standard.  If `-fno-for-scope' is specified,
+     the scope of variables declared in a for-init-statement extends to
+     the end of the enclosing scope, as was the case in old versions of
+     G++, and other (traditional) implementations of C++.
+
+     The default if neither flag is given to follow the standard, but
+     to allow and give a warning for old-style code that would
+     otherwise be invalid, or have different behavior.
+
+`-fno-gnu-keywords'
+     Do not recognize `typeof' as a keyword, so that code can use this
+     word as an identifier.  You can use the keyword `__typeof__'
+     instead.  `-ansi' implies `-fno-gnu-keywords'.
+
+`-fno-implicit-templates'
+     Never emit code for non-inline templates which are instantiated
+     implicitly (i.e. by use); only emit code for explicit
+     instantiations.  *Note Template Instantiation::, for more
+     information.
+
+`-fno-implicit-inline-templates'
+     Don't emit code for implicit instantiations of inline templates,
+     either.  The default is to handle inlines differently so that
+     compiles with and without optimization will need the same set of
+     explicit instantiations.
+
+`-fno-implement-inlines'
+     To save space, do not emit out-of-line copies of inline functions
+     controlled by `#pragma implementation'.  This will cause linker
+     errors if these functions are not inlined everywhere they are
+     called.
+
+`-fms-extensions'
+     Disable pedantic warnings about constructs used in MFC, such as
+     implicit int and getting a pointer to member function via
+     non-standard syntax.
+
+`-fno-nonansi-builtins'
+     Disable built-in declarations of functions that are not mandated by
+     ANSI/ISO C.  These include `ffs', `alloca', `_exit', `index',
+     `bzero', `conjf', and other related functions.
+
+`-fno-operator-names'
+     Do not treat the operator name keywords `and', `bitand', `bitor',
+     `compl', `not', `or' and `xor' as synonyms as keywords.
+
+`-fno-optional-diags'
+     Disable diagnostics that the standard says a compiler does not
+     need to issue.  Currently, the only such diagnostic issued by G++
+     is the one for a name having multiple meanings within a class.
+
+`-fpermissive'
+     Downgrade messages about nonconformant code from errors to
+     warnings.  By default, G++ effectively sets `-pedantic-errors'
+     without `-pedantic'; this option reverses that.  This behavior and
+     this option are superseded by `-pedantic', which works as it does
+     for GNU C.
+
+`-frepo'
+     Enable automatic template instantiation at link time.  This option
+     also implies `-fno-implicit-templates'.  *Note Template
+     Instantiation::, for more information.
+
+`-fno-rtti'
+     Disable generation of information about every class with virtual
+     functions for use by the C++ runtime type identification features
+     (`dynamic_cast' and `typeid').  If you don't use those parts of
+     the language, you can save some space by using this flag.  Note
+     that exception handling uses the same information, but it will
+     generate it as needed.
+
+`-fstats'
+     Emit statistics about front-end processing at the end of the
+     compilation.  This information is generally only useful to the G++
+     development team.
+
+`-ftemplate-depth-N'
+     Set the maximum instantiation depth for template classes to N.  A
+     limit on the template instantiation depth is needed to detect
+     endless recursions during template class instantiation.  ANSI/ISO
+     C++ conforming programs must not rely on a maximum depth greater
+     than 17.
+
+`-fuse-cxa-atexit'
+     Register destructors for objects with static storage duration with
+     the `__cxa_atexit' function rather than the `atexit' function.
+     This option is required for fully standards-compliant handling of
+     static destructors, but will only work if your C library supports
+     `__cxa_atexit'.
+
+`-fvtable-gc'
+     Emit special relocations for vtables and virtual function
+     references so that the linker can identify unused virtual
+     functions and zero out vtable slots that refer to them.  This is
+     most useful with `-ffunction-sections' and `-Wl,--gc-sections', in
+     order to also discard the functions themselves.
+
+     This optimization requires GNU as and GNU ld.  Not all systems
+     support this option.  `-Wl,--gc-sections' is ignored without
+     `-static'.
+
+`-fno-weak'
+     Do not use weak symbol support, even if it is provided by the
+     linker.  By default, G++ will use weak symbols if they are
+     available.  This option exists only for testing, and should not be
+     used by end-users; it will result in inferior code and has no
+     benefits.  This option may be removed in a future release of G++.
+
+`-nostdinc++'
+     Do not search for header files in the standard directories
+     specific to C++, but do still search the other standard
+     directories.  (This option is used when building the C++ library.)
+
+   In addition, these optimization, warning, and code generation options
+have meanings only for C++ programs:
+
+`-fno-default-inline'
+     Do not assume `inline' for functions defined inside a class scope.
+     *Note Options That Control Optimization: Optimize Options.  Note
+     that these functions will have linkage like inline functions; they
+     just won't be inlined by default.
+
+`-Wabi (C++ only)'
+     Warn when G++ generates code that is probably not compatible with
+     the vendor-neutral C++ ABI.  Although an effort has been made to
+     warn about all such cases, there are probably some cases that are
+     not warned about, even though G++ is generating incompatible code.
+     There may also be cases where warnings are emitted even though
+     the code that is generated will be compatible.
+
+     You should rewrite your code to avoid these warnings if you are
+     concerned about the fact that code generated by G++ may not be
+     binary compatible with code generated by other compilers.
+
+     The known incompatibilites at this point include:
+
+        * Incorrect handling of tail-padding for bit-fields.  G++ may
+          attempt to pack data into the same byte as a base class.  For
+          example:
+
+               struct A { virtual void f(); int f1 : 1; };
+               struct B : public A { int f2 : 1; };
+
+          In this case, G++ will place `B::f2' into the same byte
+          as`A::f1'; other compilers will not.  You can avoid this
+          problem by explicitly padding `A' so that its size is a
+          multiple of the byte size on your platform; that will cause
+          G++ and other compilers to layout `B' identically.
+
+        * Incorrect handling of tail-padding for virtual bases.  G++
+          does not use tail padding when laying out virtual bases.  For
+          example:
+
+               struct A { virtual void f(); char c1; };
+               struct B { B(); char c2; };
+               struct C : public A, public virtual B {};
+
+          In this case, G++ will not place `B' into the tail-padding for
+          `A'; other compilers will.  You can avoid this problem by
+          explicitly padding `A' so that its size is a multiple of its
+          alignment (ignoring virtual base classes); that will cause
+          G++ and other compilers to layout `C' identically.
+
+
+`-Wctor-dtor-privacy (C++ only)'
+     Warn when a class seems unusable, because all the constructors or
+     destructors in a class are private and the class has no friends or
+     public static member functions.
+
+`-Wnon-virtual-dtor (C++ only)'
+     Warn when a class declares a non-virtual destructor that should
+     probably be virtual, because it looks like the class will be used
+     polymorphically.
+
+`-Wreorder (C++ only)'
+     Warn when the order of member initializers given in the code does
+     not match the order in which they must be executed.  For instance:
+
+          struct A {
+            int i;
+            int j;
+            A(): j (0), i (1) { }
+          };
+
+     Here the compiler will warn that the member initializers for `i'
+     and `j' will be rearranged to match the declaration order of the
+     members.
+
+   The following `-W...' options are not affected by `-Wall'.
+
+`-Weffc++ (C++ only)'
+     Warn about violations of the following style guidelines from Scott
+     Meyers' `Effective C++' book:
+
+        * Item 11:  Define a copy constructor and an assignment
+          operator for classes with dynamically allocated memory.
+
+        * Item 12:  Prefer initialization to assignment in constructors.
+
+        * Item 14:  Make destructors virtual in base classes.
+
+        * Item 15:  Have `operator=' return a reference to `*this'.
+
+        * Item 23:  Don't try to return a reference when you must
+          return an object.
+
+
+     and about violations of the following style guidelines from Scott
+     Meyers' `More Effective C++' book:
+
+        * Item 6:  Distinguish between prefix and postfix forms of
+          increment and decrement operators.
+
+        * Item 7:  Never overload `&&', `||', or `,'.
+
+
+     If you use this option, you should be aware that the standard
+     library headers do not obey all of these guidelines; you can use
+     `grep -v' to filter out those warnings.
+
+`-Wno-deprecated (C++ only)'
+     Do not warn about usage of deprecated features.  *Note Deprecated
+     Features::.
+
+`-Wno-non-template-friend (C++ only)'
+     Disable warnings when non-templatized friend functions are declared
+     within a template.  With the advent of explicit template
+     specification support in G++, if the name of the friend is an
+     unqualified-id (i.e., `friend foo(int)'), the C++ language
+     specification demands that the friend declare or define an
+     ordinary, nontemplate function.  (Section 14.5.3).  Before G++
+     implemented explicit specification, unqualified-ids could be
+     interpreted as a particular specialization of a templatized
+     function.  Because this non-conforming behavior is no longer the
+     default behavior for G++, `-Wnon-template-friend' allows the
+     compiler to check existing code for potential trouble spots, and
+     is on by default.  This new compiler behavior can be turned off
+     with `-Wno-non-template-friend' which keeps the conformant
+     compiler code but disables the helpful warning.
+
+`-Wold-style-cast (C++ only)'
+     Warn if an old-style (C-style) cast to a non-void type is used
+     within a C++ program.  The new-style casts (`static_cast',
+     `reinterpret_cast', and `const_cast') are less vulnerable to
+     unintended effects, and much easier to grep for.
+
+`-Woverloaded-virtual (C++ only)'
+     Warn when a function declaration hides virtual functions from a
+     base class.  For example, in:
+
+          struct A {
+            virtual void f();
+          };
+          
+          struct B: public A {
+            void f(int);
+          };
+
+     the `A' class version of `f' is hidden in `B', and code like this:
+
+          B* b;
+          b->f();
+
+     will fail to compile.
+
+`-Wno-pmf-conversions (C++ only)'
+     Disable the diagnostic for converting a bound pointer to member
+     function to a plain pointer.
+
+`-Wsign-promo (C++ only)'
+     Warn when overload resolution chooses a promotion from unsigned or
+     enumeral type to a signed type over a conversion to an unsigned
+     type of the same size.  Previous versions of G++ would try to
+     preserve unsignedness, but the standard mandates the current
+     behavior.
+
+`-Wsynth (C++ only)'
+     Warn when G++'s synthesis behavior does not match that of cfront.
+     For instance:
+
+          struct A {
+            operator int ();
+            A& operator = (int);
+          };
+          
+          main ()
+          {
+            A a,b;
+            a = b;
+          }
+
+     In this example, G++ will synthesize a default `A& operator =
+     (const A&);', while cfront will use the user-defined `operator ='.
+
+
+File: gcc.info,  Node: Objective-C Dialect Options,  Next: Language Independent Options,  Prev: C++ Dialect Options,  Up: Invoking GCC
+
+Options Controlling Objective-C Dialect
+=======================================
+
+   This section describes the command-line options that are only
+meaningful for Objective-C programs; but you can also use most of the
+GNU compiler options regardless of what language your program is in.
+For example, you might compile a file `some_class.m' like this:
+
+     gcc -g -fgnu-runtime -O -c some_class.m
+
+In this example, only `-fgnu-runtime' is an option meant only for
+Objective-C programs; you can use the other options with any language
+supported by GCC.
+
+   Here is a list of options that are _only_ for compiling Objective-C
+programs:
+
+`-fconstant-string-class=CLASS-NAME'
+     Use CLASS-NAME as the name of the class to instantiate for each
+     literal string specified with the syntax `@"..."'.  The default
+     class name is `NXConstantString'.
+
+`-fgnu-runtime'
+     Generate object code compatible with the standard GNU Objective-C
+     runtime.  This is the default for most types of systems.
+
+`-fnext-runtime'
+     Generate output compatible with the NeXT runtime.  This is the
+     default for NeXT-based systems, including Darwin and Mac OS X.
+
+`-gen-decls'
+     Dump interface declarations for all classes seen in the source
+     file to a file named `SOURCENAME.decl'.
+
+`-Wno-protocol'
+     Do not warn if methods required by a protocol are not implemented
+     in the class adopting it.
+
+`-Wselector'
+     Warn if a selector has multiple methods of different types defined.
+
+
+File: gcc.info,  Node: Language Independent Options,  Next: Warning Options,  Prev: Objective-C Dialect Options,  Up: Invoking GCC
+
+Options to Control Diagnostic Messages Formatting
+=================================================
+
+   Traditionally, diagnostic messages have been formatted irrespective
+of the output device's aspect (e.g. its width, ...).  The options
+described below can be used to control the diagnostic messages
+formatting algorithm, e.g. how many characters per line, how often
+source location information should be reported.  Right now, only the
+C++ front end can honor these options.  However it is expected, in the
+near future, that the remaining front ends would be able to digest them
+correctly.
+
+`-fmessage-length=N'
+     Try to format error messages so that they fit on lines of about N
+     characters.  The default is 72 characters for `g++' and 0 for the
+     rest of the front ends supported by GCC.  If N is zero, then no
+     line-wrapping will be done; each error message will appear on a
+     single line.
+
+`-fdiagnostics-show-location=once'
+     Only meaningful in line-wrapping mode.  Instructs the diagnostic
+     messages reporter to emit _once_ source location information; that
+     is, in case the message is too long to fit on a single physical
+     line and has to be wrapped, the source location won't be emitted
+     (as prefix) again, over and over, in subsequent continuation
+     lines.  This is the default behavior.
+
+`-fdiagnostics-show-location=every-line'
+     Only meaningful in line-wrapping mode.  Instructs the diagnostic
+     messages reporter to emit the same source location information (as
+     prefix) for physical lines that result from the process of breaking
+     a message which is too long to fit on a single line.
+

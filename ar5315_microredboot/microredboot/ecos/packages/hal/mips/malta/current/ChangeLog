@@ -1,0 +1,362 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_malta.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2004-01-14  Nick Garnett  <nickg@calivar.com>
+
+	* src/plf_misc.c (hal_platform_init): Changed capitalization of
+	"eCos" displayed on ASCII display.
+	(cyg_hal_plf_pci_init): Added call to cyg_pci_init() before call
+	to cyg_pci_configure_bus().
+
+	* include/plf_io.h (HAL_PCI_TRANSLATE_INTERRUPT): Added special
+	case for on-board Ethernet device. It doesn't seem it obey the
+	rules.
+
+	* include/plf_intr.h (HAL_INTERRUPT_ACKNOWLEDGE): Added
+	acknowledgement for interrupts in interrupt controller.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_RAM_5kc.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_ROM_5kc.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-09-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/plf_misc.c: IDE init needs to return number of controllers found.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_malta.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/ser16c550c.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Added hal_intc_translate that knows about
+	the special trampoline code.
+
+	* include/plf_intr.h: Updated comment.
+
+2002-02-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h: Always define the vectors, regardless of
+	chaining configuration.
+
+2002-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S (hal_isr_springboard_southbridge): Apply mask to
+	interrupt flags - I've seen requests set for masked
+	interrupts. Also don't check the slave controller unless the
+	cascade request is set.
+
+2001-12-06  Nick Garnett  <nickg@redhat.com>
+
+	* images/redboot_RAM_5kc.elf
+	* images/redboot_RAM_5kc.srec
+	* images/redboot_ROM_5kc.elf
+	* images/redboot_ROM_5kc.fl
+	* images/redboot_ROM_5kc.srec
+	Added these images for 5kc target.
+
+	* images/redboot_RAM.elf
+	* images/redboot_RAM.srec
+	* images/redboot_ROM.elf
+	* images/redboot_ROM.fl
+	* images/redboot_ROM.srec
+	Updated these images to match the 5kc ones. These images are for
+	Malta boards with the 4kc processor. These will actually run in a
+	5kc, but will treat it as a 32bit CPU, and will not provide 64bit
+	state to GDB.
+	
+2001-12-04  Nick Garnett  <nickg@redhat.com>
+
+	* misc/redboot_ROM.ecm: Commented out CYGSEM_REDBOOT_DISK_ISO9660
+	since its presence causes CDL and compilation errors.
+
+2001-11-06  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_ROM.ecm: Cleanup to support both mips32 and mips64.
+	* misc/redboot_RAM.ecm: Ditto.
+
+2001-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mips_malta.cdl: Indicate support of variable baud rates.
+
+2001-07-24  Mark Salter  <msalter@redhat.com>
+
+	* src/plf_misc.c (cyg_hal_plf_ide_init): New function to enable	IDE
+	controllers.
+	(cyg_hal_plf_pci_init): Move ISA bridge setup from cyg_hal_plf_pci_init
+	* include/plf_io.h: Add IDE i/f macros.
+	* cdl/hal_mips_malta.cdl: Now implements CYGINT_HAL_PLF_IF_IDE.
+
+2001-07-17  David Woodhouse <dwmw2@redhat.com>
+
+	* src/redboot_cmds.c: Remove. Superseded by generic MIPS exec.
+	* cdl/hal_mips_malta.cdl: Remove reference to $1
+
+2001-07-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h (HAL_PCI_ALLOC_BASE_IO): Reserve 64kB for
+	southbridge instead of 8kB.
+
+2001-07-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Fix errors.
+
+2001-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added PCI/CPU address translation macros.
+
+2001-06-27  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_RAM.ecm (CYGSEM_REDBOOT_BSP_SYSCALLS): Enable GNUPro
+	syscalls.
+	* misc/redboot_ROM.ecm (CYGSEM_REDBOOT_BSP_SYSCALLS): Ditto.
+
+2001-06-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h (HAL_PCI_TRANSLATE_INTERRUPT): Defined.
+
+	* include/plf_intr.h: Made safe to include from assembly files. 
+	* src/plf_mk_defs.c (main): Deleted interrupt vector definitions.
+
+	* src/ser16c550c.c: Fix warning.
+
+	* src/platform.S: Add .noreorder statements.
+
+2001-06-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S (hal_isr_springboard_southbridge): Use delay
+	slots, return 0 for spurious interrupts.
+
+2001-06-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_mk_defs.c: Added CYGNUM_HAL_INTERRUPT_CASCADE.
+
+	* src/plf_misc.c (hal_init_irq): Fix enabling of cascading
+	interrupts from secondary controller.
+
+	* src/platform.S (hal_isr_springboard_southbridge): Fixed decoding
+	of secondary sources. Bail out on spurious interrups.
+
+2001-04-26  Mark Salter  <msalter@redhat.com>
+
+	* include/plf_io.h (HAL_PCI_ALLOC_BASE_MEMORY): Fix typo.
+
+	* cdl/hal_mips_malta.cdl (CYGNUM_HAL_RTC_PERIOD): Fix calculation to
+	be based on one half of the CPU clock frequency.
+	
+2001-04-23  Mark Salter  <msalter@redhat.com>
+
+	* include/plf_io.h: Adjust PCI memory and io base constants so that
+	CPU/PCI addresses match the GT64120 setup. Change PCI memory alloc
+	base to allow for memory used by south bridge.
+
+2001-04-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_mk_defs.c: Added a few more defs.
+
+	* src/platform.S: Added southbridge springboard for interrupt
+	decoding.
+
+	* include/plf_io.h: Carve out a bit of memory at 0 in the PCI IO
+	space. Otherwise PCI devices get assigned space which the lana
+	southbridge is hardwired to.  Also moved PCI register defs to this
+	file.
+	
+	* src/plf_misc.c: Added PCI interrupt routing setup.
+
+2001-04-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/ser16c550c.c (cyg_hal_plf_serial_init_channel): Allow
+	interrupts.
+
+	* include/plf_io.h (HAL_PIIX4_ELCR2): Fix typo.
+
+	* src/plf_misc.c (hal_init_irq): Added.
+	(hal_init_irq): Use byte access to SERIRQ.
+
+	* include/plf_io.h: Replaced interrupt definitions.
+
+	* include/plf_intr.h: Proper interrupt handling.
+
+	* include/platform.inc: Removed hal_intc_decode.
+
+	* misc/redboot_RAM.ecm: Added decompression support.
+	* misc/redboot_ROM.ecm: Same.
+
+	* include/pkgconf/mlt_mips_malta_ram.mlt: Give RedBoot even more
+	space.
+	* include/pkgconf/mlt_mips_malta_ram.ldi: Same.
+	* include/pkgconf/mlt_mips_malta_ram.h:   Same.
+
+2001-04-09  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_mips_malta_ram.h: Changed base address.
+	* include/pkgconf/mlt_mips_malta_ram.mlt: Same.
+	* include/pkgconf/mlt_mips_malta_ram.ldi: Same.
+
+	* misc/redboot_ROM.ecm: Updated.
+
+	* include/pkgconf/mlt_mips_malta_rom.h: Updated.
+	* include/pkgconf/mlt_mips_malta_rom.ldi: Same.
+	* include/pkgconf/mlt_mips_malta_rom.mlt: Same.
+	* include/pkgconf/mlt_mips_malta_ram.h: Updated.
+	* include/pkgconf/mlt_mips_malta_ram.ldi: Same.
+	* include/pkgconf/mlt_mips_malta_ram.mlt: Same.
+
+	* src/plf_mk_defs.c: Added.
+	* cdl/hal_mips_malta.cdl: Build mk_defs file.
+	* src/platform.S: Get table size def from header.
+
+2001-04-03  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Added net packages.
+
+	* include/pkgconf/mlt_mips_malta_ram.h: Hacked in some PCI memory.
+	* include/pkgconf/mlt_mips_malta_ram.ldi: Same.
+
+2001-04-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/ser16c550c.c: Removed debug channel definitions, added
+	second port.
+
+	* include/plf_intr.h: Removed UART vector.
+
+	* src/plf_misc.c: Moved SMSC superIO init code...
+	* src/smsc37m81x.c (cyg_hal_init_superIO): to here.
+	* cdl/hal_mips_malta.cdl: Compile new file.
+
+2001-03-23  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c (hal_platform_init): Initialize PIIX4 and set up
+	COM1 for the SMSC SuperIO part. Now we have serial output. Wohoo!
+
+	* include/plf_io.h: Added a few new definitions.
+
+	* src/platform.S: Enable Galileo as PCI master. Make all PCI IO be
+	offset from zero to make PIIX4 happy.
+
+	* include/plf_intr.h (CYGNUM_HAL_INTERRUPT_EXTERNAL_BASE): Added.
+
+	* misc/redboot_ROM.ecm: Updated.
+
+	* src/platform.S: Use correct ISR count (hack). 
+
+	* include/platform.inc: Remove RAM SDRAM init hack.
+
+	* src/platform.S: SDP: Fix sizing logic.
+
+	* include/plf_io.h (HAL_SPD_GET_SDRAM_WIDTH): Changed to width of
+	DIMM instead of width of individual SDRAM devices.
+
+2001-03-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/platform.S: Remove some of the hacks.
+
+	* include/plf_io.h (HAL_I2C_READ, HAL_I2C_WRITE): Get these right,
+	and the code works. Sheesh!
+
+	* src/platform.S: Minor tweaks to make I2C code match that in
+	YAMON. Still doesn't work though.
+
+	* include/platform.inc: Hacked to enable SDRAM init.
+
+	* src/platform.S: Rewrote to use simpler macros.
+
+	* src/plf_misc.c: Removed some CYGMON stuff.
+
+	* include/plf_io.h: Added simpler definitions for I2C access.
+
+	* src/plf_misc.c (hal_platform_init): Fix warning.
+
+	* src/platform.S: Rewrote I2C code for FPGA controller.
+
+	* include/pkgconf/mlt_mips_malta_rom.h: Updated.
+	* include/pkgconf/mlt_mips_malta_rom.mlt: Same.
+	* include/pkgconf/mlt_mips_malta_rom.ldi: Same.
+
+	* include/plf_io.h: Added I2C definitions for FPGA I2C
+	controller.
+
+	* cdl/hal_mips_malta.cdl: Added clock option.
+
+2001-03-21  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Updated.
+
+	* src/plf_misc.c: Always init PCI. Wait for reset.
+
+2001-03-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/ser16c550c.c: Work with either the debug UART (untested) or
+	the SuperIO controllers. Clean up baud rate stuff.
+
+	* src/plf_misc.c (cyg_hal_plf_pci_init): Disable init code for
+	now.
+
+	* include/platform.inc: Removed ROMRAM startup stuff.
+
+	* cdl/hal_mips_malta.cdl: Changed some default settings.
+
+	* src/plf_misc.c: Removed test code and CYGMON init code.
+
+	* misc/redboot_RAM.ecm: Updated with new options.
+
+	* src/ser16c550c.c: Changes to use SuperIO in PCI space.
+
+	* cdl/hal_mips_malta.cdl: Replace old baud rate options with
+	CYGNUM_HAL_VIRTUAL_VECTOR_CHANNELS_DEFAULT_BAUD.
+	* src/redboot_cmds.c (do_exec): Use
+	CYGNUM_HAL_VIRTUAL_VECTOR_CHANNELS_DEFAULT_BAUD.
+
+	* Package cloned from Atlas package.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

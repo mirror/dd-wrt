@@ -1,0 +1,121 @@
+# ====================================================================
+#
+#      hal_arm_xscale_iq80310.cdl
+#
+#      Intel IQ80310 (Cyclone) eval board HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  
+# Contributors:   gthomas
+# Date:           2002-10-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_ARM_XSCALE_IQ80310 {
+    display       "Intel Cyclone eval board"
+    parent        CYGPKG_HAL_ARM_XSCALE
+    define_header hal_arm_xscale_iq80310.h
+    include_dir   cyg/hal
+    hardware
+    description   "
+        The IQ80310 HAL package provides the support needed to run
+        eCos on an Intel IQ80310 (Cyclone) evaluation board."
+
+    compile iq80310_misc.c
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_arm.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_VARIANT_H  <pkgconf/hal_arm_xscale_iop310.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_arm_xscale_iq80310.h>"
+	puts $::cdl_header "#define HAL_PLATFORM_CPU    \"XScale\""
+        puts $::cdl_header "#define HAL_PLATFORM_BOARD  \"Iq80310\""
+        puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\""
+    }
+
+    implements CYGHWR_HAL_ARM_IOP310_SERIAL_PORTA
+    implements CYGHWR_HAL_ARM_IOP310_SERIAL_PORTB
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ?       "arm_xscale_iq80310_ram" : \
+                     CYGSEM_HAL_ARM_IOP310_ARMBOOT ? "arm_xscale_iq80310_roma" : \
+	                                              "arm_xscale_iq80310_rom" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_xscale_iq80310_ram.ldi>" : \
+                         CYGSEM_HAL_ARM_IOP310_ARMBOOT ? "<pkgconf/mlt_arm_xscale_iq80310_roma.ldi>" : \
+                                                    "<pkgconf/mlt_arm_xscale_iq80310_rom.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_arm_xscale_iq80310_ram.h>" : \
+                         CYGSEM_HAL_ARM_IOP310_ARMBOOT ? "<pkgconf/mlt_arm_xscale_iq80310_roma.h>" : \
+                                                    "<pkgconf/mlt_arm_xscale_iq80310_rom.h>" }
+        }
+    }
+
+    cdl_option CYGBLD_INTEL_DIAGNOSTICS {
+         display         "Build Intel Xscale diagnostics"
+         default_value   1
+         parent          CYGPKG_REDBOOT_HAL_OPTIONS
+         active_if       CYGBLD_BUILD_REDBOOT_BIN
+         no_define
+         description     "Enabling this option will include diagnostics 
+            from Intel in the RedBoot image."
+
+         compile -library=libextras.a \
+             diag/diag.c diag/io_utils.c diag/external_timer.c \
+             diag/i557_eep.c diag/pci_serv.c diag/interrupts.c          \
+             diag/xscale_test.c diag/flash.c diag/cycduart.c            \
+             diag/ether_test.c diag/memtest.c diag/test_menu.c          \
+             diag/irq.S
+     }
+}

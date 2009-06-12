@@ -1,0 +1,22 @@
+/* XPM */
+static char *search_xpm[] = {
+"16 15 4 1",
+" 	c None",
+".	c #808080",
+"X	c Yellow",
+"o	c Black",
+" .XXXX          ",
+".XX .XX         ",
+".XX .XX         ",
+".. .XX          ",
+"   XX           ",
+"   XX           ",
+"   ..  oo   oo  ",
+"  .XX  oo   oo  ",
+"  .XX ooo. .ooo ",
+"  ...o ooooo ooo",
+"     o ooo.o ooo",
+"     ooooooooooo",
+"     o oo   o oo",
+"     o oo   o oo",
+"     o oo   o oo"};

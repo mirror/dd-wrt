@@ -1,0 +1,593 @@
+File System Support Infrastructure
+==================================
+
+Nick Garnett
+v0.2
+
+
+This document describes the filesystem infrastructure provided in
+eCos. This is implemented by the FILEIO package and provides POSIX
+compliant file and IO operations together with the BSD socket
+API. These APIs are described in the relevant standards and original
+documentation and will not be described here. This document is,
+instead, concerned with the interfaces presented to client
+filesystems and network protocol stacks.
+
+The FILEIO infrastructure consist mainly of a set of tables containing
+pointers to the primary interface functions of a file system. This
+approach avoids problems of namespace pollution (several filesystems
+can have a function called read(),so long as they are static). The
+system is also structured to eliminate the need for dynamic memory
+allocation.
+
+New filesystems can be written directly to the interfaces described
+here. Existing filesystems can be ported very easily by the
+introduction of a thin veneer porting layer that translates FILEIO
+calls into native filesystem calls. 
+
+The term filesystem should be read fairly loosely in this
+document. Object accessed through these interfaces could equally be
+network protocol sockets, device drivers, fifos, message queues or any
+other object that can present a file-like interface.
+
+    
+File System Table
+-----------------
+
+The filesystem table is an array of entries that describe each
+filesystem implementation that is part of the system image. Each
+resident filesystem should export an entry to this table using the
+FSTAB_ENTRY() macro.
+
+The table entries are described by the following structure:
+
+struct cyg_fstab_entry
+{
+    const char          *name;          // filesystem name
+    CYG_ADDRWORD        data;           // private data value
+    cyg_uint32          syncmode;       // synchronization mode
+    
+    int     (*mount)    ( cyg_fstab_entry *fste, cyg_mtab_entry *mte );
+    int     (*umount)   ( cyg_mtab_entry *mte );
+    int     (*open)     ( cyg_mtab_entry *mte, cyg_dir dir, const char *name,
+                          int mode,  cyg_file *fte );
+    int     (*unlink)   ( cyg_mtab_entry *mte, cyg_dir dir, const char *name );
+    int     (*mkdir)    ( cyg_mtab_entry *mte, cyg_dir dir, const char *name );
+    int     (*rmdir)    ( cyg_mtab_entry *mte, cyg_dir dir, const char *name );
+    int     (*rename)   ( cyg_mtab_entry *mte, cyg_dir dir1, const char *name1,
+                          cyg_dir dir2, const char *name2 );
+    int     (*link)     ( cyg_mtab_entry *mte, cyg_dir dir1, const char *name1,
+                          cyg_dir dir2, const char *name2, int type );
+    int     (*opendir)  ( cyg_mtab_entry *mte, cyg_dir dir, const char *name,
+                          cyg_file *fte );
+    int     (*chdir)    ( cyg_mtab_entry *mte, cyg_dir dir, const char *name,
+                          cyg_dir *dir_out );
+    int     (*stat)     ( cyg_mtab_entry *mte, cyg_dir dir, const char *name,
+                          struct stat *buf);
+    int     (*getinfo)  ( cyg_mtab_entry *mte, cyg_dir dir, const char *name,
+                          int key, char *buf, int len );
+    int     (*setinfo)  ( cyg_mtab_entry *mte, cyg_dir dir, const char *name,
+                          int key, char *buf, int len );
+};
+
+The _name_ field points to a string that identifies this filesystem
+implementation. Typical values might be "romfs", "msdos", "ext2" etc.
+
+The _data_ field contains any private data that the filesystem needs,
+perhaps the root of its data structures.
+
+The _syncmode_ field contains a description of the locking protocol to
+be used when accessing this filesystem. It will be described in more
+detail in the "Synchronization" section.
+
+The remaining fields are pointers to functions that implement
+filesystem operations that apply to files and directories as whole
+objects. The operation implemented by each function should be obvious
+from the names, with a few exceptions.
+
+The _opendir_ function opens a directory for reading. See the section
+on Directories later for details.
+
+The _getinfo_ and _setinfo_ functions provide support for various
+minor control and information functions such as pathconf() and
+access().
+
+With the exception of the _mount_ and _umount_ functions, all of these
+functions take three standard arguments, a pointer to a mount table
+entry (see later) a directory pointer (also see later) and a file name
+relative to the directory. These should be used by the filesystem to
+locate the object of interest.
+
+Mount Table
+-----------
+
+The mount table records the filesystems that are actually active.
+These can be seen as being analogous to mount points in Unix systems.
+
+There are two sources of mount table entries. Filesystems (or other
+components) may export static entries to the table using the
+MTAB_ENTRY() macro. Alternatively, new entries may be installed at run
+time using the mount() function. Both types of entry may be unmounted
+with the umount() function.
+
+A mount table entry has the following structure:
+
+struct cyg_mtab_entry
+{
+    const char          *name;          // name of mount point
+    const char          *fsname;        // name of implementing filesystem
+    const char          *devname;       // name of hardware device
+    CYG_ADDRWORD        data;           // private data value
+    cyg_bool            valid;          // Valid entry?
+    cyg_fstab_entry     *fs;            // pointer to fstab entry
+    cyg_dir             root;           // root directory pointer
+};
+
+The _name_ field identifies the mount point. This is used to translate
+rooted filenames (filenames that begin with "/") into the correct
+filesystem. When a file name that begins with "/" is submitted, it is
+matched against the _name_ fields of all valid mount table
+entries. The entry that yields the longest match terminating before a
+"/", or end of string, wins and the appropriate function from the
+filesystem table entry is then passed the remainder of the file name
+together with a pointer to the table entry and the value of the _root_
+field as the directory pointer.
+
+For example, consider a mount table that contains the following
+entries:
+
+	{ "/",    "msdos", "/dev/hd0", ... }
+	{ "/fd",  "msdos", "/dev/fd0", ... }
+	{ "/rom", "romfs", "", ... }
+	{ "/tmp", "ramfs", "", ... }
+	{ "/dev", "devfs", "", ... }
+
+An attempt to open "/tmp/foo" would be directed to the RAM filesystem
+while an open of "/bar/bundy" would be directed to the hard disc MSDOS
+filesystem. Opening "/dev/tty0" would be directed to the device
+management filesystem for lookup in the device table.
+
+Unrooted file names (those that do not begin with a '/') are passed
+straight to the current directory. The current directory is
+represented by a pair consisting of a mount table entry and a
+directory pointer.
+
+The _fsname_ field points to a string that should match the _name_
+field of the implementing filesystem. During initialization the mount
+table is scanned and the _fsname_ entries looked up in the
+filesystem table. For each match, the filesystem's _mount_ function
+is called and if successful the mount table entry is marked as valid
+and the _fs_ pointer installed.
+
+The _devname_ field contains the name of the device that this
+filesystem is to use. This may match an entry in the device table (see
+later) or may be a string that is specific to the filesystem if it has
+its own internal device drivers.
+
+The _data_ field is a private data value. This may be installed either
+statically when the table entry is defined, or may be installed during
+the _mount_ operation.
+
+The _valid_ field indicates whether this mount point has actually been
+mounted successfully. Entries with a false _valid_ field are ignored
+when searching for a name match.
+
+The _fs_ field is installed after a successful mount operation to
+point to the implementing filesystem.
+
+The _root_ field contains a directory pointer value that the
+filesystem can interpret as the root of its directory tree. This is
+passed as the _dir_ argument of filesystem functions that operate on
+rooted filenames. This field must be initialized by the filesystem's
+_mount_ function.
+
+
+
+File Table
+----------
+
+Once a file has been opened it is represented by an open file
+object. These are allocated from an array of available file
+objects. User code accesses these open file objects via a second array
+of pointers which is indexed by small integer offsets. This gives the
+usual Unix file descriptor functionality, complete with the various
+duplication mechanisms.
+
+A file table entry has the following structure:
+
+struct CYG_FILE_TAG
+{
+    cyg_uint32	                f_flag;		/* file state                   */
+    cyg_uint16                  f_ucount;       /* use count                    */
+    cyg_uint16                  f_type;		/* descriptor type              */
+    cyg_uint32                  f_syncmode;     /* synchronization protocol     */
+    struct CYG_FILEOPS_TAG      *f_ops;         /* file operations              */
+    off_t       	        f_offset;       /* current offset               */
+    CYG_ADDRWORD	        f_data;		/* file or socket               */
+    CYG_ADDRWORD                f_xops;         /* extra type specific ops      */
+    cyg_mtab_entry              *f_mte;         /* mount table entry            */
+};
+
+The _f_flag_ field contains some FILEIO control bits and some of the
+bits from the open call (defined by CYG_FILE_MODE_MASK).
+
+The _f_ucount_ field contains a use count that controls when a file
+will be closed. Each duplicate in the file descriptor array counts for
+one reference here and it is also incremented around each I/O
+operation.
+
+The _f_type_ field indicates the type of the underlying file
+object. Some of the possible values here are CYG_FILE_TYPE_FILE,
+CYG_FILE_TYPE_SOCKET or CYG_FILE_TYPE_DEVICE.
+
+The _f_syncmode_ field is copied from the _syncmode_ field of the
+implementing filesystem. Its use is described in the "Synchronization"
+section later.
+
+The _f_offset_ field records the current file position. It is the
+responsibility of the file operation functions to keep this field up
+to date.
+
+The _f_data_ field contains private data placed here by the underlying
+filesystem. Normally this will be a pointer to or handle on the
+filesystem object that implements this file.
+
+The _f_xops_ field contains a pointer to any extra type specific
+operation functions. For example, the socket I/O system installs a
+pointer to a table of functions that implement the standard socket
+operations.
+
+The _f_mte_ field contains a pointer to the parent mount table entry
+for this file. It is used mainly to implement the synchronization
+protocol. This may contain a pointer to some other data structure in
+file objects not derived from a filesystem.
+
+The _f_ops_ field contains a pointer to a table of file I/O
+operations. This has the following structure:
+
+struct CYG_FILEOPS_TAG
+{
+        int	(*fo_read)      (struct CYG_FILE_TAG *fp, struct CYG_UIO_TAG *uio);
+        int	(*fo_write)     (struct CYG_FILE_TAG *fp, struct CYG_UIO_TAG *uio);
+        int     (*fo_lseek)     (struct CYG_FILE_TAG *fp, off_t *pos, int whence );
+        int	(*fo_ioctl)     (struct CYG_FILE_TAG *fp, CYG_ADDRWORD com,
+                                 CYG_ADDRWORD data);
+        int	(*fo_select)    (struct CYG_FILE_TAG *fp, int which, CYG_ADDRWORD info);
+        int     (*fo_fsync)     (struct CYG_FILE_TAG *fp, int mode );        
+        int	(*fo_close)     (struct CYG_FILE_TAG *fp);
+        int     (*fo_fstat)     (struct CYG_FILE_TAG *fp, struct stat *buf );
+        int     (*fo_getinfo)   (struct CYG_FILE_TAG *fp, int key, char *buf, int len );
+        int     (*fo_setinfo)   (struct CYG_FILE_TAG *fp, int key, char *buf, int len );
+};
+
+It should be obvious from the names of most of these functions what
+their responsibilities are. The _fo_getinfo_ and _fo_setinfo_
+function, like their counterparts in the filesystem structure,
+implement minor control and info functions such as fpathconf().
+
+The second argument to _fo_read_ and _fo_write_ is a pointer to a UIO
+structure:
+
+struct CYG_UIO_TAG
+{
+    struct CYG_IOVEC_TAG *uio_iov;	/* pointer to array of iovecs */
+    int	                 uio_iovcnt;	/* number of iovecs in array */
+    off_t       	 uio_offset;	/* offset into file this uio corresponds to */
+    ssize_t     	 uio_resid;	/* residual i/o count */
+    enum cyg_uio_seg     uio_segflg;    /* see above */
+    enum cyg_uio_rw      uio_rw;        /* see above */
+};
+
+struct CYG_IOVEC_TAG
+{
+    void           *iov_base;           /* Base address. */
+    ssize_t        iov_len;             /* Length. */
+};
+
+This structure encapsulates the parameters of any data transfer
+operation. It provides support for scatter/gather operations and
+records the progress of any data transfer. It is also compatible with
+the I/O operations of any BSD-derived network stacks and filesystems.
+
+
+When a file is opened (or a file object created by some other means,
+such as socket() or accept()) it is the responsibility of the
+filesystem open operation to initialize all the fields of the object
+except the _f_ucount_, _f_syncmode_ and _f_mte_ fields. Since the
+_f_flag_ field will already contain bits belonging to the FILEIO
+infrastructure, any changes to it must be made with the appropriate
+logical operations.
+
+
+Directories
+-----------
+
+Filesystem operations all take a directory pointer as one of their
+arguments.  A directory pointer is an opaque handle managed by the
+filesystem. It should encapsulate a reference to a specific directory
+within the filesystem. For example, it may be a pointer to the data
+structure that represents that directory, or a pointer to a pathname
+for the directory.
+
+The _chdir_ filesystem function has two modes of use. When passed a
+pointer in the _dir_out_ argument, it should locate the named
+directory and place a directory pointer there. If the _dir_out_
+argument is NULL then the _dir_ argument is a previously generated
+directory pointer that can now be disposed of. When the infrastructure
+is implementing the chdir() function it makes two calls to filesystem
+_chdir_ functions. The first is to get a directory pointer for the new
+current directory. If this succeeds the second is to dispose of the
+old current directory pointer.
+
+The _opendir_ function is used to open a directory for reading. This
+results in an open file object that can be read to return a sequence
+of _struct dirent_ objects. The only operation that are allowed on
+this file are _read_, _lseek_ and _close_. Each read operation on this
+file should return a single _struct dirent_ object. When the end of
+the directory is reached, zero should be returned. The only seek
+operation allowed is a rewind to the start of the directory, by
+supplying an offset of zero and a _whence_ specifier of _SEEK_SET_.
+
+Most of these considerations are invisible to clients of a filesystem
+since they will access directories via the POSIX
+opendir()/readdir()/closedir() functions.
+
+Support for the _getcwd()_ function is provided by three mechanisms.
+The first is to use the _FS_INFO_GETCWD_ getinfo key on the filesystem
+to use any internal support that it has for this. If that fails it
+falls back on one of the two other mechanisms. If
+_CYGPKG_IO_FILEIO_TRACK_CWD_ is set then the current directory is
+tracked textually in chdir() and the result of that is reported in
+getcwd(). Otherwise an attempt is made to traverse the directory tree
+to its root using ".." entries.
+
+This last option is complicated and expensive, and relies on the
+filesystem supporting "." and ".."  entries. This is not always the
+case, particularly if the filesystem has been ported from a
+non-UNIX-compatible source. Tracking the pathname textually will
+usually work, but might not produce optimum results when symbolic
+links are being used.
+
+
+Synchronization
+---------------
+
+The FILEIO infrastructure provides a synchronization mechanism for
+controlling concurrent access to filesystems. This allows existing
+filesystems to be ported to eCos, even if they do not have their own
+synchronization mechanisms. It also allows new filesystems to be
+implemented easily without having to consider the synchronization
+issues.
+
+The infrastructure maintains a mutex for each entry in each of
+the main tables: filesystem table, mount table and file table. For
+each class of operation each of these mutexes may be locked before the
+corresponding filesystem operation is invoked.
+
+The synchronization protocol implemented by a filesystem is described
+by the _syncmode_ field of the filesystem table entry. This is a
+combination of the following flags:
+
+CYG_SYNCMODE_FILE_FILESYSTEM Lock the filesystem table entry mutex
+			     during all filesystem level operations.
+
+CYG_SYNCMODE_FILE_MOUNTPOINT Lock the mount table entry mutex
+			     during all filesystem level operations.
+
+CYG_SYNCMODE_IO_FILE	     Lock the file table entry mutex during all
+			     I/O operations.
+
+CYG_SYNCMODE_IO_FILESYSTEM   Lock the filesystem table entry mutex
+			     during all I/O operations.
+			     
+CYG_SYNCMODE_IO_MOUNTPOINT   Lock the mount table entry mutex during
+			     all I/O operations.
+
+CYG_SYNCMODE_SOCK_FILE       Lock the file table entry mutex during
+			     all socket operations.
+
+CYG_SYNCMODE_SOCK_NETSTACK   Lock the network stack table entry mutex
+			     during all socket operations.
+
+CYG_SYNCMODE_NONE	     Perform no locking at all during any
+			     operations.
+
+
+The value of the _syncmode_ in the filesystem table entry will be
+copied by the infrastructure to the open file object after a
+successful open() operation.
+
+
+Initialization and Mounting
+---------------------------
+
+As mentioned previously, mount table entries can be sourced from two
+places. Static entries may be defined by using the MTAB_ENTRY()
+macro. Such entries will be automatically mounted on system startup.
+For each entry in the mount table that has a non-null _name_ field the
+filesystem table is searched for a match with the _fsname_ field. If a
+match is found the filesystem's _mount_ entry is called and if
+successful the mount table entry marked valid and the _fs_ field
+initialized. The _mount_ function is responsible for initializing the
+_root_ field.
+
+The size of the mount table is defined by the configuration value
+CYGNUM_FILEIO_MTAB_MAX. Any entries that have not been statically
+defined are available for use by dynamic mounts.
+
+A filesystem may be mounted dynamically by calling mount(). This
+function has the following prototype:
+
+int mount( const char *devname,
+           const char *dir,
+	   const char *fsname);
+
+The _devname_ argument identifies a device that will be used by this
+filesystem and will be assigned to the _devname_ field of the mount
+table entry.
+
+The _dir_ argument is the mount point name, it will be assigned to the
+_name_ field of the mount table entry.
+
+The _fsname_ argument is the name of the implementing filesystem, it
+will be assigned to the _fsname_ entry of the mount table entry.
+
+The process of mounting a filesystem dynamically is as follows. First
+a search is made of the mount table for an entry with a NULL _name_
+field to be used for the new mount point. The filesystem table is then
+searched for an entry whose name matches _fsname_. If this is
+successful then the mount table entry is initialized and the
+filesystem's _mount_ operation called. If this is successful, the
+mount table entry is marked valid and the _fs_ field initialized.
+
+Unmounting a filesystem is done by the umount() function. This can
+unmount filesystems whether they were mounted statically or
+dynamically.
+
+The umount() function has the following prototype:
+
+int umount( const char *name );
+
+The mount table is searched for a match between the _name_ argument
+and the entry _name_ field. When a match is found the filesystem's
+_umount_ operation is called and if successful, the mount table entry
+is invalidated by setting its _valid_ field false and the _name_ field
+to NULL.
+
+Sockets
+-------
+
+If a network stack is present, then the FILEIO infrastructure also
+provides access to the standard BSD socket calls.
+
+The netstack table contains entries which describe the network
+protocol stacks that are in the system image. Each resident stack
+should export an entry to this table using the NSTAB_ENTRY() macro.
+
+Each table entry has the following structure:
+
+struct cyg_nstab_entry
+{
+    cyg_bool            valid;          // true if stack initialized
+    cyg_uint32          syncmode;       // synchronization protocol
+    char                *name;          // stack name
+    char                *devname;       // hardware device name
+    CYG_ADDRWORD        data;           // private data value
+
+    int     (*init)( cyg_nstab_entry *nste );
+    int     (*socket)( cyg_nstab_entry *nste, int domain, int type,
+		       int protocol, cyg_file *file );
+};
+
+This table is analogous to a combination of the filesystem and mount
+tables.
+
+The _valid_ field is set true if the stack's _init_ function returned
+successfully and the _syncmode_ field contains the CYG_SYNCMODE_SOCK_*
+bits described above.
+
+The _name_ field contains the name of the protocol stack.
+
+The _devname_ field names the device that the stack is using. This may
+reference a device under "/dev", or may be a name that is only
+meaningful to the stack itself.
+
+The _init_ function is called during system initialization to start
+the protocol stack running. If it returns non-zero the _valid_ field
+is set false and the stack will be ignored subsequently.
+
+The _socket_ function is called to attempt to create a socket in the
+stack. When the socket() API function is called the netstack table is
+scanned and for each valid entry the _socket_ function is called. If
+this returns non-zero then the scan continues to the next valid stack,
+or terminates with an error if the end of the table is reached.
+
+The result of a successful socket call is an initialized file object
+with the _f_xops_ field pointing to the following structure:
+
+struct cyg_sock_ops
+{
+    int (*bind)      ( cyg_file *fp, const sockaddr *sa, socklen_t len );
+    int (*connect)   ( cyg_file *fp, const sockaddr *sa, socklen_t len );
+    int (*accept)    ( cyg_file *fp, cyg_file *new_fp,
+                       struct sockaddr *name, socklen_t *anamelen );
+    int (*listen)    ( cyg_file *fp, int len );
+    int (*getname)   ( cyg_file *fp, sockaddr *sa, socklen_t *len, int peer );
+    int (*shutdown)  ( cyg_file *fp, int flags );
+    int (*getsockopt)( cyg_file *fp, int level, int optname,
+                       void *optval, socklen_t *optlen);
+    int (*setsockopt)( cyg_file *fp, int level, int optname,
+                       const void *optval, socklen_t optlen);
+    int (*sendmsg)   ( cyg_file *fp, const struct msghdr *m,
+                       int flags, ssize_t *retsize );
+    int (*recvmsg)   ( cyg_file *fp, struct msghdr *m,
+                       socklen_t *namelen, ssize_t *retsize );
+};
+
+It should be obvious from the names of these functions which API calls
+they provide support for. The _getname_ function provides support for
+both getsockname() and getpeername() while the _sendmsg_ and _recvmsg_
+functions provide support for send(), sendto(), sendmsg(), recv(),
+recvfrom() and recvmsg() as appropriate.
+
+
+
+Select
+------
+
+The infrastructure provides support for implementing a select
+mechanism. This is modeled on the mechanism in the BSD kernel, but has
+been modified to make it implementation independent.
+
+The main part of the mechanism is the select() API call. This
+processes its arguments and calls the _fo_select_ function on all file
+objects referenced by the file descriptor sets passed to it. If the
+same descriptor appears in more than one descriptor set, the
+_fo_select_ function will be called separately for each appearance.
+
+The _which_ argument of the _fo_select_ function will either be
+CYG_FREAD to test for read conditions, CYG_FWRITE to test for write
+conditions or zero to test for exceptions. For each of these options
+the function should test whether the condition is satisfied and if so
+return true. If it is not satisfied then it should call
+cyg_selrecord() with the _info_ argument that was passed to the
+function and a pointer to a cyg_selinfo structure.
+
+The cyg_selinfo structure is used to record information about current
+select operations. Any object that needs to support select must
+contain an instance of this structure.  Separate cyg_selinfo
+structures should be kept for each of the options that the object can
+select on - read, write or exception.
+
+If none of the file objects report that the select condition is
+satisfied, then the select() API function puts the calling thread to
+sleep waiting either for a condition to become satisfied, or for the
+optional timeout to expire.
+
+A selectable object must have some asynchronous activity that may
+cause a select condition to become true - either via interrupts or the
+activities of other threads. Whenever a selectable condition is
+satisfied, the object should call cyg_selwakeup() with a pointer to
+the appropriate cyg_selinfo structure. If the thread is still waiting,
+this will cause it to wake up and repeat its poll of the file
+descriptors. This time around, the object that caused the wakeup
+should indicate that the select condition is satisfied, and the
+_select()_ API call will return.
+
+Note that _select()_ does not exhibit real time behaviour: the
+iterative poll of the descriptors, and the wakeup mechanism mitigate
+against this. If real time response to device or socket I/O is
+required then separate threads should be devoted to each device of
+interest.
+
+
+Devices
+-------
+
+Devices are accessed by means of a pseudo-filesystem, "devfs", that is
+mounted on "/dev". Open operations are translated into calls to
+cyg_io_lookup() and if successful result in a file object whose
+_f_ops_ functions translate filesystem API functions into calls into
+the device API.
+
+// EOF fileio.txt

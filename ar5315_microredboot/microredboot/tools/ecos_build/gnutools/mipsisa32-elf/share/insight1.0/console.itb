@@ -1,0 +1,701 @@
+# Console window for Insight
+# Copyright 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+body Console::constructor {args} {
+  global gdbtk_state
+  window_name "Console Window"
+
+  debug "$args"
+  _build_win
+  eval itk_initialize $args
+  add_hook gdb_no_inferior_hook [list $this idle dummy]
+  
+  # There are a bunch of console prefs that have no UI
+  # for the user to modify them.  In the event that the user
+  # really wants to change them, they will have to be modified
+  # in prefs.tcl or by editing .gdbtkinit.  When these prefs
+  # gain a prefs UI, the user may change them dynamically
+  # and the console window will need notification that they
+  # have changed.  Add them to the following list and
+  # Console::_update_option.
+  foreach option {gdb/console/wrap} {
+    pref add_hook $option [code $this _update_option]
+  }
+
+  set gdbtk_state(console) $this
+}
+
+body Console::destructor {} {
+  global gdbtk_state
+  set gdbtk_state(console) ""
+  remove_hook gdb_no_inferior_hook [list $this idle dummy]
+}
+
+body Console::_build_win {} {
+  iwidgets::scrolledtext $itk_interior.stext \
+    -vscrollmode dynamic -textbackground white
+
+  set _twin [$itk_interior.stext component text]
+
+  _set_wrap [pref get gdb/console/wrap]
+
+  $_twin tag configure prompt_tag -foreground [pref get gdb/console/prompt_fg]
+  $_twin tag configure err_tag -foreground [pref get gdb/console/error_fg]
+  $_twin tag configure log_tag -foreground [pref get gdb/console/log_fg]
+  $_twin tag configure target_tag -foreground [pref get gdb/console/target_fg]
+  $_twin configure -font [pref get gdb/console/font] \
+    -bg $::Colors(textbg) -fg $::Colors(textfg)
+  
+  #
+  # bind editing keys for console window
+  #
+  bind $_twin <Return> "$this invoke; break"
+  bind_plain_key $_twin Control-m "$this invoke; break"
+  bind_plain_key $_twin Control-j "$this invoke; break"
+
+  # History control.
+  bind_plain_key $_twin Control-p "[code $this _previous]; break"
+  bind $_twin <Up> "[code $this _previous]; break"
+  bind_plain_key $_twin Control-n "[code $this _next]; break"
+  bind $_twin <Down> "[code $this _next]; break"
+  bind $_twin <Meta-less> "[code $this _first]; break"
+  bind $_twin <Home> "[code $this _first]; break"
+  bind $_twin <Meta-greater> "[code $this _last]; break"
+  bind $_twin <End> "[code $this _last]; break"
+  bind_plain_key $_twin Control-o "[code $this _operate_and_get_next]; break"
+
+  # Tab completion
+  bind_plain_key $_twin KeyPress-Tab "[code $this _complete]; break"
+  
+  # Don't let left arrow or ^B go over the prompt
+  bind_plain_key $_twin Control-b {
+    if {[%W compare insert <= {cmdmark + 1 char}]} {
+      break
+    }
+  }
+  bind $_twin <Left> [bind $_twin <Control-b>]
+
+  # Don't let Control-h, Delete, or Backspace back up over the prompt.
+  bind_plain_key $_twin Control-h "[code $this _delete]; break"
+
+  bind $_twin <BackSpace> "[code $this _delete]; break"
+  
+  bind $_twin <Delete> "[code $this _delete 1]; break"
+
+  # Control-a moves to start of line.
+  bind_plain_key $_twin Control-a {
+    %W mark set insert {cmdmark + 1 char}
+    %W see {insert linestart}
+    break
+  }
+
+  # Control-u deletes to start of line.
+  bind_plain_key $_twin Control-u {
+    %W delete {cmdmark + 1 char} insert
+    %W see {insert linestart}
+  }
+
+  # Control-w deletes previous word.
+  bind_plain_key $_twin Control-w {
+    if {[%W compare {insert -1c wordstart} > cmdmark]} {
+      %W delete {insert -1c wordstart} insert
+      %W see insert
+    }
+  }
+
+  bind $_twin <Control-Up> "[code $this _search_history]; break"
+  bind $_twin <Shift-Up> "[code $this _search_history]; break"
+  bind $_twin <Control-Down> "[code $this _rsearch_history]; break"
+  bind $_twin <Shift-Down> "[code $this _rsearch_history]; break"
+
+  # Don't allow key motion to move insertion point outside the command
+  # area.  This is done by fixing up the insertion point after any key
+  # movement.  We only need to do this after events we do not
+  # explicitly override.  Note that since the edit line is always the
+  # last line, we can't possibly go past it, so we don't bother
+  # checking that.  Note also that we check for a binding which is
+  # simply `;'; this lets us handle keys already bound via
+  # bind_plain_key.
+  foreach event [bind Text] {
+    if {[string match *Key* $event]
+	&& ([bind $_twin $event] == ""
+	    || [bind $_twin $event] == ";")} {
+      bind $_twin $event [bind Text $event]
+      bind $_twin $event {+
+	if {[%W compare insert <= {cmdmark + 1 char}]} {
+	  %W mark set insert {cmdmark + 1 char}
+	}
+	break
+      }
+    }
+  }
+
+  # Don't allow mouse to put cursor outside command line.  For some
+  # events we do this by noticing when the cursor is outside the
+  # range, and then saving the insertion point.  For others we notice
+  # the saved insertion point.
+  set pretag pre-$_twin
+  bind $_twin <1> [format {
+    if {[%%W compare [tkTextClosestGap %%W %%x %%y] <= cmdmark]} {
+      %s _insertion [%%W index insert]
+    } else {
+      %s _insertion {}
+    }
+  } $this $this]
+  bind $_twin <B1-Motion> [format {
+    if {[%s _insertion] != ""} {
+      %%W mark set insert [%s _insertion]
+    }
+  } $this $this $this]
+  # FIXME: has inside information.
+  bind $_twin <ButtonRelease-1> [format {
+    tkCancelRepeat
+    if {[%s _insertion] != ""} {
+      %%W mark set insert [%s _insertion]
+    }
+    %s _insertion {}
+    break
+  } $this $this $this]
+
+  # Don't allow inserting text outside the command line.  FIXME:
+  # requires inside information.
+  # Also make it a little easier to paste by making the button
+  # drags a little "fuzzy".
+  bind $_twin <B2-Motion> {
+    if {!$tk_strictMotif} {
+      if {($tkPriv(x) - 2 < %x < $tkPriv(x) + 2) \
+	    || ($tkPriv(y) - 2 < %y < $tkPriv(y) + 2)} {
+	set tkPriv(mouseMoved) 1
+      }
+      if {$tkPriv(mouseMoved)} {
+	%W scan dragto %x %y
+      }
+    }
+    break
+  }
+  bind $_twin <ButtonRelease-2> [format {
+    if {!$tkPriv(mouseMoved) || $tk_strictMotif} {
+      %s
+      break
+    }
+  } [code $this _paste 1]]
+  bind $_twin <<Paste>> "[code $this _paste 0]; break"
+  bind $_twin <<PasteSelection>> "[code $this _paste 0]; break"
+  
+  _setprompt
+  pack $itk_interior.stext -expand yes -fill both
+    
+  focus $_twin
+
+}
+
+body Console::idle {event} {
+  set _running 0
+  $_top configure -cursor {}
+}
+
+# ------------------------------------------------------------------
+#  METHOD: busy - busy event handler
+# ------------------------------------------------------------------
+body Console::busy {event} {
+  set _running 1
+  $_top configure -cursor watch
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  insert - insert new text in the text widget
+# ------------------------------------------------------------------
+body Console::insert {line {tag ""}} {
+  if {$_needNL} {
+    $_twin insert {insert linestart} "\n"
+  }
+  # Remove all \r characters from line.
+  set line [join [split $line \r] {}]
+  $_twin insert {insert -1 line lineend} $line $tag
+
+  set nlines [lindex [split [$_twin index end] .] 0]
+  if {$nlines > $throttle} {
+    set delta [expr {$nlines - $throttle}]
+    $_twin delete 1.0 ${delta}.0
+  }
+
+  $_twin see insert
+  set _needNL 0
+  ::update idletasks
+}
+
+# ------------------------------------------------------------------
+#  NAME:         ConsoleWin::_operate_and_get_next
+#  DESCRIPTION:  Invokes the current command and, if this
+#                command came from the history, arrange for
+#                the next history command to be inserted once this
+#                command is finished.
+#
+#  ARGUMENTS:    None
+#  RETURNS:      Nothing
+# ------------------------------------------------------------------
+body Console::_operate_and_get_next {} {
+  if {$_histElement >= 0} {
+    # _pendingHistElement will be used after the new history element
+    # is pushed.  So we must increment it.
+    set _pendingHistElement [expr {$_histElement + 1}]
+  }
+  invoke
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  _previous - recall the previous command
+# ------------------------------------------------------------------
+body Console::_previous {} {
+  if {$_histElement == -1} {
+    # Save partial command.
+    set _partialCommand [$_twin get {cmdmark + 1 char} {cmdmark lineend}]
+  }
+  incr _histElement
+  set text [lindex $_history $_histElement]
+  if {$text == ""} {
+    # No dice.
+    incr _histElement -1
+    # FIXME flash window.
+  } else {
+    $_twin delete {cmdmark + 1 char} {cmdmark lineend}
+    $_twin insert {cmdmark + 1 char} $text
+  }
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  _search_history - search history for match
+# ------------------------------------------------------------------
+body Console::_search_history {} {
+  set str [$_twin get {cmdmark + 1 char} {cmdmark lineend}]
+
+  if {$_histElement == -1} {
+    # Save partial command.
+    set _partialCommand $str
+    set ix [lsearch $_history ${str}*]
+  } else {
+    set str $_partialCommand
+    set num [expr $_histElement + 1]
+    set ix [lsearch [lrange $_history $num end] ${str}*]
+    incr ix $num
+  }
+
+  set text [lindex $_history $ix]
+  if {$text != ""} {
+    set _histElement $ix
+    $_twin delete {cmdmark + 1 char} {cmdmark lineend}
+    $_twin insert {cmdmark + 1 char} $text
+  }
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  _rsearch_history - search history in reverse for match
+# ------------------------------------------------------------------
+body Console::_rsearch_history {} {
+  if {$_histElement != -1} {
+    set str $_partialCommand
+    set num [expr $_histElement - 1]
+    set ix $num
+    while {$ix >= 0} {
+      if {[string match ${str}* [lindex $_history $ix]]} {
+	break
+      }
+      incr ix -1
+    }
+
+    set text ""
+    if {$ix >= 0} {
+      set text [lindex $_history $ix]
+      set _histElement $ix
+    } else {
+      set text $_partialCommand
+      set _histElement -1
+    }
+    $_twin delete {cmdmark + 1 char} {cmdmark lineend}
+    $_twin insert {cmdmark + 1 char} $text
+  }
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  _next - recall the next command (scroll forward)
+# ------------------------------------------------------------------
+body Console::_next {} {
+  if {$_histElement == -1} {
+    # FIXME flash window.
+    return
+  }
+  incr _histElement -1
+  if {$_histElement == -1} {
+    set text $_partialCommand
+  } else {
+    set text [lindex $_history $_histElement]
+  }
+  $_twin delete {cmdmark + 1 char} {cmdmark lineend}
+  $_twin insert {cmdmark + 1 char} $text
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  _last - get the last history element
+# ------------------------------------------------------------------
+body Console::_last {} {
+  set _histElement 0
+  _next
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  _first - get the first (earliest) history element
+# ------------------------------------------------------------------
+body Console::_first {} {
+  set _histElement [expr {[llength $_history] - 1}]
+  _previous
+}
+
+
+
+#-------------------------------------------------------------------
+#  METHOD:  _setprompt - put a prompt at the beginning of a line
+# ------------------------------------------------------------------
+body Console::_setprompt {{prompt {}}} {
+  if {$_invoking} {
+    set prompt ""
+  } elseif {"$prompt" != ""} {
+    # nothing
+  } else {
+    #set prompt [pref get gdb/console/prompt]
+    set prompt [gdb_prompt]
+  }
+
+  $_twin insert {insert linestart} $prompt prompt_tag
+  $_twin mark set cmdmark "insert -1 char"
+  $_twin see insert
+
+  if {$_pendingHistElement >= 0} {
+    set _histElement $_pendingHistElement
+    set _pendingHistElement -1
+    _next
+  }
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  activate - run this after a command is run
+# ------------------------------------------------------------------
+body Console::activate {{prompt {}}} {
+  if {$_invoking > 0} {
+    incr _invoking -1
+    _setprompt $prompt
+  }
+}
+
+#-------------------------------------------------------------------
+#  METHOD:  invoke - invoke a command
+# ------------------------------------------------------------------
+body Console::invoke {} {
+  global gdbtk_state
+
+  set text [$_twin get {cmdmark + 1 char} end ]
+
+  if { "[string range $text 0 1]" == "tk" } {
+    if {! [info complete $text] } {
+      $_twin insert {insert lineend} " \\\n"
+      $_twin see insert
+      return
+    }
+  }
+
+  incr _invoking
+
+  set text [string trimright $text \n]
+  if {$text == ""} {
+    set text [lindex $_history 0]
+    $_twin insert {insert lineend} $text
+  }
+  $_twin mark set insert {insert lineend}
+  $_twin insert {insert lineend} "\n"
+
+  set ok 0
+  if {$_running} {
+    if {[string index $text 0] == "!"} {
+      set text [string range $text 1 end]
+      set ok 1
+    }
+  }
+
+  # Only push new nonempty history items.
+  if {$text != "" && [lindex $_history 0] != $text} {
+    lvarpush _history $text
+  }
+  
+  set index [$_twin index insert]
+  
+  # Clear current history element, and current partial element.
+  set _histElement -1
+  set _partialCommand ""
+  
+  # Need a newline before next insert.
+  set _needNL 1
+  
+  # run command
+  if {$gdbtk_state(readline)} {
+    set gdbtk_state(readline_response) $text
+    return
+  }
+
+  if {!$_running || $ok} {
+    set result [catch {gdb_immediate "$text" 1} message]
+  } else {
+    set result 1
+    set message "The debugger is busy."
+  }
+
+  # gdb_immediate may take a while to finish.  Exit if
+  # our window has gone away.
+  if {![winfo exists $_twin]} { return }
+
+  if {$result} {
+    global errorInfo
+    dbug W "Error: $errorInfo\n"
+    $_twin insert end "Error: $message\n" err_tag
+  } elseif {$message != ""} {
+    $_twin insert $index "$message\n"
+  }
+  
+  # Make the prompt visible again.
+  activate
+  
+  # Make sure the insertion point is visible.
+  $_twin see insert
+}
+
+#-------------------------------------------------------------------
+#  PRIVATE METHOD:  _delete - Handle a Delete of some sort.
+# ------------------------------------------------------------------
+body Console::_delete {{right 0}} {
+
+  # If we are deleting to the right, and we have this turned off,
+  # delete to the right.
+  
+  if {$right && ![pref get gdb/console/deleteLeft]} {
+    set right 0
+  }
+  
+  if {!$right} {
+    set insert_valid [$_twin compare insert > {cmdmark + 1 char}]
+    set delete_loc "insert-1c"
+  } else {
+    set insert_valid [$_twin compare insert > cmdmark]
+    set delete_loc "insert"
+  }
+  
+  # If there is a selection on the command line, delete it,
+  # If there is a selection above the command line, do a
+  # regular delete, but don't delete the prompt.
+  # If there is no selection, do the delete.
+  
+  if {![catch {$_twin index sel.first}]} {
+    if {[$_twin compare sel.first <= cmdmark]} {
+      if {$insert_valid} {
+	$_twin delete $delete_loc
+      }
+    } else {
+      $_twin delete sel.first sel.last
+    }
+  } elseif {$insert_valid} {
+    $_twin delete $delete_loc
+  }
+}
+
+#-------------------------------------------------------------------
+#  PRIVATE METHOD:  _insertion - Set or get saved insertion point
+# ------------------------------------------------------------------
+body Console::_insertion {args} {
+  if {! [llength $args]} {
+    return $_saved_insertion
+  } else {
+    set _saved_insertion [lindex $args 0]
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _paste - paste the selection into the console window
+# ------------------------------------------------------------------
+body Console::_paste {{check_primary 1}} {
+  set sel {}
+
+  if {!$check_primary || [catch {selection get} sel] || $sel == ""} {
+    if {[catch {selection get -selection CLIPBOARD} sel] || $sel == ""} {
+      return
+    }
+  }
+
+  #if there is a selection, insert over it:
+  if {![catch {$_twin index sel.first}] 
+      && [$_twin compare sel.first > {cmdmark + 1 char}]} {
+    set point [$_twin index sel.first]
+    $_twin delete sel.first sel.last
+    $_twin insert $point $sel
+  } else {
+    $_twin insert insert $sel
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _find_lcp - Return the longest common prefix in SLIST.
+#              Can be empty string.
+# ------------------------------------------------------------------
+body Console::_find_lcp {slist} {
+  # Handle trivial cases where list is empty or length 1
+  if {[llength $slist] <= 1} {return [lindex $slist 0]}
+
+  set prefix [lindex $slist 0]
+  set prefixlast [expr [string length $prefix] - 1]
+
+  foreach str [lrange $slist 1 end] {
+    set test_str [string range $str 0 $prefixlast]
+    while {[string compare $test_str $prefix] != 0} {
+      incr prefixlast -1
+      set prefix [string range $prefix 0 $prefixlast]
+      set test_str [string range $str 0 $prefixlast]
+    }
+    if {$prefixlast < 0} break
+  }
+  return $prefix
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _find_completion - Look through COMPLETIONS to generate
+#             the suffix needed to do command
+# ------------------------------------------------------------------
+body Console::_find_completion {cmd completions} {
+  # Get longest common prefix
+  set lcp [_find_lcp $completions]
+  set cmd_len [string length $cmd]
+  # Return suffix beyond end of cmd
+  return [string range $lcp $cmd_len end]
+}
+
+# ------------------------------------------------------------------
+#  METHOD: _complete - Command line completion
+# ------------------------------------------------------------------
+body Console::_complete {} {
+
+  set command_line [$_twin get {cmdmark + 1 char} {cmdmark lineend}]
+  set choices [gdb_cmd "complete $command_line" 1]
+  set choices [string trimright $choices \n]
+  set choices [split $choices \n]
+
+  # Just do completion if this is the first tab
+  if {!$_saw_tab} {
+    set _saw_tab 1
+    set completion [_find_completion $command_line $choices]
+
+    # Here is where the completion is actually done.  If there
+    # is one match, complete the command and print a space.
+    # If two or more matches, complete the command and beep.
+    # If no match, just beep.
+    switch [llength $choices] {
+      0 {}
+      1 {
+	$_twin insert end "$completion "
+	set _saw_tab 0
+	return
+      }
+
+      default {
+	$_twin insert end $completion
+      }
+    }
+    bell
+    $_twin see end
+    bind $_twin <KeyPress> [code $this _reset_tab]
+  } else {
+    # User hit another consecutive tab.  List the choices.
+    # Note that at this point, choices may contain commands
+    # with spaces.  We have to lop off everything before (and
+    # including) the last space so that the completion list
+    # only shows the possibilities for the last token.
+    set choices [lsort $choices]
+    if {[regexp ".* " $command_line prefix]} {
+      regsub -all $prefix $choices {} choices
+    }
+    if {[llength choices] != 0} {
+      insert "\nCompletions:\n[join $choices \ ]\n"
+      $_twin see end
+      bind $_twin <KeyPress> [code $this _reset_tab]
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _reset_tab - Helper method for tab completion. Used
+#             to reset the tab when a key is pressed.
+# ------------------------------------------------------------------
+body Console::_reset_tab {} {
+  bind $_twin <KeyPress> {}
+  set _saw_tab 0
+}
+
+
+# ------------------------------------------------------------------
+#  METHOD:  _set_wrap - Set wrap mode
+# ------------------------------------------------------------------
+body Console::_set_wrap {wrap} {
+  if { $wrap } {
+    set hsm none
+    set wv char
+  } else {
+    set hsm dynamic
+    set wv none
+  }
+
+  $itk_interior.stext configure -hscrollmode $hsm
+  $_twin configure -wrap $wv
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _update_option - Update in response to preference change
+# ------------------------------------------------------------------
+body Console::_update_option {name value} {
+  switch -- $name {
+    gdb/console/wrap {
+      _set_wrap $value
+    }
+
+    gdb/console/prompt_fg {
+      $_twin tag configure prompt_tag -foreground $value
+    }
+
+    gdb/console/error_fg {
+      $_twin tag configure err_tag -foreground $value
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  NAME:         public method Console::test
+#  DESCRIPTION:  Executes the given command
+#
+#  ARGUMENTS:    Command to run
+#  RETURNS:      Return value of command
+#
+#  NOTES:        This will only run if env(GDBTK_TEST_RUNNING)==1.
+#                FOR TESTING ONLY
+# ------------------------------------------------------------------
+body Console::test {args} {
+  global env
+
+  if {[info exists env(GDBTK_TEST_RUNNING)] && $env(GDBTK_TEST_RUNNING) == 1} {
+    return [eval $args]
+  }
+}
+

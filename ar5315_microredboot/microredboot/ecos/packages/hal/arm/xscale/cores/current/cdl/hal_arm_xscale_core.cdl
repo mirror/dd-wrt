@@ -1,0 +1,79 @@
+# ====================================================================
+#
+#      hal_arm_xscale_core.cdl
+#
+#      Intel XScale architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      msalter
+# Original data:  msalter
+# Contributors:
+# Date:           2002-10-18
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_ARM_XSCALE_CORE {
+    display       "Intel XScale Core Support"
+    parent        CYGPKG_HAL_ARM
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm_xscale_core.h
+    description   "
+        This HAL variant package provides generic support common
+        to Intel XScale CPU cores. It is also necessary to select
+        a specific target platform and CPU HAL package."
+
+    implements    CYGINT_HAL_ARM_ARCH_XSCALE
+
+    compile       xscale_misc.c xscale_stub.c
+
+    cdl_option CYGSEM_HAL_ARM_XSCALE_BTB {
+    	display       "Enable Branch Target Buffer"
+        flavor        bool
+        default_value 1
+        description   "
+            This option controls whether or not the Branch Target
+            Buffer is enabled. The BTB is used for branch prediction
+            and can have significant performance benefits. Control
+            is provided because there is an errata for A-step 80200
+            CPUS which will lead to problems with thumb branches
+            if the BTB is on. Normal ARM programs are not affected
+            by this errata."
+    }
+}

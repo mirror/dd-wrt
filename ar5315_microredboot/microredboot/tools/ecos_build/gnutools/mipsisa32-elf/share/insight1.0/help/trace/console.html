@@ -1,0 +1,47 @@
+<HTML>
+<HEAD>
+<TITLE>Console Window Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Console Window</H1>
+<H3>Overview</H3>
+<P>The Console Window is perhaps the most powerful tool in the debugger. It
+provides functionality equivalent to almost all of the debugger's secondary
+windows, macro definitions, and other more advanced features.</P>
+
+<P>Console Window topics:
+<UL>
+    <LI><UL><A HREF="#display">Console Display</A>
+            <LI><A HREF="#display_cmd">Executing Commands</A>
+            <LI><A HREF="#display_hlp">Getting Help</A>
+        </UL>
+</UL></P>
+
+<H3><A NAME="display">Console Display</A></H3>
+The Console Display is simply a scrolled window in which the debugger prompt
+appears. By default, the prompt is set to "(gdb) ", but it may be changed via a
+command line option.
+
+<P>To <A NAME="display_cmd">execute commands</A> in the console window, simply enter
+the command in the display. If the debugger is busy, the message "Error: The
+debugger is busy." appears informing the user that the command was not accepted.</P>
+
+<P>Whenever a command is executed, the debugger's windows will update to display
+any new state information. Any output from the command is also echoed to the Console
+Window for ease of use. If an error occurs, an error message is printed to the Console
+Window. All error messages appear in the Console Window using a red colored typeface.
+</P>
+
+<P>The Console Window responds to special character commands just as a shell window
+does: it has a history mechanism which allows the user to scan previously used commands
+by pressing the up and down arrow keys on the keyboard, jumping to the beginning or
+end of a line by entering Ctrl-A or Ctrl-E, erasing a line by pressing Ctrl-K, and
+more. Users familiar with GNU Emacs will recognize these keys as commonly used
+keystrokes from that editor.</P>
+
+<H3><A NAME="display_hlp">Getting Help</A></H3>
+The Console Window has its own online help system. To access the help system, enter
+"help" at the prompt and follow the on-screen instructions. For more help, please
+consult the <!-- What is this really called? --> <I>GDB User's Guide</I>.
+</BODY>
+</HTML>

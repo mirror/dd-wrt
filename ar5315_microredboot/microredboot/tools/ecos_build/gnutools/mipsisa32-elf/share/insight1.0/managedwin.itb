@@ -1,0 +1,386 @@
+# Managed window for Insight.
+# Copyright 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  constructor
+# ------------------------------------------------------------
+body ManagedWin::constructor {args} {
+  #debug "$this args=$args"
+  set _top [winfo toplevel $itk_interior]
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD: destructor
+# ------------------------------------------------------------
+body ManagedWin::destructor {} {
+  # If no toplevels remain, quit.  However, check the quit_if_last
+  # flag since we might be doing something like displaying a 
+  # splash screen at startup...
+
+  if {!$numTopWins && [quit_if_last]} {
+    gdb_force_quit
+  } else {
+    destroy_toplevel
+  }
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  window_name - Set the name of the window
+#   (and optionally its icon's name).
+# ------------------------------------------------------------
+body ManagedWin::window_name {wname {iname ""}} {
+  wm title $_top $wname
+  if {$iname != ""} {
+    wm iconname $_top $iname
+  } else {
+    wm iconname $_top $wname
+  }
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD: pickle - This is the base class pickle
+#   method.  It returns a command that can be used to recreate
+#   this particular window.  
+# ------------------------------------------------------------
+body ManagedWin::pickle {} {
+  return [list ManagedWin::open [namespace tail [info class]]]
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  reveal
+# ------------------------------------------------------------
+body ManagedWin::reveal {} {
+  # Do this update to flush all changes before deiconifying the window.
+  update idletasks
+  
+  raise $_top
+  wm deiconify $_top
+
+  # Some window managers (on unix) fail to honor the geometry unless
+  # the window is visible.
+  if {[info exists ::$_top._init_geometry]} {
+    upvar ::$_top._init_geometry gm
+    if {$::tcl_platform(platform) == "unix"} {
+      wm geometry $_top $gm
+    }
+    unset ::$_top._init_geometry
+  }
+  
+  # There used to be a `focus -force' here, but using -force is
+  # unfriendly, so it was removed.  It was then replaced with a simple
+  # `focus $top'.  However, this has no useful effect -- it just
+  # resets the subwindow of $top which has the `potential' focus.
+  # This can actually be confusing to the user.
+
+  # NOT for Windows, though. Without the focus, we get, eg. a
+  # register window on top of the source window, but the source window
+  # will have the focus. This is not the proper model for Windows.
+  if {$::tcl_platform(platform) == "windows"} {
+    focus -force [focus -lastfor $_top]
+  }
+}
+
+# ------------------------------------------------------------
+#  PUBLIC PROC:  restart
+# ------------------------------------------------------------
+body ManagedWin::restart {} {
+  # This is needed in case we've called "gdbtk_busy" before the restart.
+  # This will configure the stop/run button as necessary
+  after idle gdbtk_idle
+  
+  # call the reconfig method for each object
+  foreach obj [itcl_info objects -isa ManagedWin] {
+    if {[catch {$obj reconfig} msg]} {
+      dbug W "reconfig failed for $obj - $msg"
+    } 
+  }
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC PROC:  shutdown - This writes all the active windows to
+#   the preferences file, so they can be restored at startup.
+#   FIXME: Currently assumes only ONE window per type...
+# ------------------------------------------------------------------
+body ManagedWin::shutdown {} {
+  set activeWins {}
+  foreach win [itcl_info objects -isa ManagedWin] {
+    if {![$win isa ModalDialog] && ![$win _ignore_on_save]} {
+      set g [wm geometry [winfo toplevel [namespace tail $win]]]
+      pref setd gdb/geometry/[namespace tail $win] $g
+      lappend activeWins [$win pickle]
+    }
+  }
+  pref set gdb/window/active $activeWins
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC PROC:  startup - This restores all the windows that were
+#   opened at shutdown.
+#   FIXME: Currently assumes only ONE window per type...
+# ------------------------------------------------------------------
+body ManagedWin::startup {} {
+  debug "Got active list [pref get gdb/window/active]"
+
+  foreach cmd [pref get gdb/window/active] {
+    eval $cmd
+  }
+  # If we open the source window, and a source window already exists,
+  # then we end up raising it twice during startup.  This yields an
+  # annoying effect for the user: if the user tries the bury the
+  # source window during startup, it will raise itself again.  This
+  # explains why we first check to see if a source window exists
+  # before trying to create it -- raising the window is an inevitable
+  # side effect of the creation process.
+  if {[llength [find SrcWin]] == 0} {
+    ManagedWin::open SrcWin
+  }
+}
+
+# ------------------------------------------------------------
+#  PUBLIC PROC:  open_dlg
+# ------------------------------------------------------------
+body ManagedWin::open_dlg {class args} {
+  
+  set newwin [eval _open $class $args]
+  if {$newwin != ""} {
+    $newwin reveal
+    $newwin post
+  }
+}
+
+# ------------------------------------------------------------
+#  PUBLIC PROC:  open
+# ------------------------------------------------------------
+body ManagedWin::open {class args} {
+  
+  set newwin [eval _open $class $args]
+  if {$newwin != ""} {
+    if {[$newwin isa ModalDialog]} {
+      parse_args [list {expire 0}]
+      after idle "$newwin reveal; $newwin post 0 $expire"
+    } else {
+      after idle "$newwin reveal"
+    }
+  }
+  
+  return $newwin
+}
+
+# ------------------------------------------------------------
+#  PRIVATE PROC:  _open
+# ------------------------------------------------------------
+body ManagedWin::_open { class args } {
+  debug "$class $args"
+  
+  parse_args force
+
+  if {!$force} {
+    # check all windows for one of this type
+    foreach obj [itcl_info objects -isa ManagedWin] {
+      if {[$obj isa $class]} {
+	$obj reveal
+	return $obj
+      }
+    }
+    
+  }
+  # need to create a new window
+  return [eval _create $class $args]
+}
+
+# ------------------------------------------------------------
+#  PRIVATE PROC:  _create
+# ------------------------------------------------------------
+body ManagedWin::_create { class args } {
+  
+  set win [string tolower $class]
+  debug "win=$win args=$args"
+  
+  parse_args {center transient {over ""}} 
+  
+  # increment window numbers until we get an unused one
+  set i 0
+  while {[winfo exists .$win$i]} { incr i }
+  
+  while { 1 } {
+    set top [toplevel .$win$i]
+    wm withdraw $top
+    wm protocol $top WM_DELETE_WINDOW "destroy $top"
+    wm group $top .
+    set newwin $top.$win
+    if {[catch {uplevel \#0 eval $class $newwin $args} msg]} {
+      dbug E "object creation of $class failed: $msg"
+      dbug E $::errorInfo
+      if {[string first "object already exists" $msg] != -1} {
+	# sometimes an object is still really around even though
+	# [winfo exists] said it didn't exist.  Check for this case
+	# and increment the window number again.
+	catch {destroy $top}
+	incr i
+      } else {
+	return ""
+      }
+    } else {
+      break
+    }
+  }
+  
+  if {[catch {pack $newwin -expand yes -fill both}]} {
+    dbug W "packing of $newwin failed: $::errorInfo"
+    return ""
+  }
+  
+  wm maxsize $top $_screenwidth $_screenheight
+  wm minsize $top 20 20
+  update idletasks
+
+  if {$over != ""} {
+    # center new window
+    center_window $top -over [winfo toplevel [namespace tail $over]]
+  } elseif {$center} {
+    center_window $top
+  }
+
+  if {$transient} {
+    wm resizable $top 0 0
+
+    # If a SrcWin is around, use its toplevel as the master for
+    # the transient. Otherwise use ".". (The splash screen will
+    # need ".", for example.)
+    set srcs [ManagedWin::find SrcWin]
+    if {[llength $srcs] > 0} {
+      set w [winfo toplevel [namespace tail [lindex $srcs 0]]]
+    } else {
+      set w .
+    }
+    wm transient $top $w
+  } elseif {$::tcl_platform(platform) == "unix"} {
+    # Modal dialogs DONT get Icons...
+    if {[pref get gdb/use_icons] && ![$newwin isa ModalDialog]} {
+      set icon [_make_icon_window ${top}_icon]
+      wm iconwindow $top $icon
+      bind $icon <Double-1> "$newwin reveal"
+    }
+  }
+  
+  if {[info exists ::env(GDBTK_TEST_RUNNING)] && $::env(GDBTK_TEST_RUNNING)} {
+    set g "+100+100"
+    wm geometry $top $g
+    wm positionfrom $top user
+  } else {
+    set g [pref getd gdb/geometry/$newwin]
+    if {$g == "1x1+0+0"} { 
+      dbug E "bad geometry"
+      set g ""
+    }
+    if {$g != ""} {
+      # OK. We have a requested geometry. We know that it fits on the screen
+      # because we set the maxsize.  Now we have to make sure it will not be
+      # displayed off the screen.
+      set w 0; set h 0; set x 0; set y 0
+      if {![catch {scan $g  "%dx%d%d%d" w h x y} res]} {
+	if {$x < 0} {
+	  set x [expr $_screenwidth + $x]
+	}
+	if {$y < 0} {
+	  set y [expr $_screenheight + $y]
+	}
+	
+	# If the window is transient, then don't reset its size, since
+	# the user didn't set this anyway, and in some cases where the
+	# size can change dynamically, like the Global Preferences
+	# dialog, this can hide parts of the dialog with no recourse...
+	
+	# if dont_remember_size is true, don't set size, just like
+	# transients
+	
+	if {$transient || [dont_remember_size]} {
+	  set g "+${x}+${y}"
+	} else {
+	  set g "${w}x${h}+${x}+${y}"
+	}
+	if {[expr $x+50] < $_screenwidth && [expr $y+20] < $_screenheight} {
+	  wm positionfrom $top user
+	  wm geometry $top $g
+	  set ::$top._init_geometry $g
+	}
+      }
+    }
+  }
+
+  bind $top <Alt-F4> [list delete object $newwin]
+
+  return $newwin
+}
+
+# ------------------------------------------------------------
+#  PUBLIC PROC:  find
+# ------------------------------------------------------------
+body ManagedWin::find { win } {
+  debug "$win"
+  set res ""
+  foreach obj [itcl_info objects -isa ManagedWin] {
+    if {[$obj isa $win]} {
+      lappend res $obj
+    }
+  }
+  return $res
+}
+
+# ------------------------------------------------------------
+#  PUBLIC PROC:  init
+# ------------------------------------------------------------
+body ManagedWin::init {} {
+  wm withdraw .
+  set _screenheight [winfo screenheight .]
+  set _screenwidth [winfo screenwidth .]
+}
+
+# ------------------------------------------------------------
+#  PUBLIC METHOD:  destroy_toplevel
+# ------------------------------------------------------------
+body ManagedWin::destroy_toplevel {} {
+  after idle "update idletasks;destroy $_top"
+}
+
+# ------------------------------------------------------------
+#  PROTECTED METHOD:  _freeze_me
+# ------------------------------------------------------------
+body ManagedWin::_freeze_me {} {
+  $_top configure -cursor watch
+  ::update idletasks
+}
+
+# ------------------------------------------------------------
+#  PROTECTED METHOD: _thaw_me
+# ------------------------------------------------------------
+body ManagedWin::_thaw_me {} {
+
+  $_top configure -cursor {}
+  ::update idletasks
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE PROC: _make_icon_window - create a small window with an
+#   icon in it for use by certain Unix window managers.
+# ------------------------------------------------------------------
+body ManagedWin::_make_icon_window {name {file "gdbtk_icon"}} {
+  if {![winfo exists $name]} {
+    toplevel $name
+    label $name.im -image \
+      [image create photo icon_photo -file [file join $::gdb_ImageDir $file.gif]]
+  }
+  pack $name.im
+  return $name
+}

@@ -1,0 +1,553 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2001-10-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Define CPU as big-endian here.
+
+2001-09-07  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Brought up to date and much of
+	the configury now moved to the VRC437X package. Configury for
+	Redboot and virtual vectors added here.
+
+	* misc/redboot_RAM.ecm:
+	* misc/redboot_ROM.ecm:
+	* misc/redboot_ROMRAM.ecm:
+	These files added to configure redboot for this target.
+	
+	* include/hal_diag.h:
+	* include/platform.inc:
+	* include/plf_cache.h:
+	* include/plf_intr.h:
+	* include/plf_io.h:
+	* include/plf_stub.h:
+	* include/plf_z8530.h:
+	* misc/stubrom.perm:
+	* src/hal_diag.c:
+	* src/platform.S:
+	* src/plf_misc.c:
+	* src/plf_stub.c:
+	* src/pmon.S:
+	Files removed and relocated to VRC437X package. This package is
+	now just a configuration and memory layout package. This ChangeLog
+	is being retained in it original form for archival purposes.
+
+	
+	
+2001-02-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/platform.inc: Always do unsigned arithmetic on addresses
+	* src/platform.S: Ditto
+	Reported by Chris Morrow <cmorrow@YottaYotta.com>
+
+2001-02-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Ignore devices not on bus 0.
+
+2001-01-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/platform.S: Added *va* (see mips/arch/.../arch.inc) macros
+	when manipulating values that are potentially 64 bits.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_ram.mlt:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_rom.mlt:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_ram.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_rom.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.h:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_ram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_rom.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.ldi:
+	Regenerated
+
+2000-09-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/platform.inc: Added some extra ifdefs and code to try
+	and get ROM startup working.
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl:
+	Building GDB stubs was requiring ROM startup when it should have
+	ROMRAM startup.
+
+2000-08-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/platform.S (hal_pci_config_read): Prevent assembler reordering,
+	the address is important
+
+2000-08-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.ldi: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.h: 
+	Fixed typo in last change. Forgot that the RAM base address
+	appears twice in these files. Also fixed .h file to match.
+	
+2000-08-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.ldi:
+	RAM start on these configurations should be 0x80000000 not
+	0x80100000.
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CTRLC init hacks.
+
+	* src/plf_misc.c (hal_ctrlc_isr_init): Made public.
+
+2000-05-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Let arch call ctrlc_init.
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl (CYGBLD_BUILD_GDB_STUBS): When
+	building stubs, define every dependency required here rather than
+	in the template
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: 
+	Removed HAL_STUB_PLATFORM_STUBS_INIT.
+
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h: Removed stubs as a
+	legal startup type.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: use cpu options when linking.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Implements stubs.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Moved part of stubs build rule to
+	common HAL. Changed description.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Add stubs build rule.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* misc/stubrom.perm: Rename CYG_HAL_ROM_MONITOR ->
+	CYGSEM_HAL_ROM_MONITOR
+
+	* include/platform.inc: Rename CYG_HAL_USE_ROM_MONITOR_PMON ->
+	CYGSEM_HAL_USE_ROM_MONITOR_PMON throughout
+	Rename CYG_HAL_USE_ROM_MONITOR_GDB_STUBS ->
+	CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs throughout
+
+	* src/hal_diag.c: Likewise
+
+	* src/plf_misc.c: Likewise. Similarly CYG_HAL_USE_ROM_MONITOR_CYGMON
+	-> CYGSEM_HAL_USE_ROM_MONITOR_CygMon
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Add new platform-specific
+	CYGSEM_HAL_USE_ROM_MONITOR and CYGSEM_HAL_ROM_MONITOR options to
+	control ROM monitor support
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Add -Wl for linker options.
+
+1999-11-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h: 
+	Reparent under HAL MIPS variants as for other MIPS targets
+
+1999-11-25  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl:
+
+	Remove references to obsolete 'STUBS' memory layout.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.h: New file.
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.ldi: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.mlt: Real file.
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_rom.h: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_ram.h: New file(s).
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_vr4300_vrc4373.cdl: Added.
+
+1999-10-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/plf_intr.h: 
+	* src/plf_misc.c: 
+	* src/hal_diag.c:
+	Changed CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT to
+	CYGDBG_HAL_MIPS_DEBUG_GDB_CTRLC_SUPPORT.
+
+1999-10-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/platform.S: Swapped around the IOPROF registers for
+	big-endian mode. These 16 bit registers end up in opposite halves
+	of the 32 bit word in big endian mode.
+
+	* include/plf_z8530.h: In big-endian mode the Z8530 registers are
+	at the other end of the word. This is easily fixed by redefining
+	the DUART_BASE only.
+
+1999-09-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Ack VRC4373 interrupt to
+	prevent spurious interrupts
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h: 
+	Add new CYGSEM_HAL_MIPS_VR4300_VRC4373_DIAG_ACKS_INT_0 option to
+	control the above behaviour
+
+1999-09-08  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/plf_intr.h (HAL_INTERRUPT_UNMASK): Rephrase to silence warnings
+	about left-shifting negative numbers. Equivalent when optimized.
+	(HAL_INTERRUPT_ACKNOWLEDGE): Likewise
+	(HAL_INTERRUPT_MASK): Likewise
+
+1999-09-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/platform.inc: Changed end address for copy from
+	__bss_end to __ram_data_end.
+
+1999-09-08  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/platform.S (NTLBENTRIES): Fix typo: 0x32 -> 32
+
+	* include/platform.inc (hal_mon_copy_trampoline): Use branch delay slot
+	when copying - both for ROMRAM startup and CYG_HAL_USE_ROM_MONITOR_PMON
+	(hal_mon_init_vsr_table): Don't init debug vector - not used on
+	vr4300 CPUs
+
+1999-09-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/platform.inc: Added code to monitor setup to copy
+	other_vector in to correct RAM location.
+
+1999-08-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/plf_io.h: Added this file to contain PCI access support.
+
+	* include/platform.inc:
+	* src/platform.S: 
+	Added function to read data from the PCI data register together
+	with a data load/store VSR which catches any exceptions and fixes
+	them up so that the program can continue.
+
+1999-07-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c: Add prototypes for cyg_hal_is_break and
+	cyg_hal_user_break to silence warning
+
+1999-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c (hal_ctrlc_isr): Changed all return codes to 2 so
+	that the interrupt is reported as handled.
+
+1999-06-17  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/platform.inc: Added code to initialize VSR slots for
+	debug, utlb and nmi vectors.
+
+	* misc/stubrom.perm: Added disable of
+	CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT when building ROM monitor.
+
+1999-06-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/plf_stub.c (hal_plf_stub_init): Fix config problem.
+
+1999-06-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_stub.c: Added interrupt acknowledge calls to character
+	IO routines to prevent spurious interrupts.
+
+1999-06-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c: Ensure that reads and writes do not provoke
+	spurious interrupts.
+
+	* include/platform.inc: Tidied up debug version of
+	hal_diag_intr_start a little.
+
+1999-05-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* misc/stubrom.perm: Added this file to contain a permutation for
+	building a stub ROM for the VRC4373 board.
+
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h: Removed redfinitions
+	triggered by CYG_HAL_STARTUP_STUBS.
+
+	* include/plf_stub.h: Added HAL_STUB_PLATFORM_INIT and voided
+	HAL_STUB_PLATFORM_INIT_BREAK_IRQ and HAL_STUB_PLATFORM_STUBS_INIT.
+
+	* src/plf_stub.c: 
+	Moved all setup into hal_plf_stub_init(). Deleted
+	hal_plf_init_break_irq().
+	
+1999-05-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_stub.c: 
+	Moved Z8530 definitions out to plf_z8530.h.
+	Added setup of install_async_breakpoint() function is vector
+	table.
+	
+	* src/platform.S: Some minor tidies to the code.
+
+	* src/hal_diag.c:
+	Moved Z8530 definitions out to plf_z8530.h.
+	Added modifications for Control-C support - mostly removing some
+	defunct code.
+
+	* include/plf_z8530.h
+	Added this file to contain definitions and access macros to the
+	Z8530 DUART for use in the HAL.
+	
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h: Removed some
+	unnecessary defines.
+
+	* include/plf_intr.h:
+	* src/plf_misc.c: 
+	Added Control-C support.
+
+	* include/platform.inc: Some minor changes to diagnostic macros.
+
+1999-05-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_stub.c (hal_plf_init_serial): Tidied away some unused
+	code.
+
+	* src/platform.S:
+	Made use of ROMRAM startup option where relevant.
+	Modified code to be position independent since under ROMRAM
+	startup it is linked to run in RAM but must actually run in ROM
+	prior to the copy.
+	Added some delay loops to try and get the hardware to settle on
+	startup. Without these the machine sometimes wedges after
+	power-on.
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.ldi: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_romram.mlt: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_stubs.ldi: 
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_stubs.mlt:
+	Added these files to support the new startup types.
+	Note: at present the .mlt files do not match the .ldi files.
+
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h:
+	Added ROMRAM and STUBS startup options to CDL. Moved default ports
+	for DIAG and GDB to 0 at 38400 baud.
+	Added an ifdef to modify the configuration for STUBS startup.
+
+	* include/plf_stub.h: Removed spurious include.
+
+	* include/platform.inc:
+	Added version of INITIAL_SR for use with GDB stubs.
+	Added implementation of "lar" macro and converted the relevant
+	instances of "la" to use it.
+	Made use of ROMRAM startup option where relevant.
+	Implemented copy of ROM image to RAM and transfer of control to
+	it.
+	Tidied up trampoline copy and VSR table init in monitor init
+	macros.
+	Added code to generate messages to the GrammerEngine PromIce AI
+	interface during initialization.
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h: Move RTC setup here.
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	Imported whole directory tree into main trunk of repository.
+	
+1999-05-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_rom.ldi:
+	Moved RAM and ROM back to their correct addresses.
+
+	* include/pkgconf/hal_vr4300_vrc4373.h: 
+	* include/pkgconf/hal_mips_vr4300_vrc4373.h:
+	Renamed hal_vr4300_vrc4373.h to match file name synthesized by
+	pkgconf.tcl.
+
+	* src/hal_diag.c:
+	* src/plf_stub.c: 
+	Removed explicit include of vrc4372 pkgconf file.
+
+1999-05-06  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]
+	* include/pkgconf/hal_vr4300_vrc4373.h: Switched initial DIAG and
+	GDB baud rates to 38400.
+
+	* include/plf_stub.h:
+	* src/plf_stub.c:
+	Added hal_plf_stub_init() to initialize the virtual vector table
+	for thread-aware debugging.
+
+1999-05-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* include/platform.inc: Added code to plant interrupt VSR in table
+	when using PMON.
+
+1999-04-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_ram.ldi:
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_ram.mlt: 
+	Load address moved to 0x80100000, which is the cacheable area (kseg0).
+
+	* include/pkgconf/mlt_mips_vr4300_vrc4373_rom.ldi: For testing
+	purposes ROM loaded code is put at 0x80680000 and its working RAM
+	at 0x80600800. These will be moved back to the real addresses when
+	we can build real ROMs.
+	The corresponding .mlt file has NOT been changed.
+
+	* src/plf_stub.c (hal_plf_init_serial): Re-enabled initialization
+	of serial port.
+	Temporarily made calls to PMON close function unconditional.
+
+	* src/plf_misc.c (hal_platform_init): Added call to
+	patch_dbg_syscalls().
+
+	* src/platform.S: Lots of code, tables and definitions added to
+	initialize the MMU and memory/bus controllers.
+
+	* src/hal_diag.c: Added support for GDB protocol messages.
+
+	* include/platform.inc: Added hal_mmu_init and hal_memc_init
+	macros. Added code to initialize the VSR table in various
+	configurations.	
+
+1999-04-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* include/pkgconf/hal_vr4300_vrc4373.h: Default diagnostics on port B.
+
+	* src/hal_diag.c (hal_diag_init): Port initialization was incorrect.
+
+1999-04-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]
+	* include/platform.inc: Added some extra vsr table redirects for
+	most other exceptions while we are running under PMON.
+
+1999-04-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]		
+	* include/plf_stub.h: 
+	* src/plf_stub.c:
+	* src/PKGconf.mak (COMPILE): 
+	Files added to start work on GDB stub support.
+
+1999-04-22  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* src/hal_diag.c: 
+	* include/pkgconf/hal_vr4300_vrc4373.h: Add diag/gdb serial
+	port configury.
+
+1999-04-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]	
+	* include/platform.inc: Modified hal_intc_init to always enable
+	IPL0..2 bits in CP0 status register.
+
+1999-04-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[VR4300 branch]
+	* src/plf_misc.c: Added this file to contain hal_platform_init().
+
+	* src/pmon.S: Renamed pmon entry functions to avoid clashes with
+	the C library. Removed unused code.
+
+	* src/platform.S: Added this file. It contains an ISR springboard
+	routine to decode interrupts via the vrc4372, a breakpoint
+	springboard to allow breakpoints to continue being handled by
+	PMON, and board specific versions of the ISR tables.
+	[later] Fixed a bug in the ISR springboard, added a few comments
+	too.
+	
+	* src/hal_diag.c: Implemented direct-to-hardware diagnostic
+	output.
+
+	* src/PKGconf.mak (COMPILE): Added platform.S.
+	Added plf_misc.c.
+
+	* include/plf_intr.h: Added extensive support for vr4372 interrupt
+	controller.
+
+	* include/platform.inc: Added an initial status register value to
+	avoid upsetting PMON. Added plant of hal_breakpoint_springboard in
+	VSR table. Added some diagnostic code to wiggle a led.
+	Added an implementation of hal_intc_init. Changed initial status
+	register value. Moved VRC4372 register definitions here.
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

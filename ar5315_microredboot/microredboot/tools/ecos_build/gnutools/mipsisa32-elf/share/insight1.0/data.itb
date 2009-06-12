@@ -1,0 +1,48 @@
+# Data-type class implementations for GDBtk.
+# Copyright 1997, 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# ------------------------------------------------------------------
+#                             Stack
+# ------------------------------------------------------------------
+body Stack::constructor {} {
+  set _stack {}
+}
+
+body Stack::push {args} {
+  set _stack [concat $_stack $args]
+}
+
+body Stack::destructor {} {
+}
+
+body Stack::pop {} {
+  set thing [lindex $_stack end]
+  set _stack [lreplace $_stack end end]
+  return $thing
+}
+
+# ------------------------------------------------------------------
+#                             Queue
+# ------------------------------------------------------------------
+body Queue::constructor {} {
+}
+
+body Queue::destructor {} {
+}
+
+body Queue::pop {} {
+  set thing [lindex $_stack 0]
+  set _stack [lreplace $_stack 0 0]
+  return $thing
+}
+

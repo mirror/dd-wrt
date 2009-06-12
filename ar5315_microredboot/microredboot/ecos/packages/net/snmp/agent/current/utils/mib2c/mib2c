@@ -1,0 +1,310 @@
+#!/usr/bin/perl
+#!/usr/bin/perl -w
+
+#
+# Description: 
+#
+# This program, given an OID reference as an argument, creates some
+# template mib module files to be used with the ucd-snmp agent.  It is
+# far from perfect and will not generate working modules, but it
+# significantly shortens development time by outlining the basic
+# structure.
+#
+# Its up to you to verify what it does and change the default values
+# it returns.
+#
+
+use SNMP;
+use FileHandle;
+
+#use strict 'vars';
+$SNMP::save_descriptions=1;
+$SNMP::use_long_names=1;
+$SNMP::use_enums=1;
+SNMP::initMib();
+
+$configfile="mib2c.conf";
+$debug=0;
+$nostats = 0;
+
+sub usage {
+    print "$0 [-h] [-c configfile] [-f prefix] mibNode\n\n";
+    print "  -h\t\tThis message.\n\n";
+    print "  -c configfile\tSpecifies the configuration file to use\n\t\tthat dictates what the output of mib2c will look like.\n\n";
+    print "  -f prefix\tSpecifies the output prefix to use.  All code\n\t\twill be put into prefix.c and prefix.h\n\n";
+    print "  mibNode\tThe name of the top level mib node you want to\n\t\tgenerate code for.  By default, the code will be stored in\n\t\tmibNode.c and mibNode.h (use the -f flag to change this)\n\n";
+    print "  -d\t\tdebugging output (dont do it.  trust me.)\n\n";
+    print "  -s\t\tDon't display statistics at the end\n\n";
+    1;
+}	
+
+while($#ARGV >= 0) {
+    $_ = shift;
+    $configfile = shift if (/-c/);
+    $debug = 1 if (/-d/);
+    $nostats = 1 if (/-s/);
+    usage && exit(1) if (/-h/);
+    $outputName = shift if (/-f/);
+    $oid = $_ if (/^[^-]/);
+}
+ 
+read_config($configfile);
+#
+# internal conversion tables
+#
+
+%accessToUCD = qw(ReadOnly RONLY ReadWrite RWRITE 
+		  WriteOnly RWRITE Create RWRITE);
+
+#  The lengths of the defined 'variableN' structures
+@varLengths = (2,4,7,8,13);
+
+if (!defined($oid)) {
+    print STDERR "You didn\'t specify a mib oid to convert!\n";
+    usage();
+    exit(1);
+}
+
+$mib = $SNMP::MIB{$oid};
+$_ = $commaoid = $fulloid = $mib->{'objectID'};
+if (!defined ($fulloid)) {
+    print STDERR "Couldn\'t find mib reference: $oid\n";
+    exit(1);
+}
+s/[^.]//g;
+$commaoid =~ s/\./,/g;
+$commaoid =~ s/^,//g;
+
+$outputName = $mib->{'label'} if (!defined($outputName));
+$OUTPUTNAME = uc($outputName);
+$vroutine="$outputName";
+print "outputting to $outputName.c and $outputName.h ...\n";
+
+#============================================
+#
+#   Walk the MIB tree, and construct strings
+#     holding the various fragments of code needed.
+#
+#   'loadMib' returns the length of the longest OID suffix
+#     encountered.
+#
+#   The variables constructed and used are:
+#
+#   (in the header file)
+#	functionInfo :	A list of definitions for the table-handling functions,
+#			and routines for SETtable variables.
+#			(The main scalar handling routine is handled implicitly)
+#
+#   (in the code file)
+#	structinfo :	The contents of the variableN structure listing
+#			the variables handled, including type, access level,
+#			OID suffix and 'magic number'
+#
+#	caseStatements:	A hash array (indexed by variable routine name)
+#			containing the body of the switch statement
+#			used for returning the appropriate values.
+#			At a minimum, this consists of the various 'case' labels
+#			If full type information is available (from mib2c.conf)
+#			then this will also include a default initialiser,
+#			and setting of a 'write_method' (if appropriate).
+#
+#	writeFuncs:	A list of function skeletons for setting variables
+#			(for variables with suitable access levels).
+#			Note that this list will not include functions
+#			for variables which don't provide type information
+#			in the mib2c.conf file (even if such variables are
+#			defined as writeable in the variableN structure).
+#
+#============================================
+$count = 0;
+$depth = loadMib($mib,0)-1;
+
+#  Determine which 'variableN' structure is needed
+for($varlen = 0; $varlen <= $#varLengths; $varlen++) {
+  last if ($depth <= $varLengths[$varlen]);
+}
+$varlen = $varLengths[$varlen];
+
+#============================================
+#
+#	Table-handling routines.
+#
+#============================================
+foreach $vtable (@table_list) {
+    foreach $ptable (@processtable) {
+	$variables{$ptable}{'processed'} .= 
+	    (eval "\"$variables{$ptable}{'code'}\"") . "\n\n";
+    }
+    $var_routines .= 
+	(eval "\"$variables{'code-var_table'}{'code'}\"") . "\n\n";
+}
+
+#============================================
+#
+#   Output the header file
+#
+#============================================
+open(DOTH,">$outputName.h");
+print DOTH (eval "\"$variables{'code-dot-h'}{'code'}\"") . "\n";
+close(DOTH);
+
+#============================================
+#
+#   Output the code file:
+#	Initialisation and main variable routine.
+#
+#============================================
+
+open(DOTC,">$outputName.c");
+print DOTC (eval "\"$variables{'code-main-part'}{'code'}\"") . "\n\n";;
+close(DOTC);
+
+#============================================
+#
+# Everyone loves statistics.
+#
+#============================================
+print "  depth: $depth\n";
+print "  Number of Lines Created:\n";
+system("wc -l $outputName.c $outputName.h");
+print "Done.\n";
+
+#============================================
+#
+#  loadMib:
+#	Recursive routine to walk the mib,
+#	and construct the various code fragment strings.
+#
+#============================================
+sub loadMib {
+    my $mib = shift;
+    my $i;
+    my $depth = shift;
+    $depth = $depth + 1;
+    my $name = $mib->{'label'};
+    my $NAME = uc($name);
+    print "doing $mib->{label} : $mib->{objectID}\n" if $debug;
+    if (defined($mib->{'access'}) && 
+	$mib->{'access'} =~ /ReadOnly|ReadWrite|WriteOnly|Create|NoAccess/) {
+	$count = $count + 1;
+	$subid = $mib->{'objectID'};
+	$subid =~ s/$fulloid\.//;
+	$subid =~ s/\./,/g;
+	if (!defined($variables{$mib->{'type'}})  && !defined($mib->{'indexes'})) {
+	    print STDERR "unknown type:  $mib->{type} for $mib->{label} $mib->{'access'}\n";
+	    print STDERR "unknown type:  no information generated for $mib->{label}\n";
+	} else {
+	    foreach $i (@process) {
+		next if (defined($variables{$i}{'skipif'}) &&
+			 eval $variables{$i}{'skipif'});
+		my $result = (eval "\"$variables{$i}{'code'}\"");
+		$variables{$i}{'processed'} .= "$result\n";
+		$variables{$vroutine}{$i}{'processed'} .= "$result\n";
+	    }
+	}
+	if (defined($mib->{'indexes'})) {
+	    print "indexes: ", join(", ",@{$mib->{'indexes'}}),"\n" if ($debug);
+	    $variables{$vroutine}{'indexes'} = $mib->{'indexes'};
+	    foreach $i (@{$mib->{'indexes'}}) {
+		$variables{$vroutine}{$i}{'isanindex'} = 1;
+	    }
+	}
+    }
+    my $children = $$mib{'children'}; 
+    my $i;
+    my $newdepth = $depth;
+    foreach $i (@{$children}) {
+	if ( $name =~ /Table$/ ) {
+	    $vroutine="$name";
+	    push @table_list, $name;
+	    $newdepth = max(loadMib($i, $depth), $newdepth);
+	    $vroutine="$outputName";
+	}
+	else {
+	    $newdepth = max(loadMib($i, $depth), $newdepth);
+	}
+    }
+    return $newdepth;
+}
+
+sub max {
+    my $x = shift;
+    my $y = shift;
+    return ($x > $y) ? $x : $y;
+}
+
+
+sub read_config() {
+    my $configfile = shift;
+    my ($type, $lasttoken);
+    my $fh = new FileHandle;
+    if ( $fh->open("<$configfile") ) {
+	while(<$fh>) {
+	    next if (/^\s*\#/ || /^\s*$/);
+	    if (/^\s*type:\s*(.*)/) {
+		if (defined($type) && defined($lasttoken) && 
+		    defined ($variables{$type}{$lasttoken})) {
+		    chomp($variables{$type}{$lasttoken});
+		}
+		$type = $1;
+		chomp($type);
+	    } elsif (/include:\s*(.*)/) {
+		read_config($1);
+	    } elsif (/process:\s*(.*)/) {
+		push (@process, $1);
+	    } elsif (/processtable:\s*(.*)/) {
+		push (@processtable, $1);
+	    } elsif (/delete:\s*(.*)/) {
+		delete($variables{$type}{$1});
+	    } elsif (/copy:\s*(.*)/) {
+		my $item;
+		chomp($1);
+		foreach $item (keys(%{$variables{$1}})) {
+		    $variables{$type}{$item} = $variables{$1}{$item};
+		}
+	    } else {
+		if (/\s*([^:]*):(\s*.*)/) {
+		    if (!defined($variables{$type}{$1})) {
+			if (defined($type) && defined($lasttoken) && 
+			    defined ($variables{$type}{$lasttoken})) {
+			    chomp($variables{$type}{$lasttoken});
+			}
+			$variables{$type}{$1} = $2;
+			$lasttoken = $1;
+			$variables{$type}{$1} =~ s/^\t+//;
+		    } else {
+			# duplicate entry:  tack it on.
+			my ($x, $y) = ($1, $2);
+			$y =~ s/^\t+//;
+			$variables{$type}{$x} .= "\n" . $y;
+		    }
+		} else {
+		    # continuation line, it started with spaces or a +
+		    s/^\s*//;
+		    s/^\+//; 
+		    $variables{$type}{$lasttoken} .= "\n" . $_;
+		    chomp($variables{$type}{$lasttoken});
+		}
+	    }
+	}
+	$fh->close();
+    } else {
+	warn "Config file ($configfile) not found.\n";
+    }
+}
+
+sub evalstr {
+    my $str = shift;
+#    if ($str !~ /^\"/) {
+	$str = "\"$str\"";  # surround by quotes.
+#    }
+    eval ($str);            # should return a string, with variables expanded
+}
+
+sub evalrstr {
+    my $rstr = shift;
+#    if ($str !~ /^\"/) {
+#	$$rstr = "\"" . $$rstr . "\"";  # surround by quotes.
+#    }
+    eval ("\"$$rstr\"");            # should return a string, with variables expanded
+}

@@ -1,0 +1,448 @@
+* Support for generic IDE disks using PIO, by Iztok Zupet.
+* Support for SPI on the eb55 by Savin Zlobec.
+* Added support for the Atmel JTST board by Andrea Michelotti.
+* Added support for the AIM711 contributed by Roland Cassebohm.
+* Added the lwIP TCP/IP stack. 
+* Added PPP network support. Contributed by Nick Garnett of eCosCentric.
+* Added support for network under vmWare using the LANCE chipset. Contributed
+  by Iztok Zupet. 
+* Added support for FAT12/16 filesystems. Contributed by
+  Savin Zlobec of Elatec Engineering.
+* Support for Spanning Tree Protocol in the old OpenBSD stack
+* Add support for GPS-4020 (embedded ARM7 GPS receiver/controller)
+* Basic IPSEC and libipsec support. 
+* Flash driver for SST 39VFXXX devices
+* Wall clock driver for Synthetic target.
+* New port to TAMS MOAB (PowerPC 405GPr) development board
+* FLASH layer can now support NAND devices
+* RedBoot 'fconfig' data can now be stored in either FLASH or EEPROM
+* VNC server (remote access graphic system), contributed by
+  Chris Garry  <cgarry@sweeneydesign.co.uk>
+* New port to Analogue & Micro Rattler (Motorola MPC8250)
+* Improved support for ethernet PHY devices.
+* Improved variant support for Motorola Power-QUICC2 systems.
+* Vastly improved networking speeds in RedBoot stack.
+* New port for Motorola PrPMC1100 (Intel XScale IXC1100)
+* SNTP client supports IPv6 multicast packets from time servers.
+* DNS client support looking up IPv6 addresses and reverse lookups
+* FTP client is IPv6 aware.
+* httpd daemon is IPv6 aware.
+* TFTP client and TFTP server now work with both IPv4 and IPv6.
+* New port for Analogue & Micro Adder-II (PPC 852T) boards
+* New ports for Intel XScale IXP425 boards (IXDP425 and Generic Residential
+  Gateway).
+* Simple Network Time Protocol (SNTP) client contributed by Andrew Lunn.
+* Added port for NMI uE250 (ARM Xscale PXA250) platform, contributed 
+  by Mind, NV.
+
+*********** eCos 2.0 release ************
+
+* SNMP code now works with the FreeBSD stack
+* Port added for IDT MIPS IDT79RC32334 reference platform, including Flash,
+  ethernet, and serial drivers as well as RedBoot support. Contributed by
+  Tim Michals working for IDT.
+* Port added for Texas Instruments ARM9 OMAP Innovator board. Contributed by
+  Patrick Doyle of Delphi Communication Systems.
+* Add XScale PXA2x0 support, with Microplex Printer control 5.0 (mpc50)
+  target incorporating flash support.
+* Add support for Cogent CSB281 - PowerPC 8245 board.
+* Add support for PowerPC 8260 based systems - one from Motorola (VADS)
+  and another from Delphi Communications.  Contributed by Delphi.
+* Add support for Analogue & Micro Adder (PowerPC 850) boards
+* Update MN10300 ASB2303 HAL to support RedBoot
+* New package for application level profiling (histogram only)
+* Support for NPWR Linux Engine (Xscale IOP310) from Team ASA
+* Support for Allied Telesyn TS1000 (PowerPC 855T based design)
+* Yoshinori Sato has contributed a watchdog driver for the Hitachi H8/300H.
+* Add AT91 watchdog driver. Contributed by Thomas Koeller of Basler Vision
+  Technologies.
+* SMP support added for x86.
+* Ported new networking stack from FreeBSD to eCos. Includes IPv6 support.
+* Added generic power management support, plus platform support for the iPAQ.
+* Ported Microwindows windowing graphics system. This port is still alpha.
+* Added hooks in common ethernet driver for lwIP lightweight IP stack.
+* Added RedBoot only ports to Samsung Calmrisc16 and Calmrisc32 architectures.
+  Includes board ports to Calm16 Core and Calm32 Core eval boards. 
+* Added Samsung ARM KS32c5000 SNDS100 eval board port including RedBoot and
+  ethernet support. Contributed by Grant Edwards of Comtrol.
+* eCos+RedBoot port to the Altera ARM9 Excalibur board. Includes FLASH driver.
+* eCos+RedBoot port to Hitachi SH3-based HS7729PCI board, with SH 7729 CPU.
+  Includes FLASH, ethernet, watchdog and wallclock drivers. The ethernet
+  driver includes generic support for the VIA Rhine chipset.
+* eCos+RedBoot port to Hitachi SH3-based Solution Engine SE77x9 board.
+  Includes FLASH, ethernet, serial and watchdog drivers.
+* eCos+RedBoot port to Hitachi SH4-based Solution Engine SE7751 board.
+  Includes FLASH, ethernet, serial and watchdog drivers.
+* Support for the SH2 core, and SH2 on-chip etherc added.
+* Port to Matsushita AM33-2 based ASB2305 board added, including serial,
+  ethernet and FLASH support.
+* Ethernet, serial and USB drivers for NEC MIPS uPD985xx chip family added.
+* RedBoot-only port to MIPS Malta evaluation board (Mips32 4Kc and Mips64 5Kc
+  cores) added, including FLASH and ethernet support.
+* Port to NEC MIPS VRC4375-based 'Blue Nile' evaluation board. Includes
+  FLASH, serial and ethernet drivers (the latter being new support for the
+  i21143 chipset).
+* Ethernet driver for Intel i82544 Gigabit ethernet added.
+* Support for Samsung ARM KS32C5000 on-core ethernet broken out into "generic"
+  driver.
+* New architectural port to Fujitsu FR-V added. Initial board port to FR-V 400
+  development board, including RedBoot support and ethernet and FLASH drivers.
+  Currently pre-alpha quality only.
+* Support added to port remote file operations using the remote protocol for
+  newlib applications run under RedBoot.
+* eCos+RedBoot port to Intel XScale IQ80321 port added, including FLASH,
+  ethernet, and serial drivers.  
+* ARM Integrator port rewritten. Now includes ARM9 support.
+* RedBoot+eCos port to the Agilent ARM9-based AAED2000 evaluation board.
+  Includes FLASH, ethernet, keyboard and touchscreen drivers.
+* eCos relicensed to be under a GPL+exception licence, instead of the RHEPL.
+* All eCos documentation now available in DocBook format, licensed under the
+  OPL.
+* CYGPKG_IO_ETH_DRIVERS now puts its headers in install/include/cyg/io/eth
+* All platforms are now expected to be using Virtual Vectors. The
+  option CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED has been
+  removed so recently built applications will fail to run on
+  boards that have old-style GDB stubs without VV support.
+* Added ELF and wider decompression support to RedBoot.
+* Added support for SuperH SH2 CPUs
+* Added port for Motorola MCF5272c3 ColdFire evaulation board from 
+  Wade Jensen <Wade_Jensen@inter-tel.com>.
+* Added ports to Wuerz Elektronik and Axiom Manufacturing MPC555 based eval
+  boards. Contributed by Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+  from Katholieke Universiteit Leuven. Includes FLASH, serial and wallclock
+  drivers.
+* Added H8/300 port contributed by Yoshinori Sato  <qzb04471@nifty.ne.jp>
+  Initially for Akizuki H8/3068 board with ethernet and serial driver support,
+  and H8/300H simulator.
+* Added RedBoot support for remote file I/O operations using the GDB remote
+  protocol.
+* Added SPARC_LEON port contributed by Jiri Gaisler <jiri@gaisler.com> -
+  see <http://www.gaisler.com> for information about the TSIM simulator
+  and Leon project per se.
+* Added port to CerfCube and CerfPDA, contributed by the manufacturer,
+  Intrinsyc. Includes ethernet drivers.
+* Added alpha of JFFS2 journalling flash file system v2 support.
+* Add synthetic target synthetic flash driver, contributed by Andrew Lunn.
+* CqREEK SH7750 FLASH driver added, contributed by Koichi Nagashima
+* EDB7xxx ethernet driver rewritten to be a generic Cirrus Logic CS8900A
+  package.
+* Incorporated FTP client code (library and test) from Andrew Lunn.
+* Incorporated ARM Development board aka INTEGRATOR port from Philippe Robin
+  at ARM. Includes FLASH, ethernet and serial drivers, along with RedBoot
+  support.
+* Added ARM E7T (AEB-2) serial device drivers contributed by 
+  Lars Lindqvist at Combitech <Lars.Lindqvist@combitechsystems.com>
+* Flash driver added for the SH EDK7708 platform.
+* Added rudimentary ELF loader, including support for dynamic objects under
+  services/loader.
+* DNS lookup support added. Contributed by Andrew Lunn <andrew.lunn@ascom.ch>
+* Cogent [Cirrus Logic] EDB7312 platform added.
+* Dallas wallclock driver implemented for x86 PC.
+* AMD PCNet ethernet driver added.
+* Generic SMP support added.
+* RedBoot support added to AM33-STB port.
+* Add Atmel AT91/EB40 port, including flash and serial drivers.
+* Added HAL port to SEGA Dreamcast.
+  Contributed by Takeshi Yaegashi <t@keshi.org>
+* Added port to Bright Star Engineering SA11x0 based Flexanet handheld board,
+  including flash and ethernet support.
+  Contributed by Jordi Colomer <jco@ict.es>
+* Added support for loading files from disk. Currently supports IDE drives
+  with Linux EXT2 filesystems.
+* Added wallclock driver for DS12887
+* AM33 STB flash driver added.
+* C library now supports multiple locales with multibyte character set support,
+  and the possibility of plugging in more. Current locales supported
+  are now C, C-SJIS, C-EUCJP and C-JIS.
+* Major reorganization of x86 HAL. Support for RedBoot and PCI added, based on
+  Fabrice Gautier's patches. i82559 ethernet driver added (Intel Etherexpress).
+  Synthetic HAL redesigned and moved to separate hal/synth hierarchy.
+* Added ethernet drivers for SMSC lan91cxx 
+* Added driver for Motorola PowerPC 8xxT "Fast Ethernet Controller".
+* Added support for Analogue & Micro "viper" - PowerPC 860T based
+  board.  Currently this is only alpha since full test farm testing
+  has not yet been started.  Includes RedBoot, Flash and FEC ethernet.
+* RedBoot and eCos ported to Bright Star Engineering nanoEngine
+  StrongARM SA1110 board, including Flash, watchdog, serial, ethernet
+  drivers and PCI support.
+* Added support for ARM Evaluator7T (e7t) board.
+* Ported to Compaq StrongARM SA1110 PocketPC (iPAQ), including keypad,
+  touch screen, watchdog, FLASH, PCMCIA and Compact Flash drivers.
+  Also includes RedBoot, with support for booting ARM Linux.
+  Derived from an initial port by Richard Panton of 3G Lab.
+  http://www.3glab.org/
+* Added flash verification checksums to RedBoot.
+* Added watchdog driver for Intel SA11x0 StrongARM.
+* Added generic Intel FlashFile 28Fxxx flash driver.
+* Added generic Intel StrataFLASH driver.
+* Support flash and ROMRAM startup for V850 HAL and Cosmo CEB board; also
+  adding support for the NEC V850/SB1 CPU variant. Also support for
+  thread debugging via ICE and gdbserv.
+* Added support for MIPS32/64 MIPS variants and Atlas platform, using both
+  the MIPS32 4Kc and MIPS64 5Kc processor modules. Includes PCI, serial,
+  ethernet and flash drivers. This is a RedBoot-only port at this time, not
+  full eCos.
+* Added simple ROM based file system support, contributed by 
+  Richard Panton of 3G Lab.
+* Added support for MIPS PMC-Sierra RM7000 variant and Ocelot board, including
+  PCI, ethernet and FLASH support.
+* Added gzip/zlib decompression support to RedBoot.
+* Added zlib decompression library.
+* GDB stubs no longer reboot the board in response to a 'k' packet. Instead
+  from within GDB a "maintenance packet r" must be sent, followed by a
+  "detach". Then you can reconnect to the board.a
+* Added generic AMD AM29xxxxx flash driver based on MBX driver, and make
+  the MBX use it.
+* Added RedBoot support to PID target.
+* Added Atmel AT29C040 flash driver.
+* Added Intel XScale support with the IQ80310 Software Development and
+  Processor Evaluation Kit. Support includes flash and ethernet drivers,
+  and RedBoot support.
+* Added support for USB slave devices. This includes generic USB slave
+  support, a device driver for the SA11x0 on-chip USB device, and an
+  additional support package for developing USB-ethernet and similar
+  peripherals.
+* Added POSIX cancellation points for the sigwait family of functions,
+  pthread_join, pthread_cond_wait, pthread_cond_timedwait, sleep and
+  nanosleep
+* Virtual vectors initialization can now be configured with a finer 
+  granularity. Diagnostic output should also appear on the same channel
+  (possibly ethernet) as the application was launched from.
+* Added cyg_pci_find_matching() to PCI library API to allow more generalized
+  matching on device properties.
+* ARM EBSA285 now configured to use virtual vectors all the time. Users with
+  old GDB stub ROM images should upgrade to newer GDB stub ROM images, or
+  better still to RedBoot.
+* Stack usage measurement has been added, with the functions
+  pthread_measure_stack_usage() in the POSIX thread API and
+  cyg_thread_measure_stack_usage() in the kernel C API.
+* Thread stack checking support added. See CYGFUN_KERNEL_THREADS_STACK_CHECKING
+  in the kernel CDL for information.
+* Add syscall support to RedBoot for compatibility with newlib-based BSPs
+* Bridge support added to the PCI library. Use cyg_pci_configure_bus() to
+  configure all busses.
+* Added a port to the Toshiba MIPS TX49 chip, with the REF4955 reference
+  platform. This includes serial device driver and wallclock device driver
+  support.
+* PowerPC 40x variant support added.
+* Added SH4 support. Split SH architecture HAL into variants in the process.
+* Added SH4/CQ7750 platform support [still untested]
+* Port to Intel SA1100 Multimedia evalulation board added, including serial
+  device driver, FLASH driver and RedBoot support 
+* FLASH driver added for PowerPC/MBX
+* sigsetjmp() and siglongjmp() added
+* A choice of getcwd() implementations have been added
+* SH serial driver cleanup. SCIF driver added. SCI and SCIF drivers are
+  now separate packages. SCIF driver uses full FIFO and can utilize
+  DMA for transmit operations.
+* Move logical ethernet "driver" into io/eth where the interface can be shared
+  between multiple implementations, e.g. BSD TCP/IP and Red Boot's TCP/IP
+  stacks.
+* RedBoot - the Red Hat Bootstrap ROM monitor has been added, initially
+  supporting ARM-EDB7xxx, ARM-EBSA285, and ARM-Assabet boards. Provides
+  serial and ethernet GDB debugging support, flash image management and flash
+  booting, BOOTP/DHCP and TFTP boot support and a CLI interface.
+* Added PCMCIA and Compact Flash support, including drivers for the ARM-Assabet
+  board.
+* Added generic FLASH memory support
+* Added flash memory support for ARM-EBSA285 and ARM-EDB7xxx boards
+* Added Compact Flash Ethernet driver
+* Hitachi SH7707a variant support added.
+* Support added for both software and hardware flow control with an initial
+  version of the latter available only for the ARM PID board at present.
+* Loopback serial device driver added
+* POSIX termios support added for EL/IX level 1 compatibility
+* Improved dynamic memory management support in the memory allocator
+  package. Existing dynamic memory support in the kernel (fixed and variable
+  block allocators) and in libc (malloc, etc.) has been moved to this
+  package, located at services/memalloc/common. It is now possible to support
+  memory pools occupying all of remaining memory (as determined by the MLT).
+  New memory allocators can be "plugged in", and an example of Doug Lea's
+  malloc (dlmalloc) has been included.
+* Plug-in filesystem support added, with a POSIX 1003.1 compatible API, found
+  in the io/fileio package, and integrated with the C library.
+* An initial example filesystem implementation is provided in fs/ram. This
+  is a RAM filesystem that attempts to both be a useful tool in its own
+  right and an example of how to write a filesystem that plugs into the
+  fileio infrastructure.
+  The source of the filesystem is in fs/ram/VERSION/src/ramfs.c and is
+  intended to be largely self documenting. The General Description at
+  the beginning of the file gives an overview of the structure of the
+  system, and comments within the code explain specific points. This
+  code should be read in conjunction with the description of the fileio
+  infrastructure.
+* Support added for POSIX 1003.1 threads, mutexes, semaphores, message queues,
+  condition variables, clocks, timers and real-time signals in the POSIX
+  compatibility package (part of the EL/IX compatibility initiative) found at
+  compat/posix.
+* Kernel enhanced with Asynchronous Service Routines (ASRs) which are routines
+  called back at the point a thread is scheduled.
+* Added (configurably) priority ceilings for kernel mutexes
+* Support sorted thread queues in kernel, rather than LIFO, controlled by the
+  CYGIMP_KERNEL_SCHED_SORTED_QUEUES option.
+* The Kernel C API functions cyg_semaphore_wait() and cyg_cond_wait() now
+  return booleans to indicate if the wait failed.
+* Added enhanced form of kernel message queue which is more flexible at runtime
+  than mboxes - available in <cyg/kernel/mqueue.hxx>
+* Add a generic interface in <cyg/hal/hal_tables.h> to allow tables of
+  data, particularly initialization data, to be included in an application
+  image. This replaces the previous __DEVTAB__ and __NETDEVTAB__ references
+  in linker scripts.
+* Most standard top-level header files now controlled by the "isoinfra"
+  package
+* C library package split into separate packages on functional boundaries:
+  i18n, setjmp, signals, startup, stdio, stdlib, time
+* Most targets now implement a standard form of "virtual vectors" - a
+  mechanism to allow enhanced co-operation between ROM monitors and running
+  applications. This allows the application to leave to the ROM things that
+  the ROM supports rather than duplicating, including debug channels that may
+  be via serial or ethernet. To take advantage of this, new GDB stub
+  images/CygMon images should be programmed onto boards, although old images
+  will continue to work - they will just not be able to use the new facilities.
+* DHCP support has been added to the TCP/IP support, in addition to the
+  existing BOOTP support
+* CDL now supports type bool and booldata for interfaces
+* CDL now exports extra macros in header files, to indicate package version
+  numbers
+* A port of the University of California at Davis (UCD) SNMP stack has been
+  added
+* Hitachi SH7709A variant support added
+* NEC V85x architecture support added
+* NEC Cosmo CEB-V850/SA1 evaluation board platform HAL added
+* Serial device drivers added for systems based on NEC V850 SA1 (70F3017)
+  or SB1 (70F3033) processors
+* Hitachi SH3 CqREEK (cq7708) platform HAL support added
+  Contributed by Haruki Kashiwaya
+* Watchdog reworked much like wallclock.
+  Common code and API in io/watchdog, simpler (smaller) low-level drivers in
+  devs/watchdog/<arch>.
+* IO serial driver
+  The common serial driver has been extended with a configurable option for
+  a non-blocking read/write mode. It has also been given some new callbacks
+  which allow low-level drivers to transfer data in blocks instead of as
+  single characters.
+* SH HAL
+  Now provides ROMRAM startup type, copying code and data to RAM before
+  executing, improving performance at cost of memory.
+* IO serial drivers reworked by separating into distinct platform
+  packages, making it simpler to implement new drivers.
+* WallClock reworked, making it simpler to implement new drivers.
+  New drivers
+  o SH3 RTC module
+
+-------- eCos 1.3.1 public net release:
+
+* New architectures and variants
+  o ARM Thumb
+  o ARM9
+  o Hitachi SH3
+  o Cirrus Logic CL-PS7111, EP72xx
+  o Intel StrongARM
+  o Matsushita AM33
+  o NEC MIPS VR4300
+
+* New platforms
+  o ARM AEB-1 rev C
+  o ARM PID support extended: ARM9, Thumb and big-endian
+  o Cirrus Logic EDB7xxx
+  o Cogent CMA222 and CMA230 ARM boards. (CMA222 contributed by Mark Salter)
+  o Hitachi EDK7708
+  o Intel x86 PC (base port contributed by Patrick O'Grady)
+  o Intel EBSA285
+  o Matsushita STB
+  o Motorola MBX evaluation board
+  o NEC VRC4373
+
+* New hosts
+  o Windows 2000 host support (beta)
+  o Red Hat Linux 6.x (should work on other distributions, but only
+    Red Hat Linux 6.x has been used for testing).
+
+* Configuration system revised
+  o Tools based on GPL'd configuration library (only tested on
+    Windows and Red Hat Linux 6.x)
+  o Tools available for both Windows (graphical) and Linux (CLI).
+  o Target side configuration much more flexible now, even though
+    existing configuration data has not yet been changed to take full
+    advantage of the new features.
+
+* TCP/IP stack and drivers [distributed in separate package]
+  o OpenBSD based, supporting UDP, TCP and ICMP.
+  o Motorola MBX (quicc) driver.
+  o Cirrus Logic EDB7xxx driver.
+
+* PCI bus library
+  o Simple API for configuring PCI resources.
+  o Intel EBSA285 HAL implementation.
+  o NEC VRC4373 HAL implementation.
+
+* New watchdog drivers
+  o ARM AEB-1
+  o Hitachi EDK7708
+  o Intel EBSA285
+
+* Debugging
+  o Stack monitoring
+    The file <cyg/kernel/test/stackmon.h> defines some functions
+    that can be used to profile stack usage.
+
+* API changes
+  o KAPI
+    include/kapi.h (cyg_thread_delete): is now a boolean function to
+    indicate success.  Failure is when the thread needs to run in
+    order to become killed.
+
+* HAL changes
+  o i386/linux
+    The eCos idle loop will not load the host system anymore (except
+    in special configurations, see linux_misc.c).
+  o MIPS
+    Split into arch/variant/platform hierarchy.
+  o MN10300
+    Split into arch/variant/platform hierarchy.
+  o PowerPC
+    Split into arch/variant/platform hierarchy.
+    Major revamp of exception handling - _not_ backwards compatible
+    (see vectors.S for the reasoning behind the change).
+  o SPARClite
+    Where supported by the targetted platform, it is now possible to
+    use Multiple Vector Trapping (MVT).
+  o ARM
+    The ARM Multi-ICE JTAG debugging interface is now supported on the
+    relevant platforms. eCos has also been extended to provide thread
+    debugging when debugging via Multi-ICE.
+
+* CygMon
+  o Integration of CygMon ROM monitor into eCos by porting it on top
+    of the eCos HAL
+
+--------- eCos 1.2.1 public net release:
+
+* Architectures and variants
+  o ARM7TDMI
+  o Fujitsu SPARClite
+  o Intel x86 [incomplete, unsupported]
+  o Matsushita MN10300
+  o Motorola PowerPC
+  o Sharp LH77790 (ARM7DI core)
+  o Toshiba TX39 (MIPS R3900 derivative)
+
+* Platforms
+  o ARM PID7T board
+  o ARM AEB-1 board (rev B)
+  o Cogent CMA287-23 (MPC823), CMA287-50 (MPC850), CMA286-60 (MPC860)
+  o Fujitsu MB8683x boards
+  o Linux/x86 Synthetic Target
+  o Matsushita standard evaluation board
+  o Matsushita standard evaluation board simulator
+  o Motorola FADS board [unsupported] (contributed by Kevin Hester)
+  o PSIM - PowerPC architectural simulator
+  o Toshiba JMR3904 evaluation board
+  o Toshiba JMR3904 evaluation board simulator
+  o SIS - SPARClite simulator [unsupported]
+
+* Hosts
+  o Redhat Linux 4.2 and later
+  o Solaris 2.5.1 and later
+  o Windows NT 4.0SP3 and later
+  o Windows 95/98 (Beta)

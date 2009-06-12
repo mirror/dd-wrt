@@ -1,0 +1,235 @@
+				TODO List
+				---------
+
+Minor
+-----
+
+1) savefile support. Add option handling to the remaining savefile
+   commands, even if no options are currently defined.
+
+2) remember unrecognised options so that they can be written back
+   when the savefile is regenerated. Perhaps add option details
+   to the header?
+
+3) allow re-parenting below "". Make the orphans container disabled? 
+
+4) get limbo working
+
+5) make cdl_interfaces into containers? How about cdl_options as well,
+   to avoid reparenting problems?
+
+   cdl_interfaces as containers is actually a problem because interfaces
+   are part of the core, and hence do not know about the existence of
+   options and components.
+
+6) allow components and options to be used interchangeably in savefiles. 
+
+7) ecosconfig, create a paths file with details of the source tree
+   location etc? How about reporting the paths?
+
+   >     Huge> How about: put information about the source tree into the savefile BUT you
+   >     Huge> can put
+   >     Huge> 	ecosconfig --srcdir=/home/hmt/work/ecc/net/ecc/ecc
+   >     Huge> and it'll say "Oi!  You've changed the repository!  Override [y/n]?"
+   >     Huge> That lets you move them 'round.
+   > 
+   > That is a possibility, but I am reluctant to add any interactive
+   > facilities to ecosconfig just yet
+
+   OK, instead:
+	% ecosconfig --srcdir=/home/hmt/work/ecc/net/ecc/
+        ecosconfig: Oi!  You've changed the repository!  Quitting.
+	ecosconfig: [Hint: Use --new-srcdir to override.]
+	% ecosconfig --new-srcdir=/home/hmt/work/ecc/net/ecc/
+	ecosconfig: new repository selected: /home/hmt/work/ecc/net/ecc/
+	% _
+   There's interactive and interactive... ;-)
+   [*enable anyone? ;-)]
+
+8) savefiles, if an interface has no implementors then say so.
+
+9) CDL filenames in the savefile? This might be useful for people
+   wanting to look at the CDL sources, although all the interesting
+   information should already be in the savefile.
+
+10) what happens if a source file is listed for two separate options?
+
+11) define -format="\\\"%s\\\"" XYZ
+    This seems to do the wrong thing. Consider:
+
+    cdl_option CYGNUM_LIBC_MAX_LOCALE_NAME_SIZE {
+        define -format="\\\"%s\\\"" XYZ
+        ...
+    }
+
+    The output is:
+
+    #define CYGNUM_LIBC_MAX_LOCALE_NAME_SIZE "16"
+    #define XYZ_16
+
+    BLV - may have been fixed on Feb 14th
+
+12) define -format="\"%s\"" XYZ
+
+    This gives an internal error. Should it?
+
+13) make-object, check for priorities less than 200. It is not
+    sensible to build an object after the library has been
+    constructed. Also check that the target is a .o file.
+
+14) exported header files. Suppress obvious problems such as
+    CVS subdirectories and files ending with ~. See pkgconf::locate_files. 
+
+15) diagnostics for inappropriate templates, e.g. the stubs template on simulators. 
+
+16) custom build steps and generating exported header files.
+
+    Priorities of custom build steps that should go before header file
+    generation?
+    Use of include_files property.
+
+17) what happens when several packages specify the same define_header?
+
+18) evalexception conflicts. What should happen if the node is disabled or inactive? 
+    Especially if it is the default_value expression that is causing the problem.
+
+19) add diagnostic callback support to the inference engine so that I
+    can figure out what is going on.
+
+20) make version comparison completely case insensitive, to avoid
+    problems on some file systems.
+
+21) configure magic to cope with Debian TCL organization.
+    See http://sourceware.cygnus.com/ml/ecos-discuss/2000-06/msg00094.html
+
+22) add version number #define's to pkgconf/system.h, to allow
+    application code to adapt to different versions of a package.
+    http://sourceware.cygnus.com/ml/ecos-discuss/2000-06/msg00140.html
+
+Intermediate
+------------
+
+1) integrate the makefile generation support into libcdl.
+
+2) implement the Tcl interface to the CDL data, especially tcl_get
+   and the appropriate Tcl variables.
+
+3) full definition of custom build steps and the build procedure
+   generally, including working out what should happen for
+   compiler flags.
+
+   Dependency analysis in custom build steps.
+
+4) get safe interpreters working, and make sure that only safe
+   file I/O operations are permitted.
+
+5) Improve diagnostic messages, including line numbers.
+
+6) extend the inference engine to support more operators.
+
+7) support disabled conflicts.
+
+8) full implementation of interfaces, including automatic creation.
+
+9) text aliases for legal_values lists?
+
+10) savefiles do not list `implements' properties
+
+11) ecosconfig verbosity. Add --silent and --verbose modes?
+
+12) header file dependencies. From Jesper and others:
+
+    One alternative way of handling this is the way it's done in Linux
+    (which happened around 2.2.?, I think, and made for some
+    phenomenal build speedups):
+
+     grep each source file foo.c for use of CYGxxx_ macros. Cat this list
+     into .foo.c.config_deps (or similar) with proper mangling so it
+     becomes a GCC dependency file (for foo.c) on "option files".
+
+     Each option, opt_name, thus adds a dependency on
+     $build/config_deps/CYGxxx_opt_name. Whenever changing the config,
+     touch the relevant config_deps/ files.
+
+     In short: when making general source file dependencies, exclude any
+     dependencies on $install/include/pkgconf/* and replace with
+     appropriate $build/config_deps/* dependencies. That makes for one
+     smoooking fast dependency system. It doesn't get finer-grained than
+     this.
+
+13) friend packages, allowing one package to see the implementation
+    details of another. Also, handle documentation links between these.
+
+14) API clean-up. Eliminate the confusion between "value" and the data part of
+    a bool/data pair.
+
+Major
+-----
+
+1) implement and integrate a proper infrastructure. Generally sort out
+   the host-side build tree, including making libcdl into a Tcl
+    package. 
+
+2) sort out the test suites.
+
+3) std::bad_alloc exceptions. These can happen just about anywhere.
+   Lots of places need to be hardened against this to avoid memory
+   leaks. A completely robust system is probably not possible
+   because cancelling a transaction may involve memory allocation.
+
+4) general code walk through to look for obvious inefficiencies, e.g.
+   passing things by value rather than by reference.
+
+5) generalise the build support for other languages such as Java.
+
+6) implement a proper database and associated admin tool.
+
+7) improved autoconfiscation support, in particular finding the
+   appropriate platform-specific library support.
+
+8) a suitable naming convention for data members and for arguments to
+   inline functions should be adopted, to prevent collisions with
+   #define'd symbols in application land. Possibilities include
+   _X_ and __X.
+
+9) work out how to extend Tcl to provide line number information.
+
+10) i18n support.
+
+11) currently the data type cdl_int is defined to be 64 bits. This should
+    probably be changed to arbitrary precision, so that e.g. processors
+    which can perform 128 bit arithmetic can be adequately supported.
+
+12) extend the CDL expression syntax with e.g. string operators. This
+    will impact the inference engine.
+
+13) add an interactive mode to ecosconfig resolve, allowing users to
+    confirm or cancel solutions?
+
+//===========================================================================
+//####COPYRIGHTBEGIN####
+//                                                                          
+// ----------------------------------------------------------------------------
+// Copyright (C) 1999, 2000 Red Hat, Inc.
+//
+// This file is part of the eCos host tools.
+//
+// This program is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU General Public License as published by the Free 
+// Software Foundation; either version 2 of the License, or (at your option) 
+// any later version.
+// 
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+// more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this program; if not, write to the Free Software Foundation, Inc., 
+// 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+//
+// ----------------------------------------------------------------------------
+//                                                                          
+//####COPYRIGHTEND####
+//===========================================================================
+   

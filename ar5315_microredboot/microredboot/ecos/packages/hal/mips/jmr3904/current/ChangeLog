@@ -1,0 +1,488 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.mlt:
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.h:
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.h:
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.ldi:
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.ldi:
+	Regenerated
+
+2000-09-11  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Fix startup type description.
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Let arch call ctrlc_init.
+
+2000-05-10  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.mlt: Fix mistake in last
+	change: bss/sbss shouldn't be relocated
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.ldi: Regenerate
+
+2000-04-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.ldi: 
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.mlt: 
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.ldi: 
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.mlt: 
+	Split lit section into lit4 and lit8
+	DEVTAB -> devtab
+	Update alignments
+	For ROM startup, ensure all relevant sections are relocated,
+	not just .data
+	Above changed as per new mips_tx39.ld in variant HAL
+
+	* cdl/hal_mips_tx39_jmr3904.cdl (CYG_HAL_STARTUP): Fix board
+	name typo
+
+2000-03-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.h,
+	include/pkgconf/mlt_mips_tx39_jmr3904_ram.ldi,
+	include/pkgconf/mlt_mips_tx39_jmr3904_ram.mlt,
+	include/pkgconf/mlt_mips_tx39_jmr3904_rom.h,
+	include/pkgconf/mlt_mips_tx39_jmr3904_rom.ldi,
+	include/pkgconf/mlt_mips_tx39_jmr3904_rom.mlt:
+	Update new sections according to new mips_tx39.ld from variant HAL
+	
+2000-02-23  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/plf_stub.c (hal_jmr_get_char):
+	CYG_HAL_MIPS_SIM -> CYGPKG_HAL_MIPS_SIM
+
+	* include/platform.inc: CYG_HAL_MIPS_SIM -> CYGPKG_HAL_MIPS_SIM
+	CYG_HAL_MIPS_TX3904 -> CYGPKG_HAL_MIPS_TX3904
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl (CYGBLD_BUILD_GDB_STUBS): When building
+	stubs, define every dependency required here rather than in the
+	template
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Implements stubs.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Moved part of stubs build rule to
+	common HAL.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Fix display string.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Add stubs build rule.
+	* include/plf_stub.h: Include correct hal/platform header.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/plf_misc.c (hal_platform_init): Rename
+	CYG_HAL_USE_ROM_MONITOR_CYGMON -> CYGSEM_HAL_USE_ROM_MONITOR_CygMon
+	(cyg_hal_user_break): Likewise. Also rationalize a little.
+
+	* include/platform.inc: Rename CYG_HAL_USE_ROM_MONITOR ->
+	CYGSEM_HAL_USE_ROM_MONITOR
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Add new platform-specific
+	CYGSEM_HAL_USE_ROM_MONITOR and CYGSEM_HAL_ROM_MONITOR options to
+	control ROM monitor support
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.h: 
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.h: New file(s).
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_tx39_jmr3904.cdl: Added.
+
+1999-10-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/plf_intr.h:
+	* src/plf_misc.c: 
+	Changed CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT to
+	CYGDBG_HAL_MIPS_DEBUG_GDB_CTRLC_SUPPORT.	
+
+1999-08-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/platform.inc: Rearranged code a little to avoid
+	assembler warning messages.
+
+	* src/plf_misc.c (hal_platform_init): No longer disable cache when
+	enabling TOE. A better solution to this has been made elsewhere.
+
+	* include/pkgconf/hal_mips_tx39_jmr3904.h: Removed some now-bogus
+	comments and generally tidied things a little.
+
+1999-08-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/plf_io.h: Added this file to match other platforms.
+
+1999-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c (hal_ctrlc_isr): Changed return value from 0 to 2
+	to indicate that the interrupt has been handled.
+
+1999-06-02  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.mlt: 
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.mlt: 
+	* include/pkgconf/mlt_mips_tx39_jmr3904_ram.ldi: 
+	* include/pkgconf/mlt_mips_tx39_jmr3904_rom.ldi: 
+	Use ctors/dtors sections as required by new compilers
+
+1999-05-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c: Reorganized and generally fixed up Ctrl-C
+	handling code.
+
+	* include/plf_intr.h: Added support for Ctrl-C handling.
+
+1999-05-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/plf_misc.c: Change CYG_HAL_TX39_JMR3904 to
+	CYG_HAL_MIPS_TX39_JMR3904
+
+1999-05-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c: Delete - this has been moved to hal/mips/tx39
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips_tx39_jmr3904.h: Move RTC setup here.
+
+1999-05-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/platform.S: Moved ISR tables out to variant directory.
+
+	* include/platform.inc: Moved definition of
+	CYG_HAL_MIPS_ISR_TABLES_DEFINED out to variant.inc.
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	The following changes were made on a branch and merged:
+	
+    1999-05-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_jmr3904.h:
+	* include/pkgconf/hal_mips_tx39_jmr3904.h: 
+	File hal_tx39_jmr3904.h renamed to match name synthesized by
+	pkgconf.tcl.
+
+    1999-04-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c: Added this file. it contains all of the TX39
+	specific code that was in hal_misc.c.
+
+	* src/platform.S: Added this file. It contains platform specific
+	code and data, specifically the ISR tables.
+
+	* src/PKGconf.mak (COMPILE): Substituted platform.S for jmr3904.S.
+	Added plf_misc.c.
+
+	* include/platform.inc: Added CYG_HAL_MIPS_ISR_TABLES_DEFINED to
+	indicate that the tables are defined in platform.S.
+
+1999-04-30  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	Merge the following changes from the 1.2.1 release branch.
+
+   1999-04-29  Hugo Tyson  <hmt@cygnus.co.uk>	
+	* src/hal_diag.c (hal_diag_write_char): Only include the code to
+	read the '+' from GDB and test for ^C there if not installing the
+	default isr to catch these: CYGDBG_HAL_MIPS_INSTALL_CTRL_C_ISR.
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_*.*: Use double underscore substitution
+	for period character in SECTION_* macro names (PR 19787)
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_jmr3904.h:
+	Added some edit-only options for controlling DRAM setup and bus
+	timeout detection. These should only be used by experts, so they
+	are not presently exported as full config options.
+
+1999-03-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char):	Backed off Gary's change.
+
+1999-03-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Don't disable all interrupts,
+	just the ones for the appropriate UART.
+
+1999-03-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char):
+	Enabled code to process ACK characters and force a breakpoint.
+	This is temporary, it needs to use cyg_hal_is_break() and
+	cyg_hal_user_break().
+
+1999-03-10  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_init):
+	Fixed names of symbols used for the frequency option.
+
+1999-03-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c: 
+	* include/pkgconf/hal_tx39_jmr3904.h:
+	Removed frequency options and made them more generic to all MIPS
+	targets. Changed names where applicable.
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c:
+	Added support for 66MHz part.
+	Disabled handling of GDB O packet acknowledgement, this is now
+	done by hal_ctrlc_isr() which also checks for ^C.
+
+	* include/pkgconf/hal_tx39_jmr3904.h:
+	Added support for 66MHz part.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): 
+	Rename CYG_VECTOR_EXTERNAL_2 -> CYGNUM_HAL_INTERRUPT_EXTERNAL_2
+	in line with HAL changes
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: [removed]
+	* include/plf_stub.h: [added]
+	* src/hal_stub.c:     [removed]
+	* src/plf_stub.c:     [added]
+	* src/PKGconf.mak: 
+	Changed hal_stub to plf_stub. Moved generic HAL stub code to
+	common/.../hal_stub.c.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.mlt: New memory layout save files
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi:
+	* include/pkgconf/rom.ldi:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1999-01-13  John Dallaway  <jld@cygnus.co.uk>
+
+      * include/pkgconf/ram.ldi: add .rel.dyn output section
+      * include/pkgconf/rom.ldi: add .rel.dyn output section
+
+1999-01-13  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/jmr3904.ld: remove for MLT
+      * src/PKGconf.mak: remove jmr3904.ld rules for MLT
+      * include/pkgconf/ram.ldi: new linker script fragment for MLT
+      * include/pkgconf/rom.ldi: new linker script fragment for MLT
+
+1998-11-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (set_debug_traps): Call initHardware.
+	(__flush_d_cache): Added.
+
+1998-10-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Fixed #endif comment.
+
+Fri Oct 23 03:33:47 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/jmr3904.ld: 
+	Move _gp pointer to after data section and constructors/destructors
+
+1998-10-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_stub.c:
+	Removed include of <signal.h>, it appears to be unnecessary.
+
+1998-10-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_jmr3904.h: Undid 1998-10-16 change.
+
+1998-10-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_jmr3904.h: Changed
+	CYGPKG_HAL_TX39_JMR3904 to CYG_HAL_TX39_JMR3904.
+
+1998-10-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_stub.h:
+	Now get generic-stub.h from hal rather than kernel.
+
+	* src/hal_diag.c:
+	* src/hal_stub.c:
+	Altered ifdefs to support building without kernel.
+
+1998-10-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/jmr3904.ld:
+	Moved RAM load address to 0x80008000.
+
+Mon Oct 12 18:04:16 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_diag.h: 
+	Add void arg to hal_diag_init() prototype
+	Fix for PR 17309
+	
+1998-09-24  Tim Goodwin   <tgoodwin@cygnus.co.uk>
+
+        * include/pkgconf/hal_tx39_jmr3904.h:
+	Correct file name in comment.
+
+1998-09-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/jmr3904.ld:
+	Moved RAM LOAD_BASE up to 0x80005000 to avoid memory used by
+	Cygmon.
+
+	* src/hal_diag.c (hal_diag_write_char):
+	Added support for Ctrl-C handling while running under Cygmon.
+	Extra support from Cygmon may be needed in future.
+
+1998-09-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_jmr3904.h:
+	Updated configuration data with some descriptions.
+
+1998-09-04  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_jmr3904.h: 
+	Temporary change to the type of the startup option, needed by the
+	configuration tool.
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39_jmr3904.h:
+	New header file for platform-specific configuration options
+
+	* tests/PKGconf.mak: 
+	* src/PKGconf.mak: 
+	Sort out package naming conventions.
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/hal_diag.c, src/hal_stub.c:
+	Updated for new kernel configuration option symbol names
+
+Fri Aug 28 09:22:30 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/hal_stub.c: Moved strcpy/strlen to the generic stub.
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_diag.h: 
+	* include/hal_stub.h: 
+	* src/hal_diag.c: 
+	* src/jmr3904.S:
+	Now includes <pkgconf/hal.h> rather than <pkgconf/kernel.h>.
+	
+	* src/jmr3904.ld:
+	Removed memory layout tool support.
+	Now includes <pkgconf/hal.h> rather than <pkgconf/kernel.h>.
+
+Tue Aug 18 11:44:40 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/jmr3904.ld: Reorder group line
+
+Mon Aug 17 22:23:27 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/jmr3904.ld: 
+        Add GROUP(libgcc.a libtarget.a) to prevent need for explicit linking
+
+1998-07-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/jmr3904.ld: Added header comment and tidied up the layout a
+	little.
+	
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

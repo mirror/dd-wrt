@@ -1,0 +1,94 @@
+===========================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+===========================================================================
+
+2000.02.03
+
+How to build and install the GDB module on the MBX board
+
+Make GDB module
+~~~~~~~~~~~~~~~
+Configure and build using the 'stubs_old_scheme' template for the MBX
+target. These are the necessary CLI instructions. It can also be done
+from the Configtool by selecting the appropriate templates.
+
+ % cd /tmp
+ % mkdir stubs
+ % cd stubs
+ % ecosconfig new mbx stubs_old_scheme
+ % ecosconfig tree
+ % make
+
+This will install some files in ./install/bin:
+
+ cygmon.img:   The built stubs image
+ cygmon.bin:   The image converted to binary (suitable for burning to ROM)
+ cygmon.srec:  The S-Record image (suitable for flash programming, see below)
+
+
+Prepare board for flash programming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This assumes you have EPPC-Bug in the on-board flash. This can be determined
+by setting up the board according to the below instructions and powering
+up the board. The EPPC-Bug prompt should appear on the SMC1 connector at
+9600 baud, 8N1.
+
+ 1. Set jumper 3 to 2-3     [allow XU2 flash to be programmed]
+ 2. Set jumper 4 to 2-3     [boot EPPC-Bug]
+
+
+Program FLASH
+~~~~~~~~~~~~~
+ 1. Prepare EPPC-Bug for download:
+
+       EPPC-Bug>lo 0
+
+    At this point the monitor is ready for input. It will not return the
+    prompt until the file has been downloaded.
+
+ 2. Use the terminal emulator's ASCII download feature (or a simple clipboard
+    copy/paste operation) to download the gdb_module.srec data.
+
+     Note: On Linux, Minicom's ASCII download feature seems to be broken.
+           A workaround is to load the file into emacs (or another editor)
+           and copy the full contents to the clipboard. Then press the
+           mouse paste-button (usually middle) over the Minicom window.
+
+ 3. Program the flash with the downloaded data:
+
+       EPPC-Bug>pflash 40000 60000 fc000000
+
+ 4. Switch off the power, and change jumper 4 to 1-2. Turn on the power
+    again. The board should now boot using the newly programmed stubs.
+

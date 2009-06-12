@@ -1,0 +1,68 @@
+<HTML>
+<HEAD>
+<TITLE>Target Selection Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Target Selection Dialog</H1>
+<H3>Overview</H3>
+<P>The Target Selection Dialog allows users to specify the debug target,
+the interface used to connect to the target, and some useful run
+options.</P>
+
+<P>Target Selection topics:
+<UL>
+    <LI><UL><A HREF="#select">Selecting a Target</A>
+            <LI><A HREF="#select_tar">Specifying a Target</A>
+            <LI><A HREF="#select_int">Choosing a Connection Interface</A>
+        </UL>
+    <LI><UL><A HREF="#options">Run Options</A>
+            <LI><A HREF="#options_run_until_main">Run until 'main'</A>
+            <LI><A HREF="#options_bp_at_exit">Set breakpoint at 'exit'</A>
+            <LI><A HREF="#options_download_dialog">Display Download Dialog</A>
+            <LI><A HREF="#options_compare_to_remote_executable">Compare to
+            remote executable</A>
+        </UL>
+</UL></P>
+
+<H3><A NAME="select">Selecting a Target</A></H3>
+Selecting a target involves choosing a target for debugging and setting connection
+interface options for the target. 
+
+<P>Common targets include: "exec" for native debuggers, "remote" for establishing
+a connection to a target board via a serial line, "remotetcp" for TCP connections,
+and "sim" for connections to the simulator. There may be more depending on the
+configuration of the debugger being used.</P>
+
+<P>In general, "remote" targets are always serial connections which require the user
+to specify the serial port and baud rate to be used for the connection and
+"remotetcp" targets are always TCP connections which require specifying the hostname
+and port number of the machine to which to connect. Depending upon configuration,
+there may be numerous serial- and TCP-based connections. These always follow the
+naming convention <I>target</I> and <I>target</I>tcp.</P>
+
+<P>To <A NAME="select_tar"> select a target</A>, choose one of the available targets
+from the dropdown menu in the Connection Frame. Then <A NAME="#select_int">specify
+the interface options</A> for this target: selecting the baudrate and serial port
+from the dropdown menus (serial targets only) or entering the hostname and port number
+(TCP targets only).</P>
+
+<H3><A NAME="options">Run Options</A></H3>
+Three run options which may be selected include:
+<DL>
+    <DT><A NAME="options_run_until_main">Run until 'main'
+        <DD>Sets a breakpoint at main(). This has no effect when using
+            GDB in tracing mode.
+    <DT><A NAME="options_bp_at_exit">Set breakpoint at 'exit'
+        <DD>Sets a breakpoint at exit(). This has no effect when using
+            GDB in tracing mode.
+    <DT><A NAME="options_download_dialog">Display Download Dialog
+        <DD>Displays a dialog showing the progress of the download to
+            the target section by section. This has no effect when using
+            GDB in tracing mode.
+    <DT><A NAME="options_compare_to_remote_executable">
+        Compare to remote executable</A>
+        <DD>When attaching to a tracing target, compare the host's and target's
+            executable by computing the checksum of each loadable section.
+</DL>
+</BODY>
+</HTML>

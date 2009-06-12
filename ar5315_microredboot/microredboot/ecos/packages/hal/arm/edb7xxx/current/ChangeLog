@@ -1,0 +1,1198 @@
+2004-08-12  Jani Monoses <jani@iv.ro>
+
+	* cdl/hal_arm_edb7xxx.cdl:
+	* src/hal_diag.c: Support baudrate change via virtual vectors.
+
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_arm_edb7xxx.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/edb7312_redboot_RAM.ecm: 
+	* misc/edb7312_redboot_ROM.ecm: 
+	* misc/edb7312_redboot_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_edb7xxx.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-28  Jani Monoses  <jani@iv.ro>
+
+	* include/hal_platform_setup.h: EDB7211 has two 8M FLASH chips
+	with different chip selects, so map them contiguously.
+	Also fix compiler warning with #if to #ifdef.
+
+	* include/pkgconf/mlt_arm_edb7211_rom.mlt: Update to reflect ROM
+	being 16M not 8M now.
+	* include/pkgconf/mlt_arm_edb7211_rom.ldi: Ditto.
+	* include/pkgconf/mlt_arm_edb7211_rom.h: Ditto.
+
+2003-02-13  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_io.h: Add CYG_MACRO_START/END markers to match
+	recent changes in arch code.
+
+	* cdl/hal_arm_edb7xxx.cdl: Builds without RedBoot+Linux-exec
+	were broken by recent changes.
+
+2003-02-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_io.h: Provide proper memory layout for EDB7312.
+
+2003-02-06  Gary Thomas  <gary@mind.be>
+
+	* misc/edb7312_redboot_ROMRAM.ecm: 
+	* src/edb7xxx_misc.c: 
+	* include/plf_io.h: 
+	* include/hal_platform_setup.h: 
+	* cdl/hal_arm_edb7xxx.cdl: Add support for booting Linux by defining
+	CYGARC_PHYSICAL_ADDRESS().
+
+2002-12-06  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* misc/edb7312_redboot_ROMRAM.ecm: 
+	* misc/edb7312_redboot_ROM.ecm: 
+	* misc/edb7312_redboot_RAM.ecm: 
+	* misc/edb7212_redboot_ROM.ecm: 
+	* misc/edb7212_redboot.ecm: 
+	* misc/edb7211_redboot_ROM.ecm: 
+	* misc/edb7211_redboot.ecm: Force no 'Linux exec' command in RedBoot.
+
+2002-08-02  Gary Thomas  <gary@chez-thomas.org>
+
+	* cdl/hal_arm_edb7xxx.cdl: Clean up CDL.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-04-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/i2s_audio_fiq.S:
+	Don't use .file as it can confuse debugging since the .file
+	doesn't contain the path and therefore the debugger will never
+	know where it lives! This conflicts with using -Wa,--gstabs.
+
+2002-03-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/edb7312_redboot_RAM.ecm: memalloc package no longer required.
+	* misc/edb7312_redboot_ROM.ecm: Ditto.
+	* misc/edb7312_redboot_ROMRAM.ecm: Ditto.
+
+2002-03-21  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_edb7xxx.h: Include the package config file too; some
+	versions need to be told their clock setup to select
+	initialization constants in this file.  It remains
+	assembler-clean, no problem.
+
+2002-03-05  Jesper Skov  <jskov@redhat.com>
+
+	* misc/edb7312_redboot_RAM.ecm: Added memalloc package.
+	* misc/edb7312_redboot_ROM.ecm: Same.
+
+2002-03-04  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_platform_setup.h (IO_LA_END): Set IO_LA_END (IO
+	logical address space end) higher so that we can readback the
+	value of the PLL Multiplier at 0x8000a5a8 - just for debugging.
+
+	* src/edb7xxx_misc.c (hal_hardware_init): Add more nops after
+	setting PLL Multiplier for 90MHz.
+
+	* cdl/hal_arm_edb7xxx.cdl: Change default timer tick rate for
+	faster version.
+
+2002-03-01  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Add 90317 to legal_values for
+	CYGHWR_HAL_ARM_EDB7XXX_PROCESSOR_CLOCK.
+
+	* include/hal_edb7xxx.h (EP7312_PLL_MR): Define additional
+	register and contents for 90Mhz operation.  Redefine baud rate
+	calculator for 90Mhz operation.
+
+	* src/edb7xxx_misc.c (hal_hardware_init): If the CPU clock speed
+	is 90317, set the PLL multiplier register to gear-up 22.5%, and
+	add some waitstates to all the memory access so it still works.
+
+2002-02-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c (idle): Only [re]enable LCD if being used
+	as the console device.  This keeps it from coming on when there
+	is serial line activity [just an anoyance].
+
+2002-02-01  Hugo Tyson  <hmt@redhat.com>
+
+	* misc/edb7312_redboot_ROMRAM.ecm: 
+	* misc/edb7312_redboot_ROM.ecm: 
+	* misc/edb7312_redboot_RAM.ecm: CYGBLD_REDBOOT_MIN_IMAGE_SIZE set
+	to 0x40000 to contain the size of RedBoot.
+
+2002-01-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_edb7xxx.h: Add extra useful definitions for the 7312.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2002-01-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/edb7312_redboot_ROM.ecm: Fix
+	CYGPKG_DEVS_FLASH_STRATA_EDB7XXX -> CYGPKG_DEVS_FLASH_EDB7XXX
+
+2001-12-06  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/edb7212_redboot.ecm:
+	* misc/edb7212_redboot_ROM.ecm:
+	* misc/edb7312_redboot_RAM.ecm:
+	* misc/edb7312_redboot_ROM.ecm:
+	* misc/edb7312_redboot_ROMRAM.ecm:
+	Fix target descriptions to be edb7xxx.
+
+2001-11-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_misc.c (hal_hardware_init): Set clock speed.
+
+2001-11-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_misc.c (hal_clock_reset): DRAM refresh not needed.
+
+2001-11-06  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_edb7312_romram.mlt: 
+	* include/pkgconf/mlt_arm_edb7312_romram.ldi: 
+	* include/pkgconf/mlt_arm_edb7312_romram.h: 
+	* include/pkgconf/mlt_arm_edb7312_ram.mlt: 
+	* include/pkgconf/mlt_arm_edb7312_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7312_ram.h: New ROMRAM setup.
+
+2001-10-14  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/edb7312_redboot_ROMRAM.ecm: 
+	* misc/edb7312_redboot_RAM.ecm: Update for new FLASH driver layout.
+
+2001-10-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Clarify package description strings.
+
+2001-10-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_misc.c: 
+	* include/hal_platform_ints.h: 
+	* include/hal_edb7xxx.h: EP7312 has slightly different peripherals.
+
+2001-10-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_misc.c: Fix sly problem on EDB7312 only which 
+	caused RESET vector to be destroyed.
+
+2001-10-03  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/edb7312_redboot_ROMRAM.ecm: 
+	* include/pkgconf/mlt_arm_edb7312_romram.mlt: 
+	* include/pkgconf/mlt_arm_edb7312_romram.ldi: 
+	* include/pkgconf/mlt_arm_edb7312_romram.h: New files.
+
+	* include/pkgconf/mlt_arm_edb7312_ram.mlt: 
+	* include/pkgconf/mlt_arm_edb7312_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7312_ram.h: 
+	* include/hal_platform_setup.h: 
+	* cdl/hal_arm_edb7xxx.cdl: Add support for ROMRAM startup mode.
+	Currently only tested on EDB7312.
+
+2001-09-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Reorg - comm init also initializes display.
+	Don't export the comm if no keyboard.  Lots of little changes
+	trying to get keyboard initialization correct.  Works sometimes.
+
+	* src/edb7xxx_misc.c (hal_hardware_init): Change PS/2 timing.
+	Also, LCD comm channel now initializes LCD display.
+
+	* cdl/hal_arm_edb7xxx.cdl: Change LCD defaults to landscape mode
+	with Red Hat logo at top.
+
+2001-09-29  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: 
+	* src/edb7xxx_misc.c (hal_hardware_init): 
+	* include/lcd_support.h: 
+	* src/lcd_support.c: 
+	* src/font.h: 
+	* src/banner.xpm: New file(s).  Adding LCD/keyboard console.
+
+2001-09-26  Gary Thomas  <gthomas@redhat.com
+
+	* cdl/hal_arm_edb7xxx.cdl: Implement CYGINT_HAL_SUPPORTS_MMU_TABLES
+	to show that this HAL uses MMU tables.
+
+2001-09-25  Gary Thomas  <gthomas@redhat.com>
+
+	* support/io.c: 
+	* support/download_file.c: 
+	* support/dl_edb7xxx.c: Change around internal functions (add
+	some flexibility).
+
+	* include/hal_platform_setup.h: Rewrote most of this code as
+	assembly macros which are easier to conditionalize.  Now supports
+	EDB7312 as well.
+
+	* src/edb7xxx_misc.c (hal_hardware_init):
+	* include/pkgconf/mlt_arm_edb7312_rom.mlt: 
+	* include/pkgconf/mlt_arm_edb7312_rom.ldi: 
+	* include/pkgconf/mlt_arm_edb7312_rom.h: 
+	* include/pkgconf/mlt_arm_edb7312_ram.mlt: 
+	* include/pkgconf/mlt_arm_edb7312_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7312_ram.h: 
+	* include/hal_edb7xxx.h: 
+	* cdl/hal_arm_edb7xxx.cdl: Add support for EDB7312 platform.
+
+2001-07-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_arm_edb7211_ram.h:
+	* include/pkgconf/mlt_arm_edb7211_ram.ldi:
+	* include/pkgconf/mlt_arm_edb7211_ram.mlt:
+	* include/pkgconf/mlt_arm_edb7212_ram.h:
+	RAM size should default to 0xfd7000 consistently.
+
+2001-07-18  Franck Mamalet  <franck.mamalet@rd.francetelecom.com>
+2001-07-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/edb7xxx_misc.c: Reorder hal_interrupt_status_regmap so that
+	all FIQs are first.
+
+2001-06-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/io.c: Support building on cygwin.
+
+2001-06-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Clarify platform description.
+
+2001-06-08  Gary Thomas  <gthomas@redhat.com>
+
+	* support/dl_edb7xxx.c: Change use of 'CharReady()' which seems
+	to be unreliable on Windows/CygWin.  These changes should make
+	this program work on Windows when built via CygWin.  Suggested
+	by Lewin A.R.W. Edwards <larwe@larwe.com>.
+
+2001-05-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_platform_setup.h: Use correct 7209 define.
+
+2001-05-01  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/edb7212_redboot_ROM.ecm: 
+	* misc/edb7212_redboot.ecm: 
+	* misc/edb7211_redboot_ROM.ecm: 
+	* misc/edb7211_redboot.ecm: RedBoot rebuilt & configs updated.
+
+	* include/hal_cache.h (HAL_ICACHE_IS_ENABLED): Add.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Add CDL to describe CPU family.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h (HAL_FLASH_CACHES_OLD_MACROS):  This platform
+	uses deprecated cache handling macros.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/edb7212_redboot_ROM.ecm: Renamed from edb7212_redboot_ROM.cfg
+
+	* misc/edb7212_redboot.ecm: Renamed from edb7212_redboot.cfg
+
+	* misc/edb7211_redboot_ROM.ecm: Renamed from edb7211_redboot_ROM.cfg
+
+	* misc/edb7211_redboot.ecm: Renamed from edb7211_redboot.cfg
+
+2001-02-13  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_edb7211_ram.h: 
+	* include/pkgconf/mlt_arm_edb7211_ram.mlt: 
+	* include/pkgconf/mlt_arm_edb7211_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7212_ram.h: 
+	* include/pkgconf/mlt_arm_edb7212_ram.mlt: 
+	* include/pkgconf/mlt_arm_edb7212_ram.ldi: Adjust memory map
+	for RedBoot [with networking].
+
+	* src/edb7xxx_misc.c (hal_IRQ_handler): 
+	Return CYGNUM_HAL_INTERRUPT_NONE for spurious interrupts.	
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+	* cdl/hal_arm_edb7xxx.cdl: Respect channel configuration
+	constraints.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_None
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Moved reset macro to
+	* include/hal_platform_ints.h: this file.
+
+2000-12-04  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_cache.h: Consistently ensure that ARM registers used
+	in MCR ops to cache-control coprocessors, where the data doesn't
+	matter, all actually have data zero ("SBZ") as in the Jaggar book.
+	This may well not be necessary, but for the sake of making sure...
+
+2000-12-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Reenable caching on FLASH/ROM.
+
+	* include/hal_cache.h: Update cache macros to follow ARM
+	and Cirrus Logic manuals more closely.  These changes seem
+	to allow for cacheable FLASH segments.
+
+2000-11-06  Jesper Skov  <jskov@redhat.com>
+
+	* tests/dram_test.c: Add kernel check.
+
+2000-10-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/edb7211_redboot_ROM.cfg: Ensure CYGSEM_HAL_ROM_MONITOR is
+	enabled
+	* misc/edb7212_redboot_ROM.cfg: Ditto
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_arm_cl7111_ram.mlt:
+	* include/pkgconf/mlt_arm_cl7111_rom.mlt:
+	* include/pkgconf/mlt_arm_edb7209_rom.mlt:
+	* include/pkgconf/mlt_arm_edb7211_ram.mlt:
+	* include/pkgconf/mlt_arm_edb7211_rom.mlt:
+	* include/pkgconf/mlt_arm_edb7212_ram.mlt:
+	* include/pkgconf/mlt_arm_edb7212_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_arm_cl7111_ram.h:
+	* include/pkgconf/mlt_arm_cl7111_rom.h:
+	* include/pkgconf/mlt_arm_edb7209_rom.h:
+	* include/pkgconf/mlt_arm_edb7211_ram.h:
+	* include/pkgconf/mlt_arm_edb7211_rom.h:
+	* include/pkgconf/mlt_arm_edb7212_ram.h:
+	* include/pkgconf/mlt_arm_edb7212_rom.h:
+	* include/pkgconf/mlt_arm_cl7111_ram.ldi:
+	* include/pkgconf/mlt_arm_cl7111_rom.ldi:
+	* include/pkgconf/mlt_arm_edb7209_rom.ldi:
+	* include/pkgconf/mlt_arm_edb7211_ram.ldi:
+	* include/pkgconf/mlt_arm_edb7211_rom.ldi:
+	* include/pkgconf/mlt_arm_edb7212_ram.ldi:
+	* include/pkgconf/mlt_arm_edb7212_rom.ldi:
+	Regenerate
+
+2000-09-17  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Update platform/cpu identification strings.
+
+2000-08-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_diag.c (cyg_hal_plf_serial_getc): Only call dram refresh
+	[workaround] every 10ms or so, not all the time.  This fixes GDB
+	serial overrun problems.
+
+2000-08-16  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_cache.h (HAL_UCACHE_INVALIDATE_ALL): Fix - wrong code.
+
+	* include/hal_platform_setup.h: Map all of SRAM (was only mapping
+	4K which is all that the CL7111 had).
+ 
+2000-08-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Make ROM segment not cached (since 
+	the data cache seems to stick on).
+
+	* include/pkgconf/mlt_arm_edb7211_ram.h: 
+	* include/pkgconf/mlt_arm_edb7211_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7211_ram.mlt: Expand reserved area.
+
+2000-08-14  Gary Thomas  <gthomas@redhat.com>
+	
+	* cdl/hal_arm_edb7xxx.cdl: Add support for RedBoot.
+
+	* include/hal_cache.h: Trying to get cache working properly.
+
+	* include/pkgconf/mlt_arm_edb7212_ram.h: 
+	* include/pkgconf/mlt_arm_edb7212_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7212_ram.mlt: Expand reserved area.
+
+	* include/hal_diag.h: 
+	* src/edb7xxx_misc.c: Add support for HAL_DELAY_US().
+
+2000-07-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/edb7xxx_misc.c (dram_delay_loop): 
+	* src/hal_diag.c (cyg_hal_plf_serial_getc,
+	(cyg_hal_plf_serial_putc): Added delay loop.
+
+2000-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET_ENTRY): Not comitted.
+
+	* src/hal_diag.c: 
+	* cdl/hal_arm_edb7xxx.cdl: 
+	Clean up channel options.
+	
+	* src/plf_stub.c: [deleted]
+	* src/hal_diag.c:
+	* src/edb7xxx_misc.c: 
+	* include/plf_stub.h:
+	* include/hal_diag.h: 
+	* cdl/hal_arm_edb7xxx.cdl: 
+	Changed to use virtual vectors.
+
+	* include/hal_platform_setup.h: #error instead of #err.
+
+2000-06-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_cl7111_ram.ldi: 
+	* include/pkgconf/mlt_arm_cl7111_ram.mlt: 
+	* include/pkgconf/mlt_arm_cl7111_rom.ldi: 
+	* include/pkgconf/mlt_arm_cl7111_rom.mlt: 
+	* include/pkgconf/mlt_arm_edb7209_rom.ldi: 
+	* include/pkgconf/mlt_arm_edb7209_rom.mlt: 
+	* include/pkgconf/mlt_arm_edb7211_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7211_ram.mlt: 
+	* include/pkgconf/mlt_arm_edb7211_rom.ldi: 
+	* include/pkgconf/mlt_arm_edb7211_rom.mlt: 
+	* include/pkgconf/mlt_arm_edb7212_ram.ldi: 
+	* include/pkgconf/mlt_arm_edb7212_ram.mlt: 
+	* include/pkgconf/mlt_arm_edb7212_rom.ldi: 
+	* include/pkgconf/mlt_arm_edb7212_rom.mlt: 
+	Incorporate new fixed vectors (used on all ARM platforms).
+
+2000-04-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Fix build of i2s audio test.
+
+2000-02-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+        * include/pkgconf/mlt_arm_cl7111_ram.h:
+        * include/pkgconf/mlt_arm_cl7111_ram.ldi:
+        * include/pkgconf/mlt_arm_cl7111_ram.mlt:
+        * include/pkgconf/mlt_arm_cl7111_rom.h:
+        * include/pkgconf/mlt_arm_cl7111_rom.ldi:
+        * include/pkgconf/mlt_arm_cl7111_rom.mlt:
+        * include/pkgconf/mlt_arm_edb7209_rom.h:
+        * include/pkgconf/mlt_arm_edb7209_rom.ldi:
+        * include/pkgconf/mlt_arm_edb7211_ram.h:
+        * include/pkgconf/mlt_arm_edb7211_ram.ldi:
+        * include/pkgconf/mlt_arm_edb7211_ram.mlt:
+        * include/pkgconf/mlt_arm_edb7211_rom.h:
+        * include/pkgconf/mlt_arm_edb7211_rom.ldi:
+        * include/pkgconf/mlt_arm_edb7211_rom.mlt:
+        * include/pkgconf/mlt_arm_edb7212_ram.h:
+        * include/pkgconf/mlt_arm_edb7212_ram.ldi:
+        * include/pkgconf/mlt_arm_edb7212_ram.mlt:
+        * include/pkgconf/mlt_arm_edb7212_rom.h:
+        * include/pkgconf/mlt_arm_edb7212_rom.ldi:
+        * include/pkgconf/mlt_arm_edb7212_rom.mlt:
+	Align all sections on word boundaries
+
+2000-02-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/kbd_support.c: Fix typo (in comment).
+
+	* misc/kbd_test.c: Remove unused LCD include.
+
+2000-02-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl: Remove -mstructure-size-boundary=8
+	option - no longer needed to build working networking code.
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl (CYGBLD_BUILD_GDB_STUBS): When
+	building stubs, define every dependency required here rather than
+	in the template
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/edb7xxx_misc.c:
+	* include/hal_platform_setup.h:
+	CYG_HAL_ARM -> CYGPKG_HAL_ARM
+
+2000-02-10  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/dram_test.c: Include proper testing infrastructure to
+	make farm happy.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: 
+	HAL_STUB_PLATFORM_STUBS_INIT->HAL_STUB_PLATFORM_INIT
+
+	* misc/STUBS_config: 
+	* src/hal_diag.c: 
+	* include/pkgconf/hal_arm_edb7xxx.h: 
+	Removed stubs as a legal startup type.
+
+2000-02-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Added remaining build dependencies.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Use cpu option when linking.
+	Fixed typo.
+	
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Implements stubs.
+
+2000-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Added build rule for flash program.
+
+	* misc/prog_flash.c (program_flash): Added expected argument.
+
+2000-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Use common stubs code and build
+	rules. Removed stubs startup type.
+
+2000-01-31  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/dram_test.c: Decrease total number of runs to keep test
+	farm happy.
+
+	* src/edb7xxx_misc.c (hal_clock_reset): Increase DRAM 'idle' time
+	to give marginal hardware a chance.
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl: Add -mstructure-size-boundary=8 to
+	compile options - required to get network structures properly
+	aligned.
+
+2000-01-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl:
+
+	Fix parenting of CYGDAT_CYGMON_CONSOLE_DEV and
+	CYGBLD_BUILD_CYGMON_BIN.
+
+2000-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Corrected build runes.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl (CYGBLD_CYGMON_TARGET_REQUIREMENTS):
+	Improved serial expression.
+	Moved options into a CygMon HAL component.
+
+2000-01-26  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl (CYGBLD_CYGMON_TARGET_REQUIREMENTS): Only 
+	activate when CYGPKG_CYGMON enabled
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_edb7xxx.cdl: Fix display string. Add CygMon options.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl: Add stubs build rule.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+2000-01-03  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/edb7xxx_misc.c: Need to re-enable FIQ during software "refresh",
+	no matter what method is being used [implicit or explicit].
+
+1999-12-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_platform_extras.h: Map in expansion segments (used
+	for ethernet and parallel port).
+
+1999-12-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* support/Makefile: Update filenames from earlier source file change,
+	and make other names generic
+
+	* support/dl_edb7xxx.c (main): Give the correct device name if
+	using the default.
+
+1999-12-08  Gary Thomas  <gthomas@cygnus.co.uk>
+	* include/pkgconf/mlt_arm_edb7212_ram.ldi:
+	* include/pkgconf/mlt_arm_edb7212_ram.mlt:
+	* include/pkgconf/mlt_arm_edb7212_rom.h:
+	* include/pkgconf/mlt_arm_edb7212_rom.ldi:
+	* include/pkgconf/mlt_arm_edb7212_rom.mlt:
+	* include/pkgconf/mlt_arm_edb7212_ram.h: Update with .sram section.
+
+1999-12-07  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl: Add descriptive strings used by CygMon.
+
+1999-11-29  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c: Fix typoe: CYGDGB_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	-> CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+
+1999-11-27  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_edb7xxx.h (HAL_PLATFORM_BOARD): Add missing endif
+
+1999-11-26  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* misc/STUBS_config: Mention edb7212 in usage
+
+1999-11-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_edb7xxx.h: Add platform info defines.
+
+1999-11-26  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Backslash wrapped
+	line properly
+
+1999-11-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Fix typo
+	Init_MEMORY_CONFIG -> INIT_MEMORY_CONFIG
+
+	* src/hal_diag.c: Conditionalize def of diag_buffer for only when it's
+	explicitly wanted and someone hacks the code
+	(hal_diag_write_char): Likewise
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_edb7212_stubs.h: 
+	* include/pkgconf/mlt_arm_edb7211_stubs.h: 
+	* include/pkgconf/mlt_arm_cl7111_stubs.h: New file.
+
+	* include/pkgconf/mlt_arm_edb7209_rom.h: 
+	* include/pkgconf/mlt_arm_edb7212_ram.h: 
+	* include/pkgconf/mlt_arm_edb7212_rom.h: 
+	* include/pkgconf/mlt_arm_edb7211_ram.h: 
+	* include/pkgconf/mlt_arm_edb7211_rom.h: 
+	* include/pkgconf/mlt_arm_cl7111_rom.h: 
+	* include/pkgconf/mlt_arm_cl7111_ram.h: Update 'do not edit' strings.
+
+1999-11-23  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/edb7xxx_misc.c (hal_clock_reset): Fix DRAM "idle" time > 200us.
+
+1999-11-23  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/edb7xxx_misc.c (hal_clock_reset): EP7209 has no DRAM, thus
+	no DRAM starvation problem.
+
+1999-11-22  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_edb7212_stubs.h: New file.
+	
+	* include/pkgconf/mlt_arm_edb7209_rom.h: 
+	* include/pkgconf/mlt_arm_edb7209_rom.mlt: 
+	* include/pkgconf/mlt_arm_edb7209_rom.ldi: 
+	* include/pkgconf/mlt_arm_edb7212_rom.h: 
+	* include/pkgconf/mlt_arm_edb7212_rom.mlt: 
+	* include/pkgconf/mlt_arm_edb7212_rom.ldi: 
+	* include/pkgconf/mlt_arm_edb7212_stubs.mlt: 
+	* include/pkgconf/mlt_arm_edb7212_stubs.ldi: Add MMU tables section.
+
+	* include/pkgconf/mlt_arm_edb7211_stubs.h: New file.
+	
+	* include/pkgconf/mlt_arm_edb7211_stubs.mlt: 
+	* include/pkgconf/mlt_arm_edb7211_stubs.ldi: Add MMU tables section.
+
+	* misc/STUBS_config: Add patch to set up for static MMU tables.
+
+	* include/hal_platform_setup.h: Some rearranging to allow for
+	static MMU tables.
+
+	* include/hal_platform_extras.h: New file.
+
+1999-11-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_edb7xxx.h: Fix bogus comment.
+
+	* misc/STUBS_config: Change variable name to reflect usage.
+	EDB7x11 => EDB7xxx.
+
+1999-11-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_edb7209_ram.mlt:
+	* include/pkgconf/mlt_arm_edb7209_ram.ldi:
+	* include/pkgconf/mlt_arm_edb7209_stubs.mlt:
+	* include/pkgconf/mlt_arm_edb7209_stubs.ldi: Removed
+	
+	* include/pkgconf/mlt_arm_edb7209_rom.mlt:
+	* include/pkgconf/mlt_arm_edb7209_rom.ldi:
+	* include/pkgconf/mlt_arm_cl7111_rom.mlt:
+	* include/pkgconf/mlt_arm_cl7111_rom.ldi:
+	* include/pkgconf/mlt_arm_cl7111_ram.mlt:
+	* include/pkgconf/mlt_arm_cl7111_ram.ldi: New [more complete] layout.
+
+	* include/pkgconf/mlt_arm_edb7209_rom.h: 
+	* include/pkgconf/mlt_arm_cl7111_rom.h: 
+	* include/pkgconf/mlt_arm_cl7111_ram.h: New file(s).
+
+1999-11-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_edb7xxx.h: EDB7209 has only ROM startup.
+
+	* cdl/hal_arm_edb7xxx.cdl: EDB7209 has only ROM startup.
+1999-11-16  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl: Tidy display string.
+
+1999-11-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_edb7xxx.cdl: Fix typo.
+	Flushing out support options for various platforms.
+
+1999-11-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	The great renaming.  All platform references are now EDB7xxx, except
+	for CL7111 (archaic) which remains.  This required renaming of the
+	whole directory, along with many internal files.
+
+1999-11-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/dram_test.c: Make more generic (no platform dependencies).
+
+	* src/cl7211_misc.c (hal_clock_reset): Implement "bus idle" code
+	which helps with DRAM refresh problem.
+
+	* include/plf_stub.h (HAL_STUB_PLATFORM_RESET): Add reset support.
+
+1999-11-11  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/dram_test.c (dram_exercise): Use MLT constants to define
+	set of memory to be tested.  Make stack size HAL defined.
+	This test is nearly ready to be promoted to a system-wide test.
+
+	* include/hal_platform_setup.h (DRAM_LA_END): Adjust to accurately
+	convey end of usable RAM (leave out MMU tables, etc).
+
+1999-11-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: Fix stupid CPP error.
+
+	* include/pkgconf/mlt_arm_eb7212_rom.h:
+	* include/pkgconf/mlt_arm_eb7212_ram.h: New files.
+
+	* include/pkgconf/mlt_arm_eb7212_ram.ldi:
+	* include/pkgconf/mlt_arm_eb7212_ram.mlt:
+	* include/pkgconf/mlt_arm_eb7212_rom.ldi:
+	* include/pkgconf/mlt_arm_eb7212_ram.mlt:
+	* include/pkgconf/mlt_arm_eb7211_ram.ldi:
+	* include/pkgconf/mlt_arm_eb7211_ram.mlt:
+	* include/pkgconf/mlt_arm_eb7211_rom.ldi:
+	* include/pkgconf/mlt_arm_eb7211_rom.mlt: Correct memory layout.
+
+1999-11-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: Incorporate option to force raw diagnostic
+	I/O (no GDB protocol).
+
+1999-11-03  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl: 
+	* include/pkgconf/hal_arm_cl7211.h: Change default clock speed
+	to 36MHz with no software DRAM refresh (hardware is stable with
+	this combo).
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl: Define build options.
+
+1999-11-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl: Remove define_proc comments.
+
+1999-10-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/cl7211_misc.c (enable_FIQ): New function.  Used to re-enable
+	FIQ interrupts during DRAM refresh code.
+
+	* include/pkgconf/mlt_arm_eb7211_stubs.h:
+	* include/pkgconf/mlt_arm_eb7211_rom.h:
+	* include/pkgconf/mlt_arm_eb7211_ram.h: New files.
+
+	* include/pkgconf/mlt_arm_eb7211_rom.ldi:
+	* include/pkgconf/mlt_arm_eb7211_ram.ldi:
+	* include/pkgconf/mlt_arm_eb7211_stubs.ldi:
+	* include/pkgconf/mlt_arm_eb7211_ram.mlt:
+	* include/pkgconf/mlt_arm_eb7211_rom.mlt:
+	* include/pkgconf/mlt_arm_eb7211_stubs.mlt: Update for new layout
+	which describes physical regions completely.
+
+1999-10-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Fixed conditional include.
+
+1999-10-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Use new macro
+	CYG_HAL_GDB_ENTER_CRITICAL_IO_REGION and its mate to control
+	stepping through gdb $O packet output.
+
+1999-10-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/PKGconf.mak: Add DRAM test program.
+
+	* tests/dram_test.c: New file.
+
+	* include/hal_platform_setup.h: Fix DRAM mapping (was slightly
+	incorrect at end of first DRAM chip).
+
+1999-10-26  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl:
+
+	Rename CYGBLD_GLOBAL_PREFIX to
+	CYGBLD_GLOBAL_COMMAND_PREFIX
+
+1999-10-20  Simon FitzMaurice <sdf@cygnus.co.uk>
+	* cdl/hal_arm_aeb.cdl:
+
+	Remove -Wl options from compiler flags
+
+1999-10-20  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl:
+
+	Specify "-mpu=arm710c" for CL-PS7111.
+
+1999-10-19  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl:
+
+	Substitute "cl7211"->"eb7211" in MLT-related options.
+
+1999-10-19  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl:
+
+	Define cdl_options for the memory layout linker script
+	fragment and the memory layout header file.
+
+	Define cdl_options for build flags and command prefix.
+
+1999-10-06  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl:
+	Define CYGTST_TESTING_IDENTIFIER.
+
+1999-10-04  Gary Thomas  <gthomas@cygnus.co.uk>
+	* src/cl7211_misc.c (hal_hardware_init): Update hardware timings.
+
+	* include/hal_platform_setup.h: Allow ROM applications to be linked
+	at "ram" addresses and be automatically relocated at startup time.
+
+1999-09-23  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/plf_stub.c: 
+	* src/hal_diag.c: Revert [forced] baud rate changes.
+
+1999-09-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/lcd_panel_support.c (lcd_panel_server): Take out some prints.
+
+1999-09-18  Gary Thomas  <gthomas@cygnus.co.uk>
+	* misc/lcd_support.c (lcd_vprintf): 
+	* misc/kbd_support.c (kbd_getc): 
+	* misc/kbd_test.c (kbd_exercise): Clean up warnings.
+
+1999-09-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/lcd_support.c (lcd_putc): Add cursor support.  Fix '\b'.
+
+1999-09-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/lcd_panel_support.c (lcd_panel_server): Reorg sampling
+	loop to use a weighted average (try and avoid bad results).
+
+	* misc/kbd_test.c (kbd_exercise): Use new kbd_getc() function.
+
+	* misc/kbd_support.c (kbd_getc): New function.
+
+	* misc/lcd_support.c: Add simple printf() code. 
+
+1999-09-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_eb7212_ram.ldi: 
+	* include/pkgconf/mlt_arm_eb7212_ram.mlt: Fix DRAM limits.
+
+	* include/pkgconf/mlt_arm_eb7211_ram.ldi: 
+	* include/pkgconf/mlt_arm_eb7211_ram.mlt: Fix DRAM limits.
+
+1999-09-13  Gary Thomas  <gthomas@cygnus.co.uk>
+	* images/gdb_module.bin: Rebuild with date/time stamp.  Notice
+	that default baud rate is now 115200.
+
+	* misc/lcd_panel_support.c (lcd_panel_init): Make initialization
+	of LCD panel as stand-alone as possible.
+
+	* misc/lcd_panel_support.c: New file - support split out.
+
+	* misc/panel_test.c (panel_exercise): Reorg test with separate
+	support file.
+
+1999-09-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/kbd_support.c: New file.  Also change to more or less
+	ignore interrupts since they don't work for many keys!
+
+	* misc/kbd_test.c: Move keyboard support routines to separate
+	file.
+
+1999-09-11  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/cl7211_misc.c (hal_hardware_init): Set up platform registers.
+
+1999-09-10  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_platform_setup.h: Fix spelling error.
+
+1999-09-09  Gary Thomas  <gthomas@cygnus.co.uk>
+	* misc/i2s_audio.c: New test for AUDIO interface.
+		
+	* include/hal_cl7211.h: Add I2S definitions for EB7209.
+
+	* misc/kbd_test.c: Major rework.  Now uses a separate thread
+	to manage the keyboard, debounce, etc.  Result is a series of
+	events placed into a kernel 'mbox'.
+1999-09-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/panel_test.c: Trick for these interrupts is that they
+	only happen when the drive is 0x70.
+
+	* misc/kbd_test.c: Found trick to get interrupts - need to leave
+	columns hot!
+
+	* include/pkgconf/mlt_arm_eb7211_rom.mlt: 
+	* include/pkgconf/mlt_arm_eb7211_rom.ldi: Change RAM layout.
+
+	* include/pkgconf/mlt_arm_eb7209_rom.mlt: 
+	* include/pkgconf/mlt_arm_eb7209_rom.ldi: 
+	* include/pkgconf/mlt_arm_eb7212_rom.mlt: 
+	* include/pkgconf/mlt_arm_eb7212_rom.ldi: Change RAM layout.
+
+	* src/cl7211_misc.c (hal_hardware_init): Set up various hardware
+	segments (not totally complete).
+	* include/hal_platform_setup.h: Made ROM segment #1 non-cacheable.
+
+	* misc/kbd_test.c: New test for ASCII keyboard.  Interrupts
+	not yet working.
+
+	* misc/panel_test.c: Fix panel driving code.  Can now read
+	panel samples, but no interrupts.
+
+	* src/cl7211_misc.c: Add missing clear for keyboard interrupt.
+
+1999-09-06  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/PKGconf.mak (PROGS): Add new test.
+
+	* misc/panel_test.c: New file.  Test code for LCD touch panel.
+
+	* misc/lcd_support.c: New file.
+
+	* misc/lcd_test.c: Move LCD driving code to 'lcd_support.c' so it
+	can be shared.
+
+1999-09-03  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/lcd_test.c (lcd_drawc): Correct drawing of larger characters.
+
+	* misc/PKGconf.mak: Make LCD test program for all platforms.
+
+	* include/pkgconf/mlt_arm_cl7211_rom.mlt: 
+	* include/pkgconf/mlt_arm_cl7211_rom.ldi: 
+	* include/pkgconf/mlt_arm_cl7211_ram.mlt: 
+	* include/pkgconf/mlt_arm_cl7211_ram.ldi: 72xx has 16M by default.
+
+	* misc/PKGconf.mak: Remove extra [left over] step in make.
+
+1999-09-02  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* misc/PKGconf.mak: Use correct EXEEXT for gdb_module program.
+
+1999-09-02  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* support/io.c (uspin): Change timing - ugly.
+
+	* src/cl7211_misc.c: Disable out BATLOW testing code.
+
+	* include/hal_platform_setup.h: Better setup when LCD is installed.
+
+	* include/pkgconf/hal_arm_cl7211.h: Make LCD installed by default.
+
+	* misc/lcd_test.c: Rework for larger ALPS unit.  Also make characters
+	twice as big (so there's a chance at seeing them!)
+
+1999-08-16  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_cl7211.h:
+
+	Proper case various display strings.
+
+1999-08-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cl7211.cdl:
+	Define CYG_HAL_STARTUP and CYGHWR_MEMORY_LAYOUT.
+
+1999-07-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/STUBS_config: Update for latest hal.h.  Also add way to
+	specify platform (second parameter).
+
+1999-07-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_UCACHE_LINE_SIZE): Correct the comment
+	and the value: this is supposed to be in bytes.
+
+1999-06-22  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/cl7211_misc.c (hal_IRQ_handler): Remove some debug code.
+	Add simple handler for battery low to test FIQ support.
+
+1999-06-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/plf_stub.c: 
+	* src/hal_diag.c: Use pkgconf derived platform include file.
+
+	* src/cl7211_misc.c (hal_hardware_init): 
+	* include/pkgconf/hal_arm_cl7211.h: Add configuration control for
+	CPU processor speed.  Default to 73.728 MHz.
+
+1999-06-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_platform_setup.h (MAP_DRAM): 16M layout was wrong.
+
+1999-06-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: Clean up.
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): 
+	Better MMU initialization for IO segments.
+	(PLATFORM_SETUP1): Add mappings for expansion I/O.
+
+	* src/cl7211_misc.c (hal_hardware_init): Turn on DIAG LED.
+
+	* include/hal_cl7211.h: Add LED flasher definitions.
+
+1999-06-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/prog_flash.c: Massive rewrite/upgrade to handle Intel
+	parts that are on the 7211, as well as the ATMEL parts on 7111.
+	This program should work for either and gives a good example
+	of how to access/program/erase the FLASH.
+
+	* include/hal_platform_setup.h (CYGHWR_HAL_ARM_HAS_MMU): Define.
+
+	* misc/PKGconf.mak (gdb_module.img): 
+	* include/pkgconf/mlt_arm_cl7211_stubs.mlt: 
+	* include/pkgconf/mlt_arm_cl7211_stubs.ldi: Support to allow
+	stubs to be the startup application (GDB on board).
+
+1999-06-14  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_cache.h: Turn on FLUSH macros.
+
+1999-06-11  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_cache.h: Update with new unified cache support.
+
+1999-06-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Remove debug code.
+
+	* include/pkgconf/hal_arm_cl7211.h: Add new configuration options.
+	DRAM size (currently 2M and 16M supported).
+	LCD installed?
+
+	* include/hal_platform_setup.h: Reorganize to support configuration
+	of DRAM size and LCD installed.
+
+1999-05-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_cl7211.h: New configury to support
+	multiple versions of CLxx11.
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_cl7211.h: Move RTC setup here.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,1734 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Writing New Devices - host</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="Writing New Devices - target"
+HREF="synth-new-target.html"><LINK
+REL="NEXT"
+TITLE="Porting"
+HREF="synth-porting.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="synth-new-target.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="synth-porting.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH-NEW-HOST">Writing New Devices - host</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN726"
+></A
+><H2
+>Name</H2
+>Writing New Devices&nbsp;--&nbsp;extending the synthetic target, host-side</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-DESCRIPTION"
+></A
+><H2
+>Description</H2
+><P
+>On the host-side adding a new device means writing a Tcl/Tk script
+that will handle instantiation and subsequent requests from the
+target-side. These scripts all run in the same full interpreter,
+extended with various commands provided by the main I/O auxiliary
+code, and running in an overall GUI framework. Some knowledge of
+programming with Tcl/Tk is required to implement host-side device
+support.
+    </P
+><P
+>Some devices can be implemented entirely using a Tcl/Tk script. For
+example, if the final system will have some buttons then those can be
+emulated in the synthetic target using a few Tk widgets. A simple
+emulation could just have the right number of buttons in a row. A more
+advanced emulation could organize the buttons with the right layout,
+perhaps even matching the colour scheme, the shapes, and the relative
+sizes. With other devices it may be necessary for the Tcl script to
+interact with an external program, because the required functionality
+cannot easily be accessed from a Tcl script. For example interacting
+with a raw ethernet device involves some <TT
+CLASS="FUNCTION"
+>ioctl</TT
+>
+calls, which is easier to do in a C program. Therefore the
+<TT
+CLASS="FILENAME"
+>ethernet.tcl</TT
+> script which implements the
+host-side ethernet support spawns a separate program
+<TT
+CLASS="FILENAME"
+>rawether</TT
+>, written in C, that performs the
+low-level I/O. Raw ethernet access usually also requires root
+privileges, and running a small program <TT
+CLASS="FILENAME"
+>rawether</TT
+>
+with such privileges is somewhat less of a security risk than the
+whole eCos application, the I/O auxiliary, and various dynamically
+loaded Tcl scripts.
+    </P
+><P
+>Because all scripts run in a single interpreter, some care has
+to be taken to avoid accidental sharing of global variables. The best
+way to avoid problems is to have each script create its own Tcl
+namespace, so for example the <TT
+CLASS="FILENAME"
+>ethernet.tcl</TT
+> script
+creates a namespace <TT
+CLASS="VARNAME"
+>ethernet::</TT
+> and all variables
+and procedures reside in this namespace. Similarly the I/O auxiliary
+itself makes use of a <TT
+CLASS="VARNAME"
+>synth::</TT
+> namespace.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-BUILD"
+></A
+><H2
+>Building and Installation</H2
+><P
+>When an eCos device driver or application code instantiates a device,
+the I/O auxiliary will attempt to load a matching Tcl script. The
+third argument to <TT
+CLASS="FUNCTION"
+>synth_auxiliary_instantiate</TT
+>
+specifies the type of device, for example <TT
+CLASS="LITERAL"
+>ethernet</TT
+>,
+and the I/O auxiliary will append a <TT
+CLASS="FILENAME"
+>.tcl</TT
+> suffix
+and look for a script <TT
+CLASS="FILENAME"
+>ethernet.tcl</TT
+>.
+    </P
+><P
+>If the device being instantiated is application-specific rather than
+part of an eCos package, the I/O auxiliary will look first in the
+current directory, then in <TT
+CLASS="FILENAME"
+>~/.ecos/synth</TT
+>. If it is part of an eCos
+package then the auxiliary will expect to find the Tcl script and any
+support files below <TT
+CLASS="FILENAME"
+>libexec/ecos</TT
+> in the install tree - note
+that the same install tree must be used for the I/O auxiliary itself
+and for any device driver support. The directory hierarchy below
+<TT
+CLASS="FILENAME"
+>libexec/ecos</TT
+> matches the
+structure of the eCos repository, allowing multiple versions of a
+package to be installed to allow for incompatible protocol changes.
+    </P
+><P
+>The preferred way to build host-side software is to use
+<B
+CLASS="COMMAND"
+>autoconf</B
+> and <B
+CLASS="COMMAND"
+>automake</B
+>. Usually
+this involves little more than copying the
+<TT
+CLASS="FILENAME"
+>acinclude.m4</TT
+>, <TT
+CLASS="FILENAME"
+>configure.in</TT
+>
+and <TT
+CLASS="FILENAME"
+>Makefile.am</TT
+> files from an existing package,
+for example the synthetic target ethernet driver, and then making
+minor edits. In <TT
+CLASS="FILENAME"
+>acinclude.m4</TT
+> it may be necessary
+to adjust the path to the root of the repository.
+<TT
+CLASS="FILENAME"
+>configure.in</TT
+> may require a similar change, and
+the <TT
+CLASS="FUNCTION"
+>AC_INIT</TT
+> macro invocation will have to be
+changed to match one of the files in the new package. A critical macro
+in this file is <TT
+CLASS="FILENAME"
+>ECOS_PACKAGE_DIRS</TT
+> which will set
+up the correct install directory. <TT
+CLASS="FILENAME"
+>Makefile.am</TT
+> may
+require some more changes, for example to specify the data files that
+should be installed (including the Tcl script). These files should
+then be processed using <B
+CLASS="COMMAND"
+>aclocal</B
+>,
+<B
+CLASS="COMMAND"
+>autoconf</B
+> and <B
+CLASS="COMMAND"
+>automake</B
+> in that
+order. Actually building the software then just involves
+<B
+CLASS="COMMAND"
+>configure</B
+>, <B
+CLASS="COMMAND"
+>make</B
+> and
+<B
+CLASS="COMMAND"
+>make install</B
+>, as per the instructions in the
+toplevel <TT
+CLASS="FILENAME"
+>README.host</TT
+> file.
+    </P
+><P
+>To assist developers, if the environment variable
+<TT
+CLASS="ENVAR"
+>ECOSYNTH_DEVEL</TT
+> is set then a slightly different
+algorithm is used for locating device Tcl scripts. Instead of looking
+only in the install tree the I/O auxiliary will also look in the
+source tree, and if the script there is more recent than the installed
+version it will be used in preference. This allows developers to
+modify the master copy without having to run <B
+CLASS="COMMAND"
+>make
+install</B
+> all the time.
+    </P
+><P
+>If a script needs to know where it has been installed it can examine
+the Tcl variable <TT
+CLASS="VARNAME"
+>synth::device_install_dir</TT
+> . This
+variable gets updated whenever a  script is loaded, so if the
+value may be needed later it should be saved away in a device-specific
+variable. 
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-INSTANTIATION"
+></A
+><H2
+>Instantiation</H2
+><P
+>The I/O auxiliary will <B
+CLASS="COMMAND"
+>source</B
+> the device-specific
+Tcl script when the eCos application first attempts to instantiate a
+device of that type. The script should return a procedure that will be
+invoked to instantiate a device.
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>namespace eval ethernet {
+    &#8230;
+    proc instantiate { id instance data } {
+        &#8230;
+        return ethernet::handle_request
+    }
+}
+return ethernet::instantiate</PRE
+></TD
+></TR
+></TABLE
+><P
+>The <TT
+CLASS="VARNAME"
+>id</TT
+> argument is a unique identifier for this
+device instance. It will also be supplied on subsequent calls to the
+request handler, and will match the return value of
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_instantiate</TT
+> on the target side. A
+common use for this value is as an array index to support multiple
+instances of this types of device. The <TT
+CLASS="VARNAME"
+>instance</TT
+> and
+<TT
+CLASS="VARNAME"
+>data</TT
+> arguments match the corresponding arguments to
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_instantiate</TT
+> on the target side, so
+a typical value for <TT
+CLASS="VARNAME"
+>instance</TT
+> would be
+<TT
+CLASS="LITERAL"
+>eth0</TT
+>, and <TT
+CLASS="VARNAME"
+>data</TT
+> is used to pass
+arbitrary initialization parameters from target to host.
+    </P
+><P
+>The actual work done by the instantiation procedure is obviously
+device-specific. It may involve allocating an <A
+HREF="synth-new-host.html#SYNTH-NEW-HOST-INTERRUPTS"
+>interrupt vector</A
+>, adding a
+device-specific subwindow to the display, opening a real Linux device,
+establishing a socket connection to some server, spawning a separate
+process to handle the actual I/O, or a combination of some or all of
+the above.
+    </P
+><P
+>If the device is successfully instantiated then the return value
+should be a handler for subsequent I/O requests. Otherwise the return
+value should be an empty string, and on the target-side the
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_instantiate</TT
+> call will return
+<TT
+CLASS="LITERAL"
+>-1</TT
+>. The script is responsible for providing
+<A
+HREF="synth-new-host.html#SYNTH-NEW-HOST-OUTPUT"
+>diagnostics</A
+> explaining
+why the device could not be instantiated.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-REQUESTS"
+></A
+><H2
+>Handling Requests</H2
+><P
+>When the target-side calls
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_xchgmsg</TT
+>, the I/O auxiliary will
+end up calling the request handler for the appropriate device instance
+returned during instantiation:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>namespace eval ethernet {
+    &#8230;
+    proc handle_request { id request arg1 arg2 txdata txlen max_rxlen } {
+        &#8230;
+        if { &lt;some condition&gt; } {
+            synth::send_reply &lt;error code&gt; 0 ""
+            return
+        }
+        &#8230;
+        synth::send_reply &lt;reply code&gt; $packet_len $packet
+    }
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>The <TT
+CLASS="VARNAME"
+>id</TT
+> argument is the same device id that was
+passed to the instantiate function, and is typically used as an array
+index to access per-device data. The <TT
+CLASS="VARNAME"
+>request</TT
+>,
+<TT
+CLASS="VARNAME"
+>arg1</TT
+>, <TT
+CLASS="VARNAME"
+>arg2</TT
+>, and
+<TT
+CLASS="VARNAME"
+>max_rxlen</TT
+> are the same values that were passed to
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_xchgmsg</TT
+> on the target-side,
+although since this is a Tcl script obviously the numbers have been
+converted to strings. The <TT
+CLASS="VARNAME"
+>txdata</TT
+> buffer is raw data
+as transmitted by the target, or an empty string if the I/O operation
+does not involve any additional data. The Tcl procedures
+<B
+CLASS="COMMAND"
+>binary scan</B
+>, <B
+CLASS="COMMAND"
+>string index</B
+> and
+<B
+CLASS="COMMAND"
+>string range</B
+> may be found especially useful when
+manipulating this buffer. <TT
+CLASS="VARNAME"
+>txlen</TT
+> is provided for
+convenience, although <B
+CLASS="COMMAND"
+>string length $txdata</B
+> would
+give the same information.
+    </P
+><P
+>The code for actually processing the request is of course device
+specific. If the target does not expect a reply then the request
+handler should just return when finished. If a reply is expected then
+there should be a call to <B
+CLASS="COMMAND"
+>synth::send_reply</B
+>. The
+first argument is the reply code, and will be turned into a 32-bit
+integer on the target side. The second argument specifies the length
+of the reply data, and the third argument is the reply data itself.
+For some devices the Tcl procedure <B
+CLASS="COMMAND"
+>binary format</B
+>
+may prove useful. If the reply involves just a code and no additional
+data, the second and third arguments should be <TT
+CLASS="LITERAL"
+>0</TT
+>
+and an empty string respectively.
+    </P
+><P
+>Attempts to send a reply when none is expected, fail to send a reply
+when one is expected, or send a reply that is larger than the
+target-side expects, will all be detected by the I/O auxiliary and
+result in run-time error messages.
+    </P
+><P
+>It is not possible for the host-side code to send unsolicited messages
+to the target. If host-side code needs attention from the target, for
+example because some I/O operation has completed, then an interrupt
+should be raised.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-INTERRUPTS"
+></A
+><H2
+>Interrupts</H2
+><P
+>The I/O auxiliary provides a number of procedures for interrupt
+handling. 
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth::interrupt_allocate &lt;name&gt;
+synth::interrupt_get_max
+synth::interrupt_get_devicename &lt;vector&gt;
+synth::interrupt_raise &lt;vector&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::interrupt_allocate</B
+> is normally called during
+device instantiation, and returns the next free interrupt vector. This
+can be passed on to the target-side device driver in response to a
+suitable request, and it can then install an interrupt handler on that
+vector. Interrupt vector <TT
+CLASS="LITERAL"
+>0</TT
+> is used within the
+target-side code for the real-time clock, so the allocated vectors
+will start at <TT
+CLASS="LITERAL"
+>1</TT
+>. The argument identifies the
+device, for example <TT
+CLASS="LITERAL"
+>eth0</TT
+>. This is not actually used
+internally, but can be accessed by user-initialization scripts that
+provide some sort of interrupt monitoring facility (typically via the
+<TT
+CLASS="LITERAL"
+>interrupt</TT
+> <A
+HREF="synth-new-host.html#SYNTH-NEW-HOST-HOOKS"
+>hook</A
+>). It is possible for a
+single device to allocate multiple interrupt vectors, but the
+synthetic target supports a maximum of 32 such vectors.
+    </P
+><P
+><B
+CLASS="COMMAND"
+>synth::interrupt_get_max</B
+> returns the highest
+interrupt vector that has been allocated, or <TT
+CLASS="LITERAL"
+>0</TT
+> if
+there have been no calls to
+<B
+CLASS="COMMAND"
+>synth::interrupt_allocate</B
+>.
+<B
+CLASS="COMMAND"
+>synth::interrupt_get_devicename</B
+> returns the string
+that was passed to <B
+CLASS="COMMAND"
+>synth::interrupt_allocate</B
+> when
+the vector was allocated.
+    </P
+><P
+><B
+CLASS="COMMAND"
+>synth::interrupt_raise</B
+> can be called any time after
+initialization. The argument should be the vector returned by
+<B
+CLASS="COMMAND"
+>synth::interrupt_allocate</B
+> for this device. It will
+activate the normal eCos interrupt handling mechanism so, subject to
+interrupts being enabled and this particular interrupt not being
+masked out, the appropriate ISR will run.
+    </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>At this time it is not possible for a device to allocate a specific
+interrupt vector. The order in which interrupt vectors are assigned to
+devices effectively depends on the order in which the eCos devices get
+initialized, and that may change if the eCos application is rebuilt. A
+future extension may allow devices to allocate specific vectors, thus
+making things more deterministic. However that will introduce new
+problems, in particular the code will have to start worrying about
+requests for vectors that have already been allocated.
+    </P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-ARGS"
+></A
+><H2
+>Flags and Command Line Arguments</H2
+><P
+>The generic I/O auxiliary code will process the standard command line
+arguments, and will set various flag variables accordingly. Some of
+these should be checked by device-specific scripts.
+    </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="VARNAME"
+>synth::flag_gui</TT
+></DT
+><DD
+><P
+>This is set when the I/O auxiliary is operating in graphical mode
+rather than text mode. Some functionality such as filters and the GUI
+layout are only available in graphical mode.
+        </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    if { $synth::flag_gui } {
+        &#8230;
+    }</PRE
+></TD
+></TR
+></TABLE
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>synth::flag_verbose</TT
+></DT
+><DD
+><P
+>The user has requested additional information during startup. Each
+device driver can decide how much additional information, if any,
+should be produced.
+         </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>synth::flag_keep_going</TT
+></DT
+><DD
+><P
+>The user has specified <TT
+CLASS="OPTION"
+>-k</TT
+> or
+<TT
+CLASS="OPTION"
+>--keep-going</TT
+>, so even if an error occurs the I/O
+auxiliary and the various device driver scripts should continue running
+if at all possible. Diagnostics should still be generated.
+        </P
+></DD
+></DL
+></DIV
+><P
+>Some scripts may want to support additional command line arguments.
+This facility should be used with care since there is no way to
+prevent two different scripts from trying to use the same argument.
+The following Tcl procedures are available:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth::argv_defined &lt;name&gt;
+synth::argv_get_value &lt;name&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::argv_defined</B
+> returns a boolean to indicate
+whether or not a particular argument is present. If the argument is
+the name part of a name/value pair, an <TT
+CLASS="LITERAL"
+>=</TT
+> character
+should be appended. Typical uses might be:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    if { [synth::argv_defined "-o13"] } {
+        &#8230;
+    }
+
+    if { [synth::argv_defined "-mark="] } {
+        &#8230;
+    }</PRE
+></TD
+></TR
+></TABLE
+><P
+>The first call checks for a flag <TT
+CLASS="LITERAL"
+>-o13</TT
+> or
+<TT
+CLASS="LITERAL"
+>--o13</TT
+> - the code treats options with single and
+double hyphens interchangeably. The second call checks for an argument
+of the form <TT
+CLASS="LITERAL"
+>-mark=&lt;value&gt;</TT
+> or a pair of
+arguments <TT
+CLASS="LITERAL"
+>-mark &lt;value&gt;</TT
+>. The value part of a
+name/value pair can be obtained using
+<B
+CLASS="COMMAND"
+>synth::argv_get_value</B
+>;
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    variable speed 1
+    if { [synth::argv_defined "-mark="] } {
+        set mark [synth::argv_get_value "-mark="]
+        if { ![string is integer $mark] || ($mark &#60; 1) || ($mark &#62; 9) } {
+            &lt;issue diagnostic&gt;
+        } else {
+            set speed $mark
+        }
+    }</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::argv_get_value</B
+> should only be used after a
+successful call to <B
+CLASS="COMMAND"
+>synth::argv_defined</B
+>.
+At present there is no support for some advanced forms of command line
+argument processing. For example it is not possible to repeat a
+certain option such as <TT
+CLASS="OPTION"
+>-v</TT
+> or
+<TT
+CLASS="OPTION"
+>--verbose</TT
+>, with each occurrence increasing the level
+of verbosity. 
+    </P
+><P
+>If a script is going to have its own set of command-line arguments
+then it should give appropriate details if the user specifies
+<TT
+CLASS="OPTION"
+>--help</TT
+>. This involves a hook function:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>namespace eval my_device {
+    proc help_hook { } {
+        puts " -o13          : activate the omega 13 device"
+        puts " -mark &lt;speed&gt; : set speed. Valid values are 1 to 9."
+    }
+
+    synth::hook_add "help" my_device::help_hook
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-TDF"
+></A
+><H2
+>The Target Definition File</H2
+><P
+>Most device scripts will want to check entries in the target
+definition file for run-time configuration information. The Tcl
+procedures for this are as follows:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth::tdf_has_device &lt;name&gt;
+synth::tdf_get_devices
+synth::tdf_has_option &lt;devname&gt; &lt;option&gt;
+synth::tdf_get_option &lt;devname&gt; &lt;option&gt;
+synth::tdf_get_options &lt;devname&gt; &lt;option&gt;
+synth::tdf_get_all_options &lt;devname&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::tdf_has_device</B
+> can be used to check whether
+or not the target definition file had an entry
+<TT
+CLASS="LITERAL"
+>synth_device&nbsp;&lt;name&gt;</TT
+>. Usually the name
+will match the type of device, so the
+<TT
+CLASS="FILENAME"
+>console.tcl</TT
+> script will look for a target
+definition file entry <TT
+CLASS="LITERAL"
+>console</TT
+>.
+<B
+CLASS="COMMAND"
+>synth::tdf_get_devices</B
+> returns a list of all
+device entries in the target definition file.
+    </P
+><P
+>Once it is known that the target definition file has an entry for a
+certain device, it is possible to check for options within the entry.
+<B
+CLASS="COMMAND"
+>synth::tdf_has_option</B
+> just checks for the presence,
+returning a boolean:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    if { [synth::tdf_has_option "console" "appearance"] } {
+        &#8230;
+    }</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::tdf_get_option</B
+> returns a list of all the
+arguments for a given option. For example, if the target definition
+file contains an entry:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device console {
+    appearance -foreground white -background black
+    filter trace {^TRACE:.*} -foreground HotPink1 -hide 1
+    filter xyzzy {.*xyzzy.*} -foreground PapayaWhip
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>A call
+<B
+CLASS="COMMAND"
+>synth::tdf_get_option&nbsp;console&nbsp;appearance</B
+>
+will return the list <TT
+CLASS="LITERAL"
+>{-foreground white -background
+black}</TT
+>. This list can be manipulated using standard Tcl routines
+such as <B
+CLASS="COMMAND"
+>llength</B
+> and <B
+CLASS="COMMAND"
+>lindex</B
+>. Some
+options can occur multiple times in one entry, for example
+<TT
+CLASS="OPTION"
+>filter</TT
+> in the <TT
+CLASS="LITERAL"
+>console</TT
+> entry.
+<B
+CLASS="COMMAND"
+>synth::tdf_get_options</B
+> returns a list of lists,
+with one entry for each option occurrence.
+<B
+CLASS="COMMAND"
+>synth::tdf_get_all_options</B
+> returns a list of lists
+of all options. This time each entry will include the option name as
+well.
+    </P
+><P
+>The I/O auxiliary will not issue warnings about entries in the target
+definition file for devices which were not loaded, unless the
+<TT
+CLASS="OPTION"
+>-v</TT
+> or <TT
+CLASS="OPTION"
+>--verbose</TT
+> command line
+argument was used. This makes it easier to use a single target
+definition file for different applications. However the auxiliary will
+issue warnings about options within an entry that were ignored,
+because often these indicate a typing mistake of some sort. Hence a
+script should always call <B
+CLASS="COMMAND"
+>synth::tdf_has_option</B
+>,
+<B
+CLASS="COMMAND"
+>synth:;tdf_get_option</B
+> or
+<B
+CLASS="COMMAND"
+>synth::tdf_get_options</B
+> for all valid options, even
+if some of the options preclude the use of others.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-HOOKS"
+></A
+><H2
+>Hooks</H2
+><P
+>Some scripts may want to take action when particular events occur, for
+example when the eCos application has exited and there is no need for
+further I/O. This is supported using hooks:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>namespace eval my_device {
+    &#8230;
+    proc handle_ecos_exit { arg_list } {
+        &#8230;
+    }
+    synth::hook_add "ecos_exit" my_device::handle_ecos_exit
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>It is possible for device scripts to add their own hooks and call all
+functions registered for those hooks. A typical use for this is by
+user initialization scripts that want to monitor some types of I/O.
+The available Tcl procedures for manipulating hooks are:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth::hook_define &lt;name&gt;
+synth::hook_defined &lt;name&gt;
+synth::hook_add &lt;name&gt; &lt;function&gt;
+synth::hook_call &lt;name&gt; &lt;args&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::hook_define</B
+> creates a new hook with the
+specified name. This hook must not already exist.
+<B
+CLASS="COMMAND"
+>synth::hook_defined</B
+> can be used to check for the
+existence of a hook. <B
+CLASS="COMMAND"
+>synth::hook_add</B
+> allows other
+scripts to register a callback function for this hook, and
+<B
+CLASS="COMMAND"
+>synth::hook_call</B
+> allows the owner script to invoke
+all such callback functions. A hook must already be defined before a
+callback can be attached. Therefore typically device scripts will only
+use standard hooks and their own hooks, not hooks created by some
+other device, because the order of device initialization is not
+sufficiently defined. User scripts run from
+<TT
+CLASS="FILENAME"
+>mainrc.tcl</TT
+> can use any hooks that have been
+defined.
+    </P
+><P
+><B
+CLASS="COMMAND"
+>synth::hook_call</B
+> takes an arbitrary list of
+arguments, for example:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    synth::hook_call "ethernet_rx" "eth0" $packet</PRE
+></TD
+></TR
+></TABLE
+><P
+>The callback function will always be invoked with a single argument,
+a list of the arguments that were passed to
+<B
+CLASS="COMMAND"
+>synth::hook_call</B
+>: 
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    proc rx_callback { arg_list } {
+        set device [lindex $arg_list 0]
+        set packet [lindex $arg_list 1]
+    }</PRE
+></TD
+></TR
+></TABLE
+><P
+>Although it might seem more appropriate to use Tcl's
+<B
+CLASS="COMMAND"
+>eval</B
+> procedure and have the callback functions
+invoked with the right number of arguments rather than a single list,
+that would cause serious problems if any of the data contained special
+characters such as <TT
+CLASS="LITERAL"
+>[</TT
+> or <TT
+CLASS="LITERAL"
+>$</TT
+>. The
+current implementation of hooks avoids such problems, at the cost of
+minor inconvenience when writing callbacks.
+    </P
+><P
+>A number of hooks are defined as standard. Some devices will add
+additional hooks, and the device-specific documentation should be
+consulted for those. User scripts can add their own hooks if desired.
+    </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="LITERAL"
+>exit</TT
+></DT
+><DD
+><P
+>This hook is called just before the I/O auxiliary exits. Hence it
+provides much the same functionality as <TT
+CLASS="FUNCTION"
+>atexit</TT
+> in
+C programs. The argument list passed to the callback function will be
+empty. 
+        </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>ecos_exit</TT
+></DT
+><DD
+><P
+>This hook is called when the eCos application has exited. It is used
+mainly to shut down I/O operations: if the application is no longer
+running then there is no point in raising interrupts or storing
+incoming packets. The callback argument list will be empty.
+        </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>ecos_initialized</TT
+></DT
+><DD
+><P
+>The synthetic target HAL will send a request to the I/O auxiliary once
+the static constructors have been run. All devices should now have been
+instantiated. A script could now check how many instances there are of
+a given type of device, for example ethernet devices, and create a
+little monitor window showing traffic on all the devices. The
+<TT
+CLASS="LITERAL"
+>ecos_initialized</TT
+> callbacks will be run just before
+the user's <TT
+CLASS="FILENAME"
+>mainrc.tcl</TT
+> script. The callback
+argument list will be empty.
+        </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>help</TT
+></DT
+><DD
+><P
+>This hook is also invoked once static constructors have been run, but
+only if the user specified <TT
+CLASS="OPTION"
+>-h</TT
+> or
+<TT
+CLASS="OPTION"
+>--help</TT
+>. Any scripts that add their own command line
+arguments should add a callback to this hook which outputs details of
+the additional arguments. The callback argument list will be empty.
+        </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>interrupt</TT
+></DT
+><DD
+><P
+>Whenever a device calls <B
+CLASS="COMMAND"
+>synth::interrupt_raise</B
+> the
+<TT
+CLASS="LITERAL"
+>interrupt</TT
+> hook will be called with a single
+argument, the interrupt vector. The main use for this is to allow
+user scripts to monitor interrupt traffic.
+        </P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-OUTPUT"
+></A
+><H2
+>Output and Filters</H2
+><P
+>Scripts can use conventional facilities for sending text output to the
+user, for example calling <B
+CLASS="COMMAND"
+>puts</B
+> or directly
+manipulating the central text widget
+<TT
+CLASS="VARNAME"
+>.main.centre.text</TT
+>. However in nearly all cases it
+is better to use output facilities provided by the I/O auxiliary
+itself: 
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth::report &lt;msg&gt;
+synth::report_warning &lt;msg&gt;
+synth::report_error &lt;msg&gt;
+synth::internal_error &lt;msg&gt;
+synth::output &lt;msg&gt; &lt;filter&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::report</B
+> is intended for messages related to
+the operation of the I/O auxiliary itself, especially additional
+output resulting from <TT
+CLASS="OPTION"
+>-v</TT
+> or
+<TT
+CLASS="OPTION"
+>--verbose</TT
+>. If running in text mode the output will go
+to standard output. If running in graphical mode the output will go to
+the central text window. In both modes, use of <TT
+CLASS="OPTION"
+>-l</TT
+> or
+<TT
+CLASS="OPTION"
+>--logfile</TT
+> will modify the behaviour.
+    </P
+><P
+><B
+CLASS="COMMAND"
+>synth::report_warning</B
+>,
+<B
+CLASS="COMMAND"
+>synth::report_error</B
+> and
+<B
+CLASS="COMMAND"
+>synth::internal_error</B
+> have the obvious meaning,
+including prepending strings such as <TT
+CLASS="LITERAL"
+>Warning:</TT
+> and
+<TT
+CLASS="LITERAL"
+>Error:</TT
+>. When the eCos application informs the I/O
+auxiliary that all static constructors have run, if at that point
+there have been any calls to <B
+CLASS="COMMAND"
+>synth::error</B
+> then the
+I/O auxiliary will exit. This can be suppressed with command line
+arguments <TT
+CLASS="OPTION"
+>-k</TT
+> or <TT
+CLASS="OPTION"
+>--keep-going</TT
+>.
+<B
+CLASS="COMMAND"
+>synth::internal_error</B
+> will output some information
+about the current state of the I/O auxiliary and then exit
+immediately. Of course it should never be necessary to call this
+function. 
+    </P
+><P
+><B
+CLASS="COMMAND"
+>synth::output</B
+> is the main routine for outputting
+text. The second argument identifies a filter. If running in text mode
+the filter is ignored, but if running in graphical mode the filter can
+be used to control the appearance of this output. A typical use would
+be:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    synth::output $line "console"</PRE
+></TD
+></TR
+></TABLE
+><P
+>This outputs a single line of text using the
+<TT
+CLASS="LITERAL"
+>console</TT
+> filter. If running in graphical mode the
+default appearance of this text can be modified with the
+<TT
+CLASS="OPTION"
+>appearance</TT
+> option in the
+<B
+CLASS="COMMAND"
+>synth_device&nbsp;console</B
+> entry of the target
+definition file. The <SPAN
+CLASS="GUIMENUITEM"
+>System filters</SPAN
+> menu
+option can be used to change the appearance at run-time.
+    </P
+><P
+>Filters should be created before they are used. The procedures
+available for this are:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth::filter_exists &lt;name&gt;
+synth::filter_get_list
+synth::filter_add &lt;name&gt; [options]
+synth::filter_parse_options &lt;options&gt; &lt;parsed_options&gt; &lt;message&gt;
+synth::filter_add_parsed &lt;name&gt; &lt;parsed_options&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::filter_exists</B
+> can be used to check whether
+or not a particular filter already exists: creating two filters with
+the same name is not allowed.
+<B
+CLASS="COMMAND"
+>synth::filter_get_list</B
+> returns a list of the
+current known filters. <B
+CLASS="COMMAND"
+>synth::filter_add</B
+> can be
+used to create a new filter. The first argument names the new filter,
+and the remaining arguments control the initial appearance. A typical
+use might be:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    synth::filter_add "my_device_tx" -foreground yellow -hide 1</PRE
+></TD
+></TR
+></TABLE
+><P
+>It is assumed that the supplied arguments are valid, which typically
+means that they are hard-wired in the script. If instead the data
+comes out of a configuration file and hence may be invalid, the
+I/O auxiliary provides a parsing utility. Typical usage would be:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    array set parsed_options [list]
+    set message ""
+    if { ![synth::filter_parse_options $console_appearance parsed_options message] } {
+        synth::report_error \
+	        "Invalid entry in target definition file $synth::target_definition\
+	         \n  synth_device \"console\", entry \"appearance\"\n$message"
+    } else {
+        synth::filter_add_parsed "console" parsed_options
+    }</PRE
+></TD
+></TR
+></TABLE
+><P
+>On success <TT
+CLASS="VARNAME"
+>parsed_options</TT
+> will be updated with an
+internal representation of the desired appearance, which can then be
+used in a call to <B
+CLASS="COMMAND"
+>synth::filter_add_parsed</B
+>. On
+failure <TT
+CLASS="VARNAME"
+>message</TT
+> will be updated with details of the
+parsing error that occurred.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-HOST-GUI"
+></A
+><H2
+>The Graphical Interface</H2
+><P
+>When the I/O auxiliary is running in graphical mode, many scripts will
+want to update the user interface in some way. This may be as simple
+as adding another entry to the help menu for the device, or adding a
+new button to the toolbar. It may also involve adding new subwindows,
+or even creating entire new toplevel windows. These may be simple
+monitor windows, displaying additional information about what is going
+on in the system in a graphical format. Alternatively they may emulate
+actual I/O operations, for example button widgets could be used to
+emulate real physical buttons.
+    </P
+><P
+>The I/O auxiliary does not provide many procedures related to the
+graphical interface. Instead it is expected that scripts will just
+update the widget hierarchy directly.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN1018"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="layout.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>So adding a new item to the <SPAN
+CLASS="GUIMENU"
+>Help</SPAN
+> menu involves a
+<B
+CLASS="COMMAND"
+>.menubar.help&nbsp;add</B
+> operation with suitable
+arguments. Adding a new button to the toolbar involves creating a
+child window in <TT
+CLASS="VARNAME"
+>.toolbar</TT
+> and packing it
+appropriately. Scripts can create their own subwindows and then pack
+it into one of <TT
+CLASS="VARNAME"
+>.main.nw</TT
+>,
+<TT
+CLASS="VARNAME"
+>.main.n</TT
+>, <TT
+CLASS="VARNAME"
+>.main.ne</TT
+>,
+<TT
+CLASS="VARNAME"
+>.main.w</TT
+>, <TT
+CLASS="VARNAME"
+>.main.e</TT
+>,
+<TT
+CLASS="VARNAME"
+>.main.sw</TT
+>, <TT
+CLASS="VARNAME"
+>.main.s</TT
+> or
+<TT
+CLASS="VARNAME"
+>.main.se</TT
+>. Normally the user should be allowed to
+<A
+HREF="synth-gui.html#SYNTH-GUI-LAYOUT"
+>control</A
+> this via the target
+definition file. The central window <TT
+CLASS="VARNAME"
+>.main.centre</TT
+>
+should normally be left alone by other scripts since it gets used for
+text output.
+    </P
+><P
+>The following graphics-related utilities may be found useful:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth::load_image &lt;image name&gt; &lt;filename&gt;
+synth::register_ballon_help &lt;widget&gt; &lt;message&gt;
+synth::handle_help &lt;URL&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><B
+CLASS="COMMAND"
+>synth::load_image</B
+> can be used to add a new image to
+the current interpreter. If the specified file has a
+<TT
+CLASS="FILENAME"
+>.xbm</TT
+> extension then the image will be a
+monochrome bitmap, otherwise it will be a colour image of some sort.
+A boolean will be returned to indicate success or failure, and
+suitable diagnostics will be generated if necessary.
+    </P
+><P
+><B
+CLASS="COMMAND"
+>synth::register_balloon_help</B
+> provides balloon help
+for a specific widget, usually a button on the toolbar.
+    </P
+><P
+><B
+CLASS="COMMAND"
+>synth::handle_help</B
+> is a utility routine that can be
+installed as the command for displaying online help, for example:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    .menubar.help add command -label "my device" -command \
+        [list synth::handle_help "file://$path"]</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="synth-new-target.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="synth-porting.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Writing New Devices - target</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Porting</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

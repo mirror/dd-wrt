@@ -1,0 +1,444 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Receiving Data from the Host</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Devtab Entries"
+HREF="usbs-devtab.html"><LINK
+REL="NEXT"
+TITLE="Sending Data to the Host"
+HREF="usbs-start-tx.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-devtab.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-start-tx.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-START-RX"
+>Receiving Data from the Host</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN277"
+></A
+><H2
+>Name</H2
+><TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+>&nbsp;--&nbsp;Receiving Data from the Host</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN281"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN282"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/io/usb/usbs.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_start_rx_buffer</CODE
+>(usbs_rx_endpoint* ep, unsigned char* buffer, int length, void (*)(void*,int) complete_fn, void * complete_data);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_start_rx</CODE
+>(usbs_rx_endpoint* ep);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN302"
+></A
+><H2
+><TT
+CLASS="FUNCTION"
+>Description</TT
+></H2
+><P
+><TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> is a USB-specific function
+to accept a transfer from host to peripheral. It can be used for bulk,
+interrupt or isochronous transfers, but not for control messages.
+Instead those involve manipulating the <A
+HREF="usbs-control.html"
+><SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+></A
+>
+data structure directly. The function takes five arguments:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>The first argument identifies the specific endpoint that should be
+used. Different USB devices will support different sets of endpoints
+and the device driver will provide appropriate data structures. The
+device driver's documentation should be consulted for details of which
+endpoints are available.</P
+></LI
+><LI
+><P
+>The <TT
+CLASS="PARAMETER"
+><I
+>buffer</I
+></TT
+> and <TT
+CLASS="PARAMETER"
+><I
+>length</I
+></TT
+>
+arguments control the actual transfer. USB device drivers are not
+expected to perform any buffering or to support partial transfers, so
+the length specified should correspond to the maximum transfer that is
+currently possible and the buffer should be at least this large. For
+isochronous transfers the USB specification imposes an upper bound of
+1023 bytes, and a smaller limit may be set in the <A
+HREF="usbs-enum.html#AEN142"
+>enumeration data</A
+>. Interrupt
+transfers are similarly straightforward with an upper bound of 64
+bytes, or less as per the enumeration data. Bulk transfers are more
+complicated because they can involve multiple 64-byte packets plus a
+terminating packet of less than 64 bytes, so there is no predefined
+limit on the transfer size. Instead it is left to higher-level
+protocols to specify an appropriate upper bound.</P
+><P
+>One technique that may work for bulk transfers is to exploit the fact
+that such transfers happen in 64-byte packets: it may be possible to
+receive an initial 64 bytes, corresponding to the first packet in the
+transfer; these 64 bytes can then be examined to determine the total
+transfer size, and the remaining data can be transferred in another
+receive operation. This technique is not guaranteed to work with all
+USB hardware. Also, if the delay between accepting the first packet and
+the remainder of the transfer is excessive then this could cause
+timeout problems for the host-side software. For these reasons this
+technique should be avoided.</P
+></LI
+><LI
+><P
+><TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> is non-blocking. It merely
+starts the receive operation, and does not wait for completion. At
+some later point the USB device driver will invoke the completion
+function parameter with two arguments: the completion data defined by
+the last parameter and a result field. A result &gt;=
+<TT
+CLASS="LITERAL"
+>0</TT
+> indicates a successful transfer of that many
+bytes, which may be less than the upper bound imposed by the
+<TT
+CLASS="PARAMETER"
+><I
+>length</I
+></TT
+> argument. A result &lt;
+<TT
+CLASS="LITERAL"
+>0</TT
+> indicates an error. The most likely errors are
+<TT
+CLASS="LITERAL"
+>-EPIPE</TT
+> to indicate that the connection between the
+host and the target has been broken, and <TT
+CLASS="LITERAL"
+>-EAGAIN</TT
+>
+for when the endpoint has been <A
+HREF="usbs-halt.html"
+>halted</A
+>. Specific USB device drivers may
+specify additional error conditions.</P
+></LI
+></OL
+><P
+>The normal sequence of events is that the USB device driver will
+update the appropriate hardware registers. At some point after that
+the host will attempt to send data by transmitting an OUT token
+followed by a data packet, and since a receive operation is now in
+progress the data will be accepted and ACK'd. If there were no receive
+operation then the peripheral would instead generate a NAK. The USB
+hardware will generate an interrupt once the whole packet has been
+received, and the USB device driver will service this interrupt and
+arrange for a DSR to be called. Isochronous and interrupt transfers
+involve just a single packet. However, bulk transfers may involve
+multiple packets so the device driver has to check whether the packet
+was a full 64 bytes or whether it was a terminating packet of less
+than this. When the device driver DSR detects a complete transfer it
+will inform higher-level code by invoking the supplied completion
+function.</P
+><P
+>This means that the completion function will normally be invoked by a
+DSR and not in thread context - although some USB device drivers may
+have a different implementation. Therefore the completion function is
+restricted in what it can do. In particular it must not make any
+calls that will or may block such as locking a mutex or allocating
+memory. The kernel documentation should be consulted for more details
+of DSR's and interrupt handling generally.</P
+><P
+>It is possible that the completion function will be invoked before
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> returns. Such an event would
+be unusual because the transfer cannot happen until the next time the
+host tries to send data to this peripheral, but it may happen if for
+example another interrupt happens and a higher priority thread is
+scheduled to run. Also, if the endpoint is currently halted then the
+completion function will be invoked immediately with
+<TT
+CLASS="LITERAL"
+>-EAGAIN</TT
+>: typically this will happen in the current
+thread rather than in a separate DSR. The completion function is
+allowed to start another transfer immediately by calling
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> again.</P
+><P
+>USB device drivers are not expected to perform any locking. It is the
+responsibility of higher-level code to ensure that there is only one
+receive operation for a given endpoint in progress at any one time. If
+there are concurrent calls to
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> then the resulting behaviour
+is undefined. For typical USB applications this does not present any
+problems, because only one piece of code will access a given endpoint
+at any particular time.</P
+><P
+>The following code fragment illustrates a very simple use of
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+> to implement a blocking
+receive, using a semaphore to synchronise between the foreground
+thread and the DSR. For a simple example like this no completion data
+is needed.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static int error_code = 0;
+static cyg_sem_t completion_wait;
+
+static void
+completion_fn(void* data, int result)
+{
+    error_code = result;
+    cyg_semaphore_post(&amp;completion_wait);
+}
+
+int
+blocking_receive(usbs_rx_endpoint* ep, unsigned char* buf, int len)
+{
+    error_code = 0;
+    usbs_start_rx_buffer(ep, buf, len, &amp;completion_fn, NULL);
+    cyg_semaphore_wait(&amp;completion_wait);
+    return error_code;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>There is also a utility function <TT
+CLASS="FUNCTION"
+>usbs_start_rx</TT
+>. This
+can be used by code that wants to manipulate <A
+HREF="usbs-data.html"
+>data endpoints</A
+> directly, specifically the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_fn</I
+></TT
+>,
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_data</I
+></TT
+>,
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+> fields.
+<TT
+CLASS="FUNCTION"
+>usbs_start_tx</TT
+> just invokes a function
+supplied by the device driver.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-devtab.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-start-tx.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Devtab Entries</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Sending Data to the Host</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

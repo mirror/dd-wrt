@@ -1,0 +1,544 @@
+
+eCos SMP Support
+================
+
+eCos contains support for limited Symmetric Multi-Processing
+(SMP). This is only available on selected architectures and platforms.
+
+This first part of this document describes the platform-independent
+parts of the SMP support. Annexes at the end of this document describe
+any details that are specific to a particular platform.
+
+Target Hardware Limitations
+---------------------------
+
+To allow a reasonable implementation of SMP, and to reduce the
+disruption to the existing source base, a number of assumptions have
+been made about the features of the target hardware.
+
+- Modest multiprocessing. The typical number of CPUs supported is two
+  to four, with an upper limit around eight. While there are no
+  inherent limits in the code, hardware and algorithmic limitations
+  will probably become significant beyond this point.
+
+- SMP synchronization support. The hardware must supply a mechanism to
+  allow software on two CPUs to synchronize. This is normally provided
+  as part of the instruction set in the form of test-and-set,
+  compare-and-swap or load-link/store-conditional instructions. An
+  alternative approach is the provision of hardware semaphore
+  registers which can be used to serialize implementations of these
+  operations. Whatever hardware facilities are available, they are
+  used in eCos to implement spinlocks.
+
+- Coherent caches. It is assumed that no extra effort will be required
+  to access shared memory from any processor. This means that either
+  there are no caches, they are shared by all processors, or are
+  maintained in a coherent state by the hardware. It would be too
+  disruptive to the eCos sources if every memory access had to be
+  bracketed by cache load/flush operations. Any hardware that requires
+  this is not supported.
+
+- Uniform addressing. It is assumed that all memory that is
+  shared between CPUs is addressed at the same location from all
+  CPUs. Like non-coherent caches, dealing with CPU-specific address
+  translation is considered too disruptive to the eCos source
+  base. This does not, however, preclude systems with non-uniform
+  access costs for different CPUs.
+
+- Uniform device addressing. As with access to memory, it is assumed
+  that all devices are equally accessible to all CPUs. Since device
+  access is often made from thread contexts, it is not possible to
+  restrict access to device control registers to certain CPUs, since
+  there is currently no support for binding or migrating threads to CPUs.
+  
+- Interrupt routing. The target hardware must have an interrupt
+  controller that can route interrupts to specific CPUs. It is
+  acceptable for all interrupts to be delivered to just one CPU, or
+  for some interrupts to be bound to specific CPUs, or for some
+  interrupts to be local to each CPU. At present dynamic routing,
+  where a different CPU may be chosen each time an interrupt is
+  delivered, is not supported. ECos cannot support hardware where all
+  interrupts are delivered to all CPUs simultaneously with the
+  expectation that software will resolve any conflicts.
+
+- Inter-CPU interrupts. A mechanism to allow one CPU to interrupt
+  another is needed. This is necessary so that events on one CPU can
+  cause rescheduling on other CPUs.
+
+- CPU Identifiers. Code running on a CPU must be able to determine
+  which CPU it is running on. The CPU Id is usually provided either in
+  a CPU status register, or in a register associated with the
+  inter-CPU interrupt delivery subsystem. Ecos expects CPU Ids to be
+  small positive integers, although alternative representations, such
+  as bitmaps, can be converted relatively easily. Complex mechanisms
+  for getting the CPU Id cannot be supported. Getting the CPU Id must
+  be a cheap operation, since it is done often, and in performance
+  critical places such as interrupt handlers and the scheduler.
+  
+Kernel Support
+--------------
+
+This section describes how SMP is handled in the kernel, and where
+system behaviour differs from a single CPU system.
+
+System Startup
+~~~~~~~~~~~~~~
+
+System startup takes place on only one CPU, called the primary
+CPU. All other CPUs, the secondary CPUs, are either placed in
+suspended state at reset, or are captured by the HAL and put into
+a spin as they start up.
+
+The primary CPU is responsible for copying the DATA segment and
+zeroing the BSS (if required), calling HAL variant and platform
+initialization routines and invoking constructors. It then calls
+cyg_start() to enter the application. The application may then create
+extra threads and other objects.
+
+It is only when the application calls Cyg_Scheduler::start() that the
+secondary CPUs are initialized. This routine scans the list of
+available secondary CPUs and calls HAL_SMP_CPU_START() to start each one.
+Finally it calls Cyg_Scheduler::start_cpu().
+
+Each secondary CPU starts in the HAL, where it completes any per-CPU
+initialization before calling into the kernel at
+cyg_kernel_cpu_startup(). Here it claims the scheduler lock and calls 
+Cyg_Scheduler::start_cpu().
+
+Cyg_Scheduler::start_cpu() is common to both the primary and secondary
+CPUs. The first thing this code does is to install an interrupt object
+for this CPU's inter-CPU interrupt. From this point on the code is the
+same as for the single CPU case: an initial thread is chosen and
+entered.
+
+From this point on the CPUs are all equal, eCos makes no further
+distinction between the primary and secondary CPUs. However, the
+hardware may still distinguish them as far as interrupt delivery is
+concerned.
+
+
+Scheduling
+~~~~~~~~~~
+
+To function correctly an operating system kernel must protect its
+vital data structures, such as the run queues, from concurrent
+access. In a single CPU system the only concurrent activities to worry
+about are asynchronous interrupts. The kernel can easily guard its
+data structures against these by disabling interrupts. However, in a
+multi-CPU system, this is inadequate since it does not block access by
+other CPUs.
+
+The eCos kernel protects its vital data structures using the scheduler
+lock. In single CPU systems this is a simple counter that is
+atomically incremented to acquire the lock and decremented to release
+it. If the lock is decremented to zero then the scheduler may be
+invoked to choose a different thread to run. Because interrupts may
+continue to be serviced while the scheduler lock is claimed, ISRs are
+not allowed to access kernel data structures, or call kernel routines
+that can. Instead all such operations are deferred to an associated
+DSR routine that is run during the lock release operation, when the
+data structures are in a consistent state.
+
+By choosing a kernel locking mechanism that does not rely on interrupt
+manipulation to protect data structures, it is easier to convert eCos
+to SMP than would otherwise be the case. The principal change needed to
+make eCos SMP-safe is to convert the scheduler lock into a nestable
+spin lock. This is done by adding a spinlock and a CPU id to the
+original counter.
+
+The algorithm for acquiring the scheduler lock is very simple. If the
+scheduler lock's CPU id matches the current CPU then it can increment
+the counter and continue. If it does not match, the CPU must spin on
+the spinlock, after which it may increment the counter and store its
+own identity in the CPU id.
+
+To release the lock, the counter is decremented. If it goes to zero
+the CPU id value must be set to NONE and the spinlock cleared.
+
+To protect these sequences against interrupts, they must be performed
+with interrupts disabled. However, since these are very short code
+sequences, they will not have an adverse effect on the interrupt
+latency.
+
+Beyond converting the scheduler lock, further preparing the kernel for
+SMP is a relatively minor matter. The main changes are to convert
+various scalar housekeeping variables into arrays indexed by CPU
+id. These include the current thread pointer, the need_reschedule
+flag and the timeslice counter.
+
+At present only the Multi-Level Queue (MLQ) scheduler is capable of
+supporting SMP configurations. The main change made to this scheduler
+is to cope with having several threads in execution at the same
+time. Running threads are marked with the CPU they are executing on.
+When scheduling a thread, the scheduler skips past any running threads
+until it finds a thread that is pending. While not a constant-time
+algorithm, as in the single CPU case, this is still deterministic,
+since the worst case time is bounded by the number of CPUs in the
+system.
+
+A second change to the scheduler is in the code used to decide when
+the scheduler should be called to choose a new thread. The scheduler
+attempts to keep the *n* CPUs running the *n* highest priority
+threads. Since an event or interrupt on one CPU may require a
+reschedule on another CPU, there must be a mechanism for deciding
+this. The algorithm currently implemented is very simple. Given a
+thread that has just been awakened (or had its priority changed), the
+scheduler scans the CPUs, starting with the one it is currently
+running on, for a current thread that is of lower priority than the
+new one. If one is found then a reschedule interrupt is sent to that
+CPU and the scan continues, but now using the current thread of the
+rescheduled CPU as the candidate thread. In this way the new thread
+gets to run as quickly as possible, hopefully on the current CPU, and
+the remaining CPUs will pick up the remaining highest priority
+threads as a consequence of processing the reschedule interrupt.
+
+The final change to the scheduler is in the handling of
+timeslicing. Only one CPU receives timer interrupts, although all CPUs
+must handle timeslicing. To make this work, the CPU that receives the
+timer interrupt decrements the timeslice counter for all CPUs, not
+just its own. If the counter for a CPU reaches zero, then it sends a
+timeslice interrupt to that CPU. On receiving the interrupt the
+destination CPU enters the scheduler and looks for another thread at
+the same priority to run. This is somewhat more efficient than
+distributing clock ticks to all CPUs, since the interrupt is only
+needed when a timeslice occurs.
+
+Device Drivers
+~~~~~~~~~~~~~~
+
+The main area where the SMP nature of a system will be most apparent
+is in device drivers. It is quite possible for the ISR, DSR and thread
+components of a device driver to execute on different CPUs. For this
+reason it is much more important that SMP-capable device drivers use
+the driver API routines correctly.
+
+Synchronization between threads and DSRs continues to require that the
+thread-side code use cyg_drv_dsr_lock() and cyg_drv_dsr_unlock() to
+protect access to shared data. Synchronization between ISRs and DSRs
+or threads requires that access to sensitive data be protected, in all
+places, by calls to cyg_drv_isr_lock() and cyg_drv_isr_unlock().
+
+The ISR lock, for SMP systems, not only disables local interrupts, but
+also acquires a spinlock to protect against concurrent access from
+other CPUs. This is necessary because ISRs are not run with the
+scheduler lock claimed. Hence they can run in parallel with other
+components of the device driver.
+
+The ISR lock provided by the driver API is just a shared spinlock that
+is available for use by all drivers. If a driver needs to implement a
+finer grain of locking, it can use private spinlocks, accessed via the
+cyg_drv_spinlock_*() functions (see API later).
+
+
+API Extensions
+--------------
+
+In general, the SMP support is invisible to application code. All
+synchronization and communication operations function exactly as
+before. The main area where code needs to be SMP aware is in the
+handling of interrupt routing, and in the synchronization of ISRs,
+DSRs and threads.
+
+The following sections contain brief descriptions of the API
+extensions added for SMP support. More details will be found in the
+Kernel C API and Device Driver API documentation.
+
+Interrupt Routing
+~~~~~~~~~~~~~~~~~
+
+Two new functions have been added to the Kernel API and the device
+driver API to do interrupt routing. These are:
+
+void cyg_interrupt_set_cpu( cyg_vector_t vector, cyg_cpu_t cpu );
+void cyg_drv_interrupt_set_cpu( cyg_vector_t vector, cyg_cpu_t cpu );
+
+cyg_cpu_t cyg_interrupt_get_cpu( cyg_vector_t vector );
+cyg_cpu_t cyg_drv_interrupt_get_cpu( cyg_vector_t vector );
+
+the *_set_cpu() functions cause the given interrupt to be handled by
+the nominated CPU.
+
+The *_get_cpu() functions return the CPU to which the vector is
+routed.
+
+Although not currently supported, special values for the cpu argument
+may be used to indicate that the interrupt is being routed dynamically
+or is CPU-local.
+
+Once a vector has been routed to a new CPU, all other interrupt
+masking and configuration operations are relative to that CPU, where
+relevant.
+
+Synchronization
+~~~~~~~~~~~~~~~
+
+All existing synchronization mechanisms work as before in an SMP
+system. Additional synchronization mechanisms have been added to
+provide explicit synchronization for SMP.
+
+A set of functions have been added to the Kernel and device driver
+APIs to provide spinlocks:
+
+void cyg_spinlock_init( cyg_spinlock_t *lock, cyg_bool_t locked );
+void cyg_drv_spinlock_init( cyg_spinlock_t *lock, cyg_bool_t locked );
+
+void cyg_spinlock_destroy( cyg_spinlock_t *lock );
+void cyg_drv_spinlock_destroy( cyg_spinlock_t *lock );
+
+void cyg_spinlock_spin( cyg_spinlock_t *lock );
+void cyg_drv_spinlock_spin( cyg_spinlock_t *lock );
+
+void cyg_spinlock_clear( cyg_spinlock_t *lock );
+void cyg_drv_spinlock_clear( cyg_spinlock_t *lock );
+
+cyg_bool_t cyg_spinlock_try( cyg_spinlock_t *lock );
+cyg_bool_t cyg_drv_spinlock_try( cyg_spinlock_t *lock );
+
+cyg_bool_t cyg_spinlock_test( cyg_spinlock_t *lock );
+cyg_bool_t cyg_drv_spinlock_test( cyg_spinlock_t *lock );
+
+void cyg_spinlock_spin_intsave( cyg_spinlock_t *lock,
+                                cyg_addrword_t *istate );
+void cyg_drv_spinlock_spin_intsave( cyg_spinlock_t *lock,
+                                    cyg_addrword_t *istate );
+
+void cyg_spinlock_clear_intsave( cyg_spinlock_t *lock,
+                                 cyg_addrword_t istate );
+void cyg_drv_spinlock_clear_intsave( cyg_spinlock_t *lock,
+                                     cyg_addrword_t istate );
+
+The *_init() functions initialize the lock, to either locked or clear,
+and the *_destroy() functions destroy the lock. Init() should be called
+before the lock is used and destroy() should be called when it is
+finished with.
+
+The *_spin() functions will cause the calling CPU to spin until it can
+claim the lock and the *_clear() functions clear the lock so that the
+next CPU can claim it. The *_try() functions attempts to claim the lock
+but returns false if it cannot. The *_test() functions simply return
+the state of the lock.
+
+None of these functions will necessarily block interrupts while they
+spin. If the spinlock is only to be used between threads on different
+CPUs, or in circumstances where it is known that the relevant
+interrupts are disabled, then these functions will suffice. However,
+if the spinlock is also to be used from an ISR, which may be called at
+any point, a straightforward spinlock may result in deadlock. Hence
+the *_intsave() variants are supplied to disable interrupts while the
+lock is held.
+
+The *_spin_intsave() function disables interrupts, saving the current
+state in *istate, and then claims the lock. The *_clear_intsave()
+function clears the spinlock and restores the interrupt enable state
+from *istate.
+
+
+HAL Support
+-----------
+
+SMP support in any platform depends on the HAL supplying the
+appropriate operations. All HAL SMP support is defined in the
+hal_smp.h header (and if necessary var_smp.h and plf_smp.h).
+
+SMP support falls into a number of functional groups.
+
+CPU Control
+~~~~~~~~~~~
+
+This group consists of descriptive and control macros for managing the
+CPUs in an SMP system.
+
+HAL_SMP_CPU_TYPE	A type that can contain a CPU id. A CPU id is
+			usually a small integer that is used to index
+			arrays of variables that are managed on an
+			per-CPU basis.
+
+HAL_SMP_CPU_MAX		The maximum number of CPUs that can be
+			supported. This is used to provide the size of
+			any arrays that have an element per CPU.
+
+HAL_SMP_CPU_COUNT()	Returns the number of CPUs currently
+			operational. This may differ from
+			HAL_SMP_CPU_MAX depending on the runtime
+			environment.
+
+HAL_SMP_CPU_THIS()	Returns the CPU id of the current CPU.
+
+HAL_SMP_CPU_NONE	A value that does not match any real CPU
+			id. This is uses where a CPU type variable
+			must be set to a nul value.
+
+HAL_SMP_CPU_START( cpu )
+		        Starts the given CPU executing at a defined
+		        HAL entry point. After performing any HAL
+		        level initialization, the CPU calls up into
+		        the kernel at cyg_kernel_cpu_startup().
+
+HAL_SMP_CPU_RESCHEDULE_INTERRUPT( cpu, wait )
+			Sends the CPU a reschedule interrupt, and if
+			_wait_ is non-zero, waits for an
+			acknowledgment. The interrupted CPU should
+			call cyg_scheduler_set_need_reschedule() in
+			its DSR to cause the reschedule to occur.
+
+HAL_SMP_CPU_TIMESLICE_INTERRUPT( cpu, wait )
+			Sends the CPU a timeslice interrupt, and if
+			_wait_ is non-zero, waits for an
+			acknowledgment. The interrupted CPU should
+			call cyg_scheduler_timeslice_cpu() to cause
+			the timeslice event to be processed.
+
+Test-and-set Support
+~~~~~~~~~~~~~~~~~~~~
+
+Test-and-set is the foundation of the SMP synchronization
+mechanisms.
+
+HAL_TAS_TYPE		The type for all test-and-set variables. The
+			test-and-set macros only support operations on
+			a single bit (usually the least significant
+			bit) of this location. This allows for maximum
+			flexibility in the implementation.
+
+HAL_TAS_SET( tas, oldb )
+		        Performs a test and set operation on the
+		        location _tas_. _oldb_ will contain *true* if
+		        the location was already set, and *false* if
+		        it was clear.
+
+HAL_TAS_CLEAR( tas, oldb )
+		        Performs a test and clear operation on the
+		        location _tas_. _oldb_ will contain *true* if
+		        the location was already set, and *false* if
+		        it was clear.
+
+Spinlocks
+~~~~~~~~~
+
+Spinlocks provide inter-CPU locking. Normally they will be implemented
+on top of the test-and-set mechanism above, but may also be
+implemented by other means if, for example, the hardware has more
+direct support for spinlocks.
+
+HAL_SPINLOCK_TYPE       The type for all spinlock variables.
+
+HAL_SPINLOCK_INIT_CLEAR	A value that may be assigned to a spinlock
+			variable to initialize it to clear.
+
+HAL_SPINLOCK_INIT_SET	A value that may be assigned to a spinlock
+			variable to initialize it to set.
+
+HAL_SPINLOCK_SPIN( lock )
+		        The caller spins in a busy loop waiting for
+		        the lock to become clear. It then sets it and
+		        continues. This is all handled atomically, so
+		        that there are no race conditions between CPUs.
+
+HAL_SPINLOCK_CLEAR( lock )
+			The caller clears the lock. One of any waiting
+			spinners will then be able to proceed.
+
+HAL_SPINLOCK_TRY( lock, val )
+		        Attempts to set the lock. The value put in
+		        _val_ will be *true* if the lock was
+		        claimed successfully, and *false* if it was
+		        not.
+
+HAL_SPINLOCK_TEST( lock, val )
+			Tests the current value of the lock. The value
+			put in _val_ will be *true* if the lock is
+			claimed and *false* of it is clear.
+
+Scheduler Lock
+~~~~~~~~~~~~~~
+
+The scheduler lock is the main protection for all kernel data
+structures. By default the kernel implements the scheduler lock itself
+using a spinlock. However, if spinlocks cannot be supported by the
+hardware, or there is a more efficient implementation available, the
+HAL may provide macros to implement the scheduler lock.
+
+HAL_SMP_SCHEDLOCK_DATA_TYPE
+			A data type, possibly a structure, that
+			contains any data items needed by the
+			scheduler lock implementation. A variable of
+			this type will be instantiated as a static
+			member of the Cyg_Scheduler_SchedLock class
+			and passed to all the following macros.
+
+HAL_SMP_SCHEDLOCK_INIT( lock, data )
+			Initialize the scheduler lock. The _lock_
+			argument is the scheduler lock counter and the
+			_data_ argument is a variable of
+			HAL_SMP_SCHEDLOCK_DATA_TYPE type.
+
+HAL_SMP_SCHEDLOCK_INC( lock, data )
+		        Increment the scheduler lock. The first
+		        increment of the lock from zero to one for any
+		        CPU may cause it to wait until the lock is
+		        zeroed by another CPU. Subsequent increments
+		        should be less expensive since this CPU
+		        already holds the lock.
+			
+HAL_SMP_SCHEDLOCK_ZERO( lock, data )
+			Zero the scheduler lock. This operation will
+			also clear the lock so that other CPUs may
+			claim it.
+	
+HAL_SMP_SCHEDLOCK_SET( lock, data, new )
+
+			Set the lock to a different value, in
+			_new_. This is only called when the lock is
+			already known to be owned by the current
+			CPU. It is never called to zero the lock, or
+			to increment it from zero.
+
+
+Interrupt Routing
+~~~~~~~~~~~~~~~~~
+
+The routing of interrupts to different CPUs is supported by two new
+interfaces in hal_intr.h.
+
+Once an interrupt has been routed to a new CPU, the existing vector
+masking and configuration operations should take account of the CPU
+routing. For example, if the operation is not invoked on the
+destination CPU itself, then the HAL may need to arrange to transfer
+the operation to the destination CPU for correct application.
+
+HAL_INTERRUPT_SET_CPU( vector, cpu )
+		       Route the interrupt for the given _vector_ to
+		       the given _cpu_. 
+
+HAL_INTERRUPT_GET_CPU( vector, cpu )
+		       Set _cpu_ to the id of the CPU to which this
+		       vector is routed.
+
+
+
+
+
+Annex 1 - Pentium SMP Support
+=============================
+
+ECos supports SMP working on Pentium class IA32 CPUs with integrated
+SMP support. It uses the per-CPU APIC's and the IOAPIC to provide CPU
+control and identification, and to distribute interrupts. Only PCI
+interrupts that map into the ISA interrupt space are currently
+supported. The code relies on the MP Configuration Table supplied by
+the BIOS to discover the number of CPUs, IOAPIC location and interrupt
+assignments - hardware based MP configuration discovery is
+not currently supported. 
+
+Inter-CPU interrupts are mapped into interrupt vectors from 64
+up. Each CPU has its own vector at 64+CPUID.
+
+Interrupt delivery is initially configured to deliver all interrupts
+to the initial CPU. HAL_INTERRUPT_SET_CPU() currently only supports
+the ability to deliver interrupts to specific CPUs, dynamic CPU
+selection is not currently supported.
+
+eCos has only been tested in a dual processor configuration. While the
+code has been written to handle an arbitrary number of CPUs, this has
+not been tested.
+
