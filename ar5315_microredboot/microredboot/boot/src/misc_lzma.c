@@ -185,6 +185,9 @@ struct fis_image_desc {
 
 static unsigned int sectorsize = 0x10000;
 static unsigned int linuxaddr = 0xbfc10000;
+/*
+ * searches for a directory entry named linux* vmlinux* or kernel and returns its flash address (it also initializes entrypoint and load address)
+ */
 unsigned int getLinux(void)
 {
 	int count;
@@ -266,24 +269,17 @@ static void error(char *x)
 
 static int getGPIO(int nr)
 {
-	unsigned int *gpio = (unsigned int *)AR2316_GPIO_DI;
+	volatile unsigned int *gpio = (unsigned int *)AR2316_GPIO_DI;
 	if ((*gpio & 1 << nr) == (1 << nr))
 		return 1;
 	return 0;
 }
 
+/*
+ * checks if the reset button is pressed, return 1 if the button is pressed and 0 if not
+ */
 static int resetTouched(void)
 {
-/*puts("gpio 5:");
-print_hex(getGPIO(5));
-puts("\r\n");
-puts("gpio 6:");
-print_hex(getGPIO(6));
-puts("\r\n");
-puts("gpio 7:");
-print_hex(getGPIO(7));
-puts("\r\n");
-*/
 	int trigger = getGPIO(RESETBUTTON & 0x0f);
 	if (RESETBUTTON & 0xf0)
 		trigger = 1 - trigger;
@@ -332,6 +328,9 @@ MACRO_START                                 \
     *(_pvalue_) = result;                       \
 MACRO_END
 
+/*
+ * 
+ */
 static void delay_us(int us)
 {
 	unsigned int val1, val2;
@@ -628,7 +627,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 		if ((res & 0x3) == 0x2) {
 			break;
 		}
-		delay_us(20);
+		delay_us(200000);
 		spiflash_sendcmd(STM_OP_WR_ENABLE, 0);
 	} while (1);
 	spiflash_sendcmd(STM_OP_SECTOR_ERASE, offset);
@@ -660,7 +659,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		while (count--) {
 			if (!resetTouched()) // check if reset button is unpressed again
 				break;
-			delay_us(1000);
+			delay_us(1000000);
 		}
 		if (!count) {
 			puts("reset button 5 seconds pushed, erasing nvram\r\n");
@@ -699,11 +698,11 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 
 		regtmp = sysRegRead(AR2316_RESET);
 		sysRegWrite(AR2316_RESET, regtmp | mask);
-		delay_us(10);
+		delay_us(10000);
 
 		regtmp = sysRegRead(AR2316_RESET);
 		sysRegWrite(AR2316_RESET, regtmp & ~mask);
-		delay_us(10);
+		delay_us(10000);
 
 		regtmp = sysRegRead(AR2316_IF_CTL);
 		regtmp |= IF_TS_LOCAL;
