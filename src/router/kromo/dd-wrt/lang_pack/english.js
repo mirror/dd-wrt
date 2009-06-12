@@ -481,7 +481,7 @@ hconfig.right4="Click the <em>Browse...</em> button to browse for a configuratio
 
 // ** DDNS.asp **//
 var ddns = new Object();
-ddns.titl="Dynamic DNS"
+ddns.titl="Dynamic DNS";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS Service";

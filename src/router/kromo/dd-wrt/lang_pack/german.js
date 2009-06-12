@@ -418,7 +418,7 @@ hconfig.right4="Klicken Sie den <em>Durchsuchen...</em>-Button, um eine Konfigur
 
 // **************************************************************** DDNS.asp **********************************************************************//
 
-ddns.titl="Dynamic DNS"
+ddns.titl="Dynamic DNS";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS-Service";

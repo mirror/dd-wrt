@@ -393,7 +393,7 @@ hconfig.right4="Clique em <em>Procurar...</em> para procurar por um arquivo de c
 
 // ******************************************* DDNS.asp *******************************************//
 
-ddns.titl="DNS Dinâmico"
+ddns.titl="DNS Dinâmico";
 ddns.h2="Sistema Dinâmico de Nomes de Domínio (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="Serviço DDNS";
