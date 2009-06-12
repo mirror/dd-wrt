@@ -1,0 +1,425 @@
+# ====================================================================
+#
+#      freebsd_net.cdl
+#
+#      Networking configuration data
+#
+# ====================================================================
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2000, 2001, 2002 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-11-29
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_NET_FREEBSD_STACK {
+    display       "FreeBSD networking stack"
+    parent        CYGPKG_NET
+    doc           ref/tcpip-freebsd.html
+    include_dir   .
+    requires      CYGPKG_IO
+    requires      CYGPKG_ISOINFRA
+    requires      CYGINT_ISO_C_TIME_TYPES
+    requires      CYGINT_ISO_STRERROR
+    requires      CYGINT_ISO_ERRNO
+    requires      CYGINT_ISO_ERRNO_CODES
+    requires      CYGINT_ISO_MALLOC
+    requires      CYGINT_ISO_STRING_BSD_FUNCS
+    requires      CYGPKG_IO_FILEIO
+    description   "Basic networking support, including TCP/IP."
+
+    cdl_interface CYGINT_NET_IPSEC_BSD_CRYPTO {
+        display   "Implementation of BSD CRYPTO functions"
+        description "
+          In order to avoid potential export problems of crypto
+          functions, they are distributed in a separate package which
+          must implement this interface"
+    }
+
+    implements    CYGPKG_NET_STACK
+    implements    CYGPKG_NET_STACK_INET
+    implements    CYGPKG_NET_STACK_INET6
+
+    # Note: separating the stack implementation from the common support leads
+    # to some rather incestious config file relationships.
+    define_proc {
+        puts $::cdl_system_header "/***** Networking stack proc output start *****/"
+        puts $::cdl_header "#include <pkgconf/net.h>"
+        puts $::cdl_system_header "#define CYGDAT_NET_STACK_CFG <pkgconf/net_freebsd_stack.h>"
+        puts $::cdl_system_header "/***** Networking stack proc output end *****/"
+    }
+
+
+    # Export our types to <sys/types.h>
+    implements    CYGINT_ISO_BSDTYPES
+    requires      { CYGBLD_ISO_BSDTYPES_HEADER == "<sys/bsdtypes.h>" }
+
+    # These files are unique to eCos
+    compile ecos/support.c \
+        ecos/synch.c \
+        ecos/timeout.c \
+        ecos/init.cxx 
+    compile -library=libextras.a sys/kern/sockio.c
+
+    # These files were derived from FreeBSD and carry their copyright
+    compile sys/net/if.c \
+        sys/net/rtsock.c \
+        sys/net/raw_cb.c \
+        sys/net/raw_usrreq.c \
+        sys/net/route.c \
+        sys/net/radix.c \
+        sys/net/if_ethersubr.c \
+        sys/net/if_loop.c \
+        sys/netinet/igmp.c \
+        sys/netinet/raw_ip.c \
+        sys/netinet/in.c  \
+        sys/netinet/in_cksum.c \
+        sys/netinet/in_pcb.c \
+        sys/netinet/in_proto.c \
+        sys/netinet/in_rmx.c \
+        sys/netinet/ip_encap.c \
+        sys/netinet/ip_id.c \
+        sys/netinet/ip_icmp.c \
+        sys/netinet/ip_flow.c \
+        sys/netinet/ip_input.c \
+        sys/netinet/ip_output.c \
+        sys/netinet/ip_mroute.c \
+        sys/netinet/if_ether.c \
+        sys/netinet/udp_usrreq.c \
+        sys/netinet/tcp_input.c \
+        sys/netinet/tcp_output.c \
+        sys/netinet/tcp_debug.c \
+        sys/netinet/tcp_usrreq.c \
+        sys/netinet/tcp_timer.c \
+        sys/netinet/tcp_subr.c \
+        sys/kern/md5c.c \
+        sys/kern/uipc_domain.c \
+        sys/kern/uipc_socket.c \
+        sys/kern/uipc_socket2.c \
+        sys/kern/uipc_mbuf.c \
+        sys/kern/uipc_mbuf2.c \
+        sys/kern/uipc_accf.c \
+        sys/kern/kern_subr.c 
+
+    cdl_component CYGPKG_NET_FREEBSD_INET {
+        display       "INET support"
+        active_if     CYGPKG_NET_INET
+        flavor        bool
+        no_define
+        default_value 1
+        description   "
+            This option enables support for INET (IPv4) network processing."
+
+        cdl_option CYGPKG_NET_FREEBSD_INET6 {
+            display       "IPv6 support"
+            active_if     CYGPKG_NET_INET6
+            flavor        bool
+            default_value 1
+            description   "
+                This option enables support for new IPv6."
+            # These files were derived from FreeBSD and carry their copyright
+            compile \
+              sys/netinet6/dest6.c \
+              sys/netinet6/frag6.c \
+              sys/netinet6/icmp6.c \
+              sys/netinet6/in6.c \
+              sys/netinet6/in6_cksum.c \
+              sys/netinet6/in6_ifattach.c \
+              sys/netinet6/in6_pcb.c \
+              sys/netinet6/in6_proto.c \
+              sys/netinet6/in6_rmx.c \
+              sys/netinet6/in6_src.c \
+              sys/netinet6/ip6_forward.c \
+              sys/netinet6/ip6_input.c \
+              sys/netinet6/ip6_mroute.c \
+              sys/netinet6/ip6_output.c \
+              sys/netinet6/mld6.c \
+              sys/netinet6/nd6.c \
+              sys/netinet6/nd6_nbr.c \
+              sys/netinet6/nd6_rtr.c \
+              sys/netinet6/raw_ip6.c \
+              sys/netinet6/route6.c \
+              sys/netinet6/scope6.c \
+              sys/netinet6/udp6_output.c \
+              sys/netinet6/udp6_usrreq.c \
+
+## Only if firewall enabled
+##              sys/netinet6/ip6_fw.c \
+##
+        }
+        cdl_option CYGPKG_NET_FREEBSD_IPSEC {
+            display       "IPSEC support"
+            requires      CYGPKG_COMPRESS_ZLIB
+            implements    CYGPKG_NET_STACK_IPSEC
+
+            flavor        bool
+            default_value CYGPKG_NET_IPSEC_BSD_CRYPTO
+
+            description   "
+                This option enables support for IPSEC."
+            # These files were derived from FreeBSD/KAME and carry their copyright
+            compile \
+              sys/netkey/key.c \
+              sys/netkey/key_debug.c \
+              sys/netkey/keydb.c\
+              sys/netkey/keysock.c \
+              sys/netinet6/ipsec.c \
+              sys/netinet6/ah_core.c \
+              sys/netinet6/ah_input.c \
+              sys/netinet6/ah_output.c \
+              sys/netinet6/ipcomp_core.c \
+              sys/netinet6/esp_core.c \
+              sys/netinet6/esp_output.c \
+              sys/netinet6/esp_input.c \
+              sys/netinet6/esp_rijndael.c \
+              sys/netinet6/esp_twofish.c \
+              sys/netinet6/ipcomp_core.c \
+              sys/netinet6/ipcomp_output.c \
+              sys/netinet6/ipcomp_input.c \
+              sys/netinet/ip_ecn.c
+        }
+        cdl_option CYGPKG_NET_FREEBSD_IPSEC6 {
+            display       "IPSEC support for IPv6"
+            active_if     CYGPKG_NET_INET6
+            active_if     CYGPKG_NET_FREEBSD_IPSEC
+
+            flavor        bool
+            default_value 1
+            description   "
+                This option enables support for IPSEC with IPv6"
+            compile \
+              sys/netinet6/in6_gif.c
+
+        }
+        cdl_option CYGPKG_NET_FREEBSD_SYSCTL {
+            display       "sysctl support"
+            flavor        bool
+            default_value 0
+            description   "
+                This option enables support for the system call sysctl used
+            to configure options/variables in the stack and retrieve statistics. "
+            # This file was derived from FreeBSD and carries that copyright
+            compile \
+              sys/kern/kern_sysctl.c
+        } 
+    }
+
+    cdl_option CYGPKG_NET_NGIF {
+        display "Number of GIF things"
+        flavor  data
+        default_value 0
+        description   "
+            This option controls the number of active GIF things."
+        define NGIF
+    }
+
+    cdl_option CYGPKG_NET_NLOOP {
+        display "Number of loopback interfaces"
+        flavor  data
+        default_value 1
+        description   "
+            This option controls the number of loopback, i.e. local, interfaces.
+            There is seldom need for this value to be anything other than one."
+        define NLOOP
+    }
+
+    cdl_option CYGPKG_NET_FREEBSD_LOGGING {
+        display       "Error and warning log control"
+        flavor        booldata
+        default_value 0xC08F
+        description   "
+            This option controls the type and amount of information
+            printed by the networking code.  Different logging 
+            facilities may be enabled by bitwise or-ing:
+              LOG_ERR     0x0001 - error conditions
+              LOG_WARNING 0x0002 - interesting, but not errors
+              LOG_NOTICE  0x0004 - things to look out for
+              LOG_INFO    0x0008 - generic comments
+              LOG_DEBUG   0x0010 - for finding obscure problems
+              LOG_MDEBUG  0x0020 - additional information about memory allocations
+              LOG_IOCTL   0x0040 - information about ioctl calls
+              LOG_INIT    0x0080 - information as system initializes
+              LOG_ADDR    0x0100 - information about IPv6 addresses
+              LOG_FAIL    0x0200 - why packets (IPv6) are ignored, etc.
+              LOG_EMERG   0x4000 - emergency conditions
+              LOG_CRIT    0x8000 - critical error
+            "
+    }
+
+    cdl_option CYGPKG_NET_FORCE_SERIAL_CONSOLE {
+        display "Force use of serial console during initialization"
+        flavor  bool
+        default_value 0
+        description   "
+            Trying to print initialization messages can fail if the
+            console channel is a network connection (via RedBoot).
+            Use of this option forces the stack to use a serial
+            port during this phase for safety.  It can be used 
+            if the network drivers are unstable at this point."
+    }
+
+    cdl_option CYGPKG_NET_MEM_USAGE {
+        display "Memory designated for networking buffers."
+        flavor  data
+        default_value (256*1024)+(CYGPKG_NET_MAXSOCKETS*1024)
+        description   "
+            This option controls the amount of memory pre-allocated
+        for buffers used by the networking code.  The number is an
+        upper limit, with at least enough space to get the stack
+        initialized. Tip: setting a breakpoint at cyg_memalloc_alloc_fail() 
+	is an especially useful tool in establishing when there is too 
+        little memory for an application. "
+    }
+
+    cdl_option CYGPKG_NET_MEMPOOL_SIZE {
+        display "Memory designated for network dynamically allocated memory"
+        flavor  data
+        default_value CYGPKG_NET_MEM_USAGE/4
+        description   "
+            Controls the amount of memory in the pool used for dynamically
+            allocated memory. This does not include mbufs or clusters."
+    }
+
+    cdl_option CYGPKG_NET_MBUFS_SIZE {
+        display "MBUFs memory size"
+        flavor  data
+        default_value CYGPKG_NET_MEM_USAGE/4
+        description   "
+            Size of MBUFs pool."
+    }
+
+    cdl_option CYGPKG_NET_CLUSTERS_SIZE {
+        display "Clusters size"
+        flavor  data
+        default_value CYGPKG_NET_MEM_USAGE/2
+        description   "
+            Clusters size."
+    }
+
+    cdl_option CYGPKG_NET_MAXSOCKETS {
+        display "Max number of open sockets."
+        flavor  data
+        default_value CYGNUM_FILEIO_NFILE
+        description   "
+            This option controls the amount of memory pre-allocated
+        for socket buffers used by the networking code."
+    }
+
+    cdl_option CYGPKG_NET_NUM_WAKEUP_EVENTS {
+        display "Number of supported pending network events"
+        flavor  data
+        default_value 8
+        description   "
+            This option controls the number of pending network events
+        used by the networking code."
+    }
+
+    cdl_option CYGPKG_NET_THREAD_PRIORITY {
+        display "Priority level for backgound network processing."
+        flavor  data
+        default_value 7
+        description   "
+            This option allows the thread priority level used by the
+        networking stack to be adjusted by the user.  It should be set
+        high enough that sufficient CPU resources are available to
+        process network data, but may be adjusted so that application
+        threads can have precedence over network processing."
+    }
+
+    cdl_option CYGPKG_NET_FAST_THREAD_PRIORITY {
+        display "Priority level for fast network processing."
+        flavor  data
+        default_value CYGPKG_NET_THREAD_PRIORITY - 1
+        description   "
+            This option sets the thread priority level used by the fast
+        network thread.  The fast network thread runs often but briefly, to
+        service network device interrupts and network timeout events.  This
+        thread should have higher priority than the background network
+        thread.  It is reasonable to set this thread's priority higher than
+        application threads for best network throughput, or to set it lower
+        than application threads for best latency for those application
+        threads themselves, potentially at a cost to network throughput."
+    }
+
+    cdl_component CYGPKG_NET_FAST_THREAD_TICKLE_DEVS {
+        display "Fast network processing thread 'tickles' drivers"
+        default_value 1
+        description "
+            If this is enabled, the fast network thread will tickle the
+            device(s) periodically, to unblock them when the hardware has
+            become wedged due to a lost interrupt or other hardware
+            race-condition type problem.
+            This is not necessary if a networked app is running which sends
+            packets itself often - or
+            uses TCP, or any similar protocol which exchanges keep-alive
+            packets periodically and often enough.
+            Trying to send a packet passes control into the driver; this is
+            sufficient to detect and unblock jammed hardware."
+
+        cdl_option CYGNUM_NET_FAST_THREAD_TICKLE_DEVS_DELAY {
+            display "Delay in kernel clocks of tickle loop"
+            flavor data
+            default_value 50
+            description "
+                The default is 50, which will usually mean a delay between
+                tests for 'stuck' devices of 500mS, that is half a second.
+	        The overhead only applies if no network activity occurred,
+	        so it may be acceptable to make this value very small,
+                where high CPU load does not matter during network idle
+                periods, or very large if your application tries often to
+                send packets itself."
+        }
+    }
+
+    cdl_component CYGPKG_NET_FREEBSD_STACK_OPTIONS {
+        display "Networking support build options"
+        flavor  none
+        no_define
+
+        cdl_option CYGPKG_NET_FREEBSD_STACK_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the networking package.
+                These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_NET_FREEBSD_STACK_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the networking package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+    cdl_option CYGPKG_NET_FREEBSD_STACK_TESTS {
+        display       "FreeBSD network stack tests"
+        flavor        data
+        no_define
+        calculated { CYGPKG_NET_FREEBSD_SYSCTL ? "tests/sysctl1" : "" }
+        description  "
+            These are test specifically for the FreeBSD stack. These test features
+            which only the FreeBSD stack has"
+    }
+}

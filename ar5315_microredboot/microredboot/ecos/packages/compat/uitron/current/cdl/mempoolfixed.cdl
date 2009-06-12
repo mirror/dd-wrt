@@ -1,0 +1,138 @@
+# ====================================================================
+#
+#      mempoolfixed.cdl
+#
+#      uITRON fixed memory pool related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  hmt
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGNUM_UITRON_MEMPOOLFIXED {
+    display       "Number of fixed-size memorypools"
+    flavor        data
+    legal_values  1 to 65535
+    default_value 3
+    description   "
+        The number of uITRON Fixed-Size
+        Memorypools present in the system.
+        Valid Fixed-Size Memorypool IDs will range
+        from 1 to this value."
+}
+cdl_component CYGPKG_UITRON_MEMPOOLFIXED_CREATE_DELETE {
+    display       "Support create and delete"
+    flavor        bool
+    default_value 1
+    active_if     (0 < CYGNUM_UITRON_MEMPOOLFIXED)
+    description   "
+        Support fixed-size memory pool
+        create and delete operations
+        (cre_mpf, del_mpf).
+        Otherwise all fixed mempools are created,
+        up to the number specified above."
+
+    cdl_option CYGNUM_UITRON_MEMPOOLFIXED_INITIALLY {
+        display       "Number of fixed mempools created initially"
+        flavor        data
+        legal_values  0 to 65535
+        default_value 3
+        description   "
+            The number of fixed mempools initially created.
+            This number should not be more than the number
+            of fixed mempools in the system, though setting
+            it to a large value to mean 'all' is acceptable.
+            Initially, only fixed mempools numbered from
+            1 to this number exist;
+            higher numbered ones must be created before use.
+            Whilst all mempools must be initialized to tell
+            the system what memory to use for each pool,
+            it is only useful to initialize the blocksize of
+            fixed mempools up to this number;
+            the blocksize for higher numbered ones
+            will be defined when they are created."
+    }
+}
+cdl_option CYGDAT_UITRON_MEMPOOLFIXED_EXTERNS {
+    display       "Externs for initialization"
+    flavor        data
+    default_value {"static char fpool1[ 2000 ], \\\n\
+                                fpool2[ 2000 ], \\\n\
+                                fpool3[ 2000 ];"}
+    description   "
+        Fixed mempool initializers may refer to external
+        objects such as memory for the pool to manage.
+        Use this option to define or declare any external
+        objects needed by the pool's static initializer below.
+        Example: create some memory for a mempool using
+        'static char fpool1\[2000\];'
+        to set up a chunk of memory of 2000 bytes.
+        Note: this option is invoked in the 'outermost' context
+        of C++ source, where global/static objects are created;
+        it should contain valid, self-contained, C++ source."
+}
+cdl_option CYGDAT_UITRON_MEMPOOLFIXED_INITIALIZERS {
+    display       "Static initializers"
+    flavor        data
+    default_value {"CYG_UIT_MEMPOOLFIXED( fpool1, 2000,  20 ), \\\n\
+                    CYG_UIT_MEMPOOLFIXED( fpool2, 2000, 100 ), \\\n\
+                    CYG_UIT_MEMPOOLFIXED( fpool3, 2000, 500 ),"}
+    description   "
+        Fixed block memory pools should be statically
+        initialized: enter a list of initializers
+        separated by commas, one per line.
+        An initializer is
+        'CYG_UIT_MEMPOOLFIXED(ADDR,SIZE,BLOCK)'
+        where addr is the address of memory to manage,
+        size is the total size of that memory, and
+        block is the block size for allocation by the pool.
+        If create and delete operations are supported,
+        initializers of the form
+        'CYG_UIT_MEMPOOLFIXED_NOEXS(ADDR,SIZE)' should be
+        used for pools which are not initially created, to tell
+        the system what memory to use for each pool.
+        Note: this option is invoked in the context of a
+        C++ array initializer, between curly brackets.
+        Ensure that the number of initializers here exactly
+        matches the total number of fixed pools specified."
+}

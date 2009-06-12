@@ -1,0 +1,197 @@
+# ====================================================================
+#
+#      pthread.cdl
+#
+#      POSIX pthread configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Contributors:   jlarmour
+# Date:           2000-3-28
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGPKG_POSIX_PTHREAD_REQUIREMENTS {
+	display         "Generic requirements of pthread package"
+	flavor          bool
+	calculated 	1
+        implements      CYGINT_ISO_PTHREADTYPES
+        implements      CYGINT_ISO_PTHREAD_IMPL
+	requires        CYGPKG_POSIX_SCHED
+	requires	CYGSEM_KERNEL_SCHED_TIMESLICE_ENABLE
+	requires	CYGSEM_KERNEL_SCHED_ASR_SUPPORT
+	requires	CYGSEM_KERNEL_SCHED_ASR_GLOBAL
+	requires	!CYGSEM_KERNEL_SCHED_ASR_DATA_GLOBAL
+	requires	CYGFUN_KERNEL_THREADS_STACK_LIMIT
+        requires        { CYGBLD_ISO_PTHREADTYPES_HEADER == \
+                          "<cyg/posix/types.h>" }
+        requires        { CYGBLD_ISO_PTHREAD_IMPL_HEADER == \
+                          "<cyg/posix/pthread.h>" }
+	description     "This option exists merely to carry the pthread
+                         package requirements."
+
+}
+
+# ====================================================================
+
+cdl_component CYGPKG_POSIX_PTHREAD_VALUES {
+    display          "Constant values used in pthread package"
+    flavor           bool
+    calculated 	     1
+    description      "These are values that are either configurable, or derived
+                     from system parameters."
+
+    cdl_option CYGNUM_POSIX_PTHREAD_DESTRUCTOR_ITERATIONS {
+	display          "Maximum number of iterations of key destructors"
+	flavor           data
+	legal_values     4 to 100
+	default_value    4
+	description      "Maximum number of iterations of key destructors allowed."
+    }
+
+    cdl_option CYGNUM_POSIX_PTHREAD_KEYS_MAX {
+	display          "Maximum number of per-thread data keys allowed"
+	flavor           data
+	legal_values     128 to 65535
+	default_value    128
+	description      "Number of per-thread data keys supported."
+    }
+
+        cdl_option CYGNUM_POSIX_PTHREAD_THREADS_MAX {
+	display          "Maximum number of threads allowed"
+	flavor           data
+	legal_values     64 to 1024
+	default_value    64
+	description      "Maximum number of threads supported."
+    }
+
+}
+
+# ====================================================================
+
+cdl_component CYGPKG_POSIX_PTHREAD_FEATURES {
+	display		"Fixed Feature test macros for POSIX"
+	flavor        	bool
+	calculated 	1
+	description	"These options define POSIX feature test macros that
+			 describe the eCos implementation of pthreads. These
+			 are not changeable configuration options."
+
+    cdl_option _POSIX_THREADS {
+	display		"POSIX thread support feature test macro"
+	flavor        	bool
+	calculated 	1
+	requires	CYGSEM_KERNEL_SCHED_TIMESLICE
+	requires	CYGVAR_KERNEL_THREADS_DATA
+	description	"This option defines the POSIX feature test macro
+			for thread support."
+    }
+
+    cdl_option _POSIX_THREAD_PRIORITY_SCHEDULING {
+	display		"POSIX thread priority scheduling feature test macro"
+	flavor        	bool
+	calculated 	1
+	requires	CYGSEM_KERNEL_SCHED_MLQUEUE
+        requires      _POSIX_THREADS
+	description	"This option defines the POSIX feature test macro
+			for thread priority scheduling support."
+    }
+
+    cdl_option _POSIX_THREAD_ATTR_STACKADDR {
+	display		"POSIX stack address attribute feature test macro"
+	flavor        	bool
+	calculated 	1
+	description	"This option defines the POSIX feature test macro
+			for supporting the thread stack address in the thread
+			attribute object."
+    }
+
+    cdl_option _POSIX_THREAD_ATTR_STACKSIZE {
+	display		"POSIX stack size attribute feature test macro"
+	flavor        	bool
+	calculated 	1
+	description	"This option defines the POSIX feature test macro
+			for supporting the thread stack size in the thread
+			attribute object."
+    }
+
+    cdl_option _POSIX_THREAD_PROCESS_SHARED {
+	display		"POSIX process shared attribute feature test macro"
+	flavor        	bool
+	calculated 	0
+	description	"This option defines the POSIX feature test macro
+			for supporting process shared mutexes. Since eCos
+			does not have processes, this attribute is undefined."
+    }
+
+}
+
+# ====================================================================
+
+cdl_component CYGPKG_POSIX_MAIN_THREAD {
+	display		"Main thread configuration"
+	flavor        	bool
+	calculated 	1
+	requires        { 0 != CYGPKG_LIBC_STARTUP }
+	requires        CYGSEM_LIBC_STARTUP_MAIN_OTHER
+        implements      CYGINT_LIBC_STARTUP_EXTERNAL_INVOKE_MAIN_POSSIBLE
+	description	"These options control the thread used to
+                         run the main() application entry routine."
+			 
+	cdl_option CYGNUM_POSIX_MAIN_DEFAULT_PRIORITY {
+	     display        "main()'s default thread priority"
+	     flavor         data
+	     legal_values   0 to 31
+	     default_value  16
+	     description    "
+                POSIX compatibility requires that the application's
+                main() function be invoked in a thread.
+		This option controls the priority of that thread. This
+                priority is the POSIX priority and is NOT the same as
+                an eCos thread priority. With POSIX thread priorities,
+                lower numbers are lower priority, and higher numbers are
+                higher priority."
+	}
+}
+
+# ====================================================================
+# End of pthread.cdl
+
+

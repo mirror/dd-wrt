@@ -1,0 +1,42 @@
+<HTML>
+<HEAD>
+<TITLE>Register Window Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Register Window</H1>
+<P>The Register Window lists all the registers and their contents for
+the selected stack frame. It permits viewing the contents of registers
+in different formats, editing register values, and some display
+customizations.</P>
+
+<P>The Register Window will update the register contents in the display
+to match the stack frame currently being viewed in the <A HREF="source.html">
+Source Window</A> and <A HREF="stack.html">Stack Window</A>.</P>
+<p>Each time the program stops, the register window will automatically update.
+Registers that have changed since the last stop will be displayed in blue.</p>
+<H3>The Register Display</H3>
+<UL>
+        <LI><A HREF="#display_edit">Editing a Register</A></LI>
+        <LI><A HREF="#display_popup">Register Pop-up Menu</A></LI>
+</UL>
+
+<H4><A NAME="display_edit">Editing a Register</A> </H4>
+<P>
+To edit a register, simply click on it with the left mouse button.  Type
+in the new value and hit enter.  You can enter a decimal, hex, or float number and
+the type will be converted if possible. You may also enter an expression to be evaluated.
+For example, to set  $r3 to the same as $r4, edit $r3 and enter "$r4" as the value.  In the same
+way, you can set $pc to "main".
+The value of the register is set to the current value of the expression; it will not be reevaluated
+if the expression's value later changes.
+</P>
+<P>Press the escape key on the keyboard to cancel your edit.</P>
+<H4><A NAME="display_popup">The Register Pop-up Menu</A></H4>
+<P>
+To activate the pop-up menu, click the right mouse button over a register.
+This will allow you change the way the register is displayed, or to remove
+it from the display.  Or you can add the register to the watch window.
+For integer registers, you can also open a memory window at the
+location pointed to by the register.</P>
+</BODY>
+</HTML>

@@ -1,0 +1,1733 @@
+2003-12-10  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/netinet/in.h: Prototype for inet_ntoa_r()
+
+2003-11-25  Manu Sharma <manu.sharma@ascom.com>
+        * src/sys/net/bridgestp.c: Code for Spanning Tree Protocol (STP).
+
+        * cdl/openbsd_net.cdl: Changes make provisions for STP code.
+        * doc/openbsd.sgml:         Same.
+        * include/net/if.h:         Same.
+        * include/net/if_bridge.h:  Same.
+        * include/net/if_llc.h:     Same.
+        * include/sys/sockio.h:     Same.
+        * src/sys/net/if_bridge.c:  Same.
+
+        * doc/openbsd-manpages-stp.sgml: Documentation for OpenBSD specific code
+        * doc/openbsd-manpages-netintro.sgml: Same.
+        * doc/openbsd-manpages-bridge.sgml:   Same.
+
+2003-09-22  Reinhard Jessich  <Reinhard.Jessich@frequentis.com>
+
+	* include/net/if.h: Define macro IF_IS_EMPTY needed by eth_drv.c
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/openbsd_net.cdl: Improve doc links.
+
+2003-01-30  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/sys/net/if_bridge.c (bridge_input): Learn source host addr,
+	not dest host addr.
+	Fix pointed to by Daniel Néri.
+
+2002-12-14  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/sys/netinet/tcp_usrreq.c (tcp_usrreq): Rearranged ifndef on
+	PRU_SENSE case to keep the case in the switch and let it return a
+	sensible result. Otherwise a stat() on a socket causes a panic().
+
+2002-12-03  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/ecos/support.c (show_network_tables): New function used
+	to print network information (interface, routing).
+
+2002-05-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/lib/recv.c: Fix warning. socket.h declarations are not
+	available to the kernel code. Added missing argument in the
+	recvfrom call.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/netinet6/in6.h: Fixed warnings.
+
+	* src/sys/kern/uipc_socket2.c (sblock): Fixed warning.
+	* src/sys/netinet/tcp_input.c: Same.
+	* src/sys/net/if_loop.c (looutput): Same.
+	* src/sys/kern/sockio.c: Same.
+
+	* include/sys/param.h: Include machine headers after the namespace
+	changing macros to get the desired declarations, thus fixing
+	compiler warnings.
+
+2002-04-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/netinet/ip_input.c: Proper "extern" definition of 'ipstat'.
+
+	* src/sys/netinet/raw_ip.c: 
+	* src/sys/netinet/ip_output.c: 
+	* include/netinet/ip_var.h: Use of ramdom IP packet id is optional.
+
+2002-04-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/netinet/tcp_usrreq.c: 
+	* src/sys/netinet/tcp_output.c: 
+	* src/sys/netinet/tcp_input.c: 
+	* src/sys/netinet/tcp_debug.c: 
+	* include/netinet/tcp_debug.h: Fully conditionalize on TCPDEBUG.
+
+2002-03-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* doc/openbsd.sgml: Manpages now live in "common" BSD package.
+
+2002-03-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/net/route.c (cyg_route_reinit): Renamed from route_reinit.
+
+2002-03-11  Hugo Tyson  <hmt@redhat.com> 
+
+	[Case 107110]
+
+	* src/sys/netinet/in.c (in_control): SIOCSIFADDR switch entry
+	moved to before the scan for this same address being in the list
+	already, along with Add and Delete (SIOCAIFADDR,SIOCDIFADDR) arms.
+	It falls through into the same alloc-if-needed code anyway.
+	Thus repeatedly setting the same address does not leak store.
+
+	* src/sys/net/route.c (route_reinit): Rewrite to delete all routes
+	individually rather than en-masse (leaking store).
+	(rt_reinit_rtdelete): New function; callback for individual
+	deletion.
+	(rtioctl): Do not pass in a "route **" to return a pointer to the
+	route removed or added; this results in an extra reference, by the
+	returned pointer, and so a storeleak.
+	(rtrequest): RTM_DELETE arm: do not free a gateway route if the
+	gateway pointer is the same as the route itself - it gets freed
+	*again* at the end of the routine if you do.  Just dec the refcnt.
+
+2002-03-07  Gary Thomas  <gthomas@redhat.com>
+
+	* include/sys/param.h: Privatize route_reinit(), arc4random().
+
+2002-02-28  Hugo Tyson  <hmt@redhat.com>
+2002-02-28  Martin Buck <martin.buck@ascom.ch>
+
+	* src/sys/net/if_ethersubr.c (ether_input): [Bugzilla 60318]
+	ether_input() schedules processing by calling schednetisr(FOO) and
+	then queues the frame afterwards.  Where we cannot be preempted
+	eg. in a DSR or in the original BSD kernel, this is OK.  In eCos
+	the call to schednetisr(FOO) might cause a context switch *before*
+	the frame is enqueued.  This "jams" one packet in the queue,
+	delaying it until the next packet, and so on.
+
+	This change makes ether_input() store up the schednetisr() arg
+	until the end, and do the call then, much like it does with the
+	queue to use.  Thanks Martin!
+
+2002-02-22  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/openbsd.sgml: New file; separated stack-specific docs from
+	monolithic net doc, and tidied up in various ways.
+
+2002-02-15  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/openbsd_net.cdl: Slight changes in layout required by split
+	of network stacks.
+
+2002-02-13  Jonathan Larmour  <jlarmour@redhat.com>
+2002-02-13  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/sys/mbuf.h: Declare variables as extern in header.
+	* src/sys/kern/uipc_mbuf.c: Define mbtypes[] and init it.
+
+2002-02-05  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/openbsd_net.cdl: Place this package below  CYGPKG_NET
+	ie. the common networking package.  Only affects the view in the
+	GUI CT, no big deal.
+
+2002-01-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/netinet/ip_input.c: inet_ntoa() is now common.
+
+	* cdl/openbsd_net.cdl: Renamed from net.cdl.  This package
+	is now a proper sub-package, implementing a network stack.
+
+2002-01-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl: Clarify CYGPKG_NET_ROUTING description.
+
+2002-01-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/server_test.c (server_test): Correct port conversion.
+
+2001-12-14  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sys/net/if_ethersubr.c (ether_output): Never ever print
+	anything!  It can recurse unexpectedly if debugging over net.
+
+2001-12-10  Andrew Lunn <andrew.lunn@ascom.ch>
+
+	* cdl/net.cdl: Add configury to eliminate network timing stats.
+	* src/include/machine/param.h: Timing statistics for things like 
+	memcpy, mbuf_alloc etc now use configury to determine if the
+	statistics code should be compiled.
+	* src/ecos/support.c: Ditto.
+	* tests/nc_test_slave.c: Only print timing stats when they
+	are enabled. 
+	* tests/tcp_echo.c: Ditto.
+	* tests/nc_test_master.c: Allow building with SNMP lib which has
+	its own gettimeofday(). This should be fixed better a different
+	way but will do for now.
+	
+2001-12-06  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/bootp_support.c (init_net): Just re-tabbed and checked
+	the addition to initialize DNS from DHCP info - it had already
+	snuck into the file in the previous change from Andrew.  Include
+	of netdb.h added also, from the patch in Bug 57019.  Also check
+	CYGINT_ISO_DNS for the setup code instead of CYGPKG_ISO_DNS.
+
+2001-12-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lib/bootp_support.c: Check CYGINT_ISO_DNS (from
+	<pkgconf/isoinfra.h>) instead of CYGPKG_ISO_DNS.
+
+2001-12-03   Andrew Lunn  <Andrew.Lunn@ascom.ch>
+
+	* src/lib/bootp_support.c: get_bootp_option(): Take the
+	max length of data we want out of the bootp record.
+	* src/lib/dhcp_prot.c: Pass the length we expect for an option.
+
+2001-08-16  Anssi Pulkkinen <Anssi.Pulkkinen@ascom.ch>
+
+	* src/lib/dhcp_prot.c: Make sure we use the newly calculated xid.
+	
+2001-08-02  Anand Srivastava <Anand.Srivastava@ascom.ch>
+
+        * src/lib/dhcp_prot.c do_dhcp: ID calculation must be done only
+	once. moved it out the loop. 	
+	
+2001-11-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/dhcp_support.c (dhcp_mgt_entry): If we have an
+	SNMPAGENT, must recycle it whenever we reinitialize all
+	interfaces; call SnmpdShutDown() to cause this.
+	Also re-initialize all loopback interfaces here too.	
+
+2001-11-30  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/dhcp_prot.c (set_default_dhcp_tags): New routine to
+	insert all the extra woffle we need neatly each time, keeping the
+	state machine's case arms to the real work.  The new thing this
+	sets is TAG_DHCP_PARM_REQ_LIST, with a list that matches the
+	default set we get from a LINUX dhcpd.  This is because M$ servers
+	need explicit requests for eg. TAG_GATEWAY.  Note that I have
+	included configuration to override the set of tags requested here
+	in the source, but not yet backed up by CDL - we'll see whether
+	anyone needs this.
+	(set_variable_tag): New routine to insert a variable pointed-to
+	data item rather than an int of 1,2 or 4 bytes.
+	(do_dhcp): Call set_default_dhcp_tags() every time we send a
+	packet, rather than ad hoc additions in each state.
+
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/machine/ansi.h: No longer require BSD string function
+	compatibility macros (in fact they confuse things).
+
+	* cdl/net.cdl: Require BSD compatibility functions from <string.h>.
+
+2001-11-19  Hugo Tyson  <hmt@redhat.com>
+
+	* include/bootp.h (BP_STD_TX_MINPKTSZ): New symbol defining the
+	minimal DHCP packet size which we should send.
+
+	* src/lib/dhcp_prot.c (scan_dhcp_size): New routine to scan up to
+	the end of the packet, for length determination and padding.
+	(dhcp_size): Now uses scan_dhcp_size().
+	(dhcp_size_for_send): New, uses scan_dhcp_size() and pads with
+	zero up to the min packet size that we should send.
+	(do_dhcp): In every sendto() call, use dhcp_size_for_send(xmit) in
+	order to send padded, full size packets as needed.  5 instances.
+
+	Credit to "Anssi Pulkkinen" <Anssi.Pulkkinen@ascom.ch> for the
+	original version of this patch.
+
+2001-11-08  Jesper Skov  <jskov@redhat.com>
+
+	* tests/server_test.c (net_test): Fix compile error.
+
+2001-11-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ecos/support.c: 
+	* include/machine/ansi.h: Add C++ support [externC].
+
+2001-11-11  Andrew Lunn <andrew.lunn@ascom.ch>
+
+	*src/lib/recv.c: Implement the recv() call.
+
+2001-10-29  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sys/net/if_ethersubr.c (ether_output): [CASE 106613] Even if
+	the queue is full, and we are dropping the packet, try to start
+	the interface anyway, to give it a chance to empty the queue if
+	the device has recovered from whatever made the queue fill up in
+	the first place - being unplugged from the network for example.
+	This change is belt & braces with a similar policy in the periodic
+	tickle function in the logical ether driver in io/eth/... ; this
+	change will recover the situation immediately if the application
+	continues trying to send despite ENOBUFS.
+
+2001-10-25  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sys/net/if_bridge.c (bridge_broadcast): Count if_obytes in
+	destination interfaces as well as the bridge interface; normally
+	this is done in if_ethersubr.c but here we talk directly to the
+	interface, bypassing that layer.  Thanks to Andrew Lunn for
+	noticing that.
+
+2001-10-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/sys/netinet/in.c (in_lifaddr_ioctl): Silence warnings about
+	trigraphs.
+
+2001-10-10  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/ftp_test.c (net_test): This was lacking #ifdefs for
+	CYGHWR_NET_DRIVER_ETH0 and CYGHWR_NET_DRIVER_ETH1.  Ooops.
+
+2001-10-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl (CYGPKG_NET_CFLAGS_ADD): Define __INSIDE_NET within
+	this package to allow segregation of definitions only relevant for
+	internal consumption, and definitions allowable for external
+	consumption.
+
+	* include/lib/libkern/libkern.h: Conditionalize on __INSIDE_NET.
+
+2001-10-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl (CYGHWR_NET_DRIVER_ETH0): Make flavor bool so it isn't
+	defined when 0.
+	(CYGHWR_NET_DRIVER_ETH1): Ditto.
+
+2001-10-04  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/dhcp_support.c: Some conditional compilation tags were
+	wrong vis a vis ETH1 versus ETH0.  Thanks to "Simon"
+	<simoncc@ms46.url.com.tw> for spotting it.
+
+2001-10-04  Jesper Skov  <jskov@redhat.com>
+
+	* tests/multi_lo_select.c (cyg_user_start): Added CYG_TEST_INIT
+	call.
+	* tests/ping_lo_test.c (cyg_start): Same.
+	* tests/tcp_lo_test.c (cyg_start): Same.
+	* tests/udp_lo_test.c (cyg_start): Same.
+	* tests/tcp_lo_select.c (cyg_start): Same.
+
+2001-09-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl: Tell isoinfra we support getproto* and getserv*
+	NS functionality.
+	* include/netdb.h: Move to...
+	* include/net/netdb.h: ...here.
+
+2001-09-25  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/net.cdl: Don't build tests/nc_test_master as it's a host
+	side tool.
+
+	* src/lib/getserv.c: Added domain service.
+
+	* include/netdb.h: Moved getbyhost()/getbyaddr() declarations and
+	hostent struct definition to the DNS package. 
+
+	* src/lib/gethost.c: Removed.
+
+	* cdl/net.cdl: Removed gethost.c (replaced by proper
+	implementation in CYGPKG_NS_DNS).
+
+2001-09-17  Hugo Tyson  <hmt@redhat.com>
+2001-09-17  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* src/sys/net/if_bridge.c (bridge_broadcast): Fix a null pointer
+	deference.  Supporting VLANs, it seems that during the net_init()
+	function, it sends a packet to the bridge with the source
+	interface being NULL.  Stats counting assumed otherwise.
+
+2001-09-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/sys/kern/uipc_syscalls.c: Last change to uipc_syscalls.c
+	wasn't right. The parts that were __ECOS__ should simply have
+	been completely removed.
+
+2001-09-13  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/net.cdl: Add configury to control whether we can tickle the
+	network devices if there's a lack of network traffic, and to
+	control the delay time before so doing.
+
+	* src/ecos/timeout.c (alarm_thread): Use a timed wait, if so
+	configured, for the flag; and if it times out, tickle all the
+	devices via the common ether driver routine for so doing.
+
+2001-09-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/sys/socketvar.h: Use __ECOS, not __ECOS__.
+	* src/sys/kern/uipc_syscalls.c: Ditto.
+	* src/sys/kern/uipc_socket2.c (sblock): Ditto.
+
+2001-08-02  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tests/linux_echo.c (echo_test): Set socket options before bind.
+	* tests/nc_test_slave.c (do_tcp_test): Ditto.
+	* tests/server_test.c (server_test): Ditto.
+	* tests/tcp_echo.c (echo_test): Ditto.
+	* tests/tcp_lo_test.c (server): Ditto.
+	* tests/tcp_sink.c (sink_test): Ditto.
+	* tests/tcp_source.c (source_test): Ditto.
+
+2001-07-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/sys/select.h: Renamed to....
+	* include/sys/bsdselect.h: New file.
+	* include/sys/socketvar.h: Include <sys/bsdselect.h> instead of
+	<sys/select.h>
+	* src/lib/select.c: Include <sys/bsdselect.h>
+
+2001-07-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl (CYGPKG_NET_API_LOCAL): Implements select()
+	* include/sys/bsdtypes.h: No need for these select definitions.
+
+2001-06-20  Grant Edwards <grante@visi.com>
+2001-06-20  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/dhcp_prot.c (alarm_function): Change the lease state
+	before re-enabling the alarm so that if it somehow gets times of
+	zero (ie. right now) it quickly completes the state machine rather
+	than recursing to its doom.
+	(new_lease): Test the retcode of get_bootp_option() and use
+	obvious defaults if the T1 and T2 times are not provided - this is
+	RFC compliant! - and use "infinite lease" if the lease time is not
+	provided at all.
+
+2001-06-19  Trenton D. Adams  <tadams@extremeeng.com>
+
+	* tests/server_test.c (server_test): Null terminate read string
+	at right place.
+
+2001-06-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl: Make debug output an option. Include DHCP.
+
+	* src/lib/dhcp_prot.c: DHCP_CHATTER -> CYGDBG_NET_DHCP_CHATTER
+
+	* src/ecos/support.c (cyg_kmem_init): Only print debug output if
+	requested.
+
+	* cdl/net.cdl: Make requirements on other eCos features more
+	abstract.
+
+2001-05-09  Robin Farine <acnrf@dial.eunet.ch>
+2001-05-09  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/dhcp_prot.c (do_dhcp): In DHCPSTATE_INIT case, create a
+	new xid.  Servers apparantly can use *only* this to distinguish
+	machines, even with different MAC addresses!  Therefore we use
+	both the most sensitive randomizer available (arc4random()) which
+	in reality uses a finegrain clock, and salt the value further with
+	the MAC address itself.  Thanks again Robin.
+
+	* src/ecos/support.c (arc4random): Make arc4random not always be a
+	multiple of 256; stir the clock into the low bits also.
+
+2001-05-09  Robin Farine <acnrf@dial.eunet.ch>
+2001-05-09  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sys/net/if_bridge.c: Patch from Robin; the route aging
+	process took twice as long to timeout because an entry requires
+	*two* executions of bridge_rtage() to actually get removed.
+	Record the timeout over 2 to fix that and also define
+	BRIDGE_RTABLE_TIMEOUT as 300s that the standard specifies as
+	default aging time.
+
+2001-05-09  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/getserv.c (setreturned): New routine to set up a copy of
+	the service data with the port converted to network order like the
+	API demands.  It's this way to make the initialization of the
+	table most readable.  
+	(services[]): Added an entry for snmp.
+	(getservbyname): Use setreturned() to return adjusted info.
+	(getservbyport): Use setreturned() to return adjusted info and
+	compare with host-ordered version of the port.
+
+	* src/lib/tftp_client.c (tftp_get): 
+	(tftp_put): Do not convert to net order from
+	the getserv structure; it's already net order.
+
+	* src/lib/tftp_server.c (tftpd_server): Convert the socket into
+	host order; it's network order in the getserv API.
+
+	* tests/ftp_test.c (ftp_test): Do not convert to net order from
+	the getserv structure; it's already net order.
+
+	* tests/tftp_client_test.c (PUTFILE): Changed the names of the
+	test files to be fully qualified, this makes the test work with
+	more server machines.  /tftpboot/tftp_get and /tftpboot/tftp_put.
+	
+2001-04-24  Bart Veer  <bartv@redhat.com>
+
+	* cdl/net.cdl:
+	Prevent multiple device drivers from implementing the
+	same eth0/eth1 device.
+
+2001-03-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl (CYGPKG_NET_SYSCTL): Comment out - currently unsupported.
+
+2001-03-28  Richard Panton  <rpanton@3glab.com>
+
+	* include/bootp.h: Define func protos with C linkage
+	* include/netdb.h: Ditto
+	* include/network.h: Ditto
+	* include/tftp_support.h: Ditto
+
+	* src/lib/getserv.c: getservbynumber() -> getservbyport()	
+
+2001-03-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/network_support.c (init_all_network_interfaces): 
+	FIx slightly broken previous attempt in abort code.
+
+2001-03-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/network_support.c (init_all_network_interfaces): 
+	Let initialization of PCMCIA devices abort after ~5 seconds.
+
+2001-02-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lib/tftp_server.c (STACK_SIZE): Align
+
+2001-02-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/net.cdl: Avoid puts to the CDL header when a CDL
+	define will do.
+	Rename CYGPKG_NET_BRIDGE_CODE -> CYGPKG_NET_BRIDGE
+	Rename CYGPKG_NET_NBRIDGE -> CYGNUM_NET_BRIDGES
+	Rename CYGPKG_NET_BRIDGE_HANDLER -> CYGINT_NET_BRIDGE_HANDLER
+	Make if_bridge.c compilation conditional on CYGPKG_NET_BRIDGE
+
+	* src/sys/net/if_bridge.c: Reflect above renames.
+
+2001-02-20  Hugo Tyson  <hmt@redhat.com>
+2001-02-15  Martin Buck  <martin.buck@ascom.ch>
+
+	* cdl/net.cdl: Split up CYGPKG_NET_NBRIDGE into 2 parts:
+	CYGPKG_NET_NBRIDGE and CYGPKG_NET_BRIDGE_HANDLER. If
+	CYGPKG_NET_BRIDGE_HANDLER is nonzero, calls to an Ethernet
+	bridge are inserted into the stack's data path. If
+	CYGPKG_NET_NBRIDGE is nonzero, the standard OpenBSD bridge
+	code is added. This setup allows you to implement your own
+	bridge as a separate package which then implements
+	CYGPKG_NET_BRIDGE_HANDLER so it gets called by the stack.
+	NBRIDGE now is the same as CYGPKG_NET_BRIDGE_HANDLER instead
+	of CYGPKG_NET_NBRIDGE. This means it's nonzero if the bridge
+	is wanted, but it no longer contains the number of bridge
+	buffers requested. This shouldn't be a problem, because the
+	only place where the actual number of buffers is required is
+	in if_bridge.c, which now uses CYGPKG_NET_NBRIDGE instead
+	of NBRIDGE.
+
+	* src/sys/net/if_bridge.c: Use CYGPKG_NET_NBRIDGE instead of
+	NBRIDGE, because the latter one now only means that there is
+	a bridge, not that we should implement it.
+
+2001-01-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ecos/support.c: 
+	* cdl/net.cdl: 	Add interface 'CYGPKG_NET_DRIVER_FRAMEWORK'
+	to describe interdependencies between network stack and driver
+	framework packages.
+
+
+2001-01-03  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/linux_echo.c: New file to test for network bandwidth
+	limitations in host side.  Builds to a linux version of the
+	tcp_echo middleman.
+
+	* tests/make.linux (all): Build linux_echo.
+
+2001-01-03  Hugo Tyson  <hmt@redhat.com>
+
+	* include/dhcp.h (struct dhcp_lease): Define the semaphore pointer
+	field in each lease structure.
+
+	* src/lib/dhcp_support.c: Initialize the dhcp_lease structs to
+	point to the semaphore "dhcp_needs_attention".
+
+	* src/lib/dhcp_prot.c (alarm_function): Post to the semaphore
+	pointed to in the lease structure, rather than one hard-coded.
+	This is much cleaner, in that dhcp_prot.c now uses no external
+	variables, all state goes through the API.
+
+2000-11-15  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/bootp_support.c (init_net): Do a SIOCSIFADDR a 2nd time
+	after setting the netmask (SIOCSIFNETMASK) in order for the newly
+	set netmask to "take" - otherwise a bogus route based on the
+	default netmask lurks within the system.
+
+2000-11-10  Hugo Tyson  <hmt@redhat.com>
+
+	* src/ecos/support.c (cyg_net_get_mem_stats): New API for getting
+	info on the various mem pools the stack uses to enable tests to
+	spot store leaks.
+
+	* include/network.h (cyg_net_get_mem_stats): Export this API for
+	automated network testing.
+
+2000-10-24  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/tftp_server.c (tftpd_server): Cut down the chatter to
+	nothing (unless there's an error) if running automated testing.
+
+2000-10-17  Hugo Tyson  <hmt@redhat.com>
+2000-10-10  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* src/ecos/support.c (setsoftnet,cyg_panic): Less chatter,
+	particularly not when we're out of MBUFs.
+
+2000-10-17  Hugo Tyson  <hmt@redhat.com>
+2000-10-10  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* src/sys/net/if_bridge.c: Intergrated a more up to date version
+	from the OpenBSD sources. This fixes a few bugs.
+
+2000-10-17  Hugo Tyson  <hmt@redhat.com>
+
+	* src/ecos/support.c (cyg_ktime_init): Start time at 1 Second so
+	that all visible time values are valid; offset time by 1 Second
+	subsequently, for ever.
+
+	* src/sys/netinet/if_ether.c (arpresolve): Undo the change below;
+	instead make "kernel time" be valid ie. more than 1 second into
+	its life.  Dumb stack assumes it takes UNIX-like time to start.
+
+2000-10-16  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sys/netinet/if_ether.c (arpresolve): Deal with the initial
+	case when the route timeout is zero (as initialized).  Otherwise
+	it never actually sent out the initial ARP request packet.  This
+	caused connect() not to work, and thus ftp_test, for example.
+
+	* src/lib/dhcp_support.c (dhcp_start_dhcp_mgt_thread): Also
+	initialize the dhcp semaphore here.  The other place it is init'd
+	[correctly] didn't fire if we use the standard support.  Fixed
+	some absent return value warnings.
+
+2000-10-10  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/tftp_server.c (tftpd_server): Modify the server to
+	support multiple sessions - ie. starting N servers at once.
+	Mainly this means closing the initial socket whilst servicing a
+	request, so that another server can then bind to it; tell another
+	server to retry that bind via a semaphore, that it waited on when
+	the bind failed initially, rather than just returning.
+
+	* src/lib/tftp_dummy_file.c (dummy_open): Trivial bugfix: scan the
+	list of files as well as incrementing the counter.
+
+2000-10-05  Andrew Lunn <andrew.lunn@ascom.ch>
+
+	* src/ecos/support.c (cyg_ktime_func,cyg_ktime_init,cyg_net_init): 
+	Make 'ktime' value valid.
+
+2000-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/tftp_server.c (tftpd_write_file): Restructure this
+	function to match the loop layout of the tftpd_read_file; so that
+	it retries sensibly, and so that a delayed/duplicated packet does
+	not cause a doubling of all traffic with a less smart host.
+
+2000-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* include/tftp_support.h (TFTP_TIMEOUT_MAX): Change this to 50; it
+	refers to total timeouts for a whole session, so it should be
+	greater than the retry count for each packet.
+
+2000-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/tftp_dummy_file.c: Make the fake file slots be a Mb
+	instead of 10k so that you can do meaningful timing tests with it.
+	(dummy_open): Allow re-write of an existing file so that you can
+	do repeated put tests without running out of slots.
+
+2000-10-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/select.c (_cyg_select): Unlock the scheduler in a couple
+	of other places I missed.  Doh.
+
+2000-09-28  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/select.c (_cyg_select): Elect to wait for the flags
+	atomically wrt sockets possibly becoming ready - this was a race
+	condition that would apparently delay a packet until another
+	arrived, eg. a tftp retry.  Then two came along all at once.
+
+2000-09-28  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/tftp_server.c: Add lots of instrumentation for
+	debugging.  It's switched off, and doesn't have a real config opt,
+	though it easily could have.
+
+2000-09-26  Hugo Tyson  <hmt@redhat.com>
+
+	* src/lib/tftp_server.c (tftpd_read_file): Doh! TFTP_TIMEOUT is an
+	internal API thing, not an error we can send in an ERROR packet.
+
+	* include/tftp_support.h: Comment to this effect.
+
+2000-09-26  Hugo Tyson  <hmt@redhat.com>
+2000-09-25  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* src/lib/tftp_server.c: Send an ERROR packet when giving up after
+	too many timeouts.  This should cause the client to give up as
+	well.  Also moved all the replicated code to send an ERROR packet
+	into one function.
+
+	[Huge] I collected another point where we can use the common
+	function also, and used ETIMEOUT instead of EBADOP for the new
+	error packet returns. Thanks Andrew!
+	
+2000-09-14  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/net.cdl (CYGOPT_NET_DHCP_DHCP_THREAD_PARAM): Set default to
+	1 so that the DHCP management thread loops forever.  This allows
+	it to recover from a DHCP renewal failure.
+
+	* src/lib/dhcp_prot.c (next_timeout): Harden the DHCP protocol
+	machine against [simulated] failures - otherwise the tests with
+	simulated failures tend just to close down all the interfaces when
+	DHCP packets are lost.
+
+2000-09-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/bootp_support.c (init_net): Set default route correctly.
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/ecos/support.c (cyg_net_init): You can't print things while
+	initializing the network!  Well, not if connected to GDB over the
+	network anyway.  The printf("Init device '%s'...); removed.
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* OVERVIEW: This is part of the change to the network stack to
+	greatly reduce latencies both of (other) DSRs and of thread
+	scheduling.  All the work that the network stack *and* individual
+	ether drivers used to do in DSRs (including alarm callbacks and
+	data copies to/from the device memory) is moved into a "fast
+	network thread" instead.  It calls a device's "deliver" function
+	to do the work that was previously in the DSR.  This is a separate
+	thread so that it can be set higher priority than application
+	threads in order to minimize packet loss (depending on the
+	driver), if required (the application threads presumed to be
+	higher priority in turn than the network thread).  A crucial
+	consequence of this is that we are no longer locking against DSRs,
+	so a plain mutex can be used rather than the global scheduler
+	lock, thus simplifying all the splfoo/splx() style functions.
+
+	* src/ecos/timeout.c (alarm_thread): Addition of the "fast network
+	thread" which runs DSR-like activities.
+	(do_timeout): Timeout function morphed for calling from that.
+	(do_alarm, ecos_synch_eth_drv_dsr): new DSR functions to signal to
+	the thread.
+	(timeout): Race condition fixed.  splinternal() used for locking
+	instead of scheduler.
+	
+	* src/ecos/support.c (cyg_net_init): Splfoo/splx() functions,
+	together with tsleep/wakeup functions, all removed to separate
+	them from the mixed bag of utilities in this file.  What remains
+	is mbuf wrapper routines and the like, plus the network "netisr"
+	thread itself, the caller into the stack that does the slower
+	priority work.
+
+	* src/ecos/synch.c: New file; implemtation of new splfoo/splx()
+	functions, together with tsleep/wakeup functions, since they are
+	related now.
+
+	* cdl/net.cdl: Compile new file synch.c; two new options, one for
+	"fast thread" priority, and one for DHCP manager thread priority,
+	as I was adding prio configury.  CYGPKG_NET_FAST_THREAD_PRIORITY
+	and CYGPKG_NET_DHCP_THREAD_PRIORITY resp, with suitable default
+	values relative to the CYGPKG_NET_THREAD_PRIORITY.
+
+	* src/lib/dhcp_support.c (dhcp_start_dhcp_mgt_thread): Use the
+	configured priority rather than just "net thread - 1"
+
+2000-08-31  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tcp_echo.c: Change the priorities of the main and loading
+	threads to accommodate the network having helper threads around at
+	adjacent priorities to its main thread prio.
+
+2000-08-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sys/net/if.c (ifioctl): Support the two new ioctl() keys; at
+	this level, the struct ifreq at the head of the data area must be
+	filled to select an interface.
+
+	* include/sys/sockio.h (SIOCGIFSTATSUD): Add two new eCos-only
+	ioctl() keys, SIOCGIFSTATSUD and SIOCGIFSTATS, for reading
+	statistical information out of ethernet devices, for SNMP. This
+	should allow SNMP (a) to not explode, (b) to get useful info out
+	of other device implementations than this one.
+
+2000-08-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/ecos/timeout.c (timeout): Rework the timeout system to
+	record last-time-we-set-the-alarm and whence values, so that new
+	timeouts being added can be set up relative to the correct
+	absolute time.  Otherwise adding a new timeout sets them *all*
+	into the future by the expired portion of the previous minimum
+	pending timeout.  Also deal better with recursion ie. timeout
+	handlers themselves setting new timeouts as is only natural.
+	Lots of asserts too.
+
+	* src/ecos/support.c (cyg_splsoftnet): Use the new kernel facility
+	to lock mutex &c atomically, with the scheduler locked already.
+	(cyg_tsleep): Similarly, and reclaim the mutex likewise.
+	Also added lots of asserts to both calls the better to document
+	what's going on.
+
+2000-08-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/tftp_server.c: Fix contributors field.
+
+2000-08-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/tftp_server.c: Improvements to server wrt better error
+	messages and detection of filesystem errors eg. on close-file.
+	Contrib from ASCOM.  I tidied up some comments and indent to
+	minimize the diff.  [CASE 104354]
+
+2000-08-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* doc/bridge.html: New file...
+	* doc/bridge.doc: New file...
+	provided by ASCOM from the OpenBSD version.
+
+2000-08-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sys/net/if_bridge.c (bridge_ioctl): SIOCBRDGSTO takes
+	argument in seconds not in ticks.  So move around some mul/div by
+	hz ops to get this right.
+
+2000-08-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ecos/support.c: Use new table definition mechanism.
+
+2000-07-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/dhcp_prot.c (do_dhcp): Use xmit->bp_htype =
+	HTYPE_ETHERNET rather than ifr.ifr_hwaddr.sa_family; sa_family is
+	in a different namespace, despite appearances.
+
+	* src/lib/bootp_support.c (do_bootp): Use bp_htype =
+	HTYPE_ETHERNET rather than ifr.ifr_hwaddr.sa_family; sa_family is
+	in a different namespace, despite appearances.
+
+2000-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* cdl/net.cdl: Require the C library STDIO package to be present
+	if there is more than one loopback interface. This is because it
+	needs sprintf() to form the interface names.
+
+	* src/sys/net/if_loop.c (loopattach): 
+	Only use sprintf() to form the loopback interface names when there
+	is more than one. The CDL ensures that this will work.
+
+	* src/lib/network_support.c:
+	Added diag_printf() version of perror() for when STDIO package is
+	absent.
+	Only use sprintf() to form the loopback interface names when there
+	is more than one. The CDL ensures that this will work.
+
+	* tests/multi_lo_select.c:
+	* tests/ping_lo_test.c:
+	* tests/tcp_lo_test.c:
+	Removed dependence on C library by adding a substitute perror()
+	based on diag_printf() that is enabled when the STDIO package is
+	absent.
+	
+2000-07-26  Hugo Tyson  <hmt@cygnus.co.uk>
+ 
+	* src/lib/dhcp_prot.c (do_dhcp): Set the broadcast flag where
+	necessary, and the client address too.  This makes it talk to a
+	greater range of servers OK.
+ 
+2000-07-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/multi_lo_select.c: Changed definition of NLISTENERS to
+	work correctly with FILEIO package.
+
+	* src/sys/net/if_loop.c (loopattach): Changed initialization of
+	if_xname to "lo0".
+
+	* src/ecos/support.c (cyg_net_init): Removed redundant code to
+	initialize loop-back interface.
+
+2000-07-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/getserv.c: Add a list terminator record with NULLs in it
+	so that the search finishes (without throwing asserts about bad
+	strings).
+
+2000-07-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sys/net/if_bridge.c: Move the include of stdio.h lower,
+	apparently it confuses local x86 compilers if their host tree is
+	malformed.  Or something.
+
+2000-07-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl: Add a lot of description about the way the various
+	fields are used in interface initialization: specifically that
+	"server" so-called is just "someone to talk to" in the absence of
+	bootp - and our tests depend on it!
+
+	* src/lib/bootp_support.c (init_net): Only set up a route if the
+	route address is nonzero - or all manner of confusion occurs with
+	multiple interfaces and route that sends to 0.0.0.0...
+	For setting up the default route, use
+	      (SIOCADDRT, 0, 0, TAG_GATEWAY)
+	rather than the bogus
+	      (SIOCADDRT, yiaddr & netmask, netmask, TAG_GATEWAY)
+	that we did before.
+
+	* tests/ftp_test.c (ftp_test): Try it with eth1 if available also.
+
+	* tests/ping_test.c (ping_host): If a ping fails, reset the packet
+	size to small just in case the huge packet size is what's causing
+	confusion - helps it as a debug tool.
+
+	* tests/dhcp_test.c (net_test): It didn't compile if DHCP is
+	disabled!  Doh.  Same change as ping_test also.
+
+2000-07-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/tftp_server.c (tftpd_read_file): Deal with a) [assumed]
+	timeouts on the select, and b) ACKs for old packets.
+	[CASE 104052 and CASE 104055]
+
+2000-07-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/select.c (_cyg_select): Return 0 and do not perturb
+	errno when the timeout occurs.  That matches the man page!
+	[CASE 104054]
+
+2000-07-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/machine/param.h: Be more defensive against warnings from
+	external defines such as __linux__/__bsdi__/__FreeBSD__/...
+	[CASE 104090]
+
+2000-07-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/multi_lo_select.c: New test program to test for proper
+	broadcast behaviour of select() implementation.  Took some
+	fiddling to get it to work, but it really did fail before the
+	select change below.
+
+	* cdl/net.cdl: Build the new test.
+
+	* src/lib/select.c (_cyg_select): Don't use the CLR flag in the
+	flag wait because that gives unicast semantics.  Flags have
+	producer-does-all-the-work behaviour, so setting a value then
+	clearing it right afterwards does the right thing, with broadcast
+	semantics so long as no waiter has set the CLR part.
+	[CASE 104058]
+
+2000-07-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	All part of the bridge contribution from Andrew Lunn/ASCOM
+	(andrew.lunn@ascom.ch).  Bridginess is controlled by NBRIDGE which
+	is itself controlled by CDL option CYGPKG_NET_NBRIDGE aka "Number
+	of bridge buffers?"
+
+	* include/machine/param.h: Add proper definition of untimeout().
+
+	* include/sys/sockio.h (SIOCBRDGFRL): Add this and the other 2
+	bridge ioctl() call definitions. 
+
+	* include/sys/param.h (splhigh): Added.
+
+	* src/ecos/timeout.c (untimeout): Implement this properly, it was
+	never used before.
+
+	* src/ecos/support.c: implement cyg_splhigh(), call bridgeintr()
+	when it is scheduled and bridgeattach() if configured.
+
+	* tests/bridge.c: New "test" file - implements an ethernet bridge.
+	Contributed by Andrew Lunn/ASCOM, from the usual OpenBSD external
+	source original.
+
+	* include/net/if_bridge.h: New file, contributed by Andrew Lunn/
+	ASCOM, from OpenBSD original.  (Actually did exist in eCos source
+	tree but was not released)
+
+	* src/sys/net/if_bridge.c: New file, contributed by Andrew Lunn/
+	ASCOM, from OpenBSD original.
+
+	* cdl/net.cdl: Build the new files.
+
+2000-07-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/tftp_client.c (tftp_get): Fix edge condition when 
+	penultimate block is full and end of file which implies that
+	the last block has zero data bytes.
+
+2000-07-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/dhcp_prot.c: Ignore NAK messages from the wrong server -
+	we get these because the REQUEST for our chosen IP is broadcast,
+	so other servers think we've asked to use the wrong IP.
+
+2000-07-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/bootp.h: export init_loopback_interface();
+
+2000-07-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl: Add option controlling whether to have a separate
+	DHCP lease management thread, and what its parameter is to be -
+	which controls whether it loops or quits if a lease fails.
+
+	* src/lib/dhcp_support.c (dhcp_start_dhcp_mgt_thread): Provide the
+	DHCP management thread function and code to instantiate and start
+	the thread if so configured.
+
+	* src/lib/network_support.c (init_all_network_interfaces): Call
+	the function that starts the DHCP management thread function.
+
+	* include/dhcp.h: Declare the DHCP management thread function &c
+	if so configured.
+
+	* tests/dhcp_test.c (net_test): Only poll for need to rebind DHCP
+	leases if there is no service thread to do the same.
+
+2000-07-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/bootp.h (build_bootp_record): Export this, no harm in
+	it, and some folk want to use this rather than configured
+	initialization or bootp/dhcp.
+	Also commented the other APIs somewhat better.
+
+	* src/lib/network_support.c (build_bootp_record): Unconditionally
+	provide this; selective linking will look after it if unused.
+
+2000-07-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/network_support.c (build_bootp_record): [Static
+	configuration of interface parameters] Add the gateway into the
+	options section with TAG_GATEWAY so that init_net() will pick it
+	up and set up a route accordingly.
+
+2000-07-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/dhcp_test.c:
+	* tests/flood.c:
+	* tests/ftp_test.c:
+	* tests/nc_test_master.c:
+	* tests/nc_test_slave.c:
+	* tests/ping_lo_test.c:
+	* tests/ping_test.c:
+	* tests/server_test.c:
+	* tests/set_mac_address.c:
+	* tests/tcp_echo.c:
+	* tests/tftp_client_test.c:
+	* tests/tftp_server_test.c:
+	Up the stack size to cope with full DHCP initialization in
+	init_all_network_interfaces().
+	
+2000-07-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl: Add DHCP enable and interface-specific controls.
+
+	* include/dhcp.h: New file: describe the DHCP APIs and behaviour,
+	as well as some internal APIs that are also available.
+
+	* src/lib/dhcp_support.c: New file: the surrounding management
+	routines, a bit like network_support.c, which know about multiple
+	interfaces and so on.
+
+	* src/lib/dhcp_prot.c: New file: the interface-independent DHCP
+	protocol machine, which is called from dhcp_support.c routines and
+	init_all_network_interfaces() in network_support.c
+
+	* include/bootp.h (struct bootp): Make the packet bigger if DHCP
+	so that a mininal DHCP packet will fit.
+
+	* src/lib/bootp_support.c (do_bootp): If no reply, fail gracefully
+	and tidy up so that other interfaces can be upbrung.
+	(show_bootp): Tell us a lot more about DHCP-specific info in the
+	packet structure.
+	(get_bootp_option): be aware of DHCP extensions to re-use file and
+	sname fields for options.
+
+	* src/lib/network_support.c (init_all_network_interfaces): Call
+	do_dhcp() rather than do_bootp() if so configured, and initialize
+	the per-interface DHCP state variables accordingly.
+
+	* tests/dhcp_test.c (net_test): New test file that diddles the
+	DHCP machine while doing a ping test.
+
+2000-07-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/netdev.h: Add single-inclusion fences.
+
+	* include/sys/param.h: Add traced versions of splx() routines,
+	selectable by a configuration option.
+
+	* src/ecos/support.c: Rework splx() emulation routines to
+	be more robust and realtime friendly.
+
+	* src/lib/network_support.c (init_all_network_interfaces): 
+	Add minimal support for PCMCIA based devices.
+
+2000-07-04  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/bootp.h: Fix namespace pollution from "#define int32
+	int" - it fights against application code too much.
+
+2000-07-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/net.cdl: Package requires CYGPKG_MEMALLOC
+
+2000-06-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/ping_test.c (net_test): Added use of the
+	CYGPKG_NET_TESTS_USE_RT_TEST_HARNESS stuff now that the test
+	passes (consequent on the change below); also use larger ping
+	packets now that that is working also.
+
+	* tests/tcp_echo.c (echo_test): Added use of the
+	CYGPKG_NET_TESTS_USE_RT_TEST_HARNESS stuff now that the test
+	passes (consequent on the change below).
+
+2000-06-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/ecos/support.c (cyg_splnet): Use the scheduler lock and a
+	mutex instead of disable-interrupts for SPLX type processing.  A
+	mutex is used at splsoftnet because that is client threads - we do
+	not want them to pre-empt the rest of the app.  This enables the
+	real-time response testing for the EBSA285 to succeed (interrupts
+	every 1mS, DSRs delayed by at most 2mS).
+
+2000-06-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/ecos/support.c (cyg_net_mbuf_alloc, cyg_kmem_init): Align
+	the mbuf pool to MSIZE [128] bytes.  That way dtom() works, nasty
+	though it is.  That's needed for ip reassembly in ip_input.c, when
+	dealing with large icmp-layer packets eg. ping -s 2000 ...
+
+2000-06-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/lib/libkern/libkern.h: Do not define assert multiple
+	times; guarded by __ECOS.
+
+	* include/sys/param.h (MAX,MIN): Only define if undef.
+
+2000-06-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl: Build the new tests; in fact build them
+	unconditionally.
+
+	* src/lib/network_support.c (init_all_network_interfaces):
+	Initialize loopback device[s] using init_loopback_interface(),
+	providing a sensible default route et al.  Multiple devs: lo1 will
+	be 127.0.*1*.1, and so on; class C netmasks will be used.
+
+	init_all_network_interfaces() is also made thread-safe as well as
+	idempotent, so other threads (or daemons) can call it to make sure
+	the net is up.
+
+	* src/ecos/support.c (cyg_net_init): Add a call to loopattach() if
+	there are indeed loopback dev(s) configured.  This does the
+	equivalent of the init of a device from the table, but simpler.
+
+	* tests/udp_lo_test.c (udp_server): New testcase...
+	* tests/tcp_lo_select.c (tcp_server): New testcase...
+	* tests/tcp_lo_test.c (tcp_client): New testcase...
+	* tests/ping_lo_test.c (net_test): New testcase, unconditionally
+	built loopback device test.  Will run on platforms with no network
+	interfaces.
+
+2000-06-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/ecos/support.c:
+	* include/netdev.h:
+	Converted to use of new table construction mechanism.
+
+2000-06-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/bootp.h: Remove RCS id tag
+	* include/netinet/ip_auth.h: Ditto
+	* include/netinet/ip_fil.h: Ditto
+	* include/netinet/ip_fil_compat.h: Ditto
+	* include/netinet/ip_frag.h: Ditto
+	* include/netinet/ip_nat.h: Ditto
+	* include/netinet/ip_proxy.h: Ditto
+	* include/netinet/ip_state.h: Ditto
+
+2000-06-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sys/kern/sockio.c: Added cyg_selinit() calls to bad_socket()
+	and bsd_accept() functions.
+
+	* src/ecos/support.c (cyg_tsleep): Changed tests on wakeup from
+	semaphore waits to enable return of EINTR results.
+
+2000-06-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sys/net/if_loop.c: Substituted sprintf() for a straight
+	strcpy() when initalizing if name. This currently only works for
+	one loopback interface. However, there seems little need to have
+	more than one.
+
+	* src/sys/kern/sockio.c (bsd_select): Added select support.
+
+	* include/sys/time.h: Moved timeval structure definition to
+	isoinfra time.h header since it is needed by the select() API.
+
+	* include/sys/select.h: Added option to use fileio select
+	mechanism if it is present.
+
+	* src/ecos/support.c (cyg_net_init):
+	Added code to bring up the loopback interface. This is to help
+	with testing on platforms without network hardware.
+
+2000-06-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/netinet/ip_var.h: Export ipforwarding as well as
+	ip_defttl for monitoring applications.
+
+2000-06-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/tcp_echo.c: 
+	* tests/socket_test.c: 
+	* tests/server_test.c: 
+	* tests/ping_test.c: 
+	* tests/nc_test_master.c: 
+	* tests/nc_test_slave.c: 
+	* tests/ftp_test.c:
+	Removed dependence of these programs on STDIO. For most this
+	simply required the use of a diag_printf() based perror() clone is
+	CYGPKG_LIBC_STDIO is not defined. For server_test is also required
+	the substitution of sprintf() with some more primitive string
+	functions.
+
+	* src/sys/netinet/ip_input.c: Rewrote inet_ntoa() to not use
+	sprintf(). This was the only place in the TCP/IP stack that was
+	dependent on a STDIO function. We really should avoid building
+	this kind of casual dependency into the code.
+
+	* src/sys/kern/sockio.c: This new file contain code to support the
+	fileio package. So far only a few of these functions have actually
+	been tested.
+
+	* include/sys/kernel.h (time): The time variable clashes with the
+	C library time() function. To prevent this it is renamed ktime,
+	and a #define allows "kernel" code to continue accessing it as
+	time.
+
+	* src/ecos/support.c: Added definition for ktime variable, as
+	described above. I could not find any definition for struct
+	timeval time. I have a nasty suspicion that it was using the
+	time() function - let's hope that no code that actually uses this
+	has been run.
+
+	* src/lib/bootp_support.c: Another substitution of a diag_printf()
+	based perror() clone when STDIO is absent.
+	
+	* include/sys/bsdtypes.h: This is the original
+	include/sys/types.h. Renamed to avoid clashing with <sys/types.h>
+	defined by the isoinfra package.
+
+	* include/sys/types.h: Renamed to bsdtypes.h.
+	
+	* include/machine/limits.h:
+	Various changes to make these headers play nicely with those
+	defined in isoinfra package.
+
+	* include/network.h: Added include of <pkgconf/system.h>. Fixed
+	prototypes of functions here to match POSIX specifications.
+
+	* cdl/net.cdl:
+	Split list of files to compile into the common set plus those
+	needed when the fileio package is present and those that are
+	needed when it is absent.
+	Added CDL to export our definitions to <sys/types.h>.
+	
+
+2000-05-31  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/lib/network_support.c (init_all_network_interfaces): Make
+	this call idempotent - this is useful for reliable initialization
+	of dependent subsystems.
+
+	* include/lib/libkern/libkern.h: remove protos of random() and
+	srandom() for they are not in fact provided.
+
+	* cdl/net.cdl: Turn off CYGPKG_NET_TESTS_USE_RT_TEST_HARNESS by
+	default - since not all tests currently pass. 
+
+2000-05-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl (CYGPKG_NET_TFTPD_THREAD_PRIORITY): New option,
+	control the TFTPD thread priority.  These options are *all*
+	CYGPKG_NET.  Yuk, sort 'em out later.
+
+	* tests/tftp_server_test.c (tftp_test): Added use of the
+	CYGPKG_NET_TESTS_USE_RT_TEST_HARNESS stuff, same as for the flood
+	ping test.  This one passes (with the next change), so committed.
+
+	* src/lib/tftp_server.c (tftpd_server): Cancelled some of the
+	printouts as connections come and go *iff* the tests are set up to
+	use the realtime-ness test harness.  This needs generalizing into
+	proper control of the network's chattiness overall.
+	(tftpd_start): Also added configury of the TFTPD thread priority.
+
+2000-05-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl: Add flood test below.  Also add option
+	CYGPKG_NET_TESTS_USE_RT_TEST_HARNESS to decide whether to
+	"Use real-time response test harness (if available)".
+	Consequently moved the test build stuff forward out of the build
+	flags area.
+
+	* tests/flood.c (net_test): New file; performs a flood-ping (well,
+	as fast as we can go) of the server(s) on the two interfaces.
+	Also uses the real-time interrupt response verification stuff from
+	the EBSA285 driver component.
+
+2000-05-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl: Add new utility (and harmless-by-default test)
+	tests/set_mac_address.  You have to edit it to get anything
+	damaging to happen.
+
+	* tests/set_mac_address.c: New file added.  It uses SIOCSIFHWADDR
+	to set the MAC address of any interfaces it has been told to.
+
+2000-05-08  Gary Thomas  <gthomas@redhat.com>
+
+	* include/machine/cpu.h: 
+	* include/machine/cdefs.h: Add copyright boilerplate.
+
+2000-05-05  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/arpa/tftp.h: Aargh.  Turns out that removing the align
+	driective and retaining only the packed directive makes the
+	original version work.  So, reverted.  Apologies for the wasted
+	time.
+
+	* src/lib/tftp_server.c (tftpd_read_file): Coupla warnings
+	reduced, and reverted to match original tftp.h
+
+	* src/lib/tftp_dummy_file.c (dummy_open): Removed use of
+	undeclared malloc().
+
+2000-05-04  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/tftp_server.c: 
+	* src/lib/tftp_client.c: Adjust for changes in header structure.
+
+	* include/arpa/tftp.h: Continuing problems with alignment on ARM.  
+	Recourse is very bastardized structure, but it _does_ work.
+
+2000-05-04  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tftp_client_test.c (tftp_test): Print out a coupla more
+	things and test both interfaces if they exist - which does the
+	same thing twice if the same server bootp'd both.  Changed the
+	filenames to something more obvious.
+
+	* cdl/net.cdl (CYGPKG_NET_TESTS): Build the tftp tests
+	tests/tftp_client_test tests/tftp_server_test
+
+	* src/ecos/support.c (cyg_kmem_print_stats): New function; prints
+	info about memory usage for some tests to come.
+
+2000-05-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/arpa/tftp.h: Force packed alignment - required on some
+	architectures.
+
+2000-05-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/tftp_dummy_file.c: Adding very simple routines - just
+	enough to test TFTP server.  This support will come from elsewhere
+	in actual application environments (e.g. a real file system).
+
+	* tests/tftp_server_test.c: 
+	* src/lib/tftp_server.c: 
+	* include/tftp_support.h: Flesh out TFTP server support.
+
+2000-04-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tcp_echo.c (calibrate_load): Import better background
+	thread loading algorithm with bugfix; if the initial HIGH limit
+	was not large enough, it never got loaded enough.
+
+	* tests/nc_test_slave.c (calibrate_load): Import the fixed version
+	from above back in here.
+
+2000-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ecos/support.c (cyg_tsleep): Use 'cyg_scheduler_safe_lock()' so
+	this function can be called with the scheduler locked.
+
+	* src/sys/kern/uipc_socket2.c: 
+	* include/sys/socketvar.h: Update sblock()/sbunlock() to be eCos safe.
+
+2000-04-12  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tcp_echo.c: Include <lib/libkern/libkern.h> so that it
+	links - otherwise max() is not around.
+
+2000-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/lib/libkern/libkern.h: 
+	* include/network.h (NO_LIBKERN_INLINE): Disable kernel inline
+	functions.
+
+2000-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/getserv.c: Add TFTP protocol.
+
+	* cdl/net.cdl: Add TFTP library functions.
+	
+	* include/tftp_support.h: 
+	* src/lib/tftp_dummy_file.c: 
+	* src/lib/tftp_server.c: 
+	* src/lib/tftp_client.c: New file(s).  Basic TFTP support functions.
+
+2000-04-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tcp_echo.c (echo_test): 
+	* tests/tcp_source.c: 
+	* tests/tcp_sink.c: 
+	Merge in changes from Grant Edwards <grante@visi.com> presented on
+	ecos-discuss "Mon, 10 Apr 2000 11:01:54 -0500" - fix some
+	warnings, and use ntohl() on the control data that travels netly
+	so that the host tools will work on otherendian machines.
+
+2000-04-07  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/nc_test_slave.c: Update background thread loading
+	calibration to use a binary search (better) algorithm.
+
+2000-03-29  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/ftp_test.c (cyg_test_exit): 
+	* tests/mbuf_test.c (cyg_start): 
+	* tests/nc_test_master.c (cyg_test_exit): 
+	* tests/nc_test_slave.c (show_net_times): 
+	* tests/ping_test.c (cyg_test_exit): 
+	* tests/server_test.c (cyg_test_exit): 
+	* tests/socket_test.c (cyg_test_exit): 
+	* tests/tcp_echo.c (cyg_test_exit): 
+	Some eCos infrastructure changes caused, in some configurations,
+	cyg_test_exit() from the infrastructure to be brought in (in
+	tcdiag.o) even when the Test Case system was not explicitly being
+	invoked.  That fought with the convenience copy of cyg_test_exit()
+	in these tests.  The neatest fix is to use that provided centrally
+	where relevent, so that is what this change does.
+
+	* tests/tcp_echo.c: Also now use granularity of 5% by default,
+	calibrate the load at 50%, and check and report the load that was
+	actually achieved after the test.
+
+2000-03-29  John Dallaway  <jld@cygnus.co.uk>
+
+	* doc/ecos_tcpip.html:
+
+	Remove error-prone cross-reference to another eCos package.
+
+	* doc/index.html:
+
+	Synchronize index page title with web site.
+
+2000-03-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lib/bootp_support.c (init_net): Need to start interface,
+	especially for manual/static IP configurations.
+
+	* tests/nc_test_slave.c (calibrate_load): Better calibration for
+	slower targets.
+
+2000-03-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/kern/sys_socket.c: 
+	* src/sys/kern/sys_generic.c: 
+	* include/sys/sockio.h: Add FIONBIO, FIOASYNC, FIONREAD functions.
+
+	* include/machine/types.h: Make definitions safe for use with libc.
+
+2000-03-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ecos/support.c: Remove some debug messages.
+	Update timed sleep functions (tsleep) to use scheduler lock
+	instead of brute-force interrupt locks.
+
+2000-03-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tcp_echo.c (echo_test): Also enable, log and print out the
+	idle-thread activity during the test - this reassures us that
+	there is no [significant] spare time being wasted idling during
+	the test.  This change has no effect on the results at all.
+
+2000-03-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tcp_echo.c (calibrate_load): Improve the accuracy of the
+	calibration with some post-scaling.  Change load to an array
+	accessor instead of register-based floating point - this is less
+	load, so more loops are needed, so the initial load level is upped
+	also.  More loops means better accuracy anyway, a good thing.
+
+2000-03-06  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/tcp_source.c (show_results): Print results in Mbit/S also.
+	(source_test): Warnings reduction; add some casts to sending and
+	receiving the control packets.
+	(NUM_BUF): becomes 1024; send more data to get thro'put result.
+
+	* tests/tcp_sink.c (show_results): Print results in Mbit/S also.
+	(sink_test): Warnings reduction; add some casts to sending and
+	receiving the control packets.
+
+	* tests/nc_test_master.c (show_results): Reinstate tot_bytes
+	variable for host testing tool version.  Print results in Mbit/S
+	also.
+
+	* tests/nc_test_slave.c (net_test): Comment out starting multiple
+	threads; they fight over a wide-open socket.  One thread is
+	enough.
+
+2000-03-06  Gary Thomas  <gthomas@redhat.com>
+
+	* include/netdev.h: Update structure for improved API description.
+
+2000-03-05  Gary Thomas  <gthomas@redhat.com>
+
+	* include/network.h:
+	* include/sys/syscallargs.h:
+	* src/lib/accept.c:
+	* src/lib/bootp_support.c:
+	* src/lib/close.c:
+	* src/lib/getpeername.c:
+	* src/lib/getsockname.c:
+	* src/lib/recvfrom.c:
+	* tests/ftp_test.c:
+	* tests/nc_test_framework.h:
+	* tests/nc_test_master.c:
+	* tests/nc_test_slave.c:
+	* tests/ping_test.c:
+	* tests/server_test.c:
+	* tests/socket_test.c:
+	* tests/tcp_echo.c:
+	Cleanup to remove compiler warnings.	
+
+2000-03-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/machine/param.h:
+	* include/sys/socketvar.h:
+	* src/ecos/timeout.c:
+	* src/sys/kern/kern_subr.c:
+	* src/sys/kern/sys_generic.c:
+	* src/sys/kern/sys_socket.c:
+	* src/sys/kern/uipc_mbuf.c:
+	* src/sys/kern/uipc_socket2.c:
+	* src/sys/kern/uipc_syscalls.c:
+	* src/sys/net/if_ethersubr.c:
+	* src/sys/net/if_loop.c:
+	* src/sys/net/route.c:
+	* src/sys/net/rtsock.c:
+	* src/sys/netinet/in_cksum.c:
+	* src/sys/netinet/in_pcb.c:
+	* src/sys/netinet/ip_input.c:
+	* src/sys/netinet/tcp_input.c:
+	* src/sys/netinet/tcp_output.c:
+	* src/sys/netinet/tcp_subr.c:
+	* src/sys/netinet/udp_usrreq.c:
+	Cleanup to remove compiler warnings.	
+
+2000-03-01  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/ping_test.c: Reorganize test, display error info.
+
+	* src/lib/bootp_support.c: Add support for DNS options.
+
+2000-02-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/sys/sockio.h (SIOCSIFHWADDR): Add function to
+	set hardware (MAC) address via ioctl.
+
+2000-02-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/net.cdl:
+
+	Reparent cdl_interface CYGHWR_NET_DRIVER_ETH0_SETUP under
+	cdl_component CYGHWR_NET_DRIVER_ETH0_SETUP_OPTIONS to
+	avoid a spurious conflict report when the latter is
+	inactive.
+
+2000-02-25  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/net.cdl:
+
+	Reparent cdl_interface CYGHWR_NET_DRIVER_ETH1_SETUP under
+	cdl_component CYGHWR_NET_DRIVER_ETH1_SETUP_OPTIONS to
+	avoid a spurious conflict report when the latter is
+	inactive.
+
+2000-02-22  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/netinet/if_ether.h: 
+	* include/netinet/ip.h: 
+	* include/netinet/ip_icmp.h: 
+	* include/netinet/tcp.h: 
+	* include/netinet/udp.h: More structure alignement fixes.
+
+2000-02-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/netinet/tcpip.h: 
+	* include/netinet/udp_var.h: Force structure alignment.
+
+2000-02-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/server_test.c: Target [client] address was wrong.
+
+	* tests/tcp_source.c:
+	* tests/tcp_sink.c:
+	* tests/tcp_echo.c: New test suite.
+	
+2000-02-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/ping_test.c: Fix typo in startup message.
+
+	* src/sys/net/route.c (route_reinit): New function - only here
+	until BOOTP problems can be found/fixed.
+
+	* src/lib/bootp_support.c (do_bootp): Force any existing routes
+	to be reset since this causes a problem if BOOTP has been previously
+	run.  Also, the BOOTP request must be zeroed or the server will
+	get confused.
+
+	* src/lib/network_support.c (init_all_network_interfaces): 
+	Rearrange initialization so that all BOOTP activity takes place
+	before any permanent setups are in place.
+
+2000-02-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/sys/net/route.c (rtioctl): Add support for deleting routes.
+
+	* src/lib/network_support.c (init_all_network_interfaces): 
+	Support predefined IP configurations, as well as BOOTP.
+
+	* tests/ping_test.c: Renamed from 'bootp_test.c'
+
+	* src/lib/inet_addr.c: 
+	* include/arpa/ftp.h: 
+	* include/arpa/nameser.h: 
+	* include/arpa/telnet.h: 
+	* include/arpa/inet.h: 
+	* include/arpa/tftp.h: New file(s).
+
+2000-02-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/lib/select.c: Add 'cyg_select_with_abort()' interface which
+	will allow 'select()' function to be abnormally terminated.  Add
+	new function 'cyg_select_abort()' which does this.
+
+2000-02-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/net.cdl: Fix typo; cdl_interface CYGHWR_NET_DRIVER_ETH1 was
+	missing, so EBSA build was conflictual.
+
+2000-02-14  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/bootp_test.c: 
+	* tests/ftp_test.c: 
+	* tests/nc_test_framework.h: 
+	* tests/nc_test_master.c: 
+	* tests/nc_test_slave.c: 
+	* tests/server_test.c: Rework with automatic network initialization.
+	Includes support for multiple interfaces.
+
+	* src/lib/network_support.c: 
+	* include/network.h: New file(s).
+
+	* cdl/net.cdl: New CDL to support multiple interfaces and their
+	configuration.  (Not complete yet).
+
+2000-02-11  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/lib/select.c (select): Add a way to abort selects (EINTR).
+
+2000-02-10  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/nc_test_slave.c (calibrate_load): Slightly different algorithm,
+	which should work better on all platforms.
+
+2000-02-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/net.cdl: Add CYGPKG_NET_THREAD_PRIORITY to allow user more
+	control over how networking [anonymous] threads behave.
+
+	* tests/nc_test_framework.h: 
+	* tests/nc_test_slave.c: 
+	* tests/nc_test_master.c: Support test mode with target CPU under
+	various loads.
+
+2000-02-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/ecos/support.c (bcmp): Fix bug.  Missing pointer increments
+	meant that the zeroth byte only was compared.  Caused stack to
+	reject ARP packets - depending on MAC address order for particular
+	platform.
+
+2000-02-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/bootp_test.c:
+	* tests/ftp_test.c:
+	* tests/nc_test_master.c:
+	* tests/server_test.c:
+	* tests/socket_test.c:
+	Change stacksize of test thread to TYPICAL not MINIMAL - some
+	drivers eat more stack than others.  Generally:
+	-#define STACK_SIZE CYGNUM_HAL_STACK_SIZE_MINIMUM
+	+#define STACK_SIZE CYGNUM_HAL_STACK_SIZE_TYPICAL
+
+2000-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/net.cdl:
+
+	Tidy display strings.
+
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2000, 2001, 2002 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####

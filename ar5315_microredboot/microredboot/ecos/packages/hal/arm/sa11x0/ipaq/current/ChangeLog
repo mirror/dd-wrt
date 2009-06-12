@@ -1,0 +1,392 @@
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2002-09-20  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/lcd_support.c (lcd_comm_control): Need to ingore BAUD commands
+	since they may confuse RedBoot.
+
+	* include/ipaq.h: Define "LinkUP Systems" PCMCIA controller.  Used
+	on Compaq dual PCMCIA sleeve.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_ROM.ecm: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT.
+	* misc/redboot_RAM.ecm: Ditto.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/atmel_support.c: Fixed warning.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+
+2002-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_cmds.c: 
+	* src/lcd_support.c: 
+	* src/kbd.xpm: 
+	* src/ipaq_misc.c: 
+	* src/atmel_support.c: Clean up warnings.
+
+2002-04-03  Jesper Skov  <jskov@redhat.com>
+
+	* src/lcd_support.c: Don't use sscanf - it may rely on stuff that
+	is only initialized later.
+
+	* src/ipaq_misc.c (plf_if_init): lcd_init is always called.
+
+2002-03-06  Mark Salter  <msalter@redhat.com>
+
+	* src/lcd_support.c (lcd_init): Tweak LCD settings.
+
+2002-02-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c (lcd_on): Only enable LCD if LCD/TS is being used 
+	as the console.  This keeps the LCD backlight off which in turn makes
+	the unit run cooler (and longer).
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-09-28  Richard Panton <rpanton@3glab.com>
+
+	* include/hal_platform_setup.h: Use correct MMU control register bits
+	during initial disable.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_cmds.c: 
+	* src/lcd_support.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-07-23  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_ints.h: 
+	* cdl/hal_arm_sa11x0_ipaq.cdl: 
+	Define sample "extended interrupt" support.
+
+2001-06-22  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_WinCE.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: Force stack size to 6K.
+
+2001-06-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* images/*: Remove. Don't bloat repository with things already on
+	the web.
+
+2001-06-08  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.ldi: Relax heap alignment.
+
+2001-05-24  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: Remove 'RedBoot[backup]' image by
+	default - to make room for Linux kernel.
+
+2001-05-16  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Always init UART3.  Add support
+	for deep sleep/resume.  Note: this has only been tested from
+	Linux.  Support for sleep/resume will have to come later for eCos.
+
+2001-04-30  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h (CYGSEM_HAL_ROM_RESET_USES_JUMP): 
+	Explicitly defined to handle strange startup situations.
+
+2001-04-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: Remove redundant -Wl,-N from link flags
+
+2001-04-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Clean up Compaq startup mode which
+	needs to behave like ROM startup with minor differences.
+
+2001-04-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lcd_support.c: Frame pointer was right before.
+
+2001-04-03  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/elinux.patch: Add patch for Linux to allow co-existence
+	with RedBoot. (authored by Gary)
+
+2001-04-03  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_compaq.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_compaq.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_compaq.h: New file(s).
+
+	* src/lcd_support.c (lcd_comm_getc_nonblock): Force LCD on
+	whenever there is a keystroke or button pushed.
+
+	* misc/redboot_WinCE.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_Compaq.ecm: New file(s) - standard RedBoot configurations.
+	* images/redboot_WinCE.srec: 
+	* images/redboot_WinCE.elf: 
+	* images/redboot_WinCE.bin: 
+	* images/redboot_ROM.srec: 
+	* images/redboot_ROM.elf: 
+	* images/redboot_ROM.bin: 
+	* images/redboot_RAM.srec: 
+	* images/redboot_RAM.elf: 
+	* images/redboot_RAM.bin: 
+	* images/redboot_Compaq.srec: 
+	* images/redboot_Compaq.elf: 
+	* images/redboot_Compaq.bin: New file(s) - standard RedBoot images.
+
+	* images/OSloader: New file - imported from Compaq.
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: Add 'Compaq' startup type.
+
+2001-04-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Define virtual screen to be 80x??, with only
+	a 30 character wide window showing (in portrait mode).  Use the 
+	joypad to pan around.  Also, restore cursor support.
+	(lcd_comm_init): Set up default keyboard parameters and let the
+	initialization (calibration) abort/timeout.
+	(lcd_refresh): Fix problem with pan right.
+
+	* src/kbd.xpm: Revert to using "small" keyboard graphic.
+
+	* src/font.h: Add special character for block cursor.
+
+	* src/lcd_support.c (lcd_comm_getc_nonblock): Rework keyboard 
+	input to make it more responsive/smoother.
+
+2001-03-24  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: LCD comm only in RedBoot mode.	
+
+2001-03-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c (init_kbd_coord): Make screen calibration more
+	user friendly.  User can abort at any time with 'return' button.
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: Set default clock speed to 206MHz.
+
+2001-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.mlt: Decrease heap alignment.
+
+	* src/lcd_support.c: Keyboard map had / & \ backwards.
+
+2001-03-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_cmds.c (idle): Add idle processing - turn off LCD
+	screen and backlight when not in use.
+
+	* src/lcd_support.c: 
+	* include/lcd_support.h (lcd_getinfo): New function used to export
+	information about LCD screen, video memory, etc.
+	(lcd_on): New function - used to enable/disable screen.
+
+2001-03-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Improved LCD virtual keyboard support.
+	Better initialization and setup.  Remember parameters so it's
+	not necessary to calibrate on every boot.
+
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.h: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_ram.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_ram.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_ram.h: Reserve LCD memory.
+
+	* include/ipaq.h: 
+	* include/hal_platform_setup.h: Add LCD screen parameters to fixed area.
+
+2001-03-09  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_wince.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_wince.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_wince.h: New file(s).
+
+	* include/hal_platform_setup.h: Support starting from Windows/CR.
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: Add new startup type: WinCE.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl:  Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-03-06  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Massive improvement in non-interrupt
+	driven keyboard scanning.  Support 'return' button for ^C.
+	Support control keymap.
+
+	* src/atmel_support.c: Improve interrupt support.  Fix
+	keypad [buttons] reporting.
+
+	* include/atmel_support.h: Add interrupt driven support.
+	Define button values (using icons for names).
+
+2001-03-05  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Use new Atmel asynchronous handling.
+
+	* src/ipaq_misc.c (plf_if_init): Always required [now].
+
+	* src/atmel_support.c: Restructure for asynchronous event
+	handling - many changes.
+
+	* include/lcd_support.h: New file - define LCD interfaces.
+
+	* include/atmel_support.h: Add asynchronous response handling.
+
+2001-03-01  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: Define CYGINT_HAL_PLF_IF_INIT
+	to indicate that this platform requires plf_if_init();.
+
+	* src/lcd_support.c: Minor cleanup during screen calibrate.
+
+	* src/ipaq_misc.c: Only init LCD when creating I/O channel.
+
+2001-02-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ipaq_misc.c: Initialize LCD/TS I/O channel.
+
+	* src/banner.xpm: Trim and clean up a few lines.
+
+	* src/atmel_support.c: 
+	* include/atmel_support.h: Define simple touch screen interface.
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: Add CDL to support using LCD/TS
+	as a communications channel.
+
+	* src/lcd_support.c: Lots of changes.  Support pesudo keyboard
+	using touchscreen.
+
+	* src/kbd.xpm: New file.  Includes pixmaps for keyboard matrix.
+
+2001-02-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Move logo to bottom of screen.  Also
+	turn on LCD light using Atmel micro-controller.
+
+	* src/ipaq_misc.c: Initialize Atmel hardware.
+
+	* src/banner.xpm: Improve look in portrait mode (borders).
+
+	* src/atmel_support.c: 
+	* include/atmel_support.h: New file(s).  Interfaces to control
+	and interact with the Atmel micro-controller which is used to
+	handle the LCD light, LED, touch panel, etc.
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: Adding Atmel micro-controller support.
+
+2001-02-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/lcd_support.c: Define frame pointer with volatile correctly.
+	Silence warnings.
+
+2001-02-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Fix character rendering for 
+	portrait mode.  Scrolling still broken.
+
+	* src/font.h: New file - extracted from lcd_support.c
+
+	* src/banner.xpm: Add portrait mode version.
+
+	* src/lcd_support.c: Initial portrait mode support.
+
+	* src/redboot_cmds.c (do_physaddr): Use common support.
+
+	* src/lcd_support.c: Merge ISOINFRA changes from Assabet.
+	Put frame buffer at end of RAM.
+
+	* src/ipaq_misc.c: Remove unused code.  Enable LCD display.
+
+	* include/hal_platform_setup.h: 
+	Prune some debug code.  Fix up DRAM initialization.
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: 
+	Add option to enable DRAM controller init.
+
+2001-02-24  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_ipaq.cdl: 	
+	Define machine type for Linux bootstrap.
+
+	* src/redboot_cmds.c: Linux 'exec' command now in generic code.
+	
+2001-02-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_cmds.c: 	
+	* src/lcd_support.c: 
+	* src/ipaq_misc.c: 
+	* src/banner.xpm.bin: 
+	* src/banner.xpm: 
+	* misc/redboot_ROM.ecm: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_rom.h: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_ram.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_ram.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_ipaq_ram.h: 
+	* include/plf_mmap.h: 
+	* include/ipaq.h (SA1110_EIO_IR_OFF): 
+	* include/hal_platform_setup.h: 
+	* include/hal_platform_ints.h: 
+	* doc/README.ipaq: 
+	* cdl/hal_arm_sa11x0_ipaq.cdl: New file(s) - initial import
+	based on contribution by Richard Panton, 3G Labs, Inc.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,964 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Running a Synthetic Target Application</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="Installation"
+HREF="synth-install.html"><LINK
+REL="NEXT"
+TITLE="The I/O Auxiliary's User Interface"
+HREF="synth-gui.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="synth-install.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="synth-gui.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH-RUNNING">Running a Synthetic Target Application</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN95"
+></A
+><H2
+>Name</H2
+>Execution&nbsp;--&nbsp;Arguments and configuration files</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-RUNNING-DESCRIPTION"
+></A
+><H2
+>Description</H2
+><P
+>The procedure for configuring and building eCos and an application for
+the synthetic target is the same as for any other eCos target. Once an
+executable has been built it can be run like any Linux program, for
+example from a shell prompt,
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ ecos_hello &lt;options&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+>or using gdb:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ gdb --nw --quiet --args ecos_hello &lt;options&gt;
+(gdb) run
+Starting program: ecos_hello &lt;options&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+>By default use of the I/O auxiliary is disabled. If its I/O facilities
+are required then the option <TT
+CLASS="OPTION"
+>--io</TT
+> must be used.
+    </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>In future the default behaviour may change, with the I/O auxiliary
+being started by default. The option <TT
+CLASS="OPTION"
+>--nio</TT
+> can be
+used to prevent the auxiliary from being run.
+    </P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-RUNNING-ARGUMENTS"
+></A
+><H2
+>Command-line Arguments</H2
+><P
+>The syntax for running a synthetic target application is:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ &lt;ecos_app&gt; [options] [-- [app_options]]</PRE
+></TD
+></TR
+></TABLE
+><P
+>Command line options up to the <TT
+CLASS="OPTION"
+>--</TT
+> are passed on to
+the I/O auxiliary. Subsequent arguments are not passed on to the
+auxiliary, and hence can be used by the eCos application itself. The
+full set of arguments can be accessed through the variables
+<TT
+CLASS="VARNAME"
+>cyg_hal_sys_argc</TT
+> and
+<TT
+CLASS="VARNAME"
+>cyg_hal_sys_argv</TT
+>. 
+    </P
+><P
+>The following options are accepted as standard:
+    </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>--io</TT
+></DT
+><DD
+><P
+>This option causes the eCos application to spawn the I/O auxiliary
+during HAL initialization. Without this option only limited I/O will
+be available.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>--nio</TT
+></DT
+><DD
+><P
+>This option prevents the eCos application from spawning the I/O
+auxiliary. In the current version of the software this is the default.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-nw</TT
+>, <TT
+CLASS="OPTION"
+>--no-windows</TT
+></DT
+><DD
+><P
+>The I/O auxiliary can either provide a graphical user interface, or it
+can run in a text-only mode. The default is to provide the graphical
+interface, but this can be disabled with <TT
+CLASS="OPTION"
+>-nw</TT
+>.
+Emulation of some devices, for example buttons connected to digital
+inputs, requires the graphical interface.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-w</TT
+>, <TT
+CLASS="OPTION"
+>--windows</TT
+></DT
+><DD
+><P
+>The <TT
+CLASS="OPTION"
+>-w</TT
+> causes the I/O auxiliary to provide a
+graphical user interface. This is the default.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-v</TT
+>, <TT
+CLASS="OPTION"
+>--version</TT
+></DT
+><DD
+><P
+>The <TT
+CLASS="OPTION"
+>-v</TT
+> option can be used to determine the version of
+the I/O auxiliary being used and where it has been installed. Both the
+auxiliary and the eCos application will exit immediately.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-h</TT
+>, <TT
+CLASS="OPTION"
+>--help</TT
+></DT
+><DD
+><P
+><TT
+CLASS="OPTION"
+>-h</TT
+> causes the I/O auxiliary to list all accepted
+command-line arguments. This happens after all devices have been
+initialized, since the host-side support for some of the devices may
+extend the list of recognised options. After this both the auxiliary
+and the eCos application will exit immediately. This option implies
+<TT
+CLASS="OPTION"
+>-nw</TT
+>. 
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-k</TT
+>, <TT
+CLASS="OPTION"
+>--keep-going</TT
+></DT
+><DD
+><P
+>If an error occurs in the I/O auxiliary while reading in any of the
+configuration files or initializing devices, by default both the 
+auxiliary and the eCos application will exit. The <TT
+CLASS="OPTION"
+>-k</TT
+>
+option can be used to make the auxiliary continue in spite of errors,
+although obviously it may not be fully functional.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-nr</TT
+>, <TT
+CLASS="OPTION"
+>--no-rc</TT
+></DT
+><DD
+><P
+>Normally the auxiliary processes two <A
+HREF="synth-running.html#SYNTH-RUNNING-USER-CONFIG"
+>user configuration files</A
+>
+during startup: <TT
+CLASS="FILENAME"
+>initrc.tcl</TT
+> and
+<TT
+CLASS="FILENAME"
+>mainrc.tcl</TT
+>. This can be suppressed using the
+<TT
+CLASS="OPTION"
+>-nr</TT
+> option.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-x</TT
+>, <TT
+CLASS="OPTION"
+>--exit</TT
+></DT
+><DD
+><P
+>When providing a graphical user interface the I/O auxiliary will
+normally continue running even after the eCos application has exited.
+This allows the user to take actions such as saving the current
+contents of the main text window. If run with <TT
+CLASS="OPTION"
+>-x</TT
+> then
+the auxiliary will exit as soon the application exits.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-nx</TT
+>, <TT
+CLASS="OPTION"
+>--no-exit</TT
+></DT
+><DD
+><P
+>When the graphical user interface is disabled with
+<TT
+CLASS="OPTION"
+>-nw</TT
+> the I/O auxiliary will normally exit immediately
+when the eCos application exits. Without the graphical frontend there
+is usually no way for the user to interact directly with the
+auxiliary, so there is no point in continuing to run once the eCos
+application will no longer request any I/O operations. Specifying the
+<TT
+CLASS="OPTION"
+>-nx</TT
+> option causes the auxiliary to continue running
+even after the application has exited.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-V</TT
+>, <TT
+CLASS="OPTION"
+>--verbose</TT
+></DT
+><DD
+><P
+>This option causes the I/O auxiliary to output some additional
+information, especially during initialization.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-l &lt;file&gt;</TT
+>, <TT
+CLASS="OPTION"
+>--logfile &lt;file&gt;</TT
+></DT
+><DD
+><P
+>Much of the output of the eCos application and the I/O auxiliary is
+simple text, for example resulting from eCos
+<TT
+CLASS="FUNCTION"
+>printf</TT
+> or <TT
+CLASS="FUNCTION"
+>diag_printf</TT
+> calls.
+When running in graphical mode this output goes to a central text
+window, and can be saved to a file or edited via menus. The
+<TT
+CLASS="OPTION"
+>-l</TT
+> can be used to automatically generate an
+additional logfile containing all the text. If graphical
+mode is disabled then by default all the text just goes to the current
+standard output. Specifying <TT
+CLASS="OPTION"
+>-l</TT
+> causes most of the
+text to go into a logfile instead, although some messages such as
+errors generated by the auxiliary itself will still go to stdout as
+well. 
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-t &lt;file&gt;</TT
+>, <TT
+CLASS="OPTION"
+>--target &lt;file&gt;</TT
+></DT
+><DD
+><P
+>During initialization the I/O auxiliary reads in a target definition
+file. This file holds information such as which Linux devices should
+be used to emulate the various eCos devices. The <TT
+CLASS="OPTION"
+>-t</TT
+>
+option can be used to specify which target definition should be used
+for the current run, defaulting to <TT
+CLASS="FILENAME"
+>default.tdf</TT
+>.
+It is not necessary to include the <TT
+CLASS="FILENAME"
+>.tdf</TT
+> suffix,
+this will be appended automatically if necessary.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-geometry &lt;geometry&gt;</TT
+></DT
+><DD
+><P
+>This option can be used to control the size and position of the main
+window, as per X conventions.
+         </P
+></DD
+></DL
+></DIV
+><P
+>The I/O auxiliary loads support for the various devices dynamically
+and some devices may accept additional command line arguments. Details
+of these can be obtained using the <TT
+CLASS="OPTION"
+>-h</TT
+> option or by
+consulting the device-specific documentation. If an unrecognised
+command line argument is used then a warning will be issued.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-RUNNING-TDF"
+></A
+><H2
+>The Target Definition File</H2
+><P
+>The eCos application will want to access devices such as
+<TT
+CLASS="VARNAME"
+>eth0</TT
+> or <TT
+CLASS="VARNAME"
+>/dev/ser0</TT
+>. These need to
+be mapped on to Linux devices. For example some users may all traffic
+on the eCos <TT
+CLASS="VARNAME"
+>/dev/ser0</TT
+> serial device to go via the
+Linux serial device <TT
+CLASS="VARNAME"
+>/dev/ttyS1</TT
+>, while ethernet I/O
+for the eCos <TT
+CLASS="VARNAME"
+>eth0</TT
+> device should be mapped to the
+Linux ethertap device <TT
+CLASS="VARNAME"
+>tap3</TT
+>. Some devices may need
+additional configuration information, for example to limit the
+number of packets that should be buffered within the I/O auxiliary.
+The target definition file provides all this information.
+    </P
+><P
+>By default the I/O auxiliary will look for a file
+<TT
+CLASS="FILENAME"
+>default.tdf</TT
+>. An alternative target definition can
+be specified on the command line using <TT
+CLASS="OPTION"
+>-t</TT
+>, for
+example:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ bridge_app --io -t twineth</PRE
+></TD
+></TR
+></TABLE
+><P
+>A <TT
+CLASS="FILENAME"
+>.tdf</TT
+> suffix will be appended automatically if
+necessary. If a relative pathname is used then the I/O auxiliary will
+search for the target definition file in the current directory, then
+in <TT
+CLASS="FILENAME"
+>~/.ecos/synth/</TT
+>, and finally
+in its install location.
+    </P
+><P
+>A typical target definition file might look like this:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device console {
+    # appearance -foreground white -background black
+    filter trace {^TRACE:.*} -foreground HotPink1 -hide 1
+}
+
+synth_device ethernet {
+    eth0 real eth1
+    eth1 ethertap tap4 00:01:02:03:FE:06
+
+    ## Maximum number of packets that should be buffered per interface.
+    ## Default 16
+    #max_buffer 32
+
+    ## Filters for the various recognised protocols.
+    ## By default all filters are visible and use standard colours.
+    filter ether  -hide 0
+    #filter arp    -hide 1
+    #filter ipv4   -hide 1
+    #filter ipv6   -hide 1
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>A target definition file is actually a Tcl script that gets run in the
+main interpreter of the I/O auxiliary during initialization. This
+provides a lot of flexibility if necessary. For example the script
+could open a socket to a resource management server of some sort to
+determine which hardware facilities are already in use and adapt
+accordingly. Another possibility is to adapt based on <A
+HREF="synth-new-host.html#SYNTH-NEW-HOST-ARGS"
+>command line arguments</A
+>. Users who
+are not familiar with Tcl programming should still be able to edit a
+simple target definition file without too much difficulty, using a
+mixture of cut'n'paste, commenting or uncommenting various lines, and
+making small edits such as changing <TT
+CLASS="LITERAL"
+>tap4</TT
+> to
+<TT
+CLASS="LITERAL"
+>eth2</TT
+>. 
+    </P
+><P
+>Each type of device will have its own entry in the target definition
+file, taking the form:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device &lt;device type&gt; {
+    &lt;options&gt;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>The documentaton for each synthetic target device should provide
+details of the options available for that device, and often a suitable
+fragment that can be pasted into a target definition file and edited.
+There is no specific set of options that a given device will always
+provide. However in practice many devices will use common code
+exported by the main I/O auxiliary, or their implementation will
+involve some re-use of code for an existing device. Hence certain
+types of option are common to many devices.
+    </P
+><P
+>A good example of this is filters, which control the appearance of
+text output. The above target definition file defines a filter
+<TT
+CLASS="VARNAME"
+>trace</TT
+> for output from the eCos application. The
+regular expression will match output from the infrastructure package's
+tracing facilities when <TT
+CLASS="VARNAME"
+>CYGDBG_USE_TRACING</TT
+> and
+<TT
+CLASS="VARNAME"
+>CYGDBG_INFRA_DEBUG_TRACE_ASSERT_SIMPLE</TT
+> are enabled.
+With the current settings this output will not be visible by default,
+but can be made visible using the menu item <SPAN
+CLASS="GUIMENUITEM"
+>System
+Filters</SPAN
+>. If made visible the trace output will appear in
+an unusual colour, so users can easily distinguish the trace output
+from other text. All filters accept the following options:
+    </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-hide [0|1]</TT
+></DT
+><DD
+><P
+>This controls whether or not text matching this filter should be
+invisible by default or not. At run-time the visibility of each filter
+can be controlled using the <SPAN
+CLASS="GUIMENUITEM"
+>System Filters</SPAN
+>
+menu item.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-foreground &lt;colour&gt;</TT
+></DT
+><DD
+><P
+>This specifies the foreground colour for all text matching this
+filter. The colour can be specified using an RGB value such as
+<TT
+CLASS="LITERAL"
+>#F08010</TT
+>, or a symbolic name such as
+<TT
+CLASS="LITERAL"
+>"light steel blue"</TT
+>. The X11 utility
+<SPAN
+CLASS="APPLICATION"
+>showrgb</SPAN
+> can be used to find out
+about the available colours.
+         </P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-background &lt;colour&gt;</TT
+></DT
+><DD
+><P
+>This specifies the background colour for all text matching the filter.
+As with <TT
+CLASS="OPTION"
+>-foreground</TT
+> the colour can be specified using
+a symbolic name or an RGB value.
+         </P
+></DD
+></DL
+></DIV
+><P
+>Some devices may create their own subwindows, for example to monitor
+ethernet traffic or to provide additional I/O facilities such as
+emulated LED's or buttons. Usually the target definition file can be
+used to control the <A
+HREF="synth-gui.html#SYNTH-GUI-LAYOUT"
+>layout</A
+> of
+these windows.
+    </P
+><P
+>The I/O auxiliary will not normally warn about
+<B
+CLASS="COMMAND"
+>synth_device</B
+> entries in the target definition file
+for devices that are not actually needed by the current eCos
+application. This makes it easier to use a single file for several
+different applications. However it can lead to confusion if an entry
+is spelled incorrectly and hence does not actually get used. The
+<TT
+CLASS="OPTION"
+>-V</TT
+> command line option can be used to get warnings
+about unused device entries in the target definition file.
+    </P
+><P
+>If the body of a <B
+CLASS="COMMAND"
+>synth_device</B
+> command contains an
+unrecognised option and the relevant device is in use, the I/O
+auxiliary will always issue a warning about such options.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-RUNNING-USER-CONFIG"
+></A
+><H2
+>User Configuration Files</H2
+><P
+>During initialization the I/O auxiliary will execute two user
+configuration files, <TT
+CLASS="FILENAME"
+>initrc.tcl</TT
+> and
+<TT
+CLASS="FILENAME"
+>mainrc.tcl</TT
+>. It will look for these files in the
+directory <TT
+CLASS="FILENAME"
+>~/.ecos/synth/</TT
+>. If
+that directory does not yet exist it will be created and populated
+with initial dummy files.
+    </P
+><P
+>Both of these configuration files are Tcl scripts and will be run in
+the main interpreter used by the I/O auxiliary itself. This means that
+they have full access to the internals of the auxiliary including the
+various Tk widgets, and they can perform file or socket I/O if
+desired. The section <A
+HREF="synth-new-host.html"
+>Writing New Devices - host</A
+> contains
+information about the facilities available on the host-side for
+writing new device drivers, and these can also be used in the
+initialization scripts.
+    </P
+><P
+>The <TT
+CLASS="FILENAME"
+>initrc.tcl</TT
+> script is run before the auxiliary
+has processed any requests from the eCos application, and hence before
+any devices have been instantiated. At this point the generic
+command-line arguments has been processed, the target definition file
+has been read in, and the hooks functionality has been initialized. If
+running in graphical mode the main window will have been created, but
+has been withdrawn from the screen to allow new widgets to be added
+without annoying screen flicker. A typical
+<TT
+CLASS="FILENAME"
+>initrc.tcl</TT
+> script could add some menu or toolbar
+options, or install a hook function that will be run when the
+eCos application exits.
+    </P
+><P
+>The <TT
+CLASS="FILENAME"
+>mainrc.tcl</TT
+> script is run after eCos has
+performed all its device initialization and after C++ static
+constructors have run, and just before the call to
+<TT
+CLASS="FUNCTION"
+>cyg_start</TT
+> which will end up transferring control
+to the application itself. A typical <TT
+CLASS="FILENAME"
+>mainrc.tcl</TT
+>
+script could look at what interrupt vectors have been allocated to
+which devices and create a little monitor window that shows interrupt
+activity. 
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-RUNNING-SESSION"
+></A
+><H2
+>Session Information</H2
+><P
+>When running in graphical mode, the I/O auxiliary will read in a file
+<TT
+CLASS="FILENAME"
+>~/.ecos/synth/guisession</TT
+> containing session
+information. This file should not normally be edited manually, instead
+it gets updated automatically when the auxiliary exits. The purpose of
+this file is to hold configuration options that are manipulated via
+the graphical interface, for example which browser should be used to
+display online help.
+    </P
+><DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+BORDER="1"
+WIDTH="100%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Warning</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>GUI session functionality is not yet available in the current release.
+When that functionality is fully implemented it is possible that some
+target definition file options may be removed, to be replaced by
+graphical editing via a suitable preferences dialog, with the
+current settings saved in the session file.
+    </P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="synth-install.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="synth-gui.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Installation</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>The I/O Auxiliary's User Interface</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,15 @@
+version 0
+region ram 0 1000000 0 !
+region rom 41000000 400000 1 !
+section fixed_vectors 0 1 0 1 1 0 1 0 20 20 !
+section data 0 1 1 1 1 1 0 0 8000 bss !
+section bss 0 4 0 1 0 1 0 1 heap1 heap1 !
+section heap1 0 8 0 0 0 0 0 0 !
+section pci_window 100000 1 0 0 1 0 1 0 f00000 f00000 !This is the memory area that is dual-ported to devices onthe PCI bus.  Such devices can read and write this memory areaas their own.  Examples include the EBSA-285 Ethernet driver, which receives and transmits packets via this memory area.  It must be 1Mb aligned, so that the MMU initialization can arrange for it to be uncacheable.
+section rom_vectors 0 1 0 1 1 1 1 1 41000000 41000000 text text !
+section text 0 4 0 1 0 1 0 1 fini fini !
+section fini 0 4 0 1 0 1 0 1 rodata rodata !
+section rodata 0 4 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 4 0 1 0 1 0 1 fixup fixup !
+section fixup 0 4 0 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 4 0 1 0 0 0 1 data !

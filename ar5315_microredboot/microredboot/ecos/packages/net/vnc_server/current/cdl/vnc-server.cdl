@@ -1,0 +1,299 @@
+# ====================================================================
+#
+#      vnc-server.cdl
+#
+#      VNC Server configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+#==========================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):    Chris Garry <cgarry@sweeneydesign.co.uk>
+# Contributors: 
+# Date:         2003-08-22
+# Purpose:      
+# Description:  eCos VNC Server configuration data
+#
+#####DESCRIPTIONEND####
+#
+#========================================================================*/
+
+
+cdl_package CYGPKG_VNC_SERVER {
+    display       "VNC Server"
+    doc           doc/vnc-server.html
+    include_dir   .
+    requires      (CYGNUM_VNC_SERVER_PIXEL_SELECTED <= 1)
+    requires      CYGPKG_IO
+    requires      (CYGPKG_NET || CYGPKG_NET_LWIP)
+    description   "VNC Server."
+    compile vnc-server.c
+    compile -library=libextras.a init.cxx
+    
+    cdl_option CYGNUM_VNC_SERVER_PORT {
+        display "VNC server port number"
+        flavor   data
+        default_value 5900
+        description "Port VNC server will listen on for client connection.
+                     This defaults to the standard port 5900, but may
+                     be changed to any other port number if required."
+    }
+
+    cdl_option CYGDAT_VNC_DESKTOP_NAME {
+        display "VNC Desktop Name"
+        flavor   data
+        default_value { "\"eCos Desktop\"" }
+        description "This is the string that will be sent to the client
+                     in the ServerInitialisation message as the desktop
+                     name."
+    }
+    
+    cdl_option CYGNUM_VNC_SERVER_DELAY {
+        display "VNC server startup delay"
+        flavor data
+        default_value 0
+        description "This defines the number of system clock ticks that the VNC
+                     server will wait before initializing itself and spawning any
+                     extra server threads. This is to give the application a chance
+                     to initialize properly without any interference from the VNC
+                     server."
+    }
+    
+    cdl_option CYGNUM_VNC_SERVER_PRIORITY {
+        display "VNC server thread priority"
+        flavor data
+        default_value { CYGNUM_KERNEL_SCHED_PRIORITIES-2 }
+        legal_values 0 to CYGNUM_KERNEL_SCHED_PRIORITIES
+        description "This sets the priority of the VNC server threads.
+                     The default priority is 1 above the lowest priority."
+    }
+
+    cdl_component CYGPKG_VNC_SERVER_ENCODING_OPTIONS {
+        display "Encoding options"
+        flavor  none
+    no_define
+
+        cdl_component CYGNUM_VNC_SERVER_USE_CORRE_ENCODING {
+            display     "Use CoRRE encoding"
+            flavor bool
+            default_value 1
+            description "This option causes the VNC server to use
+            CoRRE encoding on the display data it sends to the client
+            (vncviewer program). If an encoded data packet works out
+            larger than the RAW data packet, then that packet is sent
+            as raw data anyway.  If this option is not selected, or
+            the client does not support CoRRE encoding, then the display
+            data is sent as raw data."
+    
+            cdl_option CYGNUM_VNC_SERVER_CORRE_ENCODING_HACK {
+                display     "Work-around CoRRE bug in vncviewer"
+                flavor bool
+                default_value 1
+                description "Some versions of the vncviewer program have
+                a bug where they don't display the background colour when
+                CoRRE encoding is used.  This option adds a workaround to
+                this bug to the VNC server.  Note, this problem is not seen
+                with the TightVNC viewer."
+            }
+        }
+    }
+
+    
+    cdl_component CYGPKG_VNC_SERVER_DISPLAY_OPTIONS {
+        display "Display options"
+        flavor  none
+	no_define
+    
+        cdl_option CYGNUM_VNC_SERVER_FRAME_WIDTH {
+        display "Frame width in pixels"
+	    flavor   data
+	    default_value 640
+	    description "This sets the width of the VNC server frame buffer."
+        }
+
+        cdl_option CYGNUM_VNC_SERVER_FRAME_HEIGHT {
+            display "Frame heigth in pixels"
+            flavor   data
+            default_value 480
+            description "This sets the height of the VNC server frame buffer."
+        }
+
+        cdl_option CYGNUM_VNC_SERVER_TILE_SIZE {
+            display "Display tile size"
+            flavor   data
+            default_value 32
+            legal_values  1 to 255
+            description "This sets the size of the tile for the VNC server.  The VNC
+            frame is split into tiles and frame updates to the client are always
+            multiples of whole tiles.  Note that these tiles are not the same as the
+            tiles used with Hextile encoding."
+        }
+    
+        cdl_interface CYGNUM_VNC_SERVER_PIXEL_SELECTED {
+            display     "Pixel format support"
+        }
+    
+        cdl_option CYGNUM_VNC_SERVER_PIXEL_RGB332 {
+            display     "RGB332 pixel format (8-bit)"
+            flavor bool
+            default_value 0
+            implements CYGNUM_VNC_SERVER_PIXEL_SELECTED
+            description "This selects 8-bit, RGB332 pixel format."
+        }
+
+        cdl_option CYGNUM_VNC_SERVER_PIXEL_BGR233 {
+            display     "BGR233 pixel format (8-bit)"
+            flavor bool
+            default_value 1
+            implements CYGNUM_VNC_SERVER_PIXEL_SELECTED
+            description "This selects 8-bit, BGR233 pixel format."
+        }
+
+        cdl_option CYGNUM_VNC_SERVER_PIXEL_RGB555 {
+            display     "RGB555 pixel format (16-bit)"
+            flavor bool
+            default_value 0
+            implements CYGNUM_VNC_SERVER_PIXEL_SELECTED
+            description "This selects 16-bit, RGB555 pixel format."
+        }
+
+        cdl_option CYGNUM_VNC_SERVER_PIXEL_RGB565 {
+            display     "RGB565 pixel format (16-bit)"
+            flavor bool
+            default_value 0
+            implements CYGNUM_VNC_SERVER_PIXEL_SELECTED
+            description "This selects 16-bit, RGB565 pixel format."
+        }
+
+        cdl_option CYGNUM_VNC_SERVER_PIXEL_TRUECOLOR0888 {
+            display     "True Color pixel format (32-bit)"
+            flavor bool
+            default_value 0
+            implements CYGNUM_VNC_SERVER_PIXEL_SELECTED
+            description "This selects 32-bit, TRUECOLOR0888 pixel format."
+        }
+        
+        cdl_option CYGNUM_VNC_SERVER_INCLUDE_VNC_PRINTF {
+            display "Include VncPrintf() function"
+            flavor        bool
+            default_value 1
+            requires      !CYGPKG_MICROWINDOWS
+            description "If this option is selected, the VNC server will include
+            the VncPrintf function for writing text to the VNC server frame buffer.
+            This function is not available if the MicroWindows package is also
+            included."
+#            compile -library=libextras.a fonts/winFreeSystem14x16.c
+            compile                           \
+                fonts/helvB10.c               \
+                fonts/helvB12.c               \
+                fonts/helvR10.c               \
+                fonts/rom8x16.c               \
+                fonts/rom8x8.c                \
+                fonts/symbol.c                \
+                fonts/winFreeSansSerif11x13.c \
+                fonts/winFreeSystem14x16.c    \
+                fonts/X5x7.c                  \
+                fonts/X6x13.c
+            
+            
+        }
+
+    }
+    
+    cdl_component CYGPKG_VNC_SERVER_BUILD_MOUSE_DRIVER {
+        display "Build VNC mouse driver"
+        flavor        bool
+        default_value 1
+        requires      CYGPKG_IO_FILEIO
+        description "If this option is selected, the VNC mouse driver will be built.
+                     If not selected, all mouse data from the VNC client will be
+                     quietly ignored."
+        compile -library=libextras.a vnc_mouse.c
+        
+
+        cdl_option CYGNUM_VNC_SERVER_MOUSE_EVENTS {
+            display "Number of mouse events for VNC server mouse driver to buffer."
+            flavor   data
+            default_value 64
+            description "This option specifies how many mouse events the
+            mouse driver can hold before it overflows."
+        }
+    	
+        cdl_option CYGDAT_VNC_SERVER_MOUSE_NAME {
+            display       "Device name for the VNC server mouse driver"
+            flavor        data
+            default_value {"\"/dev/vnc_mouse\""}
+            description   "This option sets the device name for the VNC server mouse."
+        }	
+    }
+    
+    cdl_component CYGPKG_VNC_SERVER_BUILD_KEYBOARD_DRIVER {
+        display "Build VNC keyboard driver"
+        flavor        bool
+        default_value 1
+        requires      CYGPKG_IO_FILEIO
+        description "If this option is selected, the VNC keyboard driver will be
+                     built. If not selected, all keyboard data from the VNC client
+                     will be quietly ignored."
+        compile -library=libextras.a vnc_kbd.c
+
+        cdl_option CYGNUM_VNC_SERVER_KEYBOARD_EVENTS {
+            display "Number of keyboard events for VNC server keyboard driver to buffer."
+            flavor   data
+            default_value 64
+            description "This option specifies how many keystroke events the 
+            keyboard driver can hold before it overflows."
+        }
+    	
+        cdl_option CYGDAT_VNC_SERVER_KEYBOARD_NAME {
+            display       "Device name for the VNC server keyboard driver"
+            flavor        data
+            default_value {"\"/dev/vnc_kbd\""}
+            description   "This option sets the device name for the VNC server keyboard."
+        }
+    }
+
+    cdl_option CYGPKG_VNC_SERVER_TESTS {
+        display "VNC server tests"
+        flavor  data
+        no_define
+        calculated { "tests/vnc-test" }
+        description   "
+         This option specifies the set of tests
+         for the VNC server package."
+    }
+}
+
+# EOF vnc-server.cdl

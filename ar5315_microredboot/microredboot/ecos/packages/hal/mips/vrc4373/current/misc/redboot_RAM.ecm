@@ -1,0 +1,61 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+#    package CYGPKG_IO_FLASH current ;
+#    package CYGPKG_IO_ETH_DRIVERS current ;
+};
+
+cdl_option CYGBLD_BUILD_GDB_STUBS {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT {
+    inferred_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT {
+    inferred_value 0
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    inferred_value 0 0
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value RAM
+};
+
+cdl_option CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+#cdl_option CYGSEM_REDBOOT_FLASH_CONFIG {
+#    user_value 1
+#};
+
+#cdl_option CYGSEM_REDBOOT_BSP_SYSCALLS {
+#  user_value 1
+#};
+
+#cdl_option CYGBLD_REDBOOT_FLASH_BOOT_OFFSET {
+#  inferred_value 0x1C00000
+#};

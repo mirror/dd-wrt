@@ -1,0 +1,59 @@
+Brief RedBoot Usage Instructions
+
+Complete documentation for RedBoot is online at the eCos web site.
+
+Here are a few useful RedBoot commands:
+
+To load and execute a linux kernel over the network
+   load vmlinux
+   exec
+
+To place a gzip-compressed Linux image in flash:
+A) First, you have to create the compressed loadable image:
+   Build the vmlinux image in the normal way.
+   mips-linux-objcopy -O binary -g vmlinux vmlinux.bin
+   gzip vmlinux.bin
+   You now have a file, vmlinux.bin.gz, which will be used in later steps.
+
+   Determine the entry point, ENTRY, which you will use below
+    mips-linux-objdump -f vmlinux
+   The hex address listed as "start address" is the ENTRY.
+
+   Determine the load point, MEMADDR, which you will use below
+    mips-linux-objdump -h vmlinux | head
+   The first item listed under VMA (e.g. 0x80002000) is the MEMADDR.
+
+B) Now under redboot
+   load -r -b %{FREEMEMLO} vmlinux.bin.gz         /* TFTP must be running */
+   fis create -e ENTRY -r MEMADDR vmlinux.bin.gz  /* Replace ENTRY & MEMADDR */
+
+To boot a gzip-compressed Linux image from flash:
+   fis load -d vmlinux.bin.gz
+   exec
+
+To automatically load and execute a linux kernel on reset, use RedBoot's
+fconfig command to set up a script.  Here's an example setup that causes
+RedBoot to wait for five seconds, and then automatically load a compressed
+vmlinux file from flash and begin execution.
+    RedBoot> fconfig
+    Run script at boot: true
+    Boot script:
+    Enter script, terminate with empty line
+    >> fis load -d vmlinux.bin.gz
+    >> exec
+    >>
+    Boot script timeout (1000ms resolution): 5
+    Use BOOTP for network configuration: false
+    Gateway IP address:
+    Local IP address: 192.168.1.20
+    Local IP address mask: 255.255.255.0
+    Default server IP address: 192.168.1.100
+    Console baud rate: 9600
+    DNS server IP address:
+    GDB connection port: 9000
+    Force console for special debug messages: false
+    Network debug at boot time: false
+    Update RedBoot non-volatile configuration - continue (y/n)? y
+
+After you've used fconfig, reset the system:
+    reset

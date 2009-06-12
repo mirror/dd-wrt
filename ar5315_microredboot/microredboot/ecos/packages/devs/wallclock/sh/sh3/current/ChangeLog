@@ -1,0 +1,83 @@
+2001-07-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/wallclock_sh3.cxx: fix description.
+
+2001-03-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/wallclock_sh3.cxx: Don't include kernel config.
+
+2000-05-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/wallclock_sh3.cdl: CYGSEM_WALLCLOCK_SET_GET_MODE moved to IO
+	package.
+
+	* src/wallclock_sh3.cxx: Get helpers from new file.
+
+2000-04-06  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/wallclock_sh3.cdl: Only active when wallclock is.
+
+2000-04-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/wallclock_sh3.cdl: 
+
+	Provide hardware wallclock implementation as a radio button.
+
+2000-04-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/wallclock_sh3.cxx: 
+	Moved from devs/wallclock/current to here.
+	Get API from io/wallclock.
+	Deleted all non-SH3 changelog entries
+
+2000-03-29  Jesper Skov  <jskov@redhat.com>
+
+	* tests/wallclock2.cxx:
+	* include/wallclock.hxx:
+	* src/sh3.cxx: 
+	* src/wallclock.cxx: 
+	* cdl/wallclock.cdl:
+	Reworked WallClock API. It should now be simpler to add new
+	wallclock drivers. Added a simple test to print out the current
+	wallclock value so a human can verify battery backup works.
+
+2000-03-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/wallclock.cdl: 
+	* src/sh3.cxx: 
+	Added wallclock driver for SH3 RTC module.
+
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+
+

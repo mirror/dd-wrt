@@ -1,0 +1,1207 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Pragmas,  Next: Unnamed Fields,  Prev: Target Builtins,  Up: C Extensions
+
+Pragmas Accepted by GCC
+=======================
+
+   GCC supports several types of pragmas, primarily in order to compile
+code originally written for other compilers.  Note that in general we
+do not recommend the use of pragmas; *Note Function Attributes::, for
+further explanation.
+
+* Menu:
+
+* ARM Pragmas::
+* Darwin Pragmas::
+* Solaris Pragmas::
+* Tru64 Pragmas::
+
+
+File: gcc.info,  Node: ARM Pragmas,  Next: Darwin Pragmas,  Up: Pragmas
+
+ARM Pragmas
+-----------
+
+   The ARM target defines pragmas for controlling the default addition
+of `long_call' and `short_call' attributes to functions.  *Note
+Function Attributes::, for information about the effects of these
+attributes.
+
+`long_calls'
+     Set all subsequent functions to have the `long_call' attribute.
+
+`no_long_calls'
+     Set all subsequent functions to have the `short_call' attribute.
+
+`long_calls_off'
+     Do not affect the `long_call' or `short_call' attributes of
+     subsequent functions.
+
+
+File: gcc.info,  Node: Darwin Pragmas,  Next: Solaris Pragmas,  Prev: ARM Pragmas,  Up: Pragmas
+
+Darwin Pragmas
+--------------
+
+   The following pragmas are available for all architectures running the
+Darwin operating system.  These are useful for compatibility with other
+MacOS compilers.
+
+`mark TOKENS...'
+     This pragma is accepted, but has no effect.
+
+`options align=ALIGNMENT'
+     This pragma sets the alignment of fields in structures.  The
+     values of ALIGNMENT may be `mac68k', to emulate m68k alignment, or
+     `power', to emulate PowerPC alignment.  Uses of this pragma nest
+     properly; to restore the previous setting, use `reset' for the
+     ALIGNMENT.
+
+`segment TOKENS...'
+     This pragma is accepted, but has no effect.
+
+`unused (VAR [, VAR]...)'
+     This pragma declares variables to be possibly unused.  GCC will not
+     produce warnings for the listed variables.  The effect is similar
+     to that of the `unused' attribute, except that this pragma may
+     appear anywhere within the variables' scopes.
+
+
+File: gcc.info,  Node: Solaris Pragmas,  Next: Tru64 Pragmas,  Prev: Darwin Pragmas,  Up: Pragmas
+
+Solaris Pragmas
+---------------
+
+   For compatibility with the SunPRO compiler, the following pragma is
+supported.
+
+`redefine_extname OLDNAME NEWNAME'
+     This pragma gives the C function OLDNAME the assembler label
+     NEWNAME.  The pragma must appear before the function declaration.
+     This pragma is equivalent to the asm labels extension (*note Asm
+     Labels::).  The preprocessor defines `__PRAGMA_REDEFINE_EXTNAME'
+     if the pragma is available.
+
+
+File: gcc.info,  Node: Tru64 Pragmas,  Prev: Solaris Pragmas,  Up: Pragmas
+
+Tru64 Pragmas
+-------------
+
+   For compatibility with the Compaq C compiler, the following pragma
+is supported.
+
+`extern_prefix STRING'
+     This pragma renames all subsequent function and variable
+     declarations such that STRING is prepended to the name.  This
+     effect may be terminated by using another `extern_prefix' pragma
+     with the empty string.
+
+     This pragma is similar in intent to to the asm labels extension
+     (*note Asm Labels::) in that the system programmer wants to change
+     the assembly-level ABI without changing the source-level API.  The
+     preprocessor defines `__EXTERN_PREFIX' if the pragma is available.
+
+
+File: gcc.info,  Node: Unnamed Fields,  Prev: Pragmas,  Up: C Extensions
+
+Unnamed struct/union fields within structs/unions.
+==================================================
+
+   For compatibility with other compilers, GCC allows you to define a
+structure or union that contains, as fields, structures and unions
+without names.  For example:
+
+     struct {
+       int a;
+       union {
+         int b;
+         float c;
+       };
+       int d;
+     } foo;
+
+   In this example, the user would be able to access members of the
+unnamed union with code like `foo.b'.  Note that only unnamed structs
+and unions are allowed, you may not have, for example, an unnamed `int'.
+
+   You must never create such structures that cause ambiguous field
+definitions.  For example, this structure:
+
+     struct {
+       int a;
+       struct {
+         int a;
+       };
+     } foo;
+
+   It is ambiguous which `a' is being referred to with `foo.a'.  Such
+constructs are not supported and must be avoided.  In the future, such
+constructs may be detected and treated as compilation errors.
+
+
+File: gcc.info,  Node: C++ Extensions,  Next: Objective-C,  Prev: C Extensions,  Up: Top
+
+Extensions to the C++ Language
+******************************
+
+   The GNU compiler provides these extensions to the C++ language (and
+you can also use most of the C language extensions in your C++
+programs).  If you want to write code that checks whether these
+features are available, you can test for the GNU compiler the same way
+as for C programs: check for a predefined macro `__GNUC__'.  You can
+also use `__GNUG__' to test specifically for GNU C++ (*note Standard
+Predefined Macros: (cpp.info)Standard Predefined.).
+
+* Menu:
+
+* Min and Max::		C++ Minimum and maximum operators.
+* Volatiles::		What constitutes an access to a volatile object.
+* Restricted Pointers:: C99 restricted pointers and references.
+* Vague Linkage::       Where G++ puts inlines, vtables and such.
+* C++ Interface::       You can use a single C++ header file for both
+                        declarations and definitions.
+* Template Instantiation:: Methods for ensuring that exactly one copy of
+                        each needed template instantiation is emitted.
+* Bound member functions:: You can extract a function pointer to the
+                        method denoted by a `->*' or `.*' expression.
+* C++ Attributes::      Variable, function, and type attributes for C++ only.
+* Java Exceptions::     Tweaking exception handling to work with Java.
+* Deprecated Features:: Things might disappear from g++.
+* Backwards Compatibility:: Compatibilities with earlier definitions of C++.
+
+
+File: gcc.info,  Node: Min and Max,  Next: Volatiles,  Up: C++ Extensions
+
+Minimum and Maximum Operators in C++
+====================================
+
+   It is very convenient to have operators which return the "minimum"
+or the "maximum" of two arguments.  In GNU C++ (but not in GNU C),
+
+`A <? B'
+     is the "minimum", returning the smaller of the numeric values A
+     and B;
+
+`A >? B'
+     is the "maximum", returning the larger of the numeric values A and
+     B.
+
+   These operations are not primitive in ordinary C++, since you can
+use a macro to return the minimum of two things in C++, as in the
+following example.
+
+     #define MIN(X,Y) ((X) < (Y) ? : (X) : (Y))
+
+You might then use `int min = MIN (i, j);' to set MIN to the minimum
+value of variables I and J.
+
+   However, side effects in `X' or `Y' may cause unintended behavior.
+For example, `MIN (i++, j++)' will fail, incrementing the smaller
+counter twice.  The GNU C `typeof' extension allows you to write safe
+macros that avoid this kind of problem (*note Typeof::).  However,
+writing `MIN' and `MAX' as macros also forces you to use function-call
+notation for a fundamental arithmetic operation.  Using GNU C++
+extensions, you can write `int min = i <? j;' instead.
+
+   Since `<?' and `>?' are built into the compiler, they properly
+handle expressions with side-effects;  `int min = i++ <? j++;' works
+correctly.
+
+
+File: gcc.info,  Node: Volatiles,  Next: Restricted Pointers,  Prev: Min and Max,  Up: C++ Extensions
+
+When is a Volatile Object Accessed?
+===================================
+
+   Both the C and C++ standard have the concept of volatile objects.
+These are normally accessed by pointers and used for accessing
+hardware.  The standards encourage compilers to refrain from
+optimizations concerning accesses to volatile objects that it might
+perform on non-volatile objects.  The C standard leaves it
+implementation defined as to what constitutes a volatile access.  The
+C++ standard omits to specify this, except to say that C++ should
+behave in a similar manner to C with respect to volatiles, where
+possible.  The minimum either standard specifies is that at a sequence
+point all previous accesses to volatile objects have stabilized and no
+subsequent accesses have occurred.  Thus an implementation is free to
+reorder and combine volatile accesses which occur between sequence
+points, but cannot do so for accesses across a sequence point.  The use
+of volatiles does not allow you to violate the restriction on updating
+objects multiple times within a sequence point.
+
+   In most expressions, it is intuitively obvious what is a read and
+what is a write.  For instance
+
+     volatile int *dst = SOMEVALUE;
+     volatile int *src = SOMEOTHERVALUE;
+     *dst = *src;
+
+will cause a read of the volatile object pointed to by SRC and stores
+the value into the volatile object pointed to by DST.  There is no
+guarantee that these reads and writes are atomic, especially for objects
+larger than `int'.
+
+   Less obvious expressions are where something which looks like an
+access is used in a void context.  An example would be,
+
+     volatile int *src = SOMEVALUE;
+     *src;
+
+   With C, such expressions are rvalues, and as rvalues cause a read of
+the object, GCC interprets this as a read of the volatile being pointed
+to.  The C++ standard specifies that such expressions do not undergo
+lvalue to rvalue conversion, and that the type of the dereferenced
+object may be incomplete.  The C++ standard does not specify explicitly
+that it is this lvalue to rvalue conversion which is responsible for
+causing an access.  However, there is reason to believe that it is,
+because otherwise certain simple expressions become undefined.  However,
+because it would surprise most programmers, G++ treats dereferencing a
+pointer to volatile object of complete type in a void context as a read
+of the object.  When the object has incomplete type, G++ issues a
+warning.
+
+     struct S;
+     struct T {int m;};
+     volatile S *ptr1 = SOMEVALUE;
+     volatile T *ptr2 = SOMEVALUE;
+     *ptr1;
+     *ptr2;
+
+   In this example, a warning is issued for `*ptr1', and `*ptr2' causes
+a read of the object pointed to.  If you wish to force an error on the
+first case, you must force a conversion to rvalue with, for instance a
+static cast, `static_cast<S>(*ptr1)'.
+
+   When using a reference to volatile, G++ does not treat equivalent
+expressions as accesses to volatiles, but instead issues a warning that
+no volatile is accessed.  The rationale for this is that otherwise it
+becomes difficult to determine where volatile access occur, and not
+possible to ignore the return value from functions returning volatile
+references.  Again, if you wish to force a read, cast the reference to
+an rvalue.
+
+
+File: gcc.info,  Node: Restricted Pointers,  Next: Vague Linkage,  Prev: Volatiles,  Up: C++ Extensions
+
+Restricting Pointer Aliasing
+============================
+
+   As with gcc, g++ understands the C99 feature of restricted pointers,
+specified with the `__restrict__', or `__restrict' type qualifier.
+Because you cannot compile C++ by specifying the `-std=c99' language
+flag, `restrict' is not a keyword in C++.
+
+   In addition to allowing restricted pointers, you can specify
+restricted references, which indicate that the reference is not aliased
+in the local context.
+
+     void fn (int *__restrict__ rptr, int &__restrict__ rref)
+     {
+       ...
+     }
+
+In the body of `fn', RPTR points to an unaliased integer and RREF
+refers to a (different) unaliased integer.
+
+   You may also specify whether a member function's THIS pointer is
+unaliased by using `__restrict__' as a member function qualifier.
+
+     void T::fn () __restrict__
+     {
+       ...
+     }
+
+Within the body of `T::fn', THIS will have the effective definition `T
+*__restrict__ const this'.  Notice that the interpretation of a
+`__restrict__' member function qualifier is different to that of
+`const' or `volatile' qualifier, in that it is applied to the pointer
+rather than the object.  This is consistent with other compilers which
+implement restricted pointers.
+
+   As with all outermost parameter qualifiers, `__restrict__' is
+ignored in function definition matching.  This means you only need to
+specify `__restrict__' in a function definition, rather than in a
+function prototype as well.
+
+
+File: gcc.info,  Node: Vague Linkage,  Next: C++ Interface,  Prev: Restricted Pointers,  Up: C++ Extensions
+
+Vague Linkage
+=============
+
+   There are several constructs in C++ which require space in the object
+file but are not clearly tied to a single translation unit.  We say that
+these constructs have "vague linkage".  Typically such constructs are
+emitted wherever they are needed, though sometimes we can be more
+clever.
+
+Inline Functions
+     Inline functions are typically defined in a header file which can
+     be included in many different compilations.  Hopefully they can
+     usually be inlined, but sometimes an out-of-line copy is
+     necessary, if the address of the function is taken or if inlining
+     fails.  In general, we emit an out-of-line copy in all translation
+     units where one is needed.  As an exception, we only emit inline
+     virtual functions with the vtable, since it will always require a
+     copy.
+
+     Local static variables and string constants used in an inline
+     function are also considered to have vague linkage, since they
+     must be shared between all inlined and out-of-line instances of
+     the function.
+
+VTables
+     C++ virtual functions are implemented in most compilers using a
+     lookup table, known as a vtable.  The vtable contains pointers to
+     the virtual functions provided by a class, and each object of the
+     class contains a pointer to its vtable (or vtables, in some
+     multiple-inheritance situations).  If the class declares any
+     non-inline, non-pure virtual functions, the first one is chosen as
+     the "key method" for the class, and the vtable is only emitted in
+     the translation unit where the key method is defined.
+
+     _Note:_ If the chosen key method is later defined as inline, the
+     vtable will still be emitted in every translation unit which
+     defines it.  Make sure that any inline virtuals are declared
+     inline in the class body, even if they are not defined there.
+
+type_info objects
+     C++ requires information about types to be written out in order to
+     implement `dynamic_cast', `typeid' and exception handling.  For
+     polymorphic classes (classes with virtual functions), the type_info
+     object is written out along with the vtable so that `dynamic_cast'
+     can determine the dynamic type of a class object at runtime.  For
+     all other types, we write out the type_info object when it is
+     used: when applying `typeid' to an expression, throwing an object,
+     or referring to a type in a catch clause or exception
+     specification.
+
+Template Instantiations
+     Most everything in this section also applies to template
+     instantiations, but there are other options as well.  *Note
+     Where's the Template?: Template Instantiation.
+
+   When used with GNU ld version 2.8 or later on an ELF system such as
+Linux/GNU or Solaris 2, or on Microsoft Windows, duplicate copies of
+these constructs will be discarded at link time.  This is known as
+COMDAT support.
+
+   On targets that don't support COMDAT, but do support weak symbols,
+GCC will use them.  This way one copy will override all the others, but
+the unused copies will still take up space in the executable.
+
+   For targets which do not support either COMDAT or weak symbols, most
+entities with vague linkage will be emitted as local symbols to avoid
+duplicate definition errors from the linker.  This will not happen for
+local statics in inlines, however, as having multiple copies will
+almost certainly break things.
+
+   *Note Declarations and Definitions in One Header: C++ Interface, for
+another way to control placement of these constructs.
+
+
+File: gcc.info,  Node: C++ Interface,  Next: Template Instantiation,  Prev: Vague Linkage,  Up: C++ Extensions
+
+Declarations and Definitions in One Header
+==========================================
+
+   C++ object definitions can be quite complex.  In principle, your
+source code will need two kinds of things for each object that you use
+across more than one source file.  First, you need an "interface"
+specification, describing its structure with type declarations and
+function prototypes.  Second, you need the "implementation" itself.  It
+can be tedious to maintain a separate interface description in a header
+file, in parallel to the actual implementation.  It is also dangerous,
+since separate interface and implementation definitions may not remain
+parallel.
+
+   With GNU C++, you can use a single header file for both purposes.
+
+     _Warning:_ The mechanism to specify this is in transition.  For the
+     nonce, you must use one of two `#pragma' commands; in a future
+     release of GNU C++, an alternative mechanism will make these
+     `#pragma' commands unnecessary.
+
+   The header file contains the full definitions, but is marked with
+`#pragma interface' in the source code.  This allows the compiler to
+use the header file only as an interface specification when ordinary
+source files incorporate it with `#include'.  In the single source file
+where the full implementation belongs, you can use either a naming
+convention or `#pragma implementation' to indicate this alternate use
+of the header file.
+
+`#pragma interface'
+`#pragma interface "SUBDIR/OBJECTS.h"'
+     Use this directive in _header files_ that define object classes,
+     to save space in most of the object files that use those classes.
+     Normally, local copies of certain information (backup copies of
+     inline member functions, debugging information, and the internal
+     tables that implement virtual functions) must be kept in each
+     object file that includes class definitions.  You can use this
+     pragma to avoid such duplication.  When a header file containing
+     `#pragma interface' is included in a compilation, this auxiliary
+     information will not be generated (unless the main input source
+     file itself uses `#pragma implementation').  Instead, the object
+     files will contain references to be resolved at link time.
+
+     The second form of this directive is useful for the case where you
+     have multiple headers with the same name in different directories.
+     If you use this form, you must specify the same string to `#pragma
+     implementation'.
+
+`#pragma implementation'
+`#pragma implementation "OBJECTS.h"'
+     Use this pragma in a _main input file_, when you want full output
+     from included header files to be generated (and made globally
+     visible).  The included header file, in turn, should use `#pragma
+     interface'.  Backup copies of inline member functions, debugging
+     information, and the internal tables used to implement virtual
+     functions are all generated in implementation files.
+
+     If you use `#pragma implementation' with no argument, it applies to
+     an include file with the same basename(1) as your source file.
+     For example, in `allclass.cc', giving just `#pragma implementation'
+     by itself is equivalent to `#pragma implementation "allclass.h"'.
+
+     In versions of GNU C++ prior to 2.6.0 `allclass.h' was treated as
+     an implementation file whenever you would include it from
+     `allclass.cc' even if you never specified `#pragma
+     implementation'.  This was deemed to be more trouble than it was
+     worth, however, and disabled.
+
+     If you use an explicit `#pragma implementation', it must appear in
+     your source file _before_ you include the affected header files.
+
+     Use the string argument if you want a single implementation file to
+     include code from multiple header files.  (You must also use
+     `#include' to include the header file; `#pragma implementation'
+     only specifies how to use the file--it doesn't actually include
+     it.)
+
+     There is no way to split up the contents of a single header file
+     into multiple implementation files.
+
+   `#pragma implementation' and `#pragma interface' also have an effect
+on function inlining.
+
+   If you define a class in a header file marked with `#pragma
+interface', the effect on a function defined in that class is similar to
+an explicit `extern' declaration--the compiler emits no code at all to
+define an independent version of the function.  Its definition is used
+only for inlining with its callers.
+
+   Conversely, when you include the same header file in a main source
+file that declares it as `#pragma implementation', the compiler emits
+code for the function itself; this defines a version of the function
+that can be found via pointers (or by callers compiled without
+inlining).  If all calls to the function can be inlined, you can avoid
+emitting the function by compiling with `-fno-implement-inlines'.  If
+any calls were not inlined, you will get linker errors.
+
+   ---------- Footnotes ----------
+
+   (1) A file's "basename" was the name stripped of all leading path
+information and of trailing suffixes, such as `.h' or `.C' or `.cc'.
+
+
+File: gcc.info,  Node: Template Instantiation,  Next: Bound member functions,  Prev: C++ Interface,  Up: C++ Extensions
+
+Where's the Template?
+=====================
+
+   C++ templates are the first language feature to require more
+intelligence from the environment than one usually finds on a UNIX
+system.  Somehow the compiler and linker have to make sure that each
+template instance occurs exactly once in the executable if it is needed,
+and not at all otherwise.  There are two basic approaches to this
+problem, which I will refer to as the Borland model and the Cfront
+model.
+
+Borland model
+     Borland C++ solved the template instantiation problem by adding
+     the code equivalent of common blocks to their linker; the compiler
+     emits template instances in each translation unit that uses them,
+     and the linker collapses them together.  The advantage of this
+     model is that the linker only has to consider the object files
+     themselves; there is no external complexity to worry about.  This
+     disadvantage is that compilation time is increased because the
+     template code is being compiled repeatedly.  Code written for this
+     model tends to include definitions of all templates in the header
+     file, since they must be seen to be instantiated.
+
+Cfront model
+     The AT&T C++ translator, Cfront, solved the template instantiation
+     problem by creating the notion of a template repository, an
+     automatically maintained place where template instances are
+     stored.  A more modern version of the repository works as follows:
+     As individual object files are built, the compiler places any
+     template definitions and instantiations encountered in the
+     repository.  At link time, the link wrapper adds in the objects in
+     the repository and compiles any needed instances that were not
+     previously emitted.  The advantages of this model are more optimal
+     compilation speed and the ability to use the system linker; to
+     implement the Borland model a compiler vendor also needs to
+     replace the linker.  The disadvantages are vastly increased
+     complexity, and thus potential for error; for some code this can be
+     just as transparent, but in practice it can been very difficult to
+     build multiple programs in one directory and one program in
+     multiple directories.  Code written for this model tends to
+     separate definitions of non-inline member templates into a
+     separate file, which should be compiled separately.
+
+   When used with GNU ld version 2.8 or later on an ELF system such as
+Linux/GNU or Solaris 2, or on Microsoft Windows, g++ supports the
+Borland model.  On other systems, g++ implements neither automatic
+model.
+
+   A future version of g++ will support a hybrid model whereby the
+compiler will emit any instantiations for which the template definition
+is included in the compile, and store template definitions and
+instantiation context information into the object file for the rest.
+The link wrapper will extract that information as necessary and invoke
+the compiler to produce the remaining instantiations.  The linker will
+then combine duplicate instantiations.
+
+   In the mean time, you have the following options for dealing with
+template instantiations:
+
+  1. Compile your template-using code with `-frepo'.  The compiler will
+     generate files with the extension `.rpo' listing all of the
+     template instantiations used in the corresponding object files
+     which could be instantiated there; the link wrapper, `collect2',
+     will then update the `.rpo' files to tell the compiler where to
+     place those instantiations and rebuild any affected object files.
+     The link-time overhead is negligible after the first pass, as the
+     compiler will continue to place the instantiations in the same
+     files.
+
+     This is your best option for application code written for the
+     Borland model, as it will just work.  Code written for the Cfront
+     model will need to be modified so that the template definitions
+     are available at one or more points of instantiation; usually this
+     is as simple as adding `#include <tmethods.cc>' to the end of each
+     template header.
+
+     For library code, if you want the library to provide all of the
+     template instantiations it needs, just try to link all of its
+     object files together; the link will fail, but cause the
+     instantiations to be generated as a side effect.  Be warned,
+     however, that this may cause conflicts if multiple libraries try
+     to provide the same instantiations.  For greater control, use
+     explicit instantiation as described in the next option.
+
+  2. Compile your code with `-fno-implicit-templates' to disable the
+     implicit generation of template instances, and explicitly
+     instantiate all the ones you use.  This approach requires more
+     knowledge of exactly which instances you need than do the others,
+     but it's less mysterious and allows greater control.  You can
+     scatter the explicit instantiations throughout your program,
+     perhaps putting them in the translation units where the instances
+     are used or the translation units that define the templates
+     themselves; you can put all of the explicit instantiations you
+     need into one big file; or you can create small files like
+
+          #include "Foo.h"
+          #include "Foo.cc"
+          
+          template class Foo<int>;
+          template ostream& operator <<
+                          (ostream&, const Foo<int>&);
+
+     for each of the instances you need, and create a template
+     instantiation library from those.
+
+     If you are using Cfront-model code, you can probably get away with
+     not using `-fno-implicit-templates' when compiling files that don't
+     `#include' the member template definitions.
+
+     If you use one big file to do the instantiations, you may want to
+     compile it without `-fno-implicit-templates' so you get all of the
+     instances required by your explicit instantiations (but not by any
+     other files) without having to specify them as well.
+
+     g++ has extended the template instantiation syntax outlined in the
+     Working Paper to allow forward declaration of explicit
+     instantiations (with `extern'), instantiation of the compiler
+     support data for a template class (i.e. the vtable) without
+     instantiating any of its members (with `inline'), and
+     instantiation of only the static data members of a template class,
+     without the support data or member functions (with (`static'):
+
+          extern template int max (int, int);
+          inline template class Foo<int>;
+          static template class Foo<int>;
+
+  3. Do nothing.  Pretend g++ does implement automatic instantiation
+     management.  Code written for the Borland model will work fine, but
+     each translation unit will contain instances of each of the
+     templates it uses.  In a large program, this can lead to an
+     unacceptable amount of code duplication.
+
+  4. Add `#pragma interface' to all files containing template
+     definitions.  For each of these files, add `#pragma implementation
+     "FILENAME"' to the top of some `.C' file which `#include's it.
+     Then compile everything with `-fexternal-templates'.  The
+     templates will then only be expanded in the translation unit which
+     implements them (i.e. has a `#pragma implementation' line for the
+     file where they live); all other files will use external
+     references.  If you're lucky, everything should work properly.  If
+     you get undefined symbol errors, you need to make sure that each
+     template instance which is used in the program is used in the file
+     which implements that template.  If you don't have any use for a
+     particular instance in that file, you can just instantiate it
+     explicitly, using the syntax from the latest C++ working paper:
+
+          template class A<int>;
+          template ostream& operator << (ostream&, const A<int>&);
+
+     This strategy will work with code written for either model.  If
+     you are using code written for the Cfront model, the file
+     containing a class template and the file containing its member
+     templates should be implemented in the same translation unit.
+
+  5. A slight variation on this approach is to use the flag
+     `-falt-external-templates' instead.  This flag causes template
+     instances to be emitted in the translation unit that implements the
+     header where they are first instantiated, rather than the one which
+     implements the file where the templates are defined.  This header
+     must be the same in all translation units, or things are likely to
+     break.
+
+     *Note Declarations and Definitions in One Header: C++ Interface,
+     for more discussion of these pragmas.
+
+
+File: gcc.info,  Node: Bound member functions,  Next: C++ Attributes,  Prev: Template Instantiation,  Up: C++ Extensions
+
+Extracting the function pointer from a bound pointer to member function
+=======================================================================
+
+   In C++, pointer to member functions (PMFs) are implemented using a
+wide pointer of sorts to handle all the possible call mechanisms; the
+PMF needs to store information about how to adjust the `this' pointer,
+and if the function pointed to is virtual, where to find the vtable, and
+where in the vtable to look for the member function.  If you are using
+PMFs in an inner loop, you should really reconsider that decision.  If
+that is not an option, you can extract the pointer to the function that
+would be called for a given object/PMF pair and call it directly inside
+the inner loop, to save a bit of time.
+
+   Note that you will still be paying the penalty for the call through a
+function pointer; on most modern architectures, such a call defeats the
+branch prediction features of the CPU.  This is also true of normal
+virtual function calls.
+
+   The syntax for this extension is
+
+     extern A a;
+     extern int (A::*fp)();
+     typedef int (*fptr)(A *);
+     
+     fptr p = (fptr)(a.*fp);
+
+   For PMF constants (i.e. expressions of the form `&Klasse::Member'),
+no object is needed to obtain the address of the function.  They can be
+converted to function pointers directly:
+
+     fptr p1 = (fptr)(&A::foo);
+
+   You must specify `-Wno-pmf-conversions' to use this extension.
+
+
+File: gcc.info,  Node: C++ Attributes,  Next: Java Exceptions,  Prev: Bound member functions,  Up: C++ Extensions
+
+C++-Specific Variable, Function, and Type Attributes
+====================================================
+
+   Some attributes only make sense for C++ programs.
+
+`init_priority (PRIORITY)'
+     In Standard C++, objects defined at namespace scope are guaranteed
+     to be initialized in an order in strict accordance with that of
+     their definitions _in a given translation unit_.  No guarantee is
+     made for initializations across translation units.  However, GNU
+     C++ allows users to control the order of initialization of objects
+     defined at namespace scope with the `init_priority' attribute by
+     specifying a relative PRIORITY, a constant integral expression
+     currently bounded between 101 and 65535 inclusive.  Lower numbers
+     indicate a higher priority.
+
+     In the following example, `A' would normally be created before
+     `B', but the `init_priority' attribute has reversed that order:
+
+          Some_Class  A  __attribute__ ((init_priority (2000)));
+          Some_Class  B  __attribute__ ((init_priority (543)));
+
+     Note that the particular values of PRIORITY do not matter; only
+     their relative ordering.
+
+`java_interface'
+     This type attribute informs C++ that the class is a Java
+     interface.  It may only be applied to classes declared within an
+     `extern "Java"' block.  Calls to methods declared in this
+     interface will be dispatched using GCJ's interface table
+     mechanism, instead of regular virtual table dispatch.
+
+
+File: gcc.info,  Node: Java Exceptions,  Next: Deprecated Features,  Prev: C++ Attributes,  Up: C++ Extensions
+
+Java Exceptions
+===============
+
+   The Java language uses a slightly different exception handling model
+from C++.  Normally, GNU C++ will automatically detect when you are
+writing C++ code that uses Java exceptions, and handle them
+appropriately.  However, if C++ code only needs to execute destructors
+when Java exceptions are thrown through it, GCC will guess incorrectly.
+Sample problematic code is:
+
+       struct S { ~S(); };
+       extern void bar();    // is written in Java, and may throw exceptions
+       void foo()
+       {
+         S s;
+         bar();
+       }
+
+The usual effect of an incorrect guess is a link failure, complaining of
+a missing routine called `__gxx_personality_v0'.
+
+   You can inform the compiler that Java exceptions are to be used in a
+translation unit, irrespective of what it might think, by writing
+`#pragma GCC java_exceptions' at the head of the file.  This `#pragma'
+must appear before any functions that throw or catch exceptions, or run
+destructors when exceptions are thrown through them.
+
+   You cannot mix Java and C++ exceptions in the same translation unit.
+It is believed to be safe to throw a C++ exception from one file
+through another file compiled for the Java exception model, or vice
+versa, but there may be bugs in this area.
+
+
+File: gcc.info,  Node: Deprecated Features,  Next: Backwards Compatibility,  Prev: Java Exceptions,  Up: C++ Extensions
+
+Deprecated Features
+===================
+
+   In the past, the GNU C++ compiler was extended to experiment with new
+features, at a time when the C++ language was still evolving.  Now that
+the C++ standard is complete, some of those features are superseded by
+superior alternatives.  Using the old features might cause a warning in
+some cases that the feature will be dropped in the future.  In other
+cases, the feature might be gone already.
+
+   While the list below is not exhaustive, it documents some of the
+options that are now deprecated:
+
+`-fexternal-templates'
+`-falt-external-templates'
+     These are two of the many ways for g++ to implement template
+     instantiation.  *Note Template Instantiation::.  The C++ standard
+     clearly defines how template definitions have to be organized
+     across implementation units.  g++ has an implicit instantiation
+     mechanism that should work just fine for standard-conforming code.
+
+`-fstrict-prototype'
+`-fno-strict-prototype'
+     Previously it was possible to use an empty prototype parameter
+     list to indicate an unspecified number of parameters (like C),
+     rather than no parameters, as C++ demands.  This feature has been
+     removed, except where it is required for backwards compatibility
+     *Note Backwards Compatibility::.
+
+   The named return value extension has been deprecated, and is now
+removed from g++.
+
+   The use of initializer lists with new expressions has been
+deprecated, and is now removed from g++.
+
+   Floating and complex non-type template parameters have been
+deprecated, and are now removed from g++.
+
+   The implicit typename extension has been deprecated and will be
+removed from g++ at some point.  In some cases g++ determines that a
+dependant type such as `TPL<T>::X' is a type without needing a
+`typename' keyword, contrary to the standard.
+
+
+File: gcc.info,  Node: Backwards Compatibility,  Prev: Deprecated Features,  Up: C++ Extensions
+
+Backwards Compatibility
+=======================
+
+   Now that there is a definitive ISO standard C++, G++ has a
+specification to adhere to.  The C++ language evolved over time, and
+features that used to be acceptable in previous drafts of the standard,
+such as the ARM [Annotated C++ Reference Manual], are no longer
+accepted.  In order to allow compilation of C++ written to such drafts,
+G++ contains some backwards compatibilities.  _All such backwards
+compatibility features are liable to disappear in future versions of
+G++._ They should be considered deprecated *Note Deprecated Features::.
+
+`For scope'
+     If a variable is declared at for scope, it used to remain in scope
+     until the end of the scope which contained the for statement
+     (rather than just within the for scope).  G++ retains this, but
+     issues a warning, if such a variable is accessed outside the for
+     scope.
+
+`Implicit C language'
+     Old C system header files did not contain an `extern "C" {...}'
+     scope to set the language.  On such systems, all header files are
+     implicitly scoped inside a C language scope.  Also, an empty
+     prototype `()' will be treated as an unspecified number of
+     arguments, rather than no arguments, as C++ demands.
+
+
+File: gcc.info,  Node: Objective-C,  Next: Compatibility,  Prev: C++ Extensions,  Up: Top
+
+GNU Objective-C runtime features
+********************************
+
+   This document is meant to describe some of the GNU Objective-C
+runtime features.  It is not intended to teach you Objective-C, there
+are several resources on the Internet that present the language.
+Questions and comments about this document to Ovidiu Predescu
+<ovidiu@cup.hp.com>.
+
+* Menu:
+
+* Executing code before main::
+* Type encoding::
+* Garbage Collection::
+* Constant string objects::
+* compatibility_alias::
+
+
+File: gcc.info,  Node: Executing code before main,  Next: Type encoding,  Prev: Objective-C,  Up: Objective-C
+
+`+load': Executing code before main
+===================================
+
+   The GNU Objective-C runtime provides a way that allows you to execute
+code before the execution of the program enters the `main' function.
+The code is executed on a per-class and a per-category basis, through a
+special class method `+load'.
+
+   This facility is very useful if you want to initialize global
+variables which can be accessed by the program directly, without
+sending a message to the class first.  The usual way to initialize
+global variables, in the `+initialize' method, might not be useful
+because `+initialize' is only called when the first message is sent to a
+class object, which in some cases could be too late.
+
+   Suppose for example you have a `FileStream' class that declares
+`Stdin', `Stdout' and `Stderr' as global variables, like below:
+
+
+     FileStream *Stdin = nil;
+     FileStream *Stdout = nil;
+     FileStream *Stderr = nil;
+     
+     @implementation FileStream
+     
+     + (void)initialize
+     {
+         Stdin = [[FileStream new] initWithFd:0];
+         Stdout = [[FileStream new] initWithFd:1];
+         Stderr = [[FileStream new] initWithFd:2];
+     }
+     
+     /* Other methods here */
+     @end
+
+   In this example, the initialization of `Stdin', `Stdout' and
+`Stderr' in `+initialize' occurs too late.  The programmer can send a
+message to one of these objects before the variables are actually
+initialized, thus sending messages to the `nil' object.  The
+`+initialize' method which actually initializes the global variables is
+not invoked until the first message is sent to the class object.  The
+solution would require these variables to be initialized just before
+entering `main'.
+
+   The correct solution of the above problem is to use the `+load'
+method instead of `+initialize':
+
+
+     @implementation FileStream
+     
+     + (void)load
+     {
+         Stdin = [[FileStream new] initWithFd:0];
+         Stdout = [[FileStream new] initWithFd:1];
+         Stderr = [[FileStream new] initWithFd:2];
+     }
+     
+     /* Other methods here */
+     @end
+
+   The `+load' is a method that is not overridden by categories.  If a
+class and a category of it both implement `+load', both methods are
+invoked.  This allows some additional initializations to be performed in
+a category.
+
+   This mechanism is not intended to be a replacement for `+initialize'.
+You should be aware of its limitations when you decide to use it
+instead of `+initialize'.
+
+* Menu:
+
+* What you can and what you cannot do in +load::
+
+
+File: gcc.info,  Node: What you can and what you cannot do in +load,  Prev: Executing code before main,  Up: Executing code before main
+
+What you can and what you cannot do in `+load'
+----------------------------------------------
+
+   The `+load' implementation in the GNU runtime guarantees you the
+following things:
+
+   * you can write whatever C code you like;
+
+   * you can send messages to Objective-C constant strings (`@"this is a
+     constant string"');
+
+   * you can allocate and send messages to objects whose class is
+     implemented in the same file;
+
+   * the `+load' implementation of all super classes of a class are
+     executed before the `+load' of that class is executed;
+
+   * the `+load' implementation of a class is executed before the
+     `+load' implementation of any category.
+
+
+   In particular, the following things, even if they can work in a
+particular case, are not guaranteed:
+
+   * allocation of or sending messages to arbitrary objects;
+
+   * allocation of or sending messages to objects whose classes have a
+     category implemented in the same file;
+
+
+   You should make no assumptions about receiving `+load' in sibling
+classes when you write `+load' of a class.  The order in which sibling
+classes receive `+load' is not guaranteed.
+
+   The order in which `+load' and `+initialize' are called could be
+problematic if this matters.  If you don't allocate objects inside
+`+load', it is guaranteed that `+load' is called before `+initialize'.
+If you create an object inside `+load' the `+initialize' method of
+object's class is invoked even if `+load' was not invoked.  Note if you
+explicitly call `+load' on a class, `+initialize' will be called first.
+To avoid possible problems try to implement only one of these methods.
+
+   The `+load' method is also invoked when a bundle is dynamically
+loaded into your running program.  This happens automatically without
+any intervening operation from you.  When you write bundles and you
+need to write `+load' you can safely create and send messages to
+objects whose classes already exist in the running program.  The same
+restrictions as above apply to classes defined in bundle.
+
+
+File: gcc.info,  Node: Type encoding,  Next: Garbage Collection,  Prev: Executing code before main,  Up: Objective-C
+
+Type encoding
+=============
+
+   The Objective-C compiler generates type encodings for all the types.
+These type encodings are used at runtime to find out information about
+selectors and methods and about objects and classes.
+
+   The types are encoded in the following way:
+
+`char'             `c'
+`unsigned char'    `C'
+`short'            `s'
+`unsigned short'   `S'
+`int'              `i'
+`unsigned int'     `I'
+`long'             `l'
+`unsigned long'    `L'
+`long long'        `q'
+`unsigned long     `Q'
+long'              
+`float'            `f'
+`double'           `d'
+`void'             `v'
+`id'               `@'
+`Class'            `#'
+`SEL'              `:'
+`char*'            `*'
+unknown type       `?'
+bit-fields         `b' followed by the starting position of the
+                   bit-field, the type of the bit-field and the size of
+                   the bit-field (the bit-fields encoding was changed
+                   from the NeXT's compiler encoding, see below)
+
+   The encoding of bit-fields has changed to allow bit-fields to be
+properly handled by the runtime functions that compute sizes and
+alignments of types that contain bit-fields.  The previous encoding
+contained only the size of the bit-field.  Using only this information
+it is not possible to reliably compute the size occupied by the
+bit-field.  This is very important in the presence of the Boehm's
+garbage collector because the objects are allocated using the typed
+memory facility available in this collector.  The typed memory
+allocation requires information about where the pointers are located
+inside the object.
+
+   The position in the bit-field is the position, counting in bits, of
+the bit closest to the beginning of the structure.
+
+   The non-atomic types are encoded as follows:
+
+pointers       `^' followed by the pointed type.
+arrays         `[' followed by the number of elements in the array
+               followed by the type of the elements followed by `]'
+structures     `{' followed by the name of the structure (or `?' if the
+               structure is unnamed), the `=' sign, the type of the
+               members and by `}'
+unions         `(' followed by the name of the structure (or `?' if the
+               union is unnamed), the `=' sign, the type of the members
+               followed by `)'
+
+   Here are some types and their encodings, as they are generated by the
+compiler on an i386 machine:
+
+
+Objective-C type   Compiler encoding
+     int a[10];    `[10i]'
+     struct {      `{?=i[3f]b128i3b131i2c}'
+       int i;      
+       float f[3]; 
+       int a:3;    
+       int b:2;    
+       char c;     
+     }             
+
+
+   In addition to the types the compiler also encodes the type
+specifiers.  The table below describes the encoding of the current
+Objective-C type specifiers:
+
+
+Specifier          Encoding
+`const'            `r'
+`in'               `n'
+`inout'            `N'
+`out'              `o'
+`bycopy'           `O'
+`oneway'           `V'
+
+
+   The type specifiers are encoded just before the type.  Unlike types
+however, the type specifiers are only encoded when they appear in method
+argument types.
+
+
+File: gcc.info,  Node: Garbage Collection,  Next: Constant string objects,  Prev: Type encoding,  Up: Objective-C
+
+Garbage Collection
+==================
+
+   Support for a new memory management policy has been added by using a
+powerful conservative garbage collector, known as the
+Boehm-Demers-Weiser conservative garbage collector.  It is available
+from `http://www.hpl.hp.com/personal/Hans_Boehm/gc/'.
+
+   To enable the support for it you have to configure the compiler
+using an additional argument, `--enable-objc-gc'.  You need to have
+garbage collector installed before building the compiler.  This will
+build an additional runtime library which has several enhancements to
+support the garbage collector.  The new library has a new name,
+`libobjc_gc.a' to not conflict with the non-garbage-collected library.
+
+   When the garbage collector is used, the objects are allocated using
+the so-called typed memory allocation mechanism available in the
+Boehm-Demers-Weiser collector.  This mode requires precise information
+on where pointers are located inside objects.  This information is
+computed once per class, immediately after the class has been
+initialized.
+
+   There is a new runtime function `class_ivar_set_gcinvisible()' which
+can be used to declare a so-called "weak pointer" reference.  Such a
+pointer is basically hidden for the garbage collector; this can be
+useful in certain situations, especially when you want to keep track of
+the allocated objects, yet allow them to be collected.  This kind of
+pointers can only be members of objects, you cannot declare a global
+pointer as a weak reference.  Every type which is a pointer type can be
+declared a weak pointer, including `id', `Class' and `SEL'.
+
+   Here is an example of how to use this feature.  Suppose you want to
+implement a class whose instances hold a weak pointer reference; the
+following class does this:
+
+
+     @interface WeakPointer : Object
+     {
+         const void* weakPointer;
+     }
+     
+     - initWithPointer:(const void*)p;
+     - (const void*)weakPointer;
+     @end
+     
+     
+     @implementation WeakPointer
+     
+     + (void)initialize
+     {
+       class_ivar_set_gcinvisible (self, "weakPointer", YES);
+     }
+     
+     - initWithPointer:(const void*)p
+     {
+       weakPointer = p;
+       return self;
+     }
+     
+     - (const void*)weakPointer
+     {
+       return weakPointer;
+     }
+     
+     @end
+
+   Weak pointers are supported through a new type character specifier
+represented by the `!' character.  The `class_ivar_set_gcinvisible()'
+function adds or removes this specifier to the string type description
+of the instance variable named as argument.
+

@@ -1,0 +1,294 @@
+2004-05-27  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c (do_exec): Be sensitive to value in
+	"entry_address" as this can indicate if the image to be executed
+	is valid (the "load" functions set it to "NO_MEMORY" when invalid)
+
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mn10300_am33.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/var_intr.h:  hal_delay_us() is a C function.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_mn10300_am33.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/mn10300_am33.ld: 
+	Added .eh_frame to data section. This is a stopgap fix to allow
+	C++ programs that define exceptions to link and run. It does not
+	allow them to actually throw exceptions, since that depends on
+	compiler changes that have not been made. Further, more
+	far-reaching, linker script changes will also be needs when that
+	happens.
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2003-03-14  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/mn10300_am33.ld: add entries for debug sections, needed by
+	current tools
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Call eth_drv_stop as necessary.
+
+2002-12-06  Mark Salter  <msalter@redhat.com>
+
+	* src/var_misc.c (hal_mn10300_mem_real_region_top): New function.
+
+	* include/variant.inc: Don't set TBR for RAM startup if the RAM
+	base is not properly aligned.
+
+2002-11-19  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33.cdl: Add virtual vector comm support using
+	any combination of AM33 serial ports and platform serial ports.
+	* src/am33_serial.c: New file. Support for internal serial ports.
+
+2002-11-15  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33.cdl: Add options to control placement of
+	VSR and virtual vector tables. Platforms may override.
+	* src/mn10300_am33.ld: Use new cdl option values.
+
+2002-11-14  Mark Salter  <msalter@redhat.com>
+
+	* include/var_intr.h (HAL_CLOCK_INITIALIZE): Save _period_ for
+	use by other code.
+
+	* src/redboot_cmds.c: New file.
+	* cdl/hal_mn10300_am33.cdl: Add support for RedBoot exec command.
+
+2001-10-18  David Howells  <dhowells@redhat.com>
+
+	* include/variant.inc: Suppress as many interrupt sources as
+	possible whilst booting.
+
+2001-07-27  David Howells  <dhowells@redhat.com>
+
+	* cdl/hal_mn10300_am33.cdl: Added option for disabling caching
+	when accessing flash (CYGSEM_HAL_UNCACHED_FLASH_ACCESS).
+	* include/var_cache.h: Ditto.
+	* include/variant.inc: Initialise the cache and the trap base
+	register if appropriate.
+	* src/mn10300_am33.ld: Handle code kept in RAM for flash drivers
+	and permit the VSR table to reside in on-CPU RAM.
+
+2000-08-12  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/var_misc.c: More rearranging of GDB regnames.
+
+2000-08-11  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/var_misc.c: Rearranged regnames to correspond to what GDB is
+	expecting.
+
+2000-08-10  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/var_misc.c: Added Cygmon support.
+
+	* include/variant.inc: Added AM33/2.00 support.
+	* src/mn10300_am33.ld: Ditto.
+	* src/var_misc.c: Ditto.
+
+	* include/var_intr.h: Added Cygmon support.
+
+	* include/var_arch.h: Added some PSW bitmasks.
+	Added Cygmon support.
+
+	* cdl/hal_mn10300_am33.cdl: Added option for AM33_REVISION
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300_am33.ld:
+	Added extra underscore to _stext and _etext.
+	Switched to new table definition mechanism.	
+
+2000-03-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/variant.inc (SAVED_CONTEXT_PC_OFFSET): New macro to give
+	variant-specific offset of PC within saved register context
+	(hal_mon_init_vsr): For RAM startup, override breakpoint VSR if stubs
+	are included
+
+	* include/var_arch.h (HAL_SavedRegisters): Move here from architecture
+	HAL
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am33.cdl: remove fix me
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/mn10300_am33.ld: Add support for network package.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/variant.inc: Rename CYG_HAL_USE_ROM_MONITOR_GDB_STUBS ->
+	CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs
+
+	* cdl/hal_mn10300_am33.cdl: Ensure we "puts" to appropriate CDL header
+	We don't need to include CYGBLD_HAL_PLATFORM_H - that's done in hal.h
+
+1999-12-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/var_intr.h (HAL_INTERRUPT_CONFIGURE): EXTMD needs to be
+	accessed as a 32-bit register on the AM33
+
+1999-12-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_cache.h (HAL_DCACHE_WRITE_MODE): Fixed to clear old
+	write mode before setting new one. otherwise write-through mode is
+	sticky.
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am33.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am33.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am33.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am33.cdl: Added.
+
+1999-10-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc: CYG_ISR_TABLE_SIZE changed to 57, which is
+	what it should be. Case 102415.
+
+1999-10-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Don't create extras.o here any more
+
+1999-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_intr.h: Added CYGNUM_HAL_EXCEPTION_WATCHDOG as a
+	synonym for CYGNUM_HAL_VECTOR_WATCHDOG.
+
+1999-08-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/var_intr.h (HAL_INTERRUPT_CONFIGURE): Correct bad address
+	when restoring EXTMD. 0x180>>1 becomes 0x200>>1 for AM33
+
+	* include/variant.inc: Change comment mentioning AM32 to AM33
+
+1999-08-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/variant.S: Tidied away superfluous trace code.
+
+	* include/var_cache.h: Removed disablement of data cache
+	enable/disable.
+
+1999-08-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_am33.h:
+	reparent CYGPKG_HAL_MN10300_AM33 under CYGPKG_HAL_MN10300_VARIANTS 
+
+1999-07-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/variant.S: Added trampolines to decode NMICR and ISR
+	register value and vector back into the VSR.
+
+	* include/pkgconf/hal_mn10300_am33.h:
+	Added includes for architecture and platform pkgconf files.
+
+	* include/variant.inc: Added initialization for extra entries in
+	VSR table. Added initialization for NMI VSR trampolines.
+
+	* include/var_intr.h: Moved HAL_INTERRUPT_CONFIGURE() here since
+	it is now variant-specific.
+	Reorganized and renumbered exceptions.
+
+1999-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/variant.S: Added this file to contain assembly
+	implementation of cyg_hal_dcache_store().
+
+	* src/var_misc.c: Removed cyg_hal_dcache_store(), now implemented
+	in assembly in variant.S.
+
+	* src/mn10300_am33.ld: Relocated VSR table and VVT to 0x50000100
+	and 0x50000200 respectively.
+
+	* src/PKGconf.mak (COMPILE): Added variant.S.
+
+	* include/variant.inc:
+	Added definition of DCR_DE bit.
+	Converted all *_MIPS_* definitions to *_MN10300_*.
+	Removed initialization of TBR register.
+	Fixed up differenced between RAM and ROM startups.
+
+	* include/var_cache.h:
+	Temporarily disabled DCACHE, we are having problems getting it to
+	purge properly. Various other minor tidies.
+
+	* include/var_arch.h: Added macros to transfer extra AM33
+	registers between a HAL_SavedRegisters structure and a GDB
+	register dump.
+
+1999-07-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc:
+	Moved hal_cpu_init macro here. Added initialization for TBR.
+	Implemented hal_memc_init. Removed some defunct code from
+	hal_diag_* macros.
+
+	* include/var_intr.h:
+	Tidied up timer register addresses.
+
+1999-07-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_intr.h:
+	Extended exceptions to cover those reported in the ISR register.
+
+	* include/variant.inc:
+	Added definitions of NMICR, DCR and ISR addresses.
+	Added hal_cpu_clear_nmid macro.
+
+1999-07-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300_am33.ld:
+	Temporarily disabled definition of shared VSR.
+
+	* include/variant.inc:
+	Added macros to get and set PSW in a CPU specific way.
+
+1999-06-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_arch.h:
+	* include/var_cache.h:
+	* include/var_intr.h:
+	* include/variant.inc:
+	* include/pkgconf/hal_mn10300_am33.h:
+	* src/PKGconf.mak:
+	* src/mn10300_am33.ld:
+	* src/var_misc.c:
+	Added these files to contain defines and code for the AM33
+	processor variant.
+
+	

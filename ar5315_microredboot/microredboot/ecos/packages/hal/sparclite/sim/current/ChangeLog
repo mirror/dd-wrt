@@ -1,0 +1,280 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_sparclite_sim.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_sparclite_sim_ram.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_sparclite_sim_ram.h:
+	* include/pkgconf/mlt_sparclite_sim_ram.ldi:
+	Regenerated
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sparclite_sim.cdl: Added.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_sparclite_sim_ram.h: New file.
+
+1999-10-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/hal_sparclite_sim.h: Add define of
+	CYGHWR_HAL_SPARCLITE_HAS_ASR17 for arch HAL to DTRT with SVT
+	(anticipating cores with no SVT at all, so no %asr17)
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_priv.c: Remove bogus FIX ME; it wasn't true.
+
+1999-03-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/halboot.si: Add a dummy LED macro for debug in the
+	vectors.S; correct a scary line length.
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_sparclite_sim.h: Take out DEVICES dependencies.
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	These log entries from 1999-02-22 to 1999-02-24 were executed in
+	a branch; this change is a merge of that branch into the trunk.
+
+	(1999-02-23  John Dallaway  <jld@cygnus.co.uk>)
+
+	* include/pkgconf/hal_sparclite_sim.h: New rules
+	CYGPKG_HAL_SPARCLITE_SIM precludes CYGPKG_DEVICES_GDB
+	CYGPKG_HAL_SPARCLITE_SIM precludes CYGPKG_DEVICES_SERIAL_RS232_COMMON
+
+	(1999-02-22  Hugo Tyson  <hmt@cygnus.co.uk>)
+
+	* src/hal_priv.c (hal_board_prestart, hal_board_poststart): 
+	Shut down the erc32 watchdog in and enable interrupts in these two
+	new routines.
+
+	* include/halboot.si: 
+	Remove N/A code that I was just storing here, and install the real
+	vector instructions in this fragment; there be cache-wangling to
+	do in hardware cases either side of the vector installation.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_xpic.h: 
+	Rename CYG_VECTOR_* -> CYGNUM_HAL_INTERRUPT_*
+
+	* src/hal_priv.c:
+	Add a FIX ME
+
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/sim.ld: Remove platform-specific linker script for
+        MLT compliance.
+
+	* src/PKGconf.mak: Remove build rules for sim.ld.
+
+	* include/pkgconf/ram.*: Add MLT save file and and linker
+        script fragment for RAM startup.
+
+1999-02-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/halboot.si: 
+	New file: performs platform-oriented setup of RAM and cache
+	controllers, and quietens any interrupt sources.
+
+	* include/pkgconf/hal_sparclite_sim.h: 
+	Correct comments/CDL description of sim invocation.
+
+1999-01-28  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_cache.h: NEW FILE to this directory; moved here from
+	the sparclite/arch tree; cache control is very much board-specific
+
+	* include/hal_clock.h: NEW FILE to this directory; it was a part
+	of hal_intr.h, but is now here because the clock is target determined.
+
+	* include/hal_xpic.h: NEW FILE to this directory; it was a part of
+	hal_intr.h, but is now here because the detail of interrupot
+	control is target determined.
+
+	* src/hal_priv.c: NEW FILE to this directory; it was a part
+	of hal_intr.h, but is now here because the clock is target
+	determined, and it's the clock that needs a local variable.
+
+	* src/PKGconf.mak (COMPILE): compile it.
+	
+
+1999-01-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sim.ld: 
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1999-01-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sim.ld: 
+	Remove some bogus comments.
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: 
+	Remove all traces of non-CYG_KERNEL_USE_INIT_PRIORITY code
+
+1999-01-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/sim.ld: 
+	Align bss and rom/ram_data starts and ends by 8 bytes to permit
+	fast copy routines.
+
+1999-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	Modified files in arch:
+	* include/hal_arch.h
+	* include/hal_intr.h
+	* src/PKGconf.mak
+	* src/context.S
+	* src/hal_intr.c
+	* src/vec_ivsr.S
+	* src/vec_xvsr.S
+	* src/vectors.S
+
+	New files in arch:
+	* src/hal_boot.c	(bss initialization, constructors &c)
+	* include/hal_cache.h	(empty but required header)
+
+	Modified files in sim:
+	* include/hal_diag.h
+
+	Lots more progress; essentially, everything now works.
+
+	Simulator's treatment of stdio is poor though, it doesn't work
+	under pkgtest.  This has been slowing me up.
+
+1999-01-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ecc/ecc/hal/sparclite/...:
+
+	Initial checkin of SPARClite HAL; it doesn't work yet, except the
+	most trivial of tests - timer and interrupt manipulation stuff is
+	entirely absent.
+
+	Here's some documentation of the initial checkin tree; this will
+	change, as platform dependent stuff moves correctly into the sim
+	or <board> directories.
+
+	arch/current/include:
+		basetype.h	nothing much here.
+		vectors.h	definitions of symbols shared between the
+			various vector code assembler files, can be
+			included in both C and assembler.
+		hal_intr.h	various macros for clock and interrupt
+			control plus the eCos vector numbering scheme; we
+			map thus:
+			what	SPARC trap type	    eCos vector numbers
+			-----------------------------------------------
+			(not used)   ---                0	
+			interrupts (17-31)		1-15
+			user traps (128-255)		16
+			exceptions (1-9,36==4)		17-25
+			others	   (10,?)		26
+			-----------------------------------------------
+			Trap types 5 and 6 which would be eCos vectors 21
+			and 22 are handled in the trampoline code in
+			file src/vectors.S
+		hal_arch.h	definition of a thread context, plus
+			macros for thread switching and the like.  Some
+			ancillary bit twiddling macros and cache barriers
+			too.
+
+	arch/current/include/pkgconf:
+		hal_sparclite.h 	pkgconf config/header file.
+	
+	arch/current/src:
+		vectors.S	boot-up stuff, trampoline code that hangs
+			on the interrupt/trap vector, handlers for window
+			under/overflow.  Saves some state in registers
+			then jumps to the interrupt or exception VSR
+	   		respectively.
+			Also instantiates the VSR table.
+		vec_ivsr.S	the default interrupt VSR; it establishes
+			a C calling environment (ie. anticipates a window
+			overflow) then locks the scheduler, calls the ISR
+			with appropriate arguments, and then interrupt_end()
+			before undoing that environment, anticipating
+			window underflow and returning to the interrupted
+			instruction.
+		vec_xvsr.S	the default exception AKA trap VSR; does
+			the same as the interrupt one but without the
+			scheduler lock or interrupt end.
+		hal_intr.c	instantiates the ISR table used by the
+			code above.
+		context.S	context switch code, saves and loads up a
+			whole register state, coroutine or longjump-like.
+		icontext.c	initializes a context to "jump" to in
+			context.S at the birth of a new thread.
+
+	sim/current/include:
+		hal_diag.h	macros to deal with debugging output via a
+			fake serial device of some kind; initially empty,
+			but definitely board/sim dependent.
+
+	sim/current/include/pkgconf:
+		hal_sparclite_sim.h 	pkgconf config/header file.
+
+	sim/current/src:
+		sim.ld		linker script bits for "sim" target.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+
+//EOF ChangeLog

@@ -1,0 +1,43 @@
+# Default synthetic target hardware definition file. This file gets
+# installed alongside ecosynth.tcl and other support files in the
+# directory $(libexecdir)/ecos/hal_synth_arch_<version>.
+#
+# The synthetic target support will look for the target definition
+# file in various places: first the current directory, then
+# ~/.ecos/synth, finally the install location as above. It assumes the
+# file is called "default.tdf", unless this is overwritten on the
+# command line using the -t or --target option. Typically users will
+# make a copy of the default target definition in an appropriate
+# location and then modify this copy as required.
+#
+# This file only contains support for those devices supported by the
+# core package: the console, ... Additional devices such as the
+# ethernet support which live in separate eCos packages may have their
+# own example fragments which can be inserted in the user's own target
+# definition file, directly or via e.g. a Tcl "source" command.
+#
+# This file is executed in a Tcl interpreter with an additional
+# command "synth_device", so Tcl syntax applies and the full
+# functionality provided by Tcl interpreters is available if desired.
+
+# ----------------------------------------------------------------------------
+# The console device. This serves as the destination for low-level
+# eCos text output, for example from the diag_printf() function,
+# and is intended primarily for diagnostics and debugging.
+#
+# The appearance of normal console output can be controlled by
+# the "appearance" option. This takes the standard arguments for
+# text filters, for example -foreground and -background.
+#
+# It is also possible to install new filters for specific types
+# of output, for example eCos tracing output. Each such filter
+# is defined by a name, a regular expression, and details of
+# the desired appearance. Every line of console output generated
+# by eCos is matched against the various regular expressions,
+# and the first match found controls the appearance of the
+# output.
+
+synth_device console {
+    # appearance -foreground white -background black
+    filter trace {^TRACE:.*} -foreground HotPink1 -hide 1
+}

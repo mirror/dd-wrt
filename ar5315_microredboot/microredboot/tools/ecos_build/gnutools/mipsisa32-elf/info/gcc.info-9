@@ -1,0 +1,1054 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: TMS320C3x/C4x Options,  Next: V850 Options,  Prev: System V Options,  Up: Submodel Options
+
+TMS320C3x/C4x Options
+---------------------
+
+   These `-m' options are defined for TMS320C3x/C4x implementations:
+
+`-mcpu=CPU_TYPE'
+     Set the instruction set, register set, and instruction scheduling
+     parameters for machine type CPU_TYPE.  Supported values for
+     CPU_TYPE are `c30', `c31', `c32', `c40', and `c44'.  The default
+     is `c40' to generate code for the TMS320C40.
+
+`-mbig-memory'
+
+`-mbig'
+`-msmall-memory'
+`-msmall'
+     Generates code for the big or small memory model.  The small memory
+     model assumed that all data fits into one 64K word page.  At
+     run-time the data page (DP) register must be set to point to the
+     64K page containing the .bss and .data program sections.  The big
+     memory model is the default and requires reloading of the DP
+     register for every direct memory access.
+
+`-mbk'
+`-mno-bk'
+     Allow (disallow) allocation of general integer operands into the
+     block count register BK.
+
+`-mdb'
+`-mno-db'
+     Enable (disable) generation of code using decrement and branch,
+     DBcond(D), instructions.  This is enabled by default for the C4x.
+     To be on the safe side, this is disabled for the C3x, since the
+     maximum iteration count on the C3x is 2^23 + 1 (but who iterates
+     loops more than 2^23 times on the C3x?).  Note that GCC will try
+     to reverse a loop so that it can utilise the decrement and branch
+     instruction, but will give up if there is more than one memory
+     reference in the loop.  Thus a loop where the loop counter is
+     decremented can generate slightly more efficient code, in cases
+     where the RPTB instruction cannot be utilised.
+
+`-mdp-isr-reload'
+`-mparanoid'
+     Force the DP register to be saved on entry to an interrupt service
+     routine (ISR), reloaded to point to the data section, and restored
+     on exit from the ISR.  This should not be required unless someone
+     has violated the small memory model by modifying the DP register,
+     say within an object library.
+
+`-mmpyi'
+`-mno-mpyi'
+     For the C3x use the 24-bit MPYI instruction for integer multiplies
+     instead of a library call to guarantee 32-bit results.  Note that
+     if one of the operands is a constant, then the multiplication will
+     be performed using shifts and adds.  If the `-mmpyi' option is not
+     specified for the C3x, then squaring operations are performed
+     inline instead of a library call.
+
+`-mfast-fix'
+`-mno-fast-fix'
+     The C3x/C4x FIX instruction to convert a floating point value to an
+     integer value chooses the nearest integer less than or equal to the
+     floating point value rather than to the nearest integer.  Thus if
+     the floating point number is negative, the result will be
+     incorrectly truncated an additional code is necessary to detect
+     and correct this case.  This option can be used to disable
+     generation of the additional code required to correct the result.
+
+`-mrptb'
+`-mno-rptb'
+     Enable (disable) generation of repeat block sequences using the
+     RPTB instruction for zero overhead looping.  The RPTB construct is
+     only used for innermost loops that do not call functions or jump
+     across the loop boundaries.  There is no advantage having nested
+     RPTB loops due to the overhead required to save and restore the
+     RC, RS, and RE registers.  This is enabled by default with `-O2'.
+
+`-mrpts=COUNT'
+`-mno-rpts'
+     Enable (disable) the use of the single instruction repeat
+     instruction RPTS.  If a repeat block contains a single
+     instruction, and the loop count can be guaranteed to be less than
+     the value COUNT, GCC will emit a RPTS instruction instead of a
+     RPTB.  If no value is specified, then a RPTS will be emitted even
+     if the loop count cannot be determined at compile time.  Note that
+     the repeated instruction following RPTS does not have to be
+     reloaded from memory each iteration, thus freeing up the CPU buses
+     for operands.  However, since interrupts are blocked by this
+     instruction, it is disabled by default.
+
+`-mloop-unsigned'
+`-mno-loop-unsigned'
+     The maximum iteration count when using RPTS and RPTB (and DB on
+     the C40) is 2^31 + 1 since these instructions test if the
+     iteration count is negative to terminate the loop.  If the
+     iteration count is unsigned there is a possibility than the 2^31 +
+     1 maximum iteration count may be exceeded.  This switch allows an
+     unsigned iteration count.
+
+`-mti'
+     Try to emit an assembler syntax that the TI assembler (asm30) is
+     happy with.  This also enforces compatibility with the API
+     employed by the TI C3x C compiler.  For example, long doubles are
+     passed as structures rather than in floating point registers.
+
+`-mregparm'
+`-mmemparm'
+     Generate code that uses registers (stack) for passing arguments to
+     functions.  By default, arguments are passed in registers where
+     possible rather than by pushing arguments on to the stack.
+
+`-mparallel-insns'
+`-mno-parallel-insns'
+     Allow the generation of parallel instructions.  This is enabled by
+     default with `-O2'.
+
+`-mparallel-mpy'
+`-mno-parallel-mpy'
+     Allow the generation of MPY||ADD and MPY||SUB parallel
+     instructions, provided `-mparallel-insns' is also specified.
+     These instructions have tight register constraints which can
+     pessimize the code generation of large functions.
+
+
+File: gcc.info,  Node: V850 Options,  Next: ARC Options,  Prev: TMS320C3x/C4x Options,  Up: Submodel Options
+
+V850 Options
+------------
+
+   These `-m' options are defined for V850 implementations:
+
+`-mlong-calls'
+`-mno-long-calls'
+     Treat all calls as being far away (near).  If calls are assumed to
+     be far away, the compiler will always load the functions address
+     up into a register, and call indirect through the pointer.
+
+`-mno-ep'
+`-mep'
+     Do not optimize (do optimize) basic blocks that use the same index
+     pointer 4 or more times to copy pointer into the `ep' register, and
+     use the shorter `sld' and `sst' instructions.  The `-mep' option
+     is on by default if you optimize.
+
+`-mno-prolog-function'
+`-mprolog-function'
+     Do not use (do use) external functions to save and restore
+     registers at the prolog and epilog of a function.  The external
+     functions are slower, but use less code space if more than one
+     function saves the same number of registers.  The
+     `-mprolog-function' option is on by default if you optimize.
+
+`-mspace'
+     Try to make the code as small as possible.  At present, this just
+     turns on the `-mep' and `-mprolog-function' options.
+
+`-mtda=N'
+     Put static or global variables whose size is N bytes or less into
+     the tiny data area that register `ep' points to.  The tiny data
+     area can hold up to 256 bytes in total (128 bytes for byte
+     references).
+
+`-msda=N'
+     Put static or global variables whose size is N bytes or less into
+     the small data area that register `gp' points to.  The small data
+     area can hold up to 64 kilobytes.
+
+`-mzda=N'
+     Put static or global variables whose size is N bytes or less into
+     the first 32 kilobytes of memory.
+
+`-mv850'
+     Specify that the target processor is the V850.
+
+`-mbig-switch'
+     Generate code suitable for big switch tables.  Use this option
+     only if the assembler/linker complain about out of range branches
+     within a switch table.
+
+
+File: gcc.info,  Node: ARC Options,  Next: NS32K Options,  Prev: V850 Options,  Up: Submodel Options
+
+ARC Options
+-----------
+
+   These options are defined for ARC implementations:
+
+`-EL'
+     Compile code for little endian mode.  This is the default.
+
+`-EB'
+     Compile code for big endian mode.
+
+`-mmangle-cpu'
+     Prepend the name of the cpu to all public symbol names.  In
+     multiple-processor systems, there are many ARC variants with
+     different instruction and register set characteristics.  This flag
+     prevents code compiled for one cpu to be linked with code compiled
+     for another.  No facility exists for handling variants that are
+     "almost identical".  This is an all or nothing option.
+
+`-mcpu=CPU'
+     Compile code for ARC variant CPU.  Which variants are supported
+     depend on the configuration.  All variants support `-mcpu=base',
+     this is the default.
+
+`-mtext=TEXT-SECTION'
+`-mdata=DATA-SECTION'
+`-mrodata=READONLY-DATA-SECTION'
+     Put functions, data, and readonly data in TEXT-SECTION,
+     DATA-SECTION, and READONLY-DATA-SECTION respectively by default.
+     This can be overridden with the `section' attribute.  *Note
+     Variable Attributes::.
+
+
+File: gcc.info,  Node: NS32K Options,  Next: AVR Options,  Prev: ARC Options,  Up: Submodel Options
+
+NS32K Options
+-------------
+
+   These are the `-m' options defined for the 32000 series.  The default
+values for these options depends on which style of 32000 was selected
+when the compiler was configured; the defaults for the most common
+choices are given below.
+
+`-m32032'
+`-m32032'
+     Generate output for a 32032.  This is the default when the
+     compiler is configured for 32032 and 32016 based systems.
+
+`-m32332'
+`-m32332'
+     Generate output for a 32332.  This is the default when the
+     compiler is configured for 32332-based systems.
+
+`-m32532'
+`-m32532'
+     Generate output for a 32532.  This is the default when the
+     compiler is configured for 32532-based systems.
+
+`-m32081'
+     Generate output containing 32081 instructions for floating point.
+     This is the default for all systems.
+
+`-m32381'
+     Generate output containing 32381 instructions for floating point.
+     This also implies `-m32081'.  The 32381 is only compatible with
+     the 32332 and 32532 cpus.  This is the default for the
+     pc532-netbsd configuration.
+
+`-mmulti-add'
+     Try and generate multiply-add floating point instructions `polyF'
+     and `dotF'.  This option is only available if the `-m32381' option
+     is in effect.  Using these instructions requires changes to
+     register allocation which generally has a negative impact on
+     performance.  This option should only be enabled when compiling
+     code particularly likely to make heavy use of multiply-add
+     instructions.
+
+`-mnomulti-add'
+     Do not try and generate multiply-add floating point instructions
+     `polyF' and `dotF'.  This is the default on all platforms.
+
+`-msoft-float'
+     Generate output containing library calls for floating point.
+     *Warning:* the requisite libraries may not be available.
+
+`-mnobitfield'
+     Do not use the bit-field instructions.  On some machines it is
+     faster to use shifting and masking operations.  This is the
+     default for the pc532.
+
+`-mbitfield'
+     Do use the bit-field instructions.  This is the default for all
+     platforms except the pc532.
+
+`-mrtd'
+     Use a different function-calling convention, in which functions
+     that take a fixed number of arguments return pop their arguments
+     on return with the `ret' instruction.
+
+     This calling convention is incompatible with the one normally used
+     on Unix, so you cannot use it if you need to call libraries
+     compiled with the Unix compiler.
+
+     Also, you must provide function prototypes for all functions that
+     take variable numbers of arguments (including `printf'); otherwise
+     incorrect code will be generated for calls to those functions.
+
+     In addition, seriously incorrect code will result if you call a
+     function with too many arguments.  (Normally, extra arguments are
+     harmlessly ignored.)
+
+     This option takes its name from the 680x0 `rtd' instruction.
+
+`-mregparam'
+     Use a different function-calling convention where the first two
+     arguments are passed in registers.
+
+     This calling convention is incompatible with the one normally used
+     on Unix, so you cannot use it if you need to call libraries
+     compiled with the Unix compiler.
+
+`-mnoregparam'
+     Do not pass any arguments in registers.  This is the default for
+     all targets.
+
+`-msb'
+     It is OK to use the sb as an index register which is always loaded
+     with zero.  This is the default for the pc532-netbsd target.
+
+`-mnosb'
+     The sb register is not available for use or has not been
+     initialized to zero by the run time system.  This is the default
+     for all targets except the pc532-netbsd.  It is also implied
+     whenever `-mhimem' or `-fpic' is set.
+
+`-mhimem'
+     Many ns32000 series addressing modes use displacements of up to
+     512MB.  If an address is above 512MB then displacements from zero
+     can not be used.  This option causes code to be generated which
+     can be loaded above 512MB.  This may be useful for operating
+     systems or ROM code.
+
+`-mnohimem'
+     Assume code will be loaded in the first 512MB of virtual address
+     space.  This is the default for all platforms.
+
+
+File: gcc.info,  Node: AVR Options,  Next: MCore Options,  Prev: NS32K Options,  Up: Submodel Options
+
+AVR Options
+-----------
+
+   These options are defined for AVR implementations:
+
+`-mmcu=MCU'
+     Specify ATMEL AVR instruction set or MCU type.
+
+     Instruction set avr1 is for the minimal AVR core, not supported by
+     the C compiler, only for assembler programs (MCU types: at90s1200,
+     attiny10, attiny11, attiny12, attiny15, attiny28).
+
+     Instruction set avr2 (default) is for the classic AVR core with up
+     to 8K program memory space (MCU types: at90s2313, at90s2323,
+     attiny22, at90s2333, at90s2343, at90s4414, at90s4433, at90s4434,
+     at90s8515, at90c8534, at90s8535).
+
+     Instruction set avr3 is for the classic AVR core with up to 128K
+     program memory space (MCU types: atmega103, atmega603, at43usb320,
+     at76c711).
+
+     Instruction set avr4 is for the enhanced AVR core with up to 8K
+     program memory space (MCU types: atmega8, atmega83, atmega85).
+
+     Instruction set avr5 is for the enhanced AVR core with up to 128K
+     program memory space (MCU types: atmega16, atmega161, atmega163,
+     atmega32, atmega323, atmega64, atmega128, at43usb355, at94k).
+
+`-msize'
+     Output instruction sizes to the asm file.
+
+`-minit-stack=N'
+     Specify the initial stack address, which may be a symbol or
+     numeric value, `__stack' is the default.
+
+`-mno-interrupts'
+     Generated code is not compatible with hardware interrupts.  Code
+     size will be smaller.
+
+`-mcall-prologues'
+     Functions prologues/epilogues expanded as call to appropriate
+     subroutines.  Code size will be smaller.
+
+`-mno-tablejump'
+     Do not generate tablejump insns which sometimes increase code size.
+
+`-mtiny-stack'
+     Change only the low 8 bits of the stack pointer.
+
+
+File: gcc.info,  Node: MCore Options,  Next: IA-64 Options,  Prev: AVR Options,  Up: Submodel Options
+
+MCore Options
+-------------
+
+   These are the `-m' options defined for the Motorola M*Core
+processors.
+
+`-mhardlit'
+`-mhardlit'
+`-mno-hardlit'
+     Inline constants into the code stream if it can be done in two
+     instructions or less.
+
+`-mdiv'
+`-mdiv'
+`-mno-div'
+     Use the divide instruction.  (Enabled by default).
+
+`-mrelax-immediate'
+`-mrelax-immediate'
+`-mno-relax-immediate'
+     Allow arbitrary sized immediates in bit operations.
+
+`-mwide-bitfields'
+`-mwide-bitfields'
+`-mno-wide-bitfields'
+     Always treat bit-fields as int-sized.
+
+`-m4byte-functions'
+`-m4byte-functions'
+`-mno-4byte-functions'
+     Force all functions to be aligned to a four byte boundary.
+
+`-mcallgraph-data'
+`-mcallgraph-data'
+`-mno-callgraph-data'
+     Emit callgraph information.
+
+`-mslow-bytes'
+`-mslow-bytes'
+`-mno-slow-bytes'
+     Prefer word access when reading byte quantities.
+
+`-mlittle-endian'
+`-mlittle-endian'
+`-mbig-endian'
+     Generate code for a little endian target.
+
+`-m210'
+`-m210'
+`-m340'
+     Generate code for the 210 processor.
+
+
+File: gcc.info,  Node: IA-64 Options,  Next: D30V Options,  Prev: MCore Options,  Up: Submodel Options
+
+IA-64 Options
+-------------
+
+   These are the `-m' options defined for the Intel IA-64 architecture.
+
+`-mbig-endian'
+     Generate code for a big endian target.  This is the default for
+     HPUX.
+
+`-mlittle-endian'
+     Generate code for a little endian target.  This is the default for
+     AIX5 and Linux.
+
+`-mgnu-as'
+`-mno-gnu-as'
+     Generate (or don't) code for the GNU assembler.  This is the
+     default.
+
+`-mgnu-ld'
+`-mno-gnu-ld'
+     Generate (or don't) code for the GNU linker.  This is the default.
+
+`-mno-pic'
+     Generate code that does not use a global pointer register.  The
+     result is not position independent code, and violates the IA-64
+     ABI.
+
+`-mvolatile-asm-stop'
+`-mno-volatile-asm-stop'
+     Generate (or don't) a stop bit immediately before and after
+     volatile asm statements.
+
+`-mb-step'
+     Generate code that works around Itanium B step errata.
+
+`-mregister-names'
+`-mno-register-names'
+     Generate (or don't) `in', `loc', and `out' register names for the
+     stacked registers.  This may make assembler output more readable.
+
+`-mno-sdata'
+`-msdata'
+     Disable (or enable) optimizations that use the small data section.
+     This may be useful for working around optimizer bugs.
+
+`-mconstant-gp'
+     Generate code that uses a single constant global pointer value.
+     This is useful when compiling kernel code.
+
+`-mauto-pic'
+     Generate code that is self-relocatable.  This implies
+     `-mconstant-gp'.  This is useful when compiling firmware code.
+
+`-minline-divide-min-latency'
+     Generate code for inline divides using the minimum latency
+     algorithm.
+
+`-minline-divide-max-throughput'
+     Generate code for inline divides using the maximum throughput
+     algorithm.
+
+`-mno-dwarf2-asm'
+`-mdwarf2-asm'
+     Don't (or do) generate assembler code for the DWARF2 line number
+     debugging info.  This may be useful when not using the GNU
+     assembler.
+
+`-mfixed-range=REGISTER-RANGE'
+     Generate code treating the given register range as fixed registers.
+     A fixed register is one that the register allocator can not use.
+     This is useful when compiling kernel code.  A register range is
+     specified as two registers separated by a dash.  Multiple register
+     ranges can be specified separated by a comma.
+
+
+File: gcc.info,  Node: D30V Options,  Next: S/390 and zSeries Options,  Prev: IA-64 Options,  Up: Submodel Options
+
+D30V Options
+------------
+
+   These `-m' options are defined for D30V implementations:
+
+`-mextmem'
+     Link the `.text', `.data', `.bss', `.strings', `.rodata',
+     `.rodata1', `.data1' sections into external memory, which starts
+     at location `0x80000000'.
+
+`-mextmemory'
+     Same as the `-mextmem' switch.
+
+`-monchip'
+     Link the `.text' section into onchip text memory, which starts at
+     location `0x0'.  Also link `.data', `.bss', `.strings', `.rodata',
+     `.rodata1', `.data1' sections into onchip data memory, which
+     starts at location `0x20000000'.
+
+`-mno-asm-optimize'
+`-masm-optimize'
+     Disable (enable) passing `-O' to the assembler when optimizing.
+     The assembler uses the `-O' option to automatically parallelize
+     adjacent short instructions where possible.
+
+`-mbranch-cost=N'
+     Increase the internal costs of branches to N.  Higher costs means
+     that the compiler will issue more instructions to avoid doing a
+     branch.  The default is 2.
+
+`-mcond-exec=N'
+     Specify the maximum number of conditionally executed instructions
+     that replace a branch.  The default is 4.
+
+
+File: gcc.info,  Node: S/390 and zSeries Options,  Next: CRIS Options,  Prev: D30V Options,  Up: Submodel Options
+
+S/390 and zSeries Options
+-------------------------
+
+   These are the `-m' options defined for the S/390 and zSeries
+architecture.
+
+`-mhard-float'
+`-msoft-float'
+     Use (do not use) the hardware floating-point instructions and
+     registers for floating-point operations.  When `-msoft-float' is
+     specified, functions in `libgcc.a' will be used to perform
+     floating-point operations.  When `-mhard-float' is specified, the
+     compiler generates IEEE floating-point instructions.  This is the
+     default.
+
+`-mbackchain'
+`-mno-backchain'
+     Generate (or do not generate) code which maintains an explicit
+     backchain within the stack frame that points to the caller's frame.
+     This is currently needed to allow debugging.  The default is to
+     generate the backchain.
+
+`-msmall-exec'
+`-mno-small-exec'
+     Generate (or do not generate) code using the `bras' instruction to
+     do subroutine calls.  This only works reliably if the total
+     executable size does not exceed 64k.  The default is to use the
+     `basr' instruction instead, which does not have this limitation.
+
+`-m64'
+`-m31'
+     When `-m31' is specified, generate code compliant to the Linux for
+     S/390 ABI.  When `-m64' is specified, generate code compliant to
+     the Linux for zSeries ABI.  This allows GCC in particular to
+     generate 64-bit instructions.  For the `s390' targets, the default
+     is `-m31', while the `s390x' targets default to `-m64'.
+
+`-mmvcle'
+`-mno-mvcle'
+     Generate (or do not generate) code using the `mvcle' instruction
+     to perform block moves.  When `-mno-mvcle' is specifed, use a
+     `mvc' loop instead.  This is the default.
+
+`-mdebug'
+`-mno-debug'
+     Print (or do not print) additional debug information when
+     compiling.  The default is to not print debug information.
+
+
+File: gcc.info,  Node: CRIS Options,  Next: MMIX Options,  Prev: S/390 and zSeries Options,  Up: Submodel Options
+
+CRIS Options
+------------
+
+   These options are defined specifically for the CRIS ports.
+
+`-march=ARCHITECTURE-TYPE'
+`-mcpu=ARCHITECTURE-TYPE'
+     Generate code for the specified architecture.  The choices for
+     ARCHITECTURE-TYPE are `v3', `v8' and `v10' for respectively
+     ETRAX 4, ETRAX 100, and ETRAX 100 LX.  Default is `v0' except for
+     cris-axis-linux-gnu, where the default is `v10'.
+
+`-mtune=ARCHITECTURE-TYPE'
+     Tune to ARCHITECTURE-TYPE everything applicable about the generated
+     code, except for the ABI and the set of available instructions.
+     The choices for ARCHITECTURE-TYPE are the same as for
+     `-march=ARCHITECTURE-TYPE'.
+
+`-mmax-stack-frame=N'
+     Warn when the stack frame of a function exceeds N bytes.
+
+`-melinux-stacksize=N'
+     Only available with the `cris-axis-aout' target.  Arranges for
+     indications in the program to the kernel loader that the stack of
+     the program should be set to N bytes.
+
+`-metrax4'
+`-metrax100'
+     The options `-metrax4' and `-metrax100' are synonyms for
+     `-march=v3' and `-march=v8' respectively.
+
+`-mpdebug'
+     Enable CRIS-specific verbose debug-related information in the
+     assembly code.  This option also has the effect to turn off the
+     `#NO_APP' formatted-code indicator to the assembler at the
+     beginning of the assembly file.
+
+`-mcc-init'
+     Do not use condition-code results from previous instruction;
+     always emit compare and test instructions before use of condition
+     codes.
+
+`-mno-side-effects'
+     Do not emit instructions with side-effects in addressing modes
+     other than post-increment.
+
+`-mstack-align'
+`-mno-stack-align'
+`-mdata-align'
+`-mno-data-align'
+`-mconst-align'
+`-mno-const-align'
+     These options (no-options) arranges (eliminate arrangements) for
+     the stack-frame, individual data and constants to be aligned for
+     the maximum single data access size for the chosen CPU model.  The
+     default is to arrange for 32-bit alignment.  ABI details such as
+     structure layout are not affected by these options.
+
+`-m32-bit'
+`-m16-bit'
+`-m8-bit'
+     Similar to the stack- data- and const-align options above, these
+     options arrange for stack-frame, writable data and constants to
+     all be 32-bit, 16-bit or 8-bit aligned.  The default is 32-bit
+     alignment.
+
+`-mno-prologue-epilogue'
+`-mprologue-epilogue'
+     With `-mno-prologue-epilogue', the normal function prologue and
+     epilogue that sets up the stack-frame are omitted and no return
+     instructions or return sequences are generated in the code.  Use
+     this option only together with visual inspection of the compiled
+     code: no warnings or errors are generated when call-saved
+     registers must be saved, or storage for local variable needs to be
+     allocated.
+
+`-mno-gotplt'
+`-mgotplt'
+     With `-fpic' and `-fPIC', don't generate (do generate) instruction
+     sequences that load addresses for functions from the PLT part of
+     the GOT rather than (traditional on other architectures) calls to
+     the PLT.  The default is `-mgotplt'.
+
+`-maout'
+     Legacy no-op option only recognized with the cris-axis-aout target.
+
+`-melf'
+     Legacy no-op option only recognized with the cris-axis-elf and
+     cris-axis-linux-gnu targets.
+
+`-melinux'
+     Only recognized with the cris-axis-aout target, where it selects a
+     GNU/linux-like multilib, include files and instruction set for
+     `-march=v8'.
+
+`-mlinux'
+     Legacy no-op option only recognized with the cris-axis-linux-gnu
+     target.
+
+`-sim'
+     This option, recognized for the cris-axis-aout and cris-axis-elf
+     arranges to link with input-output functions from a simulator
+     library.  Code, initialized data and zero-initialized data are
+     allocated consecutively.
+
+`-sim2'
+     Like `-sim', but pass linker options to locate initialized data at
+     0x40000000 and zero-initialized data at 0x80000000.
+
+
+File: gcc.info,  Node: MMIX Options,  Next: PDP-11 Options,  Prev: CRIS Options,  Up: Submodel Options
+
+MMIX Options
+------------
+
+   These options are defined for the MMIX:
+
+`-mlibfuncs'
+`-mno-libfuncs'
+     Specify that intrinsic library functions are being compiled,
+     passing all values in registers, no matter the size.
+
+`-mepsilon'
+`-mno-epsilon'
+     Generate floating-point comparison instructions that compare with
+     respect to the `rE' epsilon register.
+
+`-mabi=mmixware'
+`-mabi=gnu'
+     Generate code that passes function parameters and return values
+     that (in the called function) are seen as registers `$0' and up,
+     as opposed to the GNU ABI which uses global registers `$231' and
+     up.
+
+`-mzero-extend'
+`-mno-zero-extend'
+     When reading data from memory in sizes shorter than 64 bits, use
+     (do not use) zero-extending load instructions by default, rather
+     than sign-extending ones.
+
+`-mknuthdiv'
+`-mno-knuthdiv'
+     Make the result of a division yielding a remainder have the same
+     sign as the divisor.  With the default, `-mno-knuthdiv', the sign
+     of the remainder follows the sign of the dividend.  Both methods
+     are arithmetically valid, the latter being almost exclusively used.
+
+`-mtoplevel-symbols'
+`-mno-toplevel-symbols'
+     Prepend (do not prepend) a `:' to all global symbols, so the
+     assembly code can be used with the `PREFIX' assembly directive.
+
+`-melf'
+     Generate an executable in the ELF format, rather than the default
+     `mmo' format used by the `mmix' simulator.
+
+`-mbranch-predict'
+`-mno-branch-predict'
+     Use (do not use) the probable-branch instructions, when static
+     branch prediction indicates a probable branch.
+
+`-mbase-addresses'
+`-mno-base-addresses'
+     Generate (do not generate) code that uses _base addresses_.  Using
+     a base address automatically generates a request (handled by the
+     assembler and the linker) for a constant to be set up in a global
+     register.  The register is used for one or more base address
+     requests within the range 0 to 255 from the value held in the
+     register.  The generally leads to short and fast code, but the
+     number of different data items that can be addressed is limited.
+     This means that a program that uses lots of static data may
+     require `-mno-base-addresses'.
+
+
+File: gcc.info,  Node: PDP-11 Options,  Next: Xstormy16 Options,  Prev: MMIX Options,  Up: Submodel Options
+
+PDP-11 Options
+--------------
+
+   These options are defined for the PDP-11:
+
+`-mfpu'
+     Use hardware FPP floating point.  This is the default.  (FIS
+     floating point on the PDP-11/40 is not supported.)
+
+`-msoft-float'
+     Do not use hardware floating point.
+
+`-mac0'
+     Return floating-point results in ac0 (fr0 in Unix assembler
+     syntax).
+
+`-mno-ac0'
+     Return floating-point results in memory.  This is the default.
+
+`-m40'
+     Generate code for a PDP-11/40.
+
+`-m45'
+     Generate code for a PDP-11/45.  This is the default.
+
+`-m10'
+     Generate code for a PDP-11/10.
+
+`-mbcopy-builtin'
+     Use inline `movstrhi' patterns for copying memory.  This is the
+     default.
+
+`-mbcopy'
+     Do not use inline `movstrhi' patterns for copying memory.
+
+`-mint16'
+`-mno-int32'
+     Use 16-bit `int'.  This is the default.
+
+`-mint32'
+`-mno-int16'
+     Use 32-bit `int'.
+
+`-mfloat64'
+`-mno-float32'
+     Use 64-bit `float'.  This is the default.
+
+`-mfloat32'
+
+`-mno-float64'
+     Use 32-bit `float'.
+
+`-mabshi'
+     Use `abshi2' pattern.  This is the default.
+
+`-mno-abshi'
+     Do not use `abshi2' pattern.
+
+`-mbranch-expensive'
+     Pretend that branches are expensive.  This is for experimenting
+     with code generation only.
+
+`-mbranch-cheap'
+     Do not pretend that branches are expensive.  This is the default.
+
+`-msplit'
+     Generate code for a system with split I&D.
+
+`-mno-split'
+     Generate code for a system without split I&D.  This is the default.
+
+`-munix-asm'
+     Use Unix assembler syntax.  This is the default when configured for
+     `pdp11-*-bsd'.
+
+`-mdec-asm'
+     Use DEC assembler syntax.  This is the default when configured for
+     any PDP-11 target other than `pdp11-*-bsd'.
+
+
+File: gcc.info,  Node: Xstormy16 Options,  Next: Xtensa Options,  Prev: PDP-11 Options,  Up: Submodel Options
+
+Xstormy16 Options
+-----------------
+
+   These options are defined for Xstormy16:
+
+`-msim'
+     Choose startup files and linker script suitable for the simulator.
+
+
+File: gcc.info,  Node: Xtensa Options,  Prev: Xstormy16 Options,  Up: Submodel Options
+
+Xtensa Options
+--------------
+
+   The Xtensa architecture is designed to support many different
+configurations.  The compiler's default options can be set to match a
+particular Xtensa configuration by copying a configuration file into the
+GCC sources when building GCC.  The options below may be used to
+override the default options.
+
+`-mbig-endian'
+`-mlittle-endian'
+     Specify big-endian or little-endian byte ordering for the target
+     Xtensa processor.
+
+`-mdensity'
+`-mno-density'
+     Enable or disable use of the optional Xtensa code density
+     instructions.
+
+`-mmac16'
+`-mno-mac16'
+     Enable or disable use of the Xtensa MAC16 option.  When enabled,
+     GCC will generate MAC16 instructions from standard C code, with the
+     limitation that it will use neither the MR register file nor any
+     instruction that operates on the MR registers.  When this option is
+     disabled, GCC will translate 16-bit multiply/accumulate operations
+     to a combination of core instructions and library calls, depending
+     on whether any other multiplier options are enabled.
+
+`-mmul16'
+`-mno-mul16'
+     Enable or disable use of the 16-bit integer multiplier option.
+     When enabled, the compiler will generate 16-bit multiply
+     instructions for multiplications of 16 bits or smaller in standard
+     C code.  When this option is disabled, the compiler will either
+     use 32-bit multiply or MAC16 instructions if they are available or
+     generate library calls to perform the multiply operations using
+     shifts and adds.
+
+`-mmul32'
+`-mno-mul32'
+     Enable or disable use of the 32-bit integer multiplier option.
+     When enabled, the compiler will generate 32-bit multiply
+     instructions for multiplications of 32 bits or smaller in standard
+     C code.  When this option is disabled, the compiler will generate
+     library calls to perform the multiply operations using either
+     shifts and adds or 16-bit multiply instructions if they are
+     available.
+
+`-mnsa'
+`-mno-nsa'
+     Enable or disable use of the optional normalization shift amount
+     (`NSA') instructions to implement the built-in `ffs' function.
+
+`-mminmax'
+`-mno-minmax'
+     Enable or disable use of the optional minimum and maximum value
+     instructions.
+
+`-msext'
+`-mno-sext'
+     Enable or disable use of the optional sign extend (`SEXT')
+     instruction.
+
+`-mbooleans'
+`-mno-booleans'
+     Enable or disable support for the boolean register file used by
+     Xtensa coprocessors.  This is not typically useful by itself but
+     may be required for other options that make use of the boolean
+     registers (e.g., the floating-point option).
+
+`-mhard-float'
+`-msoft-float'
+     Enable or disable use of the floating-point option.  When enabled,
+     GCC generates floating-point instructions for 32-bit `float'
+     operations.  When this option is disabled, GCC generates library
+     calls to emulate 32-bit floating-point operations using integer
+     instructions.  Regardless of this option, 64-bit `double'
+     operations are always emulated with calls to library functions.
+
+`-mfused-madd'
+`-mno-fused-madd'
+     Enable or disable use of fused multiply/add and multiply/subtract
+     instructions in the floating-point option.  This has no effect if
+     the floating-point option is not also enabled.  Disabling fused
+     multiply/add and multiply/subtract instructions forces the
+     compiler to use separate instructions for the multiply and
+     add/subtract operations.  This may be desirable in some cases
+     where strict IEEE 754-compliant results are required: the fused
+     multiply add/subtract instructions do not round the intermediate
+     result, thereby producing results with _more_ bits of precision
+     than specified by the IEEE standard.  Disabling fused multiply
+     add/subtract instructions also ensures that the program output is
+     not sensitive to the compiler's ability to combine multiply and
+     add/subtract operations.
+
+`-mserialize-volatile'
+`-mno-serialize-volatile'
+     When this option is enabled, GCC inserts `MEMW' instructions before
+     `volatile' memory references to guarantee sequential consistency.
+     The default is `-mserialize-volatile'.  Use
+     `-mno-serialize-volatile' to omit the `MEMW' instructions.
+
+`-mtext-section-literals'
+`-mno-text-section-literals'
+     Control the treatment of literal pools.  The default is
+     `-mno-text-section-literals', which places literals in a separate
+     section in the output file.  This allows the literal pool to be
+     placed in a data RAM/ROM, and it also allows the linker to combine
+     literal pools from separate object files to remove redundant
+     literals and improve code size.  With `-mtext-section-literals',
+     the literals are interspersed in the text section in order to keep
+     them as close as possible to their references.  This may be
+     necessary for large assembly files.
+
+`-mtarget-align'
+`-mno-target-align'
+     When this option is enabled, GCC instructs the assembler to
+     automatically align instructions to reduce branch penalties at the
+     expense of some code density.  The assembler attempts to widen
+     density instructions to align branch targets and the instructions
+     following call instructions.  If there are not enough preceding
+     safe density instructions to align a target, no widening will be
+     performed.  The default is `-mtarget-align'.  These options do not
+     affect the treatment of auto-aligned instructions like `LOOP',
+     which the assembler will always align, either by widening density
+     instructions or by inserting no-op instructions.
+
+`-mlongcalls'
+`-mno-longcalls'
+     When this option is enabled, GCC instructs the assembler to
+     translate direct calls to indirect calls unless it can determine
+     that the target of a direct call is in the range allowed by the
+     call instruction.  This translation typically occurs for calls to
+     functions in other source files.  Specifically, the assembler
+     translates a direct `CALL' instruction into an `L32R' followed by
+     a `CALLX' instruction.  The default is `-mno-longcalls'.  This
+     option should be used in programs where the call target can
+     potentially be out of range.  This option is implemented in the
+     assembler, not the compiler, so the assembly code generated by GCC
+     will still show direct call instructions--look at the disassembled
+     object code to see the actual instructions.  Note that the
+     assembler will use an indirect call for every cross-file call, not
+     just those that really will be out of range.
+

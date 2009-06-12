@@ -1,0 +1,76 @@
+2001-10-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_sh_se77x9.inl: Added buffer parameters.
+
+2001-10-10  Gary Thomas  <gthomas@redhat.com>
+
+	* include/devs_eth_sh_se77x9.inl (CYGHWR_NS_DP83902A_PLF_RESET): 
+	Change in calling convention - now uses soft "reset" address from
+	device specific data.
+
+2001-07-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_sh_se77x9.inl: Fix typo.
+
+2001-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_sh_se77x9.inl: Use proper interrupt vector name.
+
+2001-06-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_sh_se77x9.inl: Split in devs/config parts. Use
+	proper delay in reset code.
+	Removed unused delays. Tell driver DMA HW is broken (I suspect the
+	FPGA - and yes, this took a very long time indeed to track down!).
+
+	* cdl/sh_se77x9_eth_drivers.cdl: Removed ring size options. Force
+	use of ESA until I figure out how to read the EPROM.
+
+2001-06-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/sh_se77x9_eth_drivers.cdl: Made _SET_ESA option configurable.
+
+	* include/devs_eth_sh_se77x9.inl: Added DATA I/O macros since the
+	platform needs to be treated like it was BE when accessing the
+	external devices.
+
+2001-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/devs_eth_sh_se77x9.inl: Remove debug hack.
+
+	* Created.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

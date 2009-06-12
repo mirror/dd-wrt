@@ -1,0 +1,119 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     ftpclient.sgml                                              -->
+<!--                                                                 -->
+<!--     eCos TCP/IP Stacks                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- Copyright (C) 2003 Andrew Lunn.                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART ID="net-ftpclient">
+<TITLE>FTP Client for eCos TCP/IP Stack</TITLE>
+<PARTINTRO>
+<PARA>
+The ftpclient package provides an FTP (File Transfer Protocol) client
+for use with the TCP/IP stack in eCos. It supports both IPv4 and IPv6
+and will use the DNS client, when its is part of the eCos configuration.
+</PARA>
+</PARTINTRO>
+<CHAPTER id="net-ftpclient-features">
+<TITLE>FTP Client Features</TITLE>
+<SECT1 id="net-ftpclient-features-api">
+<TITLE>FTP Client API</TITLE>
+<para>
+This package implements an FTP client.  The API is in include file
+<filename>install/include/ftpclient.h</filename> and it can be used thus:
+<programlisting>
+#include &lt;network.h&gt;
+#include &lt;ftpclient.h&gt;
+</programlisting>
+It looks like this:
+</para>
+<sect2 id="net-ftpclient-features-api-get">
+<title>ftp_get</title>
+<programlisting>
+int ftp_get(char &ast; hostname, 
+            char &ast; username, 
+            char &ast; passwd, 
+            char &ast; filename, 
+            char &ast; buf, 
+            unsigned buf_size,
+            ftp_printf_t ftp_printf);
+</programlisting>
+<para>
+Use the FTP protocol to retrieve a file from a server. Only binary
+mode is supported. The filename can include a directory name. Only
+use unix style &lsquo;/&rsquo; file separators,
+not &lsquo;\&rsquo;.
+The file is placed into <parameter>buf</parameter>.
+<parameter>buf</parameter> has maximum size <parameter>buf_size</parameter>.
+If the file is bigger than this, the
+transfer fails and <errorcode>FTP_TOOBIG</errorcode> is returned.
+Other error codes listed in the header can also be returned.
+If the transfer is successful the number of bytes received is returned.
+</para>
+</sect2>
+<sect2 id="net-ftpclient-features-api-put">
+<title>ftp_put</title>
+<programlisting>
+int ftp_put(char &ast; hostname, 
+            char &ast; username, 
+            char &ast; passwd, 
+            char &ast; filename, 
+            char &ast; buf, 
+            unsigned buf_size,
+            ftp_printf_t ftp_printf);
+</programlisting>
+<para>
+Use the FTP protocol to send a file to a server.
+Only binary
+mode is supported. The filename can include a directory name. Only
+use unix style &lsquo;/&rsquo; file separators,
+not &lsquo;\&rsquo;.
+The contents of <parameter>buf</parameter> are placed into the file on the
+server. If an error occurs one of the codes listed will be returned. If the
+transfer is successful zero is returned.
+</para>
+</sect2>
+<sect2 id="net-ftpclient-features-api-printf">
+<title>ftpclient_printf</title>
+<programlisting>
+void ftpclient_printf(unsigned error, const char *fmt, ...);
+</programlisting>
+<para>
+<function>ftp_get()</function> and <function>ftp_put</function>
+take a pointer to a function to use for printing
+out diagnostic and error messages. This is a sample implementation
+which can be used if you don't want to implement the function
+yourself.
+<parameter>error</parameter> will be true when the message to print is an
+error message. Otherwise the message is diagnostic, eg. the commands sent
+and received from the server.
+</para>
+</sect2>
+</SECT1>
+</CHAPTER>
+</PART>

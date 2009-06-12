@@ -1,0 +1,3 @@
+cdl_component CYGNUM_RAM_ENTRY {
+    user_value 0xa0010000
+};

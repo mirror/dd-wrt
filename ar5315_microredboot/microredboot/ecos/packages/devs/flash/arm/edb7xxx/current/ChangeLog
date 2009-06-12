@@ -1,0 +1,96 @@
+2003-11-20  Jani Monoses <jani@iv.ro>
+	
+	* cdl/flash_edb7xxx.cdl:
+	* src/edb7xxx_flash.c.c:
+	* src/flash_query.c:
+	* src/flash_erase_block.c:
+	* src/flash_program_buf.c: Place flash functions in RAM sections
+	and no longer implement CYGHWR_IO_FLASH_DEVICE_NOT_IN_RAM. Use
+	generic flash_dev_query().
+	
+2001-10-14  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/flash_edb7xxx.cdl: Missed change in include file location
+	for StrataFLASH changes.
+
+2001-10-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/flash_edb7xxx.cdl: Move EP72xx flash into separate subcomponent.
+	Clarify package description strings.
+	Move EP73xx strataflash support into here as another subcomponent.
+
+	* cdl/flash_strata_edb7xxx.cdl: Delete.
+	
+2001-09-25  Gary Thomas  <gthomas@redhat.com>
+
+	* include/edb7xxx_strataflash.inl: 
+	* cdl/flash_strata_edb7xxx.cdl: New setup for EDB7312 which uses
+	Intel StrataFlash devices.
+
+2001-06-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_flash.c: Remove dependency on printf() via user functions.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/flash_edb7xxx.cdl: Needs IO controller to copy functions to
+	RAM.
+
+2000-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/edb7xxx_flash.c (flash_code_overlaps): Define stext/etext
+	as array types so no assumptions can be made by the compiler about
+	location.
+
+2000-12-04  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_flash.c (flash_hwr_init): Additional debugging
+	(*flash_info.pf) statments - in case this stuff fails in the future.
+
+2000-11-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash_query.c: Increase startup timing - didn't always work.
+
+2000-08-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_flash.c: Improve error decoding.
+
+2000-08-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/edb7xxx_flash.c (flash_code_overlaps): 
+	stext,etext now are _stext,_etext
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

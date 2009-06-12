@@ -1,0 +1,3 @@
+NOTE: before formatting tcpip.sgml you need to prepare the manual
+pages in tcpip-manpages.smgl.  This is done by running the shell
+script prepare-manpages.sh

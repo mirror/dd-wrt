@@ -1,0 +1,154 @@
+2004-09-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c (hal_platform_init): Move parallel port initializations
+	from variant here (comment says they are required re: errata, but no
+	supporting documentation is known)
+
+2003-12-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/adder.S: Only clear caches on non-RAM startup modes.  This fixes
+	some problems when using network debug connections (messing with the
+	caches seems to confuse the CPM)
+
+2003-12-10  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_adder.cdl: System clock was using wrong frequency
+	(time base).  On this platform, it's configured to use the raw
+	OSCLK which is a constant 10MHz, not the higher speed PLL based 
+	clocks.
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_adder.cdl: 
+	HAL_PLATFORM_CPU now defined by MPC8xx variant CDL.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/adderII_redboot_ROMRAM.ecm: 
+	* misc/adder_redboot_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-08-28  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c: Obsolete file - removed.
+
+	* src/plf_redboot_linux_exec.c: New file - platform specifics
+	for booting Linux kernel from RedBoot.
+
+	* cdl/hal_powerpc_adder.cdl: Linux booting from RedBoot is 
+	now supported at the architecture level.  Changes to support 
+	architecture/platform layering.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_adder.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-04-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c (hal_platform_init): Set up GPIO bits according
+	to platform type.
+
+2003-03-31  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_adder.cdl: Enable use of SCC3 on AdderII.
+
+2003-03-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_ROMRAM.ecm: Remove.
+
+	* misc/adder_redboot_ROMRAM.ecm: 
+	* misc/adderII_redboot_ROMRAM.ecm: New file(s), distinguish platforms.
+
+	* src/hal_aux.c: 
+	* src/adder.S: 
+	* cdl/hal_powerpc_adder.cdl: Update to support new platform - AdderII.
+
+2003-03-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_adder.cdl: New option for setting processor type.
+
+2003-03-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c (hal_platform_init): Fix SCC2/SCC3 routing.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Call eth_drv_stop as necessary.
+
+2003-01-31  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_adder.cdl: No tests currently defined.
+
+2002-12-02  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/plf_intr.h: Use MPC8xx variant RESET support.
+
+2002-11-26  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* misc/redboot_ROMRAM.ecm: Export.
+
+	* cdl/hal_powerpc_adder.cdl: Move platform #define to platform package.
+
+2002-11-25  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/redboot_linux_exec.c: 
+	* src/hal_diag.c: 
+	* src/hal_aux.c: 
+	* src/adder.S: 
+	* misc/redboot_ROMRAM.ecm: 
+	* include/pkgconf/mlt_powerpc_adder_romram.mlt: 
+	* include/pkgconf/mlt_powerpc_adder_romram.ldi: 
+	* include/pkgconf/mlt_powerpc_adder_romram.h: 
+	* include/pkgconf/mlt_powerpc_adder_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_adder_rom.ldi: 
+	* include/pkgconf/mlt_powerpc_adder_rom.h: 
+	* include/pkgconf/mlt_powerpc_adder_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_adder_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_adder_ram.h: 
+	* include/plf_stub.h: 
+	* include/plf_regs.h: 
+	* include/plf_intr.h: 
+	* include/plf_cache.h: 
+	* include/hal_diag.h: 
+	* cdl/hal_powerpc_adder.cdl: New package - platform specifics for
+	Analogue & Micro Adder (PowerPC 850) boards.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003 Red Hat, Inc.
+// Copyright (C) 2002 Gary Thomas
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

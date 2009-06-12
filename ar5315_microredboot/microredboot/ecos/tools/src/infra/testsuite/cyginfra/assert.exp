@@ -1,0 +1,341 @@
+#===============================================================================
+#
+#    assert.exp
+#
+#    Assertion test cases
+#
+#===============================================================================
+######COPYRIGHTBEGIN####
+#                                                                          
+# ----------------------------------------------------------------------------
+# Copyright (C) 1998, 1999, 2000 Red Hat, Inc.
+#
+# This file is part of the eCos host tools.
+#
+# This program is free software; you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License as published by the Free 
+# Software Foundation; either version 2 of the License, or (at your option) 
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# ----------------------------------------------------------------------------
+#                                                                          
+######COPYRIGHTEND####
+#===============================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):	bartv
+# Contributors:	bartv
+# Date:		1998-11-25
+#
+#####DESCRIPTIONEND####
+#===============================================================================
+
+# ----------------------------------------------------------------------------
+# Start with the simple tests.
+${tool}_load tassert1
+${tool}_load tassert2
+${tool}_load tassert3
+${tool}_load tassert4
+
+# tassert5 is not buildable under Linux. It is a C program linked with
+# a C++ library, and there are dependencies on the default new and
+# delete operators which are not satisfied.
+
+if { [string match "cl*" $::hosttest_data(CC)] } {
+    ${tool}_load tassert5
+} else {
+    unsupported "using the infrastructure from C code"
+}
+
+${tool}_load tassert6
+${tool}_load tassert7
+
+# ----------------------------------------------------------------------------
+# tassert8 is a bit more complicated. It involves an assertion which
+# is not caught in any way by the application code. Therefore the
+# output of the program has to be analysed to make sure it is
+# reasonable. There is also going to be a dump file that needs
+# to be analysed and cleaned up.
+
+proc tassert8_filter { name result output } {
+
+    set all_ok 1
+    
+    if { $result == 0 } {
+	fail "testcase $name should have a non-zero exit code"
+	set all_ok 0
+    }
+
+    # Convert the output to a list of lines.
+    set lines [split $output "\n"]
+
+    # The first line of interest should contain the phrase
+    # "Assertion failure" and the string embedded in tassert8.cxx
+    while { 1 } {
+	if { [llength $lines] == 0 } {
+	    set all_ok 0
+	    fail "No \"Assertion failure\" message detected in program output"
+	    break
+	}
+	set line  [lindex $lines 0]
+	set lines [lreplace $lines 0 0]
+	if { [regexp -nocase -- {^assertion failure.*it seemed like a good idea at the time$} $line] } {
+	    break
+	}
+    }
+    
+    # The next line should indicate the file and the line number
+    if { [llength $lines] == 0 } {
+	set all_ok 0
+	fail "No file name or line number information"
+    } else {
+	set line  [lindex $lines 0]
+	set lines [lreplace $lines 0 0]
+	if { [regexp -nocase -- {^file .*tassert8.cxx.*line number [0-9]+$} $line] == 0} {
+	    fail "Output did not contain the expected filename and linenumber"
+	}
+    }
+    # There may or may not be a line containing the function name.
+    # This should not be checked, it depends on compiler support
+    # for __PRETTY_FUNCTION__. The next line of interest is
+    # "Writing additional output to xxx", where xxx is a filename.
+    while { 1 } {
+	if { [llength $lines] == 0 } {
+	    set all_ok 0
+	    fail "Output did not specify where the dump information was stored"
+	    break
+	} else {
+	    set line  [lindex $lines 0]
+	    set lines [lreplace $lines 0 0]
+	    set dummy ""
+	    set match ""
+	    if { [regexp -- {^Writing additional output to (.*)$} $line dummy match] } {
+		tassert8_process_dump $match all_ok
+		break
+	    }
+	}
+    }
+    
+    if { $all_ok } {
+	pass "Assertions generate sensible output"
+    }
+
+    return 0
+}
+
+proc tassert8_process_dump { filename all_ok_arg } {
+
+    upvar $all_ok_arg all_ok
+    set realname [hosttest_translate_existing_filename $filename]
+    if { $realname == "" } {
+	set all_ok 0
+	fail "Unable to find assertion dump file $filename"
+	return
+    }
+    set lines {}
+    set status [ catch {
+	set fd   [open $realname r]
+	set data [read $fd]
+	close $fd
+	set lines [split $data "\n"]
+	if { [llength $lines] == 0 } {
+	    set all_ok 0
+	    fail "The assertion dump file $realname contains no data"
+	}
+    } message ]
+    if { $status != 0 } {
+	set all_ok 0
+	fail "Unable to open assertion output file $realname, $message"
+    } 
+    set status [ catch { file delete $realname } message ]
+    if { $status != 0 } {
+	warning "Unable to delete assertion dump file $realname, $message" 0
+    }
+    if { [llength $lines] == 0 } {
+	return
+    }
+
+    # We have some data to process. The information should include
+    # the following:
+    # 1) a line Assertion failure msg
+    # 2) a line with the filename and the linenumber
+    # 3) optionally a line with the function name. This depends on
+    #    compiler support.
+    # 4) information from callback1
+    # 5) information from callback2
+    #
+    # The relative order of (4) and (5) is not defined.
+    while { 1 } {
+	if { [llength $lines] == 0 } {
+	    set all_ok 0
+	    fail "No \"Assertion failure\" message detected in output file"
+	    break
+	}
+	set line  [lindex $lines 0]
+	set lines [lreplace $lines 0 0]
+	if { [regexp -nocase -- {^assertion failure.*it seemed like a good idea at the time$} $line] } {
+	    break
+	}
+    }
+    
+    if { [llength $lines] == 0 } {
+	set all_ok 0
+	fail "No file name or line number information"
+    } else {
+	set line  [lindex $lines 0]
+	set lines [lreplace $lines 0 0]
+	if { [regexp -nocase -- {^file .*tassert8.cxx.*line number [0-9]+$} $line] == 0} {
+	    set all_ok 0
+	    fail "Output did not contain the expected filename and linenumber"
+	}
+    }
+
+    set seen_callback1 0
+    set seen_callback2 0
+    while { [llength $lines] > 0 } {
+	
+	set line  [lindex $lines 0]
+	set lines [lreplace $lines 0 0]
+
+	if { [regexp -nocase -- {^\# \{\{\{.*callback1.*$} $line] } {
+	    if { $seen_callback1 != 0 } {
+		set all_ok 0
+		fail "Output contains multiple occurrences of callback1"
+		continue
+	    }
+	    set seen_callback1 1
+
+	    while { [llength $lines] > 0 } {
+		set line  [lindex   $lines 0]
+		set lines [lreplace $lines 0 0]
+
+		if { [regexp -nocase -- {^\# \}\}\}.*$} $line] } {
+		    break
+		}
+
+		# callback1 should not generate any output so only blank lines
+		# are acceptable
+		if { [regexp -nocase -- {^ *$} $line] != 1} {
+		    set all_ok 0
+		    fail "Unexpected data in callback1 output: $line"
+		    # Do not repeat this failure message. This break will
+		    # do near enough the right thing.
+		    break
+		}
+	    }
+	    
+	} elseif  { [regexp -nocase -- {^\# \{\{\{.*callback2.*$} $line] } {
+	    if { $seen_callback2 != 0 } {
+		set all_ok 0
+		fail "Output contains multiple occurrences of callback2"
+	    }
+	    set seen_callback2 1
+
+	    while { [llength $lines] > 0 } {
+		set line  [lindex   $lines 0]
+		set lines [lreplace $lines 0 0]
+
+		if { [regexp -nocase -- {^\# \}\}\}.*$} $line] } {
+		    break
+		}
+
+		# callback2 is allowed to generate blank lines and
+		# fixed lines.
+		if { [regexp -nocase -- {^ *$} $line] == 1 } {
+		    continue
+		}
+		if { $line == "callback2 output" } {
+		    continue
+		}
+		set all_ok 0
+		fail "Unexpected data in callback2 output: $line"
+	    }
+	    
+	} 
+    }
+    if { ($seen_callback1 == 0) || ($seen_callback2 == 0) } {
+	set all_ok 0
+	fail "Output did not contain all the callback information"
+    }
+}
+
+hosttest_run_test_with_filter tassert8 tassert8_filter {} {} {} cyginfra {}
+
+# ----------------------------------------------------------------------------
+# Strictly speaking this is not an assertion test. However there are some
+# support routines in hosttest.exp which are tried closely to the
+# implementation of the assertion code, and it is worthwhile checking
+# these. The tassert8 testcase can be reused for this.
+
+proc tassert9_filter { name result output } {
+
+    if { [hosttest_assert_check $result $output] == 0 } {
+	fail "testcase did not generate a recognised assertion"
+	return
+    }
+
+    set output [hosttest_assert_read_dump $output]
+    if { $output == "" } {
+	fail "testcase did not generate a recognised assertion dump"
+	return
+    }
+
+    set all_ok 1
+    
+    set callback1_output [hosttest_assert_extract_callback $output "callback1"]
+    set callback2_output [hosttest_assert_extract_callback $output "callback2"]
+
+    # Callback1 output should be empty, all blank lines should have been filtered
+    # out.
+    if { $callback1_output != "" } {
+	set all_ok 0
+	fail "callback1 output should be empty"
+    }
+    set lines [split $callback2_output "\n"]
+    if { [llength $lines] == 0 } {
+	set all_ok 0
+	fail "callback2 should have produced some output"
+    } elseif { [llength $lines] < 10} {
+	set all_ok 0
+	fail "callback2 is supposted to have at least ten lines of output"
+    } else {
+	# There should be ten lines of output, possibly followed by
+	# some blanks.
+	for { set i 0 } { $i < 10 } { incr i } {
+	    set line  [lindex $lines 0]
+	    set lines [lreplace $lines 0 0]
+	    if { $line != "callback2 output" } {
+		set all_ok 0
+		fail "incorrect output from callback2"
+		break
+	    }
+	}
+
+	while { [llength $lines] > 0 } {
+	    set line  [lindex $lines 0]
+	    set lines [lreplace $lines 0 0]
+	    if { [regexp -- {^ *$} $line] != 1 } {
+		set all_ok 0
+		fail "callback2 output contains unexpected data"
+		break
+	    }
+	}
+    }
+
+    if { $all_ok } {
+	pass "assertion output and dump file format match test harness expectations"
+    }
+    return 0
+}
+
+hosttest_run_test_with_filter tassert9 tassert9_filter tassert8.cxx {} {} cyginfra {}
+

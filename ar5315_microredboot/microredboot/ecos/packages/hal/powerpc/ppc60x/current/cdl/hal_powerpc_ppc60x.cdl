@@ -1,0 +1,114 @@
+# ====================================================================
+#
+#      hal_powerpc_ppc60x.cdl
+#
+#      PowerPC/PPC60x variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Contributors:
+# Date:           2000-02-04
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_POWERPC_PPC60x {
+    display       "PowerPC 60x variant HAL"
+    parent        CYGPKG_HAL_POWERPC
+    hardware
+    include_dir   cyg/hal
+    define_header hal_powerpc_ppc60x.h
+    description   "
+           The PowerPC 60x variant HAL package provides generic support
+           for this processor variant. It is also necessary to
+           select a specific target platform HAL package."
+
+    cdl_interface CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED {
+        display       "ROM monitor configuration is unsupported"
+        no_define
+    }
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        bool
+        default_value { (CYG_HAL_STARTUP == "RAM" &&
+                        !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS &&
+                        !CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED &&
+                        !CYGSEM_HAL_POWERPC_COPY_VECTORS) ? 1 : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        requires      ! CYGSEM_HAL_POWERPC_COPY_VECTORS
+        requires      ! CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires      ! CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED
+        description   "
+            Allow coexistence with ROM monitor (CygMon or GDB stubs) by
+            only initializing interrupt vectors on startup, thus leaving
+            exception handling to the ROM monitor."
+    }
+
+    # Note: This should be sub-variant specific to reduce memory use.
+    define_proc {
+        puts $cdl_header "#define CYGHWR_HAL_VSR_TABLE (CYGHWR_HAL_POWERPC_VECTOR_BASE + 0x3000)"
+        puts $cdl_header "#define CYGHWR_HAL_VIRTUAL_VECTOR_TABLE (CYGHWR_HAL_VSR_TABLE + 0x200)"
+    }
+
+    cdl_component CYGPKG_HAL_POWERPC_PPC603 {
+        display       "PowerPC 603 microprocessor"
+        default_value 1
+        implements    CYGINT_HAL_POWERPC_VARIANT
+        description "
+            The PowerPC 603 microprocessor."
+
+        cdl_option CYGHWR_HAL_POWERPC_FPU {
+            display    "Variant FPU support"
+            calculated 1
+        }
+
+        cdl_option CYGPKG_HAL_POWERPC_MSBFIRST {
+            display    "CPU Variant big-endian"
+            calculated 1
+        }
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_powerpc.h>"
+    }
+
+    compile       var_intr.c var_misc.c variant.S
+}

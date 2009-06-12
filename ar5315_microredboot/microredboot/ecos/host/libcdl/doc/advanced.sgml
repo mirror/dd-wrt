@@ -1,0 +1,57 @@
+<!-- {{{ Banner         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     advanced.sgml                                               -->
+<!--                                                                 -->
+<!--     Various topics like templates and targets.                  -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2000, 2001, 2002 Red Hat, Inc.                    -->
+<!--                                                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2000/02/06                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<!-- FIXME: Needs to be written -->
+
+<chapter id="advanced">
+<title>Templates, Targets and Other Topics</title>
+
+<sect1 id="advanced.templates">
+<title>Templates</title>
+<para>
+This section is still under construction.
+</para>
+</sect1>
+
+<sect1 id="advanced.targets">
+<title>Targets</title>
+<para>
+This section is still under construction.
+</para>
+</sect1>
+
+</chapter>

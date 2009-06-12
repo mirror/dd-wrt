@@ -1,0 +1,166 @@
+# ====================================================================
+#
+#      hal_i386.cdl
+#
+#      i386 architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  jskov
+# Contributors:
+# Date:           1999-11-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_I386 {
+    display       "i386 architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_i386.h
+    description   "
+        The i386 architecture HAL package provides generic
+        support for this processor architecture. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    compile       hal_misc.c context.S i386_stub.c hal_syscall.c
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/i386.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_component CYGPKG_HAL_SMP_SUPPORT {
+	display       "SMP support"
+	default_value 0
+	requires { CYGHWR_HAL_I386_FPU_SWITCH_LAZY == 0 }
+	
+	cdl_option CYGPKG_HAL_SMP_CPU_MAX {
+	    display       "Max number of CPUs supported"
+	    flavor        data
+	    default_value 2
+	}
+    }
+        
+    cdl_component CYGHWR_HAL_I386_FPU {
+	display       "Enable I386 FPU support"
+	default_value 1
+	description   "This component enables support for the
+	              I386 floating point unit."
+
+	cdl_option CYGHWR_HAL_I386_FPU_SWITCH_LAZY {
+	    display       "Use lazy FPU state switching"
+	    flavor        bool
+	    default_value 1
+
+	    description "
+	                This option enables lazy FPU state switching.
+                        The default behaviour for eCos is to save and
+                        restore FPU state on every thread switch, interrupt
+	                and exception. While simple and deterministic, this
+	                approach can be expensive if the FPU is not used by
+	                all threads. The alternative, enabled by this option,
+	                is to use hardware features that allow the FPU state
+	                of a thread to be left in the FPU after it has been
+	                descheduled, and to allow the state to be switched to
+	                a new thread only if it actually uses the FPU. Where
+	                only one or two threads use the FPU this can avoid a
+	                lot of unnecessary state switching."
+	}
+    }
+    
+    cdl_component CYGHWR_HAL_I386_PENTIUM {
+	display       "Enable Pentium class CPU features"
+	default_value 0
+	description   "This component enables support for various
+	              features of Pentium class CPUs."
+
+	cdl_option CYGHWR_HAL_I386_PENTIUM_SSE {
+	    display       "Save/Restore SSE registers on context switch"
+	    flavor        bool
+	    default_value 0
+
+	    description "
+	                This option enables SSE state switching. The default
+                        behaviour for eCos is to ignore the SSE registers.
+                        Enabling this option adds SSE state information to
+                        every thread context."
+	}
+
+	cdl_option CYGHWR_HAL_I386_PENTIUM_GDB_REGS {
+	    display       "Support extra Pentium registers in GDB stub"
+	    flavor        bool
+	    default_value 0
+
+	    description "
+	                This option enables support for extra Pentium registers
+			in the GDB stub. These are registers such as CR0-CR4, and
+                        all MSRs. Not all GDBs support these registers, so the
+                        default behaviour for eCos is to not include them in the
+			GDB stub support code."
+	}
+    }
+    
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/i386.ld" }
+    }
+
+    cdl_interface CYGINT_HAL_I386_MEM_REAL_REGION_TOP {
+        display  "Implementations of hal_i386_mem_real_region_top()"
+    }
+    
+}

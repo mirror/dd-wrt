@@ -1,0 +1,4 @@
+cdl_option CYGSEM_REDBOOT_FLASH_COMBINED_FIS_AND_CONFIG {
+    user_value 0
+};
+

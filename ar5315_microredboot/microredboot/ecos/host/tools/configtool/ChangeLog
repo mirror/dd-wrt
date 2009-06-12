@@ -1,0 +1,5790 @@
+2004-01-16  John Dallaway  <jld@ecoscentric.com>
+
+	* configtool/standalone/wxwin/configtool.cpp: Prompt to save eCos
+	Configuration as necessary before building eCos.
+
+	* configtool/standalone/wxwin/mainwin.cpp: Update copyright notice.
+
+2003-08-13  John Dallaway  <jld@ecoscentric.com>
+
+	* configtool/common/common/build.cxx: More robust implementation for
+	use of the cygdrive prefix.
+
+2003-05-19  John Dallaway  <jld@ecoscentric.com>
+
+	* configtool/standalone/wxwin/manual/*,
+	  configtool/standalone/wxwin/setup/*:  Remove obsolete configtool
+	documentation and installer.
+
+2003-05-14  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/common/ecosconfig.cxx,
+	  standalone/wxwin/configtooldoc.cpp,
+	  standalone/wxwin/admindlg.cpp: Convert native Windows format
+        repository specifications to POSIX format in Cygwin builds, as now
+	required by the CDL library.
+
+2003-05-14  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/admindlg.cpp,
+	  standalone/wxwin/buildoptionsdlg.cpp,
+	  standalone/wxwin/configtool.cpp,
+	  standalone/wxwin/configtoolview.cpp,
+	  standalone/wxwin/pacakgesdlg.cpp,
+	  standalone/wxwin/runtestsdlg.cpp: Minor changes to allow building
+	against current wxWindows CVS sources. [ contributed by Julian Smart ]
+
+	* standalone/wxwin/makefile.gnu: Remove msgdlgex.cpp from the build.
+
+2003-05-02  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/appsettings.cpp: Don't use "." in the PATH to
+	look for build tools and user tools.
+
+2003-05-01  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/common/cdl_exec.cxx: Generate Cygwin text-mode mounts
+	explicitly since text-mode is no longer the default.
+
+	* standalone/wxwin/runtestsdlg.cpp: Use the rich edit control under
+	Windows to eliminate a 64k limit on the length of text in the test
+        output window and make the window read-only.
+
+2003-04-25  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/docsystem.cpp: Accommodate the latest HTML doc
+	structure.
+
+2003-04-24  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/mainwin.cpp: Fix behaviour of user tools warning
+	message box.
+
+	* standalone/wxwin/makefile.gnu: Deduce OS type using uname tool.
+
+2003-04-17  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/appsettings.cpp, standalone/wxwin/mainwin.cpp:
+	Rationalise the treatment of the build tools directory during startup
+	and when using the build tools dialog.
+
+	* standalone/wxwin/configtool.cpp: Wait for the installation of platform
+	definitions to complete on Linux.
+
+2003-04-16  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/configtool.cpp: Install default platform definitions
+	on initial invocation. Generate Cygwin text-mode mounts explicitly since
+	text-mode is no longer the default mount type.
+
+2003-04-11  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/ecutils.cpp, standalone/wxwin/ecutils.h: Create
+	wxString wrappers for cygwin_conv_to_*_path().
+
+	* standalone/wxwin/appsettings.cpp: Accommodate POSIX-style values of
+	the ECOS_REPOSITORY environment variable.
+
+2003-04-10  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/docsystem.cpp: Eliminate pop-up warning when
+	attempting to create a directory under $HOME/.eCosDocs/ which already
+	exists.
+
+2003-04-07  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/appsettings.cpp,
+	  standalone/wxwin/appsettings.h: Look for user tools and build
+	tools relative to the configtool executable file.
+
+2003-04-05  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/makefile.gnu: Build Cygwin hosted configtool with
+	"--subsystem windows" to eliminate the console window.
+
+	* standalone/wxwin/admindlg.cpp: Strip CR characters from the license
+	text on Linux.
+
+2003-03-28  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/common/ecosconfig.cxx, standalone/wxwin/symbols.h:
+	Use a generic 2.net version string by default.
+
+	* standalone/wxwin/packagesdlg.cpp: Fix population of package lists
+	to ensure the last package is seen. [ Bugzilla 87520 ]
+
+2003-03-26  Bart Veer  <bartv@ecoscentric.com>
+
+	* common/common/build.cxx: There is no longer a single repository,
+	instead each package can come from different repositories.
+
+2003-03-26  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/makefile.gnu: Tidy up.
+
+	* standalone/wxwin/splittree.cpp: Fix wxRemotelyScrolledTreeCtrl for
+	wxWindows 2.4.0 on Linux/GTK. Patch contributed by Julian Smart.
+
+2003-03-25  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/symbols.h,
+	  standalone/wxwin/aboutdlg.cpp,
+	  standalone/wxwin/configtool.cpp,
+	  standalone/wxwin/mainwin.cpp: Use a character string to represent
+	the configtool version number.
+
+	* standalone/wxwin/runtestsdlg.cpp: Remove CR characters in test
+	output. [ Bugzilla 85163 ]
+
+2003-03-19  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/appsettings.cpp,
+	  standalone/wxwin/configtooldoc.cpp,
+	  standalone/wxwin/ecpch.h,
+	  standalone/wxwin/filename.cpp,
+	  standalone/wxwin/configtool.rc,
+	  standalone/wxwin/makefile.gnu: Allow configtool to build against
+	wxWindows 2.4.0 using Cygwin GCC.
+
+2003-03-18  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/appsettings.cpp,
+	  standalone/wxwin/configtool.cpp: Look for a default repository
+	at ../../packages relative to the configtool location as a last
+	resort.
+
+	* standalone/wxwin/configtool.cpp: Eliminate scroll bar jitter in
+	the output pane during eCos builds.
+
+	* standalone/wxwin/configtool.cpp (HasInput),
+	  standalone/wxwin/mainwin.cpp,
+	  standalone/wxwin/configtool.rc,
+	  standalone/wxwin/makefile.gnu: Allow configtool to build and run
+	against wxWindows 2.4.0.
+
+2003-03-07  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/appsettings.cpp: Look in the right place for the
+	eCos repository location under Linux.
+
+	* standalone/wxwin/admindlg.cpp: Allow addition of EPKs with no
+	pkgadd.txt since this file should be optional.
+
+2003-02-25  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/makefile.gnu: No need to specify -L /usr/lib for
+	Linux builds.
+
+2003-02-21  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/makefile.gnu: Allow a specific installation of Tcl/Tk
+	to be referenced using "make TCLDIR=/path/to/tcl".
+
+2003-02-19  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/platformeditordlg.cpp:
+	Fix erroneously disabled OK button and duplicate entries in prefix list.
+
+	* standalone/wxwin/makefile.gnu:
+	Use libtcl.a rather than libcygtcl83.a for Cygwin build
+
+	* standalone/wxwin/admindlg.cpp:
+	Accommodate const char * returned by Tcl_SetVar() and
+	Tcl_GetStringResult() in Tcl 8.4.
+
+	* standalone/wxwin/configtool.cpp: Call Tcl_FindExecutable().
+
+2003-02-17  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/mainwin.cpp: Update path to configtool HTML docs.
+
+2003-02-13  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/admindlg.cpp,
+	  standalone/wxwin/configtooldoc.cpp,
+	  standalone/wxwin/configtool.cpp,
+	  standalone/wxwin/mainwin.cpp,
+	  standalone/wxwin/appsettings.cpp:
+	Look for all persistent application settings under
+        "HKEY_CURRENT_USER\Software\eCos Configuration Tool\"
+	for consistency.
+
+	* standalone/wxwin/appsettings.cpp:
+	Board 'reset type' is determined at run-time and no longer persistent.
+
+	* standalone/wxwin/configtooldoc.cpp:
+	Determine board reset type by looking for "cyg_test_is_simulator=1"
+	rather than just "cyg_test_is_simulator" since "cyg_test_simulator=0"
+	is also possible.
+
+	* standalone/wxwin/mainwin.cpp:
+	Supress obsolete menu items.
+
+	* standalone/wxwin/platformeditordialog.cpp:
+	Replace LF (rather than CRLF) with ';' when storing GDB commands.
+
+2003-02-10  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/runtestsdlg.cpp,
+	  standalone/wxwin/runtestsdlg.h:
+	Call the "Reset Board" message box in the primary thread rather than
+	the worker thread for correct operation under Linux.
+
+2003-02-05  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/configtooldoc.cpp,
+	  standalone/wxwin/platformeditordlg.cpp,
+	  standalone/wxwin/runtestsdlg.cpp:
+	Eliminate .exe suffix handling when running eCos tests. Latest
+	cross toolchains do not generate a .exe suffix.
+
+	* standalone/wxwin/symbols.h: Version number 2.11 -> 2.12
+
+2003-02-03  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/filename.cpp: Eliminate (const WCHAR*) cast
+	in call to PathRelativePathTo() which is related to an error
+	in w32api/shlwapi.h.
+
+	* standalone/configtool.cpp: Suppress obsolete splash screen and
+	associated resources for now.
+
+	* standalone/mainwin.cpp: Implement simplified 'About' dialog box
+	to eliminate configtool.bin resource file dependency.
+
+2003-01-25  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/configtool.cpp: Use correct data type in call
+	to RegCreateKeyEx() to eliminate compiler warning.
+
+	* standalone/wxwin/ecpch.h: #include <winsock2.h> early for Cygwin
+	builds to eliminate fd_set compiler warning
+
+	* standalone/wxwin/filename.cpp,
+	  standalone/wxwin/configtooldoc.cpp,
+	  standalone/wxwin/appsettings.cpp: Do not #undef macros matching
+	ecFileName member functions referenced in these files for Cygwin
+	builds.
+
+2003-01-22  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/makefile.gnu: Tidy up
+
+2003-01-21  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/configtool.h:
+	Force ecUSE_MLT == 0 even for debug builds.
+
+2003-01-20  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/configtooldoc.cpp:
+	Use wxString::GetChar() rather than an array element.
+
+	* standalone/wxwin/filename.cpp:
+	Use wxString::GetChar() and wxString::SetChar rather than an array
+	element.
+	Add some explicit casts to allow building with GNU tools on Cygwin.
+	Use MAX_PATH rather than _MAX_PATH for portability.
+
+	* standalone/wxwin/ecutils.cpp:
+	Call wxNewKill() rather than wxKill() for Cygwin builds.
+
+	* standalone/wxwin/ecutils.h:
+	Use wxLongLong_t rather than __int64 for portability.
+
+2003-01-17  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/makefile.gnu: New makefile for GNU tools
+
+2003-01-16  John Dallaway  <jld@ecoscentric.com>
+
+	* standalone/wxwin/ecutils.cpp: #include <errno.h>
+
+	* standalone/wxwin/filename.h: Make header macro unique
+
+2002-09-21  Bart Veer  <bartv@ecoscentric.com>
+
+	* common/common/build.cxx:
+	Avoid const compatibility problems with Tcl 8.4
+
+2002-08-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* standalone/win32/ReadMe:
+	Move build instructions here from the toplevel
+
+2002-08-03  Bart Veer  <bartv@ecoscentric.com>
+
+	* standalone/common/Makefile.am, configure.in, acinclude.m4:
+	Rework host-side autoconf support
+
+	* common/common/build.cxx: fix typo
+	
+2002-02-08  Julian Smart <julians@redhat.com>
+
+	* common/common/build.cxx: Added two missing backslashes
+
+2002-02-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* common/common/build.cxx: correctly substitute forward slashes
+	for backslashes.
+
+2002-01-02  Julian Smart <julians@redhat.com>
+
+    * Modified these files:
+
+      host/tools/configtool/standalone/win32/Configtool.rc
+      host/tools/configtool/standalone/win32/res/Splsh16.bmp 
+      host/tools/configtool/standalone/win32/res/Splsh16_template.bmp 
+      host/tools/configtool/standalone/wxwin/README.txt 
+      host/tools/configtool/standalone/wxwin/about.htm 
+      host/tools/configtool/standalone/wxwin/ecoslogosmall.png 
+      host/tools/configtool/standalone/wxwin/reposdlg.cpp 
+      host/tools/configtool/standalone/wxwin/bitmaps/splash16.bmp 
+      host/tools/configtool/standalone/wxwin/bitmaps/splash16.png 
+      host/tools/configtool/standalone/wxwin/setup/configtool.iss 
+      host/tools/configtool/standalone/wxwin/setup/innobott.txt 
+      host/tools/configtool/standalone/wxwin/setup/innotop.txt 
+
+      incrementing the copyright year to 2002.
+
+2001-12-03  Julian Smart <julians@redhat.com>
+
+    * standalone/wxwin/templatesdlg.cpp: hardware is now sorted alphabetically
+    on UNIX.
+
+2001-10-25  Julian Smart <julians@redhat.com>
+
+    * common/common/build.cxx: now generates /ecos-x names under Windows
+    both compiling with Cygwin and VC++.
+
+2001-09-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* common/common/build.cxx: Test for active properly in below change.
+
+2001-09-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* common/common/build.cxx: Only use tests value if enabled/active.
+
+2001-07-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* common/common/flags.cxx: Include <cctype> for isspace()
+
+2001-02-14  Julian Smart  <julians@redhat.com>
+
+    * standalone/win32/configtool.cpp
+    
+    Added support for Cygwin 00r1 when searching for registry hints.     
+
+2000-08-15  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common/win32/memmap.cpp (export_files): In header file, wrap parts
+	that aren't ASM safe in "#ifndef __ASSEMBLER__"
+	(export_sections): Ditto
+
+2000-07-25  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common/win32/memmap.cpp (export_sections): 
+	Use CYG_LABEL_DEFN to define linker symbols
+
+2000-07-18  John Dallaway  <jld@redhat.com>
+
+	* standalone/win32/Configtool.rc:
+
+	Update IDS_ECOS_SOURCEWARE_URL.
+
+2000-07-03  John Dallaway  <jld@redhat.com>
+
+	* common/win32/CTCommonDoc.cpp:
+
+	Modify SelectPackages() to inhibit option value refresh
+	while changing the version of an eCos package.
+
+2000-06-27  John Dallaway  <jld@redhat.com>
+
+	* standalone/win32/Configtool.rc:
+
+	Update menu item text:
+	"eCos Services Page" -> "eCos Product Page".
+
+2000-06-22  John Dallaway  <jld@redhat.com>
+
+	* standalone/common/cdl_exec.cxx:
+
+	Modify cdl_list() to restore printf line which
+	mysteriously disappeared some time ago.
+
+2000-06-20  John Dallaway  <jld@redhat.com>
+
+	* common/common/build.cxx:
+
+	Modify generate_toplevel_makefile() to make the generated
+	makefile fragment more generic.
+	
+2000-06-19  John Dallaway  <jld@redhat.com>
+
+	* common/common/build.cxx:
+
+	Modify generate_toplevel_makefile() to generate a rule
+	to export global flags and command prefix as a makefile
+	fragment for optional use by application developers.
+
+2000-06-19  John Dallaway  <jld@redhat.com>
+
+	* common/win32/CTCommon.rc:
+
+	Replace OK/Cancel buttons with 'Close' button in the
+	Build Options dialog.
+
+	* common/win32/CTCommonDoc.cpp:
+
+	Modify OnFileImport() to specify a default file extension
+	for the File Import dialog box.
+
+	* common/win32/memmap.cpp:
+
+	Modify add_relative_sections_to_list() to skip sections
+	which have already been added and track whether sections
+	should be skipped.
+
+	* standalone/common/ecosconfig.cxx:
+
+	Modify main() to return error codes in a consistent manner.
+
+	* standalone/win32/Configtool.rc:
+
+	Update engineering team list.
+
+2000-06-15  John Dallaway  <jld@redhat.com>
+
+	* standalone/win32/ConfigToolDoc.cpp:
+
+	Modify RunTests() to check for simulator platforms and
+	inhibit prompting for hardware reset as appropriate.
+
+	* standalone/win32/Configtool.dsp,
+	  standalone/win32/ecosconfig.dsp:
+
+	Link debug builds against tcl82d.lib rather than
+	tcl82.lib.
+
+	Look for libCDL in v:\cdl rather than v:\ide.
+
+	* standalone/win32/Configtool.rc:
+
+	Point to the eCos Product web page rather than the
+	obsolete eCos Services web page.
+
+2000-04-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/common/cdl_exec.cxx:
+
+	Use PATH_MAX rather than _MAX_PATH in the Cygwin-hosted
+	build.
+
+2000-04-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/common/cdl_exec.cxx:
+
+	Modify cmd_tree() to avoid non-standard use of
+	getcwd().
+
+2000-04-11  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/win32/CTCommonDoc.cpp:
+
+	Modify OpenRepository() to pass error and warning
+	handlers to CdlPackagesDatabaseBody::make(). This
+	allows use of the config tool with repositories
+	having missing packages.
+
+2000-03-31  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/MainFrm.cpp:
+
+	Modify CygMount() to call the correct overloaded form
+	of CSubprocess::Run().
+
+2000-03-29  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/Configtool.rc,
+	  standalone/common/ecosconfig.cxx,
+	  standalone/win32/res/Splsh16.bmp:
+
+	Update version strings.	
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/cdl.sh,
+	  standalone/win32/cdl.dsp:
+
+	Remove obsolete files.
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/win32/CTCommonDoc.cpp:
+
+	Modify QualifyDocURL() to accommodate absolute HTML
+	file paths returned by libCDL.
+
+2000-03-22 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\MainFrm.cpp
+
+  Include usr/bin in path.
+  Use prefix-gcc rather than expect for test of validity of build tools path.
+
+2000-03-21  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/win32/ConfigItem.cpp:
+
+	Modify GetURL() to return the correct default URL where
+	the document has not been specified.
+
+	* standalone/win32/Configtool.rc:
+
+	Update IDS_RED_HAT_HOME_URL value.
+
+	* common/win32/CTCommon.rc:
+
+	Update context-sensitive help URLs.
+
+2000-03-20  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/common/build.cxx:
+
+	Modify resolve_tokens() to avoid breaking make variables
+	specified in CDL custom rule targets and dependencies.
+
+2000-03-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/Configtool.rc:
+
+	Tweak main frame menu item text for eCos web pages.
+	Tweak 'about' dialog box text for consistency.
+	Update config tool version number to 1.3.2.
+
+	* standalone/common/ecosconfig.cxx:
+
+	Update ecosconfig version number to 1.3.2.
+
+	* standalone/win32/res/Splsh16.bmp:
+
+	Update config tool splash screen to version 1.3.2.
+
+2000-03-13  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/MainFrm.cpp,
+	  standalone/win32/MainFrm.h:
+
+	Modify PrepareEnvironment() to optionally prepare
+	an environment without the build tools.
+
+	* standalone/win32/ConfigToolDoc.cpp:
+
+	Modify OnToolsAdministration() to prepare the environment
+	for ecosadmin.tcl (without the build tools) before invoking
+	the admin tool dialog.
+
+2000-03-10 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+
+	Move CeCosTrace class to its own file
+  
+2000-03-10  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/MainFrm.cpp,
+	  common/win32/CTCommon.rc:
+
+	Modify OnToolsPaths() to provide a more accurate
+	description of the contents of the build tools folder.
+
+2000-03-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/Configtool.dsp:
+
+	Remove obsolete files from the project.
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.cpp
+  
+	Eliminate GarbageCollector class in favor of CeCosTest::Init() and CeCosTest::Term()
+
+2000-03-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/Configtool.dsw:
+
+	Use relocated cdl project file.
+
+2000-03-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+
+  Do not use PCH on test tool files.
+
+2000-03-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+  
+  Thread-related eCosTest code extracted to new class CeCosThreadUtils  
+  
+2000-03-02 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+    standalone\win32\MainFrm.cpp
+
+  Change to use common CSubprocess.
+
+2000-03-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/Configtool.dsp:
+
+	Add source and header for the admin tool
+	'please wait' dialog.
+
+2000-02-29  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/win32/CellView.cpp:
+
+	Compare the current cell contents with the current
+	value of the option when cancelling a cell edit.
+
+	* common/common/build.cxx:
+
+	Tidy source code.
+
+2000-02-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/MainFrm.cpp:
+
+	Modify PrepareEnvironment() to add the bin directory
+	of the install tree to the path as appropriate.
+
+2000-02-28 Simon FitzMaurice <sdf@redhat.co.uk>
+  * ChangeLog
+    standalone\win32\MainFrm.cpp
+
+  Correct logic in PrepareEnvironment()
+
+2000-02-25  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/MainFrm.cpp:
+
+	Modify PrepareEnvironment() to add the Cygwin 1.0
+	contrib/bin directory to the path as appropriate.
+
+2000-02-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/win32/MainFrm.cpp:
+
+	Modify PrepareEnvironment() to place the host tools
+	directory at the head of the PATH and define the
+	ECOS_REPOSITORY environment variable for use by the
+	ecosconfig CLUI tool.
+
+2000-02-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/win32/CdlTemplatesDialog.cpp,
+	  common/win32/CdlTemplatesDialog.h:
+
+	Add new UpdateDetails() member function to display the
+	selected packages from both the hardware and non-hardware
+	templates. The previous distinction was confusing.
+  
+	Sort the package aliases in the 'details' box.
+
+	* common/win32/CTCommon.rc:
+	
+	Tweak static text in the template selection dialog to
+	reflect the new functionality.
+
+2000-02-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* standalone/common/cdl_exec.cxx:
+
+	Modify cdl_exec::cmd_list() to sort the packages,
+	targets and templates into alphabetical order.	
+
+2000-02-23  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/win32/CTCommonDoc.cpp:
+
+	Call SwitchMemoryLayout() rather than NewMemoryLayout()
+	when importing a minimal save file or selecting new
+	hardware since the required memory layout files may not yet
+	be in the MLT directory.
+
+	* standalone/win32/ConfigToolDoc.cpp:
+
+	Modify SwitchMemoryLayout() to pass the MLT file paths to
+	CFileFind::FindFile() correctly.
+
+2000-02-22 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTUtils.*
+ 
+  CTUtils has moved to utils folder.
+  HTMLHelpLinkFileName and ShowHtmlHelp are now in doc class.
+
+2000-02-22 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CellView.cpp
+    common\win32\ControlView.cpp
+
+  Fix problem with synchronization of cell and control views w/ mouse wheel movements.
+
+2000-02-21 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.cpp
+    common\win32\CTCommonres.h
+    common\win32\CellView.cpp
+    common\win32\ConfigToolDoc.h
+    common\win32\cellview.h
+    common\win32\stdafx.h
+    standalone\common\ChangeLog
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+
+  Move CTUtils and cell editing classes to Utils folder.
+  Construct MultiLineEdit dialog from memory to avoid creating a Utils resource.
+
+2000-02-18  Drew Moseley  <dmoseley@cygnus.com>
+
+	* common/win32/ConfigItem.cpp: Support for CodeCoordinates
+
+2000-02-18  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/win32/CTCommonDoc.cpp:
+
+	Call UpdateAllViews(NULL, MemLayoutChanged) from
+	NewMemoryLayout() instead of various other functions.
+	The MLT view was not being updated correctly following
+	a change of hardware template.
+
+2000-02-18 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+
+  Correct tab order in find dialog.
+
+2000-02-18 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ControlView.cpp
+    common\win32\FindDialog.cpp
+    common\win32\stdafx.h
+
+  Support searching in values.
+
+2000-02-17 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+
+  Do not disable callbacks during template selection (allow conflicts dialog to run)
+
+2000-02-16 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\ConfigViewOptionsDialog.cpp
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Add support for adding platforms at run-time
+  Ensure .chm file is only rebuild when necessary.
+
+2000-02-15 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+    
+  Avoid using html folder.
+   
+2000-02-15 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+    
+  Use checked-in html files in HTMLHelp generation: include contents and index page generation.
+   
+2000-02-15 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp  
+    common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\ConfigToolDoc.h
+    common\win32\FolderDialog.cpp
+    common\win32\NewFolderDialog.cpp
+    standalone\win32\ConfigToolDoc.cpp
+    
+  Add error checking to the document-saving process.
+  Emit meaningful error messages if save fails.    
+  Restore document title and path if save fails.
+  Fix Save As.  
+
+2000-02-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\IdleMessage.cpp
+    common\win32\Thermometer.cpp :
+
+    More changes from Piet.
+
+2000-02-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\common\build.cxx
+    common\common\build.hxx
+    common\common\flags.cxx
+    common\common\flags.hxx
+    standalone\common\cdl_exec.cxx
+    standalone\common\cdl_exec.hxx
+    standalone\common\ecosconfig.cxx  
+    standalone\common\ecosconfig.hxx
+
+  Update copyright headers in files with non-standard extensions :-).
+    
+2000-02-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\AddRemoveDialog.cpp
+    common\win32\AddRemoveDialog.h
+    common\win32\BuildOptionsDialog.cpp
+    common\win32\BuildOptionsDialog.h
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.cpp
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\CTPropertiesDialog.cpp
+    common\win32\CTPropertiesDialog.h
+    common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\CdlPackagesDialog.cpp
+    common\win32\CdlPackagesDialog.h
+    common\win32\CdlTemplatesDialog.cpp
+    common\win32\CdlTemplatesDialog.h
+    common\win32\Cell.cpp
+    common\win32\Cell.h
+    common\win32\CellEdit.cpp
+    common\win32\CellEdit.h
+    common\win32\CellView.cpp
+    common\win32\ComboEdit.cpp
+    common\win32\ComboEdit.h
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ConfigToolDoc.h
+    common\win32\ConfigViewOptionsDialog.cpp
+    common\win32\ConfigViewOptionsDialog.h
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    common\win32\DescView.cpp
+    common\win32\DescView.h
+    common\win32\DoubleEdit.cpp
+    common\win32\DoubleEdit.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    common\win32\FindDialog.cpp
+    common\win32\FindDialog.h
+    common\win32\FolderDialog.cpp
+    common\win32\FolderDialog.h
+    common\win32\IdleMessage.cpp
+    common\win32\IdleMessage.h
+    common\win32\IncludeSTL.h
+    common\win32\IntegerEdit.cpp
+    common\win32\IntegerEdit.h
+    common\win32\MultiLineEditDialog.cpp
+    common\win32\MultiLineEditDialog.h
+    common\win32\NewFolderDialog.cpp
+    common\win32\NewFolderDialog.h
+    common\win32\NotePage.cpp
+    common\win32\PropertiesList.cpp
+    common\win32\PropertiesList.h
+    common\win32\PropertiesView.cpp
+    common\win32\PropertiesView.h
+    common\win32\RegionGeneralPage.cpp
+    common\win32\RegionGeneralPage.h
+    common\win32\RulesList.cpp
+    common\win32\RulesList.h
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h
+    common\win32\SectionGeneralPage.cpp
+    common\win32\SectionGeneralPage.h
+    common\win32\SectionRelocationPage.cpp
+    common\win32\SectionRelocationPage.h
+    common\win32\SplitterWndEx.cpp
+    common\win32\SplitterWndEx.h
+    common\win32\StdAfx.cpp
+    common\win32\StringEdit.cpp
+    common\win32\StringEdit.h
+    common\win32\TTListCtrl.cpp
+    common\win32\TTListCtrl.h
+    common\win32\Thermometer.cpp
+    common\win32\Thermometer.h
+    common\win32\cellview.h
+    common\win32\memmap.cpp
+    common\win32\memmap.h
+    common\win32\messagebox.cpp
+    common\win32\messagebox.h
+    common\win32\mltview.cpp
+    common\win32\mltview.h
+    common\win32\notepage.h
+    common\win32\resource.h
+    common\win32\stdafx.h
+    common\win32\thinsplitter.cpp
+    common\win32\thinsplitter.h
+    standalone\win32\BCMenu.cpp
+    standalone\win32\BCMenu.h
+    standalone\win32\BinDirDialog.cpp
+    standalone\win32\BinDirDialog.h
+    standalone\win32\CTres.cpp
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.h
+    standalone\win32\MLTFrame.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\OutputView.cpp
+    standalone\win32\OutputView.h
+    standalone\win32\Splash.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+    standalone\win32\splash.cpp
+
+  Update copyright headers
+
+2000-02-11  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\ecosconfig.cxx:
+
+  Update ecosconfig version string to "1.3.1".
+
+2000-02-09 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    standalone\win32\Configtool.dsp
+
+  Avoid crash in HTMLHelp 1.3 when "What's This?" windows deactivated.
+  Provide hook to disable "What's This?" help for dialogs requiring context menus.
+
+2000-02-08  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.rc:
+
+  Update 'about' box version string for release 1.3.1.
+
+2000-02-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\ConfigToolDoc.cpp
+
+  Keep test list sorted
+
+2000-02-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\IdleMessage.cpp
+    common\win32\Thermometer.cpp
+
+  Changes from Piet for new ref counting interface.
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\BCMenu.cpp
+    standalone\win32\BCMenu.h
+
+  Reinsert copyright header
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.rc
+
+  Remove unused bitmaps
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\CTres.h
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.rc
+
+  Remove scrolling credits
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    standalone\win32\MainFrm.cpp
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+
+  Introduce \D_WIN32_IE=0x0400
+
+2000-02-07  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\res\Splsh16.bmp:
+
+	Update splash screen for release 1.3.1.
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Remove unused variables (in particular, timer which was being killed but not created)
+
+2000-02-04 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+  
+  Remove MappedBitmapButton  
+  
+2000-02-04 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.h
+    standalone\win32\MainFrm.h
+
+  Ensure shortcuts for popup menus functional.
+
+  * common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\RulesView.cpp
+    common\win32\StdAfx.cpp
+    common\win32\mltview.cpp
+    common\win32\mltview.h
+    common\win32\stdafx.h
+    standalone\win32\OutputView.cpp
+    standalone\win32\OutputView.h
+
+  Correct for abnormal behaviour of vsnprintf under NT.
+
+  * standalone\win32\Configtool.rc
+
+  Output view context menu "Save" should have ellipsis.
+    
+  * standalone\win32\ecosconfig.dsp
+
+  Use cdl from v:\ide 
+
+2000-02-04 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommonres.h
+    standalone\win32\CTres.h
+
+  These files cannot have copyright banners.
+
+2000-02-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+
+  Allow overlapping solutions.
+  Display dialog in respect of conflicts without solutions.
+
+  * standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\MainFrm.cpp
+    common\win32\RulesList.cpp
+    common\win32\RulesView.cpp
+
+  Remove unnecessary #includes
+
+2000-02-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    common\win32\ConfigToolDoc.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    common\win32\RulesList.cpp
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h
+
+  Implement multiple selection in Resolve Conflicts dialog and conflicts window.
+  Add "Resolve" context menu item to conflicts window.
+
+2000-02-02 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\ConfigItem.cpp
+
+  Ensure when package is unloaded stale tree handles are not accessed.
+
+2000-02-02 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\FailingRulesDialog.cpp
+
+  Rework to avoid use of CConfigItems (because fixes may involve packages not yet loaded)
+
+2000-02-02 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\SectionGeneralPage.cpp
+    common\win32\SectionRelocationPage.cpp
+
+  Changes required by IDE API changes.
+
+2000-02-02 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\MainFrm.cpp
+
+  Make sure to reset the CSubProcess pointer to null if we fail to run the subprocess.
+
+2000-02-01 Simon FitzMaurice <sdf@redhat.co.uk>
+  * standalone\win32\BCMenu.cpp
+    standalone\win32\BCMenu.h
+    standalone\win32\CreditStatic.cpp
+    standalone\win32\CreditStatic.h
+
+  These files shouldn't have our copyright on them yet.
+
+2000-02-01 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\win32\AddRemoveDialog.cpp 
+    common\win32\AddRemoveDialog.h 
+    common\win32\BuildOptionsDialog.cpp 
+    common\win32\BuildOptionsDialog.h 
+    common\win32\CTCommonDoc.cpp 
+    common\win32\CTCommonres.cpp 
+    common\win32\CTCommonres.h 
+    common\win32\CTOptionsDialog.cpp 
+    common\win32\CTOptionsDialog.h 
+    common\win32\CTPropertiesDialog.cpp 
+    common\win32\CTPropertiesDialog.h 
+    common\win32\CTUtils.cpp 
+    common\win32\CTUtils.h 
+    common\win32\CdlPackagesDialog.cpp 
+    common\win32\CdlPackagesDialog.h 
+    common\win32\CdlTemplatesDialog.cpp 
+    common\win32\CdlTemplatesDialog.h 
+    common\win32\Cell.cpp 
+    common\win32\Cell.h 
+    common\win32\CellEdit.cpp 
+    common\win32\CellEdit.h 
+    common\win32\CellView.cpp 
+    common\win32\ComboEdit.cpp 
+    common\win32\ComboEdit.h 
+    common\win32\ConfigItem.cpp 
+    common\win32\ConfigItem.h 
+    common\win32\ConfigToolDoc.h 
+    common\win32\ConfigViewOptionsDialog.cpp 
+    common\win32\ConfigViewOptionsDialog.h 
+    common\win32\ControlView.cpp 
+    common\win32\ControlView.h 
+    common\win32\DescView.cpp 
+    common\win32\DescView.h 
+    common\win32\DoubleEdit.cpp 
+    common\win32\DoubleEdit.h 
+    common\win32\FailingRulesDialog.cpp 
+    common\win32\FailingRulesDialog.h 
+    common\win32\FindDialog.cpp 
+    common\win32\FindDialog.h 
+    common\win32\FolderDialog.cpp 
+    common\win32\FolderDialog.h 
+    common\win32\IdleMessage.cpp 
+    common\win32\IdleMessage.h 
+    common\win32\IncludeSTL.h 
+    common\win32\IntegerEdit.cpp 
+    common\win32\IntegerEdit.h 
+    common\win32\MultiLineEditDialog.cpp 
+    common\win32\MultiLineEditDialog.h 
+    common\win32\NewFolderDialog.cpp 
+    common\win32\NewFolderDialog.h 
+    common\win32\NotePage.cpp 
+    common\win32\PropertiesList.cpp 
+    common\win32\PropertiesList.h 
+    common\win32\PropertiesView.cpp 
+    common\win32\PropertiesView.h 
+    common\win32\RegionGeneralPage.cpp 
+    common\win32\RegionGeneralPage.h 
+    common\win32\RulesList.cpp 
+    common\win32\RulesList.h 
+    common\win32\RulesView.cpp 
+    common\win32\RulesView.h 
+    common\win32\SectionGeneralPage.cpp 
+    common\win32\SectionGeneralPage.h 
+    common\win32\SectionRelocationPage.cpp 
+    common\win32\SectionRelocationPage.h 
+    common\win32\SplitterWndEx.cpp 
+    common\win32\SplitterWndEx.h 
+    common\win32\StdAfx.cpp 
+    common\win32\StringEdit.cpp 
+    common\win32\StringEdit.h 
+    common\win32\TTListCtrl.cpp 
+    common\win32\TTListCtrl.h 
+    common\win32\Thermometer.cpp 
+    common\win32\Thermometer.h 
+    common\win32\cellview.h 
+    common\win32\listctrltoview.inl 
+    common\win32\memmap.cpp 
+    common\win32\memmap.h 
+    common\win32\messagebox.cpp 
+    common\win32\messagebox.h 
+    common\win32\mltview.cpp 
+    common\win32\mltview.h 
+    common\win32\notepage.h 
+    common\win32\resource.h 
+    common\win32\thinsplitter.cpp 
+    common\win32\thinsplitter.h 
+    common\win32\treectrltoview.inl 
+    standalone\win32\BCMenu.cpp 
+    standalone\win32\BCMenu.h 
+    standalone\win32\BinDirDialog.cpp 
+    standalone\win32\BinDirDialog.h 
+    standalone\win32\CTres.cpp 
+    standalone\win32\CTres.h 
+    standalone\win32\ConfigToolDoc.cpp 
+    standalone\win32\Configtool.cpp 
+    standalone\win32\Configtool.h 
+    standalone\win32\Configtool.rc 
+    standalone\win32\CreditStatic.cpp 
+    standalone\win32\CreditStatic.h 
+    standalone\win32\MLTFrame.h 
+    standalone\win32\MainFrm.cpp 
+    standalone\win32\MainFrm.h 
+    standalone\win32\MappedBitmapButton.cpp 
+    standalone\win32\MappedBitmapButton.h 
+    standalone\win32\OutputView.cpp 
+    standalone\win32\OutputView.h 
+    standalone\win32\Splash.h 
+    standalone\win32\ViewOptions.cpp 
+    standalone\win32\ViewOptions.h 
+    standalone\win32\splash.cpp:
+
+  Normalize copyright headers.
+
+2000-01-31 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28 Simon FitzMaurice  <sdf@redhat.co.uk>
+
+  * standalone\win32\MainFrm.cpp
+
+  Remove redundant status bar pane.  
+  Allow LH pane to occupy all remaining space.
+
+2000-01-28 Simon FitzMaurice  <sdf@redhat.co.uk>
+  
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+
+  Introduce resource IDs for Help menu help URLs
+
+  * common\win32\CTCommonDoc.cpp
+
+  Ensure global conflicts resolution considers all changes.
+
+  * common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    standalone\win32\Configtool.cpp
+
+  Provide function to return "link2.htm" full path name; delete this file on app exit.
+
+  * common\win32\FailingRulesDialog.cpp
+
+  Fix greying of All button; do not allow All and None buttons to affect non-visible items.
+
+  * standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Introduce HTMLHelp navigation complete handler (not functional yet)
+
+2000-01-28  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\ConfigtoolDoc.cpp:
+
+	Modify OnBuildTemplates() to call SelectHardware()
+	before SelectTemplate() rather than after it. This
+	ensures that CDL option values specified in the
+	template are applied to the new HAL rather than the
+	old one.
+
+2000-01-27  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\ecosconfig.cxx,
+	  standalone\common\cdl_exec.cxx,
+	  standalone\common\cdl_exec.hxx:
+
+	Use the inference callback function to report resolved
+	conflicts for all commands, not just 'resolve'.
+
+	Add '--no-resolve' qualifier to explicitly disable the
+	inference engine.
+
+2000-01-25  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\Configtool.cpp,
+	  standalone\win32\Configtool.h:
+
+	Add new GetInstallVersionKey() member function to
+	retrieve the path to the eCos installation version
+	key from the registry.
+
+	Modify LoadStdProfileSettings() to observe the default
+	build tools and user tools paths specified by the
+	installer.
+
+2000-01-25  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Fix cygpath() to use the no-space file path when built
+	under Cygwin.
+
+	* standalone\win32\Configtool.rc:
+
+	Update version resource and copyright strings for
+	release 1.3.
+
+2000-01-21 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+
+  Ensure modified flag is set following [hardware] template changes.
+
+2000-01-21 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\mltview.h
+    standalone\win32\CTres.h
+    standalone\win32\Configtool.h
+
+  Remove use of class CProperties
+
+  * standalone\win32\Configtool.rc
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+
+  Remove "expand\collapse tree" option
+
+2000-01-21  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp:
+
+	Modify CurrentTestingIdentifier() to return the CDL
+	target identifier. This is now the _default_ testing
+	identifier and should be overridable in one of the
+	eCosTest dialogs.
+
+2000-01-21  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp:
+
+	Modify OnFileImport() to accommodate recent libCDL API
+	change.
+
+2000-01-21  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\ecosconfig.cxx:
+
+	Add '--version' switch to show tool version, build time
+	and copyright notice.
+
+2000-01-19 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    standalone\win32\Configtool.rc
+
+    Move help about text to standlone-specific resource and update.
+
+2000-01-19  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\res\Splsh16.bmp:
+
+	Update splash screen for release 1.3.
+
+2000-01-18 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.rc
+
+  Update version info.
+
+2000-01-18 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    standalone\win32\CTres.h
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+    Cygnus -> Red Hat (excluding copyrights)
+
+2000-01-18 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    standalone\win32\ConfigToolDoc.cpp
+
+  Move code appropriate to package unloading etc... to common function RegenerateData()
+
+  * standalone\win32\MainFrm.cpp
+
+  Do not display toolbars too early.
+
+2000-01-17 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ConfigToolDoc.h
+
+  Correct accidental removal of RunTests() function.
+
+2000-01-14 Simon FitzMaurice  <sdf@redhat.co.uk>?
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.cpp
+    common\win32\CTCommonres.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+
+  Slightly clearer text on conflicts dialog CSH.  Renamed *FAILING_RULES* resources *RESOLVE_CONFLICTS*.
+
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.dsp
+
+  Grouped test running code in one place in standalone tool.  
+  Corrected action on save document if user cancels from resolve conflicts dialog.
+
+2000-01-13 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\BCMenu.cpp
+    standalone\win32\BCMenu.h
+
+  Picked up later versions
+
+  * standalone\win32\MainFrm.cpp
+
+  Fix toolbar persistence
+
+  * standalone\win32\Configtool.rc
+    standalone\win32\res\Toolbar.bmp
+
+  Adjust toolbar heights
+
+2000-01-12  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp:
+
+	Modify GenerateHeaders() to avoid copying non-config
+	headers to the install tree in the standalone config
+	tool. The make system does this copying.
+
+	* standalone\win32\MainFrm.cpp:
+
+	Modify OnToolsShell() to invoke the shell even if the
+	build tree is not yet known.
+
+	Modify PrepareEnvironment() to avoid mounting the
+	logical drives containing the build, install and
+	repository trees if this information is not yet known.
+
+2000-01-11  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\ConfigToolDoc.h,
+	  standalone\win32\ConfigToolDoc.cpp:
+
+	Restrict use of short file paths to the generation of
+	GNU makefiles only, now that the IDE will quote file paths
+	containing spaces. A few additional short paths remain
+	pending migration to the use of GnuCompiler::addInclude().
+
+2000-01-11  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp:
+
+	Modify SelectTemplate() and SelectHardware() to
+	avoid copying new MLT files to the build tree if
+	the document has not yet been saved.
+
+2000-01-11 Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    common\win32\DescView.cpp
+    common\win32\PropertiesView.cpp
+    common\win32\RulesView.cpp
+    common\win32\mltview.cpp
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  * Restore missing string resource ID
+    Continue top-level CSH implementation
+
+2000-01-11 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.cpp
+    common\win32\CTCommonres.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    common\win32\StdAfx.cpp
+
+  Update conflicts dialog to reflect EID.
+
+  * standalone\win32\ConfigToolDoc.cpp
+    common\win32\CellView.cpp
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    common\win32\DescView.cpp
+    common\win32\DescView.h
+    common\win32\PropertiesView.cpp
+    common\win32\PropertiesView.h
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h
+    common\win32\cellview.h
+    common\win32\mltview.cpp
+    common\win32\mltview.h
+
+  F1 help for top-level windows  
+
+2000-01-11  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\RulesList.cpp,
+	  common\win32\RulesList.h,
+	  common\win32\RulesView.cpp,
+	  common\win32\RulesView.h:
+
+	Restore double-click handling to the conflicts view.
+
+	Move the AssociatedItemName() function from the
+	RulesView class to the RulesList class and rename
+	to AssociatedItem() for use by the double-click
+	handler.
+
+2000-01-10  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommon.rc,
+	  common\win32\CTCommonres.h,
+	  
+	Modify the constructor to calculate the default
+	repository location from the plug-in installation
+	location if the per-user registry value is not
+	found.
+
+2000-01-10  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\CTres.h,
+	  standalone\win32\CTres.cpp,
+	  standalone\win32\CdlTemplatesDialog.cpp (remove),
+	  standalone\win32\CdlTemplatesDialog.h (remove),
+	  standalone\win32\Configtool.rc,
+	  common\win32\CTCommon.rc,
+	  common\win32\CTCommonres.cpp,
+	  common\win32\CTCommonres.h,
+	  common\win32\CdlTemplatesDialog.cpp (add),
+	  common\win32\CdlTemplatesDialog.h (add),
+	  standalone\win32\Configtool.dsp:
+
+	Make the enhanced template selection dialog common
+	between the standalone and plug-in versions of
+	the eCos configuration tool.
+
+2000-01-10  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\CTres.h,
+	  standalone\win32\CdlTemplatesDialog.cpp,
+	  standalone\win32\CdlTemplatesDialog.h,
+	  standalone\win32\Configtool.rc:
+
+	Add list of packages in the selected software template
+	to the templates dialog box in preparation for commoning
+	the standalone and plug-in versions of the dialog.
+
+2000-01-07 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\ConfigToolDoc.cpp
+
+  Treat the result of ResolveGlobalConflicts correctly
+
+2000-01-07 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\PropertiesList.cpp
+
+  CR 901982
+
+2000-01-06 Simon FitzMaurice  <sdf@redhat.co.uk>
+  *  common\win32\ControlView.cpp
+
+  CR 901981
+
+2000-01-05  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp,
+	  standalone\win32\ConfigToolDoc.cpp,
+	  common\win32\ConfigTool.h:
+
+	Modify SelectTemplate() to accommodate a template
+	version parameter.
+
+	Add a new member variable (m_template_version) to
+	the document class to hold the version of currently
+	selected template since this cannot be obtained from
+	libCDL.
+
+	Modify OpenRepository() to use the new template version
+	member variable.
+
+	* standalone\win32\ConfigToolDoc.cpp,
+
+	Pass template version parameter in all calls to
+	CConfigToolDoc::SelectTemplate().
+
+	* standalone\win32\CdlTemplatesDialog.cpp,
+	  standalone\win32\CdlTemplatesDialog.h,
+	  standalone\win32\Configtool.rc,
+	  standalone\win32\CTres.h,
+
+	Add new template version combo box to the template selection
+	dialog.
+
+2000-01-04  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\Configtool.rc:
+
+	Update copyright notices for the new year.
+
+1999-12-22 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonres.cpp
+    standalone\win32\CTres.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+
+  Dummy CSH for dialogs.
+
+1999-12-21 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.cpp
+    
+  Migrate mapping of common control IDs to eCosTestDialog
+
+1999-12-21 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    common\win32\ControlView.cpp
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\stdafx.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.rc
+    
+  Introduce separate help maps for each component.
+
+1999-12-21 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\FileName.cpp
+
+  Fix it.
+
+1999-12-21  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp
+
+	Provide an implementation of the minimal eCos
+	configuration import function.
+
+1999-12-21  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp
+	  common\win32\ConfigToolDoc.h
+	  standalone\win32\CTres.h
+	  standalone\win32\ConfigToolDoc.cpp
+	  standalone\win32\Configtool.rc
+
+	Add new menu items for the import and export of
+	minimal eCos configuration save files. Provide
+	an implementation of the export function.
+
+1999-12-17 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\FileName.cpp
+    common\win32\FileName.h
+
+  Move to Utils directory
+
+1999-12-17 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\FileName.cpp
+    common\win32\FileName.h
+
+  Add ReplaceExtension() function
+
+  * common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\eCosPropertyPage.cpp
+    common\win32\eCosPropertyPage.h
+
+  Use common code between Dialog and Property page variants of CSH classes.
+
+  * standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.h
+    standalone\win32\MainFrm.cpp
+
+  Set default .chm file name from executable name
+
+1999-12-20  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTUtils.cpp
+
+	Fix CUtils::StripExtraWhitespace() to replace a sequence
+	of whitespace characters with a single space character
+	rather than preserving the first whitespace character in
+	the sequence.
+
+1999-12-20  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\cdl_exec.cxx,
+	  standalone\common\cdl_exec.hxx,
+	  standalone\common\ecosconfig.cxx:
+
+	Enhance 'new' and 'template' commands to accept a template
+	version argument.
+
+	Add 'import' and 'export' commands for the manipulation of
+	minimal save files.
+
+1999-12-17 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\PropertiesList.cpp
+    common\win32\PropertiesList.h
+
+  Fix problem of multiple requires properties not all displaying 
+    
+  * common\win32\CTUtils.cpp
+
+  Speed up StripExtraWhitespace to allow properties view to paint nicely
+
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    standalone\win32\ConfigToolDoc.cpp
+
+  Ensure minimal work on saving an unmodified doc
+
+  * standalone\win32\MainFrm.cpp
+
+  Ensure current dir selected in build tools dialog
+
+1999-12-17  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\memmap.cpp:
+
+	Initialise the memory map size.
+
+1999-12-17 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Restore "automounting" of drives for install and build trees + repository
+
+1999-12-16 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\MainFrm.cpp
+  
+  Ensure standalone config tool view menu checkmarks assume state on app initialisation
+
+1999-12-16 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\FailingRulesDialog.cpp
+
+  Prevent crash in release build: ASSERT->VERIFY
+
+  * common\win32\ControlView.cpp
+
+  Prevent crash in release build: test on NULL!=GetFocus()
+
+1999-12-14 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    common\win32\FileName.cpp
+    common\win32\FileName.h
+    standalone\win32\ConfigToolDoc.cpp
+
+  Work around problem w\ spaces in filenames: remove spaces from install tree, build tree and repository
+
+1999-12-14 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CSHDialog.cpp
+    common\win32\CSHDialog.h
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+
+  Add overridable GetInstanceHandle()
+
+  * standalone\win32\ConfigToolDoc.cpp
+
+  Close document before invoking pkgadmin dialog
+        
+1999-12-13 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CSHPropertyPage.cpp
+    common\win32\CSHPropertyPage.h
+    
+  Match guicommon version 
+    
+  * standalone\win32\Configtool.dsp
+    common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    common\win32\eCosDialog.h
+    common\win32\eCosPropertyPage.h
+    standalone\win32\CTres.h
+    standalone\win32\Configtool.rc
+
+  Move IDR_MLTBAR and IDB_BITMAP2 to common resources
+
+  * standalone\win32\ConfigToolDoc.cpp
+
+  Improve handling when tools admin
+
+1999-12-13  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp,
+	  common\win32\ConfigItem.cpp,
+	  common\win32\ConfigToolDoc.h,
+	  standalone\win32\CdlTemplatesDialog.cpp:
+
+	Synchronize with recent libCDL API changes.
+
+1999-12-13  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\cdl_exec.cxx,
+	  standalone\common\cdl_exec.hxx:
+
+	Synchronize with recent libCDL API changes.
+
+1999-12-13  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\MainFrm.cpp:
+
+	Modify Build() function to form 'make <target>'	command
+	strings correctly.
+
+1999-12-10  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx.
+
+	Define the make variable OBJCOPY for use by CDL custom
+	rules.
+
+1999-12-09 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonres.h
+    standalone\win32\CTres.h
+    
+  Renumber resource IDs  (CR 901703)
+
+
+  * common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+
+  Disable buttons as appropriate on dialog initialization (CR 901688)
+
+1999-12-09 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\MainFrm.cpp
+
+  Move persistence of registry to Software\Cygnus Solutions\eCos\Common\Repository\folder.
+
+1999-12-08 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Use IDE debugger as far as possible (not functional yet).
+  Call pkgadmin as built-in dialog
+
+1999-12-07 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+
+  Remove reference to runtestssheet
+
+1999-12-07 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    
+    Restore standard app string ids
+    
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    standalone\win32\ConfigToolDoc.cpp
+
+    Use function to determine test executable names
+
+  * common\win32\ControlView.cpp
+
+    Remove unused variable
+
+1999-12-07  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\cdl_exec.cxx,
+	  standalone\common\cdl_exec.hxx,
+	  standalone\common\ecosconfig.cxx:
+
+	Add 'list' command to view the repository database.
+
+1999-12-06 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\subprocess.cpp
+    common\win32\subprocess.h
+    common\win32\CTCommonDoc.cpp
+    common\win32\Thermometer.cpp
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\OutputView.cpp
+    standalone\win32\OutputView.h
+
+  Overhaul CSubprocess class
+
+1999-12-06  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\cdl_exec.cxx,
+	  standalone\common\cdl_exec.hxx,
+	  standalone\common\ecosconfig.cxx:
+
+	Rename 'hardware' command to 'target' in line with
+	libCDL error messages.
+
+1999-12-03  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Modify generate_toplevel_makefile() to honour the
+	priorities of custom make rules.
+
+	Modify generate_toplevel_makefile() to ignore the
+	install tree during 'make clean'.
+
+1999-12-03  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Modify cygpath() to use the Cygwin function
+	cygwin_conv_to_posix_path() for Cygwin builds.
+
+1999-12-02 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\StdAfx.cpp
+    common\win32\stdafx.h
+
+  Move trace fn to global namespace
+
+1999-12-02 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\stdafx.h
+
+  Circumvent 512 character limit in TRACE
+
+1999-12-02  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Modify generate_makefile() to resolve <PACKAGE> tokens.
+
+1999-12-01  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Modify generate_toplevel_makefile() and
+	generate_makefile() to resolve <PREFIX> and
+	<REPOSITORY> tokens.
+
+	Modify generate_makefile() to use the VPATH with
+	wildcard expansion to accommodate 'make -n' for
+	custom rules.
+
+1999-12-01 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\RulesView.cpp
+    common\win32\RulesView.h
+
+  Make locate work properly on both columns in conflicts view.
+
+1999-12-01 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+  
+  Place exception handler around get_build_info() call
+  
+1999-12-01 Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\ConfigToolDoc.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\MainFrm.cpp
+
+  More conflict resolution work - for global conflicts
+
+  * common\win32\FileName.cpp
+    common\win32\FileName.h
+
+  Introduce file-finding utility function.
+
+1999-12-01  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommon.rc:
+
+	Add Robert Erskine to the list of eCos team members in the
+	'Help About' dialog box.
+
+1999-12-01  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\cdl_exec.cxx,
+	  standalone\common\cdl_exec.hxx:
+
+	Add inference_callback() function to report resolved
+	conflicts.
+
+	Modify cmd_resolve() to use the new inference_callback()
+	function.
+
+1999-11-30  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Modify generate_makefile() to make the 'headers' target
+	dependent on the new 'mlt_headers' target defined in
+	pkgconf\rules.mak.
+
+1999-11-30  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Modify generate_makefile() to generate separate rules
+	for copying each header file to the install tree. This
+	speeds up 'make headers' considerably.
+
+1999-11-30  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Modify generate_makefile() to replicate the global
+	variables in each package makefile. This facilitates the
+	rebuilding of individual packages in isolation.
+
+1999-11-26  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    common\win32\ConfigToolDoc.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.rc
+
+  Moved sourceware references to be standalone-specific
+
+  * common\win32\CTCommonDoc.cpp
+
+  Do not complain about failing rules if document already saved
+
+  * standalone\win32\MainFrm.cpp
+
+  Try global conflict resolution
+
+1999-11-29  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\ecosconfig.cxx,
+	  standalone\common\cdl_exec.cxx,
+	  standalone\common\cdl_exec.hxx:
+
+	Add experimental 'resolve' command to resolve global
+	configuration conflicts.
+
+1999-11-29  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\ecosconfig.cxx,
+	  standalone\common\ecosconfig.h:
+
+	Add new function trim_path() to remove the trailing
+	directory separator char (if present) from a
+	file path.
+
+	Call trim_path() on the user-specified repository and
+	install tree paths.
+
+1999-11-26  Simon FitzMaurice  <sdf@redhat.co.uk>
+  *  common\win32\CellView.cpp
+
+  Ignore empty strings in integer or floating cells - only are legal as intermediate values
+
+1999-11-26  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Now using CDL test name values to find test executables.
+
+  * standalone\win32\ViewOptions.cpp
+
+  Test for existence of viewer is not enough: it must be a file
+
+1999-11-26  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\ConfigToolDoc.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Introduce class for registry access and simplify code accordingly
+  Remove some more unused variables and code
+  Prevent thread calculating thermometer max accessing GUI objects
+
+1999-11-26  John Dallaway  <jld@redhat.co.uk>
+
+	* common\common\build.cxx:
+
+	Add path_to_vector() and nospace_path() functions to
+	calculate a Win32 file path which does not contain
+	spaces but which otherwise preserves long directory
+	names.
+
+	Modify cygpath() to use nospace_path() rather than
+	call GetShortPathNameA() directly.
+
+1999-11-25  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ControlView.cpp
+  Correct find bug.
+
+1999-11-25  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\ConfigToolDoc.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\OutputView.cpp
+
+  Use a smooth progress control for accuracy.
+  Remove more unused stuff.
+  Use a better algorithm for estimating a build duration.
+
+1999-11-25  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\win32\ConfigToolDoc.cpp,
+
+	Modify SwitchMemoryLayout() to copy default memory
+	layout files only where they do not already exist
+	at the destination location.
+
+	* common\win32\ConfigItem.cpp:
+
+	Modify the string version of SetValue() to reference the
+	transaction object as appropriate.
+
+1999-11-25  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+  Correct confusion between UNICODE and ANSI in reading registry for bin dirs
+
+1999-11-25  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ControlView.cpp
+  Normalize IsActive, IsEnabled functions in CConfigitem.
+  Removed unused members from CConfigItem
+  Removed m_nIndex from CConfigItem
+  Fixed NULL transaction being passed to cdl layer
+
+  * standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+  Removed unused members 
+
+  * common\win32\SplitterWndEx.cpp
+    common\win32\SplitterWndEx.h
+  Fixed crash on hiding MLT
+
+  * common\win32\CTCommonres.h
+    standalone\win32\CTres.h
+  Restored IDS_REGKEY
+
+1999-11-25  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ControlView.cpp
+    common\win32\SplitterWndEx.cpp
+    common\win32\SplitterWndEx.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+
+1999-11-25  John Dallaway  <jld@redhat.co.uk>
+
+	* common\win32\CTCommonDoc.cpp:
+
+	Modify SaveMemoryMap() to no longer export the memory
+	layout to the build tree. The layout is now only exported
+	to the install tree.
+
+	Modify CopyMLTFiles() to no longer copy the default memory
+	layout exports from the repository to the build tree. The
+	layouts are now only copied to the install tree and only
+	where they are not already present. 
+
+	Modify MLTDir() to generate the MLT save file directory path
+	by appending "_mlt" to the root name of the config save file.
+
+	Modify UpdateBuildInfo() to correctly pass the install tree
+	path to generate_build_tree().
+
+	* standalone\win32\ConfigToolDoc.cpp:
+
+	Modify SwitchMemoryLayout() to make correct use of the
+	MLTDir() function.
+
+	Modify OnOpenDocument() and OnSaveDocument() to call
+	SetPathName() explicitly such that MLTDir() returns the correct
+	value.
+
+	Modify SetPathName() to generate the build and install
+	directory paths by appending "_build" and "_install" respectively
+	to the root name of the config save file.
+
+1999-11-25  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\ConfigToolDoc.cpp
+
+  Use "native" in the case of no toolchain prefix.
+
+1999-11-25  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.h
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+  Complete changes for build paths and remove yet more unused variables.
+  Place registry keys in string resources.
+
+1999-11-24  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ConfigToolDoc.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    common\win32\PropertiesList.cpp
+    common\win32\PropertiesList.h
+    common\win32\PropertiesView.cpp
+    common\win32\RulesList.cpp
+    common\win32\RulesList.h
+    common\win32\RulesView.cpp
+    common\win32\eCosDialog.cpp
+    common\win32\mltview.cpp
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\MainFrm.cpp
+
+  More work on failing rules correction.
+  Removed CTarget class.
+  Added TTListCtrl class for list control tooltips.
+  Simplified MLTView tooltips (didn't fix problem though)
+
+1999-11-24  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\ecosconfig.cxx,
+	  standalone\common\cdl_exec.cxx,
+	  common\common\build.cxx:
+
+	Call cygwin_conv_to_win32_path() in Cygwin builds to
+	process Cygwin-style directory paths on the ecosconfig
+	command line. Such paths are not understood universally
+	by the Cygwin tcl library.
+
+1999-11-23  John Dallaway  <jld@redhat.co.uk>
+
+	* standalone\common\ecosconfig.cxx,
+	  standalone\common\cdl_exec.cxx,
+	  common\common\build.cxx:
+
+	Check for the _MSC_VER macro rather than _WIN32 to
+	facilitate cygwin builds.
+
+1999-11-19  Simon FitzMaurice  <sdf@redhat.co.uk>
+  
+  * common\win32\FailingRulesDialog.cpp
+
+    Use CDL conflicts code for real.  
+
+  * common\win32\RulesList.cpp
+    common\win32\RulesList.h
+
+    Add Tooltips
+
+  * common\win32\mltview.h
+
+    Remove usused variable
+
+1999-11-19  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+
+  Fixed crash in hardware selection - need to remove items from view first to avoid painting problems.
+   
+  * standalone\win32\MainFrm.h
+   
+  Fixed include file name
+
+  * standalone\win32\Configtool.rc
+    standalone\win32\res\miscbar.bmp
+    common\win32\CTCommonres.h
+    standalone\win32\MainFrm.cpp
+
+  Restored help menu bitmaps
+
+  * common\win32\CellEdit.cpp
+    common\win32\ComboEdit.cpp
+
+  Removed compilation warnings
+  Correctly passed non-special keystrokes to default window handler
+
+1999-11-19  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+
+  Remove unwanted references to bitmaps
+
+1999-11-18  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CSHDialog.h
+    common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    common\win32\ControlView.cpp
+    common\win32\eCosDialog.h
+    common\win32\eCosPropertyPage.h
+    common\win32\mltview.cpp
+    standalone\win32\CTres.h
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\OutputView.cpp
+    standalone\win32\res\Toolbar.bmp
+   
+  Add bitmap menu items.
+
+1999-11-17  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\ControlView.cpp
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Restore Help->doc home page
+  Update tool options labels
+
+1999-11-17  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ControlView.cpp
+
+  Use recommended accelerator for "Properties"
+
+  * common\win32\PropertiesList.cpp
+   
+  Move grid line up one pixel
+
+  * common\win32\mltview.cpp
+    common\win32\mltview.h
+   
+  Prevent theft of tooltip messages from mainframe
+    Add keyboard accessibility for properties, current section\region
+   
+  * standalone\win32\Configtool.rc
+
+  Adjust view menu accelerators to match previous version more closely
+
+1999-11-17  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\ecosconfig.cxx
+
+  Modify main() to return an appropriate exit code
+  should execution fail.
+
+  Modify main() to account for the case where there
+  are qualifiers on the command line, but no command.
+
+1999-11-16  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx
+
+  Modify generate_makefile() to perform 'chmod u+w'
+  rather than 'chmod 644' on each header file installed.
+
+1999-11-16  Simon FitzMaurice  <sdf@redhat.co.uk>
+  *  standalone\win32\Configtool.rc
+   
+  Fix bug whereby user tools binaries directory dialog browse button did nothing
+
+1999-11-16  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\CellView.cpp
+    common\win32\ComboEdit.cpp
+    common\win32\ComboEdit.h
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    common\win32\DoubleEdit.cpp
+    common\win32\DoubleEdit.h
+    common\win32\IntegerEdit.cpp
+    common\win32\IntegerEdit.h
+    common\win32\StringEdit.cpp
+    common\win32\StringEdit.h
+    common\win32\cellview.h
+    common\win32\mltview.cpp
+    common\win32\mltview.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\OutputView.cpp
+    standalone\win32\OutputView.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+    standalone\win32\res\Toolbar.bmp
+
+  Added accelerator for "Search in" in find dialog
+  Added remove button to balance Add in Run Tests.  Derived testtool from CSH-enabled classes
+  Improved pane names in font selection dialog
+  Removed view->header files in standalone
+  Fix editing operations for cells in standalone : new classes CCell and CCellEdit to group related in-cell editing functionality.
+    Added "no suggest fixes" choice on tools\options
+
+1999-11-16  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx
+
+  Modify generate_makefile() to perform 'chmod 644' on
+  each header file installed. This eliminates problems
+  with updating the install tree from a read-only
+  repository.
+
+1999-11-16  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.hxx,
+    standalone\common\cdl_exec.cxx
+
+  Modify constructor to define savefile and install_prefix
+  member variables. Use these variables in each command
+  function.
+
+  * standalone\common\ecosconfig.cxx:
+
+  Modify main() to process command qualifiers and
+  instantiate a cdl_exec object accordingly.
+
+  Add command line qualifiers to the usage message in
+  usage_message().
+
+1999-11-15  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp:
+
+  Modify SetEnabled() to call CdlTransactionBody::body()
+  to commit the transaction. This facilitates inference
+  and transaction callback processing.
+
+  * common\win32\ControlView.cpp:
+
+  Modify RestoreDefault() to avoid calling
+  CdlValuableBody::set_source() on items of flavor None.
+  This was triggering an assertion in the latest libCDL
+  code.
+
+1999-11-15  Simon FitzMaurice  <sdf@redhat.co.uk>
+   
+  * common\win32\ConfigToolDoc.h
+   
+  OnMLTProperties should have been public
+   
+1999-11-12  Simon FitzMaurice  <sdf@redhat.co.uk>
+   
+  * common\win32\ConfigItem.cpp
+   
+  Enumeration image was missing for Double
+
+  * common\win32\ControlView.cpp
+    common\win32\ControlView.h
+
+  Remove some obsolete test code, add elipsis to "Unload"
+  Correct painting problem on unload
+
+  * common\win32\ConfigToolDoc.h
+
+  Remove obsolete FileNameChanged hint
+  Rearranged declarations to reduce preprocessing
+  Fix for 901455
+
+  * common\win32\CTPropertiesDialog.cpp
+    common\win32\CTCommonDoc.cpp
+    common\win32\PropertiesList.cpp
+    common\win32\PropertiesList.h
+    common\win32\PropertiesView.cpp
+    common\win32\PropertiesView.h
+
+  Overhaul including corrections for:
+    Incorrect scrolling
+    Overpainting of header control
+    Empty File property
+
+1999-11-12  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\mltview.cpp:
+
+  Increase inter-region spacing to match client area
+  border for aesthetic reasons.
+
+  Modify OnUpdate() and OnSize() functions to improve
+  the vertical scroll size calculation to account for
+  the external text border around each region.
+
+1999-11-11  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CSHDialog.cpp
+    common\win32\CSHDialog.h
+    common\win32\CSHPropertyPage.cpp
+    common\win32\CSHPropertyPage.h
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\eCosPropertyPage.cpp
+    common\win32\eCosPropertyPage.h
+  Make HelpID() const 
+
+  * common\win32\CTCommonDoc.cpp
+    
+  Prevent control view displaying too early
+
+  * common\win32\ControlView.cpp
+  Remove Settings context menu item
+
+  * common\win32\RulesView.cpp
+  Remove Resolve  context menu item
+
+1999-11-11  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\mltview.cpp
+    common\win32\mltview.h
+  Add tooltips for section names the exceeed the caption rectangle available
+  Decrease size of everything somewhat to allow default display to avoid use of scrollbar
+  * common\win32\ctutils.cpp
+  Do not check for duplicate paths (so always allowing path fragments to be inserted at beginning)
+
+1999-11-11  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify generate_makefile() to add the package version
+  directory in the build tree to the INCLUDE_PATH.
+
+1999-11-11  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify eval_tcl_command() to avoid redirecting stdout
+  under Linux. This was affecting the channel reference
+  count mechanism resulting in system.h not being written
+  out correctly by CdlToplevelBody::generate_config_headers().
+
+1999-11-10  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CSHDialog.cpp
+    common\win32\CSHDialog.h
+    common\win32\CSHPropertyPage.cpp
+    common\win32\CSHPropertyPage.h
+    common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\eCosPropertyPage.cpp
+    common\win32\eCosPropertyPage.h :
+  "What's this?" style help.
+
+1999-11-09  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.hxx,
+    standalone\common\cdl_exec.cxx:
+
+  New resolve_hardware_alias() and resolve_template_alias ()
+  functions to allow users to specify hardware and templates
+  by their aliases on the command line.
+
+1999-11-09  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\FailingRulesDialog.cpp
+    standalone\win32\CreditStatic.cpp
+    standalone\win32\MainFrm.cpp
+  Change various ASSERTs to VERIFYs (caused crash in release build)
+
+1999-11-09  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Add COMMAND_PREFIX variable to top-level makefile.
+
+  Rationalise naming of makefile variables.
+
+1999-11-08  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\BuildOptionsDialog.cpp
+    common\win32\CSHDialog.cpp
+    common\win32\CSHDialog.h
+    common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    common\win32\CTPropertiesDialog.cpp
+    common\win32\FolderDialog.cpp
+    common\win32\NewFolderDialog.cpp
+    common\win32\NotePage.cpp
+    common\win32\RegionGeneralPage.cpp
+    common\win32\RegionGeneralPage.h
+    common\win32\SectionGeneralPage.cpp
+    common\win32\SectionGeneralPage.h
+    common\win32\SectionRelocationPage.cpp
+    common\win32\SectionRelocationPage.h
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\notepage.h
+    standalone\win32\BinDirDialog.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.mak
+  Extend CSH to property pages (still some anomalies here with the sheet buttons)
+  Entered first cut at CSH data
+
+1999-11-08  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\AddRemoveDialog.cpp
+    common\win32\AddRemoveDialog.h
+    common\win32\BuildOptionsDialog.cpp
+    common\win32\BuildOptionsDialog.h
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\CTPropertiesDialog.cpp
+    common\win32\CTPropertiesDialog.h
+    common\win32\CdlPackagesDialog.cpp
+    common\win32\ConfigViewOptionsDialog.cpp
+    common\win32\ConfigViewOptionsDialog.h
+    common\win32\FolderDialog.cpp
+    common\win32\FolderDialog.h
+    common\win32\MultiLineEditDialog.cpp
+    common\win32\MultiLineEditDialog.h
+    common\win32\NewFolderDialog.cpp
+    common\win32\NewFolderDialog.h
+    common\win32\RulesView.h
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\eCosHelp.h
+    standalone\win32\CTOutputPage.cpp
+    standalone\win32\CTOutputPage.h
+    standalone\win32\CdlTemplatesDialog.cpp
+    standalone\win32\CdlTemplatesDialog.h
+    standalone\win32\HeadersDialog.cpp
+    standalone\win32\HeadersDialog.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+  Derive dialog classes from CeCosDialog
+
+1999-11-08  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.hxx,
+    standalone\common\cdl_exec.cxx:
+
+  New resolve_package_alias() function to allow users
+  to specify packages by their aliases on the command
+  line.
+
+1999-11-08  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Invoke high-priority custom rules from the top-level
+  makefile as for low-priority ones.
+
+1999-11-08  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+  Correct control spacing in folder dialog
+
+    common\win32\CTCommonDoc.cpp
+    Work around shell crash w\ URL
+
+    standalone\win32\CTOutputPage.cpp
+    standalone\win32\CTOutputPage.h
+    common\win32\ConfigViewOptionsDialog.cpp
+    common\win32\ConfigViewOptionsDialog.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+  Convert back to dialog mode
+
+1999-11-08  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\ecosconfig.cxx,
+    standalone\common\cdl_exec.hxx,
+    standalone\common\cdl_exec.cxx:
+
+  Add 'version' command and report non-default package
+  versions.
+
+1999-11-05  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+  Do not assert when file does not exist
+
+    common\win32\CTUtils.cpp
+  Correct includes for ANSI build
+
+    common\win32\PropertiesList.cpp
+    common\win32\CTCommon.rc
+    common\win32\CTCommonres.h
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\ConfigToolDoc.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.rc
+    standalone\win32\HelpView.cpp
+    standalone\win32\MainFrm.h
+  More work on failing rules dialog
+  Remove FullURL
+
+    common\win32\RulesList.cpp
+    common\win32\RulesList.h
+  Provide vector and list versions of AddConflicts
+
+    standalone\win32\MainFrm.cpp
+  Improve splitter sizes
+
+    common\win32\ConfigViewOptionsDialog.cpp
+    common\win32\ConfigViewOptionsDialog.h
+    standalone\win32\CTOutputPage.cpp
+    standalone\win32\CTOutputPage.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+  Remove remnants of Apply logic
+
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+  Use tree control for topological links (parent, child,...)
+  Provide deleteitem handler (to sync cell view when packages removed)
+
+    common\win32\SplitterWndEx.h
+    common\win32\thinsplitter.cpp
+    common\win32\thinsplitter.h
+  Prevent split box appearing in control view
+
+1999-11-05  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h :
+  Minor fixes
+
+1999-11-05  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CSHDialog.cpp
+    common\win32\CSHDialog.h
+  Provide default implementation for virtual fns
+
+    common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\FailingRulesDialog.cpp
+    common\win32\FailingRulesDialog.h
+    common\win32\ResolveConflictsDialog.cpp
+    common\win32\ResolveConflictsDialog.h
+    common\win32\RulesList.cpp
+    common\win32\RulesList.h
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h
+    standalone\win32\ConfigToolDoc.cpp
+  Refine failing rules dialog
+  Prevent removed package items causing crash during (for example) paint operations executed within callback
+
+1999-11-05  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\unix\makefile:
+
+  Add 'clean' target.
+
+  * standalone\common\ecosconfig.cxx:
+
+  Look for the ECOS_REPOSITORY environment variable
+  rather than COMPONENT_REPOSITORY.
+
+  * common\common\build.cxx:
+
+  Modify generate_toplevel_makefile() to invoke per-
+  package makefiles with the '-r' switch since we do
+  not use implicit rules.
+
+1999-11-05  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\unix\makefile:
+
+  Enable -O2 build optimization.
+
+  * standalone\common\ecosconfig.cxx:
+
+  Modify usage_message() to refer to 'ecosconfig'
+  rather than 'pkgconfig'.
+
+1999-11-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommon.rc
+  Tidy conflicts resolution dialog
+
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+  Remove m_strName member variable
+
+    common\win32\CTCommonDoc.cpp
+  Avoid use of stale pointers after package removal
+
+1999-11-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+  Fix attribute functions for root node
+
+1999-11-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+  Remove unnecessary members from CConfigItem
+
+    common\win32\eCosDialog.h
+  Remove temp path from include specification
+
+
+1999-11-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.mak
+  Move to HTML Help (define HTMLHelp, add library to link)
+
+1999-11-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\PropertiesList.cpp
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.h
+    standalone\win32\Configtool.mak
+    standalone\win32\HelpFrame.cpp
+    standalone\win32\HelpFrame.h
+    standalone\win32\HelpView.cpp
+    standalone\win32\HelpView.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\ViewOptions.cpp
+  
+  Removed Help view in favour of HTML Help (old code still accessible if HOME_GROWN_HELP defined).
+  To activate HTMLHelp:
+    define HTMLHELP 
+    put HtmlHelp.h in your include search path
+    put HtmlHelp.lib in your lib search path
+    include HtmlHelp.lib in your set of librariess to include in link
+
+  * common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\BuildOptionsDialog.h
+  Created non-eCos-specific base class CCSHDialog
+
+  * standalone\win32\Configtool.rc
+    common\win32\CTCommonres.h
+    common\win32\ConfigViewOptionsDialog.cpp
+    standalone\win32\CTres.h
+  Removed remaining Apply buttons
+
+1999-11-04  John Dallaway  <jld@redhat.co.uk>
+
+  Changes to rename "pkgconfig" tool->"ecosconfig":
+
+  * standalone\win32\ecosconfig.dsp:
+
+  Add new project file.
+
+  * standalone\win32\pkgconfig.dsp:
+   
+  Remove old project file.
+
+  * standalone\win32\Configtool.dsw:
+
+  Include ecosconfig project rather than pkgconfig
+  project.
+
+  * standalone\unix\makefile:
+
+  Generate ecosconfig rather than pkgconfig.
+
+  * standalone\common\pkgconfig.*:
+
+  Rename files to ecosconfig.* and adjust #include of
+  header file.
+
+1999-11-04  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Generate a header at the top of each makefile.
+
+1999-11-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+    standalone\win32\ConfigToolDoc.cpp
+  Correct compilation error (bis)
+
+1999-11-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\PropertiesList.cpp
+    common\win32\RulesList.cpp
+  Remove unreferenced param warnings
+    standalone\win32\CTres.h
+  Remove duplication definition if IDAPPLY
+    standalone\win32\ConfigToolDoc.cpp
+  Correct compilation error
+
+1999-11-03  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonres.h
+    standalone\win32\CTres.h
+  Supply IDs necessary for resource editor
+
+1999-11-03  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\BuildOptionsDialog.cpp
+    common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    common\win32\CTOptionsDialog.cpp
+    common\win32\CTOptionsDialog.h
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    common\win32\FailingRulesDialog.cpp
+    common\win32\NotePage.cpp
+    common\win32\PropertiesList.cpp
+    common\win32\RegionGeneralPage.cpp
+    common\win32\RegionGeneralPage.h
+    common\win32\RulesView.cpp
+    common\win32\SectionGeneralPage.cpp
+    common\win32\SectionGeneralPage.h
+    common\win32\SectionRelocationPage.cpp
+    common\win32\SectionRelocationPage.h
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\notepage.h
+    standalone\win32\CTOutputPage.cpp
+    standalone\win32\CTOutputPage.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.h
+    standalone\win32\Configtool.rc
+    standalone\win32\HelpView.cpp
+    standalone\win32\HelpView.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+  General context-sensitive help changes
+  (in particular ShowURL() member function in CConfigToolDoc class)
+  recent libCDL API change: get_normal_conflicts => get_all_conflicts
+  Remove some unused resource IDs
+
+1999-11-03  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.cxx:
+
+  Modify cmd_check() to accommodate recent libCDL API
+  change.
+
+1999-11-03  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\pkgconfig.dsp:
+
+  Disable building of the ChangeLog file in the
+  'Release' configuration (as for 'Debug').
+
+1999-11-03  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp :
+  Remove OptionsSheet
+
+1999-11-03  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify generate_makefile() to eliminate the use of
+  .stamp files for individual object files. Use the
+  dependency files (*.d) as stamp files.
+
+1999-11-03  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.cxx,
+    standalone\common\cdl_exec.hxx,
+    standalone\common\pkgconfig.cxx:
+
+  Rename 'report' command to 'check'.
+
+1999-11-02  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\ConfigItem.cpp
+    common\win32\stdafx.cpp
+    common\win32\eCosDialog.cpp
+  HTML help now used uniformly for CSH
+   
+1999-11-02  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    common\win32\PropertiesList.cpp
+    common\win32\StdAfx.cpp
+    common\win32\eCosDialog.cpp
+    common\win32\eCosDialog.h
+    common\win32\stdafx.h
+    standalone\win32\Configtool.cpp
+    standalone\win32\HelpView.cpp
+    standalone\win32\HelpView.h
+  Add HTML help support (if HTMLHELP macro defined)
+  Define DocBase() member of document.  This is the folder to which documentation links are relative.
+
+    common\win32\cellview.h
+    common\win32\ComboEdit.h
+    common\win32\DoubleEdit.h
+    common\win32\IntegerEdit.h
+    common\win32\target.h
+  Remove junk header includes
+
+1999-11-02  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify generate_makefile() to generate a .deps file
+  after updating a library archive file.
+
+  * standalone\common\cdl_exec.cxx:
+
+  Modify diagnostic_handler() to format output in a
+  manner consistent with the other output-generating
+  functions.
+
+  * standalone\win32\pkgconfig.dsp:
+
+  Add the ChangeLog file to the project.
+
+1999-11-01  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ControlView.cpp
+    common\win32\ControlView.h :
+
+  Fix for CR 101034 [customized fonts in control view]
+
+1999-11-01  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\pkgconfig.cxx:
+
+  Look for the component repository in the directory
+  where the pkgconfig tool is located if the
+  COMPONENT_REPOSITORY environment variable is not
+  specified.
+
+1999-11-01  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.cxx,
+    standalone\common\cdl_exec.hxx:
+
+  Catch and report exceptions.
+
+  * standalone\unix\makefile:
+
+    Specify include\ and lib\ directories by package.
+
+1999-11-01  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\AddRemoveDialog.h
+    common\win32\BuildOptionsDialog.h
+    common\win32\CTOptionsDialog.h
+    common\win32\CTPropertiesDialog.h
+    common\win32\CTUtils.cpp
+    common\win32\CdlPackagesDialog.h
+    common\win32\CellView.cpp
+    common\win32\ConfigViewOptionsDialog.h
+    common\win32\FailingRulesDialog.h
+    common\win32\FindDialog.h
+    common\win32\FolderDialog.h
+    common\win32\MultiLineEditDialog.h
+    common\win32\NewFolderDialog.cpp
+    common\win32\RegionGeneralPage.h
+    common\win32\ResolveConflictsDialog.h
+    common\win32\SectionGeneralPage.h
+    common\win32\SectionRelocationPage.h
+    common\win32\eCosDialog.h
+    common\win32\notepage.h
+    common\win32\stdafx.h
+    standalone\win32\BinDirDialog.h
+    standalone\win32\CTOutputPage.h
+    standalone\win32\CdlTemplatesDialog.h
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.mak
+    standalone\win32\Configtool.rc
+    standalone\win32\HeadersDialog.h
+    standalone\win32\HelpFrame.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\ViewOptions.h
+    standalone\win32\splash.cpp :
+   
+  Include resources directly.  I suspect including resource headers from PCH might have been responsible for
+  resource IDs not being found.
+
+  * common\win32\CTCommon.rc
+
+  Restore CDL templates dialog
+
+
+1999-11-01  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.cxx,
+    standalone\common\cdl_exec.hxx,
+    standalone\common\pkgconfig.cxx:
+
+  Add new 'report' command which lists CDL conlficts.
+
+  Rename 'load' and 'unload' commands to 'add' and
+  'remove' respectively.
+
+1999-10-29  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp : 
+  use short form filename for generate_config_headers
+  so as to avoid problems with spaces in paths
+
+1999-10-29  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak:
+
+  Remove non-existent files from the project.
+
+1999-10-29  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.dsw:
+
+  Add the pkgconfig project to the workspace.
+
+1999-10-29  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    standalone\win32\Configtool.cpp
+  Change default arg values of Chop to false (less error-prone)
+
+  * common\win32\PropertiesList.cpp
+    common\win32\PropertiesList.h
+  Remove SizeColumns
+
+  * standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+  Remove more unused stuff
+
+1999-10-29  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\common\cdl_exec.cxx,
+    standalone\common\cdl_exec.hxx,
+    standalone\common\pkgconfig.cxx,
+    standalone\common\pkgconfig.hxx,
+    standalone\unix\makefile,
+    standalone\win32\pkgconfig.dsp:
+
+  Initial check-in of eCos command line config tool sources.
+
+  * common\common\build.cxx:
+
+  Modify eval_tcl_command() to use \dev\null or NUL: as appropriate.
+
+  * common\common\flags.cxx:
+
+  Modify srting_to_list() parameter list to avoid compilation
+  error with GCC.
+
+1999-10-29  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTCommonres.h
+    common\win32\CTPropertiesDialog.cpp
+    common\win32\CTPropertiesDialog.h
+    common\win32\ControlView.cpp
+    common\win32\PropertiesView.cpp
+    common\win32\PropertiesView.h
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.mak
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    common\win32\PropertiesList.cpp
+    common\win32\PropertiesList.h
+    common\win32\ResolveConflictsDialog.cpp
+    common\win32\ResolveConflictsDialog.h
+    common\win32\RulesList.cpp
+    common\win32\RulesList.h
+  Migrate list view specialization from views (CPropertiesView and CRulesView) to the controls
+  (CPropertiesList and CRulesList).  
+  Introduce prototype conflicts resolution dialog (not functional yet).  
+
+1999-10-29  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify generate_makefile() and
+  generate_toplevel_makefile() to copy all necessary non-config
+  header files into the install tree in an initial 'make
+  headers' phase.
+
+  Move the common '.PHONY' declaration into rules.mak.
+
+1999-10-28  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommon.rc :
+  Fix id of list control
+
+1999-10-28  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\BuildOptionsDialog.cpp
+    common\win32\BuildOptionsDialog.h
+  Experiment with framework for HtmlHelp
+
+  * common\win32\RegionGeneralPage.h
+  Remove kludge for not-found resource ID (rebuild all fixes)
+
+  * standalone\win32\ConfigToolDoc.cpp
+  Initialize m_nFindWhere
+
+  * standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.h
+  Remove some unused stuff
+
+  * standalone\win32\HelpFrame.cpp
+    standalone\win32\HelpFrame.h
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+  Migrate URL status bar pane to help frame
+
+  * common\win32\RulesView.cpp
+    common\win32\RulesView.h
+  Experiment with conflict resolution
+
+1999-10-28  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ConfigItem.cpp
+
+  Change "NYI" to "Not yet implemented" (CR 901460)
+
+1999-10-28  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify cygpath() to accommodate repository and install
+  tree paths containing spaces by converting to short
+  file paths (Win32 only).
+
+  Modify generate_makefile() to rationalise the naming of
+  timestamp files.
+
+1999-10-27  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify generate_makefile() to handle tests specified by
+  their source files.
+
+  * common\common\build.hxx:
+
+  Add get_tests() declaration.
+
+1999-10-27  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Modify generate_toplevel_makefile() to handle the case of an
+  empty command prefix correctly.
+
+  * common\win32\memmap.cpp:
+
+  Modify export_files() to export memory region info to
+  the memory layout header file.
+
+1999-10-27  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\CellView.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+
+  Sort out generation of header files as necessary for creation of build tree
+  Introduce helper functions:
+  CConfigItem::GetCdlValuable() - returns cdl item cast to CdlValuable
+  CUtils::CopyFile - copies without touching dest file if same as source
+  CUtils::Wpath - moved from CProject
+  Remove some unused crud from main frame class
+
+1999-10-27  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx:
+
+  Create the 'include' directory in the install tree
+  explicitly.
+
+1999-10-27  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx,
+    common\common\build.hxx:
+
+  Modify generate_build_tree() to accommodate backslashes in
+  directory arguments under Win32.
+
+1999-10-26  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ConfigToolDoc.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\MainFrm.cpp :
+
+  Start to use make file generation
+
+1999-10-26  John Dallaway  <jld@redhat.co.uk>
+
+  * common\common\build.cxx,
+    common\common\build.hxx,
+    standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak:
+
+  New files providing the initial implementation of
+  build tree and makefile generation from CDL data.
+
+1999-10-26  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+
+  Correct problem whereby some tests were not being correctly located.
+
+1999-10-26  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+   
+  Adapt to changes for make file generation
+  Traverse only package directories looking for tests
+
+  * common\win32\FileName.cpp
+
+  Correct trace output
+
+1999-10-22  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\CellView.cpp
+    common\win32\ComboEdit.cpp
+    common\win32\ComboEdit.h
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ConfigToolDoc.h
+    common\win32\DoubleEdit.cpp
+    common\win32\DoubleEdit.h
+    common\win32\FileName.cpp
+    common\win32\IntegerEdit.cpp
+    common\win32\IntegerEdit.h
+    common\win32\StringEdit.cpp
+    common\win32\StringEdit.h
+    common\win32\cellview.h
+    common\win32\thinsplitter.cpp
+    standalone\win32\CTOutputPage.cpp
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.ma?
+    standalone\win32\Configtool.rc
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\ViewOptions.h
+  Remove unused resources
+  Localize information regarding kind of cell in CCellView and use runtime class information to represent it.
+  Remove unused functions from CConfigItem
+  Remove inapplicable items from View\Settings and Tools\Options
+
+1999-10-21  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ConfigToolDoc.h
+    common\win32\RulesView.cpp
+    common\win32\RulesView.h
+    common\win32\SplitterWndEx.cpp
+    common\win32\SplitterWndEx.h
+    common\win32\thinsplitter.cpp
+    common\win32\thinsplitter.h
+    standalone\win32\BuildOptsPage.cpp
+    standalone\win32\BuildOptsPage.h
+    standalone\win32\CTres.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.h
+    standalone\win32\Configtool.mak
+    standalone\win32\Configtool.rc
+    standalone\win32\HelpView.cpp
+    standalone\win32\HelpView.h
+    standalone\win32\MLTFrame.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\RulesFrame.cpp
+    standalone\win32\RulesFrame.h
+    standalone\win32\SplitterWndEx.cpp
+    standalone\win32\SplitterWndEx.h
+    standalone\win32\ViewOptions.cpp
+    standalone\win32\res\Toolbar.bmp
+    standalone\win32\res\toolbar1.bmp :
+  In standalone tool, make help window floating, other windows splitter panes.
+  Make splitter placement data-driven
+  Rules window columns to size propoertionately to window.
+  Remove BuildOptsPage
+  Remove CPackage class
+  Move SplitterWndEx from standalone to common (CThinSplitter now derives from it)
+
+1999-10-20  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak:
+
+  Remove non-existent files from the project.
+
+  Add eCosTestDownloadFilter.h to the project.
+
+1999-10-19  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify CdlTransactionHandler() to do nothing if a
+  CdlInterface node has become active or inactive.
+
+1999-10-19  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\ConfigToolDoc.cpp
+    common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+
+  Make build info available in document (member BuildInfo())
+  Introduce UpdateeCosProject() member as place to update build info
+
+  * standalone\win32\ViewOptions.cpp
+  Correct typo
+
+  * standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.mak
+
+  Add flags.cxx,.hxx
+  Introduce new build options dialog class
+
+  * standalone\win32\CTres.h
+    standalone\win32\Configtool.rc
+
+  Introduce new build options dialog class
+
+1999-10-18  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp
+    common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    standalone\win32\MainFrm.cpp
+    common\win32\FileName.cpp
+
+  [mostly] eliminate changing directory, which is dangerous in a multithreading environment
+   
+  * common\win32\FileName.cpp :
+   
+  Use shell API to calculate relative paths
+
+  * common\win32\PropertiesView.h
+    common\win32\PropertiesView.cpp
+
+  Remove "display" as property and need for count of properties
+
+  * standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak :
+   
+  add shlwapi.lib to link
+   
+1999-10-18  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ControlView.cpp:
+
+  Modify ShowPopupMenu() to enable the 'Restore Default' menu item
+  for any config item if the item or any of its descendants have a
+  non-default value source.
+
+1999-10-15  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTCommonDoc.cpp : 
+  
+  Do not mention an empty repository name
+
+1999-10-13  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ControlView.cpp:
+
+  Modify ShowPopupMenu() to add doc and header menu items
+  if the config item has either a data or bool part or
+  both.
+
+1999-10-13  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify NewMemoryLayout() take the directory containing
+  the .mlt files as its parameter rather than the prefix
+  to a "pkgconf" directory.
+
+  Modify SwitchMemoryLayout(), OnOpenDocument(),
+  OnNewDocument(), OnConfigurationRepository() and
+  OnBuildTemplates() to accommodate the above change to
+  NewMemoryLayout().
+
+1999-10-13  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp,
+    common\win32\ConfigtoolDoc.h:
+
+  Add new MLTDir() function to return the directory in
+  which to save .mlt files.
+
+  Modify SelectPackages() and SelectTemplate() to
+  accommodate the above change to NewMemoryLayout().
+
+  Modify SaveMemoryMap() and CopyMLTFiles() to place .mlt
+  files in a directory outside the build and install trees
+  by calling MLTDir().
+
+1999-10-13  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\ConfigItem.cpp : 
+  Correct calculation of filename
+
+1999-10-13  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ControlView.cpp
+    common\win32\PropertiesView.cpp
+    common\win32\PropertiesView.h : 
+  Add ViewURL() and ViewHeader() to CConfigItem class and use these in control and properties views.
+
+1999-10-13  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+  Fix problem of tree not being populated when repository already open
+  Migrate m_arstrFiles.RemoveAll() calls to DeleteContents() for standalone
+
+  * common\win32\ControlView.cpp : 
+    
+  some hacky debugging for window persistence
+
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h : 
+    
+  protect status bar creation with boolean
+
+1999-10-13  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\MainFrm.cpp:
+
+  Modify PrepareEnvironment() and OnToolsPaths() to
+  use CConfigToolApp::m_arstrToolChainPaths rather than
+  CConfigToolDoc::arstrToolChainPaths.
+
+  * common\win32\CTCommonDoc.cpp,
+    common\win32\ConfigtoolDoc.h:
+
+  Remove obsolete ChooseDefaultHal() and m_arstrToolChainPaths
+  members.
+
+1999-10-13  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify DeleteContents() to save tools bin directories
+  by calling CWinApp::WriteProfileString() rather than
+  ::WriteProfileString().
+
+  * standalone\win32\MainFrm.cpp:
+
+  Modify PrepareEnvironment() and OnUsertoolsPaths() to
+  use CConfigToolApp::m_strUserToolsDir rather than
+  CConfigToolDoc::m_strUserToolsDir.
+
+  * common\win32\ConfigtoolDoc.h:
+
+  Remove obsolete m_strUserToolsDir member variable. The
+  user tools bin directory is now stored in the
+  CConfigToolApp class.
+
+1999-10-11  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\ConfigTool.dsp
+    standalone\win32\ConfigTool.make : 
+    
+  add eCosTestDownloadFilter.cpp
+
+1999-10-11  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify OnBuildTemplates() to convert the selected template STL
+  string to a CString.
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify SelectTemplate() to convert the selected template STL
+  string to a CString.
+
+1999-10-11  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak:
+
+  Remove all references to the deprecated Tcl 8.1 headers and
+  libraries.
+
+1999-10-08  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak:
+
+  Link against Tcl 8.2.1.
+
+1999-10-08  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp : 
+    
+  avoid crash if attempt is made to access status bar early (before mainframe exists)
+
+1999-10-08  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h : 
+    
+  Add status pane support
+
+1999-10-08  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\OutputView.cpp,
+    common\win32\OutputView.h:
+
+  Override CEditView::OnEditChange() to prevent setting
+  of the document modified flag when the output window
+  contents changes.
+
+1999-10-08  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify GetDefaultHardware() to use the eCos version registry
+  key with the greatest value.
+
+1999-10-08  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify OnBuildTemplates() to construct the memory layout
+  directory correctly now that m_strPackagesDir is a full
+  directory path.
+
+1999-10-07  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify SaveMemoryMap() and CopyMLTFiles() to ensure that
+  both the default MLT export files and any modified ones
+  are copied into both <build tree>\pkgconf and
+  <install tree>\pkgconf\include.
+
+1999-10-07  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.cpp:
+
+  Modify Log() function to fix memory leak.
+
+1999-10-07  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp:
+
+  Modify HasRadio() function to use the recently
+  implemented CdlValuableBody::get_widget_hint() function.
+
+1999-10-06  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp,
+    common\win32\ConfigToolDoc.h:
+
+  Add new CurrentTestingIdentifier() function which
+  returns the string value of the
+  CYGTST_TESTING_IDENTIFIER cdl_option.
+
+  * standalone\win32\MainFrm.cpp,
+
+  Modify OnRunSim()\OnRunTests() to use the string value
+  of the CYGTST_TESTING_IDENTIFIER cdl_option as the test
+  target by calling
+  CConfigtoolDoc::CurrentTestingIdentifier().
+
+1999-10-05  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CdlPackagesDialog.cpp,
+    common\win32\CdlPackagesDialog.h:
+
+  Add new UpdateHardwareSelectionFlag() function to set
+  a Boolean member variable according to whether a hardware
+  package is currently selected.
+
+  Modify OnSelchangeList1() and OnSelchangeList2() to call
+  the new UpdateHardwareSelectionFlag() function.
+
+  Add new HardwarePackageMessageBox() function to issue a
+  warning message box.
+
+  Modify OnDblclkList1(), OnDblclkList2(), OnAdd() and
+  OnRemove() to check the hardware selected flag and warn
+  the user if it is set by calling HardwarePackageMessageBox().
+
+1999-10-05  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CdlPackagesDialog.cpp:
+
+  Modify UpdateVersionList() to fill the version combo box
+  with all versions held in common by multiple selected
+  packages.
+
+  Modify OnSelchangePackageVersion() to modify the version of
+  all selected packages.
+
+1999-10-04  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CdlPackagesDialog.cpp:
+
+  Modify OnSelChangePackageVersion() and UpdateVersionList() to
+  work with both package listboxes.
+
+  * standalone\win32\Configtool.rc,
+
+  Extend the version combo box to full width in the package
+  selection dialog box.
+
+1999-10-01  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\memmap.cpp:
+
+  Modify edit_memory_section() to accommodate a relocating memory
+  section changing to non-relocating where a relocating memory
+  section is to follow it.
+
+1999-10-01  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\PropertiesView.cpp:
+
+  Modify DblClk() to restore correct function of double-clicking
+  on the documentation URL in the standalone config tool.
+
+1999-09-30  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify SaveProfileSettings() to re-establish repository path
+  persistence which had disappeared in mysterious circumstances.
+
+1999-09-30  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\memmap.cpp,
+    common\win32\memmap.h:
+
+  Modify edit_memory_section() to check for a non-relocating
+  section changing to relocating where the final location moves
+  from a read_only region to a read_write region and there is a
+  following non-relocating section. Report and reject such edits
+  because they result in a non-relocating section being defined as
+  following the initial location of a relocating region. [PR 19797]
+
+  * standalone\win32\CTres.h,
+    standalone\win32\Configtool.rc,
+
+  Add a resource string containing the error message for the
+  condition described above.
+
+1999-09-30  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\memmap.cpp:
+
+  Modify add_relative_sections_to_list() to avoid skipping
+  non-relocating relative sections which follow the final
+  location of a relocating relative section [PR 19799].
+
+1999-09-29  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\memmap.cpp:
+
+  Modify export_files() to use localtime() rather than
+  gmtime() such that the timestamp in exported files
+  is corrected for daylight saving time. [CR 100663]
+
+1999-09-29  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Reimplement CurrentStartup() using the CYG_HAL_STARTUP
+  macro.
+
+  * standalone\win32\MainFrm.cpp,
+
+  Modify OnRunSim()\OnRunTests() to derive a test target
+  identifier of the form "<template>-<startup>" from the
+  name of the selected hardware template and the macro
+  CYG_HAL_STARTUP. Check the validity of the identifier
+  by calling CeCosTest::IsValid().
+
+1999-09-29  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CdlPackagesDialog.cpp:
+
+  Modify UpdateVersionList() to disable the version
+  combo box in the package selection dialog if there
+  is only one installed version of the selected package.
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify SelectPackages() to present hardware packages
+  in the package selection dialog and to issue a warning
+  message box if no package is providing the linker script
+  and memory layout macro definitions.
+
+1999-09-28  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\Configtool.rc,
+    standalone\win32\CTres.h,
+
+  Add a version selection combo box to the packages dialog.
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify SelectPackages() to pass the current version
+  string of each package to the packages dialog and
+  switch to a new version on dismissal of the dialog
+  as appropriate.
+
+  * common\win32\CdlPackagesDialog.cpp,
+    common\win32\CdlPackagesDialog.h:
+
+  Add new UpdateVersionList() function to fill the new
+  version combo box as necessary.
+
+  Override OnAdd(), OnRemove(), OnDblclkList1() and
+  OnDblclkList2() message handlers to call the new
+  UpdateVersionList() function.
+
+  Override Insert() to setup an array of version strings.
+
+  Add new GetVersion() function to extract the user-
+  selected package versions.
+
+  * common\win32\CellView.cpp:
+
+  Modify InCell() and OnDraw() to check for package items
+  explicitly and present their values in a non-editable
+  manner.
+
+1999-09-27  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp,
+    common\win32\ConfigtoolDoc.h:
+
+  Modify AddItem() to dispense with the CPackage class for
+  the eCos plug-in. Keep this class in the standalone
+  config tool for now until we finalise plans for the
+  build flags.
+
+1999-09-27  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Remove obsolete loop from AddAllItems() which removed
+  CPackage objects for packages which were not loaded.
+  There are no longer any such objects.
+
+  Changes to present package version information in the
+  cell view:
+
+  * common\win32\ConfigItem.cpp:
+
+  Modify ItemTypeOf() to return 'String' for a package item
+  rather than 'None'.
+
+  Modify StringValue() to return the value of a package item.
+
+  * common\win32\ControlView.cpp:
+
+  Modify AdjustItemImage() to check for packages when the item
+  type is 'String' rather than 'None'.
+
+1999-09-27  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp,
+    common\win32\ConfigtoolDoc.h:
+
+  Modify AddItem() to deduce the target name from CDL option
+  CYGBLD_LINKER_SCRIPT and to create the CPackage objects
+  directly.
+
+  Remove obsolete GetPackageData() function.
+
+1999-09-24  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp : 
+    
+  "eCos" adjective added to prompt for repository dialog (CR 101081)
+
+1999-09-24  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTPropertiesDialog.cpp
+    common\win32\CTPropertiesDialog.h
+    common\win32\CTUtils.cpp
+    common\win32\CTUtils.h
+    common\win32\CellView.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\ConfigItem.h
+    common\win32\ConfigToolDoc.h
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    common\win32\DoubleEdit.h
+    common\win32\FindDialog.h
+    common\win32\IncludeSTL.h
+    common\win32\IntegerEdit.cpp
+    common\win32\IntegerEdit.h
+    common\win32\Package.h
+    common\win32\StringEdit.h
+    common\win32\cellview.h
+    common\win32\stdafx.h
+    standalone\win32\BinDirDialog.cpp
+    standalone\win32\BuildOptsPage.cpp
+    standalone\win32\BuildOptsPage.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\HeadersDialog.cpp
+    standalone\win32\HelpView.cpp
+    standalone\win32\MLTFrame.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\MainFrm.h
+    standalone\win32\OutputView.cpp : 
+  rearranged includes to reduce dependencies on header files
+  CConfigItem::ItemIntegerType becomes ItemIntegerType and moves to stdafx.h
+  CConfigToolDoc::ItemTypeOf moves to (static member of) CConfigTool
+
+  Various functions of projectmanager move to project
+  Corrected call of OnSaveDocument() with null argument
+
+
+    standalone\win32\dirdocmgr.cpp, h : 
+    
+  removed
+
+1999-09-23  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+  Remove obsolete m_strPlatform member variable. The concept of
+  a platform is now embodied in the CDL 'target'.
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify AddItem() to remove the processing of 'platform'
+  packages.
+
+  Modify SetValue() to check whether the memory layout will
+  change via the CYG_HAL_STARTUP macro name.
+
+  Convert CurrentPlatform() into a dummy function returning
+  an empty string for now.
+
+1999-09-23  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify parameter passed to NewMemoryLayout() to remove duplicate
+  repository path since m_strPackagesDir is now a full path.
+
+1999-09-23  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify OpenRepository() to report the most recent parsing
+  error when loading the default hardware template to a
+  message box in case the output pane is not available.
+
+1999-09-23  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify OpenRepository() to show repository path in status bar.
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+    common\win32\ConfigtoolDoc.h:
+
+  Remove obsolete override of SaveModified().
+
+  Modify OnSaveDocument() to show document path in status bar.
+
+1999-09-23  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify OpenRepository() to clear any previously-specified
+  document file name. This allows reloading of the MRU config
+  file having just switched repository.
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify OnConfigurationRepository() to reset the document title
+  the correct way, using CDocTemplate::SetDefaultTitle()
+
+  * standalone\win32\Configtool.cpp,
+    standalone\win32\Configtool.h:
+
+  Remove obsolete override of AddToRecentFileList().
+
+1999-09-23  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify OnNewDocument() to force the existing repository
+  to be re-opened.
+
+  Modify OnConfigurationRepository() to prompt for saving of
+  changes to the existing configuration and to refresh the
+  memory layout and failing rules views when the new repository
+  has been loaded and to reset the frame title.
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify OpenRepository() to catch and report exceptions when
+  loading the default template.
+
+1999-09-21  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp,
+    standalone\win32\ConfigtoolDoc.cpp:
+
+  Ensure that all calls to libCDL functions which parse input
+  files catch and report exceptions of type CdlStringException.
+
+1999-09-21  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify ConfigurationFile() to return the document path name
+  (which is now a file rather than a directory).
+
+  * common\win32\ConfigToolDoc.h:
+
+  Promote GetPathName() to a public member function.
+
+1999-09-20  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h : 
+    
+  adjust decls for standalone case
+
+1999-09-20  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\ConfigToolDoc.h
+    standalone\win32\ConfigToolDoc.cpp :
+  Move GenerateHeaders() from ProjectManger to document class
+  Call file-saving operations appropriately (generally in OnSaveDocument())
+  Responsibility for attaching to eCos project removed from document - now in caller
+  Set install and build trees only after document opened
+  Implement rule ordering using priority fields
+
+1999-09-20  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigToolDoc.cpp,
+    common\win32\ConfigtoolDoc.h:
+
+  Modify OnOpenDocument() and OnSaveDocument() to use a
+  save file passed in the lpszPathName parameter rather than
+  a folder name.
+
+  Use base implementation of SetTitle() function.
+
+  Override SetModifiedFlag() to force a refresh of the frame
+  window title by calling UpdateFrameCounts().
+
+  Modify SetPathName() to calculate build and install folders
+  from the save file name.
+
+  * standalone\win32\Configtool.cpp:
+
+  Modify the constructor to use the default CDocManager.
+
+  * standalone\win32\Configtool.rc:
+
+  Modify IDR_MAINFRAME string to specify eCos Configuration
+  Files (*.ecc).
+
+  * standalone\win32\MainFrm.cpp,
+    standalone\win32\MainFrm.h:
+
+  New override of CFrameWnd::OnUpdateFrameTitle() to manage
+  'document modified' asterisk.
+
+  Use base implementation of OnUpdateMRUList().
+
+  * common\win32\ControlView.cpp:
+
+  Modify OnInitialUpdate() to no longer set frame window title.
+
+  Modify AdjustItemImage() to no longer force a refresh of the
+  frame window title. This is now performed in
+  CConfigToolDoc::SetValue() via SetModifiedFlag().
+
+  * standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak:
+
+  No longer build the obsolete directory document manager class
+  (CDirDocManager) in dirdocmgr.cpp.
+
+1999-09-20  Simon FitzMaurice  <sdf@redhat.co.uk>
+    standalone\win32\ConfigTool.cpp: 
+    
+  correct compilation error
+
+    common\win32\AddRemoveDialog.cpp
+    common\win32\CTCommonDoc.cpp
+    common\win32\CTUtils.cpp
+    common\win32\FileName.cpp
+    common\win32\subprocess.cpp
+    standalone\win32\CreditStatic.cpp: 
+    
+  use of deleteZA
+
+1999-09-20  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigToolDoc.cpp:
+
+  Modify OnOpenDocument() to ensure that the CDL transaction
+  callback is reenabled following failure to open the new
+  document.
+
+  * common\win32\CTCommonDoc.cpp:
+
+  Modify OpenRepository() to ensure that the CDL transaction
+  callback is reenabled following failure to open the new
+  repository.
+
+1999-09-17  Simon FitzMaurice  <sdf@redhat.co.uk>
+    standalone\win32\ConfigToolDoc.cpp : 
+    
+  Remove unneeded #includes
+
+1999-09-17  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    standalone\win32\ConfigtoolDoc.cpp : 
+  CurrentLinkerScript() made common.
+  Remaining fns in non-common docs reordered to ease diffs.
+
+1999-09-17  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigToolDoc.cpp,
+    common\win32\ConfigToolDoc.h:
+
+  Remove obsolete functions and their references:
+   
+  RecalculateFileList()
+  CreateNotificationThread()
+  DestroyNotificationThread()
+
+  * standalone\win32\splash.cpp:
+
+  Fix compilation error relating to deleteZ().
+
+1999-09-17  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    standalone\win32\ConfigToolDoc.cpp : 
+    
+    AddAllItems() becomes common
+
+1999-09-17  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\CellView.cpp
+    common\win32\ConfigItem.cpp
+    common\win32\FolderDialog.cpp
+    common\win32\memmap.cpp
+    common\win32\messagebox.cpp
+    common\win32\stdafx.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.cpp
+    standalone\win32\HelpView.cpp
+    standalone\win32\MainFrm.cpp
+    standalone\win32\splash.cpp : 
+    
+    Use deleteZ and deleteZA macros; migrate AddItem() to common ConfigToolDoc file
+
+1999-09-16  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ProperitesView.cpp:
+
+  Modify FillCtrl() to limit the length of property value strings
+  since the list control appears to truncate the displayed string
+  to 256 characters. This change speeds up FillCtrl() considerably
+  when a CdlProperty has a large number of arguments.
+
+1999-09-16  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTCommonDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h:
+
+  Rename CdlErrorHandler() to CdlParseErrorHandler() and
+  introduce new handlers CdlLoadErrorHandler() and
+  CdlLoadWarningHandler().
+
+  Modify SetValue (CConfigItem &, double) to set the MFC
+  document modified flag.
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+
+  Reference renamed CdlParseErrorHandler() function.
+
+  * common\win32\ControlView.cpp:
+
+  Modify OnUpdate() to hardcode the tree item height (16) for
+  now. This works around an issue regarding the incorrect
+  spacing of grid lines when a 'large' display font is
+  selected.
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify OnCloseDocument() to only delete the CDL data
+  structures if they have been created.
+
+  Modify OnOpenDocument() to load a CDL save file.
+
+  Modify OnNewDocument() to quit the application if the
+  user refuses to specify a valid repository.
+
+  Modify OnSaveDocument() to output a CDL save file.
+
+  Modify OpenRepository() to allow reverting to the previous
+  repository until sanity checks have been performed on
+  the new one.
+
+  Modify ReadOptions() to do nothing. Build options will
+  eventually be obtained by another route.
+
+  Modify IsModified() to call the base implementation.
+
+  Modify AddAllItems() to clear the MFC document modified flag.
+
+1999-09-13  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    standalone\win32\ConfigToolDoc.cpp : 
+    
+  more commonality
+
+1999-09-13  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CTCommonDoc.cpp
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    standalone\win32\ConfigToolDoc.cpp
+    standalone\win32\Configtool.dsp
+    standalone\win32\Configtool.mak
+    standalone\win32\ConfigtoolDoc.h : 
+    
+  Move common sections of configtooldoc to shared file
+
+1999-09-10  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\FileName.cpp : 
+    
+  return abs path name if comparison cannot be made (e.g. different drives)
+
+1999-09-09  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+
+  Modify GetPackageData() to supress obsolete warning messages
+  concerning missing include\pkgconf\*.h header files.
+
+  Modify NewMemoryLayout() in avoid importing linker-defined
+  memory section names if no linker script has been found.
+
+1999-09-07  John Dallaway  <jld@redhat.co.uk>
+
+  * Configtool.dsw:
+
+  Use common cdl project with ANSI build configurations.
+
+1999-09-06  Simon FitzMaurice  <sdf@redhat.co.uk>
+    common\win32\CellView.cpp
+    common\win32\ControlView.cpp
+    common\win32\ControlView.h
+    common\win32\cellview.h : 
+    
+  Add keyboard interface to tab from cell to cell, also '<' and '>' for integer "bumping"
+
+    common\win32\DoubleEdit.cpp
+    common\win32\IntegerEdit.cpp : 
+    
+  allow partial value "-"
+
+    standalone\win32\BuildOptsPage.cpp
+    common\win32\PropertiesView.cpp
+    common\win32\RulesView.cpp 
+    standalone\win32\MainFrm.cpp : 
+    
+  use correct macros for decoding GetMessagePos() result
+
+1999-09-02  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp:
+
+  Modify all versions of CConfigItem::SetValue() to
+  force the current boolean state when changing config
+  items of CDL type booldata. This prevents a possible
+  change of boolean state if the value source changes.
+
+1999-09-02  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ControlView.cpp,
+    common\win32\ControlView.h:
+  Eliminate beeping when keyboard used.
+
+1999-08-18  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ControlView.cpp,
+    common\win32\ControlView.h:
+
+  Rename Enabled() function to IsActive() for
+  consistency of nomenclature.
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+  Modify SetEnabled() to change the selected radio
+  button of a radio button group in a single CDL
+  transaction.
+
+  * common\win32\CTUtils.cpp:
+
+  Modify DoubleToStr() to output the correct
+  precision for a double using DBL_DIG.
+
+1999-08-17  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+
+  Modify CdlTransactionHandler() to refresh the control
+  view when the value source of a config item changes
+  to ensure that the 'not default' asterisk is shown
+  for _all_ items in a group of radio buttons when a new
+  item is selected, even if the value of a specific
+  item has not changed.
+
+1999-08-17  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+  Modify Value() to support the CDL BoolData flavor.
+
+  Implement HasRadio() by searching for a clue in the
+  config item description as a hack to test radio
+  button support.
+
+  Modify SetEnabled() to disable other config items in
+  a radio button group when a new item is selected.
+
+  Make HasBool() a constant function.
+
+  * common\win32\ControlView.cpp,
+    common\win32\ControlView.h:
+
+  Modify AdjustItemImage() to use radio icons as appropriate.
+
+  Modify RestoreDefault() to restore the default value of
+  all config items with radio buttons in a group.
+
+  Modify BumpItem() to prevent disabling a config item
+  with a radio button in this way.
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+
+  Restore CheckRadios() and modify to provide a warning if
+  the default states of config items with radio buttons
+  is inconsistent.
+
+  Modify AddAllItems() to invoke CheckRadios().
+
+1999-08-17  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\RegionGeneralPage.h:
+
+  Specify dialog resource ID directly to workaround
+  weirdness with IDD_REGION_GENERAL macro.
+
+1999-08-16  John Dallaway  <jld@redhat.co.uk>
+
+  Support for CDL flavor BoolData:
+
+  * common\win32\CellView.cpp:
+
+  Modify OnDraw() to grey the cell text for
+  disabled BoolData items.
+
+  * common\win32\ConfigItem.cpp:
+
+  Modify StringValue() to return a data string
+  for BoolData items as for Data items.
+
+  Modify SetEnabled() to enforce the current data
+    value as the user value when enabling\disabling
+  BoolData items to avoid current data value changes.
+
+  * common\win32\ControlView.cpp:
+
+  Modify BumpItem() to distinguish between boolean
+    toggle requests (nInc == 0) and data increment\
+  decrement requests (nInc != 0).
+
+  Modify OnLButtonDown() to distinguish between
+  toggling a boolean item and incrementing a
+  data item.
+
+  Modify OnChar() to to distinguish between
+  toggling a boolean item (using space bar) and
+  incrementing\decrementing a data item (using
+  +\- keys).
+
+  Modify AdjustItemImage() to grey the checkbox of
+  disabled Bool and BoolData items.
+
+1999-08-16  John Dallaway  <jld@redhat.co.uk>
+
+  Preparation for supporting CDL flavor BoolData:
+
+  * common\win32\ConfigItem.cpp, ConfigItem.h:
+
+  Remove enum types Boolean and Radio since the
+  presence of a boolean state is now independent
+  of the config item data type. Modify member
+  functions accordingly.
+
+  New functions SetEnabled(), HasRadio() and
+  HasBool() to get\set boolean information via
+  CDL calls. HasRadio() is a dummy function for
+  now.
+
+  * common\win32\CellView.cpp:
+
+  Modify GetCellValue() to remove references to
+  Boolean and Radio config item types.
+
+  * common\win32\ControlView.cpp:
+
+  Modify AdjustItemImage() and BumpItem() to use
+  CConfigItem::HasBool() and remove other references
+  to Boolean and Radio config item types.
+
+  * common\win32\PropertiesView.cpp,
+    common\win32\PropertiesView.h:
+
+  Modify FillCtrl() to present an 'Enabled' property
+  if the config item has boolean data (in addition
+  to the 'Value' property).
+
+  Modify OnUpdate() to update the 'Enabled' property
+  field when a value has changed.
+
+  Remove references to Boolean and Radio config item
+  types in other member functions.
+
+  * standalone\win32\MainFrm.cpp,
+
+  Remove references to Boolean and Radio config item
+  types in member functions.
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h,
+
+  New SetEnabled() member function to set a boolean
+  config item.
+
+  Modify ItemTypeOf() to return CConfigItem::None for
+  CDL items of flavor Bool. Such items are now tested
+  using CConfigItem::HasBool().
+
+  Remove references to Boolean and Radio config item
+  types in other member functions.
+
+1999-08-13  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\CTUtils.cpp:
+
+  Modify DoubleToStr() to use "%g" rather than "%e" to
+  format doubles.
+
+  * standalone\win32\res\bitmap2.bmp,
+    common\win32\ControlView.cpp:
+
+  Add new icon for config items of type double and
+  modify AdjustItemImage() to make use of it.
+
+  * standalone\win32\Configtool.rc:
+
+  Suppress the erroneous generation of a #include for
+  TestTool.rc by the resource editor.
+
+1999-08-13  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CTUtils.cpp : no need for UNICODE filtering
+  * standalone\win32\Configtool.dsp,.mak : use common version of properties
+
+1999-08-13  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h,
+
+  Make CdlTransactionHandler() a class member.
+
+  Modify CurrentLinkerScript() to trap missing
+  CYGBLD_LINKER_SCRIPT option.
+
+  Modify SwitchMemoryLayout() to eliminate duplicate
+  calls to mem_map class member functions.
+
+1999-08-13  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp, common\win32\ConfigItem.h:
+
+  New member variable m_bPackage and IsPackage() access function
+  to denote package config items in preparation for retiring
+  the CPackage class.
+
+  * common\win32\ControlView.cpp:
+
+  Modify AdjustItemImage() to use CConfigItem::IsPackage().
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h,
+
+  Implement revised scheme for obtaining memory layout and
+  linker script files using CDL options CYGHWR_MEMORY_LAYOUT
+  and CYGBLD_LINKER_SCRIPT respectively. Use new member
+  functions CurrentMemoryLayout() and CurrentLinkerScript()
+  when switching memory layout.
+
+1999-08-12  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * tools\configtool\common\win32\ControlView.cpp : 
+  
+  "options" -> "settings" in context menu and introduce separator
+
+  * tools\configtool\common\win32\FileName.cpp : do not attempt to create c: etc..
+  * tools\ecostest\common\wcharunix.h : add mkdir compatibility macro
+  * tools\testtool\win32\RunTestsSheet.cpp,h : size correctly in modeless case and simulate WM_KICKIDLE
+
+1999-08-12  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\cdl.dsp,
+  * standalone\win32\cdl.dsp,?
+    standalone\win32\cdl.mak:
+
+  Further revision missed in previous commit.
+
+1999-08-12  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\cdl.dsp,
+    standalone\win32\cdl.mak,
+    standalone\win32\cdl.sh:
+
+  Accommodate revised configure switches in CDL custom build
+  rule.
+
+1999-08-12  Bart Veer  <bartv@redhat.co.uk>
+
+  * Makefile.in:
+  * acinclude.m4:
+  * aclocal.m4:
+  * configure.in:
+  * configure:
+  * config.h.in:
+  First attempt at autoconfiscating the configtool.
+
+1999-08-11  John Dallaway  <jld@redhat.co.uk>
+
+  Implementing support for config items of type double:
+
+  * common\win32\DoubleEdit.cpp,
+    common\win32\DoubleEdit.h,
+    standalone\win32\Configtool.dsp,
+    standalone\win32\Configtool.mak:
+
+  New CDoubleEdit class to provide appropriate edit mask for
+  editing double values.
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+  New CConfigItem::Double config data type.
+
+  New member functions SetValue(double), DoubleValue() and
+  DoubleDefaultValue().
+
+  * common\win32\CTUtils.cpp,
+    common\win32\CTUtils.h:
+
+  New member functions StrToDouble() and DoubleToStr().
+   
+  * common\win32\ControlView.cpp,
+    common\win32\PropertiesView.cpp,
+    common\win32\CellView.cpp:
+
+  Accommodate new CConfigItem::Double config data type.
+
+    standalone\win32\ConfigtoolDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h:
+
+  New SetValue(CConfigItem &, double) member function.
+
+  Modify ItemTypeOf() to return CConfigItem::Double when
+  a config option has a legal value range of type double.
+
+  Modify SetValue (CConfigItem &, const CString, bool) to
+  accommodate double values.
+
+1999-08-09  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * tools\ResourceTool\win32\ResourceToolDlg.h
+    tools\ResourceTool\win32\StdAfx.h
+    tools\Utils\win32\properties.cpp,h : Make windows-independent (move to common some time)
+    tools\ecostest\win32\*.dsp,*.mak : use properties class
+    tools\testtool\win32\RunTestsSheet.cpp
+    tools\testtool\win32\RunTestsSheet.h
+    tools\ecostest\common\TestResource.cpp,h 
+    tools\ecostest\common\ResourceServer.cpp,h 
+    tools\ecostest\common\eCosTest.cpp
+    tools\ecostest\common\eCosTestUtils.cpp,h : Use common properties class
+
+1999-08-06  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\ConfigTooldoc.h : correct misplaced edit
+
+1999-08-06  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\ControlView.cpp: UNICODEd trace string
+  * common\win32\IncludeSTL.h: explicit pragma warning so as to be able to
+  use level 4
+  * tools\configtool\common\win32\PropertiesView.cpp
+    tools\configtool\common\win32\RulesView.cpp
+    standalone\win32\CdlTemplatesDialog.h
+    common\win32\stdafx.h : move include of STL string from PCH to using files
+  * testtool\win32\RunTestsSheet.cpp : correct dereference of view **
+
+1999-08-06  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+
+  Report CdlStringException exceptions raised while
+  loading the initial CDL configuration.
+
+1999-08-06  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\CdlTemplatesDialog.cpp,
+
+  Modify OnInitDialog() to handle the case where no
+  template is selected on dialog initialisation
+  (due to a previous error). Select the first template
+  in such cases.
+
+1999-08-05  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+
+  Catch assertions raised while selecting a new CDL template.
+
+1999-08-05  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+
+  Tidy up AddItems() source. No functional change.
+
+1999-08-05  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Fix GetDefaultHardware() to pass the length of the
+  data buffer to RegQueryValueEx() correctly.
+
+1999-08-04  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\CellView.cpp,h, common\win32\mltview.cpp,h :
+  workaround for slickedit bug (paint our own backgrounds)
+  * common\win32\ControlView.cpp : force a cell view update to improve latency
+  * tools\ecostest\common\TestResource.cpp : avoid compilation warning
+  * common\win32\ConfigItem.cpp,h : replace state variables by parameter of 
+  EvalEnumStrings a parameter to police just-in-time lookup
+  * tools\testtool\win32\RunTestsSheet.cpp,h : allow for modeless as well as modal operation
+  * eCos.rc : restore include of TestTool.rc
+
+1999-08-04  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+1999-08-04  John Dallaway  <jld@redhat.co.uk>
+
+  * common.win32\CellView.cpp:
+
+  Modify InCell() to invoke EvalEnumStrings() for
+  config items of type CConfigItem::Enum only.
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+  Remove obsolete m_nGeneralFlag and m_nDefinitionLine
+  members.
+
+  Simplify EvalEnumStrings() to process config items
+  of type CConfigItem::Enum only.
+
+1999-08-04  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+  Remove m_nEnumMax member and Modify EnumMax() to
+  use CStringArray::GetUpperBound().
+
+1999-08-04  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp,
+    common\win32\ConfigItem.h:
+
+  Remove obsolete m_nMin, m_nMax and CanSetValue()
+  class members.
+   
+  Add m_nEnumMax member to support combo boxes in the
+  cell view.
+
+  * common\win32\CellView.cpp:
+
+  Modify InCell() and GetInCellRect() to use
+  CConfigItem::EnumMax().
+
+  * common\win32\ControlView.cpp:
+
+  Modify BumpItem() to use CConfigItem::EnumMax() and
+  correctly handle the decrementing of enum config
+  items.
+
+  * common\win32\PropertiesView.cpp:
+
+  Remove obsolete references to Min and Max rows of the
+  properties view.
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h,
+
+  Remove obsolete ReadMacros() function.
+
+  Modify AddItem() to no longer read enum values during
+  initialisation. They are always read just-in-time now.
+
+1999-08-04  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\cdl.dsp,
+    standalone\win32\cdl.mak:
+
+  Correct path to libCDL source files which was preventing
+  source browsing.
+
+1999-08-04  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h:
+
+  New function GetDefaultHardware() retrieves the
+  default hardware template from the registry.
+
+  Modify OpenRepository() to load the default hardware
+  template obtained by GetDefaultHardware().
+
+1999-08-03  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\ConfigtoolDoc.cpp,
+    standalone\win32\ConfigtoolDoc.h,
+
+  Modify OpenRepository() to catch exceptions generated
+  while loading the hardware and package templates.
+
+  Modify CdlErrorHandler() to save the most recent
+  error message in a member variable for reporting
+  purposes.
+
+1999-08-03  John Dallaway  <jld@redhat.co.uk>
+
+    standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify OpenRepository() to delete any previous CDL
+  configuration before creating the new one.
+
+1999-08-02  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\AddRemoveDialog.cpp: Removed debugging code
+  * common\win32\CTUtils.cpp: Include <string> with STLInclude mechanism
+  * common\win32\CellView.cpp,h: Combo in-cell changes now only "committed" when
+  cell closed.  Cancel will leave value unchanged.
+  * common\win32\ControlView.cpp,h,
+    standalone\win32\HelpView.cpp,
+    standalone\win32\MainFrm.cpp, standalone\win32\OutputView.cpp,h:
+  Allow only a single find dialog to be active at a given time
+  * standalone\win32\MainFrm.cpp: Diable edit menu items when focus not in control view
+
+1999-08-02  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * standalone\win32\Configtool.dsp, standalone\win32\Configtool.mak, standalone\win32\Configtool.rc :
+  Properly include testtool resources.
+
+1999-08-02  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * tools\configtool\common\win32\CTUtils.cpp : Include <string> with IncludeSTL mechanism
+  * tools\configtool\common\win32\CellView.*  : ESC now cancels effect of combo
+   
+1999-08-02  John Dallaway  <jld@redhat.co.uk>
+
+    standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify CdlErrorHandler() to log parse errors to the
+  output window.
+
+  Modify LogConflicts() to strip all unnecessary whitespace
+  from messages.
+
+  Modify SelectPackages() to list non-hardware packages
+  only in the dialog box. Addition and removal of hardware
+  packages must be undertaken by selecting an appropriate
+  hardware template to ensure selection of the correct
+  memory layout. Also trap any parse errors which are
+    encountered while loading\unloading packages. These are
+  not fatal.
+
+1999-08-02  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * common\win32\StringEdit.* : Add idle message hint for in-cell string editing
+  * common\win32\IdleMessage.* : Add Reset() member function
+
+1999-07-30  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.h:
+
+  Remove obsolete members from class declaration.
+
+  * standalone\win32\Configtool.rc:
+
+  Use IDC_CT_EDIT rather than IDC_EDIT for multi-line
+  string edit box.
+
+1999-07-29  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * FolderDialog.*, NewFolderDialog.* : moved IDs to implementation
+  (unknown why the existing code doesn't compile, but it doesn't)
+
+1999-07-29  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\ConfigItem.cpp:
+
+  Restore the implementation of EvalEnumStrings() which
+  was erroneously commented out.
+
+1999-07-29  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\RulesView.cpp:
+
+  Modify OnDblclk() to jump to the config item referenced
+  in the property column if the click was in that column.
+  If the property does not reference a single config item
+  then jump to the config item owning the conflict as
+  before.
+
+1999-07-28  John Dallaway  <jld@redhat.co.uk>
+
+  * common\win32\PropertiesView.cpp,
+    common\win32\PropertiesView.h:
+
+  Modifications to minimise flicker in the properties view:
+
+  Add a new function SetItemTextGrow() which sets the text
+  of a list item in the properties list control, extending
+  the list if necessary.
+
+  Modify FillCtrl() to make use of the new SetItemTextGrow()
+  function.
+
+  Modify OnUpdate() to force the refresh of all list items
+  when a new config item is selected, even if the new config
+  item is of the same type as the old.
+
+1999-07-27  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * DescView.*: Fixed selection of short description pane font
+  * ControlView.cpp : Context menu now available on items of type NONE
+  * CellView.cpp : Removed font change visibility when in-cell starts
+  * ConfigTool.dsp : readded changelog
+
+1999-07-27  John Dallaway  <jld@redhat.co.uk>
+
+  * standalone\win32\cdl.sh:
+
+  Accommodate eCos repository with any root directory
+  name.
+
+  Use external TCLHOME environment variable if it exists.
+
+  * common\win32\ControlView.cpp:
+
+  Modify AdjustItemImage() to display a greyed icon for
+  all calculated config items.
+
+  * common\win32\CellView.cpp, common\win32\ControlView.cpp:
+
+  Modify all calls to CdlVisible::is_modifiable() to also
+  test CdlVisible::is_active(). This is necessary because
+  inactive config items may still be modifiable.
+
+  Modify OnDraw() to use only CdlValuable::is_modifiable()
+  in determining whether a config item can be edited.
+
+  * standalone\win32\Configtool.dsp:
+
+  Add ChangeLog.
+
+  * standalone\win32\ConfigtoolDoc.cpp:
+
+  Modify SetValue() to check if the new value of an integer
+  item is legal and report to the user.
+
+  Modify OnOpenDocument() to workaround the initial update
+  problem temporarily by forcing the update of all views.
+
+  * common\win32\PropertiesView.cpp:
+
+  Modify DblClk() to handle double clicking on 'requires'
+  properties by examining the associated CdlReference
+  objects.
+
+===========================================================
+
+    1999-07-27    merge sources from devo\ide\src\gui\mfc\eCos
+    and ecc\ecc\cdltools\current\host\build\win32
+
+===========================================================
+
+1999-07-23  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * CTMain.cpp, MultiDocSECWorksheet.* : turn close into hide of client windows
+  in order to preserve caption and position.
+  * ProjectManager.* : hack for invoking custom rules unconditionally
+  * PropertiesView.cpp: fix to look for macros not macros-or-names
+  * subprocess.*: save directory as CString, not psz    
+  * IntegerEdit.cpp: allow hex and integer input
+
+1999-07-23  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp:
+
+  Modify EvalEnumStrings() to accommodate boolean
+  config items.
+
+1999-07-23  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp:
+
+  Modify StringValue() to observe the hex display
+  option if enabled.
+
+1999-07-23  John Dallaway  <jld@redhat.co.uk>
+
+  * ControlView.cpp:
+
+  Modify RestoreDefault() to skip the root tree node
+  which has no CDL item.
+
+  * PropertiesView.cpp:
+
+  Modify FillCtrl() to omit the Min and Max rows for
+  integer items. CDL now allows multiple ranges with
+  calculated limits.
+   
+  Rename the evaluated "Default Value" row to "Default"
+  to distinguish it from the "DefaultValue" CDL
+  property which presents the underlying expression.
+  Both items provide useful information.
+
+  * ConfigtoolDoc.cpp:
+
+  Modify CdlTransactionHandler() to switch memory
+  layout if a config item with display string "Startup
+  type" changes value.
+
+1999-07-22  John Dallaway  <jld@redhat.co.uk>
+
+  * CdlTemplatesDialog.cpp, CdlTemplatesDialog.h:
+
+  Modify OnSelchangeCdlTemplate() to fill the packages
+  edit box with package aliases.
+
+    Move most of the show\hide code into a new function
+  ShowDetails() which can be called to hide details by
+  default before the dialog is displayed.
+
+  * eCos.rc:
+
+  Tweak static text in templates dialog.
+
+  * ConfigtoolDoc.cpp:
+
+  Modify SelectPackages() to restore use of the
+  CCdlPackagesDialog dialog.
+
+  * CellView.cpp:
+
+  Modify InCell() to recalculate the combo box size after
+  the enum values have been fetched and the enum count is
+  known.
+
+1999-07-22  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * CellView.cpp - restore "restore default" for NONE items
+
+1999-07-22  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * ComboEdit.cpp,.h : new class to deal with in-cell combobox edits
+  For now this just exists to handle escape and enter cancellation, like
+  integeredit and stringedit.
+  * Integeredit.* : escape and enter cancellation, like stringedit.
+  * Integeredit.cpp : reverse sense of ES_NUMBER
+  * CellView.cpp : use of the above
+
+1999-07-22  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp, ConfigItem.h:
+
+  New function EvalEnumStrings() to calculate the legal
+  values on a just-in-time basis.
+
+  Modify DefaultValue() to obtain data from libCDL directly.
+
+  * ConfigtoolDoc.cpp:
+
+  Modify ItemTypeOf() to return ConfigItem::Integer if
+  there are legal ranges.
+
+  Modify AddItem() to no longer read legal values on
+  initialisation. They are now read just-in-time.
+
+  * ControlView.cpp:
+
+  Modify BumpItem() to restore Enum bump facility using
+  CConfigItem::EvalEnumStrings().
+
+  * PropertiesView.cpp:
+
+  Modify FillCtrl() to use StringDefaultValue() to fill
+  the "Default Value" field for all config item types.
+
+  * CellView.cpp:
+
+  Modify InCell() to read the Enum values just-in-time
+  using CConfigItem::EvalEnumStrings().
+
+1999-07-22  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * StringEdit.* : Fixed edit cancelling by means of escape and enter keys
+  * ControlView.* : Tailor context menu better to item under point
+  Give focus to an in-cell edit after creation
+  * CellView.cpp : Add rclick functionality as for controlview (still some
+  more to do here: better positioning of context menu and syskey accels)
+  * ConfigToolDoc.* : Find now takes optional "where" parameter
+  * PropertiesView.cpp : Implement double cliok on name.macro functionality
+  * RulesView.cpp : Restored selection on double-click functionality
+  * ecos.rc : Restored missing properties resource
+   
+1999-07-22  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp, ConfigItem.h:
+
+  Modify StringValue() to take a CdlValueSource parameter.
+  Modify StringDefaultValue() to use StringValue().
+
+  * ControlView.cpp:
+
+  Modify OnRestoreDefaults() to refresh the other views.
+
+  * ConfigtoolDoc.h:
+
+  Make UpdateFailingRuleCount() public.
+
+
+  * ConfigtoolDoc.cpp:
+
+  Remove remaining reference to CDL structural conflicts missed
+  in previous commit.
+
+1999-07-22  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp:
+
+  Modify Modified() to determine whether an option has been
+  modified using CdlValuableBody::get_source().
+
+  * ConfigtoolDoc.cpp:
+
+  Modify OnCloseDocument() to disable the CDL transaction handler
+  before deleting CDL data.
+
+  Modify AddItem() to no longer set the initial value of a new
+  config item. This is not necessary now the values are stored in
+  CDL objects.
+
+  * ControlView.cpp:
+
+  Modify IsChanged() to use CConfigItem::Modified().
+
+  Modify RestoreDefault() to restore the default option value
+  using a call to CdlValuableBody::set_source().
+
+1999-07-22  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * AddRemoveDialog.*: add fn to limit expansion of listbox sizes.
+  GetStyle() does not return WS_HSCROLL attribute - work around this
+  * CTOPtionsDialog.*: remove options unlikely to be implemented RSN
+  * CDTemplatesDialog.*: add "Details" button (filling of control still to do)
+  * ConfigToolDoc.cpp: Tidied CFileName usage
+  * Project.cpp: used slightly different AddLibrary hack
+  * ProjectManager.cpp: added timing fns
+  * eCos.rc: changes associated with the above + remove usused dialogs
+  * testtoolres.h: Restore missing defines
+  * Outputpage.cpp: Use a fixed font
+  * ExecutionPage.cpp: Remove unused refresh map entry
+
+1999-07-21  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp, PropertiesView.cpp, RulesView.cpp:
+
+  Ignore CDL _structural_ conflicts for now.
+
+1999-07-21  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp:
+
+  New CdlTransactionHandler() function to manage refreshing
+  of the config tree.
+
+  Modify OpenRepository(), SelectPackages() and SelectTemplate()
+  to install and disable the CDL transaction handler as
+  appropriate.
+
+  * ControlView.cpp, ControlView.h:
+
+  Rename Enable() to Refresh() and remove vestigial second
+  argument.
+
+  Modify Enabled() to use CdlUserVisible::is_active().
+
+  Modify BumpItem() to disabled bumping of Enum options for now.
+
+1999-07-21  John Dallaway  <jld@redhat.co.uk>
+
+  * RulesView.cpp:
+
+  Modify AddConflicts() to save the unique CdlConflict as the
+  item data in the list control.
+
+  Modify OnDblClk() to derive the config item from the new list
+  item data.
+
+  Re-implement CompareFunc() to sort with the list control text.
+
+1999-07-21  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtooDoc.cpp:
+
+  Modify in line with recent changes to the libCDL API. All
+  legal values are now obtained via CdlListValue::get_table().
+
+1999-07-20  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * ConfigToolDoc.*, CTMain,*: CConfigToolDoc no longer derives from CDocument
+  Added fn. to show eCos bar
+  Tidied up MLT message handlers
+  * ConfigItem.* etc...added fn to select - includes showing eCos bar
+  * ControlView.cpp: modified IsChanged to accommodate all types of item
+
+1999-07-20  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp, ConfigItem.h:
+
+    Modify SetValue(), StringValue() and Value() to store\retrieve
+  config values using libCDL.
+
+  * PropertiesView.cpp:
+
+  Modify OnUpdate() to refresh property list icons when
+  CConfigToolDoc::ValueChanged.
+
+  * CellView.cpp:
+
+  Modify CancelCellEdit(), OnComboCelEndOK() and InCell() to store
+  values of config items of type Enum as strings.
+
+1999-07-20  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * CTMain.cpp: removed obsolete include of mainfrm.h and resource.h in 
+  favour of ide.guicommon.h
+  * CTUtils.* etc...: renamed StrToInt as StrToItemIntegerType (clashed
+  SDK define)
+  * CellView.*, ControlView.*: added find menu greying functionality, 
+  find again functionality
+  * Project.cpp: minor fixes to library deps
+  * Thermometer: added optional second (name) param to ctor
+
+1999-07-20  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp, PropertiesView.cpp, RulesView.cpp:
+
+  Modify in line with minor changes to the libCDL API.
+  Specifically, CdlBaseBody has been eliminated in favour
+  of CdlNodeBody and CdlListExpression::eval() now takes
+  a CdlEvalContext parameter.
+
+1999-07-20  John Dallaway  <jld@redhat.co.uk>
+
+  * CTMain.cpp, CTMain.h:
+
+  Modify update handlers such that MLT function menu
+  items are greyed if the MLT view is hidden.
+
+Mon Jul 19 17:50:10 1999  Tomy Hudson  <thudson@redhat.com>
+
+  * stdafx.h: Remove obsolete include of ide.model.h
+
+1999-07-19  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp, ConfigtoolDoc.h:
+
+  New function CopyMLTFiles() copies all MLT-related files
+    for the current target\platform from the eCos repository
+  to the build tree.
+
+1999-07-19  John Dallaway  <jld@redhat.co.uk>
+
+  * CTMain.cpp, CTMain.h:
+
+  Add new menu items and associated message handlers to
+  add, remove and edit memory layout regions and sections.
+
+  * ConfigtoolDoc.cpp:
+
+  Re-enable correct functioning of CurrentPlatform() now that
+  enum config options are supported.
+
+  Modify SetValue() to detect a change in target or platform
+  by comparing old values with new ones.
+
+1999-07-19  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * CTMain.*,ProjectManager.*: Adjusted to allow multiple init and finalize
+  * ConfigtoolDoc.*: Add persistence via registry, removed some unused code
+  * Properties.*, ConfigTool.* etc...: Added registry specification to CProperties ctor
+  * .cvsignore: updated
+  * CTOptionsDialog.*: removed unused code
+  * Project.*: added yet another hack for lack of custom rules
+
+1999-07-16  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * CTMain.*, CFileName.*
+  Removed DeleteFolderAndContents in favour of CFileName::RecursivelyDelete
+  Grey packages and templates dialogs if build in progress
+  Proper preprocessing around SEC3DTabWnd
+  * ConfigTool.*:
+  eCosInit gains build tree and bCreate params
+  * ConfigToolDoc.*:
+  Introduce BuildTree() and InstallTree() helper fns.
+  * Project.cpp:
+  Custom rules go in install tree, not build tree
+  * eCos.dsp. eCos.mak:
+  Add dependency on guicommon
+  * cdl.dsp:
+  Added cdl.sh to project
+
+1999-07-16  John Dallaway  <jld@redhat.co.uk>
+
+  * CdlTemplatesDialog.cpp, CdlTemplatesDialog.h,
+  eCos.rc, eCosres.h:
+
+  New template selection dialog box and handlers.
+
+  * eCos.dsp, eCos.mak:
+
+  Add CdlTemplatesDialog.cpp and CdlTemplatesDialog.h
+  to the eCos project.
+
+  * ConfigtoolDoc.cpp, ConfigtoolDoc.h:
+
+  New SelectTemplate() function to setup and invoke the
+  new template selection dialog box.
+
+  * CTMain.cpp, CTMain.h:
+
+  New "eCos Template..." menu item and handler to call
+  CConfigToolDoc::SelectTemplate().
+
+
+1999-07-15  John Dallaway  <jld@redhat.co.uk>
+
+  * cdl.sh:
+
+  Create the intermediate directory if it doesn't exist.
+
+1999-07-15  Simon FitzMaurice  <sdf@redhat.co.uk>
+  * cdl.dsp cdl.mak cdl.sh
+  Fix to work on command line.
+
+1999-07-15  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp:
+
+  Modify FileName() to generate the header file name for
+  a config item using libCDL calls.
+
+  * PropertiesView.cpp:
+
+  Modify DblClk() to prepend the build tree to the header
+  file name before launching the associated file viewer.
+
+1999-07-15  John Dallaway  <jld@redhat.co.uk>
+
+  * cdl.dsp, cdl.mak:
+
+  Generate the TCLHOME environment variable from the current
+  directory. It is no longer necessary to define TCLHOME
+  externally.
+
+  * eCos.dsp, eCos.mak:
+
+  Remove explicit references to cdl.lib and cyginfra.lib
+  since these are outputs of the cdl project.
+
+1999-07-15  Simon FitzMaurice  <sdf@redhat.co.uk>
+
+  * eCos.dsp, eCos.mak:
+    Included ..\..\..\..\tcl\lib on library path
+
+1999-07-15  Simon FitzMaurice  <sdf@redhat.co.uk>
+
+  * eCos.dsp, eCos.mak:
+    Included ..\..\..\..\tcl\include on path so as to be able to use checked-in tcl files
+  Restored missing FindDialog and MultiLineEditString files to link
+
+1999-07-15  John Dallaway  <jld@redhat.co.uk>
+
+  * PropertiesView.cpp, PropertiesView.h:
+
+  Remove "Defined at line" property from the properties
+  view as this information is no longer available.
+
+1999-07-14  Simon FitzMaurice  <sdf@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp
+  * ConfigtoolDoc.h
+  * ControlView.cpp
+  * IntegerEdit.cpp
+  * IntegerEdit.h
+  * Project.cpp
+  * Project.h
+  * ProjectManager.cpp
+  * ProjectManager.h
+  * PropertiesView.cpp
+  * StringEdit.cpp
+  * StringEdit.h
+  * cdl.dsp
+  * cdl.mak
+  * eCos.dsp
+  * eCos.mak
+  Introduced StringEdit class to deal with in-cell string editing (whether 
+  multiline or not)
+    Prepared document load\save functions to accommodate CDL databse loading\
+  saving
+  Corrected IntegerEdit to deal correctly with hex and decimal modes
+  Introduced hacks into CProject to deal with addLibrary not working and
+  implicit dependency on target.ld
+
+1999-07-14  Drew Moseley  <dmoseley@redhat.com>
+
+  * .cvsignore: Ignore .dep files.
+
+1999-07-14  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp:
+
+  Modify OpenRepository() to check that there is at least one
+  target and one template in the specified packages database
+  file.
+
+  Modify the constructor to enable the presentation of boolean
+  values in the cell view by default.
+
+1999-07-14  John Dallaway  <jld@redhat.co.uk>
+
+  * PropertiesView.cpp:
+
+  Restore handling code for ValueChanged updates which
+  was erroneously commented out in an earlier commit.
+
+1999-07-14  John Dallaway  <jld@redhat.co.uk>
+
+  * ControlView.cpp:
+
+  Modify BumpItem() to avoid changing the value of calculated
+  options.
+
+  Modify AdjustItemImage() to present a greyed checkbox icon
+  for calculated boolean options.
+
+1999-07-14  John Dallaway  <jld@redhat.co.uk>
+
+  * CellView.cpp:
+
+  Modify OnDraw() to show calculated option values greyed.
+
+  Modify OnLButtonDown() to prevent user editing of calculated
+  option values.
+
+1999-07-13  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp:
+
+  Use CdlValue::get_flavor () to determine the type and
+  default value of each config item.
+
+  Use CdlValuable::get_legal_values() to set up the
+  enum list for config items of type Enum. This needs
+  to be performed just-in-time in due course. 
+
+1999-07-13  Simon FitzMaurice  <sdf@redhat.co.uk>
+
+  Find functionality.
+
+1999-07-13  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp, ConfigItem.h:
+
+  Add new member variable m_CdlItem pointing to the associated
+  CDL node.
+
+  * ConfigtoolDoc.cpp:
+
+  Use get_default_value_expression ()->eval () rather than
+  get_argc () to calculate the default value at the time of
+  creating each CConfigItem object.
+
+1999-07-12  Simon FitzMaurice  <sdf@redhat.co.uk>
+
+  Removed more of unused variables and unused code.
+  Tidied up repository-filename access in the document class.
+  Moved eCos tools menu items to an "eCos" submenu.
+  Moved enums to stdafx.
+  Finally got rid of those pesky STL warnings.
+  Added description functionality to AddRemoveDialog
+  Added status bar code in accordance with latest functionality:
+  new classes CIdleMessage and CThermometer
+  Removed MultiLineString code
+
+1999-07-12  John Dallaway  <jld@redhat.co.uk>
+
+  * cdl.dsp, cdl.mak:
+
+  Generate intermediate files and output files on logical
+  drive V:
+
+1999-07-12  John Dallaway  <jld@redhat.co.uk>
+
+  * CTOptionsDialog.cpp, ConfigtoolDoc.cpp, ConfigtoolDoc.h,
+  ConfigTool.cpp, CTMain.cpp, PropertiesView.cpp, RulesView.cpp
+
+  Remove or comment out all references to libNotCDL, CRule
+  and CFailingRulesDialog.
+
+  * eCos.dsp, eCos.mak:
+
+  No longer build the CFailingRulesDialog and CRule classes,
+  but keep them in the project for reference temporarily.
+
+  Remove all libNotCDL files from the project.
+
+1999-07-09  Simon FitzMaurice  <sdf@redhat.co.uk>
+
+  Removed a large number of unused variables
+  Introduced GetMain() function to CConfigTool: CTMain fns no longer have to be static.
+
+1999-07-09  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp, ConfigtoolDoc.h:
+
+  Remove UpdateFailingRuleCount() which is also provided
+  by class CConfigToolMain. Modify all references to
+  use the remaining version of this function.
+
+  * RulesView.h:
+
+  Remove unnecessary GetConflictCount() function.
+
+  * CTMain.cpp, CTMain.h:
+
+  Modify UpdateFailingRuleCount() to determine the
+  conflict count from the document's m_CdlConfig
+  object directly. Also make the function static.
+
+1999-07-09  John Dallaway  <jld@redhat.co.uk>
+
+  * RulesView.cpp:
+
+  Modify AddConflicts() to present the formal property
+  name rather than argv [0] which could be an alias for
+  the property name.
+
+1999-07-09  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigItem.cpp, ConfigItem.h:
+
+  Reduce dependencies on the CRule class as a precursor
+  to removing CRule. Remove all dependencies on the
+  CHeaderFile class.
+
+  * eCos.dsp, eCos.mak:
+
+  No longer build the obsolete CHeaderFile class.
+
+  * ConfigtoolDoc.cpp, ConfigtoolDoc.h:
+
+  Remove all dependencies on the CHeaderFile class.
+
+  Read default values for items using libCDL calls in
+  AddItem () rather than calling SetDefaults() and
+  ReadMacros().
+
+  Set package items to type 'None' so that they
+  cannot be deselected.
+
+  Remove obsolete Rule() member function.
+
+  * ControlView.cpp:
+
+  Modify AdjustItemImage() to display package icons for
+  packages (which are now of type 'None').
+
+  Modify ShowPopupMenu() to enable 'Properties' menu
+  item for packages (which are now of type 'None').
+
+  * Rule.cpp:
+
+  Comment out references to the removed function
+  CConfigToolDoc::Rule ().
+
+1999-07-08  John Dallaway  <jld@redhat.co.uk>
+
+  * PropertiesView.cpp, PropertiesView.h:
+
+  New function PropertyInConflictsList() determines if
+  a CDL property is within a specified list of CDL
+  conflicts.
+
+  Modify the FillCtrl() function to add an exclamation
+  icon to listed properties which are within any CDL
+  conflict list by calling the new
+  PropertyInConflictsList() function.
+
+1999-07-08  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp:
+
+  Use CDL flavor info to workaround the lack of
+  get_widget_hint() for now.
+
+1999-07-08  John Dallaway  <jld@redhat.co.uk>
+
+  * CTUtils.cpp:
+
+  Accommodate both leading and trailing whitespace in
+  the StripExtraWhitespace() function.
+
+  * PropertiesView.cpp:
+
+  Add CDL properties to the properties view list box in
+  function FillCtrl().
+
+1999-07-07  John Dallaway  <jld@redhat.co.uk>
+
+  * RulesView.cpp:
+
+  Modify FillRules() function to present all property
+  arguments for each conflict.
+
+1999-07-07  John Dallaway  <jld@redhat.co.uk>
+
+  * RulesView.cpp, RulesView.h:
+
+  Modify FillRules() function to fill the rules list with
+  CDL conflicts by calling a new function AddConflicts().
+
+  Modify OnDblclk() message handler to use a CItem pointer
+  from the list view rather than the previous CRule
+  pointer.
+
+  * CTMain.cpp, CTMain.h:
+
+  New View->Conflicts menu item and message handlers
+  replacing View->Rules items.
+
+  Change rules window caption to 'Conflicts' in the
+  constructor.
+
+  * ConfigtoolDoc.cpp:
+
+  Modify UpdateFailingRuleCount() to call FillRules()
+  unconditionally. And call UpdateFailingRuleCount() from
+  AddAllItems().
+
+1999-07-07  John Dallaway <jld@redhat.co.uk>
+
+  * cdl.dsp, cdl.mak: New libCDL project which builds sources
+    from devo\ecos. Requires Cygwin B20.1 bin directory in the
+  list of 'executable files' directories (Tools->Options in VC++
+    6 IDE). Also requires \bin such that \bin\sh exists. Finally
+  requires that Tcl 8.1 is installed and a TCLHOME environment
+    variable such that $TCLHOME\lib and $TCLHOME\include exist.
+
+  * eCos.dsp, eCos.mak: Use the cdl.lib and cyginfra.lib built
+  by the new libCDL project rather than the pre-built libraries
+    at devo\ide\cdl.
+
+1999-07-05  John Dallaway <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp ConfigtoolDoc.h:
+
+  New function LogConflicts() logs global conflict explanation
+  strings to the output pane. Called from AddAllItems().
+
+1999-07-05  John Dallaway <jld@redhat.co.uk>
+
+  * CdlPackagesDialog.cpp (OnInitDialog): Enable horizontal
+  scrolling of listboxes to accommodate long package aliases.
+
+1999-07-01  John Dallaway <jld@redhat.co.uk>
+
+  * eCos.rc: Add the LBS_SORT property to the listboxes
+  in the package selection dialog explicity. Add the dialog
+  title (caption) explicity.
+
+  * CdlPackagesDialog.cpp, ConfigtoolDoc.cpp (SelectPackages):
+
+  Remove unnecessary dialog initialization code.
+
+Thu Jul 01 07:52:10 1999  Ian Molee  <imolee@redhat.com>
+
+  * eCos.dsp: Added proper CDL paths to library and header file
+  search paths in project settings, to eliminate the need for the
+  user to manually specify these in DevStudio settings.
+  * eCos.mak: re-exported makefile with new settings.
+
+1999-06-30  John Dallaway <jld@redhat.co.uk>
+
+  * eCosres.h: Remove erroneous definition of IDC_EDIT1.
+
+  * ConfigtoolDoc.cpp: Full implementation of SelectPackages()
+    which performs package loading\unloading in response to
+  user input.
+
+1999-06-30  John Dallaway <jld@redhat.co.uk>
+
+  * AddRemoveDialog.cpp, AddRemoveDialog.h: Additional
+  constructor to allow use of class CAddRemoveDialog with other
+  dialog resources.
+
+  * CTUtils.cpp, CTUtils.h: New member function
+  StripExtraWhitespace() returns a copy of a string in which
+  each whitespace sequence s replaced by a single space
+  character.
+
+  * ConfigtoolDoc.cpp, ConfigtoolDoc.h: Initial implementation
+  of SelectPackages() using new dialog. New member function
+  GetPackageName () returning a package name given a package
+  alias.
+
+  * eCos.dsp, eCos.mak, CdlPackageDialog.cpp,
+  CdlPackageDialog.h, eCos.rc, eCosres.h:
+
+  New dialog resource and class derived from CAddRemoveDialog
+  implementing a package selection dialog.
+
+1999-06-30  John Dallaway <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp, ConfigtoolDoc.h:
+
+  AddAllItems(): New function to generate the CConfigItems
+  objects. Called from OpenRepository() and forthcoming
+    CDL package load\unload functions.
+
+  SelectPackages(): Dummy version of a new function to invoke
+  the forthcoming package selection dialog box.
+
+  * CTMain.cpp, CTMain.h:
+
+  New 'eCos Packages' menu item and OnToolsPackages() message
+  handler.
+
+Tue Jun 29 13:48:06 1999  Tomy Hudson  <thudson@redhat.com>
+
+  * CTMain.cpp (CConfigToolMain): Changed all references of
+  SECShortcutBar to QESECShortcutBar. Likewise for othre relevant
+  stingray classes.
+  * CTMain.h (class CConfigToolMain): Changed SEC3DTabWnd to
+  QESEC3DTabWnd.
+
+Mon Jun 28 14:30:34 1999  Ian Molee  <imolee@redhat.com>
+
+  * ecos.dsp: Ensured that _SECDLL and _GXDLL are defined in all
+  configurations to use the Objective Grid dynamically as the rest
+  of the projects do, rather than linking it in statically.
+
+1999-06-25  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp, ConfigtoolDoc.h:
+
+  Use libCDL to read config options, eliminating
+  ReadConfigData().
+
+  New AddContents() function to handle CDL container nodes.
+
+  Modify AddItem() to work with AddContents() and libCDL
+  objects. Implement hack to determine target and platform
+  packages in the absence of hCDL. No support for rules as
+  yet.
+
+  Modify ItemTypeOf() function to use libCDL get_widget_hint(),
+  but get_widget_hint() is not working so assume all visible
+  items are Boolean for now.
+
+  Modify OnCloseDocument() to delete the CDL objects.
+
+1999-06-16  John Dallaway  <jld@redhat.co.uk>
+
+  * parse.cxx, notcdl.cxx, libnotcdl.hxx: Prefix libnotCDL class
+  names with "not" to avoid naming clashes with libCDL classes.
+
+  * Rule.h, Rule.cpp, ConfigtoolDoc.h ConfigtoolDoc.cpp: Use the
+  revised libnotCDL class names.
+
+  * eCos.dsp, eCos.mak: Make correct use of _UNICODE and NDEBUG
+  pre-processor symbols in each of the build configurations.
+  Add explicit references to the (external) cdl, cyginfra and
+  tcl81 static libraries.
+
+  * ConfigtoolDoc.h,
+  ConfigtoolDoc.cpp (OpenRepository, GetPackageData):
+  Read the package names using libCDL rather than pkgconf.tcl.
+  Note that this requires an eCos repository containing the
+  ecos.db packages database file.
+
+1999-06-08  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp:
+  Check for expect.exe rather than make.exe in the user-selected
+  build tools directory.
+
+1999-06-08  John Dallaway  <jld@redhat.co.uk>
+
+  * ConfigtoolDoc.cpp:
+  Add 'run tests' data for SH, MIPS_TX39 and VR4300 targets from
+  eCos repository.
+
+Tue Jun 01 14:46:45 1999  Tomy Hudson  <thudson@redhat.com>
+
+  * CTMain.h: Changed include from GuiToolkit.h to ide.guicommon.h

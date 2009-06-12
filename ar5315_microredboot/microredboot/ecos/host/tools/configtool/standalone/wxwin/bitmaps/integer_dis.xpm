@@ -1,0 +1,23 @@
+/* XPM */
+static char * integer_dis_xpm[] = {
+"16 16 4 1",
+" 	c None",
+".	c #808080",
+"X	c #c0c0c0",
+"o	c Black",
+"                ",
+".............   ",
+".XXXXXXXXXXX..  ",
+".XXXXXXXXXXX. . ",
+".XX...XX..X..ooo",
+".X..X..X..X..XXo",
+".X..X..X..X..XXo",
+".XX...XX..X..XXo",
+".XXXXXXXXXXXXXXo",
+".X..X..XX...XXXo",
+".X..X..X..X..XXo",
+".X..X..X..X..XXo",
+".X..X..XX.o.XXXo",
+".XXXXXXXXXXXXXXo",
+".ooXXXX.oooo.XXo",
+"   .oooo    o.Xo"};

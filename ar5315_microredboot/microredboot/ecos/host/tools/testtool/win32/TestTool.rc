@@ -1,0 +1,519 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "testtoolres.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "testtoolres.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""res\\TestTool.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_TT_MAINFRAME        ICON    DISCARDABLE     "res\\TestTool.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_TT_ABOUTBOX DIALOG DISCARDABLE  0, 0, 235, 55
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About RunTests"
+FONT 8, "MS Sans Serif"
+BEGIN
+    ICON            IDR_TT_MAINFRAME,IDC_STATIC,11,17,20,20
+    LTEXT           "RunTests Version 1.0",IDC_STATIC,40,10,119,8,
+                    SS_NOPREFIX
+    LTEXT           "Copyright (C) 2000",IDC_STATIC,40,25,119,8
+    DEFPUSHBUTTON   "OK",IDOK,178,7,50,14,WS_GROUP
+END
+
+IDD_TT_EXECUTION_PAGE DIALOG DISCARDABLE  0, 0, 344, 229
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Executables"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "C&heck All",IDC_TT_SELECT_ALL,7,7,63,14,WS_DISABLED
+    PUSHBUTTON      "&Uncheck All",IDC_TT_UNSELECT_ALL,74,7,63,14,
+                    WS_DISABLED
+    DEFPUSHBUTTON   "&Add...",IDC_TT_ADD,141,7,63,14
+    PUSHBUTTON      "Add from &Folder...",IDC_TT_FOLDER,207,7,63,14
+    PUSHBUTTON      "&Remove",IDC_TT_REMOVE,274,7,63,14
+    LISTBOX         IDC_TT_RUNTESTS_LIST,7,27,330,194,LBS_SORT | 
+                    LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | 
+                    LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | 
+                    WS_HSCROLL | WS_TABSTOP
+END
+
+IDD_TT_OUTPUT_PAGE DIALOG DISCARDABLE  0, 0, 357, 228
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Output"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_TT_EDIT,7,7,343,214,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_READONLY | WS_VSCROLL | WS_HSCROLL
+END
+
+IDD_TT_ADDFILEDIALOG DIALOG DISCARDABLE  0, 0, 263, 181
+STYLE WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "",1119,7,7,249,131
+END
+
+IDD_TT_SUMMARY_PAGE DIALOG DISCARDABLE  0, 0, 357, 228
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Summary"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "List1",IDC_TT_LIST,"SysListView32",LVS_REPORT | 
+                    WS_BORDER | WS_TABSTOP,7,7,343,214
+END
+
+IDD_TT_PROPERTIES DIALOG DISCARDABLE  0, 0, 207, 135
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Properties"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Platform:",IDC_STATIC,7,9,28,8
+    GROUPBOX        "Timeouts",IDC_STATIC,7,24,193,51
+    EDITTEXT        IDC_TT_DOWNLOADTIMEOUT,158,35,20,12,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    CONTROL         "Spin1",IDC_TT_SPIN4,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_AUTOBUDDY | UDS_ARROWKEYS,180,35,11,14
+    EDITTEXT        IDC_TT_TESTTIMEOUT,158,55,20,12,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    CONTROL         "Spin1",IDC_TT_SPIN3,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_AUTOBUDDY | UDS_ARROWKEYS,180,55,11,14
+    GROUPBOX        "Execution",IDC_STATIC_EXECUTION,7,78,193,28
+    CONTROL         "&Local",IDC_TT_RADIO_LOCAL,"Button",BS_AUTORADIOBUTTON,
+                    13,90,33,10
+    CONTROL         "&Remote",IDC_TT_RADIO_REMOTE,"Button",
+                    BS_AUTORADIOBUTTON,51,90,41,10
+    PUSHBUTTON      "&Connection...",IDC_TT_SETTINGS,7,114,50,14
+    DEFPUSHBUTTON   "OK",IDOK,96,114,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,150,114,50,14
+    COMBOBOX        IDC_TT_DOWNLOADTIMEOUT_COMBO,55,35,94,54,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_TT_TIMEOUT_COMBO,55,55,94,50,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_TT_PLATFORM,72,7,128,82,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Some platform name here",IDC_TT_STATIC_PLATFORM,36,9,
+                    120,8,NOT WS_VISIBLE
+    LTEXT           "Download:",IDC_STATIC,13,37,35,8
+    LTEXT           "Runtime:",IDC_STATIC,15,57,29,8
+END
+
+IDD_TT_PROPERTIES2 DIALOG DISCARDABLE  0, 0, 254, 146
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Connection"
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Download",IDC_TT_STATIC_DOWNLOAD,7,7,240,51
+    CONTROL         "&Serial",IDC_TT_RADIO_SERIAL,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,35,21,33,10
+    LTEXT           "&Port:",IDC_STATIC,109,21,16,8
+    COMBOBOX        IDC_TT_LOCAL_PORT,126,18,39,46,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "&Baud:",IDC_STATIC,176,20,20,8
+    COMBOBOX        IDC_TT_BAUD,196,18,42,90,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    CONTROL         "&TCP/IP",IDC_TT_RADIO_TCPIP,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,35,39,40,10
+    LTEXT           "&Address:",IDC_STATIC,109,39,28,8
+    EDITTEXT        IDC_TT_LOCALTCPIPHOST,147,38,59,12,ES_AUTOHSCROLL
+    LTEXT           ":",IDC_STATIC,209,40,4,8
+    EDITTEXT        IDC_TT_LOCALTCPIPPORT,214,38,24,12,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    GROUPBOX        "Reset",IDC_TT_STATIC_RESET,7,61,240,59
+    LTEXT           "&Method:",IDC_TT_STATIC_METHOD,16,74,27,8
+    COMBOBOX        IDC_TT_RESET,71,73,48,41,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    DEFPUSHBUTTON   "OK",IDOK,143,125,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,197,125,50,14
+    LTEXT           "Command string:",IDC_STATIC,16,97,53,8
+    EDITTEXT        IDC_TT_RESETSTRING,71,94,168,14,ES_AUTOHSCROLL
+END
+
+IDD_TT_PROPERTIES3 DIALOG DISCARDABLE  0, 0, 169, 69
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Connection"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "&Farmed by:",IDC_TT_FARMED,"Button",BS_AUTORADIOBUTTON,
+                    7,8,51,10
+    EDITTEXT        IDC_TT_RESOURCEHOST,68,7,59,12,ES_AUTOHSCROLL
+    LTEXT           ":",IDC_STATIC,131,8,8,8
+    EDITTEXT        IDC_TT_RESOURCEPORT,138,7,24,12,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    CONTROL         "&Executed on:",IDC_TT_EXPLICIT,"Button",
+                    BS_AUTORADIOBUTTON,7,27,58,10
+    EDITTEXT        IDC_TT_REMOTEHOST,68,26,59,12,ES_AUTOHSCROLL
+    LTEXT           ":",IDC_STATIC,131,27,8,8
+    EDITTEXT        IDC_TT_REMOTEPORT,138,26,24,12,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    DEFPUSHBUTTON   "OK",IDOK,55,48,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,112,48,50,14
+END
+
+IDD_TT_PLATFORM DIALOG DISCARDABLE  0, 0, 231, 214
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Platform"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Platform &name:",IDC_STATIC,7,7,48,8
+    EDITTEXT        IDC_TT_NEW_PLATFORM,81,7,143,14,ES_AUTOHSCROLL
+    LTEXT           "Command &prefix:",IDC_STATIC,7,27,53,8
+    COMBOBOX        IDC_TT_NEW_PLATFORM_PREFIX,81,27,143,74,CBS_DROPDOWN | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Arguments for &GDB:",IDC_STATIC,7,45,64,8
+    EDITTEXT        IDC_TT_NEW_PLATFORM_GDB,81,45,143,70,ES_MULTILINE | 
+                    ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "Inferior:",IDC_STATIC,7,121,24,8
+    EDITTEXT        IDC_INFERIOR,81,121,143,14,ES_AUTOHSCROLL
+    LTEXT           "Prompt:",IDC_STATIC,7,141,25,8
+    EDITTEXT        IDC_PROMPT,81,141,143,14,ES_AUTOHSCROLL
+    CONTROL         "Server-side GDB",IDC_SERVER_SIDE_GDB,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,81,161,69,10
+    DEFPUSHBUTTON   "OK",IDOK,115,193,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,174,193,50,14
+END
+
+IDD_TT_NEW_PLATFORM DIALOG DISCARDABLE  0, 0, 168, 50
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_TT_PLATFORM,57,7,104,14,ES_AUTOHSCROLL
+    LTEXT           "Platform &name:",IDC_STATIC,8,10,48,8
+    DEFPUSHBUTTON   "OK",IDOK,57,29,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,111,29,50,14
+END
+
+IDD_TT_PLATFORMS_DIALOG DIALOG DISCARDABLE  0, 0, 319, 225
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Platforms"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Modify...",IDC_TT_MODIFY_PLATFORM,7,7,50,14
+    PUSHBUTTON      "&Add...",IDC_TT_ADD_PLATFORM,70,7,50,14
+    PUSHBUTTON      "&Delete...",IDC_TT_DELETE_PLATFORM,133,7,50,14
+    DEFPUSHBUTTON   "OK",IDOK,196,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,259,7,50,14
+    CONTROL         "List1",IDC_TT_PLATFORM_LIST,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | WS_BORDER | WS_TABSTOP,7,28,305,190
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_TT_PROPERTIES2 DLGINIT
+BEGIN
+    IDC_TT_BAUD, 0x403, 4, 0
+0x3131, 0x0030, 
+    IDC_TT_BAUD, 0x403, 4, 0
+0x3033, 0x0030, 
+    IDC_TT_BAUD, 0x403, 4, 0
+0x3036, 0x0030, 
+    IDC_TT_BAUD, 0x403, 5, 0
+0x3231, 0x3030, "\000" 
+    IDC_TT_BAUD, 0x403, 5, 0
+0x3432, 0x3030, "\000" 
+    IDC_TT_BAUD, 0x403, 5, 0
+0x3834, 0x3030, "\000" 
+    IDC_TT_BAUD, 0x403, 5, 0
+0x3639, 0x3030, "\000" 
+    IDC_TT_BAUD, 0x403, 6, 0
+0x3431, 0x3034, 0x0030, 
+    IDC_TT_BAUD, 0x403, 6, 0
+0x3931, 0x3032, 0x0030, 
+    IDC_TT_BAUD, 0x403, 6, 0
+0x3833, 0x3034, 0x0030, 
+    IDC_TT_BAUD, 0x403, 6, 0
+0x3635, 0x3030, 0x0030, 
+    IDC_TT_BAUD, 0x403, 6, 0
+0x3735, 0x3036, 0x0030, 
+    IDC_TT_BAUD, 0x403, 7, 0
+0x3131, 0x3235, 0x3030, "\000" 
+    IDC_TT_BAUD, 0x403, 7, 0
+0x3231, 0x3038, 0x3030, "\000" 
+    IDC_TT_BAUD, 0x403, 7, 0
+0x3532, 0x3036, 0x3030, "\000" 
+    IDC_TT_RESET, 0x403, 5, 0
+0x6f4e, 0x656e, "\000" 
+    IDC_TT_RESET, 0x403, 4, 0
+0x3158, 0x0030, 
+    IDC_TT_RESET, 0x403, 7, 0
+0x614d, 0x756e, 0x6c61, "\000" 
+    0
+END
+
+IDD_TT_PROPERTIES DLGINIT
+BEGIN
+    IDC_TT_DOWNLOADTIMEOUT_COMBO, 0x403, 5, 0
+0x6f4e, 0x656e, "\000" 
+    IDC_TT_DOWNLOADTIMEOUT_COMBO, 0x403, 10, 0
+0x7053, 0x6365, 0x6669, 0x6569, 0x0064, 
+    IDC_TT_DOWNLOADTIMEOUT_COMBO, 0x403, 26, 0
+0x6143, 0x636c, 0x6c75, 0x7461, 0x6465, 0x6620, 0x6f72, 0x206d, 0x6966, 
+0x656c, 0x7320, 0x7a69, 0x0065, 
+    IDC_TT_TIMEOUT_COMBO, 0x403, 5, 0
+0x6f4e, 0x656e, "\000" 
+    IDC_TT_TIMEOUT_COMBO, 0x403, 10, 0
+0x7053, 0x6365, 0x6669, 0x6569, 0x0064, 
+    IDC_TT_TIMEOUT_COMBO, 0x403, 8, 0
+0x6544, 0x6166, 0x6c75, 0x0074, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_TT_CONTEXTMENU MENU DISCARDABLE 
+BEGIN
+    POPUP "Popup"
+    BEGIN
+        MENUITEM "&Add...",                     IDC_TT_ADD
+        MENUITEM "&Remove",                     IDC_TT_REMOVE
+    END
+END
+
+IDR_TT_CONTEXTMENU1 MENU DISCARDABLE 
+BEGIN
+    POPUP "Popup"
+    BEGIN
+        MENUITEM "&Clear",                      IDC_TT_CLEAR
+        MENUITEM "&Save",                       ID_TT_EDIT_SAVE
+    END
+END
+
+IDR_TT_CONTEXTMENU2 MENU DISCARDABLE 
+BEGIN
+    POPUP "Popup"
+    BEGIN
+        MENUITEM "Clea&r",                      ID_EDIT_CLEAR
+        MENUITEM "&Copy",                       ID_EDIT_COPY
+        MENUITEM "Select A&ll",                 ID_EDIT_SELECT_ALL
+        MENUITEM SEPARATOR
+        MENUITEM "&Save",                       ID_TT_EDIT_SAVE
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_TT_EXECUTION_PAGE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 337
+        TOPMARGIN, 7
+    END
+
+    IDD_TT_PROPERTIES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 200
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 128
+    END
+
+    IDD_TT_PROPERTIES3, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 162
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 62
+    END
+
+    IDD_TT_PLATFORM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 224
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 207
+    END
+
+    IDD_TT_NEW_PLATFORM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 161
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 43
+    END
+
+    IDD_TT_PLATFORMS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 218
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_TT_ABOUTBOX         "&About RunTests..."
+    IDP_TT_SOCKETS_INIT_FAILED "Windows sockets initialization failed."
+    IDS_TT_OUTPUT           "Output"
+    IDS_TT_SUMMARY          "Summary"
+    IDC_TT_TESTTIMEOUT      "Specifies a fixed-period timeout (in seconds) to be applied to the run phase of test execution."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_TT_ADD              "Adds a test to the set that can be executed."
+    IDC_TT_REMOVE           "Removes a test from the set that can be executed."
+    IDC_TT_LIST             "Displays a summary of test execution."
+    IDC_TT_SETTINGS         "Changes settings specifying the connection of the target board."
+    IDC_TT_DOWNLOADTIMEOUT_COMBO 
+                            "Specifies the kind of timeout to be applied to the download phase of test execution."
+    IDC_TT_TIMEOUT_COMBO    "Specifies the kind of timeout to be applied to the run phase of test execution."
+    IDC_TT_CLEAR            "Clear contents of the summary list"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_TT_EDIT_SAVE         "Saves the contents of the window to a file"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_TT_DOWNLOADTIMEOUT  "Specifies a fixed-period timeout (in seconds) to be applied to the download phase of test execution."
+    IDC_TT_SELECT_ALL       "Selects all tests for execution"
+    IDC_TT_UNSELECT_ALL     "Clears the selection of tests"
+    IDC_TT_RUNTESTS_LIST    "Displays the set of tests that can be executed.  Each test can be selected for execution by checking the adjacent box."
+    IDC_TT_LOCAL_PORT       "Specifies the communications ports to be used for local download."
+    IDC_TT_BAUD             "Specifies the baud rate at which the communications port is to operate."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_TT_RADIO_TCPIP      "Specifies that download is remote, using GDB remote protocol via a TCP/IP port."
+    IDC_TT_EDIT             "Displays the output of test execution."
+    IDC_TT_FOLDER           "Adds a one or more tests to the set that can be executed from a folder."
+    IDC_TT_PLATFORM         "Specifies the platform on which the tests are to run."
+    IDC_TT_LOCALTCPIPHOST   "Specifies the TCP/IP host to be used for remote download."
+    IDC_TT_LOCALTCPIPPORT   "Specifies the TCP/IP port number to be used for remote download."
+    IDC_TT_RADIO_SERIAL     "Specifies that download is local, using a serial communications port."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_TT_NEW_PLATFORM_GDB "Specifies any additional arguments to be used when invoking gdb."
+    IDC_TT_NEW_PLATFORM     "Specifies the name of the platform.  Platform names are arbitrary strings, but must be unique for a given user."
+    IDC_TT_DELETE_PLATFORM  "Removes the currently selected platform."
+    IDC_TT_ADD_PLATFORM     "Adds a new platform."
+    IDC_TT_PLATFORM_LIST    "Displays the list of platforms."
+    IDC_TT_MODIFY_PLATFORM  "Changes the characteristics of the currently selected platform."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_TT_NEW_PLATFORM_PREFIX 
+                            "Specifies the prefix to be used when invoking tools such as gdb (for example, ""arm-elf"" is the correct prefix if the appropriate gdb executable is arm-elf-gdb.exe)."
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif //_WIN32
+#include "res\TestTool.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"         // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

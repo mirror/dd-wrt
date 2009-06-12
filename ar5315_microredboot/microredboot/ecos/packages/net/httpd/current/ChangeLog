@@ -1,0 +1,97 @@
+2004-10-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/monitor.c: include sys/sysctl.h to prevent compiler
+	warnings.
+
+2004-08-16  Peter Korsgaard <jacmet@sunsite.dk>
+
+	* src/monitor.c: Added missing spaces in multi-line HTML strings.
+
+2004-03-09  Nick Garnett  <nickg@calivar.com>
+
+	* include/httpd.h: 
+	* src/init.cxx: 
+	* src/httpd.c: 
+	* src/init.cxx:
+	* doc/httpd.sgml:
+	Added option to enable auto-starting of HTTPD. This is set by
+	default so the current behaviour is retained. When this is
+	disabled the application has to call cyg_httpd_startup() to get
+	the server going.
+
+2004-02-23  Jeff Duncan  <jeffd@magtek.com>
+
+	* src/httpd.c (cyg_httpd_server): Fix http header by adding
+          newline after server name.
+
+2003-10-21  Eric Doenges <Eric.Doenges@DynaPel.com>
+
+	* src/monitor.c (cyg_monitor_memory): Check if the request
+	contains a 'base' parameter and don't display anything if it does
+	not. This prevents the monitor from attempting to access memory
+	location '0' when the user accesses the memory html page for the
+	first time without any parameters.
+
+2003-09-23  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * src/httpd.c (cyg_httpd_server): Removed unused variable.
+        * doc/httpd.sgml: Updated documentation for previous change.
+
+2003-09-22  Eric Doenges  <Eric.Doenges@DynaPel.com>
+	
+        * include/httpd.h: changed prototype of cyg_httpd_send_html and
+        cyg_httpd_send_data to match implementation.
+
+2003-06-09  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/httpd.c: Fixed a problem with closing the client socket --
+	it was being done twice.
+	Tidied up the formatting a little.
+
+	* src/monitor.c: Fixed some compiler warnings.
+
+2003-05-11  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/monitor.c (cyg_monitor_network): Added IPv6 information to
+	the display of network information.
+	* tests/httpd1.c: New file: Simple program to actually run the 
+	server so we can test it.
+	* cdl/httpd.cdl: Added the test program.
+
+2003-05-10  Andrew Lunn   <andrew.lunn@ascom,ch>
+
+	* src/httpd.c: Added support for serving content over IPv6,
+	* doc/httpd.sgml: Added comment about IPv6.
+
+2003-04-23  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+
+	* cdl/httpd.cdl: Only build monitor in CDL option.
+
+2003-03-17  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/monitor.c (cyg_monitor_network): Added monitoring of Mbufs
+	to network page.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/httpd.cdl: Add doc link.
+
+2003-02-14  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+
+	* include/httpd.h (html_end): fix typo.
+
+2002-12-06  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/httpd.h: 
+	* src/init.cxx: 
+	* src/httpd.c: 
+	* src/monitor.c: 
+	* doc/httpd.sgml: 
+	* cdl/httpd.cdl: 
+	Created HTTPD package.
+	
+# Copyright (C) 2002 Nick Garnett
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.

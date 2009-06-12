@@ -1,0 +1,2747 @@
+<!-- DOCTYPE part  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     synth.sgml                                                  -->
+<!--                                                                 -->
+<!--     Synthetic target architectural documentation.               -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2002 Bart Veer.                                   -->
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2002/02/24                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="hal-synth-arch"><title>eCos Synthetic Target</title>
+
+<!-- {{{ Overview                       -->
+
+<refentry id="synth">
+  <refmeta>
+    <refentrytitle>Overview</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>The eCos synthetic target</refname>
+    <refpurpose>Overview</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="synth-description"><title>Description</title>
+    <para>
+Usually eCos runs on either a custom piece of hardware, specially
+designed to meet the needs of a specific application, or on a
+development board of some sort that is available before the final
+hardware. Such boards have a number of things in common:
+    </para>
+    <orderedlist>
+      <listitem><para>
+Obviously there has to be at least one processor to do the work. Often
+this will be a 32-bit processor, but it can be smaller or larger.
+Processor speed will vary widely, depending on the expected needs of
+the application. However the exact processor being used tends not to
+matter very much for most of the development process: the use of
+languages such as C or C++ means that the compiler will handle those
+details.
+      </para></listitem>
+      <listitem><para>
+There needs to be memory for code and for data. A typical system will
+have two different types of memory. There will be some non-volatile
+memory such as flash, EPROM or masked ROM. There will also be some
+volatile memory such as DRAM or SRAM. Often the code for the final
+application will reside in the non-volatile memory and all of the RAM
+will be available for data. However updating non-volatile memory
+requires a non-trivial amount of effort, so for much of the
+development process it is more convenient to burn suitable firmware,
+for example RedBoot, into the non-volatile memory and then use that to
+load the application being debugged into RAM, alongside the
+application data and a small area reserved for use by the firmware.
+      </para></listitem>
+      <listitem><para>
+The platform must provide certain mimimal I/O facilities. Most eCos
+configurations require a clock signal of some sort. There must also be
+some way of outputting diagnostics to the user, often but not always 
+via a serial port. Unless special debug hardware is being used, source
+level debugging will require bidirectional communication between a
+host machine and the target hardware, usually via a serial port or an
+ethernet device.
+      </para></listitem>
+      <listitem><para>
+All the above is not actually very useful yet because there is no way
+for the embedded device to interact with the rest of the world, except
+by generating diagnostics. Therefore an embedded device will have
+additional I/O hardware. This may be fairly standard hardware such as
+an ethernet or USB interface, or special hardware designed
+specifically for the intended application, or quite often some
+combination. Standard hardware such as ethernet or USB may be
+supported by eCos device drivers and protocol stacks, whereas the
+special hardware will be driven directly by application code.
+      </para></listitem>
+    </orderedlist>
+    <para>
+Much of the above can be emulated on a typical PC running Linux.
+Instead of running the embedded application being developed on a
+target board of some sort, it can be run as a Linux process. The
+processor will be the PC's own processor, for example an x86, and the
+memory will be the process' address space. Some I/O facilities can be
+emulated directly through system calls. For example clock hardware can
+be emulated by setting up a <literal>SIGALRM</literal> signal, which
+will cause the process to be interrupted at regular intervals. This
+emulation of real hardware will not be particularly accurate, the
+number of cpu cycles available to the eCos application between clock
+ticks will vary widely depending on what else is running on the PC,
+but for much development work it will be good enough.
+    </para>
+    <para>
+Other I/O facilities are provided through an I/O auxiliary process,
+ecosynth, that gets spawned by the eCos application during startup.
+When an eCos device driver wants to perform some I/O operation, for
+example send out an ethernet packet, it sends a request to the I/O
+auxiliary. That is an ordinary Linux application so it has ready
+access to all normal Linux I/O facilities. To emulate a device
+interrupt the I/O auxiliary can raise a <literal>SIGIO</literal>
+signal within the eCos application. The HAL's interrupt subsystem
+installs a signal handler for this, which will then invoke the
+standard eCos ISR/DSR mechanisms. The I/O auxiliary is based around
+Tcl scripting, making it easy to extend and customize. It should be
+possible to configure the synthetic target so that its I/O
+functionality is similar to what will be available on the final target
+hardware for the application being developed.
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="synth-io-overview.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+A key requirement for synthetic target code is that the embedded
+application must not be linked with any of the standard Linux
+libraries such as the GNU C library: that would lead to a confusing
+situation where both eCos and the Linux libraries attempted to provide
+functions such as <function>printf</function>. Instead the synthetic
+target support must be implemented directly on top of the Linux
+kernels' system call interface. For example, the kernel provides a
+system call for write operations. The actual function
+<function>write</function> is implemented in the system's C library,
+but all it does is move its arguments on to the stack or into certain
+registers and then execute a special trap instruction such as
+<literal>int&nbsp;0x80</literal>. When this instruction is executed
+control transfers into the kernel, which will validate the arguments
+and perform the appropriate operation. Now, a synthetic target
+application cannot be linked with the system's C library. Instead it
+contains a function <function>cyg_hal_sys_write</function> which, like
+the C library's <function>write</function> function, pushes its
+arguments on to the stack and executes the trap instruction. The Linux
+kernel cannot tell the difference, so it will perform the I/O
+operation requested by the synthetic target. With appropriate
+knowledge of what system calls are available, this makes it possible
+to emulate the required I/O facilities. For example, spawning the
+ecosynth I/O auxiliary involves system calls
+<function>cyg_hal_sys_fork</function> and
+<function>cyg_hal_sys_execve</function>, and sending a request to the
+auxiliary uses <function>cyg_hal_sys_write</function>.
+    </para>
+    <para>
+In many ways developing for the synthetic target is no different from
+developing for real embedded targets. eCos must be configured
+appropriately: selecting a suitable target such as
+<userinput>i386linux</userinput> will cause the configuration system
+to load the appropriate packages for this hardware; this includes an
+architectural HAL package and a platform-specific package; the
+architectural package contains generic code applicable to all Linux
+platforms, whereas the platform package is for specific Linux
+implementations such as the x86 version and contains any
+processor-specific code. Selecting this target will also bring in some
+device driver packages. Other aspects of the configuration such as
+which API's are supported are determined by the template, by adding
+and removing packages, and by fine-grained configuration.
+    </para>
+    <para>
+In other ways developing for the synthetic target can be much easier
+than developing for a real embedded target. For example there is no
+need to worry about building and installing suitable firmware on the
+target hardware, and then downloading and debugging the actual
+application over a serial line or a similar connection. Instead an
+eCos application built for the synthetic target is mostly
+indistinguishable from an ordinary Linux program. It can be run simply
+by typing the name of the executable file at a shell prompt.
+Alternatively you can debug the application using whichever version of
+gdb is provided by your Linux distribution. There is no need to build
+or install special toolchains. Essentially using the synthetic target
+means that the various problems associated with real embedded hardware
+can be bypassed for much of the development process.
+    </para>
+    <para>
+The eCos synthetic target provides emulation, not simulation. It is
+possible to run eCos in suitable architectural simulators but that
+involves a rather different approach to software development. For
+example, when running eCos on the psim PowerPC simulator you need
+appropriate cross-compilation tools that allow you to build PowerPC
+executables. These are then loaded into the simulator which interprets
+every instruction and attempts to simulate what would happen if the
+application were running on real hardware. This involves a lot of
+processing overhead, but depending on the functionality provided by
+the simulator it can give very accurate results. When developing for
+the synthetic target the executable is compiled for the PC's own
+processor and will be executed at full speed, with no need for a
+simulator or special tools. This will be much faster and somewhat
+simpler than using an architectural simulator, but no attempt is made
+to accurately match the behaviour of a real embedded target.
+    </para>
+  </refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Installation                   -->
+
+<refentry id="synth-install">
+  <refmeta>
+    <refentrytitle>Installation</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Installation</refname>
+    <refpurpose>Preparing to use the synthetic target</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="synth-install-host"><title>Host-side Software</title>
+    <para>
+To get the full functionality of the synthetic target, users must
+build and install the I/O auxiliary ecosynth and various support
+files. It is possible to develop applications for the synthetic target
+without the auxiliary, but only limited I/O facilities will be
+available. The relevant code resides in the <filename
+class="directory">host</filename> subdirectory of the synthetic target
+architectural HAL package, and building it involves the standard
+<command>configure</command>, <command>make</command>, and
+<command>make install</command> steps.
+    </para>
+    <para>
+There are two main ways of building the host-side software. It is
+possible to build both the generic host-side software and all
+package-specific host-side software, including the I/O auxiliary. in a
+single build tree. This involves using the
+<command>configure</command> script at the toplevel of the eCos
+repository, which will automatically search the <filename
+class="directory">packages</filename> hierarchy for host-side
+software. For more information on this, see the
+<filename>README.host</filename> file at the top of the repository.
+Note that if you have an existing build tree which does not include
+the synthetic target architectural HAL package then it will be
+necessary to rerun the toplevel configure script: the search for
+appropriate packages happens at configure time.
+    </para>
+    <para>
+The alternative is to build just the host-side for this package.
+This involves creating a suitable build directory and running the
+<command>configure</command> script. Note that building directly in
+the source tree is not allowed.
+    </para>
+    <screen>
+$ cd &lt;somewhere suitable&gt;
+$ mkdir synth_build
+$ cd synth_build
+$ &lt;repo&lt;&gt;/packages/hal/synth/arch/&lt;version&gt;/host/configure &lt;options&gt;
+$ make
+$ make install
+</screen>
+    <para>
+The code makes extensive use of Tcl/TK and requires version 8.3 or
+later. This is checked by the <command>configure</command> script. By
+default it will use the system's Tcl installation in <filename
+class="directory">/usr</filename>. If a different, more recent Tcl
+installation should be used then its location can be specified using
+the options <option>--with-tcl=&lt;path&gt;</option>,
+<option>--with-tcl-header=&lt;path&gt;</option> and
+<option>--with-tcl-lib=&lt;path&gt;</option>. For more information on these options
+see the <filename>README.host</filename> file at the toplevel of the
+eCos repository.
+    </para>
+    <para>
+Some users may also want to specify the install location using a
+<option>--prefix=&lt;path&gt;</option> option. The default install
+location is <filename class="directory">/usr/local</filename>. It is
+essential that the <filename class="directory">bin</filename>
+subdirectory of the install location is on the user's search
+<envar>PATH</envar>, otherwise the eCos application will be unable to
+locate and execute the I/O auxiliary ecosynth.
+    </para>
+    <para>
+Because ecosynth is run automatically by an eCos application rather
+than explicitly by the user, it is not installed in the <filename
+class="directory">bin</filename> subdirectory itself. Instead it is
+installed below <filename class="directory">libexec</filename>,
+together with various support files such as images. At configure time
+it is usually possible to specify an alternative location for
+<filename class="directory">libexec</filename> using
+<option>--exec-prefix=&lt;path&gt;</option> or
+<option>--libexecdir=&lt;path&gt;</option>. These options should not
+be used for this package because the eCos application is built
+completely separately and does not know how the host-side was
+configured. 
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-tools"><title>Toolchain</title>
+    <para>
+When developing eCos applications for a normal embedded target it is
+necessary to use a suitable cross-compiler and related tools such as
+the linker. Developing for the synthetic target is easier because you
+can just use the standard GNU tools (gcc, g++, ld, &hellip;) which
+were provided with your Linux distribution, or which you used to build
+your own Linux setup. Any reasonably recent version of the tools, for
+example gcc 2.96(Red Hat) as shipped with Red Hat Linux 7, should be
+sufficient.
+    </para>
+    <para>
+There is one important limitation when using these tools: current gdb
+will not support debugging of eCos threads on the synthetic target. As
+far as gdb is concerned a synthetic target application is
+indistinguishable from a normal Linux application, so it assumes that
+any threads will be created by calls to the Linux
+<function>pthread_create</function> function provided by the C
+library. Obviously this is not the case since the application is never
+linked with that library. Therefore gdb never notices the eCos thread
+mechanisms and assumes the application is single-threaded. Fixing this
+is possible but would involve non-trivial changes to gdb.
+    </para>
+    <para>
+Theoretically it is possible to develop synthetic target applications
+on, for example, a PC running Windows and then run the resulting
+executables on another machine that runs Linux. This is rarely useful:
+if a Linux machine is available then usually that machine will also be
+used for building ecos and the application. However, if for some
+reason it is necessary or desirable to build on another machine then
+this requires a suitable cross-compiler and related tools. If the
+application will be running on a typical PC with an x86 processor then
+a suitable configure triplet would be
+<userinput>i686-pc-linux-gnu</userinput>. The installation
+instructions for the various GNU tools should be consulted for further
+information. 
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-hardware"><title>Hardware Preparation</title>
+    <para>
+Preparing a real embedded target for eCos development can be tricky.
+Often the first step is to install suitable firmware, usually RedBoot.
+This means creating and building a special configuration for eCos with
+the RedBoot template, then somehow updating the target's flash chips
+with the resulting RedBoot image. Typically it will also be necessary
+to get a working serial connection, and possibly set up ethernet as
+well. Although usually none of the individual steps are particularly
+complicated, there are plenty of ways in which things can go wrong and
+it can be hard to figure out what is actually happening. Of course
+some board manufacturers make life easier for their developers by
+shipping hardware with RedBoot preinstalled, but even then it is still
+necessary to set up communication between host and target.
+    </para>
+    <para>
+None of this is applicable to the synthetic target. Instead you can
+just build a normal eCos configuration, link your application with the
+resulting libraries, and you end up with an executable that you can
+run directly on your Linux machine or via gdb. A useful side effect of
+this is that application development can start before any real
+embedded hardware is actually available.
+    </para>
+    <para>
+Typically the memory map for a synthetic target application will be
+set up such that there is a read-only ROM region containing all the
+code and constant data, and a read-write RAM region for the data. The
+default locations and sizes of these regions depend on the specific
+platform being used for development. Note that the application always
+executes out of ROM: on a real embedded target much of the development
+would involve running RedBoot firmware there, with application code
+and data loaded into RAM; usually this would change for the final
+system; the firmware would be replaced by the eCos application itself,
+configured for ROM bootstrap, and it would perform the appropriate
+hardware initialization. Therefore the synthetic target actually
+emulates the behaviour of a final system, not of a development
+environment. In practice this is rarely significant, although having
+the code in read-only memory can help catch some problems in
+application code.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Running the application        -->
+
+<refentry id="synth-running">
+  <refmeta>
+    <refentrytitle>Running a Synthetic Target Application</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Execution</refname>
+    <refpurpose>Arguments and configuration files</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="synth-running-description"><title>Description</title>
+    <para>
+The procedure for configuring and building eCos and an application for
+the synthetic target is the same as for any other eCos target. Once an
+executable has been built it can be run like any Linux program, for
+example from a shell prompt,
+    </para>
+    <screen>
+$ ecos_hello &lt;options&gt;
+</screen>
+    <para>
+or using gdb:
+    </para>
+    <screen>
+$ gdb --nw --quiet --args ecos_hello &lt;options&gt;
+(gdb) run
+Starting program: ecos_hello &lt;options&gt;
+</screen>
+    <para>
+By default use of the I/O auxiliary is disabled. If its I/O facilities
+are required then the option <option>--io</option> must be used.
+    </para>
+    <note><para>
+In future the default behaviour may change, with the I/O auxiliary
+being started by default. The option <option>--nio</option> can be
+used to prevent the auxiliary from being run.
+    </para></note>
+  </refsect1>
+
+  <refsect1 id="synth-running-arguments"><title>Command-line Arguments</title>
+    <para>
+The syntax for running a synthetic target application is:
+    </para>
+    <screen>
+$ &lt;ecos_app&gt; [options] [-- [app_options]]
+</screen>
+    <para>
+Command line options up to the <option>--</option> are passed on to
+the I/O auxiliary. Subsequent arguments are not passed on to the
+auxiliary, and hence can be used by the eCos application itself. The
+full set of arguments can be accessed through the variables
+<varname>cyg_hal_sys_argc</varname> and
+<varname>cyg_hal_sys_argv</varname>. 
+    </para>
+    <para>
+The following options are accepted as standard:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><option>--io</option></term>
+         <listitem><para>
+This option causes the eCos application to spawn the I/O auxiliary
+during HAL initialization. Without this option only limited I/O will
+be available.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--nio</option></term>
+         <listitem><para>
+This option prevents the eCos application from spawning the I/O
+auxiliary. In the current version of the software this is the default.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-nw</option>, <option>--no-windows</option></term>
+         <listitem><para>
+The I/O auxiliary can either provide a graphical user interface, or it
+can run in a text-only mode. The default is to provide the graphical
+interface, but this can be disabled with <option>-nw</option>.
+Emulation of some devices, for example buttons connected to digital
+inputs, requires the graphical interface.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-w</option>, <option>--windows</option></term>
+         <listitem><para>
+The <option>-w</option> causes the I/O auxiliary to provide a
+graphical user interface. This is the default.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-v</option>, <option>--version</option></term>
+         <listitem><para>
+The <option>-v</option> option can be used to determine the version of
+the I/O auxiliary being used and where it has been installed. Both the
+auxiliary and the eCos application will exit immediately.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option>, <option>--help</option></term>
+         <listitem><para>
+<option>-h</option> causes the I/O auxiliary to list all accepted
+command-line arguments. This happens after all devices have been
+initialized, since the host-side support for some of the devices may
+extend the list of recognised options. After this both the auxiliary
+and the eCos application will exit immediately. This option implies
+<option>-nw</option>. 
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-k</option>, <option>--keep-going</option></term>
+         <listitem><para>
+If an error occurs in the I/O auxiliary while reading in any of the
+configuration files or initializing devices, by default both the 
+auxiliary and the eCos application will exit. The <option>-k</option>
+option can be used to make the auxiliary continue in spite of errors,
+although obviously it may not be fully functional.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-nr</option>, <option>--no-rc</option></term>
+         <listitem><para>
+Normally the auxiliary processes two <link
+linkend="synth-running-user-config">user configuration files</link>
+during startup: <filename>initrc.tcl</filename> and
+<filename>mainrc.tcl</filename>. This can be suppressed using the
+<option>-nr</option> option.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-x</option>, <option>--exit</option></term>
+         <listitem><para>
+When providing a graphical user interface the I/O auxiliary will
+normally continue running even after the eCos application has exited.
+This allows the user to take actions such as saving the current
+contents of the main text window. If run with <option>-x</option> then
+the auxiliary will exit as soon the application exits.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-nx</option>, <option>--no-exit</option></term>
+         <listitem><para>
+When the graphical user interface is disabled with
+<option>-nw</option> the I/O auxiliary will normally exit immediately
+when the eCos application exits. Without the graphical frontend there
+is usually no way for the user to interact directly with the
+auxiliary, so there is no point in continuing to run once the eCos
+application will no longer request any I/O operations. Specifying the
+<option>-nx</option> option causes the auxiliary to continue running
+even after the application has exited.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-V</option>, <option>--verbose</option></term>
+         <listitem><para>
+This option causes the I/O auxiliary to output some additional
+information, especially during initialization.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-l &lt;file&gt;</option>, <option>--logfile &lt;file&gt;</option></term>
+         <listitem><para>
+Much of the output of the eCos application and the I/O auxiliary is
+simple text, for example resulting from eCos
+<function>printf</function> or <function>diag_printf</function> calls.
+When running in graphical mode this output goes to a central text
+window, and can be saved to a file or edited via menus. The
+<option>-l</option> can be used to automatically generate an
+additional logfile containing all the text. If graphical
+mode is disabled then by default all the text just goes to the current
+standard output. Specifying <option>-l</option> causes most of the
+text to go into a logfile instead, although some messages such as
+errors generated by the auxiliary itself will still go to stdout as
+well. 
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-t &lt;file&gt;</option>, <option>--target &lt;file&gt;</option></term>
+         <listitem><para>
+During initialization the I/O auxiliary reads in a target definition
+file. This file holds information such as which Linux devices should
+be used to emulate the various eCos devices. The <option>-t</option>
+option can be used to specify which target definition should be used
+for the current run, defaulting to <filename>default.tdf</filename>.
+It is not necessary to include the <filename>.tdf</filename> suffix,
+this will be appended automatically if necessary.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-geometry &lt;geometry&gt;</option></term>
+         <listitem><para>
+This option can be used to control the size and position of the main
+window, as per X conventions.
+         </para></listitem>
+      </varlistentry>
+    </variablelist>
+    <para>
+The I/O auxiliary loads support for the various devices dynamically
+and some devices may accept additional command line arguments. Details
+of these can be obtained using the <option>-h</option> option or by
+consulting the device-specific documentation. If an unrecognised
+command line argument is used then a warning will be issued.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-running-tdf"><title>The Target Definition File</title>
+    <para>
+The eCos application will want to access devices such as
+<varname>eth0</varname> or <varname>/dev/ser0</varname>. These need to
+be mapped on to Linux devices. For example some users may all traffic
+on the eCos <varname>/dev/ser0</varname> serial device to go via the
+Linux serial device <varname>/dev/ttyS1</varname>, while ethernet I/O
+for the eCos <varname>eth0</varname> device should be mapped to the
+Linux ethertap device <varname>tap3</varname>. Some devices may need
+additional configuration information, for example to limit the
+number of packets that should be buffered within the I/O auxiliary.
+The target definition file provides all this information.
+    </para>
+    <para>
+By default the I/O auxiliary will look for a file
+<filename>default.tdf</filename>. An alternative target definition can
+be specified on the command line using <option>-t</option>, for
+example:
+    </para>
+    <screen>
+$ bridge_app --io -t twineth
+</screen>
+    <para>
+A <filename>.tdf</filename> suffix will be appended automatically if
+necessary. If a relative pathname is used then the I/O auxiliary will
+search for the target definition file in the current directory, then
+in <filename class="directory">~/.ecos/synth/</filename>, and finally
+in its install location.
+    </para>
+    <para>
+A typical target definition file might look like this:
+    </para>
+    <programlisting>
+synth_device console {
+    # appearance -foreground white -background black
+    filter trace {^TRACE:.*} -foreground HotPink1 -hide 1
+}
+
+synth_device ethernet {
+    eth0 real eth1
+    eth1 ethertap tap4 00:01:02:03:FE:06
+
+    ## Maximum number of packets that should be buffered per interface.
+    ## Default 16
+    #max_buffer 32
+
+    ## Filters for the various recognised protocols.
+    ## By default all filters are visible and use standard colours.
+    filter ether  -hide 0
+    #filter arp    -hide 1
+    #filter ipv4   -hide 1
+    #filter ipv6   -hide 1
+}
+</programlisting>
+    <para>
+A target definition file is actually a Tcl script that gets run in the
+main interpreter of the I/O auxiliary during initialization. This
+provides a lot of flexibility if necessary. For example the script
+could open a socket to a resource management server of some sort to
+determine which hardware facilities are already in use and adapt
+accordingly. Another possibility is to adapt based on <link
+linkend="synth-new-host-args">command line arguments</link>. Users who
+are not familiar with Tcl programming should still be able to edit a
+simple target definition file without too much difficulty, using a
+mixture of cut'n'paste, commenting or uncommenting various lines, and
+making small edits such as changing <literal>tap4</literal> to
+<literal>eth2</literal>. 
+    </para>
+    <para>
+Each type of device will have its own entry in the target definition
+file, taking the form:
+    </para>
+    <programlisting>
+synth_device &lt;device type&gt; {
+    &lt;options&gt;
+}
+</programlisting>
+    <para>
+The documentaton for each synthetic target device should provide
+details of the options available for that device, and often a suitable
+fragment that can be pasted into a target definition file and edited.
+There is no specific set of options that a given device will always
+provide. However in practice many devices will use common code
+exported by the main I/O auxiliary, or their implementation will
+involve some re-use of code for an existing device. Hence certain
+types of option are common to many devices.
+    </para>
+    <para>
+A good example of this is filters, which control the appearance of
+text output. The above target definition file defines a filter
+<varname>trace</varname> for output from the eCos application. The
+regular expression will match output from the infrastructure package's
+tracing facilities when <varname>CYGDBG_USE_TRACING</varname> and
+<varname>CYGDBG_INFRA_DEBUG_TRACE_ASSERT_SIMPLE</varname> are enabled.
+With the current settings this output will not be visible by default,
+but can be made visible using the menu item <guimenuitem>System
+Filters</guimenuitem>. If made visible the trace output will appear in
+an unusual colour, so users can easily distinguish the trace output
+from other text. All filters accept the following options:
+    </para>
+    <variablelist>
+      <varlistentry>
+         <term><option>-hide [0|1]</option></term>
+         <listitem><para>
+This controls whether or not text matching this filter should be
+invisible by default or not. At run-time the visibility of each filter
+can be controlled using the <guimenuitem>System Filters</guimenuitem>
+menu item.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>-foreground &lt;colour&gt;</option></term>
+         <listitem><para>
+This specifies the foreground colour for all text matching this
+filter. The colour can be specified using an RGB value such as
+<literal>#F08010</literal>, or a symbolic name such as
+<literal>"light steel blue"</literal>. The X11 utility
+<application>showrgb</application> can be used to find out
+about the available colours.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>-background &lt;colour&gt;</option></term>
+         <listitem><para>
+This specifies the background colour for all text matching the filter.
+As with <option>-foreground</option> the colour can be specified using
+a symbolic name or an RGB value.
+         </para></listitem>
+      </varlistentry>
+    </variablelist>
+    <para>
+Some devices may create their own subwindows, for example to monitor
+ethernet traffic or to provide additional I/O facilities such as
+emulated LED's or buttons. Usually the target definition file can be
+used to control the <link linkend="synth-gui-layout">layout</link> of
+these windows.
+    </para>
+    <para>
+The I/O auxiliary will not normally warn about
+<command>synth_device</command> entries in the target definition file
+for devices that are not actually needed by the current eCos
+application. This makes it easier to use a single file for several
+different applications. However it can lead to confusion if an entry
+is spelled incorrectly and hence does not actually get used. The
+<option>-V</option> command line option can be used to get warnings
+about unused device entries in the target definition file.
+    </para>
+    <para>
+If the body of a <command>synth_device</command> command contains an
+unrecognised option and the relevant device is in use, the I/O
+auxiliary will always issue a warning about such options.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-running-user-config"><title>User Configuration Files</title>
+    <para>
+During initialization the I/O auxiliary will execute two user
+configuration files, <filename>initrc.tcl</filename> and
+<filename>mainrc.tcl</filename>. It will look for these files in the
+directory <filename class="directory">~/.ecos/synth/</filename>. If
+that directory does not yet exist it will be created and populated
+with initial dummy files.
+    </para>
+    <para>
+Both of these configuration files are Tcl scripts and will be run in
+the main interpreter used by the I/O auxiliary itself. This means that
+they have full access to the internals of the auxiliary including the
+various Tk widgets, and they can perform file or socket I/O if
+desired. The section <xref linkend="synth-new-host"> contains
+information about the facilities available on the host-side for
+writing new device drivers, and these can also be used in the
+initialization scripts.
+    </para>
+    <para>
+The <filename>initrc.tcl</filename> script is run before the auxiliary
+has processed any requests from the eCos application, and hence before
+any devices have been instantiated. At this point the generic
+command-line arguments has been processed, the target definition file
+has been read in, and the hooks functionality has been initialized. If
+running in graphical mode the main window will have been created, but
+has been withdrawn from the screen to allow new widgets to be added
+without annoying screen flicker. A typical
+<filename>initrc.tcl</filename> script could add some menu or toolbar
+options, or install a hook function that will be run when the
+eCos application exits.
+    </para>
+    <para>
+The <filename>mainrc.tcl</filename> script is run after eCos has
+performed all its device initialization and after C++ static
+constructors have run, and just before the call to
+<function>cyg_start</function> which will end up transferring control
+to the application itself. A typical <filename>mainrc.tcl</filename>
+script could look at what interrupt vectors have been allocated to
+which devices and create a little monitor window that shows interrupt
+activity. 
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-running-session"><title>Session Information</title>
+    <para>
+When running in graphical mode, the I/O auxiliary will read in a file
+<filename>~/.ecos/synth/guisession</filename> containing session
+information. This file should not normally be edited manually, instead
+it gets updated automatically when the auxiliary exits. The purpose of
+this file is to hold configuration options that are manipulated via
+the graphical interface, for example which browser should be used to
+display online help.
+    </para>
+    <warning><para>
+GUI session functionality is not yet available in the current release.
+When that functionality is fully implemented it is possible that some
+target definition file options may be removed, to be replaced by
+graphical editing via a suitable preferences dialog, with the
+current settings saved in the session file.
+    </para></warning>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ ecosynth user interface        -->
+
+<refentry id="synth-gui">
+  <refmeta>
+    <refentrytitle>The I/O Auxiliary's User Interface</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>User Interface</refname>
+    <refpurpose>Controlling the I/O Auxiliary</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="synth-gui-description"><title>Description</title>
+    <para>
+The synthetic target auxiliary is designed to support both extensions
+and user customization. Support for the desired devices is dynamically
+loaded, and each device can extend the user interface. For example it
+is possible for a device to add menu options, place new buttons on the
+toolbar, create its own sub-window within the overall layout, or even
+create entire new toplevel windows. These subwindows or toplevels
+could show graphs of activity such as interrupts or packets being
+transferred. They could also allow users to interact with the eCos
+application, for example by showing a number of buttons which will be
+mapped on to digital inputs in the eCos application. Different
+applications will have their own I/O requirements, changing the
+host-side support files that get loaded and that may modify the user
+interface. The I/O auxiliary also reads in user configuration scripts
+which can enhance the interface in the same way. Therefore the exact
+user interface will depend on the user and on the eCos application
+being run. However the overall layout is likely to remain the same.
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="screen_main.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+The title bar identifies the window as belonging to an eCos synthetic
+target application and lists both the application name and its process
+id. The latter is especially useful if the application was started
+directly from a shell prompt and the user now wants to attach a gdb
+session. The window has a conventional menu bar with the usual
+entries, plus a toolbar with buttons for common operations such as cut
+and paste. Balloon help is supported.
+    </para>
+    <para>
+There is a central <link linkend="synth-gui-text">text window</link>,
+possibly surrounded by various sub-windows for various devices. For
+example there could be a row of emulated LED's above the text window,
+and monitors of ethernet traffic and interrupt activity on the right.
+At the bottom of the window is a status line, including a small
+animation that shows whether or not the eCos application is still
+running.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-gui-menus"><title>Menus and the Toolbar</title>
+    <para>
+Usually there will be four menus on the menu bar:
+<guimenu>File</guimenu>, <guimenu>Edit</guimenu>,
+<guimenu>View</guimenu> and <guimenu>Help</guimenu>.
+    </para>
+      <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="menu_file.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+On the <guimenu>File</guimenu> menu there are three entries related to
+saving the current contents of the central text window.
+<guimenuitem>Save</guimenuitem> is used to save the currently visible
+contents of the text window. Any text that is hidden because of
+filters will not be written to the savefile. If there has been a
+previous <guimenuitem>Save</guimenuitem> or <guimenuitem>Save
+As</guimenuitem> operation then the existing savefile will be re-used,
+otherwise the user will be asked to select a suitable file.
+<guimenuitem>Save As</guimenuitem> also saves just the currently
+visible contents but will always prompt the user for a filename.
+<guimenuitem>Save All</guimenuitem> can be used to save the full
+contents of the text window, including any text that is currently
+hidden. It will always prompt for a new filename, to avoid confusion
+with partial savefiles.
+    </para>
+    <para>
+Usually the eCos application will be run from inside gdb or from a
+shell prompt. Killing off the application while it is being debugged
+in a gdb session is not a good idea, it would be better to use gdb's
+own <command>kill</command> command. Alternatively the eCos
+application itself can use the <function>CYG_TEST_EXIT</function> or
+<filename>cyg_hal_sys_exit</filename> functionality. However it is
+possible to terminate the application from the I/O auxiliary using
+<guimenuitem>Kill eCos</guimenuitem>. A clean shutdown will be
+attempted, but that can fail if the application is currently halted
+inside gdb or if it has crashed completely. As a last resort
+<constant>SIGKILL</constant> will be used.
+    </para>
+    <para>
+When operating in graphical mode the I/O auxiliary will normally
+continue to run even after the eCos application has exited. This
+allows the user to examine the last few lines of output, and perhaps
+perform actions such as saving the output to a file. The
+<guimenuitem>Exit</guimenuitem> menu item can be used to shut down the
+auxiliary. Note that this behaviour can be changed with command line
+arguments <link
+linkend="synth-running-arguments"><option>--exit</option></link> and
+<link
+linkend="synth-running-arguments"><option>--no-exit</option></link>.
+    </para>
+    <para>
+If <guimenuitem>Exit</guimenuitem> is used while the eCos application
+is still running then the I/O auxiliary will first attempt to
+terminate the application cleanly, and then exit.
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="menu_edit.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+The <guimenu>Edit</guimenu> menu contains the usual entries for
+text manipulation: <guimenuitem>Cut</guimenuitem>,
+<guimenuitem>Copy</guimenuitem>, <guimenuitem>Paste</guimenuitem>,
+<guimenuitem>Clear</guimenuitem> and <guimenuitem>Select
+All</guimenuitem>. These all operate on the central text window. By
+default this window cannot be edited so the cut, paste and clear
+operations are disabled. If the user wants to edit the contents of the
+text window then the <guimenuitem>Read Only</guimenuitem> checkbutton
+should be toggled.
+    </para>
+    <para>
+The <guimenuitem>Preferences</guimenuitem> menu item brings up a
+miscellaneous preferences dialog. One of the preferences relates to
+online help: the I/O auxiliary does not currently have a built-in html
+viewer; instead it will execute an external browser of some sort. With
+the example settings shown, the I/O auxiliary will first attempt to
+interact with an existing mozilla session. If that fails it will try
+to run a new mozilla instance, or as a last result use the Gnome help
+viewer. 
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="preferences.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+The <guimenu>View</guimenu> menu contains the <guimenuitem>System
+Filters</guimenuitem> entry, used to edit the settings for the current
+<link linkend="synth-gui-text">filters</link>.
+    </para>
+     <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="menu_view.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+The <guimenu>Help</guimenu> menu can be used to activate online help
+for eCos generally, for the synthetic target as a whole, and for
+specific devices supported by the generic target. The Preferences
+dialog can be used to select the browser that will be used.
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="menu_help.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <note><para>
+At the time of writing there is no well-defined toplevel index file
+for all eCos documentation. Hence the relevant menu item is disabled.
+Documentation for the synthetic target and the supported devices
+is stored as part of the package itself so can usually be found fairly
+easily. It may be necessary to set the <envar>ECOS_REPOSITORY</envar>
+environment variable.
+    </para></note>
+
+  </refsect1>
+
+  <refsect1 id="synth-gui-text"><title>The Main Text Window</title>
+    <para>
+The central text window holds the console output from the eCos
+application: the screen shot above shows DHCP initialization data from
+the TCP/IP stack, and some output from the <function>main</function>
+thread at the bottom. Some devices can insert text of their own, for
+example the ethernet device support can be configured to show details
+of incoming and outgoing packets. Mixing the output from the eCos
+application and the various devices can make it easier to understand
+the order in which events occur.
+    </para>
+    <para>
+The appearance of text from different sources can be controlled by
+means of filters, and it is also possible to hide some of the text.
+For example, if tracing is enabled in the eCos configuration then the
+trace output can be given its own colour scheme, making it stand out
+from the rest of the output. In addition the trace output is generally
+voluminous so it can be hidden by default, made visible only to find
+out more about what was happening when a particular problem occurred.
+Similarly the ethernet device support can output details of the
+various packets being transferred, and using a different background
+colour for this output again makes it easier to distinguish from
+console output.
+    </para>
+    <para>
+The default appearance for most filters is controlled via the
+<link linkend="synth-running-tdf">target definition file</link>. An
+example entry might be:
+    </para>
+    <programlisting>
+  filter trace {^TRACE:.*} -foreground HotPink1 -hide 1
+</programlisting>
+    <para>
+The various colours and the hide flag for each filter can be changed
+at run-time, using the <guimenuitem>System Filters</guimenuitem> item
+on the <guimenu>View</guimenu> menu. This will bring up a dialog like
+the following:
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="filters.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+It should be noted that the text window is line-oriented, not
+character-oriented. If an eCos application sends a partial line of
+text then that will remain buffered until a newline character is
+received, rather than being displayed immediately. This avoids
+confusion when there is concurrent output from several sources.
+    </para>
+    <para>
+By default the text window is read-only. This means it will not allow
+cut, paste and clear operations, and keyboard input will be ignored.
+The <guimenu>Edit</guimenu> menu has a checkbutton <guimenuitem>Read
+Only</guimenuitem> which can be toggled to allow write operations. For
+example, a user could type in a reminder of what was happening at this
+time, or paste in part of a gdb session. Such keyboard input does not
+get forwarded to the eCos application: if the latter requires keyboard
+input then that should happen via a separate keyboard device.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-gui-layout"><title>Positioning Optional Windows</title>
+    <para>
+Some devices may create their own subwindows, for example to monitor
+ethernet traffic or to provide additional I/O facilities such as
+emulated LED's or buttons. Usually the target definition file can be
+used to control the <link linkend="synth-gui-layout">layout</link> of
+these windows. This requires an understanding of the overall layout of
+the display.
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="layout.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+Subwindows are generally packed in one of eight frames surrounding the
+central text window: <varname>.main.nw</varname>,
+<varname>.main.n</varname>, <varname>.main.ne</varname>,
+<varname>.main.w</varname>, <varname>.main.e</varname>,
+<varname>.main.sw</varname>, <varname>.main.s</varname>, and
+<varname>.main.se</varname>. To position a row of LED's above the text
+window and towards the left, a target definition file could contain an
+entry such as:
+    </para>
+    <programlisting>
+synth_device led {
+    pack -in .main.n -side left
+    &hellip;
+}
+</programlisting>
+    <para>
+Similarly, to put a traffic monitor window on the right of the text
+window would involve something like:
+    </para>
+    <programlisting>
+    &hellip;
+    monitor_pack -in .main.e -side bottom
+    &hellip;
+</programlisting>
+    <para>
+Often it will be sufficient to specify a container frame and one of
+<constant>left</constant>, <constant>right</constant>,
+<constant>top</constant> or <constant>bottom</constant>. Full control
+over the positioning requires an understanding of Tcl/Tk and in
+particular the packing algorithm, and an appropriate reference work
+should be consulted.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-gui-global-config"><title>Global Settings</title>
+    <note><para>
+This section still to be written - it should document the interaction
+between X resources and ecosynth, and how users can control settings
+such as the main foreground and background colours.
+    </para></note>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ The console device             -->
+
+<refentry id="synth-console">
+  <refmeta>
+    <refentrytitle>The Console Device</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>The console device </refname>
+    <refpurpose>Show output from the eCos application</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="synth-console-description"><title>Description</title>
+    <para>
+The eCos application can generate text output in a variety of ways,
+including calling <function>printf</function> or
+<function>diag_printf</function>. When the I/O auxiliary is enabled
+the eCos startup code will instantiate a console device to process all
+such output. If operating in text mode the output will simply go to
+standard output, or to a logfile if the <option>-l</option> command
+line option is specified. If operating in graphical mode the output
+will go to the central text window, and optionally to a logfile as
+well. In addition it is possible to control the appearance of the main
+text via the target definition file, and to install extra filters for
+certain types of text.
+    </para>
+    <para>
+It should be noted that the console device is line-oriented, not
+character-oriented. This means that outputting partial lines is not
+supported, and some functions such as <function>fflush</function> and
+<function>setvbuf</function> will not operate as expected. This
+limitation prevents much possible confusion when using filters to
+control the appearance of the text window, and has some performance
+benefits - especially when the eCos application generates a great deal
+of output such as when tracing is enabled. For most applications this
+is not a problem, but it is something that developers should be aware
+of. 
+    </para>
+    <para>
+The console device is output-only, it does not provide any support for
+keyboard input. If the application requires keyboard input then that
+should be handled by a separate eCos device package and matching
+host-side code.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-console-install"><title>Installation</title>
+    <para>
+The eCos side of the console device is implemented by the
+architectural HAL itself, in the source file
+<filename>synth_diag.c</filename>, rather than in a separate device
+package. Similarly the host-side implementation,
+<function>console.tcl</function>, is part of the architectural HAL's
+host-side support. It gets installed automatically alongside the I/O
+auxiliary itself, so no separate installation procedure is required.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-console-tdf"><title>Target Definition File</title>
+    <para>
+The <link linkend="synth-running-tdf">target definition file</link>
+can contain a number of entries related to the console device. These
+are all optional, they only control the appearance of text output. If
+such control is desired then the relevant options should appear in the
+body of a <command>synth_device</command> entry:
+    </para>
+    <programlisting>
+synth_device console {
+    &hellip;
+}
+</programlisting>
+    <para>
+The first option is <command>appearance</command>, used to control the
+appearance of any text generated by the eCos application that does not
+match one of the installed filters. This option takes the same
+argument as any other filter, for example:
+    </para>
+    <programlisting>
+synth_device console {
+    appearance -foreground white -background black
+    &hellip;
+}
+</programlisting>
+    <para>
+Any number of additional filters can be created with a
+<command>filter</command> option, for example:
+    </para>
+    <programlisting>
+synth_device console {
+    &hellip;
+    filter trace {^TRACE:.*} -foreground HotPink1 -hide 1
+    &hellip;
+}
+</programlisting>
+    <para>
+The first argument gives the new filter a name which will be used in
+the <link linkend="synth-gui-text">filters dialog</link>. Filter names
+should be unique. The second argument is a Tcl regular expression. The
+console support will match each line of eCos output against this
+regular expression, and if a match is found then the filter will be
+used for this line of text. The above example matches any line of
+output that begins with <literal>TRACE:</literal>, which corresponds
+to the eCos infrastructure's tracing facilities. The remaining options
+control the desired appearance for matched text. If some eCos output
+matches the regular expressions for several different filters then
+only the first match will be used.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-console-target-config"><title>Target-side
+  Configuration Options</title>
+    <para>
+There are no target-side configuration options related to the console
+device. 
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-console-arguments"><title>Command Line Arguments</title>
+    <para>
+The console device does not use any command-line arguments.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-console-hooks"><title>Hooks</title>
+    <para>
+The console device does not provide any hooks.
+    </para>
+  </refsect1>
+
+  <refsect1><title>Additional Tcl Procedures</title>
+    <para>
+The console device does not provide any additional Tcl procedures that
+can be used by other scripts.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ System calls                   -->
+
+<refentry id="synth-syscalls">
+  <refmeta>
+    <refentrytitle>System Calls</refentrytitle>
+  </refmeta>
+
+  <refnamediv>
+    <refname>cyg_hal_sys_xyz</refname>
+    <refpurpose>Access Linux system facilities</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <funcsynopsis>
+      <funcsynopsisinfo>
+#include &lt;cyg/hal/hal_io.h&gt;
+      </funcsynopsisinfo>
+      <funcprototype>
+        <funcdef>int <function>cyg_hal_sys_xyzzy</function></funcdef>
+        <varargs>
+      </funcprototype>
+    </funcsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="synth-syscalls-description"><title>Description</title>
+    <para>
+On a real embedded target eCos interacts with the hardware by peeking
+and poking various registers, manipulating special regions of memory,
+and so on. The synthetic target does not access hardware directly.
+Instead I/O and other operations are emulated by making appropriate
+Linux system calls. The HAL package exports a number of functions
+which allow other packages, or even application code, to make these
+same system calls. However this facility must be used with care: any
+code which calls, for example, <function>cyg_hal_sys_write</function>
+will only ever run on the synthetic target; that functionality is
+obviously not provided on any real hardware because there is no
+underlying Linux kernel to implement it.
+    </para>
+    <para>
+The synthetic target only provides a subset of the available system
+calls, specifically those calls which have proved useful to implement
+I/O emulation. This subset can be extended fairly easily if necessary.
+All of the available calls, plus associated data structures and
+macros, are defined in the header file <filename
+class="headerfile">cyg/hal/hal_io.h</filename>. There is a simple
+convention: given a Linux system call such as
+<function>open</function>, the synthetic target will prefix
+<literal>cyg_hal_sys</literal> and provide a function with that name.
+The second argument to the <function>open</function> system call is
+a set of flags such as <constant>O_RDONLY</constant>, and the header
+file will define a matching constant
+<constant>CYG_HAL_SYS_O_RDONLY</constant>. There are also data
+structures such as <structname>cyg_hal_sys_sigset_t</structname>,
+matching the Linux data structure <structname>sigset_t</structname>.
+    </para>
+    <para>
+In most cases the functions provided by the synthetic target behave as
+per the documentation for the Linux system calls, and section 2 of the
+Linux man pages can be consulted for more information. There is one
+important difference: typically the documentation will say that a
+function returns <literal>-1</literal> to indicate an error, with the
+actual error code held in <varname>errno</varname>; the actual
+underlying system call and hence the
+<function>cyg_hal_sys_xyz</function> provided by eCos instead returns
+a negative number to indicate an error, with the absolute value of
+that number corresponding to the error code; usually it is the C
+library which handles this and manipulates errno, but of course
+synthetic target applications are not linked with that Linux library.
+    </para>
+    <para>
+However, there are some exceptions. The Linux kernel has evolved over
+the years, and some of the original system call interfaces are no
+longer appropriate. For example the original
+<function>select</function> system call has been superseded by
+<function>_newselect</function>, and that is what the
+<function>select</function> function in the C library actually uses.
+The old call is still available to preserve binary compatibility but,
+like the C library, eCos makes use of the new one because it provides
+the appropriate functionality. In an attempt to reduce confusion the
+eCos function is called <function>cyg_hal_sys__newselect</function>,
+in other words it matches the official system call naming scheme. The
+authoritive source of information on such matters is the Linux kernel
+sources themselves, and especially its header files.
+    </para>
+    <para>
+eCos packages and applications should never
+<literal>#include</literal> Linux header files directly. For example,
+doing a <literal>#include&nbsp;&lt;/usr/include/fcntl.h&gt;</literal>
+to access additional macros or structure definitions, or alternatively
+manipulating the header file search path, will lead to problems
+because the Linux header files are likely to duplicate and clash with
+definitions in the eCos headers. Instead the appropriate functionality
+should be extracted from the Linux headers and moved into either
+<filename class="headerfile">cyg/hal/hal_io.h</filename> or into
+application code, with suitable renaming to avoid clashes with eCos
+names. Users should be aware that large-scale copying may involve
+licensing complications.
+    </para>
+    <para>
+Adding more system calls is usually straightforward and involves
+adding one or more lines to the platform-specific file in the
+appropriate platform HAL, for example
+<filename>syscall-i386-linux-1.0.S</filename>. However it is necessary
+to do some research first about the exact interface implemented by the
+system call, because of issues such as old system calls that have been
+superseded. The required information can usually be found fairly
+easily by searching through the Linux kernel sources and possibly the
+GNU C library sources.
+    </para>
+  </refsect1>
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ New devices - target-side      -->
+
+<refentry id="synth-new-target">
+  <refmeta>
+    <refentrytitle>Writing New Devices - target</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Writing New Devices</refname>
+    <refpurpose>extending the synthetic target, target-side</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <funcsynopsis>
+      <funcsynopsisinfo>
+#include &lt;cyg/hal/hal_io.h&gt;
+      </funcsynopsisinfo>
+
+      <funcprototype>
+        <funcdef>int <function>synth_auxiliary_instantiate</function></funcdef>
+        <paramdef>const char* <parameter>package</parameter></paramdef>
+        <paramdef>const char* <parameter>version</parameter></paramdef>
+        <paramdef>const char* <parameter>device</parameter></paramdef>
+        <paramdef>const char* <parameter>instance</parameter></paramdef>
+        <paramdef>const char* <parameter>data</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>void <function>synth_auxiliary_xchgmsg</function></funcdef>
+        <paramdef>int <parameter>device_id</parameter></paramdef>
+        <paramdef>int <parameter>request</parameter></paramdef>
+        <paramdef>int <parameter>arg1</parameter></paramdef>
+        <paramdef>int <parameter>arg2</parameter></paramdef>
+        <paramdef>const unsigned char* <parameter>txdata</parameter></paramdef>
+        <paramdef>int <parameter>txlen</parameter></paramdef>
+        <paramdef>int* <parameter>reply</parameter></paramdef>
+        <paramdef>unsigned char* <parameter>rxdata</parameter></paramdef>
+        <paramdef>int* <parameter>rxlen</parameter></paramdef>
+        <paramdef>int <parameter>max_rxlen</parameter></paramdef>
+      </funcprototype>
+    </funcsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="synth-new-target-description"><title>Description</title>
+    <para>
+In some ways writing a device driver for the synthetic target is very
+similar to writing one for a real target. Obviously it has to provide
+the standard interface for that class of device, so for example an
+ethernet device has to provide <function>can_send</function>,
+<function>send</function>, <function>recv</function> and similar
+functions. Many devices will involve interrupts, so the driver
+contains ISR and DSR functions and will call
+<function>cyg_drv_interrupt_create</function>,
+<function>cyg_drv_interrupt_acknowledge</function>, and related
+functions.
+    </para>
+    <para>
+In other ways writing a device driver for the synthetic target is very
+different. Usually the driver will not have any direct access to the
+underlying hardware. In fact for some devices the I/O may not involve
+real hardware, instead everything is emulated by widgets on the
+graphical display. Therefore the driver cannot just peek and poke
+device registers, instead it must interact with host-side code by
+exchanging message. The synthetic target HAL provides a function
+<function>synth_auxiliary_xchgmsg</function> for this purpose.
+    </para>
+    <para>
+Initialization of a synthetic target device driver is also very
+different. On real targets the device hardware already exists when the
+driver's initialization routine runs. On the synthetic target it is
+first necessary to instantiate the device inside the I/O auxiliary, by
+a call to <function>synth_auxiliary_instantiate</function>. That
+function performs a special message exchange with the I/O auxiliary,
+causing it to load a Tcl script for the desired type of device and run
+an instantiation procedure within that script.
+    </para>
+    <para>
+Use of the I/O auxiliary is optional: if the user does not specify
+<option>--io</option> on the command line then the auxiliary will not
+be started and hence most I/O operations will not be possible. Device
+drivers should allow for this possibility, for example by just
+discarding any data that gets written. The HAL exports a flag
+<varname>synth_auxiliary_running</varname> which should be checked.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-target-instantiate"><title>Instantiating a Device</title>
+    <para>
+Device instantiation should happen during the C++ prioritized static
+constructor phase of system initialization, before control switches to
+<function>cyg_user_start</function> and general application code. This
+ensures that there is a clearly defined point at which the I/O
+auxiliary knows that all required devices have been loaded. It can
+then perform various consistency checks and clean-ups, run the user's
+<filename>mainrc.tcl</filename> script, and make the main window
+visible.
+    </para>
+    <para>
+For standard devices generic eCos I/O code will call the device
+initialization routines at the right time, iterating through the
+<varname>DEVTAB</varname> table in a static constructor. The same
+holds for network devices and file systems. For more custom devices
+code like the following can be used:
+    </para>
+    <programlisting>
+#include &lt;cyg/infra/cyg_type.h&gt;
+class mydev_init {
+  public:
+    mydev_init() {
+        &hellip;
+    }
+};
+static mydev_init mydev_init_object CYGBLD_ATTRIB_INIT_PRI(CYG_INIT_IO);
+</programlisting>
+    <para>
+Some care has to be taken because the object
+<varname>mydev_init_object</varname> will typically not be referenced
+by other code, and hence may get eliminated at link-time. If the code
+is part of an eCos package then problems can be avoided by putting the
+relevant file in <filename>libextras.a</filename>:
+    </para>
+    <programlisting>
+cdl_package CYGPKG_DEVS_MINE {
+    &hellip;
+    compile -library=libextras.a init.cxx
+}
+</programlisting>
+    <para>
+For devices inside application code the same can be achieved by
+linking the relevant module as a <filename>.o</filename> file rather
+than putting it in a <filename>.a</filename> library.
+    </para>
+    <para>
+In the device initialization routine the main operation is a call to
+<function>synth_auxiliary_instantiate</function>. This takes five
+arguments, all of which should be strings:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><varname>package</varname></term>
+        <listitem><para>
+For device drivers which are eCos packages this should be a directory
+path relative to the eCos repository, for example
+<literal>devs/eth/synth/ecosynth</literal>. This will allow the I/O
+auxiliary to find the various host-side support files for this package
+within the install tree. If the device is application-specific and not
+part of an eCos package then a NULL pointer can be used, causing the
+I/O auxiliary to search for the support files in the current directory
+and then in <filename class="directory">~/.ecos/synth</filename>
+instead. 
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>version</varname></term>
+        <listitem><para>
+For eCos packages this argument should be the version of the package
+that is being used, for example <literal>current</literal>. A simple
+way to get this version is to use the
+<function>SYNTH_MAKESTRING</function> macro on the package name.
+If the device is application-specific then a NULL pointer should be
+used. 
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>device</varname></term>
+        <listitem><para>
+This argument specifies the type of device being instantiated, for
+example <literal>ethernet</literal>. More specifically the I/O
+auxiliary will append a <filename>.tcl</filename> suffix, giving
+the name of a Tcl script that will handle all I/O requests for the
+device. If the application requires several instances of a type
+of device then the script will only be loaded once, but the script
+will contain an instantiation procedure that will be called for each
+device instance. 
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>instance</varname></term>
+        <listitem><para>
+If it is possible to have multiple instances of a device then this
+argument identifies the particular instance, for example
+<literal>eth0</literal> or <literal>eth1</literal>. Otherwise a NULL
+pointer can be used.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>data</varname></term>
+        <listitem><para>
+This argument can be used to pass additional initialization data from
+eCos to the host-side support. This is useful for devices where eCos
+configury must control certain aspects of the device, rather than
+host-side configury such as the target definition file, because eCos
+has compile-time dependencies on some or all of the relevant options.
+An example might be an emulated frame buffer where eCos has been
+statically configured for a particular screen size, orientation and
+depth. There is no fixed format for this string, it will be
+interpreted only by the device-specific host-side Tcl script. However
+the string length should be limited to a couple of hundred bytes to
+avoid possible buffer overflow problems.
+        </para></listitem>
+      </varlistentry>
+    </variablelist>
+    <para>
+Typical usage would look like:
+    </para>
+    <programlisting>
+    if (!synth_auxiliary_running) {
+      return;
+    }
+    id = synth_auxiliary_instantiate("devs/eth/synth/ecosynth",
+             SYNTH_MAKESTRING(CYGPKG_DEVS_ETH_ECOSYNTH),
+             "ethernet",
+             "eth0",
+             (const char*) 0);
+</programlisting>
+    <para>
+The return value will be a device identifier which can be used for
+subsequent calls to <function>synth_auxiliary_xchgmsg</function>. If
+the device could not be instantiated then <literal>-1</literal> will
+be returned. It is the responsibility of the host-side software to
+issue suitable diagnostics explaining what went wrong, so normally the
+target-side code should fail silently.
+    </para>
+    <para>
+Once the desired device has been instantiated, often it will be
+necessary to do some additional initialization by a message exchange.
+For example an ethernet device might need information from the
+host-side about the MAC address, the <link
+linkend="synth-new-target-interrupts">interrupt vector</link>, and
+whether or not multicasting is supported.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-target-xchgmsg"><title>Communicating with a Device</title>
+    <para>
+Once a device has been instantiated it is possible to perform I/O by
+sending messages to the appropriate Tcl script running inside the
+auxiliary, and optionally getting back replies. I/O operations are
+always initiated by the eCos target-side, it is not possible for the
+host-side software to initiate data transfers. However the host-side
+can raise interrupts, and the interrupt handler inside the target can
+then exchange one or more messages with the host.
+    </para>
+    <para>
+There is a single function to perform I/O operations,
+<function>synth_auxiliary_xchgmsg</function>. This takes the following
+arguments: 
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><varname>device_id</varname></term>
+         <listitem><para>
+This should be one of the identifiers returned by a previous
+call to <function>synth_auxiliary_instantiate</function>, specifying the
+particular device which should perform some I/O.
+         </para></listitem>
+       </varlistentry>
+      <varlistentry>
+        <term><varname>request</varname></term>
+         <listitem><para>
+Request are just signed 32-bit integers that identify the particular
+I/O operation being requested. There is no fixed set of codes, instead
+each type of device can define its own.
+         </para></listitem>
+       </varlistentry>
+      <varlistentry>
+        <term><varname>arg1</varname></term>
+        <term><varname>arg2</varname></term>
+         <listitem><para>
+For some requests it is convenient to pass one or two additional
+parameters alongside the request code. For example an ethernet device
+could define a multicast-all request, with <varname>arg1</varname>
+controlling whether this mode should be enabled or disabled. Both
+<varname>arg1</varname> and <varname>arg2</varname> should be signed
+32-bit integers, and their values are interpreted only by the
+device-specific Tcl script.
+         </para></listitem>
+       </varlistentry>
+      <varlistentry>
+        <term><varname>txdata</varname></term>
+        <term><varname>txlen</varname></term>
+         <listitem><para>
+Some I/O operations may involve sending additional data, for example
+an ethernet packet. Alternatively a control operation may require many
+more parameters than can easily be encoded in <varname>arg1</varname>
+and <varname>arg2</varname>, so those parameters have to be placed in
+a suitable buffer and extracted at the other end.
+<varname>txdata</varname> is an arbitrary buffer of
+<varname>txlen</varname> bytes that should be sent to the host-side.
+There is no specific upper bound on the number of bytes that can be
+sent, but usually it is a good idea to allocate the transmit buffer
+statically and keep transfers down to at most several kilobytes.
+         </para></listitem>
+       </varlistentry>
+      <varlistentry>
+        <term><varname>reply</varname></term>
+         <listitem><para>
+If the host-side is expected to send a reply message then
+<varname>reply</varname> should be a pointer to an integer variable
+and will be updated with a reply code, a simple 32-bit integer. The
+synthetic target HAL code assumes that the host-side and target-side
+agree on the protocol being used: if the host-side will not send a
+reply to this message then the <varname>reply</varname> argument
+should be a NULL pointer; otherwise the host-side must always send
+a reply code and the <varname>reply</varname> argument must be valid.
+         </para></listitem>
+       </varlistentry>
+      <varlistentry>
+        <term><varname>rxdata</varname></term>
+        <term><varname>rxlen</varname></term>
+         <listitem><para>
+Some operations may involve additional data coming from the host-side,
+for example an incoming ethernet packet. <varname>rxdata</varname>
+should be a suitably-sized buffer, and <varname>rxlen</varname> a
+pointer to an integer variable that will end up containing the number
+of bytes that were actually received. These arguments will only be
+used if the host-side is expected to send a reply and hence the
+<varname>reply</varname> argument was not NULL.
+         </para></listitem>
+       </varlistentry>
+      <varlistentry>
+        <term><varname>max_rxlen</varname></term>
+         <listitem><para>
+If a reply to this message is expected and that reply may involve
+additional data, <varname>max_rxlen</varname> limits the size of that
+reply. In other words, it corresponds to the size of the
+<varname>rxdata</varname> buffer.
+         </para></listitem>
+       </varlistentry>
+    </variablelist>
+    <para>
+Most I/O operations involve only some of the arguments. For example
+transmitting an ethernet packet would use the
+<varname>request</varname>, <varname>txdata</varname> and
+<varname>txlen</varname> fields (in addition to
+<varname>device_id</varname> which is always required), but would not
+involve <varname>arg1</varname> or <varname>arg2</varname> and no
+reply would be expected. Receiving an ethernet packet would involve
+<varname>request</varname>, <varname>rxdata</varname>,
+<varname>rxlen</varname> and <varname>max_rxlen</varname>; in addition
+<varname>reply</varname> is needed to get any reply from the host-side
+at all, and could be used to indicate whether or not any more packets
+are buffered up. A control operation such as enabling multicast mode
+would involve <varname>request</varname> and <varname>arg1</varname>,
+but none of the remaining arguments.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-target-interrupts"><title>Interrupt Handling</title>
+    <para>
+Interrupt handling in the synthetic target is much the same as on a
+real target. An interrupt object is created using
+<function>cyg_drv_interrupt_create</function>, attached, and unmasked.
+The emulated device - in other words the Tcl script running inside the
+I/O auxiliary - can raise an interrupt. Subject to interrupts being
+disabled and the appropriate vector being masked, the system will
+invoke the specified ISR function. The synthetic target HAL
+implementation does have some limitations: there is no support for
+nested interrupts, interrupt priorities, or a separate interrupt
+stack. Supporting those might be appropriate when targetting a
+simulator that attempts to model real hardware accurately, but not for
+the simple emulation provided by the synthetic target.
+    </para>
+    <para>
+Of course the actual implementation of the ISR and DSR functions will
+be rather different for a synthetic target device driver. For real
+hardware the device driver will interact with the device by reading
+and writing device registers, managing DMA engines, and the like. A
+synthetic target driver will instead call
+<function>synth_auxiliary_xchgmsg</function> to perform the I/O
+operations.
+    </para>
+    <para>
+There is one other significant difference between interrupt handling
+on the synthetic target and on real hardware. Usually the eCos code
+will know which interrupt vectors are used for which devices. That
+information is fixed when the target hardware is designed. With the
+synthetic target interrupt vectors are assigned to devices on the host
+side, either via the target definition file or dynamically when the
+device is instantiated. Therefore the initialization code for a
+target-side device driver will need to request interrupt vector
+information from the host-side, via a message exchange. Such interrupt
+vectors will be in the range 1 to 31 inclusive, with interrupt 0 being
+reserved for the real-time clock.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ New devices - host-side        -->
+
+<refentry id="synth-new-host">
+  <refmeta>
+    <refentrytitle>Writing New Devices - host</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Writing New Devices</refname>
+    <refpurpose>extending the synthetic target, host-side</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="synth-new-host-description"><title>Description</title>
+    <para>
+On the host-side adding a new device means writing a Tcl/Tk script
+that will handle instantiation and subsequent requests from the
+target-side. These scripts all run in the same full interpreter,
+extended with various commands provided by the main I/O auxiliary
+code, and running in an overall GUI framework. Some knowledge of
+programming with Tcl/Tk is required to implement host-side device
+support.
+    </para>
+    <para>
+Some devices can be implemented entirely using a Tcl/Tk script. For
+example, if the final system will have some buttons then those can be
+emulated in the synthetic target using a few Tk widgets. A simple
+emulation could just have the right number of buttons in a row. A more
+advanced emulation could organize the buttons with the right layout,
+perhaps even matching the colour scheme, the shapes, and the relative
+sizes. With other devices it may be necessary for the Tcl script to
+interact with an external program, because the required functionality
+cannot easily be accessed from a Tcl script. For example interacting
+with a raw ethernet device involves some <function>ioctl</function>
+calls, which is easier to do in a C program. Therefore the
+<filename>ethernet.tcl</filename> script which implements the
+host-side ethernet support spawns a separate program
+<filename>rawether</filename>, written in C, that performs the
+low-level I/O. Raw ethernet access usually also requires root
+privileges, and running a small program <filename>rawether</filename>
+with such privileges is somewhat less of a security risk than the
+whole eCos application, the I/O auxiliary, and various dynamically
+loaded Tcl scripts.
+    </para>
+    <para>
+Because all scripts run in a single interpreter, some care has
+to be taken to avoid accidental sharing of global variables. The best
+way to avoid problems is to have each script create its own Tcl
+namespace, so for example the <filename>ethernet.tcl</filename> script
+creates a namespace <varname>ethernet::</varname> and all variables
+and procedures reside in this namespace. Similarly the I/O auxiliary
+itself makes use of a <varname>synth::</varname> namespace.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-host-build"><title>Building and Installation</title>
+    <para>
+When an eCos device driver or application code instantiates a device,
+the I/O auxiliary will attempt to load a matching Tcl script. The
+third argument to <function>synth_auxiliary_instantiate</function>
+specifies the type of device, for example <literal>ethernet</literal>,
+and the I/O auxiliary will append a <filename>.tcl</filename> suffix
+and look for a script <filename>ethernet.tcl</filename>.
+    </para>
+    <para>
+If the device being instantiated is application-specific rather than
+part of an eCos package, the I/O auxiliary will look first in the
+current directory, then in <filename
+class="directory">~/.ecos/synth</filename>. If it is part of an eCos
+package then the auxiliary will expect to find the Tcl script and any
+support files below <filename
+class="directory">libexec/ecos</filename> in the install tree - note
+that the same install tree must be used for the I/O auxiliary itself
+and for any device driver support. The directory hierarchy below
+<filename class="directory">libexec/ecos</filename> matches the
+structure of the eCos repository, allowing multiple versions of a
+package to be installed to allow for incompatible protocol changes.
+    </para>
+    <para>
+The preferred way to build host-side software is to use
+<command>autoconf</command> and <command>automake</command>. Usually
+this involves little more than copying the
+<filename>acinclude.m4</filename>, <filename>configure.in</filename>
+and <filename>Makefile.am</filename> files from an existing package,
+for example the synthetic target ethernet driver, and then making
+minor edits. In <filename>acinclude.m4</filename> it may be necessary
+to adjust the path to the root of the repository.
+<filename>configure.in</filename> may require a similar change, and
+the <function>AC_INIT</function> macro invocation will have to be
+changed to match one of the files in the new package. A critical macro
+in this file is <filename>ECOS_PACKAGE_DIRS</filename> which will set
+up the correct install directory. <filename>Makefile.am</filename> may
+require some more changes, for example to specify the data files that
+should be installed (including the Tcl script). These files should
+then be processed using <command>aclocal</command>,
+<command>autoconf</command> and <command>automake</command> in that
+order. Actually building the software then just involves
+<command>configure</command>, <command>make</command> and
+<command>make install</command>, as per the instructions in the
+toplevel <filename>README.host</filename> file.
+    </para>
+    <para>
+To assist developers, if the environment variable
+<envar>ECOSYNTH_DEVEL</envar> is set then a slightly different
+algorithm is used for locating device Tcl scripts. Instead of looking
+only in the install tree the I/O auxiliary will also look in the
+source tree, and if the script there is more recent than the installed
+version it will be used in preference. This allows developers to
+modify the master copy without having to run <command>make
+install</command> all the time.
+    </para>
+    <para>
+If a script needs to know where it has been installed it can examine
+the Tcl variable <varname>synth::device_install_dir</varname> . This
+variable gets updated whenever a  script is loaded, so if the
+value may be needed later it should be saved away in a device-specific
+variable. 
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-host-instantiation"><title>Instantiation</title>
+    <para>
+The I/O auxiliary will <command>source</command> the device-specific
+Tcl script when the eCos application first attempts to instantiate a
+device of that type. The script should return a procedure that will be
+invoked to instantiate a device.
+    </para>
+    <programlisting>
+namespace eval ethernet {
+    &hellip;
+    proc instantiate { id instance data } {
+        &hellip;
+        return ethernet::handle_request
+    }
+}
+return ethernet::instantiate
+</programlisting>
+    <para>
+The <varname>id</varname> argument is a unique identifier for this
+device instance. It will also be supplied on subsequent calls to the
+request handler, and will match the return value of
+<function>synth_auxiliary_instantiate</function> on the target side. A
+common use for this value is as an array index to support multiple
+instances of this types of device. The <varname>instance</varname> and
+<varname>data</varname> arguments match the corresponding arguments to
+<function>synth_auxiliary_instantiate</function> on the target side, so
+a typical value for <varname>instance</varname> would be
+<literal>eth0</literal>, and <varname>data</varname> is used to pass
+arbitrary initialization parameters from target to host.
+    </para>
+    <para>
+The actual work done by the instantiation procedure is obviously
+device-specific. It may involve allocating an <link
+linkend="synth-new-host-interrupts">interrupt vector</link>, adding a
+device-specific subwindow to the display, opening a real Linux device,
+establishing a socket connection to some server, spawning a separate
+process to handle the actual I/O, or a combination of some or all of
+the above.
+    </para>
+    <para>
+If the device is successfully instantiated then the return value
+should be a handler for subsequent I/O requests. Otherwise the return
+value should be an empty string, and on the target-side the
+<function>synth_auxiliary_instantiate</function> call will return
+<literal>-1</literal>. The script is responsible for providing
+<link linkend="synth-new-host-output">diagnostics</link> explaining
+why the device could not be instantiated.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-host-requests"><title>Handling Requests</title>
+    <para>
+When the target-side calls
+<function>synth_auxiliary_xchgmsg</function>, the I/O auxiliary will
+end up calling the request handler for the appropriate device instance
+returned during instantiation:
+    </para>
+    <programlisting>
+namespace eval ethernet {
+    &hellip;
+    proc handle_request { id request arg1 arg2 txdata txlen max_rxlen } {
+        &hellip;
+        if { &lt;some condition&gt; } {
+            synth::send_reply &lt;error code&gt; 0 ""
+            return
+        }
+        &hellip;
+        synth::send_reply &lt;reply code&gt; $packet_len $packet
+    }
+    &hellip;
+}
+</programlisting>
+    <para>
+The <varname>id</varname> argument is the same device id that was
+passed to the instantiate function, and is typically used as an array
+index to access per-device data. The <varname>request</varname>,
+<varname>arg1</varname>, <varname>arg2</varname>, and
+<varname>max_rxlen</varname> are the same values that were passed to
+<function>synth_auxiliary_xchgmsg</function> on the target-side,
+although since this is a Tcl script obviously the numbers have been
+converted to strings. The <varname>txdata</varname> buffer is raw data
+as transmitted by the target, or an empty string if the I/O operation
+does not involve any additional data. The Tcl procedures
+<command>binary scan</command>, <command>string index</command> and
+<command>string range</command> may be found especially useful when
+manipulating this buffer. <varname>txlen</varname> is provided for
+convenience, although <command>string length $txdata</command> would
+give the same information.
+    </para>
+    <para>
+The code for actually processing the request is of course device
+specific. If the target does not expect a reply then the request
+handler should just return when finished. If a reply is expected then
+there should be a call to <command>synth::send_reply</command>. The
+first argument is the reply code, and will be turned into a 32-bit
+integer on the target side. The second argument specifies the length
+of the reply data, and the third argument is the reply data itself.
+For some devices the Tcl procedure <command>binary format</command>
+may prove useful. If the reply involves just a code and no additional
+data, the second and third arguments should be <literal>0</literal>
+and an empty string respectively.
+    </para>
+    <para>
+Attempts to send a reply when none is expected, fail to send a reply
+when one is expected, or send a reply that is larger than the
+target-side expects, will all be detected by the I/O auxiliary and
+result in run-time error messages.
+    </para>
+    <para>
+It is not possible for the host-side code to send unsolicited messages
+to the target. If host-side code needs attention from the target, for
+example because some I/O operation has completed, then an interrupt
+should be raised.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-host-interrupts"><title>Interrupts</title>
+    <para>
+The I/O auxiliary provides a number of procedures for interrupt
+handling. 
+    </para>
+    <programlisting>
+synth::interrupt_allocate &lt;name&gt;
+synth::interrupt_get_max
+synth::interrupt_get_devicename &lt;vector&gt;
+synth::interrupt_raise &lt;vector&gt;
+</programlisting>
+    <para>
+<command>synth::interrupt_allocate</command> is normally called during
+device instantiation, and returns the next free interrupt vector. This
+can be passed on to the target-side device driver in response to a
+suitable request, and it can then install an interrupt handler on that
+vector. Interrupt vector <literal>0</literal> is used within the
+target-side code for the real-time clock, so the allocated vectors
+will start at <literal>1</literal>. The argument identifies the
+device, for example <literal>eth0</literal>. This is not actually used
+internally, but can be accessed by user-initialization scripts that
+provide some sort of interrupt monitoring facility (typically via the
+<literal>interrupt</literal> <link
+linkend="synth-new-host-hooks">hook</link>). It is possible for a
+single device to allocate multiple interrupt vectors, but the
+synthetic target supports a maximum of 32 such vectors.
+    </para>
+    <para>
+<command>synth::interrupt_get_max</command> returns the highest
+interrupt vector that has been allocated, or <literal>0</literal> if
+there have been no calls to
+<command>synth::interrupt_allocate</command>.
+<command>synth::interrupt_get_devicename</command> returns the string
+that was passed to <command>synth::interrupt_allocate</command> when
+the vector was allocated.
+    </para>
+    <para>
+<command>synth::interrupt_raise</command> can be called any time after
+initialization. The argument should be the vector returned by
+<command>synth::interrupt_allocate</command> for this device. It will
+activate the normal eCos interrupt handling mechanism so, subject to
+interrupts being enabled and this particular interrupt not being
+masked out, the appropriate ISR will run.
+    </para>
+    <note><para>
+At this time it is not possible for a device to allocate a specific
+interrupt vector. The order in which interrupt vectors are assigned to
+devices effectively depends on the order in which the eCos devices get
+initialized, and that may change if the eCos application is rebuilt. A
+future extension may allow devices to allocate specific vectors, thus
+making things more deterministic. However that will introduce new
+problems, in particular the code will have to start worrying about
+requests for vectors that have already been allocated.
+    </para></note>
+  </refsect1>
+
+  <refsect1 id="synth-new-host-args"><title>Flags and Command Line Arguments</title>
+    <para>
+The generic I/O auxiliary code will process the standard command line
+arguments, and will set various flag variables accordingly. Some of
+these should be checked by device-specific scripts.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><varname>synth::flag_gui</varname></term>
+        <listitem><para>
+This is set when the I/O auxiliary is operating in graphical mode
+rather than text mode. Some functionality such as filters and the GUI
+layout are only available in graphical mode.
+        </para>
+        <programlisting>
+    if { $synth::flag_gui } {
+        &hellip;
+    }
+</programlisting></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>synth::flag_verbose</varname></term>
+         <listitem><para>
+The user has requested additional information during startup. Each
+device driver can decide how much additional information, if any,
+should be produced.
+         </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>synth::flag_keep_going</varname></term>
+        <listitem><para>
+The user has specified <option>-k</option> or
+<option>--keep-going</option>, so even if an error occurs the I/O
+auxiliary and the various device driver scripts should continue running
+if at all possible. Diagnostics should still be generated.
+        </para></listitem>
+      </varlistentry>
+    </variablelist>
+    <para>
+Some scripts may want to support additional command line arguments.
+This facility should be used with care since there is no way to
+prevent two different scripts from trying to use the same argument.
+The following Tcl procedures are available:
+    </para>
+    <programlisting>
+synth::argv_defined &lt;name&gt;
+synth::argv_get_value &lt;name&gt;
+</programlisting>
+    <para>
+<command>synth::argv_defined</command> returns a boolean to indicate
+whether or not a particular argument is present. If the argument is
+the name part of a name/value pair, an <literal>=</literal> character
+should be appended. Typical uses might be:
+    </para>
+    <programlisting>
+    if { [synth::argv_defined "-o13"] } {
+        &hellip;
+    }
+
+    if { [synth::argv_defined "-mark="] } {
+        &hellip;
+    }
+</programlisting>
+    <para>
+The first call checks for a flag <literal>-o13</literal> or
+<literal>--o13</literal> - the code treats options with single and
+double hyphens interchangeably. The second call checks for an argument
+of the form <literal>-mark=&lt;value&gt;</literal> or a pair of
+arguments <literal>-mark &lt;value&gt;</literal>. The value part of a
+name/value pair can be obtained using
+<command>synth::argv_get_value</command>;
+    </para>
+    <programlisting>
+    variable speed 1
+    if { [synth::argv_defined "-mark="] } {
+        set mark [synth::argv_get_value "-mark="]
+        if { ![string is integer $mark] || ($mark < 1) || ($mark > 9) } {
+            &lt;issue diagnostic&gt;
+        } else {
+            set speed $mark
+        }
+    }
+</programlisting>
+    <para>
+<command>synth::argv_get_value</command> should only be used after a
+successful call to <command>synth::argv_defined</command>.
+At present there is no support for some advanced forms of command line
+argument processing. For example it is not possible to repeat a
+certain option such as <option>-v</option> or
+<option>--verbose</option>, with each occurrence increasing the level
+of verbosity. 
+    </para>
+    <para>
+If a script is going to have its own set of command-line arguments
+then it should give appropriate details if the user specifies
+<option>--help</option>. This involves a hook function:
+    </para>
+    <programlisting>
+namespace eval my_device {
+    proc help_hook { } {
+        puts " -o13          : activate the omega 13 device"
+        puts " -mark &lt;speed&gt; : set speed. Valid values are 1 to 9."
+    }
+
+    synth::hook_add "help" my_device::help_hook
+}
+</programlisting>
+  </refsect1>
+
+  <refsect1 id="synth-new-host-tdf"><title>The Target Definition File</title>
+    <para>
+Most device scripts will want to check entries in the target
+definition file for run-time configuration information. The Tcl
+procedures for this are as follows:
+    </para>
+    <programlisting>
+synth::tdf_has_device &lt;name&gt;
+synth::tdf_get_devices
+synth::tdf_has_option &lt;devname&gt; &lt;option&gt;
+synth::tdf_get_option &lt;devname&gt; &lt;option&gt;
+synth::tdf_get_options &lt;devname&gt; &lt;option&gt;
+synth::tdf_get_all_options &lt;devname&gt;
+</programlisting>
+    <para>
+<command>synth::tdf_has_device</command> can be used to check whether
+or not the target definition file had an entry
+<literal>synth_device&nbsp;&lt;name&gt;</literal>. Usually the name
+will match the type of device, so the
+<filename>console.tcl</filename> script will look for a target
+definition file entry <literal>console</literal>.
+<command>synth::tdf_get_devices</command> returns a list of all
+device entries in the target definition file.
+    </para>
+    <para>
+Once it is known that the target definition file has an entry for a
+certain device, it is possible to check for options within the entry.
+<command>synth::tdf_has_option</command> just checks for the presence,
+returning a boolean:
+    </para>
+    <programlisting>
+    if { [synth::tdf_has_option "console" "appearance"] } {
+        &hellip;
+    }
+</programlisting>
+    <para>
+<command>synth::tdf_get_option</command> returns a list of all the
+arguments for a given option. For example, if the target definition
+file contains an entry:
+    </para>
+    <programlisting>
+synth_device console {
+    appearance -foreground white -background black
+    filter trace {^TRACE:.*} -foreground HotPink1 -hide 1
+    filter xyzzy {.*xyzzy.*} -foreground PapayaWhip
+}
+</programlisting>
+    <para>
+A call
+<command>synth::tdf_get_option&nbsp;console&nbsp;appearance</command>
+will return the list <literal>{-foreground white -background
+black}</literal>. This list can be manipulated using standard Tcl routines
+such as <command>llength</command> and <command>lindex</command>. Some
+options can occur multiple times in one entry, for example
+<option>filter</option> in the <literal>console</literal> entry.
+<command>synth::tdf_get_options</command> returns a list of lists,
+with one entry for each option occurrence.
+<command>synth::tdf_get_all_options</command> returns a list of lists
+of all options. This time each entry will include the option name as
+well.
+    </para>
+    <para>
+The I/O auxiliary will not issue warnings about entries in the target
+definition file for devices which were not loaded, unless the
+<option>-v</option> or <option>--verbose</option> command line
+argument was used. This makes it easier to use a single target
+definition file for different applications. However the auxiliary will
+issue warnings about options within an entry that were ignored,
+because often these indicate a typing mistake of some sort. Hence a
+script should always call <command>synth::tdf_has_option</command>,
+<command>synth:;tdf_get_option</command> or
+<command>synth::tdf_get_options</command> for all valid options, even
+if some of the options preclude the use of others.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-new-host-hooks"><title>Hooks</title>
+    <para>
+Some scripts may want to take action when particular events occur, for
+example when the eCos application has exited and there is no need for
+further I/O. This is supported using hooks:
+    </para>
+    <programlisting>
+namespace eval my_device {
+    &hellip;
+    proc handle_ecos_exit { arg_list } {
+        &hellip;
+    }
+    synth::hook_add "ecos_exit" my_device::handle_ecos_exit
+}
+</programlisting>
+    <para>
+It is possible for device scripts to add their own hooks and call all
+functions registered for those hooks. A typical use for this is by
+user initialization scripts that want to monitor some types of I/O.
+The available Tcl procedures for manipulating hooks are:
+    </para>
+    <programlisting>
+synth::hook_define &lt;name&gt;
+synth::hook_defined &lt;name&gt;
+synth::hook_add &lt;name&gt; &lt;function&gt;
+synth::hook_call &lt;name&gt; &lt;args&gt;
+</programlisting>
+    <para>
+<command>synth::hook_define</command> creates a new hook with the
+specified name. This hook must not already exist.
+<command>synth::hook_defined</command> can be used to check for the
+existence of a hook. <command>synth::hook_add</command> allows other
+scripts to register a callback function for this hook, and
+<command>synth::hook_call</command> allows the owner script to invoke
+all such callback functions. A hook must already be defined before a
+callback can be attached. Therefore typically device scripts will only
+use standard hooks and their own hooks, not hooks created by some
+other device, because the order of device initialization is not
+sufficiently defined. User scripts run from
+<filename>mainrc.tcl</filename> can use any hooks that have been
+defined.
+    </para>
+    <para>
+<command>synth::hook_call</command> takes an arbitrary list of
+arguments, for example:
+    </para>
+    <programlisting>
+    synth::hook_call "ethernet_rx" "eth0" $packet
+</programlisting>
+    <para>
+The callback function will always be invoked with a single argument,
+a list of the arguments that were passed to
+<command>synth::hook_call</command>: 
+    </para>
+    <programlisting>
+    proc rx_callback { arg_list } {
+        set device [lindex $arg_list 0]
+        set packet [lindex $arg_list 1]
+    }
+</programlisting>
+    <para>
+Although it might seem more appropriate to use Tcl's
+<command>eval</command> procedure and have the callback functions
+invoked with the right number of arguments rather than a single list,
+that would cause serious problems if any of the data contained special
+characters such as <literal>[</literal> or <literal>$</literal>. The
+current implementation of hooks avoids such problems, at the cost of
+minor inconvenience when writing callbacks.
+    </para>
+    <para>
+A number of hooks are defined as standard. Some devices will add
+additional hooks, and the device-specific documentation should be
+consulted for those. User scripts can add their own hooks if desired.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><literal>exit</literal></term>
+        <listitem><para>
+This hook is called just before the I/O auxiliary exits. Hence it
+provides much the same functionality as <function>atexit</function> in
+C programs. The argument list passed to the callback function will be
+empty. 
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>ecos_exit</literal></term>
+        <listitem><para>
+This hook is called when the eCos application has exited. It is used
+mainly to shut down I/O operations: if the application is no longer
+running then there is no point in raising interrupts or storing
+incoming packets. The callback argument list will be empty.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>ecos_initialized</literal></term>
+        <listitem><para>
+The synthetic target HAL will send a request to the I/O auxiliary once
+the static constructors have been run. All devices should now have been
+instantiated. A script could now check how many instances there are of
+a given type of device, for example ethernet devices, and create a
+little monitor window showing traffic on all the devices. The
+<literal>ecos_initialized</literal> callbacks will be run just before
+the user's <filename>mainrc.tcl</filename> script. The callback
+argument list will be empty.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>help</literal></term>
+        <listitem><para>
+This hook is also invoked once static constructors have been run, but
+only if the user specified <option>-h</option> or
+<option>--help</option>. Any scripts that add their own command line
+arguments should add a callback to this hook which outputs details of
+the additional arguments. The callback argument list will be empty.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>interrupt</literal></term>
+        <listitem><para>
+Whenever a device calls <command>synth::interrupt_raise</command> the
+<literal>interrupt</literal> hook will be called with a single
+argument, the interrupt vector. The main use for this is to allow
+user scripts to monitor interrupt traffic.
+        </para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  
+  <refsect1 id="synth-new-host-output"><title>Output and Filters</title>
+    <para>
+Scripts can use conventional facilities for sending text output to the
+user, for example calling <command>puts</command> or directly
+manipulating the central text widget
+<varname>.main.centre.text</varname>. However in nearly all cases it
+is better to use output facilities provided by the I/O auxiliary
+itself: 
+    </para>
+    <programlisting>
+synth::report &lt;msg&gt;
+synth::report_warning &lt;msg&gt;
+synth::report_error &lt;msg&gt;
+synth::internal_error &lt;msg&gt;
+synth::output &lt;msg&gt; &lt;filter&gt;
+</programlisting>
+    <para>
+<command>synth::report</command> is intended for messages related to
+the operation of the I/O auxiliary itself, especially additional
+output resulting from <option>-v</option> or
+<option>--verbose</option>. If running in text mode the output will go
+to standard output. If running in graphical mode the output will go to
+the central text window. In both modes, use of <option>-l</option> or
+<option>--logfile</option> will modify the behaviour.
+    </para>
+    <para>
+<command>synth::report_warning</command>,
+<command>synth::report_error</command> and
+<command>synth::internal_error</command> have the obvious meaning,
+including prepending strings such as <literal>Warning:</literal> and
+<literal>Error:</literal>. When the eCos application informs the I/O
+auxiliary that all static constructors have run, if at that point
+there have been any calls to <command>synth::error</command> then the
+I/O auxiliary will exit. This can be suppressed with command line
+arguments <option>-k</option> or <option>--keep-going</option>.
+<command>synth::internal_error</command> will output some information
+about the current state of the I/O auxiliary and then exit
+immediately. Of course it should never be necessary to call this
+function. 
+    </para>
+    <para>
+<command>synth::output</command> is the main routine for outputting
+text. The second argument identifies a filter. If running in text mode
+the filter is ignored, but if running in graphical mode the filter can
+be used to control the appearance of this output. A typical use would
+be:
+    </para>
+    <programlisting>
+    synth::output $line "console"
+</programlisting>
+    <para>
+This outputs a single line of text using the
+<literal>console</literal> filter. If running in graphical mode the
+default appearance of this text can be modified with the
+<option>appearance</option> option in the
+<command>synth_device&nbsp;console</command> entry of the target
+definition file. The <guimenuitem>System filters</guimenuitem> menu
+option can be used to change the appearance at run-time.
+    </para>
+    <para>
+Filters should be created before they are used. The procedures
+available for this are:
+    </para>
+    <programlisting>
+synth::filter_exists &lt;name&gt;
+synth::filter_get_list
+synth::filter_add &lt;name&gt; [options]
+synth::filter_parse_options &lt;options&gt; &lt;parsed_options&gt; &lt;message&gt;
+synth::filter_add_parsed &lt;name&gt; &lt;parsed_options&gt;
+</programlisting>
+    <para>
+<command>synth::filter_exists</command> can be used to check whether
+or not a particular filter already exists: creating two filters with
+the same name is not allowed.
+<command>synth::filter_get_list</command> returns a list of the
+current known filters. <command>synth::filter_add</command> can be
+used to create a new filter. The first argument names the new filter,
+and the remaining arguments control the initial appearance. A typical
+use might be:
+    </para>
+    <programlisting>
+    synth::filter_add "my_device_tx" -foreground yellow -hide 1
+</programlisting>
+    <para>
+It is assumed that the supplied arguments are valid, which typically
+means that they are hard-wired in the script. If instead the data
+comes out of a configuration file and hence may be invalid, the
+I/O auxiliary provides a parsing utility. Typical usage would be:
+    </para>
+    <programlisting>
+    array set parsed_options [list]
+    set message ""
+    if { ![synth::filter_parse_options $console_appearance parsed_options message] } {
+        synth::report_error \
+	        "Invalid entry in target definition file $synth::target_definition\
+	         \n  synth_device \"console\", entry \"appearance\"\n$message"
+    } else {
+        synth::filter_add_parsed "console" parsed_options
+    }
+</programlisting>
+    <para>
+On success <varname>parsed_options</varname> will be updated with an
+internal representation of the desired appearance, which can then be
+used in a call to <command>synth::filter_add_parsed</command>. On
+failure <varname>message</varname> will be updated with details of the
+parsing error that occurred.
+    </para>
+  </refsect1>
+  
+  <refsect1 id="synth-new-host-gui"><title>The Graphical Interface</title>
+    <para>
+When the I/O auxiliary is running in graphical mode, many scripts will
+want to update the user interface in some way. This may be as simple
+as adding another entry to the help menu for the device, or adding a
+new button to the toolbar. It may also involve adding new subwindows,
+or even creating entire new toplevel windows. These may be simple
+monitor windows, displaying additional information about what is going
+on in the system in a graphical format. Alternatively they may emulate
+actual I/O operations, for example button widgets could be used to
+emulate real physical buttons.
+    </para>
+    <para>
+The I/O auxiliary does not provide many procedures related to the
+graphical interface. Instead it is expected that scripts will just
+update the widget hierarchy directly.
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="layout.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+So adding a new item to the <guimenu>Help</guimenu> menu involves a
+<command>.menubar.help&nbsp;add</command> operation with suitable
+arguments. Adding a new button to the toolbar involves creating a
+child window in <varname>.toolbar</varname> and packing it
+appropriately. Scripts can create their own subwindows and then pack
+it into one of <varname>.main.nw</varname>,
+<varname>.main.n</varname>, <varname>.main.ne</varname>,
+<varname>.main.w</varname>, <varname>.main.e</varname>,
+<varname>.main.sw</varname>, <varname>.main.s</varname> or
+<varname>.main.se</varname>. Normally the user should be allowed to
+<link linkend="synth-gui-layout">control</link> this via the target
+definition file. The central window <varname>.main.centre</varname>
+should normally be left alone by other scripts since it gets used for
+text output.
+    </para>
+    <para>
+The following graphics-related utilities may be found useful:
+    </para>
+    <programlisting>
+synth::load_image &lt;image name&gt; &lt;filename&gt;
+synth::register_ballon_help &lt;widget&gt; &lt;message&gt;
+synth::handle_help &lt;URL&gt;
+</programlisting>
+    <para>
+<command>synth::load_image</command> can be used to add a new image to
+the current interpreter. If the specified file has a
+<filename>.xbm</filename> extension then the image will be a
+monochrome bitmap, otherwise it will be a colour image of some sort.
+A boolean will be returned to indicate success or failure, and
+suitable diagnostics will be generated if necessary.
+    </para>
+    <para>
+<command>synth::register_balloon_help</command> provides balloon help
+for a specific widget, usually a button on the toolbar.
+    </para>
+    <para>
+<command>synth::handle_help</command> is a utility routine that can be
+installed as the command for displaying online help, for example:
+    </para>
+    <programlisting>
+    .menubar.help add command -label "my device" -command \
+        [list synth::handle_help "file://$path"]
+</programlisting>
+  </refsect1>
+  
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ Porting                        -->
+
+<refentry id="synth-porting">
+  <refmeta>
+    <refentrytitle>Porting</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Porting</refname>
+    <refpurpose>Adding support for other hosts</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="synth-porting-description"><title>Description</title>
+    <para>
+The initial development effort of the eCos synthetic target happened
+on x86 Linux machines. Porting to other platforms involves addressing
+a number of different issues. Some ports should be fairly
+straightforward, for example a port to Linux on a processor other than
+an x86. Porting to Unix or Unix-like operating systems other than
+Linux may be possible, but would involve more effort. Porting to a
+completely different operating system such as Windows would be very
+difficult. The text below complements the eCos Porting Guide.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-porting-linux"><title>Other Linux Platforms</title>
+    <para>
+Porting the synthetic target to a Linux platform that uses a processor
+other than x86 should be straightforward. The simplest approach is to
+copy the existing <filename class="directory">i386linux</filename>
+directory tree in the <filename class="directory">hal/synth</filename>
+hierarchy, then rename and edit the ten or so files in this package.
+Most of the changes should be pretty obvious, for example on a 64-bit
+processor some new data types will be needed in the
+<filename>basetype.h</filename> header file. It will also be necessary
+to update the toplevel <filename>ecos.db</filename> database with an
+entry for the new HAL package, and a new target entry will be needed.
+    </para>
+    <para>
+Obviously a different processor will have different register sets and
+calling conventions, so the code for saving and restoring thread
+contexts and for implementing <function>setjmp</function> and
+<function>longjmp</function> will need to be updated. The exact way of
+performing Linux system calls will vary: on x86 linux this usually
+involves pushing some registers on the stack and then executing an
+<literal>int&nbsp;0x080</literal> trap instruction, but on a different
+processor the arguments might be passed in registers instead and
+certainly a different trap instruction will be used. The startup code
+is written in assembler, but needs to do little more than extract the
+process' argument and environment variables and then jump to the main
+<function>linux_entry</function> function provided by the
+architectural synthetic target HAL package.
+    </para>
+    <para>
+The header file <filename>hal_io.h</filename> provided by the
+architectural HAL package provides various structure definitions,
+function prototypes, and macros related to system calls. These are
+correct for x86 linux, but there may be problems on other processors.
+For example a structure field that is currently defined as a 32-bit
+number may in fact may be a 64-bit number instead.
+    </para>
+    <para>
+The synthetic target's memory map is defined in two files in the
+<filename class="directory">include/pkgconf</filename> subdirectory.
+For x86 the default memory map involves eight megabytes of read-only
+memory for the code at location 0x1000000 and another eight megabytes
+for data at 0x2000000. These address ranges may be reserved for other
+purposes on the new architecture, so may need changing. There may be
+some additional areas of memory allocated by the system for other
+purposes, for example the startup stack and any environment variables,
+but usually eCos applications can and should ignore those.
+    </para>
+    <para>
+Other HAL functionality such as interrupt handling, diagnostics, and
+the system clock are provided by the architectural HAL package and
+should work on different processors with few if any changes. There may
+be some problems in the code that interacts with the I/O auxiliary
+because of lurking assumptions about endianness or the sizes of
+various data types.
+    </para>
+    <para>
+When porting to other processors, a number of sources of information
+are likely to prove useful. Obviously the Linux kernel sources and
+header files constitute the ultimate authority on how things work at
+the system call level. The GNU C library sources may also prove very
+useful: for a normal Linux application it is the C library that
+provides the startup code and the system call interface.
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-porting-unix"><title>Other Unix Platforms</title>
+    <para>
+Porting to a Unix or Unix-like operating system other than Linux would
+be somewhat more involved. The first requirement is toolchains: the
+GNU compilers, gcc and g++, must definitely be used; use of other GNU
+tools such as the linker may be needed as well, because eCos depends
+on functionality such as prioritizing C++ static constructors, and
+other linkers may not implement this or may implement it in a
+different and incompatible way. A closely related requirement is the
+use of ELF format for binary executables: if the operating system
+still uses an older format such as COFF then there are likely to be
+problems because they do not provide the flexibility required by eCos.
+    </para>
+    <para>
+In the architectural HAL there should be very little code that is
+specific to Linux. Instead the code should work on any operating
+system that provides a reasonable implementation of the POSIX
+standard. There may be some problems with program startup, but those
+could be handled at the architectural level. Some changes may also be
+required to the exception handling code. However one file which will
+present a problem is <filename>hal_io.h</filename>, which contains
+various structure definitions and macros used with the system call
+interface. It is likely that many of these definitions will need
+changing, and it may well be appropriate to implement variant HAL
+packages for the different operating systems where this information
+can be separated out. Another possible problem is that the generic
+code assumes that system calls such as
+<function>cyg_hal_sys_write</function> are available. On an operating
+system other than Linux it is possible that some of these are not
+simple system calls, and instead wrapper functions will need to be
+implemented at the variant HAL level.
+    </para>
+    <para>
+The generic I/O auxiliary code should be fairly portable to other Unix
+platforms. However some of the device drivers may contain code that is
+specific to Linux, for example the <literal>PF_PACKET</literal> socket
+address family and the ethertap virtual tunnelling interface. These
+may prove quite difficult to port.
+    </para>
+    <para>
+The remaining porting task is to implement one or more platform HAL
+packages, one per processor type that is supported. This should
+involve much the same work as a port to <link
+linkend="synth-porting-linux">another processor running Linux</link>.
+    </para>
+    <para>
+When using other Unix operating systems the kernel source code may not
+be available, which would make any porting effort more challenging.
+However there is still a good chance that the GNU C library will have
+been ported already, so its source code may contain much useful
+information. 
+    </para>
+  </refsect1>
+
+  <refsect1 id="synth-porting-other"><title>Windows Platforms</title>
+    <para>
+Porting the current synthetic target code to some version of Windows
+or to another non-Unix platform is likely to prove very difficult. The
+first hurdle that needs to be crossed is the file format for binary
+executables: current Windows implementations do not use ELF, instead
+they use their own format PE which is a variant of the rather old and
+limited COFF format. It may well prove easier to first write an ELF
+loader for Windows executables, rather than try to get eCos to work
+within the constraints of PE. Of course that introduces new problems,
+for example existing source-level debuggers will still expect
+executables to be in PE format.
+    </para>
+    <para>
+Under Linux a synthetic target application is not linked with the
+system's C library or any other standard system library. That would
+cause confusion, for example both eCos and the system's C library
+might try to define the <function>printf</function> function, and
+introduce complications such as working with shared libraries. For
+much the same reasons, a synthetic target application under Windows
+should not be linked with any Windows DLL's. If an ELF loader has been
+specially written then this may not be much of a problem.
+    </para>
+    <para>
+The next big problem is the system call interface. Under Windows
+system calls are generally made via DLL's, and it is not clear that
+the underlying trap mechanism is well-documented or consistent between
+different releases of Windows.
+    </para>
+    <para>
+The current code depends on the operating system providing an
+implementation of POSIX signal handling. This is used for I/O
+purposes, for example <literal>SIGALRM</literal> is used for the
+system clock, and for exceptions. It is not known what equivalent
+functionality is available under Windows.
+    </para>
+    <para>
+Given the above problems a port of the synthetic target to Windows may
+or may not be technically feasible, but it would certainly require a
+very large amount of effort.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+
+</part>

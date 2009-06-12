@@ -1,0 +1,17 @@
+version 0
+region sram1 82000000 100000 0 !
+region sram2 89000000 100000 0 !
+region ram 8c020000 3fe0000 0 !
+section heap2 0 1 0 0 1 0 1 0 82000000 82000000 !
+section heap3 0 1 0 0 1 0 1 0 89000000 89000000 !
+section vectors 0 1 0 1 1 1 1 1 8c020000 8c020000 text text !
+section text 0 4 0 1 0 1 0 1 fini fini !
+section fini 0 4 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 8 0 1 0 1 0 1 rodata rodata !
+section rodata 0 8 0 1 0 1 0 1 fixup fixup !
+section fixup 0 4 0 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 1 0 1 0 1 0 1 data data !
+section data 0 8 0 1 0 1 0 1 bss bss !
+section bss 0 10 0 1 0 1 0 1 heap1 heap1 !
+section heap1 0 8 0 0 0 0 0 0 !
+section pci_window 100000 1 0 0 1 0 1 0 8ff00000 8ff00000 !

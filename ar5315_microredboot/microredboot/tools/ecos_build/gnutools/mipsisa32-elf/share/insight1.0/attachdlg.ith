@@ -1,0 +1,35 @@
+#
+# attachdlg.ith - itcl declarations for class AttachDlg
+# ----------------------------------------------------------------------
+# Implements Attach to process window
+#
+# ----------------------------------------------------------------------
+#   Copyright (C) 1999 Cygnus Solutions
+#
+class AttachDlg {
+  inherit ModalDialog ManagedWin
+
+  public {
+    method constructor {args}
+    proc last_button {} {return $last_button}
+    proc pid {} {return $last_pid}
+    proc symbol_file {} {return $symbol_file}
+  }
+
+  protected {
+    method build_win {args}
+    method cancel {}
+    method choose_symbol_file {}
+    method doit {}
+    method list_pids {{pattern *}}
+    method select_pid {}
+    method clear_pid_selection {}
+    method filter_pid_selection {}
+
+    variable pid_list
+
+    common  last_button 0
+    common last_pid {}
+    common symbol_file
+  }
+}

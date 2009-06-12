@@ -1,0 +1,324 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_sim.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-02-04  Nick Garnett  <nickg@calivar.com>
+
+	* cdl/hal_powerpc_sim.cdl: Added requirement for
+	CYGSEM_HAL_USE_ROM_MONITOR==0. Otherwise the exception vectors do
+	not get included.
+
+2003-01-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_regs.h: 
+	* include/plf_intr.h: 
+	* include/platform.inc: New file(s) - empty, but used by latest HAL.
+
+2002-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_cache.h: Cache control is in hal/common CDL.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_sim_ram.h:
+	* include/pkgconf/mlt_powerpc_sim_ram.ldi:
+	Regenerated with updated host tools
+
+2000-10-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_sim_ram.h: Added heap1 label.
+	* include/pkgconf/mlt_powerpc_sim_ram.mlt: Same.
+	* include/pkgconf/mlt_powerpc_sim_ram.ldi: Same.
+
+2000-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_aux.c (hal_platform_init): Added.
+
+	* cdl/hal_powerpc_sim.cdl: Does not support CTRLC (sim handles
+	that, no target code required).
+
+2000-04-11  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_sim.cdl: Force inclusion of vectors, disable
+	MMU.
+
+2000-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_sim_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_sim_ram.h: 
+	* include/pkgconf/mlt_powerpc_sim_ram.ldi: 
+	Reserve space for VSR table.
+	
+2000-03-02  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_sim_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_sim_ram.ldi:
+	Let text section follow vectors without a hardcoded gap.
+
+	* include/hal_diag.h (HAL_DIAG_WRITE_CHAR): Fix typo.
+
+2000-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_sim.cdl: Remove hardcoded copy_vectors
+	definition.
+
+2000-02-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/sim.S:  use arch.inc instead of ppc.inc
+
+2000-02-14  Jesper Skov  <jskov@redhat.com>
+	902064-CR
+	* cdl/hal_powerpc_sim.cdl: 603 CPU, but enable soft-float. Same
+	options in linker flags.
+
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_aux.c: Cleaned up includes.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_sim.cdl:
+	* include/pkgconf/hal_powerpc_sim.h: 
+	Use 60x variant code.
+	
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_sim.cdl: CYG_HAL_POWERPC_x->CYGPKG_...
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_cache.h: Added.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+2000-01-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_powerpc_sim.cdl:
+
+	Define CYG_HAL_POWERPC_SIM to allow kernel test
+	'kcache1' to build.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_powerpc_sim.cdl: Ensure we "puts" to appropriate CDL header
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_powerpc_sim.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_sim_ram.h: New file.
+
+1999-09-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* runtime/tree: Delete. Now obsolete.
+
+1999-06-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/PKGconf.mak: Build the new file.
+
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): New file, to define this
+	object for per-platform table-driven memory map initialization.
+	The table used to be in hal_misc.c in the architectural HAL; this
+	is platform dependent so better and cleaner here.
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_sim.h: Move RTC setup here.
+
+1999-04-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_sim_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_sim_ram.mlt: 
+	Increased memory size to 1MB.
+	
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_diag.h (HAL_DIAG_WRITE_CHAR): 
+	Disable interrupts when doing diag output so that
+	system "freezes" while this goes on
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_sim.h:  Take out DEVICES dependencies.
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: Removed.
+
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.mlt: New memory layout save files
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi: Rationalize memory layout.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1998-10-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	
+	* include/hal_stub.h: Removed superfluous pkgconf/kernel.h
+	include.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_sim.h: Allow wallclock and watchdog
+	devices to be configured.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: Include generic-stub.h from hal.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/PKGconf.mak (COMPILE): Removed empty hal_diag.c.
+
+1998-10-22  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17898
+
+	* include/pkgconf/hal_powerpc_sim.h: Preclude devices.
+
+1998-10-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* runtime/tree: Added.
+
+1998-10-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_sim.h: Undid 1998-10-16 change.
+
+1998-10-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_sim.h: Changed
+	CYGPKG_HAL_POWERPC_SIM to CYG_HAL_POWERPC_SIM.
+
+1998-10-13  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_stub.h: Added.
+
+1998-10-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sim.ld: Glob expressions to match function/data-sections
+	needed for selective linking.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_diag.h
+	* src/sim.ld
+	Changed /**/ comments to //.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+        * src/makefile: Removed.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_diag.h
+	* include/pkgconf/hal_powerpc_sim.h
+	* src/sim.S
+	* src/sim.ld
+	Expanded TABs.
+
+Thu Sep 17 17:40:31 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/sim.ld: Fixed to work with simulator. Needs to be cleaned up
+ 	though.
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_sim.h:
+	Added missing descriptions (PR 17184)
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_sim.h:
+	New header file for platform-specific configuration options
+
+	* tests/PKGconf.mak: 
+	* src/PKGconf.mak: 
+	Sort out package naming conventions.
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sim.S: 
+	* include/hal_diag.h:
+	Now uses hal.h rather than kernel.h.
+
+Tue Aug 18 11:47:24 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: Reorder GROUP line
+
+Mon Aug 17 22:18:15 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/sim.ld: 
+	Add GROUP(libgcc.a libtarget.a) to prevent need for explicit linking
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

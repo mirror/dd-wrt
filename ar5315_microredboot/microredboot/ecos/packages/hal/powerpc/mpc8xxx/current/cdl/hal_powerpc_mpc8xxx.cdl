@@ -1,0 +1,218 @@
+# ====================================================================
+#
+#      hal_powerpc_mpc8xxx.cdl
+#
+#      PowerPC/MPC8xxx variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002, 2003 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      pfine
+# Contributors:   jskov, gthomas
+# Date:           2001-12-12
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_POWERPC_MPC8XXX {
+    display       "PowerPC MPC8xxx variant HAL"
+    parent        CYGPKG_HAL_POWERPC
+    hardware
+    include_dir   cyg/hal
+    define_header hal_powerpc_mpc8xxx.h
+    description   "
+           The PowerPC MPC8xxx variant HAL package provides generic support
+           for this processor variant. It is also necessary to
+           select a specific target platform HAL package."
+
+    # Note: This should be sub-variant specific to reduce memory use.
+    define_proc {
+        puts $cdl_header "#define CYGHWR_HAL_VSR_TABLE (CYGHWR_HAL_POWERPC_VECTOR_BASE + 0x3000)"
+        puts $cdl_header "#define CYGHWR_HAL_VIRTUAL_VECTOR_TABLE (CYGHWR_HAL_VSR_TABLE + 0x200)"
+    }
+
+    implements    CYGINT_HAL_POWERPC_VARIANT
+
+    cdl_option CYGHWR_HAL_POWERPC_FPU {
+        display    "Variant FPU support"
+        calculated 0
+    }
+
+    cdl_option CYGPKG_HAL_POWERPC_MSBFIRST {
+        display    "CPU Variant big-endian"
+        calculated 1
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_powerpc.h>"
+    }
+
+    cdl_interface CYGNUM_HAL_MPC8XXX_SMC1 {
+        display    "SMC1 is available for serial I/O"
+        description "
+          This interface indicates that SMC1 can be outfitted as
+          a serial device."
+    }
+
+    cdl_interface CYGNUM_HAL_MPC8XXX_SMC2 {
+        display    "SMC2 is available for serial I/O"
+        description "
+          This interface indicates that SMC2 can be outfitted as
+          a serial device."
+    }
+
+    cdl_interface CYGNUM_HAL_MPC8XXX_SCC1 {
+        display    "SCC1 is available for serial I/O"
+        description "
+          Port SCC1 is available for serial I/O"
+    }
+
+    cdl_interface CYGNUM_HAL_MPC8XXX_SCC2 {
+        display    "SCC2 is available for serial I/O"
+        description "
+          Port SCC2 is available for serial I/O"
+    }
+
+    cdl_interface CYGNUM_HAL_MPC8XXX_SCC3 {
+        display    "SCC3 is available for serial I/O"
+        description "
+          Port SCC3 is available for serial I/O"
+    }
+
+    cdl_interface CYGNUM_HAL_MPC8XXX_SCC4 {
+        display    "SCC4 is available for serial I/O"
+        description "
+          Port SCC4 is available for serial I/O"
+    }
+
+   cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+        display       "Baud rate for the HAL diagnostic port"
+        flavor        data
+        legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400 3600
+                      4800 7200 9600 14400 19200 38400 57600 115200 230400
+        }
+        default_value 38400
+        description   "
+            This option specifies the default baud rate (speed) for the 
+            HAL diagnostic port."
+   }
+
+   cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+       display      "Number of communication channels on the board"
+       flavor       data
+       calculated   CYGNUM_HAL_MPC8XXX_SMC1+CYGNUM_HAL_MPC8XXX_SMC2+CYGNUM_HAL_MPC8XXX_SCC1+CYGNUM_HAL_MPC8XXX_SCC2+CYGNUM_HAL_MPC8XXX_SCC3+CYGNUM_HAL_MPC8XXX_SCC4
+   }
+
+   cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+       display          "Debug serial port"
+       active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+       flavor data
+       legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+       default_value    0
+       description      "
+           The MPC8xxx variants can have many serial ports.  This option
+           chooses which port will be used to connect to a host running GDB."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+        display          "Diagnostic serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           This option chooses which of the serial ports 
+           will be used for diagnostic output."
+    }
+
+    # This option is only used when USE_ROM_MONITOR is enabled - but
+    # it cannot be a sub-option to that option, since the code uses the
+    # definition in a preprocessor comparison.
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_ROM_DEBUG_CHANNEL {
+        display          "Debug serial port used by ROM monitor"
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           This option chooses which of the serial ports 
+           will be used for GDB debugging."
+    }
+
+    compile       var_intr.c var_misc.c variant.S quicc2_diag.c cpm.c
+
+    cdl_component CYGPKG_HAL_POWERPC_MPC8XXX_OPTIONS {
+        display "MPC8XXX build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_HAL_POWERPC_MPC8XXX_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the MPC8XXX HAL. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_HAL_POWERPC_MPC8XXX_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the MPC8XXX HAL. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_HAL_POWERPC_MPC8XXX_TESTS {
+            display "MPC8XXX tests"
+            flavor  data
+            no_define
+            calculated { "tests/mpc8xxx_timer" }
+            description   "
+                This option specifies the set of tests for the MPC8XXX HAL."
+        }
+    }
+}

@@ -1,0 +1,74 @@
+<HTML>
+  <HEAD>
+    <TITLE>Console Window Help</TITLE>
+  </HEAD>
+  <BODY>
+    <CENTER><H2>The Console Window</H2></CENTER>
+
+    <P>The Console Window provides the traditional command-line interface to GDB.
+      It is very similar to the command-line you get when GDB is run with "-nw".</P>
+
+    <UL>
+      <LI><A HREF="#display">Console Display</A></LI>
+      <LI><A HREF="#editing">Editing Commands</A></LI>
+      <LI><A HREF="#history">History Commands</A></LI>
+      <LI><A HREF="#display_hlp">Getting Help</A></LI>
+    </UL>
+
+    <H4><A NAME="display">Console Display</A></H4>
+    The Console Display is simply a scrolled window in which the debugger prompt
+    appears. By default, the prompt is set to "(gdb) ", but it may be changed via a
+    command line option.
+    
+    <P>To execute commands in the console window, simply enter
+      the command in the display. If the debugger is busy, the message "Error: The
+      debugger is busy." appears informing the user that the command was not accepted.</P>
+    
+    <P>Whenever a command is executed, the debugger's windows will update to display
+      any new state information. Any output from the command is also echoed to the Console
+      Window for ease of use. If an error occurs, an error message is printed to the Console
+      Window. All error messages appear in the Console Window using a red typeface.
+    </P>
+    
+    <BR>
+
+    <H4><A NAME="editing">Editing Commands</A></H4>
+    <P>The Console Window shell has many powerful features to help edit commands.</P>
+    <UL>
+      <LI> Return or Enter causes the command to be executed.
+
+      <LI> Control-A moves the cursor to the beginning of the line.</LI>
+      <LI> Control-E moves the cursor to the end of the line.</LI>
+      <LI> Control-D or DELETE delete the character to the right of the cursor.</LI>
+      <LI> BACKSPACE deletes the character to the left of the cursor.</LI>
+      <LI> Control-B or LeftArrow moves the cursor to the left.</LI>
+      <LI> Control-F or RightArrow moves the cursor to the right.</LI>
+      <LI> Control-K deletes everything to the right of the cursor.</LI>
+      <LI> Control-U deletes the text between the cursor and the start of the line.</LI>
+      <LI> Control-W deletes the previous word</LI>
+      <LI> END deletes the whole line.</LI>
+      <LI> The mouse may also be used to position the cursor and cut and paste.</LI>
+    </UL>
+    
+    <H4><A NAME="history">History Commands</A></H4>
+    <UL>
+      <LI> Conrol-P or UpArrow recalls the previous command.</LI>
+      <LI> Conrol-N or DownArrow recalls the next command.</LI>
+      <LI> Shift-UpArrow or Control-UpArrow will search through previous commands
+	for commands that start with the same characters as the current line.  For
+	example, if you type "pr" and hit Shift-UpArrow, it may find commands in the
+	history such as "print foo" or "print sol[x]".  Each time you search it will
+	go back further in the history.  If nothing is on the current line, it
+	acts just like Control-P or UpArrow.</LI>
+      <LI> Shift-DownArrow or Control-DownArrow work in the opposite direction of 
+	Shift-UpArrow and Control-DownArrow. </LI>
+  </UL>
+    
+    <BR>
+
+    <H4><A NAME="display_hlp">Getting Help</A></H4>
+    The Console Window has its own online help system. To access the help system, enter
+    "help" at the prompt and follow the on-screen instructions. For more help, please
+    consult the <!-- What is this really called? --> <I>GDB User's Guide</I>.
+  </BODY>
+</HTML>

@@ -1,0 +1,148 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_arm_integrator.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_platform_ints.h: hal_delay_us() is a C function.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_integrator.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-04-11  Bart Veer  <bartv@ecoscentric.com>
+
+	* cdl/hal_arm_integrator.cdl: thumb is not supported so the
+	reference to thumb-elf was spurious.
+
+2002-05-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_integrator.cdl: Don't run cache tests.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_integrator.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-03-19  Nick Garnett  <nickg@redhat.com>
+
+	* include/plf_io.h: Added volatiles to PCI config accesses. These
+	should have been noticed ages ago!
+
+2002-03-14  Nick Garnett  <nickg@redhat.com>
+
+	* include/plf_stub.h: Added data access check macros
+	CYG_HAL_STUB_PERMIT_DATA_READ() and
+	CYG_HAL_STUB_PERMIT_DATA_WRITE() for use by GDB stubs.
+
+	* cdl/hal_arm_integrator.cdl: Added -fno-schedule-insns to ARM7
+	compile line option. There seem to be some issues in the ethernet
+	driver when scheduling instructions.
+
+2002-03-08  Nick Garnett  <nickg@redhat.com>
+
+	* src/integrator_misc.c (cyg_plf_pci_init): Only actually init PCI
+	bridge for non-RAM configurations. Reinitializing during RAM
+	startup kills any PCI devices. This is particularly a problem if
+	we are debugging via the ethernet.
+
+2002-03-07  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_ROMRAM.ecm: Added zlib.
+
+	* cdl/hal_arm_integrator.cdl: Require more flash for the RedBoot
+	image, but remove the backup image to compensate.
+
+2002-03-06  Nick Garnett  <nickg@redhat.com>
+
+	* src/integrator_misc.c:
+	Added hal_delay_us() and initialized clock in plf_hardware_init()
+	to make it work in RedBoot.
+	Moved PCI initialization from macro to cyg_plf_pci_init().
+
+	* src/hal_diag.c: Fixed ISR to operate correctly. Removed legacy
+	code.
+
+	* misc/redboot_ROMRAM.ecm: Added this file to support ROMRAM
+	startup redboot.
+
+	* include/pkgconf/mlt_arm_integrator_ram.ldi: 
+	* include/pkgconf/mlt_arm_integrator_ram.h:
+	* include/pkgconf/mlt_arm_integrator_rom.ldi: 
+	* include/pkgconf/mlt_arm_integrator_rom.h:
+	* include/pkgconf/mlt_arm_integrator_romram.ldi: 
+	* include/pkgconf/mlt_arm_integrator_romram.h:
+	Added ROMRAM startup files. Fixed up ROM and RAM files to reflect
+	use of PCI window.
+	Note: MLT files not updated!
+
+	* include/plf_io.h: Moved contents of HAL_PCI_INIT() out to
+	src/integrator_misc.c. Added CYGARC_PHYSICAL_ADDRESS(). Fixed 32
+	bit PCI config accesses to use two 16 bit accesses - the stright
+	32 bit accesses do not seem to work.
+
+	* include/hal_platform_setup.h: Added support for ROMRAM startup.
+	Tidied up a bit.
+
+	* include/hal_platform_ints.h: Added HAL_DELAY_US() and
+	implemented HAL_PLATFORM_RESET().
+
+	* include/hal_integrator.h: Move HAL_FLASH_WRITE_ENABLE() and
+	HAL_FLASH_WRITE_DISABLE() out to integrator FLASH device driver.
+
+	* cdl/hal_arm_integrator.cdl:
+	Added support for ARM7 and ARM9 variants. Generally tidied up.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_integrator.cdl: Removed explicit declaration of
+	plf_io.h
+
+2001-10-30  Philippe Robin <Philippe.Robin@arm.com>
+
+	* Initial version of integrator package.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,19 @@
+2002-09-30  H.J. Lu <hjl@gnu.org>
+
+	* binutils-all/objcopy.exp (copy_setup): Skip the test if the
+	cross binary fails to run.
+
+2001-08-04  H.J. Lu  <hjl@gnu.org>
+
+	* binutils-all/windres/bmp1.bmp.uu: Removed.
+
+	* binutils-all/windres/windres.exp: Don't run on any
+	none-ix86/pe targets.
+
+2001-07-25  H.J. Lu  <hjl@gnu.org>
+
+	* binutils-all/windres/bmp1.bmp.uu: New. Uunecoded from
+	binutils-all/windres/bmp1.bmp.
+
+	* binutils-all/windres/windres.exp: Regenerate bmp1.bmp from
+	bmp1.bmp.uu if bmp1.bmp doesn't exist.

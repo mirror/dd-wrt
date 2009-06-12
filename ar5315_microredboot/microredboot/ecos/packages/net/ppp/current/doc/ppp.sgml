@@ -1,0 +1,1854 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     ppp.sgml                                                    -->
+<!--                                                                 -->
+<!--     eCos PPP code                                               -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2003, 2004 eCosCentric Ltd.                             -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+
+<part id="ppp">
+<title><productname>eCos</productname> PPP User Guide</title>
+
+<partintro>
+<para>
+This package provides support for PPP (Point-to-Point Protocol) in the
+<productname>eCos</productname> FreeBSD TCP/IP networking stack.
+</para>
+</partintro>
+
+<!-- {{{ Features                         -->
+
+<chapter id="ppp-features">
+<title>Features</title>
+<para>
+The <productname>eCos</productname> PPP implementation provides the
+following features:
+</para>
+<itemizedlist>
+
+<listitem>
+<para>
+PPP line protocol including VJ compression.
+</para>
+</listitem>
+
+<listitem>
+<para>
+LCP, IPCP and CCP control protocols.
+</para>
+</listitem>
+
+<listitem>
+<para>
+PAP and CHAP authentication.
+</para>
+</listitem>
+
+<listitem>
+<para>
+CHAT subset connection scripting.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Modem control line support.
+</para>
+</listitem>
+
+</itemizedlist>
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Using                            -->
+
+<chapter id="ppp-using">
+<title>Using PPP</title>
+<para>
+Before going into detail, let's look at a simple example of how the
+<productname>eCos</productname> PPP package is used. Consider the
+following example:
+</para>
+
+<programlisting width=72>
+static void ppp_up(void)
+{
+    cyg_ppp_options_t options;
+    cyg_ppp_handle_t ppp_handle;
+
+    // Bring up the TCP/IP network
+    init_all_network_interfaces();
+
+    // Initialize the options
+    cyg_ppp_options_init( &amp;options );
+
+    // Start up PPP
+    ppp_handle = cyg_ppp_up( "/dev/ser0", &amp;options );
+
+    // Wait for it to get running
+    if( cyg_ppp_wait_up( ppp_handle ) == 0 )
+    {
+        // Make use of PPP
+        use_ppp();
+
+        // Bring PPP link down
+        cyg_ppp_down( ppp_handle );
+
+        // Wait for connection to go down.
+        cyg_ppp_wait_down( ppp_handle );
+    }
+}
+</programlisting>
+
+<para>
+This is a simple example of how to bring up a simple PPP connection to
+another computer over a directly connected serial line. The other end
+is assumed to already be running PPP on the line and waiting for a
+connection.
+</para>
+
+<para>
+The first thing this code does is to call
+<function>init_all_network_interfaces()</function> to bring up the
+TCP/IP stack and initialize any other network interfaces. It then
+calls <function>cyg_ppp_options_init()</function> to initialize the
+PPP options structure to the defaults. As it happens, the default
+options are exactly what we want for this example, so we don't need to
+make any further changes. We go straight on to bring the PPP interface
+up by calling <function>cyg_ppp_up()</function>. The arguments to this
+function give the name of the serial device to use, in this case
+<literal>"/dev/ser0"</literal>, and a pointer to the options.
+</para>
+
+<para>
+When <function>cyg_ppp_up()</function> returns, it passes back a
+handle to the PPP connection which is to be used in other calls.  The
+PPP link will not necessarily have been fully initialized at this
+time. There is a certain amount of negotiation that goes on between
+the ends of a PPP link before it is ready to pass packets. An
+application can wait until the link is ready by calling
+<function>cyg_ppp_wait_up()</function>, which returns
+zero if the link is up and running, or
+<literal>-1</literal> if it has gone down or failed to come up.
+</para>
+
+<para>
+After a successful return from <function>cyg_ppp_wait_up()</function>,
+the application may make use of the PPP connection. This is
+represented here by the call to <function>use_ppp()</function> but
+it may, of course, be accessed by any thread. While the connection is
+up the application may use the standard socket calls to make or accept
+network connections and transfer data in the normal way.
+</para>
+
+<para>
+Once the application has finished with the PPP link, it can bring it
+down by calling <function>cyg_ppp_down()</function>. As with bringing
+the connection up, this call is asynchronous, it simply informs the
+PPP subsystem to start bringing the link down. The application can
+wait for the link to go down fully by calling
+<function>cyg_ppp_wait_down()</function>.
+</para>
+
+<para>
+That example showed how to use PPP to connect to a local peer. PPP is
+more often used to connect via a modem to a remote server, such as an
+ISP. The following example shows how this works:
+</para>
+
+<programlisting width=72>
+
+static char *isp_script[] =
+{
+    "ABORT"             ,       "BUSY"                                  ,
+    "ABORT"             ,       "NO CARRIER"                            ,
+    "ABORT"             ,       "ERROR"                                 ,
+    ""                  ,       "ATZ"                                   ,
+    "OK"                ,       "AT S7=45 S0=0 L1 V1 X4 &amp;C1 E1 Q0"      ,
+    "OK"                ,       "ATD" CYGPKG_PPP_DEFAULT_DIALUP_NUMBER  ,
+    "ogin:--ogin:"      ,       CYGPKG_PPP_AUTH_DEFAULT_USER            ,
+    "assword:"          ,       CYGPKG_PPP_AUTH_DEFAULT_PASSWD          ,
+    "otocol:"           ,       "ppp"                                   ,
+    "HELLO"             ,       "\\c"                                   ,
+    0
+};
+
+static void ppp_up(void)
+{
+    cyg_ppp_options_t options;
+    cyg_ppp_handle_t ppp_handle;
+
+    // Bring up the TCP/IP network
+    init_all_network_interfaces();
+
+    // Initialize the options
+    cyg_ppp_options_init( &amp;options );
+
+    options.script = isp_script;
+    options.modem  = 1;
+
+    // Start up PPP
+    ppp_handle = cyg_ppp_up( "/dev/ser0", &amp;options );
+
+    // Wait for it to get running
+    if( cyg_ppp_wait_up( ppp_handle ) == 0 )
+    {
+        // Make use of PPP
+        use_ppp();
+
+        // Bring PPP link down
+        cyg_ppp_down( ppp_handle );
+
+        // Wait for connection to go down.
+        cyg_ppp_wait_down( ppp_handle );
+    }
+}
+</programlisting>
+
+<para>
+The majority of this code is exactly the same as the previous
+example. The main difference is in the setting of a couple of options
+before calling <function>cyg_ppp_up()</function>. The
+<structfield>script</structfield> option is set to point to a CHAT
+script to manage the setup of the connection. The
+<structfield>modem</structfield> option is set to cause the PPP system
+to make use of the modem control lines.
+</para>
+
+<para>
+During the PPP bring-up a call will be made to
+<function>cyg_ppp_chat()</function> to run the CHAT script (see <xref
+linkend="ppp-chat">). In the example this script sets up various modem
+options and then dials a number supplied as part of the PPP package
+configuration (see <xref linkend="ppp-config">). When the connection
+has been established, the script log on to the server, using a name
+and password also supplied by the configuration, and then starts PPP
+on the remote end. If this script succeeds the PPP connection will be
+brought up and will then function as expected.
+</para>
+
+<para>
+The <structfield>modem</structfield> option causes the PPP system to
+make use of the modem control lines. In particular it waits for
+<literal>Carrier Detect</literal> to be asserted, and will bring the
+link down if it is lost. See <xref linkend="ppp-options-init">
+for more details.
+</para>
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Interface                        -->
+
+<chapter id="ppp-interface">
+<title>PPP Interface</title>
+
+<!-- {{{ cyg_ppp_options_init             -->
+
+<refentry id="ppp-options-init">
+
+    <refmeta>
+    <refentrytitle>cyg_ppp_options_init()</refentrytitle>
+    </refmeta>
+
+    <refnamediv>
+      <refname>cyg_ppp_options_init</refname>
+      <refpurpose>Initialize PPP link options</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <funcsynopsis>
+        <funcsynopsisinfo>
+#include &lt;cyg/ppp/ppp.h&gt;
+        </funcsynopsisinfo>
+        <funcprototype>
+          <funcdef>cyg_int32 <function>cyg_ppp_options_init</function></funcdef>
+          <paramdef>cyg_ppp_options_t <parameter>*options</parameter></paramdef>
+        </funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1><title id="ppp-options-init-description">Description</title>
+<para>
+This function initializes the PPP options, pointed to by the
+<parameter>options</parameter> parameter, to the default state. Once
+the defaults have been initialized, application code may adjust them
+by assigning new values to the the fields of the
+<structname>cyg_ppp_options_t</structname> structure.
+</para>
+
+<para>
+This function returns zero if the options were initialized
+successfully. It returns -1 if the <parameter>options</parameter>
+argument is NULL, or the options could not be initialized.
+</para>
+
+<para>
+The option fields, their functions and default values are as follows:
+</para>
+
+<variablelist>
+
+<varlistentry>
+  <term>debug</term>
+  <listitem>
+    <para> If set to 1 this enables the reporting of debug messages
+    from the PPP system. These will be generated using
+    <function>diag_printf()</function> and will appear on the standard
+    debug channel. Note that <function>diag_printf()</function>
+    disables interrupts during output: this may cause the PPP link
+    device to overrun and miss characters. It is quite possible for
+    this option to cause errors and even make the PPP link fail
+    completely. Consequently, this option should be used with care.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>kdebugflag</term>
+  <listitem>
+    <para> This five bit field enables low level debugging messages from
+    the PPP device layer in the TCP/IP stack. As with the
+    <structfield>debug</structfield> option, this may result in missed
+    characters and cause errors. The bits of the field have the
+    following meanings:
+    </para>
+    <informaltable frame="all">
+      <tgroup cols="3" colsep="1" rowsep="1" align="left">
+        <thead>
+          <row>
+            <entry>Bit</entry>
+            <entry>BSD Name</entry>
+            <entry>Description</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>0x01</entry>
+            <entry>SC_DEBUG</entry>
+            <entry>Enable debug messages</entry>
+          </row>
+          <row>
+            <entry>0x02</entry>
+            <entry>SC_LOG_INPKT</entry>
+            <entry>Log contents of good packets received</entry>
+          </row>
+          <row>
+            <entry>0x04</entry>
+            <entry>SC_LOG_OUTPKT</entry>
+            <entry>Log contents of packets sent</entry>
+          </row>
+          <row>
+            <entry>0x08</entry>
+            <entry>SC_LOG_RAWIN</entry>
+            <entry>Log all characters received</entry>
+          </row>
+          <row>
+            <entry>0x10</entry>
+            <entry>SC_LOG_FLUSH</entry>
+            <entry>Log all characters flushed</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>default_route</term>
+  <listitem>
+    <para> If set to 1 this option causes the PPP subsystem to install
+    a default route in the TCP/IP stack's routing tables using the
+    peer as the gateway. This entry will be removed when the PPP link
+    is broken. If there is already an existing working network
+    connection, such as an ethernet device, then there may already be
+    a default route established. If this is the case, then this option
+    will have no effect.
+    </para>
+    <para>
+    Default value: 1
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>modem</term>
+  <listitem>
+    <para> If this option is set to 1, then the modem lines will be
+    used during the connection. Specifically, the PPP subsystem will
+    wait until the <literal>carrier detect</literal> signal is
+    asserted before bringing up the PPP link, and will take the PPP
+    link down if this signal is de-asserted.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>flowctl</term>
+  <listitem>
+    <para> This option is used to specify the mechanism used to
+    control data flow across the serial line. It can take one of the
+    following values:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><literal>CYG_PPP_FLOWCTL_DEFAULT</literal></term>
+        <listitem>
+          <para>
+          The flow control mechanism is not changed and is left at
+          whatever value was set before bringing PPP up. This allows
+          a non-standard flow control mechanism to be used, or for it to
+          be chosen and set by some other means.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>CYG_PPP_FLOWCTL_NONE</literal></term>
+        <listitem>
+          <para>
+          Flow control is turned off. It is not recommended that this
+          option be used unless the baud rate is set low or the two
+          communicating machines are particularly fast.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>CYG_PPP_FLOWCTL_HARDWARE</literal></term>
+        <listitem>
+          <para>
+          Use hardware flow control via the RTS/CTS lines. This is the
+          most effective flow control mechanism and should always be
+          used if available. Availability of this mechanism depends on
+          whether the serial device hardware has the ability to control
+          these lines, whether they have been connected to the socket
+          pins and whether the device driver has the necessary support.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>CYG_PPP_FLOWCTL_SOFTWARE</literal></term>
+        <listitem>
+          <para>
+          Use software flow control by embedding XON/XOFF characters in
+          the data stream. This is somewhat less effective that hardware
+          flow control since it is subject to the propagation time of
+          the serial cable and the latency of the communicating
+          devices. Since it does not rely on any hardware support, this
+          flow control mechanism is always available.
+          </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    <para>
+    Default value: CYG_PPP_FLOWCTL_HARDWARE
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>refuse_pap</term>
+  <listitem>
+    <para> If this option is set to 1, then the PPP subsystem will not
+    agree to authenticate itself to the peer with PAP. When dialling
+    in to a remote server it is normal to authenticate the
+    client. There are three ways this can be done, using a
+    straightforward login mechanism via the CHAT script, with the
+    Password Authentication Protocol (PAP), or with the Challenge
+    Handshake Authentication Protocol (CHAP). For PAP to work the
+    <structfield>user</structfield> and
+    <structfield>passwd</structfield> options must be set to the
+    expected values. If they are not, then this option should be set
+    to force CHAP authentication.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>refuse_chap</term>
+  <listitem>
+    <para> If this option is set to 1, then the PPP subsystem will not
+    agree to authenticate itself to the peer with CHAP. CHAP
+    authentication will only work if the
+    <structfield>passwd</structfield> option has been set to the
+    required CHAP secret for the destination server. Otherwise this
+    option should be disabled.
+    </para>
+    <para>
+    If both <structfield>refuse_pap</structfield> and
+    <structfield>refuse_chap</structfield> are set, then either no
+    authentication will be carried out, or it is the responsibility of
+    the <command>chat</command> script to do it. If the peer does not
+    require any authentication, then the setting of these options is
+    irrelevant.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>baud</term>
+  <listitem>
+    <para> This option is set to the baud rate at which the serial
+    connection should be run. The default value is the rate at which
+    modems conventionally operate. This field is an instance of the
+    <type>cyg_serial_baud_rate_t</type> enum defined in the
+    <literal>serialio.h</literal> header and may only take one of the
+    baud rate constants defined in there.
+    </para>
+    <para>
+    Default value: <literal>CYGNUM_SERIAL_BAUD_115200</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>idle_time_limit</term>
+  <listitem>
+    <para> This is the number of seconds that the PPP connection may
+    be idle before it is shut down automatically.
+    </para>
+    <para>
+    Default value: 60
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>maxconnect</term>
+  <listitem>
+    <para> This causes the connection to terminate when it has been up
+    for this number of seconds. The default value of zero means that
+    the connection will stay up indefinitely, until either end
+    explicitly brings it down, or the link is lost.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>our_address</term>
+  <listitem>
+    <para> This is the IP address, in network byte order, to be
+    attached to the local end of the PPP connection. The default value
+    of <literal>INADDR_ANY</literal> causes the local address to be
+    obtained from the peer.
+    </para>
+    <para>
+    Default value: <literal>INADDR_ANY</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>his_address</term>
+  <listitem>
+    <para> This is the IP address, in network byte order, to be
+    attached to the remote end of the PPP connection. The default
+    value of <literal>INADDR_ANY</literal> causes the remote address
+    to be obtained from the peer.
+    </para>
+    <para>
+    Default value: <literal>INADDR_ANY</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>script</term>
+  <listitem>
+    <para> This is a pointer to a CHAT script suitable for passing to
+    <function>cyg_ppp_chat()</function>. See <xref linkend="ppp-chat">
+    for details of the format and contents of this script.
+    </para>
+    <para>
+    Default value: <literal>NULL</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>user</term>
+  <listitem>
+    <para> This array contains the user name to be used for PAP
+    authentication. This field is not used for CHAP authentication. By
+    default the value of this option is set from the
+    <literal>CYGPKG_PPP_AUTH_DEFAULT_USER</literal> configuration
+    option.
+    </para>
+    <para>
+    Default value: <literal>CYGPKG_PPP_AUTH_DEFAULT_USER</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>passwd</term>
+  <listitem>
+    <para> This array contains the password to be used for PAP
+    authentication, or the secret to be used during CHAP
+    authentication. By default the value of this option is set from
+    the <literal>CYGPKG_PPP_AUTH_DEFAULT_PASSWD</literal>
+    configuration option.
+    </para>
+    <para>
+    Default value: <literal>CYGPKG_PPP_AUTH_DEFAULT_PASSWD</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+</variablelist>
+
+    </refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ cyg_ppp_up                       -->
+
+<refentry id="ppp-up">
+
+    <refmeta>
+    <refentrytitle>cyg_ppp_up()</refentrytitle>
+    </refmeta>
+
+    <refnamediv>
+      <refname>cyg_ppp_up</refname>
+      <refpurpose>Bring PPP connection up</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <funcsynopsis>
+        <funcsynopsisinfo>
+#include &lt;cyg/ppp/ppp.h&gt;
+        </funcsynopsisinfo>
+        <funcprototype>
+          <funcdef>cyg_ppp_handle_t <function>cyg_ppp_up</function></funcdef>
+          <paramdef>char <parameter>*devnam</parameter></paramdef>
+          <paramdef>const cyg_ppp_options_t <parameter>*options</parameter></paramdef>
+        </funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1><title id="ppp-up-description">Description</title>
+<para>
+This function starts up a PPP connection. The
+<parameter>devnam</parameter> argument is the name of the device to be
+used for the connection, typically <literal>"/dev/ser0"</literal> or
+<literal>"/dev/ser1"</literal>. The <structfield>options</structfield>
+argument should point to an initialized
+<structname>cyg_ppp_options_t</structname> object.
+</para>
+
+<para>
+The return value will either be zero, indicating a failure, or a
+<type>cyg_ppp_handle_t</type> object that may be used as an argument
+to other PPP functions.
+</para>
+
+<note>
+<para>
+Although the PPP API is designed to permit several simultaneous
+connections to co-exist, at present only one PPP connection is
+actually implemented. Any attempt to create a second connection while
+there is already one open will fail.
+</para>
+</note>
+
+</refsect1>
+
+</refentry>
+
+<!-- }}} -->
+<!-- {{{ cyg_ppp_down                     -->
+
+<refentry id="ppp-down">
+
+    <refmeta>
+    <refentrytitle>cyg_ppp_down()</refentrytitle>
+    </refmeta>
+
+    <refnamediv>
+      <refname>cyg_ppp_down</refname>
+      <refpurpose>Bring PPP connection down</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <funcsynopsis>
+        <funcsynopsisinfo>
+#include &lt;cyg/ppp/ppp.h&gt;
+        </funcsynopsisinfo>
+        <funcprototype>
+          <funcdef>cyg_int32 <function>cyg_ppp_down</function></funcdef>
+          <paramdef>cyg_ppp_handle_t <parameter>handle</parameter></paramdef>
+        </funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1><title id="ppp-down-description">Description</title>
+<para>
+This function brings the PPP connection down. The
+<parameter>handle</parameter> argument is the result of a successful
+call to <function>cyg_ppp_up()</function>. This function only signals
+to the PPP subsystem that the link should be brought down. The link
+will be terminated asynchronously. If the application needs to wait
+for the link to terminate, then it should call
+<function>cyg_ppp_wait_down()</function> after calling
+<function>cyg_ppp_down()</function>.
+</para>
+
+<para>
+The function returns zero if it was able to start the termination of
+the PPP connection successfully. It will return -1 if the connection
+is not running, or if it could not otherwise start the termination.
+</para>
+
+    </refsect1>
+
+</refentry>
+
+<!-- }}} -->  
+<!-- {{{ cyg_ppp_wait_up                  -->
+
+<refentry id="ppp-wait-up">
+
+    <refmeta>
+    <refentrytitle>cyg_ppp_wait_up()</refentrytitle>
+    </refmeta>
+
+    <refnamediv>
+      <refname>cyg_ppp_wait_up</refname>
+      <refpurpose>Wait for PPP connection to come up</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <funcsynopsis>
+        <funcsynopsisinfo>
+#include &lt;cyg/ppp/ppp.h&gt;
+        </funcsynopsisinfo>
+        <funcprototype>
+          <funcdef>cyg_int32 <function>cyg_ppp_wait_up</function></funcdef>
+          <paramdef>cyg_ppp_handle_t <parameter>handle</parameter></paramdef>
+        </funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1><title id="ppp-wait-up-description">Description</title>
+<para>
+This function waits until the PPP connection is running and then
+returns. This is needed because the actual bring up of the connection
+happens mostly after the call to <function>cyg_ppp_up()</function>
+returns, and may take some time to complete, especially if dialling a
+remote server.
+</para>
+
+<para>
+The result of this call will be zero when the connection is running,
+or -1 if the connection failed to start for some reason. If the
+connection is already running when this call is made it will return
+immediately with a zero result. If the connection is not in the
+process of coming up, or has failed, or has terminated, then a result
+of -1 will be returned immediately. Thus this function may also be
+used to test that the connection is still running at any point.
+</para>
+
+    </refsect1>
+
+</refentry>
+
+<!-- }}} -->  
+<!-- {{{ cyg_ppp_wait_down                -->
+
+<refentry id="ppp-wait-down">
+
+    <refmeta>
+    <refentrytitle>cyg_ppp_wait_down()</refentrytitle>
+    </refmeta>
+
+    <refnamediv>
+      <refname>cyg_ppp_wait_down</refname>
+      <refpurpose>Wait for PPP connection to terminate</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <funcsynopsis>
+        <funcsynopsisinfo>
+#include &lt;cyg/ppp/ppp.h&gt;
+        </funcsynopsisinfo>
+        <funcprototype>
+          <funcdef>void <function>cyg_ppp_wait_down</function></funcdef>
+          <paramdef>cyg_ppp_handle_t <parameter>handle</parameter></paramdef>
+        </funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1><title id="ppp-wait-down-description">Description</title>
+<para>
+This function waits for the PPP connection to terminate. The link may
+be terminated with a call to <function>cyg_ppp_down()</function>, by
+the remote end, or by the telephone line being dropped or lost. 
+</para>
+
+<para>
+This function has no return value. If the PPP connection is not
+running, or has terminated, it will return. Applications should use
+<function>cyg_ppp_wait_up()</function> to test the link state.
+</para>
+
+    </refsect1>
+
+</refentry>
+
+<!-- }}} -->  
+<!-- {{{ cyg_ppp_chat                     -->
+
+<refentry id="ppp-chat-fn">
+
+    <refmeta>
+    <refentrytitle>cyg_ppp_chat()</refentrytitle>
+    </refmeta>
+
+    <refnamediv>
+      <refname>cyg_ppp_chat</refname>
+      <refpurpose>Execute chat script</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+      <funcsynopsis>
+        <funcsynopsisinfo>
+#include &lt;cyg/ppp/ppp.h&gt;
+        </funcsynopsisinfo>
+        <funcprototype>
+          <funcdef>cyg_int32 <function>cyg_ppp_chat</function></funcdef>
+          <paramdef>const char <parameter>*devname</parameter></paramdef>
+          <paramdef>const char <parameter>*script[]</parameter></paramdef>
+        </funcprototype>
+      </funcsynopsis>
+    </refsynopsisdiv>
+
+    <refsect1><title id="ppp-chat-description">Description</title>
+<para>
+This function implements a subset of the automated conversational
+scripting as defined by the <command>chat</command> program. The first
+argument is the name of the serial device to be used, typically
+<literal>"/dev/ser0"</literal> or <literal>"/dev/ser1"</literal>. The
+<parameter>script</parameter> argument is a pointer to a zero
+terminated array of strings that comprise the chat script. See <xref
+linkend="ppp-using"> for an example script, and <xref
+linkend="ppp-chat"> for full detail of the script used.
+</para>
+
+<para>
+The return value of this function will be zero if the chat script
+fails for any reason, such as an ABORT or a timeout. If the end of the
+script is reached, then the return value will be non-zero.
+</para>
+
+<para>
+Under normal use this function is called from the PPP subsystem if the
+<structname>cyg_ppp_options_t</structname>
+<structfield>script</structfield> field is set to a
+non-<literal>NULL</literal> value. This function should only be used
+directly if the application needs to undertake special processing
+between running the chat script, and bringing up the PPP connections.
+</para>
+
+    </refsect1>
+
+</refentry>
+
+<!-- }}} -->  
+
+
+<!--IOCTLs???? -->
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Install and Config               -->
+
+<chapter id="ppp-config">
+<title>Installing and Configuring PPP</title>
+
+<sect1 id="ppp-config-include">
+<title>Including PPP in a Configuration</title>
+
+<para>
+PPP is contained entirely within a single
+<productname>eCos</productname> package. So to include PPP in a
+configuration all you need to do is add that package.
+</para>
+
+<para>
+In the GUI configuration tool use the
+<command>Build->Packages</command> menu item, find the "PPP Support"
+package in the left-hand pane and use the <command>Add</command> button
+to add it to the list of packages in use in the right-hand pane.
+</para>
+
+<para>
+In the command-line tool <command>ecosconfig</command>, you can use the
+following command during the configuration phase to add the PPP package:
+</para>
+
+<programlisting width=72>
+
+$ ecosconfig add ppp
+
+</programlisting>
+
+<para>
+In addition to the PPP package you will also need to have the
+<literal>"Network"</literal> package and the <literal>"Serial Device
+Drivers"</literal> package in the configuration. The dependencies and
+requirements of the networking package are such that it is strongly
+recommended that you start with the <literal>net</literal> template.
+</para>
+
+<para>
+See the <productname>eCos</productname> User Guide for full details on
+how to configure and build <productname>eCos</productname>.
+</para>
+
+</sect1>
+
+
+<sect1 id="ppp-config-config">
+<title>Configuring PPP</title>
+<para>
+The PPP package contains a number of configuration options that may be
+changed to affect its behaviour.
+
+<variablelist>
+
+<varlistentry>
+  <term>CYGNUM_PPP_PPPD_THREAD_PRIORITY</term>
+  <listitem>
+    <para>
+    The PPP system contains two threads, One is used for receiving
+    data from the link and processing control packets.  The other is
+    used to transmit data asynchronously to the link when it cannot be
+    completed synchronously. The receive thread runs at the priority
+    given here, and the transmit thread runs at the next lower
+    priority.  The exact priority needed here depends on the
+    importance of the PPP subsystem relative to the rest of the
+    system. The default is to put it in the middle of the priority
+    range to provide reasonable response without impacting genuine
+    high priority threads.
+    </para>
+    <para>
+    Default value: <literal>CYGNUM_KERNEL_SCHED_PRIORITIES/2</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_DEBUG_WARN_ONLY</term>
+  <listitem>
+    <para>
+    The runtime <varname>debug</varname> option enables logging of
+    high level debug messages. Too many of these can interfere with
+    the PPP device and may result in missed messages.  This is because
+    these messages are emitted via the diag_printf() mechanism, which
+    disables interrupts while it prints.  By default, therefore, we
+    only report errors and warnings, and not all events. Setting this
+    option to zero will enable the logging of all events.
+    </para>
+    <para>
+    Default value: <literal>1</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_AUTH_DEFAULT_USER</term>
+  <listitem>
+    <para>
+    This option gives the default value for the user name used to
+    initialize the <structfield>user</structfield> field in the PPP
+    options.
+    </para>
+    <para>
+    Default value: <literal>"eCos"</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_AUTH_DEFAULT_PASSWD</term>
+  <listitem>
+    <para>
+    This option gives the default value for the password used to
+    initialize the <structfield>passwd</structfield> field in the PPP
+    options.
+    </para>
+    <para>
+    Default value: <literal>"secret"</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_DEFAULT_DIALUP_NUMBER</term>
+  <listitem>
+    <para>
+    This option provides a default dialup number for use in
+    <command>chat</command> scripts. This value is not used anywhere
+    in the PPP package, but is provided to complete the information
+    needed, alongside the user name and password, for accessing a
+    typical dialup server.
+    </para>
+    <para>
+    Default value: <literal>"5551234"</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_PAP</term>
+  <listitem>
+    <para>
+    This component enables the inclusion of PAP authentication
+    support.
+    </para>
+    <para>
+    Default value: 1
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_CHAP</term>
+  <listitem>
+    <para>
+    This component enables the inclusion of CHAT authentication
+    support.
+    </para>
+    <para>
+    Default value: 1
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_COMPRESSION</term>
+  <listitem>
+    <para>
+    This component provides control over PPP compression
+    features. WARNING: at present there are problems with this option,
+    and and in any case the compression code needs to allocate large
+    amounts of memory. Hence this option is currently disabled and
+    should remain so.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>PPP_BSDCOMP</term>
+  <listitem>
+    <para>
+    This option enables inclusion of BSD compression into the PPP
+    protocol.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>PPP_DEFLATE</term>
+  <listitem>
+    <para>
+    This option enables inclusion of ZLIB compression into the PPP
+    protocol.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_CHAT</term>
+  <listitem>
+    <para>
+    This component enables the inclusion of a simple scripting system
+    to bring up PPP connections.  It implements a subset of the
+    <command>chat</command> scripting language.
+    </para>
+    <para>
+    Default value: 1
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGNUM_PPP_CHAT_ABORTS_MAX</term>
+  <listitem>
+    <para>
+    This option defines the maximum number of <literal>ABORT</literal>
+    strings that the CHAT system will store.
+    </para>
+    <para>
+    Default value: 10
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGNUM_PPP_CHAT_ABORTS_SIZE</term>
+  <listitem>
+    <para>
+    This option defines the maximum size of each
+    <literal>ABORT</literal> strings that the <command>chat</command>
+    system will store.
+    </para>
+    <para>
+    Default value: 20
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGNUM_PPP_CHAT_STRING_LENGTH</term>
+  <listitem>
+    <para>
+    This option defines the maximum size of any expect or reply
+    strings that the <command>chat</command> system will be given.
+    </para>
+    <para>
+    Default value: 256
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_TEST_DEVICE</term>
+  <listitem>
+    <para>
+    This option defines the serial device to be used for PPP test
+    programs.
+    </para>
+    <para>
+    Default value: <literal>"/dev/ser0"</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGPKG_PPP_TESTS_AUTOMATE</term>
+  <listitem>
+    <para>
+    This option enables automated testing features in certain test
+    programs. These programs will interact with a test server at the
+    remote end of the serial link to run a variety of tests in
+    different conditions. Without this option most tests default to
+    running a single test instance and are suitable for being run by
+    hand for debugging purposes.
+    </para>
+    <para>
+    Default value: 0
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term>CYGDAT_PPP_TEST_BAUD_RATES</term>
+  <listitem>
+    <para>
+    This option supplies a list of baud rates at which certain tests
+    will run if the <literal>CYGPKG_PPP_TESTS_AUTOMATE</literal>
+    option is set.
+    </para>
+    <para>
+    Default value: <literal>"CYGNUM_SERIAL_BAUD_19200,CYGNUM_SERIAL_BAUD_38400,CYGNUM_SERIAL_BAUD_57600,CYGNUM_SERIAL_BAUD_115200"</literal>
+    </para>
+  </listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</para>
+
+</sect1>
+
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Chat                             -->
+
+<chapter id="ppp-chat">
+<title>CHAT Scripts</title>
+<para>
+The automated conversational scripting supported by the
+<productname>eCos</productname> PPP package is a subset of the
+scripting language provided by the <command>chat</command> command
+found on most UNIX and Linux systems.
+</para>
+
+<para>
+Unlike the <command>chat</command> command, the
+<productname>eCos</productname> <function>cyg_ppp_chat()</function>
+function takes as a parameter a zero-terminated array of pointers to
+strings. In most programs this will be defined by means of an
+initializer for a static array, although there is nothing to stop the
+application constructing it at runtime. A simple script would be
+defined like this:
+</para>
+
+<programlisting width=72>
+
+static char *chat_script[] =
+{
+    "ABORT"        ,  "BUSY"        ,
+    "ABORT"        ,  "NO CARRIER"  ,
+    ""             ,  "ATD5551234"  ,
+    "ogin:--ogin:" ,  "ppp"         ,
+    "ssword:"      ,  "hithere"     ,
+    0
+};
+
+</programlisting>
+
+<para>
+The following sections have been abstracted from the public domain
+documentation for the <command>chat</command> command. 
+</para>
+
+
+<sect1 id="ppp-chat-script">
+<title>Chat Script</title>
+<para>
+       A script consists of one or more "expect-send" pairs of
+       strings, separated by spaces, with an optional "subexpect-
+       subsend" string pair, separated by a dash as in the following
+       example:
+</para>
+
+<programlisting width=72>
+
+    "ogin:--ogin:"     ,  "ppp"       ,
+    "ssword:"          ,   "hello2u2" ,
+    0
+
+</programlisting>
+
+<para>
+       This script fragment indicates that the
+       <function>cyg_ppp_chat()</function> function should expect the
+       string "ogin:". If it fails to receive a login prompt within
+       the time interval allotted, it is to send a carriage return
+       to the remote and then expect the string "ogin:" again.  If
+       the first "ogin:" is received then the carriage return is not
+       generated.
+</para>
+<para>
+       Once it received the login prompt the
+       <function>cyg_ppp_chat()</function> function will send the
+       string "ppp" and then expect the prompt "ssword:".  When it
+       receives the prompt for the password, it will send the password
+       "hello2u2".
+</para>
+<para>
+       A carriage return is normally sent following the reply string.
+       It is not expected in the "expect" string unless it is
+       specifically requested by using the "\r" character sequence.
+</para>
+<para>
+       The expect sequence should contain only what is needed to
+       identify the string. It should not contain variable
+       information. It is generally not acceptable to look for time
+       strings, network identification strings, or other variable
+       pieces of data as an expect string.
+</para>
+<para>
+       To help correct for characters which may be corrupted during
+       the initial sequence, look for the string "ogin:" rather than
+       "login:". It is possible that the leading "l" character may be
+       received in error and you may never find the string even though
+       it was sent by the system. For this reason, scripts look for
+       "ogin:" rather than "login:" and "ssword:" rather than
+       "password:".
+</para>
+<para>
+       A very simple script might look like this:
+</para>
+<programlisting width=72>
+
+    "ogin:"    , "ppp"       ,
+    "ssword:"  , " hello2u2" ,
+    0
+
+</programlisting>
+
+<para>
+       In other words, expect "....ogin:", send "ppp", expect "...ssword:",
+       send "hello2u2".
+</para>
+<para>
+       In actual practice, simple scripts are rare. At the very least,
+       you should include sub-expect sequences should the original
+       string not be received. For example, consider the following
+       script:
+</para>
+<programlisting width=72>
+
+    "ogin:--ogin:"  , "ppp"     ,
+    "ssword:"       , "hello2u2",
+    0
+
+</programlisting>
+<para>
+       This would be a better script than the simple one used earlier.
+       This would look for the same "login:" prompt, however, if one
+       was not received, a single return sequence is sent and then it
+       will look for "login:" again. Should line noise obscure the
+       first login prompt then sending the empty line will usually
+       generate a login prompt again.
+</para>
+
+</sect1>
+
+<sect1 id="ppp-chat-abort">
+<title>ABORT Strings</title>
+
+<para>
+       Many modems will report the status of the call as a
+       string. These strings may be CONNECTED or NO CARRIER or
+       BUSY. It is often desirable to terminate the script should the
+       modem fail to connect to the remote. The difficulty is that a
+       script would not know exactly which modem string it may
+       receive. On one attempt, it may receive BUSY while the next
+       time it may receive NO CARRIER.
+</para>
+<para>
+       These "abort" strings may be specified in the script using
+       the ABORT sequence. It is written in the script as in  the
+       following example:
+</para>
+<programlisting width=72>
+
+    "ABORT"    , "BUSY"    ,
+    "ABORT"    , "NO CARRIER"  ,
+    ""         , "ATZ"         ,
+    "OK"       , "ATDT5551212" ,
+    "CONNECT"  , ...
+
+</programlisting>
+
+<para>
+       This sequence will expect nothing; and then send the string
+       ATZ.  The expected response to this is the string OK. When it
+       receives OK, it sends the string ATDT5551212 to dial the
+       telephone.  The expected string is CONNECT. If the string
+       CONNECT is received the remainder of the script is
+       executed. However, should the modem find a busy telephone, it
+       will send the string BUSY. This will cause the string to match
+       the abort character sequence. The script will then fail because
+       it found a match to the abort string. If it received the string
+       NO CARRIER, it will abort for the same reason. Either string
+       may be received. Either string will terminate the chat script.
+</para>
+
+</sect1>
+
+<sect1 id="ppp-chat-timeout">
+<title>TIMEOUT</title>
+<para>
+       The initial timeout value  is  45  seconds.
+       To  change  the  timeout value for the next expect string,
+       the following example may be used:
+</para>
+<programlisting width=72>
+
+    ""              , "ATZ"         ,
+    "OK"            , "ATDT5551212" ,
+    "CONNECT"       , "\\c"         ,
+    "TIMEOUT"       , "10"          ,
+    "ogin:--ogin:"  , "ppp"         ,
+    "TIMEOUT"       , "5"           ,
+    "assword:"      , "hello2u2"    ,
+    0
+
+</programlisting>
+<para>
+       This will change the timeout to 10 seconds when it expects the
+       login: prompt. The timeout is then changed to 5 seconds when
+       it looks for the password prompt.
+</para>
+<para>
+       The  timeout,  once changed, remains in effect until it is
+       changed again.
+</para>
+
+</sect1>
+
+<sect1 id="ppp-chat-eot">
+<title>Sending EOT</title>
+<para>
+       The special reply string of EOT indicates  that  the  chat
+       program  should  send an EOT character to the remote. This
+       is normally the End-of-file character sequence.  A  return
+       character is not sent following the EOT.  The EOT sequence
+       may be embedded into the send string  using  the  sequence
+       "\x04" (i.e. a Control-D character).
+</para>
+</sect1>
+
+<sect1 id="ppp-chat-escape">
+<title>Escape Sequences</title>
+<para>
+Most standard <command>chat</command> escape sequences can be replaced
+with standard C string escapes such as '\r', '\n', '\t'
+etc. Additional escape sequences may be embedded in the expect or
+reply strings by introducing them with <emphasis>two</emphasis>
+backslashes.
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term>\\c</term>
+<listitem>
+<para>
+Suppresses the newline at the end of the reply string.  This is the
+only method to send a string without a trailing return character. It
+must be at the end of the send string.  For example, the sequence
+"hello\\c" will simply send the characters h, e, l, l, o.  (not valid
+in expect strings.)
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect1>
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Drivers                          -->
+
+<chapter id="ppp-drivers">
+<title>PPP Enabled Device Drivers</title>
+<para>
+For PPP to function fully over a serial device, its driver must
+implement certain features. At present not all
+<productname>eCos</productname> serial drivers implement these
+features. A driver indicates that it supports a certain feature by
+including an <literal>"implements"</literal> line in its CDL for the
+following interfaces:
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><literal>CYGINT_IO_SERIAL_FLOW_CONTROL_HW</literal></term>
+<listitem>
+<para>
+This interface indicates that the driver implements hardware flow
+control using the RTS and CTS lines. When data is being transferred
+over high speed data lines, it is essential that flow control be used
+to prevent buffer overrun.
+</para>
+<para>
+The PPP subsystem functions best with hardware flow control. If this
+is not available, then it can be configured to use software flow
+control. Since software flow control is implemented by the device
+independent part of the serial device infrastructure, it is available
+for all serial devices. However, this will have an effect on the
+performance and reliability of the PPP link.
+</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term><literal>CYGINT_IO_SERIAL_LINE_STATUS_HW</literal></term>
+<listitem>
+<para>
+This interface indicates that the driver implements a callback
+interface for indicating the status of various RS232 control lines. Of
+particular interest here is the ability to detect changes in the
+Carrier Detect (CD) line. Not all drivers that implement this
+interface can indicate CD status.
+</para>
+<para>
+This functionality is only needed if it is important that the link be
+dropped immediately a telephone connection fails. Without it, a
+connection will only be dropped after it times out. This may be
+acceptable in many situations.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>
+At the time of writing, the serial device drivers for the following
+platforms implement some or all of the required functionality:
+</para>
+
+<itemizedlist>
+
+<listitem>
+<para>
+All drivers that use the generic 16x5x driver implement all functions:
+</para>
+<itemizedlist>
+<listitem><para>ARM CerfPDA</para></listitem>
+<listitem><para>ARM IQ80321</para></listitem>
+<listitem><para>ARM PID</para></listitem>
+<listitem><para>ARM IOP310</para></listitem>
+<listitem><para>i386 PC</para></listitem>
+<listitem><para>MIPS Atlas</para></listitem>
+<listitem><para>MIPS Ref4955</para></listitem>
+<listitem><para>SH3 SE77x9</para></listitem>
+</itemizedlist>
+</listitem>
+
+<listitem>
+<para>
+The following drivers implement flow control but either do not support
+line status callbacks, or do not report CD changes:
+</para>
+<itemizedlist>
+<listitem><para>SH4 SCIF</para></listitem>
+<listitem><para>A&amp;M AdderI</para></listitem>
+<listitem><para>A&amp;M AdderII</para></listitem>
+</itemizedlist>
+</listitem>
+
+<listitem>
+<para>
+All other drivers can support software flow control only.
+</para>
+</listitem>
+
+</itemizedlist>
+
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Tests                            -->
+
+<chapter id="ppp-tests">
+<title>Testing</title>
+
+
+<sect1>
+<title>Test Programs</title>
+
+<para>
+There are a number of test programs supplied with the PPP
+subsystem. By default all of these tests use the device configured by
+<literal>CYGPKG_PPP_TEST_DEVICE</literal> as the PPP link device.
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><literal>ppp_up</literal></term>
+<listitem>
+<para>
+This test just brings up the PPP link on
+<literal>CYGPKG_PPP_TEST_DEVICE</literal> and waits until the remote end brings
+it back down. No modem lines are used and the program expects a PPP
+connection to be waiting on the other end of the line. Typically the
+remote end will test the link using <command>ping</command> or access
+the HTTP system monitor if it is present.
+</para>
+<para>
+If <literal>CYGPKG_PPP_TESTS_AUTOMATE</literal> is set, then this test
+attempts to bring PPP up at each of the baud rates specified in
+<literal>CYGDAT_PPP_TEST_BAUD_RATES</literal>. If it is not set then
+it will just bring the connection up at 115200 baud.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>ppp_updown</literal></term>
+<listitem>
+<para>
+This test brings the PPP link up on
+<literal>CYGPKG_PPP_TEST_DEVICE</literal> and attempts to
+<command>ping</command> the remote end of the link. Once the pings
+have finished, the link is then brought down.
+</para>
+<para>
+If <literal>CYGPKG_PPP_TESTS_AUTOMATE</literal> is set, then this test
+attempts to bring PPP up at each of the baud rates specified in
+<literal>CYGDAT_PPP_TEST_BAUD_RATES</literal>. If it is not set then
+it will just bring the connection up at 115200 baud.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>chat</literal></term>
+<listitem>
+<para>
+This test does not bring the PPP link up but simply executes a chat
+script. It expects a server at the remote end of the link to supply
+the correct responses.
+</para>
+<para>
+This program expects the <command>test_server.sh</command> script to
+be running on the remote end and attempts several different tests,
+expecting a variety of different responses for each.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>ppp_auth</literal></term>
+<listitem>
+<para>
+This test attempts to bring up the PPP link under a variety of
+different authentication conditions. This includes checking that both
+PAP and CHAP authentication work, and that the connection is rejected
+when the incorrect authentication protcol or secrets are used. 
+</para>
+<para>
+This test expects the <command>test_server.sh</command> script to be
+running on the remote end. For this test to work the <filename>/etc/ppp/pap-secrets</filename> file on the remote
+end should contain the following two lines:
+</para>
+<programlisting width=72>
+eCos       *         secret       *
+eCosPAP    *         secretPAP    *
+</programlisting>
+<para>
+The <filename>/etc/ppp/chap-secrets</filename> file should contain:
+</para>
+<programlisting width=72>
+eCos       *         secret       *
+eCosCHAP   *         secretCHAP   *
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>isp</literal></term>
+<listitem>
+<para>
+This test expects the serial test device to be connected to a Hayes
+compatible modem. The test dials the telephone number given in
+<literal>CYGPKG_PPP_DEFAULT_DIALUP_NUMBER</literal> and attempts to
+log on to an ISP using the user name and password supplied in
+<literal>CYGPKG_PPP_AUTH_DEFAULT_USER</literal> and
+<literal>CYGPKG_PPP_AUTH_DEFAULT_PASSWD</literal>. Once the PPP
+connection has been made, the program then attempts to ping a number
+of well known addresses.
+</para>
+<para>
+Since this test is designed to interact with an ISP, it does not run
+within the automated testing system.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>tcp_echo</literal></term>
+<listitem>
+<para>
+This is a version of the standard network <command>tcp_echo</command>
+test that brings up the PPP connection before waiting for the
+<command>tcp_sink</command> and <command>tcp_source</command> programs
+to connect. It is expected that at least one of these programs will
+connect via the PPP link. However, if another network interface is
+present, such as an ethernet device, then one may connect via that
+interface.
+</para>
+<para>
+While this test is supported by the <command>test_server.sh</command>
+script, it runs for such a long time that it should not normally be
+used during automated testing.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>nc_test_slave</literal></term>
+<listitem>
+<para>
+This is a version of the standard network
+<command>nc_test_slave</command> test that brings up the PPP
+connection before waiting for the <command>nc_test_master</command>
+program to connect. It is expected that the master will connect via
+the PPP link.
+</para>
+<para>
+While this test is supported by the <command>test_server.sh</command>
+script, it runs for such a long time that it should not normally be
+used during automated testing.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect1>
+
+<sect1 id="ppp-test-script">
+<title>Test Script</title>
+
+<para>
+The PPP package additionally contains a shell script
+(<command>test_server.sh</command>) that may be used to operate the
+remote end of a PPP test link.
+</para>
+
+<para>
+The script may be invoked with the following arguments:
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><literal>--dev=&lt;devname&gt;</literal></term>
+<listitem>
+<para>
+This mandatory option gives the name of the device to be used for the
+PPP link. Typically <literal>"/dev/ttyS0"</literal> or
+<literal>"/dev/ttyS1"</literal>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>--myip=&lt;ipaddress&gt;</literal></term>
+<listitem>
+<para>
+This mandatory option gives the IP address to be attached to this end
+of the PPP link.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>--hisip=&lt;ipaddress&gt;</literal></term>
+<listitem>
+<para>
+This mandatory option gives the IP address to be attached to the
+remote (test target) end of the PPP link.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>--baud=&lt;baud_rate&gt;</literal></term>
+<listitem>
+<para>
+This option gives the baud rate at which the PPP link is to be run. If
+absent then the link will run at the value set for
+<literal>--redboot-baud</literal>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>--redboot</literal></term>
+<listitem>
+<para>
+If this option is present then the script will look for a
+<literal>"RedBoot&gt;"</literal> prompt between test runs. This is
+necessary if the serial device being used for testing is also used by
+RedBoot.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>--redboot-baud=&lt;baud_rate&gt;</literal></term>
+<listitem>
+<para>
+This option gives the baud rate at which the search for the RedBoot
+prompt will be made. If absent then the link will run at 38400 baud.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><literal>--debug</literal></term>
+<listitem>
+<para>
+If this option is present, then the script will print out some
+additional debug messages while it runs.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>
+This script operates as follows: If the <literal>--redboot</literal>
+option is set it sets the device baud rate to the RedBoot baud rate
+and waits until a <literal>"RedBoot&gt;"</literal> prompt is encountered.
+It then sets the baud rate to the value given by the
+<literal>--baud</literal> option and reads lines from the device until
+a recognizable test announce string is read. It then executes an
+appropriate set of commands to satisfy the test. This usually means
+bringing up the PPP link by running <command>pppd</command> and maybe
+executing various commands. It then either terminates the link itself,
+or waits for the target to terminate it. It then goes back to looking
+for another test announce string. If a string of the form
+<literal>"BAUD:XXX"</literal> is received then the baud rate is
+changed depending on the <literal>XXX</literal> value. If a
+<literal>"FINISH"</literal> string is received it returns to waiting
+for a <literal>"RedBoot>"</literal> prompt. The script repeats this
+process until it is terminated with a signal.
+</para>
+
+</sect1>
+
+</chapter>
+
+<!-- }}} -->
+
+
+</part>

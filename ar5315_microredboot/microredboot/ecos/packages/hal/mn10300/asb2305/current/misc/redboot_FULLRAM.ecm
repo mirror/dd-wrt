@@ -1,0 +1,111 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    asb2305 ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_MN10300 current ;
+    package -hardware CYGPKG_HAL_MN10300_AM33_ASB2305 current ;
+    package -hardware CYGPKG_HAL_MN10300_AM33 current ;
+    package -hardware CYGPKG_IO_SERIAL_MN10300 current ;
+    package -hardware CYGPKG_IO_PCI current ;
+    package -hardware CYGPKG_DEVICES_WATCHDOG_MN10300_MN10300 current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+
+    package CYGPKG_IO_ETH_DRIVERS current ;
+    package -hardware CYGPKG_DEVS_ETH_MN10300_ASB2305 current ;
+    package -hardware CYGPKG_DEVS_ETH_AMD_PCNET current ;
+
+    package CYGPKG_IO_FLASH current ;
+    package -hardware CYGPKG_DEVS_FLASH_MN10300_ASB2305 current ;
+    package CYGPKG_DEVS_FLASH_AMD_AM29XXXXX current ;
+};
+
+cdl_option CYGBLD_BUILD_GDB_STUBS {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT {
+    inferred_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT {
+    inferred_value 0
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    inferred_value 0 0
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    inferred_value 1
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value RAM
+};
+
+cdl_option CYG_HAL_FULL_RAM {
+    user_value 1
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_option CYGOPT_REDBOOT_FIS {
+    user_value 1
+};
+
+cdl_option CYGHWR_DEVS_FLASH_MN10300_ASB2305_BANK {
+    user_value "BootPROM"
+};
+
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29DL324D {
+    user_value 1
+};
+
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV800 {
+    user_value 1
+};
+
+cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+    user_value 115200
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_RTSCTS {
+    user_value 0
+};
+
+cdl_option CYGSEM_IO_FLASH_SOFT_WRITE_PROTECT {
+    user_value 0
+};
+
+cdl_option CYGSEM_DEVS_ETH_AMD_PCNET_FORCE_10MBPS {
+  user_value 1
+};
+
+cdl_option CYGSEM_REDBOOT_BSP_SYSCALLS {
+  user_value 1
+};

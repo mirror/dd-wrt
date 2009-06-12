@@ -1,0 +1,347 @@
+2004-09-05  Mark Salter  <msalter@redhat.com>
+
+	* doc/flash.sgml: Fix unbalanced <PARA>s.
+
+2004-08-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/io_flash.cdl:
+	* tests/flash1.c: Add simple test of FLASH driver.
+
+2004-06-20  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/flash.c (flash_read): Don't check if the flash is write 
+  	  protected before performing a read.
+        * doc/flash.sgml
+	* cdl/io_flash.cdl: Added documentation of the FLASH API
+
+2004-04-29  Sebastien Couret  <sebastien.couret@elios-informatique.com>
+2004-04-29  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/flashiodev.c: When checking flash upper bound, allow for end
+	of flash at 0xffffffff.
+
+2003-11-27  David Woodhouse  <dwmw2@infradead.org>
+
+	* src/flashiodev.c: Enable set_config() and implement
+	CYG_IO_SET_CONFIG_FLASH_FIS_NAME.
+	
+2003-11-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/flash.c: gcc 3.x vs gcc 2.x problems. 
+
+2003-11-24  Jani Monoses  <jani@iv.ro>
+
+	* cdl/io_flash.cdl:
+	* include/flash.h: Remove CYGNUM_FLASH_WORKSPACE_SIZE cdl option. 
+ 
+2003-11-24  Roland Caﬂebohm <roland.cassebohm@visionsystems.de>
+
+	* src/flashiodev.c (flashiodev_bwrite): Use flash_read rather than
+	directly doing a memcpy. 
+
+2003-11-20  Jani Monoses  <jani@iv.ro>
+
+	* src/flash.c: 
+	* src/flashiodev.c: 
+	* include/flash.h: Remove references to work_space and work_space_size
+	since they are no longer used.
+
+2003-11-20  Jani Monoses  <jani@iv.ro>
+
+	* cdl/io_flash.cdl:
+	* src/flash.c: Remove handling of CYGHWR_IO_FLASH_DEVICE_NOT_IN_RAM
+	now that all flash drivers use ELF sections to specify which parts
+	go in RAM.
+
+2003-10-08  Roland Cassebohm  <roland.cassebohm@visionsystems.de>
+
+	* src/flash.c: Fix parse error if CYGSEM_IO_FLASH_READ_INDIRECT 
+	is not defined.
+
+2003-09-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c: 
+	* include/flash.h: 
+	* cdl/io_flash.cdl: Add support for NAND (indirectly accessed)
+	devices.  This includes a generic "flash_read_buf()" function.
+
+2003-04-14  Jani Monoses  <jani@iv.ro>
+
+	* include/flash_dev.h: Include <cyg/infra/cyg_type.h> 
+
+2003-03-19  Thomas Koeller <thomas.koeller@baslerweb.com>
+
+	* src/flashiodev.c: Fixed trivial error.
+
+2003-03-03  Knud Woehler <knud.woehler@microplex.de>
+
+	* src/flashiodev.c:
+	* cdl/io_flash.cdl: Add CYGNUM_IO_FLASH_BLOCK_CFG_FIS_1 / 
+	CYGNUM_IO_FLASH_BLOCK_CFG_STATIC_1. Initialize the block device 
+	from the FIS table.
+	
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/io_flash.cdl: Remove irrelevant doc link - default to top
+	level.
+
+2002-01-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/flashiodev.c: Fix bounds checking and offsetting.
+
+	* cdl/io_flash.cdl (CYGNUM_IO_FLASH_BLOCK_LENGTH_1): Default to
+	0x100000 for convenience.
+
+2002-01-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/io_flash.cdl: Allow specification of an offset and length
+	of the region of flash.
+	* src/flashiodev.c: Use it.
+
+2002-01-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash.h: Add a comment about the obvious: the flash
+	caching macros should be called with interrupts disabled.
+
+2002-01-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/io_flash.cdl: Add CYGPKG_IO_FLASH_BLOCK_DEVICE and
+	CYGDAT_IO_FLASH_BLOCK_DEVICE_NAME_1 to allow exporting flash
+	as block devices accessible from file systems.
+	* src/fileiodev.c: New file implementing this.
+	* include/flash.h: Add typedefs for the various structures used
+	to configure the block devices.
+
+2002-01-18  Paul Fine  <pfine@delcomsys.com>
+
+	* src/flash.c : Modified flash_verify_addr, flash_erase,
+	flash_lock and flash_unlock to to work properly when the location
+	of the flash in the memory map is at the very top of the address
+	space.  We check and handle values that may overflow.
+
+2001-10-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (flash_erase): Don't call hardware layer if block
+	appears to be already erased [faster and less wear & tear].
+
+2001-10-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/flash_dev.h: Fix test of 4x16-bit flash parts.
+	Spotted by Jose Pascual <josepascual@almudi.com>
+
+2001-10-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c: Include string.h
+
+	* cdl/io_flash.cdl: Package requires ISOINFRA and string
+	functions.
+
+2001-10-15  David Howells  <dhowells@redhat.com>
+
+	* src/flash.c: Include string.h to get mem*() functions.
+
+2001-09-25  Gary Thomas  <gthomas@redhat.com>
+
+	* include/flash.h: Remove warning on printf() prototype.
+
+2001-08-10  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/io_flash.cdl: Changed flavor of
+	CYGHWR_IO_FLASH_BLOCK_LOCKING to booldata.
+	* include/flash.h: Matching changes.
+	* src/flash.c: Matching changes.
+
+2001-07-23  David Howells  <dhowells@redhat.com>
+
+	* cdl/io_flash.cdl: Added software write protect option.
+	* include/flash.h: Ditto.
+	* src/flash.c: Added software write protect option and bank
+	support, and prevented low-level writes from being handed
+	cross-block data chunks.
+
+2001-07-20  Gary Thomas  <gthomas@redhat.com>
+
+	* include/flash.h: 
+	* cdl/io_flash.cdl: Name convention: CYGINT_FLASH_WORKSPACE_SIZE 
+	renamed to be CYGNUM_FLASH_WORKSPACE_SIZE.
+
+2001-07-19  Gary Thomas  <gthomas@redhat.com>
+
+	* include/flash.h: 
+	* cdl/io_flash.cdl: New option CYGINT_FLASH_WORKSPACE_SIZE used
+	to control how much memory is reserved for use by FLASH drivers.
+
+2001-06-19  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c (flash_program): Only verify program with memcmp if
+	the status code suggests the programming went OK so far.
+	Otherwise all errors become verify errors.
+
+	(flash_init): Fix bug in removal of dependency of printf().  The
+	pointer was not initialized until after the call into the driver.
+
+2001-06-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: 
+	* include/flash.h: Remove dependency on printf() via user functions.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_dev.h (FLASH_P2V): Use CYG_ADDRWORD instead of int.
+
+	* src/flash.c: Copy functions to RAM iff
+	CYGHWR_IO_FLASH_DEVICE_NOT_IN_RAM defined.
+
+	* cdl/io_flash.cdl: Changed CYGHWR_IO_FLASH_DEVICE_IN_RAM to
+	CYGHWR_IO_FLASH_DEVICE_NOT_IN_RAM.
+
+2001-05-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/flash_dev.h: Fix cyg_uin16 typo.
+
+2001-03-29  Mark Salter  <msalter@redhat.com>
+
+	* cdl/io_flash.cdl (CYGSEM_IO_FLASH_VERIFY_PROGRAM): New option
+	to control whether or not to perform extra verification of flash
+	programming.
+	* src/flash.c (flash_program): No verification unless
+	CYGSEM_IO_FLASH_VERIFY_PROGRAM defined.
+
+2001-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (flash_program): Verify data after programming.
+
+2001-03-21  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash.h: Added low voltage error message.
+	* src/flash.c: And its error message.
+
+2001-03-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (flash_program): 
+	* include/flash.h: Add support for [StrataFLASH] buffered writes.
+	This requires knowledge of the device write buffer size [saved].
+
+2001-03-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: 
+	* include/flash.h: Allow platform to define pre/post routines
+	to enable/disable device access.  These may be required, e.g.
+	to turn on some voltage, etc.
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash.h: HAL_FLASH_CACHES_WANT_OPTIMAL replaced with
+	(opposite sense) HAL_FLASH_CACHES_OLD_MACROS.
+
+	* src/flash.c (__anonymizer): Use to force the compiler to use
+	jumps instead of branches.
+
+2001-02-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_dev.h: Added. Contains macros and definitions
+	common to all (new style) flash device drivers.
+
+	* include/flash.h: Added two new error codes.
+	* cdl/io_flash.cdl: Added CYGHWR_IO_FLASH_DEVICE_IN_RAM.
+	* src/flash.c: Made functions respect
+	CYGHWR_IO_FLASH_DEVICE_IN_RAM and jump directly to the code
+	instead of copying it around.
+	(__arm_broken): Work around problem with ARM tools.
+
+2001-02-06  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c (flash_erase): Add an additional argument to the
+	call into the driver, being the blocksize (as discovered).  This
+	allows a gross check for actual erase in some drivers.  Those that
+	don't use it, it's harmless - after all, this is an API by trust.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c (flash_dev_query): Added. Allows reloc/cache magic
+	to be removed from device drivers (eventually). Also fixed some
+	warnings, and made function references use char[] instead of just
+	char to prevent MIPS compiler from messing up.
+
+	* include/flash.h: Added FLASH_ERR_DRV_VERIFY and flash_dev_query.
+
+2000-11-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c: Do all flash access inside properly
+	cache-controlled region.
+	* include/flash.h: Cache definitions.
+
+2000-11-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c: Added debug mode, allowing device driver to use printf.
+
+2000-11-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c: Added suspend error messages.
+	* include/flash.h: Same.
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/flash.h: 
+	* src/flash.c: CYGHWR_IO_FLASH_BLOCK_LOCKING is an interface, so
+	it's always defined; look for > 0 instead.
+
+2000-08-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: 
+	* include/flash.h: 
+	* cdl/io_flash.cdl: Support block locking (optional by hardware).
+
+2000-08-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/flash.c (flash_program): Add HAL_ICACHE_DISABLE/ENABLE pairs
+	around calls to RAM copy of programming/erasing function - this is
+	necessary to get reliable operation on EBSA285 and similar.
+	Otherwise, what is in the instruction cache might be run instead.
+
+2000-08-14  Gary Thomas  <gthomas@redhat.com>
+
+	* include/flash.h: Add block size mask for finding block boundaries.
+
+	* src/flash.c: Use block size properly.
+
+2000-07-29  Gary Thomas  <gthomas@redhat.com>
+
+	* include/flash.h: 
+	* src/flash.c (flash_get_block_info): New function.
+	(flash_program): Program in block_size chunks as much as possible.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

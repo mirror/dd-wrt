@@ -1,0 +1,252 @@
+2000-12-04  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/monitor_cmd.c (breakpoint_cmd): Fix typo in printf
+	formatting for error message.
+
+2000-11-20  Drew Moseley  <dmoseley@redhat.com>
+
+	* cdl/cygmon.cdl: Make sure we don't specify vectors.o and target.ld twice.
+
+2000-11-03  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/cygmon.cdl: Improve cygmon.elf make dependencies
+
+2000-10-17  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/utils.c: Fix a typo.  Also make sure we are ignoring the
+	'+' characters from gdb.
+
+	* misc/monitor_cmd.c: Add a few cache flushes.
+
+	* misc/monitor.h: Use the debug port for xvprintf.
+
+2000-08-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/ecos_bsp.c: Added some include files to fix some build
+	failures on partially unsupported systems. (ie non-cygmon, etc).
+
+2000-08-12  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/bsp/common/debug-io.c (bsp_debug_write): Use
+	output_gdb_string when stub_is_active.
+
+2000-08-10  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/utils.c: Removed some unused functions.  Also handle
+	printing invalid registers.
+
+	* misc/monitor_cmd.c: Handle some unprintable characters better.
+	Also handle displaying of invalid memory locations better.
+	Add handling for register validity checking.
+
+	* misc/monitor.h: Add a conditional field "reg_valid" to struct
+	regstruct.
+
+	* misc/monitor.c: Added a call to a conditionally defined routine
+	INITIALIZE_MON_EACH_TIME().  This is called everytime the monitor
+	is invoked.  For instance, this is used to determine which
+	registers have actually been read.
+
+	* misc/generic_mem.c: Allow Cygmon to use the Safe memory routines
+	in the HAL.
+
+	* misc/board.h: Added MN10300 basic support.
+	* misc/cpu-mon.c: Ditto.
+	* misc/cpu_info.h: Ditto.
+	* misc/bsp/cpu.h: Ditto.
+	* misc/bsp/mn10300/gdb-cpu.c: Ditto. New file.
+	* misc/bsp/mn10300/gdb-cpu.h: Ditto. New file.
+	* misc/bsp/mn10300/gdb.h: Ditto. New file.
+	* misc/bsp/mn10300/insn.h: Ditto. New file.
+	* misc/bsp/mn10300/singlestep.c: Ditto. New file.
+	* misc/mn10300/board.h: Ditto. New file.
+	* misc/mn10300/cpu.h: Ditto. New file.
+	* misc/mn10300/cpu_info.h: Ditto. New file.
+	* misc/mn10300/mn10300-mon.c: Ditto. New file.
+
+	* cdl/cygmon.cdl: Removed dependency on the kernel and Serial I/O.
+	* misc/ecos_bsp.c: Ditto.
+	* misc/ecos_dummy.c: Ditto.
+
+2000-07-21  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/ecos_bsp.c: Rearrange the linkage between Cygmon and HAL so
+	that Cygmon needs HAL but not vice-versa.  ie HAL no longer calls
+	any Cygmon functions.
+	* misc/monitor.c: Ditto.
+
+2000-07-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/bsp/mips/gdb-cpu.c: New files. Mips based Cygmon now running on top of eCos HAL.
+	* misc/bsp/mips/gdb-cpu.h: Ditto.
+	* misc/bsp/mips/gdb.h: Ditto.
+	* misc/bsp/mips/insn.h: Ditto.
+	* misc/bsp/mips/singlestep.c: Ditto.
+	* misc/mips/board.h: Ditto.
+	* misc/mips/cpu.h: Ditto.
+	* misc/mips/cpu_info.h: Ditto.
+	* misc/mips/mips-mon.c: Ditto.
+
+	* misc/bsp/common/syscall.c: Added SYS_meminfo call to find out
+	how much RAM we have.
+	* misc/bsp/common/syscall.h: Ditto.
+
+	* misc/bsp/common/breakpoint.c: Added __ECOS__ support.
+
+	* misc/monitor_cmd.c: Cleanup.  Added some more error handling.
+	* misc/utils.c: Ditto.
+
+	* misc/monitor.c: Added basic syscall handling to support libgloss.
+	Added support for using more features of the HAL (ie breakpoints
+	and exceptions).
+	* misc/monitor.h: Ditto.
+	* misc/tservice.h: Ditto.
+	* misc/bsp/bsp.h: Ditto.
+	* misc/arm/cpu_info.h: Ditto.
+
+	* misc/ledit.c: Cleanup.
+
+	* misc/ecos_dummy.c: Support for reset through the HAL.
+
+	* misc/ecos_bsp.c: Filled in uart_control function for setting baud rate
+	through the HAL.  Also added VIRTUAL_VECTOR_SUPPORT and support of the
+	low-level HAL-based serial driver.  Also added set_memsize() support.
+
+	* misc/bplist-dynamic.c: Added option for using breakpoints in the HAL.
+	Also, various cleanups of build warnings, etc.	
+	* misc/breakpoints.c: Ditto.
+
+	* cdl/cygmon.cdl: Allow cygmon to be built for either Arm or Mips.
+	
+	* misc/board.h: Move architecture-dependent things out.
+	* misc/cpu-mon.c: Ditto.
+	* misc/cpu_info.h: Ditto.
+	* misc/bsp/cpu.h: Ditto.
+	* misc/bsp/common/gdb-cpu.c: Ditto.
+	* misc/bsp/common/gdb-cpu.h: Ditto.
+	* misc/bsp/common/singlestep.c: Ditto.
+
+2000-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* misc/Notes_CygMon_PID: Added.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/cygmon.cdl: Include hal.h config for CygMon options defined
+	by platform CDL.
+
+2000-01-26  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/cygmon.cdl: Remove CYGDAT_CYGMON_ENABLE - no longer required
+
+2000-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/cygmon.cdl: Moved console device config to target CDL.
+	Let target CDL handle binary conversion.
+
+1999-12-17  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdl/cygmon.cdl:
+	Fix a requires property, getting the quoting right
+
+1999-12-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/cygmon.cdl: Add custom make rule to build CygMon.
+
+1999-12-06  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/arm/arm-mon.c (machine_syscall): 
+	* misc/ecos_bsp.c (_bsp_handle_exception): 
+	* misc/PKGconf.mak: Adding 'syscall' support.
+
+	* misc/CygMon_PID.cfg: 
+	* misc/bsp/common/syscall.h:
+	* misc/bsp/common/syscall.c: New file(s).
+
+1999-11-26  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* misc/CygMon_EDB7211.cfg: Rename to misc/CygMon/EDB7xxx.cfg
+	* misc/CygMon_EDB7xxx.cfg: New file
+
+1999-11-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/ecos_bsp.c (_bsp_board_init): Use/define HAL symbols
+	for board/cpu information.
+	(_bsp_memory_list): Use MLT information here.
+
+	* misc/CygMon_EDB7211.cfg: Fix typo.  Change startup to be
+	ROM which gives more useful RAM information.
+
+1999-11-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/CygMon_EDB7211.cfg: Add platform parameter.  Update
+	patch for latest changes.
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/cygmon.cdl: Added.
+
+1999-10-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/PKGconf.mak: Add new targets (.bin .srec images).
+
+	* include/pkgconf/cygmon.h: Update strings to be more conformant.
+
+	* misc/CygMon_EDB7211.cfg: New file for building CygMon.
+
+	* include/pkgconf/cygmon.h: Add work-around because packages
+	can't be disabled by default.
+
+1999-10-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/cygmon.h: Fix typo 'CYGPKC_LIBC'=>'CYGPKG_LIBC'
+	Also, node type was wrong ('radio' instead of 'boolean')
+
+1999-10-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/cygmon.h: Add configuration options for
+	console device [name] and extended help.  Remove duplicate
+	boilerplate.
+
+	* misc/board.h: Enable "help" via configuration option.
+
+	* misc/ecos_bsp.c: Cleanup/remove extra (debug) code.
+	Add support for console port configuration.
+
+	* misc/monitor.c: 
+	* misc/monitor_cmd.c: Cleanup/remove some debug code.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

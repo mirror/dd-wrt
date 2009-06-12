@@ -1,0 +1,129 @@
+# ====================================================================
+#
+#      hal_mips_tx39.cdl
+#
+#      MIPS/TX39 variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  bartv, nickg
+# Contributors:
+# Date:           1999-11-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_TX39 {
+    display       "TX39 variant"
+    parent        CYGPKG_HAL_MIPS
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mips_tx39.h
+    description   "
+           The TX39 architecture HAL package provides generic support
+           for this processor architecture. It is also necessary to
+           select a specific target platform HAL package."
+
+    cdl_component CYGPKG_HAL_MIPS_TX3904 {
+        display       "TX3904 microprocessor"
+        default_value 1
+        implements    CYGINT_HAL_MIPS_VARIANT
+        description "
+            The TMPR3904F microprocessor. This is an embedded part that in
+            addition to the TX39 processor core has built in peripherals
+            such as memory controllers, DMA controllers, serial ports and
+            timers/counters."               
+
+        cdl_option CYGHWR_HAL_MIPS_FPU {
+            display    "Variant FPU support"
+            calculated 0
+        }
+
+        cdl_option CYGPKG_HAL_MIPS_MSBFIRST {
+            display    "CPU Variant big-endian"
+            calculated 1
+        }
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_mips.h>"
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_CPU_FREQ_ACTUAL {
+        display       "Actual CPU frequency"
+        calculated    (CYGHWR_HAL_MIPS_CPU_FREQ == 50 ? 49152000 :   \
+                       CYGHWR_HAL_MIPS_CPU_FREQ == 66 ? 66355200 : 0 )
+        flavor data
+        legal_values  { 49152000 66355200 }
+        description "
+            Only the frequencies 50MHz and 66MHz are supported for this
+            CPU variant."
+    } 
+
+    cdl_option CYGHWR_HAL_MIPS_TX3904_TRR_REQUIRES_SYNC {
+        display       "Workaround for TX3904 Timer TRR register problem"
+        flavor        bool
+        default_value { (CYGHWR_HAL_MIPS_CPU_FREQ == 50) ? 1 : 0 }
+        description "
+            Early versions of the TX3904 CPU have a bug such that if
+            coprocessor 0 (CP0) is busy outputting write buffer data, reads
+            of the clock would return bad values. This option enables a
+            workaround by not reading the clock until the write buffer
+            is empty."
+    } 
+
+    compile       hal_diag.c var_misc.c variant.S
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/mips_tx39.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/mips_tx39.ld" }
+    }
+
+}

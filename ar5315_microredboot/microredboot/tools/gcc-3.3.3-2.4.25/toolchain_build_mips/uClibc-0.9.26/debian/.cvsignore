@@ -1,0 +1,13 @@
+uclibc-toolchain.substvars
+uclibc-toolchain.prerm.debhelper
+uclibc-toolchain.postinst.debhelper
+uclibc-toolchain
+uclibc-gcc
+tmp
+prerm.debhelper
+postinst.debhelper
+libuclibc0.substvars
+libuclibc0.prerm.debhelper
+libuclibc0.postinst.debhelper
+libuclibc0
+files

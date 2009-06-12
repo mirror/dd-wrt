@@ -1,0 +1,310 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     flash.sgml                                                  -->
+<!--                                                                 -->
+<!--     eCos FLASH support                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2004 Andrew Lunn                                  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART id="io-flash">
+<TITLE>FLASH Library</TITLE>
+<CHAPTER id="ecos-flash-library">
+<TITLE>The eCos FLASH Library</TITLE>
+<PARA>The FLASH library is an optional part of eCos, and is only
+	applicable to some platforms.</PARA>
+<SECT1 id="flash-library">
+<TITLE>FLASH Library</TITLE>
+
+<PARA>The eCos FLASH library provides the following functionality:</PARA>
+
+<orderedlist>
+<listitem><PARA>Identifying installed device of a FLASH family.
+          </PARA>
+</listitem>
+<listitem><PARA>Read, erasing and writing to FLASH blocks.</PARA></listitem>
+<listitem><PARA>Validating an address is within the FLASH.</PARA></listitem>
+<listitem><PARA>Determining the number and size of FLASH blocks.
+          </PARA></listitem>
+</orderedlist>
+
+<PARA>
+The library has a number of limitations:</PARA>
+
+<orderedlist>
+<listitem><PARA>Only one family of FLASH device may be supported at once.
+         </PARA>
+</listitem>
+<listitem><PARA>Multiple devices of one family are supported, but they must 
+                be contiguous in memory.
+          </PARA>
+</listitem>
+<listitem><PARA>The library is not thread or interrupt safe under 
+                some conditions.
+          </PARA>
+</listitem>
+<listitem><PARA>The library currently does not use the eCos naming 
+                 convention for its functions. This may change in the
+                 future but backward compatibility is likely to be kept.
+          </PARA>
+</listitem>
+</orderedlist>
+
+<PARA>All of the functions described below are declared in the header
+file <filename>&lt;cyg/io/flash.h.h&gt;</filename> which all users of
+the FLASH library should include.</PARA>
+
+<SECT2>
+<TITLE>Initializing the FLASH library</TITLE>
+
+<PARA>The FLASH library needs to be initialized before other FLASH
+operations can be performed. This only needs to be done once. The
+following function will only do the initialization once so it's safe
+to call multiple times: </PARA>
+
+<PROGRAMLISTING>externC int flash_init( _printf *pf ); typedef int
+_printf(const char *fmt, ...); </PROGRAMLISTING>
+
+<PARA>
+The parameter <parameter>pf</parameter> is a pointer to a function
+which is to be used for diagnostic output. Typically the function
+<function>diag_printf()</function> will be passed. Normally this
+function is not used by the higher layer of the library unless
+<literal>CYGSEM_IO_FLASH_CHATTER</literal> is enabled.  Passing a
+<parameter>NULL</parameter> is not recommended, even when
+CYGSEM_IO_FLASH_CHATTER is disabled. The lower layers of the library
+may unconditionally call this function, especially when errors occur,
+probably resulting in a more serious error/crash!.</PARA>
+</SECT2>
+
+<SECT2>
+<TITLE>Retrieving information about the FLASH</TITLE> 
+
+<PARA>
+The following four functions return information about the FLASH.
+</PARA>
+
+<PROGRAMLISTING>externC int flash_get_block_info(int *block_size, int *blocks);
+externC int flash_get_limits(void *target, void **start, void **end);
+externC int flash_verify_addr(void *target);
+externC bool flash_code_overlaps(void *start, void *end);
+</PROGRAMLISTING>
+
+<PARA>
+The function <FUNCTION>flash_get_block_info()</FUNCTION> returns the
+size and number of blocks. When the device has a mixture of block
+sizes, the size of the "normal" block will be returned. Please read
+the source code to determine exactly what this means.
+<FUNCTION>flash_get_limits()</FUNCTION> returns the lower and upper
+memory address the FLASH occupies. The <PARAMETER>target</PARAMETER>
+parameter is current unused. <FUNCTION> flash_verify_addr()
+</FUNCTION> tests if the target addresses is within the flash,
+returning <LITERAL>FLASH_ERR_OK</LITERAL> if so. Lastly, <FUNCTION>
+flash_code_overlaps() </FUNCTION> checks if the executing code is
+resident in the section of flash indicated by
+<PARAMETER>start</PARAMETER> and <PARAMETER> end</PARAMETER>. If this
+function returns true, erase and program operations within this range
+are very likely to cause the target to crash and burn horribly. Note
+the FLASH library does allow you to shoot yourself in the foot in this
+way.</PARA>
+
+</SECT2>
+<SECT2>
+
+<TITLE>Reading from FLASH</TITLE>
+
+<PARA>
+There are two methods for reading from FLASH. The first is to use the
+following function. </PARA>
+
+<PROGRAMLISTING>
+externC int flash_read(void *flash_base, void *ram_base, int len, void **err_address);
+</PROGRAMLISTING>
+
+<PARA>
+<PARAMETER>flash_base</PARAMETER> is where in the flash to read
+from. <PARAMETER>ram_base</PARAMETER> indicates where the data read
+from flash should be placed into RAM. <PARAMETER>len</PARAMETER> is
+the number of bytes to be read from the FLASH and
+<PARAMETER>err_address</PARAMETER> is used to return the location in
+FLASH that any error occurred while reading.
+</PARA>
+
+<PARA>
+The second method is to simply <FUNCTION>memcpy()</FUNCTION> directly
+from the FLASH. This is not recommended since some types of device
+cannot be read in this way, eg NAND FLASH. Using the FLASH library
+function to read the FLASH will always work so making it easy to port
+code from one FLASH device to another.
+</PARA>
+
+</SECT2>
+<SECT2>
+
+<TITLE>Erasing areas of FLASH</TITLE>
+
+<PARA>
+Blocks of FLASH can be erased using the following function:
+</PARA>
+
+<PROGRAMLISTING>externC int flash_erase(void *flash_base, int len, void **err_address);
+</PROGRAMLISTING>
+
+<PARA>
+<PARAMETER>flash_base</PARAMETER> is where in the flash to erase
+from. <PARAMETER>len</PARAMETER> is the minimum number of bytes to
+erase in the FLASH and <PARAMETER>err_address</PARAMETER> is used to
+return the location in FLASH that any error occurred while erasing. It
+should be noted that FLASH devices are block oriented when erasing. It
+is not possible to erase a few bytes within a block, the whole block
+will be erased. <PARAMETER>flash_base</PARAMETER> may be anywhere
+within the first block to be erased and <PARAMETER>flash_base+len
+</PARAMETER> maybe anywhere in the last block to be erased.  </PARA>
+
+</SECT2>
+<SECT2>
+
+<TITLE>Programming the FLASH</TITLE>
+
+<PARA> Programming of the flash is achieved using the following
+function.</PARA>
+
+<PROGRAMLISTING>externC int flash_program(void *flash_base, void *ram_base, int len, void **err_address);
+</PROGRAMLISTING>
+
+<PARA>
+<PARAMETER>flash_base</PARAMETER> is where in the flash to program
+from. <PARAMETER>ram_base</PARAMETER> indicates where the data to be
+programmed into FLASH should be read from in RAM. <PARAMETER>len
+</PARAMETER> is the number of bytes to be program into the FLASH and
+<PARAMETER>err_address</PARAMETER> is used to return the location in
+FLASH that any error occurred while programming. </PARA>
+
+</SECT2>
+<SECT2>
+
+<TITLE>Locking and unlocking blocks</TITLE>
+
+<PARA>
+Some flash devices have the ability to lock and unlock blocks. A
+locked block cannot be erased or programmed without it first being
+unlocked. For devices which support this feature and when <LITERAL>
+CYGHWR_IO_FLASH_BLOCK_LOCKING</LITERAL> is enabled then the following
+two functions are available:</PARA>
+
+<PROGRAMLISTING>
+externC int flash_lock(void *flash_base, int len, void **err_address);
+externC int flash_unlock(void *flash_base, int len, void **err_address);
+</PROGRAMLISTING>
+
+</SECT2>
+<SECT2>
+
+<TITLE>Return values and errors</TITLE>
+
+<PARA>All the functions above, except <FUNCTION>flash_code_overlaps()
+</FUNCTION> return one of the following return values.</PARA>
+
+<PROGRAMLISTING>
+FLASH_ERR_OK              No error - operation complete
+FLASH_ERR_INVALID         Invalid FLASH address
+FLASH_ERR_ERASE           Error trying to erase
+FLASH_ERR_LOCK            Error trying to lock/unlock
+FLASH_ERR_PROGRAM         Error trying to program
+FLASH_ERR_PROTOCOL        Generic error
+FLASH_ERR_PROTECT         Device/region is write-protected
+FLASH_ERR_NOT_INIT        FLASH info not yet initialized
+FLASH_ERR_HWR             Hardware (configuration?) problem
+FLASH_ERR_ERASE_SUSPEND   Device is in erase suspend mode
+FLASH_ERR_PROGRAM_SUSPEND Device is in program suspend mode
+FLASH_ERR_DRV_VERIFY      Driver failed to verify data
+FLASH_ERR_DRV_TIMEOUT     Driver timed out waiting for device
+FLASH_ERR_DRV_WRONG_PART  Driver does not support device
+FLASH_ERR_LOW_VOLTAGE     Not enough juice to complete job
+</PROGRAMLISTING>
+
+<PARA>To turn an error code into a human readable string the following
+function can be used:</PARA>
+
+<PROGRAMLISTING>externC char *flash_errmsg(int err);
+</PROGRAMLISTING>
+</SECT2>
+
+<SECT2>
+
+<TITLE> Notes on using the FLASH library</TITLE>
+
+<PARA>
+The FLASH library evolved from the needs and environment of RedBoot
+rather than being a general purpose eCos component. This history
+explains some of the problems with the library.  </PARA>
+
+<PARA>The library is not thread safe. Multiple simultaneous calls to
+its library functions will likely fail and may cause a crash. It is
+the callers responsibility to use the necessary mutex's if needed.
+</PARA>
+
+<PARA>FLASH devices cannot be read from when an erase or write
+operation is active. This means it is not possible to execute code
+from flash while an erase or write operation is active. It is possible
+to use the library when the executable image is resident in FLASH. The
+low level drivers are written such that the linker places the
+functions that actually manipulate the flash into RAM.  However the
+library may not be interrupt safe. An interrupt must not cause
+execution of code that is resident in FLASH. This may be the image
+itself, or RedBoot. In some configurations of eCos, ^C on the serial
+port or debugging via Ethernet may cause an interrupt handler to call
+RedBoot. If RedBoot is resident in FLASH this will cause a crash.
+Similarly, if another thread invokes a virtual vector function to
+access RedBoot, eg to perform a <FUNCTION>diag_printf()</FUNCTION> a
+crash could result.
+</PARA>
+
+<PARA> Thus with a ROM based image or a ROM based Redboot it is
+recommended to disable interrupts while erasing or programming
+flash. Using both a ROMRAM or RAM images and a ROMRAM or RAM RedBoot
+are safe and there is no need to disable interrupts. Similarly, 
+</PARA>
+
+</SECT2>
+<SECT2>
+
+<TITLE>Danger, Will Robinson! Danger!</TITLE>
+
+<PARA>Unlike nearly every other aspect of embedded system programming,
+getting it wrong with FLASH devices can render your target system
+useless. Most targets have a boot loader in the FLASH. Without this
+boot loader the target will obviously not boot. So before starting to
+play with this library its worth investigating a few things. How do
+you recover your target if you delete the boot loader? Do you have the
+necessary JTAG cable? Or is specialist hardware needed? Is it even
+possible to recover the target boards or must it be thrown into the
+rubbish bin? How does killing the board affect your project schedule?
+</PARA>
+
+</SECT2>
+</SECT1> 
+</CHAPTER> 
+</PART>

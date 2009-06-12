@@ -1,0 +1,4050 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     io.sgml                                                     -->
+<!--                                                                 -->
+<!--     Generic I/O subsystem documentation                         -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART id="io">
+<TITLE>I/O Package (Device Drivers)</TITLE>
+
+<!-- {{{ Intro -->
+
+<CHAPTER id="io-package-intro">
+<TITLE>Introduction</TITLE>
+
+<PARA>
+The I/O package is designed as a general purpose framework for
+supporting device drivers. This includes all classes of
+drivers from simple serial to networking stacks and beyond.
+</PARA>
+
+<PARA>
+Components of the I/O package, such as device drivers, are
+configured into the system just like all other components.
+Additionally, end users may add their own drivers to this set.
+</PARA>
+
+<PARA>
+While the set of drivers (and the devices they represent) may be
+considered static, they must be accessed via an opaque
+&ldquo;handle&rdquo;. Each device in the system has a unique name and
+the <FUNCTION>cyg_io_lookup()</FUNCTION> function is used to map that
+name onto the handle for the device. This &ldquo;hiding&rdquo; of the
+device implementation allows for generic, named devices, as well as
+more flexibility. Also, the <FUNCTION>cyg_io_lookup()</FUNCTION>
+function provides drivers the opportunity to initialize the device
+when usage actually starts.
+</PARA>
+
+<PARA>
+All devices have a name. The standard provided devices use names such
+as <filename>&ldquo;/dev/console&rdquo;</filename> and
+<filename>&ldquo;/dev/serial0&rdquo;</filename>, where the
+<filename>&ldquo;/dev/&rdquo;</filename> prefix indicates that this is
+the name of a device.
+</PARA>
+
+<PARA>The entire I/O package API, as well as the standard
+set of provided drivers, is written in C. </PARA>
+
+<PARA>Basic functions are provided to send data to and receive data
+from a device. The details of how this is done is left to the device [class] itself.
+For example, writing data to a block device like a disk drive may
+have different semantics than writing to a serial port. </PARA>
+
+<PARA>Additional functions are provided to manipulate the state
+of the driver and/or the actual device. These functions
+are, by design, quite specific to the actual driver. </PARA>
+
+<PARA>This driver model supports layering; in other words, a device
+may actually be created &ldquo;on top of&rdquo; another device.
+For example, the &ldquo;tty&rdquo; (terminal-like) devices are
+built on top of simple serial devices. The upper layer then has
+the flexibility to add features and functions not found at the lower
+layers. In this case the &ldquo;tty&rdquo; device provides
+for line buffering and editing not available from the simple serial
+drivers.
+</PARA>
+
+<PARA>Some drivers will support visibility of the layers they depend
+upon. The &ldquo;tty&rdquo; driver allows information about
+the actual serial device to be manipulated by passing get/set
+config calls that use a serial driver &ldquo;key&rdquo; down
+to the serial driver itself. </PARA>
+
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ User API -->
+
+<CHAPTER id="io-user-api">
+<TITLE><!-- <index></index> -->User API</TITLE>
+
+<PARA>
+All functions, except <FUNCTION>cyg_io_lookup()</FUNCTION>
+require an I/O &ldquo;<!-- <index></index> -->handle&rdquo;.
+</PARA>
+
+<PARA>
+All functions return a value of the type <type>Cyg_ErrNo</type>. If an
+error condition is detected, this value will be negative and the
+absolute value indicates the actual error, as specified in
+<filename>cyg/error/codes.h</filename>. The only other legal return
+value will be <varname>ENOERR</varname>. All other function arguments
+are pointers (references). This allows the drivers to pass information
+efficiently, both into and out of the driver. The most striking
+example of this is the &ldquo;length&rdquo; value passed to the read
+and write functions. This parameter contains the desired length of
+data on input to the function and the actual transferred length on
+return.
+</PARA>
+
+<PROGRAMLISTING>
+// Lookup a device and return its handle 
+  Cyg_ErrNo <FUNCTION><!-- <index></index> -->cyg_io_lookup</function>( 
+    const char <parameter>*name</parameter>,
+    cyg_io_handle_t <parameter>*handle</parameter> )
+</PROGRAMLISTING>
+
+<PARA>
+This function maps a device name onto an appropriate handle. If the
+named device is not in the system, then the error
+<varname>-ENOENT</varname> is returned. If the device is found, then
+the handle for the device is returned by way of the handle pointer
+<parameter>*handle</parameter>.
+</PARA>
+
+<PROGRAMLISTING>
+// Write data to a device 
+Cyg_ErrNo <FUNCTION><!-- <index></index> -->cyg_io_write</function>( 
+    cyg_io_handle_t <parameter>handle</parameter>,
+    const void <parameter>*buf</parameter>,
+    cyg_uint32 <parameter>*len</parameter> )
+</PROGRAMLISTING>
+
+<PARA>
+This function sends data to a device. The size of data to send is
+contained in <parameter>*len</parameter> and the actual size sent will
+be returned in the same place.
+</PARA>
+
+<PROGRAMLISTING>
+// Read data from a device 
+Cyg_ErrNo <!-- <index></index> --><function>cyg_io_read</function>( 
+    cyg_io_handle_t <parameter>handle</parameter>,
+    void <parameter>*buf</parameter>,
+    cyg_uint32 <parameter>*len</parameter> )
+</PROGRAMLISTING>
+
+<PARA>
+This function receives data from a device. The desired size of data to
+receive is contained in <parameter>*len</parameter> and the actual
+size obtained will be returned in the same place.
+</PARA>
+
+<PROGRAMLISTING>
+// Get the configuration of a device 
+Cyg_ErrNo <FUNCTION><!-- <index></index> -->cyg_io_get_config</FUNCTION>( 
+    cyg_io_handle_t <parameter>handle</parameter>,
+    cyg_uint32 <parameter>key</parameter>,
+    void *<parameter>buf</parameter>,
+    cyg_uint32 *<parameter>len</parameter> )
+</PROGRAMLISTING>
+
+<PARA>
+This function is used to obtain run-time configuration about a
+device. The type of information retrieved is specified by the
+<parameter>key</parameter>. The data will be returned in the given
+buffer. The value of <parameter>*len</parameter> should contain the
+amount of data requested, which must be at least as large as the size
+appropriate to the selected key. The actual size of data retrieved is
+placed in <parameter> *len</parameter>. The appropriate key values
+differ for each driver and are all listed in the file
+<filename>&lt;cyg/io/config_keys.h&gt;</filename>.
+</PARA>
+
+<PROGRAMLISTING>
+// Change the configuration of a device 
+Cyg_ErrNo <!-- <index></index> --><function>cyg_io_set_config</function>( 
+    cyg_io_handle_t <parameter>handle</parameter>,
+    cyg_uint32 <parameter>key</parameter>,
+    const void <parameter>*buf</parameter>,
+    cyg_uint32 <parameter>*len</parameter> )
+</PROGRAMLISTING>
+
+<PARA>
+This function is used to manipulate or change the run-time
+configuration of a device. The type of information is specified by the
+<parameter>key</parameter>. The data will be obtained from the given
+buffer. The value of <parameter>*len</parameter> should contain the
+amount of data provided, which must match the size appropriate to the
+selected key.  The appropriate key values differ for each driver and
+are all listed in the file
+<filename>&lt;cyg/io/config_keys.h&gt;</filename>.
+</PARA>
+
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ Serial Drivers  -->
+
+<CHAPTER id="io-serial-driver-details">
+<TITLE>Serial driver details</TITLE>
+
+<PARA>
+Two different classes of serial drivers are provided as a standard
+part of the eCos system. These are described as &ldquo;raw
+serial&rdquo; (serial) and &ldquo;tty-like&rdquo; (tty).
+</PARA>
+
+<!-- {{{ Raw Serial Drivers -->
+
+<SECTION id="io-simple-serial-driver">
+<TITLE>Raw Serial Driver</TITLE>
+
+<PARA>
+Use the include file <FILENAME>&lt;cyg/io/serialio.h&gt;</FILENAME> for
+this driver.
+</PARA>
+
+<PARA>
+The <!-- <index></index> -->raw serial driver is capable of sending
+and receiving blocks of raw data to a serial device. Controls are
+provided to configure the actual hardware, but there is no manipulation
+of the data by this driver.
+</PARA>
+
+<PARA>
+There may be many instances of this driver in a given system,
+one for each serial channel. Each channel corresponds to a physical
+device and there will typically be a device module created for this
+purpose. The device modules themselves are configurable, allowing
+specification of the actual hardware details, as well as such details
+as whether the channel should be buffered by the serial driver,
+etc.
+</PARA>
+
+<!-- {{{ Runtime Configuration -->
+
+<SECTION>
+<TITLE>Runtime Configuration</TITLE>
+
+<para>
+Runtime configuration is achieved by exchanging data structures with
+the driver via the <function>cyg_io_set_config()</function> and
+<function>cyg_io_get_config()</function> functions.
+</para>
+
+<PROGRAMLISTING>
+typedef struct {
+ cyg_serial_baud_rate_t baud;
+ cyg_serial_stop_bits_t stop;
+ cyg_serial_parity_t parity;
+ cyg_serial_word_length_t word_length;
+ cyg_uint32 flags;
+} cyg_serial_info_t;
+</PROGRAMLISTING>
+
+<PARA>
+The field <structfield><!-- <index></index>
+-->word_length</structfield> contains the number of data bits per word
+(character). This must be one of the values:
+</PARA>
+
+<PROGRAMLISTING>
+ CYGNUM_SERIAL_WORD_LENGTH_5
+ CYGNUM_SERIAL_WORD_LENGTH_6
+ CYGNUM_SERIAL_WORD_LENGTH_7
+ CYGNUM_SERIAL_WORD_LENGTH_8
+</PROGRAMLISTING>
+
+<PARA>
+The field <structfield><!-- <index></index>
+-->baud</structfield> contains a baud rate selection.  This must be
+one of the values:
+</PARA>
+
+<PROGRAMLISTING>
+ CYGNUM_SERIAL_BAUD_50
+ CYGNUM_SERIAL_BAUD_75
+ CYGNUM_SERIAL_BAUD_110
+ CYGNUM_SERIAL_BAUD_134_5
+ CYGNUM_SERIAL_BAUD_150
+ CYGNUM_SERIAL_BAUD_200
+ CYGNUM_SERIAL_BAUD_300
+ CYGNUM_SERIAL_BAUD_600
+ CYGNUM_SERIAL_BAUD_1200
+ CYGNUM_SERIAL_BAUD_1800
+ CYGNUM_SERIAL_BAUD_2400
+ CYGNUM_SERIAL_BAUD_3600
+ CYGNUM_SERIAL_BAUD_4800
+ CYGNUM_SERIAL_BAUD_7200
+ CYGNUM_SERIAL_BAUD_9600
+ CYGNUM_SERIAL_BAUD_14400
+ CYGNUM_SERIAL_BAUD_19200
+ CYGNUM_SERIAL_BAUD_38400
+ CYGNUM_SERIAL_BAUD_57600
+ CYGNUM_SERIAL_BAUD_115200
+ CYGNUM_SERIAL_BAUD_234000
+</PROGRAMLISTING>
+
+<PARA>The field <structfield><!-- <index></index>
+-->stop</structfield> contains the number of stop bits. This must be
+one of the values:</PARA>
+
+<PROGRAMLISTING>
+ CYGNUM_SERIAL_STOP_1
+ CYGNUM_SERIAL_STOP_1_5
+ CYGNUM_SERIAL_STOP_2
+</PROGRAMLISTING>
+
+<NOTE>
+<title>Note</title>
+<PARA>
+On most hardware, a selection of 1.5 stop bits is only valid
+if the word (character) length is 5.
+</PARA>
+</NOTE>
+
+<PARA>The field <structfield><!-- <index></index>
+-->parity</structfield> contains the parity mode.  This must be one of
+the values: </PARA>
+
+<PROGRAMLISTING>
+ CYGNUM_SERIAL_PARITY_NONE
+ CYGNUM_SERIAL_PARITY_EVEN
+ CYGNUM_SERIAL_PARITY_ODD
+ CYGNUM_SERIAL_PARITY_MARK
+ CYGNUM_SERIAL_PARITY_SPACE
+</PROGRAMLISTING>
+
+<PARA>The field <structfield><!-- <index></index>
+-->flags</structfield> is a bitmask which controls the behavior of the
+serial device driver. It should be built from the values
+<literal>CYG_SERIAL_FLAGS_xxx</literal> defined below:
+</PARA>
+
+<PROGRAMLISTING>
+#define CYG_SERIAL_FLAGS_RTSCTS 0x0001
+</PROGRAMLISTING>
+
+<PARA>If this bit is set then the port is placed in &ldquo;hardware
+handshake&rdquo; mode. In this mode, the CTS and RTS pins control
+when data is allowed to be sent/received at the port. This
+bit is ignored if the hardware does not support this level of
+handshake.
+</PARA>
+
+<PROGRAMLISTING>
+typedef struct {
+  cyg_int32 rx_bufsize;
+  cyg_int32 rx_count;
+  cyg_int32 tx_bufsize;
+  cyg_int32 tx_count;
+} cyg_serial_buf_info_t;     
+</PROGRAMLISTING>
+
+<PARA>The field <structfield>rx_bufsize</structfield> contains
+the total size of the incoming data buffer. This is set to zero on
+devices that do not support buffering (i.e. polled devices).</PARA>
+
+<PARA>The field <structfield>rx_count</structfield> contains the
+number of bytes currently occupied in the incoming data buffer.
+This is set to zero on devices that do not support buffering (i.e. polled
+devices).</PARA>
+
+<PARA>The field <structfield>tx_bufsize</structfield> contains the
+total size of the transmit data buffer. This is set to zero on devices
+that do not support buffering (i.e. polled devices).</PARA>
+
+<PARA>The field <structfield>tx_count</structfield> contains the
+number of bytes currently occupied in the transmit data buffer.  This
+is set to zero on devices that do not support buffering (i.e. polled
+devices).</PARA>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ API Details -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->API Details</TITLE>
+
+<!-- {{{ cyg_io_write -->
+
+<section id="io-serial-cyg-io-write">
+<title>cyg_io_write</title>
+
+<PROGRAMLISTING>
+cyg_io_write(handle, buf, len)
+</PROGRAMLISTING>
+
+<PARA>
+Send the data from <parameter>buf</parameter> to the device. The
+driver maintains a buffer to hold the data. The size of the
+intermediate buffer is configurable within the interface module. The
+data is not modified at all while it is being buffered. On return,
+<parameter>*len</parameter> contains the amount of characters actually
+consumed .</PARA>
+
+<PARA>
+It is possible to configure the write call to be blocking
+(default) or non-blocking. Non-blocking mode requires both the configuration
+option <literal>CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING</literal>
+to be enabled, and the specific device to be set to non-blocking
+mode for writes (see <function>cyg_io_set_config()</function>).
+</para>
+
+<para>
+In blocking mode, the call will not return until there is space in the
+buffer and the entire contents of <parameter>buf</parameter> have been
+consumed.
+</PARA>
+
+<PARA>
+In non-blocking mode, as much as possible gets consumed from
+<parameter>buf</parameter>. If everything was consumed, the call
+returns <literal>ENOERR</literal>. If only part of the
+<parameter>buf</parameter> contents was consumed,
+<literal>-EAGAIN</literal> is returned and the caller must try
+again. On return, <parameter>*len</parameter> contains the number of characters actually
+consumed .</PARA>
+
+<PARA>
+The call can also return <literal>-EINTR</literal> if interrupted
+via the <function>cyg_io_get_config()</function>/<literal>ABORT</literal> key.
+</para>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ cyg_io_read -->
+
+<section id="io-serial-cyg-io-read">
+<title>cyg_io_read</title>
+
+<programlisting>
+cyg_io_read(handle, buf, len)
+</programlisting>
+
+<PARA>
+Receive data into the buffer, <parameter>buf</parameter>, from the
+device. No manipulation of the data is performed before being
+transferred.  An interrupt driven interface module will support data
+arriving when no read is pending by buffering the data in the serial
+driver.  Again, this buffering is completely configurable. On return,
+<parameter>*len</parameter> contains the number of characters actually
+received.</PARA>
+
+<PARA>
+It is possible to configure the read call to be blocking (default)
+or  non-blocking. Non-blocking mode requires both the configuration
+option  <literal>CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING</literal>
+to be enabled, and the specific device to be set to non-blocking
+mode for reads (see <function>cyg_io_set_config()</function>).
+</PARA>
+
+<PARA>
+In blocking mode, the call will not return until the requested
+amount of data has been read.</PARA>
+
+<PARA>
+In non-blocking mode, data waiting in the device buffer is copied to
+<parameter>buf</parameter>, and the call returns immediately. If there
+was enough data in the buffer to fulfill the request,
+<literal>ENOERR</literal> is returned.  If only part of the request
+could be fulfilled, <literal>-EAGAIN</literal> is returned and the
+caller must try again. On return, <parameter>*len</parameter> contains
+the number of characters actually received.</PARA>
+
+<PARA>
+The call can also return <literal>-EINTR</literal> if interrupted via
+the <function>cyg_io_get_config()</function>/<literal>ABORT</literal>
+key.
+</PARA>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ cyg_io_get_config -->
+
+<section id="io-serial-cyg-get-config">
+<title>cyg_io_get_config</title>
+
+<PROGRAMLISTING>
+cyg_io_get_config(handle, key, buf, len)
+</PROGRAMLISTING>
+
+<PARA>This function returns current [runtime] information
+about the device and/or driver. </PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_INFO</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>cyg_serial_info_t</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>
+              This function retrieves the current state of the driver
+              and hardware. This information contains fields for
+              hardware baud rate, number of stop bits, and parity
+              mode. It also includes a set of flags that control the
+              port, such as hardware flow control.
+            </PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_BUFFER_INFO</literal></TERM>
+    <LISTITEM>
+       <variablelist>
+         <VARLISTENTRY>
+           <TERM>Buf type:</TERM>
+           <LISTITEM>
+             <PARA>cyg_serial_buf_info_t</PARA>
+           </LISTITEM>
+         </VARLISTENTRY>
+         <VARLISTENTRY>
+           <TERM>Function:</TERM>
+           <LISTITEM>
+             <PARA>
+               This function retrieves the current state of the
+               software buffers in the serial drivers. For both
+               receive and transmit buffers it returns the total
+               buffer size and the current number of bytes occupied in
+               the buffer. It does not take into account any buffering
+               such as FIFOs or holding registers that the serial
+               device itself may have.
+             </PARA>
+           </LISTITEM>
+         </VARLISTENTRY>
+       </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_OUTPUT_DRAIN</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>void *</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>
+              This function waits for any buffered output to
+              complete. This function only completes when there is no
+              more data remaining to be sent to the device.
+            </PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_OUTPUT_FLUSH</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>void *</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>
+              This function discards any buffered output for the
+	      device.
+            </PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_INPUT_DRAIN</literal></term>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>void *</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function: 	</TERM>
+          <LISTITEM>
+            <PARA>This function discards any buffered input for the
+            device.</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_ABORT</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA> void*</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>This function will cause any pending read or write calls on
+            this device to return with <literal>-EABORT</literal>.</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_READ_BLOCKING</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA> cyg_uint32 (values 0 or 1)</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>This function will read back the blocking-mode
+            setting for read calls on this device. This call is only
+            available if the configuration option
+            <literal>CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING</literal> is
+            enabled.</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_SERIAL_WRITE_BLOCKING</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA> cyg_uint32 (values 0 or 1)</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>
+            This function will read back the blocking-mode
+            setting for write calls on this device. This call is only
+            available if the configuration option
+            <literal>CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING</literal> is enabled.</PARA>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </listitem>
+  </varlistentry>
+</variablelist>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ cyg_io_set_config -->
+
+<section id="io-serial-cyg-set-config">
+<title>cyg_io_set_config</title>
+
+<PROGRAMLISTING>
+cyg_io_set_config(handle, key, buf,len)
+</PROGRAMLISTING>
+
+<PARA>This function is used to update or change runtime configuration
+of a port. </PARA>
+
+<variablelist>
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_SET_CONFIG_SERIAL_INFO</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>cyg_serial_info_t</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>This function updates the information for the driver
+            and hardware.  The information contains fields for
+            hardware baud rate, number of stop bits, and parity
+            mode. It also includes a set of flags that control the
+            port, such as hardware flow control.
+            </PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_SET_CONFIG_SERIAL_READ_BLOCKING</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA> cyg_uint32 (values 0 or 1)</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>This function will set the blocking-mode for read
+            calls on this device. This call is only available if the
+            configuration option <literal>CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING</literal>
+            is enabled.
+            </PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_SET_CONFIG_SERIAL_WRITE_BLOCKING</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>cyg_uint32 (values 0 or 1)</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>This function will set the blocking-mode for write
+            calls on this device. This call is only available if the
+            configuration option <literal>CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING</literal>
+            is enabled.
+            </PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</section>
+
+<!-- }}} -->
+
+</SECTION>
+
+<!-- }}} -->
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ TTY Drivers -->
+
+<SECTION id="io-tty-driver">
+<TITLE> TTY driver</TITLE>
+
+<PARA>
+Use the include file <filename>&lt;cyg/io/ttyio.h&gt;</filename> for
+this driver.
+</PARA>
+
+<PARA>
+This <!-- <index></index> -->driver is built on top of the simple
+serial driver and is typically used for a device that interfaces with
+humans such as a terminal. It provides some minimal formatting of data
+on output and allows for line-oriented editing on input.
+</PARA>
+
+<!-- {{{ Runtime Configuration -->
+
+<SECTION>
+<TITLE>Runtime configuration</TITLE>
+
+<para>
+Runtime configuration is achieved by exchanging data structures with
+the driver via the <function>cyg_io_set_config()</function> and
+<function>cyg_io_get_config()</function> functions.
+</para>
+
+
+<PROGRAMLISTING>
+typedef struct {
+ cyg_uint32 tty_out_flags;
+ cyg_uint32 tty_in_flags;
+} cyg_tty_info_t;
+</PROGRAMLISTING>
+
+<PARA>The field <structfield><!-- <index></index> -->tty_out_flags</structfield>
+is used to control what happens to data as it is send to the serial
+port. It contains a bitmap comprised of the bits as defined by the
+<literal>CYG_TTY_OUT_FLAGS_xxx</literal> values below. </PARA>
+
+<PROGRAMLISTING>
+#define CYG_TTY_OUT_FLAGS_CRLF 0x0001 // Map '\n' =&gt; '\r\n' on output
+</PROGRAMLISTING>
+
+<PARA>If this bit is set in <structfield>tty_out_flags</structfield>,
+any occurrence of the character &quot;\n&quot; will
+be replaced by the sequence &quot;\r\n&quot; before
+being sent to the device.</PARA>
+
+<PARA>The field <structfield><!-- <index></index> -->tty_in_flags</structfield>
+is used to control how data is handled as it comes from the serial
+port. It contains a bitmap comprised of the bits as defined by the
+<literal>CYG_TTY_IN_FLAGS_xxx</literal> values below. </PARA>
+
+<PROGRAMLISTING>
+#define CYG_TTY_IN_FLAGS_CR 0x0001 // Map '\r' =&gt; '\n' on input
+</PROGRAMLISTING>
+
+<PARA>If this bit is set in <structfield>tty_in_flags</structfield>, the
+character &quot;\r&quot; (&ldquo;return&rdquo; or &ldquo;enter&rdquo; on
+most keyboards) will be mapped to &quot;\n&quot;.</PARA>
+
+<PROGRAMLISTING>
+#define CYG_TTY_IN_FLAGS_CRLF 0x0002 // Map '\r\n' =&gt; '\n' on input
+</PROGRAMLISTING>
+
+<PARA>
+If this bit is set in <structfield>tty_in_flags</structfield>, the
+character sequence &quot;\r\n&quot; (often sent by DOS/Windows
+based terminals) will be mapped to &quot;\n&quot;. </PARA>
+
+<PROGRAMLISTING>
+#define CYG_TTY_IN_FLAGS_BINARY 0x0004 // No input processing
+</PROGRAMLISTING>
+
+<PARA>If this bit is set in <structfield>tty_in_flags</structfield>, the
+input will not be manipulated in any way before being placed in
+the user&rsquo;s buffer. </PARA>
+
+<PROGRAMLISTING>
+#define CYG_TTY_IN_FLAGS_ECHO 0x0008 // Echo characters as processed
+</PROGRAMLISTING>
+
+<PARA>
+If this bit is set in <structfield>tty_in_flags</structfield>, characters
+will be echoed back to the serial port as they are processed. </PARA>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ API Details -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->API details</TITLE>
+
+<PROGRAMLISTING>
+cyg_io_read(handle, buf, len)
+</PROGRAMLISTING>
+
+<PARA>This function is used to read data from the device. In the
+default case, data is read until an end-of-line character ("\n"
+or "\r") is read. Additionally, the characters are echoed
+back to the [terminal] device. Minimal editing
+of the input is also supported. </PARA>
+
+<NOTE>
+<PARA>When connecting to a remote target via GDB it is not possible
+to provide console input while GDB is connected. The GDB remote
+protocol does not support input. Users must disconnect from GDB
+if this functionality is required.</PARA>
+</NOTE>
+
+<PROGRAMLISTING>	
+cyg_io_write(handle, buf, len)
+</PROGRAMLISTING>
+
+<PARA>This function is used to send data to the device. In the default
+case, the end-of-line character "\n" is replaced by the
+sequence "\r\n". </PARA>
+
+<PROGRAMLISTING>
+cyg_io_get_config(handle, key, buf, len)
+</PROGRAMLISTING>
+
+<PARA>This function is used to get information about the channel&rsquo;s
+configuration at runtime. </PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_GET_CONFIG_TTY_INFO</literal></TERM>
+    <LISTITEM>
+      <variablelist>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>cyg_tty_info_t</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function:</TERM>
+          <LISTITEM>
+            <PARA>This function retrieves the current state of the
+	    driver.
+            </PARA>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </listitem>
+  </varlistentry>
+</variablelist>
+
+<PARA>Serial driver keys (see above) may also be specified
+in which case the call is passed directly to the serial
+driver. </PARA>
+
+<PROGRAMLISTING>
+cyg_io_set_config(handle, key, buf, len)
+</PROGRAMLISTING>
+
+<PARA>This function is used to modify the channel&rsquo;s configuration
+at runtime. </PARA>
+
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM><literal>CYG_IO_SET_CONFIG_TTY_INFO</literal></term>
+    <LISTITEM>
+      <VARIABLELIST>
+        <VARLISTENTRY>
+          <TERM>Buf type:</TERM>
+          <LISTITEM>
+            <PARA>cyg_tty_info_t</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+        <VARLISTENTRY>
+          <TERM>Function: 	</TERM>
+          <LISTITEM>
+            <PARA>This function changes the current state of the
+	    driver.</PARA>
+          </LISTITEM>
+        </VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+<PARA>Serial driver
+keys (see above) may also be specified in which case the
+call is passed directly to the serial driver. </PARA>
+
+</SECTION>
+
+<!-- }}} -->
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ DSP Driver -->
+
+
+<!-- }}} -->
+
+</CHAPTER>
+
+<!-- }}} -->
+<!-- {{{ How to Write a Driver -->
+
+<CHAPTER id="io-how-to-write-a-driver">
+<TITLE>How to Write a Driver</TITLE>
+
+<!-- {{{ Intro -->
+
+<PARA>
+A <!-- <index></index> -->device driver is nothing more than a
+named entity that supports the basic I/O functions - read, write, get
+config, and set config. Typically a device driver also uses and
+manages interrupts from the device. While the interface is generic and
+device driver independent, the actual driver implementation is
+completely up to the device driver designer. </PARA>
+
+<PARA>That said, the reason for using a device driver is to provide
+access to a device from application code in as general purpose a
+fashion as reasonable. Most driver writers are also concerned with
+making this access as simple as possible while being as efficient
+as possible. </PARA>
+
+<PARA>Most device drivers are concerned with the movement of information,
+for example data bytes along a serial interface, or packets in a
+network. In order to make the most efficient use of system resources,
+interrupts are used. This will allow other application processing
+to take place while the data transfers are under way, with interrupts
+used to indicate when various events have occurred. For example,
+a serial port typically generates an interrupt after a character
+has been sent &ldquo;down the wire&rdquo; and the interface
+is ready for another. It makes sense to allow further application
+processing while the data is being sent since this can take quite
+a long time. The interrupt can be used to allow the driver to send
+a character as soon as the current one is complete, without any
+active participation by the application code. </PARA>
+
+<PARA>The main building blocks for device drivers are found in the
+include file: <filename>&lt;cyg/io/devtab.h&gt;</filename></PARA>
+
+<PARA>All device drivers in <EMPHASIS>eCos</EMPHASIS> are described
+by a device table entry, using the <type>cyg_devtab_entry_t</type> type.
+The entry should be created using the <FUNCTION>DEVTAB_ENTRY()</FUNCTION> macro,
+like this:</PARA>
+
+<PROGRAMLISTING><function>
+DEVTAB_ENTRY</function>(l, name, dep_name, handlers, init, lookup, priv)
+</PROGRAMLISTING>
+
+<variablelist>
+<title>Arguments</title>
+  <varlistentry>
+    <term><parameter>l</parameter></term>
+    <listitem><para>The "C" label for this device table entry.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>name</parameter></term>
+    <listitem><para>The "C" string name for the device.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>dep_name</parameter></term>
+    <listitem><para>For a layered device, the "C" string name of the
+    device this device is built upon.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>handlers</parameter></term>
+    <listitem><para>A pointer to the I/O function "handlers" (see below).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>init</parameter></term>
+    <listitem><para>A function called when eCos is initialized. This
+    function can query the device, setup hardware, etc.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>lookup</parameter></term>
+    <listitem><para>A function called when <function>cyg_io_lookup()</function> is called
+    for this device. </para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>priv</parameter></term>
+    <listitem><para>A placeholder for any device specific data
+    required by the driver.</para></listitem>
+  </varlistentry>
+</variablelist>
+
+<PARA>The interface to the driver is through the <structfield><!--
+<index></index> -->handlers</structfield> field.  This is a pointer to
+a set of functions which implement the various <function>cyg_io_XXX()</function>
+routines. This table is defined by the macro:</PARA>
+
+
+<PROGRAMLISTING>
+DEVIO_TABLE(l, write, read, get_config, set_config)
+</PROGRAMLISTING>
+
+<variablelist>
+<title>Arguments</title>
+  <varlistentry>
+    <term><parameter>l</parameter></term>
+    <listitem><para>The "C" label for this table of handlers.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>write</term>
+    <listitem><para>The function called as a result of
+    <function>cyg_io_write()</function>.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>read</term>
+    <listitem><para>The function called as a result of
+    <function>cyg_io_read()</function>. </para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>get_config</term>
+    <listitem><para>The function called as a result of
+    <function>cyg_io_get_config()</function>.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>set_config</term>
+    <listitem><para>The function called as a result of
+    <function>cyg_io_set_config()</function>. </para></listitem>
+  </varlistentry>
+</variablelist>
+
+<PARA>
+When <EMPHASIS>eCos</EMPHASIS> is initialized (sometimes called
+&ldquo;boot&rdquo; time), the <function>init()</function> function is called
+for all devices in the system. The <function>init()</function> function is
+allowed to return an error in which case the device will be placed
+&ldquo;off line&rdquo; and all I/O requests to that device will be
+considered in error.
+</PARA>
+
+<PARA>
+The <function>lookup()</function> function is called whenever
+the <FUNCTION>cyg_io_lookup()</FUNCTION> function
+is called with this device name. The lookup function may cause the device
+to come &ldquo;on line&rdquo; which would then allow I/O
+operations to proceed. Future versions of the I/O system
+will allow for other states, including power saving modes,
+etc.
+</PARA>
+
+<!-- }}} -->
+<!-- {{{ How to Write a Serial Hardware Interface Driver -->
+
+<SECTION id="io-how-to-write-serial-interface-driver">
+<TITLE>How to Write a Serial Hardware Interface Driver</TITLE>
+
+
+<PARA>The standard serial driver supplied with
+<EMPHASIS>eCos</EMPHASIS> is structured as a hardware independent
+portion and a hardware dependent interface module. To add support for
+a new serial port, the user should be able to use the existing
+hardware independent portion and just add their own <!--
+<index></index> -->interface driver which handles the details of the
+actual device. The user should have no need to change the hardware
+independent portion. </PARA>
+
+<PARA>The interfaces used by the serial driver and serial implementation
+modules are contained in the file <filename>&lt;cyg/io/serial.h&gt;</filename>
+</PARA>
+
+<NOTE>
+<PARA>In the sections below we use the notation &lt;&lt;xx&gt;&gt; to
+mean a module specific value, referred to as &ldquo;xx&rdquo; below.</PARA>
+</NOTE>
+
+<!-- {{{ DevTab Entry -->
+
+<section>
+<title>DevTab Entry</title>
+
+<PARA>The interface module contains the devtab entry (or entries
+if a single module supports more than one interface). This entry
+should have the form: </PARA>
+
+<PROGRAMLISTING>
+DEVTAB_ENTRY(&lt;&lt;module_name&gt;&gt;, 
+             &lt;&lt;device_name&gt;&gt;,
+             0,
+             &amp;serial_devio, 
+             &lt;&lt;module_init&gt;&gt;, 
+             &lt;&lt;module_lookup&gt;&gt;,
+             &amp;&lt;&lt;serial_channel&gt;&gt;
+            );
+</PROGRAMLISTING>
+
+<variablelist>
+<title>Arguments</title>
+  <varlistentry>
+    <term><parameter>module_name</parameter></term>
+    <listitem><para>The "C" label for this devtab entry</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>device_name</parameter></term>
+    <listitem><para>The "C" string for the
+    device. E.g. <filename>/dev/serial0</filename>.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>serial_devio</parameter></term>
+    <listitem><para>The table of I/O functions. This set is defined in
+    the hardware independent serial driver and should be used.</para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>module_init</parameter></term>
+    <listitem><para>The module initialization function.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>module_lookup</parameter></term>
+    <listitem><para>The device lookup function. This function
+    typically sets up the device for actual use, turning on
+    interrupts, configuring the port, etc.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>serial_channel</parameter></term>
+    <listitem><para>This table (defined below) contains the interface
+    between the interface module and the serial driver proper.</para></listitem>
+  </varlistentry>
+</variablelist>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Serial Channel Structure -->
+
+<section>
+<title>Serial Channel Structure</title>
+
+<PARA>Each serial device must have a &ldquo;serial channel&rdquo;.
+This is a set of data which describes all operations on the device.
+It also contains buffers, etc., if the device is to be buffered.
+The serial channel is created by the macro: </PARA>
+
+<PROGRAMLISTING>
+SERIAL_CHANNEL_USING_INTERRUPTS(l, funs, dev_priv, baud,stop, parity, word_length,
+                                flags, out_buf, out_buflen, in_buf, in_buflen)
+</PROGRAMLISTING>
+
+<variablelist>
+  <title>Arguments</title>
+  <varlistentry>
+    <term><parameter>l</parameter></term>
+    <listitem><para>The "C" label for this structure.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>funs</parameter></term>
+    <listitem><para>The set of interface functions (see below).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>dev_priv</structfield></term>
+    <listitem><para>A placeholder for any device specific data for
+    this channel.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>baud</structfield></term>
+    <listitem><para>The initial baud rate value
+    (<type>cyg_serial_baud_t</type>).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>stop</structfield></term>
+    <listitem><para>The initial stop bits value
+    (<type>cyg_serial_stop_bits_t</type>).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>parity</structfield></term>
+    <listitem><para>The initial parity mode value
+    (<type>cyg_serial_parity_t</type>).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>word_length</structfield></term>
+    <listitem><para>The initial word length value
+    (<type>cyg_serial_word_length_t</type>).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>flags</structfield></term>
+    <listitem><para>The initial driver flags value.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>out_buf</structfield></term>
+    <listitem><para>Pointer to the output
+    buffer. <literal>NULL</literal> if none required.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>out_buflen</structfield></term>
+    <listitem><para>The length of the output buffer.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>in_buf</structfield></term>
+    <listitem><para>pointer to the input
+    buffer. <literal>NULL</literal> if none required.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>in_buflen</structfield></term>
+    <listitem><para>The length of the input buffer. </PARA></listitem>
+  </varlistentry>
+</variablelist>
+
+<PARA>
+If either buffer length is zero, no buffering will take place
+in that direction and only polled mode functions will be used.
+</PARA>
+
+<PARA>
+The interface from the hardware independent driver into the
+hardware interface module is contained in the <structfield>funs</structfield> table.
+This is defined by the macro:
+</PARA>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Serial Functions Structure -->
+
+<section>
+<title>Serial Functions Structure</title>
+
+<PROGRAMLISTING>
+SERIAL_FUNS(l, putc, getc, set_config, start_xmit, stop_xmit)
+</PROGRAMLISTING>
+
+
+<variablelist>
+  <title>Arguments</title>
+  <varlistentry>
+    <term><structfield>l</structfield></term>
+    <listitem><para>The "C" label for this structure.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>putc</structfield></term>
+    <listitem>
+      <para><literal>bool (*putc)(serial_channel *priv, unsigned char
+      c)</literal></para>
+      <para>
+      This function sends one character to the interface. It should
+      return <literal>true</literal> if the character is actually consumed. It should
+      return <literal>false</literal> if there is no space in the interface
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>getc</structfield></term>
+    <listitem>
+      <para><literal>unsigned char (*getc)(serial_channel *priv)</literal></para>
+      <para>
+      This function fetches one character from the interface. It will
+      be only called in a non-interrupt driven mode, thus it should
+      wait for a character by polling the device until ready.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><structfield>set_config</structfield></term>
+    <listitem>
+      <para><literal>bool (*set_config)(serial_channel
+      *priv,cyg_serial_info_t *config)</literal></para>
+      <para>
+        This function is used to configure the port. It should return
+        <literal>true</literal> if the hardware is updated to match the desired
+        configuration. It should return <literal>false</literal> if the port cannot
+        support some parameter specified by the given
+        configuration. E.g. selecting 1.5 stop bits and 8 data bits is
+        invalid for most serial devices and should not be allowed.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>start_xmit</parameter></term>
+    <listitem><para><literal>void (*start_xmit)(serial_channel *priv)</literal></para>
+      <para>
+        In interrupt mode, turn on the transmitter and allow for
+        transmit interrupts.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><parameter>stop_xmit</parameter></term>
+    <listitem>
+      <para><literal>void (*stop_xmit)(serial_channel *priv)</literal></para>
+      <para>In interrupt mode, turn off the transmitter.</PARA>
+    </listitem>
+  </varlistentry>
+</variablelist>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Callbacks -->
+
+<section>
+<title>Callbacks</title>
+
+<PARA>
+The device interface module can execute functions in the
+hardware independent driver via <literal>chan-&gt;callbacks</literal>.
+These functions are available:
+</PARA>
+
+<PROGRAMLISTING>
+void (*serial_init)( serial_channel *chan )
+</PROGRAMLISTING>
+
+<PARA>This function is used to initialize the serial channel. It
+is only required if the channel is being used in interrupt
+mode.</PARA>
+
+<PROGRAMLISTING>
+void (*xmt_char)( serial_channel *chan )
+</PROGRAMLISTING>
+
+<PARA>
+This function would be called from an interrupt handler after a
+transmit interrupt indicating that additional characters may be
+sent. The upper driver will call the <function>putc</function>
+function as appropriate to send more data to the device.</PARA>
+
+<PROGRAMLISTING>
+void (*rcv_char)( serial_channel *chan, unsigned char c )
+</PROGRAMLISTING>
+
+
+<PARA>
+This function is used to tell the driver that a character has arrived
+at the interface. This function is typically called from the interrupt
+handler. </PARA>
+
+<PARA>
+Furthermore, if the device has a FIFO it should require the hardware
+independent driver to provide block transfer functionality (driver CDL
+should include &quot;implements
+CYGINT_IO_SERIAL_BLOCK_TRANSFER&quot;).  In that case, the following
+functions are available as well:</PARA>
+
+<PROGRAMLISTING>
+bool (*data_xmt_req)(serial_channel *chan,
+                     int space,
+                     int* chars_avail,
+                     unsigned char** chars)
+void (*data_xmt_done)(serial_channel *chan)
+</PROGRAMLISTING>
+
+<PARA>
+Instead of calling <function>xmt_char()</function> to get a single
+character for transmission at a time, the driver should call
+<function>data_xmt_req()</function> in a loop, requesting character
+blocks for transfer. Call with a <parameter>space</parameter> argument of how much space
+there is available in the FIFO.</PARA>
+
+<PARA>If the call returns <literal>true</literal>, the driver can read
+<parameter>chars_avail</parameter> characters from
+<parameter>chars</parameter> and copy them into the FIFO.</PARA>
+
+<PARA>If the call returns <literal>false</literal>, there are
+no more buffered characters and the driver should continue without
+filling up the FIFO.</PARA>
+
+<PARA>When all data has been unloaded, the
+driver must call <function>data_xmt_done()</function>.</PARA>
+
+
+<PROGRAMLISTING>
+bool (*data_rcv_req)(serial_channel *chan,
+                     int avail,
+                     int* space_avail,
+                     unsigned char** space)
+void (*data_rcv_done)(serial_channel *chan)
+</PROGRAMLISTING>
+
+<PARA>Instead of calling <function>rcv_char()</function> with a single
+character at a time, the driver should call
+<function>data_rcv_req()</function> in a loop, requesting space to
+unload the FIFO to. <parameter>avail</parameter> is the number of
+characters the driver wishes to unload.</PARA>
+
+
+<PARA>If the call returns <literal>true</literal>, the driver can copy
+<parameter>space_avail</parameter> characters to
+<parameter>space</parameter>. </PARA>
+
+
+<PARA>If the call returns <literal>false</literal>, the input buffer is
+full. It is up to the driver to decide what to do in that case
+(callback functions for registering overflow are being planned for
+later versions of the serial driver).
+</PARA>
+
+<PARA>When all data has been unloaded, the driver must call
+<function>data_rcv_done()</function>.</PARA>
+
+</section>
+
+<!-- }}} -->
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Serial Testing -->
+
+<section id="io-serial-testing-with-serfilter">
+<title>Serial testing with ser_filter</title>
+
+<!-- {{{ Rationale -->
+
+<section id="io-serfilter-rationale">
+<title>Rationale</title>
+
+<para>
+Since some targets only have one serial connection, a serial testing harness
+needs to be able to share the connection with <application>GDB</application>
+(however, the test and <application>GDB</application> can also run on separate
+lines).
+</para>
+
+<para>
+The <firstterm>serial filter</firstterm> (<application>ser_filter</application>)
+sits between the serial port and <application>GDB</application> and monitors
+the exchange of data between <application>GDB</application> and the target.
+Normally, no changes are made to the data.
+</para>
+
+<para>
+When a test request packet is sent from the test on the target, it is 
+intercepted by the filter.
+</para>
+
+<para>
+The filter and target then enter a loop, exchanging protocol data between
+them which <application>GDB</application> never sees.
+</para>
+
+<para>
+In the event of a timeout, or a crash on the target, the filter falls
+back into its pass-through mode. If this happens due to a crash it should be
+possible to start regular debugging with <application>GDB</application>. The
+filter will stay in the pass-though mode until <application>GDB</application>
+disconnects.
+</para>
+</section>
+
+<!-- }}} -->
+<!-- {{{ The Protocol -->
+
+<section id="io-serfilter-protocol">
+<title>The Protocol</title>
+
+<para>The protocol commands are prefixed with an <literal>&quot;@&quot;</literal>
+character which the serial filter is looking for. The protocol
+commands include:
+</para>
+
+<variablelist>
+  <varlistentry>
+    <term><literal>PING</literal></term>
+    <listitem>
+      <para>Allows the test on the target to probe for the filter. The
+      filter responds with <literal>OK</literal>, while
+      <application>GDB</application> would just ignore the
+      command. This allows the tests to do nothing if they require the
+      filter and it is not present.</para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><literal>CONFIG</literal></term>
+    <listitem>
+      <para>Requests a change of serial line configuration. Arguments
+      to the command specify baud rate, data bits, stop bits, and
+      parity. [This command is not fully implemented yet - there is no
+      attempt made to recover if the new configuration turns out to
+      cause loss of data.]</para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><literal>BINARY</literal></term>
+    <listitem>
+      <para>Requests data to be sent from the filter to the
+      target. The data is checksummed, allowing errors in the transfer
+      to be detected.  Sub-options of this command control how the
+      data transfer is made:</para>
+      <variablelist>
+        <varlistentry>
+          <term><literal>NO_ECHO</literal></term>
+          <listitem>
+            <para>(serial driver receive test) Just send data from the
+            filter to the target. The test verifies the checksum and
+            PASS/FAIL depending on the result. </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>EOP_ECHO</literal></term>
+          <listitem>
+            <para>(serial driver half-duplex receive and send test) As
+            <literal>NO_ECHO</literal> but the test echoes back the
+            data to the filter.  The filter does a checksum on the
+            received data and sends the result to the target. The test
+            PASS/FAIL depending on the result of both checksum
+            verifications.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>DUPLEX_ECHO</literal></term>
+          <listitem>
+            <para>(serial driver duplex receive and send test) Smaller
+            packets of data are sent back and forth in a pattern that
+            ensures that the serial driver will be both sending and
+            receiving at the same time. Again, checksums are computed
+            and verified resulting in PASS/FAIL.
+            </para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><literal>TEXT</literal></term>
+    <listitem>
+      <para> This is a test of the text translations in the TTY layer.
+      Requests a transfer of text data from the target to the filter
+      and possibly back again. The filter treats this as a binary
+      transfer, while the target ma be doing translations on the
+      data. The target provides the filter with checksums for what it
+      should expect to see. This test is not implemented yet.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+
+<para>The above commands may be extended, and new commands added, as
+required to test (new) parts of the serial drivers in
+<productname>eCos</productname>.
+</para>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ The Serial Tests -->
+
+<section id="io-serfilter-serial-tests">
+<title>The Serial Tests</title>
+
+<para>
+The serial tests are built as any other eCos test. After running the
+<command>make tests</command> command, the tests can be found in
+<filename>install/tests/io_serial/</filename></para>
+
+<variablelist>
+  <varlistentry>
+    <term><filename>serial1</filename></term>
+    <listitem><para>A simple API test.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><filename>serial2</filename></term>
+    <listitem>
+      <para>A simple serial send test. It writes out two strings, one
+      raw and one encoded as a <application>GDB</application>
+      O-packet</para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><filename>serial3</filename> [ requires the serial filter ]</term>
+    <listitem>
+      <para>This tests the half-duplex send and receive capabilities
+      of the serial driver. </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><filename>serial4</filename> [ requires the serial filter ]</term>
+    <listitem>
+      <para>This test attempts to use a few different serial
+      configurations, testing the driver's configuration/setup
+      functionality. </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><filename>serial5</filename> [ requires the serial filter ]</term>
+    <listitem>
+      <para>This tests the duplex send and receive capabilities of the
+      serial driver. </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+
+<para>All tests should complete in less than 30 seconds.</para>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Serial Filter Usage-->
+
+<section id="io-serfilter-usage">
+<title>Serial Filter Usage</title>
+
+<para>Running the ser_filter program with no (or wrong) arguments results in
+the following output:
+</para>
+
+<screen>
+Usage: ser_filter [-t -S] TcpIPport SerialPort BaudRate 
+or: ser_filter -n [-t -S] SerialPort BaudRate 
+-t: Enable tracing. 
+-S: Output data read from serial line. 
+-c: Output data on console instead of via GDB. 
+-n: No GDB. 
+</screen>
+
+<para>The normal way to use it with GDB is to start the filter:</para>
+
+<screen>
+$ <userinput>ser_filter -t 9000 com1 38400</userinput>
+</screen>
+
+<para>
+In this case, the filter will be listening on port 9000 and connect to the
+target via the serial port <literal>COM1</literal> at 38400 baud. On a UNIX
+host, replace "<literal>COM1</literal>" with a device such as 
+"<filename>/dev/ttyS0</filename>".
+</para>
+
+<para>
+The <option>-t</option> option enables tracing which will cause the
+filter to describe its actions on the console.
+</para>
+
+<para>Now start <application>GDB</application> with one of the tests as an
+argument:
+</para>
+
+<screen>
+$ <userinput>mips-tx39-elf-gdb -nw install/tests/io_serial/serial3</userinput>
+</screen>
+
+<para>Then connect to the filter:</para>
+
+<screen>
+(gdb) <userinput>target remote localhost:9000</userinput>
+</screen>
+
+<para>
+This should result in a connection in exactly the same way as if you
+had connected directly to the target on the serial line.
+</para>
+
+<screen>
+(gdb) <userinput>c</userinput>
+</screen>
+
+<para>
+Which should result in output similar to the below:
+</para>
+
+<screen>
+Continuing. 
+INFO: &lt;BINARY:16:1!&gt; 
+PASS: &lt;Binary test completed&gt;
+INFO: &lt;BINARY:128:1!&gt; 
+PASS: &lt;Binary test completed&gt;
+INFO: &lt;BINARY:256:1!&gt; 
+PASS: &lt;Binary test completed&gt;
+INFO: &lt;BINARY:1024:1!&gt; 
+PASS: &lt;Binary test completed&gt;
+INFO: &lt;BINARY:512:0!&gt;
+PASS: &lt;Binary test completed&gt;
+... 
+PASS: &lt;Binary test completed&gt;
+INFO: &lt;BINARY:16384:0!&gt;
+PASS: &lt;Binary test completed&gt;
+PASS: &lt;serial13 test OK&gt;
+EXIT: &lt;done&gt;
+</screen>
+
+<para>
+If any of the individual tests fail the testing will terminate with a 
+<computeroutput>FAIL</computeroutput>.
+</para>
+
+<para>
+With tracing enabled, you would also see the filter's status output:
+</para>
+
+<para>
+The <literal>PING</literal> command sent from the target to determine the
+presence of the filter:
+</para>
+
+<screen>
+[400 11:35:16] Dispatching command PING 
+[400 11:35:16] Responding with status OK
+</screen>
+
+<para>Each of the binary commands result in output similar to:</para>
+
+<screen>
+[400 11:35:16] Dispatching command BINARY 
+[400 11:35:16] Binary data (Size:16, Flags:1). 
+[400 11:35:16] Sending CRC: '170231!', len: 7. 
+[400 11:35:16] Reading 16 bytes from target. 
+[400 11:35:16] Done. in_crc 170231, out_crc 170231. 
+[400 11:35:16] Responding with status OK 
+[400 11:35:16] Received DONE from target.
+</screen>
+
+<para>
+This tracing output is normally sent as O-packets to <application>GDB
+</application> which will display the tracing text. By using the
+<option>-c </option> option, the tracing text can be redirected to the
+console from which ser_filter was started.
+</para>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ A Note on Failures -->
+
+<section id="io-serfilter-failures">
+<title>A Note on Failures</title>
+
+<para>
+A serial connection (especially when driven at a high baud rate) can garble the
+transmitted data because of noise from the environment. It is not the job of
+the serial driver to ensure data integrity - that is the job of protocols
+layering on top of the serial driver. </para>
+
+<para>In the current implementation the serial tests and the serial filter are
+not resilient to such data errors. This means that the test may crash or hang
+(possibly without reporting a <computeroutput>FAIL</computeroutput>). It also
+means that you should be aware of random errors - a <computeroutput>FAIL
+</computeroutput> is not necessarily caused by a bug in the serial driver.
+</para>
+
+<para>Ideally, the serial testing infrastructure should be able to distinguish
+random errors from consistent errors - the former are most likely due to noise
+in the transfer medium, while the latter are more likely to be caused by faulty
+drivers. The current implementation of the infrastructure does not have this
+capability.</para>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Debugging -->
+
+<section id="io-serfilter-debugging">
+<title>Debugging</title>
+
+<para>If a test fails, the serial filter's output may provide some hints about
+what the problem is. If the option <option>-S</option> is used when starting
+the filter, data received from the target is printed out: 
+</para>
+
+<screen>
+[400 11:35:16] 0000 50 41 53 53 3a 3c 42 69 'PASS:&lt;Bi'
+[400 11:35:16] 0008 6e 61 72 79 20 74 65 73 'nary.tes' 
+[400 11:35:16] 0010 74 20 63 6f 6d 70 6c 65 't.comple' 
+[400 11:35:16] 0018 74 65 64 3e 0d 0a 49 4e 'ted&gt;..IN' 
+[400 11:35:16] 0020 46 4f 3a 3c 42 49 4e 41 'FO:&lt;BINA'
+[400 11:35:16] 0028 52 59 3a 31 32 38 3a 31 'RY:128:1' 
+[400 11:35:16] 0030 21 3e 0d 0a 40 42 49 4e '!..@BIN' 
+[400 11:35:16] 0038 41 52 59 3a 31 32 38 3a 'ARY:128:' 
+[400 11:35:16] 0040 31 21 .. .. .. .. .. .. '1!' 
+</screen>
+
+<para>In the case of an error during a testing command the data received by the
+filter will be printed out, as will the data that was expected. This allows
+the two data sets to be compared which may give some idea of what the problem
+is.</para>
+
+</section>
+
+<!-- }}} -->
+
+</section>
+
+<!-- }}} -->
+
+</chapter>
+
+<!-- }}} -->
+<!-- {{{ Device Driver API -->
+
+<CHAPTER id="devapi-device-driver-interface-to-the-kernel">
+<TITLE>Device Driver Interface to the Kernel</TITLE>
+
+<PARA>
+This chapter describes the API that device drivers may use
+to interact with the kernel and HAL. It is primarily concerned with
+the control and management of interrupts and the synchronization of
+ISRs, DSRs and threads.
+</PARA>
+
+<PARA>
+The same API will be present in configurations where the kernel
+is not present. In this case the functions will be supplied by code
+acting directly on the HAL.
+</PARA>
+
+
+<!-- {{{ Interrupt Model -->
+
+<SECTION id="devapi-interrupt-model">
+<TITLE>Interrupt Model</TITLE>
+
+<PARA>
+<EMPHASIS>eCos</EMPHASIS> presents a three level interrupt model to
+<!-- <index></index> -->device drivers. This consists of <!--
+<index></index> -->Interrupt Service Routines (ISRs) that are invoked
+in response to a hardware interrupt; <!-- <index></index> -->Deferred
+Service Routines (DSRs) that are invoked in response to a request by
+an ISR; and threads that are the clients of the driver. </PARA>
+
+<PARA>
+Hardware interrupts are delivered with minimal intervention to an
+ISR. The HAL decodes the hardware source of the interrupt and calls
+the ISR of the attached interrupt object. This ISR may manipulate the
+hardware but is only allowed to make a restricted set of calls on the
+driver API. When it returns, an ISR may request that its DSR should be
+scheduled to run.
+</PARA>
+
+<PARA>
+A DSR will be run when it is safe to do so without interfering with
+the scheduler. Most of the time the DSR will run immediately after the
+ISR, but if the current thread is in the scheduler, it will be delayed
+until the thread is finished. A DSR is allowed to make a larger set of
+driver API calls, including, in particular, being able to call
+<FUNCTION>cyg_drv_cond_signal()</FUNCTION> to wake up waiting
+threads.
+</PARA>
+
+<PARA>
+Finally, threads are able to make all API calls and in particular are
+allowed to wait on mutexes and condition variables. </PARA>
+
+
+<PARA>
+For a device driver to receive interrupts it must first define ISR and
+DSR routines as shown below, and then call
+<FUNCTION>cyg_drv_interrupt_create()</FUNCTION>.  Using the handle
+returned, the driver must then call
+<FUNCTION>cyg_drv_interrupt_attach()</FUNCTION> to actually attach the
+interrupt to the hardware vector.
+</PARA>
+
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Synchronization -->
+
+<SECTION id="devapi-synchronization">
+<TITLE><!-- <index></index> -->Synchronization</TITLE>
+
+<PARA>There are three levels of synchronization supported:</PARA>
+
+<ORDEREDLIST>
+  <LISTITEM>
+    <PARA>
+    Synchronization with ISRs. This normally means disabling
+    interrupts to prevent the ISR running during a critical
+    section. In an SMP environment, this will also require the use of
+    a spinlock to synchronize with ISRs, DSRs or threads running on
+    other CPUs.  This is implemented by the
+    <FUNCTION>cyg_drv_isr_lock()</FUNCTION> and
+    <FUNCTION>cyg_drv_isr_unlock()</FUNCTION> functions. This
+    mechanism should be used sparingly and for short periods only.
+    For finer grained synchronization, individual spinlocks are also
+    supplied.
+    </PARA>
+  </LISTITEM>
+
+  <LISTITEM>
+    <PARA>
+    Synchronization with DSRs. This will be implemented in the kernel
+    by taking the scheduler lock to prevent DSRs running during
+    critical sections. In non-kernel configurations it will be
+    implemented by non-kernel code. This is implemented by the
+    <FUNCTION>cyg_drv_dsr_lock()</FUNCTION> and
+    <FUNCTION>cyg_drv_dsr_unlock()</FUNCTION> functions. As with ISR
+    synchronization, this mechanism should be used sparingly. Only
+    DSRs and threads may use this synchronization mechanism, ISRs are
+    not allowed to do this.
+    </PARA>
+  </LISTITEM>
+  <LISTITEM>
+    <PARA>
+    Synchronization with threads. This is implemented with mutexes
+    and condition variables. Only threads may lock the mutexes and
+    wait on the condition variables, although DSRs may signal
+    condition variables.
+    </PARA>
+  </LISTITEM>
+</ORDEREDLIST>
+
+<PARA>
+Any data that is accessed from more than one level must be protected
+against concurrent access. Data that is accessed by ISRs must be
+protected with the ISR lock, or a spinlock at all times,
+<emphasis>even in ISRs</emphasis>. Data that is shared between DSRs
+and threads should be protected with the DSR lock. Data that is only
+accessed by threads must be protected with mutexes.
+</PARA>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ SMP Support -->
+
+<SECTION id="devapi-smp-support">
+<TITLE><!-- <index></index> -->SMP Support</TITLE>
+
+<para>
+Some eCos targets contain support for Symmetric Multi-Processing (SMP)
+configurations, where more than one CPU may be present. This option
+has a number of ramifications for the way in which device drivers must
+be written if they are to be SMP-compatible. 
+</para>
+
+<para>
+Since it is possible for the ISR, DSR and thread components of a
+device driver to execute on different CPUs, it is important that
+SMP-compatible device drivers use the driver API routines correctly.
+</para>
+
+<para>
+Synchronization between threads and DSRs continues to require that the
+thread-side code use <function>cyg_drv_dsr_lock()</function> and
+<function>cyg_drv_dsr_unlock()</function> to protect access to shared
+data. While it is not strictly necessary for DSR code to claim the DSR
+lock, since DSRs are run with it claimed already, it is good practice
+to do so.
+</para>
+
+<para>
+Synchronization between ISRs and DSRs or threads requires that access
+to sensitive data be protected, in all places, by calls to
+<function>cyg_drv_isr_lock()</function> and
+<function>cyg_drv_isr_unlock()</function>. Disabling or masking
+interrupts is not adequate, since the thread or DSR may be running on
+a different CPU and interrupt enable/disable only work on the current
+CPU.
+</para>
+
+<para>
+The ISR lock, for SMP systems, not only disables local interrupts, but
+also acquires a spinlock to protect against concurrent access from
+other CPUs. This is necessary because ISRs are not run with the
+scheduler lock claimed. Hence they can run in parallel with the other
+components of the device driver.
+</para>
+
+<para>
+The ISR lock provided by the driver API is just a shared spinlock that
+is available for use by all drivers. If a driver needs to implement a
+finer grain of locking, it can use private spinlocks, accessed via the
+<function>cyg_drv_spinlock_*()</function> functions.
+</para>
+
+</section>
+
+<!-- }}} -->
+<!-- {{{ Device Driver Models -->
+
+<SECTION id="devapi-device-driver-models">
+<TITLE>Device Driver Models</TITLE>
+
+<PARA>
+There are several ways in which <!-- <index></index> -->device drivers
+may be built. The exact model chosen will depend on the properties of
+the device and the behavior desired. There are three basic models that
+may be adopted.
+</PARA>
+
+<PARA>
+The first model is to do all device processing in the ISR.  When it is
+invoked the ISR programs the device hardware directly and accesses
+data to be transferred directly in memory. The ISR should also call
+<FUNCTION>cyg_drv_interrupt_acknowledge()</FUNCTION>.  When it is
+finished it may optionally request that its DSR be invoked.  The DSR
+does nothing but call <FUNCTION>cyg_drv_cond_signal()</FUNCTION> to
+cause a thread to be woken up. Thread level code must call
+<FUNCTION>cyg_drv_isr_lock()</FUNCTION>, or
+<FUNCTION>cyg_drv_interrupt_mask()</FUNCTION> to prevent ISRs running
+while it manipulates shared memory.
+</PARA>
+
+<PARA>
+The second model is to defer device processing to the DSR.  The ISR
+simply prevents further delivery of interrupts by either programming
+the device, or by calling
+<FUNCTION>cyg_drv_interrupt_mask()</FUNCTION>.  It must then call
+<FUNCTION>cyg_drv_interrupt_acknowledge()</FUNCTION> to allow other
+interrupts to be delivered and then request that its DSR be
+called. When the DSR runs it does the majority of the device handling,
+optionally signals a condition variable to wake a thread, and finishes
+by calling <FUNCTION>cyg_drv_interrupt_unmask()</FUNCTION> to re-allow
+device interrupts. Thread level code uses
+<FUNCTION>cyg_drv_dsr_lock()</FUNCTION> to prevent DSRs running while
+it manipulates shared memory.  The eCos serial device drivers use this
+approach.
+</PARA>
+
+<PARA>
+The third model is to defer device processing even further to a
+thread. The ISR behaves exactly as in the previous model and simply
+blocks and acknowledges the interrupt before request that the DSR
+run. The DSR itself only calls
+<FUNCTION>cyg_drv_cond_signal()</FUNCTION> to wake the thread. When
+the thread awakens it performs all device processing, and has full
+access to all kernel facilities while it does so. It should finish by
+calling <FUNCTION>cyg_drv_interrupt_unmask()</FUNCTION> to re-allow
+device interrupts.  The eCos ethernet device drivers are written to
+this model.
+</PARA>
+
+<PARA>
+The first model is good for devices that need immediate processing and
+interact infrequently with thread level. The second model trades a
+little latency in dealing with the device for a less intrusive
+synchronization mechanism. The last model allows device processing to
+be scheduled with other threads and permits more complex device
+handling.
+</PARA>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ Synchronization Levels -->
+
+<SECTION id="devapi-synchronization-levels">
+<TITLE>Synchronization Levels</TITLE>
+
+<PARA>
+Since it would be dangerous for an ISR or DSR to make a call
+that might reschedule the current thread (by trying to lock a mutex
+for example) all functions in this API have an associated synchronization
+level. These levels are:
+</PARA>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Thread</TERM>
+    <LISTITEM>
+      <PARA>
+      This function may only be called from within threads. This is
+      usually the client code that makes calls into the device driver.
+      In a non-kernel configuration, this will be code running at the
+      default non-interrupt level.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>DSR</TERM>
+    <LISTITEM>
+      <PARA>
+      This function may be called by either DSR or thread code.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+
+  <VARLISTENTRY>
+    <TERM>ISR</TERM>
+    <LISTITEM>
+      <PARA>
+      This function may be called from ISR, DSR or thread code.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+<PARA>
+The following table shows, for each API function, the levels
+at which is may be called:
+</PARA>
+
+<PROGRAMLISTING role="ascii-art">
+                                  Callable from:
+Function                       ISR     DSR    Thread
+-------------------------------------------------------------------------
+
+cyg_drv_isr_lock                X       X       X
+cyg_drv_isr_unlock              X       X       X
+cyg_drv_spinlock_init                           X
+cyg_drv_spinlock_destroy                        X
+cyg_drv_spinlock_spin           X       X       X
+cyg_drv_spinlock_clear          X       X       X
+cyg_drv_spinlock_try            X       X       X
+cyg_drv_spinlock_test           X       X       X
+cyg_drv_spinlock_spin_intsave   X       X       X
+cyg_drv_spinlock_clear_intsave  X       X       X
+cyg_drv_dsr_lock                        X       X
+cyg_drv_dsr_unlock                      X       X
+cyg_drv_mutex_init                              X
+cyg_drv_mutex_destroy                           X
+cyg_drv_mutex_lock                              X
+cyg_drv_mutex_trylock                           X
+cyg_drv_mutex_unlock                            X
+cyg_drv_mutex_release                           X
+cyg_drv_cond_init                               X
+cyg_drv_cond_destroy                            X
+cyg_drv_cond_wait                               X
+cyg_drv_cond_signal                     X       X
+cyg_drv_cond_broadcast                  X       X
+cyg_drv_interrupt_create                        X
+cyg_drv_interrupt_delete                        X
+cyg_drv_interrupt_attach        X       X       X
+cyg_drv_interrupt_detach        X       X       X
+cyg_drv_interrupt_mask          X       X       X
+cyg_drv_interrupt_unmask        X       X       X
+cyg_drv_interrupt_acknowledge   X       X       X
+cyg_drv_interrupt_configure     X       X       X
+cyg_drv_interrupt_level         X       X       X
+cyg_drv_interrupt_set_cpu       X       X       X
+cyg_drv_interrupt_get_cpu       X       X       X
+
+</PROGRAMLISTING>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ The API -->
+
+<SECTION id="devapi-api">
+<TITLE>The API</TITLE>
+
+<PARA>
+This section details the <!-- <index></index> -->Driver Kernel
+Interface. Note that most of these functions are identical to Kernel C
+API calls, and will in most configurations be wrappers for them. In
+non-kernel configurations they will be supported directly by the HAL,
+or by code to emulate the required behavior.
+</PARA>
+
+<PARA>This API is defined in the header file
+<FILENAME>&lt;cyg/hal/drv_api.h&gt;</FILENAME>.
+</PARA>
+
+<!-- {{{ cyg_drv_isr_lock -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_isr_lock</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_isr_lock()</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <PARA>
+      Disables delivery of interrupts, preventing all ISRs running.  This
+      function maintains a counter of the number of times it is
+      called.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_isr_unlock -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_isr_unlock</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_isr_unlock()</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Re-enables delivery of interrupts, allowing ISRs to
+      run. This function decrements the counter maintained by
+      <FUNCTION>cyg_drv_isr_lock()</FUNCTION>, and only re-allows
+      interrupts when it goes to zero. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_init -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_init</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+<programlisting>
+void cyg_drv_spinlock_init(cyg_spinlock_t *lock, cyg_bool_t locked )
+</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock to initialize</PARA>
+      <PARA><parameter>locked</parameter> - initial state of lock</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      Initialize a spinlock. The <parameter>locked</parameter>
+      argument indicates how the spinlock should be initialized:
+      <literal>TRUE</literal> for locked or <literal>FALSE</literal>
+      for unlocked state.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_destroy -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_destroy</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_spinlock_destroy(cyg_spinlock_t *lock )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock destroy</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      Destroy a spinlock that is no longer of use. There should be no
+      CPUs attempting to claim the lock at the time this function is
+      called, otherwise the behavior is undefined.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_spin -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_spin</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_spinlock_spin(cyg_spinlock_t *lock )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock to claim</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      Claim a spinlock, waiting in a busy loop until it is
+      available. Wherever this is called from, this operation
+      effectively pauses the CPU until it succeeds. This operations
+      should therefore be used sparingly, and in situations where
+      deadlocks/livelocks cannot occur. Also see
+      <function>cyg_drv_spinlock_spin_intsave()</function>.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_clear -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_clear</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_spinlock_clear(cyg_spinlock_t *lock )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock to clear </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      Clear a spinlock. This clears the spinlock and allows another
+      CPU to claim it. If there is more than one CPU waiting in
+      <function>cyg_drv_spinlock_spin()</function> then just one of
+      them will be allowed to proceed.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_try -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_try</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <programlisting>cyg_bool_t cyg_drv_spinlock_try(cyg_spinlock_t *lock )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock to try</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA><literal>TRUE</literal> if the spinlock was claimed,
+      <literal>FALSE</literal> otherwise.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      Try to claim the spinlock without waiting. If the spinlock could
+      be claimed immediately then <literal>TRUE</literal> is
+      returned. If the spinlock is already claimed then the result is
+      <literal>FALSE</literal>.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_test -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_test</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <programlisting>cyg_bool_t cyg_drv_spinlock_test(cyg_spinlock_t *lock )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock to test</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA><literal>TRUE</literal> if the spinlock is available,
+      <literal>FALSE</literal> otherwise.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      Inspect the state of the spinlock. If the spinlock is not locked
+      then the result is <literal>TRUE</literal>. If it is locked then
+      the result will be <literal>FALSE</literal>.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_spin_intsave -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_spin_intsave</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+<programlisting>
+void cyg_drv_spinlock_spin_intsave(cyg_spinlock_t *lock,
+                                   cyg_addrword_t *istate )
+</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock to claim</PARA>
+      <PARA><parameter>istate</parameter> - pointer to interrupt state save location</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      This function behaves exactly like
+      <function>cyg_drv_spinlock_spin()</function> except that it also
+      disables interrupts before attempting to claim the lock. The
+      current interrupt enable state is saved in
+      <parameter>*istate</parameter>. Interrupts remain disabled once
+      the spinlock had been claimed and must be restored by calling
+      <function>cyg_drv_spinlock_clear_intsave()</function>.
+      </para>
+      <para>
+      In general, device drivers should use this function to claim and
+      release spinlocks rather than the
+      non-<function>_intsave()</function> variants, to ensure proper
+      exclusion with code running on both other CPUs and this CPU.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_spinlock_clear_intsave -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_spinlock_clear_intsave</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+<programlisting>
+void cyg_drv_spinlock_clear_intsave( cyg_spinlock_t *lock,
+                                     cyg_addrword_t istate )
+</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>lock</parameter> - pointer to spinlock to clear </PARA>
+      <PARA><parameter>istate</parameter> - interrupt state to restore </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <para>
+      This function behaves exactly like
+      <function>cyg_drv_spinlock_clear()</function> except that it
+      also restores an interrupt state saved by
+      <function>cyg_drv_spinlock_spin_intsave()</function>. The
+      <parameter>istate</parameter> argument must have been
+      initialized by a previous call to
+      <function>cyg_drv_spinlock_spin_intsave()</function>.
+      </para>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_dsr_lock -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_dsr_lock</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_dsr_lock()</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>DSR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Disables scheduling of DSRs. This function maintains a
+      counter of the number of times it has been called. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_dsr_unlock -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_dsr_unlock</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_dsr_unlock()</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>		</PARA>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>DSR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Re-enables scheduling of DSRs. This function decrements
+      the counter incremented by
+      <FUNCTION>cyg_drv_dsr_lock()</FUNCTION>.  DSRs are only allowed
+      to be delivered when the counter goes to zero. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_mutex_init -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_mutex_init</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_mutex_init(cyg_drv_mutex_t *mutex)</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>mutex</parameter> - pointer to mutex to initialize</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Initialize the mutex pointed to by the
+      <literal>mutex</literal> argument. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_mutex_destroy -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_mutex_destroy</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_mutex_destroy( cyg_drv_mutex_t *mutex )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>mutex</parameter> - pointer to mutex to destroy</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Destroy the mutex pointed to by the
+      <parameter>mutex</parameter> argument. The mutex should be unlocked
+      and there should be no threads waiting to lock it when this call
+      in made.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_mutex_lock -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_mutex_lock</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>cyg_bool cyg_drv_mutex_lock( cyg_drv_mutex_t *mutex )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>mutex</parameter> - pointer to mutex to lock</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA><literal>TRUE</literal> it the thread has claimed the
+      lock, <literal>FALSE</literal> otherwise.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Attempt to lock the mutex pointed to by the
+      <parameter>mutex</parameter> argument.  If the mutex is already
+      locked by another thread then this thread will wait until that
+      thread is finished. If the result from this function is
+      <literal>FALSE</literal> then the thread was broken out of its
+      wait by some other thread. In this case the mutex will not have
+      been locked. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_mutex_trylock -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_mutex_trylock</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+      <PARA><programlisting>cyg_bool cyg_drv_mutex_trylock( cyg_drv_mutex_t *mutex )</programlisting></PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>mutex</parameter> - pointer to mutex to lock</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA><literal>TRUE</literal> if the mutex has been locked,
+      <literal>FALSE</literal> otherwise. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description:</TERM>
+    <LISTITEM>
+      <PARA>Attempt to lock the mutex pointed to by the
+      <parameter>mutex</parameter> argument without waiting. If the
+      mutex is already locked by some other thread then this function
+      returns <literal>FALSE</literal>. If the function can lock the
+      mutex without waiting, then <literal>TRUE</literal> is
+      returned. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_mutex_unlock -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_mutex_unlock</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_mutex_unlock( cyg_drv_mutex_t *mutex )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>mutex</parameter> - pointer to mutex to unlock</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+    <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Unlock the mutex pointed to by the
+      <parameter>mutex</parameter> argument. If there are any threads
+      waiting to claim the lock, one of them is woken up to try and
+      claim it. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_mutex_release -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_mutex_release</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_mutex_release( cyg_drv_mutex_t *mutex )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><literal>mutex</literal> - pointer to mutex to release</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Release all threads waiting on the mutex pointed to by the
+      <parameter>mutex</parameter> argument. These threads will return
+      from <FUNCTION>cyg_drv_mutex_lock()</FUNCTION> with a
+      <literal>FALSE</literal> result and will not have claimed the
+      mutex. This function has no effect on any thread that may have
+      the mutex claimed. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_cond_init -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_cond_init</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting> void cyg_drv_cond_init( cyg_drv_cond_t *cond, cyg_drv_mutex_t *mutex )
+	      </programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>cond</parameter> - condition variable to initialize</PARA>
+      <PARA><parameter>mutex</parameter> - mutex to associate with this condition variable</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Initialize the condition variable pointed to by the
+      <parameter>cond</parameter> argument.  The
+      <parameter>mutex</parameter> argument must point to a mutex with
+      which this condition variable is associated. A thread may only
+      wait on this condition variable when it has already locked the
+      associated mutex. Waiting will cause the mutex to be unlocked,
+      and when the thread is reawakened, it will automatically claim
+      the mutex before continuing. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_cond_destroy -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_cond_destroy</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting> void cyg_drv_cond_destroy( cyg_drv_cond_t *cond )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>cond</parameter> - condition variable to destroy</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Destroy the condition variable pointed to by the
+      <parameter>cond</parameter> argument. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_cond_wait -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_cond_wait</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_cond_wait( cyg_drv_cond_t *cond )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>cond</parameter> - condition variable to wait on</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Wait for a signal on the condition variable pointed to by
+      the <parameter>cond</parameter> argument. The thread must have
+      locked the associated mutex, supplied in
+      <function>cyg_drv_cond_init()</function>, before waiting on this
+      condition variable. While the thread waits, the mutex will be
+      unlocked, and will be re-locked before this function returns. It
+      is possible for threads waiting on a condition variable to
+      occasionally wake up spuriously. For this reason it is necessary
+      to use this function in a loop that re-tests the condition each
+      time it returns. Note that this function performs an implicit
+      scheduler unlock/relock sequence, so that it may be used within
+      an explicit
+      <literal>cyg_drv_dsr_lock()...cyg_drv_dsr_unlock()</literal>
+      structure.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_cond_signal -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_cond_signal</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_cond_signal( cyg_drv_cond_t *cond )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>cond</parameter> - condition variable to signal</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>DSR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Signal the condition variable pointed to by the <parameter>cond</parameter>
+      argument.  If there are any threads waiting on this variable at
+      least one of them will be awakened. Note that in some
+      configurations there may not be any difference between this
+      function and <FUNCTION>cyg_drv_cond_broadcast()</FUNCTION>.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_cond_broadcast -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_cond_broadcast</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_cond_broadcast( cyg_drv_cond_t *cond )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>cond</parameter> - condition variable to broadcast to</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>DSR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Signal the condition variable pointed to by the
+      <parameter>cond</parameter> argument.  If there are any threads
+      waiting on this variable they will all be awakened. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_create -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_create</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+<PROGRAMLISTING>
+void cyg_drv_interrupt_create( cyg_vector_t vector,
+                               cyg_priority_t priority,
+                               cyg_addrword_t data,
+                               cyg_ISR_t *isr,
+                               cyg_DSR_t *dsr,
+                               cyg_handle_t *handle,
+                               cyg_interrupt *intr
+                             )
+</PROGRAMLISTING>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to attach to</PARA>
+      <PARA><parameter>priority</parameter> - queuing priority</PARA>
+      <PARA><parameter>data</parameter> - data pointer</PARA>
+      <PARA><parameter>isr</parameter> - interrupt service routine</PARA>
+      <PARA><parameter>dsr</parameter> - deferred service routine</PARA>
+      <PARA><parameter>handle</parameter> - returned handle</PARA>
+      <PARA><parameter>intr</parameter> - put interrupt object here</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Create an interrupt object and returns a handle to it. The
+      object contains information about which interrupt vector to use
+      and the ISR and DSR that will be called after the interrupt
+      object is attached to the vector. The interrupt object will be
+      allocated in the memory passed in the
+      <parameter>intr</parameter> parameter. The interrupt object is
+      not immediately attached; it must be attached with the
+      <FUNCTION>cyg_interrupt_attach()</FUNCTION> call. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_delete -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_delete</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting> void cyg_drv_interrupt_delete( cyg_handle_t interrupt )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>interrupt</parameter> - interrupt to delete</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>Thread</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Detach the interrupt from the vector and free the memory
+      passed in the <parameter>intr</parameter> argument to
+      <FUNCTION>cyg_drv_interrupt_create()</FUNCTION> for
+      reuse. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_attach -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_attach</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_interrupt_attach( cyg_handle_t interrupt )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>interrupt</parameter> - interrupt to attach</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Attach the interrupt to the vector so that interrupts will
+      be delivered to the ISR when the interrupt occurs. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_detach -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_detach</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_interrupt_detach( cyg_handle_t interrupt )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>interrupt</parameter> - interrupt to detach</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Detach the interrupt from the vector so that interrupts
+      will no longer be delivered to the ISR. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_mask -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_mask</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_interrupt_mask(cyg_vector_t vector )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to mask</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Program the interrupt controller to stop delivery of
+      interrupts on the given vector. On architectures which implement
+      interrupt priority levels this may also disable all lower
+      priority interrupts. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_mask_intunsafe -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_mask_intunsafe</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_interrupt_mask_intunsafe(cyg_vector_t vector )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to mask</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Program the interrupt controller to stop delivery of
+      interrupts on the given vector. On architectures which implement
+      interrupt priority levels this may also disable all lower
+      priority interrupts. This version differs from
+      <function>cyg_drv_interrupt_mask()</function> in not being
+      interrupt safe. So in situations where, for example, interrupts
+      are already known to be disabled, this may be called to avoid
+      the extra overhead.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_unmask -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_unmask</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_interrupt_unmask(cyg_vector_t vector )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to unmask</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Program the interrupt controller to re-allow delivery of
+      interrupts on the given <parameter>vector</parameter>. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_unmask_intunsafe -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_unmask_intunsafe</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_interrupt_unmask_intunsafe(cyg_vector_t vector )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to unmask</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Program the interrupt controller to re-allow delivery of
+      interrupts on the given <parameter>vector</parameter>. This
+      version differs from
+      <function>cyg_drv_interrupt_unmask()</function> in not being
+      interrupt safe.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_acknowledge -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_acknowledge</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <programlisting>void cyg_drv_interrupt_acknowledge( cyg_vector_t vector )</programlisting>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to acknowledge</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Perform any processing required at the interrupt
+      controller and in the CPU to cancel the current interrupt
+      request on the <parameter>vector</parameter>. An ISR may also
+      need to program the hardware of the device to prevent an
+      immediate re-triggering of the interrupt. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_configure -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_configure</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+      <PROGRAMLISTING>
+void cyg_drv_interrupt_configure( cyg_vector_t vector,
+                                  cyg_bool_t level, 
+                                  cyg_bool_t up
+                                )
+</PROGRAMLISTING>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to configure</PARA>
+      <PARA><parameter>level</parameter> - level or edge triggered</PARA>
+      <PARA><parameter>up</parameter> - rising/falling edge, high/low level</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Program the interrupt controller with the characteristics
+      of the interrupt source. The <parameter>level</parameter>
+      argument chooses between level- or edge-triggered
+      interrupts. The <parameter>up</parameter> argument chooses
+      between high and low level for level triggered interrupts or
+      rising and falling edges for edge triggered interrupts. This
+      function only works with interrupt controllers that can control
+      these parameters. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_level -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_level</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function: 	</TERM>
+    <LISTITEM>
+<PROGRAMLISTING>
+void cyg_drv_interrupt_level( cyg_vector_t vector,
+                              cyg_priority_t level
+                            )
+</PROGRAMLISTING>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector to configure</PARA>
+      <PARA><parameter>level</parameter> - level to set</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level: 	</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Program the interrupt controller to deliver the given
+       interrupt at the supplied priority level. This function only
+       works with interrupt controllers that can control this
+       parameter.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_set_cpu -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_set_cpu</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+<PROGRAMLISTING>
+void cyg_drv_interrupt_set_cpu( cyg_vector_t vector,
+                                cyg_cpu_t cpu
+                              )
+</PROGRAMLISTING>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - interrupt vector to route</PARA>
+      <PARA><parameter>cpu</parameter> - destination CPU</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>
+      This function causes all interrupts on the given vector to be
+      routed to the specified CPU. Subsequently, all such interrupts
+      will be handled by that CPU. This only works if the underlying
+      hardware is capable of performing this kind of routing. This
+      function does nothing on a single CPU system.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_drv_interrupt_get_cpu -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_drv_interrupt_get_cpu</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Function:</TERM>
+    <LISTITEM>
+<PROGRAMLISTING>
+cyg_cpu_t cyg_drv_interrupt_set_cpu( cyg_vector_t vector )
+</PROGRAMLISTING>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Arguments:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - interrupt vector to query</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result:</TERM>
+    <LISTITEM>
+      <PARA>The CPU to which this vector is routed</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Level:</TERM>
+    <LISTITEM>
+      <PARA>ISR</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>
+      In multi-processor systems this function returns the id of the
+      CPU to which interrupts on the given vector are current being
+      delivered. In single CPU systems this function returns zero.
+      </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_ISR_t -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_ISR_t</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Type: 	</TERM>
+    <LISTITEM>
+<PROGRAMLISTING>
+typedef cyg_uint32 cyg_ISR_t( cyg_vector_t vector,
+                              cyg_addrword_t data
+                            )
+</PROGRAMLISTING>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Fields:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector being delivered</PARA>
+      <PARA><parameter>data</parameter> - data value supplied by client</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>Bit mask indicating whether interrupt was handled and
+      whether the DSR should be called. </PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Interrupt Service Routine definition. A pointer to a
+      function with this prototype is passed to
+      <FUNCTION>cyg_interrupt_create()</FUNCTION> when an interrupt
+      object is created. When an interrupt is delivered the function
+      will be called with the vector number and the data value that
+      was passed to <FUNCTION>cyg_interrupt_create()</FUNCTION>.
+      </PARA>
+      <PARA>The return value is a bit mask containing one or both of the
+      following bits: </PARA>
+      <variablelist>
+	<VARLISTENTRY>
+	  <TERM>CYG_ISR_HANDLED 	</TERM>
+	  <LISTITEM>
+	    <PARA>indicates that the interrupt was handled by this
+	    ISR. It is a configuration option whether this will
+	    prevent further ISR being run. </PARA>
+	  </LISTITEM>
+	</VARLISTENTRY>
+	<VARLISTENTRY>
+	  <TERM>CYG_ISR_CALL_DSR 	</TERM>
+	  <LISTITEM>
+	    <PARA>causes the DSR that was passed to
+	    <FUNCTION>cyg_interrupt_create()</FUNCTION> to be
+	    scheduled to be called.</PARA>
+	  </LISTITEM>
+	</VARLISTENTRY>
+      </variablelist>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+<!-- {{{ cyg_DSR_t -->
+
+<SECTION>
+<TITLE><!-- <index></index> -->cyg_DSR_t</TITLE>
+
+<VARIABLELIST>
+  <VARLISTENTRY>
+    <TERM>Type: 	</TERM>
+    <LISTITEM>
+<PROGRAMLISTING>
+typedef void cyg_DSR_t( cyg_vector_t vector,
+                        cyg_ucount32 count,
+                        cyg_addrword_t data
+                      )
+</PROGRAMLISTING>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Fields:</TERM>
+    <LISTITEM>
+      <PARA><parameter>vector</parameter> - vector being delivered</PARA>
+      <PARA><parameter>count</parameter> - number of times DSR has been scheduled</PARA>
+      <PARA><parameter>data</parameter> - data value supplied by client</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Result: 	</TERM>
+    <LISTITEM>
+      <PARA>None</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+  <VARLISTENTRY>
+    <TERM>Description: 	</TERM>
+    <LISTITEM>
+      <PARA>Deferred Service Routine prototype. A pointer to a
+      function with this prototype is passed to
+      <FUNCTION>cyg_interrupt_create()</FUNCTION> when an interrupt
+      object is created. When the ISR requests the scheduling of its
+      DSR, this function will be called at some later point. In
+      addition to the <parameter>vector</parameter> and
+      <parameter>data</parameter> arguments, which will be the same as
+      those passed to the ISR, this routine is also passed a
+      <parameter>count</parameter> of the number of times the ISR has
+      requested that this DSR be scheduled.  This counter is zeroed
+      each time the DSR actually runs, so it indicates how many
+      interrupts have occurred since it last ran.</PARA>
+    </LISTITEM>
+  </VARLISTENTRY>
+</VARIABLELIST>
+
+</SECTION>
+
+<!-- }}} -->
+
+</SECTION>
+
+<!-- }}} -->
+
+</CHAPTER>
+
+<!-- }}} -->
+
+
+</PART>

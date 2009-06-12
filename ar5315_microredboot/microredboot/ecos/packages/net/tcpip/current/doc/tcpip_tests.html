@@ -1,0 +1,98 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; I; Linux 2.2.14 ppc) [Netscape]">
+</head>
+<body>
+
+<center>
+<h1>
+eCos TCP/IP Networking Tests and Examples</h1></center>
+A number of test/example programs are currently provided with the TCP/IP
+networking package.&nbsp; These are not "tests" in the traditional eCos
+test suite sense, but rather simple programs which exercise various parts
+of the networking stack.&nbsp; Also included are a set of performance tests,
+used to measure throughput and latency in an embedded eCos system.
+<p>The following paragraphs list the various tests and how they might be
+used.&nbsp;&nbsp; They are enumerated in the order in which they should
+be run to verify a system configuration.
+<p>Note: none of these tests are built by default.&nbsp; The user must
+enable the <b><tt>CYGPKG_NET_BUILD_TESTS </tt></b>option and then "<tt>make
+tests</tt>" to create them for the target environment.&nbsp; Also, these
+tests require that the hardware interfaces be configured to use either
+BOOTP or static initialization methods.
+<h3>
+mbuf_test.c</h3>
+This should be the first test run on a new system.&nbsp; It simply tests
+that the networking system can be initialized and that the internal memory
+management (used by the stack) is functioning.
+<h3>
+socket_test.c</h3>
+This test exercises some of the basic library interfaces.
+<h3>
+server_test.c</h3>
+This test creates a server process on the target hardware which listens
+on port TCP/7734.&nbsp; To verify that it is working, try to connect to
+this port from some other [host] system.&nbsp; E.g. on Linux, use the command
+"<tt>telnet <i>eCos</i> 7734</tt>", where "<i><tt>eCos</tt></i>" is the
+name associated with the target hardware.&nbsp; Once connected, the eCos
+application will respond with a "Hello" message and wait for a single line
+of input text, which will be displayed on the diagnostic channel of the
+target system.
+<h3>
+ping_test.c</h3>
+This tests attempts to issue an ICMP "echo" request to the "server" host
+(provided as part of the BOOTP or static configuration information).&nbsp;
+The output will be similar to the analogous Linux program, "<tt>ping</tt>".&nbsp;
+The test program also attempts to ping an additional host whose IP address
+is the server IP+32.&nbsp; This second test is present to verify that the
+ICMP (actually <tt>receive</tt>) time-out mechanism is working (assuming
+that the second host is non-existent).
+<h3>
+ftp_test.c</h3>
+This test attempts to make a connection to an FTP server, assuming the
+default server host.&nbsp; This is an additional test which verifies that
+the basic TCP functionality is working.
+<h3>
+nc_test_master.c</h3>
+
+<h3>
+nc_test_slave.c</h3>
+This pair of programs can be used to measure throughput and latencies in
+the target system.&nbsp; While both programs have been written in such
+a way that they can be built and used on either Linux or eCos, the primary
+use will be to run the "<tt>nc_test_master</tt>" program on a Linux host
+and the "<tt>nc_test_slave</tt>" on the target hardware.&nbsp; If run in
+this configuration, the master program will attempt to connect to the slave
+and make various measurements using both UDP and TCP protocols.&nbsp; Additionally,
+measurements will be made on an eCos slave of the actual CPU utilization
+by the networking stack.
+<p>To build the Linux versions, simply execute (in the eCos source tree,
+not the install tree):
+<blockquote><tt>make -f make.linux</tt></blockquote>
+
+<h3>
+tcp_echo.c</h3>
+
+<h3>
+tcp_sink.c</h3>
+
+<h3>
+tcp_source.c</h3>
+This set of programs is similar to the <i><tt>nc_test_XXX</tt></i> programs
+described above.&nbsp; However, they are designed to measure overall throughput
+of the eCos system.&nbsp; The setup allows for one Linux host to run "<tt>tcp_source
+<i>eCos</i></tt>" and another Linux host to run "<tt>tcp_sink <i>eCos</i></tt>".&nbsp;
+The "<tt>tcp_echo</tt>" program is run on the target hardware.&nbsp; The
+tests then measure the throughput and latency of sending TCP data from
+one host, though the eCos target system and on to another host.&nbsp; Note:
+the two Linux host systems may be the same computer in which case this
+becomes a single wire echo test.&nbsp; This test suite is unique in that
+it attempts to load the target system down with additional background processing
+at various levels.&nbsp; This is done to simulate a real world environment
+where the networking is ancillary to the main processing on the target
+system.
+<br>&nbsp;
+</body>
+</html>

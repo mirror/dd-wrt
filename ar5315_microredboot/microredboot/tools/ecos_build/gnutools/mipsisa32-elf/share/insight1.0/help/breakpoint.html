@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.06 [en] (X11; I; Linux 2.0.35 i686) [Netscape]">
+   <TITLE>Breakpoint Window Help</TITLE>
+</HEAD>
+<BODY>
+
+<H1>The Breakpoint Window</H1>
+The Breakpoint Window lists all the various breakpoints that exist in the
+program. It facilitates modifying breakpoints (make them temporary or normal,
+disabled or enabled) and removing breakpoints.
+<UL>
+<LI><A HREF="#menus_bp">Breakpoint Menu</A></LI>
+<LI><A HREF="#menus_global">Global Menu</A></LI>
+<LI><A HREF="#display">Breakpoint Display</A></LI>
+</UL>
+
+<HR SIZE=4 WIDTH="100%">
+
+<H2>
+<A NAME="menus_bp"></A>Breakpoint Menu</H2>
+The Breakpoint Menu operates on the selected breakpoint only.&nbsp; If
+no breakpoint is selected the menu items will be disabled. The type and
+state of a breakpoint may be changed by selecting the desired type or state
+from the menu.
+<DL>
+<DT>Normal</DT>
+<DD>The selected breakpoint is a normal breakpoint</DD>
+<DT>Temporary</DT>
+<DD>Indicates that the breakpoint is temporary</DD>
+<DT>Enabled</DT>
+<DD>The breakpoint is active and will stop the debugger when it is hit.</DD>
+<DT>Disabled</DT>
+<DD>The breakpoint is being ignored. A disabled breakpoint will never get hit.</DD>
+<DT>Remove</DT>
+<DD>Deletes the breakpoint</DD>
+</DL>
+
+<HR SIZE=4 WIDTH="100%">
+<H2>
+<A NAME="menus_global"></A>Global Menu</H2>
+Items on the Global Menu affect all defined breakpoints. Users may:
+<DL>
+<DT>Show Threads</DT>
+<DD>Toggle on/off the thread column</DD>
+<DT>Enable All</DT>
+<DD>Enable all breakpoints</DD>
+<DT>Disable All</DT>
+<DD>Disable all breakpoints</DD>
+<DT>Remove All</DT>
+<DD>Delete all breakpoints</DD>
+</DL>
+
+<HR SIZE=4 WIDTH="100%">
+
+<H2><A NAME="display"></A>Breakpoint Display</H2>
+The Breakpoint Display is a table of breakpoints. The first column of the
+table (unlabeled) shows a checkbutton, indicating whether the breakpoint
+is enabled (checked) or disabled (unchecked). Disabled breakpoints are
+ignored and will not cause the program to stop.
+<P>To use the Breakpoint Menu or the Breakpoint Pop-up Menu, first use
+the left mouse button to select a breakpoint from the list, then make the
+menu selection.
+
+<H4>Modifying Breakpoints</H4>
+To&nbsp;<A NAME="display_state"></A>enable a breakpoint, simply click the
+checkbutton in the first column of the desired breakpoint so that it is
+selected (checked). To disable a breakpoint, "uncheck" the checkbutton.
+<P>To change a breakpoint's&nbsp;<A NAME="display_temp"></A>type, select
+the desired type from either the Breakpoint Menu or the Breakpoint Pop-up
+Menu.
+<P>To remove a&nbsp;<A NAME="display_remove"></A>breakpoint, use the left
+mouse button to select the breakpoint to remove and use either the Breakpoint
+Menu or the Breakpoint Pop-up Menu to select "remove". To re-install a
+breakpoint, use the <A HREF="source.html#setting_a_breakpoint">Source Window
+Display</A>.
+
+<H4><A NAME="display_popup"></A>Breakpoint Pop-up Menu</H4>
+The Breakpoint Pop-up Menu is accessed by using the mouse cursor to select
+a breakpoint from the Breakpoint Display and then clicking the right button
+on the mouse. The Pop-up allows expert users quicker access to the functions
+of the Breakpoint Menu:
+<DL>
+<DT>Normal</DT>
+<DD>The selected breakpoint is a normal breakpoint</DD>
+<DT>Temporary</DT>
+<DD>Indicates that the breakpoint is temporary</DD>
+<DT>Enabled</DT>
+<DD>The breakpoint is active and will stop the debugger when it is hit.</DD>
+<DT>Disabled</DT>
+<DD>The breakpoint is being ignored. A disabled breakpoint will never get hit.</DD>
+<DT>Remove</DT>
+<DD>Deletes the breakpoint</DD>
+<DT>Global, Show Threads</DT>
+<DD>Toggle on/off the thread column</DD>
+<DT>Global, Enable All</DT>
+<DD>Enable all breakpoints</DD>
+<DT>Global, Disable All</DT>
+<DD>Disable all breakpoints</DD>
+<DT>Global, Remove All</DT>
+<DD>Delete all breakpoints</DD>
+</DL>
+
+</BODY>
+</HTML>

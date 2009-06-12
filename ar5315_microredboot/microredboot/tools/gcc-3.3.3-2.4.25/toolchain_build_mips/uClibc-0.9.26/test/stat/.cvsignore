@@ -1,0 +1,12 @@
+stat
+stat.o
+stat.out
+stat64
+stat64.o
+stat64.out
+stat64_glibc
+stat64_glibc.o
+stat64_glibc.out
+stat_glibc
+stat_glibc.o
+stat_glibc.out

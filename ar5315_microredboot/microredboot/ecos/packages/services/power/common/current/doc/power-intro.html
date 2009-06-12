@@ -1,0 +1,553 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Introduction</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Power Management Support"
+HREF="services-power.html"><LINK
+REL="PREVIOUS"
+TITLE="eCos Power Management Support"
+HREF="services-power.html"><LINK
+REL="NEXT"
+TITLE="Power Management Information"
+HREF="power-info.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Power Management Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="services-power.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="power-info.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="POWER-INTRO"
+>Introduction</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+>Introduction&nbsp;--&nbsp;eCos support for Power Management</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INTRO-INTRO"
+></A
+><H2
+>Introduction</H2
+><P
+>The eCos Power Management package provides a framework for
+incorporating power management facilities in an embedded application.
+However its functionality is deliberately limited.</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>The package does not contain any support for controlling the current
+power mode of any given processor, device or board. Instead it is the
+responsibility of the appropriate HAL or device driver package to
+implement such support, by implementing <I
+CLASS="FIRSTTERM"
+>power
+controllers</I
+>. The power management package groups these
+power controllers together and provides an interface for manipulating
+them.</P
+></LI
+><LI
+><P
+>The package does not contain any power management policy support.
+Specifically, including this package in an application does not by
+itself ever cause the system to go into low-power mode. Instead it is
+the responsibility of a separate policy module, provided by
+higher-level application code or by some other package, to decide when
+it would be appropriate to switch from one power mode to another. The
+power management package then provides the mechanisms for making it
+happen.</P
+></LI
+></OL
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INTRO-INCLUDE"
+></A
+><H2
+>Including Power Management</H2
+><P
+>The power management package is never included automatically in an
+eCos configuration: it is not part of any target specification or of
+any template. Instead it must be added explicitly to a configuration
+if the intended application requires power management functionality.
+When using the command-line <B
+CLASS="COMMAND"
+>ecosconfig</B
+> tool this
+can be achieved using a command such as:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ ecosconfig add power</PRE
+></TD
+></TR
+></TABLE
+><P
+>The generic eCos user documentation should be consulted for more
+information on how to use the various tools. The functionality
+provided by the power management package is defined in the header file
+<TT
+CLASS="FILENAME"
+>cyg/power/power.h</TT
+>. This header
+file can be used by both C and C++ code.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INTRO-MODES"
+></A
+><H2
+>Power Modes</H2
+><P
+>There are four defined modes of operation:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>active</DT
+><DD
+><P
+>The system is fully operational, and power consumption is expected to
+be high.</P
+></DD
+><DT
+>idle</DT
+><DD
+><P
+>There has been little or no activity for a short period of time. It is
+up to the policy module to determine what constitutes a short period
+of time, but typically it will be some tenths of a second or some
+small number of seconds. A possible action when entering idle mode is
+to reduce the system's clock speed, thus reducing the power drawn by
+the cpu.</P
+><P
+>Note that typically this power mode is not entered automatically
+whenever the idle thread starts running. Instead it is entered when
+the policy module discovers that for a certain period of time the
+system has been spending most of its time in the idle thread.
+Theoretically it is possible to implement a policy module that would
+cause a switch to idle mode as soon as the idle thread starts running,
+but that could result in a great many power mode changes for no
+immediate benefit.</P
+></DD
+><DT
+>sleep</DT
+><DD
+><P
+>The system has been idle for a significant period of time, perhaps
+some tens of seconds. It is desirable to shut down any hardware that
+is drawing a significant amount of power, for example a screen
+backlight.</P
+></DD
+><DT
+>off</DT
+><DD
+><P
+>The system is powered down. Power consumption should be minimized.
+Some special action may be needed before the system comes back up, for
+example the user may need to press a specific button.</P
+></DD
+></DL
+></DIV
+><P
+>The exact transitions that will happen are decided by the policy
+module. One policy module might include transitions from active to
+idle, from idle to sleep, from sleep to off, and from any of idle,
+sleep or off directly back to active. Another policy module might
+only use the active and off states, bypassing the intermediate ones.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INTRO-CONTROLLERS"
+></A
+><H2
+>Power Controllers</H2
+><P
+>The power management package operates primarily on power controllers.
+The main functionality provided by a power controller is to switch the
+power mode for some part of the system, for example the lcd display or
+the cpu. A power controller consists primarily of a function which
+will be invoked to switch the power mode for the part of the overall
+system being controlled, plus some auxiliary data. A typical system
+will include a number of different power controllers:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>Usually there will be one power controller
+<TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+> associated with the processor
+or with the target platform, and provided by the corresponding HAL
+package. It is this controller which is responsible for switching off
+the system when entering the <SPAN
+CLASS="TYPE"
+>off</SPAN
+> mode, which makes it
+somewhat special: attempting to switch off the cpu before other
+devices like the lcd display does not make sense because the cpu would
+no longer be executing any instructions for the latter operation.
+Therefore this power controller has to be invoked last when switching
+to a lower-power mode, and similarly when switching back to a
+higher-power mode it will be invoked first.</P
+><P
+>It should be noted that providing power management support is not a
+hard requirement when porting eCos to a new processor or platform, and
+many eCos ports predate the availability of power management support.
+Therefore for any given platform it is distinctly possible that
+<TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+> is not yet provided, and if
+full power management functionality is desired then the appropriate
+HAL package would have to be extended first. System developers should
+examine the relevant HAL documentation and sources to determine what
+is actually available.</P
+></LI
+><LI
+><P
+>Some or all of the device drivers will supply their own power
+controllers, as part of the device driver package. It is not required
+that all device drivers provide power controllers. In some cases,
+especially for devices that are integrated with the processor,
+<TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+> will take care of the
+integrated devices as a side effect. In other cases the hardware may
+not provide any functionality that allows power consumption to be
+controlled. For any given device driver it is also possible that no
+power controller exists either because it was not required when the
+driver was written, or because the driver predates the availability of
+power management. Again the relevant documentation and sources should
+be consulted for further information.</P
+></LI
+><LI
+><P
+>There may be power controllers which are not associated directly with
+any specific hardware. For example a TCP/IP stack could provide a
+power controller so that it gets informed when the system has been
+reactivated: by looking at the system clock it can determine for how
+long the system has been switched off; using this information it can
+then recover from expired dhcp leases, or even to shut down any stream
+connections that may have become invalid (although arguably the stack
+should have refused to go to <SPAN
+CLASS="TYPE"
+>off</SPAN
+> mode while there were
+open connections).</P
+></LI
+></OL
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INTRO-OPERATION"
+></A
+><H2
+>Basic Operation</H2
+><P
+>By default the Power Management package creates a thread during
+initialization. It is also possible for the package to be used without
+such a thread, for example in configurations which do not include a
+full kernel, and this alternative is described below. When a separate
+thread is used the stacksize and priority for this thread can be
+controlled by configuration options
+<TT
+CLASS="VARNAME"
+>CYGNUM_POWER_THREAD_STACKSIZE</TT
+> and
+<TT
+CLASS="VARNAME"
+>CYGNUM_POWER_THREAD_PRIORITY</TT
+>. Typically the thread
+will just wait on a semaphore internal to the package, and will do
+nothing until some other part of the system requests a change to the
+power mode.</P
+><P
+>At some point the policy module will decide that the system should
+move into a lower-power mode, for example from active to idle. This is
+achieved by calling the function <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>,
+provided by the power management package and declared in <TT
+CLASS="FILENAME"
+>cyg/power/power.h</TT
+>, with a single
+argument, <TT
+CLASS="LITERAL"
+>PowerMode_Idle</TT
+>. This function manipulates
+some internal state and posts the semaphore, thus waking up the power
+management thread. Note that the function returns before the mode
+change has completed, and in fact depending on thread priorities this
+return may happen before any power controller has been invoked.</P
+><P
+>When the power management thread wakes up it examines the internal
+state to figure out what it should be doing. In this case it is
+supposed to change the global power mode, so it will iterate over all
+the power controllers requesting each one to switch to the
+<SPAN
+CLASS="TYPE"
+>idle</SPAN
+> mode. It is up to each power controller to handle
+this request appropriately. Optionally the thread will invoke a
+callback function after processing each power controller, so that
+higher-level code such as the policy module can more easily keep
+track of the actual state of each controller. Once the thread has
+iterated through all the power controllers it will again wait on the
+internal semaphore for the next request to arrive.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>At present the power management thread always runs at a single
+priority, which defaults to a low priority. A possible future
+enhancement would be to support two separate priorities. When
+switching to a lower-powered mode the thread would run at a low
+priority as before, thus allowing other threads to run and get a
+chance to cancel this mode change. When switching to a higher-powered
+mode the thread would run at a high priority. This could be especially
+important when moving out of the <SPAN
+CLASS="TYPE"
+>off</SPAN
+> state: for example
+it would ensure that all device drivers get a chance to wake up before
+ordinary application threads get to run again and possibly attempt I/O
+operations.</P
+></BLOCKQUOTE
+></DIV
+><P
+>Although usually calls to <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> will
+come from just one place in the policy module, this is not a hard
+requirement. It is possible for multiple threads to call this
+function, with no need for any synchronization. If the power
+management thread is in the middle of performing a mode change and a
+new request comes in, the thread will detect this, abort the current
+operation, and start iterating through the power controllers again
+with the new mode. This check happens between every power controller
+invocation. Usefully this makes it possible for power controllers
+themselves to manipulate power modes: a power controller is invoked to
+change mode; for some reason it determines that the new mode is
+inappropriate; it calls <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> to move
+the system back to another mode; when the power controller returns
+this event will be detected; the power management thread will abort
+the current mode change, and start the new one.</P
+><P
+>In addition to changing the power mode for the system as a whole,
+individual controllers can be manipulated using the function
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+>. For example, while the
+system as a whole might be in <SPAN
+CLASS="TYPE"
+>active</SPAN
+> mode certain devices
+might be kept in <SPAN
+CLASS="TYPE"
+>sleep</SPAN
+> mode until they are explicitly
+activated. It is possible to mix concurrent calls to
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> and
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+>, and when a power
+controller is invoked it may use
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> to request further
+changes to its own or to another controller's mode as required.</P
+><P
+>There are some scenarios where the power management package should not
+use its own thread. One scenario is if the configuration is
+specifically for a single-threaded application such as RedBoot.
+Another scenario is if the policy module already involves a separate
+thread: it may make more sense if the various power management
+operations are synchronous with respect to the calling thread. The use
+of a separate thread inside the power management package is controlled
+by the configuration option <TT
+CLASS="VARNAME"
+>CYGPKG_POWER_THREAD</TT
+>,
+which is active only if the kernel package is present and enabled by
+default.</P
+><P
+>If no separate power management thread is used then obviously the
+implementations of <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> and
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> will be somewhat
+different: instead of waking up a separate thread to do the work,
+these functions will now manipulate the power controllers directly. If
+the system does still involve multiple threads then only one thread
+may call <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> or
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> at a time: the power
+management package will not provide any synchronization, that must
+happen at a higher level. However when a power controller is invoked
+it can still call these functions as required.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="services-power.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="services-power.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="power-info.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>eCos Power Management Support</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Power Management Information</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

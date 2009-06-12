@@ -1,0 +1,42 @@
+# Download class definition for Insight
+# Copyright 1999, 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class Download {
+  inherit ManagedWin
+  
+  protected {
+    common total_bytes
+    common section
+    common bytes
+    common num_sections
+    common num_steps 100
+
+    method _ignore_on_save {} { return 1 }
+    proc dont_remember_size {} { return 1}
+  }
+  public {
+    variable filename
+
+    method constructor {args} 
+    method destructor {}
+    method update_download { sec num tot }
+    method done { {msg ""} }
+    method cancel {}
+
+    proc download_it { }
+    proc do_download_hooks {}
+    proc download_hash { section num }
+    
+  }
+}

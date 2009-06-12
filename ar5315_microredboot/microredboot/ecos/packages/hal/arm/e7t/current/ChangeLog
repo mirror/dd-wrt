@@ -1,0 +1,207 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_arm_e7t.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us is a C function.
+	
+2003-11-05  Roland Caﬂebohm  <roland.cassebohm@visionsystems.de>
+
+        * include/plf_io.h: Define HAL_IO_MACROS_NO_ADDRESS_MUNGING to
+        force the IO macros not to mung the addresses. This platform
+        don't need this.
+
+2003-10-06  Chris Garry  <cgarry@sweeneydesign.co.uk>
+
+        * include/plf_io.h: Correct (unused) defines for
+        E7T_ROMCON_BASE_MASK and E7T_ROMCON_NEXT_MASK.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_e7t.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-02-05  Nick Garnett  <nickg@calivar.com>
+
+	* include/plf_io.h (CYGARC_PHYSICAL_ADDRESS): Added this
+	definition to keep redboot_linux_exec.c happy.
+
+2003-01-29  John Dallaway  <jld@ecoscentric.com>
+
+	* src/flash_cksum.tcl: Accommodate latest Cygwin Tcl shell
+	(tclsh83.exe)
+
+2002-10-19  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Only define if
+	ROM or ROMRAM, not if STUBS which can be RAM.
+
+2002-04-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Changed ldm/stm
+	to ldmia/stmia.
+
+2002-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_ROM.ecm: Added zlib package.
+
+2001-10-02  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_e7t.cdl (CYGBLD_BUILD_REDBOOT_BIN): cygtclsh80 on
+	Cygwin can't deal with absolute paths correctly, so copy
+	flash_cksum.tcl into build directory.
+
+2001-07-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c (cyg_hal_plf_serial_getc_nonblock): Ack RX
+	interrupt after reading.
+
+	* include/pkgconf/mlt_arm_e7t_ram.mlt: Reserve 64kB for RedBoot.
+	* include/pkgconf/mlt_arm_e7t_ram.ldi: Same.
+
+	* src/hal_diag.c: Make some data type fixes. Try to ack interrupt
+	after reading data. Unable to test though due to some other
+	problem on diag output.
+
+2001-04-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_e7t.cdl: Fix compiler flags. In particular, do now
+	allow unaligned access since the CPU doesn't handle it.
+
+	* include/hal_platform_setup.h (PLATFORM_SETUP1): Use proper
+	spells to init memory interface.
+
+	* src/e7t_misc.c (hal_hardware_init): Removed debug code, fix
+	cache init code.
+
+	* include/plf_io.h: Use uncached addresses for IO registers.
+
+	* include/hal_platform_setup.h: Found a hint for problems with
+	memory init.
+
+	* include/hal_cache.h (HAL_UCACHE_INVALIDATE_ALL): Tried to make
+	this a bit faster. Didn't help much though.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_init): Remove unused variable.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_e7t.cdl: Add CDL to describe CPU family.
+
+2001-04-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/e7t_misc.c (hal_delay_us): Fixed.
+
+	* include/pkgconf/mlt_arm_e7t_rom.ldi: Updated.
+	* include/pkgconf/mlt_arm_e7t_rom.mlt: Same.
+	* include/pkgconf/mlt_arm_e7t_rom.h:   Same.
+	* include/pkgconf/mlt_arm_e7t_ram.ldi: Updated.
+	* include/pkgconf/mlt_arm_e7t_ram.mlt: Same.
+	* include/pkgconf/mlt_arm_e7t_ram.h:   Same.
+
+2001-04-05  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_ROM.ecm: Only read from debug port.
+
+	* src/redboot_module.c: Fail if attempted built in wrong config.
+
+	* src/e7t_misc.c (hal_IRQ_handler): Fixed comparisons.
+
+2001-03-19  Jesper Skov  <jskov@redhat.com>
+
+	* src/e7t_misc.c (hal_delay_us): Made it work. Not sure why the
+	interrupts don't actually fire. This will probably break when that
+	gets sorted out later.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_getc_nonblock): Rename a
+	register.
+
+	* src/e7t_misc.c (hal_hardware_init): Init caches, clear global
+	interrupt mask flag.
+	(hal_delay_us): Added.
+
+	* include/plf_io.h: Added cache definitions.
+
+	* include/hal_diag.h (HAL_DELAY_US): Added.
+
+	* include/hal_cache.h: Rewrote for KS32C50100.
+
+	* misc/redboot_ROM.ecm: Added.
+
+	* src/redboot_module.c: Added.
+	* src/gdb_module.c: Removed.
+
+	* src/e7t_misc.c: Comment out test code, but keep it around for
+	now.
+
+	* cdl/hal_arm_e7t.cdl: Added RedBoot build magic. Removed stubs
+	build magic.
+
+	* include/hal_platform_setup.h: Set PIO directions and IO
+	widths. The rest cannot be set wo hanging the board.
+
+	* src/hal_diag.c: Baud rate is computed from 1/2 core clock. All
+	register access is 32 bit. Added simple functions to print out
+	values without use of RAM.
+	Enabling TX/RX means allowing interrupts. Rely on vector mask only
+	for controlling ctrl-c interrupts.
+
+2001-03-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/e7t_misc.c: Rewrote timer and interrupt code for
+	E7T. Removed reset code.
+
+	* include/plf_io.h: Added interrupt controller and timer
+	registers.
+
+	* include/hal_platform_ints.h: Updated interrupt defintions to
+	match E7T. No reset magic.
+
+	* src/hal_diag.c: Use correct interrupt definitions.
+
+	* Cloned from AEB HAL.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

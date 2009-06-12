@@ -1,0 +1,297 @@
+# ====================================================================
+#
+#      stdlib.cdl
+#
+#      C library stdlib related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBC_STDLIB {
+    display       "ISO C library general utility functions"
+    description   "
+        This package provides general utility functions in <stdlib.h>
+        as specified by the ISO C standard - ISO/IEC 9899:1990."
+    doc           ref/libc.html
+    include_dir   cyg/libc/stdlib
+    parent        CYGPKG_LIBC
+    requires      CYGPKG_ISOINFRA
+    implements    CYGINT_ISO_STDLIB_STRCONV
+    implements    CYGINT_ISO_STDLIB_ENVIRON
+    implements    CYGINT_ISO_STDLIB_SYSTEM
+    implements    CYGINT_ISO_BSEARCH
+    implements    CYGINT_ISO_QSORT
+    implements    CYGINT_ISO_ABS
+    implements    CYGINT_ISO_DIV
+    requires      CYGINT_ISO_CTYPE
+    requires      CYGINT_ISO_STRING_STRFUNCS
+
+    compile       abs.cxx      atox.cxx     bsearch.cxx  \
+                  div.cxx      getenv.cxx   qsort.cxx    \
+                  rand.cxx     strtod.cxx   strtol.cxx   \
+                  strtoul.cxx  system.cxx
+
+# ====================================================================
+
+    cdl_component CYGIMP_LIBC_STDLIB_INLINES {
+        display       "Inline versions of <stdlib.h> functions"
+        flavor        none
+        no_define
+        description   "
+            This option chooses whether some of the
+            particularly simple standard utility functions
+            from <stdlib.h> are available as inline
+            functions. This may improve performance, and as
+            the functions are small, may even improve code
+            size."
+
+        cdl_option CYGIMP_LIBC_STDLIB_INLINE_ABS {
+            display       "abs() / labs()"
+            default_value 1
+            no_define
+            requires      { CYGBLD_ISO_STDLIB_ABS_HEADER == \
+                            "<cyg/libc/stdlib/abs.inl>" }
+        }
+
+        cdl_option CYGIMP_LIBC_STDLIB_INLINE_DIV {
+            display       "div() / ldiv()"
+            default_value 1
+            no_define
+            requires      { CYGBLD_ISO_STDLIB_DIV_HEADER == \
+                            "<cyg/libc/stdlib/div.inl>" }
+        }
+
+        cdl_option CYGIMP_LIBC_STDLIB_INLINE_ATOX {
+            display       "atof() / atoi() / atol()"
+            default_value 1
+            no_define
+            requires      { CYGBLD_ISO_STDLIB_STRCONV_HEADER == \
+                            "<cyg/libc/stdlib/atox.inl>" }
+        }
+    }
+    
+    cdl_component CYGPKG_LIBC_RAND {
+        display       "Random number generation"
+        flavor        none
+        description   "
+            These options control the behaviour of the
+            functions rand(), srand() and rand_r()"
+    
+        cdl_option CYGSEM_LIBC_PER_THREAD_RAND {
+            display       "Per-thread random seed"
+            doc           ref/libc-thread-safety.html
+            requires      CYGVAR_KERNEL_THREADS_DATA
+            default_value 0
+            description   "
+                This option controls whether the pseudo-random
+                number generation functions rand() and srand()
+                have their state recorded on a per-thread
+                basis rather than global. If this option is
+                disabled, some per-thread space can be saved.
+                Note there is also a POSIX-standard rand_r()
+                function to achieve a similar effect with user
+                support. Enabling this option will use one slot
+                of kernel per-thread data. You should ensure you
+                have enough slots configured for all your
+                per-thread data."
+        }
+    
+        cdl_option CYGNUM_LIBC_RAND_SEED {
+            display       "Random number seed"
+            flavor        data
+            legal_values  0 to 0x7fffffff
+            default_value 1
+            description   "
+                This selects the initial random number seed for
+                rand()'s pseudo-random number generator. For
+                strict ISO standard compliance, this should be 1,
+                as per section 7.10.2.2 of the standard."
+        }
+    
+        cdl_option CYGNUM_LIBC_RAND_TRACE_LEVEL {
+            display       "Tracing level"
+            flavor        data
+            legal_values  0 to 1
+            default_value 0
+            description   "
+                Trace verbosity level for debugging the rand(),
+                srand() and rand_r() functions. Increase this
+                value to get additional trace output."
+        }
+    
+        cdl_option CYGIMP_LIBC_RAND_SIMPLEST {
+            display       "Simplest implementation"
+            flavor        bool
+            default_value 0
+            implements    CYGINT_ISO_RAND
+            description   "
+                This provides a very simple implementation of rand()
+                that does not perform well with randomness in the
+                lower significant bits. However it is exceptionally
+                fast. It uses the sample algorithm from the ISO C
+                standard itself."
+        }
+    
+        cdl_option CYGIMP_LIBC_RAND_SIMPLE1 {
+            display       "Simple implementation #1"
+            flavor        bool
+            default_value 1
+            implements    CYGINT_ISO_RAND
+            description   "
+                This provides a very simple implementation of rand()
+                based on the simplest implementation above. However
+                it does try to work around the lack of randomness
+                in the lower significant bits, at the expense of a
+                little speed."
+        }
+    
+        cdl_option CYGIMP_LIBC_RAND_KNUTH1 {
+            display       "Knuth implementation #1"
+            flavor        bool
+            default_value 0
+            implements    CYGINT_ISO_RAND
+            description   "
+                This implements a slightly more complex algorithm
+                published in Donald E. Knuth's Art of Computer
+                Programming Vol.2 section 3.6 (p.185 in the 3rd ed.).
+                This produces better random numbers than the
+                simplest approach but is slower."
+        }
+    }
+    
+    cdl_option CYGFUN_LIBC_strtod {
+        display       "Provides strtod()"
+        requires      CYGPKG_LIBM
+        default_value { 0 != CYGPKG_LIBM }
+        implements    CYGINT_ISO_STDLIB_STRCONV_FLOAT
+        description   "
+            This option allows use of the utility function
+            strtod() (and consequently atof()) to convert
+            from string to double precision floating point
+            numbers. Disabling this option removes the
+            dependency on the math library package."
+    }
+
+    cdl_option CYGFUN_LIBC_STDLIB_CONV_LONGLONG {
+        display       "Provides long long conversion functions"
+        default_value 1
+        compile       strtoll.cxx strtoull.cxx
+        description   "
+                Enabling this option will provide support for the strtoll(),
+                strtoull() and atoll() conversion functions, which are
+                the long long variants of the standard versions of these
+                functions. Supporting this requires extra code and compile
+                time."
+    }
+    
+    cdl_option CYGNUM_LIBC_BSEARCH_TRACE_LEVEL {
+        display       "bsearch() tracing level"
+        flavor        data
+        legal_values  0 to 1
+        default_value 0
+        description   "
+            Trace verbosity level for debugging the <stdlib.h>
+            binary search function bsearch(). Increase this
+            value to get additional trace output."
+    }
+    
+    cdl_option CYGNUM_LIBC_QSORT_TRACE_LEVEL {
+        display       "qsort() tracing level"
+        flavor        data
+        legal_values  0 to 1
+        default_value 0
+        description   "
+            Trace verbosity level for debugging the <stdlib.h>
+            quicksort function qsort(). Increase this value
+            to get additional trace output."
+    }
+    
+
+# ====================================================================
+
+    cdl_component CYGPKG_LIBC_STDLIB_OPTIONS {
+        display       "C library stdlib build options"
+        flavor        none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBC_STDLIB_CFLAGS_ADD {
+            display       "Additional compiler flags"
+            flavor        data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBC_STDLIB_CFLAGS_REMOVE {
+            display       "Suppressed compiler flags"
+            flavor        data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBC_STDLIB_TESTS {
+            display       "C library stdlib tests"
+            flavor        data
+            no_define
+            calculated    { "tests/abs tests/atoi tests/atol tests/bsearch tests/div tests/getenv tests/labs tests/ldiv tests/qsort tests/rand1 tests/rand2 tests/rand3 tests/rand4 tests/srand tests/strtol tests/strtoul" }
+            description   "
+                This option specifies the set of tests for this package."
+        }
+    }
+}
+
+# ====================================================================
+# EOF stdlib.cdl

@@ -1,0 +1,126 @@
+This is doc/cpp.info, produced by makeinfo version 4.2 from
+doc/cpp.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* Cpp: (cpp).		       The GNU C preprocessor.
+END-INFO-DIR-ENTRY
+
+
+File: cpp.info,  Node: Concept Index,  Prev: Index of Directives,  Up: Top
+
+Concept Index
+*************
+
+* Menu:
+
+* # operator:                            Stringification.
+* ## operator:                           Concatenation.
+* _Pragma:                               Pragmas.
+* alternative tokens:                    Tokenization.
+* arguments:                             Macro Arguments.
+* arguments in macro definitions:        Macro Arguments.
+* assertions:                            Assertions.
+* assertions, cancelling:                Assertions.
+* backslash-newline:                     Initial processing.
+* block comments:                        Initial processing.
+* C++ named operators:                   C++ Named Operators.
+* character constants:                   Tokenization.
+* character sets:                        Initial processing.
+* command line:                          Invocation.
+* commenting out code:                   Deleted Code.
+* comments:                              Initial processing.
+* common predefined macros:              Common Predefined Macros.
+* computed includes:                     Computed Includes.
+* concatenation:                         Concatenation.
+* conditional group:                     Ifdef.
+* conditionals:                          Conditionals.
+* continued lines:                       Initial processing.
+* controlling macro:                     Once-Only Headers.
+* defined:                               Defined.
+* dependencies for make as output:       Environment Variables.
+* dependencies, make:                    Invocation.
+* diagnostic:                            Diagnostics.
+* differences from previous versions:    Differences from previous versions.
+* digraphs:                              Tokenization.
+* directive line:                        The preprocessing language.
+* directive name:                        The preprocessing language.
+* directives:                            The preprocessing language.
+* empty macro arguments:                 Macro Arguments.
+* environment variables:                 Environment Variables.
+* expansion of arguments:                Argument Prescan.
+* FDL, GNU Free Documentation License:   GNU Free Documentation License.
+* function-like macros:                  Function-like Macros.
+* grouping options:                      Invocation.
+* guard macro:                           Once-Only Headers.
+* header file:                           Header Files.
+* header file names:                     Tokenization.
+* identifiers:                           Tokenization.
+* implementation limits:                 Implementation limits.
+* implementation-defined behavior:       Implementation-defined behavior.
+* including just once:                   Once-Only Headers.
+* invalid token paste:                   Miscellaneous obsolete features.
+* invocation:                            Invocation.
+* iso646.h:                              C++ Named Operators.
+* line comments:                         Initial processing.
+* line control:                          Line Control.
+* line endings:                          Initial processing.
+* linemarkers:                           Preprocessor Output.
+* macro argument expansion:              Argument Prescan.
+* macros in include:                     Computed Includes.
+* macros with arguments:                 Macro Arguments.
+* macros with variable arguments:        Variadic Macros.
+* make:                                  Invocation.
+* manifest constants:                    Object-like Macros.
+* multi-line string constants:           Miscellaneous obsolete features.
+* named operators:                       C++ Named Operators.
+* newlines in macro arguments:           Newlines in Arguments.
+* null directive:                        Other Directives.
+* numbers:                               Tokenization.
+* object-like macro:                     Object-like Macros.
+* options:                               Invocation.
+* options, grouping:                     Invocation.
+* other tokens:                          Tokenization.
+* output format:                         Preprocessor Output.
+* overriding a header file:              Wrapper Headers.
+* parentheses in macro bodies:           Operator Precedence Problems.
+* pitfalls of macros:                    Macro Pitfalls.
+* pragma poison:                         Miscellaneous obsolete features.
+* predefined macros:                     Predefined Macros.
+* predefined macros, system-specific:    System-specific Predefined Macros.
+* predicates:                            Assertions.
+* preprocessing directives:              The preprocessing language.
+* preprocessing numbers:                 Tokenization.
+* preprocessing tokens:                  Tokenization.
+* prescan of macro arguments:            Argument Prescan.
+* problems with macros:                  Macro Pitfalls.
+* punctuators:                           Tokenization.
+* redefining macros:                     Undefining and Redefining Macros.
+* repeated inclusion:                    Once-Only Headers.
+* reporting errors:                      Diagnostics.
+* reporting warnings:                    Diagnostics.
+* reserved namespace:                    System-specific Predefined Macros.
+* self-reference:                        Self-Referential Macros.
+* semicolons (after macro calls):        Swallowing the Semicolon.
+* side effects (in macro arguments):     Duplication of Side Effects.
+* standard predefined macros.:           Standard Predefined Macros.
+* string constants:                      Tokenization.
+* string literals:                       Tokenization.
+* stringification:                       Stringification.
+* symbolic constants:                    Object-like Macros.
+* system header files <1>:               System Headers.
+* system header files:                   Header Files.
+* system-specific predefined macros:     System-specific Predefined Macros.
+* testing predicates:                    Assertions.
+* token concatenation:                   Concatenation.
+* token pasting:                         Concatenation.
+* tokens:                                Tokenization.
+* trigraphs:                             Initial processing.
+* undefining macros:                     Undefining and Redefining Macros.
+* unsafe macros:                         Duplication of Side Effects.
+* variable number of arguments:          Variadic Macros.
+* variadic macros:                       Variadic Macros.
+* wrapper #ifndef:                       Once-Only Headers.
+* wrapper headers:                       Wrapper Headers.
+
+

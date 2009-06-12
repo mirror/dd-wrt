@@ -1,0 +1,63 @@
+# Kernel Object Display Window definition for Insight.
+# Copyright (C) 1999, 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+class KodWin {
+  inherit EmbeddedWin GDBWin
+
+  private {
+    variable bf
+    variable lf
+    variable titl
+    variable BTop
+    variable BUp
+    variable BClear
+    variable BDisplay
+    variable lb
+    variable t1
+    variable t2
+    variable pl1
+    variable pl2
+    variable pane1command ""
+    variable pane2command ""
+    variable BPane1
+    variable BPane2
+    variable level 0
+    common LevelCmd
+    variable BState
+    variable Running 0
+    method build_win {}
+    method display {}
+    method display_list {}
+    method display_object {{cmd ""} {obj ""}}
+    method clear {}
+    method top {}
+    method up {}
+    method cursor {glyph}
+    method _disable_buttons {}
+    method _restore_buttons {}
+  }
+
+  public {
+    method constructor {args}
+    method destructor {}
+    method reconfig {}
+
+    #
+    # Gdb Events
+    #
+    method set_variable {event}
+    method busy {event}
+    method idle {event}
+    method update {event}
+  }
+}

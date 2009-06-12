@@ -1,0 +1,63 @@
+synth_device watchdog {
+
+    ## How should the watchdog device decide that the watchdog has
+    ## triggered, assuming the eCos application has failed to
+    ## reset the device in time. There are two options: wallclock
+    ## time, where the watchdog will trigger after a second
+    ## irrespective of what the eCos application has been doing;
+    ## or consumed cpu time, where the watchdog will only trigger
+    ## if the eCos application has actually run for a whole second.
+    ##
+    ## Using wallclock time matches most real hardware,
+    ## but can give spurious results if there are other processes
+    ## running and consuming cpu cycles. Also, if the user has
+    ## halted the application in gdb then the watchdog will trigger
+    ## even though the application has no chance to reset the
+    ## watchdog.
+    ##
+    ## Using consumed cpu cycles avoids these problems.
+    ## However the default implementation of the idle thread action
+    ## is to block in a select() system call, so if the eCos
+    ## application spends most of its time idling but not resetting
+    ## the watchdog then the device will not trigger. The
+    ## configuration option CYGIMP_HAL_IDLE_THREAD_SPIN can be used
+    ## to change the synthetic target HAL's implementation of the
+    ## idle thread action.
+    ##
+    ## The default is to use consumed_cpu_time. Wallclock time can
+    ## be selected by uncommenting the next line.
+    # use wallclock_time
+    # use consumed_cpu_time
+    
+    ## When running in GUI mode there will be a small window showing
+    ## the current state of the watchdog: asleep, watching, or giving
+    ## the alarm. This window can be packed as desired, using one
+    ## of the container frames .main.nw .main.n .main.ne .main.w
+    ## .main.e .main.sw .main.s or .main.se, and with a position of
+    ## left, right, top or bottom. The default is to pack inside the
+    ## .main.n frame, on the right, thus causing the watchdog to
+    ## appear above the central text window.
+    # watchdog_pack -in .main.n -side right
+
+    ## If running in GUI mode, when the watchdog triggers and resets
+    ## the eCos application this will be shown in the display.
+    ## Optionally the watchdog device can also give an audible alert
+    ## when this happens. This is disabled by default to avoid
+    ## annoying co-workers, but can be enabled by specifying a suitable
+    ## sound file. Two such files, sound1.au and sound2.au, are supplied
+    ## with the watchdog device itself. Alternatively the user can
+    ## specify a different sound file using a suitable path
+    # sound sound1.au
+    # sound sound2.au
+    # sound ~/sounds/my_watchdog_alert.au
+
+    ## If sound is enabled then the watchdog device needs some way to
+    ## access the host's sound hardware. Rather than accessing
+    ## /dev/audio or /dev/dsp directly the watchdog.tcl script will
+    ## run an external program. This can avoid complications with
+    ## different sound file formats etc. The default program is
+    ## "play", a front-end to the sox utility, but a different
+    ## program or script can be specified if desired. It will be run
+    ## simply as "<program> <sound file> &"
+    # sound_player play
+}

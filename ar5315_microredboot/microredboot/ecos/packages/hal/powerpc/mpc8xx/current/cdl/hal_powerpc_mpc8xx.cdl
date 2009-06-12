@@ -1,0 +1,210 @@
+# ====================================================================
+#
+#      hal_powerpc_mpc8xx.cdl
+#
+#      PowerPC/MPC8xx variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002, 2003 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Contributors:   gthomas
+# Date:           2000-02-04
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_POWERPC_MPC8xx {
+    display       "PowerPC 8xx variant HAL"
+    parent        CYGPKG_HAL_POWERPC
+    hardware
+    include_dir   cyg/hal
+    define_header hal_powerpc_mpc8xx.h
+    description   "
+           The PowerPC 8xx variant HAL package provides generic support
+           for this processor variant. It is also necessary to
+           select a specific target platform HAL package."
+
+    implements CYGINT_PROFILE_HAL_TIMER
+
+    cdl_interface CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED {
+        display       "ROM monitor configuration is unsupported"
+        no_define
+    }
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        bool
+        default_value { (CYG_HAL_STARTUP == "RAM" &&
+                        !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS &&
+                        !CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED &&
+                        !CYGSEM_HAL_POWERPC_COPY_VECTORS) ? 1 : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        requires      ! CYGSEM_HAL_POWERPC_COPY_VECTORS
+        requires      ! CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires      ! CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED
+        description   "
+            Allow coexistence with ROM monitor (CygMon or GDB stubs) by
+            only initializing interrupt vectors on startup, thus leaving
+            exception handling to the ROM monitor."
+    }
+
+
+    # FIXME: the option above should be adjusted to select between monitor
+    #        variants
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs {
+        display "Bad CDL workaround"
+        calculated 1
+        active_if CYGSEM_HAL_USE_ROM_MONITOR
+    }
+
+
+    # Note: This should be sub-variant specific to reduce memory use.
+    define_proc {
+        puts $cdl_header "#define CYGHWR_HAL_VSR_TABLE (CYGHWR_HAL_POWERPC_VECTOR_BASE + 0x3000)"
+        puts $cdl_header "#define CYGHWR_HAL_VIRTUAL_VECTOR_TABLE (CYGHWR_HAL_VSR_TABLE + 0x200)"
+
+        puts $::cdl_header "#define CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES 250000"
+    }
+
+    cdl_component CYGHWR_HAL_POWERPC_MPC8XX {
+        display       "PowerPC 8xx microprocessor family"
+        flavor        data
+	legal_values  { "823" "850" "852T" "855T" "860" "860T" "862T" "862P" "866T" }
+        default_value "860"
+        implements    CYGINT_HAL_POWERPC_VARIANT
+        description "
+            The PowerPC 8xx microprocessor family. These are embedded parts 
+            that in addition to the PowerPC processor core have built in peripherals
+            such as memory controllers, DMA controllers, serial ports and
+            timers/counters."               
+
+        define_proc {
+            # Someday, CDL will support doing this directly...
+            puts $::cdl_header "#if defined(CYGHWR_HAL_POWERPC_MPC8XX_823)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 823\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_850)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 850\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_852T)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 852T\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_855T)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 855T\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_860)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 860\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_860T)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 860T\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_862T)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 862T\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_862P)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 862P\""
+            puts $::cdl_header "#elif defined(CYGHWR_HAL_POWERPC_MPC8XX_866T)"
+            puts $::cdl_header "#define HAL_PLATFORM_CPU    \"PowerPC 866T\""
+            puts $::cdl_header "#else"
+            puts $::cdl_header "#error Unknown CPU variant"
+            puts $::cdl_header "#endif"
+        }
+
+        cdl_option CYGHWR_HAL_POWERPC_FPU {
+            display    "Variant FPU support"
+            calculated 0
+        }
+
+        cdl_option CYGPKG_HAL_POWERPC_MSBFIRST {
+            display    "CPU Variant big-endian"
+            calculated 1
+        }
+
+
+        cdl_component CYGSEM_HAL_POWERPC_MPC860_CPM_ENABLE {
+            display       "Enable CPM interrupts"
+            default_value 1
+            description   "
+                This option causes the CPM interrupt arbiter to be attached
+                at startup, and CPM interrupts are enabled. Enabling CPM
+                level interrupt arbitration and handling must still be
+                done by the application code. See intr0.c test for an
+                example."
+
+            cdl_option CYGHWR_HAL_POWERPC_MPC860_CPM_LVL {
+                display       "CPM interrupt level on the SIU"
+                flavor        data
+                legal_values  0 to 7
+                default_value 7
+                description   "
+                    This option selects which SIU level the CPM interrupts
+                    should be routed to."
+            }
+        }
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_powerpc.h>"
+    }
+
+    compile       var_intr.c var_misc.c variant.S
+
+    cdl_option CYGPKG_HAL_POWERPC_MPC8xx_TESTS {
+        display "PowerPC MPC8xx tests"
+        flavor  data
+        no_define
+        calculated { "tests/intr0" }
+
+        description   "
+            This option specifies the set of tests for the PowerPC MPC8xx HAL."
+    }
+
+    cdl_option CYGBLD_BUILD_VERSION_TOOL {
+        display "Build MPC8xx version dump tool"
+        default_value 0
+        requires { CYG_HAL_STARTUP == "RAM" }
+        no_define
+        description "This option enables the building of a tool which will print the version identifiers of the CPU."
+        make -priority 320 {
+            <PREFIX>/bin/mpc8xxrev : <PACKAGE>/src/mpc8xxrev.c
+            @sh -c "mkdir -p src $(dir $@)"
+            $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o src/mpc8xxrev.o $<
+            @echo $@ ": \\" > $(notdir $@).deps
+            @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+            @tail -n +2 deps.tmp >> $(notdir $@).deps
+            @echo >> $(notdir $@).deps
+            @rm deps.tmp
+            $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ src/mpc8xxrev.o
+        }
+    }
+
+}

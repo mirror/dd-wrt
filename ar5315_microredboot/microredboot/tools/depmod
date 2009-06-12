@@ -1,0 +1,13 @@
+#!/bin/bash
+if [  "$KERNELPATH" = "" -o  "$MODULEPATH" = "" ] 
+ then
+   if [  "$KERNELPATH" = "" ] 
+    then
+      echo KERNELPATH not defoned!
+    else
+      echo MODULEPATH not defoned!
+    fi
+ else
+	perl $TOPDIR/tools/depmod.pl -b ${MODULEPATH}/.. -k ${KERNELPATH}/vmlinux  
+
+fi

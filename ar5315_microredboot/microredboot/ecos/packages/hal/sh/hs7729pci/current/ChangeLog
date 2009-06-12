@@ -1,0 +1,230 @@
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/ser16c550c.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Serial register renaming.
+
+2001-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_sh_sh7729_hs7729pci.cdl: Indicate support of variable baud
+	rates.
+
+2001-10-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Fixed warning.
+
+2001-09-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h: Removed dummy
+	CYGPRI_HAL_INTERRUPT_CONFIGURE_PLF definition.
+
+2001-09-21  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h (CYGPRI_HAL_INTERRUPT_UPDATE_LEVEL_PLF):
+	Ignore level vectors.
+
+2001-07-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c (hal_platform_init): Use driver API to attach PCI
+	arbiter.
+
+2001-07-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7729_hs7729pci.cdl: Increase PLL1 to 4 for faster
+	CPU clock.
+
+2001-07-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c (hal_platform_init): Always install PCI arbiter.
+
+	* src/smsc37c93x.c: Enable RTC.
+
+2001-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_sh7729_hs7729pci.cdl: Set linux exec parameters.
+
+	* include/platform.inc: Fix SD0001 SDRAM setup.
+
+	* src/smsc37c93x.c (cyg_hal_init_superIO): Fixed interrupt setting
+	- 32 bit reads swap the two 16 bits words, so my first reading of
+	the default setup was wrong.
+
+2001-07-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: CYGARC_PHYSICAL_ADDRESS renamed to
+	CYGARC_BUS_ADDRESS.
+	* include/plf_io.h: Same.
+
+2001-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h (CYGPRI_HAL_INTERRUPT_ACKNOWLEDGE_PLF): Fix
+	typo.
+
+	* src/plf_misc.c: Include new arbiter header.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Set up ISR arbiter for the PCI vector.
+
+	* include/plf_io.h: Added HAL_PCI_TRANSLATE_INTERRUPT.
+
+	* include/plf_intr.h: Added decoded PCI vectors. Added interrupt
+	configury extensions. 
+
+2001-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.mlt: Reserve 128k
+	for redBoot.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.h: Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.ldi: Same.
+
+	* misc/redboot_RAM.ecm: Added ether driver. Added compression.
+	* misc/redboot_ROM.ecm: Same.
+
+	* include/platform.inc: Replace settings with proper values from
+	Hitachi boot loader.
+
+	* src/plf_misc.c (cyg_hal_plf_pci_init): Set PCI IO/MEM
+	offsets. Set BAR1 to SDRAM start.
+
+	* include/plf_io.h: Set proper PCI memory base. Fix CPU/BUS
+	translation macros.
+
+2001-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_RAM.ecm: Increase stack size to 6kB.
+	* misc/redboot_ROM.ecm: Same.
+
+	* include/plf_io.h: Define PCI IO accessor macros (keep commented
+	out though since IO mapped access is working now).
+	* src/plf_misc.c: PCI IO accessor functions fixed (and commented
+	out). Instead of fiddling PCI endian control, set PCI timeout
+	values like the Linux kernel, and PCI IO mapped access works.
+
+2001-06-25  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Call PCI init in RedBoot configs. Added PCI IO
+	accessor functions.
+
+	* include/plf_io.h: Define PCI IO accessor macros and CPU/BUS
+	translation macros.
+
+	* src/plf_misc.c (cyg_hal_plf_pci_cfg_write_byte): 
+
+	* src/ser16c550c.c: Use magic 16bit access.
+	* src/smsc37c93x.c: Same.
+
+	* src/hal_diag.c (cyg_hal_plf_comms_init): Init SuperIO.
+
+2001-06-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c (cyg_hal_plf_pci_init): Fiddle PCI setup.
+
+2001-06-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/smsc37c93x.c (cyg_hal_init_superIO): Power up COM ports. Use
+	correct offsets. Set interrupt vectors.
+
+	* src/ser16c550c.c: Correct clock and vectors.
+
+	* cdl/hal_sh_sh7729_hs7729pci.cdl: Force LVL irq mode.
+
+	* include/plf_intr.h: Added external interrupts.
+
+2001-05-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.h: Added PCI window.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.mlt: Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.ldi: Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_rom.h:   Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_rom.mlt: Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_rom.ldi: Same.
+
+2001-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c (hal_platform_init): Init SuperIO controller.
+
+	* src/hal_diag.c (cyg_hal_plf_comms_init): Init superIO UARTs (disabled).
+
+	* src/ser16c550c.c: Added.
+	* src/smsc37c93x.c: Added.
+	* cdl/hal_sh_sh7729_hs7729pci.cdl: Build new files.
+
+	* src/plf_misc.c: Added delays to make PCI config IO work. 
+
+	* include/plf_io.h (HAL_PCI_ALLOC_BASE_MEMORY): Changed - not sure
+	if correct. 
+	(HAL_PCI_IGNORE_DEVICE): Don't probe anything but PCI bus 0.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: Added PCI functions.
+
+	* include/plf_io.h: Added. Contains PCI details.
+
+	* include/platform.inc (BSC_settings_table): Changed to use init
+	values as documented by Hitachi.
+
+	* misc/split_words.c: Quick hack to allow splitting of images for
+	EPROM programming.
+
+	* misc/redboot_RAM.ecm: Added.
+	* misc/redboot_ROM.ecm: Added.
+
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.h: Made SDRAM area
+	default for memory. Added SRAM1 and SRAM2 areas.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.ldi: Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_ram.mlt: Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_rom.h:   Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_rom.ldi: Same.
+	* include/pkgconf/mlt_sh_sh7729_hs7729pci_rom.mlt: Same.
+
+	* cdl/hal_sh_sh7729_hs7729pci.cdl: Use SDRAM.
+
+2001-05-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc (hal_hardware_init): Don't mess with BSC
+	stuff in RAM startup.
+
+2001-05-25  Jesper Skov  <jskov@cambridge.redhat.com>
+
+	* New platform HAL.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,473 @@
+# ====================================================================
+#
+#      hal.cdl
+#
+#      HAL configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  nickg,jskov,jlarmour
+# Contributors:   dmoseley
+# Date:           1999-06-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL {
+    display       "eCos HAL"
+    include_dir   cyg/hal
+    description   "
+        The eCos HAL package provide a porting layer for
+        higher-level parts of the system such as the kernel and the
+        C library. Each installation should have HAL packages for
+        one or more architectures, and for each architecture there
+        may be one or more supported platforms. It is necessary to
+        select one target architecture and one platform for that
+        architecture. There are also a number of configuration
+        options that are common to all HAL packages."
+    doc           ref/the-ecos-hardware-abstraction-layer.html
+
+    compile       drv_api.c
+    compile       -library=libextras.a dummy.c
+
+    requires      CYGPKG_INFRA
+
+    make -priority 250 {
+        <PREFIX>/lib/extras.o: <PREFIX>/lib/libextras.a
+        $(CC) $(CFLAGS) -nostdlib -Wl,-r -Wl,--whole-archive -o $@ $<
+    }   
+
+
+    cdl_component CYGPKG_HAL_COMMON {
+        display       "Platform-independent HAL options"
+        flavor        none
+        description   "
+            A number of configuration options are common to most or all
+            HAL packages, for example options controlling how much state
+            should be saved during a context switch. The implementations
+            of these options will vary from architecture to architecture."
+
+        script        common.cdl
+    }
+
+    cdl_component CYGPKG_HAL_COMMON_INTERRUPTS {
+        display       "HAL interrupt handling"
+        flavor        none
+        description   "
+            A number of configuration options related to interrupt
+            handling are common to most or all HAL packages, even though
+            the implementations will vary from architecture to
+            architecture."
+
+        script        interrupts.cdl
+    }
+
+    cdl_component CYGPKG_HAL_COMMON_CONTEXT {
+        display       "HAL context switch support"
+        flavor        none
+        description   "
+            A number of configuration options related to thread contexts
+            are common to most or all HAL packages, even though the
+            implementations will vary from architecture to architecture."
+
+        cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+            display       "Use minimum thread context"
+            parent        CYGPKG_HAL_COMMON_CONTEXT
+            default_value 1
+            description   "
+                The thread context switch code can exploit the calling
+                conventions defined for a given architecture to reduce the
+                amount of state that has to be saved during a context
+                switch. Generally this improves performance and reduces
+                code size. However it can make source-level debugging more
+                difficult."
+        }
+    }
+
+    cdl_component CYGPKG_HAL_CACHE_CONTROL {
+        display       "Explicit control over cache behaviour"
+        flavor        none
+        no_define
+        description   "
+            These options let the default behaviour of the caches 
+            be easily configurable."
+
+        cdl_component CYGSEM_HAL_ENABLE_DCACHE_ON_STARTUP {
+            display       "Enable DATA cache on startup"
+            default_value 1
+            description   "
+                Enabling this option will cause the data cache to be enabled
+                as soon as practicable when eCos starts up.  One would choose
+                to disable this if the data cache cannot safely be turned on,
+                such as a case where the cache(s) require additional platform
+                specific setup."
+            cdl_option CYGSEM_HAL_DCACHE_STARTUP_MODE {
+                display       "DATA cache mode on startup"
+                flavor        data
+                legal_values  { "COPYBACK" "WRITETHRU" }
+                default_value { "COPYBACK" }
+                description   "
+                    This option controls the mode the cache will be set to
+                when enabled on startup."
+            }
+        }
+
+        cdl_option CYGSEM_HAL_ENABLE_ICACHE_ON_STARTUP {
+            display       "Enable INSTRUCTION cache on startup"
+            default_value 1
+            description   "
+                Enabling this option will cause the instruction cache to be enabled
+                as soon as practicable when eCos starts up.  One would choose
+                to disable this if the instruction cache cannot safely be turned on,
+                such as a case where the cache(s) require additional platform
+                specific setup."
+        }
+    }
+
+    cdl_component CYGPKG_HAL_DEBUG {
+        display       "Source-level debugging support"
+        flavor        none
+        description   "
+            If the source level debugger gdb is to be used for debugging
+            application code then it may be necessary to configure in support
+            for this in the HAL."
+
+        script        debugging.cdl
+    }
+
+    cdl_component CYGPKG_HAL_ROM_MONITOR {
+        display       "ROM monitor support"
+        flavor        none
+        no_define
+        description   "
+            Support for ROM monitors can be built in to your application. 
+            It may also be relevant to build your application as a ROM monitor
+            itself. Such options are contained here if relevant for your chosen
+            platform. The options and ROM monitors available to choose are
+            platform-dependent."
+
+
+
+        cdl_interface CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT {
+            display "Target has virtual vector support"
+            no_define
+        }
+
+
+        cdl_interface CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT {
+            display     "Target supports baud rate control via vectors"
+            no_define
+            description "
+                Whether this target supports the __COMMCTL_GETBAUD
+                and __COMMCTL_SETBAUD virtual vector comm control operations."
+        }
+
+        cdl_component CYGSEM_HAL_VIRTUAL_VECTOR_SUPPORT {
+            display     "Enable use of virtual vector calling interface"
+            active_if   CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+            calculated  1
+            description "
+                Virtual vector support allows the HAL to let the ROM
+                monitor handle certain operations. The virtual vector table
+                defines a calling interface between applications running in
+                RAM and the ROM monitor."
+            compile     hal_if.c hal_misc.c
+
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_INHERIT_CONSOLE {
+                display       "Inherit console settings from ROM monitor"
+	        active_if     CYGSEM_HAL_USE_ROM_MONITOR
+                default_value { !CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_COMMS }
+                description   "
+                    When this option is set, the application will inherit
+	            the console as set up by the ROM monitor. This means
+                    that the application will use whatever channel and
+                    mangling style was used by the ROM monitor when
+                    the application was launched."
+            }
+
+            cdl_option CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE {
+                display       "Debug channel is configurable"
+                calculated    { CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_COMMS }
+                description   "
+                    This option is a configuration hint - it is enabled
+                    when the HAL initialization code will make use
+                    of the debug channel configuration option."
+            }
+
+            cdl_option CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE {
+                display       "Console channel is configurable"
+                calculated    { !CYGSEM_HAL_VIRTUAL_VECTOR_INHERIT_CONSOLE \
+                                && !CYGDBG_HAL_DIAG_TO_DEBUG_CHAN }
+                description   "
+                    This option is a configuration hint - it is enabled
+                    when the HAL initialization code will make use
+                    of the console channel configuration option."
+            }
+                
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE {
+                display       "Initialize whole of virtual vector table"
+                default_value { CYG_HAL_STARTUP != "RAM" || !CYGSEM_HAL_USE_ROM_MONITOR }
+                requires CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_RESET
+                requires CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DELAY_US
+                requires CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_CACHE
+                requires CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DATA
+                requires CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_COMMS
+                description   "
+                    This option will cause the whole of the virtual
+                    vector table to be initialized with dummy values on
+                    startup. When this option is enabled, all the
+                    options below must also be enabled - or the
+                    table would be empty when the application
+                    launches.
+
+                    On targets where older ROM monitors without
+                    virtual vector support may still be in use, it is
+                    necessary for RAM applictions to initialize the
+                    table (since all HAL diagnostics and debug IO
+                    happens via the table)."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DEFAULT {
+                display       "Claim virtual vector table entries by default"
+		active_if     !CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE
+                default_value 1
+                description "
+                    By default most virtual vectors will be claimed by
+                    RAM startup configurations, meaning that the RAM
+                    application will provide the services. The
+                    exception is COMMS support (HAL
+                    diagnostics/debugging IO) which is left in the
+                    control of the ROM monitor.
+
+                    The reasoning behind this is to get as much of the
+                    code exercised during regular development so it
+                    is known to be working the few times a new ROM
+                    monitor or a ROM production configuration is used
+                    - COMMS are excluded only by necessity in order to
+                    avoid breaking an existing debugger connections
+                    (there may be ways around this).
+
+                    For production RAM configurations this option can
+                    be switched off, causing the appliction to rely on
+                    the ROM monitor for these services, thus
+                    saving some space.
+
+                    Individual vectors may also be left unclaimed,
+                    controlled by the below options (meaning that the
+                    associated service provided by the ROM monitor
+                    will be used)."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_RESET {
+                display       "Claim reset virtual vectors"
+                default_value { CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE \
+                                || CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DEFAULT }
+                description   "
+                    This option will cause the reset and kill_by_reset
+                    virtual vectors to be claimed."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_VERSION {
+                display       "Claim version virtual vectors"
+                default_value { CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE }
+                description   "
+                    This option will cause the version
+                    virtual vectors to be claimed."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DELAY_US {
+                display       "Claim delay_us virtual vector"
+                default_value { CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE \
+                                || CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DEFAULT }
+                description   "
+                    This option will cause the delay_us
+                    virtual vector to be claimed."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_CACHE {
+                display       "Claim cache virtual vectors"
+                default_value { CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE \
+                                || CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DEFAULT }
+                description   "
+                    This option will cause the cache virtual vectors
+                    to be claimed."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DATA {
+                display       "Claim data virtual vectors"
+                default_value { CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE \
+                                || CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DEFAULT }
+                description   "
+                    This option will cause the data virtual vectors
+                    to be claimed. At present there is only one, used
+                    by the RedBoot ethernet driver to share diag output."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_COMMS {
+                display       "Claim comms virtual vectors"
+                default_value { CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE \
+                                || CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS }
+                description   "
+                    This option will cause the communication tables
+                    that are part of the virtual vectors mechanism to
+                    be claimed. Note that doing this may cause an
+                    existing ROM monitor communication connection to
+                    be closed. For this reason, the option is disabled
+                    per default for normal application
+                    configurations."
+            }
+
+            cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_DIAG {
+                display       "Do diagnostic IO via virtual vector table"
+                calculated    1
+                description   "
+                    All HAL IO happens via the virtual vector table / comm
+                    tables when those tables are supported by the HAL.
+
+                    If so desired, the low-level IO functions can
+                    still be provided by the RAM application by
+                    enabling the CLAIM_COMMS option."
+            }
+        }
+
+        cdl_option CYGBLD_BUILD_COMMON_GDB_STUBS {
+            display "Build common GDB stub ROM image"
+            default_value 0
+            parent  CYGBLD_GLOBAL_OPTIONS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            no_define
+            description "
+                Unless a target board has specific requirements to the
+                stub implementation, it can use a simple common stub.
+                This option, which gets enabled by platform HALs as
+                appropriate, controls the building of the common stub."
+                         
+            make -priority 315 {
+                <PREFIX>/bin/gdb_module.img : <PACKAGE>/src/stubrom/stubrom.c <PREFIX>/lib/extras.o <PREFIX>/lib/libtarget.a <PREFIX>/lib/target.ld <PREFIX>/lib/vectors.o
+                @sh -c "mkdir -p src/stubrom $(dir $@)"
+                $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o src/stubrom/gdb_module.o $<
+                @echo $@ ": \\" > $(notdir $@).deps
+                @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+                @tail -n +2 deps.tmp >> $(notdir $@).deps
+                @echo >> $(notdir $@).deps
+                @rm deps.tmp
+                $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ src/stubrom/gdb_module.o
+            }
+        }
+
+
+    }
+
+    # Does platform need special I/O initializations?
+    cdl_interface     CYGINT_HAL_PLF_IF_INIT {
+        display       "Platform defined I/O channels."
+        description   "
+          Platforms which provide additional I/O channels can implement
+          this interface, indicating that the function plf_if_init()
+          needs to be called."
+    }
+
+    # Does platform provide IDE I/O macros?
+    cdl_interface     CYGINT_HAL_PLF_IF_IDE {
+        display       "Platform IDE I/O support."
+        description   "
+          Platforms which provide IDE controllers can implement
+          this interface, indicating that IDE I/O macros are
+          available."
+    }
+    cdl_option CYGPKG_HAL_GDB_FILEIO {
+        display       "File I/O operations via GDB"
+        default_value 0
+        active_if     CYGSEM_REDBOOT_BSP_SYSCALLS
+        requires      CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        compile       gdb-fileio.c
+        description   "This option enables support for various file I/O
+                       operations using the GDB remote protocol to communicate
+                       with GDB. The operations are then performed on the
+                       debugging host by proxy. These operations are only
+                       currently available by using a system call interface
+                       to RedBoot. This may change in the future."
+    }
+
+    define_proc {
+        puts $::cdl_header "/***** proc output start *****/"
+        puts $::cdl_header "#include <pkgconf/system.h>"
+
+        puts $::cdl_header "#include CYGBLD_HAL_TARGET_H"
+        puts $::cdl_header "#ifdef   CYGBLD_HAL_VARIANT_H"
+        puts $::cdl_header "#include CYGBLD_HAL_VARIANT_H"
+        puts $::cdl_header "#endif"
+        puts $::cdl_header "#include CYGBLD_HAL_PLATFORM_H"
+
+        puts $::cdl_header "/****** proc output end ******/"
+
+    }
+
+    cdl_option     CYGPKG_HAL_BUILD_COMPILER_TESTS {
+        display       "Build Compiler sanity checking tests"
+        description   "
+            Enabling this option causes compiler tests to be built."
+    }
+
+    cdl_component CYGPKG_HAL_TESTS {
+        display "Common HAL tests"
+        flavor  data
+        no_define
+        calculated {  "tests/context tests/basic"
+                      . ((!CYGINT_HAL_TESTS_NO_CACHES) ? " tests/cache" : "")
+                      . ((CYGPKG_HAL_BUILD_COMPILER_TESTS) ? " tests/cpp1 tests/vaargs" : "")
+                      . ((!CYGVAR_KERNEL_COUNTERS_CLOCK) ?   " tests/intr" : "") }
+        description   "
+            This option specifies the set of tests for the common HAL."
+
+
+        cdl_interface CYGINT_HAL_TESTS_NO_CACHES {
+            display       "Interface for cache presence"
+            flavor        booldata
+            description   "
+                Some architectures and/or platforms do not have caches. By
+                implementing this interface, these can disable the various
+                cache-related tests."
+        }                
+
+    }
+}

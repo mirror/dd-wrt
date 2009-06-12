@@ -1,0 +1,416 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.06 [en] (X11; I; Linux 2.0.35 i686) [Netscape]">
+   <TITLE>Source Window Help</TITLE>
+</HEAD>
+<BODY>
+
+<CENTER>
+<H1>The Source Window</H1></CENTER>
+
+<BR>The Source Window is the primary interface between the user and
+the debugger; it is automatically opened when the debugger starts. The
+Source Window displays the status of the program, controls execution of
+the program, and allows visualization of the program execution.
+
+<H3><A HREF="#menus">Menus</A></H3>
+
+<UL>
+<LI><A HREF="#menus_file">File Menu</A></LI>
+<LI><A HREF="#menus_run">Run Menu</A></LI>
+<LI><A HREF="#menus_view">View Menu</A></LI>
+<LI><A HREF="#menus_control">Control Menu</A></LI>
+<LI><A HREF="#menus_prefs">Preferences Menu</A></LI>
+</UL>
+
+<H3><A HREF="#toolbar">Toolbar</A></H3>
+
+<UL>
+<LI><A HREF="#toolbar_exec">Execution Control Buttons</A></LI>
+<LI><A HREF="#toolbar_window">Window Buttons</A></LI>
+<LI><A HREF="#toolbar_frame">Frame Control</A></LI>
+</UL>
+
+<H3><A HREF="#display">Source Window Display</A></H3>
+
+<UL>
+<LI><A HREF="#setting_a_breakpoint">Setting a Breakpoint</A></LI>
+<LI><A HREF="#viewing_breakpoints">Viewing Breakpoints</A></LI>
+<LI><A HREF="#display_balloon">Variable Balloons</A></LI>
+<LI><A HREF="#display_popup">Source Pop-up Menus</A></LI>
+</UL>
+
+<H3><A HREF="#status">Source Window Status Bars</A></H3>
+
+<UL>
+<LI><A HREF="#status_bar">Program Status Bar</A></LI>
+<LI><A HREF="#status_mode">Source Display Status Bar</A></LI>
+</UL>
+
+<H3><A HREF="#search">Search Entry</A></H3>
+
+<HR>
+<H2><A NAME="menus"></A>Menus</H2>
+
+<IMG SRC="images/src_menu.gif">
+<H4><A NAME="menus_file"></A>File Menu</H4>
+
+<DL>
+<DT>Open</DT>
+<DD>Opens a file selection dialog to select the executable to debug</DD>
+<DT>Target Settings...</DT>
+<DD>Opens the <A HREF="target.html">Target Selection Dialog</A> to edit target
+settings</DD>
+<DT>Page Setup</DT>
+<DD>(Windows only) Opens the Windows Page Setup dialog to configure printing</DD>
+<DT>Print</DT>
+<DD>(Windows only) Print the contents of the Source Window Display</DD>
+<DT>Exit</DT>
+<DD>Exits the debugger</DD>
+</DL>
+
+<H4><A NAME="menus_run"></A>Run Menu</H4>
+<DL>
+<DT>Download</DT>
+<DD>Initiates download of the executable onto the target via the protocol specified
+in the <A HREF="target.html">Target Selection Dialog</A></DD>
+<DT>Run</DT>
+<DD>Runs or re-runs the program</DD>
+</DL>
+
+<H4><A NAME="menus_view"></A>View Menu</H4>
+<DL>
+<DT>Stack</DT>
+<DD>Open a <A HREF="stack.html">Stack Window</A></DD>
+<DT>Registers</DT>
+<DD>Open a <A HREF="register.html">Register Window</A></DD>
+<DT>Memory</DT>
+<DD>Open a <A HREF="memory.html">Memory Window</A></DD>
+<DT>Watch Expressions</DT>
+<DD>Open a <A HREF="watch.html">Watch Window</A></DD>
+<DT>Local Variables</DT>
+<DD>Open a <A HREF="locals.html">Locals Window</A></DD>
+<DT>Breakpoints</DT>
+<DD>Open a <A HREF="breakpoint.html">Breakpoint Window</A></DD>
+<DT>Console</DT>
+<DD>Open a <A HREF="console.html">Console Window</A></DD>
+<DT>Function Browser</DT>
+<DD>Open a window allowing the user to easily search for functions and 
+set breakpoints.</DD>
+<DT>Thread List</DT>
+<DD>Open a window that displays all current threads and allows the user
+to change active threads</DD>
+</DL>
+
+<H4><A NAME="menus_control"></A>Control Menu</H4>
+<DL>
+<DT><A HREF="#step_button">Step</A></DT>
+<DD>Step program until it reaches a different source line</DD>
+<DT><A HREF="#next_button">Next</A></DT>
+<DD>Step program, proceeding through subroutine calls</DD>
+<DT><A HREF="#finish_button">Finish</A></DT>
+<DD>Execute until the current stack frame returns</DD>
+<DT><A HREF="#continue_button">Continue</A></DT>
+<DD>Continue program being debugged, after signal or breakpoint</DD>
+<DT><A HREF="#stepi_button">Step Asm Inst</A></DT>
+<DD>Step one instruction exactly</DD>
+<DT><A HREF="#nexti_button">Next Asm Inst</A></DT>
+<DD>Step one instruction, but proceed through subroutine calls</DD>
+<DT>Automatic Step</DT>
+<DD>Automatically step the program every two seconds</DD>
+</DL>
+
+<H4><A NAME="menus_prefs"></A>Preferences Menu</H4>
+<DL>
+<DT>Global</DT>
+<DD>Opens the <A HREF="gbl_pref.html">Global Preferences Dialog</A> and allows
+editing of global settings</DD>
+<DT>Source</DT>
+<DD>Opens the <A HREF="src_pref.html">Source Preferences Dialog</A> and allows
+editing of Source Window settings</DD>
+</DL>
+
+<HR>
+
+<H2><A NAME="toolbar"></A>Toolbar</H2>
+<IMG SRC="images/src_toolbar.gif">
+The Source Window toolbar consists of three functional sections: execution
+control buttons, debugger window buttons, and stack frame control buttons.
+
+<BR>
+<H4><A NAME="toolbar_exec"></A>Execution Control Buttons</H4>
+These convenience buttons provide on-screen access to the most important
+debugger execution control functions:
+<DL>
+<DT><A NAME="run_button"></A><IMG SRC="../images/run.gif"> or 
+<IMG SRC="../images2/run.gif"> Run </DT>
+<DD>The Run Button will start execution of the program, including target selection
+and downloading, if necessary. If the program is already running, the Run
+Button will start the program from the beginning (re-run it).</DD>
+
+<DT><A NAME="stop_button"></A><IMG SRC="../images/stop.gif"> or
+<IMG SRC="../images2/stop.gif"> Stop</DT>
+<DD>The Stop Button will interrupt execution of the program (provided this
+feature is supported by the underlying debugging protocol and hardware)
+or cancel downloads. It is also used as an indication that the debugger
+is busy.</DD>
+<DT><A NAME="step_button"></A><IMG SRC="../images/step.gif"> or <IMG SRC="../images2/step.gif">Step</DT>
+<DD>Step the program until it reaches a different source line</DD>
+<DT><A NAME="next_button"></A><IMG SRC="../images/next.gif"> or <IMG SRC="../images2/next.gif">Next</DT>
+<DD>Step the program, proceeding through subroutine calls</DD>
+<DT><A NAME="finish_button"></A><IMG SRC="../images/finish.gif"> or <IMG SRC="../images2/finish.gif"> Finish</DT>
+<DD>Execute until the current stack frame returns</DD>
+<DT><A NAME="continue_button"></A><IMG SRC="../images/continue.gif"> or <IMG SRC="../images2/continue.gif"> Continue</DT>
+<DD>Continue the program being debugged, after signal or breakpoint</DD>
+<DT><A NAME="stepi_button"></A><IMG SRC="../images/stepi.gif"> or <IMG SRC="../images2/stepi.gif"> Step Asm Inst</DT>
+<DD>Step one instruction exactly. This function is only available when the
+Source Window is displaying assembler code.</DD>
+<DT><A NAME="nexti_button"></A><IMG SRC="../images/nexti.gif"> or <IMG SRC="../images2/nexti.gif"> Next Asm Inst</DT>
+<DD>Step one instruction, but proceed through subroutine calls. This function
+is only available when the Source Window is displaying assembler code.</DD>
+</DL>
+
+<H4>
+<A NAME="toolbar_window"></A>Window Buttons</H4>
+The Debugger Window buttons give instant access to the Debugger's auxiliary
+windows:
+<DL>
+<DT><A NAME="register_button"></A><IMG SRC="../images/reg.gif"> or <IMG SRC="../images2/reg.gif"> Registers</DT>
+<DD>Open a <A HREF="register.html">Register Window</A></DD>
+<DT><A NAME="memory_button"></A><IMG SRC="../images/memory.gif"> or <IMG SRC="../images2/memory.gif"> Memory</DT>
+<DD>Open a <A HREF="memory.html">Memory Window</A></DD>
+<DT><A NAME="stack_button"></A><IMG SRC="../images/stack.gif"> or <IMG SRC="../images2/stack.gif"> Stack</DT>
+<DD>Open a <A HREF="stack.html">Stack Window</A></DD>
+<DT><A NAME="watch_button"></A><IMG SRC="../images/watch.gif"> or <IMG SRC="../images2/watch.gif"> Watch Expressions</DT>
+<DD>Open a <A HREF="watch.html">Watch Window</A></DD>
+<DT><A NAME="locals_button"></A><IMG SRC="../images/vars.gif"> or <IMG SRC="../images2/vars.gif"> Local Variables</DT>
+<DD>Open a <A HREF="locals.html">Locals Window</A></DD>
+<DT><A NAME="breakpoints_button"></A><IMG SRC="../images/bp.gif"> or <IMG SRC="../images2/bp.gif"> Breakpoints</DT>
+<DD>Open a <A HREF="breakpoint.html">Breakpoint Window</A></DD>
+<DT><A NAME="console_button"></A><IMG SRC="../images/console.gif"> or <IMG SRC="../images2/console.gif"> Console</DT>
+<DD>Open a <A HREF="console.html">Console Window</A></DD>
+</DL>
+
+<H4><A NAME="toolbar_frame"></A>Frame Control</H4>
+The Frame Control area of the toolbar displays information about the PC
+of the current frame, and the frame control buttons may be used to navigate
+through the call stack. Whenever any of these buttons are used, both the
+Source Window Display and the <A HREF="stack.html">Stack Window</A> will
+show the selected frame.
+<DL>
+<DT><IMG SRC="images/frame_info.gif" > Frame Information Display</DT>
+<DD>The left half of the frame information display shows the value of the PC
+in the current frame. The right half shows the line number of the PC in
+the source file, if available.</DD>
+
+<DT><A NAME="up_button"></A><IMG SRC="../images/up.gif"> or <IMG SRC="../images2/up.gif"> Up</DT>
+<DD>Select and view the stack frame that called this one</DD>
+
+<DT><A NAME="down_button"></A><IMG SRC="../images/down.gif"> or <IMG SRC="../images2/down.gif"> Down</DT>
+<DD>Select and view the stack frame called by this one</DD>
+
+<DT><A NAME="bottom_button"></A><IMG SRC="../images/bottom.gif"> or <IMG SRC="../images2/bottom.gif"> Bottom</DT>
+<DD>Select and view the bottom-most stack frame</DD>
+</DL>
+
+<HR>
+
+<H2><A NAME="display"></A>Source Display</H2>
+The Source Display is used for many things: browsing source code, setting
+and clearing breakpoints, and a few other special functions. Executable
+lines (those for which executable code was generated by the compiler) are
+denoted with a marker (a dash, "-") in the first column of the display.
+<P>The debugger highlights the PC in the current frame in either green,
+indicating that the PC is in the bottom-most frame (i.e., it is being executed)
+or gold, indicating that the PC is contained in a frame that is not currently
+executing (because it has called another function). A blue highlight is
+used by the debugger to indicate a browsing position: the PC is contained
+in a frame that is not executing or on the call stack. All highlight colors
+are user selectable in the <A HREF="src_pref.html">Source Preferences</A>.
+
+<BR>
+<H4><A NAME="setting_a_breakpoint"></A>Setting a Breakpoint</H4>
+Moving the mouse pointer over the "hot spot" of an executable line will
+change the mouse cursor to a large dot. Clicking the left mouse button
+will then toggle a breakpoint at this line. If no breakpoint exists, one
+will be installed and the dash in the left margin will change into a red
+breakdot. If a breakpoint exists, it will be removed and the red breakdot
+will revert back to a dash. The executable line marker shows the status
+of each line: an empty marker (the dash) indicates that no breakpoints
+are set at the line. A colored breakdot indicates that a breakpoint exists
+at the line (see <A HREF="#display_popup">Source Pop-up Menus</A> for more
+information on setting different types of breakpoints and their representations
+in the Source Display).
+<P>Black breakdots in the Source Window display indicate that the breakpoint
+has been disabled. To re-enable the breakpoint, click the enable/disable
+checkbox in the Breakpoint Window (see <A HREF="breakpoint.html#display_state">
+Enabling/Disabling Breakpoints</A>).
+
+<BR>
+<H4><A NAME="viewing_breakpoints"></A>Viewing Breakpoints</H4>
+You can find out more information about a breakpoint by moving the cursor
+over a breakpoint.  A balloon window will pop up with additional information.
+To get a list of all the active breakpoints, you will need to open a 
+<A HREF="breakpoint.html">breakpoint window</A>.
+<IMG SRC="images/src_bp_bal.gif">
+
+<BR>
+<H4><A NAME="display_balloon"></A>Variable Balloons</H4>
+If the program to be debugged has started and is stopped, the display
+will show the value of variables in variable
+balloons. To activate a variable balloon, simply hold the mouse cursor
+over the name of a variable in the Source Display for a second or two:
+the debugger displays the name of the variable, its type, and its value
+in a pop-up balloon.
+<IMG SRC="images/src_bal.gif">
+
+<BR>
+<H4><A NAME="display_popup"></A>Source Pop-up Menus</H4>
+The Source Display has two pop-up menus. One is activated by clicking the
+right mouse button when the mouse cursor is over an executable line marker's
+hot spot. This pop-up menu looks like this:
+<P><IMG SRC="images/src_bpop.gif">
+<DL>
+<DT>Continue to Here</DT>
+<DD>Continue program execution until it reaches this point. All breakpoints
+will be ignored.  Be aware that if the program never executes the line you selected,
+it will run until completion.</DD>
+<DT>Set Breakpoint</DT>
+<DD>Set a breakpoint at this line. This has the same effect as left clicking
+on this line. Breakpoints are shown as red breakdots in the Source Window
+Display.</DD>
+<DT>Set Temporary Breakpoint</DT>
+<DD>Set a temporary breakpoint at this line. Temporary breakpoints are shown
+as orange breakdots in the Source Window Display. The remove themselves automatically
+the first time they are hit.</DD>
+<A NAME="thread_bp"></A>
+<DT>Set Breakpoint on Thread(s)...</DT>
+<DD>GDB allows the user to set a breakpoint on a particular thread or threads. This
+menu item will display a dialog with a list of threads.  The user can select a list
+of threads that will have breakpoints set at the selected line number.  A warning
+will be displayed if there are no active threads.</DD>
+<IMG SRC="images/src_thread.gif">
+</DL>
+
+The other pop-up menu is activated by clicking the right mouse button anywhere
+else in the Source Display. It is only available when a variable or number
+in the display lies below the mouse cursor or is selected (by clicking
+the left mouse button and dragging the mouse to highlight the variable/number).
+The pop-up menu looks like this:
+<P><IMG SRC="images/src_pop.gif">
+<DL>
+<DT><A NAME="add_to_watch"></A>Add <I>expr</I> to Watch</DT>
+<DD>Adds the selected expression to the <A HREF="watch.html">Watch Window</A>,
+opening it, if necessary.</DD>
+<DT>Dump Memory at <I>expr</I></DT>
+<DD>Opens a new <A HREF="memory.html">Memory Window</A> at the selected expression.
+If the expression is a variable, then the Memory Window is opened with
+memory addresses starting at the value of the variable.</DD>
+<DT>Open Another SOurce Window</DT>
+<DD>GDB allows multiple source windows to co-exist. You can, for example, have
+one window in source mode and one in assembly mode.  Or you can use one window
+to browse the stack or other files.</DD>
+</DL>
+
+<H4><A NAME="status"></A>Source Window Status Bars</H4>
+The Source Window has two status bars which inform the user of the status
+of the program (the "status bar") and the status of the Source Window.
+<P>The&nbsp;<A NAME="status_bar"></A>Program Status Bar (or simply "Status
+Bar") displays the status of the program. Common messages seen here include:
+<DL>
+<DT>No program loaded.</DT>
+<DD>No program has been loaded into target memory.</DD>
+<DT>Program is ready to run.</DT>
+<DD>A program has been loaded into target memory and may be executed. Start
+the program by hitting <A HREF="#run_button">Run</A>.</DD>
+<DT>Program stopped at <I>line/address</I></DT>
+<DD>The program stopped at line <I>line</I> or address <I>address</I>. Execution
+may continue by hitting any of the <A HREF="#toolbar_exec">execution control
+buttons</A> on the toolbar.</DD>
+<DT>Program terminated. 'Run' will restart.</DT>
+<DD>The program exited. Pressing <A HREF="#run_button">Run</A> will restart
+it.</DD>
+</DL>
+
+The Status Bar also displays some help information. For instance, the Status
+Bar will show the function of a button on the toolbar or the Source Display
+Status Bar as well as any keyboard shortcut for any button in the Source
+Window.
+
+<BR>
+<H4><A NAME="status_mode"></A>Source Display Status Bar</H4>
+<IMG SRC="images/src_stat.gif">
+The Source Display Status Bar shows the current state of the Source Window:
+the name of the file displayed in the Display, the name of the function
+in the Display which contains the PC for the current frame (if any), and
+the display mode.
+<P>The <A NAME="file_selector"></A>Source File Selector is a dropdown
+menu which contains the names of all the files that were compiled into
+the program being debugged.
+<P>Normally, the File Selector displays the name of the file currently
+being viewed, but any file from the dropdown menu may be selected for browsing.
+Simply select the file to view from the available choices (or type it directly
+into the File Selector) and the Source Window will load that file into
+the Display. To return to the PC of the program, simply press the
+<A HREF="#bottom_button">Bottom
+Frame Control Button</A>.
+<P>The <A NAME="function_selector"></A>Source Function Selector displays
+the name of the function containing the Source Window's PC, if one exists,
+but it may be used to browse any function in the current file. Simply type
+the name of the desired function into the Function Selector or select it
+from the dropdown menu. The Source Window's PC is updated to point at this
+function. To return to the PC of the program, simply press the
+<A HREF="#bottom_button">Bottom
+Frame Control Button</A>.
+<P>The <A NAME="mode_selector"></A>Source Display Mode Selector displays
+the viewing mode of the current file/function shown in the Source Window
+Display.
+<P>The function of the "step" keyboard shortcut will differ depending on
+the mode the Source Window Display. "Stepping" in Source Mode (or in the
+Source Pane of SRC+ASM Mode) will cause a source-level step. "Stepping"
+in Assembly or Mixed Mode (or in the Assembly Pane of the SRC+ASM Mode)
+will cause the debugger to step exactly one machine instruction. This also
+applies to the shortcut for "next".
+<P>The Display Mode Selector may be used to change the view of the current
+source file. The available display modes are
+<DL>
+<DT>SOURCE</DT>
+<DD>The contents of the Display are shown as source code. If source code is
+not available (either because no debugging information is available or
+the source file is not found), the Source Window will temporarily set the Display
+Mode to "ASSEMBLY".</DD>
+<DT>ASSEMBLY</DT>
+<DD>A disassembly of the target's memory is shown in the Display. Even assembly
+source files show a disassembly of target memory; to see the assembly source
+code, use the SOURCE mode. Note that the debugger can only display assembly
+code on a function-by-function basis. It cannot display all the instructions
+generated from a single source file.</DD>
+<DT>MIXED</DT>
+<DD>The Display shows source code mixed with the assembler instructions which
+were generated for those lines by the compiler for the current function.
+Note that the addresses of the assembly lines is not necessarily monotonically
+increasing. If the source file associated with the function cannot be found,
+the Source Window will revert to ASSEMBLY mode.</DD>
+<DT>SRC+ASM</DT>
+<DD>The Source Window Display is divided into two panes: an assembly pane and
+a source pane. Breakpoints may be set/cleared in either pane.</DD>
+</DL>
+
+<HR>
+
+<H2><A NAME="search"></A>Search Entry</H2>
+The Search Entry facilitates searching for text in the Source Window Display.
+Simply enter the text to be found into the Search Entry and press the Enter
+key on the keyboard to search forwards in the Source Window Display (hold
+down the Shift key to search backwards). If a match is found, it is highlighted
+in the Source Window and the Program Status Bar displays information about
+where the match was found.
+<P>The Search Entry can also jump the Source Window to a specific line.
+Enter the line number preceded by an "at" sign (@) into the Search Entry
+and press enter. If entered line number is greater than the total number
+of lines in the Source Window Display, the Display will jump to the end
+of the current file.
+</BODY>
+</HTML>

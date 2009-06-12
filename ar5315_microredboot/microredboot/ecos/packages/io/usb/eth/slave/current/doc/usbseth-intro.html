@@ -1,0 +1,314 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Introduction</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="PREVIOUS"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="NEXT"
+TITLE="Initializing the USB-ethernet Package"
+HREF="usbseth-init.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Support for Developing USB-ethernet Peripherals</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="io-usb-slave-eth.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbseth-init.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBSETH-INTRO"
+>Introduction</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+>Introduction&nbsp;--&nbsp;eCos support for developing USB ethernet peripherals</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN9"
+></A
+><H2
+>Introduction</H2
+><P
+>The eCos USB-ethernet package provides additional support for USB
+peripherals that involve some sort of ethernet-style network. This can
+be a traditional ethernet, or it can involve some other networking
+technology that uses ethernet frames as a unit of transfer. It
+provides functions to transfer ethernet frames over the USB bus,
+handles certain control messages from the host, and optionally it can
+provide a network device driver for use by the eCos TCP/IP stack.
+The package comes with an example host-side device driver.</P
+><P
+>The USB-ethernet package is not tied to any specific hardware. It
+requires the presence of USB hardware and a suitable device driver,
+but not all USB peripherals involve ethernet communications. Hence the
+configuration system cannot load the package automatically for
+specific targets, in the way that a USB device driver or an ethernet
+driver can be loaded automatically. Instead, the package has to be
+added explicitly. When using the command line tools this will involve
+an operation like the following:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ ecosconfig add usbs_eth</PRE
+></TD
+></TR
+></TABLE
+><P
+>Typically, this will automatically cause the USB device driver to
+become active. Loading the USB-ethernet package automatically provides
+functionality for <A
+HREF="usbseth-init.html"
+>initialization</A
+>,
+<A
+HREF="usbseth-data.html"
+>data transfer</A
+>, and the handling of
+<A
+HREF="usbseth-control.html"
+>control messages</A
+> and state
+changes. If the current configuration includes the eCos TCP/IP stack
+then the <A
+HREF="usbseth-netdev.html"
+>network device driver</A
+>
+support will be enabled as well by default, allowing the stack to
+exchange ethernet frames over the USB bus.</P
+><P
+>There is a USB standard for a class of communication devices including
+ethernet. The package does not implement this standard, due to
+limitations in the hardware for which the package was first developed.
+Instead, the package uses its own <A
+HREF="usbseth-protocol.html"
+>protocol</A
+> between USB
+<A
+HREF="usbseth-host.html"
+>host device driver</A
+> and the
+peripheral. </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN22"
+></A
+><H2
+>Usage Scenarios</H2
+><P
+>The USB-ethernet package can be used several different scenarios. In
+a simple scenario, the peripheral serves only to connect the USB host
+to a suitable network:</P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN25"
+></A
+><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="simple.gif"
+></IMG
+></P
+></DIV
+><P
+></P
+></DIV
+><P
+>After initialization, and once the USB connection between host and
+peripheral has been established, higher-level code needs to detect
+packets that are intended for the host, and to forward these. This can
+be achieved by the low-level <TT
+CLASS="FUNCTION"
+>usbs_eth_start_tx</TT
+>
+function. Similarly, higher-level code needs to detect packets coming
+from the host, using <TT
+CLASS="FUNCTION"
+>usbs_eth_start_rx</TT
+>, and to
+forward these using the real network. As far as the host is concerned
+it is connected directly to the network. In this scenario there is no
+confusion about addresses: there is a single MAC address for the
+host/peripheral combination, corresponding to the connection to the
+real network, and it is this address which should be supplied during
+<A
+HREF="usbseth-init.html"
+>initialization</A
+>.</P
+><P
+>In a more complicated scenario, there is a TCP/IP stack running inside
+the peripheral.</P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN36"
+></A
+><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="tcpip.gif"
+></IMG
+></P
+></DIV
+><P
+></P
+></DIV
+><P
+>This involves the USB-ethernet package providing a service both to the
+host and to the eCos TCP/IP stack. It achieves the latter by acting as
+an eCos network device. Typically, the TCP/IP stack will be configured
+to act as a network bridge. The USB peripheral needs to examine the
+packets arriving over the real network. Some of these packets will be
+intended for the host, while others will be intended for the
+peripheral itself. To distinguish between these two scenarios, two
+distinct MAC addresses are needed: one for the host, and one for the
+peripheral. Similarly, packets sent by the host may have to be
+forwarded via the real network, or they may be intended for the TCP/IP
+stack inside the peripheral. Packets generated inside the peripheral's
+TCP/IP stack may need to be sent via the real network or over the USB
+bus. The network bridge software will have to take care of all these
+possibilities. Unusually for a network bridge, one of the network
+segments being bridged will only ever have one machine attached.</P
+><P
+>There are other possible usage scenarios. For example, the peripheral
+might not be attached to a real network at all. Instead it could be
+the USB host that acts as a network bridge, allowing a TCP/IP stack
+inside the peripheral to communicate with the outside world. The
+various details will depend on the exact type of peripheral being
+developed. </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbseth-init.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>eCos Support for Developing USB-ethernet Peripherals</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Initializing the USB-ethernet Package</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,79 @@
+2004-05-11  Thomas Koeller  <thomas.koeller@baslerweb.com>
+
+	* cdl/flash_atmel_at49xxxx.cdl:
+	* include/flash_at49xxxx.inl: Added workaround for Atmel
+	AT91FR40162 erase bug.
+
+2003-11-10  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/flash_at49xxxx_parts.inl: Add AT29LV200BB
+
+2003-09-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/flash_at49xxxx_parts.inl: Add support for AT49LV040
+
+	* include/flash_at49xxxx.inl: Support devices which need "chip erase"
+	as opposed to "sector erase" operations.
+
+2003-08-08  Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* include/flash_at49xxxx.inl: the program/erase completion had a
+	race condtion.  Changes algorithms to one that does not suffer
+	from potential race conditions.
+
+2003-07-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/flash_at49xxxx.inl: Reorganise to support boot blocks,
+	multiple flash types from the same driver, and do proper
+	verification.
+	* include/flash_at49xxxx_parts.inl: New file to describe flash
+	part information.
+
+2003-06-10  Øyvind Harboe  <oyvind.harboe@zylin.com>
+
+	* include/flash_at49xxxx.inl: wait_while_busy needs to be in RAM
+	since its called while the flash is not readable.
+	
+2002-07-12  Tim Drury (tdrury@siliconmotorsports.com>
+
+	* include/flash_at49xxxx.inl: added support for AT49LV1614
+
+2002-06-24  Jani Monoses <jani@iv.ro>
+
+	* include/flash_at49xxxx.inl: Added support for AT49BV8011
+	based on AT29XXXXX
+	
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

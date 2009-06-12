@@ -1,0 +1,832 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: Expressions,  Next: Tagging Insns,  Prev: Defining Attributes,  Up: Insn Attributes
+
+Attribute Expressions
+---------------------
+
+   RTL expressions used to define attributes use the codes described
+above plus a few specific to attribute definitions, to be discussed
+below.  Attribute value expressions must have one of the following
+forms:
+
+`(const_int I)'
+     The integer I specifies the value of a numeric attribute.  I must
+     be non-negative.
+
+     The value of a numeric attribute can be specified either with a
+     `const_int', or as an integer represented as a string in
+     `const_string', `eq_attr' (see below), `attr', `symbol_ref',
+     simple arithmetic expressions, and `set_attr' overrides on
+     specific instructions (*note Tagging Insns::).
+
+`(const_string VALUE)'
+     The string VALUE specifies a constant attribute value.  If VALUE
+     is specified as `"*"', it means that the default value of the
+     attribute is to be used for the insn containing this expression.
+     `"*"' obviously cannot be used in the DEFAULT expression of a
+     `define_attr'.
+
+     If the attribute whose value is being specified is numeric, VALUE
+     must be a string containing a non-negative integer (normally
+     `const_int' would be used in this case).  Otherwise, it must
+     contain one of the valid values for the attribute.
+
+`(if_then_else TEST TRUE-VALUE FALSE-VALUE)'
+     TEST specifies an attribute test, whose format is defined below.
+     The value of this expression is TRUE-VALUE if TEST is true,
+     otherwise it is FALSE-VALUE.
+
+`(cond [TEST1 VALUE1 ...] DEFAULT)'
+     The first operand of this expression is a vector containing an even
+     number of expressions and consisting of pairs of TEST and VALUE
+     expressions.  The value of the `cond' expression is that of the
+     VALUE corresponding to the first true TEST expression.  If none of
+     the TEST expressions are true, the value of the `cond' expression
+     is that of the DEFAULT expression.
+
+   TEST expressions can have one of the following forms:
+
+`(const_int I)'
+     This test is true if I is nonzero and false otherwise.
+
+`(not TEST)'
+`(ior TEST1 TEST2)'
+`(and TEST1 TEST2)'
+     These tests are true if the indicated logical function is true.
+
+`(match_operand:M N PRED CONSTRAINTS)'
+     This test is true if operand N of the insn whose attribute value
+     is being determined has mode M (this part of the test is ignored
+     if M is `VOIDmode') and the function specified by the string PRED
+     returns a nonzero value when passed operand N and mode M (this
+     part of the test is ignored if PRED is the null string).
+
+     The CONSTRAINTS operand is ignored and should be the null string.
+
+`(le ARITH1 ARITH2)'
+`(leu ARITH1 ARITH2)'
+`(lt ARITH1 ARITH2)'
+`(ltu ARITH1 ARITH2)'
+`(gt ARITH1 ARITH2)'
+`(gtu ARITH1 ARITH2)'
+`(ge ARITH1 ARITH2)'
+`(geu ARITH1 ARITH2)'
+`(ne ARITH1 ARITH2)'
+`(eq ARITH1 ARITH2)'
+     These tests are true if the indicated comparison of the two
+     arithmetic expressions is true.  Arithmetic expressions are formed
+     with `plus', `minus', `mult', `div', `mod', `abs', `neg', `and',
+     `ior', `xor', `not', `ashift', `lshiftrt', and `ashiftrt'
+     expressions.
+
+     `const_int' and `symbol_ref' are always valid terms (*note Insn
+     Lengths::,for additional forms).  `symbol_ref' is a string
+     denoting a C expression that yields an `int' when evaluated by the
+     `get_attr_...' routine.  It should normally be a global variable.
+
+`(eq_attr NAME VALUE)'
+     NAME is a string specifying the name of an attribute.
+
+     VALUE is a string that is either a valid value for attribute NAME,
+     a comma-separated list of values, or `!' followed by a value or
+     list.  If VALUE does not begin with a `!', this test is true if
+     the value of the NAME attribute of the current insn is in the list
+     specified by VALUE.  If VALUE begins with a `!', this test is true
+     if the attribute's value is _not_ in the specified list.
+
+     For example,
+
+          (eq_attr "type" "load,store")
+
+     is equivalent to
+
+          (ior (eq_attr "type" "load") (eq_attr "type" "store"))
+
+     If NAME specifies an attribute of `alternative', it refers to the
+     value of the compiler variable `which_alternative' (*note Output
+     Statement::) and the values must be small integers.  For example,
+
+          (eq_attr "alternative" "2,3")
+
+     is equivalent to
+
+          (ior (eq (symbol_ref "which_alternative") (const_int 2))
+               (eq (symbol_ref "which_alternative") (const_int 3)))
+
+     Note that, for most attributes, an `eq_attr' test is simplified in
+     cases where the value of the attribute being tested is known for
+     all insns matching a particular pattern.  This is by far the most
+     common case.
+
+`(attr_flag NAME)'
+     The value of an `attr_flag' expression is true if the flag
+     specified by NAME is true for the `insn' currently being scheduled.
+
+     NAME is a string specifying one of a fixed set of flags to test.
+     Test the flags `forward' and `backward' to determine the direction
+     of a conditional branch.  Test the flags `very_likely', `likely',
+     `very_unlikely', and `unlikely' to determine if a conditional
+     branch is expected to be taken.
+
+     If the `very_likely' flag is true, then the `likely' flag is also
+     true.  Likewise for the `very_unlikely' and `unlikely' flags.
+
+     This example describes a conditional branch delay slot which can
+     be nullified for forward branches that are taken (annul-true) or
+     for backward branches which are not taken (annul-false).
+
+          (define_delay (eq_attr "type" "cbranch")
+            [(eq_attr "in_branch_delay" "true")
+             (and (eq_attr "in_branch_delay" "true")
+                  (attr_flag "forward"))
+             (and (eq_attr "in_branch_delay" "true")
+                  (attr_flag "backward"))])
+
+     The `forward' and `backward' flags are false if the current `insn'
+     being scheduled is not a conditional branch.
+
+     The `very_likely' and `likely' flags are true if the `insn' being
+     scheduled is not a conditional branch.  The `very_unlikely' and
+     `unlikely' flags are false if the `insn' being scheduled is not a
+     conditional branch.
+
+     `attr_flag' is only used during delay slot scheduling and has no
+     meaning to other passes of the compiler.
+
+`(attr NAME)'
+     The value of another attribute is returned.  This is most useful
+     for numeric attributes, as `eq_attr' and `attr_flag' produce more
+     efficient code for non-numeric attributes.
+
+
+File: gccint.info,  Node: Tagging Insns,  Next: Attr Example,  Prev: Expressions,  Up: Insn Attributes
+
+Assigning Attribute Values to Insns
+-----------------------------------
+
+   The value assigned to an attribute of an insn is primarily
+determined by which pattern is matched by that insn (or which
+`define_peephole' generated it).  Every `define_insn' and
+`define_peephole' can have an optional last argument to specify the
+values of attributes for matching insns.  The value of any attribute
+not specified in a particular insn is set to the default value for that
+attribute, as specified in its `define_attr'.  Extensive use of default
+values for attributes permits the specification of the values for only
+one or two attributes in the definition of most insn patterns, as seen
+in the example in the next section.
+
+   The optional last argument of `define_insn' and `define_peephole' is
+a vector of expressions, each of which defines the value for a single
+attribute.  The most general way of assigning an attribute's value is
+to use a `set' expression whose first operand is an `attr' expression
+giving the name of the attribute being set.  The second operand of the
+`set' is an attribute expression (*note Expressions::) giving the value
+of the attribute.
+
+   When the attribute value depends on the `alternative' attribute
+(i.e., which is the applicable alternative in the constraint of the
+insn), the `set_attr_alternative' expression can be used.  It allows
+the specification of a vector of attribute expressions, one for each
+alternative.
+
+   When the generality of arbitrary attribute expressions is not
+required, the simpler `set_attr' expression can be used, which allows
+specifying a string giving either a single attribute value or a list of
+attribute values, one for each alternative.
+
+   The form of each of the above specifications is shown below.  In
+each case, NAME is a string specifying the attribute to be set.
+
+`(set_attr NAME VALUE-STRING)'
+     VALUE-STRING is either a string giving the desired attribute value,
+     or a string containing a comma-separated list giving the values for
+     succeeding alternatives.  The number of elements must match the
+     number of alternatives in the constraint of the insn pattern.
+
+     Note that it may be useful to specify `*' for some alternative, in
+     which case the attribute will assume its default value for insns
+     matching that alternative.
+
+`(set_attr_alternative NAME [VALUE1 VALUE2 ...])'
+     Depending on the alternative of the insn, the value will be one of
+     the specified values.  This is a shorthand for using a `cond' with
+     tests on the `alternative' attribute.
+
+`(set (attr NAME) VALUE)'
+     The first operand of this `set' must be the special RTL expression
+     `attr', whose sole operand is a string giving the name of the
+     attribute being set.  VALUE is the value of the attribute.
+
+   The following shows three different ways of representing the same
+attribute value specification:
+
+     (set_attr "type" "load,store,arith")
+     
+     (set_attr_alternative "type"
+                           [(const_string "load") (const_string "store")
+                            (const_string "arith")])
+     
+     (set (attr "type")
+          (cond [(eq_attr "alternative" "1") (const_string "load")
+                 (eq_attr "alternative" "2") (const_string "store")]
+                (const_string "arith")))
+
+   The `define_asm_attributes' expression provides a mechanism to
+specify the attributes assigned to insns produced from an `asm'
+statement.  It has the form:
+
+     (define_asm_attributes [ATTR-SETS])
+
+where ATTR-SETS is specified the same as for both the `define_insn' and
+the `define_peephole' expressions.
+
+   These values will typically be the "worst case" attribute values.
+For example, they might indicate that the condition code will be
+clobbered.
+
+   A specification for a `length' attribute is handled specially.  The
+way to compute the length of an `asm' insn is to multiply the length
+specified in the expression `define_asm_attributes' by the number of
+machine instructions specified in the `asm' statement, determined by
+counting the number of semicolons and newlines in the string.
+Therefore, the value of the `length' attribute specified in a
+`define_asm_attributes' should be the maximum possible length of a
+single machine instruction.
+
+
+File: gccint.info,  Node: Attr Example,  Next: Insn Lengths,  Prev: Tagging Insns,  Up: Insn Attributes
+
+Example of Attribute Specifications
+-----------------------------------
+
+   The judicious use of defaulting is important in the efficient use of
+insn attributes.  Typically, insns are divided into "types" and an
+attribute, customarily called `type', is used to represent this value.
+This attribute is normally used only to define the default value for
+other attributes.  An example will clarify this usage.
+
+   Assume we have a RISC machine with a condition code and in which only
+full-word operations are performed in registers.  Let us assume that we
+can divide all insns into loads, stores, (integer) arithmetic
+operations, floating point operations, and branches.
+
+   Here we will concern ourselves with determining the effect of an
+insn on the condition code and will limit ourselves to the following
+possible effects:  The condition code can be set unpredictably
+(clobbered), not be changed, be set to agree with the results of the
+operation, or only changed if the item previously set into the
+condition code has been modified.
+
+   Here is part of a sample `md' file for such a machine:
+
+     (define_attr "type" "load,store,arith,fp,branch" (const_string "arith"))
+     
+     (define_attr "cc" "clobber,unchanged,set,change0"
+                  (cond [(eq_attr "type" "load")
+                             (const_string "change0")
+                         (eq_attr "type" "store,branch")
+                             (const_string "unchanged")
+                         (eq_attr "type" "arith")
+                             (if_then_else (match_operand:SI 0 "" "")
+                                           (const_string "set")
+                                           (const_string "clobber"))]
+                        (const_string "clobber")))
+     
+     (define_insn ""
+       [(set (match_operand:SI 0 "general_operand" "=r,r,m")
+             (match_operand:SI 1 "general_operand" "r,m,r"))]
+       ""
+       "@
+        move %0,%1
+        load %0,%1
+        store %0,%1"
+       [(set_attr "type" "arith,load,store")])
+
+   Note that we assume in the above example that arithmetic operations
+performed on quantities smaller than a machine word clobber the
+condition code since they will set the condition code to a value
+corresponding to the full-word result.
+
+
+File: gccint.info,  Node: Insn Lengths,  Next: Constant Attributes,  Prev: Attr Example,  Up: Insn Attributes
+
+Computing the Length of an Insn
+-------------------------------
+
+   For many machines, multiple types of branch instructions are
+provided, each for different length branch displacements.  In most
+cases, the assembler will choose the correct instruction to use.
+However, when the assembler cannot do so, GCC can when a special
+attribute, the `length' attribute, is defined.  This attribute must be
+defined to have numeric values by specifying a null string in its
+`define_attr'.
+
+   In the case of the `length' attribute, two additional forms of
+arithmetic terms are allowed in test expressions:
+
+`(match_dup N)'
+     This refers to the address of operand N of the current insn, which
+     must be a `label_ref'.
+
+`(pc)'
+     This refers to the address of the _current_ insn.  It might have
+     been more consistent with other usage to make this the address of
+     the _next_ insn but this would be confusing because the length of
+     the current insn is to be computed.
+
+   For normal insns, the length will be determined by value of the
+`length' attribute.  In the case of `addr_vec' and `addr_diff_vec' insn
+patterns, the length is computed as the number of vectors multiplied by
+the size of each vector.
+
+   Lengths are measured in addressable storage units (bytes).
+
+   The following macros can be used to refine the length computation:
+
+`FIRST_INSN_ADDRESS'
+     When the `length' insn attribute is used, this macro specifies the
+     value to be assigned to the address of the first insn in a
+     function.  If not specified, 0 is used.
+
+`ADJUST_INSN_LENGTH (INSN, LENGTH)'
+     If defined, modifies the length assigned to instruction INSN as a
+     function of the context in which it is used.  LENGTH is an lvalue
+     that contains the initially computed length of the insn and should
+     be updated with the correct length of the insn.
+
+     This macro will normally not be required.  A case in which it is
+     required is the ROMP.  On this machine, the size of an `addr_vec'
+     insn must be increased by two to compensate for the fact that
+     alignment may be required.
+
+   The routine that returns `get_attr_length' (the value of the
+`length' attribute) can be used by the output routine to determine the
+form of the branch instruction to be written, as the example below
+illustrates.
+
+   As an example of the specification of variable-length branches,
+consider the IBM 360.  If we adopt the convention that a register will
+be set to the starting address of a function, we can jump to labels
+within 4k of the start using a four-byte instruction.  Otherwise, we
+need a six-byte sequence to load the address from memory and then
+branch to it.
+
+   On such a machine, a pattern for a branch instruction might be
+specified as follows:
+
+     (define_insn "jump"
+       [(set (pc)
+             (label_ref (match_operand 0 "" "")))]
+       ""
+     {
+        return (get_attr_length (insn) == 4
+                ? "b %l0" : "l r15,=a(%l0); br r15");
+     }
+       [(set (attr "length")
+             (if_then_else (lt (match_dup 0) (const_int 4096))
+                           (const_int 4)
+                           (const_int 6)))])
+
+
+File: gccint.info,  Node: Constant Attributes,  Next: Delay Slots,  Prev: Insn Lengths,  Up: Insn Attributes
+
+Constant Attributes
+-------------------
+
+   A special form of `define_attr', where the expression for the
+default value is a `const' expression, indicates an attribute that is
+constant for a given run of the compiler.  Constant attributes may be
+used to specify which variety of processor is used.  For example,
+
+     (define_attr "cpu" "m88100,m88110,m88000"
+      (const
+       (cond [(symbol_ref "TARGET_88100") (const_string "m88100")
+              (symbol_ref "TARGET_88110") (const_string "m88110")]
+             (const_string "m88000"))))
+     
+     (define_attr "memory" "fast,slow"
+      (const
+       (if_then_else (symbol_ref "TARGET_FAST_MEM")
+                     (const_string "fast")
+                     (const_string "slow"))))
+
+   The routine generated for constant attributes has no parameters as it
+does not depend on any particular insn.  RTL expressions used to define
+the value of a constant attribute may use the `symbol_ref' form, but
+may not use either the `match_operand' form or `eq_attr' forms
+involving insn attributes.
+
+
+File: gccint.info,  Node: Delay Slots,  Next: Function Units,  Prev: Constant Attributes,  Up: Insn Attributes
+
+Delay Slot Scheduling
+---------------------
+
+   The insn attribute mechanism can be used to specify the requirements
+for delay slots, if any, on a target machine.  An instruction is said to
+require a "delay slot" if some instructions that are physically after
+the instruction are executed as if they were located before it.
+Classic examples are branch and call instructions, which often execute
+the following instruction before the branch or call is performed.
+
+   On some machines, conditional branch instructions can optionally
+"annul" instructions in the delay slot.  This means that the
+instruction will not be executed for certain branch outcomes.  Both
+instructions that annul if the branch is true and instructions that
+annul if the branch is false are supported.
+
+   Delay slot scheduling differs from instruction scheduling in that
+determining whether an instruction needs a delay slot is dependent only
+on the type of instruction being generated, not on data flow between the
+instructions.  See the next section for a discussion of data-dependent
+instruction scheduling.
+
+   The requirement of an insn needing one or more delay slots is
+indicated via the `define_delay' expression.  It has the following form:
+
+     (define_delay TEST
+                   [DELAY-1 ANNUL-TRUE-1 ANNUL-FALSE-1
+                    DELAY-2 ANNUL-TRUE-2 ANNUL-FALSE-2
+                    ...])
+
+   TEST is an attribute test that indicates whether this `define_delay'
+applies to a particular insn.  If so, the number of required delay
+slots is determined by the length of the vector specified as the second
+argument.  An insn placed in delay slot N must satisfy attribute test
+DELAY-N.  ANNUL-TRUE-N is an attribute test that specifies which insns
+may be annulled if the branch is true.  Similarly, ANNUL-FALSE-N
+specifies which insns in the delay slot may be annulled if the branch
+is false.  If annulling is not supported for that delay slot, `(nil)'
+should be coded.
+
+   For example, in the common case where branch and call insns require
+a single delay slot, which may contain any insn other than a branch or
+call, the following would be placed in the `md' file:
+
+     (define_delay (eq_attr "type" "branch,call")
+                   [(eq_attr "type" "!branch,call") (nil) (nil)])
+
+   Multiple `define_delay' expressions may be specified.  In this case,
+each such expression specifies different delay slot requirements and
+there must be no insn for which tests in two `define_delay' expressions
+are both true.
+
+   For example, if we have a machine that requires one delay slot for
+branches but two for calls,  no delay slot can contain a branch or call
+insn, and any valid insn in the delay slot for the branch can be
+annulled if the branch is true, we might represent this as follows:
+
+     (define_delay (eq_attr "type" "branch")
+        [(eq_attr "type" "!branch,call")
+         (eq_attr "type" "!branch,call")
+         (nil)])
+     
+     (define_delay (eq_attr "type" "call")
+                   [(eq_attr "type" "!branch,call") (nil) (nil)
+                    (eq_attr "type" "!branch,call") (nil) (nil)])
+
+
+File: gccint.info,  Node: Function Units,  Prev: Delay Slots,  Up: Insn Attributes
+
+Specifying Function Units
+-------------------------
+
+   On most RISC machines, there are instructions whose results are not
+available for a specific number of cycles.  Common cases are
+instructions that load data from memory.  On many machines, a pipeline
+stall will result if the data is referenced too soon after the load
+instruction.
+
+   In addition, many newer microprocessors have multiple function
+units, usually one for integer and one for floating point, and often
+will incur pipeline stalls when a result that is needed is not yet
+ready.
+
+   The descriptions in this section allow the specification of how much
+time must elapse between the execution of an instruction and the time
+when its result is used.  It also allows specification of when the
+execution of an instruction will delay execution of similar instructions
+due to function unit conflicts.
+
+   For the purposes of the specifications in this section, a machine is
+divided into "function units", each of which execute a specific class
+of instructions in first-in-first-out order.  Function units that
+accept one instruction each cycle and allow a result to be used in the
+succeeding instruction (usually via forwarding) need not be specified.
+Classic RISC microprocessors will normally have a single function unit,
+which we can call `memory'.  The newer "superscalar" processors will
+often have function units for floating point operations, usually at
+least a floating point adder and multiplier.
+
+   Each usage of a function units by a class of insns is specified with
+a `define_function_unit' expression, which looks like this:
+
+     (define_function_unit NAME MULTIPLICITY SIMULTANEITY
+                           TEST READY-DELAY ISSUE-DELAY
+                          [CONFLICT-LIST])
+
+   NAME is a string giving the name of the function unit.
+
+   MULTIPLICITY is an integer specifying the number of identical units
+in the processor.  If more than one unit is specified, they will be
+scheduled independently.  Only truly independent units should be
+counted; a pipelined unit should be specified as a single unit.  (The
+only common example of a machine that has multiple function units for a
+single instruction class that are truly independent and not pipelined
+are the two multiply and two increment units of the CDC 6600.)
+
+   SIMULTANEITY specifies the maximum number of insns that can be
+executing in each instance of the function unit simultaneously or zero
+if the unit is pipelined and has no limit.
+
+   All `define_function_unit' definitions referring to function unit
+NAME must have the same name and values for MULTIPLICITY and
+SIMULTANEITY.
+
+   TEST is an attribute test that selects the insns we are describing
+in this definition.  Note that an insn may use more than one function
+unit and a function unit may be specified in more than one
+`define_function_unit'.
+
+   READY-DELAY is an integer that specifies the number of cycles after
+which the result of the instruction can be used without introducing any
+stalls.
+
+   ISSUE-DELAY is an integer that specifies the number of cycles after
+the instruction matching the TEST expression begins using this unit
+until a subsequent instruction can begin.  A cost of N indicates an N-1
+cycle delay.  A subsequent instruction may also be delayed if an
+earlier instruction has a longer READY-DELAY value.  This blocking
+effect is computed using the SIMULTANEITY, READY-DELAY, ISSUE-DELAY,
+and CONFLICT-LIST terms.  For a normal non-pipelined function unit,
+SIMULTANEITY is one, the unit is taken to block for the READY-DELAY
+cycles of the executing insn, and smaller values of ISSUE-DELAY are
+ignored.
+
+   CONFLICT-LIST is an optional list giving detailed conflict costs for
+this unit.  If specified, it is a list of condition test expressions to
+be applied to insns chosen to execute in NAME following the particular
+insn matching TEST that is already executing in NAME.  For each insn in
+the list, ISSUE-DELAY specifies the conflict cost; for insns not in the
+list, the cost is zero.  If not specified, CONFLICT-LIST defaults to
+all instructions that use the function unit.
+
+   Typical uses of this vector are where a floating point function unit
+can pipeline either single- or double-precision operations, but not
+both, or where a memory unit can pipeline loads, but not stores, etc.
+
+   As an example, consider a classic RISC machine where the result of a
+load instruction is not available for two cycles (a single "delay"
+instruction is required) and where only one load instruction can be
+executed simultaneously.  This would be specified as:
+
+     (define_function_unit "memory" 1 1 (eq_attr "type" "load") 2 0)
+
+   For the case of a floating point function unit that can pipeline
+either single or double precision, but not both, the following could be
+specified:
+
+     (define_function_unit
+        "fp" 1 0 (eq_attr "type" "sp_fp") 4 4 [(eq_attr "type" "dp_fp")])
+     (define_function_unit
+        "fp" 1 0 (eq_attr "type" "dp_fp") 4 4 [(eq_attr "type" "sp_fp")])
+
+   *Note:* The scheduler attempts to avoid function unit conflicts and
+uses all the specifications in the `define_function_unit' expression.
+It has recently come to our attention that these specifications may not
+allow modeling of some of the newer "superscalar" processors that have
+insns using multiple pipelined units.  These insns will cause a
+potential conflict for the second unit used during their execution and
+there is no way of representing that conflict.  We welcome any examples
+of how function unit conflicts work in such processors and suggestions
+for their representation.
+
+
+File: gccint.info,  Node: Conditional Execution,  Next: Constant Definitions,  Prev: Insn Attributes,  Up: Machine Desc
+
+Conditional Execution
+=====================
+
+   A number of architectures provide for some form of conditional
+execution, or predication.  The hallmark of this feature is the ability
+to nullify most of the instructions in the instruction set.  When the
+instruction set is large and not entirely symmetric, it can be quite
+tedious to describe these forms directly in the `.md' file.  An
+alternative is the `define_cond_exec' template.
+
+     (define_cond_exec
+       [PREDICATE-PATTERN]
+       "CONDITION"
+       "OUTPUT-TEMPLATE")
+
+   PREDICATE-PATTERN is the condition that must be true for the insn to
+be executed at runtime and should match a relational operator.  One can
+use `match_operator' to match several relational operators at once.
+Any `match_operand' operands must have no more than one alternative.
+
+   CONDITION is a C expression that must be true for the generated
+pattern to match.
+
+   OUTPUT-TEMPLATE is a string similar to the `define_insn' output
+template (*note Output Template::), except that the `*' and `@' special
+cases do not apply.  This is only useful if the assembly text for the
+predicate is a simple prefix to the main insn.  In order to handle the
+general case, there is a global variable `current_insn_predicate' that
+will contain the entire predicate if the current insn is predicated,
+and will otherwise be `NULL'.
+
+   When `define_cond_exec' is used, an implicit reference to the
+`predicable' instruction attribute is made.  *Note Insn Attributes::.
+This attribute must be boolean (i.e. have exactly two elements in its
+LIST-OF-VALUES).  Further, it must not be used with complex
+expressions.  That is, the default and all uses in the insns must be a
+simple constant, not dependent on the alternative or anything else.
+
+   For each `define_insn' for which the `predicable' attribute is true,
+a new `define_insn' pattern will be generated that matches a predicated
+version of the instruction.  For example,
+
+     (define_insn "addsi"
+       [(set (match_operand:SI 0 "register_operand" "r")
+             (plus:SI (match_operand:SI 1 "register_operand" "r")
+                      (match_operand:SI 2 "register_operand" "r")))]
+       "TEST1"
+       "add %2,%1,%0")
+     
+     (define_cond_exec
+       [(ne (match_operand:CC 0 "register_operand" "c")
+            (const_int 0))]
+       "TEST2"
+       "(%0)")
+
+generates a new pattern
+
+     (define_insn ""
+       [(cond_exec
+          (ne (match_operand:CC 3 "register_operand" "c") (const_int 0))
+          (set (match_operand:SI 0 "register_operand" "r")
+               (plus:SI (match_operand:SI 1 "register_operand" "r")
+                        (match_operand:SI 2 "register_operand" "r"))))]
+       "(TEST2) && (TEST1)"
+       "(%3) add %2,%1,%0")
+
+
+File: gccint.info,  Node: Constant Definitions,  Prev: Conditional Execution,  Up: Machine Desc
+
+Constant Definitions
+====================
+
+   Using literal constants inside instruction patterns reduces
+legibility and can be a maintenance problem.
+
+   To overcome this problem, you may use the `define_constants'
+expression.  It contains a vector of name-value pairs.  From that point
+on, wherever any of the names appears in the MD file, it is as if the
+corresponding value had been written instead.  You may use
+`define_constants' multiple times; each appearance adds more constants
+to the table.  It is an error to redefine a constant with a different
+value.
+
+   To come back to the a29k load multiple example, instead of
+
+     (define_insn ""
+       [(match_parallel 0 "load_multiple_operation"
+          [(set (match_operand:SI 1 "gpc_reg_operand" "=r")
+                (match_operand:SI 2 "memory_operand" "m"))
+           (use (reg:SI 179))
+           (clobber (reg:SI 179))])]
+       ""
+       "loadm 0,0,%1,%2")
+
+   You could write:
+
+     (define_constants [
+         (R_BP 177)
+         (R_FC 178)
+         (R_CR 179)
+         (R_Q  180)
+     ])
+     
+     (define_insn ""
+       [(match_parallel 0 "load_multiple_operation"
+          [(set (match_operand:SI 1 "gpc_reg_operand" "=r")
+                (match_operand:SI 2 "memory_operand" "m"))
+           (use (reg:SI R_CR))
+           (clobber (reg:SI R_CR))])]
+       ""
+       "loadm 0,0,%1,%2")
+
+   The constants that are defined with a define_constant are also output
+in the insn-codes.h header file as #defines.
+
+
+File: gccint.info,  Node: Target Macros,  Next: Host Config,  Prev: Machine Desc,  Up: Top
+
+Target Description Macros and Functions
+***************************************
+
+   In addition to the file `MACHINE.md', a machine description includes
+a C header file conventionally given the name `MACHINE.h' and a C
+source file named `MACHINE.c'.  The header file defines numerous macros
+that convey the information about the target machine that does not fit
+into the scheme of the `.md' file.  The file `tm.h' should be a link to
+`MACHINE.h'.  The header file `config.h' includes `tm.h' and most
+compiler source files include `config.h'.  The source file defines a
+variable `targetm', which is a structure containing pointers to
+functions and data relating to the target machine.  `MACHINE.c' should
+also contain their definitions, if they are not defined elsewhere in
+GCC, and other functions called through the macros defined in the `.h'
+file.
+
+* Menu:
+
+* Target Structure::    The `targetm' variable.
+* Driver::              Controlling how the driver runs the compilation passes.
+* Run-time Target::     Defining `-m' options like `-m68000' and `-m68020'.
+* Per-Function Data::   Defining data structures for per-function information.
+* Storage Layout::      Defining sizes and alignments of data.
+* Type Layout::         Defining sizes and properties of basic user data types.
+* Escape Sequences::    Defining the value of target character escape sequences
+* Registers::           Naming and describing the hardware registers.
+* Register Classes::    Defining the classes of hardware registers.
+* Stack and Calling::   Defining which way the stack grows and by how much.
+* Varargs::		Defining the varargs macros.
+* Trampolines::         Code set up at run time to enter a nested function.
+* Library Calls::       Controlling how library routines are implicitly called.
+* Addressing Modes::    Defining addressing modes valid for memory operands.
+* Condition Code::      Defining how insns update the condition code.
+* Costs::               Defining relative costs of different operations.
+* Scheduling::          Adjusting the behavior of the instruction scheduler.
+* Sections::            Dividing storage into text, data, and other sections.
+* PIC::			Macros for position independent code.
+* Assembler Format::    Defining how to write insns and pseudo-ops to output.
+* Debugging Info::      Defining the format of debugging output.
+* Cross-compilation::   Handling floating point for cross-compilers.
+* Mode Switching::      Insertion of mode-switching instructions.
+* Target Attributes::   Defining target-specific uses of `__attribute__'.
+* Misc::                Everything else.
+
+
+File: gccint.info,  Node: Target Structure,  Next: Driver,  Up: Target Macros
+
+The Global `targetm' Variable
+=============================
+
+ - Variable: struct gcc_target targetm
+     The target `.c' file must define the global `targetm' variable
+     which contains pointers to functions and data relating to the
+     target machine.  The variable is declared in `target.h';
+     `target-def.h' defines the macro `TARGET_INITIALIZER' which is
+     used to initialize the variable, and macros for the default
+     initializers for elements of the structure.  The `.c' file should
+     override those macros for which the default definition is
+     inappropriate.  For example:
+          #include "target.h"
+          #include "target-def.h"
+          
+          /* Initialize the GCC target structure.  */
+          
+          #undef TARGET_COMP_TYPE_ATTRIBUTES
+          #define TARGET_COMP_TYPE_ATTRIBUTES MACHINE_comp_type_attributes
+          
+          struct gcc_target targetm = TARGET_INITIALIZER;
+
+   Where a macro should be defined in the `.c' file in this manner to
+form part of the `targetm' structure, it is documented below as a
+"Target Hook" with a prototype.  Many macros will change in future from
+being defined in the `.h' file to being part of the `targetm' structure.
+

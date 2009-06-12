@@ -1,0 +1,16 @@
+version 0
+region sram 0 80000 00100000 !
+region ram 0 80000 00100000 !
+region rom 01000000 20000 1 !
+section fixed_vectors 0 1 0 1 1 0 1 0 20 20 !
+section data 0 1 1 1 1 1 0 0 00100000 bss !
+section bss 0 4 0 1 0 1 0 1 heap1 heap1 !
+section heap1 0 8 0 0 0 0 0 0 !
+section reserved_bootmon 10000 1 0 0 1 1 1 1 01000000 01000000 rom_vectors rom_vectors !
+section rom_vectors 0 8 0 1 0 1 0 1 text text !
+section text 0 1 0 1 0 1 0 1 fini fini !
+section fini 0 4 0 1 0 1 0 1 rodata rodata !
+section rodata 0 4 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 4 0 1 0 1 0 1 fixup fixup !
+section fixup 0 4 0 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 4 0 1 0 0 0 1 data !

@@ -1,0 +1,359 @@
+diff -urN packages.prev/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.c packages/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.c
+--- packages.prev/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.c	2008-08-05 11:50:05.000000000 +0200
++++ packages/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.c	2009-05-24 17:55:43.975968485 +0200
+@@ -312,72 +312,7 @@
+      * After the phy is reset, it takes a little while before
+      * it can respond properly.
+      */
+-    sysMsDelay(1000);
+-    
+-    /*
+-     * Wait up to 3 seconds for ALL associated PHYs to finish
+-     * autonegotiation.  The only way we get out of here sooner is
+-     * if ALL PHYs are connected AND finish autonegotiation.
+-     */
+-    DEBUGOUT("associated PHY");
+-    for (phyUnit=0; (phyUnit < ATHR_PHY_MAX) /*&& (timeout > 0) */; phyUnit++) {
+-        if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
+-            continue;
+-        }
+-
+-        timeout=20;
+-        for (;;) {
+-            phyHwStatus = phyRegRead(phyBase, phyAddr, ATHR_PHY_CONTROL);
+-
+-            if (ATHR_RESET_DONE(phyHwStatus)) {
+-                DRV_PRINT(DRV_DEBUG_PHYSETUP,
+-                          ("Port %d, Neg Success\n", phyUnit));
+-                break;
+-            }
+-            if (timeout == 0) {
+-                DRV_PRINT(DRV_DEBUG_PHYSETUP,
+-                          ("Port %d, Negogiation timeout\n", phyUnit));
+-                break;
+-            }
+-            if (--timeout == 0) {
+-                DRV_PRINT(DRV_DEBUG_PHYSETUP,
+-                          ("Port %d, Negogiation timeout\n", phyUnit));
+-                break;
+-            }
+-
+-            sysMsDelay(150);
+-        }
+-    }
+-
+-    /*
+-     * All PHYs have had adequate time to autonegotiate.
+-     * Now initialize software status.
+-     *
+-     * It's possible that some ports may take a bit longer
+-     * to autonegotiate; but we can't wait forever.  They'll
+-     * get noticed by mv_phyCheckStatusChange during regular
+-     * polling activities.
+-     */
+-    DEBUGOUT("Initialize software status\n");
+-    for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
+-        if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
+-            continue;
+-        }
+-
+-        if (athrs26_phy_is_link_alive(phyUnit)) {
+-            liveLinks++;
+-            ATHR_IS_PHY_ALIVE(phyUnit) = TRUE;
+-        } else {
+-            ATHR_IS_PHY_ALIVE(phyUnit) = FALSE;
+-        }
+-
+-        DRV_PRINT(DRV_DEBUG_PHYSETUP,
+-            ("eth%d: Phy Specific Status=%4.4x\n",
+-            ethUnit, 
+-            phyRegRead(ATHR_PHYBASE(phyUnit),
+-                         ATHR_PHYADDR(phyUnit),
+-                         ATHR_PHY_SPEC_STATUS)));
+-    }
++//    sysMsDelay(1000);
+ 
+ #ifndef HEADER_REG_CONF 
+     /* if using header for register configuration, we have to     */
+diff -urN packages.prev/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.h packages/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.h
+--- packages.prev/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.h	2008-08-05 11:50:05.000000000 +0200
++++ packages/devs/eth/mips/ar531xPhy/athrs26/current/src/athrs26_phy.h	2009-05-24 19:36:15.531104805 +0200
+@@ -86,7 +86,7 @@
+ 
+ /* before define HEADER_REG_CONF, please make sure you also enable s26's */
+ /* HEADER_EN on CPU port in bootloader, or the configuration will fail */
+-#define HEADER_REG_CONF
++#undef HEADER_REG_CONF
+ #ifdef HEADER_REG_CONF
+ #define HEADER_EN
+ #endif
+diff -urN packages.prev/hal/mips/ap48/current/misc/redboot_RAM.ecm packages/hal/mips/ap48/current/misc/redboot_RAM.ecm
+--- packages.prev/hal/mips/ap48/current/misc/redboot_RAM.ecm	2008-08-05 11:51:37.000000000 +0200
++++ packages/hal/mips/ap48/current/misc/redboot_RAM.ecm	2009-05-25 02:58:43.028987151 +0200
+@@ -19,8 +19,6 @@
+     package -template CYGPKG_REDBOOT current ;
+     package -template CYGPKG_ISOINFRA current ;
+     package -template CYGPKG_LIBC_STRING current ;
+-    package CYGPKG_MEMALLOC current ;
+-    package CYGPKG_COMPRESS_ZLIB current ;
+     package CYGPKG_COMPRESS_7ZIP current ;
+     package CYGPKG_IO_ETH_DRIVERS current ;
+     package CYGPKG_IO_FILEIO current ;
+diff -urN packages.prev/hal/mips/ap51/current/misc/redboot_RAM.ecm packages/hal/mips/ap51/current/misc/redboot_RAM.ecm
+--- packages.prev/hal/mips/ap51/current/misc/redboot_RAM.ecm	2008-08-05 11:51:37.000000000 +0200
++++ packages/hal/mips/ap51/current/misc/redboot_RAM.ecm	2009-05-25 02:58:21.808342274 +0200
+@@ -21,9 +21,7 @@
+     package -template CYGPKG_LIBC_STRING current ;
+     package -template CYGPKG_NS_DNS current ;
+     package CYGPKG_MEMALLOC current ;
+-    package CYGPKG_COMPRESS_ZLIB current ;
+     package CYGPKG_IO_ETH_DRIVERS current ;
+-    package CYGPKG_FS_JFFS2 current ;
+     package CYGPKG_IO_FILEIO current ;
+     package CYGPKG_IO_FLASH current ;
+     package CYGPKG_IO current ;
+diff -urN packages.prev/hal/mips/ap51/current/misc/redboot_ROM.ecm packages/hal/mips/ap51/current/misc/redboot_ROM.ecm
+--- packages.prev/hal/mips/ap51/current/misc/redboot_ROM.ecm	2008-08-05 11:51:37.000000000 +0200
++++ packages/hal/mips/ap51/current/misc/redboot_ROM.ecm	2009-05-25 02:59:08.485760741 +0200
+@@ -21,10 +21,7 @@
+     package -template CYGPKG_LIBC_STRING v2_0 ;
+     package -template CYGPKG_NS_DNS v2_0 ;
+     package CYGPKG_MEMALLOC v2_0 ;
+-    package CYGPKG_COMPRESS_ZLIB v2_0 ;
+     package CYGPKG_IO_ETH_DRIVERS v2_0 ;
+-    package CYGPKG_FS_JFFS2 v2_0 ;
+-    package CYGPKG_IO_FILEIO v2_0 ;
+     package CYGPKG_IO_FLASH v2_0 ;
+     package CYGPKG_IO v2_0 ;
+     package CYGPKG_ERROR v2_0 ;
+diff -urN packages.prev/hal/mips/ap53/current/misc.old/redboot_RAM.ecm packages/hal/mips/ap53/current/misc.old/redboot_RAM.ecm
+--- packages.prev/hal/mips/ap53/current/misc.old/redboot_RAM.ecm	2008-08-05 11:51:37.000000000 +0200
++++ packages/hal/mips/ap53/current/misc.old/redboot_RAM.ecm	2009-05-25 02:58:55.109354252 +0200
+@@ -21,9 +21,7 @@
+     package -template CYGPKG_LIBC_STRING current ;
+     package -template CYGPKG_NS_DNS current ;
+     package CYGPKG_MEMALLOC current ;
+-    package CYGPKG_COMPRESS_ZLIB current ;
+     package CYGPKG_IO_ETH_DRIVERS current ;
+-    package CYGPKG_FS_JFFS2 current ;
+     package CYGPKG_IO_FILEIO current ;
+     package CYGPKG_IO_FLASH current ;
+     package CYGPKG_IO current ;
+diff -urN packages.prev/hal/mips/ar2316/current/include/ar2316reg.h packages/hal/mips/ar2316/current/include/ar2316reg.h
+--- packages.prev/hal/mips/ar2316/current/include/ar2316reg.h	2008-08-05 11:51:38.000000000 +0200
++++ packages/hal/mips/ar2316/current/include/ar2316reg.h	2009-05-24 20:54:05.059359254 +0200
+@@ -325,7 +325,7 @@
+  *   baud = clock / (16 * divisor)
+  * where divisor is specified as a High Byte (DLM) and a Low Byte (DLL).
+  */
+-#define DESIRED_BAUD_RATE           9600
++#define DESIRED_BAUD_RATE           115200
+ 
+ /*
+  * The WATCHDOG value is computed as
+diff -urN packages.prev/hal/mips/ar2316/current/include/platform.inc packages/hal/mips/ar2316/current/include/platform.inc
+--- packages.prev/hal/mips/ar2316/current/include/platform.inc	2008-08-05 11:51:38.000000000 +0200
++++ packages/hal/mips/ar2316/current/include/platform.inc	2009-05-24 20:19:14.804191120 +0200
+@@ -281,7 +281,7 @@
+     li	a0, K1BASE|AR2316_SPI_CTL
+     lw	t0, 0(a0)
+     and	t0, ~SPI_CTL_CLK_SEL_MASK
+-    or	t0, 0 << 24
++    or	t0, 1 << 24
+     sw	t0, 0(a0)
+     sync 
+     nop
+diff -urN packages.prev/redboot/current/include/redboot.h packages/redboot/current/include/redboot.h
+--- packages.prev/redboot/current/include/redboot.h	2008-08-05 11:52:39.000000000 +0200
++++ packages/redboot/current/include/redboot.h	2009-05-25 03:06:51.367831760 +0200
+@@ -62,7 +62,7 @@
+ #include <cyg/hal/hal_tables.h>
+ #include <cyg/hal/hal_endian.h>
+ #include <cyg/infra/diag.h>
+-#include <cyg/crc/crc.h>
++//#include <cyg/crc/crc.h>
+ #include <string.h>
+ 
+ #ifdef CYGPKG_REDBOOT_NETWORKING
+diff -urN packages.prev/redboot/current/src/fconfig.c packages/redboot/current/src/fconfig.c
+--- packages.prev/redboot/current/src/fconfig.c	2008-08-05 11:52:39.000000000 +0200
++++ packages/redboot/current/src/fconfig.c	2009-05-25 03:09:54.369406980 +0200
+@@ -762,7 +762,7 @@
+     }
+ #endif
+  
+-    crc = cyg_crc32((unsigned char *)conf, sizeof(*conf)-sizeof(conf->cksum));
++    crc = 0;//cyg_crc32((unsigned char *)conf, sizeof(*conf)-sizeof(conf->cksum));
+ 
+ #ifdef REDBOOT_FLASH_REVERSE_BYTEORDER
+     if (swabbed)
+diff -urN packages.prev/redboot/current/src/net/net_io.c packages/redboot/current/src/net/net_io.c
+--- packages.prev/redboot/current/src/net/net_io.c	2008-08-05 11:52:39.000000000 +0200
++++ packages/redboot/current/src/net/net_io.c	2009-05-24 21:18:39.437106715 +0200
+@@ -770,12 +770,20 @@
+             }
+         }
+     } else {
++
++            if (__local_ip_addr[0] == 0 && __local_ip_addr[1] == 0 &&
++                __local_ip_addr[2] == 0 && __local_ip_addr[3] == 0) {
++                have_net = false;
++            }else{
++
++
+         enet_addr_t enet_addr;
+         have_net = true;  // Assume values in FLASH were OK
+         // Tell the world that we are using this fixed IP address
+         if (__arp_request((ip_addr_t *)__local_ip_addr, &enet_addr, 1) >= 0) {
+             diag_printf("Warning: IP address %s in use\n", inet_ntoa((in_addr_t *)&__local_ip_addr));
+         }
++        }
+     }
+     if (have_net) {
+         show_eth_info();
+diff -urN packages.prev/redboot/current/src/xyzModem.c packages/redboot/current/src/xyzModem.c
+--- packages.prev/redboot/current/src/xyzModem.c	2008-08-05 11:52:39.000000000 +0200
++++ packages/redboot/current/src/xyzModem.c	2009-05-25 03:09:30.912692411 +0200
+@@ -295,14 +295,15 @@
+         return xyzModem_frame;
+     }
+     // Verify checksum/CRC
+-    if (xyz.crc_mode) {
+-        cksum = cyg_crc16(xyz.pkt, xyz.len);
+-        if (cksum != ((xyz.crc1 << 8) | xyz.crc2)) {
+-            ZM_DEBUG(zm_dprintf("CRC error - recvd: %02x%02x, computed: %x\n", 
+-                                xyz.crc1, xyz.crc2, cksum & 0xFFFF));
+-            return xyzModem_cksum;
+-        }
+-    } else {
++//    if (xyz.crc_mode) {
++//        cksum = cyg_crc16(xyz.pkt, xyz.len);
++//        if (cksum != ((xyz.crc1 << 8) | xyz.crc2)) {
++//            ZM_DEBUG(zm_dprintf("CRC error - recvd: %02x%02x, computed: %x\n", 
++//                                xyz.crc1, xyz.crc2, cksum & 0xFFFF));
++//            return xyzModem_cksum;
++//        }
++//    } else
++     {
+         cksum = 0;
+         for (i = 0;  i < xyz.len;  i++) {
+             cksum += xyz.pkt[i];
+diff -urN packages.prev/services/compress/7zip/current/src/LzmaDecode.c packages/services/compress/7zip/current/src/LzmaDecode.c
+--- packages.prev/services/compress/7zip/current/src/LzmaDecode.c	2008-08-05 11:52:39.000000000 +0200
++++ packages/services/compress/7zip/current/src/LzmaDecode.c	2009-05-24 19:13:54.844853966 +0200
+@@ -37,35 +37,39 @@
+ 
+ typedef struct _CRangeDecoder
+ {
+-  Byte *Buffer;
+-  Byte *BufferLim;
+   UInt32 Range;
+   UInt32 Code;
+-  int ExtraBytes;
+ } CRangeDecoder;
+ 
+-Byte RangeDecoderReadByte(CRangeDecoder *rd)
+-{
+-  if (rd->Buffer == rd->BufferLim)
+-  {
+-    {
+-      rd->ExtraBytes = 1;
+-      return 0xFF;
+-    }
+-  }
+-  return (*rd->Buffer++);
++static unsigned int offset=0;
++static unsigned int vall;
++static unsigned char *buffer;
++static unsigned char *BufferLim;
++static  int ExtraBytes;
++
++Byte GetByte(void)
++{
++if (((unsigned int)offset % 4) == 0) {
++	vall = *(unsigned int *)buffer;
++	buffer += 4;
++}
++    if (buffer>=BufferLim)
++	{
++	ExtraBytes=1;
++	return 0xff;
++	}
++  return *(((unsigned char *)&vall) + (offset++ & 3));
+ }
+ 
+ /* #define ReadByte (*rd->Buffer++) */
+-#define ReadByte (RangeDecoderReadByte(rd))
++#define ReadByte (GetByte())
+ 
+ void RangeDecoderInit(CRangeDecoder *rd,
+     Byte *stream, UInt32 bufferSize)
+ {
+   int i;
+-  rd->Buffer = stream;
+-  rd->BufferLim = stream + bufferSize;
+-  rd->ExtraBytes = 0;
++  BufferLim = stream + bufferSize;
++  ExtraBytes = 0;
+   rd->Code = 0;
+   rd->Range = (0xFFFFFFFF);
+   for(i = 0; i < 5; i++)
+@@ -340,7 +344,7 @@
+   while(nowPos < outSize)
+   {
+     int posState = (int)(nowPos & posStateMask);
+-    if (rd.ExtraBytes != 0)
++    if (ExtraBytes != 0)
+       return LZMA_RESULT_DATA_ERROR;
+     if (RangeDecoderBitDecode(p + IsMatch + (state << kNumPosBitsMax) + posState, &rd) == 0)
+     {
+@@ -474,15 +478,18 @@
+   int lc, lp, pb;
+   unsigned char properties[5];
+   unsigned char prop0;
++  buffer = inBuffer;
++  offset=0;
++  BufferLim = inBuffer + inLength;
+   for (i=0;i<5;i++) 
+   {
+-     properties[i] = inBuffer[i];
++     properties[i] = GetByte();
+   }
+ 
+   outSize=0;
+   for (i= 0 ; i < 4; i++) 
+   {
+-     outSize += (unsigned int)(inBuffer[i+5]) << (i* 8);
++     outSize += (unsigned int)(GetByte()) << (i* 8);
+   }
+   if (outSize == 0xFFFFFFFF) 
+   {
+@@ -491,7 +498,7 @@
+   }
+   for (i = 0; i < 4; i++)
+   {
+-    if (inBuffer[i+9] != 0)
++    if (GetByte() != 0)
+     {
+       diag_printf("too long file.\n");
+       return 1; 
+@@ -521,7 +528,7 @@
+   compressedSize = inLength - 13;
+   res = LzmaDecode((unsigned char *)lzmaInternalData, lzmaInternalSize,
+ 		   lc, lp, pb,
+-		   inBuffer+13, compressedSize,
++		   buffer, compressedSize,
+ 		   outBuffer, outSize, &outSizeProcessed);
+   *outLength = outSizeProcessed;
+   return res;
+diff -urN packages.prev/templates/redboot/current.ect packages/templates/redboot/current.ect
+--- packages.prev/templates/redboot/current.ect	2008-08-05 11:52:50.000000000 +0200
++++ packages/templates/redboot/current.ect	2009-05-25 03:05:51.966021885 +0200
+@@ -15,7 +15,6 @@
+     package     CYGPKG_REDBOOT current ;
+     package     CYGPKG_ISOINFRA current ;
+     package     CYGPKG_LIBC_STRING current ; 
+-    package     CYGPKG_CRC current ;
+ };
+ 
+ cdl_option CYGBLD_BUILD_REDBOOT {

@@ -1,0 +1,344 @@
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_arm9_excalibur.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-02-13  Patrick Doyle  <wpd@delcomsys.com>
+	* src/excalibur_misc.c: Replaced explicit prototype of memset with
+	#include <string.h>.
+
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Remove CYGSEM_REDBOOT_ARM_LINUX_BOOT
+	requirement.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/excalibur_misc.c: Fixed warning.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_arm9_excalibur.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-04-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Use --no-target-default-spec to
+	avoid problems with newer tools.
+
+2002-04-02  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_arm_arm9_excalibur_redboot.h: Added new
+	REDBOOT startup mode that is similar in function to the ROMRAM
+	starup mode, with the exception that (RedBoot) application memory
+	is linked at 0x07f80000 instead of 0x00008000, thus freeing up
+	memory at 0x8000 to applications linked without the correct linker
+	map.
+	* include/pkgconf/mlt_arm_arm9_excalibur_redboot.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_redboot.ldi: Same.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Added REDBOOT startup mode
+	handling.
+
+	* include/hal_platform_setup.h: Handle REDBOOT startup mode like
+	ROMRAM mode.
+
+	* misc/redboot_REDBOOT.ecm: Configuration for use of the REDBOOT
+	startup mode.
+
+2002-01-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h (CYGARC_PHYSICAL_ADDRESS): Added.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Use generic linux exec command.
+	* src/redboot_linux_exec.c: Removed.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-12-21  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.ldi: Increase RAM
+	size to 128MB.
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.h: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.ldi: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.h: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.ldi: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.h: Same.
+
+	* include/hal_platform_setup.h: Make Altera's init code the
+	default after finding the buglet that made it fail.
+
+	* include/excalibur.h: Added some registers, cut out some unused
+	definitions.
+	* cdl/hal_arm_arm9_excalibur.cdl: Increased clocks to 150/75MHz.
+
+2001-12-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_setup.h: Added SDRAM configuration code
+	from Altera. Clean up code. Added printhex8 function.
+
+2001-12-18  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Added some clock comments. 
+	* include/excalibur.h: Added CLK definitions.
+	* include/hal_platform_setup.h: Added code (from Altera) to change
+	clocking to 150/75/75MHz. They don't work though.
+	Oops, get the math right.
+	
+2001-12-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/excalibur.h (_MMAP_PLD1_INIT): Changed to 0x0f000000.
+	* src/excalibur_misc.c (hal_mmu_init): Added mapping for
+	PLD1. Still causes access error though...
+
+2001-12-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.h: Changed ROM
+	location.
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.ldi: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.h: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.ldi: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.mlt: Same.
+
+	* include/excalibur.h: Change memory mapping to match that
+	expected by Linux.
+	* cdl/hal_arm_arm9_excalibur.cdl: Relocate .hex file accordingly.
+	Also suppress reservation of space for RedBoot[backup] image.
+	Finally, increase default baud rate to 57600.
+	* src/excalibur_misc.c (hal_mmu_init): Change memory mapping.
+
+2001-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/redboot_linux_exec.c: Added.
+
+	* misc/redboot_ROMRAM.ecm: Don't disable dcache.
+	* misc/redboot_RAM.ecm: Same.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Added Linux platform
+	identifier [for Camelot platform - may have to change]. Build file
+	with exec command.
+
+2001-12-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Cache should be safe to use
+	now. Bug in variant HAL macro.
+
+2001-08-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Point to
+	excalibur_program_new_stack.
+	* src/excalibur_misc.c (excalibur_program_new_stack): Added.
+
+	* misc/redboot_ROMRAM.ecm: Clean up inferred/user_values.
+
+2001-08-16  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_ROMRAM.ecm: Added threads. [made it inferred]
+	Enable syscall support.
+
+	* include/hal_platform_setup.h: Enable flash parts 1-3 on
+	expansion bus.
+
+	* include/excalibur.h: Added expansion bus config defs.
+
+2001-08-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/excalibur_misc.c (hal_clock_initialize): Be a little more
+	careful initializing the timer.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Fix RTC period calculation.
+
+	* misc/redboot_ROMRAM.ecm: Added flash and compression.
+	* misc/redboot_RAM.ecm: Added.
+
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.mlt: More space to
+	RedBoot.
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.ldi: Same.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_isr): Also use RX int
+	workaround here.
+
+	* src/excalibur_misc.c (hal_IRQ_handler): INT_ID doesn't do the
+	helpful thing, so decode by steam.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Disable D-cache again.
+
+2001-08-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/excalibur_misc.c (hal_mmu_init): Don't let flash be cached:
+	appears to cause a bus lock when accessed from RAM.
+
+	* include/hal_platform_setup.h: Only copy code when in ROMRAM
+	startup configuration.
+
+	* src/excalibur_misc.c (hal_delay_us): Use timer.
+
+	* include/hal_platform_setup.h: Better ROMRAM startup.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Allow caches again. Up baud rate.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_putc): Work around HW bug in
+	transmitter.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Added ROMRAM startup mode.
+
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.ldi: Added.
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.mlt: Added.
+	* include/pkgconf/mlt_arm_arm9_excalibur_romram.h: Added.
+
+	* src/hal_diag.c: Use RI flag in ISR instead of polling the FIFO
+	count register. Appears that FIFO jams on overruns somehow, and
+	messes up the ISR state in the process. Try to work around that by
+	checking both FIFO count and ISR RI flag. It works. Sort of.
+
+	* src/excalibur_misc.c (hal_delay_us): Do nothing for now. Real
+	code changed a bit too. 
+
+	* include/excalibur.h: Fixed typo in FIFO register defs.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Changed baud rate to 9600 until
+	cache issue is resolved. 
+
+2001-08-13  Jesper Skov  <jskov@redhat.com>
+
+	* src/excalibur_misc.c (hal_mmu_init): Fix comment error.
+
+	* include/hal_platform_setup.h: Clear instruction cache on startup.
+
+	* include/excalibur.h: Minor reorg, comment question resolved.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Require ARM922T support.
+
+	* include/hal_platform_setup.h: Write buffer cannot be disabled.
+
+2001-08-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/excalibur_misc.c (hal_delay_us): Don't use prescaling.
+
+	* include/hal_platform_setup.h: Set up EBI1-3 (flash parts 1-3) -
+	doesn't work though.
+
+	* include/hal_platform_ints.h: Added reset code.
+
+	* include/excalibur.h: Added watchdog defs. Updated EBI regions.
+
+2001-08-09  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_setup.h: Remove SRAM hack.
+	* include/excalibur.h: Same.
+
+	* include/hal_platform_setup.h: Cleanup.
+	Missing LED cleanup. Move PLD init.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Disable caches for now.
+
+	* src/excalibur_misc.c: Added debug code, disable PLD interrupts.
+
+	* include/hal_platform_setup.h: Added some (overkill) delays,
+	moved PLD mmap init, do SDRAM init, don't touch unused mmap
+	entries. Do DPSRAM init (not that it should make a difference).
+
+	* include/excalibur.h: Fixed mmap sizes. Fixed SDRAM map
+	size. Added some debug code. Added DPSRAM defs.
+
+2001-08-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_setup.h: Jump to ROM, disable ROM
+	mapping. Wait after SDRAM refresh operations.
+	Output debug via LED macro.
+
+	* include/excalibur.h: Altera SDRAM settings.
+
+	* include/hal_platform_setup.h: Adding more initialization and
+	(temporary) UART debug code. Fixing instruction addressing modes.
+
+	* include/excalibur.h: Adding more definitions.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Added ihex build rule for
+	RedBoot.
+
+2001-08-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/excalibur.h: Added SDRAM controller details.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Added SDRAM clock.
+
+	* include/hal_platform_setup.h: Added hardwired SDRAM init.
+
+	* src/hal_diag.c: Use peripheral clock. Fix compiler error.
+
+	* src/excalibur_misc.c: Updated memory mapping. Fix compiler
+	errors and warnings.
+
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.ldi: Updated.
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_ram.h: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.ldi: Updated.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_excalibur_rom.h: Same.
+
+	* include/hal_platform_setup.h: Set up memory map.
+
+	* include/excalibur.h: Added memory mapping registers and memory
+	map layout.
+
+	* cdl/hal_arm_arm9_excalibur.cdl: Package display changed to match
+	top-level. Added clock definitions (must add configury eventually).
+
+2001-08-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/excalibur_misc.c: Clock, irq and MMU code.
+
+	* include/excalibur.h: Register definitions.
+
+	* src/hal_diag.c: Serial driver added.
+
+	* Created HAL for Altera Excalibur.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

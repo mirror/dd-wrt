@@ -1,0 +1,42 @@
+
+Functionality of eCos on the PC
+-------------------------------
+
+This release of eCos for the PC target is based on the code
+contributed by Patrick O'Grady (patrick@softprocess.com). With the
+exception of some minor reorganization it is essentially the same as
+Patrick's release.
+
+There are a number of things that are currently incomplete and are
+listed here to indicate where this code is expected to change in the
+future. These include:
+
+- The current exception handling code is derived from the original GDB
+  stubs and is only really adequate for handling debugging
+  requirements. We will need to provide full support for exception
+  delivery to applications. As a result of this, nearly all of the
+  related code will need to be rewritten.
+
+- Currently the GDB stub monitor is used just as a loader, once the
+  program is running any debug duties are taken by a separate set of
+  GDB stubs in the loaded image. To make this image smaller it is
+  desirable to use the GDB stubs already present in the monitor. This
+  requires some reorganization of the VSR table and the addition of a
+  vector table for calls between the two pieces of code. 
+
+- Related to the previous item, support for using Ctrl-C when there
+  are no stubs present in the executable need to be added. This
+  differs from the current support that interacts with the included
+  stubs since it must interact with the monitor via the vector table.
+
+- At present the stub monitor can only boot from floppy disk. It
+  should be possible to make this code more generic so that it can
+  boot from hard disk and CD too. Support for applications that can
+  boot in this way should also be possible, as is booting via
+  BOOTP/TFTP from a network interface.
+
+- Complete the HAL port, including addition of cache control macros
+  and a cleaner distinction between architecture, variant and
+  platform.
+
+

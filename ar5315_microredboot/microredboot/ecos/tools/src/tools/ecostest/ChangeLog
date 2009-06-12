@@ -1,0 +1,1033 @@
+2003-04-11  John Dallaway  <jld@ecoscentric.com>
+
+	* common/eCosTestPlatform.cpp (CeCosTestPlatform::Load): Return
+	true since it's not a problem if there are no platforms defined.
+
+	* unix/Makefile: Allow ser_filter to build under Cygwin.
+
+2003-02-21  John Dallaway  <jld@ecoscentric.com>
+
+	* common/eCosTestPlatform.cpp (CeCosTestPlatform::Load): Allow an
+	extra character for string termination when retrieving registry
+	key names.
+
+2003-02-13  John Dallaway  <jld@ecoscentric.com>
+
+	* common/eCosTestPlatform.cpp:
+	Look for all persistent application settings under
+        "HKEY_CURRENT_USER\Software\eCos Configuration Tool\"
+	for consistency.
+
+2003-02-05  John Dallaway  <jld@ecoscentric.com>
+
+	* common/eCosTest.cpp (CygPath): Get the cygdrive prefix from
+	the registry.
+
+2003-01-20  John Dallaway  <jld@ecoscentric.com>
+
+	* common/eCosTestPlatform.cpp (CProperties::CreateKey):
+	"sizeof TCHAR" -> "sizeof (TCHAR)" for GNU headers.
+
+2001-02-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* common/eCosTestClient.cpp (LocateExecutables): Add /sbin and
+	/usr/sbin to path before trying to run fuser.
+
+2000-09-28  Jesper Skov  <jskov@redhat.com>
+
+	* common/eCosTestSerialFilter.cpp (CMD_TestBinary): Reset counter
+	for each test so the failure data is the same from two different
+	runs of the test.
+
+2000-09-15  Jesper Skov  <jskov@redhat.com>
+
+	* common/ser_filter.cpp (main): Don't require ResourceServer.
+
+	* common/Makefile.am: Added ser_filter handling.
+	* common/Makefile.in: Ditto.
+	* common/configure: Ditto.
+	* common/configure.in: Ditto.
+	* common/eCosTest.cpp: Fix typo.
+
+2000-08-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common/ser_filter.cpp (main): Clean up warning
+
+2000-08-08  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common/eCosTestSerialFilter.h: Update flow_cfg_t values for correct
+	target settings
+
+2000-08-01  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common/eCosTestSerialFilter.cpp (PrintHex): Print out more printable
+	chars
+	(SetConfig): Support flow control
+	(ParseConfig): Support target setting of flow control
+	(CMD_TestBinary): Don't output XON/XOFF. Output 255 chars not 256
+	to make buffer problems more obvious.
+
+	* common/eCosTestDownloadFilter.h: Allow SET_VALUE to set optional args
+	* common/eCosTestSerialFilter.h: Allow SET_VALUE to set optional args
+	Also add flow_cfg_t type and flags member in ser_cfg_t for flow control
+
+2000-07-24  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common/eCosTestSerialFilter.cpp (FilterFunctionProper): 
+	Store output for tracing up so it is output a packet at a time.
+	As well as clarifying the output, it is required when sending to
+	GDB to prevent the trace 'O' packets in the middle of target packets.
+	(CMD_TestBinary): Delay to allow target to read in checksum. This
+	prevents overruns before finishing reading the checksum masking
+	the real cause of the problem.
+	(CeCosTestSerialFilter): Initialise stored trace buffer members
+
+	* common/eCosTestSerialFilter.h: Add trace buffer members for above
+	to CeCosTestSerialFilter
+
+2000-06-19  John Dallaway  <jld@redhat.com>
+
+	* unix/Makefile:
+
+	Link with -lposix4 under Solaris for sched_yield().
+
+2000-06-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common/eCosTestDownloadFilter.cpp: Remove RCS id tags
+	* common/eCosTestMonitorFilter.cpp: Ditto
+	* common/eCosTestSerialFilter.cpp: Ditto
+
+2000-06-15  John Dallaway  <jld@redhat.com>
+
+	* common/eCosTest.cpp:
+
+	Modify CeCosTest construvtor to use GetEnvironmentVariable()
+	rather than _tgetenv() under Win32. For some unknown reason,
+	_tgetenv() is not returning the correct version of PATH.
+
+	* common/eCosTestPlatform.cpp:
+
+	Modify SaveToRegistry() to save all test platform attributes.
+
+2000-05-03  Bart Veer  <bartv@redhat.com>
+
+	* common/permtest.cxx (find_ptest):
+	Do a little bit of searching for the permutation file.
+	Catch errors and give a diagnostic, rather than aborting because
+	of an uncaught C++ exception.
+
+2000-04-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp : do not carry forward values for skipped fields in reset strings
+  * common\eCosTest.cpp : Avoid overflow in socket timeouts
+    
+2000-04-13  Jesper Skov  <jskov@redhat.com>
+
+	* unix/Makefile: add randfile
+
+2000-04-13  Jesper Skov  <jskov@redhat.com>
+
+	* common/eCosTestDownloadFilter.cpp: Cast Write arguments to void*.
+
+2000-04-13 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\eCosTest.cpp
+    common\eCosTestClient.cpp
+
+  Ensure socket timeout matches on_off/off_on delay for reset
+  Correct parsing of eCosTestClient delay args.
+  Use remote resource to determine baud rate for default download timeout.
+
+2000-04-13 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestServer.cpp
+    common\eCosTestUtils.cpp
+    common\rgdb.cpp
+    common\summlog.cpp
+    common\x10reset.cpp
+    win32\eCosTest.dsp
+
+  Tidy up reset output.
+  Police use of -f and -r switches more accurately.
+  Set default timeout in all cases.
+
+2000-04-11 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResetAttributes.h
+    common\ResourceServer.cpp
+    common\TestResource.cpp
+    common\TestResource.h
+    common\X10.h
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestDownloadFilter.cpp
+    common\eCosTestDownloadFilter.h
+    common\eCosTestMonitorFilter.cpp
+    common\eCosTestMonitorFilter.h
+    common\eCosTestSerialFilter.cpp
+    common\eCosTestSerialFilter.h
+    common\eCosTestServer.cpp
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\resetall.cpp
+    common\rgdb.cpp
+    common\ser_filter.cpp
+    common\stat.cpp
+    common\summlog.cpp
+    common\x10reset.cpp
+    unix\Makefile
+    win32\eCosTest.dsp
+    win32\Amplicon\AmpliconD.cpp
+
+  General tidy-up.
+
+2000-04-10  Bart Veer  <bartv@redhat.com>
+
+	* common/permtest.cxx (main):
+	Add diagnostics callbacks to database initialization.
+
+2000-03-20  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/eCosTest.dsp:
+
+	Add common/eCosTestMonitorFilter.h and
+	common/eCosTestMonitorFilter.cpp to the project.
+
+2000-03-16  Jesper Skov  <jskov@redhat.com>
+
+	* common/eCosTestMonitorFilter.h:
+	* common/eCosTestMonitorFilter.cpp:
+	* common/ser_filter.cpp:
+	* unix/Makefile (common_sources): 
+	Added monitor filter and new -m option to ser_filter. This allows
+	simple monitoring of the traffic between host and target.
+
+2000-03-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/eCosTest.cpp:
+
+	Modify RunGdb() to sleep 500ms if there is no message.
+
+2000-03-13 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResourceServer.cpp
+    common\TestResource.cpp
+    common\eCosTest.cpp
+    common\eCosTestClient.cpp
+    common\eCosTestSerial.cpp
+    common\eCosTestSerial.h
+    common\eCosTestSocket.cpp
+    common\eCosTestSocket.h
+    common\eCosTestUtils.cpp
+    common\randfile.cpp
+    common\rgdb.cpp
+    common\ser_filter.cpp
+
+	Mark UNIX sections of code as such.
+	Correct behavior of eCosTestClient when give directory as argument.
+	A couple of allocations -> stack for simplicity.
+
+2000-03-10 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResourceServer.cpp
+    common\X10.cpp
+    common\TestResource.cpp
+    common\TestResource.h
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestDownloadFilter.cpp
+    common\eCosTestSerial.cpp
+    common\eCosTestServer.cpp
+    common\eCosTestSocket.cpp
+    common\rgdb.cpp
+    common\ser_filter.cpp
+    common\x10reset.cpp
+    unix\Makefile
+    win32\eCosTest.dsp
+    win32\Amplicon\AmpliconD.cpp
+		
+	Move CeCosTrace class to its own file
+	Increase Time type to 64 bits to avoid signedness problems
+  Remove priority latch functionality
+
+  * common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+
+  Make CommandLine() UNICODE-compliant
+
+
+  * common\summlog.cpp
+
+	Remove hack designed to cater for incorrectly terminated output lines
+
+  * win32\SingleCPU.cpp
+
+	Provide ability to run on named processor
+
+  * common\eCosTestClient.cpp
+
+	Improve recognition of non-executable files on UNIX
+
+2000-03-09 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\SingleCPU.cpp
+
+  Avoid a performance problem with bash which, when left to its own devices, is slow on multi-processor machines.
+
+2000-03-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* common/eCosTest.cpp,
+	  common/eCosTest.h:
+
+	Use 'REMOTE_SIM' as the platform type identifier for
+	remote simulators.
+
+2000-03-09  Bart Veer  <bartv@redhat.com>
+
+	* common/permtest.cxx (main):
+	Add an explicit call to resolve_all_conflicts(), although I am not
+	yet sure under what circumstances this would be necessary.
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTestClient.cpp
+
+  Correct logic error - - allow multiple threads only when non-local
+
+2000-03-08  Bart Veer  <bartv@redhat.com>
+
+	* common/configure.in (cyg_ac_infra_libdir):
+	Fix typo detected by Solaris build
+
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\summlog.cpp
+
+  Eliminate compiler warnings on UNIX.
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTestClient.cpp
+
+	Prevent locally running clients loading from resource server.
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTest.cpp
+    common\summlog.cpp
+
+  Ensure that gdb output is terminated by a newline and that summlog initializes target list correctly.
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTestClient.cpp
+    win32\Amplicon\AmpliconD.cpp
+
+  Add name argument to RunThread calls for debugging.
+	Do not allow wait for SuckTheadfunc in reset to time out - thread already has a timeout
+
+  * win32\eCosTest.dsw : 	Adapt to new location of cdl.dsp
+  * common\summlog.cpp : ensure eCosTest::Init() and Term() are called
+
+
+2000-03-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResourceServer.cpp
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestServer.cpp
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\resetall.cpp
+    common\rgdb.cpp
+    common\ser_filter.cpp
+    common\stat.cpp
+    common\summlog.cpp
+    common\x10reset.cpp
+    win32\Amplicon\AmpliconD.cpp
+
+	Eliminate GarbageCollector class in favor of CeCosTest::Init() and CeCosTest::Term()
+	Fix UNICODE problems in eCosTestUtils
+
+2000-03-08  Bart Veer  <bartv@redhat.com>
+
+	* common/permtest.cxx (process_startup):
+	Look for CYGHWR_HAL_STARTUP as well as CYG_HAL_STARTUP
+
+2000-03-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/eCosTest.dsw:
+
+	Use relocated cdl project file.
+
+2000-03-07  Bart Veer  <bartv@redhat.com>
+
+	* common/permtest.cxx (process_startup):
+	If a target does not have a CYG_HAL_STARTUP option, ignore any
+	attempts to set the startup.
+
+2000-03-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResetAttributes.h
+    common\ResourceServer.cpp
+    common\TestResource.cpp
+    common\TestResource.h
+    common\X10.cpp
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestDownloadFilter.cpp
+    common\eCosTestDownloadFilter.h
+    common\eCosTestSerial.cpp
+    common\eCosTestSerial.h
+    common\eCosTestSerialFilter.cpp
+    common\eCosTestSerialFilter.h
+    common\eCosTestServer.cpp
+    common\eCosTestSocket.cpp
+    common\eCosTestSocket.h
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\resetall.cpp
+    common\rgdb.cpp
+    common\ser_filter.cpp
+    common\stat.cpp
+    common\summlog.cpp
+    common\x10reset.cpp
+    win32\eCosTest.dsw
+    win32\Amplicon\AmpliconD.cpp
+
+	Use std::vector directly instead of StringArray, PtrArray
+	Introduce common command-line processing to CeCosTestUtils
+	Tidy output and trace functions and move to CeCosTrace
+
+2000-03-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.h
+    common\eCosTest.cpp
+    common\eCosTest.h
+
+  Adjust for UNIX compiler requirements.
+
+2000-03-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\TestResource.cpp
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    unix\Makefile
+    win32\eCosTest.dsp
+    win32\Amplicon\AmpliconD.cpp
+
+  Thread-related code extracted to new class CeCosThreadUtils
+
+2000-03-03 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\TestResource.h
+    common\eCosTest.cpp
+
+  Eliminate memory leaks.
+  Allow resources to be properly reused for benefit of Resource Tool.
+
+2000-03-02 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResetAttributes.h
+    common\ResourceServer.cpp
+    common\TestResource.cpp
+    common\TestResource.h
+    common\X10.cpp
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestDownloadFilter.cpp
+    common\eCosTestDownloadFilter.h
+    common\eCosTestSerial.cpp
+    common\eCosTestSerial.h
+    common\eCosTestSerialFilter.cpp
+    common\eCosTestSerialFilter.h
+    common\eCosTestServer.cpp
+    common\eCosTestSocket.cpp
+    common\eCosTestSocket.h
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\resetall.cpp
+    common\rgdb.cpp
+    common\ser_filter.cpp
+    common\stat.cpp
+    common\stdafx.cpp
+    common\stop.cpp
+    common\summlog.cpp
+    common\x10reset.cpp
+    unix\Makefile
+    win32\eCosTest.dsp
+    win32\Amplicon\AmpliconD.cpp
+
+  Introduce flexible reset scheme.
+  Migrate more classes to Utils from eCosTest.
+  Introduce collections.h for String, StringArray etc...
+  Use common CSubprocess class implementation.
+
+2000-02-29 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp : Ensure it compiles on unix
+
+2000-02-29 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp : correct typo
+  * win32\eCosTest.dsw : add testtool
+        
+2000-02-29 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResetAttributes.h
+    common\ResourceServer.cpp
+    common\TestResource.cpp
+    common\TestResource.h
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestSerial.cpp
+    common\eCosTestSerial.h
+    common\eCosTestSerialFilter.cpp
+    common\eCosTestServer.cpp
+    common\eCosTestSocket.cpp
+    common\eCosTestSocket.h
+    common\eCosTestStd.h
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\resetall.cpp
+    common\rgdb.cpp
+    common\stat.cpp
+    common\summlog.cpp
+    common\wcharunix.h
+    common\x10reset.cpp
+    win32\subprocess.cpp
+    win32\subprocess.h
+    win32\Amplicon\AmpliconD.cpp
+
+  Change to flexible reset scheme.
+  CeCosTestUtils::String -> String, CeCosTestUtils::StringArray -> StringArray
+
+2000-02-25 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResetAttributes.h
+    common\ResourceServer.cpp
+    common\TestResource.cpp
+    common\x10reset.cpp
+
+  Use ResetAttributes properties to serialize TestResource.
+
+2000-02-25 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResetAttributes.h
+    common\TestResource.cpp
+    common\X10.cpp
+    common\X10d.cpp
+    common\eCosTestClient.cpp
+    common\eCosTestServer.cpp
+    common\x10reset.cpp
+    win32\Amplicon\AmpliconD.cpp
+
+  Reset control string verification fully server-side
+
+2000-02-25 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResetAttributes.cpp
+    common\ResetAttributes.h
+    common\TestResource.cpp
+    common\X10.cpp
+    common\X10.h
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTestClient.cpp
+    common\eCosTestServer.cpp
+    common\x10reset.cpp
+    win32\Amplicon\AmpliconD.cpp
+  
+  Normalize control code usage to 0-15, 0-15
+
+2000-02-25 Simon FitzMaurice <sdf@redhat.co.uk>
+  * unix/Makefile : update for ResetAttributes
+
+2000-02-25 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\TestResource.h
+    common\X10.cpp
+    common\X10.h
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTestClient.cpp
+    common\eCosTestServer.cpp
+    common\resetall.cpp
+    common\x10reset.cpp
+    win32\X10d.dsp
+    win32\eCosTest.dsp
+    win32\Amplicon\AmpliconD.cpp
+
+  Generalize "X10 reset" to "reset" - introduce ResetAttributes class to hold the details.
+
+2000-02-24 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\TestResource.h
+    common\X10.h
+    common\X10d.cpp
+    common\x10reset.cpp
+    win32\eCosTest.dsw
+
+  Add Amplicon to "all" project.
+  Fail on reset if comms/tcp port cannot be opened.
+  Add -t (timeout on read) param to x10reset
+
+2000-02-24 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    win32\eCosTest.dsw
+    win32\Amplicon\AmpliconD.cpp
+    win32\Amplicon\AmpliconD.dsp
+    win32\Amplicon\Dio_tc.h
+    win32\Amplicon\Dio_tc.lib
+
+  Implement Amplicon reset daemon in C++.
+
+2000-02-23 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestStd.h
+    common\eCosTestUtils.cpp
+    common\summlog.cpp
+    common\wcharunix.h
+
+  strnccmp -> _tcsicmp
+
+2000-02-23 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\eCosTest.dsw
+
+  Add "All" utility project.
+
+2000-02-23 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTest.cpp
+    common\eCosTest.h
+
+  Allow HwTypes to be expressed as strings.
+    
+2000-02-23 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\X10.cpp
+    common\X10d.cpp
+    common\x10reset.cpp
+
+  Change X10 daemon protocol to allow long delays
+
+2000-02-22 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\eCosTest.cpp
+    common\eCosTestClient.cpp
+    
+  Adjust for Solaris.
+  Increase total reset timeout.
+
+2000-02-21 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\TestResource.h
+    common\X10.h
+    common\eCosTest.cpp
+    common\eCosTest.h
+
+  Add "Originator", "Reason", "BoardId", "Email" and "Date" to known resource attributes.
+  Add reset timeout attribute.
+    
+2000-02-18 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTest.cpp
+    common\eCosTest.h
+
+  Changes to support non-gdb execution.
+
+2000-02-17 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTest.cpp
+
+  Remove incorrect #include
+
+2000-02-16 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\TestResource.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+
+  Add support for defining platforms.
+
+2000-02-14 Simon FitzMaurice <sdf@redhat.co.uk>
+
+  * common\permtest.cxx
+
+  Update copyright headers in files with non-standard extensions :-)
+
+2000-02-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResourceServer.cpp
+    common\TestResource.cpp
+    common\TestResource.h
+    common\X10.cpp
+    common\X10.h
+    common\X10d.cpp
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestDownloadFilter.cpp
+    common\eCosTestDownloadFilter.h
+    common\eCosTestSerial.cpp
+    common\eCosTestSerial.h
+    common\eCosTestSerialFilter.cpp
+    common\eCosTestSerialFilter.h
+    common\eCosTestServer.cpp
+    common\eCosTestSocket.cpp
+    common\eCosTestSocket.h
+    common\eCosTestStd.h
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\randfile.cpp
+    common\resetall.cpp
+    common\rgdb.cpp
+    common\ser_filter.cpp
+    common\stat.cpp
+    common\stdafx.cpp
+    common\stop.cpp
+    common\summlog.cpp
+    common\wcharunix.h
+    common\x10reset.cpp
+    win32\subprocess.cpp
+    win32\subprocess.h
+
+  Update copyright headers
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\subprocess.cpp
+
+  Fix fix to handle leak.
+
+
+2000-02-07 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\eCosTest.dsw
+
+  Add "All" target
+
+  * win32\subprocess.cpp
+
+  Fix handle leak
+
+2000-02-04 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTestDownloadFilter.cpp
+    common\eCosTestSerialFilter.cpp
+    common\eCosTestUtils.cpp
+
+  Correct for abnormal behaviour of vsnprintf under NT.
+
+  * win32\permtest.dsp
+
+  Use cdl from v:\ide 
+
+2000-02-01 Simon FitzMaurice <sdf@redhat.co.uk>
+  * ecostest\common\TestResource.cpp
+    ecostest\common\eCosTest.cpp
+    ecostest\common\eCosTest.h
+    ecostest\common\eCosTestClient.cpp
+    ecostest\common\eCosTestDownloadFilter.cpp
+    ecostest\common\eCosTestSerialFilter.cpp
+    ecostest\common\eCosTestSocket.cpp
+    ecostest\common\eCosTestStd.h
+    ecostest\common\eCosTestUtils.cpp
+    ecostest\common\eCosTestUtils.h
+    ecostest\common\rgdb.cpp
+    ecostest\common\summlog.cpp
+    ecostest\win32\summlog.dsp
+
+  min->MIN for compilation on UNIX
+  CeCosTest::ExecutionParameters gains type as 1st argument
+  Performance improvements to summlog
+
+2000-02-01 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResourceServer.cpp 
+    common\TestResource.h 
+    common\X10.cpp 
+    common\X10.h 
+    common\X10d.cpp 
+    common\eCosTestDownloadFilter.h 
+    common\eCosTestSerial.cpp 
+    common\eCosTestSerial.h 
+    common\eCosTestSerialFilter.h 
+    common\eCosTestServer.cpp 
+    common\eCosTestSocket.h 
+    common\randfile.cpp 
+    common\resetall.cpp 
+    common\ser_filter.cpp 
+    common\stat.cpp 
+    common\stdafx.cpp 
+    common\stop.cpp 
+    common\wcharunix.h 
+    common\x10reset.cpp 
+    win32\subprocess.cpp 
+
+  Normalize copyright headers.
+
+2000-01-31  Bart Veer  <bartv@redhat.com>
+
+	* common\permtest.cxx (tcl_pkgconf_command):
+	Use the default template rather than the all template when
+	uItron is disabled. Downgrade an error to a warning to cope
+	with the watchdog device not being in the default template.
+	
+2000-01-28 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTest.cpp
+
+  Check cancelled status in gdb driving loop.
+
+2000-01-27 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\summlog.cpp
+
+  Ensure pass and inapplic separated in totals for the architectures by perm tables.
+
+2000-01-21 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\resourceserver.cpp
+
+  Efficiency improvements (single send on query)
+
+2000-01-20 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\summlog.cpp
+
+  Separate Pass and NA.
+  Fix problem w\ successful results not being counted.
+
+2000-01-19 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTest.cpp
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\summlog.cpp
+
+  Attempt to reduce memory usage of summlog.
+  Found possible problem - different specs of vsnsprintf on UNIX vs NT.
+
+2000-01-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\ResourceServer.cpp
+    common\eCosTest.cpp
+    common\eCosTestSocket.cpp
+
+  Cygnus -> Red Hat (not copyrights)
+
+  * common\summlog.cpp
+
+  Attempt to fix memory behaviour on UNIX.
+
+2000-01-14 Simon FitzMaurice <sdf@redhat.co.uk>
+  * summlog.cpp
+
+  Correct too-late release of string buffer.
+
+2000-01-13 Simon FitzMaurice <sdf@redhat.co.uk>
+  * eCosTest.cpp
+
+  Correct overload problem w\ Run
+
+1999-12-23  John Dallaway  <jld@redhat.co.uk>
+
+	* unix\Makefile:
+
+	Use g++ for compilation rather than egcs.
+
+1999-12-23  John Dallaway  <jld@redhat.co.uk>
+
+	* common\eCosTestUtils.h:
+
+	Use '#pragma warning' with Microsoft compiler only.
+
+1999-12-22 Simon FitzMaurice <sdf@redhat.co.uk>
+  * unix\makefile
+
+  Add stl library to link  
+
+1999-12-22 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTestUtils.h
+    common\eCosTest.cpp
+
+  Make it compile on UNIX
+
+1999-12-21 Simon FitzMaurice <sdf@redhat.co.uk>
+  * win32\eCosTest.dsw
+
+  Remove TestTool (as an MFC project using properties it cannot link against the non-MFC eCosTest library)
+
+  * common\ResourceServer.cpp
+
+  Do not read the files if unchanged since last time
+
+  * common\summlog.cpp
+
+  Remove remote PR lookup functionality
+
+1999-12-17  John Dallaway  <jld@redhat.co.uk>
+
+	* win32\permtest.dsp:
+
+	Generate RTTI when building permtest.
+
+1999-12-17  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* common\permtest.cxx (tcl_value_command): Ensure BoolData options
+	are enabled if they are given a value
+
+1999-12-15  John Dallaway  <jld@redhat.co.uk>
+
+	* win32\permtest.dsp:
+
+	New VC++ project.
+
+	* win32\eCosTest.dsw:
+
+	Add the new permtest project to the eCosTest
+	workspace.
+
+1999-12-14  John Dallaway  <jld@redhat.co.uk>
+
+	* common\permtest.cxx:
+
+	Further changes to accommodate the recent libCDL
+	API changes.
+
+	* common\permtest.cxx:
+
+	Accommodate the recent libCDL API changes.
+
+1999-12-08 Simon FitzMaurice <sdf@redhat.co.uk>
+  * common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+
+    Tighter policing of GetBuffer().
+    Fix vFormat (needed terminating \0)
+
+1999-12-07 Simon FitzMaurice <sdf@redhat.co.uk>
+
+  * common\TestResource.cpp
+    common\TestResource.h
+    common\eCosTest.cpp
+    common\eCosTest.h
+    common\eCosTestClient.cpp
+    common\eCosTestSerialFilter.cpp
+    common\eCosTestServer.cpp
+    common\eCosTestSocket.cpp
+    common\eCosTestSocket.h
+    common\eCosTestUtils.cpp
+    common\eCosTestUtils.h
+    common\rgdb.cpp
+    common\wcharunix.h
+    common\x10reset.cpp
+    win32\eCosTest.dsp
+
+  Base string class on STL.
+  Use subprocess class (like than in CT)
+
+1999-11-23  John Dallaway  <jld@redhat.co.uk>
+
+	* unix\Makefile:
+
+	Add explicit pattern matching rule for compiling .cpp files.
+
+1999-11-11  Bart Veer  <bartv@redhat.co.uk>
+
+	* common\permtest.cxx:
+	Be more tolerant in the data that is accepted, to allow for
+	incompatibilities between the old and new worlds.
+
+1999-11-09  Bart Veer  <bartv@redhat.co.uk>
+
+	* common\permtest.cxx
+	Replacement for permtest.tcl
+
+	* common\acinclude.m4
+	* common\configure.in
+	* common\Makefile.am
+	* common\configure
+	* common\Makefile.in
+	* common\aclocal.m4
+	Build support for permtest.tcl replacement
+
+1999-10-20  John Dallaway  <jld@redhat.co.uk>
+
+	* win32\eCosTest.dsp, win32\eCosTest.mak,
+	  win32\ResourceServer.dsp, win32\ResourceServer.mak:
+
+	Fix intermediate and output directories for the release build.
+
+1999-10-19  Jesper Skov  <jskov@redhat.co.uk>
+
+	* common\X10d.cpp: Allow using '0' as a NOP serial device for the
+	reset controller.
+
+	* common\eCosTest.cpp: Send 'quit' to GDB after 'bt'.
+
+1999-10-18  Jesper Skov  <jskov@redhat.co.uk>
+
+	* unix\Makefile [deleted]:
+	* unix\Makefile [added]:
+	Better makefile.
+
+1999-10-14  Jesper Skov  <jskov@redhat.co.uk>
+
+	* common\ser_filter.cpp: Enabled DL filter as default.
+
+	* common\eCosTestDownloadFilter.h: 
+	* common\eCosTestDownloadFilter.cpp:
+	* common\eCosTest.cpp (ConnectSocketToSerialThreadFunc): 
+	Allow two connections during a session if the first one is a file
+	download.
+	
+	* common\eCosTestServer.cpp: Added missing arg.
+
+1999-10-13  Jesper Skov  <jskov@redhat.co.uk>
+
+	* common\eCosTestDownloadFilter.h: 
+	* common\eCosTestDownloadFilter.cpp:
+	Use Buffer instead of array for in-buffer. Made its size an
+	argument of the info packet.
+	Added status to protocol (OK\DL failure\transfer failure)
+	
+1999-10-11  Jesper Skov  <jskov@redhat.co.uk>
+
+	* common\eCosTest.cpp (ConnectSocketToSerialThreadFunc): Enabled
+	download filter.
+
+	* common\eCosTestDownloadFilter.cpp: Fixed a few compiler warnings.
+
+1999-10-08  Jesper Skov  <jskov@redhat.co.uk>
+
+	* unix\makefile: Fixed.
+
+	* common\eCosTest.cpp:
+	* common\eCosTest.h:
+	* common\eCosTestSocket.cpp:
+	* common\eCosTestSocket.h:
+	* common\ser_filter.cpp:
+	Changed ConectSocketToSerial to take parameter for both serial and
+	socket filters.
+
+	* common\eCosDownloadFilter.cpp: [added]
+	* common\eCosDownloadFilter.h: [added]
+	* common\ser_filter.cpp:
+	Added download filter.
+
+1999-10-07  John Dallaway  <jld@redhat.co.uk>
+
+	* common\eCosTest.cpp,
+	  common\eCosTest.h:
+
+	New GetGreatestSubkey() function returns the name of
+	the subkey of the specified key with the greatest value.
+
+	Modify InitTargetInfoReg() to look in the HKEY_LOCAL_MACHINE
+	hierarchy rather than the HKEY_CURRENT_USER hierarchy.
+
+	Modify InitTargetInfo() to construct the platforms registry
+	key using GetGreatestSubkey().

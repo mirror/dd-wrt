@@ -1,0 +1,6 @@
+2003-08-06  Michael Anburaj <embeddedeng@hotmail.com>
+
+	* cdl/flash_smdk2410.cdl:
+	* src/smdk2410_flash.c:
+	New package to support the flash device on a Samsung ARM9/SMDK2410
+	development board.

@@ -1,0 +1,286 @@
+# Viewer for HTML help info
+# Copyright 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# -----------------------------------------------------------------------------
+# NAME:	
+#	HtmlViewer::constructor
+#
+# SYNOPSIS:	
+#	constructor args
+#
+# DESC:	
+#	Creates the Help Viewer window.
+# -----------------------------------------------------------------------------
+body HtmlViewer::constructor {args} {
+  window_name "Help"
+  eval itk_initialize $args
+  _buildwin
+}
+
+
+# -----------------------------------------------------------------------------
+# NAME:	
+#	private method HtmlViewer::_buildwin
+#
+# SYNOPSIS:	
+#	_buildwin args
+#
+# DESC:	
+#	This function is called by the constructor to build the widget. It
+#	creates pulldown menus, buttons, a stack, and a scrolledhtml widget.
+#	Finally it loads help/index.html.  This last step should change if
+#	this widget is ever used for anything but help.
+# -----------------------------------------------------------------------------
+body HtmlViewer::_buildwin {} {
+  global GDBTK_LIBRARY gdb_ImageDir
+
+  set _links [PageStack \#auto]
+  
+  # create pulldown menu
+  set menu [menu $itk_interior.m -tearoff 0]
+  $menu add cascade -menu $menu.file -label "File" -underline 0
+  set _m [menu $menu.file]
+  $_m add command -label "Back" -underline 0 -command "$this back"
+  $_m add command -label "Forward" -underline 0 -command "$this forward"
+  $_m add command -label "Home" -underline 0 -command "$this link $file"
+  $_m add separator
+  $_m add command -label "Close" -underline 0 -command "delete object $this"
+  $menu add cascade -menu $menu.topic -label "Topics" -underline 0
+  set _t [menu $menu.topic]
+  foreach t $topics {
+    $_t add command -label [lindex $t 0] -command "$this link [lindex $t 1]"
+  }
+  [winfo toplevel $itk_interior] configure -menu $menu
+  
+  # create buttons
+  set _f [frame $itk_interior.b]
+  button $_f.back -command "$this back" \
+    -image [image create photo -file [file join $gdb_ImageDir back.gif]]
+  button $_f.fore -command "$this forward" \
+    -image [image create photo -file [file join $gdb_ImageDir fore.gif]]
+  button $_f.home -command "$this link $file" \
+    -image [image create photo -file [file join $gdb_ImageDir home.gif]]
+  standard_toolbar $_f $_f.back $_f.fore $_f.home
+  
+  _enable 0 back fore
+
+  # create html widget
+  set _html [iwidgets::scrolledhtml $itk_interior.a -linkcommand "$this link"]
+
+  # get things going by loading index.html
+  $_html import [file join $GDBTK_LIBRARY help $file]
+  $_links push $file
+  
+  pack $_f -side top -fill x
+  pack $_html -expand yes -fill both
+
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		public method PageStack::push
+# SYNOPSIS:	push val
+# DESC:		Pushes a value onto the stack.
+# -----------------------------------------------------------------------------
+body PageStack::push {val} {
+  incr _ptr
+  incr _max
+  if {$_ptr < $_max} {
+    set _max $_ptr
+  }
+  set _stack($_ptr) $val
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		public method PageStack::back
+# SYNOPSIS:	back
+# DESC:		Moves the stack pointer back by one.
+# RETURNS:	Returns the value on the stack, or 0 on error.
+# -----------------------------------------------------------------------------
+body PageStack::back {} {
+  if {$_ptr > 0} {
+    incr _ptr -1
+    return $_stack($_ptr)
+  }
+  return 0
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		public method PageStack::next
+# SYNOPSIS:	next
+# DESC:		Moves the stack pointer forward by one.
+# RETURNS:	Returns the value on the stack, or 0 on error.
+# -----------------------------------------------------------------------------
+body PageStack::next {} {
+  if {$_ptr < $_max} {
+    incr _ptr
+    return $_stack($_ptr)
+  }
+  return 0
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		public method PageStack:more
+# SYNOPSIS:	more
+# DESC:		Indicates if the stack pointer is not at the top.
+# RETURNS:	Returns 1 if PageStack::next will suceed, 0 otherwise.
+# -----------------------------------------------------------------------------
+body PageStack::more {} {
+  if {$_ptr < $_max} {
+    return 1
+  }
+  return 0
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		public method PageStack:less
+# SYNOPSIS:	less
+# DESC:		Indicates if the stack pointer is not at the bottom of stack.
+# RETURNS:	Returns 1 if PageStack::back will suceed, 0 otherwise.
+# -----------------------------------------------------------------------------
+body PageStack::less {} {
+  if {$_ptr > 0} {
+    return 1
+  }
+  return 0
+}
+
+# -----------------------------------------------------------------------------
+# NAME:		public method PageStack:current
+# SYNOPSIS:	current
+# RETURNS:	Returns the current value on the stack.
+# -----------------------------------------------------------------------------
+body PageStack::current {} {
+  if {$_ptr > 0} {
+    return $_stack($_ptr)
+  }
+  return 0
+}
+
+# ------------------------------------------------------------------------------
+# NAME:		
+#	private method HtmlViewer::_enable
+#
+# SYNOPSIS:	
+#	_enable { on args }
+#
+# DESC:		
+#	Enables or disables buttons and menus.
+#
+# ARGS:	
+#	on - "1" to enable, "0" to disable
+#	args - things to enable/disable.  May include "back",
+#	"fore", and "home"
+#
+# ------------------------------------------------------------------------------
+body HtmlViewer::_enable { on args } {
+  if {$on} {
+    set state normal
+  } else {
+    set state disabled
+  }
+  
+  foreach a $args {
+    switch $a {
+      back {
+	# set state of "back"
+	$_m entryconfigure 0 -state $state
+	$_f.back configure -state $state
+      }
+      fore {
+	# set state of "forward"
+	$_m entryconfigure 1 -state $state
+	$_f.fore configure -state $state
+      }
+      home {
+	# set state of "home"
+	$_m entryconfigure 2 -state $state
+	$_f.home configure -state $state
+      }
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+# NAME:		public method HtmlViewer::back
+# SYNOPSIS:	back
+# DESC:		Moves to the previous page
+# ------------------------------------------------------------------------------
+body HtmlViewer::back {} {
+  set res [$_links back]
+  if {$res != 0} {
+    load $res
+    if {![$_links less]} {
+      _enable 0 back
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+# NAME:		public method HtmlViewer::forward
+# SYNOPSIS:	forward
+# DESC:		Moves to the next page
+# ------------------------------------------------------------------------------
+body HtmlViewer::forward {} {
+  set res [$_links next]
+  if {$res != 0} {
+    load $res
+    if {![$_links more]} {
+      _enable 0 fore
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+# NAME:		public method HtmlViewer::link
+# SYNOPSIS:	link page
+# ARDS:		page - link to the page to load
+# DESC:		Saves the page on the stack and calls the "load" method
+# ------------------------------------------------------------------------------
+body HtmlViewer::link {page} {
+  if {$page != [$_links current]} {
+    $_links push $page
+    load $page
+    if {![$_links more]} {
+      _enable 0 fore
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+# NAME:		private method HtmlViewer::load
+# SYNOPSIS:	load link
+# DESC:		Disables menus and buttons, sets cursor, loads a page into 
+#		the html widget, then resets cursor and enables the menus 
+#		and buttons
+# ------------------------------------------------------------------------------
+body HtmlViewer::load {link} {
+  _enable 0 back fore home
+  $itk_interior configure -cursor watch
+  $_html import -link $link
+  $itk_interior configure -cursor ""    
+  _enable 1 back fore home
+}
+
+# ------------------------------------------------------------------------------
+# NAME:		public proc HtmlViewer::open_help
+# SYNOPSIS:	HtmlViewer::open_help file
+# DESC:		If the prefs are set to use a browser, attempts
+#		to do so. Otherwise, uses builtin HtmlViewer class.
+# ------------------------------------------------------------------------------
+body HtmlViewer::open_help {hfile} {
+  set link file://[file join $::GDBTK_LIBRARY help $hfile]
+  if {![pref get gdb/help/browser] || ![::open_url $link]} {
+    ManagedWin::open HtmlViewer -file $hfile
+  }
+}

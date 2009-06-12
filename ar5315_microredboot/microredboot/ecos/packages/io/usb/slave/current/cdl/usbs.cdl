@@ -1,0 +1,134 @@
+# ====================================================================
+#
+#      usbs.cdl
+#
+#      USB slave-side support
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  bartv
+# Contributors:
+# Date:           2000-10-04
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_IO_USB_SLAVE {
+    display     "USB slave-side support"
+    parent      CYGPKG_IO_USB
+    include_dir "cyg/io/usb"
+    active_if   CYGHWR_IO_USB_SLAVE
+    doc         ref/io-usb-slave.html
+    
+    compile usbs.c
+
+    cdl_interface CYGINT_IO_USB_SLAVE_CLIENTS {
+	display         "Number of clients of USB devices"
+	description "
+	    This counter keeps track of the number of clients of
+	    USB devices, especially application-class packages such
+	    as the USB-ethernet support. It can be used by USB
+	    device drivers for default settings.
+	"
+    }
+
+    cdl_option CYGGLO_IO_USB_SLAVE_APPLICATION {
+	display         "Application code uses USB devices"
+	default_value   0
+	implements      CYGINT_IO_USB_SLAVE_CLIENTS
+	description "
+	    If the USB devices are accessed by application code
+	    rather than by other packages then enabling this
+	    option will cause the USB device drivers to be enabled. 
+	"
+    }
+    
+    cdl_option CYGGLO_IO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES {
+	display         "Provide devtab entries by default"
+	default_value   CYGPKG_IO
+	requires        CYGPKG_IO
+	description "
+	    The USB slave-side endpoints can typically be accessed in two
+	    different ways. There is support for the traditional way of
+	    doing I/O with open/read/write calls, which involves the
+	    use of devtab entries. It is also possible to use a
+	    USB-specific API, defined largely in terms of asynchronous
+	    operations and callbacks (the read/write implementation uses
+	    these lower-level calls). If neither the application nor
+	    any other USB-related packages require the higher-level
+            read/write calls then it is possible to save some memory
+	    by eliminating the devtab entries.
+	"
+    }
+    
+    cdl_interface CYGHWR_IO_USB_SLAVE_OUT_ENDPOINTS {
+	display "Number of available host->slave endpoints"
+    }
+    cdl_interface CYGHWR_IO_USB_SLAVE_IN_ENDPOINTS {
+	display "Number of available slave->host endpoints"
+    }
+
+    cdl_option CYGBLD_IO_USB_SLAVE_USBTEST {
+	display         "Build the main USB test program"
+	doc             ref/usbs-testing.html
+	description "
+	    The USB slave-side software is supplied with host-side
+            and target-side software that allows a variety of testing
+	    to be performed. The slave-side software is not built
+	    by default since it can only operate in specific environments
+	    and in conjunction with the host-side software. Enabling
+	    this option causes the slave-side software to be added
+	    to the list of test cases for the current configuration."
+	default_value   0
+	implements      CYGINT_IO_USB_SLAVE_CLIENTS
+	requires        { is_substr(CYGPKG_IO_USB_SLAVE_TESTS, " tests/usbtarget") }
+
+	requires        CYGFUN_KERNEL_API_C CYGFUN_KERNEL_THREADS_TIMER !CYGINT_KNEREL_SCHEDULER_UNIQUE_PRIORITIES
+	requires        CYGPKG_LIBC_STDIO CYGSEM_LIBC_STDIO_THREAD_SAFE_STREAMS
+    }
+    
+    cdl_option CYGPKG_IO_USB_SLAVE_TESTS {
+	display   "Kernel tests"
+	flavor    data
+	no_define
+	default_value { "" }
+	description "This option specifies the set of tests to be
+            built for the USB slave package"
+    }
+}

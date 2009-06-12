@@ -1,0 +1,817 @@
+<!-- {{{ Banner                 -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     concepts.sgml                                               -->
+<!--                                                                 -->
+<!--     Introductory chapter.                                       -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2000, 2001, 2002 Red Hat, Inc.                    -->
+<!--                                                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2000/02/06                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<chapter id="overview">
+<title>Overview</title>
+
+<!-- {{{ Introit                --> 
+
+<para>
+&eCos; was designed from the very beginning as a configurable
+component architecture. The core &eCos; system consists of a number of
+different components such as the kernel, the C library, an
+infrastructure package. Each of these provides a large number of
+configuration options, allowing application developers to build a
+system that matches the requirements of their particular application.
+To manage the potential complexity of multiple components and lots of
+configuration options, &eCos; comes with a component framework: a
+collection of tools specifically designed to support configuring
+multiple components. Furthermore this component framework is
+extensible, allowing additional components to be added to the system
+at any time.
+</para>
+
+<!-- }}} -->
+<!-- {{{ Terminology            --> 
+
+<sect1 id="overview.terminology">
+<title>Terminology</title>
+<para>
+The &eCos; component architecture involves a number of key concepts.
+</para>
+
+<!-- {{{ Component Framework    -->
+
+<sect2 id="concepts.terminology.framework">
+<title>Component Framework</title>
+
+<para>
+The phrase <phrase>component framework</phrase> is used to describe
+the collection of tools that allow users to configure a system and
+administer a component repository. This includes the <application
+class="software">ecosconfig</application> command line tool, the
+graphical configuration tool, and the package administration tool.
+Both the command line and graphical tools are based on a single
+underlying library, the &CDL; library.
+</para>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Option                 -->
+
+<sect2 id="concepts.terminology.option">
+<title>Configuration Option</title>
+<para>
+The option is the basic unit of configurability. Typically each option
+corresponds to a single choice that a user can make. For example there
+is an option to control whether or not assertions are enabled, and the
+kernel provides an option corresponding to the number of scheduling
+priority levels in the system. Options can control very small amounts
+of code such as whether or not the C library's
+<function>strtok</function> gets inlined. They can also control quite
+large amounts of code, for example whether or not the
+<function>printf</function> supports floating point conversions.
+</para>
+<para>
+Many options are straightforward, and the user only gets to choose
+whether the option is enabled or disabled. Some options are more
+complicated, for example the number of scheduling priority levels is a
+number that should be within a certain range. Options should always
+start off with a sensible default setting, so that it is not necessary
+for users to make hundreds of decisions before any work can start on
+developing the application. Once the application is running the
+various configuration options can be used to tune the system for the
+specific needs of the application.
+</para>
+<para>
+The component framework allows for options that are not directly
+user-modifiable. Consider the case of processor endianness: some
+processors are always big-endian or always little-endian, while with
+other processors there is a choice. Depending on the user's choice of
+target hardware, endianness may or may not be user-modifiable.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Component              -->
+
+<sect2 id="concepts.terminology.component">
+<title>Component</title>
+<para>
+A component is a unit of functionality such as a particular kernel
+scheduler or a device driver for a specific device. A component is
+also a configuration option in that users may want to enable
+or disable all the functionality in a component. For example, if a
+particular device on the target hardware is not going to be used by
+the application, directly or indirectly, then there is no point in
+having a device driver for it. Furthermore disabling the device driver
+should reduce the memory requirements for both code and data.
+</para>
+<para>
+Components may contain further configuration options. In the case of a
+device driver, there may be options to control the exact behavior of
+that driver. These will of course be irrelevant if the driver as a
+whole is disabled. More generally options and components live in a
+hierarchy, where any component can contain options specific to that
+component and further sub-components. It is possible to view the
+entire &eCos; kernel as one big component, containing sub-components
+for scheduling, exception handling, synchronization primitives, and so
+on. The synchronization primitives component can contain further
+sub-components for mutexes, semaphores, condition variables, event
+flags, and so on. The mutex component can contain configuration
+options for issues like priority inversion support.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Package                -->
+
+<sect2 id="concepts.terminology.package">
+<title>Package</title>
+<para>
+A package is a special type of component. Specifically, a package is
+the unit of distribution of components. It is possible to create a
+distribution file for a package containing all of the source code,
+header files, documentation, and other relevant files. This
+distribution file can then be installed using the appropriate tool.
+Afterwards it is possible to uninstall that package, or to install a
+later version. The core &eCos; distribution comes with a number of
+packages such as the kernel and the infrastructure. Other packages
+such as network stacks can come from various different sources and can
+be installed alongside the core distribution.
+</para>
+<para>
+Packages can be enabled or disabled, but the user experience is a
+little bit different. Generally it makes no sense for the tools to
+load the details of every single package that has been installed. For
+example, if the target hardware uses an ARM processor then there is no
+point in loading the HAL packages for other architectures and
+displaying choices to the user which are not relevant. Therefore
+enabling a package means loading its configuration data into the
+appropriate tool, and disabling a package is an unload operation. In
+addition, packages are not just enabled or disabled: it is also
+possible to select the particular version of a package that should be
+used.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Configuration          -->
+
+<sect2 id="concepts.terminology.configuration">
+<title>Configuration</title>
+<para>
+A configuration is a collection of user choices. The various
+tools that make up the component framework deal with entire
+configurations. Users can create a new configuration, output a
+savefile (by default <filename>ecos.ecc</filename>), manipulate a
+configuration, and use a configuration to generate a build tree prior
+to building &eCos; and any other packages that have been selected.
+A configuration includes details such as which packages have been
+selected, in addition to finer-grained information such as which
+options in those packages have been enabled or disabled by the user. 
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Target                 -->
+
+<sect2 id="concepts.terminology.target">
+<title>Target</title>
+<para>
+The target is the specific piece of hardware on which the application
+is expected to run. This may be an off-the-shelf evaluation board, a
+piece of custom hardware intended for a specific application, or it
+could be something like a simulator. One of the steps when creating a
+new configuration is need to specify the target. The component
+framework will map this on to a set of packages that are used to
+populate the configuration, typically HAL and device driver packages,
+and in addition it may cause certain options to be changed from their
+default settings to something more appropriate for the
+specified target.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Template               -->
+
+<sect2 id="concepts.terminology.template">
+<title>Template</title>
+<para>
+A template is a partial configuration, aimed at providing users with
+an appropriate starting point. &eCos; is shipped with a small number
+of templates, which correspond closely to common ways of using the
+system. There is a minimal template which provides very little
+functionality, just enough to bootstrap the hardware and then jump
+directly to application code. The default template adds additional
+functionality, for example it causes the kernel and C library packages
+to be loaded as well. The uitron template adds further functionality
+in the form of a &uITRON; compatibility layer. Creating a new
+configuration typically involves specifying a template as well as a
+target, resulting in a configuration that can be built and linked with
+the application code and that will run on the actual hardware. It is
+then possible to fine-tune configuration options to produce something
+that better matches the specific requirements of the application.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Properties             -->
+
+<sect2 id="concepts.terminology.properties">
+<title>Properties</title>
+<para>
+The component framework needs a certain amount of information about
+each option. For example it needs to know what the legal values are,
+what the default should be, where to find the on-line documentation if
+the user needs to consult that in order to make a decision, and so on.
+These are all properties of the option. Every option (including
+components and packages) consists of a name and a set of properties.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Consequences           -->
+
+<sect2 id="concepts.terminology.consequences">
+<title>Consequences</title>
+<para>
+Choices must have consequences. For an &eCos; configuration the main
+end product is a library that can be linked with application code, so
+the consequences of a user choice must affect the build process. This
+happens in two main ways. First, options can affect which files get
+built and end up in the library. Second, details of the current option
+settings get written into various configuration header files using C
+preprocessor <literal>#define</literal> directives, and package source
+code can <literal>#include</literal> these configuration headers and
+adapt accordingly. This allows options to affect a package at a very
+fine grain, at the level of individual lines in a source file if
+desired. There may be other consequences as well, for example there
+are options to control the compiler flags that get used during the
+build process.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Constraints            -->
+
+<sect2 id="concepts.terminology.constraints">
+<title>Constraints</title>
+<para>
+Configuration choices are not independent. The C library can provide
+thread-safe implementations of functions like
+<function>rand</function>, but only if the kernel provides support for
+per-thread data. This is a constraint: the C library option has a
+requirement on the kernel. A typical configuration involves a
+considerable number of constraints, of varying complexity: many
+constraints are straightforward, option <literal>A</literal> requires
+option <literal>B</literal>, or option <literal>C</literal> precludes
+option <literal>D</literal>. Other constraints can be more
+complicated, for example option <literal>E</literal> may require the
+presence of a kernel scheduler but does not care whether it is the
+bitmap scheduler, the mlqueue scheduler, or something else.
+</para>
+<para>
+Another type of constraint involves the values that can be used for
+certain options. For example there is a kernel option related to the
+number of scheduling levels, and there is a legal values constraint on
+this option: specifying zero or a negative number for the number of
+scheduling levels makes no sense.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Conflicts              -->
+
+<sect2 id="concepts.terminology.conflicts">
+<title>Conflicts</title>
+<para>
+As the user manipulates options it is possible to end up with an
+invalid configuration, where one or more constraints are not
+satisfied. For example if kernel per-thread data is disabled but the C
+library's thread-safety options are left enabled then there are
+unsatisfied constraints, also known as conflicts. Such conflicts will
+be reported by the configuration tools. The presence of conflicts does
+not prevent users from attempting to build &eCos;, but the
+consequences are undefined: there may be compile-time failures, there
+may be link-time failures, the application may completely fail to run,
+or the application may run most of the time but once in a while there
+will be a strange failure&hellip; Typically users will want to resolve
+all conflicts before continuing.
+</para>
+<para>
+To make things easier for the user, the configuration tools contain an
+inference engine. This can examine a conflict in a particular
+configuration and try to figure out some way of resolving the
+conflict. Depending on the particular tool being used, the inference
+engine may get invoked automatically at certain times or the user may
+need to invoke it explicitly. Also depending on the tool, the
+inference engine may apply any solutions it finds automatically or it
+may request user confirmation.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ CDL                    -->
+
+<sect2 id="concepts.terminology.cdl">
+<title>CDL</title>
+<para>
+The configuration tools require information about the various options
+provided by each package, their consequences and constraints, and
+other properties such as the location of on-line documentation. This
+information has to be provided in the form of &CDL; scripts. CDL
+is short for Component Definition Language, and is specifically
+designed as a way of describing configuration options.
+</para>
+<para>
+A typical package contains the following:
+</para>
+<orderedlist>
+<listitem><para>
+Some number of source files which will end up in a library. The
+application code will be linked with this library to produce an
+executable. Some source files may serve other purposes, for example to
+provide a linker script.
+</para></listitem>
+<listitem><para>
+Exported header files which define the interface provided by the
+package. 
+</para></listitem>
+<listitem><para>
+On-line documentation, for example reference pages for each exported
+function. 
+</para></listitem>
+<listitem><para>
+Some number of test cases, shipped in source format, allowing users to
+check that the package is working as expected on their particular
+hardware and in their specific configuration.
+</para></listitem>
+<listitem><para>
+One or more &CDL; scripts describing the package to the configuration
+system.
+</para></listitem>
+</orderedlist>
+<para>
+Not all packages need to contain all of these. For example some
+packages such as device drivers may not provide a new interface,
+instead they just provide another implementation of an existing
+interface. However all packages must contain a &CDL; script that
+describes the package to the configuration tools.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Component Repository   -->
+
+<sect2 id="concepts.terminology.repo">
+<title>Component Repository</title>
+<para>
+All &eCos; installations include a component repository. This is a
+directory structure where all the packages get installed. The
+component framework comes with an administration tool that allows new
+packages or new versions of a package to be installed, old packages to
+be removed, and so on. The component repository includes a simple
+database, maintained by the administration tool, which contains
+details of the various packages.
+</para>
+<para>
+Generally application developers do not need to modify anything inside
+the component repository, except by means of the administration tool.
+Instead their work involves separate build and install trees. This
+allows the component repository to be treated as a read-only resource
+that can be shared by multiple projects and multiple users. Component
+writers modifying one of the packages do need to manipulate files in
+the component repository.
+</para>
+</sect2>
+
+<!-- }}} -->
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Why configurability ?  --> 
+
+<sect1 id="overview.configurability">
+<title>Why Configurability?</title>
+<para>
+The &eCos; component framework places a great deal of emphasis on
+configurability. The fundamental goal is to allow large parts of
+embedded applications to be constructed from re-usable software
+components, which does not a priori require that those components be
+highly configurable. However embedded application development often
+involves some serious constraints.
+</para>
+<para>
+Many embedded applications have to work with very little memory, to
+keep down manufacturing costs. The final application image that will
+get blown into EPROM's or used to manufacture ROMs should contain only
+the code that is absolutely necessary for the application to work, and
+nothing else. If a few tens of kilobytes are added unnecessarily to a
+typical desktop application then this is regrettable, but is quite
+likely to go unnoticed. If an embedded application does not fit on the
+target hardware then the problem is much more serious. The component
+framework must allow users to configure the components so that any
+unnecessary functionality gets removed.
+</para>
+<para>
+Many embedded applications need deterministic behavior so that they
+can meet real-time requirements. Such deterministic behavior can
+often be provided, but at a cost in terms of code size, slower
+algorithms, and so on. Other applications have no such real-time
+requirements, or only for a small part of the overall system, and the
+bulk of the system should not suffer any penalties. Again the
+component framework must allow the users control over the timing
+behavior of components.
+</para>
+<para>
+Embedded systems tend to be difficult to debug. Even when it is
+possible to get information out of the target hardware by means other
+than flashing an LED, the more interesting debugging problems are
+likely to be timing-related and hence very hard to reproduce and track
+down. The re-usable components can provide debugging assistance in
+various ways. They can provide functionality that can be exploited by
+source level debuggers such as gdb, for example per-thread debugging
+information. They can also contain various assertions so that problems
+can be detected early on, tracing mechanisms to figure out what
+happened before the assertion failure, and so on. Of course all of
+these involve overheads, especially code size, and affect the timing.
+Allowing users to control which debugging features are enabled for any
+given application build is very desirable.
+</para>
+<para>
+However, although it is desirable for re-usable components to provide
+appropriate configuration options this is not required. It is possible
+to produce a package which does not provide a single configuration
+option&nbsp;&mdash;&nbsp;although the user still gets to choose
+whether or not to use the package. In such cases it is still necessary
+to provide a minimal CDL script, but its main purpose would be to
+integrate the package with the component framework's build system.
+</para>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Approaches             --> 
+
+<sect1 id="overview.approaches">
+<title>Approaches to Configurability</title>
+
+<para>
+The purpose of configurability is to control the behavior of
+components. A scheduler component may or may not support time slicing;
+it may or may not support multiple priorities; it may or may not
+perform error checking on arguments passed to the scheduler routines.
+In the context of a desktop application a button widget may contain
+some text or it may contain a picture; the text may be displayed in a
+variety of fonts; the foreground and background color may vary. When
+an application uses a component there must be some way of specifying
+the desired behavior. The component writer has no way of knowing in
+advance exactly how a particular component will end up being used.
+</para>
+<para>
+One way to control the behavior is at run time. The application
+creates an instance of a button object, and then instructs this object
+to display either text or a picture. No special effort by the
+application developer is required, since a button can always support
+all desired behavior. There is of course a major disadvantage in
+terms of the size of the final application image: the code that gets
+linked with the application has to provide support for all possible
+behavior, even if the application does not require it.
+</para>
+<para>
+Another approach is to control the behavior at link-time, typically
+by using inheritance in an object-oriented language. The button
+library provides an abstract base class <classname>Button</classname>
+and derived classes <classname>TextButton</classname> and
+<classname>PictureButton</classname>. If an application only uses text
+buttons then it will only create objects of type
+<classname>TextButton</classname>, and the code for the
+<classname>PictureButton</classname> class does not get used. In
+many cases this approach works rather well and reduces the final image
+size, but there are limitations. The main one is that you can only
+have so many derived classes before the system gets unmanageable: a
+derived class
+<classname>TextButtonUsingABorderWidthOfOnePlusAWhiteBackgroundAndBlackForegroundAndATwelvePointTimesFontAndNoErrorCheckingOrAssertions</classname>
+is not particularly sensible as far as most application developers are
+concerned.
+</para>
+<para>
+The &eCos; component framework allows the behavior of components to
+be controlled at an even earlier time: when the component source code
+gets compiled and turned into a library. The button component could
+provide options, for example an option that only text buttons need to
+be supported. The component gets built and becomes part of a library
+intended specifically for the application, and the library will
+contain only the code that is required by this application and nothing
+else. A different application with different requirements would need
+its own version of the library, configured separately.
+</para>
+<para>
+In theory compile-time configurability should give the best possible
+results in terms of code size, because it allows code to be controlled
+at the individual statement level rather than at the function or
+object level. Consider an example more closely related to embedded
+systems, a package to support multi-threading. A standard routine
+within such a package allows applications to kill threads
+asynchronously: the POSIX routine for this is
+<function>pthread_cancel</function>; the equivalent routine in &uITRON;
+is <function>ter_tsk</function>. These routines themselves tend to
+involve a significant amount of code, but that is not the real
+problem: other parts of the system require extra code and data for the
+kill routine to be able to function correctly. For example if a thread
+is blocked while waiting on a mutex and is killed off by another
+thread then the kill operation may have to do two things: remove the
+thread from the mutex's queue of waiting threads; and undo the
+effects, if any, of priority inheritance. The implementation requires
+extra fields in the thread data structure so that the kill routine
+knows about the thread's current state, and extra code in the mutex
+routines to fill in and clear these extra fields correctly.
+</para>
+<para>
+Most embedded applications do not require the ability to kill off a
+thread asynchronously, and hence the kill routine will not get linked
+into the final application image. Without compile-time configurability
+this would still mean that the mutex code and similar parts of the
+system contain code and data that serve no useful purpose in this
+application. The &eCos; approach allows the user to select that the
+thread kill functionality is not required, and all the components can
+adapt to this at compile-time. For example the code in the mutex lock
+routine contains statements to support the killing of threads, but
+these statements will only get compiled in if that functionality is
+required. The overall result is that the final application image
+contains only the code and data that is really needed for the
+application to work, and nothing else.
+</para>
+<para>
+Of course there are complications. To return to the button example,
+the application code might only use text buttons directly, but it
+might also use some higher-level widget such as a file selector and
+this file selector might require buttons with pictures. Therefore the
+button code must still be compiled to support pictures as well as
+text. The configuration tools must be aware of the dependencies
+between components and ensure that the internal constraints are met,
+as well as the external requirements of the application code. An area
+of particular concern is conflicting requirements: a button component
+might be written in such a way that it can only support either text
+buttons or picture buttons, but not both in one application; this
+would represent a weakness in the component itself rather than in the
+component framework as a whole.
+</para>
+<para>
+Compile-time configurability is not intended to replace the other
+approaches but rather to complement them. There will be times when
+run-time selection of behavior is desirable: for example an
+application may need to be able to change the baud rate of a serial
+line, and the system must then provide a way of doing this at
+run-time. There will also be times when link-time selection is
+desirable: for example a C library might provide two different random
+number routines <function>rand</function> and
+<function>lrand48</function>; these do not affect other code so there
+is no good reason for the C library component not to provide both of
+these, and allow the application code to use none, one, or both of
+them as appropriate; any unused functions will just get eliminated at
+link-time. Compile-time selection of behavior is another option, and
+it can be the most powerful one of the three and the best suited to
+embedded systems development.
+</para>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Degrees                -->
+
+<sect1 id="overview.degress">
+<title>Degrees of Configurability</title>
+
+<para>
+Components can support configurability in varying degrees. It is not
+necessary to have any configuration options at all, and the only user
+choice is whether or not to load a particular package. Alternatively
+it is possible to implement highly-configurable code. As an example
+consider a typical facility that is provided by many real-time
+kernels, mutex locks. The possible configuration options include:
+</para>
+
+<orderedlist>
+
+<listitem>
+<para>
+If no part of the application and no other component requires mutexes
+then there is no point in having the mutex code compiled into a
+library at all. This saves having to compile the code. In addition
+there will never be any need for the user to configure the detailed
+behavior of mutexes. Therefore the presence of mutexes is a
+configuration option in itself.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Even if the application does make use of mutexes directly or
+indirectly, this does not mean that all mutex functions have to be
+included. The minimum functionality consists of lock and unlock
+functions. However there are variants of the locking primitive such as
+try-lock and try-with-timeout which may or may not be needed.
+</para>
+<para>
+Generally it will be harmless to compile the try-lock function even if
+it is not actually required, because the function will get eliminated
+at link-time. Some users might take the view that the try-lock
+function should never get compiled in unless it is actually needed, to
+reduce compile-time and disk usage. Other users might argue that there
+are very few valid uses for a try-lock function and it should not be
+compiled by default to discourage incorrect uses. The presence of a
+try-lock function is a possible configuration option, although it may
+be sensible to default it to true.
+</para>
+<para>
+The try-with-timeout variant is more complicated because it adds a
+dependency: the mutex code will now rely on some other component to
+provide a timer facility. To make things worse the presence of this
+timer might impact other components, for example it may now be
+necessary to guard against timer interrupts, and thus have an
+insidious effect on code size. The presence of a lock-with-timeout
+function is clearly a sensible configuration option, but the default
+value is less obvious. If the option is enabled by default then the
+final application image may end up with code that is not actually
+essential. If the option is disabled by default then users will have
+to enable the option somehow in order to use the function, implying
+more effort on the part of the user. One possible approach is to
+calculate the default value based on whether or not a timer component
+is present anyway.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The application may or may not require the ability to create and
+destroy mutexes dynamically. For most embedded systems it is both less
+error-prone and more efficient to create objects like mutexes
+statically. Dynamic creation of mutexes can be implemented using a
+pre-allocated pool of mutex objects, involving some extra code to
+manipulate the pool and an additional configuration option to define
+the size of the pool. Alternatively it can be implemented using a
+general-purpose memory allocator, involving quite a lot of extra code
+and configuration options. However this general-purpose memory
+allocator may be present anyway to support the application itself or
+some other component. The ability to create and destroy mutexes
+dynamically is a configuration option, and there may not be a sensible
+default that is appropriate for all applications.
+</para>
+</listitem>
+
+<listitem>
+<para>
+An important issue for mutex locks is the handling of priority
+inversion, where a high priority thread is prevented from running
+because it needs a lock owned by a lower priority thread. This is only
+an issue if there is a scheduler with multiple priorities: some
+systems may need multi-threading and hence synchronization primitives,
+but a single priority level may suffice. If priority inversion is a
+theoretical possibility then the application developer may still want
+to ignore it because the application has been designed such that the
+problem cannot arise in practice. Alternatively the developer may want
+some sort of exception raised if priority inversion does occur,
+because it should not happen but there may still be bugs in the code.
+If priority inversion can occur legally then there are three main ways
+of handling it: priority ceilings, priority inheritance, and ignoring
+the problem. Priority ceilings require little code but extra effort on
+the part of the application developer. Priority inheritance requires
+more code but is automatic. Ignoring priority inversion may or may not
+be acceptable, depending on the application and exactly when priority
+inversion can occur. Some of these choices involve additional
+configuration options, for example there are different ways of raising
+an exception, and priority inheritance may or may not be applied
+recursively.
+</para>
+</listitem>
+
+<listitem>
+<para>
+As a further complication some mutexes may be hidden inside a
+component rather than being an explicit part of the application. For
+example, if the C library is configured to provide a
+<function>malloc</function> call then there may be an associated mutex
+to make the function automatically thread-safe, with no need for
+external locking. In such cases the memory allocation component of the
+C library can impose a constraint on the kernel, requiring that
+mutexes be provided. If the user attempts to disable mutexes anyway
+then the configuration tools will report a conflict.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The mutex code should contain some general debugging code such as
+assertions and tracing. Usually such debug support will be enabled or
+disabled at a coarse level such as the entire system or everything
+inside the kernel, but sometimes it will be desirable to enable the
+support more selectively. One reason would be memory requirements: the
+target may not have enough memory to hold the system if all debugging
+is enabled. Another reason is if most of the system is working but
+there are a few problems still to resolved; enabling debugging in the
+entire system might change the system's timing behavior too much, but
+enabling some debug options selectively can still be useful. There
+should be configuration options to allow specific types of debugging
+to be enabled at a fine-grain, but with default settings inherited
+from an enclosing component or from global settings.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The mutex code may contain specialized code to interact
+with a debugging tool running on the host. It should be
+possible to enable or disable this debugging code, and there may
+be additional configuration options controlling the detailed
+behavior.
+</para>
+</listitem>
+
+</orderedlist>
+
+<para>
+Altogether there may be something like ten to twenty configuration
+options that are specific to the mutex code. There may be a similar
+number of additional options related to assertions and other debug
+facilities. All of the options should have sensible default values,
+possibly fixed, possibly calculated depending on what is happening
+elsewhere in the configuration. For example the default setting for
+an assertion option should generally inherit from a kernel-wide
+assertion control option, which in turn inherits from a global option.
+This allows users to enable or disable assertions globally or at
+a more fine-grained level, as desired.
+</para>
+<para>
+Different components may be configurable to different degrees, ranging
+from no options at all to the fine-grained configurability of the
+above mutex example (or possibly even further). It is up to component
+writers to decide what options should be provided and how best to
+serve the needs of application developers who want to use that
+component.
+</para>
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Warning                -->
+
+<sect1 id="overview.warning">
+<title>Warnings</title>
+<para>
+Large parts of &eCos; were developed concurrently with the development
+of the configuration technology, or in some cases before design work
+on that technology was complete. As a consequence the various &eCos;
+packages often make only limited use of the available functionality.
+This situation is expected to change over time. It does mean that many
+of the descriptions in this guide will not correspond exactly to how
+the &eCos; packages work right now, but rather to how they could work.
+Some of the more extreme discrepancies such as the location of on-line
+documentation in the component repository will be mentioned in the
+appropriate places in the guide.
+</para>
+<para>
+A consequence of this is that developers of new components can look at
+existing &CDL; scripts for examples, and discover discrepancies
+between what is recommended in this guide and what actually happens at
+present. In such cases this guide should be treated as authoritative.
+</para>
+<para>
+It is also worth noting that the current component framework is not
+finished. Various parts of this guide will refer to possible changes
+and enhancements in future versions. Examining the source code of the
+configuration tools may reveal hints about other likely developments,
+and there are many more possible enhancements which only exist at a
+conceptual level right now.
+</para>
+
+</sect1>
+
+<!-- }}} -->
+
+</chapter>

@@ -1,0 +1,923 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mn10300.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_misc.c: Only declare __mem_fault_handler if GDB stubs
+	are included (and it will be used).
+
+2003-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Let generic syscall code
+	handle exit.
+
+2002-12-06  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300.cdl: Add CYGINT_HAL_MN10300_MEM_REAL_REGION_TOP.
+	* include/hal_intr.h: Support CYGINT_HAL_MN10300_MEM_REAL_REGION_TOP.
+
+2002-04-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S:
+	Don't use .file as it can confuse debugging since the .file
+	doesn't contain the path and therefore the debugger will never
+	know where it lives! This conflicts with using -Wa,--gstabs.
+
+2002-04-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Add extra sig argument to
+	__do_syscall.
+
+2001-11-16  Nick Garnett  <nickg@redhat.com>
+
+	* src/hal_misc.c (hal_msbit_index): Fixed this function so that it
+	actually works!
+
+2001-10-16  David Howells  <dhowells@redhat.com>
+
+	* src/hal_syscall.c: mustn't increment the return address by 4.
+	* cdl/hal_mn10300.cdl: moved the RTC configuration previously
+	added to the ASB2305 platform.
+
+2001-10-16  David Howells  <dhowells@redhat.com>
+
+	* src/vectors.S: conditionally call diagnostic macros on entry and
+	exit to default NMI handler and make inclusion of RedBoot header
+	file conditional.
+
+2001-10-15  David Howells  <dhowells@redhat.com>
+
+	* include/mn10300_stub.h: added syscall handling.
+	* src/hal_syscall.c: ditto
+	* src/mn10300_stub.c: ditto
+	* src/vectors.S: ditto
+	* cdl/hal_mn10300.cdl: added RTC configuration.
+
+2001-07-27  David Howells  <dhowells@redhat.com>
+
+	* include/mn10300_stub.h: set NUMREGS to be the correct value to
+	keep gdb happy.
+	* include/hal_io.h: refer to plf_io.h
+	* include/arch.inc: note presence of the ASB2305 platform
+	* src/vectors.S: Adjusted exception handling to be able to cope
+	with AM33v2 exceptions.
+
+2001-01-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: Added underscore to reference to
+	cyg_scheduler_sched_lock, since CYGBLD_ATTRIB_ASM_ALIAS() now adds
+	one automatically.
+
+2000-11-30  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/hal_arch.h: Handle Cygmon interrupt stack.  ie For
+	Cygmon we must switch to a new stack immediately on exception to
+	make sure that we don't modify the application stack at all since
+	GDB may be using it.
+	* src/vectors.S: Ditto.
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c: Update __mem_fault_handler declaration.
+
+2000-09-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/basetype.h (CYGARC_ALIGNMENT): mn10300 has 4 byte alignment
+	(CYGARC_P2ALIGNMENT): Likewise
+
+2000-08-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/vectors.S (__default_nmi_vsr): Fix quoting in comment problem
+
+2000-08-15  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/mn10300_stub.c (__is_breakpoint_function): Prepend an _ to
+	breakinst.  Apparently the symbol generation has changed requiring
+	this.
+
+2000-08-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/vectors.S: Use some generic MN10300 code rather than AM33-specific.
+
+	* include/mn10300_stub.h: Some cleanups of AM33/2.00 includes.
+
+	* src/mn10300_stub.c (__computeSignal): Make sure SIGSYSCALL is
+	defined before returning it.
+
+2000-08-12  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/mn10300_stub.h: More rearranging of GDB regnames.
+
+2000-08-11  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/mn10300_stub.h: Rearranged regnames to correspond to
+	what GDB is expecting.
+
+	* include/arch.inc: Fixed error in declaration of hal_intc_decode.
+
+2000-08-10  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/vectors.S: Added syscall handling.
+	Added HAL_EARLY_INIT.
+	Added CTRLC_SUPPORT.
+	Added CYGMON support.
+
+	* src/mn10300_stub.c: Added breakpoint list handling.
+	Added syscall handling.
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Added support for
+	exceptions caused by the stubs which are passed transparently
+	back.
+	Also added VIRTUAL_VECTOR support.
+
+	* include/hal_arch.h: Added HAL_BREAKINST_TYPE.
+	Added Cygmon support.
+
+	* include/arch.inc: Added AM33/2.00 board support.
+
+	* include/mn10300_stub.h: Added AM33/2.00 support.
+
+	* cdl/hal_mn10300.cdl: Added option for CTRLC_SUPPORT.
+	* include/pkgconf/hal_mn10300.h: Ditto.
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h: Added underscores to label in
+	HAL_BREAKINST().
+
+	* include/basetype.h:
+	Removed definition of CYG_LABEL_NAME() and added one for
+	CYG_LABEL_DEFN().
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h (CYGARC_HAL_SAVE_GP, CYGARC_HAL_RESTORE_GP):
+	Added.
+
+2000-03-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/vectors.S (__default_interrupt_vsr): Pass variant-specific PC
+	offset from register context into cyg_hal_gdb_isr()
+
+	* include/hal_arch.h: Move HAL_SavedRegisters into variant HALs
+
+2000-03-19  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/mn10300_stub.h: Make C++ safe
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300.cdl: remove fix me.
+
+1999-11-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_RESTORE_INTERRUPTS): Ensure we restore the
+	old state exactly, including "restoring" by disabling interrupts
+	Requested by Matsushita in case 102544
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mn10300.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mn10300.cdl: Added.
+
+1999-09-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_cache.h: Change CYG_HAL_MN10300_SIM to
+	CYG_HAL_MN10300_AM31_SIM
+	Only include var_cache.h when not sim
+
+1999-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_exception_handler):
+	Use CYGNUM_HAL_EXCEPTION_WATCHDOG rather than
+	CYGNUM_HAL_INTERRUPT_WATCHDOG in test for watchdog exceptions.
+
+1999-08-17  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/arch.inc: Modified hal_cpu_int_merge to avoid corrupting
+	any registers other than the one passed as an argument.
+
+1999-08-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/arch.inc: rename CYGPKG_HAL_MN10300_AM32_STDEVAL1 to
+	CYGPKG_HAL_MN10300_AM31_STDEVAL1
+
+1999-08-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/arch.inc: Moved AM33 trace address to uncached memory
+	window.
+
+	* src/vectors.S (_start): Tidied away some superfluous trace
+	code.
+	
+1999-08-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	Imported following changed from development branch.
+	
+    1999-08-11  Nick Garnett  <nickg@cygnus.co.uk>	
+
+	* src/vectors.S: Removed debug code.
+
+	* include/hal_intr.h: Made mn10300_interrupt_control[] unsized
+	since it is different sizes on different variants.
+
+	* include/arch.inc:
+	Changed hal_cpu_int_merge so that both the IE and IPL bits are
+	changed across a thread switch.
+	Some minor tweaks to trace code for AM32.
+
+    1999-08-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300.h:
+	Move CYGPKG_HAL_MN10300's "target mn10300" under the variant
+	packages instead.
+	Add CYGPKG_HAL_MN10300_VARIANTS
+
+    1999-07-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c: Added default ISR.
+
+	* src/vectors.S:
+	Added Ctrl-C support. Extended VSR table to include new
+	exceptions. Install default ISR by default.
+
+	* src/mn10300_stub.c:
+	Added asynchronous breakpoint support.
+	[Later] Tidied up install_async_breakpoint() and fixed indirection
+	bug.
+
+	* include/hal_intr.h:
+	Added default ISR. Removed HAL_INTERRUPT_CONFIGURE(), this is now
+	variant-specific.
+
+    1999-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: 
+	Some reorganization to make code more generic.
+	Some diagnostic macros added.
+	Note: some trace/debug code has been left in place temporarily,
+	this will be removed eventually.
+
+	* include/mn10300_stub.h: Added extra regnames for AM33.
+
+	* include/hal_arch.h:
+	Added macros to get and set extra registers for AM33.
+	* include/arch.inc:
+	Changed all *_MIPS_* to *_MN10300_*.
+	Added some temporary trace/debug macros.
+
+    1999-07-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c: 
+	* include/hal_arch.h:
+	Added hal_idle_thread_action();
+
+	* include/arch.inc: Made hal_cpu_init definition optional.
+
+    1999-07-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S: 
+	Moved some code to variant specific macros. Now pass ISR register
+	to cyg_hal_exception_handler() to enable further decoding.
+	
+	* src/hal_misc.c (cyg_hal_exception_handler):
+	Added extra argument to pass ISR register value. Now decodes ISR
+	value to specify extra exceptions.
+
+    1999-07-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_intr.h:
+	Added HAL_INTERRUPT_STACK_CALL_PENDING_DSRS() macro to support
+	calling of DSRs on the interrupt stack.
+
+	* include/hal_arch.h (HAL_THREAD_INIT_CONTEXT):
+	Initialize the PSW to enable all interrupts on entry to thread.
+
+	* include/arch.inc:
+	Added implementations of CPU control macros.
+
+	* src/context.S:
+	Added code to preserve PSW across context switches.
+
+	* src/vectors.S:
+	Implemented mechanism to call DSRs on the interrupt stack.
+	Refined condition for defining VSR table here.
+
+    1999-06-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/context.S: 
+	* src/vectors.S:
+	Use hal_cpu_save_all and hal_cpu_load_all macros to save and
+	restore CPU register sets.
+
+	* include/hal_arch.h:
+	Modified HAL_THREAD_INIT_CONTEXT_EXTRA() to take some arguments.
+
+    1999-06-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h:
+	Added code in preparation for AM33 port.
+	Added include of variant header.
+
+	* include/hal_cache.h: 
+	* include/hal_intr.h: 
+	* src/vectors.S:
+	* src/hal_misc.c: 
+	Extensive changes to convert to new HAL organization. These mostly
+	involve moving variant and platform specific stuff out to the
+	appropriate headers in the variant and platform directories.
+
+	* src/PKGconf.mak:
+	* src/mn10300.ld (removed):
+	Moved build of target.ld to variant directory.
+
+	* include/arch.inc:
+	Added this file to contain architecture specific macros.
+	
+1999-06-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_dcache_store): Only define for HW target.
+
+1999-06-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 20136
+	* src/hal_misc.c (cyg_hal_dcache_store): 
+	* include/hal_cache.h (HAL_DCACHE_STORE):
+	DCACHE store operation needs 4 register variables. Put it in a
+	separate function to ensure registers are availble.
+
+1999-05-21  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/hal_intr.h: Define HAL_INTERRUPT_STACK_BASE and
+	HAL_INTERRUPT_STACK_TOP so that stack usage macros in
+	kernel/.../stackmon.hxx can work.
+
+	* src/vectors.S (cyg_interrupt_stack_base): Define this symbol for
+	the interrupt stack and its friend for the stack top so that we
+	can publish them with nice names.
+
+1999-05-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h (HAL_THREAD_INIT_CONTEXT): Align stack
+	(rather conservatively) before use.
+
+1999-04-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Remove the -n argument to tail, it does not appear to be required
+	on any supported host and causes problems with some
+	implementations of tail.
+
+1999-04-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_cache.h: 
+	(HAL_DCACHE_IS_ENABLED) (HAL_ICACHE_IS_ENABLED): Add these new macros
+	(HAL_DCACHE_DISABLE) (HAL_ICACHE_DISABLE): Make variables register
+	variables
+	Ensure the cache has finished its operation before exitting.
+	(HAL_DCACHE_INVALIDATE_ALL) (HAL_ICACHE_INVALIDATE_ALL): Make
+	variables register variables.
+	Re-enable cache if it was enabled on entry.
+	(HAL_DCACHE_WRITE_MODE): Make variables register variables.
+	Re-enable data cache if it was enabled on entry.
+	Ensure the cache has finished its operation before exitting.
+	(HAL_DCACHE_STORE): Make variables register variables.
+	Re-enable data cache if it was enabled on entry.
+
+	These fix PR19887
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300.ld: Define __bss_end at the end of the BSS
+	* src/vectors.S (_start): Use __bss_end rather than _end when clearing
+	BSS
+	These fix PR 19750
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	* src/vectors.S:
+	Separate parts of cyg_hal_invoke_constructors() out into new functions
+	cyg_hal_enable_caches() and cyg_hal_debug_init() so that
+	cyg_hal_invoke_constructors() can be called again safely if
+	necessary
+	Fix for PR19642
+
+1999-04-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak (EXTRAS): Don't generate extras.o here any more
+	But do define EXTRAS every time for the linker script.
+
+1999-04-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/mn10300_stub.c: 
+	Moved get_register and put_register to hal_stub.c.
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/*.ld: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h (HAL_THREAD_INIT_CONTEXT): Align initial SP
+	to a 4 byte boundary. Fixes PR 19695.
+
+	* include/hal_cache.h: Added include of hal.h and a test that a
+	valid set of macros have been added.
+
+1999-03-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_arch.h (CYGNUM_HAL_STACK_SIZE_MINIMUM): Be a little
+	more generous since this stack should allow at least a kernel API
+	call which could be at least 4 levels deep.
+
+1999-03-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h:
+	Modified stack size definitions to be more accurate.
+
+1999-03-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/mn10300_stub.h: Update copyright
+
+	* src/mn10300_stub.c: Update copyright
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	* src/vectors.S:
+	Fixed problem with taking breakpoints after watchdog interrupts
+	and memory access exceptions. See the comments in
+	__default_nmi_vsr in vector.S for details.
+
+1999-03-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/PKGconf.mak: Remove dependence on echo '-e' switch.
+
+1999-03-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_arch.h: Add definition of 'CYGNUM_HAL_MINIMUM_STACK_SIZE'
+
+1999-03-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_INTERRUPT_ATTACH): Added.
+
+1999-03-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300.ld:
+	Added alignment before definition of __DEVTAB__.
+
+1999-03-05  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	* src/mn10300.ld: Clean up I/O package changes.
+
+1999-03-04  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300.ld: 
+	Unconditionalize use of libextras.a and add to GROUP()
+
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	Now tests for whether the kernel is present before trying to use
+	patch_dbg_syscalls().
+
+	* include/hal_intr.h (HAL_INTERRUPT_CONFIGURE): fixed some compile
+	bugs in this macro.
+
+	* src/vectors.S:
+	Changed label used to access scheduler lock to one that is not
+	mangled by C++. This is intended to make support for interrupt
+	handling in non-kernel configurations easier.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	QA improvements
+
+	* include/hal_intr.h:
+	Reorganise vector/interrupt/exception names according to purpose
+	QA improvements
+
+	* src/hal_misc.c:
+	Rename deliver_exception() -> cyg_hal_deliver_exception()
+	Rename CYG_VECTOR_* according to hal_intr.h changes above
+	QA improvements
+
+	* src/vectors.S:
+	Rename exception_handler() -> cyg_hal_exception_handler()
+	
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Changed set_debug_traps to initialize_stub.
+
+	* src/mn10300_stub.c: 
+	* include/mn10300_stub.h: 
+	Cleaned up to only include arch specific stub code.
+
+1999-02-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/basetype.h: Added CYG_LABEL_NAME macro.
+
+1999-02-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_DCACHE_STORE):
+	Added "register" keywords to the variables used in this macro. If
+	these are not in registers then when the cache is disabled, they
+	can be stranded in the cache and the random values in main memory
+	are used instead. This is only a problem when optimization is
+	disabled; under optimization the compiler puts these variables
+	into registers as a matter of course.
+	Fixes PR 19165.
+	(HAL_DCACHE_SYNC): Divide cache size by number of ways to
+	calculate correct size to pass to HAL_DCACHE_STORE().
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* src/mn10300.ld: Add LMA_EQ_VMA macro definition.
+
+1999-02-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h: Fixed implementation of HAL_DCACHE_STORE() so
+	that it now works, and changed implementation of HAL_DCACHE_SYNC()
+	to use it.
+	Fixes PR 18577 and is a better fix to 18849.
+	
+1999-01-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_intr.h:
+	* src/vectors.S:
+	Allow for NMI vectors in ISR table when using chained
+	interrupts. This largely consists of moving the interrupt vector
+	slots up by 3 entries.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* src/mn10300.ld:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1999-01-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/mn10300_stub.c (__build_t_packet): Rewrote fix me text. Added PR
+	number, but otherwise left the note.
+
+1999-01-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_DCACHE_SYNC): Add implementation of
+	this macro to enable test programs to work.
+	Fixes PR 18849.	
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_invoke_constructors): 
+	Add code to deal with CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG
+	Tidy up and update description header
+	Shorten needlessly long lines
+	Remove all traces of non-CYG_KERNEL_USE_INIT_PRIORITY code
+
+1999-01-14  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/mn10300.ld: do not define _hal_vsr_table for minimal
+      simulator builds
+
+1999-01-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/basetype.h: CYG_DOUBLE_BYTEORDER now in <infra/cyg_type.h>
+
+1999-01-13  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/mn10300.ld: define FOLLOWING () macro to simplify
+      hand editing of linker script fragments
+
+1999-01-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/basetype.h (CYG_DOUBLE_BYTEORDER): Define ordering
+	for words within doubles.
+
+1999-01-12  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c: Altered call to patch_dbg_syscalls() to pass
+	pointer to base of vector rather than a single vector entry.
+
+1999-01-12  John Dallaway  <jld@cygnus.co.uk>
+
+      * src/mn10300.ld: new linker script for MLT
+      * src/PKGconf.mak: add mn10300.ld rules for MLT
+
+1998-12-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	* src/context.S (_hal_setjmp, _hal_longjmp):
+        Added CYGARC definitions for jmpbuf entries.
+	
+1998-12-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_DCACHE_UNLOCK_ALL,
+	HAL_ICACHE_UNLOCK_ALL): Added.
+
+1998-11-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_arch.h (HAL_REORDER_BARRIER): Changed to same form
+	as on the other archs.
+
+1998-11-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_intr.h: Add support for interrupt latency
+	measurement, controlled by CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY.
+
+1998-11-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S (__default_interrupt_vsr): Added GDB break
+	support.
+	Added call to GDB initialization during startup.
+
+	* src/mn10300_stub.c: Changed instruction word type.
+
+1998-11-06  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	Added stub to object list.
+
+	* include/mn10300_stub.h: 
+	* src/mn10300_stub.c:
+	Added GDB stub.
+	
+	* src/hal_misc.c (exception_handler): Added GDB stub call.
+
+1998-11-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/basetype.h (CYG_BYTEORDER): Fixed comment.
+
+1998-11-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h:
+	Added volatile keyword to appropriate places to prevent compiler
+	optimizing out cache control register access.
+
+1998-10-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_intr.h (HAL_CLOCK_READ):
+	Fixed this macro to return correct value.
+
+1998-10-16  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/vectors.S (__interrupt_stack):
+	Made the interrupt stack size configurable.
+
+1998-10-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	Enabled caches by default.
+
+1998-10-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_misc.c:
+	Altered ifdefs to allow builds without kernel.
+
+Thu Sep 24 18:14:19 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h: Read the interrupt control registers back
+	after writing to them to ensure that the value is not sitting in
+	the store buffer.
+	Also put _ around variable names in HAL_INTERRUPT_CONFIGURE for
+	consistency.
+	
+1998-09-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_intr.h:
+	Inverted mask for level in HAL_INTERRUPT_SET_LEVEL().
+
+	* src/vectors.S:
+	Added correct implementations of decode_interrupt macro for
+	chained interrupt processing.
+	Modified call to cyg_instrument() to pass table offset as well as
+	vector number.
+	Include <pkgconf/kernel.h> to allow call to cyg_instrument() to be
+	enabled.
+
+1998-09-14  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Made vectors.o dependent on the various files that can contain
+	makefile variables or rules. This is needed after changes to
+	pkgconf.tcl for PRs 17195 and 17286.
+
+Mon Sep 14 11:08:40 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 17230
+	
+	* include/hal_intr.h: 
+	* src/vectors.S: 
+	Replaced CYGIMP_KERNEL_INTERRUPTS_CHAIN with new
+	CYGIMP_HAL_COMMON_INTERRUPTS_CHAIN.
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300.h:
+	Added missing descriptions (PR 17184)
+
+	* src/hal_misc.c (exception_handler): 
+	Sort out exception handling options (PR 16953)
+
+Thu Sep 10 20:24:02 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/vectors.S (__default_interrupt_vsr): 
+	Fix a bug.  Wrong offset when restoring the PSW tends to screw
+	things up rather.
+
+Thu Sep 10 15:12:21 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 17153
+
+	* src/vectors.S (__default_interrupt_vsr): Pass correct vector
+	value to isr.
+
+1998-09-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h:
+	Removed distinction between interrupt and thread switch contexts
+	in HAL_SavedRegisters. Modified appropriate macros to reflect this.
+
+	* src/hal_misc.c (cyg_hal_invoke_constructors):
+	Added call to patch_dbg_syscalls() for Cygmon hosted builds.
+
+	* src/context.S (_hal_thread_switch_context):
+	Adjust thread context so that it has the same structure as the
+	state saved by interrupt and exception handlers. This makes
+	supporting thread-aware debugging easier.
+
+	* src/vectors.S:
+	Moved nmi and trap vectors to correct slots in vsr table.
+	Now place arg3 of interrupt_end() in correct stack slot.
+
+1998-09-04  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/vectors.S (__default_interrupt_vsr):
+	Fixed type in configuration option name.
+
+Thu Sep  3 15:15:57 1998  Tim Goodwin  <tgoodwin@cygnus.co.uk>
+
+	* hal/mn10300/arch/current/src/PKGconf.mak
+	* hal/mn10300/arch/current/src/makefile
+	* hal/mn10300/arch/current/tests/PKGconf.mak
+
+	s/panx/mn10300/g
+
+1998-09-03  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Fixed offset bug in __trap.
+	Changed conditionals on runtime initialisation of VSR table to not
+	do it in simulated targets.
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300.h:
+	New header file for architecture-specific configuration options
+
+	* tests/PKGconf.mak: 
+	* src/PKGconf.mak: 
+	Sort out package naming conventions.
+
+1998-09-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Moved NMI and TRAP VSRs down 1 word to match cygmon's use of the
+	vector table. This may need to change back in the future.
+
+1998-09-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_intr.h:
+	Added CYG_VSR_COUNT, CYG_EXCEPTION_COUNT and CYG_ISR_COUNT.
+	Modified HAL_TRANSLATE_VECTOR() for mn103002 to provide slots
+	for the NMI vectors at start of hal_interrupt_* tables.
+
+	* src/hal_misc.c (exception_handler):
+	Added support for decoding NMI vectors and for calling watchdog
+	ISR if present.
+
+	* src/vectors.S:
+	Modified behaviour of __default_nmi_vsr to support watchdog timer
+	properly.
+	Fixed indirection bug in __nmi and __trap.
+	Modified offsets in hal_interrupt_* tables to provide slots for
+	NMI vectors at start in mn103002.
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/vectors.S, src/context.S, src/hal_misc.c, include/hal_intr.h: 
+	Updated for new kernel configuration option symbol names
+	
+Fri Aug 28 10:09:03 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c: 
+	rename __main() to cyg_hal_invoke_constructors() and remove
+	initialised test
+
+	* src/vectors.S (_start): 
+	Change call of __main() to cyg_hal_invoke_constructors(), and call
+	of main() to cyg_start()
+
+1998-08-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Now pass pointer to saved registers as third argument to
+	interrupt_end().
+
+	* include/hal_arch.h:
+	Added macros to support GDB.
+
+1998-08-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_cache.h: 
+	Now includes cyg_type.h rather than ktypes.h.
+	
+	* src/hal_misc.c:
+	Added calls to turn the caches on. But disabled them
+	since they interact poorly with Cygmon (Cygmon does not
+	flush the caches when setting/clearing breakpoints).
+
+Wed Aug 19 18:19:32 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_misc.c (__main): 
+	Add void to function prototypes to silence warnings
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	* include/hal_intr.h:
+	Now includes cyg_type.h rather than ktypes.h.
+
+	* src/context.S: 
+	* src/vectors.S: 
+	* src/hal_misc.c:
+	Now uses hal.h rather than kernel.h.
+
+1998-08-17  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/vectors.S:
+	Reorgnized ifdefs to better support kernel porting.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

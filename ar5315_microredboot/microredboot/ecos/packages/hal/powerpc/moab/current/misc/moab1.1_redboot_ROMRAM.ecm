@@ -1,0 +1,197 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    moab ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_POWERPC current ;
+    package -hardware CYGPKG_HAL_POWERPC_PPC40x current ;
+    package -hardware CYGPKG_HAL_POWERPC_MOAB current ;
+    package -hardware CYGPKG_DEVS_FLASH_POWERPC_MOAB current ;
+    package -hardware CYGPKG_DEVS_FLASH_ATMEL_AT49XXXX current ;
+    package -hardware CYGPKG_DEVS_FLASH_TOSHIBA_TC58XXX current ;
+    package -hardware CYGPKG_DEVS_ETH_POWERPC_MOAB current ;
+    package -hardware CYGPKG_DEVS_ETH_POWERPC_PPC405 current ;
+    package -hardware CYGPKG_DEVS_ETH_NS_DP83816 current ;
+    package -hardware CYGPKG_DEVS_ETH_PHY current ;
+    package -hardware CYGPKG_IO_PCI current ;
+    package -hardware CYGPKG_DEVICES_WALLCLOCK_DALLAS_DS1307 current ;
+    package -hardware CYGPKG_DEVICES_WALLCLOCK_POWERPC_MOAB current ;
+    package -hardware CYGPKG_IO_SERIAL_GENERIC_16X5X current ;
+    package -hardware CYGPKG_IO_SERIAL_POWERPC_PPC405 current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package -template CYGPKG_ISOINFRA current ;
+    package -template CYGPKG_LIBC_STRING current ;
+    package -template CYGPKG_CRC current ;
+    package CYGPKG_NS_DNS current ;
+    package CYGPKG_IO_ETH_DRIVERS current ;
+    package CYGPKG_IO_WALLCLOCK current ;
+    package CYGPKG_IO_FLASH current ;
+};
+
+cdl_option CYGFUN_LIBC_STRING_BSD_FUNCS {
+    inferred_value 0
+};
+
+cdl_option CYGNUM_IO_ETH_DRIVERS_NUM_PKT {
+    user_value 32
+};
+
+cdl_option CYGSEM_IO_ETH_DRIVERS_WARN {
+    user_value 0
+};
+
+cdl_option CYGHWR_DEVS_ETH_PHY_DP83847 {
+    inferred_value 1
+};
+
+cdl_option CYGIMP_HAL_COMMON_INTERRUPTS_USE_INTERRUPT_STACK {
+    inferred_value 0
+};
+
+cdl_option CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE {
+    user_value 4096
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGSEM_HAL_DCACHE_STARTUP_MODE {
+    inferred_value WRITETHRU
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_POWERPC_RESET_USES_JUMP {
+    inferred_value 1
+};
+
+cdl_option CYGHWR_HAL_POWERPC_ENABLE_MMU {
+    inferred_value 0
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value ROMRAM
+};
+
+cdl_component CYG_HAL_MOAB_BOARD_REVISION {
+    user_value 1_1
+};
+
+cdl_option CYGHWR_HAL_POWERPC_CPU_SPEED {
+    user_value 400
+};
+
+cdl_option CYGHWR_HAL_POWERPC_MEM_SPEED {
+    user_value 133
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_option CYGBLD_REDBOOT_MAX_MEM_SEGMENTS {
+    inferred_value 2
+};
+
+cdl_option CYGNUM_REDBOOT_NETWORKING_MAX_PKTBUF {
+    user_value 8
+};
+
+cdl_option CYGSEM_REDBOOT_PLF_STARTUP {
+    user_value 0
+};
+
+cdl_option CYGSEM_REDBOOT_PLF_ESA_VALIDATE {
+    inferred_value 1
+};
+
+cdl_option CYGBLD_REDBOOT_MIN_IMAGE_SIZE {
+    user_value 0x00080000
+};
+
+cdl_option CYGNUM_REDBOOT_FLASH_CONFIG_SIZE {
+    inferred_value 2048
+};
+
+cdl_option CYGHWR_REDBOOT_FLASH_CONFIG_MEDIA {
+    inferred_value EEPROM
+};
+
+cdl_option CYGNUM_REDBOOT_FLASH_STRING_SIZE {
+    inferred_value 64
+};
+
+cdl_option CYGNUM_REDBOOT_FLASH_SCRIPT_SIZE {
+    inferred_value 256
+};
+
+cdl_option CYGSEM_REDBOOT_FLASH_CONFIG_READONLY_FALLBACK {
+    inferred_value 0
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_DNS_HEADER {
+    inferred_value 1 <cyg/ns/dns/dns.h>
+};
+
+cdl_option CYGPKG_NS_DNS_BUILD {
+    inferred_value 0
+};
+
+cdl_option CYGSEM_IO_FLASH_READ_INDIRECT {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_IO_FLASH_CHATTER {
+    user_value 0
+};
+
+cdl_option CYGSEM_IO_FLASH_VERIFY_PROGRAM {
+    inferred_value 0
+};
+
+cdl_component CYGSEM_DEVS_FLASH_POWERPC_MOAB_MAIN {
+    user_value 1
+};
+
+

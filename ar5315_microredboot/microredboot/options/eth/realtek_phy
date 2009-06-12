@@ -1,0 +1,3 @@
+cdl_option CYGNUM_USE_ENET_PHY {
+    user_value "realtek"
+};

@@ -1,0 +1,177 @@
+# ====================================================================
+#
+#      watchdog.cdl
+#
+#      eCos watchdog configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg
+# Contributors:
+# Date:           1999-07-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_IO_WATCHDOG {
+    display       "Watchdog IO device"
+    define_header watchdog.h
+    include_dir   cyg/io
+    requires      1 == CYGINT_WATCHDOG_IMPLEMENTATIONS
+    description   "
+	The watchdog IO device allows applications to make use of a
+	timer facility. Depending on the underlying hardware device
+        driver, a watchdog timeout will either cause a board reset
+        or an action routine to be called. The application must call
+        the watchdog reset function at regular intervals, or else the
+	device will timeout. The assumption is that the watchdog timer
+        should never trigger unless there has been a serious fault in
+	either the hardware or the software."
+
+    compile       watchdog.cxx
+
+    cdl_interface CYGINT_WATCHDOG_HW_IMPLEMENTATIONS {
+        display       "Number of watchdog hardware implementations"
+        no_define
+    }
+
+    cdl_interface CYGINT_WATCHDOG_IMPLEMENTATIONS {
+        display       "Number of watchdog implementations"
+        no_define
+    }
+
+    cdl_component CYGPKG_IO_WATCHDOG_IMPLEMENTATION {
+        display "Watchdog implementation"
+        flavor none
+        no_define
+        description "Implementations of the watchdog device."
+
+        cdl_option CYGPKG_WATCHDOG_EMULATE {
+            default_value { 0 == CYGINT_WATCHDOG_HW_IMPLEMENTATIONS }
+            display       "Watchdog emulator"
+            implements    CYGINT_WATCHDOG_IMPLEMENTATIONS
+            requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+            compile       emulate.cxx
+            description   "
+                When this option is enabled, a watchdog device will be
+                emulated using the kernel real-time clock."
+        }
+
+        cdl_option CYGIMP_WATCHDOG_NONE {
+            display       "No watchdog"
+            default_value 0
+            implements    CYGINT_WATCHDOG_IMPLEMENTATIONS
+            description   "Disables the watchdog."
+        }
+    }
+
+    cdl_interface CYGINT_WATCHDOG_RESETS_ON_TIMEOUT {
+        display       "Set if device causes a reset on timeout"
+        no_define
+    }
+
+    cdl_option CYGSEM_WATCHDOG_RESETS_ON_TIMEOUT {
+        display       "Set if device causes a reset on timeout"
+        calculated    { CYGINT_WATCHDOG_RESETS_ON_TIMEOUT == 1 }
+        description   "
+            Some watchdog devices reset the board on timeout - for these
+            implementations it does not make sense to register timeout
+            actions so the code gets disabled when this option is set.
+            When this option is not set, it is the application's
+            responsibility to register an action handler which can force
+            a board reset when it gets called."
+    }
+
+    cdl_option CYGPKG_IO_WATCHDOG_BUILD_INTERACTIVE_TEST {
+	display "Build interactive watchdog test"
+	flavor  bool
+	no_define
+	default_value 0
+	description   "
+            This option enables the building of a watchdog test
+            which can be used to test that the board resets on
+            watchdog timeout. This test is built separately since
+            it only makes sense to use interactively."
+    }
+
+    cdl_component CYGPKG_IO_WATCHDOG_OPTIONS {
+        display "Watchdog build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_IO_WATCHDOG_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the watchdog IO device. These flags are used
+                in addition to the set of global flags."
+        }
+
+        cdl_option CYGPKG_IO_WATCHDOG_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the watchdog IO device. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_IO_WATCHDOG_TESTS {
+            display "Watchdog tests"
+            flavor  data
+            no_define
+            calculated { CYGPKG_IO_WATCHDOG_BUILD_INTERACTIVE_TEST ? 
+                         CYGSEM_WATCHDOG_RESETS_ON_TIMEOUT ? "tests/watchdog2 tests/watchdog_reset" : "tests/watchdog tests/watchdog2 tests/watchdog_reset" :
+                         CYGSEM_WATCHDOG_RESETS_ON_TIMEOUT ? "tests/watchdog2" : "tests/watchdog tests/watchdog2" }
+
+            description   "
+                This option specifies the set of tests for the
+                watchdog IO device."
+        }
+    }
+}

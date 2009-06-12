@@ -1,0 +1,174 @@
+Release History for eCos Configuration Tool 2
+=============================================
+
+*** Version 2.11, February 13th, 2002
+
+- Enabled Run Tests dialog in release mode.
+
+- Corrected backslashes in makefiles.
+
+- Added radio button group style to make the
+  groups on the Viewers dialog separate.
+
+- Enabled the Run Tests settings dialog.
+
+- Reordered the Alt-n accelerators on the
+  View menu.
+
+
+*** Version 2.10, January 25th, 2002
+
+- 2002 added to the copyright message.
+
+- The tree and value panes now have a minimum width,
+  so you can't lose the splitter bar by double-clicking
+  on it.
+
+
+*** Version 2.09, December 11th 2001
+
+- Hardware is now sorted alphabetically on UNIX.
+
+- The documentation system will now work with HTML documentation
+  generated from SGML, which will be the case from eCos 2.0
+  on.
+
+- --compile-help command added, which will create .hhp and .hhc
+  files, and then exit.
+
+- Packages dialog improvements: added keyword search and 'Omit hardware'
+  checkbox; added more information to the description window.
+
+- Added an "exact match" checkbox to the Packages dialog. That way if
+  you type 'flash', you get exactly what you'd get if you type
+  'ecosconfig add flash'.
+
+
+*** Version 2.08, October 25th 2001
+
+- Looks in PATH for gcc locations on UNIX.
+
+- Uses current directory for initial save directory, instead of configtool
+  directory.
+
+- Mounts /ecos-x paths (where x is a drive letter) for repository, build
+  and install paths, so that the compiler is always using text-mounted
+  files.
+
+
+*** Version 2.07, September 5th 2001
+
+- Image (png) files and about.htm now incorporated into configtool.bin,
+  which is an ordinary zip file.
+
+
+*** Version 2.06, August 30th 2001
+
+- Now saves the width of the configuration tree pane.
+
+- New -r (--edit-only) command-line switch which suppresses creation
+  of build trees when saving .ecc files.
+
+- Added -v (--version), -h (--help) switches, and under Unix the
+  resulting output goes on the terminal, not a dialog box.
+
+- The build tree will now only get generated when the file is saved instead
+  of when a new document is created or template selected.
+
+- Added recursive process killing for implementing Stop command.
+
+
+*** Version 2.05, August 10th 2001
+
+- Fixed a bug in the administration dialog that only looked at the filename of the
+  .epk to add and not the path.
+
+- Added "Tools | Generate Build Tree" menu so the build tree can be regenerated
+  without having to change values in the configuration and save the file.
+
+
+*** Version 2.04, July 16th 2001
+
+- Now uses /cygdrive/ notation which is future-proof for newer Cygwins,
+  and works around a mkdir bug in older Cygwins. A side-effect of this
+  is that we no longer mount drives from the tool, so we don't get the
+  flashing DOS box under Windows. Makefiles now define HOST=CYGWIN
+  so that makefiles can use mkdir the right way under Windows.
+
+- Installation program will install run-time DLLs if newer than those
+  on the system.
+
+
+*** Version 2.03, July 9nd 2001
+
+- Corrected a bug introduced in the previous release, where the initial template
+  selection was wrong.
+
+- More forgiving when specifying the packages directory for the repository.
+
+- Run Tests dialog now working when using a serial port: Windows and Linux. TCP/IP
+  mode seems to be working on Windows also.
+
+- Now saves file history list in FileHistory instead of top-level in config file/registry.
+
+- Removed Server-side GDB checkbox in platform editor.
+
+- Widened TCP/IP port text control in Run Tests settings dialog.
+
+- Fixed bug where message box with an empty repository name was shown if no repository
+  was found at all.
+
+- Fixed long-term Configuration Tool bug where some conflicts weren't resolved properly
+  (bool-data options).
+
+- Added vertical scrollbar to Short Description window.
+
+
+*** Version 2.02, June 27th 2001
+
+- Packages are now sorted in the Packages Dialog.
+  Templates are sorted on Windows, not yet on Linux.
+
+- There was an interaction between Configtool/TCL/Windows 98 that
+  caused a GPF when saving files. This has now been worked around.
+
+- When entering the user tools directory, Configtool now
+  recognises it correctly if it contains appropriate binaries.
+
+- The current build tools path is saved so that if the eCos
+  installer wasn't used, there will be a default build tools
+  path and the user won't get asked every time.
+
+- Main window now refreshed after some dialogs close and before
+  a lengthy operation for aesthetic reasons.
+
+- The dialogs for saving and opening .ecc files now default to the
+  directory of the last loaded/saved file, for convenience.
+
+- Switched to Rich Edit control for Output Window since it has
+  a higher capacity; this causes scrolling behaviour to be
+  less than optimal on NT and a bit weird on Win98, so there's some
+  work to do.
+
+- Stopping a build now works.
+
+- Added CHANGES.txt and TODO.txt to the distribution.
+
+
+*** Version 2.01, June 2001
+
+- Clicking Save when tool was first loaded didn't do anything.
+  Now behaves like Save As for a first-time save.
+
+- Mix-up with directory names fixed.
+
+- Windows installer now leaves existing DLLs intact even if
+  the installer's files were newer.
+
+- The Unix tarball now contains a subdirectory containing the current
+  version in the name.
+
+
+*** Version 2.0, May 2001
+
+- Initial public release

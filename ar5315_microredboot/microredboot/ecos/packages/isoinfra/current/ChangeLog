@@ -1,0 +1,424 @@
+2004-03-12  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/isoinfra.cdl: Typo: CYGBLD_ISO_STDIO_FILEPOS ->
+	CYGBLD_ISO_STDIO_FILEPOS_HEADER.
+
+	* include/limits.h: Avoid potential illegal recursion if
+	already been included by GCC's limits.h.
+
+	* include/stdio.h: Include stdarg.h to save duplication.
+	Give fileno(),fdopen() throw specifiers.
+
+	* include/unistd.h: Prototype for rename() lives in stdio.h.
+
+2004-01-07  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/sys/select.h: Only declare pselect() when posix signals are
+	included.
+
+2003-07-15  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/sys/stat.h (S_ISGID): Please, somebody teach me to count!
+
+2003-07-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/sys/stat.h :S_I[RWX]{USR|GRP|OTH} etc changed so they
+	don't overlap with S_ISLINK and S_ISSOCK. Reported by Scott
+	Wilkinson.
+
+2003-06-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/sys/stat.h: S_IFFIFO defies logic and should be called
+	S_IFIFO!
+
+2003-05-26  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/sys/stat.h (S_IF*): Added macros to test the type of a
+	file.
+
+2003-05-23  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/sys/stat.h: Added various S_IF macros for the st_mode
+	flags.
+
+2003-01-13  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/mqueue.h: Define POSIX 1003.1d draft mq_timedsend() and
+	mq_timedreceive() functions.
+
+2002-12-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* include/stdlib.h: #include cyg_type.h, now that this header
+	uses NORET attributes
+
+2002-11-10  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/sys/types.h: Add define/undefine for __NEED_FD_SETS_ONLY
+	around include of sys/select.h to avoid circular dependencies in
+	headers.
+
+	* include/sys/select.h: Reorganized definitions so that the
+	include from sys/types.h only defines the fd_set type and macros
+	and not the select() and pselect() functions. The latter needs
+	sigset_t from signal.h, which can result in circularity.
+
+2002-04-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stdlib.h: use NORET attributes from cyg_type.h.
+
+2002-03-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/float.h: Don't have multiple inclusion protection. It is
+	unnecessary and can confuse things if the headers are subject to two
+	-I paths.
+	* include/stdarg.h: Ditto.
+	* include/float.h: Don't cover include_next with inclusion protection
+	for a similar reason.
+	* include/stddef.h: Use C comment.
+
+2002-01-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/unistd.h: ftruncate() should use an off_t argument.
+
+2002-01-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/sys/types.h: off_t should be signed.
+
+2001-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/netdb.h (gethostbyname): anonymous arguments aren't allowed
+	in C (I thought they were a GNU C extension, sigh).
+
+2001-11-30  Jonathan Larmour  <jlarmour@redhat.com>
+2001-11-30  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/netdb.h: Provide a default NULL implementation of
+	struct hostent, gethostbyname and gethostbyaddr if a real implementation
+	doesn't exist. This makes life easier for legacy code.
+
+2001-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/isoinfra.cdl: Changed string interfaces to flavor booldata.
+
+	* include/string.h: Changed feature checks to ifdef.
+
+2001-10-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Make all CYGPKG_ISO_TIME interfaces be booldata.
+	Add config for POSIX clock types and implementations.
+	Make all CYGPKG_ISO_PTHREAD interfaces be booldata.
+	Add POSIX sleep() config.
+
+	* include/pthread.h: Reflect booldata interfaces.
+	* include/time.h: Ditto.
+	Also add default struct itimerspec and POSIX clock includes.
+	* include/unistd.h: Add sleep includes, with default proto.
+
+2001-09-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Add netdb services and proto function support.
+	* include/netdb.h: New file.
+
+2001-09-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/isoinfra.cdl: Added CYGINT_ISO_DNS and
+	CYGBLD_ISO_DNS_HEADER.
+
+2001-09-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/limits.h: Work around glibc header problem.
+
+2001-09-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Add CYGINT_ISO_PTHREAD_MUTEX and
+	CYGBLD_ISO_PTHREAD_MUTEX_HEADER.
+	* include/pthread.h: Include above header if set.
+
+2001-08-06  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Add a separate POSIX mutex types header option.
+	* include/sys/types.h: Include it.
+	* include/time.h: Provide a default struct timespec even if the
+	implementation doesn't provide something better.
+
+2001-07-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/sys/types.h: Move select() related stuff into separate
+	sys/select header. Include it still for now.
+	* include/sys/select.h: New header, as per upcoming POSIX 200x standard.
+
+	* cdl/isoinfra.cdl: Add configury for select() and poll().
+	
+
+2001-07-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stdlib.h: Use correct macro names for abs and div.
+
+2001-06-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/stdlib.h: Actually set MB_CUR_MAX in i18n package via header.
+	* cdl/isoinfra.cdl: Define multibyte char headers/interfaces
+
+2000-06-08  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* include/stdlib.h: Add code to set MB_CUR_MAX to __mb_cur_max
+	if CYGFUN_LIBC_I18N_MB is defined, otherwise set it to 1.
+
+2001-02-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Add CYGPKG_ISO_UNISTD to deal with unistd.h
+	Include POSIX timer operations underneath it.
+
+	* include/unistd.h: Add support for conditional inclusion of
+	POSIX timer operations.
+
+2001-02-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Add CYGINT_ISO_STDIO_POSIX_FDFUNCS and
+	CYGBLD_ISO_STDIO_POSIX_FDFUNCS_HEADER primarily for fileno()
+	and fdopen()
+	* include/stdio.h: Use above to provide default protos for fileno
+	and fdopen.
+
+2000-12-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/dlfcn.h: 
+	* cdl/isoinfra.cdl:
+	Added support for dlfcn.h header that defines dynamic load API.
+
+2000-11-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Add CYGINT_ISO_STDIO_STREAMS and
+	CYGBLD_ISO_STDIO_STREAMS_HEADER.
+	Change flavor of other stdio interfaces to booldata
+	* include/stdio.h: Use #ifdefs not #ifs on interfaces to reflect above
+	Add CYGINT_ISO_STDIO_STREAMS and CYGBLD_ISO_STDIO_STREAMS_HEADER.
+
+2000-10-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sys/types.h: Changed type of pid_t to plain int. It
+	needs to be signed.
+
+	* include/unistd.h: Fixed prototypes of several functions to match
+	POSIX standard.
+
+2000-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/isoinfra.cdl: Add CYGBLD_ISO_{OPEN,LINK,NAME,PATH}_MAX_HEADER
+	* include/limits.h: Support definition of OPEN_MAX, LINK_MAX,
+	NAME_MAX, PATH_MAX
+
+2000-08-30  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/assert.h (assert): Fix logic
+
+2000-08-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/stddef.h: Don't use CYGONCE_ multiple header inclusion
+	protection for this file - this is special.
+
+2000-08-08  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/limits.h: Add SSIZE_MAX
+
+2000-08-03  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/sys/types.h: Make fd_mask unsigned int, not cyg_uint32 so
+	as to avoid including cyg_type.h
+
+2000-08-01  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/isoinfra.cdl: Support termios
+	* include/termios.h: Added
+
+2000-07-21  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/isoinfra.cdl: CYGNUM_ISO_MQUEUE_OPEN_MAX and
+	CYGNUM_ISO_MQUEUE_PRIO_MAX should only be active if CYGINT_ISO_MQUEUE
+	rather than them requiring it
+
+2000-07-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* cdl/isoinfra.cdl: Added configury for sys/utsname.h.
+
+	* include/unistd.h: Added _POSIX_VERSION constant.
+	Changed return type of sysconf() to long.
+
+	* include/sys/utsname.h: Added this file.
+
+2000-07-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/unistd.h: Added fsync() prototype.
+
+2000-07-13  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/isoinfra.cdl: Add CYGINT_ISO_MALLINFO and 
+	CYGBLD_ISO_MALLINFO_HEADER to support mallinfo()
+
+	* include/stdlib.h: Support mallinfo()
+
+2000-06-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sys/stat.h: Added prototypes for stat(), fstat() and
+	mkdir().
+
+	* include/dirent.h: Added this file to provide directory reading
+	support.
+
+	* cdl/isoinfra.cdl: Added dirent support.
+
+2000-06-21  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/isoinfra.cdl: Put in below requires line, but change to allow
+	0 or 1 implementations
+
+2000-06-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* cdl/isoinfra.cdl: Commented out requires line in
+	CYGINT_POSIX_REALTIME_SIGNALS interface. This causes configuration
+	errors when the POSIX package is absent.
+
+	* include/sys/types.h: Reimplemented FD_COPY() and FD_ZERO() as
+	inline copy loops rather than calls to memcpy() and memset(). 
+
+2000-06-09  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/time.h: Following the below change, simply define struct
+	timeval, while allowing it to be overridden if necessary
+	* cdl/isoinfra.cdl (CYGBLD_ISO_STRUCTTIMEVAL_HEADER): define for this
+	purpose
+
+2000-06-09  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/time.h: Added definition of struct timeval. This is a
+	temporary home for this while we work out where definitions like
+	this should really live. Like the fd_set stuff in sys/types.h,
+	this is needed by two packages, both of which can operate
+	independently but which also need to co-operate when they are both
+	present.
+
+2000-06-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/sys/types.h: Added definitions for file descriptor sets
+	and inclusion of BSD specific types.
+
+	* include/stdlib.h: Added extern for environ variable in non-POSIX
+	builds.
+
+	* include/fcntl.h (O_WRONLY): Moved this to bit 1, leaving bit 2
+	for future expansion.
+
+	* cdl/isoinfra.cdl: Added CYGPKG_ISO_EXTRA_TYPES to control
+	inclusion of types into <sys/types.h> that are not specified by
+	POSIX. Mostly needed by the socket and BSD code.
+
+2000-06-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/unistd.h: Added this initial version of this file. Jifl
+	will probably want to rewrite it at some point.
+
+	* include/fcntl.h: Changed O_RDWR to (O_RDONLY|O_WRONLY).
+
+2000-05-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/fcntl.h: Fixed ifdefs around extern declaration of
+	fcntl().
+
+2000-05-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/fcntl.h: new file
+	* include/mqueue.h: new file
+	* include/sys/stat.h: new file
+
+	* cdl/isoinfra.cdl: No need for memcpy and memset interfaces - they're
+	always present
+	(CYGINT_ISO_POSIX_TIMERS): define _POSIX_TIMERS if enabled
+	(CYGINT_POSIX_REALTIME_SIGNALS): add
+	(CYGPKG_ISO_POSIX_FCNTL): Add a number of hooks for things that need
+	to control fcntl.h
+	(CYGPKG_ISO_MQUEUE): Add a number of hooks for things that need
+	to control mqueue.h
+	(CYGBLD_ISO_STAT_DEFS_HEADER): Add to override default sys/stat.h
+	contents
+	
+	Fix some typos throughout, and a few other minor tidies
+	
+	* include/limits.h: Move _POSIX_* macros here from POSIX package since
+	they are implementation independent
+
+	* include/time.h: Keep CLOCKS_PER_SEC at 1000000
+
+	* include/sys/types.h: Bring some of the types more in line with Linux
+
+	* include/ctype.h, include/errno.h, include/limits.h, include/locale.h,
+	include/pthread.h, include/sched.h, include/semaphore.h,
+	include/setjmp.h, include/signal.h, include/stdio.h, include/stdlib.h,
+	include/string.h, include/time.h, include/sys/types.h:
+	Don't need to explicitly check interface values > 0
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/time.h: Provide default definitions of time_t, clock_t and
+	CLOCKS_PER_SEC
+
+	* cdl/isoinfra.cdl: Remove CYGINT_ISO_TIME_T and CYGINT_ISO_CLOCK_T -
+	not really needed with a default definition
+
+	* New package isoinfra with the following files:
+	include/errno.h
+	include/sys/types.h
+	include/assert.h
+	include/stddef.h
+	include/string.h
+	include/setjmp.h
+	include/ctype.h
+	include/float.h
+	include/sched.h
+	include/stdarg.h
+	include/semaphore.h
+	include/time.h
+	include/signal.h
+	include/locale.h
+	include/pthread.h
+	include/stdio.h
+	include/stdlib.h
+	include/limits.h
+	cdl/isoinfra.cdl
+
+	This package manages the ISO standard (C and POSIX) top-level header
+	files
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,7 @@
+2003-08-06  Michael Anburaj <embeddedeng@hotmail.com>
+
+	* cdl/ser_arm_smdk2410.cdl:
+	* src/smdk2410_serial.c:
+	* src/smdk2410_serial.h:
+	New package to support the serial device on a Samsung
+	ARM9/SMDK2410 development board.

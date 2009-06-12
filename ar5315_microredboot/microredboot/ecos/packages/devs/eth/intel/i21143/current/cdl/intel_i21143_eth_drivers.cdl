@@ -1,0 +1,102 @@
+# ====================================================================
+#
+#	intel_i21143_eth_drivers.cdl
+#
+#	Intel 21143 ethernet driver
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      hmt
+# Original data:  
+# Contributors:	  
+# Date:           2000-09-17
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_INTEL_I21143 {
+    display       "Intel 21143 ethernet driver"
+    description   "Ethernet driver for Intel 21143 controller."
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGINT_DEVS_ETH_INTEL_I21143_REQUIRED
+
+    include_dir   cyg/devs/eth
+
+    compile       -library=libextras.a if_i21143.c
+
+    cdl_option CYGDBG_DEVS_ETH_INTEL_I21143_CHATTER {
+	display "Prints ethernet device status info during startup"
+	default_value 0
+	description   "
+	    The ethernet device initialization code can print lots of info
+	    to confirm that it has found the devices on the PCI bus, read
+	    the MAC address from EEPROM correctly, and so on, and also
+	    displays the mode (10/100MHz, half/full duplex) of the
+	    connection."
+    }
+
+    cdl_option CYGNUM_DEVS_ETH_INTEL_I21143_DEV_COUNT {
+	display "Number of supported interfaces."
+	calculated    { CYGINT_DEVS_ETH_INTEL_I21143_REQUIRED }
+        flavor        data
+	description   "
+	    This option selects the number of PCI ethernet interfaces to
+            be supported by the driver."
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_INTEL_I21143_OPTIONS {
+        display "Intel 21143 ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_INTEL_I21143_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Intel 21143 ethernet driver
+                package. These flags are used in addition to the set of
+                global flags."
+        }
+    }
+}
+# EOF intel_i21143_eth_drivers.cdl

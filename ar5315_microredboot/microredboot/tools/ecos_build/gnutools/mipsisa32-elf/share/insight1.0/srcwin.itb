@@ -1,0 +1,1032 @@
+# Source window for Insight.
+# Copyright 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ------------------------------------------------------------------
+#  CONSTRUCTOR - create new source window
+# ------------------------------------------------------------------
+body SrcWin::constructor {args} {
+  debug "$args"
+  eval itk_initialize $args
+  set top [winfo toplevel $itk_interior]
+
+  _update_title ""
+
+  # On Windows, create a sizebox.
+  if {$::tcl_platform(platform) == "windows"} {
+    ide_sizebox $itk_interior.sizebox
+  }
+
+  set Tracing [pref get gdb/mode]
+  set current(filename) ""
+
+  if {[catch {_build_win} mssg]} {
+    dbug E "_build_win returned: $::errorInfo"
+  }
+
+  # add special delete handler
+  wm protocol $top WM_DELETE_WINDOW "[code $this _exit]"
+
+  # add hooks
+  add_hook gdb_no_inferior_hook "$this no_inferior"
+  add_hook download_progress_hook "$this download_progress"
+  add_hook state_hook [code $this _set_state]
+  add_hook gdb_clear_file_hook [code $this clear_file]
+  after idle "
+      update idletasks
+      $this sizeWinByChild toolbar"
+
+  lappend window_list $this
+}
+
+# ------------------------------------------------------------------
+#  DESTRUCTOR - destroy window containing widget
+# ------------------------------------------------------------------
+body SrcWin::destructor {} {
+  debug
+  remove_hook gdb_no_inferior_hook "$this no_inferior"
+  remove_hook download_progress_hook "$this download_progress"
+  remove_hook state_hook [code $this _set_state]
+  remove_hook gdb_clear_file_hook [code $this clear_file]
+  set window_list [lremove $window_list $this]
+  if {$pc_window == $this} then {
+    set pc_window ""
+  }
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _build_win - build the main source window
+# ------------------------------------------------------------------
+body SrcWin::_build_win {} {
+  global gdb_downloading gdb_running gdb_loaded
+
+  # build source toolbar
+  set _toolbar [conAdd toolbar -resizable 0]
+  SrcBar $_toolbar $this \
+    -updatecommand [list $this toggle_updates] \
+    -updatevalue $do_updates
+  pack $_toolbar -expand 1 -fill both
+
+  # if user likes control on bottom...
+  if {! [pref get gdb/src/top_control]} {
+
+    # add a SrcTextWin container
+    set srcwin [conAdd src]
+    set twin [SrcTextWin $srcwin -Tracing $Tracing -parent $this]
+    pack $srcwin -expand 1 -fill both
+
+    # add status line
+    set _status [conAdd status -resizable 0]
+    label $_status -relief sunken -bd 3 -font global/status -height 1
+    pack $_status -expand 1 -fill both
+  }
+  
+  # add a status bar container
+  set _statbar [conAdd stat -resizable 0]
+  frame $_statbar
+  pack $_statbar -expand 1 -fill both
+
+  combobox::combobox $_statbar.name -maxheight 15 -font global/fixed\
+    -command [code $this _name]
+  
+  set need_files 1
+  
+  combobox::combobox $_statbar.func -maxheight 15 -font global/fixed\
+    -command [code $this goto_func]
+  combobox::combobox $_statbar.mode -width 9 -editable false \
+    -font global/fixed -command [code $this mode]
+  
+  $_statbar.mode list insert end SOURCE
+  $_statbar.mode list insert end ASSEMBLY
+  $_statbar.mode list insert end MIXED
+  $_statbar.mode list insert end SRC+ASM
+
+  pack $_statbar.mode -side right -padx 10 -pady 4
+  pack $_statbar.name $_statbar.func -side left -pady 4 -padx 10
+
+  # if user likes control on top...
+  if {[pref get gdb/src/top_control]} {
+  
+    # add a SrcTextWin container
+    set srcwin [conAdd src]
+    set twin [SrcTextWin $srcwin -Tracing $Tracing -parent $this]
+    pack $srcwin -expand 1 -fill both
+
+    # add status line
+    set _status [conAdd status -resizable 0]
+    set _statusframe [frame $_status]
+    set _status $_statusframe.con
+    label $_status -relief sunken -bd 3 -font global/status -height 1 \
+      -anchor w
+
+    # add download progress meter
+    canvas $_statusframe.progress -relief sunken -borderwidth 2 \
+      -highlightthickness 0 -takefocus 0 -width 100 -height 0 -confine 1
+    $_statusframe.progress create rectangle 0 0 0 \
+      [winfo height $_statusframe.progress] -outline blue -fill blue -tags rect
+
+    # add address and line number indicators
+    label $_statusframe.addr -text "" -width 10 -relief sunken \
+      -bd 1 -anchor e -font global/fixed
+    label $_statusframe.line -text "" -width 6 -relief sunken \
+      -bd 1 -anchor e -font global/fixed
+
+    balloon register $_statusframe.addr "Address"
+    balloon register $_statusframe.line "Line number"
+
+    pack $_statusframe -expand 1 -fill both
+    grid $_status -row 0 -column 1 -sticky news -pady 2 -padx 2
+    grid $_statusframe.addr -row 0 -column 3 -sticky nes -pady 4
+    grid $_statusframe.line -row 0 -column 4 -sticky nws -pady 4
+    grid columnconfigure $_statusframe 1 -weight 10
+    grid columnconfigure $_statusframe 2 -minsize 5
+    grid columnconfigure $_statusframe 5 -minsize 5
+  }
+
+  set_execution_status
+
+  # balloon help
+  foreach i {entry button} {
+    balloon register $_statbar.name.$i "Current file name"
+    balloon register $_statbar.func.$i "Current function name"
+    balloon register $_statbar.mode.$i "Source mode"
+  }
+  balloon variable $_status ${twin}_balloon
+
+  $_statbar.mode entryset [$twin mode_get]
+
+  # time to load the widget with a file.
+  # If this is a new widget and the program is
+  # not yet being debugged, load the file with "main" in it.
+  if {$gdb_running} {
+    if {[catch {gdb_loc} loc]} {
+      # Nothing we can do but leave the window empty.
+    } else {
+      _update $loc
+    }
+  } else {
+    if {[set linespec [gdbtk_locate_main]] != ""} {
+      location BROWSE_TAG $linespec
+    }
+  }
+}
+
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  _set_state - do things when program state changes
+# ------------------------------------------------------------------
+body SrcWin::_set_state {varname} {
+  global gdb_running gdb_downloading gdb_loaded gdb_program_has_run
+  debug "$varname l=$gdb_loaded d=$gdb_downloading r=$gdb_running"
+
+  if {$varname == "gdb_loaded" && $gdb_loaded == 1} {
+    set gdb_program_has_run 0
+    #set current(filename) ""
+    return
+  }
+
+  if {$gdb_running} {
+    set state normal
+    set gdb_program_has_run 1
+  } else {
+    set state disabled
+  }
+  if {!$Tracing} {
+    $twin SetRunningState $state
+  }
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  download_progress - update the progress meter when downloading
+# ------------------------------------------------------------------
+body SrcWin::download_progress { section num tot {msg ""} } {
+  global download_start_time download_cancel_ok gdb_loaded
+
+  #debug "$section $num $tot $msg"
+  if {$last_section_start == 0} {
+    grid forget $_statusframe.addr $_statusframe.line
+    grid $_statusframe.progress -row 0 -column 4 -padx 4 -sticky news
+    ::update idletasks
+  }
+
+  if {$section == "DONE"} {
+    set last_done $tot
+    if {$gdb_loaded} {
+      # loaded something
+      set secs [expr {[clock seconds] - $download_start_time}]
+      if {$secs} {
+	set bps [expr {8 * $tot / $secs}]
+	set_status "DOWNLOAD FINISHED: $tot bytes in $secs seconds ($bps bits per second)"
+      } else {
+	set_status "DOWNLOAD FINISHED"
+      }
+    }
+  } elseif {$section != "CANCEL"} {
+    if {$section != $last_section} {
+      set last_section $section
+      set last_section_start $last_done
+    }
+    set last_done [expr {$last_section_start + $num}]
+    set_status "Downloading section $section - $num bytes"
+  }
+
+  set canvas $_statusframe.progress
+  set height [winfo height $canvas]
+  if {$last_done} {
+    set width [winfo width $canvas]
+    set rw [expr {double ($last_done) * $width / $tot}]
+    $canvas coords rect 0 0 $rw $height
+    ::update
+  }
+
+  if {$last_done == $tot || $section == "CANCEL"} {
+    $_toolbar configure -runstop normal
+    if {!$gdb_loaded} {
+      ::update
+      # errored or canceled
+      if {$msg != ""} {
+	set_status "DOWNLOAD FAILED: $msg"
+      } else {
+	set_status "DOWNLOAD CANCELLED"
+      }
+      $canvas coords rect 0 0 0 $height
+      ::update idletasks
+    }
+
+    set last_section ""
+    set last_done 0
+    set last_section_start 0
+
+    grid forget $_statusframe.progress
+    grid $_statusframe.addr -row 0 -column 3 -sticky new -pady 4
+    grid $_statusframe.line -row 0 -column 4 -sticky nws -pady 4
+    ::update idletasks
+  }
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  reconfig - used when preferences change
+# ------------------------------------------------------------------
+body SrcWin::reconfig {} {
+  debug
+  $_toolbar reconfig
+  $twin reconfig
+}
+
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _name - filename combobox callback
+#  This is only called when the user edits the name combobox.
+#  It is the only way that files can be inserted into the file list
+#  once the debugger is started. 
+# ------------------------------------------------------------------
+body SrcWin::_name {w {val ""}} {
+  global _files
+  debug "$w $val"
+  if {$val != ""} {
+    if {![info exists _files(short,$val)]} {
+      if {![info exists _files(full,$val)]} {
+	if [catch {gdb_find_file $val} full] {
+	  set_status "Cannot find source file \"$val\": $full"
+	  $_statbar.name entryset [lindex [file split $current(filename)] end]
+	  return
+	}
+	if {$full == ""} {
+	  set_status "Cannot find source file \"$val\""
+	  $_statbar.name entryset [lindex [file split $current(filename)] end]
+	  return
+	}
+	set _files(short,$full) $val
+	set _files(full,$val) $full
+      }
+      set full $_files(full,$val)
+    } else {
+      set full $val
+      set val $_files(short,$full)
+    }
+    $_statbar.name entryset $val
+    location BROWSE_TAG [list $val "" $full 0 0 0 {}]
+  }
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE PUBLIC METHOD:  toggle_updates - update toggle callback
+# ------------------------------------------------------------------
+body SrcWin::toggle_updates {value} {
+  # save state in do_updates so it will be preserved
+  # in window reconfigs
+  set do_updates $value
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE PUBLIC METHOD:  goto_func - function combobox callback
+# ------------------------------------------------------------------
+body SrcWin::goto_func {w {val ""}} {
+  if {$val != ""} {
+    set mang 0
+    if {[info exists _mangled_func($val)]} {
+      set mang $_mangled_func($val)
+    }
+    if {$mang} {
+      set loc $val
+    } else {
+      set fn [lindex [::file split $current(filename)] end]
+      if {$fn == ""} {
+	set loc $val
+      } else {
+	set loc $fn:$val
+      }
+    }
+    debug "GOTO $loc"
+    if {![catch {gdb_loc $loc} result]} {
+      location BROWSE_TAG $result
+    } else {
+      dbug W "gdb_loc returned \"$result\""
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  fillNameCB - fill the name combobox
+#
+#         This method needs to be public, since other parts of
+#         the gui can cause new symbols to be read.
+# ------------------------------------------------------------------
+body SrcWin::fillNameCB {} {
+  global _files
+  set allfiles [gdb_listfiles]
+  foreach f $allfiles {
+    # FIXME: If you reactivate this code add a catch as gdb_find_file can err
+    # (P.S.: I don't know why this is commented out)
+    #set fullname [gdb_find_file $f]
+    #set _files(full,$f) $fullname
+    #set _files(short,$fullname) $f
+    $_statbar.name list insert end $f
+  }
+  set need_files 0
+}
+
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  fillFuncCB - fill the function combobox
+#
+#         This method needs to be public, since other parts of
+#         the gui can cause new symbols to be read.
+# ------------------------------------------------------------------
+body SrcWin::fillFuncCB {name} {
+  $_statbar.func list delete 0 end
+  if {$name != ""} {
+    set maxlen 10
+    if {[catch {gdb_listfuncs $name} listfuncs]} {
+      tk_messageBox -icon error -default ok \
+	-title "GDB" -type ok \
+	-message "This file can not be found or does not contain\ndebugging information."
+      _set_name ""
+      return
+    }
+    foreach f [lsort -increasing $listfuncs] {
+      lassign $f func mang
+      set _mangled_func($func) $mang
+      $_statbar.func list insert end $func
+      if {[string length $func] > $maxlen} {
+	set maxlen [string length $func]
+      }
+    }
+    $_statbar.func configure -width [expr $maxlen + 1]
+  }
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  location - update the location displayed
+#
+#  a linespec looks like this:
+#  0: basename of the file
+#  1: function name
+#  2: full filename
+#  3: source line number
+#  4: address
+#  5: current PC - which will often be the same as address, but not when
+#  6: shared library name if the pc is in a shared lib
+#  we are browsing, or walking the stack.
+#
+# linespec will be "{} {} {} 0 0x0 0x0" when GDB has not started debugging.
+# ------------------------------------------------------------------
+body SrcWin::location {tag linespec} {
+  global gdb_running gdb_exe_name _files tcl_platform
+
+  # We need to keep track of changes to the line, filename, function name
+  # and address so we can keep the widgets up-to-date.  Otherwise we
+  # basically pass things through to the SrcTextWin location public method.
+
+  debug "running=$gdb_running tag=$tag linespec=$linespec"    
+  lassign $linespec foo funcname name line addr pc_addr lib
+
+  # need to call this to update running state
+  set_execution_status $line $addr
+
+  # "update" doesn't set the tag so we do it here
+  if {$tag == ""} {
+    if {$addr == $pc_addr} {
+      set tag PC_TAG
+    } else {
+      set tag STACK_TAG
+    }
+  }
+  
+  if {!$gdb_running} {
+    # When we are not yet debugging, we need to force something
+    # to be displayed, so we choose to find function "main" and
+    # display the file with it.
+    set tag BROWSE_TAG
+    debug "not running: name=$name funcname=$funcname line=$line"
+    if {$name == ""} {
+      if {[set linespec [gdbtk_locate_main]] == ""} {
+	# no "main" function found
+	return 
+      }
+      lassign $linespec foo funcname name line addr pc_addr lib
+      debug "new linespec=$linespec"    
+    }
+  }
+
+  # update file and function combobox
+  if {$name != $current(filename)} {
+    _set_name $name
+    fillFuncCB $name
+  }
+
+  # set address and line widgets
+  if {[string length $addr] > 10} {
+    # 64-bit address plus "0x"
+    set width 18
+  } else {
+    # 32-bit address plus "0x"
+    set width 10
+  }
+  $_statusframe.addr configure -text $addr -font global/fixed -width $width
+  $_statusframe.line configure -text $line
+
+  # set function combobox
+  $_statbar.func entryset $funcname
+
+  # call SrcTextWin::location
+  $twin location $tag $name $funcname $line $addr $pc_addr $lib
+
+  set current(filename) $name
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  stack - handle stack commands
+# ------------------------------------------------------------------
+body SrcWin::stack {cmd} {
+  if {$cmd == "bottom"} {
+    set cmd "frame 0"
+  }
+  gdbtk_busy
+  if {[catch {gdb_cmd "$cmd"} message]} {
+    dbug E "STACK ERROR: $message"
+  }
+  gdbtk_update
+  gdbtk_idle
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _update - update widget when PC changes
+# ------------------------------------------------------------------
+body SrcWin::_update {loc} {
+  debug "loc=$loc"
+  # See if name combobox needs filled.
+  if {$need_files} {
+    fillNameCB
+  }
+  location "" $loc
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  idle - callback for gdbtk_idle
+#  Called when the target is idle, so enable all buttons.
+# ------------------------------------------------------------------
+body SrcWin::idle {event} {
+  $_toolbar configure -runstop normal
+  enable_ui 1
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  mode - set mode to SOURCE, ASSEMBLY, MIXED, SRC+ASM
+# ------------------------------------------------------------------
+body SrcWin::mode {w new_mode {go 1}} {
+  gdbtk_busy
+  $_statbar.mode entryset $new_mode
+  catch {$twin mode_set $new_mode $go} errorVal
+  $_toolbar configure -displaymode $new_mode
+  gdbtk_idle
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _update_title - update title bar
+# ------------------------------------------------------------------
+body SrcWin::_update_title {name} {
+  set fn [lindex [::file split $name] end]
+  if {$fn == ""} {
+    set prefix ""
+  } else {
+    set prefix "$fn - "
+  }
+  window_name "${prefix}Source Window" $fn
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  busy - disable things when gdb is busy
+# ------------------------------------------------------------------
+body SrcWin::busy {event} {
+  global gdb_loaded gdb_target_name
+#  debug "gdb_loaded=$gdb_loaded, gdb_target_name=$gdb_target_name"
+
+  if {$do_updates} {
+    enable_ui 0
+    if {$Running} {
+      $_toolbar configure -runstop running
+      if {$gdb_loaded || \
+	    ([TargetSelection::native_debugging] && $gdb_target_name != "remote")} {
+	set_status "Program is running."
+      } 
+    } else {
+      $_toolbar configure -runstop busy
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#   PUBLIC METHOD:  update - The inferior's state has changed.
+# ------------------------------------------------------------------
+body SrcWin::update {event} {
+
+  # FIXME: This is kinda lame. We need to run this only once
+  # as it is now written, so only the first window in the list
+  # will actually call choose_and_update.
+  # This is still better than before, since it will not
+  # matter if this window is destroyed: as long as _a_
+  # SrcWin exists, this will get called.
+  if {[lindex $window_list 0] == $this} {
+    choose_and_update
+  }
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _set_name - set the name in the name combobox and in the title
+# ------------------------------------------------------------------
+body SrcWin::_set_name { val {found 1} } {
+  global _files
+  _update_title $val
+  if {![info exists _files(short,$val)]} {
+    if {![info exists _files(full,$val)]} {
+      # not in our list; just display basename
+      $_statbar.name entryset [lindex [::file split $val] end]
+      return
+    }
+  } else {
+    set val $_files(short,$val)
+  }
+  if {$found} {
+    $_statbar.name entryset $val
+  } else {
+    $_statbar.name entryset "$val (not found)"
+  }
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  set_status - write a message to the status line.
+#  If "tmp" is set, the status change will not be saved.
+# ------------------------------------------------------------------
+
+body SrcWin::set_status { {msg ""} {tmp 0} } {
+  set msg [lindex [split $msg \n] 0]
+  if {$tmp} {
+    $_status configure -text $msg
+    return
+  }
+  if {$msg != ""} {
+    set saved_msg $msg
+  }
+  $_status configure -text $saved_msg
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  set_execution_status - write the current execution state 
+#  to the status line
+# ------------------------------------------------------------------
+body SrcWin::set_execution_status { {line ""} {pc ""}} {
+  global gdb_running gdb_loaded gdb_program_has_run gdb_target_changed
+  #debug "line=$line pc=$pc [gdb_target_has_execution] running=$gdb_running loaded=$gdb_loaded"
+  set message ""
+
+  if {![gdb_target_has_execution]} {
+    if {$gdb_running} {
+      set gdb_running 0
+      # tell text window program is no longer running
+      $twin ClearTags
+    }
+    if {$gdb_loaded} {
+      if {$gdb_program_has_run} {
+	set message "Program terminated. 'Run' will restart."
+	# Need to set gdb_target_changed because most
+	# remote targets detach when they are finished, 
+	# and this will force it to reattach.
+	set gdb_target_changed 1
+	set gdb_running 0
+      } else {
+	set message "Program is ready to run."
+      }
+    } else {
+      set message "Program not running. Click on run icon to start."
+    }
+  } else {
+
+    # gdb_target_has_execution has returned true, so we must be running.
+    #
+    # This can cause problems on targets which do not set inferior_pid.
+    # Although this is bogus, much of gdb (and gdbtk) relies on
+    # gdb_target_has_execution (and thus inferior_pid), so we should
+    # not try to second guess it and fix those targets which do not set
+    # inferior_pid when opened.
+    set gdb_running 1
+
+    # only do a gdb_loc if we have to
+    if {$line == "" && $pc == ""} {
+      if {[catch {gdb_loc} loc] == 0} {
+	set line [lindex $loc 3] 
+	set pc [lindex $loc 4]
+      }
+    }
+
+    if {$line == "" || $line == 0} {
+      if {$pc == "" || $pc == 0} {
+	if {$Tracing} {
+	  set message "Ready."
+	} else {
+	  set message "Program stopped."
+	}
+      } else {
+	set message [gdb_cmd "printf \"Program stopped at %lx\",$pc"]
+      }
+    } else {
+      if {$Tracing} {
+	set msg "Inspecting trace"
+      } else {
+	set msg "Program stopped"
+      }
+      switch [$twin mode_get] {
+	ASSEMBLY {set message [gdb_cmd "printf \"$msg at 0x%lx\",$pc"] }
+	MIXED {set message [gdb_cmd "printf \"$msg at line $line, 0x%lx\",$pc"] }
+	SRC+ASM {set message [gdb_cmd "printf \"$msg at line $line, 0x%lx\",$pc"] }
+	default {set message "$msg at line $line" }
+      }
+    }
+  }
+  set_status $message
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  edit - invoke external editor
+# ------------------------------------------------------------------
+body SrcWin::edit {} {
+  global external_editor_command
+  # If external editor is enabled, pass the file to the specified command
+
+  if {$current(filename) == ""} {
+    tk_dialog .warn {Edit} {No file is loaded in the source window.} error 0 Ok
+    return
+  }
+
+  if {[catch {$twin report_source_location} loc_info]} {
+    tk_dialog .warn "Edit" "No source file selected" error 0 Ok
+    return
+  }
+
+  Editor::edit $loc_info
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  print - print the contents of the text widget
+# ------------------------------------------------------------------
+body SrcWin::print {} {
+  # Call the SrcTextWin's print public method
+  $twin print $top
+}
+
+# ------------------------------------------------------------------
+# PUBLIC METHOD:   enable_ui
+#              Enable all UI elements for user interaction.
+# ------------------------------------------------------------------
+body SrcWin::enable_ui { on } {
+  #debug "$on"
+  if {$on} {
+    set Running 0
+    set state normal
+    set glyph ""
+  } else {
+    if {!$NoRun} {set Running 1}
+    set state disabled
+    set glyph watch
+  }
+  # combo boxes
+  $_statbar.mode configure -state $state
+  $_statbar.name configure -state $state
+  $_statbar.func configure -state $state
+
+  $twin enable $on
+  $top configure -cursor $glyph
+}
+
+# ------------------------------------------------------------------
+# PUBLIC METHOD:   no_inferior
+#              Put the UI elements of this object into a state
+#              appropriate for an inferior which is not executing.
+#              For this object, this means:
+# Disable:
+# - key binding for all inferior control (not needed -- gdb does this
+#    for us)
+#
+# Enable:
+# - file/func/mode selectors
+# - right-click popups, since gdb DOES allow looking at exe fil
+# - selections
+# 
+# Change mouse pointer to normal
+# ------------------------------------------------------------------
+body SrcWin::no_inferior {} {
+  #debug
+  set_execution_status
+  enable_ui 1
+}
+
+# ------------------------------------------------------------------
+#   PUBLIC METHOD: reset - reset the source window
+# ------------------------------------------------------------------  
+body SrcWin::reset {} {
+  set current(filename) ""
+  set need_files 1
+  set do_updates 1
+  set last_section ""
+  set last_section_start 0
+  set last_done 0
+  set saved_msg ""
+
+  # do we need to flush the cache or clear the source windows?
+
+  # Empty combo boxes
+  $_statbar.name list delete 0 end
+  $_statbar.name configure -value {}
+  $_statbar.func list delete 0 end
+  $_statbar.func configure -value {}
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  search - search for a STRING or jump to a specific line
+#           in source window, going in the specified DIRECTION.
+# ------------------------------------------------------------------
+body SrcWin::search {direction string} {
+  set_status
+  set_status [$twin search $string $direction] 1
+}
+
+# ------------------------------------------------------------------
+#  PROCEDURE: point_to_main
+#         Proc that may be called to point some source window to
+#         main (or an entry point?). (see gdbtk_tcl_exec_file_changed)
+# ------------------------------------------------------------------
+body SrcWin::point_to_main {} {
+  # We need to force this to some default location. Assume main and
+  # if that fails, let the source window guess (via gdb_loc using stop_pc).
+  set src [lindex [ManagedWin::find SrcWin] 0]
+  if {[set linespec [gdbtk_locate_main]] == ""} {
+    gdbtk_update
+    debug "could not find main"
+  } else {
+    $src location BROWSE_TAG [list $linespec]
+  }
+}
+
+body SrcWin::_exit {} {
+  debug
+  if {[llength [ManagedWin::find SrcWin]] == 1} {
+    if {![gdbtk_quit_check]} {
+      return
+    }
+  }
+  after idle [delete object $this]
+}
+
+# public method for testing use only!
+body SrcWin::test_get {var {private_func 0}} {
+  debug $var
+  if {$private_func} {
+    return [code $this $var]
+  }
+  return [set $var]
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD: toolbar - configure the toolbar's "state"
+# ------------------------------------------------------------------
+#
+#  This method is used to configure the toolbar's running state.
+#  Valid states include anything that the "runtest" variable of
+#  the GDBSrcBar may accept. Specifically,
+#
+#  busy        - Run button becomes disabled
+#  running     - Stop button appears, allowing user to stop executing target
+#  downloading - Stop button appears, allowing user to interrupt downloading
+#  normal      - Run button appears, allowing user to run/re-run exe
+body SrcWin::toolbar {state} {
+  $_toolbar configure -runstop $state
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  inferior - change execution state of inferior
+# ------------------------------------------------------------------
+#
+# ACTION may be:
+#   step       -  step the inferior one source line (stepping into functions)
+#   next       -  step the inferior one source line (stepping over functions)
+#   finish     -  finish the current frame of execution
+#   continue   -  continue executing the inferior
+#   stepi      -  step one machine instruction (stepping into calls)
+#   nexti      -  step one machine instruction (stepping over calls)
+#   run        -  run/re-run the inferior
+#   stop       -  stop or detach from target
+#
+# FIXME: This should really be in an object which describes gdb's state.
+# Unfortunately, this doesn't exist, so it's here for now.
+body SrcWin::inferior {action} {
+
+  switch $action {
+    step { gdbtk_step }
+
+    next { gdbtk_next }
+
+    finish { gdbtk_finish }
+
+    continue { gdbtk_continue }
+
+    stepi { gdbtk_stepi }
+
+    nexti { gdbtk_nexti }
+
+    run { gdbtk_run }
+
+    stop { gdbtk_stop }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  clear_file
+#  Tasks for SrcWin to clear file:
+#
+# - clear window
+# - reset to src mode
+# - clear func/file comboboxes
+# - clear status (done by no_inferior)
+# - allow SrcTextWin to clear_file
+# ------------------------------------------------------------------
+body SrcWin::clear_file {} {
+
+  # Reset to Source mode
+  if {[$twin mode_get] != "SOURCE"} {
+    mode {} SOURCE 0
+  }
+
+  no_inferior
+  reset
+
+  # run srctextwin clear_file
+  $twin clear_file
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  get_file
+#  Return name of displayed file, or empty string if no file.
+# ------------------------------------------------------------------
+body SrcWin::get_file {} {
+  if {$twin == ""} {
+    return ""
+  } else {
+    return [$twin get_file]
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  is_fixed
+#  Return boolean indicating whether this window is fixed.
+# ------------------------------------------------------------------
+body SrcWin::is_fixed {} {
+  return 0
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  get_top
+#  Return toplevel
+# ------------------------------------------------------------------
+body SrcWin::get_top {} {
+  return $top
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _set_tag_to_stack
+#  Set tag to `stack' and update the underlying window.
+# ------------------------------------------------------------------
+body SrcWin::_set_tag_to_stack {} {
+  set tag STACK_TAG
+  if {$twin != ""} then {
+    $twin set_tag_to_stack
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  _choose_window
+#  Choose the right source window.
+# ------------------------------------------------------------------
+body SrcWin::_choose_window {file} {
+  # Find the next available source window.  The rules are:
+  # 1. LRU overall
+  # 2. Skip iconified windows
+  # 3. If a window already shows the file, use it.  Prefer the
+  #    window currently showing the PC
+  # 4. If the window is fixed, skip it
+  if {$pc_window != ""} then {
+    if {[$pc_window get_file] == $file} then {
+      return $pc_window
+    }
+  }
+
+  set choice ""
+  foreach win $window_list {
+    if {[wm state [$win get_top]] != "normal"} then {
+      continue
+    }
+
+    if {[$win get_file] == ""
+	|| [$win get_file] == $file
+	|| ! [$win is_fixed]} then {
+      set choice $win
+      break
+    }
+  }
+
+  # If we didn't find an available window, then pick the current PC
+  # window.
+  if {$choice == ""} then {
+    set choice $pc_window
+  }
+
+  set window_list [lremove $window_list $choice]
+  lappend window_list $choice
+
+  return $choice
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  choose_and_update
+#  Choose the right source window and then cause it to be updated
+# ------------------------------------------------------------------
+body SrcWin::choose_and_update {} {
+  if {$pc_window == ""} then {
+    set pc_window [lindex $window_list 0]
+  }
+
+  if {$pc_window == ""} then {
+    # Nothing.
+  } elseif {[catch {gdb_loc} loc]} {
+    $pc_window set_execution_status
+  } else {
+    set prev $pc_window
+    set file [lindex $loc 2]
+    set pc_window [_choose_window $file]
+    debug "chose window $pc_window"
+    $pc_window _update $loc
+    if {$pc_window != $prev} then {
+      $pc_window reveal
+      $prev _set_tag_to_stack
+    }
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  choose_and_display
+#  Choose the right source window for a given file
+# ------------------------------------------------------------------
+body SrcWin::choose_and_display {tag linespec} {
+  set file [lindex $linespec 2]
+  set window [_choose_window $file]
+  $window location $tag $linespec
+}

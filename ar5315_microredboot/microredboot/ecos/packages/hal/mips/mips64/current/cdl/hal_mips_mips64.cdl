@@ -1,0 +1,165 @@
+# ====================================================================
+#
+#      hal_mips_mips64.cdl
+#
+#      MIPS 64 variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg (after MIPS32 by dmoseley)
+# Original data:  bartv, nickg
+# Contributors:
+# Date:           2001-01-30
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_MIPS64 {
+    display       "MIPS64 variant"
+    parent        CYGPKG_HAL_MIPS
+    hardware
+    include_dir   cyg/hal
+    description   "
+           The MIPS64 architecture HAL package provides generic support
+           for this processor architecture. It is also necessary to
+           select a specific target platform HAL package."
+
+    cdl_option CYGHWR_HAL_MIPS_MIPS64_CORE {
+        display       "Mips64 processor core used"
+        flavor        data
+        default_value {"5K"}
+        legal_values  {"5K" "20K" }
+        description   "
+            The MIPS64 cores come in (at least) 2 flavors.  The main
+            differences being in the MMU"
+    }
+
+    implements    CYGINT_HAL_MIPS_VARIANT
+
+    cdl_option CYGHWR_HAL_MIPS_64BIT {
+        display    "Variant 64 bit architecture support"
+        calculated 1
+    }
+    
+    cdl_option CYGHWR_HAL_MIPS_FPU {
+        display    "Variant FPU support"
+        calculated 0
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_FPU_64BIT {
+        display    "Variant 64 bit FPU support"
+        calculated 1
+    }
+
+    cdl_option CYGPKG_HAL_MIPS_LSBFIRST {
+        display    "CPU Variant little-endian"
+        calculated 1
+    }
+
+    cdl_option CYGPKG_HAL_MIPS_GDB_REPORT_CP0 {
+	display "Report contents of CP0 to GDB"
+	calculated 1
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_mips.h>"
+    }
+
+    compile       var_misc.c variant.S
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/mips_mips64.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/mips_mips64.ld" }
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        parent  CYGPKG_NONE
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "mipsisa32-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools. Note that both MIPS32 and
+	        MIPS64 targets use the same toolchain."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-mips64 -EL -msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -G0" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-EL -msoft-float -g -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+    }
+    
+}

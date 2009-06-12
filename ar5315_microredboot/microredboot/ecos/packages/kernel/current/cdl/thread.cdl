@@ -1,0 +1,332 @@
+# ====================================================================
+#
+#      thread.cdl
+#
+#      configuration data related to the kernel threads
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg
+# Contributors:
+# Date:           1999-07-05
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGFUN_KERNEL_THREADS_TIMER {
+    display       "Allow per-thread timers"
+    requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+    default_value 1
+    description   "
+        This option controls whether or not the kernel should support
+        per-thread clock and alarm related functions. Also some of
+        the synchronization primitives such as semaphore and
+        condition variable timed wait operations require per-thread
+        timer support. If none of these facilities are required then
+        the option can be disabled."
+}
+
+cdl_option CYGVAR_KERNEL_THREADS_NAME {
+    display       "Support optional name for each thread"
+    default_value 1
+    description   "
+        Threads may optionally be supplied with a name string that is
+        used to identify them during debugging. This name is only
+        present if `this option is defined. Disabling it reduces both
+        code and data size."
+}
+
+cdl_option CYGVAR_KERNEL_THREADS_LIST {
+    display       "Keep track of all threads using a linked list"
+    default_value 1
+    description   "
+        Threads may optionally be placed on a housekeeping list so
+        that all threads may be located easily. This is useful mainly
+        in conjunction with source-level debugging."
+}
+
+cdl_option CYGFUN_KERNEL_THREADS_STACK_LIMIT {
+    display       "Keep track of the base of each thread's stack"
+    default_value 1
+    description   "
+        This option makes the kernel keep track of the lower limit on
+        each thread's stack. It allows the kernel to adjust the lower
+        limit, thus making space for per-thread data. Note that it
+        does not imply any form of run-time stack overflow checking."
+}
+
+cdl_component CYGFUN_KERNEL_THREADS_STACK_CHECKING {
+    display       "Check thread stacks for overflows"
+    active_if     CYGPKG_INFRA_DEBUG
+    active_if     CYGDBG_USE_ASSERTS
+    default_value 1
+    description   "
+        This option enables a variety of checks for stack overflow
+        including signatures at the top and base of thread stacks,
+        which are asserted for correctness whenever a thread switches."
+
+    cdl_option CYGFUN_KERNEL_ALL_THREADS_STACK_CHECKING {
+	display   "Check all threads whenever possible"
+	requires  CYGVAR_KERNEL_THREADS_LIST
+	default_value 0
+	description "
+	This option enables more active checking of all threads for
+	wrongdoing.  In theory, checking threads other than the old and new
+	executing threads in a thread-switch is pointless, because no other
+	thread has run, so no other stack can be exceeded.  But errors such
+	as memory scribbling, dangling pointers, overlapping use of store
+	or errors accessing objects adjacent to a stack which can be very
+	hard to find can be detected this way, saving debug time."
+    }
+
+    cdl_option CYGNUM_KERNEL_THREADS_STACK_CHECK_DATA_SIZE {
+	display   "Signature size in bytes, at stack top and bottom"
+	flavor data
+	default_value 32
+	legal_values 8 to 512
+	description "
+	This is the size of the area reserved for a signature at the top
+	and bottom of all stacks.  It also provides a buffer zone for
+	detecting overflow before external objects are corrupted, hence the
+	ability to vary it here.  But if you are short of stack, increasing
+	this value will make the overflow more, not less likely, of course."
+    }
+}
+
+cdl_component CYGFUN_KERNEL_THREADS_STACK_MEASUREMENT {
+    display            "Measure stack usage"
+    default_value      { 0 != CYGPKG_INFRA_DEBUG }
+    description "
+        This option allows measurement of each thread's stack by initializing
+        it to a predefined value at thread creation time. Later use of the
+	cyg_thread_measure_stack_usage() function allows the maximum stack
+	usage of the thread so far to be obtained. Note that this is not
+	necessarily the true maximum stack usage that the thread will ever
+	use since all that has been measured is the stack usage corresponding
+	to the code path followed this time, and not the code path that may
+	be followed in future."
+
+    cdl_option CYGDBG_KERNEL_THREADS_STACK_MEASUREMENT_VERBOSE_EXIT {
+	display        "Output stack usage on thread exit"
+        default_value  0
+        description    "
+            This will output the measured stack usage on the diagnostic
+            output when a thread exits."
+    }
+}
+
+cdl_component CYGVAR_KERNEL_THREADS_DATA {
+    display            "Support for per-thread data"
+    requires           CYGFUN_KERNEL_THREADS_STACK_LIMIT
+    doc                ref/kernel-thread-data.html
+    default_value      1
+    description "
+        It is possible for the kernel to support per-thread data, in
+        other words an area of memory specific to each thread which
+        can be used to store data for that thread. This per-thread
+        data can be used by applications or by other packages such as
+        the ISO C library."
+
+    cdl_option CYGNUM_KERNEL_THREADS_DATA_MAX {
+	display            "Number of words of per-thread data"
+	flavor             data
+	legal_values       4 to 32
+	default_value      6
+	description "
+        It is possible for the kernel to support per-thread data, in
+        other words an area of memory specific to each thread which
+        can be used to store data for that thread. This per-thread
+        data can be used by applications or by other packages such as
+        the ISO C library. This configuration option controls the
+        number of words of per-thread data that the kernel will
+        allow. In the current implementation a bitmask is used to identify
+        used per-thread data slots and so the maximum legal value must
+        remain 32."
+    }
+
+    cdl_component CYGNUM_KERNEL_THREADS_DATA_ALL {
+	display       "Bitmap of preallocated slots of thread data"
+	flavor        data
+	calculated    15
+	description   "
+        Per thread data options. Per thread data support is based loosely
+        on that defined by POSIX. Each thread has an array of slots, up to
+        CYGNUM_KERNEL_THREADS_DATA_MAX, that may contain data. Some of the
+        slots have been preallocated to specific packages. Others may be
+        allocated dynamically."
+
+	cdl_option CYGNUM_KERNEL_THREADS_DATA_KERNEL {
+	    display       "Slot 0 preallocated for the kernel"
+	    flavor        data
+	    calculated    0
+	    description	"
+		This option defines the index of a per-thread data
+		slot which is reserved by
+		the eCos kernel
+		for private use."
+	}
+	cdl_option CYGNUM_KERNEL_THREADS_DATA_ITRON {
+	    display       "Slot 1 preallocated for uITRON"
+	    flavor        data
+	    calculated    1
+	    description	"
+		This option defines the index of a per-thread data
+		slot which is reserved by
+		the uITRON compatibility layer
+		for private use."
+	}
+	cdl_option CYGNUM_KERNEL_THREADS_DATA_ERRNO {
+	    display       "Slot 2 preallocated for errno"
+	    flavor        data
+	    calculated    2
+	    description	"
+		This option defines the index of a per-thread data
+		slot which is reserved for use by an errno variable."
+	}
+	cdl_option CYGNUM_KERNEL_THREADS_DATA_POSIX {
+	    display       "Slot 3 preallocated for POSIX"
+	    flavor        data
+	    calculated    3
+	    description	"
+		This option defines the index of a per-thread data
+		slot which is reserved by
+		POSIX
+		for private use."
+	}
+    }
+}
+
+cdl_component CYGPKG_KERNEL_THREADS_DESTRUCTORS {
+    display       "Thread destructors"
+    doc           ref/kernel-thread-destructors.html
+    default_value 0
+    description   "
+        This option enables support for registered destructor functions to
+        be called on thread exit."
+    
+
+    cdl_option CYGNUM_KERNEL_THREADS_DESTRUCTORS {
+        display        "Number of possible destructors"
+        flavor         data
+        legal_values   1 to 65535
+        default_value  8
+        description    "
+                This option gives the number of possible destructors allowed.
+                Increasing this will increase the size of every
+                thread control structure if per-thread destructors are
+                enabled."
+    }
+    
+    cdl_option CYGSEM_KERNEL_THREADS_DESTRUCTORS_PER_THREAD {
+        display        "Per-thread destructors"
+        default_value  1
+        description    "
+                Enabling this option makes the thread destructors a per-thread
+                property, with each thread having its own list of destructors.
+                Disabling this option makes the thread destructor list
+                global so all threads have the same destructors."
+    }
+    
+}
+
+cdl_option CYGNUM_KERNEL_THREADS_IDLE_STACK_SIZE {
+    display       "Stack size for the idle thread"
+    flavor        data
+    legal_values  512 to 65536
+    default_value 2048
+    description   "
+        This configuration option specifies the stack size in bytes
+        for the idle thread. Unless the HAL is configured to use a
+        separate interrupt stack this size must be sufficient to meet
+        the requirements of all interrupt handlers - these
+        requirements are cumulative if nested interrupted are
+        enabled. Depending on the target architecture, the stack size
+        typically has to be a multiple of eight or sixteen bytes.
+        This will be overridden where it is used if the
+        architectural HAL requires a minimum stack size
+        to handle interrupts correctly."
+}
+
+# ---------------------------------------------------------------------
+# Thread-related miscellania.
+
+cdl_option CYGNUM_KERNEL_MAX_SUSPEND_COUNT_ASSERT {
+    display       "Maximal suspend count"
+    flavor        data
+    default_value 500
+    description   "
+        This option provides for an assertion that the count value for
+        counted thread suspends do not exceed set limits.  This is to help
+        with debugging, to allow a runaway loop, for example, to be
+        detected more easily.
+    
+        If the option is not defined, no assert is included.  Whether asserts
+        are themselves included depends on infrastructure configury in
+        infra.h"
+}
+
+cdl_option CYGNUM_KERNEL_MAX_COUNTED_WAKE_COUNT_ASSERT {
+    display       "Maximal wake count"
+    flavor        data
+    default_value 500
+    description   "
+        This option provides for an assertion that the count value for
+        counted thread wakeups do not exceed set limits.  This is to
+        help with debugging, to allow a runaaway loop, for example, to
+        be detected more easily.
+    
+        If the option is not defined, no assert is included.  Whether asserts
+        are themselves included depends on infrastructure configury in
+        infra.h"
+}     
+
+
+#if CYGNUM_KERNEL_SCHED_PRIORITIES == 1
+#  define CYGIMP_IDLE_THREAD_YIELD
+#endif
+cdl_option CYGIMP_IDLE_THREAD_YIELD {
+    display       "Idle thread must always yield"
+    calculated    1
+    active_if     (CYGNUM_KERNEL_SCHED_PRIORITIES == 1)
+    description   "
+        If the scheduler configuration only has a single priority
+        level, then the idle thread must yield each time around its loop."
+}
+
+# EOF thread.cdl

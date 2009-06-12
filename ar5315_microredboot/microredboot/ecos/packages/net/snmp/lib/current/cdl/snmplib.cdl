@@ -1,0 +1,161 @@
+# ====================================================================
+#
+#      snmplib.cdl
+#
+#      SNMP library configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      hmt
+# Original data:  hmt
+# Contributors:   gthomas
+# Date:           2000-05-30
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_SNMPLIB {
+    display       "SNMP library"
+    parent        CYGPKG_NET
+    doc           ref/net-snmp-ecos-port.html
+    include_dir   ucd-snmp
+    requires      CYGPKG_IO
+    requires      { 0 != CYGINT_ISO_STRING_STRFUNCS }
+    requires      { 0 != CYGINT_ISO_STRING_MEMFUNCS }
+    requires      { 0 != CYGINT_ISO_STDLIB_STRCONV }
+    requires      { 0 != CYGINT_ISO_STDIO_FORMATTED_IO }
+    requires      { 0 != CYGINT_ISO_STRING_STRFUNCS }
+    requires      { 0 != CYGINT_ISO_MALLOC }
+    requires      { 0 != CYGINT_ISO_ERRNO }
+    requires      { 0 != CYGINT_ISO_ERRNO_CODES }
+    requires      CYGPKG_NET
+    description   "SNMP protocol support library based on the UCD-SNMP project."
+
+    compile					\
+		asn1.c				\
+		callback.c			\
+		default_store.c			\
+		int64.c				\
+		keytools.c			\
+		lcd_time.c			\
+		md5.c				\
+		mib.c				\
+		mt_support.c			\
+		parse.c				\
+		read_config.c			\
+		scapi.c				\
+		snmp.c				\
+		snmp_alarm.c			\
+		snmp_api.c			\
+		snmp_auth.c			\
+		snmp_client.c			\
+		snmp_debug.c			\
+		snmp_logging.c			\
+		snmpusm.c			\
+		snmpv3.c			\
+		system.c			\
+		tools.c				\
+		vacm.c
+
+
+    cdl_option CYGDBG_NET_SNMPLIB_DEBUG {
+	display        "Enable SNMP debug printout"
+	flavor         bool
+	default_value  0
+	description "
+	    This option enables the debugging printout facilities of the
+	    UCD SNMP module, controlled by the global variable 'dodebug'.
+	    Setting this variable produces lots of printout for SNMP agent
+	    activity, often enough to make your SNMP client time out."
+    }
+
+    cdl_component CYGPKG_SNMPLIB_FILESYSTEM_SUPPORT {
+      display       "SNMP file-system options"
+      description "
+          This option enables file-system dependent functionality, 
+          eg snmp.conf"
+
+      active_if     CYGPKG_IO_FILEIO 
+      active_if     { CYGINT_IO_FILEIO_FS > 0 }
+
+      flavor        bool
+      default_value 1
+
+      cdl_option CYGPKG_SNMPLIB_PERSISTENT_FILESYSTEM {
+        display "Persistent filesystem support"
+        flavor  bool
+        default_value 0
+        description "
+            This option enables functions that would require a
+            persistent file-system to be available. This
+            would be required if a system needs to save backups
+            of the snmpd.conf files."
+      }
+    }
+
+    cdl_component CYGPKG_SNMPLIB_OPTIONS {
+        display "SNMP library build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_SNMPLIB_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS -I$(PREFIX)/include/ucd-snmp" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the SNMP library package.
+	        These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_SNMPLIB_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the SNMP library package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}
+
+# EOF snmplib.cdl

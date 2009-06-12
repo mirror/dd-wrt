@@ -1,0 +1,117 @@
+# ====================================================================
+#
+#      innovator_eth_drivers.cdl
+#
+#      Ethernet drivers - support for LAN91CXX ethernet controller
+#      on the BSE Innovator/SA1110 board.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Jordi Colomer <jco@ict.es>, Patrick Doyle <wpd@delcomsys.com>
+# Contributors:	  Patrick Doyle <wpd@delcomsys.com>
+# Date:           2001-06-18
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_ARM_INNOVATOR {
+    display       "Innovator SMC91C96 ethernet driver"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_HAL_ARM_ARM9_INNOVATOR
+
+    include_dir   cyg/io
+
+    description   "Ethernet driver for Innovator boards."
+
+    # Arguably this should do in the generic package
+    # but then there is a logic loop so you can never enable it.
+
+    cdl_interface CYGINT_DEVS_ETH_SMSC_LAN91CXX_REQUIRED {
+        display   "SMSC LAN91CXX driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_SMSC_LAN91CXX_INL <cyg/io/devs_eth_innovator.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_SMSC_LAN91CXX_CFG <pkgconf/devs_eth_arm_innovator.h>"
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_ARM_INNOVATOR_ETH0 {
+        display       "Innovator ethernet port driver"
+        flavor        bool
+        default_value 1
+        description   "
+            This option includes the ethernet device driver for the
+            Innovator port."
+
+        implements    CYGHWR_NET_DRIVERS
+        implements    CYGHWR_NET_DRIVER_ETH0
+        implements    CYGINT_DEVS_ETH_SMSC_LAN91CXX_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_ARM_INNOVATOR_ETH0_NAME {
+            display       "Device name for the ETH0 ethernet driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_ARM_INNOVATOR_ETH0_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+            default_value 0
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA."
+            
+            cdl_option CYGDAT_DEVS_ETH_ARM_INNOVATOR_ETH0_ESA {
+                display       "The ethernet station address (MAC)"
+                flavor        data
+                default_value {"{0x12, 0x13, 0x14, 0x15, 0x16, 0x17}"}
+                description   "A static ethernet station address. 
+                    Caution: Booting two systems with the same MAC on the same
+                    network, will cause severe conflicts."
+            }
+        }
+    }
+}
+

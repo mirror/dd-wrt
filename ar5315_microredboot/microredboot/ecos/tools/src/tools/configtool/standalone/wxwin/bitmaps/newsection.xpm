@@ -1,0 +1,21 @@
+/* XPM */
+static char *newsection_xpm[] = {
+"16 15 3 1",
+"	c None",
+".	c Black",
+"X	c Gray100",
+"                ",
+"                ",
+"                ",
+"................",
+".    .XXXXXXXXX.",
+"......XXXX.XXXX.",
+".XXXX.XXXX.XXXX.",
+".XXXX.XX.....XX.",
+".XXXX.XXXX.XXXX.",
+".XXXX.XXXX.XXXX.",
+".XXXX.XXXXXXXXX.",
+"................",
+"                ",
+"                ",
+"                "};

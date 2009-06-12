@@ -1,0 +1,152 @@
+2002-12-13  Mark Salter  <msalter@redhat.com>
+
+	* include/platform.inc: Fix memory size test.
+
+2002-12-06  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb.cdl (CYG_HAL_FULL_RAM): New option to
+	indicate if RAM startup should use all RAM. This allows a special
+	RAM startup to be built which may be loaded onto a bare board by
+	the MEI tools. This can be used to build an initial RedBoot which
+	is used to program the flash with the ROM startup RedBoot image.
+	Implements CYGINT_HAL_MN10300_MEM_REAL_REGION_TOP.
+	
+	* misc/redboot_FULLRAM.ecm:
+	* include/pkgconf/mlt_mn10300_am33_asb_fullram.h:
+	* include/pkgconf/mlt_mn10300_am33_asb_fullram.ldi:
+	* include/pkgconf/mlt_mn10300_am33_asb_fullram.mlt: New files.
+
+	* include/platform.inc: Add runtime determination of SDRAM config.
+
+2002-11-19  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb.cdl: Remove virtual vector comm support.
+	Add options to select AM33 serial ports for comm channels.
+	* src/ser_asb.c: Remove.
+
+2002-11-15  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb.cdl: Override default VSR placement.
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.ldi: Remove unneeded defines.
+	* include/pkgconf/mlt_mn10300_am33_asb_flash.ldi: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.ldi: Ditto.
+
+2002-11-14  Mark Salter  <msalter@redhat.com>
+
+	* src/plf_misc.c: Don't mess with TBR.
+	* src/plf_stub.c: Tweak for RedBoot support.
+	* src/ser_asb.c:  Calculate baudrate divisor based on IOCLK. Register
+	getc_timeout_set handler.
+	* include/pkgconf/mlt*: Updated for flash support and adjusted RAM
+	addresses
+	* include/platform.inc: Always place boot flash at 0x80000000 and
+	system flash at 0x84000000.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/ser_asb.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2001-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb.cdl: Indicate support of variable baud rates.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/ser_asb.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Move volatile keyword before type.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.h:
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.h:
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.ldi:
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.ldi:
+	Regenerated with updated host tools
+
+2000-10-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.h: Added heap1 label.
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.mlt: Same.
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.ldi: Same.
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.h: Same.
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.mlt: Same.
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.ldi: Same.
+
+2000-08-22  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_mn10300_am33_asb.cdl: Explicitly require 
+	CYGHWR_HAL_MN10300_AM33_REVISION == 2
+
+2000-08-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/plf_misc.c: Always include CYGHWR_MEMORY_LAYOUT_H.
+	Only define __get_syscall_num() if CYGPKG_CYGMON is defined.
+
+2000-08-11  Drew Moseley  <dmoseley@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb.cdl: New file for the ASB2303 port.
+	* include/hal_diag.h: Ditto.
+	* include/platform.inc: Ditto.
+	* include/plf_intr.h: Ditto.
+	* include/plf_io.h: Ditto.
+	* include/plf_stub.h: Ditto.
+	* include/pkgconf/hal_mn10300_am33_asb.h: Ditto.
+	* src/ser_asb.c: Ditto.
+	* src/plf_stub.c: Ditto.
+	* src/plf_misc.c: Ditto.
+	* src/hal_diag.c: Ditto.
+	* src/PKGconf.mak: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.mlt: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.ldi: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb_rom.h: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.mlt: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.ldi: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb_ram.h: Ditto.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,3105 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     config-tool.sgml                                            -->
+<!--                                                                 -->
+<!--     eCos User Guide                                             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+
+<appendix id="appendix-target-setup">
+<title>Target Setup</title>
+
+<para>
+The following sections detail the setup of many of the targets
+supported by eCos. 
+</para>
+
+<caution>
+<para>
+This information is presented here only temporarily. It is intended
+that there will be separate documents detailing this information for
+each target in future releases. Consequently not much effort has been
+put into bringing the following documentation up to date -- much of it
+is obsolete, bogus or just plain wrong.
+</para>
+</caution>
+
+<!--
+<para>
+XXXXX Exactly which of these are really supported in 2.0. Can we
+delete some of them. I'm reluctant to waste much time fixing up text
+that is going to be largely rewritten anyway.
+XXXXX
+</para>
+-->
+
+<!-- ==================================================== -->
+
+<SECT1 id="setup-mn10300-stdeval1">
+<TITLE>MN10300 stdeval1 Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with a pair
+of EPROMs which provide GDB support for the Matsushita MN10300 (AM31)
+series evaluation board using CygMon, the Cygnus ROM monitor. Images
+of these EPROMs are also provided at <filename>BASE_DIR/loaders/mn10300-stdeval1/cygmon.bin</filename>.
+The LSB EPROM (LROM) is installed to socket IC8 on the board and
+the MSB EPROM (UROM) is installed to socket IC9. Attention should
+be paid to the correct orientation of these EPROMs during installation.</PARA>
+<PARA>The CygMon stubs allows communication with GDB by way of the
+serial port at connector CN2. The communication parameters are fixed
+at 38400 baud, 8 data bits, no parity bit, and 1 stop bit (8-N-1).
+No flow control is employed. Connection to the host computer should
+be made using a standard RS232C serial cable (not a null modem cable).
+A gender changer may also be required.</PARA>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="setup-mn10300-sim">
+<TITLE>MN10300 Architectural Simulator Setup</TITLE>
+<PARA>The MN10300 simulator is an architectural simulator for the
+Matsushita MN10300 that implements all features of the microprocessor
+ necessary to run eCos. The current implementation provides accurate
+simulation of the instruction set, interrupt controller, timers,
+and  serial I/O.</PARA>
+<PARA>In this release, you can run the same eCos binaries in the
+simulator that can run on target hardware, if built for ROM start-up,
+with the  exception of those that use the watchdog timer.</PARA>
+<PARA>However, note that AM33 devices required to run eCos are not
+simulated; therefore you cannot run eCos binaries built for the
+AM33 under the simulator. For the AM33, the simulator is effectively
+an instruction-set only simulator.</PARA>
+<PARA>To simplify connection to the simulator, you are advised to
+create a GDB macro by putting the following code in your personal
+GDB start-up file (gdb.ini on Windows and .gdbinit on UNIX).</PARA>
+<PROGRAMLISTING>define msim   
+ target sim --board=stdeval1 --memory-region 0x34004000,0x8
+  
+ rbreak cyg_test_exit   
+ rbreak cyg_assert_fail  
+end</PROGRAMLISTING>
+<PARA>You can then connect to the simulator by invoking the command <PROGRAMLISTING>msim</PROGRAMLISTING> on
+the command line:</PARA>
+<PROGRAMLISTING>(gdb) msim</PROGRAMLISTING>
+<PARA>You can achieve the same effect by typing out the macro&rsquo;s
+content on  the command line if necessary.</PARA>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="setup-am33-stb">
+<TITLE>AM33 STB Hardware Setup</TITLE>
+<PARA>The Matsushita AM33 STB System Reference Board may be used
+in two modes: via a JTAG debugger, or by means of a GDB stub ROM.</PARA>
+<SECT2>
+<TITLE>Use with GDB Stub ROM</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with a ROM
+image which provides GDB support for
+the Matsushita(R) AM33 STB System Reference Board. To install the
+GDB stub ROM requires the use of the JTAG debugger and the Flash ROM
+programming code available from Matsushita. An image of this ROM
+is also provided at <filename>loaders/am33-stb/gdbload.bin</filename> under
+the root of your eCos installation.</PARA>
+<PARA>Ensure that there is a Flash ROM card in MAIN MEMORY SLOT &lt;0&#62;.
+Follow the directions for programming a Flash ROM supplied with
+the programming software.</PARA>
+<PARA>The final programming of the ROM will need to be done with
+a command similar to the following:</PARA>
+<PROGRAMLISTING>fdown "gdbload.bin",0x80000000,16,1</PROGRAMLISTING>
+<PARA>Once the ROM has been programmed, close down the JTAG debugger,
+turn the STB off, and disconnect the JTAG cable. Ensure that the
+hardware switches are in the following configuration:</PARA>
+<PROGRAMLISTING>U U D D D U D D
+
+D = lower part of rocker switch pushed in
+U = upper part of rocker switch pushed in</PROGRAMLISTING>
+<PARA>This is also the configuration required by the Flash programming
+code, so it should not be necessary to change these.</PARA>
+<PARA>Restart the STB and the stub ROM will now be able to communicate
+with <PRODUCTNAME>GDB</PRODUCTNAME>. eCos programs should be built
+with RAM startup.</PARA>
+<PARA>Programs can then be downloaded via a standard RS232 null
+modem serial cable connected to the SERIAL1 connector on the STB
+front panel (the AM33&quot;s serial port 0). This line is programmed
+to run at 38400 baud, 8 data bits, no parity and 1 stop bit (8-N-1)
+with no flow control. A gender changer may also be required. Diagnostic
+output will be output to GDB using the same connection.</PARA>
+<PARA>This procedure also applies for programming ROM startup eCos
+programs into ROM, given a binary format image of the program from<PROGRAMLISTING> mn10300-elf-objcopy.</PROGRAMLISTING></PARA>
+</SECT2>
+<SECT2>
+<TITLE>Use with the JTAG debugger</TITLE>
+<PARA>To use eCos from the JTAG debugger, executables must be built
+with ROM startup and then downloaded via the JTAG debugger. For
+this to work there must be an SDRAM memory card in SUB MEMORY SLOT &lt;0&#62; and
+the hardware switches on the front panel set to the following: </PARA>
+<PROGRAMLISTING>D U D D D U D D
+
+D = lower part of rocker switch pushed in
+U = upper part of rocker switch pushed in</PROGRAMLISTING>
+<PARA>Connect the JTAG unit and run the debugger as described in
+the documentation that comes with it.</PARA>
+<PARA>eCos executables should be renamed to have a &ldquo;.out&rdquo; extension
+and may then be loaded using the debugger&quot;s &ldquo;l&rdquo; or &ldquo;lp&rdquo; commands.</PARA>
+<PARA>Diagnostic output generated by the program will be sent out
+of the AM33&quot;s serial port 0 which is connected to the SERIAL1
+connector on the STB front panel. This line is programmed to run
+at 38400 baud, 8 data bits, no parity, and one stop bit (8-N-1)
+with no flow control. Connection to the host computer should be
+using a standard RS232 null modem serial cable. A gender changer
+may also be required.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB stub ROM image</TITLE>
+<PARA>eCos comes with a pre-built GDB stub ROM image for the AM33-STB
+platform. This can be found at <filename>loaders/am33-stb/gdbload.bin</filename> relative
+to the eCos installation directory.</PARA>
+<PARA>If necessary, the ROM image can be re-built as follows:</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>		On Windows hosts, open a Bash session using 
+<EMPHASIS>Start-&#62;Programs-&#62;Red Hat eCos-&#62;eCos
+Development Environment</EMPHASIS></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Create a build directory and cd into it</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Run (all as one line):
+
+<PROGRAMLISTING>cygtclsh80 BASE_DIR/packages/pkgconf.tcl                          \
+  --target=mn10300_am33 --platform stb --startup rom              \
+  --disable-kernel --disable-uitron --disable-libc --disable-libm \
+  --disable-io --disable-io_serial --disable-wallclock
+--disable-watchdog</PROGRAMLISTING>
+	    </PARA>
+<PARA>where BASE_DIR is the path to the eCos installation
+directory.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Edit the configuration file 
+<filename>pkgconf/hal.h</filename>
+ in the build directory tree by ensuring the following configuration
+options are set as follows:
+
+<PROGRAMLISTING>#define CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+#define CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+#undef  CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+#define CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+#define CYG_HAL_ROM_MONITOR</PROGRAMLISTING>
+	    </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Run: make</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Run: make -C hal/common/current/current/src/stubrom</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The file 
+<filename>hal/common/current/src/stubrom</filename>
+ will be an ELF format executable of the ROM image. Use mn10300-elf-objcopy to
+convert this to the appropriate format for loading into the Matsushita
+FLASH ROM programmer, mode &ldquo;binary&rdquo; in this case: 
+
+<PROGRAMLISTING>$ mn10300-elf-objcopy -O binary hal/common/current/src/stubrom/ \
+  stubrom stubrom.img</PROGRAMLISTING></PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="setup-tx39-jmr3904">
+<TITLE>TX39 Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with a pair
+of ROMs that provide GDB support for
+the Toshiba JMR-TX3904 RISC processor reference board by way of CygMon. </PARA>
+<PARA>Images of these ROMs are also provided at <filename>BASE_DIR/loaders/tx39-jmr3904/cygmon50.bin</filename> and <filename>BASE_DIR/loaders/tx39-jmr3904/cygmon66.bin</filename> for
+50 MHz and 66 MHz boards respectively. The ROMs are installed to
+sockets IC6 and IC7 on the memory daughterboard according to their
+labels. Attention should be paid to the correct orientation of these
+ROMs during installation.</PARA>
+<PARA>The GDB stub allows communication with GDB using the serial
+port (channel C) at connector PJ1. The communication parameters
+are fixed at 38400 baud, 8 data bits, no parity bit, and 1 stop
+bit (8-N-1). No handshaking is employed. Connection to the host
+computer should be made using an RS232C null modem cable.</PARA>
+<PARA>CygMon and eCos currently provide support for a 16Mbyte 60ns
+72pin DRAM SIMM fitted to the PJ21 connector. Different size DRAMs
+may require changes in the value stored in the DCCR0 register. This
+value may be found near line 211 in <filename>hal/mips/arch/<replaceable>&Version;</replaceable>/src/vectors.S</filename>
+in eCos, and near line 99 in
+	  <filename>libstub/mips/tx39jmr/tx39jmr-power.S</filename> in
+CygMon. eCos does not currently use the DRAM for any purpose itself,
+so it is entirely available for application use.</PARA>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="setup-tx39-sim">
+<TITLE>TX39 Architectural Simulator Setup</TITLE>
+<PARA>The TX39 simulator is an architectural simulator which implements
+all  the features of the Toshiba TX39 needed to run eCos. The current
+implementation provides accurate simulation of the instruction set,
+ interrupt controller, and timers, as well as having generic support
+for diagnostic output, serial I/O, and exceptions.</PARA>
+<PARA>In this release, you can run the same eCos binaries in the
+simulator that can run on target hardware, if it is built for ROM
+start-up.</PARA>
+<PARA>To simplify connection to the simulator, you are advised to
+create a GDB macro by putting the following code in your personal
+GDB start-up file (gdb.ini on Windows and .gdbinit on UNIX).</PARA>
+<PROGRAMLISTING>define tsim   
+ target sim --board=jmr3904pal --memory-region 0xffff8000,0x900 \ 
+            --memory-region 0xffffe000,0x4 \          
+            --memory-region 0xb2100000,0x4   
+ rbreak cyg_test_exit
+ rbreak cyg_assert_fail
+end</PROGRAMLISTING>
+<PARA>You can then connect to the simulator by invoking the command <command>tsim</command> on
+the command line:</PARA>
+<PROGRAMLISTING>(gdb) tsim</PROGRAMLISTING>
+<PARA>You can achieve the same effect by typing out the macro&rsquo;s
+content on the command line if necessary.</PARA>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="setup-tx49-ref4955">
+<TITLE>TX49 Hardware Setup</TITLE>
+<PARA>The eCos installation CD contains a copy of the eCos GDB stubs
+in  SREC format which must be programmed into the board&rsquo;s
+FLASH memory.</PARA>
+<SECT2>
+<TITLE>Preparing the GDB stubs</TITLE>
+<PARA>These stub preparation steps are not strictly necessary as
+the eCos distribution ships with pre-compiled stubs in the directory <filename>loaders/tx49-ref4955</filename> relative
+to the installation root.</PARA>
+<SECT3>
+<TITLE>Building the GDB stub image with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>		  Start with a new document - selecting the 
+<EMPHASIS>File-&#62;New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ menu item, and then select the TX49 REF4955 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the stubs package template to build a GDB stub.
+Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos stubs using 
+<EMPHASIS>Build-&#62;Library</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+images have the prefix gdb_module.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE> Building the GDB stub image with ecosconfig</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>		  Make an empty directory to contain the build tree,
+		  and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new ref4955 stubs </PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands:</PARA>
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+images have the prefix gdb_module.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE> Installing GDB stubs into FLASH</TITLE>
+<PARA>Boot into the board&rsquo;s firmware in little-endian mode:</PARA>
+<PARA>Set the switches like this:   </PARA>
+<PARA>SW1: 10000000 (first lever up, the rest down)   
+SW2: 10000010</PARA>
+<PARA>Connect serial cable on the lower connector, configure terminal
+emulator for 38400, 8-N-1.</PARA>
+<PARA>When booting the board, you should get this prompt:</PARA>
+<PROGRAMLISTING>HCP5 rev 0.9B .    
+HCP5?</PROGRAMLISTING>
+<PARA>Select o (option), a (FLASH) and b (boot write). You should
+see this:</PARA>
+<PROGRAMLISTING>Boot ROM Write   
+ROM address-ffffffffbd000000, Boot Bus-[32bit]  
+ID2 0 4 ffffffffa002ad40  
+zzz SS-40000 IV-1 CS-20000 CC-2   
+Flash ROM-[28F640J5], [16bit chip] * 2 * 1
+Block size-00040000  count-64  
+ROM adr ffffffffbd000000-ffffffffbe000000  mask-00fc0000
+Send Srecord file sa=00000000 size=ffffffffffffffff
+ra=fffffffffe000000
+	  </PROGRAMLISTING>
+<PARA>Now send the stub SREC data down to the board using the terminal
+ emulator&rsquo;s &lsquo;send ASCII&rsquo; (or similar)
+functionality. </PARA>
+<PARA>Red Hat has experienced some sensitivity to how fast the data
+is written to the board. Under Windows you should configure Minicom
+to use a line delay of 100 milliseconds. Under Linux, use the slow_cat.tcl
+ script:</PARA>
+<PROGRAMLISTING>% cd BASE_DIR/packages/hal/mips/ref4955/<replaceable>&Version;</replaceable>/misc
+% slow_cat.tcl &lt; [path]/gdb_module.srec &#62; /dev/ttyS0</PROGRAMLISTING>
+<PARA>Power off the board, and change it to boot the GDB stubs in
+big-endian mode by setting the switches like this:</PARA>
+<PARA>SW1: 00000000 (all levers down)   
+SW2: 10001010</PARA>
+<PARA>The GDB stubs allow communication with GDB using the serial
+port at connector PJ7A (lower connector). The communication parameters
+are  fixed at 38400 baud, 8 data bits, no parity bit and 1 stop
+bit  (8-N-1). No flow control is employed. Connection to the host
+computer should be made using a straight through serial cable.</PARA>
+</SECT2>
+</SECT1>
+
+<!-- ==================================================== -->
+
+<SECT1 id="setup-vr4300-vrc4373">
+<TITLE>VR4300 Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with an EPROM
+which provides GDB support for the NEC
+VRC4373 evaluation board. An image of this EPROM is also provided
+at <filename>loaders/vr4300-vrc4373/gdbload.bin</filename> under
+the root of your eCos installation.</PARA>
+<PARA>The EPROM is installed to socket U12 on the board. Attention
+should be paid to the correct orientation of the EPROM during installation.
+Only replace the board&quot;s existing ROM using a proper PLCC
+extraction tool, as the socket would otherwise risk getting damaged. </PARA>
+<PARA>The GDB stub in the EPROM allows communication with GDB using
+the serial port at connector J1. The communication parameters are
+fixed at 38400 baud, 8 data bits, no parity bit and 1 stop bit (8-N-1).
+No flow control is employed. Connection to the host computer should
+be made using a straight-through serial cable. </PARA>
+</SECT1>
+<SECT1 id="setup-vr4300-vrc4375">
+<TITLE>VRC4375 Hardware Setup</TITLE>
+<PARA>For information about setting up the VRC4375 to run with RedBoot,
+consult the RedBoot User&quot;s Guide. If using serial debugging,
+the serial line runs at 38400 baud 8-N-1 and should be connected
+to the debug host using the cable supplied with the board.</PARA>
+</SECT1>
+<SECT1 id="setup-mips-atlasmalta">
+<TITLE>Atlas/Malta Hardware Setup</TITLE>
+<PARA>For information about setting up the Atlas and Malta boards to
+run with RedBoot, consult the RedBoot User&quot;s Guide.</PARA>
+</SECT1>
+<SECT1 id="setup-ppc-cogent">
+<TITLE>PowerPC Cogent Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with an EPROM
+which provides GDB support for the Cogent
+evaluation board. An image of this EPROM is also provided at
+	  <filename>loaders/powerpc-cogent/gdbload.bin</filename> under
+the root of your eCos installation. The same EPROM and image can
+be used on all three supported daughterboards: CMA287-23 (MPC823),
+CMA287-50 (MPC850), and CMA286-60 (MPC860).</PARA>
+<PARA>The EPROM is installed to socket U4 on the board. Attention
+should be paid to the correct orientation of the EPROM during installation. </PARA>
+<PARA>If you are going to burn a new EPROM using the binary image,
+be careful to get the byte order correct. It needs to be big-endian.
+If the EPROM burner software has a hex-editor, check that the first
+few bytes of the image look like: </PARA>
+<PROGRAMLISTING>00000000: 3c60 fff0 6063 2000 7c68 03a6 4e80 0020 &lt;&grave;..&grave;c.|h..N.. </PROGRAMLISTING>
+<PARA>If the byte order is wrong you will see 603c instead of 3c60
+etc. Use the EPROM burner software to make a byte-swap before you
+burn to image to the EPROM. </PARA>
+<PARA>If the GDB stub EPROM you burn does not work, try reversing
+the byte-order, even if you think you have it the right way around.
+At least one DOS-based EPROM burner program is known to have the
+byte-order upside down.</PARA>
+<PARA>The GDB stub in the EPROM allows communication with GDB using
+the serial port at connector P12 (CMA101) or P3 (CMA102). The communication parameters
+are fixed at 38400 baud, 8 data bits, no parity bit and 1 stop bit
+(8-N-1). No flow control is employed. Connection to the host computer
+should be made using a dedicated serial cable as specified in the
+Cogent CMA manual.</PARA>
+<SECT2>
+<TITLE>Installing the Stubs into ROM</TITLE>
+<SECT3>
+<TITLE>Preparing the Binaries</TITLE>
+<PARA>These two binary preparation steps are not strictly necessary
+as the eCos distribution ships with pre-compiled binaries in the
+directory <filename>loaders/powerpc-cogent</filename> relative to the installation
+root.</PARA>
+<SECT4>
+<TITLE>Building the ROM images with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File-&#62;New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ menu item, and then select the PowerPC    CMA28x hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the &ldquo;stubs&rdquo; package template
+to build a GDB stub. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build-&#62;Library</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the  prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+<SECT4>
+<TITLE>Building the ROM images with ecosconfig</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command: 
+  
+<PROGRAMLISTING>$ ecosconfig new cma28x stubs </PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands: 
+
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING>
+ </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+</SECT3>
+<SECT3>
+<TITLE> Installing the Stubs into ROM or FLASH</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Program the binary image file gdb_module.bin
+into ROM or FLASH referring to the instructions of your ROM programmer.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> Plug the ROM/FLASH into socket U4 as described
+at the beginning of this <EMPHASIS>Hardware Setup</EMPHASIS> section.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-ppc-mbx860">
+<TITLE>PowerPC MBX860 Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with an EPROM
+which provides GDB support for the Motorola
+PowerPC MBX860 evaluation board. An image of this EPROM is also
+provided at <filename>loaders/powerpc-mbx/gdbload.bin</filename> under
+the root of your eCos installation.</PARA>
+<PARA>The EPROM is installed to socket XU1 on the board. Attention
+should be paid to the correct orientation of the EPROM during installation.
+Only replace the board&quot;s existing ROM using a proper PLCC
+extraction tool, as the socket would otherwise risk getting damaged.</PARA>
+<PARA>The GDB stub in the EPROM allows communication with GDB using
+the serial port at connector SMC1/COM1. The communication
+parameters are fixed at 38400 baud, 8 data bits, no parity bit and
+1 stop bit (8-N-1). No flow control is employed. Connection to the
+host computer should be made using a suitable serial cable.</PARA>
+<PARA>In order to make the board execute the EPROM that you just
+installed (rather than the on-board FLASH memory), it may be necessary
+move some links on the board. Specifically, ensure that link J4
+is in position 1-2. If in doubt, refer to the MBX documentation
+from Motorola, ensuring that Boot Port Size=8 Bits/ROM
+for BOOT (CS#7), in their terminology.</PARA>
+<SECT2>
+<TITLE>Installing the Stubs into FLASH</TITLE>
+<SECT3>
+<TITLE>Preparing the Binaries</TITLE>
+<PARA>These two binary preparation steps are not strictly necessary
+as the eCos distribution ships with pre-compiled binaries in the
+directory <filename>loaders/powerpc-mbx</filename> relative to the installation
+root.</PARA>
+<SECT4>
+<TITLE>Building the ROM images with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File-&#62;New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ menu item, and then select the PowerPC    Motorola MBX860/821
+hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the &ldquo;stubs&rdquo; package template
+to build a GDB stub. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build-&#62;Library</EMPHASIS>. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+<SECT4>
+<TITLE>Building the ROM images with ecosconfig</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command: 
+  
+<PROGRAMLISTING>$ ecosconfig new mbx stubs </PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands: 
+    
+<PROGRAMLISTING>$ ecosconfig tree
+$ make </PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+</SECT3>
+<SECT3>
+<TITLE> Installing the Stubs into ROM</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA> Program the binary image file gdb_module.bin
+into ROM or FLASH referring to the instructions of your ROM programmer.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> Plug the ROM/FLASH into socket XU1 as described
+near the beginning of this <EMPHASIS>Hardware Setup</EMPHASIS> section.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Installing the Stubs into FLASH</TITLE>
+<PARA>This assumes you have EPPC-Bug in the on-board FLASH. This
+can be determined by setting up the board according to the below
+instructions and powering up the board. The EPPC-Bug prompt should
+appear on the SMC1 connector at 9600 baud, 8N1.</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Set jumper 3 to 2-3     [allow XU2 FLASH to
+be programmed]</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Set jumper 4 to 2-3     [boot EPPC-Bug]</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+<SECT4>
+<TITLE> Program FLASH</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA> Prepare EPPC-Bug for download:</PARA>
+<PROGRAMLISTING>EPPC-Bug&#62;lo 0</PROGRAMLISTING>
+<PARA>At this point the monitor is ready for input. It will not return
+the prompt until the file has been downloaded.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Use the terminal emulator&rsquo;s ASCII download feature
+(or a simple clipboard     copy/paste operation) to download
+the gdb_module.srec data.
+
+Note that on Linux, Minicom&rsquo;s ASCII download feature seems
+to be broken. A workaround is to load the file into Emacs (or another
+editor) and copy the full contents to the clipboard. Then press
+the mouse paste-button (usually the middle one) over the Minicom
+window.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Program the FLASH with the downloaded data:
+    
+<PROGRAMLISTING>EPPC-Bug&#62;pflash 40000 60000 fc000000</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Switch off the power, and change jumper 4 to 1-2. Turn
+on the power again. The board should now boot using the newly programmed
+stubs.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+</SECT3>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-ppc-sim">
+<TITLE>PowerPC Architectural Simulator Setup</TITLE>
+<PARA>The PowerPC simulator is an architectural simulator which
+implements all the features of the PowerPC needed to run eCos. The
+current implementation provides accurate simulation of the instruction
+set and timers, as well as having generic support for diagnostic
+output  and exceptions.</PARA>
+<PARA>The simulator also allows devices to be simulated, but no
+device simulation support has been defined for the serial device
+drivers in this release.</PARA>
+<PARA>To simplify connection to the simulator, you are advised to
+create a GDB macro by putting the following code in your personal
+GDB start-up file (gdb.ini on Windows and .gdbinit on UNIX).</PARA>
+<PROGRAMLISTING>define psim   
+ target sim -o &rsquo;/iobus/pal&commat;0xf0001000/reg 0xf0001000 32&rsquo;   
+ rbreak cyg_test_exit   
+ rbreak cyg_assert_fail  
+end</PROGRAMLISTING>
+<PARA>You can then connect to the simulator by invoking the command <command>psim</command> on
+the command line:</PARA>
+<PROGRAMLISTING>(gdb) psim</PROGRAMLISTING>
+<PARA>You can achieve the same effect by typing out the macro&rsquo;s
+content on the command line if necessary.</PARA>
+<NOTE>
+<PARA>The PowerPC simulator cannot execute binaries built for any
+of the supported hardware targets. You must generate a configuration
+using the PowerPC simulator platform: 
+<PROGRAMLISTING>$ ecosconfig new psim</PROGRAMLISTING>
+ or some such.</PARA>
+</NOTE>
+</SECT1>
+<SECT1 id="setup-sparclite-sleb">
+<TITLE>SPARClite Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with a ROM
+which provides GDB support for the Fujitsu SPARClite Evaluation
+Board by way of CygMon<PRODUCTNAME>. </PRODUCTNAME></PARA>
+<PARA>An image of this ROM is also provided at
+	  <filename>BASE_DIR/loaders/sparclite-sleb/cygmon.bin.</filename> The
+ROM is installed in socket IC9 on the evaluation board. Attention
+should be paid to the correct orientation of the ROM during installation.</PARA>
+<PARA>The GDB stub allows communication with GDB using a TCP channel
+via the ethernet port at connector J5.</PARA>
+<SECT2>
+<TITLE><!-- <index></index> --><!-- <xref> -->Ethernet Setup</TITLE>
+<PARA>The ethernet setup is described in the board&rsquo;s manual,
+but here is a recapitulation.</PARA>
+<PARA>Set the board&rsquo;s ethernet address using SW1 on the
+motherboard:</PARA>
+<PROGRAMLISTING>	    SW1-4 SW1-3 SW1-2 SW1-1    Ethernet Address
+	    ----- ----- ----- -----    ----------------
+	    OFF   OFF   OFF   OFF     No ethernet, use serial
+	    OFF   OFF   OFF    ON     00:00:0E:31:00:01
+	    OFF   OFF    ON   OFF     00:00:0E:31:00:02
+	    OFF   OFF    ON    ON     00:00:0E:31:00:03
+	    OFF    ON   OFF   OFF     00:00:0E:31:00:04
+	    OFF    ON   OFF    ON     00:00:0E:31:00:05
+	    OFF    ON    ON   OFF     00:00:0E:31:00:06
+	    OFF    ON    ON    ON     00:00:0E:31:00:07
+	    ON    OFF   OFF   OFF     00:00:0E:31:00:08
+	    ON    OFF   OFF    ON     00:00:0E:31:00:09
+	    ON    OFF    ON   OFF     00:00:0E:31:00:0A
+	    ON    OFF    ON    ON     00:00:0E:31:00:0B
+	    ON     ON   OFF   OFF     00:00:0E:31:00:0C
+	    ON     ON   OFF    ON     00:00:0E:31:00:0D
+	    ON     ON    ON   OFF     00:00:0E:31:00:0E
+	    ON     ON    ON    ON     00:00:0E:31:00:0F</PROGRAMLISTING>
+<SECT3><!-- <index></index> -->
+<TITLE>BOOTP/DHCP service on Linux</TITLE>
+<PARA>Configure the BOOTP or DHCP server on the network to recognize
+the evaluation board&rsquo;s ethernet address so it can assign
+the board an IP address. Below is a sample DHCP server configuration
+from a Linux system (<filename>/etc/dhcpd.conf</filename>).
+It shows a setup for three evaluation boards.</PARA>
+<PROGRAMLISTING>#
+# DHCP server configuration.
+#
+allow bootp;
+
+subnet 192.168.1.0 netmask 255.255.255.0 {
+  host mb831evb {
+    hardware ethernet 00:00:0e:31:00:01;
+    fixed-address mb831evb;
+  }
+  host mb832evb {
+    hardware ethernet 00:00:0e:31:00:02;
+    fixed-address mb832evb;
+  }
+  host mb833evb {
+    hardware ethernet 00:00:0e:31:00:03;
+    fixed-address mb833evb;
+  }
+} </PROGRAMLISTING>
+</SECT3>
+<SECT3><!-- <index></index> -->
+<TITLE>BOOTP/DHCP boot process</TITLE>
+<PARA>Even when configured to use a TCP channel, CygMon will still
+print a boot message to the serial channel. If the BOOTP process
+was successful and an IP address was found, a message &ldquo;BOOTP
+found xxx.xxx.xxx.xxx&rdquo; will be printed where xxx.xxx.xxx.xxx
+is the IP address assigned by the BOOTP or DHCP server. If the BOOTP
+process fails, a message indicating failure will be printed and
+the serial port will be used as the debug channel.</PARA>
+<PARA>Once the board finds an IP address it will respond to ICMP
+echo request packets (ping). This gives a simple means to test the
+health of the board.</PARA>
+<PARA>As described in &ldquo;Ethernet Setup&rdquo; on&nbsp;page&nbsp;72,
+it should now be possible to connect to the SPARClite board from
+within GDB by using the command:</PARA>
+<PROGRAMLISTING>(gdb) target remote &lt;host&#62;:1000</PROGRAMLISTING>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Serial Setup</TITLE>
+<PARA>The CygMon stubs also allow communication with GDB by way
+of the serial port at connector CON1. The communication parameters
+are fixed at 19200 baud, 8 data bits, no parity bit and 1 stop bit
+(8-N-1). No flow control is employed. Connection to the host computer
+should be made using a null modem cable. A gender changer may also
+be required.</PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-sparclite-sim">
+<TITLE>SPARClite Architectural Simulator Setup</TITLE>
+<PARA>The ESA SPARClite simulator is an architectural simulator
+which implements all the features of the SPARClite needed to run
+eCos. The current implementation provides accurate simulation of
+the instruction set, interrupt controller, and timers, as well as
+having generic support for diagnostic output and exceptions.</PARA>
+<PARA>Note that the ESA SPARClite simulator is unsupported, but
+is included in the release as a convenience.</PARA>
+<PARA>To simplify connection to the simulator, you are advised to
+create a GDB macro by putting the following code in your personal
+GDB start-up file (gdb.ini on Windows and .gdbinit on UNIX).</PARA>
+<PROGRAMLISTING>define ssim   
+ target sim -nfp -sparclite -dumbio   
+ rbreak cyg_test_exit   
+ rbreak cyg_assert_fail  
+end</PROGRAMLISTING>
+<PARA>You can then connect to the simulator by invoking the command <command>ssim</command> on
+the command line:</PARA>
+<PROGRAMLISTING>(gdb) ssim</PROGRAMLISTING>
+<PARA>You can achieve the same effect by typing out the macro&rsquo;s
+content on the command line if necessary.</PARA>
+</SECT1>
+<SECT1 ID="setup-arm-pid">
+<TITLE><!-- <index></index> --><!-- <xref> -->ARM PID Hardware Setup</TITLE>
+<PARA>eCos comes with two ROM images that provide GDB support for
+the ARM PID board. The first ROM image provides a port of the CygMon
+ROM monitor, which includes a command-line interface and a GDB remote
+stub. The second ROM image provides a remote GDB stub only, which
+is a minimal environment for downloading and debugging eCos programs
+solely using GDB.</PARA>
+<PARA>eCos, CygMon and the GDB stubs all support the PID fitted
+with both ARM7T and ARM9 daughterboards. CygMon and the stubs can
+be programmed into either the programmable ROM (U12) or the FLASH
+(U13). Pre-built forms of both ROM images are provided in the directory
+loaders/arm-pid under the root of your eCos installation,
+along with a tool that will program the stubs into the FLASH memory on
+the board. CygMon images are prefixed with the name 'cygmon' and
+GDB stub ROM images are given the prefix 'gdb_module'.
+Images may be provided in a number of formats including ELF (.img
+extension), binary (.bin extension) and SREC (.srec extension).
+Note that some unreliability has been experienced in downloading
+files using Angel 1.00. Angel 1.02 appears to be more robust in
+this application.</PARA>
+<SECT2>
+<TITLE>Installing the Stubs into FLASH</TITLE>
+<SECT3>
+<TITLE>Preparing the Binaries</TITLE>
+<PARA>These two binary preparation steps are not strictly necessary
+as the eCos distribution ships with pre-compiled binaries in the
+directory loaders/arm-pid relative to the installation
+root.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>Building the ROM images with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File</EMPHASIS>-&#62;<EMPHASIS>New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Templates</EMPHASIS>
+ menu item, and then select the ARM PID hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Templates</EMPHASIS>
+ dialog box, select either the "stubs" package template to build
+a GDB stub image, or the "cygmon" template to build the CygMon ROM
+Monitor. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Library</EMPHASIS></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix "gdb_module". CygMon images
+have the prefix "cygmon".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Building the ROM images with ecosconfig</TITLE>
+<!-- <PARA>(See <XREF LINKEND="USING-ECOSCONFIG-ON-UNIX">)</PARA> -->
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>		    Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new pid stubs</PROGRAMLISTING>
+<PARA>or to build a CygMon ROM monitor image, enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new pid cygmon</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands:</PARA>
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix "gdb_module". CygMon images
+have the prefix "cygmon".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Building the FLASH Tool with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File</EMPHASIS>-&#62;<EMPHASIS>New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the
+<EMPHASIS>Build</EMPHASIS>-&#62;<EMPHASIS>Templates</EMPHASIS>
+ menu item, and then select the ARM PID hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enable the "Build flash programming tool" option in the
+ARM PID HAL (CYGBLD_BUILD_FLASH_TOOL)
+and resolve any resulting configuration conflicts.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Library</EMPHASIS></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the FLASH tool image file can
+be found in the bin/ subdirectory of the install tree,
+with the prefix "prog_flash"</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Building the FLASH Tool with ecosconfig</TITLE>
+<!-- <PARA>(See <XREF LINKEND="USING-ECOSCONFIG-ON-UNIX">)</PARA> -->
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>		    Make an empty directory to contain the build tree,
+and cd into it
+		    </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new pid</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>Edit the file ecos.ecc and enable the option CYGBLD_BUILD_FLASH_TOOL
+by uncommenting its user_value property and setting it
+to 1.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands:</PARA>
+<PROGRAMLISTING>$ ecosconfig resolve</PROGRAMLISTING>
+<PARA>[there will be some output]</PARA>
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the FLASH tool image file can
+be found in the bin/ subdirectory of the install tree,
+with the prefix "prog_flash"</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Prepare the Board for FLASH Programming</TITLE>
+<PARA>Each time a new image is to be programmed in the FLASH, the
+jumpers on the board must be set to allow Angel to run:</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>		    Set jumper 7-8 on LK6   [using the Angel code
+in the 16 bit EPROM]</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Set jumper 5-6 on LK6   [select 8bit ROM mode]</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Set jumper LK18         [ROM remap - this is
+also required for eCos]</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Set S1 to 0-0-1-1       [20MHz operation]</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Open jumper LK4  [enable little-endian operation]
+
+Attach a serial cable from Serial A on the PID board to connector
+1 on the development system. This is the cable through which the
+binaries will be downloaded. Attach a serial cable from Serial B
+on the PID board to connector 2 on the development system (or any
+system that will work as a terminal). Through this cable, the FLASH
+tool will write its instructions (at 38400 baud).</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>Program the FLASH</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Download the FLASH ROM image onto the PID board. For
+example. for the GDB stubs image:
+
+<PROGRAMLISTING>bash$ arm-elf-gdb -nw gdb_module.img
+GNU gdb 4.18-DEVTOOLSVERSION
+Copyright 1998 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License,
+and you are welcome to change it and/or distribute copies
+of it under certain conditions. Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB. Type "show warranty" for details.
+This GDB was configured as "--host=i586-pc-cygwin32 --target=arm-elf".
+(no debugging symbols found)...
+(gdb) target rdi s=com1
+Angel Debug Monitor for PID (Built with Serial(x1), Parallel, DCC) 1.00
+(Advanced RISC Machines SDT 2.10)
+Angel Debug Monitor rebuilt on Jan 20 1997 at 02:33:43
+Connected to ARM RDI target.
+(gdb) load
+Loading section .rom_vectors, size 0x44 lma 0x60000
+Loading section .text, size 0x1f3c lma 0x60044
+Loading section .rodata, size 0x2c lma 0x61f80
+Loading section .data, size 0x124 lma 0x61fac
+Start address 0x60044 , load size 8400
+Transfer rate: 5169 bits/sec.
+(gdb) q 
+The program is running.  Exit anyway? (y or n) y </PROGRAMLISTING>
+
+<NOTE>
+<PARA> On a UNIX or Linux system, the serial port must be
+ /dev/ttyS0 instead of COM1.
+ You need to make sure that the /dev/ttyS0 files
+have the right permissions:
+<SCREEN>$ su
+ Password:
+ # chmod o+rw /dev/ttyS0*
+ # exit 
+		      </SCREEN>
+If you are programming the GDB stub image, it will now be located
+at 0x60000..0x64000. If you are programming the Cygmon ROM Monitor,
+it will be located at 0x60000..0x80000.</PARA>
+</NOTE></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Now download the FLASH programmer tool</PARA>
+<PROGRAMLISTING>bash$ arm-elf-gdb prog_flash.img 
+GNU gdb 4.18-DEVTOOLSVERSION
+Copyright 1998 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License,
+and you are welcome to change it and/or distribute
+copies of it under certain conditions. Type "show copying" to see
+the conditions. There is absolutely no warranty for GDB.  Type "show
+warranty" for details.
+This GDB was configured as "--host=i586-pc-cygwin32 --target=arm-elf".
+(gdb) target rdi s=com1
+Angel Debug Monitor for PID (Built with Serial(x1), Parallel, DCC) 1.00
+(Advanced RISC Machines SDT 2.10)
+Angel Debug Monitor rebuilt on Jan 20 1997 at 02:33:43
+Connected to ARM RDI target.
+(gdb) load
+Loading section .rom_vectors, size 0x44 lma 0x40000
+Loading section .text, size 0x44a4 lma 0x40044
+Loading section .rodata, size 0x318 lma 0x444e8
+Loading section .data, size 0x1c8 lma 0x44800
+Start address 0x40044 , load size 18888
+Transfer rate: 5596 bits/sec.
+(gdb) c</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>The FLASH tool will output some text on the board serial
+port B at 38400 baud:</PARA>
+<PROGRAMLISTING>ARM
+eCos
+
+FLASH here!
+manuf: 8, device: 40
+Error: Wrong Manufaturer: 08
+... Please change FLASH jumper</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>This text is repeated until you remove the jumper 7-8
+on LK6. Then the output will be:</PARA>
+<PROGRAMLISTING>manuf: 1F, device: A4
+AT29C040A recognised
+About to program FLASH using data at 60000..64000
+*** Press RESET now to abort!</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA> You have about 10 seconds to abort the operation by pressing
+reset. After this timeout, the FLASH programming happens:</PARA>
+<SCREEN>...Programming FLASH 
+All done!</SCREEN>
+</LISTITEM>
+<LISTITEM>
+<PARA>Quit/kill the GDB process, which will hang.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Next time you reset the board, the stub will be in control,
+communicating on Serial A at 38400 baud.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+<NOTE>
+<PARA>If you do not have two serial ports available on your host
+computer, you may still verify the FLASH programming completed successfully
+by quitting/killing the GDB process after running "c" in
+step 2 above. Then switch the serial cable on the PID from Serial
+A to Serial B and run a terminal emulator on the host computer.
+In a few seconds you should see the the repeated text described
+in step 2 above and you may continue the remaining steps as normal.</PARA>
+</NOTE>
+</SECT3>
+<SECT3>
+<TITLE>Programming the FLASH for big-endian mode</TITLE>
+<PARA>The process is almost identical to the previous instructions
+which apply to a PID board running in little-endian mode only.</PARA>
+<PARA>The only adjustments to make are that if programming a <EMPHASIS>GDB</EMPHASIS> stub
+ROM image (or CygMon ROM monitor image), you must enable the option "Use
+Big-endian mode" in the <EMPHASIS>eCos Configuration Tool</EMPHASIS> (CYGHWR_HAL_ARM_BIGENDIAN
+if using ecosconfig and editing ecos.ecc).</PARA>
+<PARA>When programming the FLASH there are two options:</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Program FLASH using the little-endian FLASH tool. After
+powering off, replace the ROM controller with the special big-endian
+version which can be acquired from ARM. (This has not been tested
+by Red Hat).</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Use a special big-endian version of the FLASH tool which
+byte-swaps all the words as they are written to the FLASH.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+<PARA>Build this tool by enabling the "Build flash programming tool
+for BE images on LE boards" option (CYGBLD_BUILD_FLASH_TOOL_BE),
+resulting in a utility with the prefix "prog_flash_BE_image_LE_system"
+which should be used instead of "prog_flash".</PARA>
+<PARA>Note that there is a limitation to this method: no sub-word
+data can be read from the ROM. To work around this, the .rodata
+section is folded into the .data section and thus copied to RAM
+before the system starts.</PARA>
+<PARA>Given that Thumb instructions are 16 bit, it is not possible
+to run ROM-startup Thumb binaries on the PID board using this method.</PARA>
+<PARA>When the image has been programmed, power off the board, and
+set jumper LK4 to enable big-endian operation.</PARA>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Installing the Stubs into ROM</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Program the binary image file gdb_module.bin
+into ROM referring to the instructions of your ROM programmer.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Plug the ROM into socket U12 and install jumper LK6 pins
+7-8 to enable the ROM.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-arm-aeb1">
+<TITLE><!-- <index></index> -->ARM AEB-1 Hardware Setup</TITLE>
+<SECT2>
+<TITLE>Overview</TITLE>
+<PARA>The ARM AEB-1 comes with tools in ROM. These include a simple
+FLASH management tool and the Angel&reg; monitor. eCos for
+the ARM AEB-1 comes with GDB stubs suitable for programming into
+the onboard FLASH. GDB is the preferred debug environment for GDB,
+and while Angel provides a subset of the features in the eCos GDB
+stub, Angel is unsupported.</PARA>
+<PARA>Both eCos and the stubs support both Revision B and Revision
+C of the AEB-1 board. Stub ROM images for both types of board can
+be found in the loaders/arm-aeb directory under the root
+of your eCos installation. You can select which board you are using
+by selecting either the aeb or aebC platform by selecting the appropriate
+platform HAL in the <EMPHASIS>eCos Configuration Tool</EMPHASIS>.</PARA>
+<PARA>The GDB stub can be downloaded to the board for programming
+in the FLASH using the board's on-board ROM monitor:</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>talk to the AEB-1 board with a terminal emulator (or
+a real terminal!)</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>use the board's rom menu to download a UU-encoded
+version of the GDB stubs which will act as a ROM monitor</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>tell the board to use this new monitor, and then hook
+GDB up to it for real debugging</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Talking to the Board</TITLE>
+<PARA>Connect a terminal or computer's serial port to the
+ARM AEB-1. On a PC with a 9-pin serial port, you can use the cable
+shipped by ARM with no modification. </PARA>
+<PARA>Set the terminal or terminal emulator to 9600N1 (9600 baud,
+no parity, 1 stop bit). </PARA>
+<PARA>Reset the board by pressing the little reset button on the
+top. You will see the following text: </PARA>
+<PROGRAMLISTING>	ARM Evaluation Board Boot Monitor 0.01 (19 APR 1998)
+	Press ENTER within 2 seconds to stop autoboot</PROGRAMLISTING>
+<PARA>Press ENTER quickly, and you will get the boot prompt: </PARA>
+<PROGRAMLISTING>	Boot:</PROGRAMLISTING>
+</SECT2>
+<SECT2>
+<TITLE>Downloading the Stubs via the Rom Menu</TITLE>
+<PARA>Using the AEB-1 rom menu to download the GDB stubs from the
+provided ".UU" file.</PARA>
+<NOTE>
+<PARA>This is an annotated 'terminal' session
+with the AEB-1 monitor:</PARA>
+</NOTE>
+<PROGRAMLISTING>+Boot: help
+Module is BootStrap       1.00 (14 Aug 1998)</PROGRAMLISTING>
+<PROGRAMLISTING>Help is available on:</PROGRAMLISTING>
+<PROGRAMLISTING>Help          Modules       ROMModules    UnPlug        PlugIn
+Kill          SetEnv        UnSetEnv      PrintEnv      DownLoad
+Go            GoS           Boot          PC            FlashWrite
+FlashLoad     FlashErase</PROGRAMLISTING>
+<PROGRAMLISTING>Boot: download c000
+Ready to download. Use 'transmit' option on terminal
+emulator to download file.</PROGRAMLISTING>
+<PROGRAMLISTING>... at this point, download the ASCII file "loaders/arm-aeb/
+    gdb_module.img.UU". The details of this operation differ
+    depending on which terminal emulator is used. It may be
+    necessary to enter "^D" (control+D) when the download completes
+   to get the monitor to return to command mode. </PROGRAMLISTING>
+<PROGRAMLISTING>Loaded file gdb_module.img.bin at address
+0000c000, size = 19392 </PROGRAMLISTING>
+</SECT2>
+<SECT2>
+<TITLE>Activating the GDB Stubs</TITLE>
+<PARA>Commit the GDB stubs module to FLASH: </PARA>
+<PROGRAMLISTING>	Boot: flashwrite 4018000 C000 8000
+    </PROGRAMLISTING>
+<PARA>Verify that the eCos/"GDB stubs" module is now added
+in the list of modules in the board: </PARA>
+<PROGRAMLISTING>	Boot: rommodules
+    </PROGRAMLISTING>
+<PARA>You should see output similar to the following: </PARA>
+<PROGRAMLISTING>	Header   Base     Limit
+	04000004 04000000 040034a8 BootStrap       1.00 (14 Aug 1998) 
+	04003a74 04003800 04003bc0 Production Test 1.00 (13 Aug 1998) 
+	0400e4f4 04004000 0400e60f Angel           1.02 (12 MAY 1998) 
+	0401c810 04018000 0401cbc0 eCos              1.3  (27 Jan 2000)
+GDB stubs
+    </PROGRAMLISTING>
+<PARA>Now make the eCos/"GDB stubs" module be the default
+monitor: </PARA>
+<PROGRAMLISTING>	Boot: plugin eCos
+    </PROGRAMLISTING>
+<NOTE>
+<PARA>Since the GDB stubs are always linked at the same address
+(0x4018000), the operation of writing to the FLASH and selecting
+the stubs as default monitor is an idempotent operation. You can
+download a new set of stubs following the same procedure - you do
+not have to unregister or delete anything.</PARA>
+</NOTE>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stub FLASH ROM Images</TITLE>
+<PARA>Pre-built GDB stubs images are provided in the directory loaders/arm-aeb
+relative to the root of your eCos installation, but here are instructions
+on how to rebuild them if you should ever need to.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stubs with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File</EMPHASIS>
+-&#62;
+<EMPHASIS>New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Templates</EMPHASIS>
+ menu item, and then select the ARM AEB-1 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the "stubs" package template to build a GDB
+stub image. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>If applicable, set the "AEB board revision" option to
+"C" from "B" depending on the board revision being used.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Library.</EMPHASIS></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. The GDB stub
+ROM images have the prefix "gdb_module".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stub ROMs with ecosconfig</TITLE>
+<!-- <PARA>(See <XREF LINKEND="USING-ECOSCONFIG-ON-UNIX">)</PARA> -->
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new aeb stubs</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>If applicable, edit ecos.ecc and set the AEB board revision. (CYGHWR_HAL_ARM_AEB_REVISION)
+from the default "B" to "C" by uncommenting the user_value
+property and setting it to "C".</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands
+ 
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. The GDB stub
+ROM images have the prefix "gdb_module".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-arm-cma230">
+<TITLE><!-- <index></index> -->ARM Cogent CMA230 Hardware Setup</TITLE>
+<PARA>The eCos Developer's Kit package comes with an EPROM
+which provides GDB support for the Cogent evaluation board. An image
+of this EPROM is also provided at loaders/arm-cma230/gdbload.bin
+under the root of your eCos installation. </PARA>
+<PARA>The EPROM is installed to socket U3 on the board. Attention
+should be paid to the correct orientation of the EPROM during installation.</PARA>
+<PARA>If you are going to burn a new EPROM using the binary image,
+be careful to get the byte order correct. It needs to be little-endian,
+which is usually the default in PC based programmer software.</PARA>
+<PARA>If the GDB stub EPROM you burn does not work, try reversing
+the byte-order, even if you think you have it the right way around.
+At least one DOS-based EPROM burner program is known to have the
+byte-order upside down.</PARA>
+<PARA>The GDB stub in the EPROM allows communication with GDB using
+the serial port at connector P12 (CMA101) or P3 (CMA102). The communication parameters
+are fixed at 38400 baud, 8 data bits, no parity bit and 1 stop bit
+(8-N-1).  No flow control is employed. Connection to the host computer
+should be made using a dedicated serial cable as specified in the
+Cogent CMA manual.</PARA>
+<SECT2>
+<TITLE>Building the GDB Stub FLASH ROM images</TITLE>
+<PARA>Pre-built GDB stubs images are provided in the directory loaders/arm-cma230 relative
+to the root of your eCos installation, but here are instructions
+on how to rebuild them if you should ever need to.</PARA>
+<PARA>CygMon images are prefixed with the name 'cygmon' and
+GDB stub ROM images</PARA>
+<PARA>are given the prefix 'gdb_module'.
+Images may be provided in a number of formats including ELF (.img
+extension), binary (.bin extension) and SREC (.srec extension). </PARA>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stubs with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>1. Start with a new document - selecting the File-&#62;New
+menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build</EMPHASIS>-&#62;<EMPHASIS>Templates</EMPHASIS>
+ menu item, and then select the ARM CMA230 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Templates</EMPHASIS>
+ dialog box, select the "stubs" package template to build a GDB
+stub image. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Library</EMPHASIS></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. The GDB stub
+ROM images have the prefix "gdb_module".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stub ROMs with ecosconfig</TITLE>
+<!-- <PARA>(See <XREF LINKEND="USING-ECOSCONFIG-ON-UNIX">)</PARA> -->
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>1. Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new cma230 stubs</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands:
+ 
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. The GDB stub
+ROM images have the prefix "gdb_module".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-arm-ep7211">
+<TITLE><!-- <index></index> --><!-- <xref> -->Cirrus Logic ARM EP7211 Development
+Board Hardware Setup</TITLE>
+<PARA>eCos comes with two Flash ROM images that provide GDB support
+for the Cirrus Logic EP7211 Development Board (also known as the
+EDB7211).. Note that on some board revisions, the board is silk-screened
+as EDB7111-2. The first Flash ROM image provides a port of the CygMon
+ROM monitor, which includes a command-line interface and a GDB remote
+stub. The second Flash ROM image provides a remote GDB stub only.</PARA>
+<PARA>Both ROM images are provided in the directory loaders/arm-edb7211
+under the root of your eCos installation. CygMon images are prefixed
+with the name 'edb7211_cygmon' and are
+provided in a number of formats including binary (.bin extension)
+and SREC (.srec) extension. GDB stub ROM images are given the prefix 'edb7211_gdb_module'. </PARA>
+<PARA>The ROM images provided for the EP7211 Development Board must
+be programmed into the FLASH. Please refer to the section titled
+"Loading the ROM image into On-Board flash" on how to program the
+ROM onto the board.</PARA>
+<PARA>Both Cygmon and GDB Stub ROMS allow communication with GDB
+via the serial connector labelled 'UART 1'. The
+communication parameters are fixed at 38400 baud, 8 data bits, no
+parity bit and 1 stop bit (8-N-1). No flow control is employed.
+Connection to the host computer should be made using a null modem cable.
+A gender changer may also be required. Note that the GDB Configuration tool
+uses the serial port identifiers 0 and 1 to identify the EB7211
+serial ports UART1 and UART2 respectively.</PARA>
+<PARA>Both eCos and the ROM images assume the core clock is generated
+with a 3.6864 MHz PLL input. The CPU will be configured to run at
+73.728MHz.</PARA>
+<PARA>Note: The EP7211 CPU needs a two step RESET process. After
+pressing the &grave;URESET' pushbutton, the &grave;WAKEUP' pushbutton
+must be pressed to complete the process.</PARA>
+<NOTE>
+<PARA>When an eCos program is run on an EDB7211 board fitted with
+either CygMon or a GDB stub ROM, then the code in ROM loses control.
+This means that if you require the ability to remotely stop execution
+on the target, or want thread debugging capabilities, you must include
+GDB stub support when configuring eCos.</PARA>
+</NOTE>
+<SECT2>
+<TITLE>Building programs for programming into FLASH</TITLE>
+<PARA>If your application is to be run directly from FLASH, you
+must configure eCos appropriately for "ROM" startup. This can be
+done in the <EMPHASIS>eCos Configuration Tool</EMPHASIS> by setting
+the "Startup type" HAL option to "ROM". If using the ecosconfig utility,
+set the user_value of the CYG_HAL_STARTUP
+option in ecos.ecc to "ROM".</PARA>
+<PARA>When you have linked your application with eCos, you will
+then have an ELF executable. To convert this into a format appropriate
+for the Cirrus Logic FLASH download utility, or the dl_7xxx
+utility on Linux, you can use the utility arm-elf-objcopy, as in
+the following example:</PARA>
+<PROGRAMLISTING>$ arm-elf-objcopy -O binary helloworld.exe helloworld.bin</PROGRAMLISTING>
+<PARA>This will produce a binary format image helloworld.bin which
+can be downloaded into FLASH.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stub FLASH ROM images</TITLE>
+<PARA>Pre-built GDB stubs images are provided in the directory loaders/arm-edb7211 relative
+to the root of your eCos installation, but here are instructions
+on how to rebuild them if you should ever need to.</PARA>
+<PARA>CygMon images are prefixed with the name 'cygmon' and
+GDB stub ROM images are given the prefix 'gdb_module'.
+Images may be provided in a number of formats including ELF (.img
+extension), binary (.bin extension) and SREC (.srec extension). </PARA>
+</SECT2>
+<SECT2>
+<TITLE>Building the ROM images with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File</EMPHASIS>-&#62;<EMPHASIS>New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build</EMPHASIS>-&#62;<EMPHASIS>Templates</EMPHASIS>
+ menu item, and then select the "Cirrus Logic development board"
+hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Templates</EMPHASIS>
+ dialog box, select either the "stubs" package template to build
+a GDB stub image, or the "cygmon" template to build the CygMon ROM
+Monitor. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Library</EMPHASIS></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix "gdb_module". CygMon images
+have the prefix "cygmon".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Building the ROM images with ecosconfig</TITLE>
+<!-- <PARA>(See <XREF LINKEND="USING-ECOSCONFIG-ON-UNIX">)</PARA> -->
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new edb7xxx stubs</PROGRAMLISTING>
+<PARA>or to build a CygMon ROM monitor image, enter the command:</PARA>
+<PROGRAMLISTING>$ ecosconfig new edb7xxx cygmon</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands:</PARA>
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix "gdb_module". CygMon images
+have the prefix "cygmon".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE><!-- <xref> -->Loading the ROM Image into On-board Flash</TITLE>
+<PARA>Program images can be written into Flash memory by means of
+a bootstrap program which is built into the  EDB7211.  This program
+communicates with a support program on your host to download and
+program an image into the Flash memory.</PARA>
+<PARA>Cirrus Logic provides such a program for use with Windows/DOS.
+ eCos comes with a similar program which will run under Linux. The
+basic operation of both programs is the same.</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Connect a serial line to 'UART 1'.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Power off the  EDB7211.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Install jumper 'PROGRAM ENABLE' which
+enables this special mode for downloading Flash images. Note that
+some board revisions have this jumper labelled &ldquo;BOOT ENABLE&rdquo;.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Power on the  EDB7211.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Execute the Flash writing program on your host.  On Linux,
+this would be:</PARA>
+<PROGRAMLISTING>     # dl_edb7xxx &lt;PATH&#62;/gdb_module.bin</PROGRAMLISTING>
+<PARA>where '&lt;PATH&#62;' is the path to
+the binary format version of the ROM image you wish to load, either
+as built in the previous section or the "loaders/arm-edb7211/" subdirectory
+of your eCos installation. The download tool defaults to 38400 baud and
+device /dev/ttyS1 for communication. To change
+these, specify them as parameters, e.g.
+	      </PARA>
+<PROGRAMLISTING># dl_edb7xxx &lt;PATH&#62;/gdb_module.bin 9600 /dev/ttyS0</PROGRAMLISTING>
+</LISTITEM>
+<LISTITEM>
+<PARA>The download program will indicate that it is waiting
+for the board to come alive.  At this point, press 'RESET' and
+then 'WAKEUP' switches in order.  There should be
+some indication of progress, first of the code being downloaded,
+then of the programming process.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Upon completion of the programming, power off the  EDB7211.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Remove the 'PROGRAM ENABLE/BOOT ENABLE' jumper.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Power on the  EDB7211, press 'RESET' and 'WAKEUP'.
+ The new ROM image should now be running on the board.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The GDB debugger will now be able to communicate with
+the board to download and debug RAM based programs.
+
+This procedure also applies for loading ROM-startup eCos programs
+into the on-board FLASH memory, given a binary format image of the
+program from arm-elf-objcopy.  Loading a ROM-startup eCos program
+into Flash will overwrite the GDB Stub ROM/CygMon in Flash,
+so you would have to reload the GDB Stub ROM/CygMon to
+return to normal RAM-startup program development.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Building the Flash Downloader on Linux</TITLE>
+<PARA>eCos provides a Flash download program suitable for use with
+the  EP7211 Development Board which will run on Linux.  Follow these
+steps to build this program.  Note: at the time of the writing of
+these instructions, the download program is built directly within
+the eCos source repository since it is
+not configuration specific.</PARA>
+<PROGRAMLISTING>  # cd &lt;eCos install dir&#62;/packages/hal/arm/edb7xxx/<replaceable>&Version;</replaceable>/support</PROGRAMLISTING>
+<PROGRAMLISTING>  # make</PROGRAMLISTING>
+<PARA>(where '# ' is your shell prompt)</PARA>
+<PARA>Note: this program was adapted from the Cirrus Logic original
+DOS program and still contains some vestiges of that environment.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Developing eCos Programs with the ARM Multi-ICE</TITLE>
+<PARA>The EP7211 Development Board supports use of the ARM
+	    Multi-processor EmbeddedICE(tm), also known as the
+	    Multi-ICE. Full instructions on how to install and use the
+	    Multi-ICE in conjunction with GDB are provided in the
+	    <EMPHASIS>"GNUPro Toolkit Reference for eCos
+	      ARM/Thumb"</EMPHASIS> manual. However, the following
+	    platform-specific details should be noted.</PARA>
+<PARA>You will need an ARM Multi-ICE Server configuration
+	    file for the EP7211 Development Board. Here is a suggested
+	    configuration file to use:</PARA>
+<PROGRAMLISTING>======== File "720T.cfg" ======== 
+;Total IR length = 4 
+[TITLE] 
+Multi-ICE configuration for EP7211 
+ 
+[TAP 0] 
+ARM720T 
+ 
+[TAPINFO] 
+YES 
+ 
+[Timing] 
+Low=0 
+High=0 
+Adaptive=OFF 
+==================================</PROGRAMLISTING>
+<PARA>You must ensure that the board has the appropriate soldered
+connections. For the EP7211 this involves connecting TEST0 and TEST1
+of the EP7211 to ground. To do this you must solder a wire from
+ground at JP33 to TP8 and TP9.</PARA>
+<PARA>With respect to using multiple devices simultaneously, note
+that the EP7211 is not ID sensitive.</PARA>
+<PARA>If you wish to view diagnostic output from your program that
+was downloaded via the Multi-ICE, you will note that by default
+the output on the serial line (as viewed by a terminal such as Hyperterm
+in Windows, or cu in Unix) is in the form of GDB packets.</PARA>
+<PARA>To get legible output, the solution is to set the "GDB Serial
+port" to a different device from the "Diagnostic serial port", and
+you should use the Diagnostic serial port to view the diagnostic
+output.</PARA>
+<PARA>Warning: The multi-ice-gdb-server will fail on startup if
+the board has not been both reset and awakened before running the
+server. </PARA>
+<PARA>To resolve this, it is necessary to free up the connection
+from within the ARM Multi-ICE server itself. However when this happens,
+the next time you use GDB to load the program into the board, you
+will see lots of "Readback did not match original data" messages
+in the output of the multi-ice-gdb-server program. This indicates
+your program did not load correctly, and you should restart the
+multi-ice-gdb-server program, taking care to reset the board correctly
+before reconnecting. </PARA>
+<PARA>As a reminder, you must specify --config-dialog to the
+	    multi-ice-gdb-server program to connect to the board
+	    correctly. If you do not, the multi-ice-gdb-server program
+	    will not be able to connect.</PARA>
+</SECT2>
+</SECT1>
+
+<SECT1 ID="setup-arm-ep7212">
+<TITLE><!-- <conditionaltext> -->Cirrus Logic ARM EP7212 Development Board
+Hardware Setup</TITLE>
+<PARA>The Cirrus Logic EP7212 Development Board is almost identical
+to the EP7211 Development Board from a hardware setup viewpoint,
+and is based on the same port of eCos. Therefore the earlier documentation
+for the EP7211 Development Board can be considered equivalent, but
+with the following changes:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>The first serial port is silk screened as "UART 1" on
+the EP7211 Development Board, but is silk screened as "Serial Port
+0" on the EP7212 Development Board. Similarly "UART 2" is silk screened
+as "Serial Port 1" on the EP7212 Development Board.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>JP2 (used to control reprogramming of the FLASH) is not
+silkscreened with "Boot Enable".</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To setup the EP7212 Development Board for use with the
+ARM Multi-ICE JTAG debugging interface unit, it is necessary to
+connect TEST0 and TEST1 of the EP7212 to ground.  On the Development
+Board, this is accomplished by placing shorting blocks on JP47 and
+JP48. When the shorting blocks are fitted, the board can only be
+operated through the Multi-ICE - debugging over a serial line is
+not possible.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><!-- <conditionaltext> -->Pre-built GDB stubs are
+	      provided in the directory
+	      <FILENAME>loaders/arm-edb7212</FILENAME> relative to the
+	      root of your eCos installation</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When rebuilding the GDB stub ROM image, change the "Cirrus
+Logic processor variant" option (CYGHWR_HAL_ARM_EDB7XXX_VARIANT)
+from the EP7211 to the EP7212. This can be selected in the 
+<EMPHASIS>eCos Configuration Tool</EMPHASIS>
+, or if using ecosconfig, can be set by uncommenting the user_value
+property of this option in ecos.ecc and setting it to "EP7212".</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT1>
+<SECT1 ID="setup-arm-ep7312">
+<TITLE><!-- <conditionaltext> -->Cirrus Logic ARM EP7312 Development Board
+Hardware Setup</TITLE>
+<PARA>The Cirrus Logic EP7312 Development Board is similar
+to the EP7212 Development Board from a hardware setup viewpoint,
+and is based on the same port of eCos.</PARA>
+<PARA>When rebuilding the RedBoot ROM image or an eCos application,
+change the "Cirrus Logic processor variant" option
+(CYGHWR_HAL_ARM_EDB7XXX_VARIANT)
+from the EP7211 to the EP7312. This can be selected in the 
+<EMPHASIS>eCos Configuration Tool</EMPHASIS>
+, or if using ecosconfig, can be set by uncommenting the user_value
+property of this option in ecos.ecc and setting it to "EP7312".
+</PARA>
+<PARA>
+See the RedBoot documentation for building and installing RedBoot for this
+target.  Only RedBoot is supported as a boot image; ROMRAM startup is
+recommended.
+</PARA>
+<SECT2 ID="ep7312-90MHz-operation">
+<TITLE>90MHz Operation</TITLE>
+<PARA>
+The EP7xxx targets offer a choice of clock speeds, from 18MHz to a maximum,
+normally, of 72MHz.  These are described as kHz values 18432 36864 49152
+and 73728 within the configuration tool.  If you have a release which
+supports it, you will also see 90317 as an available option here, for 90MHz
+operation.
+</PARA>
+<PARA>
+This option only applies to certain EP7312 hardware, not all EP7312 boards
+support it.  Do not select 90MHz when building RedBoot or your eCos
+application unless you are absolutely sure that your board supports it.
+</PARA>
+<PARA>
+If you do have a 90MHz board and wish to execute at 90MHz, it is in fact
+not necessary to build RedBoot specially, if you build your eCos
+application configured for 90MHz.  RedBoot will run at 72MHz and your
+application will run at 90MHz.  If you do install a 90MHz RedBoot, then you
+must build eCos for 90MHz or timing and baud rates on serial I/O will be
+wrong.
+</PARA>
+<PARA>
+In other words, code (either eCos app or RedBoot) built for 90MHz will
+&ldquo;change up a gear&rdquo; when it starts up; but code built for 72MHz,
+because it needs to run correctly on boards without the
+&ldquo;gearbox&rdquo; does not change back down, so if you mix the two,
+unexpected timing can result.  To run a non-eCos application without any
+hardware initialization code at 90MHz, you must install a specially-built
+RedBoot.
+</PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-arm-ep7209">
+<TITLE>Cirrus Logic ARM EP7209 Development Board Hardware Setup</TITLE>
+<PARA>Note: At time of writing, no EP7209 Development Board is available,
+and consequently eCos has not been verified for use with the EP7209
+Development Board.</PARA>
+<PARA>The Cirrus Logic EP7209 Development Board is almost identical
+to the EP7212 Board in all respects, except that it is not fitted
+with DRAM, nor has it a DRAM controller.</PARA>
+<PARA>The only valid configuration for the EDB7209 is ROM based.
+The STUBS and RAM startup modes are not available as no DRAM is
+fitted.</PARA>
+</SECT1>
+<SECT1 id="setup-arm-clps7111">
+<TITLE><!-- <index></index> -->Cirrus Logic ARM CL-PS7111 Evaluation Board Hardware Setup</TITLE>
+<PARA>The implementation of the port of eCos to the Cirrus Logic
+ARM CL-PS7111 Evaluation Board (also known as EB7111) is based on
+the EP7211 Development Board port.</PARA>
+<PARA>For that reason, the setup required is identical to the  EP7211
+Development Board as described above, with the following exceptions:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>The Cygmon ROM monitor is not supported</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The ARM Multi-ICE is not supported</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><!-- <conditionaltext> -->Pre-built GDB stubs are provided in the
+directory loaders/arm-eb7111 relative to the root of your
+eCos installation</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>If rebuilding the GDB stub ROM image, change the "Cirrus
+Logic processor variant" option (CYGHWR_HAL_ARM_EDB7XXX_VARIANT)
+from the EP7211 to the CL_PS7111. This can be selected
+in the 
+<EMPHASIS>eCos Configuration Tool</EMPHASIS>
+, or if using ecosconfig, can be set by uncommenting the user_value
+property of this option in ecos.ecc and setting it to "CL_PS7111"</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>All remote serial communication is done with the serial I/O
+connector</PARA>
+<PROGRAMLISTING>/misc   
+% slow_cat.tcl &lt; [path]/gdb_module.srec &#62; /dev/ttyS0</PROGRAMLISTING>
+<PARA>Power off the board, and change it to boot the GDB stubs in
+big-endian mode by setting the switches like this:</PARA>
+<PARA>SW1: 00000000 (all levers down)   
+SW2: 10001010</PARA>
+<PARA>The GDB stubs allow communication with GDB using the serial
+port at connector PJ7A (lower connector). The communication parameters
+are  fixed at 38400 baud, 8 data bits, no parity bit and 1 stop
+bit  (8-N-1). No flow control is employed. Connection to the host
+computer should be made using a straight through serial cable.</PARA>
+</SECT1>
+<SECT1 id="setup-arm-ebsa285">
+<TITLE>StrongARM EBSA-285 Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with a ROM
+image which provides GDB support for
+the Intel&reg; StrongARM&reg; Evaluation Board EBSA-285.
+ Both eCos and the Stub ROM image assume the clocks are: 3.6864
+MHz PLL input for generating the core clock, and 50MHz osc input
+for external clocks. An image of this ROM is also provided at <filename>loaders/arm-ebsa285/gdbload.bin</filename> under
+the root of your eCos installation.</PARA>
+<PARA>The ROM monitor image (an eCos GDB
+stub) provided for the EBSA-285 board must be programmed into the
+flash, replacing the Angel monitor on the board. Please refer to
+the section titled "Loading the ROM Image into On-Board flash" on how
+to program the ROM onto the board.</PARA>
+<PARA>The Stub ROM allows communication with GDB via the serial
+connector on the bulkhead mounting bracket COM0.  The communication
+parameters are fixed at 38400 baud, 8 data bits, no parity bit and
+1 stop bit (8-N-1).  No flow control is employed.</PARA>
+<SECT2>
+<TITLE>Building the GDB Stub FLASH ROM images</TITLE>
+<PARA>Pre-built GDB stubs images are provided in the directory loaders/arm-ebsa285 relative
+to the root of your eCos installation, but here are instructions
+on how to rebuild them if you should ever need to.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stubs with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File</EMPHASIS>
+-&#62;
+<EMPHASIS>New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Templates</EMPHASIS>
+ menu item, and then select the StrongARM EBSA285 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Templates</EMPHASIS>
+ dialog box, select the "stubs" package template to build a GDB
+stub image. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build</EMPHASIS>
+-&#62;
+<EMPHASIS>Library</EMPHASIS></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. The GDB stub
+ROM images have the prefix "gdb_module".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Building the GDB Stub ROMs with ecosconfig</TITLE>
+<PARA>(See &ldquo;Using ecosconfig on UNIX&rdquo; on&nbsp;page&nbsp;72)</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command:
+
+<PROGRAMLISTING>$ ecosconfig new ebsa285 stubs</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands:
+ 
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. The GDB stub
+ROM images have the prefix "gdb_module".</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT2>
+<SECT2>
+<TITLE>Loading the ROM Image into On-board Flash</TITLE>
+<PARA>There are several ways to install the eCos gdb stub ROM image
+in the EBSA board&rsquo;s flash memory. Once installed, the gdb
+stub ROM provides standard eCos download and debug via the EBSA
+board&quot;s serial port. The options available include the
+Linux based EBSA flash upgrade utility provided by Red Hat, direct writing
+of the flash via MultiICE (JTAG) hardware debugger, and other flash management
+utilities from Intel (these only support DOS, and proprietary ARM tools
+and image formats). Only the Red Hat flash upgrade tool is supported
+and tested in this release.</PARA>
+<PARA>The flash upgrade tool requires the EBSA board to be configured
+as a PCI slave (rather than a master, its normal operating mode)
+and plugged into a Linux host computer&quot;s PCI bus.</PARA>
+<PARA>Configuring the board for flash loading: Follow the instructions
+in the EBSA-285 Reference Manual, pages A-2 and A-3 to configure
+the board as an add-in card, and enable flash blank programming.
+ Briefly: assuming the board was in the default setting to execute
+as a bus master ("Host Bridge") make jumper 9 (J9), move jumper
+10 (J10) to external reset (PCI_RST), and move jumper 15
+(J15) link 4-6-5 to connect 5-6 instead of 4-6.</PARA>
+<PARA>Configuring the board for execution of eCos programs: Follow
+the instructions in the EBSA-285 Reference Manual, pages A-2 and
+A-3 to configure the board as a "Host Bridge" with "Central Function".
+ Briefly: unset J9, move J10 to on-board reset (BRD_RST),
+and set J15 to make 4-6 instead of 5-6 (see page A-8 also).  Plug
+the card into its own PCI bus, not the Linux PC used for the flash-programming
+process.</PARA>
+<PARA>Building the Linux software: the Linux software sources are
+in directory</PARA>
+<PROGRAMLISTING>      &lt;BASE_DIR&#62;/packages/hal/arm/ebsa285/v1_3/support/linux/safl_util</PROGRAMLISTING>
+<PARA>in the eCos source repository.  There are two parts to the
+system: a loadable kernel module and the flash utility.  The loadable
+kernel module is safl.o and the utility is sa_flash.  To
+build:</PARA>
+<PARA>  cd to this directory, or a copy of it.</PARA>
+<PARA>  make</PARA>
+<PARA>This builds safl.o and sa_flash. The kernel module
+must be installed, and a device file created for it. Both of these
+operations require root permissions.  Create the device file by: </PARA>
+<PROGRAMLISTING>      % mknod /dev/safl c 10 178</PROGRAMLISTING>
+<PARA>Programming the flash: switch off the EBSA-285, and remove
+the EBSA-285 board from its PCI bus.  Take appropriate anti-static
+precautions. Configure it for flash loading as above, halt your
+Linux system and turn it off.  Install the EBSA-285 board in the
+PCI bus of the Linux system and boot it up. (Single user is good enough,
+assuming your image and safl_util build dir are on a local
+disc partition.)  Change directory to the safl_util directory,
+then, to load the kernel module and flash an image onto the eval
+board (as root): </PARA>
+<PROGRAMLISTING>       % insmod safl.o
+       % sa_flash &lt;image_file&#62;</PROGRAMLISTING>
+<PARA>Halt and turn off the Linux machine and remove the EBSA-285
+card.  Take appropriate anti-static precautions.  Configure it for
+execution of eCos programs as above, and plug it into its own PCI
+bus.  Restart the Linux machine however you wish.</PARA>
+<PARA>This information is replicated in the README file within the
+safl_util directory and its parents, and in the EBSA-285
+Reference Manual from Intel, appendix A "Configuration Guide". 
+If in doubt, please refer to those documents also.</PARA>
+<PARA>This procedure also applies for loading ROM-startup eCos programs
+into the on-board flash memory, given a binary format image of the
+program from arm-elf-objcopy.  Loading a ROM-startup eCos program
+into flash will overwrite the StubROM in flash, so you would have
+to reload the StubROM to return to normal RAM-startup program development.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Running your eCos Program Using GDB and the StubROM</TITLE>
+<NOTE>
+<PARA>You must first load the StubROM image into the flash memory
+on the EBSA-285 board before doing this.  See &ldquo;Loading
+the ROM Image into On-board Flash&rdquo;, page 93 for details.</PARA>
+</NOTE>
+<PARA>Connect to the StubROM in the board and run your eCos program &lt;PROGRAM&#62; as</PARA>
+<PARA>follows:</PARA>
+<PROGRAMLISTING>      $ arm-elf-gdb -nw &lt;PROGRAM&#62;
+      (gdb) set remotebaud 38400
+      (gdb) target remote &lt;DEVICE&#62;</PROGRAMLISTING>
+<PARA>Where &lt;DEVICE&#62; is /dev/ttyS0
+or COM1: or similar, depending on your environment and how you connected
+your serial line to the host computer. Expect some output here,
+for example:</PARA>
+<PROGRAMLISTING>      Remote debugging using /dev/ttyS0
+      0x410026a4 in ?? ()</PROGRAMLISTING>
+<PARA>then, to load the program</PARA>
+<PROGRAMLISTING>        (gdb) load
+    </PROGRAMLISTING>
+<PARA>which will report locations and sizes of sections as they
+load, then begin execution using</PARA>
+<PROGRAMLISTING>      (gdb) continue</PROGRAMLISTING>
+<PARA>If you have no eCos program yet, but you want to connect to
+the board just to verify serial communications, tell gdb "set endian
+little" before anything else, so that it understands the board (GDB
+normally infers this from information within the eCos program).</PARA>
+<NOTE>
+<PARA>When an eCos program is run on the EBSA-285 board, the GDB
+stub in ROM loses control. This means that if you require the ability
+to stop execution on the target remotely, or want thread debugging
+capabilities, you must include GDB stub support when configuring
+<PRODUCTNAME>eCos</PRODUCTNAME>.</PARA>
+</NOTE>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-arm-ipaq">
+<TITLE><!-- <conditionaltext> --> <!-- NOTE: could not find it --><!-- <index></index> -->Compaq iPAQ PocketPC Hardware Setup</TITLE>
+<PARA>For setting up the iPAQ to run with RedBoot, see the the <EMPHASIS>RedBoot
+User's Guide</EMPHASIS>. Connections may be made using
+the Compact Flash Ethernet interface.  A serial cable may be connected
+directly, or via the cradle. Serial communication uses the parameters
+38400,8,N,1. The LCD/Touchscreen may also be used as an
+interface to RedBoot and eCos applications.</PARA>
+</SECT1>
+<SECT1 id="setup-arm-aim711">
+<TITLE>Arm Industrial Module AIM 711 Hardware Setup</TITLE>
+<PARA>The Arm Industrial Module AIM 711 comes with RedBoot installed
+as the default boot loader.</PARA>
+<PARA>For developing without having a finished custom board, a 
+starter-kit with a minimally configured board is available. It offers all the 
+connectors needed for development, including serial device, Ethernet, power 
+supply and an extra connector for the external bus.</PARA>
+<SECT2>
+<TITLE>Setup Hardware</TITLE>
+<SECT3>
+<TITLE>Power supply</TITLE>
+<PARA>A 6V - 7.5V power supply must be connected to J2 or TB1. At
+J2 the inner pin is V+ and at TB1 it is pin 1.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>Serial devices</TITLE>
+<PARA>The AIM 711 has 3 serial devices, which are the debug and 
+diagnostic channel COM0 (/dev/ser0), the high performance 16550
+UART COM1 (/dev/ser1) and the second internal device COM2
+(/dev/ser2).</PARA>
+<PARA>To use the debug channel, which is also the default for 
+RedBoot, the supplied DB9-male cable must be connected to
+CN4. If the also available service board is used, the above
+connector must be disabled by setting JP1.</PARA>
+<PARA>COM1 is available over the RJ45 connector CN2. This device
+can be configured as a RS232, RS422, RS485 or TTL level</PARA>
+<PARA>COM2 is only available with TTL level at CN5.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>Ethernet</TITLE>
+<PARA>The RJ45 connector CN1 is for Ethernet.</PARA>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Installing RedBoot into FLASH</TITLE>
+<SECT3>
+<TITLE>Using RedBoot</TITLE>
+<PARA>In order that Redboot can overwrite itself, Redboot is built as a ROMRAM image. </PARA>
+<PARA>Load the RedBoot binary to the next free space:
+<PROGRAMLISTING>RedBoot> load -m tftp -h 192.168.1.36 -r -b 0x40000 redboot.bin
+Raw file loaded 0x00040000-0x00063233, assumed entry at 0x00040000</PROGRAMLISTING>
+Store it in FLASH:
+<PROGRAMLISTING>RedBoot> fis create RedBoot
+An image named 'RedBoot' exists - continue (y/n)? y
+... Erase from 0x02000000-0x02025000: .....................................
+... Program from 0x00040000-0x00063234 at 0x02000000: ..........................
+..........
+... Erase from 0x021ff000-0x02200000: .
+... Program from 0x007ff000-0x00800000 at 0x021ff000: .</PROGRAMLISTING>
+Restart the AIM 711:
+<PROGRAMLISTING>RedBoot> reset
+... Resetting.</PROGRAMLISTING>
+</PARA>
+</SECT3>
+<SECT3>
+<TITLE>Using JTAG</TITLE>
+<PARA>To rewrite the FLASH using JTAG the service board must be
+used, which includes a JTAG connector.</PARA>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>More documentation</TITLE>
+<PARA>For more information please look at
+<ULINK URL="http://www.visionsystems.de/arm7.html">http://www.visionsystems.de/arm7.html</ULINK>.</PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-sh-edk7708">
+<TITLE>SH3/EDK7708 Hardware Setup</TITLE>
+<PARA>The eCos Developer&rsquo;s Kit package comes with a ROM
+which provides GDB support for the Hitachi EDK7708 board (a big-endian
+and a little-endian version). Images of these  ROMs are also provided
+at <filename>loaders/sh-edk7708/gdbload.bin</filename> and
+	  <filename>loaders/sh-edk7708le/gdbload.bin</filename> under
+the root of your eCos installation.</PARA>
+<PARA>The ROM is installed to socket U6 on the board. When using
+the big-endian ROM, jumper 9 must be set to 2-3. When using the
+little-endian ROM, jumper 9 must be set to 1-2. Attention should
+be paid to the correct orientation of the ROM during installation.
+Only replace the board&quot;s existing ROM using a proper PLCC extraction
+tool, as the socket would otherwise risk being damaged. </PARA>
+<PARA>If you are going to program a new ROM or FLASH using the binary
+image, you may have to experiment to get the right byte-order in
+the device. Depending on the programming software you use, it might
+be necessary to enable byte-swapping.  If the GDB stub ROM/FLASH
+you program does not work, try reversing the byte-order.</PARA>
+<PARA>The GDB stub in the EPROM allows communication with GDB using
+the serial port at connector J1. The communication parameters are
+fixed at 38400 baud, 8 data bits, no parity bit and 1 stop bit (8-N-1).
+No flow control is employed. Connection to the host computer should
+be made using the dedicated serial cable included in the EDK package. </PARA>
+<SECT2>
+<TITLE>Installing the Stubs into FLASH</TITLE>
+<SECT3>
+<TITLE>Preparing the Binaries</TITLE>
+<PARA>These two binary preparation steps are not strictly necessary
+as the eCos distribution ships with pre-compiled binaries in the
+directory loaders/sh-edk7708 and loaders/sh-edk7708le
+relative to the installation root.</PARA>
+<SECT4>
+<TITLE>Building the ROM images with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File-&#62;New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ menu item, and then select the SH EDK7708 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the &ldquo;stubs&rdquo; package template
+to build a GDB stub. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>If building a little-endian image, disable the &ldquo;Use
+big-endian mode&rdquo; option in the SH EDK7708 HAL (CYGHWR_HAL_SH_BIGENDIAN).</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build-&#62;Library</EMPHASIS>. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+<SECT4>
+<TITLE>Building the ROM images with ecosconfig</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command: 
+  
+<PROGRAMLISTING>$ ecosconfig new edk7708 stubs</PROGRAMLISTING>
+ </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>If building a little-endian image, uncomment the user
+value in ecos.ecc for CYGHWR_HAL_SH_BIGENDIAN
+and change it to 0.   </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands:
+    
+<PROGRAMLISTING>$ ecosconfig tree      
+$ make </PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the  prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+</SECT3>
+<SECT3>
+<TITLE> Installing the Stubs into ROM or FLASH</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Program the binary image file gdb_module.bin
+into ROM or FLASH referring to the instructions of your ROM programmer.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Plug the ROM/FLASH into socket U6. If the image
+is little-endian set jumper 9 to 1-2. If the image is big-endian
+set jumper 9 to 2-3.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-sh-cq7708">
+<TITLE>SH3/CQ7708 Hardware Setup</TITLE>
+<SECT2>
+<TITLE>Preparing the board</TITLE>
+<PARA>Make sure the DIP switches on the board are set as follows:
+  </PARA>
+<PROGRAMLISTING>SW1-1 ON
+SW1-2 OFF   
+SW1-3 ON   
+SW1-4 OFF</PROGRAMLISTING>
+<PROGRAMLISTING>SW2-1 ON   
+SW2-2 ON   
+SW2-3 OFF   
+SW2-4 OFF</PROGRAMLISTING>
+<PARA>If you are using a straight through serial cable which has
+flow control lines, you will also need to cut JP12 (5-6) as the
+flow control lines can cause NMIs.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>eCos GDB Stubs</TITLE>
+<PARA>The eCos installation CD contains a copy of the eCos GDB stubs
+in  binary format which must be programmed into an EPROM or FLASH
+and  installed on the board.</PARA>
+<SECT3>
+<TITLE> Preparing the GDB stubs</TITLE>
+<PARA>These stub preparation steps are not strictly necessary as
+the eCos distribution ships with pre-compiled stubs in the directory
+loaders/sh3-cq7708 relative to the installation root.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>Building the GDB stub image with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File-&#62;New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ menu item, and then select the SH3 cq7708 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the stubs package template to build a GDB stub.
+Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> Build eCos stubs using 
+<EMPHASIS>Build-&#62;Library</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> When the build completes, the image files can be found
+in the 
+<FILENAME>bin/</FILENAME>
+ subdirectory of the install tree. GDB stub images have the prefix 
+<FILENAME>gdb_module</FILENAME>.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE> Building the GDB stub image with ecosconfig</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> To build a GDB stub ROM image, enter the command: 
+     
+<PROGRAMLISTING>$ ecosconfig new cq7708 stubs </PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> Enter the commands:
+    
+<PROGRAMLISTING>$ ecosconfig tree      
+$ make</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the 
+<FILENAME>bin/</FILENAME>
+ subdirectory of the install tree. GDB stub images have the prefix 
+<FILENAME>gdb_module</FILENAME>.  </PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Programming the stubs in EPROM/FLASH</TITLE>
+<PARA>The board can use different sizes of ROMs. Use this table
+to adjust the board&rsquo;s jumpers to the ROM sizes you are
+using.</PARA>
+<PROGRAMLISTING>size(kbit)    JP7   JP9   JP10   JP11     
+256           2-3   2-3   open   open     
+512           1-2   2-3   open   open     
+1000          1-2   open  open   2-3     
+2000          1-2   1-2   open   2-3     
+4000          1-2   1-2   short  2-3     
+8000          1-2   1-2   short  1-2</PROGRAMLISTING>
+<PARA>There are two ways to program the stubs. We advise you to
+use method 1, since it is simpler. Method 2 is unsupported and requires
+a bit of fiddling.</PARA>
+<PARA><EMPHASIS>Method 1: </EMPHASIS> </PARA>
+<PARA>Program the binary stub image into two EPROMs, E and O. EPROM
+E should  contain the even bytes, and O the odd bytes (your EPROM
+programmer should  have the ability to split the image).</PARA>
+<PARA>EPROM E should be installed in socket IC8, and EPROM O should
+be  installed in socket IC4.</PARA>
+<PARA>Set JP6 to 16 bit mode (1-2 soldered, 2-3 cut)  Set SW1-4
+to ON and SW2-1 to OFF.</PARA>
+<PARA></PARA>
+<PARA><EMPHASIS>Method2: </EMPHASIS> </PARA>
+<PARA>Assuming that the stub binary is smaller than 32 KB, you can
+install it in a single EPROM.</PARA>
+<PARA>Compile the <FILENAME>mkcqrom.c</FILENAME> program
+found in the <FILENAME>misc</FILENAME> directory.</PARA>
+<PARA>Use it to convert the binary image to the required format.
+See the  <FILENAME>mkcqrom.c</FILENAME> source for a
+description of what is done, and why it is  necessary. </PARA>
+<PROGRAMLISTING> % mkcqrom gdb_module.bin gdb_mangled.bin</PROGRAMLISTING>
+<PARA>Program the <FILENAME>gdb_mangled.bin</FILENAME> file
+into an EPROM and install it in  socket IC4</PARA>
+<PARA>Set JP6 to 8 bit mode (cut 1-2, solder 2-3)</PARA>
+<PARA>The GDB stubs allow communication with GDB using the serial
+port at connector CN7. The communication parameters are fixed at
+38400 baud, 8 data bits, no parity bit and 1 stop bit (8-N-1). No
+flow control is employed. Connection to the host computer should
+be made using a  straight through serial cable.</PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-sh-hs7729pci">
+<TITLE>SH3/HS7729PCI Hardware Setup</TITLE>
+<PARA>Please see the RedBoot manual for instructions on how to prepare
+the board for use with eCos.</PARA>
+</SECT1>
+<SECT1 id="setup-sh-se77x9">
+<TITLE>SH3/SE77x9 Hardware Setup</TITLE>
+<PARA>Please see the RedBoot manual for instructions on how to prepare
+the board for use with eCos.</PARA>
+</SECT1>
+<SECT1 id="setup-sh-cq7750">
+<TITLE>SH4/CQ7750 Hardware Setup</TITLE>
+<SECT2>
+<TITLE>Preparing the board</TITLE>
+<PARA>Make sure the DIP switches on the board are set as follows:
+  </PARA>
+<PROGRAMLISTING>SW1-1 ON
+SW1-2 OFF   
+SW1-3 ON   
+SW1-4 OFF</PROGRAMLISTING>
+<PROGRAMLISTING>SW2-1 ON   
+SW2-2 ON   
+SW2-3 OFF   
+SW2-4 OFF</PROGRAMLISTING>
+<PARA>If you are using a straight through serial cable which has
+flow control lines, you will also need to cut JP12 (5-6) as the
+flow control lines can cause NMIs.</PARA>
+</SECT2>
+<SECT2>
+<TITLE>eCos GDB Stubs</TITLE>
+<PARA>The eCos installation CD contains a copy of the eCos GDB stubs
+in  binary format which must be programmed into an EPROM or FLASH
+and  installed on the board.</PARA>
+<SECT3>
+<TITLE> Preparing the GDB stubs</TITLE>
+<PARA>These stub preparation steps are not strictly necessary as
+the eCos distribution ships with pre-compiled stubs in the directory
+loaders/sh3-cq7708 relative to the installation root.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>Building the GDB stub image with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File-&#62;New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ menu item, and then select the SH3 cq7708 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the stubs package template to build a GDB stub.
+Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> Build eCos stubs using 
+<EMPHASIS>Build-&#62;Library</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> When the build completes, the image files can be found
+in the 
+<FILENAME>bin/</FILENAME>
+ subdirectory of the install tree. GDB stub images have the prefix 
+<FILENAME>gdb_module</FILENAME>.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE> Building the GDB stub image with ecosconfig</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> To build a GDB stub ROM image, enter the command: 
+     
+<PROGRAMLISTING>$ ecosconfig new cq7708 stubs </PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> Enter the commands:
+    
+<PROGRAMLISTING>$ ecosconfig tree      
+$ make</PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the 
+<filename>bin/</filename>
+ subdirectory of the install tree. GDB stub images have the prefix 
+<filename>gdb_module</filename>.  </PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Programming the stubs in EPROM/FLASH</TITLE>
+<PARA>The board can use different sizes of ROMs. Use this table
+to adjust the board&rsquo;s jumpers to the ROM sizes you are
+using.</PARA>
+<PROGRAMLISTING>size(kbit)    JP7   JP9   JP10   JP11     
+256           2-3   2-3   open   open     
+512           1-2   2-3   open   open     
+1000          1-2   open  open   2-3     
+2000          1-2   1-2   open   2-3     
+4000          1-2   1-2   short  2-3     
+8000          1-2   1-2   short  1-2</PROGRAMLISTING>
+<PARA>There are two ways to program the stubs. We advise you to
+use method 1, since it is simpler. Method 2 is unsupported and requires
+a bit of fiddling.</PARA>
+<PARA><EMPHASIS>Method 1: </EMPHASIS> </PARA>
+<PARA>Program the binary stub image into two EPROMs, E and O. EPROM
+E should  contain the even bytes, and O the odd bytes (your EPROM
+programmer should  have the ability to split the image).</PARA>
+<PARA>EPROM E should be installed in socket IC8, and EPROM O should
+be  installed in socket IC4.</PARA>
+<PARA>Set JP6 to 16 bit mode (1-2 soldered, 2-3 cut)  Set SW1-4
+to ON and SW2-1 to OFF.</PARA>
+<PARA></PARA>
+<PARA><EMPHASIS>Method2: </EMPHASIS> </PARA>
+<PARA>Assuming that the stub binary is smaller than 32 KB, you can
+install it in a single EPROM.</PARA>
+<PARA>Compile the <filename>mkcqrom.c</filename> program
+found in the <FILENAME>misc</FILENAME> directory.</PARA>
+<PARA>Use it to convert the binary image to the required format.
+See the  <FILENAME>mkcqrom.c</FILENAME> source for a
+description of what is done, and why it is  necessary. </PARA>
+<PROGRAMLISTING> % mkcqrom gdb_module.bin gdb_mangled.bin</PROGRAMLISTING>
+<PARA>Program the <FILENAME>gdb_mangled.bin</FILENAME> file
+into an EPROM and install it in  socket IC4</PARA>
+<PARA>Set JP6 to 8 bit mode (cut 1-2, solder 2-3)</PARA>
+<PARA>The GDB stubs allow communication with GDB using the serial
+port at connector CN7. The communication parameters are fixed at
+38400 baud, 8 data bits, no parity bit and 1 stop bit (8-N-1). No
+flow control is employed. Connection to the host computer should
+be made using a  straight through serial cable.</PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-sh-se7751">
+<TITLE>SH4/SE7751 Hardware Setup</TITLE>
+<PARA>Please see the RedBoot manual for instructions on how to prepare
+the board for use with eCos.</PARA>
+</SECT1>
+<SECT1 id="setup-v850-cebsa1">
+<TITLE>NEC CEB-V850/SA1 Hardware Setup</TITLE>
+<PARA>The CEB-V850 board is fitted with a socketed EPROM. The internal
+Flash of the V850 supplied with the CEB-V850 boards defaults to
+vectoring into this EPROM. A  GDB stub image should be programmed
+into an EPROM fitted to this board, and a pre-built image is provided
+at <FILENAME>loaders/v850-ceb_v850/v850sa1/gdb_module.bin </FILENAME>under
+the root of your eCos installation.</PARA>
+<PARA>The EPROM is installed to the socket labelled U7 on the board.
+Attention should be paid to the correct orientation of the EPROM
+during installation. </PARA>
+<PARA>When programming an EPROM using the binary image, be careful
+to get the byte order correct. It needs to be little-endian. If
+the EPROM burner software has a hex-editor, check that the first
+few bytes of the image look similar to: </PARA>
+<PROGRAMLISTING>00000000: 0018 8007 5e02 0000 0000 0000 0000 0000</PROGRAMLISTING>
+<PARA>If the byte order is wrong you will see 1800 instead of 0018
+etc. Use the EPROM burner software to make a byte-swap before you
+burn to image to the EPROM. </PARA>
+<PARA>If the GDB stub EPROM you burn does not work, try reversing
+the byte-order, even if you think you have it the right way around.
+At least one DOS-based EPROM burner program is known to have the
+byte-order upside down.</PARA>
+<PARA>The GDB stub in the EPROM allows communication with GDB using
+the serial port. The communication parameters are fixed at 38400
+baud, 8 data bits, no parity bit and 1 stop bit (8-N-1). No flow
+control is employed. Connection to the host computer should be made
+using a dedicated serial cable as specified in the CEB-V850/SA1
+manual.</PARA>
+<SECT2>
+<TITLE>Installing the Stubs into ROM</TITLE>
+<SECT3>
+<TITLE>Preparing the Binaries</TITLE>
+<PARA>These two binary preparation steps are not strictly necessary
+as the eCos distribution ships with pre-compiled binaries in the
+directory loaders/v850-ceb_v850 relative to the
+installation root.</PARA>
+<SECT4>
+<TITLE>Building the ROM images with the eCos Configuration Tool</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Start with a new document - selecting the 
+<EMPHASIS>File-&#62;New</EMPHASIS>
+ menu item if necessary to do this.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Choose the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ menu item, and then select the NEC CEB-V850/SA1 hardware.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>While still displaying the 
+<EMPHASIS>Build-&#62;Templates</EMPHASIS>
+ dialog box, select the &ldquo;stubs&rdquo; package template
+to build a GDB stub. Click 
+<EMPHASIS>OK</EMPHASIS>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Build eCos using 
+<EMPHASIS>Build-&#62;Library</EMPHASIS>. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the  prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+<SECT4>
+<TITLE>Building the ROM images with ecosconfig</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Make an empty directory to contain the build tree,
+and cd into it. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>To build a GDB stub ROM image, enter the command:
+
+<PROGRAMLISTING>$ ecosconfig new ceb-v850 stubs </PROGRAMLISTING></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Enter the commands: 
+
+<PROGRAMLISTING>$ ecosconfig tree
+$ make</PROGRAMLISTING>
+ </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When the build completes, the image files can be found
+in the bin/ subdirectory of the install tree. GDB stub
+ROM images have the prefix &ldquo;gdb_module&rdquo;.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT4>
+</SECT3>
+<SECT3>
+<TITLE> Installing the Stubs into ROM or FLASH</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA> Program the binary image file gdb_module.bin
+into ROM or FLASH referring to the instructions of your ROM
+		  programmer. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA> Plug the ROM/FLASH into the socket as described
+at the beginning of this section.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+</SECT2>
+<SECT2>
+<TITLE>Debugging with the NEC V850 I.C.E.</TITLE>
+<PARA>eCos applications may be debugged using the NEC V850 In Circuit
+Emulator (I.C.E.) A PC running Microsoft Windows is required in
+order to run the NEC ICE software and drivers. In addition Red Hat
+have developed a &ldquo;libremote&rdquo; server application
+named v850ice.exe which is used on the PC connected to the I.C.E.
+in order to allow connections from GDB.</PARA>
+<PARA>The I.C.E. must be physically connected to a Windows NT system
+through NEC&quot;s PCI or PC Card interface.  A driver, DLLs,
+and application are provided by NEC to control the I.C.E.</PARA>
+<PARA>v850ice is a Cygwin based server that runs on the NT system
+and provides an interface between the gdb client and the I.C.E.
+software. v850-elf-gdb may be run on the Windows NT system or on
+a remote system. v850-elf-gdb communicates with the libremote server
+using the gdb remote protocol over a TCP/IP socket.  v850ice
+communicates with the I.C.E. by calling functions in the NECMSG.DLL provided
+by NEC.</PARA>
+<SECT3>
+<TITLE>INITIAL SETUP</TITLE>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Configure the hardware including the I.C.E., SA1 or
+SB1 Option Module, and target board.  Install the interface card
+in the Windows NT system. Reference NEC&quot;s documentation
+for interface installation, jumper settings, etc.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Install the Windows NT device driver provided by NEC.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Copy the NEC DLLs, MDI application, and other support
+files to a directory on the Windows NT system. The standard location
+is C:\NecTools32. This directory will be referred to as
+the "libremote server directory" in this document. v850ice.exe must
+also be copied to this directory after being built. The required
+files are:  cpu.cfg, Nec.cfg, MDI.EXE, NECMSG.DLL, EX85032.DLL,
+V850E.DLL, IE850.MON, IE850E.MON, and D3037A.800.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Make certain the file cpu.cfg contains the line:</PARA>
+<PROGRAMLISTING>CpuOption=SA1</PROGRAMLISTING>
+<PARA>if using a V850/SA1 module, or:</PARA>
+<PROGRAMLISTING>CpuOption=SB1</PROGRAMLISTING>
+<PARA>if using a V850/SB1 module.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Set the environment variable IEPATH to point to the libremote
+server</PARA>
+<PARA>directory.</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>BUILD PROCEDURES</TITLE>
+<PARA>A pre-built v850ice.exe executable is supplied in the loaders/v850-ceb_v850 directory
+relative to the root of the eCos installation. However the following process
+will allow the rebuilding of this executable if required:</PARA>
+<PARA>For this example assume the v850ice libremote tree has been
+copied to a directory named "server".  The directory structure will
+be similar to the following diagram:</PARA>
+<PARA><PROGRAMLISTING>                server
+                   |
+                 devo
+                 /  \
+           config    libremote
+                      /     \
+                   lib       v850ice</PROGRAMLISTING></PARA>
+<PARA>Build the v850ice source as follows.  Be sure to use the native
+Cygwin compiler tools that were supplied alongside eCos.</PARA>
+<PARA>cd server
+mkdir build
+cd build
+../devo/configure --target=v850-elf --host=i686-pc-cygwin
+make</PARA>
+<PARA>The resultant libremote server image (v850ice.exe) can be
+found in build/libremote/v850ice.  Copy v850ice.exe
+to the lib remote server directory.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>V850ICE.EXE EXECUTION</TITLE>
+<PARA>The v850ice command line syntax is:</PARA>
+<PARA>v850ice [-d] [-t addr] [port number]</PARA>
+<PARA>The optional -d option enables debug output.  The -t option
+is associated with thread debugging - see the "eCos thread debugging"
+section below for details. By default v850ice listens on port 2345
+for an attach request from a gdb client.  A different port number
+may be specified on the command line.</PARA>
+<PARA>To run the libremote server:</PARA>
+<ORDEREDLIST>
+<LISTITEM>
+<PARA>Power on the I.C.E. and target board.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Open a Cygwin window.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Run v850ice.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>You will see the MDI interface window appear.  In this
+window you should see the "Connected to In-Circuit Emulator" message.
+ In the Cygwin window, the libremote server will indicate it is
+ready to accept a gdb client connection with the message "v850ice:
+ listening on port 2345."</PARA>
+</LISTITEM>
+</ORDEREDLIST>
+</SECT3>
+<SECT3>
+<TITLE>V850-ELF-GDB EXECUTION</TITLE>
+<PARA>Run the v850-elf-gdb client to debug the V850 target.  It
+is necessary to issue certain configuration commands to the I.C.E.
+software.  These commands may be issued directly in the MDI window
+or they may be issued from the gdb client through the "monitor"
+command.</PARA>
+<PARA>On the Cosmo CEB-V850 board, on-chip Flash is mapped at address
+0x0, the on-board EPROM at 0x100000 and the on-board RAM at 0xfc0000.
+Since a stand alone V850 will start executing from address 0x0 on
+reset, it is normal to load either an application or a bootstrap
+loader for Flash at this address. eCos programs may be built to
+boot from Flash or the on-board EPROM. If building for the on-board
+EPROM, it would be expected that the Flash will contain the default
+CEB-V850 flash contents. An ELF format version of the default contents
+may be found in the eCos distribution with the name v850flash.img.</PARA>
+<PARA>In stand alone operation, normally the code in this flash image
+would have been programmed into the V850 on the Cosmo board, and
+this would cause it to vector into the on-board EPROM to run the
+application located there. In the case of eCos, this application
+may be a GDB stub ROM application, allowing the further download
+to RAM over serial of actual applications to debug.</PARA>
+<PARA>As an example, we shall demonstrate how to use the I.C.E.
+to download the v850flash.img and GDB stub EPROM image using I.C.E.
+emulator memory only, and not requiring any actual programming of
+devices.</PARA>
+<PARA>v850-elf-gdb -nw
+(gdb) file v850flash.img
+(gdb) target remote localhost:2345
+(gdb) monitor reset
+(gdb) monitor cpu r=256 a=16
+(gdb) monitor map r=0x100000-L 0x80000
+(gdb) monitor map u=0xfc0000-L 0x40000
+(gdb) monitor pinmask k
+(gdb) monitor step
+(gdb) monitor step
+(gdb) monitor step
+(gdb) monitor step
+(gdb) load
+(gdb) detach
+(gdb) file gdb_module.img
+(gdb) target remote localhost:2345
+(gdb) load
+(gdb) continue</PARA>
+<PARA>NOTE: The four "monitor step" commands are only required the
+first time the board is connected to the I.C.E., otherwise the program
+will fail.</PARA>
+<PARA>This is because of a limitation of the I.C.E. hardware that
+means that the first time it is used, the "map" commands are not
+acted on and the addresses "0x100000" and "0xfc0000" are not mapped.
+This can be observed using the command "td e-20" in the MDI application&quot;s
+console to display the trace buffer, which will show that the contents
+of address 0x100000 are not valid. Subsequent runs do not require
+the "monitor step" commands.</PARA>
+<PARA>It is unusual to load two executable images to a target through
+gdb.  From the example above notice that this is accomplished by
+attaching to the libremote server, loading the flash image, detaching,
+reattaching, and loading the ROM/RAM image. It is more
+normal to build an executable image that can be executed directly.
+In eCos this is achieved by selecting either the ROM or ROMRAM startup
+type, and optionally enable building for the internal FLASH. The
+I.C.E. emulator memory can emulate both the internal FLASH and the
+EPROM, so real hardware programming is not required.</PARA>
+<PARA>Upon running this example you will notice that the libremote
+server does not exit upon detecting a detach request, but simply
+begins listening for the next attach request.  To cause v850ice
+to terminate, issue the "monitor quit" or "monitor exit" command
+from the gdb client.  v850ice will then terminate with the next
+detach request.  (You can also enter control-c in the Cygwin/DOS
+window where v850ice is running.)</PARA>
+</SECT3>
+<SECT3>
+<TITLE>MDI INTERFACE VS. GDB INTERFACE</TITLE>
+<PARA>If a filename is referenced in an MDI command, whether the
+command is entered in the MDI window or issued from the gdb client
+with the monitor command, the file must reside on the Windows NT
+libremote server system.  When specifying a filename when entering
+a command in the MDI window it is obvious that a server local file
+is being referenced.  When issuing an MDI command from the gdb client, the
+user must remember that the command line is simply passed to the
+I.C.E. software on the server system.  The command is executed by
+the I.C.E. software as though it were entered locally.</PARA>
+<PARA>Executable images may be loaded into the V850 target by entering
+the "load" command in the MDI window or with the gdb "load" command.
+ If the MDI load command is used, the executable image must be located
+on the server system and must be in S Record format.  If the gdb
+load command is used, the executable image must be located on the
+client system and must be in ELF format.</PARA>
+<PARA>Be aware that the gdb client is not aware of debugger commands
+issued from the MDI window.  It is possible to cause the gdb client
+and the I.C.E. software to get out of sync by issuing commands from
+both interfaces during the same debugging session.</PARA>
+</SECT3>
+<SECT3>
+<TITLE>eCos THREAD DEBUGGING</TITLE>
+<PARA>eCos and the V850 I.C.E. libremote server have been written
+to work together to allow debugging of eCos threads. This is an
+optional feature, disabled by default because of the overheads trying
+to detect a threaded program involves.</PARA>
+<PARA>Obviously thread debugging is not possible for programs with
+"RAM" startup type, as they are expected to operate underneath a
+separate ROM monitor (such as a GDB stub ROM), that itself would
+provide its own thread debugging capabilities over the serial line.
+Thread debugging is relevant only for programs built for Flash, ROM,
+or ROMRAM startup.</PARA>
+<PARA>To configure the libremote server to support thread debugging,
+use the command:</PARA>
+<PARA><PROGRAMLISTING>(gdb) monitor syscallinfo ADDRESS</PROGRAMLISTING></PARA>
+<PARA>at the GDB console prompt, where ADDRESS is the address of
+the syscall information structure included in the applications.
+In eCos this has been designed to be located at a consistent address
+for each CPU model (V850/SA1 or V850/SB1). It
+may be determined from an eCos executable using the following command
+at a cygwin bash prompt:</PARA>
+<PARA><PROGRAMLISTING>v850-elf-nm EXECUTABLE | grep hal_v85x_ice_syscall_info</PROGRAMLISTING></PARA>
+<PARA>At the current time, this address is 0xfc0400 for a Cosmo
+board fitted with a V850/SA1, or 0xfc0540 for a Cosmo board
+fitted with a V850/SB1.</PARA>
+<PARA>So for example, the GDB command for the SB1 would be:</PARA>
+<PARA><PROGRAMLISTING>(gdb) monitor syscallinfo 0xfc0540</PROGRAMLISTING></PARA>
+<PARA>Given that the syscallinfo address is fixed over all eCos
+executables for a given target, it is possible to define it on the
+libremote command line as well using the "-t" option, for example:</PARA>
+<PARA><PROGRAMLISTING>bash$ v850ice -t 0xfc0400
+v850ice: listening on port 2345</PROGRAMLISTING></PARA>
+</SECT3>
+</SECT2>
+</SECT1>
+<SECT1 id="setup-v850-cebsb1">
+<TITLE>NEC CEB-V850/SB1 Hardware Setup</TITLE>
+<PARA>The instructions for setting up the CEB-V850/SB1
+are virtually identical to those of the CEB-V850/SA1 above.
+The only significant differences are that pre-built loaders are available
+at loaders/v850-ceb_v850/v850sb1 within
+the eCos installation. Binaries supporting boards with both 16MHz
+and 8MHz clock speeds are supplied. Also when building applications,
+or rebuilding the stubs for a V850/SB1 target, then the
+V850 CPU variant must be changed in the CEB-V850 HAL to the SB1.</PARA>
+</SECT1>
+<SECT1 id="setup-i386-pc">
+<TITLE>i386 PC Hardware Setup</TITLE>
+<para>
+eCos application on the PC can be run in three ways: via RedBoot,
+loaded directly from a floppy disk, or loaded by the GRUB bootloader.
+</para>
+<sect2>
+<title>RedBoot Support</title>
+<PARA>For information about setting up the PC to run with RedBoot,
+consult the RedBoot User&quot;s Guide. If using serial debugging,
+the serial line runs at 38400 baud 8-N-1 and should be connected
+to the debug host using a null modem cable. If ethernet debugging
+is required, an i82559 compatible network interface card, such as
+an Intel EtherExpress Pro 10/100,  should be installed
+on the target PC and connected to the development PC running GDB.
+When RedBoot is configured appropriately to have an IP address set,
+then GDB will be able to debug directly over TCP/IP to the
+target PC.</PARA>
+</sect2>
+<sect2>
+<title>Floppy Disk Support</title>
+<para>
+If an application is built with a startup type of FLOPPY, then it is
+configured to be a self-booting image that must be written onto a
+formatted floppy disk. This will erase any existing file system or
+data that is already on the disk, so proceed
+with caution.
+</para>
+<para>
+To write an application to floppy disk, it must first be converted to
+a pure binary format. This is done with the following command:
+</para>
+<screen width=72>
+$ <userinput>i386-elf-objcopy -O binary app.elf app.bin</userinput>
+</screen>
+<para>
+Here <filename>app.elf</filename> is the final linked application
+executable, in ELF format (it may not have a <filename>.elf</filename>
+extension). The file <filename>app.bin</filename> is the resulting
+pure binary file. This must be written to the floppy disk with the
+following command:
+<screen width=72>
+$ <userinput>dd conv=sync if=app.bin of=/dev/fd0</userinput>
+</screen>
+</para>
+<para>For NT Cygwin users, this can be done by first ensuring that the raw
+floppy device is mounted as <filename>/dev/fd0</filename>. To check if this
+is the case, type the command <command>mount</command> at the Cygwin bash
+prompt. If the floppy drive is already mounted, it will be listed as something
+similar to the following line:</para>
+<screen>  \\.\a: /dev/fd0 user binmode</screen>
+<para>If this line is not listed, then mount the floppy drive using the command:
+</para>
+<screen>$ <userinput>mount -f -b //./a: /dev/fd0</userinput></screen>
+<para>To actually install the boot image on the floppy, use the command:</para>
+<screen>
+$ <userinput>dd conv=sync if=app.bin of=/dev/fd0</userinput>
+</screen>
+<para>Insert this floppy in the A: drive of the PC to be used as a target
+and ensure that the BIOS is configured to boot from A: by default. On reset,
+the PC will boot from the floppy and the eCos application will load
+itself and execute immediately.</para>
+<note><title>NOTE</title>
+<para>Unreliable floppy media may cause the write to silently fail. This
+can be determined if the RedBoot image does not correctly
+boot. In such cases, the floppy should be (unconditionally) reformatted
+using the <command>fdformat</command> command on Linux, or
+<command>format a: /u</command> on DOS/Windows. If this fails, try a
+different disk.</para>
+</note>
+</sect2>
+<sect2>
+<title>GRUB Bootloader Support</title>
+<para>
+If an application is built with the GRUB startup type, it is
+configured to be loaded by the GRUB bootloader.
+</para>
+<para>
+GRUB is an open source boot loader that supports many different
+operating systems. It is available from
+<ulink
+url="http://www.gnu.org/software/grub">http://www.gnu.org/software/grub</ulink>.
+The latest version of GRUB should be downloaded from there and installed.
+In Red Hat Linux version 7.2 and later it is the default bootloader
+for Linux and therefore is already installed.
+</para>
+<para>
+To install GRUB on a floppy disk from Linux you need to execute the
+following commands:
+</para>
+<screen>
+$ <userinput>mformat a:</userinput>
+$ <userinput>mount /mnt/floppy</userinput>
+$ <userinput>grub-install --root-directory=/mnt/floppy '(fd0)'</userinput>
+Probing devices to guess BIOS drives. This may take a long time.
+Installation finished. No error reported.
+This is the contents of the device map /mnt/floppy/boot/grub/device.map.
+Check if this is correct or not. If any of the lines is incorrect,
+fix it and re-run the script `grub-install'.
+
+(fd0)	/dev/fd0
+$ <userinput>cp $ECOS_REPOSITORY/packages/hal/i386/pc/current/misc/menu.lst /mnt/floppy/boot/grub</userinput>
+$ <userinput>umount /mnt/floppy</userinput>
+</screen>
+<para>
+The file <filename>menu.lst</filename> is an example GRUB menu
+configuration file. It contains menu items to load some of the
+standard eCos tests from floppy or from partition zero of the first
+hard disk. You should, of course, customize this file to load your own
+application. Alternatively you can use the command-line interface of
+GRUB to input commands yourself.
+</para>
+<para>
+Applications can be installed, or updated simply by copying them to
+the floppy disk at the location expected by the
+<filename>menu.lst</filename> file. For booting from floppy disks it
+is recommended that the executable be stripped of all debug and symbol
+table information before copying. This reduces the size of the file
+and can make booting faster.
+</para>
+<para>
+To install GRUB on a hard disk, refer to the GRUB documentation. Be
+warned, however, that if you get this wrong it may compromise any
+existing bootloader that exists on the hard disk and may make any
+other operating systems unbootable. Practice on floppy disks or
+sacrificial hard disks first. On machines running Red Hat Linux
+version 7.2 and later, you can just add your own menu items to the
+<filename>/boot/grub/menu.lst</filename> file that already exists.
+</para>
+</sect2>
+<sect2>
+<title>Debugging FLOPPY and GRUB Applications</title>
+<para>
+When RedBoot loads an application it also provides debugging services
+in the form of GDB remote protocol stubs. When an application is
+loaded stand-alone from a floppy disk, or by GRUB, these services are
+not present. To allow these application to be debugged, it is possible
+to include GDB stubs into the application.
+</para>
+<para>
+To do this, set the &quot;Support for GDB stubs&quot;
+(<literal>CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS</literal>) configuration
+option. Following this any application built will allow GDB to connect
+to the debug serial port (by default serial device 0, also known as
+COM1) whenever the application takes an exception, or if a Control-C
+is typed to the debug port. Ethernet debugging is not supported.
+</para>
+<para>
+The option &quot;Enable initial breakpoint&quot;
+(<literal>CYGDBG_HAL_DEBUG_GDB_INITIAL_BREAK</literal>) causes the HAL
+to take a breakpoint immediately before calling cyg_start(). This
+gives the developer a chance to set any breakpoints or inspect the
+system state before it proceeds. The configuration sets this option by
+default if GDB stubs are included, and this is not a RedBoot build. To
+make the application execute immediately either disable this option,
+or disable <literal>CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS</literal>.
+</para>
+</sect2>
+</SECT1>
+<SECT1 id="setup-synth-i386linux">
+<TITLE><!-- <conditionaltext> --><!-- <index></index> -->i386/Linux Synthetic Target Setup</TITLE>
+<PARA>When building for the synthetic Linux target, the resulting
+binaries are native Linux applications with the HAL providing suitable
+bindings between the eCos kernel and the Linux kernel.</PARA>
+<NOTE>
+<PARA>Please be aware that the current implementation of the Linux
+synthetic target does not allow thread-aware debugging.</PARA>
+</NOTE>
+<PARA>These Linux applications cannot be run on a Windows system.
+However, it is possible to write a similar HAL emulation for the
+Windows kernel if such a testing target is desired.</PARA>
+<SECT2>
+<TITLE>Tools</TITLE>
+
+<PARA>For the synthetic target, eCos relies on features not available
+in native compilers earlier than gcc-2.95.1. It also requires version
+2.9.5 or later of the GNU linker. If you have gcc-2.95.1 or later
+and ld version 2.9.5 or later, then you do not need to build new
+tools. eCos does not support earlier versions. You can check the compiler
+version using <COMMAND>gcc -v</COMMAND> 
+and the linker version using <COMMAND>ld
+-v</COMMAND>.</PARA>
+
+<PARA>If you have native tools that are sufficiently recent for
+use with eCos, you should be aware that by default eCos assumes
+that the tools <COMMAND>i686-pc-linux-gnu-gcc</COMMAND>, <COMMAND>i686-pc-linux-gnu-ar</COMMAND>,
+ <COMMAND>i686-pc-linux-gnu-ld</COMMAND>, and <COMMAND>i686-pc-linux-gnu-objcopy</COMMAND> are
+on your system and are the correct versions for use with eCos. But
+instead, you can tell eCos to use your native tools by editing the
+configuration value "Global command prefix" (CYGBLD_GLOBAL_COMMAND_PREFIX)
+in your eCos configuration. If left empty (i.e. set to the empty
+string) eCos will use your native tools when building.</PARA>
+<PARA>If you have any difficulties, it is almost certainly easiest
+overall to rebuild the tools as described on: <ULINK URL="http://ecos.sourceware.org/getstart.html">http://ecos.sourceware.org/getstart.html</ULINK></PARA>
+</SECT2>
+</SECT1>
+
+
+</appendix>

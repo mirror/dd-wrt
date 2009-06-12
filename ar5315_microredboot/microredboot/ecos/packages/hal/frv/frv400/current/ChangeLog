@@ -1,0 +1,179 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_frv_frv400.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_frv_frv400.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2002-08-29  Mark Salter  <msalter@redhat.com>
+
+	* include/plf_stub.h: Add HAL_STUB_HW_BREAKPOINT_LIST_SIZE and
+	HAL_STUB_HW_WATCHPOINT_LIST_SIZE.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_frv_frv400.cdl: 
+	Make CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT more standard.
+
+2001-12-10  Richard Sandiford  <rsandifo@redhat.com>
+
+        * src/frv400_misc.c (hal_interrupt_mask): Disable LAN interrupts
+        in the FPGA's register.
+        (hal_interrupt_unmask): Re-enable them.
+
+2001-12-10  Richard Sandiford  <rsandifo@redhat.com>
+
+	* src/frv400_misc.c (hal_clock_reset): Shift high word of timer left.
+	(hal_clock_read): Likewise.
+	(hal_delay_us): Increase timeout.  Correct off-by-one error when
+	time is a multiple of _MIN_DELAY us.
+
+2001-12-10  Richard Sandiford  <rsandifo@redhat.com>	
+
+	* include/plf_stub.h (HAL_FRV_ENTER_DEBUG_MODE): Remove NOPs.
+	Mark LR as clobbered due to changes in vectors.S:_break.
+	(HAL_FRV_EXIT_DEBUG_MODE): Remove NOPs.  Don't modify PSR or BPSR.
+	* src/frv400_misc.c (get_bpsr, set_bpsr): New.
+	(break_handler): Rework.  Set up BPSR to reflect the current
+	privelege level and trap state before exiting from debug mode.
+	Re-enter debugging mode and restore the old BPSR before returning.
+	(cyg_hal_plf_hw_breakpoint): Remove unnecessary DDR diddling.
+	(cyg_hal_plf_hw_watchpoint): Likewise.
+
+2001-11-28  Hugo Tyson  <hmt@redhat.com>
+
+	* include/plf_stub.h (HAL_FRV_ENTER_DEBUG_MODE): New macro; simple
+	performs a "break" to enter debug mode (with cooperation from
+	RedBoot/stubs/traphandler).
+	(HAL_FRV_EXIT_DEBUG_MODE): New macro; jumps through hoops to
+	return to normal mode from debug mode.  Can only be used from
+	debug mode, or the CPU halts.  The hoops are on fire.
+	(HAL_STUB_HW_BREAKPOINT):
+	(HAL_STUB_HW_WATCHPOINT):
+	(HAL_STUB_IS_STOPPED_BY_HARDWARE): Defines APIs so that stubs can
+	set hardware debug support, and tell whether we stopped for a
+	hardware debug reason.
+
+	* src/frv400_misc.c (break_handler): Special handler for break
+	instruction and all debug traps, to enable below.
+	(cyg_hal_plf_hw_breakpoint): 
+	(cyg_hal_plf_hw_watchpoint): 
+	(cyg_hal_plf_is_stopped_by_hardware): New routines to manipulate
+	hardware debug resources.
+
+	* include/frv400.h (_BRR_SB): Some new symbols for debug regs.
+
+2001-10-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/frv400_misc.c: Try to avoid [re]init PCI bus.
+
+	* include/frv400.h: Moved common register layouts to 'arch'.
+
+2001-10-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/frv400_misc.c (hal_delay_us): Handle small delays properly.
+
+2001-10-19  Julian Smart <julians@redhat.com>
+
+	* Added CYPKG_MEMALLOC to redboot_ROMRAM.ecm so the release script
+	knows about it.
+
+2001-10-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/frv400_misc.c (_frv400_pci_translate_interrupt): 
+	Handle interrupts from PCI slots.
+
+	* include/plf_ints.h (HAL_PLATFORM_RESET): Remove unused variable.
+
+2001-10-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/platform.inc: Getting on-board SRAM to function.  Of course,
+	the hardware doesn't match the documentation...
+
+2001-10-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/frv400_misc.c (hal_interrupt_acknowledge): Fix support for
+	onboard (LAN) interrupts.
+
+	* include/plf_ints.h: Define PCI based interrupts.
+
+	* src/frv400_misc.c (hal_hardware_init): 
+	* include/frv400.h: Add support for onboard FPGA (local interrupts).
+
+2001-10-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/frv400_misc.c: Clean up PCI code.
+
+	* misc/redboot_ROMRAM.ecm: Add BSP syscalls.
+	
+2001-10-01  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_frv_frv400.cdl: 
+	* include/pkgconf/mlt_frv_frv400_ram.ldi: 
+	* include/pkgconf/mlt_frv_frv400_rom.ldi: 
+	* include/pkgconf/mlt_frv_frv400_ram.h: 
+	* include/pkgconf/mlt_frv_frv400_rom.h: 
+	* include/pkgconf/mlt_frv_frv400_romram.ldi: 
+	* include/pkgconf/mlt_frv_frv400_romram.h: 
+	* include/plf_ints.h: 
+	* include/platform.inc: 
+	* include/hal_diag.h: 
+	* include/plf_stub.h: 
+	* include/plf_cache.h: 
+	* include/frv400.h: 
+	* include/plf_io.h: 
+	* src/hal_diag.c: 
+	* src/frv400_misc.c: 
+	* misc/redboot_ROMRAM.ecm: 
+	* misc/redboot_RAM.ecm: New port for FRV400.
+	
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

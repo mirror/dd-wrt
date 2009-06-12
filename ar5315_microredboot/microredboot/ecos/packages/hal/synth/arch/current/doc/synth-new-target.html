@@ -1,0 +1,823 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Writing New Devices - target</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="System Calls"
+HREF="synth-syscalls.html"><LINK
+REL="NEXT"
+TITLE="Writing New Devices - host"
+HREF="synth-new-host.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="synth-syscalls.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="synth-new-host.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH-NEW-TARGET">Writing New Devices - target</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN524"
+></A
+><H2
+>Name</H2
+>Writing New Devices&nbsp;--&nbsp;extending the synthetic target, target-side</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN527"><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN528"><P
+></P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/hal/hal_io.h
+      </PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>int synth_auxiliary_instantiate</CODE
+>(const char* package, const char* version, const char* device, const char* instance, const char* data);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void synth_auxiliary_xchgmsg</CODE
+>(int device_id, int request, int arg1, int arg2, const unsigned char* txdata, int txlen, int* reply, unsigned char* rxdata, int* rxlen, int max_rxlen);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-TARGET-DESCRIPTION"
+></A
+><H2
+>Description</H2
+><P
+>In some ways writing a device driver for the synthetic target is very
+similar to writing one for a real target. Obviously it has to provide
+the standard interface for that class of device, so for example an
+ethernet device has to provide <TT
+CLASS="FUNCTION"
+>can_send</TT
+>,
+<TT
+CLASS="FUNCTION"
+>send</TT
+>, <TT
+CLASS="FUNCTION"
+>recv</TT
+> and similar
+functions. Many devices will involve interrupts, so the driver
+contains ISR and DSR functions and will call
+<TT
+CLASS="FUNCTION"
+>cyg_drv_interrupt_create</TT
+>,
+<TT
+CLASS="FUNCTION"
+>cyg_drv_interrupt_acknowledge</TT
+>, and related
+functions.
+    </P
+><P
+>In other ways writing a device driver for the synthetic target is very
+different. Usually the driver will not have any direct access to the
+underlying hardware. In fact for some devices the I/O may not involve
+real hardware, instead everything is emulated by widgets on the
+graphical display. Therefore the driver cannot just peek and poke
+device registers, instead it must interact with host-side code by
+exchanging message. The synthetic target HAL provides a function
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_xchgmsg</TT
+> for this purpose.
+    </P
+><P
+>Initialization of a synthetic target device driver is also very
+different. On real targets the device hardware already exists when the
+driver's initialization routine runs. On the synthetic target it is
+first necessary to instantiate the device inside the I/O auxiliary, by
+a call to <TT
+CLASS="FUNCTION"
+>synth_auxiliary_instantiate</TT
+>. That
+function performs a special message exchange with the I/O auxiliary,
+causing it to load a Tcl script for the desired type of device and run
+an instantiation procedure within that script.
+    </P
+><P
+>Use of the I/O auxiliary is optional: if the user does not specify
+<TT
+CLASS="OPTION"
+>--io</TT
+> on the command line then the auxiliary will not
+be started and hence most I/O operations will not be possible. Device
+drivers should allow for this possibility, for example by just
+discarding any data that gets written. The HAL exports a flag
+<TT
+CLASS="VARNAME"
+>synth_auxiliary_running</TT
+> which should be checked.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-TARGET-INSTANTIATE"
+></A
+><H2
+>Instantiating a Device</H2
+><P
+>Device instantiation should happen during the C++ prioritized static
+constructor phase of system initialization, before control switches to
+<TT
+CLASS="FUNCTION"
+>cyg_user_start</TT
+> and general application code. This
+ensures that there is a clearly defined point at which the I/O
+auxiliary knows that all required devices have been loaded. It can
+then perform various consistency checks and clean-ups, run the user's
+<TT
+CLASS="FILENAME"
+>mainrc.tcl</TT
+> script, and make the main window
+visible.
+    </P
+><P
+>For standard devices generic eCos I/O code will call the device
+initialization routines at the right time, iterating through the
+<TT
+CLASS="VARNAME"
+>DEVTAB</TT
+> table in a static constructor. The same
+holds for network devices and file systems. For more custom devices
+code like the following can be used:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;cyg/infra/cyg_type.h&gt;
+class mydev_init {
+  public:
+    mydev_init() {
+        &#8230;
+    }
+};
+static mydev_init mydev_init_object CYGBLD_ATTRIB_INIT_PRI(CYG_INIT_IO);</PRE
+></TD
+></TR
+></TABLE
+><P
+>Some care has to be taken because the object
+<TT
+CLASS="VARNAME"
+>mydev_init_object</TT
+> will typically not be referenced
+by other code, and hence may get eliminated at link-time. If the code
+is part of an eCos package then problems can be avoided by putting the
+relevant file in <TT
+CLASS="FILENAME"
+>libextras.a</TT
+>:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>cdl_package CYGPKG_DEVS_MINE {
+    &#8230;
+    compile -library=libextras.a init.cxx
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>For devices inside application code the same can be achieved by
+linking the relevant module as a <TT
+CLASS="FILENAME"
+>.o</TT
+> file rather
+than putting it in a <TT
+CLASS="FILENAME"
+>.a</TT
+> library.
+    </P
+><P
+>In the device initialization routine the main operation is a call to
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_instantiate</TT
+>. This takes five
+arguments, all of which should be strings:
+    </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="VARNAME"
+>package</TT
+></DT
+><DD
+><P
+>For device drivers which are eCos packages this should be a directory
+path relative to the eCos repository, for example
+<TT
+CLASS="LITERAL"
+>devs/eth/synth/ecosynth</TT
+>. This will allow the I/O
+auxiliary to find the various host-side support files for this package
+within the install tree. If the device is application-specific and not
+part of an eCos package then a NULL pointer can be used, causing the
+I/O auxiliary to search for the support files in the current directory
+and then in <TT
+CLASS="FILENAME"
+>~/.ecos/synth</TT
+>
+instead. 
+        </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>version</TT
+></DT
+><DD
+><P
+>For eCos packages this argument should be the version of the package
+that is being used, for example <TT
+CLASS="LITERAL"
+>current</TT
+>. A simple
+way to get this version is to use the
+<TT
+CLASS="FUNCTION"
+>SYNTH_MAKESTRING</TT
+> macro on the package name.
+If the device is application-specific then a NULL pointer should be
+used. 
+        </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>device</TT
+></DT
+><DD
+><P
+>This argument specifies the type of device being instantiated, for
+example <TT
+CLASS="LITERAL"
+>ethernet</TT
+>. More specifically the I/O
+auxiliary will append a <TT
+CLASS="FILENAME"
+>.tcl</TT
+> suffix, giving
+the name of a Tcl script that will handle all I/O requests for the
+device. If the application requires several instances of a type
+of device then the script will only be loaded once, but the script
+will contain an instantiation procedure that will be called for each
+device instance. 
+        </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>instance</TT
+></DT
+><DD
+><P
+>If it is possible to have multiple instances of a device then this
+argument identifies the particular instance, for example
+<TT
+CLASS="LITERAL"
+>eth0</TT
+> or <TT
+CLASS="LITERAL"
+>eth1</TT
+>. Otherwise a NULL
+pointer can be used.
+        </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>data</TT
+></DT
+><DD
+><P
+>This argument can be used to pass additional initialization data from
+eCos to the host-side support. This is useful for devices where eCos
+configury must control certain aspects of the device, rather than
+host-side configury such as the target definition file, because eCos
+has compile-time dependencies on some or all of the relevant options.
+An example might be an emulated frame buffer where eCos has been
+statically configured for a particular screen size, orientation and
+depth. There is no fixed format for this string, it will be
+interpreted only by the device-specific host-side Tcl script. However
+the string length should be limited to a couple of hundred bytes to
+avoid possible buffer overflow problems.
+        </P
+></DD
+></DL
+></DIV
+><P
+>Typical usage would look like:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    if (!synth_auxiliary_running) {
+      return;
+    }
+    id = synth_auxiliary_instantiate("devs/eth/synth/ecosynth",
+             SYNTH_MAKESTRING(CYGPKG_DEVS_ETH_ECOSYNTH),
+             "ethernet",
+             "eth0",
+             (const char*) 0);</PRE
+></TD
+></TR
+></TABLE
+><P
+>The return value will be a device identifier which can be used for
+subsequent calls to <TT
+CLASS="FUNCTION"
+>synth_auxiliary_xchgmsg</TT
+>. If
+the device could not be instantiated then <TT
+CLASS="LITERAL"
+>-1</TT
+> will
+be returned. It is the responsibility of the host-side software to
+issue suitable diagnostics explaining what went wrong, so normally the
+target-side code should fail silently.
+    </P
+><P
+>Once the desired device has been instantiated, often it will be
+necessary to do some additional initialization by a message exchange.
+For example an ethernet device might need information from the
+host-side about the MAC address, the <A
+HREF="synth-new-target.html#SYNTH-NEW-TARGET-INTERRUPTS"
+>interrupt vector</A
+>, and
+whether or not multicasting is supported.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-TARGET-XCHGMSG"
+></A
+><H2
+>Communicating with a Device</H2
+><P
+>Once a device has been instantiated it is possible to perform I/O by
+sending messages to the appropriate Tcl script running inside the
+auxiliary, and optionally getting back replies. I/O operations are
+always initiated by the eCos target-side, it is not possible for the
+host-side software to initiate data transfers. However the host-side
+can raise interrupts, and the interrupt handler inside the target can
+then exchange one or more messages with the host.
+    </P
+><P
+>There is a single function to perform I/O operations,
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_xchgmsg</TT
+>. This takes the following
+arguments: 
+    </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="VARNAME"
+>device_id</TT
+></DT
+><DD
+><P
+>This should be one of the identifiers returned by a previous
+call to <TT
+CLASS="FUNCTION"
+>synth_auxiliary_instantiate</TT
+>, specifying the
+particular device which should perform some I/O.
+         </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>request</TT
+></DT
+><DD
+><P
+>Request are just signed 32-bit integers that identify the particular
+I/O operation being requested. There is no fixed set of codes, instead
+each type of device can define its own.
+         </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>arg1</TT
+>, <TT
+CLASS="VARNAME"
+>arg2</TT
+></DT
+><DD
+><P
+>For some requests it is convenient to pass one or two additional
+parameters alongside the request code. For example an ethernet device
+could define a multicast-all request, with <TT
+CLASS="VARNAME"
+>arg1</TT
+>
+controlling whether this mode should be enabled or disabled. Both
+<TT
+CLASS="VARNAME"
+>arg1</TT
+> and <TT
+CLASS="VARNAME"
+>arg2</TT
+> should be signed
+32-bit integers, and their values are interpreted only by the
+device-specific Tcl script.
+         </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>txdata</TT
+>, <TT
+CLASS="VARNAME"
+>txlen</TT
+></DT
+><DD
+><P
+>Some I/O operations may involve sending additional data, for example
+an ethernet packet. Alternatively a control operation may require many
+more parameters than can easily be encoded in <TT
+CLASS="VARNAME"
+>arg1</TT
+>
+and <TT
+CLASS="VARNAME"
+>arg2</TT
+>, so those parameters have to be placed in
+a suitable buffer and extracted at the other end.
+<TT
+CLASS="VARNAME"
+>txdata</TT
+> is an arbitrary buffer of
+<TT
+CLASS="VARNAME"
+>txlen</TT
+> bytes that should be sent to the host-side.
+There is no specific upper bound on the number of bytes that can be
+sent, but usually it is a good idea to allocate the transmit buffer
+statically and keep transfers down to at most several kilobytes.
+         </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>reply</TT
+></DT
+><DD
+><P
+>If the host-side is expected to send a reply message then
+<TT
+CLASS="VARNAME"
+>reply</TT
+> should be a pointer to an integer variable
+and will be updated with a reply code, a simple 32-bit integer. The
+synthetic target HAL code assumes that the host-side and target-side
+agree on the protocol being used: if the host-side will not send a
+reply to this message then the <TT
+CLASS="VARNAME"
+>reply</TT
+> argument
+should be a NULL pointer; otherwise the host-side must always send
+a reply code and the <TT
+CLASS="VARNAME"
+>reply</TT
+> argument must be valid.
+         </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>rxdata</TT
+>, <TT
+CLASS="VARNAME"
+>rxlen</TT
+></DT
+><DD
+><P
+>Some operations may involve additional data coming from the host-side,
+for example an incoming ethernet packet. <TT
+CLASS="VARNAME"
+>rxdata</TT
+>
+should be a suitably-sized buffer, and <TT
+CLASS="VARNAME"
+>rxlen</TT
+> a
+pointer to an integer variable that will end up containing the number
+of bytes that were actually received. These arguments will only be
+used if the host-side is expected to send a reply and hence the
+<TT
+CLASS="VARNAME"
+>reply</TT
+> argument was not NULL.
+         </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>max_rxlen</TT
+></DT
+><DD
+><P
+>If a reply to this message is expected and that reply may involve
+additional data, <TT
+CLASS="VARNAME"
+>max_rxlen</TT
+> limits the size of that
+reply. In other words, it corresponds to the size of the
+<TT
+CLASS="VARNAME"
+>rxdata</TT
+> buffer.
+         </P
+></DD
+></DL
+></DIV
+><P
+>Most I/O operations involve only some of the arguments. For example
+transmitting an ethernet packet would use the
+<TT
+CLASS="VARNAME"
+>request</TT
+>, <TT
+CLASS="VARNAME"
+>txdata</TT
+> and
+<TT
+CLASS="VARNAME"
+>txlen</TT
+> fields (in addition to
+<TT
+CLASS="VARNAME"
+>device_id</TT
+> which is always required), but would not
+involve <TT
+CLASS="VARNAME"
+>arg1</TT
+> or <TT
+CLASS="VARNAME"
+>arg2</TT
+> and no
+reply would be expected. Receiving an ethernet packet would involve
+<TT
+CLASS="VARNAME"
+>request</TT
+>, <TT
+CLASS="VARNAME"
+>rxdata</TT
+>,
+<TT
+CLASS="VARNAME"
+>rxlen</TT
+> and <TT
+CLASS="VARNAME"
+>max_rxlen</TT
+>; in addition
+<TT
+CLASS="VARNAME"
+>reply</TT
+> is needed to get any reply from the host-side
+at all, and could be used to indicate whether or not any more packets
+are buffered up. A control operation such as enabling multicast mode
+would involve <TT
+CLASS="VARNAME"
+>request</TT
+> and <TT
+CLASS="VARNAME"
+>arg1</TT
+>,
+but none of the remaining arguments.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-NEW-TARGET-INTERRUPTS"
+></A
+><H2
+>Interrupt Handling</H2
+><P
+>Interrupt handling in the synthetic target is much the same as on a
+real target. An interrupt object is created using
+<TT
+CLASS="FUNCTION"
+>cyg_drv_interrupt_create</TT
+>, attached, and unmasked.
+The emulated device - in other words the Tcl script running inside the
+I/O auxiliary - can raise an interrupt. Subject to interrupts being
+disabled and the appropriate vector being masked, the system will
+invoke the specified ISR function. The synthetic target HAL
+implementation does have some limitations: there is no support for
+nested interrupts, interrupt priorities, or a separate interrupt
+stack. Supporting those might be appropriate when targetting a
+simulator that attempts to model real hardware accurately, but not for
+the simple emulation provided by the synthetic target.
+    </P
+><P
+>Of course the actual implementation of the ISR and DSR functions will
+be rather different for a synthetic target device driver. For real
+hardware the device driver will interact with the device by reading
+and writing device registers, managing DMA engines, and the like. A
+synthetic target driver will instead call
+<TT
+CLASS="FUNCTION"
+>synth_auxiliary_xchgmsg</TT
+> to perform the I/O
+operations.
+    </P
+><P
+>There is one other significant difference between interrupt handling
+on the synthetic target and on real hardware. Usually the eCos code
+will know which interrupt vectors are used for which devices. That
+information is fixed when the target hardware is designed. With the
+synthetic target interrupt vectors are assigned to devices on the host
+side, either via the target definition file or dynamically when the
+device is instantiated. Therefore the initialization code for a
+target-side device driver will need to request interrupt vector
+information from the host-side, via a message exchange. Such interrupt
+vectors will be in the range 1 to 31 inclusive, with interrupt 0 being
+reserved for the real-time clock.
+    </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="synth-syscalls.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="synth-new-host.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>System Calls</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Writing New Devices - host</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

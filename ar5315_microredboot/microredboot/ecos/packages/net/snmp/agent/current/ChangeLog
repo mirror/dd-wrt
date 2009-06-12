@@ -1,0 +1,574 @@
+2004-05-14	Matt Jerdonek	<maj1224@yahoo.com>
+
+	* src/mibgroup/mibII/helpers.c (cyg_snmp_num_interfaces): return
+	correct number of interfaces including the loopback interface.  
+	* src/mibgroup/mibII/helpers (cyg_snmp_get_if) increment the
+	interface index properly.  
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): Add case 
+	for IFT_PPP interface type.
+
+2003-10-09  Roland Cassebohm  <roland.cassebohm@visionsystems.de>
+  
+	* src/mibgroup/mibII/dot3.c: Make sure the agent responses with
+        a null object oid, if there is no specific oid set by the driver
+        for the ethernet chipset.
+ 
+2003-06-17  Michael Checky  <Michael_Checky@ThermoKing.com>
+  
+        * src/mibgroup/mibII/helpers.c: Changed the definition of
+	ifnet_addrs to an extern declaration because of multiple symbol
+	definition errors when using a compiler that does not merge them.
+ 
+2003-02-28  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * include/mibgroup/mibII/itf_helpers.h:
+	* src/mibgroup/mibII/helpers.c: (New) Functions for finding the
+	interface structure for Free and open BSD.
+	* src/mibgroup/mibII/interfaces.c: Use the helper functions and
+	other changes needed for the FreeBSD stack.
+	* src/mibgroup/mibII/ip.c: Ditto
+	* src/mibgroup/mibII/udp.c: Ditto
+	* src/mibgroup/mibII/tcp.c: Ditto
+	* src/mibgroup/mibII/dot3.c: Ditto
+	* cdl/snmpagent.cdl: Removed the requirement for the OpenBSD stack.
+	* doc/snmp.sgml: Removed the documented requirement for the OpenBSD
+	stack.
+	
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/snmpagent.cdl: Add doc link.
+
+	* doc/prepare-manpages.sh: Generate namespaced IDs, without shouting.
+	* doc/snmp-manpages.sgml: Regenerated.
+
+2003-02-14  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/snmpagent.cdl: Explicitly require OpenBSD stack since we don't
+	work with the FreeBSD stack yet.
+
+	* doc/snmp.sgml: Document configuring packages better, and only use
+	of OpenBSD stack.
+
+2003-02-05  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/snmp.sgml: Fix a doc build failure, and tweak some duff links and
+	a few typos.
+
+2003-02-03  Andrew Lunn <andrew.lunn@ascom.ch>
+
+        * doc/prepare-manpages.sh: New file. Convert from man to sgml.
+        * doc/manpages/snmpd.conf.5: New file: Manual page for snmpd.conf.
+        * doc/snmp-manpages.sgml: New file. The converted man page
+        * doc/snmp.sgml: Updated documentation which includes the man page.
+
+2003-02-03  Manu Sharma <manu.sharma@ascom.com>
+
+        * cdl/snmpagent.cdl,
+        * include/mib_module_config.h,
+        * include/mib_module_dot_conf.h,
+        * include/mib_module_inits.h,
+        * include/mib_module_shutdown.h,
+        * include/snmpEngine.h,
+        * include/usmStats.h,
+        * include/usmUser.h,
+        * include/vacm_vars.h,
+        * src/agent_registry.c,:
+        * src/mib_modules.c,
+        * src/snmp_vars.c,
+        * src/snmpd.c,
+        * src/mibgroup/mibII/vacm_vars.c,
+        * src/mibgroup/snmpv3/snmpEngine.c,
+        * src/mibgroup/snmpv3/usmStats.c,
+        * src/mibgroup/snmpv3/usmUser.c,
+        * tests/snmpping.c : Support to conditionally implement SNMPv3 
+        features, based on definition of CYGPKG_SNMPAGENT_V3_SUPPORT.
+
+2002-11-11  Manu Sharma <manu.sharma@ascom.com>
+
+        * src/mibgroup/mibII/vacm_vars.c:
+        * include/vacm_vars.h: Imported from the UCD-SNMP-4.1.2.  These
+          are required to support VACM features, based on a snmpd.conf file.
+
+        * cdl/snmpagent.cdl : Compile vacm_vars.c
+
+        * include/mib_module_inits.h : Initialization of vacm and usm related 
+          functions. The usm related functionality are no longer required to
+          be initialized by application code.
+
+        * tests/snmpping.c : Code to create a basic snmpd.conf file and
+          enable its usage. This conditional on
+          CYGPKG_SNMPLIB_FILESYSTEM_SUPPORT and require the ramfs package
+
+        * doc/snmp.sgml: Documentation for above changes.
+
+2002-08-14  David Smith  <dsmith@redhat.com>
+
+	* src/agent_trap.c (send_enterprise_trap_vars):
+	* src/snmp_agent.c (handle_var_list): Memory leak fixes from
+	ucd-snmp-4.2.2.
+
+2002-06-03  Gary Thomas  <gary@chez-thomas.org> (on behalf of)
+2002-06-03  Roland Caﬂebohm <roland.cassebohm@visionsystems.de>
+
+	* src/agent_trap.c (send_enterprise_trap_vars): 
+	* src/snmp_agent.c (handle_snmp_packet): Fix memory leaks.
+
+2002-03-19  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/snmp.sgml: Fix the URLs for "where is SNMP now".
+
+2002-02-14  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/snmp.sgml: NEW FILE: Clarified and brought up to date
+	somewhat.  Still rather vague - but then it's a port of UCD's
+	work, we should not second-guess their expertise in the matter.
+
+	Release notes section from when SNMP was distributed as a separate
+	.EPK file removed - it was full of version- and platform-specific
+	references, and rehashes of general repository management advice.
+
+2002-02-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/snmptask.c: Pass a function pointer into dhcpd() for for
+	SNMP reinitialization when its state cycles up-down-up; for
+	example setting up v3 security, extra MIBs and the like.
+
+	* src/snmpd.c (dhcpd): Handle re-init pointer.  Namespace tidied
+	up a little too; state flags can be static no problem.
+
+	* tests/snmpping.c (snmp_do_reinit): New function to test hook for
+	SNMP reinitialization.  Also commit some stuff I've had around for
+	ages to make this test very robust against eg. DHCP going away.
+	It re-does the init_all_network_interfaces() and so on if any
+	interface "up"ness changes, thus testing all that stuff too.
+	Also looks at the correct symbol for SNMPv3 testing now.
+
+2002-02-01  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/snmpping.c (ping_test): 
+	* src/agent_trap.c (send_enterprise_trap_vars): 
+	Need valid value for sin_len.
+
+2001-11-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/snmpd.c (snmpd): Explicit execution-time initialization of
+	"running" variable, so that we can restart snmpd without it
+	immediately exiting again.
+
+	* src/snmptask.c (snmpdloop): Make the snmpd thread loop forever,
+	so that we can restart it when the state of all the interfaces
+	changes.
+
+2001-08-14  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/snmpping.c: 
+	* cdl/snmpagent.cdl: Add CDL options to configure tests.
+
+2001-07-31  Hugo Tyson <hmt@redhat.com>
+2001-07-31  Ron Kundla <rkundla@nband.com>
+
+	* utils/mib2c/mib2c (Table-handling): Concatenate rather than
+	replace subsequent processed variables.  The symptom was that in
+	the generated header file you only get the last table in the MIB.
+	This fixes it.  Thanks Ron!
+
+2001-06-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/mibgroup/mibII/ip.c (var_ipNetToMediaTable): Only handle
+	IPNETTOMEDIAPHYSADDRESS for devices with associated hardware.
+
+2001-05-29  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/snmpping.c (net_test): Committed the improved version of
+	this that I've been using for a while - with new improved SNMPv3
+	testing.  This requires (in the current setup) explicit init of
+	the SNMPv3 MIBs and a "user" for authentication purposes.  The
+	test can also be set to run the interfaces in promiscuous mode,
+	and/or to run forever, and it has lots better diagnostics if you
+	see mangled ping packets.  And the ping size varies too, to test
+	ICMP defragmentation.
+
+2001-05-29  Hugo Tyson  <hmt@redhat.com>
+2001-05-28  Manu Sharma <Manu.Sharam@ascom.ch>
+2001-05-28  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): Support a direct
+	call into a customer's device ioctl() for devices of type
+	IFT_CUSTOMER_SPECIAL - if they have defined it.  This is to make
+	it easier to add a custom interface type and have SNMP deal with
+	it properly without editting the SNMP sources.
+
+	* include/snmpEngine.h, include/usmState.h, include/usmUser.h:
+	* src/mibgroup/snmpv3/snmpEngine.c, src/mibgroup/snmpv3/usmStats.c:
+	* src/mibgroup/snmpv3/usmUser.c: NEW FILES: Added support of
+	SNMPv3 User based Security Module (USM). This adds
+	authentification and encryption to snmp requests and replies.
+
+	* cdl/snmpagent.cdl: Build the new files above.
+
+2001-05-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* utils/mib2c/README-eCos: Clarify usage of mib2c a bit.
+
+2001-01-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/mibgroup/util_funcs.c (restart_hook): Don't use alarm() in eCos
+	(wait_on_exec): Don't use waitpid() in eCos
+	The above prevent link errors.
+
+2001-01-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/snmpagent.cdl: Clarify ISO C requirements
+
+2000-11-29  Hugo Tyson  <hmt@redhat.com>
+2000-11-29  Andrew Lunn <Andrew.Lunn@ascom.ch>
+	* src/mibgroup/mibII/dot3.c (var_dot3StatsTable): 
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): 
+	Undo Hugo's fix; it fails if there are holes in the if_index space
+	(not something I expected).  Use this fix instead, from Andrew.
+	[CASE 104939]
+	
+	* src/mibgroups/mibII/ip.c: IPADENTIFINDEX should return the
+	interface index as seen in the interface group.  This is not the
+	if_index but merely acquired by counting.
+
+2000-11-17  Hugo Tyson  <hmt@redhat.com>
+
+	* src/mibgroup/mibII/dot3.c (var_dot3StatsTable): 
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): Use the
+	last component of the OID to select the matching interface rather
+	than merely counting through them.  Thus this MIB matches eg. the
+	IP MIB in terms of ip.ipAddrTable.ipAddrEntry.ipAdEntIfIndex.
+	[CASE 104939 "snmp interface and IP group don't correspond"]
+
+2000-08-31  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/snmpping.c (net_test): Add use of network realtime test
+	harness - if available.  One example is provided for the EBSA285
+	in "devs/eth/arm/ebsa285/VERSION/tests/test_net_realtime.h"
+
+2000-08-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/dot3.c (var_dot3StatsTable): A little further
+	diddling; have a bool to say whether the dot3 info is filled in.
+
+2000-08-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/dot3.c (var_dot3StatsTable):
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): Use new ioctl()
+	interface to get information out of ethernet devices.  If the
+	ioctl call is not supported, we just get default values.
+
+2000-08-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/snmpd.c (snmpd): Remove call to
+	init_all_network_interfaces(); it's a bad idea for the situations
+	when initialization has been done externally to our helper
+	functions.  This adds the constraint that you must initialize the
+	network interfaces first, by whatever means.  Starting snmpd
+	before the network is up may cause confusion.
+	[CASE 104330]
+
+	Also tidied some warnings.
+
+2000-07-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/snmpping.c (net_test): Make it ping the loopback
+	interfaces so as to do some valid testing in the absence of any
+	real interfaces on the platform.  Also make it run less time or no
+	doubt the farm will report many non-failures.
+
+2000-07-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/snmpping.c: Up the stack size to cope with full DHCP
+	initialization in init_all_network_interfaces().
+
+2000-06-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/dot3.c (var_dot3StatsTable): Forgot the
+	DOT3STATSINDEX for loopback, so it claimed index 0.  Fixed.
+
+2000-06-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/snmptask.c (cyg_net_snmp_init): Change the priority of the
+	SNMP thread; make it one less important than the network thread of
+	which it is a client.
+
+2000-06-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/dot3.c (var_dot3StatsTable): Don't trip over
+	loopback interface; it doesn't support the same enquiries as an
+	eth device.
+
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): Don't trip over
+	loopback interface; it doesn't support the same enquiries as an
+	eth device.
+
+2000-06-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmpagent.cdl: Add options for the default values for system
+	MIB vals that describe the machine.
+
+	* src/mibgroup/mibII/system_mib.c (init_system_mib): Pick up
+	values from configury (this goes via config.h in the library).
+
+2000-06-14  John Dallaway  <jld@redhat.com>
+
+	* cdl/snmpagent.cdl: Tidy display strings.
+
+2000-06-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmpagent.cdl: Install all the header files below
+	include/ucd-snmp/ as is the normal host-side standard; this avoids
+	some rather terrible filenamespace pollution too.  That location
+	is also added to the include path, using a mechanism that's rather
+	build-method-specific; it may need revisiting.
+
+2000-06-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmpagent.cdl: parent this below CYGPKG_NET.
+
+2000-06-13  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmpagent.cdl: Add mibgroup/mibII/dot3.c to compile list.
+
+	* src/mibgroup/mibII/dot3.c (var_dot3StatsTable): Done that - and
+	it required changes to the EBSA ether device driver.  Of course,
+	if those info-macros are not present, the SNMP agent module uses
+	zeros, so it should "work" half-heartedly with other platforms
+	too.
+
+	* include/mibgroup/mibII/dot3.h: Completed handler function list.
+
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): This now makes
+	use of info-macros exported from the ethernet dd.
+
+	* include/mib_module_inits.h: Call init_dot3() in the bootup.
+
+	* src/mibgroup/mibII/system_mib.c (init_system_mib): Fill in
+	default system type description.
+
+2000-06-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/tcp.c (var_tcpConnTable): Done that.
+
+2000-06-09  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/udp.c (var_udpTable): Done that.
+
+2000-06-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/icmp.c (var_icmp): Fleshed this out with a
+	copy from the UCD version - BSD stack nosing-in-kernel memory arm
+	of the code is the same, unsurprisingly.
+
+2000-06-08  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/ip.c (var_ip): Flesh this out; it's mostly
+	there now.
+
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): Make this more
+	consistent, particularly the use of FIXMEs for the bits I have not
+	completed yet.
+
+2000-06-06  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/mibgroup/mibII/interfaces.c (var_ifTable): Flesh this out
+	with lots of snooping into the ifnet structures and a little info
+	from the device driver.  The info is there now.
+
+	* src/mibgroup/mibII/tcp.c (var_tcpConnTable,var_ipv6TcpConnTable):
+	* src/mibgroup/mibII/udp.c (var_udpTable,var_ipv6UdpTable):
+	* src/mibgroup/mibII/ip.c (var_ipAddrTable,var_ipNetToMediaTable):
+	Fix these (by commenting out) parts for complex tables that made
+	the snmpwalk tool crash out; ie. it acts as if all such complex
+	tables are empty, rather than returning badly indexed entries.
+
+2000-06-02  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* utils/mib2c/README-eCos:
+	* utils/mib2c/README.mib2c:
+	* utils/mib2c/mib2c:
+	* utils/mib2c/mib2c.conf:
+	* utils/mib2c/mib2c.conf-ORIG:
+	* utils/mib2c/mib2c.storage.conf:
+	* utils/mib2c/mib2c.vartypes.conf:
+	New files, just to keep my variant of mib2c.conf under source
+	controlled; it includes our copyright (and attribution to UCD et
+	al, of course) the different include paths as required by eCos'
+	package layout and a couple of other nits sorted out.
+
+2000-06-02  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/snmpagent.cdl (compile): Omit the read-only file-system
+	part; the library will cheerfully use it, but it's not at all
+	necessary.  Waste of time - unless someone is liable to use the
+	snmplib for tool rather than agent purposes.
+
+	* include/mib_module_includes.h: Include the full set of includes
+	for the MIBs we will implement.  Ie.
+	  mibgroup/mibII/system_mib.h  // { mib2 1 }
+	  mibgroup/mibII/sysORTable.h  // { mib2 1.9.1 } == { system 9.1 }
+	  mibgroup/mibII/interfaces.h  // { mib2 2 }
+	  (NOT mibgroup/mibII/at.h)    // #3 is deprecated
+	  mibgroup/mibII/ip.h          // { mib2 4 }
+	  mibgroup/mibII/icmp.h        // { mib2 5 }
+	  mibgroup/mibII/tcp.h         // { mib2 6 }
+	  mibgroup/mibII/udp.h         // { mib2 7 }
+	  mibgroup/mibII/dot3.h        // { mib2 10.7 } == { transmission 7 }
+	  mibgroup/mibII/snmp_mib.h    // { mib2 11 }
+
+	* include/mib_module_inits.h: Same thing really; but dot3 is not
+	yet in there at all, it'll be added later.
+	  init_system_mib();  // { mib2 1 }
+	  init_sysORTable();  // { mib2 1.9.1 } == { system 9.1 }
+	  init_interfaces();  // { mib2 2 }
+	  //init_at();        // #3 is deprecated
+	  init_ip();          // { mib2 4 }
+	  init_icmp();        // { mib2 5 }
+	  init_tcp();         // { mib2 6 }
+	  init_udp();         // { mib2 7 }
+	  //init_dot3();      // { mib2 10.7 } == { transmission 7 } FIXME
+	  init_snmp_mib();    // { mib2 11 }
+
+	* include/mibgroup/mibII/icmp.h:
+	* include/mibgroup/mibII/interfaces.h:
+	* include/mibgroup/mibII/ip.h:
+	* include/mibgroup/mibII/tcp.h:
+	* include/mibgroup/mibII/udp.h:
+	These files have all been replaced by versions direct from mib2c,
+	without any of the UNIX/LINUX/Win32-specific gubbins from the
+	original versions.
+
+	* include/mibgroup/mibII/dot3.h: New file direct from mib2c.
+
+	* include/mibgroup/mibII/route_write.h: DELETED
+	* include/mibgroup/mibII/at.h: DELETED
+	* include/mibgroup/mibII/var_route.h: DELETED
+	Removed, not necessary for the vanilla headers; they were there
+	before to satisfy include needs of the originals.
+
+	* src/mibgroup/mibII/dot3.c:
+	* src/mibgroup/mibII/icmp.c:
+	* src/mibgroup/mibII/interfaces.c:
+	* src/mibgroup/mibII/ip.c:
+	* src/mibgroup/mibII/tcp.c:
+	* src/mibgroup/mibII/udp.c:
+	These are new files, direct from mib2c, again without all the
+	UNIX/LINUX/Win32-specific gubbins from the original versions.
+
+	* src/rofs/EtherLike-MIB.c: DELETED
+	* src/rofs/IANAifType-MIB.c: DELETED
+	* src/rofs/IF-MIB.c: DELETED
+	* src/rofs/IP-MIB.c: DELETED
+	* src/rofs/RFC-1215.c: DELETED
+	* src/rofs/SNMPv2-CONF.c: DELETED
+	* src/rofs/SNMPv2-MIB.c: DELETED
+	* src/rofs/SNMPv2-SMI.c: DELETED
+	* src/rofs/SNMPv2-TC.c: DELETED
+	* src/rofs/SNMPv2-TM.c: DELETED
+	* src/rofs/TCP-MIB.c: DELETED
+	* src/rofs/UDP-MIB.c: DELETED
+	* src/rofs/snmprofs.c: DELETED
+	Turns out that I don't need a read-only FS with all the MIBs in in
+	the agent - reading them in (and complaining of their absence) is
+	part of the snmplib startup, but it's not needed by an agent.
+	This also means that if reinstated they should live in the lib
+	component rather than the agent one; oh well.
+
+
+2000-05-31  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* Initial commit of port of UCD-SNMP version 4.1.2 to eCos. 
+
+//==========================================================================
+//
+//      ./agent/current/ChangeLog
+//
+//
+//==========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//####UCDSNMPCOPYRIGHTBEGIN####
+//
+// -------------------------------------------
+//
+// Portions of this software may have been derived from the UCD-SNMP
+// project,  <http://ucd-snmp.ucdavis.edu/>  from the University of
+// California at Davis, which was originally based on the Carnegie Mellon
+// University SNMP implementation.  Portions of this software are therefore
+// covered by the appropriate copyright disclaimers included herein.
+//
+// The release used was version 4.1.2 of May 2000.  "ucd-snmp-4.1.2"
+// -------------------------------------------
+//
+//####UCDSNMPCOPYRIGHTEND####
+//==========================================================================
+//#####DESCRIPTIONBEGIN####
+//
+// Author(s):    hmt
+// Contributors: hmt
+// Date:         2000-05-30
+// Purpose:      Port of UCD-SNMP distribution to eCos.
+// Description:  
+//              
+//
+//####DESCRIPTIONEND####
+//
+//==========================================================================
+/********************************************************************
+       Copyright 1989, 1991, 1992 by Carnegie Mellon University
+
+			  Derivative Work -
+Copyright 1996, 1998, 1999, 2000 The Regents of the University of California
+
+			 All Rights Reserved
+
+Permission to use, copy, modify and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appears in all copies and
+that both that copyright notice and this permission notice appear in
+supporting documentation, and that the name of CMU and The Regents of
+the University of California not be used in advertising or publicity
+pertaining to distribution of the software without specific written
+permission.
+
+CMU AND THE REGENTS OF THE UNIVERSITY OF CALIFORNIA DISCLAIM ALL
+WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL CMU OR
+THE REGENTS OF THE UNIVERSITY OF CALIFORNIA BE LIABLE FOR ANY SPECIAL,
+INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+FROM THE LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*********************************************************************/

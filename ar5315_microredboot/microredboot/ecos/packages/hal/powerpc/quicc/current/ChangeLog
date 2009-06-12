@@ -1,0 +1,310 @@
+2004-04-01  Robert Chenault  <robertchenault@yahoo.com>
+
+	* include/ppc8xx.h: Add definition for 8 bytes to spi_pram structure
+	(for a total of 48 bytes) as is done in the i2c_pram structure. Then
+	remove the equivalent 8 reserved bytes in the scc_pram structure.
+
+2003-09-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/quicc_smc1.c: Fix baud rate clock setup - was off by 1.
+	Reported by Tord Andersson <Tord.Andersson@combitechsystems.com>
+
+2003-03-31  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/quicc_smc1.c (cyg_hal_sccx_init_channel): Proper handling
+	(signal routing) for SCC3 - differs on 850 and 850T!
+
+2003-03-31  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/quicc_smc1.c (cyg_hal_smcx_init_channel): 
+	(cyg_hal_sccx_init_channel): 
+
+	* src/cpm.c: Include <string.h> for memset().
+	(_mpc8xx_reset_cpm): use CPM busy flag to check reset completion.
+	* src/quicc_smc1.c: Include <string.h> for memset().
+	(cyg_hal_smcx_init_channel): Don't reset CPM here - let variant
+	initialization do it. Only let through RX interrupts.
+	(cyg_hal_sccx_init_channel): Ditto.
+
+2003-03-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/quicc_smc1.c: Use new baud rate generator allocation functions.
+	Merge SMC and SCC output functions.
+	
+	* src/cpm.c: Add new function to allocate and manage the baud rate
+	generators.  Used by all serial drivers.
+
+	* include/ppc8xx.h: Some common definitions moved here from various
+	QUICC serial files.
+
+	* cdl/hal_powerpc_quicc.cdl: Add interface for SCC4 (not implemented
+	by any platform yet)
+
+2003-03-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/cpm.c (_mpc8xx_allocBd): Improve "best guess" for intial DPRAM
+	allocation to use a value which is likely not to conflict with old 
+	versions of RedBoot.
+
+2003-03-18  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/quicc_smc1.c (cyg_hal_sccx_init_channel): Update initialization
+	for SCC2 - *CAUTION* not tested on actual hardware.
+
+2003-03-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/cpm.c: Handle case where DPRAM allocation is unknown.
+	
+	* include/ppc8xx.h: Define limits of CPM/DPRAM space.
+
+2003-03-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/quicc_smc1.c: Need to flush data cache because the serial
+	driver may set use buffers in cacheable memory.  Without this,
+	diag_printf() falls over if the serial driver is ever used.
+
+	* src/cpm.c: New file with CPM/DPRAM support.
+
+	* include/ppc8xx.h: 
+	* cdl/hal_powerpc_quicc.cdl: Split out support for CPM/DPRAM.
+
+2002-11-26  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/quicc_smc1.c: Initialize BD allocation point.  Note that it is
+	different from when the CPM get's reset directly.  This is to allow
+	sharing of the space between ROM (RedBoot) code and applications.
+
+	* cdl/hal_powerpc_quicc.cdl: Move platform define here, where it belongs.
+
+2002-11-25  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/quicc_smc1.c: Support any combination of SMC1/SMC2 and
+	SCC1/SCC2/SCC3 [or at least lay foundation for it]
+
+	* cdl/hal_powerpc_quicc.cdl: Add more controls over port layout.
+
+2002-07-18  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/quicc_smc1.c (cyg_hal_scc1_init_channel): Fix init which
+	failed from power-up - wrong channel in CP command!
+
+2002-07-11  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/quicc_smc1.c: 
+	* include/quicc_smc1.h: 
+	* cdl/hal_powerpc_quicc.cdl: Add support for SCC1 as a serial
+	console (for newer chips which have this available).
+
+2002-06-25  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/quicc_smc1.c: 
+	* cdl/hal_powerpc_quicc.cdl: Use more common CDL name for baudrate
+	CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD.
+
+2002-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c: Fix warning.
+
+2001-09-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_powerpc_quicc.cdl (CYGNUM_HAL_QUICC_DIAG_BAUD):
+	234000->230400 typo.
+
+2001-07-31  Jonathan Larmour  <jlarmour@redhat.com>
+2001-07-31  Christoph Csebits  <christoph.csebits@frequentis.com>
+
+	* include/ppc8xx.h: 4 SCCs are supported by MPC860T, so don't
+	reserve space.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check. 
+
+2001-01-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/quicc_smc1.c: Provide for multiple serial input buffers
+	since the single buffer/descriptor model fails miserably on some
+	newer chips [at least 855T].
+
+2001-01-03  Gary Thomas  <gthomas@redhat.com>
+
+	* include/ppc8xx.h: Layout of I2C and IDMA was [slightly] wrong.
+
+2000-08-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c (cyg_hal_plf_serial_init_channel): Move all
+	init code to init_channel.
+
+2000-06-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c: calling i/f macro changes.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/quicc_smc1.h: 
+	* src/quicc_smc1.c: Cleanup.
+
+2000-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/quicc_smc1.h:
+	* src/quicc_smc1.c: Added non-block/timout features. Reworked
+	Ctrl-c support code.
+
+2000-06-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c: Fix compiler warning. Add functions to deal
+	with ctrl-c interrupts from the device.
+
+2000-06-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c: 
+	* include/quicc_smc1.h: 
+	Allow callers to specify base. Added code to initialize vector
+	procs table.
+
+2000-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c (hal_ctrlc_isr): Check that interrupt is
+	generated by serial controller.
+
+2000-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c:
+	* include/quicc_smc1.h:
+	Added ctrlc handling for use via virtual vector table.
+
+2000-03-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/quicc_smc1.c: Use common CPM defines (now in ppc8xx.h).
+
+	* include/ppc8xx.h: Add some generic defines for CPM.  Also
+	refine ucode area for easier use (someday).
+
+start-serialize-newcdl
+2000-02-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/quicc_smc1.c (UART_BAUD_RATE): Use CDL option for baud rate.
+
+	* cdl/hal_powerpc_quicc.cdl: Add option to control diag serial
+	baud rate, rather than being fixed at 38400.
+
+end-serialize-newcdl
+2000-02-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/quicc_smc1.c (UART_BIT_RATE): Handle system clock speeds
+	which are not integer multiples of MHz, e.g. 33.33 MHz.
+
+2000-02-04  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c (cyg_quicc_smc1_uart_rcvchar): Get frequency
+	from new CYGHWR_HAL_POWERPC_BOARD_SPEED variable.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* src/quicc_smc1.c: CYG_HAL_POWERPC_x->CYGPKG_...
+
+1999-09-02  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/quicc_smc1.c (init_smc1_uart): Generalize baud rate computation.
+
+1999-09-01  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/ppc8xx.h: Add some missing definitions (MAR, MBMR).
+
+1999-06-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/quicc_smc1.c: Many changes which allow these routines to
+	cooperate when the SMC is being used by a serial "driver" as well.
+	In particular, remove "hard coded" resources on the SMC.
+	Note: there is some lingering problem with the transmit routines
+	[globally] after the serial driver re-inits the SMC.  Of course
+	this problem is intermittent, so it's hard to fix.
+
+1999-06-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/quicc_smc1.c (cyg_hal_gdb_isr): Add this routine to trap ^C
+	events and stop the system, if CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT.
+
+1999-06-24  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/quicc_smc1.c (cyg_quicc_init_smc1): Remove unused, commented
+	out code, that was left over from CygMon version of this file.
+
+1999-06-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/quicc_smc1.c (init_smc1_uart): Use default 38400 Baud,
+	because it is better.
+
+1999-06-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_quicc.h: Fixed CDL description.
+
+1999-06-17  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/quicc_smc1.c (init_smc1_uart): Initialize the baud rate
+	depending on the system clock setting.
+
+1999-06-15  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/quicc_smc1.c: Moved include of ppc8xx.h
+
+	* src/ppc8xx.h: Removed, to...
+
+	* include/ppc8xx.h: New file.  Moved here so that platform startup
+	code can share it.
+
+1999-06-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/quicc_smc1.c: Make this file safe for compilation even when
+	no PowerPC 860 is in use; pkgconf can enable this component for
+	any target, potentially.
+
+1999-06-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ChangeLog: Component created, based partly on the FADS work and
+	on CygMon's serial IO code for the MBX860, to support the Motorola
+	MBX860 QUICC serial controller for basic IO.
+	Initially only used in the neighbouring platform component
+	HAL_POWERPC_MBX [hal/powerpc/mbx/....] 
+
+	* include/quicc_smc1.h
+	* include/pkgconf/hal_quicc.h
+	* src/PKGconf.mak
+	* src/ppc8xx.h
+	* src/quicc_smc1.c
+	New files.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

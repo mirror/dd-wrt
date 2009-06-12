@@ -1,0 +1,147 @@
+2002-12-13  Mark Salter  <msalter@redhat.com>
+
+	* include/platform.inc: Fix memory size test. Reduce wait counts
+	for chip select 3 (16550 uart).
+	* misc/redboot_FLASH.ecm: Turn off hw flow control on 16550.
+	* misc/redboot_FULLRAM.ecm: Ditto.
+	* misc/redboot_RAM.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+
+	* cdl/hal_mn10300_am33_asb2305.cdl: Add support for CPU serial ports.
+	* src/ser_asb.c: Support configurations no 16550 and with
+	builtin AM33 serial ports.
+
+2002-12-06  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb2305.cdl (CYG_HAL_FULL_RAM): New option to
+	indicate if RAM startup should use all RAM. This allows a special
+	RAM startup to be built which may be loaded onto a bare board by
+	the MEI tools. This can be used to build an initial RedBoot which
+	is used to program the flash with the ROM startup RedBoot image.
+	Implement CYGINT_HAL_MN10300_MEM_REAL_REGION_TOP.
+
+	* misc/redboot_FULLRAM.ecm:
+	* include/pkgconf/mlt_mn10300_am33_asb2305_fullram.h:
+	* include/pkgconf/mlt_mn10300_am33_asb2305_fullram.ldi:
+	* include/pkgconf/mlt_mn10300_am33_asb2305_fullram.mlt: New files.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_ram.h:
+	* include/pkgconf/mlt_mn10300_am33_asb2305_ram.ldi:
+	* include/pkgconf/mlt_mn10300_am33_asb2305_ram.mlt: Move ram base
+	so that ROM based RedBoot can load it.
+
+	* include/platform.inc: Add SDRAM runtime sizing.
+
+2002-11-19  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb2305.cdl: Remove virtual vector comm support.
+	Add option to select platform serial port for comm channels. Add rules
+	to build RedBoot srec amd img file.
+
+2002-11-15  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb2305.cdl: Override default VSR placement.
+	Removed unused options. Set correct clock speed.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_ram.ldi: Remove unneeded
+	defines.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_flash.ldi: Ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_rom.ldi: Ditto.
+
+2002-11-14  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb2305.cdl: Remove RedBoot exec option. Now
+	provided in generic AM33 code. Ditto for RTC support.
+	* src/plf_misc.c: hal_delay_us now provided by AM33 package.
+	* src/redboot_cmds.c: Remove.
+
+2002-08-02  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* cdl/hal_mn10300_am33_asb2305.cdl: Redboot exec command can now
+	be disabled by CDL
+	
+2001-10-18  David Howells  <dhowells@redhat.com>
+
+	* cdl/hal_mn10300_am33_asb2305.cdl: change incorrect "BootFlash"
+	to "BootPROM" where specified.
+	
+	* cdl/hal_mn10300_am33_asb2305.cdl: added support for booting
+	directly from the system flash.
+	* include/platform.inc: ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_flash.mlt: ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_flash.h: ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_flash.ldi: ditto.
+	* misc/redboot_FLASH.ecm: ditto.
+
+2001-10-16  David Howells  <dhowells@redhat.com>
+
+	* include/plf_io.h: made the CPU access PCI registers through the
+	uncached memmap reflection.
+	* cdl/hal_mn10300_am33_asb2305.cdl: moved the RTC configuration
+	previously added to MN10300 arch to the ASB2305 platform.
+	* include/platform.inc: display exception code on entry to NMI
+	handler and clear it on exit.
+
+2001-10-15  David Howells  <dhowells@redhat.com>
+
+	* misc/redboot_RAM.ecm: forced ethernet to switch down to 10Mbps
+	and switched syscall support on.
+	* misc/redboot_ROM.ecm: ditto.
+
+	* include/platform.inc: improved LED driving upon exception.
+	* src/plf_misc.c: ditto.
+
+	* include/pkgconf/mlt_mn10300_am33_asb2305_ram.mlt: PCI window moved.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_ram.h: ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_ram.ldi: ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_rom.mlt: ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_rom.h: ditto.
+	* include/pkgconf/mlt_mn10300_am33_asb2305_rom.ldi: ditto.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_cmds.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-08-08  David Howells  <dhowells@redhat.com>
+
+	* hal_mn10300_am33_asb2305.cdl: Generate binary RedBoot image
+	files as well as ELF ones.
+
+2001-07-27  David Howells  <dhowells@redhat.com>
+
+	* New platform inaugurated.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

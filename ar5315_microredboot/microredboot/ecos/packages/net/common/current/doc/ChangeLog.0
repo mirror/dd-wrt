@@ -1,0 +1,70 @@
+2002-01-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* prepare-manpages.sh: Use groff -Tascii -mandoc instead of nroff -man.
+	* tcpip-manpages.sgml: Regenerate.
+
+2001-12-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tcpip.sgml: Give every chapter/part/sect1 an ID.
+
+2001-12-17  Mark Galassi  <rosalia@galassi.org>
+
+	* prepare-manpages.sh: fixed a little bug: the sed commands were
+	being called in the wrong order so that & was converted to &amp;
+	after < was converted to &lt;, with the result that < was being
+	converted to &amp;lt; which is wrong.  On top of that I had a typo
+	of &gt; instead of &lt;
+
+	* tcpip-old-manpage-chapter.sgml: old deprecated stuff which I'm
+	saving off for now.  It's been replaced by the prepare-manpages.sh
+	script which generates the tcpip-manpages.sgml file.
+
+	* tcpip.sgml: took out the old ugly man pages and included the
+	auto-generated tcpip-manpages.sgml file instead.
+
+	* manpages: directory with all the raw tcp/ip man pages.
+
+	* prepare-manpages.sh: cute script to get the raw man pages from
+	the "manpages" directory and prepare a tcpip-manpages.sgml file
+	which has each man page in its own section.
+
+	* tcpip.sgml: added legal and contact info front matter.
+
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* tcpip.sgml: Mostly cosmetic fixes revealed by comparing against the
+	original non-docbook version.
+
+2001-11-19  Mark Galassi  <rosalia@galassi.org>
+
+	* tcpip.sgml: two small items found upon visual inspection.
+
+	* tcpip.sgml: made a proper list out of a bad one.
+
+	* tcpip.sgml: some more work to address Jonathan's comments.
+
+2001-11-18  Mark Galassi  <rosalia@galassi.org>
+
+	* tcpip.sgml: started addressing Jonathan's comments on this
+	document.
+
+	* man-page-send.sgml, man-page-select.sgml: added a couple of man
+	pages converted to DocBook.  They are kind of primitive.
+
+2001-10-31  Mark Galassi  <rosalia@galassi.org>
+
+	* tcpip.sgml: now contains the normalized document.  It is the
+	basis for future work.
+
+	* tcpip-not-normalized.sgml: now contains the original hand-edited
+	document.  It is now deprecated.
+
+2001-10-26  Mark Galassi  <rosalia@galassi.org>
+
+	* tcpip.sgml: now it all validates, but it's kludgy because the
+	man pages should be converted to something.
+
+2001-10-25  Mark Galassi  <rosalia@galassi.org>
+
+	* tcpip.sgml: started structuring this document.
+

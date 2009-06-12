@@ -1,0 +1,237 @@
+===========================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+===========================================================================
+
+1999-01-05, revised 1999-03-11, revised 2000.01.26
+
+How to build and install the GDB module on the AEB-1
+====================================================
+
+Overview
+--------
+
+The ARM AEB-1 comes with tools in ROM.  These include a simple FLASH
+management tool and the Angel (R) monitor.  eCos for the ARM AEB-1
+comes with GDB stubs suitable for programming into the onboard FLASH.
+GDB is the preferred debug environment for eCos, but Angel must be
+used to initially install the GDB stubs.
+
+Once this bootstrapping is done, you can use GDB to load and debug
+programs on the AEB-1 board.
+
+The following steps will have you:
+
+* talk to the AEB-1 board with a terminal emulator (or a real
+  terminal!)
+
+* enable ARM's Angel ROM monitor
+
+* use GDB with Angel or the Angel ROM monitor to download a
+  configuration of eCos with GDB stubs which will act as a ROM monitor
+
+* talk to the AEB-1 with a terminal emulator again, and tell it to
+  write the new module to flash
+
+* tell the board to use this new monitor, and then hook GDB up to it
+  for real debugging
+
+Talking to the board
+--------------------
+
+Connect a terminal or computer's serial port to the ARM AEB-1.  On a
+PC with a 9-pin serial port, you can use the cable shipped by ARM with
+no modification.
+
+Set the terminal or terminal emulator to 9600N1 (9600 baud, no parity,
+1 stop bit).
+
+Reset the board by pressing the little reset button on the top.  You
+will see the following text:
+
+	ARM Evaluation Board Boot Monitor 0.01 (19 APR 1998)
+	Press ENTER within 2 seconds to stop autoboot
+
+Press ENTER quickly, and you will get the boot prompt:
+
+	Boot:
+
+
+Downloading the GDB stubs
+-------------------------
+
+Run the angel monitor by typing the following at the Boot: prompt:
+
+    Boot: plugin angel
+    Boot: angel
+
+Then exit the terminal emulator and start up gdb with the GDB module:
+
+    $ arm-elf-gdb -nw loaders/arm-aeb/gdb_module.img
+    (gdb) set remotebaud 9600
+    (gdb) target rdi s=<YOUR SERIAL PORT>
+
+On Windows, the serial port could be com1, com2, etc.  On a UNIX or
+Linux system, the serial port would be /dev/cua0 or /dev/cua1.
+Examples are:
+
+    (gdb) target rdi s=com1
+    (gdb) target rdi s=/dev/cua0
+
+Finally, load the GDB stubs image:
+
+    (gdb) load
+    Loading section .rom_vectors, size 0x44 lma 0xc000
+    Loading section .text, size 0x3544 lma 0xc044
+    Loading section .rodata, size 0x164 lma 0xf588
+    Loading section .data, size 0x110 lma 0xf6ec
+    Start address 0xc044 , load size 14332
+    Transfer rate: 12739 bits/sec.
+
+(Note that the sizes may not exactly match the ones you see on your
+system.)
+
+Once the loading is done, quit GDB:
+
+    (gdb) quit
+
+
+Activating the GDB stubs
+------------------------
+
+Connect a terminal emulator to the board again, reset the board, and
+type enter within two seconds to get the Boot: prompt.  This is the
+same thing you did at the beginning of this procedure.
+
+Commit the GDB stubs module to flash:
+
+	Boot: flashwrite 4018000 C000 8000
+
+Verify that the eCos/"GDB stubs" module is now added in the list of
+modules in the board:
+
+	Boot: rommodules
+
+You should see the following output:
+
+	Header   Base     Limit
+	04000004 04000000 040034a8 BootStrap       1.00 (14 Aug 1998) 
+	04003a74 04003800 04003bc0 Production Test 1.00 (13 Aug 1998) 
+	0400e4f4 04004000 0400e60f Angel           1.02 (12 MAY 1998) 
+	0401ac00 04018000 0401aed8 eCos            1.2  (26 Feb 1999) GDB stubs
+
+Now make the eCos/"GDB stubs" module be the default monitor:
+
+	Boot: plugin eCos
+
+
+Running and debugging an application
+------------------------------------
+
+Configure eCos from scratch for the ARM AEB-1 platform, and build your
+application.  Remember that the AEB-1 board only has 128K of RAM.
+
+Exit from the terminal emulator (you will not need it anymore for
+normal operations), and run gdb:
+
+    $ arm-elf-gdb -nw executable
+    (gdb) set remotebaud 38400
+    (gdb) target remote <YOUR SERIAL PORT>
+    (gdb) load
+
+You can now run your program in the usual way under GDB'S control
+
+Notice that the GDB stub runs at 38400 baud.
+
+
+Building the GDB stubs
+----------------------
+
+We provide the GDB stubs image in the directory
+loaders/arm-aeb/gdb_module.img, but here are instructions on how to
+rebuild them if you should ever need to.
+
+ % ecosconfig new aeb stubs
+ % ecosconfig tree
+ % make
+
+The newlt built files are installed in ./bin/install.
+
+
+Alternate way of loading the initial stubs
+------------------------------------------
+
+Using the AEB-1 module tool, install the GDB stubs from the provided
+".UU" file.
+
+>>> This is an annotated 'terminal' session with the AEB-1 monitor:
+
+ARM Evaluation Board Boot Monitor 0.01 (19 APR 1998)
+Press ENTER within 2 seconds to stop autoboot
+Boot: help
+Module is BootStrap       1.00 (14 Aug 1998)
+
+Help is available on:
+  Help          Modules       ROMModules    UnPlug        PlugIn
+  Kill          SetEnv        UnSetEnv      PrintEnv      DownLoad
+  Go            GoS           Boot          PC            FlashWrite
+  FlashLoad     FlashErase
+
+Boot: download c000
+Ready to download. Use 'transmit' option on terminal emulator to download file.
+
+ ... at this point, I told my terminal emulator (minicom) to download
+     the ASCII file gdb_module.img.UU (probably needs a different name
+     on Win/NT) I had to enter ^D when the download was complete to
+     get the monitor to come back.
+
+Loaded file gdb_module.img.raw at address 0000c000, size = 13905
+
+Boot: flashwrite 4018000 c000 8000
+
+  As above, this command actually programs the FLASH.
+
+Boot: rommodules
+Header   Base     Limit
+04000004 04000000 040034a8 BootStrap       1.00 (14 Aug 1998)
+04003a74 04003800 04003bc0 Production Test 1.00 (13 Aug 1998)
+0400e4f4 04004000 0400e60f Angel           1.02 (12 MAY 1998)
+0401b608 04018000 0401b844 eCos            1.3  (Jan 26 2000) GDB stubs
+
+  This verifies that the eCos GDB stubs are available in FLASH.
+
+Boot: plugin ecos
+
+  This makes the eCos GDB stubs the default "monitor."  When reset the
+  AEB-1 will start the GDB stubs, after the initial 2 second escape
+  period.

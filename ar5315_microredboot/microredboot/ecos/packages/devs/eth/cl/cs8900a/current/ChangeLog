@@ -1,0 +1,167 @@
+2004-06-29  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/if_cs8900a.c: Added missing include of cyg_ass.h.
+
+2004-05-07  Bob Koninckx <bob.koninckx@o-3s.com>
+	* src/if_cs8900a.c: Drop "ghost" frames with zero length
+
+2004-04-19  Bob Koninckx <bob.koninckx@o-3s.com>
+	* src/if_cs8900a.c: function cs8900a_int_vector, return the vector
+	instead of a boolean.
+
+2004-04-08  Bob Koninckx <bob.koninckx@o-3s.com>
+	* cdl/cl_cs8900a_eth_drivers.cdl
+	* include/if_cs8900a.c
+	* src/if_cs8900a.c: Made hardware swapping or software swapping of
+    data bytes (mostly relevant to big endian machines) a configuration
+    option
+
+2003-11-05  Bob Koninckx <bob.koninckx@mech.kuleuven.ac.be>
+
+	* src/if_cs8900a.c: Fix handling of odd bytes on big endian machines
+
+2003-04-12  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/if_cs8900a.c (cs8900a_send): Allow for data not being 16-bit
+	aligned. Thanks to Laurent Gonzalez <laurent.gonzalez@ri.silicomp.fr>
+	for reporting this and his initial patch.
+
+2003-03-03  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+	
+	* src/if_cs8900a.c:
+	* include/cs8900a.h:
+	Changes to support both little and big endian targets
+
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/if_cs8900a.c: 
+	Need to include <pkgconf/io_eth_drivers.h> for proper configuration
+	of stand-alone (polled) vs. system (interrupt driven) mode.
+
+2002-05-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/cs8900.h: Check for lost ints if we can - when kernel present.
+	* src/if_cs8900a.c: Use CYGINT_IO_ETH_INT_SUPPORT_REQUIRED where
+	appropriate.
+
+2002-03-20  Gary Thomas  <gthomas@redhat.com>
+2002-03-06  Pieter Truter <ptruter@intrinsyc.com>
+
+	* src/if_cs8900a.c (cs8900a_isr): Need to acknowledge interrupt
+	here (in case DSR/poll causes a new one to occur).	
+
+2002-02-18  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/cl_cs8900a_eth_drivers.cdl: 
+	Add new interface CYGINT_IO_ETH_MULTICAST which is used to
+	insure that drivers support multicast addresses if IPv6 is used.
+
+2002-02-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/cs8900.h: 
+	* src/if_cs8900a.c (cs8900a_control): Support multicast addresses.
+
+2002-02-04  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_cs8900a.c: 
+	* include/cs8900.h: Add CYGHWR_CL_CS8900A_PLF_POST_RESET() macro.
+
+2001-11-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c (cs8900a_init): Changed order of ESA source
+	checking so user can always override at RedBoot runtime.
+
+2001-11-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c: Added some more debug output. Set all 4 LAF
+	registers. Don't reset device to stop it - just disable TX & RX.
+
+2001-11-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c (cs8900a_send): Wait for controller ready
+	signal before starting transmission.
+
+2001-11-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c: Use platform init, reset and int_clear
+	macros.
+	* include/cs8900.h: Tidy up those (default) macros.
+
+2001-11-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c (cs8900a_init): Rewrote ESA setup to be more
+	consistent.
+
+	* include/cs8900.h: Added provide_esa field to driver structure.
+
+2001-11-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c: Made it build with faked interrupts.
+
+	* include/cs8900.h: Added debug output for put/get functions.
+
+	* src/if_cs8900a.c: Made it build when NET package enabled.
+
+	* include/cs8900.h: Added tab field.
+
+	* src/if_cs8900a.c: Renamed broken ints option, more diag_printf
+	#ifdefing and removed RedBoot ESA option code.
+
+2001-11-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c: Interrupt stuff cleaned up. Fix device
+	probing. Make driver fail when no ESA available and none has been
+	configured. Compiler warning fixes and some printout cleanups.
+
+	* src/if_cs8900a.c: Platform driver provides device
+	information. Renamed functions and definitions. Init code changed
+	some.
+
+	* include/cs8900.h: Renaming some definitions.
+
+	* cdl/cl_cs8900a_eth_drivers.cdl: Platform driver provides
+	options.
+
+2001-11-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_cs8900a.c: Assorted hacking.
+	* include/cs8900.h: Same.
+
+2001-11-02  Jesper Skov  <jskov@redhat.com>
+
+	* Cloned from edb7xxx driver.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

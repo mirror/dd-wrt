@@ -1,0 +1,372 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>NEC uPD985xx USB Device Driver</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="DEVS-USB-NEC-UPD985XX"
+>NEC uPD985xx USB Device Driver</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN4"
+></A
+><H2
+>Name</H2
+>NEC uPD985xx USB Support&nbsp;--&nbsp;Device driver for the on-chip NEC uPD985xx USB device</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN7"
+></A
+><H2
+>NEC uPD985xx USB Hardware</H2
+><P
+>The NEC uPD985xx family of processors is supplied with an on-chip USB
+slave device, the UDC (USB Device Controller). This supports seven
+endpoints. Endpoint 0 can only be used for control messages. Endpoints
+1 and 2 are for isochronous transmits and receives respectively.
+Endpoints 3 and 4 support bulk transmits and receives. Endpoints 5 and
+6 normally support interrupt transmits and receives,but endpoint 5 can
+also be configured to support bulk transmits. At this time only the
+control endpoint 0, the bulk endpoints 3 and 4, and the interrupt
+endpoint 5 are supported.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN10"
+></A
+><H2
+>Endpoint Data Structures</H2
+><P
+>The uPD985xx USB device driver can provide up to four data structures
+corresponding to the four supported endpoints: a
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+> structure
+<TT
+CLASS="VARNAME"
+>usbs_upd985xx_ep0</TT
+>;
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_tx_endpoint</SPAN
+> structures
+<TT
+CLASS="VARNAME"
+>usbs_upd985xx_ep3</TT
+> and
+<TT
+CLASS="VARNAME"
+>usbs_upd985xx_ep5</TT
+>; and a
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_rx_endpoint</SPAN
+>
+<TT
+CLASS="VARNAME"
+>usbs_upd985xx_ep4</TT
+>. The header file
+<TT
+CLASS="FILENAME"
+>cyg/io/usb/usbs_nec_upd985xx.h</TT
+>
+provides declarations for these.</P
+><P
+>Not all applications will require support for all the endpoints. For
+example, if the intended use of the UDC only involves peripheral to
+host transfers then <TT
+CLASS="LITERAL"
+>usbs_upd985xx_ep4</TT
+> is redundant.
+The device driver provides configuration options to control the
+presence of each endpoint:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>Endpoint 0 is controlled by
+<TT
+CLASS="LITERAL"
+>CYGFUN_DEVS_USB_UPD985XX_EP0</TT
+>. This defaults to
+enabled if there are any higher-level packages that require USB
+hardware or if the global preference
+<TT
+CLASS="LITERAL"
+>CYGGLO_IO_USB_SLAVE_APPLICATION</TT
+> is enabled,
+otherwise it is disabled. Usually this has the desired effect. It may
+be necessary to override this in special circumstances, for example if
+the target board uses an external USB chip in preference to the UDC
+and it is that external chip's device driver that should be used
+rather than the on-chip UDC. It is not possible to disable endpoint 0
+and at the same time enable one or both of the other endpoints, since
+a USB device is only usable if it can process the standard control
+messages.</P
+></LI
+><LI
+><P
+>Endpoint 3 is controlled by
+<TT
+CLASS="LITERAL"
+>CYGPKG_DEVS_USB_UPD985XX_EP3</TT
+>. By default this
+endpoint is disabled: according to NEC erratum U3 there may be
+problems when attempting bulk transfers of 192 bytes or greater. As an
+alternative the device driver provides endpoint 5 configured to
+support bulk transfers. Endpoint 3 can be enabled if the application
+only requires bulk transfers of less than 192 bytes, or if this
+erratum is not applicable to the system being developed for other
+reasons.</P
+></LI
+><LI
+><P
+>Similarly endpoint 4 is controlled by
+<TT
+CLASS="LITERAL"
+>CYGPKG_DEVS_USB_UPD985XX_EP4</TT
+>. This is enabled by
+default whenever endpoint 0 is enabled, but it can be disabled
+manually.</P
+></LI
+><LI
+><P
+>Endpoint 5 is controlled by
+<TT
+CLASS="LITERAL"
+>CYGPKG_DEVS_USB_UPD985XX_EP5</TT
+>. This is enabled by
+default whenever endpoint 0 is enabled, but it can be disabled
+manually. There is also a configuration option
+<TT
+CLASS="LITERAL"
+>CYGIMP_DEVS_USB_UPD985XX_EP5_BULK</TT
+>, enabled by
+default. This option allows the endpoint to be used for bulk
+transfers rather than interrupt transfers.</P
+></LI
+></OL
+><P
+>The uPD985xx USB device driver implements the interface specified by the
+common eCos USB Slave Support package. The documentation for that
+package should be consulted for further details. </P
+><P
+>The device driver assumes a bulk packet size of 64 bytes, so this
+value should be used in the endpoint descriptors in the enumeration
+data provided by application code. The device driver also assumes
+a control packet size of eight bytes, and again this should be
+reflected in the enumeration data. If endpoint 5 is configured for
+interrupt rather than bulk transfers then the maximum packet size is
+limited to 64 bytes by the USB standard.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN40"
+></A
+><H2
+>Devtab Entries</H2
+><P
+>In addition to the endpoint data structures the uPD985xx USB device
+driver can also provide devtab entries for each endpoint. This allows
+higher-level code to use traditional I/O operations such as
+<TT
+CLASS="FUNCTION"
+>open</TT
+>/<TT
+CLASS="FUNCTION"
+>read</TT
+>/<TT
+CLASS="FUNCTION"
+>write</TT
+>
+rather than the USB-specific non-blocking functions like
+<TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+>. These devtab entries are
+optional since they are not always required. The relevant
+configuration options are
+<TT
+CLASS="LITERAL"
+>CYGVAR_DEVS_USB_UPD985XX_EP0_DEVTAB_ENTRY</TT
+>,
+<TT
+CLASS="LITERAL"
+>CYGVAR_DEVS_USB_UPD985XX_EP3_DEVTAB_ENTRY</TT
+>,
+<TT
+CLASS="LITERAL"
+>CYGVAR_DEVS_USB_UPD985XX_EP4_DEVTAB_ENTRY</TT
+>, and
+<TT
+CLASS="LITERAL"
+>CYGVAR_DEVS_USB_UPD985XX_EP5_DEVTAB_ENTRY</TT
+>. By
+default these devtab entries are provided if the global preference
+<TT
+CLASS="LITERAL"
+>CYGGLO_USB_SLAVE_PROVIDE_DEVTAB_ENTRIES</TT
+> is enabled,
+which is usually the case. Obviously a devtab entry for a given
+endpoint will only be provided if the underlying endpoint is enabled.
+For example, there will not be a devtab entry for endpoint 4 if
+<TT
+CLASS="LITERAL"
+>CYGPKG_DEVS_USB_UPD985XX_EP4</TT
+> is disabled.</P
+><P
+>The names for the devtab entries are determined by using a
+configurable base name and appending <TT
+CLASS="LITERAL"
+>0c</TT
+>,
+<TT
+CLASS="LITERAL"
+>3w</TT
+>, <TT
+CLASS="LITERAL"
+>4r</TT
+> or <TT
+CLASS="LITERAL"
+>5w</TT
+>.
+The base name is determined by the configuration option
+<TT
+CLASS="LITERAL"
+>CYGDAT_DEVS_USB_UPD985XX_DEVTAB_BASENAME</TT
+> and has a
+default value of <TT
+CLASS="LITERAL"
+>/dev/usbs</TT
+>, so the devtab entry for
+endpoint 4 would default to <TT
+CLASS="LITERAL"
+>/dev/usbs4r</TT
+>. If the
+target hardware involves multiple USB devices then application
+developers may have to change the base name to prevent a name clash
+with other USB device drivers.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN61"
+></A
+><H2
+>Restrictions</H2
+><P
+>The current device driver imposes a restriction on certain bulk
+receives on endpoint 4. If the protocol being used involves
+variable-length transfers, in other words if the host is allowed to
+send less data than a maximum-sized transfer, then the buffer passed
+to the device driver for receives must be aligned to a 16-byte
+cacheline boundary and it must be a multiple of this 16-byte cacheline
+size. This restriction does not apply if the protocol only involves
+fixed-size transfers.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN64"
+></A
+><H2
+>Optional Hardware Workarounds</H2
+><P
+>The NEC errata list a number of other problems that affect the
+USB device driver. The device driver contains workarounds for these,
+which are enabled by default but can be disabled if the application
+developer knows that the relevant errata are not relevant to the
+system being developed.</P
+><P
+>Erratum S1 lists a possible problem if the device driver attempts
+multiple writes to the USB hardware. This is circumvented by a
+dummy read operation after every write. If this workaround is not
+required then the configuration option
+<TT
+CLASS="LITERAL"
+>CYGIMP_DEVS_USB_UPD985XX_IBUS_WRITE_LIMIT</TT
+> can be disabled.</P
+><P
+>Errata U3 and U4 describe various problems related to concurrent
+transmissions on different endpoints. By default the device driver
+works around this by serializing all transmit operations. For example
+if the device driver needs to send a response to a control message on
+endpoint 0 while there is an ongoing bulk transfer on endpoint 5, the
+response is delayed until the bulk transfer has completed. Under
+typical operating conditions this does not cause any problems:
+endpoint 0 traffic usually happens only during initialization, when
+the target is connected to the host, while endpoint 5 traffic only
+happens after initialization. However if transmit serialization is
+inappropriate for the system being developed then it can be disabled
+using the configuration option
+<TT
+CLASS="LITERAL"
+>CYGIMP_DEVS_USB_UPD985XX_SERIALIZE_TRANSMITS</TT
+>. </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN71"
+></A
+><H2
+>Platform Dependencies</H2
+><P
+>On some platforms it is necessary for the low-level USB device driver
+to perform some additional operations during start-up. For example it
+may be necessary to manipulate one of the processor's GPIO lines
+before the host can detect a new USB peripheral and attempt to
+communicate with it. This avoids problems if the target involves a
+significant amount of work prior to device driver initialization, for
+example a power-on self-test sequence. If the USB host attempted to
+contact the target before the USB device driver had been initialized,
+it would fail to get the expected responses and conclude that the
+target was not a functional USB peripheral.</P
+><P
+>Platform-specific initialization code can be provided via a macro
+<TT
+CLASS="FUNCTION"
+>UPD985XX_USB_PLATFORM_INIT</TT
+>. Typically this macro
+would be defined in the platform HAL's header file
+<TT
+CLASS="FILENAME"
+>cyg/hal/plf_io.h</TT
+>. If the
+current platform defines such a macro, the USB device driver will
+invoke it during the endpoint 0 start-up operation.</P
+></DIV
+></BODY
+></HTML
+>

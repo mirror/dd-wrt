@@ -1,0 +1,166 @@
+2004-09-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c (cyg_plf_redboot_startup): Boot mode implies no
+	script, even if the user has set one.
+
+2004-08-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/moab.S: 
+	* sa_tests/tty.c: 
+	* sa_tests/start.S: 
+	* include/pkgconf/mlt_powerpc_moab_romram.h: 
+	* cdl/hal_powerpc_moab.cdl: Support for new board revision.  Minor
+	layout changes, change in RAM/FLASH sizes.
+
+2004-02-26  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_BOOT.ecm: 
+	* cdl/hal_powerpc_moab.cdl: Use HAL_PLATFORM_EXTRA to display operating
+	mode of RedBoot (BOOT, NAND FLASH or RAM)
+
+2004-02-25  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM+FLASH.ecm: Remove FIS - can't be supported in
+	this configuration.
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/moab.S: Fix cycle time on NAND FLASH.
+
+2003-10-15  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_moab.cdl: Remove [unused] tests so "make tests" works.
+
+2003-10-09  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf.inc: Define vector 0, to make ROMRAM mode program startup
+	safer (don't need to remember the "-e XXX" option)
+
+2003-10-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c (hal_platform_init): Better/different ESA computation,
+	using only 16 unique bits.
+
+2003-10-02  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c: 
+	* cdl/hal_powerpc_moab.cdl: Add code to set and check ethernet station
+	addresses, based on CPU serial number.  Force RedBoot to validate them.
+
+2003-09-30  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_io.h (CYGARC_VIRTUAL_ADDRESS): Added.
+	Scan all possible PCI slots.
+
+2003-09-28  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_moab.cdl: Remove conflicting constraint - prevented
+	non-RedBoot builds.
+
+2003-09-26  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_io.h: PCI IRQ mapping is platform dependent - moved here.
+
+2003-09-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/moab.S: Disable GPIO16 (watchdog timer) as output by default.
+
+2003-09-22  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_moab.cdl: Need to force 'fconfig' since that is now
+	optional in RedBoot.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_BOOT.ecm: 
+	* misc/redboot_RAM+FLASH.ecm: 
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-09-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_BOOT.ecm: Disable PCI in BOOT configuration
+
+	* include/plf_io.h: Fix PCI I/O addresses
+
+	* src/moab_ide.c: 
+	* cdl/hal_powerpc_moab.cdl: Add IDE support
+
+2003-09-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* support/make_MOAB_flash.c: Tool to create boot flash image
+
+	* sa_tests/tty.c: 
+	* sa_tests/start.S: 
+	* sa_tests/sdram_test.c: 
+	* sa_tests/ppc_ocm.ld: 
+	* sa_tests/ppc_dram.ld: 
+	* sa_tests/ppc.inc: 
+	* sa_tests/flash_test.c: 
+	* sa_tests/Makefile: Stand alone testing support.
+	
+	* misc/redboot_ROMRAM.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_BOOT.ecm: 
+	* misc/redboot_RAM+FLASH.ecm:
+	* misc/redboot_RAM.ecm: Default RedBoot configurations
+	
+	* src/moab.S: 
+	* src/hal_aux.c: 
+	* src/plf_redboot_linux_exec.c:
+	* include/pkgconf/mlt_powerpc_moab_romram.mlt: 	
+	* include/pkgconf/mlt_powerpc_moab_romram.ldi: 	
+	* include/pkgconf/mlt_powerpc_moab_romram.h: 
+	* include/pkgconf/mlt_powerpc_moab_rom.mlt: 	
+	* include/pkgconf/mlt_powerpc_moab_rom.ldi: 	
+	* include/pkgconf/mlt_powerpc_moab_rom.h: 
+	* include/pkgconf/mlt_powerpc_moab_ram.mlt: 	
+	* include/pkgconf/mlt_powerpc_moab_ram.ldi: 	
+	* include/pkgconf/mlt_powerpc_moab_ram.h: 
+	* include/plf_stub.h: 
+	* include/plf_regs.h: 
+	* include/plf_io.h: 
+	* include/plf_intr.h: 
+	* include/plf_cache.h: 
+	* include/plf.inc: 
+	* include/hal_diag.h: 
+	* cdl/hal_powerpc_moab.cdl: New package - platform support for
+	TAMS MOAB (PowerPC 405GPr) board.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+// Copyright (C) 2003, 2002 Gary Thomas
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

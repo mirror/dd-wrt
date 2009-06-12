@@ -1,0 +1,638 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Implementing a Power Controller</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Power Management Support"
+HREF="services-power.html"><LINK
+REL="PREVIOUS"
+TITLE="Attached and Detached Controllers"
+HREF="power-attached.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Power Management Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="power-attached.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="POWER-CONTROLLER"
+>Implementing a Power Controller</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN355"
+></A
+><H2
+>Name</H2
+>Implementing a Power Controller&nbsp;--&nbsp;adding power management support to device drivers and
+other packages</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN358"
+></A
+><H2
+>Implementing a Power Controller</H2
+><P
+>A system will have some number of power controllers. Usually there
+will be one power controller for the cpu,
+<TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+>, typically provided by one of
+the HAL packages and responsible for managing the processor itself and
+associated critical components such as memory. Some or all of the
+device drivers will provide power controllers, allowing the power
+consumption of the associated devices to be controlled. There may be
+some arbitrary number of other controllers present in the system. The
+power management package does not impose any restrictions on the
+number or nature of the power controllers in the system, other than
+insisting that at most one <TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+> be
+provided.</P
+><P
+>Each power controller involves a single data structure of type
+<SPAN
+CLASS="STRUCTNAME"
+>PowerController</SPAN
+>, defined in the header file
+<TT
+CLASS="FILENAME"
+>cyg/power/power.h</TT
+>. These data
+structures should all be placed in the table
+<TT
+CLASS="LITERAL"
+>__POWER__</TT
+>, so that the power management package and
+other code can easily locate all the controllers in the system. This
+table is constructed at link-time, avoiding code-size or run-time
+overheads. To facilitate this the package provides two macros which
+should be used to define a power controller,
+<TT
+CLASS="LITERAL"
+>POWER_CONTROLLER()</TT
+> and
+<TT
+CLASS="LITERAL"
+>POWER_CONTROLLER_CPU()</TT
+>.</P
+><P
+>The macro <TT
+CLASS="LITERAL"
+>POWER_CONTROLLER</TT
+> takes four arguments:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>A variable name. This can be used to access the power controller
+directly, as well as via the table.</P
+></LI
+><LI
+><P
+>A priority. The table of power controllers is sorted, such that power
+controllers with a numerically lower priority come earlier in the
+table. The special controller <TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+>
+always comes at the end of the table. When moving from a high-power
+mode to a lower-powered mode, the power management package iterates
+through the table from front to back. When moving to a higher-powered
+mode the reverse direction is used. The intention is that the power
+controller for a software-only package such as a TCP/IP stack should
+appear near the start of the table, whereas the controllers for the
+ethernet and similar devices would be near the end of the table. Hence
+when the policy module initiates a mode change to a lower-powered mode
+the TCP/IP stack gets a chance to cancel this mode change, before the
+devices it depends on are powered down. Similarly when moving to a
+higher-powered mode the devices will be re-activated before any
+software that depends on those devices.</P
+><P
+>The header file <TT
+CLASS="FILENAME"
+>cyg/power/power.h</TT
+> defines three
+priorities <TT
+CLASS="LITERAL"
+>PowerPri_Early</TT
+>,
+<TT
+CLASS="LITERAL"
+>PowerPri_Typical</TT
+> and
+<TT
+CLASS="LITERAL"
+>PowerPri_Late</TT
+>. For most controllers one of these
+priorities, possibly with a small number added or subtracted, will
+give sufficient control. If an application developer is uncertain
+about the relative priorities of the various controllers, a simple
+<A
+HREF="power-info.html#POWER-INFO-IDS"
+>test program</A
+> that iterates over
+the table will quickly eliminate any confusion.</P
+></LI
+><LI
+><P
+>A constant string identifier. If the system has been configured
+without support for such identifiers
+(<TT
+CLASS="VARNAME"
+>CYGIMP_POWER_PROVIDE_STRINGS</TT
+>) then this identifer
+will be discarded at compile-time. Otherwise it will be made available
+to higher-level code using the function
+<TT
+CLASS="FUNCTION"
+>power_get_controller_id</TT
+>. </P
+></LI
+><LI
+><P
+>A function pointer. This will be invoked to perform actual mode
+changes, as described below.</P
+></LI
+></OL
+><P
+>A typical example of the use of the
+<TT
+CLASS="LITERAL"
+>POWER_CONTROLLER</TT
+> macro would be as follows:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;pkgconf/system.h&gt;
+
+#ifdef CYGPKG_POWER
+# include &lt;cyg/power/power.h&gt;
+
+static void
+xyzzy_device_power_mode_change(
+    PowerController* controller,
+    PowerMode        desired_mode,
+    PowerModeChange  change)
+{
+   // Do the work
+}
+
+static POWER_CONTROLLER(xyzzy_power_controller, \
+                        PowerPri_Late,          \
+                        "xyzzy device",         \
+                        &amp;xyzzy_device_power_mode_change);
+#endif</PRE
+></TD
+></TR
+></TABLE
+><P
+>This creates a variable <TT
+CLASS="VARNAME"
+>xyzzy_power_controller</TT
+>,
+which is a power controller data structure that will end up near the
+end of the table of power controllers. Higher-level code can
+iterate through this table and report the string <TT
+CLASS="LITERAL"
+>"xyzzy
+device"</TT
+> to the user. Whenever there is a mode change
+operation that affects this controller, the function
+<TT
+CLASS="FUNCTION"
+>xyzzy_device_power_mode_change</TT
+> will be invoked.
+The variable is declared static so this controller cannot be
+manipulated by name in any other code. Alternatively, if the variable
+had not been declared static other code could manipulate this
+controller by name as well as through the table, especially if the
+package for the xyzzy device driver explicitly declared this
+variable in an exported header file. Obviously exporting the variable
+involves a slight risk of a name clash at link time.</P
+><P
+>The above code explicitly checks for the presence of the power
+management package before including that package's header file or
+providing any related functionality. Since power management
+functionality is optional, such checks are recommended.</P
+><P
+>The macro <TT
+CLASS="LITERAL"
+>POWER_CONTROLLER_CPU</TT
+> only takes two
+arguments, a string identifier and a mode change function pointer.
+This macro always instantiates a variable
+<TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+> so there is no need to provide
+a variable name. The resulting power controller structure always
+appears at the end of the table, so there is no need to specify a
+priority. Typical usage of the <TT
+CLASS="LITERAL"
+>POWER_CONTROLLER_CPU</TT
+>
+macro would be:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static void
+wumpus_processor_power_mode_change(
+    PowerController* controller,
+    PowerMode        desired_mode,
+    PowerModeChange  change)
+{
+   // Do the work
+}
+
+POWER_CONTROLLER_CPU("wumpus processor", \
+                     &amp;wumpus_processor_power_mode_change);</PRE
+></TD
+></TR
+></TABLE
+><P
+>This defines a power controller structure
+<TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+>. It should not be declared
+static since higher-level code may well want to manipulate the cpu's
+power mode directly, and the variable is declared by the power
+management package's header file.</P
+><P
+>Some care has to be taken to ensure that the power controllers
+actually end up in the final executable. If a power controller
+variable ends up in an ordinary library and is never referenced
+directly then typically the linker will believe that the variable is
+not needed and it will not end up in the executable. For eCos packages
+this can be achieved in the CDL, by specifying that the containing
+source file should end up in <TT
+CLASS="FILENAME"
+>libextras.a</TT
+> rather
+than the default <TT
+CLASS="FILENAME"
+>libtarget.a</TT
+>:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>cdl_package CYGPKG_HAL_WUMPUS_ARCH {
+    &#8230;
+    compile -library=libextras.a data.c
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>If the file <TT
+CLASS="FILENAME"
+>data.c</TT
+> instantiates a power
+controller this is now guaranteed to end up in the final executable,
+as intended. Typically HAL and device driver packages will already
+have some data that must not be eliminated by the linker, so they will
+already contain a file that gets built into
+<TT
+CLASS="FILENAME"
+>libextras.a</TT
+>. For power controllers defined inside
+application code it is important that the power controllers end up in
+<TT
+CLASS="FILENAME"
+>.o</TT
+> object files rather than in
+<TT
+CLASS="FILENAME"
+>.a</TT
+> library archive files.</P
+><P
+>All the real work of a power controller is done by the mode change
+function. If the power management package has been configured to use a
+separate thread then this mode change function will be invoked by that
+thread (except for the special case of <A
+HREF="power-change.html#POWER-CHANGE-CONTROLLER-NOW"
+><TT
+CLASS="FUNCTION"
+>power_set_controller_mode_now</TT
+></A
+>). 
+If no separate thread is used then the mode change function will be
+invoked directly by <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> or
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+>.</P
+><P
+>The mode change function will be invoked with three arguments. The
+first argument identifies the power controller. Usually this argument
+is not actually required since a given mode change function will only
+ever be invoked for a single power controller. For example,
+<TT
+CLASS="FUNCTION"
+>xyzzy_device_power_mode_change</TT
+> will only ever be
+used in conjunction with <TT
+CLASS="VARNAME"
+>xyzzy_power_controller</TT
+>.
+However there may be some packages which contain multiple controllers,
+all of which can share a single mode change function, and in that case
+it is essential to identify the specific controller. The second
+argument specifies the mode the controller should switch to, if
+possible: it will be one of <TT
+CLASS="LITERAL"
+>PowerMode_Active</TT
+>,
+<TT
+CLASS="LITERAL"
+>PowerMode_Idle</TT
+>, <TT
+CLASS="LITERAL"
+>PowerMode_Sleep</TT
+>
+or <TT
+CLASS="LITERAL"
+>PowerMode_Off</TT
+>. The final argument will be one of
+<TT
+CLASS="LITERAL"
+>PowerModeChange_Controller</TT
+>,
+PowerModeChange_ControllerNow, or
+<TT
+CLASS="LITERAL"
+>PowerModeChange_Global</TT
+>, and identifies the call
+that caused this invocation. For example, if the mode change function
+was invoked because of a call to <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>
+then this argument will be <TT
+CLASS="LITERAL"
+>PowerModeChange_Global</TT
+>.
+It is up to each controller to decide how to interpret this final
+argument. A typical controller might reject a global request to switch
+to <SPAN
+CLASS="TYPE"
+>off</SPAN
+> mode if the associated device is still busy, but
+if the request was aimed specifically at this controller then it could
+instead abort any current I/O operations and switch off the device.</P
+><P
+>The <SPAN
+CLASS="STRUCTNAME"
+>PowerController</SPAN
+> data structure contains
+one field, <TT
+CLASS="STRUCTFIELD"
+><I
+>mode</I
+></TT
+>, that needs to be updated
+by the power mode change function. At all times it should indicate the
+current mode for this controller. When a mode change is requested the
+desired mode is passed as the second argument. The exact operation of
+the power mode change function depends very much on what is being
+controlled and the current circumstances, but some guidelines are
+possible:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>If the request can be satisfied without obvious detriment, do so and
+update the <TT
+CLASS="STRUCTFIELD"
+><I
+>mode</I
+></TT
+> field. Reducing the power
+consumption of a device that is not currently being used is generally
+harmless.</P
+></LI
+><LI
+><P
+>If a request is a no-op, for example if the system is switching
+from <SPAN
+CLASS="TYPE"
+>idle</SPAN
+> to <SPAN
+CLASS="TYPE"
+>sleep</SPAN
+> mode and the controller
+does not distinguish between these modes, simply act as if the request
+was satisfied.</P
+></LI
+><LI
+><P
+>If a request is felt to be unsafe, for example shutting down a
+device that is still in use, then the controller may decide
+to reject this request. This is especially true if the request was a
+global mode change as opposed to one intended specifically for this
+controller: in the latter case the policy module should be given due
+deference. There are a number of ways in which a request can be
+rejected:</P
+><P
+></P
+><OL
+TYPE="a"
+><LI
+><P
+>If the request cannot be satisfied immediately but may be feasible in
+a short while, leave the <TT
+CLASS="STRUCTFIELD"
+><I
+>mode</I
+></TT
+> field
+unchanged. Higher-level code in the policy module can interpret this
+as a hint to retry the operation a little bit later. This approach is
+also useful if the mode change can be started but will take some time
+to complete, for example shutting down a socket connection, and
+additional processing will be needed later on.</P
+></LI
+><LI
+><P
+>If the request is felt to be inappropriate, for example switching off
+a device that is still in use, the mode change function can
+call <TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> to reset the
+desired mode for this controller back to the current mode.
+Higher-level code can then interpret this as a hint that there is more
+activity in the system than had been apparent.</P
+></LI
+><LI
+><P
+>For a global mode change, if the new mode is felt to be inappropriate
+then the power controller can call <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>
+to indicate this. An example of this would be the policy module
+deciding to switch off the whole unit while there is still I/O
+activity.</P
+></LI
+></OL
+></LI
+></OL
+><P
+>Mode change functions should not directly manipulate any other fields
+in the <SPAN
+CLASS="STRUCTNAME"
+>PowerController</SPAN
+> data structure. If it
+is necessary to keep track of additional data then static variables
+can be used.</P
+><P
+>It should be noted that the above are only guidelines. Their
+application in any given situation may be unclear. In addition the
+detailed requirements of specific systems will vary, so even if the
+power controller for a given device driver follows the above
+guidelines exactly it may turn out that slightly different behaviour
+would be more appropriate for the actual system that is being
+developed. Fortunately the open source nature of
+<SPAN
+CLASS="PRODUCTNAME"
+>eCos</SPAN
+> allows system developers to fine-tune
+power controllers to meet their exact requirements.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="power-attached.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="services-power.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Attached and Detached Controllers</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,238 @@
+diff -C 4 -r --exclude=build ./gdb/blockframe.c /home/apatti/source/gdb/gdb-5.3/gdb/blockframe.c
+*** ./gdb/blockframe.c	2002-08-22 15:25:17.000000000 -0700
+--- /home/apatti/source/gdb/gdb-5.3/gdb/blockframe.c	2004-12-22 15:01:41.000000000 -0800
+***************
+*** 413,420 ****
+--- 413,422 ----
+           this to after the ffi test; I'd rather have backtraces from
+           start go curfluy than have an abort called from main not show
+           main.  */
+        address = FRAME_CHAIN (next_frame);
++ 	  /* AJP */
++ 	  //printf("FRAME_CHAIN call, address %p\n", address);
+  
+        /* FIXME: cagney/2002-06-08: There should be two tests here.
+           The first would check for a valid frame chain based on a user
+           selectable policy.  The default being ``stop at main'' (as
+diff -C 4 -r --exclude=build ./gdb/config/mips/tm-embed.h /home/apatti/source/gdb/gdb-5.3/gdb/config/mips/tm-embed.h
+*** ./gdb/config/mips/tm-embed.h	2002-08-21 15:39:26.000000000 -0700
+--- /home/apatti/source/gdb/gdb-5.3/gdb/config/mips/tm-embed.h	2004-12-22 15:39:47.000000000 -0800
+***************
+*** 25,39 ****
+--- 25,50 ----
+  
+  /* Use these macros for watchpoint insertion/deletion.  */
+  /* type can be 0: write watch, 1: read watch, 2: access watch (read/write) */
+  
++ /* AJP */
++ #if 0
+  #define target_insert_watchpoint(addr, len, type) \
+  	remote_mips_set_watchpoint (addr, len, type)
++ #endif
++ #define target_insert_watchpoint(addr, len, type) \
++      (*current_target.to_insert_watchpoint) (addr, len, type)
++ 
+  int remote_mips_set_watchpoint (CORE_ADDR addr, int len, int type);
+  
++ /* AJP */
++ #if 0
+  #define target_remove_watchpoint(addr, len, type) \
+  	remote_mips_remove_watchpoint (addr, len, type)
+  int remote_mips_remove_watchpoint (CORE_ADDR addr, int len, int type);
++ #endif
++ #define target_remove_watchpoint(addr, len, type) \
++     (*current_target.to_remove_watchpoint) (addr, len, type)
+  
+  /* We need to remove watchpoints when stepping, else we hit them again! */
+  
+  #define HAVE_NONSTEPPABLE_WATCHPOINT
+diff -C 4 -r --exclude=build ./gdb/m32r-tdep.c /home/apatti/source/gdb/gdb-5.3/gdb/m32r-tdep.c
+*** ./gdb/m32r-tdep.c	2002-07-29 09:34:06.000000000 -0700
+--- /home/apatti/source/gdb/gdb-5.3/gdb/m32r-tdep.c	2004-12-22 14:33:46.000000000 -0800
+***************
+*** 479,486 ****
+--- 479,489 ----
+  m32r_frame_chain (struct frame_info *fi)
+  {
+    CORE_ADDR fn_start, callers_pc, fp;
+  
++   // AJP
++   printf("%s\n", __FUNC__);
++ 
+    /* is this a dummy frame? */
+    if (PC_IN_CALL_DUMMY (fi->pc, fi->frame, fi->frame))
+      return fi->frame;		/* dummy frame same as caller's frame */
+  
+diff -C 4 -r --exclude=build ./gdb/mips-tdep.c /home/apatti/source/gdb/gdb-5.3/gdb/mips-tdep.c
+*** ./gdb/mips-tdep.c	2002-10-01 18:29:29.000000000 -0700
+--- /home/apatti/source/gdb/gdb-5.3/gdb/mips-tdep.c	2004-12-22 15:01:05.000000000 -0800
+***************
+*** 2404,2412 ****
+    mips_extra_func_info_t proc_desc;
+    CORE_ADDR tmp;
+    CORE_ADDR saved_pc = FRAME_SAVED_PC (frame);
+  
+!   if (saved_pc == 0 || inside_entry_file (saved_pc))
+      return 0;
+  
+    /* Check if the PC is inside a call stub.  If it is, fetch the
+       PC of the caller of that stub.  */
+--- 2404,2412 ----
+    mips_extra_func_info_t proc_desc;
+    CORE_ADDR tmp;
+    CORE_ADDR saved_pc = FRAME_SAVED_PC (frame);
+  
+!   if (saved_pc == 0 /* AJP: || inside_entry_file (saved_pc) */)
+      return 0;
+  
+    /* Check if the PC is inside a call stub.  If it is, fetch the
+       PC of the caller of that stub.  */
+***************
+*** 2414,2421 ****
+--- 2414,2422 ----
+      saved_pc = tmp;
+  
+    /* Look up the procedure descriptor for this PC.  */
+    proc_desc = find_proc_desc (saved_pc, frame, 1);
++ 
+    if (!proc_desc)
+      return 0;
+  
+    cached_proc_desc = proc_desc;
+***************
+*** 2428,2437 ****
+        /* The previous frame from a sigtramp frame might be frameless
+  	 and have frame size zero.  */
+        && !frame->signal_handler_caller
+        /* Check if this is a call dummy frame.  */
+!       && frame->pc != CALL_DUMMY_ADDRESS ())
+!     return 0;
+    else
+      return get_frame_pointer (frame, proc_desc);
+  }
+  
+--- 2429,2439 ----
+        /* The previous frame from a sigtramp frame might be frameless
+  	 and have frame size zero.  */
+        && !frame->signal_handler_caller
+        /* Check if this is a call dummy frame.  */
+!       && frame->pc != CALL_DUMMY_ADDRESS ()) {
+! 	  return 0;
+!   }
+    else
+      return get_frame_pointer (frame, proc_desc);
+  }
+  
+diff -C 4 -r --exclude=build ./gdb/remote.c /home/apatti/source/gdb/gdb-5.3/gdb/remote.c
+*** ./gdb/remote.c	2002-08-18 16:17:57.000000000 -0700
+--- /home/apatti/source/gdb/gdb-5.3/gdb/remote.c	2004-12-22 15:27:40.000000000 -0800
+***************
+*** 4781,4789 ****
+      error ("Can't set hardware watchpoints without the '%s' (%s) packet\n",
+  	   remote_protocol_Z[packet].name,
+  	   remote_protocol_Z[packet].title);
+    
+!   sprintf (buf, "Z%x,", packet);
+    p = strchr (buf, '\0');
+    addr = remote_address_masked (addr);
+    p += hexnumstr (p, (ULONGEST) addr);
+    sprintf (p, ",%x", len);
+--- 4781,4790 ----
+      error ("Can't set hardware watchpoints without the '%s' (%s) packet\n",
+  	   remote_protocol_Z[packet].name,
+  	   remote_protocol_Z[packet].title);
+    
+!   /* AJP */
+!   sprintf (buf, "A%x,", packet);
+    p = strchr (buf, '\0');
+    addr = remote_address_masked (addr);
+    p += hexnumstr (p, (ULONGEST) addr);
+    sprintf (p, ",%x", len);
+diff -C 4 -r --exclude=build ./gdb/remote-mips.c /home/apatti/source/gdb/gdb-5.3/gdb/remote-mips.c
+*** ./gdb/remote-mips.c	2002-05-04 18:15:13.000000000 -0700
+--- /home/apatti/source/gdb/gdb-5.3/gdb/remote-mips.c	2004-06-15 18:33:17.000000000 -0700
+***************
+*** 2406,2414 ****
+  
+  int
+  remote_mips_can_use_hardware_watchpoint (int cnt)
+  {
+!   return cnt < MAX_LSI_BREAKPOINTS && strcmp (target_shortname, "lsi") == 0;
+  }
+  
+  
+  /* Compute a don't care mask for the region bounding ADDR and ADDR + LEN - 1.
+--- 2406,2415 ----
+  
+  int
+  remote_mips_can_use_hardware_watchpoint (int cnt)
+  {
+!     //return cnt < MAX_LSI_BREAKPOINTS && strcmp (target_shortname, "lsi") == 0;
+!     return cnt < 4;
+  }
+  
+  
+  /* Compute a don't care mask for the region bounding ADDR and ADDR + LEN - 1.
+diff -C 4 -r --exclude=build ./gdb/stack.c /home/apatti/source/gdb/gdb-5.3/gdb/stack.c
+*** ./gdb/stack.c	2002-08-29 12:59:35.000000000 -0700
+--- /home/apatti/source/gdb/gdb-5.3/gdb/stack.c	2004-12-22 15:02:42.000000000 -0800
+***************
+*** 1050,1057 ****
+--- 1050,1063 ----
+    register int i;
+    register struct frame_info *trailing;
+    register int trailing_level;
+  
++   /* AJP */
++   ///if(count_exp)
++   //printf("%c%c%c%c\n", count_exp[0],count_exp[1],count_exp[2],count_exp[3]);
++   //else
++   //  printf("no count_exp\n");
++ 
+    if (!target_has_stack)
+      error ("No stack.");
+  
+    /* The following code must do two things.  First, it must
+***************
+*** 1059,1066 ****
+--- 1065,1077 ----
+       printing.  Second, it must set the variable count to the number
+       of frames which we should print, or -1 if all of them.  */
+    trailing = get_current_frame ();
+  
++   /* AJP */
++   //if (trailing) {
++   //  printf("trailing: next %p,   prev %p", trailing->next, trailing->prev);
++   //}
++ 
+    /* The target can be in a state where there is no valid frames
+       (e.g., just connected). */
+    if (trailing == NULL)
+      error ("No stack.");
+***************
+*** 1068,1075 ****
+--- 1079,1088 ----
+    trailing_level = 0;
+    if (count_exp)
+      {
+        count = parse_and_eval_long (count_exp);
++       /* AJP */
++       //printf("parse_and_eval_long, count: %d \n", count);
+        if (count < 0)
+  	{
+  	  struct frame_info *current;
+  
+***************
+*** 1118,1125 ****
+--- 1131,1141 ----
+  	    PSYMTAB_TO_SYMTAB (ps);	/* Force syms to come in */
+  	}
+      }
+  
++   /* AJP */
++   //printf("*** count: %d ***\n", count);
++ 
+    for (i = 0, fi = trailing;
+         fi && count--;
+         i++, fi = get_prev_frame (fi))
+      {

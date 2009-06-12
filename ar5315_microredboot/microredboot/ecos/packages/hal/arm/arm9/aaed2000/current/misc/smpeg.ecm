@@ -1,0 +1,308 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    aaed2000 ;
+    template    net ;
+    package -hardware CYGPKG_HAL_ARM current ;
+    package -hardware CYGPKG_HAL_ARM_ARM9 current ;
+    package -hardware CYGPKG_HAL_ARM_ARM9_AAED2000 current ;
+    package -hardware CYGPKG_DEVS_FLASH_ARM_AAED2000 current ;
+    package -hardware CYGPKG_DEVS_FLASH_AMD_AM29XXXXX current ;
+    package -hardware CYGPKG_DEVS_ETH_CL_CS8900A current ;
+    package -hardware CYGPKG_DEVS_ETH_ARM_AAED2000 current ;
+    package -hardware CYGPKG_DEVS_KBD_AAED2000 current ;
+    package -hardware CYGPKG_DEVS_TOUCH_AAED2000 current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_IO current ;
+    package -template CYGPKG_IO_SERIAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_ISOINFRA current ;
+    package -template CYGPKG_KERNEL current ;
+    package -template CYGPKG_MEMALLOC current ;
+    package -template CYGPKG_LIBC current ;
+    package -template CYGPKG_LIBC_TIME current ;
+    package -template CYGPKG_LIBC_STDLIB current ;
+    package -template CYGPKG_LIBC_STRING current ;
+    package -template CYGPKG_LIBC_I18N current ;
+    package -template CYGPKG_LIBC_SETJMP current ;
+    package -template CYGPKG_LIBC_STARTUP current ;
+    package -template CYGPKG_LIBC_STDIO current ;
+    package -template CYGPKG_LIBM current ;
+    package -template CYGPKG_POSIX current ;
+    package -template CYGPKG_IO_WATCHDOG current ;
+    package -template CYGPKG_IO_WALLCLOCK current ;
+    package -template CYGPKG_ERROR current ;
+    package -template CYGPKG_IO_FILEIO current ;
+    package -template CYGPKG_NET current ;
+    package -template CYGPKG_NET_OPENBSD_STACK current ;
+    package -template CYGPKG_NS_DNS current ;
+    package -template CYGPKG_IO_ETH_DRIVERS current ;
+    package CYGPKG_FS_ROM current ;
+    package CYGPKG_MICROWINDOWS current ;
+    package CYGPKG_FS_JFFS2 current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+    package CYGPKG_FS_RAM current ;
+};
+
+cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+    user_value arm-elf
+};
+
+cdl_option CYGBLD_GLOBAL_CFLAGS {
+    user_value "-mcpu=arm9 -msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority"
+};
+
+cdl_option CYGPKG_HAL_ARM_ARM9_ARM920T {
+    inferred_value 1
+};
+
+cdl_option CYGPKG_IO_NFILE {
+    user_value 32
+};
+
+cdl_component CYGPKG_INFRA_DEBUG {
+    user_value 1
+};
+
+cdl_option CYGBLD_ISO_CTYPE_HEADER {
+    inferred_value 1 <cyg/libc/i18n/ctype.inl>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    inferred_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILETYPES_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_STREAMS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILEACCESS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FORMATTED_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_CHAR_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_DIRECT_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_ERROR_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_STRCONV_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/atox.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_ABS_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/abs.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_DIV_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/div.inl>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    inferred_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_TIMER_TYPES_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_CLOCK_TYPES_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_C_TIME_TYPES_HEADER {
+    inferred_value 1 <cyg/libc/time/time.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_TIMERS_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_CLOCKS_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_C_CLOCK_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/time/time.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_NUMBERS_HEADER {
+    inferred_value 1 <cyg/posix/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_IMPL_HEADER {
+    inferred_value 1 <cyg/posix/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SETJMP_HEADER {
+    inferred_value 1 <cyg/libc/setjmp/setjmp.h>
+};
+
+cdl_option CYGBLD_ISO_SIGSETJMP_HEADER {
+    inferred_value 1 <cyg/posix/sigsetjmp.h>
+};
+
+cdl_option CYGBLD_ISO_DIRENT_HEADER {
+    inferred_value 1 <cyg/fileio/dirent.h>
+};
+
+cdl_option CYGBLD_ISO_PTHREADTYPES_HEADER {
+    inferred_value 1 <cyg/posix/types.h>
+};
+
+cdl_option CYGBLD_ISO_PMUTEXTYPES_HEADER {
+    inferred_value 1 <cyg/posix/muttypes.h>
+};
+
+cdl_option CYGBLD_ISO_BSDTYPES_HEADER {
+    inferred_value 1 <sys/bsdtypes.h>
+};
+
+cdl_option CYGBLD_ISO_UTSNAME_HEADER {
+    inferred_value 1 <cyg/posix/utsname.h>
+};
+
+cdl_option CYGBLD_ISO_SEMAPHORES_HEADER {
+    inferred_value 1 <cyg/posix/semaphore.h>
+};
+
+cdl_option CYGBLD_ISO_PTHREAD_IMPL_HEADER {
+    inferred_value 1 <cyg/posix/pthread.h>
+};
+
+cdl_option CYGBLD_ISO_PTHREAD_MUTEX_HEADER {
+    inferred_value 1 <cyg/posix/mutex.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_LIMITS_HEADER {
+    inferred_value 1 <cyg/posix/limits.h>
+};
+
+cdl_option CYGBLD_ISO_OPEN_MAX_HEADER {
+    inferred_value 1 <cyg/fileio/limits.h>
+};
+
+cdl_option CYGBLD_ISO_DNS_HEADER {
+    inferred_value 1 <cyg/ns/dns/dns.h>
+};
+
+cdl_option CYGBLD_ISO_NETDB_PROTO_HEADER {
+    inferred_value 1 <net/netdb.h>
+};
+
+cdl_option CYGBLD_ISO_NETDB_SERV_HEADER {
+    inferred_value 1 <net/netdb.h>
+};
+
+cdl_option CYGIMP_KERNEL_SCHED_SORTED_QUEUES {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_KERNEL_SCHED_TIMESLICE_ENABLE {
+    inferred_value 1
+};
+
+cdl_component CYGSEM_KERNEL_SCHED_ASR_SUPPORT {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_KERNEL_SCHED_ASR_GLOBAL {
+    inferred_value 1
+};
+
+cdl_option FOPEN_MAX {
+    user_value 32
+};
+
+cdl_option CYGNUM_FILEIO_NFILE {
+    user_value 32
+};
+
+cdl_option CYGNUM_FILEIO_NFD {
+    user_value 32
+};
+
+cdl_component CYGPKG_IO_FILEIO_INODE {
+    inferred_value 1
+};
+
+cdl_option CYGBLD_MICROWINDOWS_ECOS {
+    inferred_value 1
+};
+
+cdl_option CYGBLD_MICROWINDOWS_NANOWM {
+    inferred_value 1
+};
+
+cdl_option CYGBLD_MICROWINDOWS_NXKBD {
+    inferred_value 1
+};
+
+cdl_option CYGPKG_MICROWINDOWS_CFLAGS_ADD {
+    inferred_value "-I\$(PREFIX)/include/microwin -D__ECOS=1 -DMSDOS=0 -DELKS=0 -D__rtems__=0 -D_MINIX=0 -DNOTYET=0 -DUNIX=1 -DHAVE_FILEIO -DHAVE_BMP_SUPPORT=1 -DHAVE_PNM_SUPPORT=1 -DHAVE_XPM_SUPPORT=1 -DxHAVE_JPEG_SUPPORT=1 -DHAVESELECT=1 -DMWPIXEL_FORMAT=MWPF_TRUECOLOR555"
+};
+
+cdl_component CYGPKG_IO_FLASH_BLOCK_DEVICE {
+    inferred_value 1
+};
+
+cdl_option CYGNUM_IO_FLASH_BLOCK_OFFSET_1 {
+    user_value 0x01000000
+};
+
+cdl_option CYGNUM_IO_FLASH_BLOCK_LENGTH_1 {
+    user_value 0x00400000
+};
+
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV640 {
+    inferred_value 1
+};
+
+

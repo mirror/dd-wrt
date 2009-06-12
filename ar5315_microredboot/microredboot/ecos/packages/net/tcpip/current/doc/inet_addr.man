@@ -1,0 +1,34 @@
+NAME
+       inet_aton, inet_addr, inet_ntoa -  Internet  address
+       manipulation routines
+
+SYNOPSIS
+       #include <network.h>
+
+       int inet_aton(const char *cp, struct in_addr *inp);
+
+       unsigned long int inet_addr(const char *cp);
+
+       char *inet_ntoa(struct in_addr in);
+
+DESCRIPTION
+       inet_aton() converts the Internet host address cp from the
+       standard numbers-and-dots notation into  binary  data  and
+       stores  it  in the structure that inp points to. inet_aton
+       returns nonzero if the address is valid, zero if not.
+
+       The  inet_addr()  function  converts  the  Internet   host
+       address cp from numbers-and-dots notation into binary data
+       in  network  byte  order.   If  the  input   is   invalid,
+       INADDR_NONE (usually -1) is returned.  This is an obsolete
+       interface to inet_aton, described immediately above; it is
+       obsolete  because -1 is a valid address (255.255.255.255),
+       and inet_aton provides a cleaner  way  to  indicate  error
+       return.
+
+       The   inet_ntoa()  function  converts  the  Internet  host
+       address in given in network byte  order  to  a  string  in
+       standard   numbers-and-dots   notation.    The  string  is
+       returned in a statically allocated  buffer,  which  subse­
+       quent calls will overwrite.
+

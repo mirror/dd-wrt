@@ -1,0 +1,35 @@
+uClibc attempts to fully (and rigorously) support "The Open Group Base
+Specifications Issue 6 IEEE Std 1003.1, 2003 Edition" (aka SuSv3).  However, as
+with any standard, they sometimes require things that are either impossible or
+are Completely Stupid(tm).  Therefore, we cannot claim full compliance, and
+there may be some area of uClibc that differ from the requirements of this
+specification.  This document attempts to list these differences and, when
+completed, will contain a full list of all relevant differences between uClibc
+and the requirements of the SuSv3.
+
+
+1) The uClibc setlocale() function is not threadsafe.  
+
+    SuSv3 states that "The locale state is common to all threads
+    within a process.".  But it does not explicitly mention
+    setlocale() as a function that need not be thread-safe.
+    Making setlocale() threadsafe would require an absurd amount
+    of locking (i.e. inside each and every ctype call such as
+    isalpha()).  Furthermore, we consider calling setlocale()
+    from N threads concurrently while using string functions to
+    be a terribly dumb thing to do.  Therefore, we have decided
+    that setlocale() shall not be threadsafe.  If you are
+    multi-threaded, and you wish to change the global locale
+    state, please take care to prevent all other threads from
+    using any locale or ctype functions until the setlocale()
+    call has finished.
+
+2) Some functions required by SuSv3 are not currently implemented.
+    Functions listed by SuSv3 but not (yet) included in uClibc:
+
+        fmtmsg			<not implemented>
+        <others?>
+
+
+More to follow when we think of it...
+

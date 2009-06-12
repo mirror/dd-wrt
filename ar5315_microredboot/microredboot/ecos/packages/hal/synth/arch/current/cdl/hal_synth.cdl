@@ -1,0 +1,131 @@
+# ====================================================================
+#
+#      hal_synth.cdl
+#
+#      Synthetic target architectural configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  jskov
+# Contributors:   bartv
+# Date:           1999-11-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_SYNTH {
+    display  "Linux Synthetic target"
+    parent        CYGPKG_HAL_I386
+    define_header hal_synth.h
+    include_dir   cyg/hal
+    requires      !CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+    
+    description   "
+        The Linux Synthetic Target HAL package provides the 
+        support needed to run eCos binaries on top of a
+        Linux kernel."
+
+    implements    CYGINT_HAL_TESTS_NO_CACHES
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/synth.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+    compile       synth_entry.c synth_diag.c synth_intr.c
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_synth.h>"
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        description   "
+            These values are used in the usec field of the itimerval structure
+            when using getitimer/setitimer."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value 10000
+        }
+    }
+    # What to do when idling
+    cdl_option CYGIMP_HAL_IDLE_THREAD_SPIN {
+	display	"Spin when idle"
+	default_value	CYGIMP_IDLE_THREAD_YIELD
+	description "
+            By default, whenever the eCos application enters the idle thread
+            the synthetic target HAL will make a select() system call. Effectively
+            this causes the application to block until an interrupt occurs,
+            without consuming any cpu resources, as if the hardware supported
+            some sort of IDLE instruction. Usually this behaviour is desirable.
+            However it interferes with the emulation of some hardware. For
+            example the synthetic watchdog timer device can use consumed cpu time
+            rather than wallclock time to determine whether or not the watchdog
+            has triggered, and if the process is spending nearly all its time
+            blocked in select() then the watchdog will not trigger when it should.
+            There are also some kernel configurations which require that the idle
+            thread does not block."
+    }
+    requires	  { CYGIMP_IDLE_THREAD_YIELD implies CYGIMP_HAL_IDLE_THREAD_SPIN }
+    
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/synth.ld" }
+    }
+
+}

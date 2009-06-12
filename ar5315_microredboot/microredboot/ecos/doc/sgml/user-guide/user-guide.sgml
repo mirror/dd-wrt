@@ -1,0 +1,141 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!-- Begin Document Specific Declarations -->
+
+<?Fm: Validation Off>
+
+<!ENTITY ui "&micro;ITRON">
+<!ENTITY cygnus-full "Cygnus Solutions">
+<!ENTITY cygnus-legal-notice SYSTEM "CYGNUS-TERMS">
+<!ENTITY ecos-license SYSTEM "ecos-license.sgml">
+<!ENTITY introduction SYSTEM "introduction.sgml">
+<!ENTITY installation SYSTEM "installation.sgml">
+<!ENTITY programming SYSTEM "programming.sgml">
+<!ENTITY config-tool SYSTEM "config-tool.sgml">
+<!ENTITY programming-concepts-and-techniques SYSTEM "programming-concepts-techniques.sgml">
+<!ENTITY configuration SYSTEM "configuration.sgml">
+<!ENTITY target-setup SYSTEM "target-setup.sgml">
+<!ENTITY real-time-characterization SYSTEM "real-time-characterization.sgml">
+
+<!NOTATION PNG SYSTEM "PNG">
+<!ENTITY send-pr SYSTEM "send-pr.sgml">
+<!ENTITY graphic1 SYSTEM "pix/config-f1.png" NDATA png>
+<!ENTITY graphic2 SYSTEM "pix/repos-relocate.png" NDATA png>
+<!ENTITY graphic3 SYSTEM "pix/save-as-dialog.png" NDATA png>
+<!ENTITY graphic4 SYSTEM "pix/open-dialog.png" NDATA png>
+<!ENTITY graphic5 SYSTEM "pix/html-help.png" NDATA png>
+<!ENTITY graphic6 SYSTEM "pix/settings-viewers.png" NDATA png>
+<!ENTITY graphic7 SYSTEM "pix/configwin.png" NDATA png>
+<!ENTITY graphic8 SYSTEM "pix/conflictwin.png" NDATA png>
+<!ENTITY graphic9 SYSTEM "pix/propwin.png" NDATA png>
+<!ENTITY graphic10 SYSTEM "pix/memorywin.png" NDATA png>
+<!ENTITY graphic11 SYSTEM "pix/regprops.png" NDATA png>
+<!ENTITY graphic12 SYSTEM "pix/memregions.png" NDATA png>
+<!ENTITY graphic13 SYSTEM "pix/memreloc.png" NDATA png>
+<!ENTITY graphic14 SYSTEM "pix/BuildPackages.png" NDATA png>
+<!ENTITY graphic15 SYSTEM "pix/toolsplatforms.png" NDATA png>
+<!ENTITY graphic16 SYSTEM "pix/modifyplatform.png" NDATA png>
+<!ENTITY graphic17 SYSTEM "pix/addplatform.png" NDATA png>
+<!ENTITY graphic18 SYSTEM "pix/templates.png" NDATA png>
+<!ENTITY graphic19 SYSTEM "pix/ToolsOptions.png" NDATA png>
+<!ENTITY graphic20 SYSTEM "pix/Conflicts.png" NDATA png>
+<!ENTITY graphic21 SYSTEM "pix/find-dialog.png" NDATA png>
+<!ENTITY graphic22 SYSTEM "pix/buildoptions.png" NDATA png>
+<!ENTITY graphic23 SYSTEM "pix/build-tools2.png" NDATA png>
+<!ENTITY graphic24 SYSTEM "pix/user-tools-dialog.png" NDATA png>
+<!ENTITY graphic25 SYSTEM "pix/ch-properties-dialog.png" NDATA png>
+<!ENTITY graphic26 SYSTEM "pix/connection.png" NDATA png>
+<!ENTITY graphic27 SYSTEM "pix/run-tests.png" NDATA png>
+<!ENTITY graphic28 SYSTEM "pix/addfromfolder.png" NDATA png>
+<!ENTITY graphic29 SYSTEM "pix/bash.png" NDATA png>
+<!ENTITY graphic30 SYSTEM "pix/comprepos.png" NDATA png>
+<!ENTITY graphic31 SYSTEM "pix/admin.png" NDATA png>
+<!ENTITY graphic32 SYSTEM "pix/settings-display.png" NDATA png>
+<!ENTITY graphic33 SYSTEM "pix/settings-confict.png" NDATA png>
+<!ENTITY graphic34 SYSTEM "pix/settings-runtests.png" NDATA png>
+<!ENTITY programming-graphic1 SYSTEM "pix/config-f1.png" NDATA png>
+<!ENTITY programming-graphic2 SYSTEM "pix/templates01.png" NDATA png>
+<!ENTITY programming-graphic3 SYSTEM "pix/ARMStartup01.png" NDATA png>
+<!ENTITY programming-graphic4 SYSTEM "pix/build-lib01.png" NDATA png>
+<!ENTITY programming-graphic5 SYSTEM "pix/save-as-dialog.png" NDATA png>
+<!ENTITY programming-graphic6 SYSTEM "pix/build-tools2.png" NDATA png>
+<!ENTITY programming-graphic7 SYSTEM "pix/user-tools-dialog.png" NDATA png>
+<!ENTITY programming-graphic8 SYSTEM "pix/build-tests01.png" NDATA png>
+<!ENTITY programming-graphic9 SYSTEM "pix/twothreads2.png" NDATA png>
+
+<!-- <!ENTITY version CDATA "&lt;version&gt;"> -->
+<!ENTITY Version CDATA "<version>">
+
+<!-- End Document Specific Declarations -->
+
+]>
+
+<BOOK ID="ECOS-USER-GUIDE">
+  <bookinfo>
+    <TITLE>eCos User Guide</TITLE>
+    <copyright><year>2001, 2002</year><holder>Red Hat, Inc.</holder></copyright>
+    <copyright><year>2003</year><holder>eCosCentric Ltd.</holder></copyright>
+
+    <legalnotice>
+	<title>Documentation licensing terms</title>
+<para>This material may be distributed only subject to the terms
+and conditions set forth in the Open Publication License, v1.0
+or later (the latest version is presently available at
+<ulink url="http://www.opencontent.org/openpub/">http://www.opencontent.org/openpub/</ulink>).
+</para>
+<para>
+Distribution of the work or derivative of the work in any
+standard (paper) book form is prohibited unless prior
+permission is obtained from the copyright holder.
+</para>
+    </legalnotice>
+    <legalnotice>
+      <title>Trademarks</title>
+<para>Altera&reg; and Excalibur&trade; are trademarks of Altera Corporation.</para>
+<para>AMD&reg; is a registered trademark of Advanced Micro Devices, Inc.</para>
+<para>ARM&reg;, StrongARM&reg;, Thumb&reg;, ARM7&trade;, ARM9&trade;  is a registered trademark of Advanced RISC Machines, Ltd.</para>
+<para>Cirrus Logic&reg; and Maverick&trade; are registered trademarks of Cirrus Logic, Inc.</para>
+<para>Cogent&trade; is a trademark of Cogent Computer Systems, Inc.</para>
+<para>Compaq&reg; is a registered trademark of the Compaq Computer Corporation.</para>
+<para>Fujitsu&reg; is a registered trademark of Fujitsu Limited.</para>
+<para>IBM&reg;, and PowerPC&trade; are trademarks of International Business Machines Corporation.</para>
+<para>IDT&reg; is a registered trademark of Integrated Device Technology Inc.</para>
+<para>Intel&reg;, i386&trade;, Pentium&reg;, StrataFlash&reg; and XScale&trade; are trademarks of Intel Corporation.</para>
+<para>Intrinsyc&reg; and Cerf&trade; are trademarks of Intrinsyc Software, Inc.</para>
+<para>Linux&reg; is a registered trademark of Linus Torvalds. </para>
+<para>Matsushita&trade; and Panasonic&reg; are trademarks of the Matsushita Electric Industrial Corporation.</para>
+<para>Microsoft&reg;, Windows&reg;, Windows NT&reg; and Windows XP&reg; are registered trademarks of Microsoft Corporation, Inc. </para>
+<para>MIPS&reg;, MIPS32&trade; MIPS64&trade;, 4K&trade, 5K&trade; Atlas&trade; and Malta&trade; are trademarks of MIPS Technologies, Inc.</para>
+<para>Motorola&reg;, ColdFire&reg; is a trademark of Motorola, Inc.</para>
+<para>NEC&reg; V800&trade;, V850&trade;, V850/SA1&trade;, V850/SB1&trade;, VR4300&trade;, and VRC4375&trade; are trademarks of NEC Corporation.</para>
+<para>PMC-Sierra&reg; RM7000&trade; and Ocelot&trade; are trademarks of PMC-Sierra Incorporated. </para>
+<para>Red Hat, eCos&trade;, RedBoot&trade;, GNUPro&reg;, and Insight&trade; are trademarks of Red Hat, Inc. </para>
+<para>Samsung&reg; and CalmRISC&trade; are trademarks or registered trademarks of Samsung, Inc. </para>
+<para>Sharp&reg; is a registered trademark of Sharp Electronics Corp.</para>
+<para>SPARC&reg; is a registered trademark of SPARC International, Inc., and is used under license by Sun Microsystems, Inc. </para>
+<para>Sun Microsystems&reg; and Solaris&reg; are registered trademarks of Sun Microsystems, Inc. </para>
+<para>SuperH&trade; and Renesas&trade; are trademarks owned by Renesas Technology Corp.</para>
+<para>Texas Instruments&reg;, OMAP&trade; and Innovator&trade; are trademarks of Texas Instruments Incorporated.</para>
+<para>Toshiba&reg; is a registered trademark of the Toshiba Corporation.</para>
+<para>UNIX&reg; is a registered trademark of The Open Group. </para>
+<para>All other brand and product names, trademarks, and copyrights are the
+property of their respective owners. </para>
+      </legalnotice>
+    </bookinfo>
+
+
+  &introduction;
+  &installation;
+  &programming;
+  &config-tool;
+  &programming-concepts-and-techniques;
+  &configuration;
+
+  <part id="appendices">
+  <title>Appendixes</title>
+  &target-setup;
+  &real-time-characterization;
+  &ecos-license;
+  </part>
+
+</BOOK>

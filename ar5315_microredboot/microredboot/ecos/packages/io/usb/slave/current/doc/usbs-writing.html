@@ -1,0 +1,937 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Writing a USB Device Driver</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Data Endpoints"
+HREF="usbs-data.html"><LINK
+REL="NEXT"
+TITLE="Testing"
+HREF="usbs-testing.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-data.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-testing.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-WRITING"
+>Writing a USB Device Driver</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN668"
+></A
+><H2
+>Name</H2
+>Writing a USB Device Driver&nbsp;--&nbsp;USB Device Driver Porting Guide</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN671"
+></A
+><H2
+>Introduction</H2
+><P
+>Often the best way to write a USB device driver will be to start with
+an existing one and modify it as necessary. The information given here
+is intended primarily as an outline rather than as a complete guide.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>At the time of writing only one USB device driver has been
+implemented. Hence it is possible, perhaps probable, that some
+portability issues have not yet been addressed. One issue
+involves the different types of transfer, for example the initial
+target hardware had no support for isochronous or interrupt transfers,
+so additional functionality may be needed to switch between transfer
+types. Another issue would be hardware where a given endpoint number,
+say endpoint 1, could be used for either receiving or transmitting
+data, but not both because a single fifo is used. Issues like these
+will have to be resolved as and when additional USB device drivers are
+written.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN676"
+></A
+><H2
+>The Control Endpoint</H2
+><P
+>A USB device driver should provide a single <A
+HREF="usbs-control.html"
+><SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+></A
+>
+data structure for every USB device. Typical peripherals will have
+only one USB port so there will be just one such data structure in the
+entire system, but theoretically it is possible to have multiple USB
+devices. These may all involve the same chip, in which case a single
+device driver should support multiple device instances, or they may
+involve different chips. The name or names of these data structures
+are determined by the device driver, but appropriate care should be
+taken to avoid name clashes. </P
+><P
+>A USB device cannot be used unless the control endpoint data structure
+exists. However, the presence of USB hardware in the target processor
+or board does not guarantee that the application will necessarily want
+to use that hardware. To avoid unwanted code or data overheads, the
+device driver can provide a configuration option to determine whether
+or not the endpoint 0 data structure is actually provided. A default
+value of <TT
+CLASS="LITERAL"
+>CYGINT_IO_USB_SLAVE_CLIENTS</TT
+> ensures that
+the USB driver will be enabled automatically if higher-level code does
+require USB support, while leaving ultimate control to the user.</P
+><P
+>The USB device driver is responsible for filling in the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>start_fn</I
+></TT
+>,
+<TT
+CLASS="STRUCTFIELD"
+><I
+>poll_fn</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>interrupt_vector</I
+></TT
+> fields. Usually this can
+be achieved by static initialization. The driver is also largely
+responsible for maintaining the <TT
+CLASS="STRUCTFIELD"
+><I
+>state</I
+></TT
+>
+field. The <TT
+CLASS="STRUCTFIELD"
+><I
+>control_buffer</I
+></TT
+> array should be
+used to hold the first packet of a control message. The
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+> and other fields related to data
+transfers will be managed <A
+HREF="usbs-control.html#AEN578"
+>jointly</A
+> by higher-level code and
+the device driver. The remaining fields are generally filled in by
+higher-level code, although the driver should initialize them to NULL
+values.</P
+><P
+>Hardware permitting, the USB device should be inactive until the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>start_fn</I
+></TT
+> is invoked, for example by
+tristating the appropriate pins. This prevents the host from
+interacting with the peripheral before all other parts of the system
+have initialized. It is expected that the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>start_fn</I
+></TT
+> will only be invoked once, shortly
+after power-up.</P
+><P
+>Where possible the device driver should detect state changes, such as
+when the connection between host and peripheral is established, and
+<A
+HREF="usbs-control.html#AEN515"
+>report</A
+> these to higher-level
+code via the <TT
+CLASS="STRUCTFIELD"
+><I
+>state_change_fn</I
+></TT
+> callback, if
+any. The state change to and from configured state cannot easily be
+handled by the device driver itself, instead higher-level code such as
+the common USB slave package will take care of this.</P
+><P
+>Once the connection between host and peripheral has been established,
+the peripheral must be ready to accept control messages at all times,
+and must respond to these within certain time constraints. For
+example, the standard set-address control message must be handled
+within 50ms. The USB specification provides more information on these
+constraints. The device driver is responsible for receiving the
+initial packet of a control message. This packet will always be eight
+bytes and should be stored in the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>control_buffer</I
+></TT
+> field. Certain standard
+control messages should be detected and handled by the device driver
+itself. The most important is set-address, but usually the get-status,
+set-feature and clear-feature requests when applied to halted
+endpoints should also be handled by the driver. Other standard control
+messages should first be passed on to the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>standard_control_fn</I
+></TT
+> callback (if any), and
+finally to the default handler
+<TT
+CLASS="FUNCTION"
+>usbs_handle_standard_control</TT
+> provided by the
+common USB slave package. Class, vendor and reserved control messages
+should always be dispatched to the appropriate callback and there is
+no default handler for these.</P
+><P
+>Some control messages will involve further data transfer, not just the
+initial packet. The device driver must handle this in accordance with
+the USB specification and the <A
+HREF="usbs-control.html#AEN578"
+>buffer management strategy</A
+>. The
+driver is also responsible for keeping track of whether or not the
+control operation has succeeded and generating an ACK or STALL
+handshake. </P
+><P
+>The polling support is optional and may not be feasible on all
+hardware. It is only used in certain specialised environments such as
+RedBoot. A typical implementation of the polling function would just
+check whether or not an interrupt would have occurred and, if so, call
+the same code that the interrupt handler would.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN704"
+></A
+><H2
+>Data Endpoints</H2
+><P
+>In addition to the control endpoint data structure, a USB device
+driver should also provide appropriate <A
+HREF="usbs-data.html"
+>data
+endpoint</A
+> data structures. Obviously this is only relevant if
+the USB support generally is desired, that is if the control endpoint is
+provided. In addition, higher-level code may not require all the
+endpoints, so it may be useful to provide configuration options that
+control the presence of each endpoint. For example, the intended
+application might only involve a single transmit endpoint and of
+course control messages, so supporting receive endpoints might waste
+memory.</P
+><P
+>Conceptually, data endpoints are much simpler than the control
+endpoint. The device driver has to supply two functions, one for
+data transfers and another to control the halted condition. These
+implement the functionality for
+<A
+HREF="usbs-start-rx.html"
+><TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+></A
+>,
+<A
+HREF="usbs-start-tx.html"
+><TT
+CLASS="FUNCTION"
+>usbs_start_tx_buffer</TT
+></A
+>,
+<A
+HREF="usbs-halt.html"
+><TT
+CLASS="FUNCTION"
+>usbs_set_rx_endpoint_halted</TT
+></A
+> and
+<A
+HREF="usbs-halt.html"
+><TT
+CLASS="FUNCTION"
+>usbs_set_tx_endpoint_halted</TT
+></A
+>.
+The device driver is also responsible for maintaining the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>halted</I
+></TT
+> status.</P
+><P
+>For data transfers, higher-level code will have filled in the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+>,
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+>,
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_fn</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_data</I
+></TT
+> fields. The transfer function
+should arrange for the transfer to start, allowing the host to send or
+receive packets. Typically this will result in an interrupt at the end
+of the transfer or after each packet. Once the entire transfer has
+been completed, the driver's interrupt handling code should invoke the
+completion function. This can happen either in DSR context or thread
+context, depending on the driver's implementation. There are a number
+of special cases to consider. If the endpoint is halted when the
+transfer is started then the completion function can be invoked
+immediately with <TT
+CLASS="LITERAL"
+>-EAGAIN</TT
+>. If the transfer cannot be
+completed because the connection is broken then the completion
+function should be invoked with <TT
+CLASS="LITERAL"
+>-EPIPE</TT
+>. If the
+endpoint is stalled during the transfer, either because of a standard
+control message or because higher-level code calls the appropriate
+<TT
+CLASS="STRUCTFIELD"
+><I
+>set_halted_fn</I
+></TT
+>, then again the completion
+function should be invoked with <TT
+CLASS="LITERAL"
+>-EAGAIN</TT
+>. Finally,
+the &#60;<TT
+CLASS="FUNCTION"
+>usbs_start_rx_endpoint_wait</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_start_tx_endpoint_wait</TT
+> functions involve
+calling the device driver's data transfer function with a buffer size
+of 0 bytes.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Giving a buffer size of 0 bytes a special meaning is problematical
+because it prevents transfers of that size. Such transfers are allowed
+by the USB protocol, consisting of just headers and acknowledgements
+and an empty data phase, although rarely useful. A future modification
+of the device driver specification will address this issue, although
+care has to be taken that the functionality remains accessible through
+devtab entries as well as via low-level accesses.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN731"
+></A
+><H2
+>Devtab Entries</H2
+><P
+>For some applications or higher-level packages it may be more
+convenient to use traditional open/read/write I/O calls rather than
+the non-blocking USB I/O calls. To support this the device driver can
+provide a devtab entry for each endpoint, for example:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#ifdef CYGVAR_DEVS_USB_SA11X0_EP1_DEVTAB_ENTRY
+
+static CHAR_DEVIO_TABLE(usbs_sa11x0_ep1_devtab_functions,
+                        &amp;cyg_devio_cwrite,
+                        &amp;usbs_devtab_cread,
+                        &amp;cyg_devio_bwrite,
+                        &amp;cyg_devio_bread,
+                        &amp;cyg_devio_select,
+                        &amp;cyg_devio_get_config,
+                        &amp;cyg_devio_set_config);
+
+static CHAR_DEVTAB_ENTRY(usbs_sa11x0_ep1_devtab_entry,
+                         CYGDAT_DEVS_USB_SA11X0_DEVTAB_BASENAME "1r",
+                         0,
+                         &amp;usbs_sa11x0_ep1_devtab_functions,
+                         &amp;usbs_sa11x0_devtab_dummy_init,
+                         0,
+                         (void*) &amp;usbs_sa11x0_ep1);
+#endif</PRE
+></TD
+></TR
+></TABLE
+><P
+>Again care must be taken to avoid name clashes. This can be achieved
+by having a configuration option to control the base name, with a
+default value of e.g. <TT
+CLASS="LITERAL"
+>/dev/usbs</TT
+>, and appending an
+endpoint-specific string. This gives the application developer
+sufficient control to eliminate any name clashes. The common USB slave
+package provides functions <TT
+CLASS="FUNCTION"
+>usbs_devtab_cwrite</TT
+> and
+<TT
+CLASS="FUNCTION"
+>usbs_devtab_cread</TT
+>, which can be used in the
+function tables for transmit and receive endpoints respectively. The
+private field <TT
+CLASS="STRUCTFIELD"
+><I
+>priv</I
+></TT
+> of the devtab entry
+should be a pointer to the underlying endpoint data structure.</P
+><P
+>Because devtab entries are never accessed directly, only indirectly,
+they would usually be eliminated by the linker. To avoid this the
+devtab entries should normally be defined in a separate source file
+which ends up the special library <TT
+CLASS="FILENAME"
+>libextras.a</TT
+>
+rather than in the default library <TT
+CLASS="FILENAME"
+>libtarget.a</TT
+>.</P
+><P
+>Not all applications or higher-level packages will want to use the
+devtab entries and the blocking I/O facilities. It may be appropriate
+for the device driver to provide additional configuration options that
+control whether or not any or all of the devtab entries should be
+provided, to avoid unnecessary memory overheads.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN744"
+></A
+><H2
+>Interrupt Handling</H2
+><P
+>A typical USB device driver will need to service interrupts for all of
+the endpoints and possibly for additional USB events such as entering
+or leaving suspended mode. Usually these interrupts need not be
+serviced directly by the ISR. Instead, they can be left to a DSR. If
+the peripheral is not able to accept or send another packet just yet,
+the hardware will generate a NAK and the host will just retry a little
+bit later. If high throughput is required then it may be desirable to
+handle the bulk transfer protocol largely at ISR level, that is take
+care of each packet in the ISR and only activate the DSR once the
+whole transfer has completed.</P
+><P
+>Control messages may involve invoking arbitrary callback functions in
+higher-level code. This should normally happen at DSR level. Doing it
+at ISR level could seriously affect the system's interrupt latency and
+impose unacceptable constraints on what operations can be performed by
+those callbacks. If the device driver requires a thread anyway then it
+may be appropriate to use this thread for invoking the callbacks, but
+usually it is not worthwhile to add a new thread to the system just
+for this; higher-level code is expected to write callbacks that
+function sensibly at DSR level. Much the same applies to the
+completion functions associated with data transfers. These should also
+be invoked at DSR or thread level.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN748"
+></A
+><H2
+>Support for USB Testing</H2
+><P
+>Optionally a USB device driver can provide support for the
+<A
+HREF="usbs-testing.html"
+>USB test software</A
+>. This requires
+defining a number of additional data structures, allowing the
+generic test code to work out just what the hardware is capable of and
+hence what testing can be performed.</P
+><P
+>The key data structure is
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_testing_endpoint</SPAN
+>, defined in <TT
+CLASS="FILENAME"
+>cyg/io/usb/usbs.h</TT
+>. In addition some
+commonly required constants are provided by the common USB package in
+<TT
+CLASS="FILENAME"
+>cyg/io/usb/usb.h</TT
+>. One
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_testing_endpoint</SPAN
+> structure should be
+defined for each supported endpoint. The following fields need to be
+filled in:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>endpoint_type</I
+></TT
+></DT
+><DD
+><P
+>    This specifies the type of endpoint and should be one of
+    <TT
+CLASS="LITERAL"
+>USB_ENDPOINT_DESCRIPTOR_ATTR_CONTROL</TT
+>,
+    <TT
+CLASS="LITERAL"
+>BULK</TT
+>, <TT
+CLASS="LITERAL"
+>ISOCHRONOUS</TT
+> or
+    <TT
+CLASS="LITERAL"
+>INTERRUPT</TT
+>.
+  </P
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>endpoint_number</I
+></TT
+></DT
+><DD
+><P
+>    This identifies the number that should be used by the host
+    to address this endpoint. For a control endpoint it should
+    be 0. For other types of endpoints it should be between
+    1 and 15.
+  </P
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>endpoint_direction</I
+></TT
+></DT
+><DD
+><P
+>    For control endpoints this field is irrelevant. For other
+    types of endpoint it should be either
+    <TT
+CLASS="LITERAL"
+>USB_ENDPOINT_DESCRIPTOR_ENDPOINT_IN</TT
+> or
+    <TT
+CLASS="LITERAL"
+>USB_ENDPOINT_DESCRIPTOR_ENDPOINT_OUT</TT
+>. If a given
+    endpoint number can be used for traffic in both directions then
+    there should be two entries in the array, one for each direction.
+  </P
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>endpoint</I
+></TT
+></DT
+><DD
+><P
+>    This should be a pointer to the appropriate
+    <SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+>,
+    <SPAN
+CLASS="STRUCTNAME"
+>usbs_rx_endpoint</SPAN
+> or
+    <SPAN
+CLASS="STRUCTNAME"
+>usbs_tx_endpoint</SPAN
+> structure, allowing the
+    generic testing code to perform low-level I/O.
+  </P
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>devtab_entry</I
+></TT
+></DT
+><DD
+><P
+>    If the endpoint also has an entry in the system's device table then
+    this field should give the corresponding string, for example
+    <TT
+CLASS="LITERAL"
+>&quot;/dev/usbs1r&quot;</TT
+>. This allows the
+    generic testing code to access the device via higher-level
+    calls like <TT
+CLASS="FUNCTION"
+>open</TT
+> and <TT
+CLASS="FUNCTION"
+>read</TT
+>. 
+  </P
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>min_size</I
+></TT
+></DT
+><DD
+><P
+>    This indicates the smallest transfer size that the hardware can
+    support on this endpoint. Typically this will be one.
+  </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>    Strictly speaking a minimum size of one is not quite right since it
+    is valid for a USB transfer to involve zero bytes, in other words a
+    transfer that involves just headers and acknowledgements and an
+    empty data phase, and that should be tested as well. However current
+    device drivers interpret a transfer size of 0 as special, so that
+    would have to be resolved first.
+  </P
+></BLOCKQUOTE
+></DIV
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>max_size</I
+></TT
+></DT
+><DD
+><P
+>    Similarly, this specifies the largest transfer size. For control
+    endpoints the USB protocol uses only two bytes to hold the transfer
+    length, so there is an upper bound of 65535 bytes. In practice
+    it is very unlikely that any control transfers would ever need to
+    be this large, and in fact such transfers would take a long time
+    and probably violate timing constraints. For other types of endpoint
+    any of the protocol, the hardware, or the device driver may impose
+    size limits. For example a given device driver might be unable to
+    cope with transfers larger than 65535 bytes. If it should be
+    possible to transfer arbitrary amounts of data then a value of
+    <TT
+CLASS="LITERAL"
+>-1</TT
+> indicates no upper limit, and transfer
+    sizes will be limited by available memory and by the capabilities
+    of the host machine.
+  </P
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>max_in_padding</I
+></TT
+></DT
+><DD
+><P
+>    This field is needed on some hardware where it is impossible to
+    send packets of a certain size. For example the hardware may be
+    incapable of sending an empty bulk packet to terminate a transfer
+    that is an exact multiple of the 64-byte bulk packet size.
+    Instead the driver has to do some padding and send an extra byte,
+    and the host has to be prepared to receive this extra byte. Such a
+    driver should specify a value of <TT
+CLASS="LITERAL"
+>1</TT
+> for the
+    padding field. For most drivers this field should be set to
+  <TT
+CLASS="LITERAL"
+>0</TT
+>.
+  </P
+><P
+>    A better solution would be for the device driver to supply a
+    fragment of Tcl code that would adjust the receive buffer size
+    only when necessary, rather than for every transfer. Forcing
+    receive padding on all transfers when only certain transfers
+    will actually be padded reduces the accuracy of certain tests.
+  </P
+></DD
+><DT
+><TT
+CLASS="STRUCTFIELD"
+><I
+>alignment</I
+></TT
+></DT
+><DD
+><P
+>    On some hardware data transfers may need to be aligned to certain
+    boundaries, for example a word boundary or a cacheline boundary.
+    Although in theory device drivers could hide such alignment
+    restrictions from higher-level code by having their own buffers and
+    performing appropriate copying, that would be expensive in terms of
+    both memory and cpu cycles. Instead the generic testing code will
+    align any buffers passed to the device driver to the specified
+    boundary. For example, if the driver requires that buffers be
+    aligned to a word boundary then it should specify an alignment
+    value of 4.
+  </P
+></DD
+></DL
+></DIV
+><P
+>The device driver should provide an array of these structures
+<TT
+CLASS="VARNAME"
+>usbs_testing_endpoints[]</TT
+>. The USB testing code
+examines this array and uses the information to perform appropriate
+tests. Because different USB devices support different numbers of
+endpoints the number of entries in the array is not known in advance,
+so instead the testing code looks for a special terminator
+<TT
+CLASS="VARNAME"
+>USBS_TESTING_ENDPOINTS_TERMINATOR</TT
+>. An example
+array, showing just the control endpoint and the terminator, might
+look like this:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>usbs_testing_endpoint usbs_testing_endpoints[] = {
+    {
+        endpoint_type       : USB_ENDPOINT_DESCRIPTOR_ATTR_CONTROL, 
+        endpoint_number     : 0,
+        endpoint_direction  : USB_ENDPOINT_DESCRIPTOR_ENDPOINT_IN,
+        endpoint            : (void*) &amp;ep0.common,
+        devtab_entry        : (const char*) 0,
+        min_size            : 1,
+        max_size            : 0x0FFFF,
+        max_in_padding      : 0,
+        alignment           : 0
+    },
+    &#8230;,
+    USBS_TESTING_ENDPOINTS_TERMINATOR
+};</PRE
+></TD
+></TR
+></TABLE
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>The use of a single array <TT
+CLASS="VARNAME"
+>usbs_testing_endpoints</TT
+>
+limits USB testing to platforms with a single USB device: if there
+were multiple devices, each defining their own instance of this array,
+then there would a collision at link time. In practice this should not
+be a major problem since typical USB peripherals only interact with a
+single host machine via a single slave port. In addition, even if a
+peripheral did have multiple slave ports the current USB testing code
+would not support this since it would not know which port to use.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-data.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-testing.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Data Endpoints</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Testing</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

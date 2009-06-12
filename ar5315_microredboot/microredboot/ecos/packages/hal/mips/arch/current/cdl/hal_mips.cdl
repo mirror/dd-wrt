@@ -1,0 +1,184 @@
+# ====================================================================
+#
+#      hal_mips.cdl
+#
+#      MIPS architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  bartv, nickg
+# Contributors:
+# Date:           1999-11-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS {
+    display "MIPS architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mips.h
+    description   "
+        The MIPS architecture HAL package provides generic support
+        for this processor architecture. It is also necessary to
+        select a CPU variant and a specific target platform HAL
+        package."
+
+    cdl_interface CYGINT_HAL_MIPS_VARIANT {
+        display  "Number of variant implementations in this configuration"
+        requires 1 == CYGINT_HAL_MIPS_VARIANT
+    }
+
+    compile       hal_misc.c context.S mips-stub.c mipsfp.c
+    compile       hal_syscall.c
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+
+    define_proc {
+	puts $::cdl_header "#define HAL_ARCH_PROGRAM_NEW_STACK hal_arch_program_new_stack"
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_CPU_FREQ {
+        display "CPU frequency"
+        flavor  data
+        legal_values 0 to 1000000
+        default_value 50
+        description "
+           This option contains the frequency of the CPU in MegaHertz.
+           Choose the frequency to match the processor you have. This
+           may affect thing like serial device, interval clock and
+           memory access speed settings."
+    }
+
+    cdl_option CYGDBG_HAL_MIPS_DEBUG_GDB_CTRLC_SUPPORT {
+        display "Architecture GDB CTRLC support"
+        calculated { CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT || CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT }
+        active_if { CYGINT_HAL_DEBUG_GDB_CTRLC_UNSUPPORTED == 0 }
+        description "
+            If either the CTRLC or BREAK support options in hal.h are set
+            then set our own option to turn on shared generic support for
+            control C handling."
+    }
+
+    cdl_option CYGSEM_HAL_MIPS_EMULATE_UNIMPLEMENTED_FPU_OPS {
+	display  "Emulate unimplemented FPU opcodes"
+	flavor   bool
+	default_value 1
+	description "
+           Enabling this option will include a hook in the exception
+           processing so that Unimplemented Operation FPU exceptions
+           may be handled. This option has no effect if there is no
+           hardware floating-point unit. Note that not all situations
+           in which an exception is raised may be handled. If not, the
+           exception will be passed on as normal through the standard
+           exception delivery mechanism."
+    }
+
+    cdl_interface CYGINT_HAL_MIPS_STUB_REPRESENT_32BIT_AS_64BIT {
+        display  "Represent 32-bit registers as 64-bit to GDB"
+	flavor booldata
+	description "
+	This interface may be implemented by MIPS variant or platform HALs
+	to instruct the MIPS stub to interwork correctly with GDB which
+	expects 64-bit register values, even in application code which has
+	been compiled as 32-bit.  Do not use this for real 64-bit code."
+    }
+
+    cdl_interface CYGINT_HAL_MIPS_INTERRUPT_RETURN_KEEP_SR_IM {
+	display  "Interrupt return keeps interrupt mask bits in SR"
+	description "
+	On some MIPS variants, the status register (SR) contains a number
+	of interrupt mask bits (IM\[0..7\]).  Default behavior is to restore
+	the whole SR over an interrupt.  This means that if the ISR
+	modifies those bits, the change is lost when the interrupt returns.
+	If this interface is implemented, changes made to the SR IM bits by
+	an ISR will instead be preserved.
+	Variants whose HAL_INTERRUPT_MASK() routines (et al) modify the IM
+	bits in the SR should implement this interface to get the necessary
+	preserving behavior."
+    }
+
+    cdl_component CYGPKG_REDBOOT_MIPS_OPTIONS {
+        display       "Redboot for MIPS options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_component CYGSEM_REDBOOT_MIPS_LINUX_BOOT {
+            active_if      CYGBLD_BUILD_REDBOOT_WITH_EXEC
+            display        "Support booting Linux via RedBoot"
+            flavor         bool
+            default_value  1
+            description    "
+               This option allows RedBoot to support booting of a Linux kernel."
+            compile -library=libextras.a redboot_linux_exec.c
+
+            cdl_option CYGDAT_REDBOOT_MIPS_LINUX_BOOT_ENTRY {
+                display        "Default kernel entry address"
+                flavor         data
+                default_value  0x80100750
+            }
+
+            cdl_option CYGDAT_REDBOOT_MIPS_LINUX_BOOT_ARGV_ADDR {
+                display        "Default argv address"
+                flavor         data
+                default_value  0x80030000
+            }
+
+            cdl_option CYGDAT_REDBOOT_MIPS_LINUX_BOOT_COMMAND_LINE {
+                display        "Default COMMAND_LINE"
+                flavor         data
+                default_value  { "" }
+            }
+        }
+    }
+
+}

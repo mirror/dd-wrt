@@ -1,0 +1,46 @@
+<HTML>
+  <HEAD>
+    <TITLE>Thread Window Help</TITLE>
+  </HEAD>
+  <BODY>
+
+    <CENTER>
+      <H2>The Thread Window</H2>
+    </CENTER>
+    
+
+    <BR>The Thread Window displays a list of threads and/or processes. The exact
+    contents are OS-specific.
+    
+    <UL>
+      <LI><A HREF="#display">Thread Display</A></LI>
+      <LI><A HREF="#current">Changing the Current Thread</A></LI>
+      <LI><A HREF="#bp">Setting Breakpoints on Thread(s)</A></LI>
+    </UL>
+    
+    <H2><A NAME="display">Thread Display</A></H2>
+    The Thread Display consists of a listbox which displays information on
+    threads and/or processes that are part of the executable being debugged.
+    The first column is the GDB thread number, which is used internally by GDB
+    to track the thread. The rest of the columns are OS-dependent.  The output is identical
+    to the output of the console command "info threads".
+    <BR>
+
+    <H2><A NAME="current">Changing the Current Thread</A></H2>
+    The source window can only display the current location and source for one thread
+    at a time. That thread is called the "current thread". 
+    To change the current thread, simply click the left mouse button on the desired 
+    line and the
+    debugger will switch contexts, updating all windows. The current thread will 
+    be highlighted.
+    <BR>
+
+    <H2><A NAME="bp">Setting Breakpoints on Thread(s)</A></H2>
+    Normally if you set a breakpoint on a line or function, every thread that hits
+    that location will stop execution and return to the debugger.  To set a breakpoint
+    or a specific thread or threads, you need to use the source window.  See 
+    <A HREF="source.html#thread_bp">Set Breakpoint on Threads</A>
+
+
+  </BODY>
+</HTML>

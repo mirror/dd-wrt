@@ -1,0 +1,253 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Attached and Detached Controllers</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Power Management Support"
+HREF="services-power.html"><LINK
+REL="PREVIOUS"
+TITLE="Support for Policy Modules"
+HREF="power-policy.html"><LINK
+REL="NEXT"
+TITLE="Implementing a Power Controller"
+HREF="power-controller.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Power Management Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="power-policy.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="power-controller.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="POWER-ATTACHED"
+>Attached and Detached Controllers</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN321"
+></A
+><H2
+>Name</H2
+>Attached and Detached Controllers&nbsp;--&nbsp;control which power controllers are affected by global changes</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN324"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN325"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/power/power.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    cyg_bool power_get_controller_attached
+  </CODE
+>(    PowerController* controller
+  );</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    void power_set_controller_attached
+  </CODE
+>(    PowerController* controller
+  ,     cyg_bool new_state
+  );</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN339"
+></A
+><H2
+>Detaching Power Controllers</H2
+><P
+>By default the global operation <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>
+affects all power controllers. There may be circumstances when this is
+not desirable. For example if a particular device is not currently
+being used then it can be left switched off: the rest of the system
+could be moving between <SPAN
+CLASS="TYPE"
+>active</SPAN
+>, <SPAN
+CLASS="TYPE"
+>idle</SPAN
+> and
+<SPAN
+CLASS="TYPE"
+>sleep</SPAN
+> modes, but there is no point in invoking the power
+controller for the unused device. To support this the power management
+package supports the concept of attached and detached controllers. By
+default all controllers are attached, and hence will be affected by
+global mode changes. A specific controller can be detached using the
+function <TT
+CLASS="FUNCTION"
+>power_set_controller_attached</TT
+>. This
+function takes two arguments, one to specify a particular controller
+and another to specify the desired new state.
+<TT
+CLASS="FUNCTION"
+>power_get_controller_attached</TT
+> can be used to
+determine whether or not a specific controller is currently attached.</P
+><P
+>The attached or detached state of a controller only affects what
+happens during a global mode change, in other words following a call
+to <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>. It is still possible to
+manipulate a detached controller using
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> or
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode_now</TT
+>.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="power-policy.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="services-power.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="power-controller.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Support for Policy Modules</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Implementing a Power Controller</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

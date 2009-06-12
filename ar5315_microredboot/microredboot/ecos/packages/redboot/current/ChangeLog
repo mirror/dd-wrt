@@ -1,0 +1,3526 @@
+2004-10-10	Iztok Zupet	 <iz@elsis.si>
+
+	* cdl/redboot.cdl: added CYGSEM_REDBOOT_DISK_IDE_VMWARE option.
+	* src/fs/ide.c : skip reset IDE commands if running under VMware.
+
+2004-10-08  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* doc/redboot_installing.sgml: Added links to the tools for the
+	Atmel AT91 JTST board.
+
+2004-09-27  Mark Salter  <msalter@redhat.com>
+
+	* src/fs/ide.c (ide_presence_detect): New function.
+	* src/fs/disk.c (u32_unaligned): New function to read unaligned words.
+	(find_dos_partitions): Use u32_unaligned instead of memcpy.
+
+2004-9-25   Andrew Lunn <andrew.lunn@ascom.ch>
+
+	* doc/redboot_install.sgml: Added installation information for the
+	Atmel AT91 JTST board provided by Andrea Michelotti
+	
+2004-9-23   Bob Koninckx <bob.koninckx@o-3s.com>
+
+	* src/net/tc.c: Removed unneccesary call to MS_TICKS_DELAY
+
+2004-09-19  Mark Salter  <msalter@redhat.com>
+
+	* cdl/redboot.cdl: Add CYGSEM_REDBOOT_NETWORK_INIT_ONE_DEVICE
+	* src/net/net_io.c (net_init): Initialize only one network
+	device if CYGSEM_REDBOOT_NETWORK_INIT_ONE_DEVICE defined.
+
+2004-09-19  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/load.c (do_load): Removed compiler warning when building
+	reboot without networking.
+
+2004-09-05  Mark Salter  <msalter@redhat.com>
+
+	* doc/redboot_installing.sgml: Add mb93091 and mb93093.
+
+2004-09-02  Mark Salter  <msalter@redhat.com>
+
+	* doc/redboot_cmds.sgml: Add -x option to exec command.
+
+2004-09-01  Mark Salter  <msalter@redhat.com>
+
+	* cdl/redboot.cdl (CYGOPT_REDBOOT_FLASH_BYTEORDER): New option.
+	* include/redboot.h: Define FLASH_{READ,PROGRAM} macros.
+	Define REDBOOT_FLASH_REVERSE_BYTEORDER if appropriate.
+	* src/flash.c: Add support for CYGOPT_REDBOOT_FLASH_BYTEORDER.
+	Use FLASH_{READ,PROGRAM} macros instead of flash driver api.
+	* src/fconfig.c: Ditto.
+
+	* src/main.c (do_version): Update copyright message.
+
+2004-08-31  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/flash.c (fis_init): Avoid potentially unnecessary erase
+	attempt at end of flash.
+
+2004-08-27  Peter Korsgaard <jacmet@sunsite.dk>  
+
+	* doc/redboot_cmds.sgml: Fixed a minor typo with fis list
+
+2004-08-17  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * cdl/redboot.cdl:
+        * src/net/net_io.c: added CDL to allow the default server to
+        be configured. Also respect the CYGSEM_REDBOOT_DEFAULT_NO_BOOTP
+        setting.
+
+2004-08-16  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * cdl/redboot.cdl:
+        * src/load.c: Added cdl to control the size of the buffer used
+        by getc. The size can have significant affect on load speed
+        when loading from a filesystem.
+
+2004-08-13  Jani Monoses <jani@iv.ro>
+
+	* src/net/http_client.c: Fix off-by-one error in checking
+	the HTTP response header, so the ending CRLF-CRLF is detected 
+	even if it's the last 4 bytes in the buffer.
+
+2004-08-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * cdl/redboot.cdl
+        * src/load.c (load_elf_image): Added a CDL option to configure
+        if the physical or virtual address in the headers should be used
+        when loading the image.
+
+2004-08-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * cdl/redboot.cdl
+        * src/fs/fileio.c (do_ls) Added an ls command so we can see what
+        is inside the mounted filesystem.
+
+2004-06-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/flash.c (find_free): fix endless loop when removing a
+	collapsed chunk from chunk table. Found by Laurent Gonzalez
+	(fis_load): Fixed a compiler warning.
+
+2004-05-31  Jani Monoses <jani@iv.ro>
+
+	* src/main.c:
+	* include/redboot.h: Get rid of unused workspace_size.
+	
+2004-05-16  Andrew Dyer  <adyer@righthandtech.com>
+2004-05-27  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/fs/ide.c: make sure IDE_STAT_BSY is 0 before checking other
+	bits in the status register
+
+2004-05-21  Ian Campbell  <icampbell@arcom.com>
+	 
+	* src/main.c: Make it build without CYGSEM_REDBOOT_FLASH_ALIASES.
+	
+2004-05-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c (fis_load): CRC check on load was broken (the CDL
+	option changed names)
+
+2004-04-29  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot_epilogue.sgml: Comment out </part> to reflect change
+	of 2004-04-19.
+
+2004-04-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/main.c: 
+	* src/fs/fileio.c: 
+	* src/net/net_io.c: 
+	* src/load.c: 
+	* src/flash.c: 
+	* include/redboot.h: Add asserts to check that option arrays
+	are not overrun (when used with variable number of options).
+
+2004-04-23  Gary Parnes  <garyp@logicpd.com>
+
+	* src/net/tftp_client.c: The port, if specified by the user,
+	is now corrected for endianness issues.
+
+2004-04-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/fs/fileio.c: Can't test for CYGPKG_IO_FLASH_BLOCK_DEVICE without
+	first testing for CYGPKG_IO_FLASH and including it's pkgconf file.
+
+2004-04-19  John Dallaway  <jld@ecoscentric.com>
+
+	* doc/makefile, doc/redboot_main.sgml: New files to build the RedBoot
+	User's Guide as a self-contained document.
+
+	* doc/redboot.sgml: Eliminate <part> tag to build the RedBoot User's
+	Guide as a self-contained document.
+
+2004-03-30  Mark Salter  <msalter@redhat.com>
+
+	* src/net/udp.c (__udp_recvfrom_handler): Protect against back-to-back
+	duplicate packets.
+
+2004-03-17  Thomas Koeller <thomas.koeller@baslerweb.com>
+
+       * src/fs/fileio.c: Only include IO package headers if required.
+
+2004-03-02  Andrew Dyer  <adyer@righthandtech.com>
+
+	* src/load.c: add -p option to help string and only print it and -h if
+	CYGPKG_REDBOOT_NETWORKING is enabled.  Add a CR to the end of the 
+	SHORT_DATA message string
+
+2004-02-27  Jani Monoses <jani@iv.ro>
+
+	* src/net/http_client.c: Close connection with abort instead of
+	friendly close since for ELF files we don't read the whole content
+	but end the connection when the runnable parts are in. The server
+	interprets close as it has nothing more to receive, but it still wants
+	to send the rest of the file and does that until it times out.
+	
+2004-02-26  Jani Monoses <jani@iv.ro>
+
+	* src/load.c:
+	* src/net/http_client.c: Allow overriding the default HTTP port.
+
+2004-02-25  Gratian Crisan <nelu@iv.ro>
+
+	* src/xyzModem.c: Do not read an information header for XModem 
+	in xyzModem_stream_open(). XModem does not have a file information
+	header and this caused in the previous implementation a retransmission
+	of the first data block (it was read and ignored in the open function).
+
+2004-02-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/redboot.cdl: net_io needs to be in libextras to enable network
+	support (failed if network debug was disabled)
+
+2004-02-23  Uwe Kindler  <uwe_kindler@web.de>
+
+	* src/cksum.c:
+	* src/dump.c:
+	* src/fconfig.c:
+	* src/flash.c:
+	* src/load.c:
+	* src/main.c:
+	* src/mcmp.c:
+	* src/mcopy.c:
+	* src/mfill.c:
+	* src/net/net_io.c:
+	* src/net/ping.c: Minor cleanups to remove warnings.
+
+2004-02-20  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot.sgml: Document lowering security level for TFTP to
+	work on more recent Red Hat Linux.
+
+2004-02-19  Jani Monoses <jani@iv.ro>
+
+	* src/xyzModem.c: Start with sending a 'C', do not wait until the
+	first packet from the sender.This allows download to start quicker.
+	
+2004-02-16  Andrew Dyer  <adyer@righthandtech.com>
+
+	* src/main.c: add 'go' options to help string
+
+2004-02-11  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/redboot.cdl: Bring CYGNUM_REDBOOT_LOAD_ZLIB_BUFFER under
+	CYGBLD_BUILD_REDBOOT_WITH_ZLIB. Add CYGPRI_REDBOOT_ZLIB_FLASH to
+	control whether decompression can be used with flash images.
+	* src/flash.c: Use CYGPRI_REDBOOT_ZLIB_FLASH instead of
+	CYGPKG_COMPRESS_ZLIB.
+	* src/load.c: Use CYGBLD_BUILD_REDBOOT_WITH_ZLIB in place of
+	CYGPKG_COMPRESS_ZLIB.
+	* src/main.c: only set fis_zlib_common_buffer if
+	CYGPRI_REDBOOT_ZLIB_FLASH.
+
+	* src/main.c (set_comm_baud_rate): Get current rate with GETBAUD
+	not SETBAUD!
+
+2004-02-04  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/redboot.cdl: Do not build with "common" interrupt stack
+	support.  This can cause problems when running programs (via
+	the "go" command) as interrupts will corrupt RedBoot's stack.
+
+2004-01-18  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/main.c: Fix build problem if GDB stubs are not included.
+	Minor warning cleanup (cast on NO_MEMORY).
+
+2003-12-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/tcp.c (tcp_send): Add [restore] delay into TCP write
+	path.  Sadly, there seems to be some issue where some ACK packets
+	get lost unless this is present (at least on some hardware).  
+	n.b. a small delay here is definitely preferable to the horrendous
+	delays imposed by TCP retries if this condition occurs.
+
+	* src/fconfig.c: 
+	* include/flash_config.h: New functions for get/set/enumerate
+	config data which can be used via virtual vector interface.
+
+2003-12-12  Jani Monoses <jani@iv.ro>
+
+	* src/net/tcp.c: Cancel retransmission timer when SYN is acked
+	otherwise an open active connection which doesn't send data
+	eventually resends the SYN resulting in reset from the peer.
+
+2003-12-08  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/redboot.cdl: Better handling of GDB stubs support.  This
+	should be automatically included if the platform supports GDB.
+	Disabling CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS (in the common HAL)
+	will fully disable GDB support.
+
+2003-12-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/decompress.c (gzip_init): Memory pool initialization should
+	only be done in _zlib_init().
+
+2003-12-05  Ian Campbell  <icampbell@arcom.com>
+
+	* src/decompress.c: Ensure that free'd blocks are returned to the
+	free pool and that adjacent free blocks are merged. Initialise the
+	pool in _zlib_init() so that things are initialised even when
+	gzip_init hasn't been called.
+
+2003-12-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/io.c (_rb_gets_preloaded): ^A could have moved the cursor to
+	the wrong location on the screen if ^F/^B had been used.
+
+2003-12-03  David Vrabel  <dvrabel@arcom.com>
+
+	* src/time_date.cxx (do_time_date): Use YYYY/MM/DD HH:MM:SS format
+	throughout (instead of the American specific format).  Expand
+	range of valid years to 1970 - 2034 (instead of 2000 - 2034).
+	
+2003-11-27  David Woodhouse  <dwmw2@redhat.com>
+
+	* cdl/redboot.cdl, fs/fileio.c, include/fs/fileio.h, src/load.c: 
+	Support for mounting and loading files from fileio file systems
+	such as JFFS2.
+
+2003-11-25  John Dallaway  <jld@ecoscentric.com>
+
+	* src/fconfig.c (load_flash_config):
+	Fix typo in output string.
+	
+2003-11-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/bootp.c (__bootp_find_local_ip): 
+	Suppress diagnostic message that DNS info found.
+
+2002-11-24  Jani Monoses  <jani@iv.ro>
+
+	* src/flash.c: Remove references to FLASH_MIN_WORKSPACE.
+
+2003-11-21  David Vrabel  <dvrabel@arcom.com>
+
+	* src/net/bootp.c (bootp_handler): Scan for DHCP Message Type tag
+	as it isn't always the first tag.
+
+	* include/net/bootp.h: New #define's for DHCP message types
+	(DHCP_MESSAGE_TYPE_DISCOVER etc.).
+	
+2002-11-20  Jani Monoses  <jani@iv.ro>
+
+	* src/flash.c: flash_init() no longer takes three args.
+
+2003-11-19  David Woodhouse  <dwmw2@redhat.com>
+ 
+ 	* src/main.c: Restore correct old baud rate if changing fails.
+ 
+2003-11-13  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/main.c (do_go): Need to stop catching exceptions when running a
+	user program, otherwise GDB will never run when the program fails, gets
+	a ^C interrupt, etc.  Also, clean up [remove] some cache debug code.
+
+2003-11-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_XXX.ecm: Removed - since it was only a source of confusion.
+
+2003-11-07  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/dns.c: 
+	* src/net/bootp.c: 
+	* include/net/net.h: Use DNS server address from DHCP if provided.
+	Inspired by John Newlin <jnewlin@rawbw.com>
+
+	* src/flash.c (fis_init): Take out misleading warning - since the
+	new [default] behaviour of "fis free" means free space need not
+	be necessarily erased on the device.
+
+2003-11-04  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c (find_free): Better handling of end address - otherwise
+	list of free blocks could be incorrect.  Thanks to Chris Garry.
+
+2003-11-01  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/redboot.cdl: Reorg to allow disk operations on other than
+	IDE drives.
+
+2003-10-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/main.c (cyg_start): Try to catch illegal memory accesses and
+	other abort conditions during command execution.
+
+2003-10-17  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/load.c: Only examine loadable segments when scanning to determine
+	lowest loadable address (only used when -b XXX option used).  Otherwise,
+	an offset into space could be chosen.
+
+2003-10-16  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot_installing.sgml: Fix eb40 flash install instructions.
+
+2003-10-15  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c: 
+	* src/fconfig.c: Better handling of layout of fconfig and fis
+	data within the FLASH.  Should work for even flash devices with
+	very smal block sizes.
+
+	* include/redboot.h (RedBoot_INIT_SECOND): 
+	Finer initialization control.
+
+	* cdl/redboot.cdl: Combine FIS directory and FCONFIG database
+	by default.  This results in better FLASH utilization. Also define
+	number of FIS directory slots.  This will allow support for FLASH
+	devices with very small block sizes.
+
+2003-10-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c (fis_create): Verify that any hard FLASH addresses
+	(given via -f XXX) are known to be free.
+
+2003-10-11  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c: 
+	* cdl/redboot.cdl: Change 'fis free' to use the directory structure
+	to determine what space is free in the FLASH.  This is controlled 
+	by the CDL option CYGDAT_REDBOOT_FIS_MAX_FREE_CHUNKS so the old
+	behaviour can still be defined if desired.
+
+2003-10-09  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c (fis_create): Check whole length of image, not just 
+	effective size, when validating addresses.
+
+	* src/net/net_io.c (net_init): 
+	* include/net/net.h: Rework handling of multiple network devices.  All
+	devices will now be initialized, with either the first or the default
+	device actually used for I/O.
+
+2003-10-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/net_io.c: 
+	* src/net/bootp.c: Fix some compile problems if GATEWAY support is disabled.
+
+	* src/flash.c (fis_list): Display FIS directory entries in FLASH
+	address (sorted) order.
+
+2003-10-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c (fis_delete): 'fconfig' data only shows up in FIS if
+	the data is stored in FLASH - account for this.  Also, make sure 
+	FLASH gets initialized if built without 'fconfig' enabled.
+
+2003-10-02  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/fconfig.c: 
+	* cdl/redboot.cdl: Allow platforms to provide a function to validate
+	ethernet station addresses.
+
+2003-09-30  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/fconfig.c (do_flash_config): Fix typo in error message.
+
+2003-09-30  David Vrabel  <dvrabel@arcom.com>
+
+        * src/net/tcp.c: Include missing <cyg/infra/diag.h>.
+
+        * include/redboot.h, src/parse.c (init_opts, scan_opts): Remove
+        the excessive level of indirection in the handling of option
+        arguments.
+	
+2003-09-29  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/load.c (load_elf_image): Use LMA (loader memory address), instead
+	of VMA (virtual memory address) to load code.  If LMA != VMA, it's up
+	to the loaded program to figure it out.  
+	Inspired by Artur Lipowski <LAL@pro.onet.pl>
+
+2003-09-26  Nick Garnett  <nickg@balti.calivar.com>
+
+	* doc/redboot_installing.sgml: Fixed bogus memory sizes in AT91
+	EB42/55 description.
+
+2003-09-26  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c (fis_free, fis_find_free): 
+	Fix some problems introduced with the new FLASH interfaces (used by 
+	NAND devices)
+
+	* src/fconfig.c: Honor FLASH/FIS configury.
+
+	* src/net/bootp.c: 
+	* src/fs/ide.c: Clean up some compiler warnings.
+
+2003-09-25  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/bootp.c: Rework DHCP process to handle really stubborn
+	servers.
+
+2003-09-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/bootp.c (__bootp_find_local_ip): Forgot to unregister
+	UDP handler - could cause serious problems later!  Also, fix
+	problem with retries after DHCP discovery phase.
+
+2003-09-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/bootp.c (__bootp_find_local_ip): Handle retries on DHCP 
+	requests better.
+
+2003-09-22  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/redboot.cdl: Fix compile error for systems with no FLASH.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/redboot.cdl: Make DNS truly optional (remove from template).
+	BUG #57316
+
+2003-09-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/fs/ide.c: Improve IDE handling by having init function return
+	actual number of controllers detected.  This avoids really long times
+	for startup if the controller is missing.
+
+	* src/net/bootp.c: Rework to use full DHCP protocol.  Previously,
+	once an offer came in, RedBoot was happy, without actually making
+	the address reservation and waiting for the final acknowledgement.
+	Also, added CDL to enable/disable DHCP.  BUG #1000053
+
+2003-09-20  Chris Garry  <cgarry@sweeneydesign.co.uk>
+	
+	* src/main.c: Modified the way multiple "RAM" segments are reported.
+
+	* src/fconfig.c: Variables 'stat' and '*err_addr' in function
+	flash_write_config() are now defined regardless of whether 
+	CYGSEM_REDBOOT_FLASH_COMBINED_FIS_AND_CONFIG is defined of not.
+
+2003-09-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/timers.c (__timer_poll): Need to call MS_TICKS_DELAY() or
+	else time will never progress.  This can cause a missed TCP packet
+	to cause the stack to freeze.  BUG #23006
+
+	* src/net/tftp_client.c: Make timeout on very first transaction really
+	long - again since some servers are just slow/ill mannered.
+
+	* src/net/net_io.c: Allow default server IP to be always enabled, thus
+	it can override what is provided by BOOTP/DHCP (since some DHCP servers
+	don't provide this properly).
+
+	* src/time_date.cxx: New file - support "date" command for platforms
+	with battery backed up clocks.
+
+	* src/fconfig.c: New file - split out from flash.c
+
+	* src/main.c: 
+	* src/load.c: 
+	* src/flash.c: 
+	* src/alias.c: 
+	* include/redboot.h: 
+	* cdl/redboot.cdl: Support multiple "RAM" segments (known writable
+	memory).  Also rearrange FLASH & FCONFIG, separating them as much
+	as possible and supporting FCONFIG data stored in some other sort
+	of device, like EEPROM.
+
+2003-09-09  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/flash.c (flash_config_insert_value): Default value was
+	wrong for ESA type.
+
+2003-09-08  David Vrabel  <dvrabel@arcom.com>
+
+	* src/net/bootp.c (__bootp_find_local_ip): Adds Option 55 Parameter
+	Request List) to the DHCP request (requests: Subnet Mask; Router;
+	Domain Name server).
+
+2003-08-19  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/udp.c (__udp_recvfrom): Rework loop so delay only happens
+	if no packet is immediately available - improves network throughput.
+
+	* src/ticks.c: 
+	* cdl/redboot.cdl: Add control over granularity of timers used
+	by RedBoot and the network stack.
+
+2003-08-05  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot_installing.sgml: Fix brain fart in last change to
+	AT91 instructions. Also clarify instructions a bit, including
+	documenting better for windows users.
+
+2003-07-23  Patrick Doyle  <wpd@dtccom.com>
+
+	* src/flash.c (fis_find_free)
+	* src/flash.c (fis_free): Do not search areas reserved for RedBoot
+	when scanning for free space.
+
+2003-07-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/ping.c:
+	* src/net/bootp.c: Allow ^C to abort.
+
+	* src/io.c: 
+	* include/redboot.h: New function _rb_break() used to test for ^C
+	on the console.  Used to break out of long operations like BOOTP.
+
+2003-07-15  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/bootp.c: Use correct options for DHCP discover.  This has
+	the added bonus that when BOOTP & GATEWAY options are enabled, then
+	RedBoot can get it's address via normal DHCP.  Of course, DHCP leases
+	will be ignored by RedBoot, so some caution is warranted.
+
+	* include/net/net.h: 
+	* src/net/arp.c (__arp_request): Allow ARP of self - used during
+	initialization to "broadcast" that an IP address is in use.
+
+	* src/net/net_io.c (net_init): When using a static IP, send an
+	initial ARP to see if any other node is using this address.
+	Also, some minor cosmetic cleanups to remove warnings.
+
+2003-07-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot_installing.sgml (AT91): Tell users to switch JP1
+	(or SW1 for EB40) when installing, and warn them in no
+	uncertain terms the consequences of failing to do so.
+
+2003-07-01  Mark Salter  <msalter@redhat.com>
+
+	* cdl/redboot.cdl (CYGBLD_BUILD_REDBOOT_WITH_MCOPY): New option.
+	* src/mcopy.c: New file adding mcopy command.
+	* doc/redboot_cmds.sgml: Add mcopy.
+
+2003-06-26  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot_installing.sgml: Clarify use of correct cables with
+	serial ports with AT91 boards.
+
+2003-06-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot_cmds.sgml (IP): Clarify last change a bit and fix typos
+	and markup.
+
+2003-05-20  David Vrabel  <dvrabel@arcom.com>
+2003-05-20  Ian Campbell  <icampbell@arcom.com>
+ 
+	* src/net/net_io.c: Add the ability to specify a netmask length to
+	the ip_address command
+	* doc/redboot_cmds.sgml: Document the above.
+
+2003-06-24  Jeroen Dobbelaere  <jeroen.dobbelaere@acunia.com>
+2003-06-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/net/tftp_client.c: Define tftp_stream.last_good_block to
+	permit downloads > 32MB.
+	(tftp_ack): Allow last_good_block to wrap.
+	(tftp_stream_read): Ditto.
+
+	* src/net/bootp.c: Use correct DHCP message type for DHCPREQUEST.
+
+2003-05-20  Mark Salter  <msalter@redhat.com>
+
+	* cdl/redboot.cdl (CYGBLD_REDBOOT_CMD_LINE_HISTORY): New option.
+	* src/io.c: Support history command and history expansion.
+	* doc/redboot.sgml: Document command history support.
+
+2003-05-14  Mark Salter  <msalter@redhat.com>
+
+	* src/flash.c (flash_get_config): Add CONFIG_NETPORT case.
+
+2003-05-13  Nick Garnett  <nickg@balti.calivar.com>
+
+	* doc/redboot_installing.sgml: Added installation instructions for
+	Atmel EB40A, EB42 and EB55 boards.
+
+2003-05-06  Mark Salter  <msalter@redhat.com>
+
+	* src/main.c (cyg_start): Clear gdb_active when returning from stub.
+
+2003-05-06  Pierre Habraken  <Pierre.Habraken@imag.fr>
+
+	* cdl/redboot.cdl: Added option
+	CYGOPT_REDBOOT_BSP_SYSCALLS_EXIT_WITHOUT_TRAP for enabling (possibly
+	single shot) programs to exit and return a termination status as
+	their normal behavior (i.e. without raising a SIGTRAP).
+	* src/syscall.c (__do_syscall): Added conditionally compiled code
+	to SYS_exit for returning to RedBoot main loop without raising a
+	SIGTRAP, even when the calling program is not being debugged.
+	* src/main.c (cyg_start): Added code (following Jonathan Larmour's
+	and Mark Salter's suggestions) to RedBoot main loop: a (context)
+	savepoint is created before the thread of control is transferred to
+	gdb stubs (through a trampoline procedure). This savepoint enables
+	the stubs to return control back to the main loop by calling the
+	return_to_redboot procedure (macro CYGACC_CALL_IF_MONITOR_RETURN).
+	Procedure go_trampoline and variables go_saved_context and
+	go_return_status have been respectively renamed	to trampoline,
+	saved_context and return_status.
+
+2003-04-23  Chris Garry <cgarry@sweeneydesign.co.uk>
+	
+	* src/flash.c: Only perform RAM check in fis load command when 
+	CYGSEM_REDBOOT_VALIDATE_USER_RAM_LOADS = 1
+
+2003-04-18  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/net/tftp_client.c: Arrange to ACK last good packet when closing.
+	Without this, the host can be left tryint to send that packet forever.
+
+2003-04-14  Jani Monoses  <jani@iv.ro>	
+	
+	* src/load.c:
+	Change #else if to #elif so it compiles when TFTP is disabled. 
+	
+2003-04-08  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/main.c (do_go): Silence unused variable warning when no net.
+
+2003-04-04  Mark Salter  <msalter@redhat.com>
+
+	* src/main.c (do_go): Add -n switch to optionally stop network
+	device. Mask interrupts on all comm channels.
+	Don't scan for -n unless ethernet configured in.
+	* doc/redboot_cmds.sgml: Update go command info.
+
+2003-04-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/load.c: Better handling of default download mode.  Also
+	display information when I/O errors occor (was silent).
+	(do_load): Handle case when X-modem protocol is disabled.
+
+	* src/net/http_client.c: 
+	* include/net/http.h: Improve parsing of HTTP responses for errors.
+
+2003-03-28  Gary Thomas  <gary@mlbassoc.com>  inspired by
+2003-03-28  Jani Monoses <jani@iv.ro>	
+
+	* src/load.c: 
+	* cdl/redboot.cdl: Make TFTP download protocol optional.
+
+2003-03-20  Mark Salter  <msalter@redhat.com>
+
+	* include/flash_config.h (CONFIG_NETPORT): New config option.
+	* src/flash.c: Support CONFIG_NETPORT.
+	* cdl/redboot.cdl: New option to select default ethernet device.
+	* src/net/net_io.c: Support multiple ethernet devices.
+	* include/net/net.h: Add externs for net_devname and net_devindex.
+	
+2002-03-19  John Dallaway  <jld@ecoscentric.com>
+
+	* doc/redboot_installing.sgml: Update Atmel AT91EB40 RedBoot
+	installation instructions.
+
+2003-03-18  Mark Salter  <msalter@redhat.com>
+
+	* doc/redboot_installing.sgml: Add XScale IXDP425 and GRG.
+
+2003-03-05  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/main.c (do_version): Test for CYGPKG_REDBOOT_FLASH as
+	CYGPKG_IO_FLASH can be loaded with no underlying hardware drivers!
+
+2003-03-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/main.c (set_console_baud_rate): Avoid "unused" warning.
+
+2003-03-03  Knud Woehler  <knud.woehler@microplex.de>
+
+	* src/flash.c: fis_work_block was not initialized in do_flash_init()
+	thus fis_lookup() does not work if called via the virtual vector table.
+	
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/redboot.sgml: De-vendorise a little.
+	Fix extraneous <para>.
+
+	* cdl/redboot.cdl: Add doc links.
+
+2003-02-14  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/redboot.cdl: Put virtually all options inside
+	CYGBLD_BUILD_REDBOOT. And indent accordingly.
+
+2003-02-04  Gary Thomas  <gary@mind.be>
+
+	* src/fs/ide.c: Print more info if failed to identify IDE device.
+
+	* src/fs/e2fs.c: Improved debug output.
+
+2003-02-04  Mark Salter  <msalter@redhat.com>
+2003-02-04  Brian Murphy <brian@murphy.dk>
+
+	* src/main.c (return_to_redboot): Add CYGARC_HAL_RESTORE_GP.
+
+2003-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/main.c: Add support to allow programs started by go to
+	return to RedBoot.
+
+	* src/syscall.c (__do_syscall): Return to monitor on program exit
+	if gdb not active.
+	(sys_timer_isr): Return CYG_ISR_HANDLED.
+
+2003-01-10  Patrick Doyle  <wpd@delcomsys.com>
+
+	* src/load.c (do_load): Don't abort and complain about overwriting
+	the end of RAM when loading raw data files and we already asked
+	the user if it was ok to write outside what we believe to be RAM.
+
+2002-12-31  Patrick Doyle  <wpd@delcomsys.com>
+
+	* src/decompress.c (gzip_close): Don't complain that decompression
+	didn't complete when the stream reaches its end.
+
+2002-12-18  David Mazur  <david@mind.be>
+2002-12-18  Mark Salter  <msalter@redhat.com>
+
+	* src/fs/e2fs.c (e2fs_get_gdesc): Fixed handling of group descriptor
+	cache misses.
+
+2002-12-03  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/main.c: Export version string via virtual vector table.
+
+2002-11-05  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/io.c (_rb_gets_preloaded): Null terminate when buffer full.
+
+2002-10-24  Gary Thomas  <gthomas@ecoscentric.com> (inspired by)
+2002-10-24  Jay Foster <jay@systech.com>	
+
+	* include/net/bootp.h (BP_MIN_VEND_SIZE): 
+	* src/net/bootp.c (__bootp_find_local_ip): Require a minimum vendor
+	area to always be sent (to keep some servers happy).
+
+	* src/flash.c: Fix typo for "FIS DELETE"
+
+2002-09-16  Mark Salter  <msalter@redhat.com>
+
+	* src/main.c (set_console_baud_rate): Handle CYGPKG_REDBOOT_ANY_CONSOLE.
+	(set_comm_baud_rate): New function.
+
+2002-09-13  Mark Salter  <msalter@redhat.com>
+
+	* src/decompress.c: Move error handling back into gzip_close to
+	fix xyzmodem loads.
+
+2002-09-12  Mark Salter  <msalter@redhat.com>
+
+	* src/decompress.c (gzip_inflate): Fix error return so that upper
+	doesn't quit on Z_STREAM_END.
+	(gzip_close): Move error handling into gzip_inflate.
+	
+	* src/load.c (do_load): Fix printing of address range for raw loads.
+
+2002-09-11  Mark Salter  <msalter@redhat.com>
+
+	* src/main.c (do_go): Turn on line flushes before jumping to function.
+	* src/net/net_io.c (net_io_control): Support flushes at end of lines.
+
+2002-09-03  Yoshinori Sato <qzb04471@nifty.ne.jp>
+2002-09-03  Mark Salter  <msalter@redhat.com>
+
+	* include/fs/disk.h (__SWAB32): Fix incorrect masking.
+	* src/fs/e2fs.c (e2fs_inode_block): Fix endianess of block numbers.
+
+2002-08-29  Mark Salter  <msalter@redhat.com>
+
+	* src/net/net_io.c (net_init): Initialize dns before showing addresses.
+
+2002-08-26  Thomas Koeller <thomas@koeller.dyndns.org>
+
+    	* src/flash.c: Do not warn about overwriting image data if
+	-n option is used with 'fis create'. For 'fis load',
+	perform load size check based on actual data length, not
+	image size.
+
+2002-08-22  Mark Salter  <msalter@redhat.com>
+
+	* src/net/net_io.c (net_io_putc): Don't flush on every \n.
+	* src/syscall.c (__do_syscall): Allow fileio support to fall back
+	to non-fileio behavior if program is not being run by gdb.
+
+2002-08-20  Thomas Koeller  <thomas@koeller.dyndns.org>
+
+    	* cdl/redboot.cdl:
+    	* include/redboot.h:
+    	* src/main.c:
+    	* src/flash.c:
+    	* src/decompress.c: Use a common buffer for FIS directory
+    	manipulation and zlib workspace to conserve RAM.
+
+2002-08-20  Thomas Koeller  <thomas@koeller.dyndns.org>
+ 
+     	* cdl/redboot.cdl:
+ 	* include/fis.h: Allow control of FIS descriptor padding.
+
+2002-08-16  Jani Monoses  <jani@iv.ro>
+
+	* src/io.c: Do not add empty lines to command history.
+	* src/net/http_client.c: Read all data when in CLOSE_WAIT
+	otherwise if the server closes quickly enough nothing is 
+	received.
+	
+2002-08-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+	
+	* src/crc.c: Removed. Replaced with the CRC package.
+	* src/cksum.c: Removed the posix_crc function.
+	* src/flash.c: Use the crc package crc functions.
+	* src/xyzModem.c: Ditto
+	* include/redboot.h: Use the crc package include file.
+	* cdl/redboot.cdl: removed crc.c 
+
+2002-08-09  Jani Monoses  <jani@iv.ro>
+
+	* src/net/http_client.c: use standard HTTP GET request ('/' 
+	instead of ' ' in HTTP/1.0) to work with all servers
+	
+2002-08-08  Jani Monoses  <jani@iv.ro>
+
+	* src/flash.c: fis delete should mark the slot as reusable
+	not just delete the area of flash used by the file.
+	
+2002-08-08  Gary Thomas  <gthomas@ecoscentric.com>
+2002-08-08  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/load.c (do_load): Make sure 'io_tab' is set before using it.
+
+2002-08-07  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/net/tftp_client.c: 
+	* include/net/tftp.h: Make block numbers unsigned to handle files
+	larger than 16MB.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/crc.c: POSIX crc code is now separate.
+	
+	* src/mfill.c: 
+	* src/mcmp.c: 
+	* src/dump.c: 
+	* src/cksum.c: 
+	* src/caches.c: New (split out) file(s).
+
+	* src/main.c: 
+	* cdl/redboot.cdl: Split major CLI functionality to separate
+	files, more easily controlled by CDL - inspired by Andrew.
+
+2002-08-06  Andrew Lunn  <Andrew.Lunn@ascom.ch>
+
+	* src/io.c: Fix the parsing of boot scripts to allow the use
+	  of aliases. This was broken when the ability to do startup
+	  type specific scripting was added.
+
+2002-08-05  Andrew Lunn  <Andrew.Lunn@ascom.ch>
+
+	* src/main.c: Made more of the commands conditionally compilable
+	* cdl/redboot.cdl: CDL code to control the compilation.
+	
+2002-07-30  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/net/net_io.c: Handle broadcast/mask setup better (failed if
+	not found in FLASH).  Also print on network info line.
+
+2002-07-18  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/net/tftp_client.c: 
+	* src/net/http_client.c: 
+	* src/fs/disk.c: 
+	* src/xyzModem.c: 
+	* src/load.c: 
+	* include/redboot.h: Rework load/mode information tables so that
+	load I/O methods can detect actual mode (e.g. X-modem vs Y-modem)
+
+2002-07-16  Hendrik Ruijter  <Hendrik.Ruijter@axis.com>
+2002-07-16  Mark Salter  <msalter@redhat.com>
+
+	* include/net/net.h: Add __tcp_abort prototype.
+
+	* src/net/icmp.c: The default handler can be replaced by a
+	user defined handler which handles all ICMP segments.
+
+	* src/net/ping.c
+	(handle_icmp): Only ICMP Echo Reply segments must be counted and
+	ICMP Echo Requests are handled in the user defined handler.
+
+	* src/net/tcp.c
+	(do_abort, __tcp_abort): Send an RST flag in order to abort a
+	connection. May use a delay to send the flag.
+
+2002-07-15  Mark Salter  <msalter@redhat.com>
+
+	* src/net/net_io.c: Increase size of out_buf to 1024 bytes.
+
+2002-07-11  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/io.c (mon_read_char_with_timeout): Ensure interrupts are
+	disabled on all I/O channels, except for the current console.
+	This is done when selecting a console, as this process causes
+	the interrupt state to be inherited from the current console.
+
+2002-07-09  Gary Thomas  <gary@chez-thomas.org>
+2002-07-09  Grant Edwards <grante@visi.com>
+
+	* src/net/udp.c: 
+	* src/net/net_io.c: 
+	* src/net/ip.c: 
+	* src/net/bootp.c: 
+	* src/net/arp.c: 
+	* include/net/net.h: 
+	* include/net/bootp.h: 
+	* cdl/redboot.cdl: Add basic support for non-local networking
+	using a single gateway.  Based on contribution from Grant Edwards.
+
+2002-07-01  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/net/tftp_client.c: 
+	* src/net/http_client.c: 
+	* src/fs/disk.c: 
+	* src/xyzModem.h: 
+	* src/xyzModem.c: 
+	* src/load.c: 
+	* include/net/tftp_support.h: 
+	* include/net/http.h: 
+	* include/redboot.h: 
+	* cdl/redboot.cdl: Make 'load' command stream I/O table driven.
+
+2002-05-31  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot_installing.sgml: Updated the remaining installation
+	instructions (well, the top mode details anyway).
+
+2002-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot_cmds.sgml: Changed format of fis commands.
+
+	* doc/redboot_installing.sgml: Updated installation instructions
+	for all targets up to PowerPC.
+
+2002-05-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c (load_elf_image): Improve loading of ELF files with
+	multiple physical segments.
+
+2002-05-27  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot_rebuilding.sgml: Added some guimenu tags.
+
+	* doc/redboot_installing.sgml: Updating more board instructions.
+	More updates. Changing most programlisting keywords to screen.
+	Converted remaining rebuild instructions. More mode descriptions
+	updated. iPAQ converted as well.
+
+2002-05-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c (load_elf_image): Improve loading where ELF image
+	actually overlaps headers [old COFF style files].
+
+2002-05-24  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot_installing.sgml: Updated another 3 boards'
+	instructions.
+
+	* doc/redboot.sgml: Changes due to comments from Jifl.
+	* doc/redboot_rebuilding.sgml: Same.
+	
+	* doc/redboot.sgml: Fix wording.
+
+	* doc/redboot_installing.sgml: Reordered the platform sections
+	according to CPU architecture/variant and board manufacturer.
+
+2002-05-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/dns.c (store_hent): New function. DNS package now requires
+	this instead of the cyg_thread_get_data calls.
+	(free_stored_hent): New function. Ditto.
+
+2002-05-23  Gary Thomas  <gthomas@redhat.com>
+
+	* doc/redboot_cmds.sgml: Document new HTTP download mode.
+
+	* src/net/tcp.c: Improve some interfaces.  Add support for
+	outgoing (__tcp_open) connections.
+
+	* src/net/net_io.c (net_io_flush): Use improved TCP interfaces.
+
+	* src/main.c (_mon_write_char): Map '\n' => '\r\n'.  This used
+	to be done by diag_printf(), but that was the wrong place for it.
+
+	* include/net/net.h: Add support for TCP outgoing connections.
+
+	* src/net/http_client.c: 
+	* include/net/http.h: New file(s) - HTTP client support.
+
+	* src/load.c: 
+	* cdl/redboot.cdl: Support HTTP download mode.
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot.sgml: Moved the editing and resource sections to
+	this document. Added new section on RedBoot (startup) modes.
+	* doc/redboot_cmds.sgml: Removed the editing and resource
+	sections.
+	* doc/redboot_installing.sgml: Changed a couple of platform
+	descriptions.
+	* doc/redboot_rebuilding.sgml: Make use of mode/config
+	consistent. Removed mode section.
+
+2002-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot_rebuilding.sgml: Added a note about redboot growing
+	beyond its slot limits.
+	Rewrote the RedBoot rebuilding documentation.
+
+	* src/flash.c (fis_create): Clarify error message. Get rid of bool
+	flag slot_found that only duplicated fis variable state.
+
+2002-05-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/xyzModem.h: 
+	* src/xyzModem.c: 
+	* src/load.c: Purge mention of Z-modem until it's implemented.
+
+2002-05-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c (fis_create): Removed one of the three questions to
+	verify.
+	* doc/redboot_rebuilding.sgml: Removed the query lines from the
+	docs.
+
+	* doc/redboot_installing.sgml: Removed all the free RAM related
+	resource descriptions. Left in a few timer resource descriptions.
+	* doc/redboot_cmds.sgml: Refer to platform sections for additional
+	platform-specific resource usage.
+
+	* doc/redboot_installing.sgml: Removed all platform specific
+	references to the updating section which told the user to use
+	specific flash paramemters. All this is now handled
+	automagically.
+
+	* src/alias.c (lookup_alias): FREEMEMHI is just the high address
+	masked to 1KB alignment.
+
+	* doc/redboot_cmds.sgml: Added load disk example.
+	Added section on RedBoot resources.
+
+2002-05-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_baud_rate): Improve safety by asking for verification
+	after actually changing the rate, before updating fconfig data.  This
+	reduces the chance of making a "brick" by setting a bad baud rate.
+
+	* src/flash.c (load_flash_config): Fix set_console_baud_rate prototype.
+
+	* src/io.c (verify_action_with_timeout): 
+	* include/redboot.h: New function verify_action_with_timeout().
+	Returns false if no response within XX ms (or ^C).
+
+2002-05-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_help): 
+	* src/flash.c: 
+	* include/redboot.h: Support nested command structures, like "fis",
+	better.
+
+2002-05-17  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot_rebuilding.sgml: Rewrote update procedure to become
+	truly generic. Some minor tweaks.
+
+	* doc/redboot_cmds.sgml: Added id to cksum command.
+
+	* src/shex.c (load_shex_image): Set entry address to be base
+	address.
+	* src/load.c (do_load): Same.
+
+	* src/flash.c (fis_create): Infer correct exec and entry
+	addresses.
+
+	* src/load.c (load_elf_image): Save load_address/end.
+
+	* src/flash.c: Made fis lock/unlock support optional image name
+	instead of addresses. Made a few places of the code use fis_lookup
+	instead of scanning the table by steam.
+	(do_flash_config): Update flash after configuration has been
+	initialized.
+
+2002-05-16  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot_cmds.sgml: Updated text on cksum to show the new
+	output format.
+
+	* src/xyzModem.c (xyzModem_stream_read): Fix build breakage.
+
+	* doc/redboot.sgml: Some minor tweaks.
+
+	* src/alias.c (lookup_alias): Renamed freemem aliases.
+
+2002-05-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/io.c (verify_action): Replaced 'are you sure' with
+	'continue'.
+	* doc/redboot.sgml: Same.
+
+	* src/xyzModem.c: Let Y-modem load correct length. Don't remove
+	assumed padding bytes since they may well be actual data. Don't
+	read anything after the EOF package is received.
+	Disabled the Y-modem header stuff again; it still needs the
+	padding culling code. So in the end, only the EOF-package read
+	was at fault.
+
+	* src/main.c: Tweak cksum output.
+
+	* src/flash.c (fis_create): language tweaks.
+
+	* src/main.c: Always call expand_aliases - leave it to that
+	function to look for flash aliases when appropriate.
+
+	* src/flash.c: Moved basic alias expansion into separate file.
+	* src/alias.c: New file. Always provide FREE_LOW & FREE_HIGH
+	aliases, but also call flash_lookup_alias when defined.
+
+	* include/redboot.h: Added declarations for alias functions. Added
+	getc_t and terminate_t types.
+
+	* src/load.c: Use getc_t/terminate_t types. Made raw load abort if
+	user tries to load a file too big for memory.
+
+	* cdl/redboot.cdl: Compile alias.c.
+
+2002-05-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/version.c: Clarify comments.
+
+2002-05-14  Gary Thomas  <gthomas@redhat.com>
+
+	* include/redboot.h: 
+	* src/net/net_io.c: 
+	* src/net/dns.c: Merge generic "ip" command with "dns" for
+	more homogenous interface.
+
+2002-05-13  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Disable CYGOPT_REDBOOT_FIS_REDBOOT_BACKUP
+	by default, since its use is currently unclear.
+
+	* src/flash.c (load_flash_config): Check for adequate FIS space
+	was incorrect [when FIS directory and FCONFIG are combined].
+	(fis_lookup): Image name lookup is case insensitive.
+
+2002-05-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Lots of restructuring in support of combined
+	FIS and FCONFIG data.
+
+	* cdl/redboot.cdl: 
+	Add new option CYGSEM_REDBOOT_FLASH_COMBINED_FIS_AND_CONFIG
+	to allow FIS directory and FCONFIG data to share the same
+	physical FLASH block.
+
+2002-05-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (load_flash_config): Adjust fconfig database
+	address - necessary if FLASH blocks are very small.
+
+2002-05-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c: Rework how decompression is done (with changes
+	noted below).  Now turning on decompression works by pushing
+	the decompress code into the stream I/O.
+
+	* src/flash.c (fis_load): 
+	* src/decompress.c (gzip_inflate): 
+	* include/redboot.h: Make decompression code more generalized.
+
+2002-05-01  Gary Thomas  <gthomas@redhat.com>
+
+	* include/elf.h: New file.
+
+	* cdl/redboot.cdl: 
+	* src/load.c (load_elf_image): Support [simple] ELF images.
+
+2002-04-24  Yoshinori Sato  <qzb04471@nifty.ne.jp>
+
+	* src/xyzModem.c (xyzModem_stream_terminate): Increase time for
+	cleanup from 100ms to 250ms.
+
+2002-04-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/syscall.c (__do_syscall): Rename EIO to NEWLIB_EIO to
+	pre-empt any potential conflict. Add definition of 
+	NEWLIB_ENOSYS and use it in place of ENOSYS.
+
+2002-04-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* doc/redboot.sgml: Document iq80321 switch settings.
+
+	* include/redboot.h: Add gettimeofday, rename, isatty and system
+	syscall numbers.
+	
+	* src/syscall.c (__do_syscall): Handle above new syscalls in a
+	"default" way.
+	Take new extra signal argument.
+	When required, handle file I/O syscalls, by passing into HAL.
+
+2002-04-21  Paul Fine  <pfine@delcomsys.com>
+
+	* src/flash.c (flash_get_config, load_flash_config): Save a
+	pointer to the configuration structure in FLASH.  If
+	flash_get_config fails to find a config item, check to make sure
+	that the config structure in RAM has not been trashed.  If it has
+	been trashed, set the pointer to the "readonly" version in FLASH
+	and try to read the config item again.
+	
+	* cdl/redboot.cdl (CYGSEM_REDBOOT_FLASH_CONFIG_READONLY_FALLBACK):
+	Added this flash config option to control the readonly fallback in
+	flash.c
+
+2002-04-16  Yoshinori Sato  <qzb04471@nifty.ne.jp>
+2002-04-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/xyzModem.c: Don't return ACKs too early.
+
+2002-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/bootp.c: Readjust timeouts - more, shorter.  Better response.
+
+2002-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/bootp.c: Increase timeouts for slower networks.
+
+2002-04-11  Nick Garnett  <nickg@redhat.com>
+
+	* doc/redboot.sgml: Changed some misplaced <term>s into
+	<literal>s.
+
+2002-04-08  Nick Garnett  <nickg@redhat.com>
+
+	* doc/redboot.sgml: Added full LED code desription, revised memory
+	layout and miscellaneous other fixes for 80321.
+
+2002-04-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_mfill): 
+	(do_mcmp): New routines for fill/compare random buffers.
+
+	* cdl/redboot.cdl: CDL to control mfill, mcmp, cksum commands.
+
+	* src/net/net_io.c (do_ip_addr): 
+	* doc/redboot.sgml: Add new command 'ip_addr', used to set/show the
+	local and host [server] addresses.
+
+2002-04-02  Jesper Skov  <jskov@redhat.com>
+
+	* redboot.sgml: excalibur: Updated memory map details, added
+	information about REDBOOT startup mode.
+
+2002-03-07  Mark Salter  <msalter@redhat.com>
+
+	* src/net/tcp.c: Fix missing acks of resent segments pointed out
+	by Hendrik Ruijter.
+
+2002-03-06  Nick Garnett  <nickg@redhat.com>
+
+	* doc/redboot.sgml: Added Integrator details.
+
+2002-03-06  Mark Salter  <msalter@redhat.com>
+
+	* src/net/tcp.c (__tcp_handler): Slight rework of Hendrik Ruijter's
+	fix for FIN_WAIT_1 to TIME_WAIT transition.
+
+2002-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot.sgml: Updated iq80310 details.
+	Updated iq80321 details.
+	Updated e7t details.
+	
+2002-03-05  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot.sgml: Updated ebsa285 details.
+	Updated ipaq details.
+	Updated edb7312 details.
+
+2002-03-05  Gary Thomas  <gthomas@redhat.com>
+2002-02-25 Hendrik Ruijter <Hendrik.Ruijter@axis.com>
+
+	* include/net/net.h: Add 'reuse' flag.
+
+	* src/net/tcp.c 
+	(tcp_send): Adjust socket close time to allow for faster re-use.
+	(__tcp_handler): Statetransitions to TIME_WAIT on active close 
+	when FIN,ACK receivedsimultaneously.
+	(__tcp_so_reuseaddr): New function - select fast re-use.
+
+2002-03-05  Jesper Skov  <jskov@redhat.com>
+
+	* doc/redboot.sgml: Add something about updating RedBoot on
+	platforms using ROMRAM-startup type RedBoot. Also mention that fis
+	create can get some of its information from the fis directory.
+	Updated assabet details.
+
+2002-03-01  Mark Salter  <msalter@redhat.com>
+
+	* redboot.sgml: Add diag docs and switch setting info for 80321.
+
+2002-02-28  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c (do_flash_config): Add "-d" to the help info.
+
+	* doc/redboot.sgml: Docuement the "-d" option for dumb terminals
+	with fconfig - so you're not forced to use line editing.
+
+2002-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/syscall.c: Moved SYS_ value definitions to the header file.
+	* include/redboot.h: Same.
+
+2002-02-27  David Howells  <dhowells@redhat.com>
+
+	* sgml/redboot.sgml: Removed extraneous </para>.
+
+2002-02-26  David Howells  <dhowells@redhat.com>
+
+	* doc/redboot.sgml: Updated the ASB2305 notes to be more complete
+	with respect to having two flash chips.
+
+2002-02-19  Mark Salter  <msalter@redhat.com>
+
+	* src/net/net_io.c (net_io_init): Remove ISR installation. This
+	was wrong way to fix problem.
+
+2002-02-15  Mark Salter  <msalter@redhat.com>
+
+	* src/net/net_io.c (net_io_init): Install default ISR for ethernet.
+
+2002-02-14  Patrick Doyle  <wpd@delcomsys.com>
+
+	* src/fs/disk.c (disk_stream_read): Modified to return the number
+	of bytes read instead of -1 when such number is less than was
+	requested.
+	
+2002-02-06  Mark Salter  <msalter@redhat.com>
+
+	* src/syscall.c (sys_write): Call __flush after last __putc.
+	(__flush): New function to flush console output.
+
+2002-02-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/net_io.c (net_init): Set use_bootp and net_debug defaults
+	properly.
+
+2002-01-31  Gary Thomas  <gthomas@redhat.com>
+
+	* src/fs/ide.c (ide_packet_read_sectors): Pass errors on read.
+	(ide_init): Ignore ATAPI devices that are not CDROM (like ZIP).
+
+2002-01-30  Hugo Tyson  <hmt@redhat.com>
+
+	* src/net/net_io.c (start_console): Pick up config items to choose
+	a console for special debug messages.  If it's not set, select
+	channel 0 regardless, like it used to.
+	(info_console_force, info_console_number): New fconfig options to
+	control this channel *plus* forcing application special debug out
+	to a particular serial.   This is crucial for debugging debugging
+	itself, or debugging a networked app over the network when you're
+	liable to get such messages popping out from the app as well as
+	from RedBoot.
+
+	* cdl/redboot.cdl (CYGDBG_REDBOOT_NET_DEBUG_CONSOLE_NUMBER):
+	Option deleted, because this is now controlled by fconfig items.
+
+2002-01-25  Hugo Tyson  <hmt@redhat.com>
+
+	* src/syscall.c (sys_profile_reset): New routine - doesn't do
+	much, just NULLs the callback.  Useful placeholder in case more is
+	needed in future, eg. reset the clock also.
+	(__do_syscall): Calls the reset on syscall 2003.
+
+2002-01-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c (do_flash_config): Enable a "dumb terminal" mode for
+	fconfig, which does not pre-fill the buffer for editing, but
+	merely prompts for a new value (or RET for old, for non-string
+	values).  This is because telnet/kermit-like network terminal apps
+	are not by default configured to pass all characters through.
+
+2002-01-18  Hugo Tyson  <hmt@redhat.com>
+
+	* src/syscall.c (sys_timer_ticks): Change this to a cyg_uint64 to
+	give better range for times() sanity in case we run the hardware
+	clock ticking at a faster rate, or want to last > 8 days.
+
+2002-01-16  Hugo Tyson  <hmt@redhat.com>
+
+	* src/syscall.c (sys_profile_frequency): Change frequency that is
+	passed around to signed, so that we can enquire using -ve values.
+	Re-order the logic a little so as to permit enquiries which do not
+	modify what's set up in the hardware.  Adjust the times() counter
+	when its HZ rate changes so it tells the truth.
+
+2002-01-15  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+	* src/flash.c: Better default for 'fis cr' - if we're programming
+	an existing flash image, take img_size from the last-loaded image
+	but length from the one that's already on the flash.
+	
+2002-01-14  David Woodhouse  <dwmw2@cambridge.redhat.com>
+
+	* src/main.c: Useful defaults for cksum command.
+	* src/flash.c: Useful defaults for fis create command.
+	* src/load.c: Slight cleanup of file type detection.
+	
+2002-01-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/cksum.c: Added volatile keyword to union members to
+	prevent compiler optimization messing things up.
+
+2002-01-10  Hugo Tyson  <hmt@redhat.com>
+
+	* src/syscall.c (sys_timer_isr): Add CYGARC_HAL_SAVE_GP(); and
+	CYGARC_HAL_RESTORE_GP(); around the callback invocation to protect
+	ourselves from whatever the app routine might do along those lines.
+
+2002-01-10  Hugo Tyson  <hmt@redhat.com>
+
+	* src/syscall.c (sys_timer_ticks): Explicitly initialize this.
+	(sys_timer_isr): Call periodic callback function, with PC and SP
+	of interrupted context, if set.
+	(sys_profile_call_back): New routine to support
+	gprof profiling of GNUPro/newlib apps via BSP_SYSCALLS.  Sets the
+	periodic callback function, returning the old value.
+	(sys_profile_frequency): Ditto, sets the frequency of the call, if
+	possible, or zero => a mere inquiry.
+	(sys_timer_init, sys_times): Be prepared for a dynamic non-default
+	clock rate.
+	(__do_syscall): Handle new case arms.
+
+	* cdl/redboot.cdl (CYGSEM_REDBOOT_BSP_SYSCALLS): Changed to a
+	component; want to add stuff in here later.
+	(CYGSEM_REDBOOT_BSP_SYSCALLS_GPROF): New option
+	to control inclusion of histogram profiling callback syscalls.
+
+2002-01-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/main.c (do_version): Added year 2002.
+
+2002-01-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (lookup_alias): Remove warning.
+
+2002-01-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/xyzModem.c (xyzModem_stream_read): BUG 57497
+	Try and detect (and remove) ^Z characters placed at end of stream.  
+	This data confuses higher processing, like the zlib decompression 
+	routines.
+
+2001-12-16  Mark Salter  <msalter@redhat.com>
+
+	* src/fs/ide.c: Add ATAPI support.
+	* include/fs/ide.h: Add ATAPI defines.
+	* src/fs/disk.c (disk_stream_open): Fix support for IDE CDROMs.
+	(disk_parse_filename): Ditto.
+
+2001-12-12  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/redboot.cdl (CYGDBG_REDBOOT_NET_DEBUG_CONSOLE_NUMBER): New
+	option to control the console number for network debug messages.
+	For platforms where serial0 is supported (due to common variant
+	HAL code) but not connected; serial1 is all you get, say.
+
+	* src/net/net_io.c (start_console): Use it.
+
+2001-12-10  Nick Garnett  <nickg@redhat.com>
+
+	* src/net/cksum.c (__pseudo_sum): Fixed method of adding protocol
+	field to checksum. Some compilers optimize some of this away to
+	give a bogus result.
+
+2001-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/load.c (do_load): Fix warning.
+	* src/main.c: Added support for dumping memory in 16 and 32 bit
+	units. Based on patch from Warren Jasper <warrenj@bops.com>.
+
+2001-12-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c (get_config): If we are editing an IP address, and
+	it is 0.0.0.0 (as you get at "fco -i" time) suppress using that as
+	the initial value of the string, it is unhelpful as a starting
+	point for line editing.
+
+	If we were given a value on the CLI eg. "fco bootp false" because
+	the new value was copied into the holding string, it was not
+	recognized as a change, so the flash was not updated.  Bug!  The
+	fix is to change the order of the strcpy()s so that holdline is
+	before line.
+
+	If the input line for a new value is completely blank, and the
+	type is not string, take this to mean don't change the value.
+	Otherwise typing in an empty line to an IP address goes off and
+	tries to DNS resolve it there and then, looks like a hang.
+
+	(do_flash_config): If we print the message "** invalid entry" do
+	not just loop; set onevalue = NULL so that the user is prompted
+	for a good value.  Otherwise it loops forever trying the same
+	value if you typed "fco bootp goat" (goat being a bad boolean).
+
+	* src/parse.c (parse_bool): Check for (partial) rest of the word
+	either "true" or "false" and nothing extra.  Thus we reject
+	"truefalse" as is all to easy to type in by accident.  "TRU" "T"
+	"tRuE" are all OK of course.
+
+	* src/net/inet_addr.c (inet_aton): Do not accept terminating the
+	dot-quad address with a final dot.  Else typing on the end of a
+	provided-for-editing string is accepted.  Also reject units > 255.
+	Allow typing in either exactly one (large) number or 4 small ones;
+	reject intermediates.  Thus we reject "10.16.19.1110.16.19.33" and
+	"0.0.0.010.16.19.11" as are all to easy to type in by accident,
+	and things like 10.0.0xffff which used to be accepted.  0x0a00ffff
+	is OK though.  This change also prevents the pointer s running off
+	the end of the string if you just entered eg. "1".
+
+2001-12-04  Richard Sandiford  <rsandifo@redhat.com>
+
+	* include/net/net.h (ETH_MAX_PKTLEN): Increase to match definition
+	of MAX_ETH_MSG.
+
+2001-12-04  Richard Sandiford  <rsandifo@redhat.com>
+
+	* src/net/tcp.c (__tcp_poll): Call MS_TICKS_DELAY before __timer_poll.
+	* src/net/net_io.c (net_io_getc): Remove MS_TICKS_DELAY from here...
+	(net_io_getc_nonblock): ...and from here.
+
+2001-11-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/net_io.c (net_init): Print ESA for device even if bootp
+	fails.
+
+2001-11-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/dns.c: Rename index -> ptdindex to avoid conflict with BSD
+	index() function.
+
+2001-11-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/tftp_client.c (tftp_stream_open): Clear from_addr's
+	sin_port so multiple loads are possible.
+
+2001-11-26  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_XXX.ecm: Added. Replaced the _RAM, _ROM, and
+	_ROMRAM variants.
+
+	* misc/redboot_ROM.ecm: Added configuration with all packages
+	relevant for a full RedBoot configuration. Whenever new (optional)
+	RedBoot peer packages are added, they should be added to these
+	files and not the RedBoot template.
+	* misc/redboot_ROMRAM.ecm: Same.
+	* misc/redboot_RAM.ecm: Same.
+
+2001-11-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/redboot.h: Added load_address and load_address_end
+	variables to hold bounds of a loaded image.
+	* src/load.c: Fill load_address and load_address_end after srec
+	and binary loads.
+	* src/flash.c: Same.
+	* src/main.c (do_go): removed unneeded cast.
+
+2001-11-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.c (_rb_gets_preloaded): More correct timeout handling.
+	n.b. in practice, this changes nothing, but it is more "correct".
+
+2001-11-05  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c: Minor typo in help string.
+
+	* src/io.c (_rb_gets_preloaded): Clear buffer if ^C.
+
+2001-11-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c (fis_init): Fix warning.
+
+2001-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c (fis_init): tweaks to the SIB protection code.
+
+2001-11-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_init): Need to init block fully, otherwise old
+	images can persist after init.
+
+2001-10-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/sib.h: Contains information about ARM Boot Monitor flash
+	block information.
+
+	* cdl/redboot.cdl: Added CYGOPT_REDBOOT_FIS_DIRECTORY_ARM_SIB_ID
+	option.
+
+	* src/flash.c (fis_init): Added code to add ARM Boot Monitor
+	footer on FIS block.
+	
+2001-10-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/flash.c (fis_delete): Prototype arm_fis_delete in correct place.
+	(fis_list): Fix compilation problem - this isn't C++!
+
+2001-10-30  Philippe Robin <Philippe.Robin@arm.com>
+2001-10-30  Jonathan Larmour  <jlarmour@redhat.com>
+	
+	* cdl/redboot.cdl: Add CYGINT_REDBOOT_ARM_FLASH_SIB_SUPPORTED and
+	CYGHWR_REDBOOT_ARM_FLASH_SIB to indicate support for, and a request
+	to provide ARM flash block structure support.
+
+	* src/flash.c (fis_list): Call out to driver for ARM block FIS listing.
+	(fis_delete): Call out to driver for ARM block FIS deletion.
+
+2001-10-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (cyg_start): New pseudo-commands, useful for scripts.
+	'# anything' - treated like a comment.
+	'= anything' - comment, but prints command line on console.
+
+	* src/flash.c (expand_aliases): Don't expand aliases which are
+	quoted, but only on the command line.  This allows aliases to
+	expand into other aliases which are within quoted strings.
+
+	* include/redboot.h: 
+	* src/io.c (_rb_gets_preloaded): New function which allows for a
+	buffer to be displayed and edited in place.  This is extremely
+	useful for 'fconfig', now that better line editing functions are
+	supported.
+
+	* src/flash.c (get_config): Using new function _rb_gets_preloaded(),
+	which supports edit-in-place for data items.
+
+2001-10-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (cyg_start): 
+	* src/io.c (_rb_gets): 
+	* include/redboot.h: Add new global control 'cmd_history' which is
+	used to enable/disable command history collection.  This keeps the
+	history from being cluttered with things like 'y' (answers to simple
+	questions).
+
+2001-10-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.c (_rb_gets): Fix ^A editing - was timing out, thus erasing
+	buffer [silently].
+
+2001-10-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.c:
+	* cdl/redboot.cdl: Add command line history and edit functions.
+	Controlled by CYGNUM_REDBOOT_CMD_LINE_EDITING option which defines
+	the depth of the history buffer.
+
+2001-10-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/redboot.h: Declare net_debug here.
+
+2001-10-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/net_io.c (net_init): Set cyg_io_eth_net_debug from net_debug.
+	* include/net/net.h: Declare cyg_io_eth_net_debug.
+
+2001-10-18  David Howells  <dhowells@redhat.com>
+
+	* src/syscall.c: Added support for the times() syscall and marked
+	the utime() syscall as being implemented incorrectly.
+
+2001-10-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.c (_rb_gets): Fix parsing of \" in strings.
+
+2001-10-16  Jesper Skov  <jskov@zoftcorp.adsl.dk>
+
+	* cdl/redboot.cdl: Require ISOINFA.
+
+2001-10-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/dns.c (send_recv): Clear from_addr before passing it to
+	__udp_recvfrom. Fixed return value.
+
+2001-10-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (_do_flash_init): 
+	Add wrapper function for do_flash_init() to avoid compiler warning.
+
+	* src/io.c (_rb_gets): 
+	Use sub-timeouts when calling mon_read_char_with_timeout() as it
+	was intended that this routine should timeout quickly to allow
+	for other processing to take place if no data is available.  In
+	practice this won't make any difference unless the global "idle"
+	timeout value is changed to be something quite large.
+
+	* src/decompress.c: Improve memory allocators.  Also use 'init'
+	style function so that this is the only file that knows anything
+	of the details of the decompression process or packaging.
+
+	* src/main.c: 
+	* include/redboot.h: 
+	* cdl/redboot.cdl: Rework decompression to be totally encapsulated.
+	This keeps the details of this functionality in a single file, rather
+	than scattered throughout RedBoot.
+
+2001-10-15  David Howells  <dhowells@redhat.com>
+
+	* src/xyzModem.c: put semicolon between goto-label and close curly.
+
+2001-10-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (_expand_aliases): Change around some ambiguous code.
+
+	* src/main.c: 
+	* src/decompress.c: 
+	* include/redboot.h: 
+	* cdl/redboot.cdl: Provide RedBoot specific memory allocators
+	for ZLIB.  Allows much finer control over memory map.
+
+	* src/main.c (do_dump): Add option "-s" to dump data as S-records.
+
+2001-10-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/enet.c (__enet_poll): Suppress warning messages.
+
+2001-10-10  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/flash.c (do_flash_init): Only set __flash_init when init is
+	successful.
+
+2001-10-04  Jesper Skov  <jskov@redhat.com>
+
+	* src/fs/disk.c: Fix ISO9660 build error.
+
+	* src/main.c: Added x as an alias for the dump command.
+
+	* src/net/dns.c: Fixed some messages (DNS -> DNS server).
+
+2001-10-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/xyzModem.h: 
+	* src/xyzModem.c (xyzModem_stream_open): 
+	* src/load.c (do_load): Add new option "-c <N>" to let the user
+	specify the I/O channel to use - xyModem only.
+
+2001-10-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/udp.c (__udp_recvfrom): Don't change server address (returned
+	by this function) until a packet has been received with no timeout.
+
+2001-09-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/flash.c (fis_create): if not copying, still update directory.
+
+2001-09-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (_expand_aliases): Properly null terminate expanded 
+	string - failed if alias was at end of line.
+
+2001-09-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/dns.c: Include tracing header.
+
+2001-09-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/dns.c: Removed errno hacks.
+	Reduce size of string buffers. Make sure they suffice (or fail).
+
+	* include/redboot.h: Added DNS h_errno definitions.
+
+	* include/redboot.h: Fix for building on targets wo network.
+
+	* src/load.c (do_load): Make sure host can be reached - and print
+	appropriate error message if not.
+
+	* src/net/net_io.c (net_init): Call DNS init when appropriate.
+
+	* src/net/inet_addr.c (inet_aton): Made s argument const.
+
+	* src/net/dns.c: Added UDP driven DNS support.
+
+	* src/net/bootp.c: Fixed warnings.
+
+	* src/flash.c: Replaced inet_aton with _gethostbyname.
+	* src/load.c: Same.
+	* src/net/ping.c: Same.
+
+	* include/net/net.h: Fix warning.
+
+	* include/redboot.h: Added DNS stuff, including some string
+	helpers.
+
+	* cdl/redboot.cdl: Added DNS support options.
+
+2001-09-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/version.c: Simplify _CERTIFICATE handling.
+
+2001-09-13  Fabrice Gautier <Fabrice_Gautier@sdesigns.com>
+
+	* cdl/redboot.cdl: Added configuration options to deactivate BOOTP and
+	enable net debug.
+	* src/net/net_io.c (net_init): Use them.
+
+2001-09-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Cleanups - removing some redundant code.
+
+2001-09-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * src/flash.c (do_flash_init): Only allocate fis block when
+        CYGOPT_REDBOOT_FIS enabled.
+        Conditionalize fis_work_block and fisdir_size.
+
+2001-09-12  Gary Thomas  <gthomas@redhat.com>
+
+        * src/flash.c (load_flash_config): Use additional space in the
+        FLASH work area (at end of RAM) for 'fconfig' data.  This reduces
+        overall stack requirements as there is no need for 'fconfig' data
+        to be held on the stack anymore.
+
+        * src/flash.c: 
+        * include/fis.h: Define flash addresses using CYG_ADDRESS which
+        is more portable than (unsigned long).
+
+2001-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * cdl/redboot.cdl (CYGPKG_REDBOOT_FLASH): Be conditional on an
+        actual flash device, not just the generic flash layer.
+
+2001-09-11  Gary Thomas  <gthomas@redhat.com>
+
+        * src/version.c (_CERTIFICATE): Add information about product
+        certification (either Red Hat certified or not).
+
+        * src/flash.c (fis_delete): Deny user deleting "reserved" images.
+
+2001-09-07  Andrew Lunn  <andrew.lunn@ascom.ch>
+	* src/flash.c: Extend the alias handling to allow configuration
+	information to be access using alias. Fixed alias expansion
+	when the alias is bigger than the replacement.
+	* src/parse.c: A semi colon can be used to separate multiple
+	commands on one line. 
+	
+2001-09-06  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/redboot.h: Include string function prototype header.
+
+2001-09-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/fs/ide.c (ide_read_sectors): Use diag_(s)printf.
+	* src/fs/disk.c (do_disks): Same.
+
+2001-08-27  Andrew Lunn  <andrew.lunn@ascom.ch>
+	* src/flash.c: Allow the flash blocks used for FIS directory and
+	config information to be user configured. Generalise the fis_init
+	function to deal with the blocks in any order.
+	* cdl/redboot.cdl: Added the configury needed to specify which
+	flash blocks to use.
+	
+2001-08-27  Mark Salter  <msalter@redhat.com>
+
+	* src/syscall.c (HZ): Should be 60 for ARM, also.
+
+2001-08-24  Tim Smith  <tsmith@redhat.com>
+	* src/xyzModem.c
+	* src/xyzModem.h
+	Provide xyzModem_stream_terminate() function to abort/clean up
+	XYZmodem download on normal termination or after errors.
+
+	* src/load.c
+	Use aforementioned function to abort downloads on SREC errors,
+	stop load_srec_image() from injecting stuff into the XYZmodem
+	stream and confusing things.
+
+2001-08-24  Mark Salter  <msalter@redhat.com>
+
+	* src/net/net_io.c: Don't close connections if there is
+	data left to read or write.
+
+	* src/syscall.c: Add support for utimes syscall.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/udp.c: 
+
+	* src/net/pktbuf.c: 
+
+	* src/net/ping.c: 
+
+	* src/net/net_io.c: 
+
+	* src/net/inet_addr.c: 
+
+	* src/net/enet.c: 
+
+	* src/fs/e2fs.c: 
+
+	* src/xyzModem.c: 
+	* src/parse.c: 
+	* src/misc_funs.c: 
+	* src/main.c: 
+	* src/load.c: 
+	* src/io.c: 
+	* src/flash.c: 
+	* include/net/net.h: 
+	* include/redboot.h: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.  Also
+	renamed the non-standard function gets() to be _rb_gets()
+	since there was some confusion about it because of it's
+	rather standard name.
+
+	* cdl/redboot.cdl: Lots of changes based on moving all printf()
+	functionality into "infra" and only using it as diag_XXX().
+
+2001-08-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/version.c: Augment version information with startup mode.
+
+	* src/flash.c (fis_find_free): Fix error in size comparisons.
+	(load_flash_config): Fix 'fconfig' alignment now that it's
+	size is no longer fixed.
+
+2001-08-16  Jesper Skov  <jskov@redhat.com>
+	[from branch]
+	* cdl/redboot.cdl: Also behave as ROM monitor in ROMRAM
+	configurations.
+
+	* src/load.c (do_load): Fix handling of conditional options.
+
+	* src/flash.c (fis_load): Fix handling of conditional options.
+	(fis_delete): Fix behavior on failure.
+
+	* src/flash.c (fis_write): Fix output.
+	(fis_create): Only update directory when programming succeeded.
+
+2001-08-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/redboot.cdl (CYGSEM_REDBOOT_VARIABLE_BAUD_RATE): Default
+	on, but only if platform supports it.
+
+2001-08-15  Mark Salter  <msalter@redhat.com>
+
+	* src/io.c: Add support for "{...}" notation in boot scripts.
+
+2001-08-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/io.c (gets): Allow $'s and +'s to be escaped.
+
+2001-08-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c (do_flash_init): Print error message instead of
+	error code on init failure.
+	Don't print error codes where error messages are printed. Make
+	failure reporting strings look consistent.
+ 	CYGHWR_IO_FLASH_BLOCK_LOCKING flavor changed to booldata.
+
+2001-08-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/io.c (gets): Match $ as indicating GDB anywhere in a line.
+
+2001-08-07  Julian Smart <julians@redhat.com>
+
+	* src/version.c: added commented-out CYGDAT_REDBOOT_CUSTOM_VERSION
+	define that can be replaced using the RedBoot release script by
+	a specific version in a customer branch.
+
+2001-08-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/fs/disk.c: Simple fix for DISK_IDE_CDROM partition type.
+
+	* cdl/redboot.cdl: Added (unused) CYGSEM_REDBOOT_DISK_ISO9660 option.
+
+2001-08-03  David Howells  <dhowells@redhat.com>
+
+	* src/net/net_io.c: Show the MAC address of the ethernet device
+	amongst the boot banners.
+
+2001-08-01  Mark Salter  <msalter@redhat.com>
+
+	* src/fs/ide.c (ide_reset): Check for bogus status and timeout. Add
+	return value to indicate success.
+	(ide_init): Check ide_reset() return value.
+
+2001-07-31  Mark Salter  <msalter@redhat.com>
+
+	* src/fs/disk.c (find_dos_partitions): Fix extended partitions.
+	* src/fs/ide.c (ide_init): Rework the test for device presence.
+
+2001-07-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c (load_srec_image, do_load): 
+	* cdl/redboot.cdl: New option CYGSEM_REDBOOT_VALIDATE_USER_RAM_LOADS
+	which can be used to disable user RAM checks in 'load' command.
+
+	* src/load.c: Fix build problem if no IDE support.
+
+	* src/net/tftp_client.c (tftp_stream_read): Only ACK data when it
+	has been processed and we're ready for the next block.  This fixes
+	a race/timing issue which was exacerbated by the "spinner" in 'load'.
+
+2001-07-27  David Howells  <dhowells@redhat.com>
+
+	* src/xyzModem.c: Fixed an uninitialised variable warning.
+
+2001-07-27  Mark Salter  <msalter@redhat.com>
+
+	* cdl/redboot.cdl (CYGNUM_REDBOOT_MAX_PARTITIONS): New option.
+	Rename CYGBLD_REDBOOT_MAX_DISKS to CYGNUM_REDBOOT_MAX_DISKS.
+
+	* include/fs/disk.h: Exported functions declared "externC".
+	Replace MAX_PARTITIONS with CYGNUM_REDBOOT_MAX_PARTITIONS.
+	
+	* src/fs/disk.c: Make exported functions "externC".
+	Rename CYGBLD_REDBOOT_MAX_DISKS to CYGNUM_REDBOOT_MAX_DISKS.
+	Replace MAX_PARTITIONS with CYGNUM_REDBOOT_MAX_PARTITIONS.
+
+	* src/fs/e2fs.c: Add support for symbolic links.
+	* include/fs/e2fs.h: Add dir filetype support.
+
+2001-07-24  Mark Salter  <msalter@redhat.com>
+
+	* src/load.c: Add disk load support.
+	* src/fs/disk.c: New file. RedBoot disk management.
+	* src/fs/ide.c: New file. IDE disk I/O.
+	* src/fs/e2fs.c: New file. Linux ext2 filesystem support.
+	* cdl/redboot.cdl: Add options for disk/ide/filesystem support.
+
+2001-07-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/main.c (set_console_baud_rate): No need to query the console
+	number if we don't care what it is.
+	(do_baud_rate): Likewise.
+
+2001-07-23  David Howells  <dhowells@redhat.com>
+
+	* src/flash.c: Force block-alignment for flash addresses in write
+	and erase functions.
+
+2001-07-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/net_io.c (net_init): Don't overwrite static IP
+	address when reading flash config if configured to not use BOOTP.
+	Set have_net if not using BOOTP and a default static IP addr is set.
+
+2001-07-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Be more generic with 'fconfig' layout.  In 
+	particular, handle case where FLASH block size is too small
+	to hold fconfig data.
+
+	* src/io.c (mon_set_read_char_timeout): Fix dangling else bug.
+
+	* src/flash.c (do_flash_init): Suppress printing info - this
+	will happen when 'version' is called.  Also allow flash subsystem
+	to be initialized when there is no 'fconfig' or 'fis' command
+	configured in (but flash support still is present).
+
+	* src/version.c: Display complete version information which 
+	reflects such information as the source release, etc.
+
+	* cdl/redboot.cdl: New option CYGDAT_REDBOOT_CUSTOM_VERSION used to 
+	allow site-specific version information.  Define this via the
+	CDL like this:
+	   cdl_option CYGDAT_REDBOOT_CUSTOM_VERSION {
+             user_value 1 "Special test version"
+           };
+
+2001-07-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/net_io.c (net_io_putc, net_io_isr):
+	Need CYGARC_HAL_SAVE_GP()/CYGARC_HAL_RESTORE_GP() to support
+	network debugging since different layers of eCos programs are
+	involved.
+
+2001-07-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_version): Use external function _flash_info() to 
+	display information about installed FLASH.
+
+	* src/load.c (load_srec_image): Remove extra '\n' on out of range msg.
+
+	* src/flash.c (_flash_info): New function - displays information
+	about FLASH found in system.  Used by 'version' command.
+
+2001-07-12  Gary Thomas  <gthomas@redhat.com>
+2001-07-12  Fabrice Gautier <gautier@email.enst.fr>
+	
+	* cdl/redboot.cdl: Improve some descriptions of options.
+
+2001-07-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/io.c (do_channel): Fox build for !CYGPKG_REDBOOT_ANY_CONSOLE
+
+2001-06-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/redboot.cdl: Don't have a configured default IP address by
+	default if we have fconfig.
+	* src/net/ip.c: Provide a default ip addr if not defined.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/load.c (do_load): Don't allow verbose to be used with serial
+	downloads.
+
+	* src/main.c (do_reset): Reset via VV function.
+
+2001-06-27  Hugo Tyson  <hmt@redhat.com>
+
+	* src/io.c: Provide proto for do_channel() to reduce warning.
+
+2001-06-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/redboot.cdl (CYGDAT_REDBOOT_DEFAULT_IP_ADDR): Provide a compiled
+	in default IP address.
+	* src/net/ip.c: Initialize __local_ip_addr with it.
+	* src/net/bootp.c: Restore the previous __local_ip_addr if BOOTP fails.
+
+	* include/redboot.h: Fix another VARIBLE_BAUD_RATE typo. Fun this.
+
+2001-06-26  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/io.c (do_channel): New function to display/switch console
+	channel
+
+	* src/main.c: Move define of CYGNUM_HAL_VIRTUAL_VECTOR_NUM_CHANNELS to
+	* include/redboot.h: ...here
+
+2001-06-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (load_flash_config): Fix another VARIBLE_BAUD_RATE typo.
+
+	* src/xyzModem.c (xyzModem_get_hdr): ACK on EOT was missing.
+
+2001-06-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c (do_load): Move [static] data used by decompression
+	code into this routine where it is used - no longer static.
+
+2001-06-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/xyzModem.c (xyzModem_get_hdr): More resilient header scan,
+	improves error handling capability by avoiding "early" aborts.
+
+	* src/load.c (do_load): Only check TFTP arguments if networking.
+
+	* src/flash.c: Reorg to support new config option (below).
+
+	* cdl/redboot.cdl: New option CYGOPT_REDBOOT_FIS used to enable
+	FIS oriented commands.  Other flash commands, e.g. 'fis write',
+	still exist even if disabled.
+
+	* src/main.c (do_dump): 'dump' with no arguments will now "continue"
+	dumping from where the last command left off.
+
+2001-06-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (cyg_start): 
+	* src/io.c (gets): 
+	* cdl/redboot.cdl: Support RedBoot without GDB stubs.  Later
+	versions may also support alternate debug environments.
+
+2001-06-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/net_io.c (net_io_putc): Flush data on '\n'.
+
+2001-06-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* doc/redboot.ebsa285: Remove, obsolete.
+	* doc/redboot.edb7xxx: Ditto.
+	* doc/users_guide: Ditto.
+
+2001-06-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_create): Remove default for "-s" - too dangerous!
+
+	* include/net/tftp.h: Make sure packet size is valid (was one byte
+	too long).
+
+	* src/net/tftp_client.c (tftp_stream_open): Fix problem when using
+	Windows (3Com at least) servers.
+
+	* src/flash.c: Remove dependency on printf() via user function
+	in flash drivers, provided at 'init' time.
+
+2001-06-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/parse.c (parse): Check for 'argv[]' overruns.
+
+	* src/main.c (ZLIB_COMPRESSION_OVERHEAD): Update - based on observations.
+
+	* src/net/tftp_client.c: 
+	* src/net/net_io.c: 
+	* src/net/enet.c: 
+	* include/redboot.h (MAX_ARGV): Minor memory reduction/tightening.
+
+2001-06-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/main.c (do_caches): HAL_DCACHE_IS_ENABLED is not present
+	on all arch's, so conditionalize. Ditto HAL_ICACHE_IS_ENABLED.
+
+2001-06-08  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/main.c (cyg_start): Added code to disable interrupts on all
+	comm channels before entering GDB. If this is not done then stray
+	interrupts from an otherwise idle ethernet controller can cause
+	mayhem in the application. 
+
+	* src/net/net_io.c (net_io_control): Added code to set static
+	vector number in disable case as well as enable case. 
+	(net_io_init): Added call to net_io_control() to disable network
+	interrupts initially. Mainly to get current disable state
+	correctly set.
+
+2001-06-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/load.c (do_load): Ask confirmation of RAM write addr, rather
+	than automatically denying.
+	(load_srec_image): Ditto.
+
+	* src/io.c (verify_action): Don't ask if we're executing a script.
+
+2001-06-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (expand_aliases): Allow aliases/macros to be nested.
+
+	* src/main.c (set_console_baud_rate): 
+	* src/flash.c (do_alias): Force 'fconfig' updates.
+
+	* include/flash_config.h (flash_add_config): New signature.
+	Parameter 'update' controls whether the Flash is updated.
+
+2001-06-07    <gthomas@redhat.com>
+
+	* src/load.c (do_load): Tidy some messages.
+
+	* src/flash.c (fis_load): Print image limits (memory range) when
+	loading a compressed image.
+
+2001-06-06  Mark Salter  <msalter@redhat.com>
+
+	* include/net/tftp_support.h (TFTP_TIMEOUT_PERIOD): Increase to 5.
+
+	* src/net/udp.c (__udp_recvfrom): Initialize server source port
+	to zero.
+	(__udp_recvfrom_handler): Validate server source port before
+	accepting packet.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c (fis_load): Fix compiler warning.
+
+2001-05-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (set_console_baud_rate): Couldn't restore baud
+	rate to default value!
+	(do_baud_rate): Update baud rate in flash config database.
+
+	* src/flash.c (do_flash_config): Add "-i" option to force 
+	initialization of entire configuration database.
+	(do_alias): Improve handling of existing aliases.
+
+2001-05-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (get_config): 
+	(do_alias): Be more careful about length of strings accepted.
+
+	* cdl/redboot.cdl: Make 'fconfig' data space and strings larger.
+
+	* src/main.c (cyg_start): Expand aliases on input commands.
+
+	* src/flash.c: Add support for aliases (macros).  Also update
+	support for 'fconfig' strings.
+
+	* include/flash_config.h (MAX_STRING_LENGTH): Infer from CDL.
+
+	* cdl/redboot.cdl: Add options for [FLASH based] aliases.
+	Also, 'fconfig' now supports strings.
+
+2001-05-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Fixed typo as below.
+
+2001-05-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/redboot.cdl: Fix typo: CYGSEM_REDBOOT_VARIBLE_BAUD_RATE ->
+	CYGSEM_REDBOOT_VARIABLE_BAUD_RATE
+	* src/main.c: Ditto.
+
+2001-05-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/net/tftp_client.c: include redboot.h for have_net.
+
+2001-05-17  Dennis Ehlin  <Dennis.Ehlin@ecs.ericsson.se>
+	(with minor mods by jlarmour@redhat.com)
+	
+	* cdl/redboot.cdl: Split boot script functionality into separate
+	component. Rename some options not to be specific to FLASH.
+	Add default boot script option.
+	* src/main.c (cyg_start): Use default boot script if none provided
+	in FLASH (or indeed no FLASH). Support renamed CDL options.
+	* src/io.c (gets): Support renamed CDL options.
+	(verify_action): Ditto.
+	* src/flash.c: Ditto.
+	* include/redboot.h: Ditto.
+
+2001-05-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/crc.c (crc32): Remove unused variable/warning.
+
+	* src/main.c (set_console_baud_rate, do_baud_rate): 
+	* src/flash.c: 
+	* include/redboot.h: 
+	* cdl/redboot.cdl: Add support for variable, settable, console
+	baud rate.
+
+	* src/net/tftp_client.c (tftp_stream_open): Don't try if no network.
+
+2001-05-10  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Can't build RedBoot without virtual vectors.
+
+2001-05-09  Mark Salter  <msalter@redhat.com>
+
+	* src/main.c (cyg_start): Cast CYGACC_CALL_IF_DELAY_US argument
+	to a cyg_int32. Needed when sizeof(int) < sizeof(cyg_int32).
+
+2001-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/net_io.c (net_io_isr): Interrupt acknowledgement
+	should rightly be done by the driver 'delivery' routine, not here.
+
+2001-04-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_caches): Display cache state if no arguments.
+
+2001-04-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/ping.c (do_ping): Tidy message.
+
+2001-04-12  Robin Farine  <acnrf@dial.eunet.ch>
+2001-04-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * src/io.c (gets): Checks for buffer overflow and returns buflen
+        if it reaches the end of the buffer.
+	* src/main.c (cyg_start): Cope with gets() return being the
+	buffer length.
+
+2001-04-12  Mark Salter  <msalter@redhat.com>
+2001-04-12  Robin Farine  <acnrf@dial.eunet.ch>
+
+	* src/net/enet.c (__eth_install_listener): Does not accept a
+	handler for an eth_type less than 0x800.
+	(__enet_poll): Only scan the handlers for a frame type greater
+	than 0x800.
+
+2001-04-09  Mark Salter  <msalter@redhat.com>
+
+	* src/printf.c (_vprintf): Fixed some portability problems where
+	sizeof(int) != sizeof(long).
+
+2001-04-09  Hugo Tyson	<hmt@redhat.com>
+
+	* src/main.c (do_cksum): Reduce warning absent posix_crc32().
+
+	* src/main.c (cyg_start): Compare ram_end against workspace_end to
+	see if there is *less* SDRAM than the MLT suggested, and shorten
+	workspace et al accordingly.  This is needed if some SDRAM is
+	"stolen" for use by eg. a PCI window, and mapped far away.
+
+2001-04-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c (do_load): Fix 'raw' loading to check for valid
+	base address _before_ trying to load anything.  Also, some
+	reorg to make raw vs non-raw cleaner.
+
+2001-04-02  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c (get_config): Update to support some new syntax:
+	fco -l -n        ... lists showing nicknames instead of titles.
+	fco -l -n -f     ... lists showing both nicknames and titles.
+	fco nickname     ... goes straight to editing only nickname.
+	fco nick value   ... sets nickname to value.
+	All then follow the usual flow out, including the question
+	Update RedBoot non-volatile configuration - are you sure (y/n)
+	as it should be if you made a change.
+
+2001-03-29  Mark Salter  <msalter@redhat.com>
+
+	* cdl/redboot.cdl (CYGSEM_REDBOOT_FIS_CRC_CHECK): New option to 
+	enable (default) or disable CRC checks in FIS images.
+	* src/flash.c: Use CYGSEM_REDBOOT_FIS_CRC_CHECK to decide whether
+	to provide CRC for flash images.
+
+2001-03-28  Mark Salter  <msalter@redhat.com>
+
+	* src/net/tcp.c (__tcp_handler): Don't send ACK from TIME_WAIT state
+	unless the FIN comes in again.
+
+2000-03-27  Grant Edwards <grante@visi.com>
+
+        * src/net/tcp.c (__tcp_handler): Fixed sequence number bug seen when
+        doing an active close.
+
+2001-03-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/printf.c (_vprintf): Support %u (unsigned) descriptor.
+
+	* src/main.c (do_cksum): New command to compute and print a POSIX
+	checksum on a range of memory.
+
+	* src/crc.c (posix_crc32): New routine - matches POSIX algorithm.
+
+2001-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Back off previous change in number of packets.
+	Also change minimum - below this, network debugging fails.
+
+	* src/flash.c (fis_write): New function - support raw writes to FLASH.
+
+	* src/net/enet.c (__enet_poll): Try to continue if out of packets.
+
+	* src/main.c: 
+	* src/load.c: 
+	* src/flash.c: 
+	* include/redboot.h: Keep track of available "user" RAM.
+
+	* cdl/redboot.cdl: Reduce default number of [network] packets.
+
+2001-03-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/net_io.c (net_io_test): Change for new calling convention.
+
+	* src/main.c (cyg_start): Idle processing now in I/O routines.
+
+	* src/io.c (gets): Move idle processing into this function.
+
+	* include/net/net.h (net_io_test): Needs idle parameter.
+
+	* include/redboot.h: Change 'idle' functions to take state (idle/not).
+
+2001-03-19  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/redboot.cdl: Put version.o file in the public lib directory
+	so other packages can get at it and link redboot.
+
+2001-03-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_create): Preserve memory [load/exec] address 
+	when making assumptions [rewriting existing image].
+
+2001-03-16  Mark Salter  <msalter@redhat.com>
+
+	* src/main.c (cyg_start): Restore console channel after returning
+	from stub.
+
+2001-03-15  Gary Thomas  <gthomas@redhat.com>
+2001-03-15  Grant Edwards <grante@visi.com>
+
+	* src/net/bootp.c (bootp_handler): Guard against buffer overflow.
+
+2001-03-15  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c (fis_create): The code was installing a default for
+	img_size from data_length of an extant record.  That's zero, so,
+	so whilst the flash was erased, no data was copied in!
+	(fis_list): Added a -d to get the data length field displayed.
+
+2001-03-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/main.c: Make use of script variable conditional on flash.
+
+	* include/redboot.h: Changed type of workspace_end to silence
+	warning.
+
+	* src/net/ping.c (do_ping): Fix warning.
+	* src/net/pktbuf.c (__pktbuf_dump): Fix warnings.
+
+2001-03-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_go): Make timeout code consistent with other
+	versions, e.g. script timeout.  Also, allow a script to continue
+	if it was in effect when 'go' was called and ^C was typed.
+
+	* src/flash.c (fis_create): Ask for additional user verification
+	if any [important] parameters are being assumed [left out by user].
+	This just adds a level of safety in the presence of assumptions.
+
+2001-03-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c: Define 'workspace' based on MLT files, rather than
+	simply using end of RAM area.
+
+	* src/flash.c: Use 'workspace' for scratch area.
+
+	* include/redboot.h: Define new variables 'workspace_XXX' to specify
+	ares used by RedBoot for scratch, etc.
+
+2001-03-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/decompress.c: Removed Z_BAD_CRC hack. zlib does CRC checking
+	now.
+
+2001-03-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/misc_funs.c: Added strncpy.
+	* include/redboot.h: And declaration.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/load.c (do_load): Added decompression support.
+	* src/flash.c (fis_load): Same.
+
+	* src/decompress.c: Added. Interfaces the zlib API.
+
+	* include/redboot.h: Added some definitions used by decompression
+	code.
+
+	* cdl/redboot.cdl: Added option to control size of zlib bounce
+	buffer.
+
+2001-03-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/main.c (cyg_start): Make sure communication channels are
+	initialized.
+
+2001-03-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_idle): New function - all 'idle' handling is here.
+
+	* src/io.c (mon_read_char_with_timeout): Improve timeout handling
+	when scanning for a console by applying the minimum possible value
+	(1 ms) to each channel, accumulating the total value.  The previous
+	algorithm was quite poor on systems where there is no buffering,
+	i.e. serial channels with no FIFOs, because each channel would 
+	wait for T/N (t = total timeout, N = number channels).  This might
+	possibly have been much longer than the devices could tolerate and
+	still return valid data.
+
+2001-03-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/version.c: Add 'bootstrap' to banner so the world can see
+	more of what RedBoot's all about.
+
+2001-02-28  Gary Thomas  <gthomas@redhat.com>
+
+	* include/redboot.h: Fix prioritization of 'init' table entries.
+
+2001-02-26  Gary Thomas  <gthomas@redhat.com>
+
+	* include/redboot.h (RedBoot_INIT_PRIO): Slight change - avoid
+	arithmetic which C preprocessor doesn't handle anyway.  This also
+	fixes prioritizing init entries.
+
+	* src/flash.c (fis_load): Only load actual data [length] when loading
+	an image.  
+
+	* cdl/redboot.cdl: Change build rule to always rebuild 'version.o'
+	whenever the application is relinked.  Thus the version string will
+	always accurately reflect the actual build date/time.
+
+2001-02-22  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/redboot.cdl: New config options to control default creation
+	of various FIS image files.  Also opt for a reserved area at the
+	base of flash, eg. for user's POST or other pre-RedBoot code that
+	we must not interfere with.  This isn't the same as the extant
+	boot_offset option, so the two are made to work together.
+	Likewise an offset for the start of a POST-cooperative RedBoot
+	image, if any; the value is of course platform dependent, not
+	simply after the first RedBoot image, if there is one.
+
+	Clarification: a POST-cooperative RedBoot image is a ROM-start
+	image that runs at a higher address in ROM, and which omits some
+	of the hardware initialization because it's already done by
+	whatever came before.  Most targets do not have such a thing;
+	those that do, it is created by a config export file, not by a new
+	startup type.  A POST Redboot can be tested from a plain ROM
+	redboot by just calling its entrypoint once it is installed in
+	flash; eg. by "go 0x50040044" at the RedBoot prompt.
+
+	* src/flash.c (fis_init): Create additional optional entries for
+	  o (reserved) reserved area at start, for preboot or post code.
+	  o RedBoot itself now optional
+	  o RedBoot[post]
+	  o RedBoot[backup]
+	Also initialize their addresses, sizes, accordingly.
+	The default behaviour is unchanged.
+	The flash erase is moved to after the fis table init because the
+	fis table init most conveniently calculates the high water mark of
+	built-in default objects.
+	(fis_create): If creating a file which already exists (most likely
+	one of the preconfigured defaults) pick up Flash address and
+	length (the two required parameters) from there.  They're required
+	to be the same to it's no loss of generality, and saves typing,
+	makes the default entries far more useful and so on.
+	(fis_delete): Skip those entries which were
+	preconfigured; we want nobody to be able to delete these.
+	(fis_free): Start searching for free space to list only after the
+	reserved base area - if there is one.
+	(fis_find_free): Start searching for free space only after the
+	reserved base area...
+
+2001-02-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.c: Added default case to switch statement.
+
+2001-02-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c: Remove unnecessary \r from usage message.
+
+	* src/printf.c (_vprintf): Ensure CR/LF sequence, not LFCR.
+
+	* src/net/ping.c: 
+	* src/flash.c: Better usage messages [no naked linefeeds].
+
+	* src/net/ping.c: Tidy up usage message.  Check for reasonable
+	packet lengths.
+
+	* src/load.c: Tidy up usage message.
+
+2001-02-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/flash.c (load_flash_config): Move setting of config_ok to
+	true to before we look for a script to run. Otherwise scripts just
+	don't work.
+
+2001-02-14  Hugo Tyson  <hmt@redhat.com>
+
+	* src/load.c (do_load): Wrap the help message at < 80 cols and fix
+	a coupla warnings.
+
+2001-02-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.c: Fix token/string pasting thinko: ## operators are
+	not needed and do confuse some compilers.
+
+2001-02-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/main.c: Use CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL instead
+	of CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL.
+
+2001-02-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/ping.c (do_ping): Accomodate new MS_TICKS scheme.
+
+2001-02-09  Grant Edwards  <grante@visi.com>
+
+	* include/net/net.h (MS_TICKS_DELAY): New macro, different from
+	MS_TICKS() so that MS_TICKS() gets the current tick count, and
+	MS_TICKS_DELAY is used in a delay loop to actually do a delay.
+
+	* src/ticks.c (get_ms_ticks): New function imlementing rework of
+	MS_TICKS
+
+	* src/net/net_io.c (net_io_getc): Use MS_TICKS_DELAY() instead of
+	CYGACC_CALL_IF_DELAY_US() directly
+	(net_io_getc_timeout): Likewise
+
+	* src/net/udp.c (__udp_recvfrom): MS_TICKS -> MS_TICKS_DELAY
+	* src/net/bootp.c (__bootp_find_local_ip): Likewise
+
+2001-02-09  Jonathan Larmour  <jlarmour@redhat.com>
+2001-02-09  Grant Edwards  <grante@visi.com>
+
+	* src/net/net_io.c (net_io_getc_nonblock): Silence compiler warning
+
+2001-01-31  Gary Thomas  <gthomas@redhat.com>
+
+	* include/redboot.h: 
+	* cdl/redboot.cdl: 
+	* src/flash.c: Use new CRC functions.
+
+	* src/crc.c: New file - supports 16 and 32 bit CRC functions.
+
+2001-01-31  Grant Edwards <grante@visi.com>
+
+	* src/net/net_io.c (net_io_test): Use new idle function to
+	poll for incoming network connections.  Removes #if requirements
+	from the main CLI loop.
+
+	* src/main.c (cyg_start): 
+	* include/redboot.h (RedBoot_idle): Add new tables to support
+	user defined functions to be called when idle (during command input).
+
+2001-01-31  Gary Thomas  <gthomas@redhat.com>
+
+	* include/redboot.h: 
+	* src/main.c (cyg_start): 
+	* src/net/net_io.c (net_io_getc_nonblock): Forgo TELNET escape
+	processing if GDB is active (requires 8-bit clean connection).
+
+2001-01-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/syscall.c (__do_syscall):
+	Added SYS_meminfo syscall.
+	This is used by the MIPS3264 GNUPro runtime.
+
+	* src/net/net_io.c (net_io_getc_nonblock):
+	Telnet escape processing temporarily disabled because it does not
+	work.
+
+2001-01-31  Grant Edwards <grante@visi.com>
+
+	* include/net/net.h: 
+	* src/net/enet.c (__eth_install_listener, __eth_remove_listener): 
+	New functions - allow user registerable callout to handle 
+	non-standard ethernet packets.
+
+2001-01-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_reset): HAL macro name changed.
+
+	* src/net/ping.c (do_ping): Remove warning.
+
+	* src/main.c (do_help): Only display help for selected topic
+	if provided.
+
+2001-01-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/main.c (cyg_start): Rework last change to use more generic
+	HAL_MEM_REAL_REGION_TOP macro.
+
+2001-01-24  Hugo Tyson  <hmt@redhat.com>
+
+	* src/main.c (cyg_start): Take notice of the hal_dram_size
+	variable (only supported on ARMs) to set ram_end.  The symbols
+	given by the CYGMEM_REGION_ram symbols are minima or defaults.
+
+2001-01-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/inet_addr.c (inet_aton): Fix byte order on big endian 
+	systems.
+
+	* src/net/icmp.c (__icmp_install_listener): 
+	(__icmp_remove_listener): New functions.
+	(__icmp_handler): Call listener for unhandled packets.
+
+	* include/net/net.h: Add handler for ICMP [incoming] data.
+
+	* cdl/redboot.cdl: 
+	* src/net/ping.c: New CLI command - ping a host.
+
+2001-01-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/net/net.h: 
+	* src/net/pktbuf.c (__pktbuf_alloc): 
+	* src/net/tcp.c (__tcp_listen): Remove obsolete code regarding
+	'eth_hdr' stored with packet buffer.
+
+2001-01-17  Hugo Tyson  <hmt@redhat.com>
+
+	* src/io.c (dump_buf_with_offset): Fix previous change so it
+	compiles; variable names used not same as parm names in func.
+
+2001-01-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/xyzModem.c: Improved debug support - now allows debug 
+	trace to be kept in memory and dumped at completion.
+
+	* src/io.c (vdump_buf_with_offset): New function which allows
+	dumping via any generic "print" function.
+
+	* include/redboot.h: Export new print/dump functions.
+
+2001-01-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/arp.c: Add special case handling for ARP(self).
+
+2001-01-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_version): Update copyright for 2001.
+
+	* src/io.c (gets): Use timeout provided [was hardcoded to 50ms!]
+
+2000-12-21  Mark Salter  <msalter@redhat.com>
+
+	* src/flash.c (fis_init): Use CYGBLD_REDBOOT_FLASH_BOOT_OFFSET to
+	decide where to create default images.
+
+	* cdl/redboot.cdl (CYGBLD_REDBOOT_FLASH_BOOT_OFFSET): Use this
+	to define offset from start of FLASH to start of boot image.
+
+2000-12-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/version.c: Define GDB stubs version here as well.  Also
+	add warnings and informationabout how all of this works.
+
+2000-12-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/version.c: New file.
+
+	* src/main.c: 
+	* cdl/redboot.cdl: Reorg - main.c is now treated like all other
+	files.  New file 'version.c' holds the special stuff used at
+	build time to get interesting version information into the
+	final product.
+
+2000-12-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (get_config): Increase size of input buffer used
+	during 'fconfig' command.
+
+2000-12-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c: Change in HAL layering - need to include proper
+	file to get 'reset' definition.
+
+2000-12-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/redboot.cdl: Tweak CYGPKG_REDBOOT_MAX_CMD_LINE description.
+
+2000-12-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (cyg_start): Make CLI command buffer static.
+	(do_reset): New command - reset platform from CLI.
+
+	* src/io.c (dump_buf_with_offset): Change signature for 
+	more generic export.
+
+	* include/redboot.h: Export 'dump_buf_with_offset' function.
+
+	* cdl/redboot.cdl: Define CLI command buffer - static with
+	user specified length - to accomodate some environments which
+	may want excrutiatingly long commands.
+
+2000-12-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/misc_funs.c (strlen): NULL ptr string has length 0.
+
+	* src/load.c (load_srec_image): Refuse to load data to a location
+	not in RAM.
+
+	* src/flash.c (fis_create): Hack around another MIPS compiler bug.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/load.c: Suppress verbosity when using xyz modem download.
+	
+	* src/main.c: Fix warnings.
+	* src/load.c: Fix warnings.
+
+	* src/parse.c (parse_num): Hack around MIPS compiler bug.
+
+2000-12-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/xyzModem.h: 
+	* src/xyzModem.c (xyzModem_stream_close): New function - tidy up
+	and print some statistics about the download.  Better handling
+	of CAN (cancel) function.
+
+	* src/load.c (load_srec_image): Consume all data, not just to
+	final record.  This makes Ymodem happier.  Also, call xyzModem_close().
+
+2000-11-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_create): Add new option '-n' which suppresses
+	the copy from RAM to FLASH.  Used to simply update the FIS directory.
+	Also misc printf() changes - add 0x everywhere hex is used.
+
+	* src/net/net_io.c (_net_io_getc_nonblock): Abstract function.
+	(net_io_getc_nonblock): Add minimal handling of telnet escape
+	sequences - required to properly handle ^C.
+
+	* src/main.c (cyg_start): Support network connection during
+	boot/startup script.  Use new codes from 'gets()'.
+
+	* src/flash.c (fis_create): Cleanup to remove warnings.
+
+	* include/net/net.h (BSPLOG): Update for new start/end_console().
+
+	* src/io.c (gets): 
+	* include/redboot.h (_GETS_xxx): Define result codes from 
+	'gets()' function.
+
+2000-11-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/parse.c (parse): Support escaped quote marks inside of
+	quoted string.  "ab\"c\"" is 'ab"c"'.
+
+	* src/net/tftp_client.c (tftp_stream_open): Read first datum from
+	file during open to ensure that errors are reported.
+
+2000-11-27  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/main.c: Switch to an application stack before running a
+	user-downloaded app.
+
+2000-11-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Use CYGBLD_REDBOOT_MIN_IMAGE_SIZE.
+
+	* cdl/redboot.cdl(CYGBLD_REDBOOT_MIN_IMAGE_SIZE): Define this to
+	be the minimum size allowed for FIS images.
+
+	* src/xyzModem.c: Tidy up debug support.  Fix some synch problems 
+	so that X/Y modem protocols now work properly with Windows/Hyperterm.
+
+2000-11-20  Mark Salter  <msalter@redhat.com>
+
+	* src/net/net_io.c (net_io_flush): Add __tcp_drain to make sure
+	everything is successfully sent out.
+	(net_io_control): Call net_io_flush for __COMMCTL_FLUSH_OUTPUT.
+
+2000-11-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_create): Print more info when length check fails.
+
+	* src/main.c: Split version display into separate command.
+
+2000-11-06  Mark Salter  <msalter@redhat.com>
+
+	* src/syscall.c: New file. Common handling for bsp syscalls.
+
+	* cdl/redboot.cdl: Add CYGSEM_REDBOOT_BSP_SYSCALLS option to
+	turn on BSP syscall support.
+
+2000-11-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/net/net_io.c (net_io_flush): Clear interrupt flag before
+	setting breakpoint.
+
+2000-10-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/udp.c: 
+	* src/net/pktbuf.c: 
+	* src/net/net_io.c: 
+	* src/net/enet.c: 
+	* include/net/net.h: Minor cleanups to remove warnings.
+
+	* cdl/redboot.cdl: Support threads in all but RAM mode.  Note:
+	this should allow thread support in ROM and FLOPPY startup mode.
+
+2000-10-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/xyzModem.c (xyzModem_stream_open): Add extra delay during
+	startup - to give the sender time to get started.
+
+	* src/flash.c (fis_load): Add "-c" option to show checksum of
+	image after loading.
+	(fis_list): Add "-c" to display stored checksums.
+
+2000-10-26  Mark Salter  <msalter@redhat.com>
+
+	* src/load.c (do_load): Move some local variable declarations
+	needed by xyzmodem support so they can be used when redboot
+	networking not enabled.
+
+2000-10-26  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Improve CDL so CYGSEM_HAL_ROM_MONITOR can
+	be correctly infered (when building ROM versions).	
+
+	* cdl/redboot.cdl:
+	* src/load.c: Add support for xyzModem serial download.
+
+	* src/xyzModem.h: 
+	* src/xyzModem.c: New file(s).
+
+2000-10-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: 
+	* cdl/redboot.cdl: Add new option which supports keeping all
+	important RedBoot data "locked" in FLASH.
+
+2000-10-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_lookup): New exported function.
+	(fis_load): Add memory load option. Also checksum data after copy.
+
+	* include/fis.h: Add 'data_length' member.  
+	Prototype for 'fis_lookup()'.
+
+	* src/main.c (bist): New [weak] function.  Provide hook for
+	platform specific "builtin tests".  This will be overridden by
+	platform based functions.
+
+	* cdl/redboot.cdl: 
+	* src/main.c (cyg_start): 
+	* src/flash.c: Script timeout now has a configurable resolution.
+
+2000-10-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/eth_drv.c: Removed obsolete file - now provided by
+	standard IO/ETH package.
+
+2000-10-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/pktbuf.c: Diagnostc - add buffer [list] dumper.
+
+	* src/net/enet.c: Diagnostic - dump when run out of buffers.
+
+	* src/flash.c: Make sure RedBoot flash image size meets
+	certain minimums - currently at least 128K.
+
+2000-10-19  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Add dependency on 'vectors.o'.
+
+	* include/redboot.h: 
+	* src/misc_funs.c (strcpy, memcmp): 
+	Make function signature [prototype] conform to standards.
+	(memmove, memset): Remove.
+
+2000-10-18  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Improve dependency checking in make rules.
+
+2000-10-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_create): Add new "-s" option to support padded
+	images (data size not the same as image size in FLASH).
+
+	* include/fis.h: New file - make structure available for export.
+
+	* src/parse.c: New file.
+
+	* include/redboot.h: 
+	* src/main.c: 
+	* cdl/redboot.cdl: Split command line parsing functions to separate 
+	file.
+
+2000-10-05  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/net_io.c (net_io_revert_console): 
+	(net_io_assume_console): 
+	* src/main.c (cyg_start): 
+	* src/io.c (gets): 
+	* include/redboot.h: Add notion of "console_echo" so that telnet 
+	connections don't echo doubly.  Note: there is no telnet negotiation
+	at this time, so some things are still not perfect.
+
+2000-09-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c: Display platform/cpu identification strings if available.
+
+	* cdl/redboot.cdl: Improve CDL to include thread support if
+	built in ROM mode.  Also, better handling of network option.
+
+2000-09-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c (fis_create): Length (and flash address) must match
+	exactly when replacing an image.
+	Only warn of invalid memory addresses, not fail.
+
+2000-09-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c: Better handling of bad data / checksum errors.
+
+	* src/flash.c: Handle case of replacing an image, even if no flash
+	address was given.
+
+	* include/net/tftp_support.h: Modify timeouts, etc, for better response.
+
+2000-09-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.c (mon_read_char_with_timeout): Only "select" a console
+	when real data (non-zero) arrives.
+
+2000-09-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c:
+	* src/flash.c: Remove warnings if built without networking.
+
+2000-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/redboot.h (_RedBoot_init): Define tables entries as structs
+	with one member rather than just func ptrs, to enforce alignment rules
+	* src/main.c (cyg_start): Change to use struct init_tab_entry per above
+
+2000-09-07 Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/load.c, include/redboot.h: renamed the getc functions to
+ 	redboot_getc and made them global so custom boot loaders can use
+ 	them.
+
+2000-09-06  Gary Thomas  <gthomas@redhat.com>
+
+	* doc/users_guide: Add info about region locking/unlocking.
+
+2000-09-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/flash_config.h (struct config_option): Apply
+	CYG_HAL_TABLE_TYPE
+	* include/redboot.h: Ditto for struct cmd and void_fun_ptr	
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/flash.c: CYGHWR_IO_FLASH_BLOCK_LOCKING is an interface, so
+	it's always defined; look for > 0 instead.
+
+2000-08-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Support block locking if available.
+
+2000-08-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c (getc): Fix edge condition when file is an exact multiple
+	of internal buffer size (got stuck at end of file).
+
+2000-08-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c: Fix some prints.  Also use command line parse functions
+	instead of ad hoc code.
+
+	* src/flash.c: Better configuration control.
+
+2000-08-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c (do_load): Use paramterized command line parser.
+
+	* include/redboot.h: 
+	* src/main.c (scan_opts): Better support for simple flags.
+
+	* src/flash.c: Add "-l" (list only) option to 'fconfig'.
+
+	* src/net/net_io.c: Add handling of ^C via network connections.
+
+	* include/flash_config.h: 
+
+	* include/redboot.h: Fully qualify table entries (for proper
+	sorting and order control).
+
+	* cdl/redboot.cdl: Update requirements to support ^C and thread
+	debugging.
+
+2000-08-21  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: 
+	* src/net/pktbuf.c (MAX_PKTBUF): Add CDL configury for number
+	of network packet buffers.
+
+	* src/net/net_io.c: Change config param names to enforce
+	layout (config fields are sorted by name).
+
+	* src/load.c: Adapt to changes in 'parse_num'.
+
+	* src/main.c (parse_num): Now takes additional arguments which
+	allow a delimiter set and returning the end of number string.
+
+	* include/redboot.h: Augment 'parse_num' to handle strings
+	with more than one number, delimiters, etc.
+
+	* src/flash.c: 
+	* include/flash_config.h: Add support for ethernet hardware
+	addresses.
+
+2000-08-20  Gary Thomas  <gthomas@redhat.com>
+
+	* include/flash_config.h: New file - configuration data layout.
+
+	* src/flash.c: Restructure config data to be 100% table driven.
+
+	* include/redboot.h: 
+	* include/net/bootp.h: 
+	* include/net/net.h: 
+	* include/net/tftp.h: 
+	* include/net/tftp_support.h: New location.
+
+	* src/printf.c: 
+	* src/net/arp.c: 
+	* src/net/bootp.c: 
+	* src/net/cksum.c: 
+	* src/net/enet.c: 
+	* src/net/icmp.c: 
+	* src/net/inet_addr.c: 
+	* src/net/ip.c: 
+	* src/net/net_io.c: 
+	* src/net/pktbuf.c: 
+	* src/net/tcp.c: 
+	* src/net/tftp_client.c: 
+	* src/net/timers.c: 
+	* src/net/udp.c: Include files moved.
+
+	* src/redboot.h: 
+	* src/net/bootp.h: 
+	* src/net/net.h: 
+	* src/net/tftp.h: 
+	* src/net/tftp_support.h: Files moved.
+	
+	* cdl/redboot.cdl: Move .h files to include directory.
+
+2000-08-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.c (dump_buf_with_offset): Clean up warnings.
+
+	* src/net/net_io.c: Cosmetic - clean up TCP debug code.
+
+	* src/main.c (cmd_search): Search for ambiguous commands was
+	wrong since layout change (only know the limits, don't rely
+	on "null" entry).
+
+2000-08-14  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Support for plugin (table driven) modules.
+
+	* src/flash.c: Lots of warning cleanups.
+
+	* src/io.c: Fix some flash configury.
+
+	* src/load.c: Make internal buffer unsigned so 'raw' mode
+	works properly.  Also, support as a plugin command.
+
+	* src/main.c: 
+	* src/redboot.h: Add support for "tableized" entries.  In
+	particular, commands and platform initializations can now
+	be handled via anonymous tables.
+
+	* src/net/net.h: Update for changes in network init setup.
+
+	* src/net/net_io.c: Move network initialization here.
+
+2000-08-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/net.h: 
+	* src/redboot.h: 
+	* src/main.c: Cosmetic [warnings] cleanups.
+
+2000-08-03  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Ethernet driver now comes from common
+	I/O package.
+
+	* src/io.c (verify_action): Force normal I/O (no script) 
+	to get response.
+
+	* src/main.c: Add script timeout to allow user to abort before
+	script is run on boot.
+
+	* src/printf.c: '%p' implies zero filled long format.
+
+	* src/flash.c: 
+	* src/redboot.h: Add TCP socket and script timeouts.
+
+	* src/net/net_io.c: TCP socket for debug is now configurable
+	and settable in FLASH.  Better handling of GDB $O packets (less
+	latency).  Additional small changes to support network debug.
+
+2000-07-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Make config data safer with a 'key'.  Also, don't
+	erase the config data when doing a full FIS initialization.
+	Finally, ensure that the commands which erase data are not going
+	to erase the current code!
+
+	* src/io.c (gets): Treat 'delete' char like ^H.
+
+2000-07-30  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Add option for FLASH based configuration data.
+
+	* src/flash.c: Lots of changes to support FLASH based configuration
+	data, including routines to read and maintain this data.
+
+	* src/main.c: 
+	* src/redboot.h: Many changes for FLASH configuration data support.
+	Also split out table driven option/parameter parsing.
+
+	* src/io.c: Allow ^C to abort input.  Fix timeout stuff to
+	work better while waiting for console to be discovered.
+	Add support for boot-time script.
+
+	* src/load.c: Use new IP/INET address functions.
+
+	* src/net/bootp.c: Remove force of net_debug and result print.
+
+	* src/net/inet_addr.c: IP/INET address conversion routines.
+
+	* src/net/net.h: Make 'net_debug' be boolean.  Add IP/INET
+	address conversion routine prototypes.
+
+2000-07-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Misc little cleanups.
+
+	* src/load.c: Print address range of loaded image/file.
+
+2000-07-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash.c: Add 'load' command which loads an image into RAM.
+
+	* src/load.c: Add '-raw' switch to allow loading a file without
+	trying to interpret it as an executable image.
+
+	* src/main.c: 
+	* src/redboot.h: Make command parsing functions public.
+
+2000-07-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/bootp.c: Turn on network debug during address discovery.
+	(Note: this will be optional/configurable in the future).
+
+	* src/net/eth_drv.c: Use 'net_debug' for diagnostic dumps.
+
+	* src/redboot.h: Prototypes for new functions.
+
+	* src/printf.c (vprintf): New function.
+
+	* src/io.c (verify_action): New function.
+
+	* cdl/redboot.cdl: Make FLASH support optional.
+
+	* src/flash.c: New file - implements simple FLASH Image System.
+
+	* src/misc_funs.c (memset): 
+	(strcpy): New functions.
+
+	* src/main.c: Split flash functions to separate file.
+
+2000-07-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/load.c: Add "-v" switch to turn on a little 'spinner' while
+	downloading to provide some feedback to the user.
+
+	* src/printf.c: Use only RedBoot I/O to allow console to "float."
+
+	* src/net/bootp.c: Force hardware type to be "original" ethernet.
+
+	* cdl/redboot.cdl: 
+	* src/redboot.h: 
+	* src/main.c: 
+	* src/io.c: 
+	* src/net/net_io.c: Support "floating" console, chosen from
+	available serial I/O channels.
+
+2000-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/tftp_support.h: 
+	* src/net/tftp_client.c: Add new stream oriented functions.
+
+	* src/net/net.h: More prototypes.
+
+	* src/redboot.h: Move support functions here.  Update interfaces.
+
+	* src/printf.c: Support %l (long) qualifier.
+
+	* src/misc_funs.c: Misc cleanups.  Add case insensitive routines.
+
+	* src/main.c: FLASH functionality is now in it's own package.
+
+	* src/net/eth_drv.c: 
+	* include/eth_drv.h: Update to new interface conventions.
+
+	* cdl/redboot.cdl: Changes for new files(s).
+
+2000-07-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/net/inet_addr.c: New file.  Support for IP address parsing.
+
+	* src/load.c: New file.  Split out download functionality.
+	Restructured to support download via stream (zmodem).
+
+	* src/misc_funs.c: Add case insensitive compare functions.
+
+2000-07-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/main.c (do_load): Add proper argument parsing.
+
+2000-07-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/io.c (gets): Treat "\n\r" and "\r\n" as exactluy "\n".  This
+	solves problems of simply ignoring "\n" on terminals which can only
+	send that character while still working with telnet/TCP connections.
+
+	* src/net/net_io.c: New file.  Supports local I/O via a TCP channel.
+	Additional changes to support TCP channel for GDB debug I/O.
+
+	* cdl/redboot.cdl: Clean up dependencies.  Extend network configuration.
+
+	* src/io.c (gets): Ignore blank lines which contain only '\n'.
+	This works fine for terminal I/O since they will have '\r' and it
+	allows reasonable handling when connected via telnet/TCP.
+
+	* src/main.c: Better support for network connections.  
+	Also some reworking of FLASH routines [will be moved later].  
+	More error checking and better error messages in download code.
+
+	* src/net/net.h: Reorder 'tcp_socket' fields to enforce proper
+	alignment of data buffer [needs to be on dword boundary].
+
+	* src/net/tcp.c: Many small changes getting 'endian'-ness correct.
+
+	* src/net/tftp_client.c (tftp_error): New function - returns a
+	string representing the error code [for humans].
+
+2000-07-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: Make network support configurable/optional.
+
+	* src/io.c: Add command line input function.
+
+	* src/main.c: Lots of new functions, command line processing, etc.
+
+	* src/misc_funs.c (strcmp, strncmp): New function(s).	
+
+	* src/printf.c: Add support for "%p" (pointers).
+
+	* src/redboot.h: Expand, move global vars, here, etc.
+
+	* src/net/eth_drv.c: Make quieter, change "no interface" string.
+
+	* src/net/net.h (__LITTLE_ENDIAN__): Avoid redefining this on platforms
+	where GCC does it for us.
+
+2000-07-12  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/redboot.cdl: New file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

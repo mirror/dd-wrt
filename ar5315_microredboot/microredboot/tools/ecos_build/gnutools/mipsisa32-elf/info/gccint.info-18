@@ -1,0 +1,979 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: File Framework,  Next: Data Output,  Up: Assembler Format
+
+The Overall Framework of an Assembler File
+------------------------------------------
+
+   This describes the overall framework of an assembler file.
+
+`ASM_FILE_START (STREAM)'
+     A C expression which outputs to the stdio stream STREAM some
+     appropriate text to go at the start of an assembler file.
+
+     Normally this macro is defined to output a line containing
+     `#NO_APP', which is a comment that has no effect on most
+     assemblers but tells the GNU assembler that it can save time by not
+     checking for certain assembler constructs.
+
+     On systems that use SDB, it is necessary to output certain
+     commands; see `attasm.h'.
+
+`ASM_FILE_END (STREAM)'
+     A C expression which outputs to the stdio stream STREAM some
+     appropriate text to go at the end of an assembler file.
+
+     If this macro is not defined, the default is to output nothing
+     special at the end of the file.  Most systems don't require any
+     definition.
+
+     On systems that use SDB, it is necessary to output certain
+     commands; see `attasm.h'.
+
+`ASM_COMMENT_START'
+     A C string constant describing how to begin a comment in the target
+     assembler language.  The compiler assumes that the comment will
+     end at the end of the line.
+
+`ASM_APP_ON'
+     A C string constant for text to be output before each `asm'
+     statement or group of consecutive ones.  Normally this is
+     `"#APP"', which is a comment that has no effect on most assemblers
+     but tells the GNU assembler that it must check the lines that
+     follow for all valid assembler constructs.
+
+`ASM_APP_OFF'
+     A C string constant for text to be output after each `asm'
+     statement or group of consecutive ones.  Normally this is
+     `"#NO_APP"', which tells the GNU assembler to resume making the
+     time-saving assumptions that are valid for ordinary compiler
+     output.
+
+`ASM_OUTPUT_SOURCE_FILENAME (STREAM, NAME)'
+     A C statement to output COFF information or DWARF debugging
+     information which indicates that filename NAME is the current
+     source file to the stdio stream STREAM.
+
+     This macro need not be defined if the standard form of output for
+     the file format in use is appropriate.
+
+`OUTPUT_QUOTED_STRING (STREAM, STRING)'
+     A C statement to output the string STRING to the stdio stream
+     STREAM.  If you do not call the function `output_quoted_string' in
+     your config files, GCC will only call it to output filenames to
+     the assembler source.  So you can use it to canonicalize the format
+     of the filename using this macro.
+
+`ASM_OUTPUT_SOURCE_LINE (STREAM, LINE)'
+     A C statement to output DBX or SDB debugging information before
+     code for line number LINE of the current source file to the stdio
+     stream STREAM.
+
+     This macro need not be defined if the standard form of debugging
+     information for the debugger in use is appropriate.
+
+`ASM_OUTPUT_IDENT (STREAM, STRING)'
+     A C statement to output something to the assembler file to handle a
+     `#ident' directive containing the text STRING.  If this macro is
+     not defined, nothing is output for a `#ident' directive.
+
+`OBJC_PROLOGUE'
+     A C statement to output any assembler statements which are
+     required to precede any Objective-C object definitions or message
+     sending.  The statement is executed only when compiling an
+     Objective-C program.
+
+ - Target Hook: void TARGET_ASM_NAMED_SECTION (const char *NAME,
+          unsigned int FLAGS, unsigned int ALIGN)
+     Output assembly directives to switch to section NAME.  The section
+     should have attributes as specified by FLAGS, which is a bit mask
+     of the `SECTION_*' flags defined in `output.h'.  If ALIGN is
+     nonzero, it contains an alignment in bytes to be used for the
+     section, otherwise some target default should be used.  Only
+     targets that must specify an alignment within the section
+     directive need pay attention to ALIGN - we will still use
+     `ASM_OUTPUT_ALIGN'.
+
+ - Target Hook: bool TARGET_HAVE_NAMED_SECTIONS
+     This flag is true if the target supports
+     `TARGET_ASM_NAMED_SECTION'.
+
+ - Target Hook: unsigned int TARGET_SECTION_TYPE_FLAGS (tree DECL,
+          const char *NAME, int RELOC)
+     Choose a set of section attributes for use by
+     `TARGET_ASM_NAMED_SECTION' based on a variable or function decl, a
+     section name, and whether or not the declaration's initializer may
+     contain runtime relocations.  DECL may be  null, in which case
+     read-write data should be assumed.
+
+     The default version if this function handles choosing code vs data,
+     read-only vs read-write data, and `flag_pic'.  You should only
+     need to override this if your target has special flags that might
+     be set via `__attribute__'.
+
+
+File: gccint.info,  Node: Data Output,  Next: Uninitialized Data,  Prev: File Framework,  Up: Assembler Format
+
+Output of Data
+--------------
+
+ - Target Hook: const char * TARGET_ASM_BYTE_OP
+ - Target Hook: const char * TARGET_ASM_ALIGNED_HI_OP
+ - Target Hook: const char * TARGET_ASM_ALIGNED_SI_OP
+ - Target Hook: const char * TARGET_ASM_ALIGNED_DI_OP
+ - Target Hook: const char * TARGET_ASM_ALIGNED_TI_OP
+ - Target Hook: const char * TARGET_ASM_UNALIGNED_HI_OP
+ - Target Hook: const char * TARGET_ASM_UNALIGNED_SI_OP
+ - Target Hook: const char * TARGET_ASM_UNALIGNED_DI_OP
+ - Target Hook: const char * TARGET_ASM_UNALIGNED_TI_OP
+     These hooks specify assembly directives for creating certain kinds
+     of integer object.  The `TARGET_ASM_BYTE_OP' directive creates a
+     byte-sized object, the `TARGET_ASM_ALIGNED_HI_OP' one creates an
+     aligned two-byte object, and so on.  Any of the hooks may be
+     `NULL', indicating that no suitable directive is available.
+
+     The compiler will print these strings at the start of a new line,
+     followed immediately by the object's initial value.  In most cases,
+     the string should contain a tab, a pseudo-op, and then another tab.
+
+ - Target Hook: bool TARGET_ASM_INTEGER (rtx X, unsigned int SIZE, int
+          ALIGNED_P)
+     The `assemble_integer' function uses this hook to output an
+     integer object.  X is the object's value, SIZE is its size in
+     bytes and ALIGNED_P indicates whether it is aligned.  The function
+     should return `true' if it was able to output the object.  If it
+     returns false, `assemble_integer' will try to split the object
+     into smaller parts.
+
+     The default implementation of this hook will use the
+     `TARGET_ASM_BYTE_OP' family of strings, returning `false' when the
+     relevant string is `NULL'.
+
+`OUTPUT_ADDR_CONST_EXTRA (STREAM, X, FAIL)'
+     A C statement to recognize RTX patterns that `output_addr_const'
+     can't deal with, and output assembly code to STREAM corresponding
+     to the pattern X.  This may be used to allow machine-dependent
+     `UNSPEC's to appear within constants.
+
+     If `OUTPUT_ADDR_CONST_EXTRA' fails to recognize a pattern, it must
+     `goto fail', so that a standard error message is printed.  If it
+     prints an error message itself, by calling, for example,
+     `output_operand_lossage', it may just complete normally.
+
+`ASM_OUTPUT_ASCII (STREAM, PTR, LEN)'
+     A C statement to output to the stdio stream STREAM an assembler
+     instruction to assemble a string constant containing the LEN bytes
+     at PTR.  PTR will be a C expression of type `char *' and LEN a C
+     expression of type `int'.
+
+     If the assembler has a `.ascii' pseudo-op as found in the Berkeley
+     Unix assembler, do not define the macro `ASM_OUTPUT_ASCII'.
+
+`ASM_OUTPUT_FDESC (STREAM, DECL, N)'
+     A C statement to output word N of a function descriptor for DECL.
+     This must be defined if `TARGET_VTABLE_USES_DESCRIPTORS' is
+     defined, and is otherwise unused.
+
+`CONSTANT_POOL_BEFORE_FUNCTION'
+     You may define this macro as a C expression.  You should define the
+     expression to have a nonzero value if GCC should output the
+     constant pool for a function before the code for the function, or
+     a zero value if GCC should output the constant pool after the
+     function.  If you do not define this macro, the usual case, GCC
+     will output the constant pool before the function.
+
+`ASM_OUTPUT_POOL_PROLOGUE (FILE, FUNNAME, FUNDECL, SIZE)'
+     A C statement to output assembler commands to define the start of
+     the constant pool for a function.  FUNNAME is a string giving the
+     name of the function.  Should the return type of the function be
+     required, it can be obtained via FUNDECL.  SIZE is the size, in
+     bytes, of the constant pool that will be written immediately after
+     this call.
+
+     If no constant-pool prefix is required, the usual case, this macro
+     need not be defined.
+
+`ASM_OUTPUT_SPECIAL_POOL_ENTRY (FILE, X, MODE, ALIGN, LABELNO, JUMPTO)'
+     A C statement (with or without semicolon) to output a constant in
+     the constant pool, if it needs special treatment.  (This macro
+     need not do anything for RTL expressions that can be output
+     normally.)
+
+     The argument FILE is the standard I/O stream to output the
+     assembler code on.  X is the RTL expression for the constant to
+     output, and MODE is the machine mode (in case X is a `const_int').
+     ALIGN is the required alignment for the value X; you should
+     output an assembler directive to force this much alignment.
+
+     The argument LABELNO is a number to use in an internal label for
+     the address of this pool entry.  The definition of this macro is
+     responsible for outputting the label definition at the proper
+     place.  Here is how to do this:
+
+          ASM_OUTPUT_INTERNAL_LABEL (FILE, "LC", LABELNO);
+
+     When you output a pool entry specially, you should end with a
+     `goto' to the label JUMPTO.  This will prevent the same pool entry
+     from being output a second time in the usual manner.
+
+     You need not define this macro if it would do nothing.
+
+`CONSTANT_AFTER_FUNCTION_P (EXP)'
+     Define this macro as a C expression which is nonzero if the
+     constant EXP, of type `tree', should be output after the code for a
+     function.  The compiler will normally output all constants before
+     the function; you need not define this macro if this is OK.
+
+`ASM_OUTPUT_POOL_EPILOGUE (FILE FUNNAME FUNDECL SIZE)'
+     A C statement to output assembler commands to at the end of the
+     constant pool for a function.  FUNNAME is a string giving the name
+     of the function.  Should the return type of the function be
+     required, you can obtain it via FUNDECL.  SIZE is the size, in
+     bytes, of the constant pool that GCC wrote immediately before this
+     call.
+
+     If no constant-pool epilogue is required, the usual case, you need
+     not define this macro.
+
+`IS_ASM_LOGICAL_LINE_SEPARATOR (C)'
+     Define this macro as a C expression which is nonzero if C is used
+     as a logical line separator by the assembler.
+
+     If you do not define this macro, the default is that only the
+     character `;' is treated as a logical line separator.
+
+ - Target Hook: const char * TARGET_ASM_OPEN_PAREN
+ - Target Hook: const char * TARGET_ASM_CLOSE_PAREN
+     These target hooks are C string constants, describing the syntax
+     in the assembler for grouping arithmetic expressions.  If not
+     overridden, they default to normal parentheses, which is correct
+     for most assemblers.
+
+   These macros are provided by `real.h' for writing the definitions of
+`ASM_OUTPUT_DOUBLE' and the like:
+
+`REAL_VALUE_TO_TARGET_SINGLE (X, L)'
+`REAL_VALUE_TO_TARGET_DOUBLE (X, L)'
+`REAL_VALUE_TO_TARGET_LONG_DOUBLE (X, L)'
+     These translate X, of type `REAL_VALUE_TYPE', to the target's
+     floating point representation, and store its bit pattern in the
+     array of `long int' whose address is L.  The number of elements in
+     the output array is determined by the size of the desired target
+     floating point data type: 32 bits of it go in each `long int' array
+     element.  Each array element holds 32 bits of the result, even if
+     `long int' is wider than 32 bits on the host machine.
+
+     The array element values are designed so that you can print them
+     out using `fprintf' in the order they should appear in the target
+     machine's memory.
+
+`REAL_VALUE_TO_DECIMAL (X, FORMAT, STRING)'
+     This macro converts X, of type `REAL_VALUE_TYPE', to a decimal
+     number and stores it as a string into STRING.  You must pass, as
+     STRING, the address of a long enough block of space to hold the
+     result.
+
+     The argument FORMAT is a `printf'-specification that serves as a
+     suggestion for how to format the output string.
+
+
+File: gccint.info,  Node: Uninitialized Data,  Next: Label Output,  Prev: Data Output,  Up: Assembler Format
+
+Output of Uninitialized Variables
+---------------------------------
+
+   Each of the macros in this section is used to do the whole job of
+outputting a single uninitialized variable.
+
+`ASM_OUTPUT_COMMON (STREAM, NAME, SIZE, ROUNDED)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM the assembler definition of a common-label named NAME whose
+     size is SIZE bytes.  The variable ROUNDED is the size rounded up
+     to whatever alignment the caller wants.
+
+     Use the expression `assemble_name (STREAM, NAME)' to output the
+     name itself; before and after that, output the additional
+     assembler syntax for defining the name, and a newline.
+
+     This macro controls how the assembler definitions of uninitialized
+     common global variables are output.
+
+`ASM_OUTPUT_ALIGNED_COMMON (STREAM, NAME, SIZE, ALIGNMENT)'
+     Like `ASM_OUTPUT_COMMON' except takes the required alignment as a
+     separate, explicit argument.  If you define this macro, it is used
+     in place of `ASM_OUTPUT_COMMON', and gives you more flexibility in
+     handling the required alignment of the variable.  The alignment is
+     specified as the number of bits.
+
+`ASM_OUTPUT_ALIGNED_DECL_COMMON (STREAM, DECL, NAME, SIZE, ALIGNMENT)'
+     Like `ASM_OUTPUT_ALIGNED_COMMON' except that DECL of the variable
+     to be output, if there is one, or `NULL_TREE' if there is no
+     corresponding variable.  If you define this macro, GCC will use it
+     in place of both `ASM_OUTPUT_COMMON' and
+     `ASM_OUTPUT_ALIGNED_COMMON'.  Define this macro when you need to
+     see the variable's decl in order to chose what to output.
+
+`ASM_OUTPUT_SHARED_COMMON (STREAM, NAME, SIZE, ROUNDED)'
+     If defined, it is similar to `ASM_OUTPUT_COMMON', except that it
+     is used when NAME is shared.  If not defined, `ASM_OUTPUT_COMMON'
+     will be used.
+
+`ASM_OUTPUT_BSS (STREAM, DECL, NAME, SIZE, ROUNDED)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM the assembler definition of uninitialized global DECL named
+     NAME whose size is SIZE bytes.  The variable ROUNDED is the size
+     rounded up to whatever alignment the caller wants.
+
+     Try to use function `asm_output_bss' defined in `varasm.c' when
+     defining this macro.  If unable, use the expression `assemble_name
+     (STREAM, NAME)' to output the name itself; before and after that,
+     output the additional assembler syntax for defining the name, and
+     a newline.
+
+     This macro controls how the assembler definitions of uninitialized
+     global variables are output.  This macro exists to properly
+     support languages like C++ which do not have `common' data.
+     However, this macro currently is not defined for all targets.  If
+     this macro and `ASM_OUTPUT_ALIGNED_BSS' are not defined then
+     `ASM_OUTPUT_COMMON' or `ASM_OUTPUT_ALIGNED_COMMON' or
+     `ASM_OUTPUT_ALIGNED_DECL_COMMON' is used.
+
+`ASM_OUTPUT_ALIGNED_BSS (STREAM, DECL, NAME, SIZE, ALIGNMENT)'
+     Like `ASM_OUTPUT_BSS' except takes the required alignment as a
+     separate, explicit argument.  If you define this macro, it is used
+     in place of `ASM_OUTPUT_BSS', and gives you more flexibility in
+     handling the required alignment of the variable.  The alignment is
+     specified as the number of bits.
+
+     Try to use function `asm_output_aligned_bss' defined in file
+     `varasm.c' when defining this macro.
+
+`ASM_OUTPUT_SHARED_BSS (STREAM, DECL, NAME, SIZE, ROUNDED)'
+     If defined, it is similar to `ASM_OUTPUT_BSS', except that it is
+     used when NAME is shared.  If not defined, `ASM_OUTPUT_BSS' will
+     be used.
+
+`ASM_OUTPUT_LOCAL (STREAM, NAME, SIZE, ROUNDED)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM the assembler definition of a local-common-label named NAME
+     whose size is SIZE bytes.  The variable ROUNDED is the size
+     rounded up to whatever alignment the caller wants.
+
+     Use the expression `assemble_name (STREAM, NAME)' to output the
+     name itself; before and after that, output the additional
+     assembler syntax for defining the name, and a newline.
+
+     This macro controls how the assembler definitions of uninitialized
+     static variables are output.
+
+`ASM_OUTPUT_ALIGNED_LOCAL (STREAM, NAME, SIZE, ALIGNMENT)'
+     Like `ASM_OUTPUT_LOCAL' except takes the required alignment as a
+     separate, explicit argument.  If you define this macro, it is used
+     in place of `ASM_OUTPUT_LOCAL', and gives you more flexibility in
+     handling the required alignment of the variable.  The alignment is
+     specified as the number of bits.
+
+`ASM_OUTPUT_ALIGNED_DECL_LOCAL (STREAM, DECL, NAME, SIZE, ALIGNMENT)'
+     Like `ASM_OUTPUT_ALIGNED_DECL' except that DECL of the variable to
+     be output, if there is one, or `NULL_TREE' if there is no
+     corresponding variable.  If you define this macro, GCC will use it
+     in place of both `ASM_OUTPUT_DECL' and `ASM_OUTPUT_ALIGNED_DECL'.
+     Define this macro when you need to see the variable's decl in
+     order to chose what to output.
+
+`ASM_OUTPUT_SHARED_LOCAL (STREAM, NAME, SIZE, ROUNDED)'
+     If defined, it is similar to `ASM_OUTPUT_LOCAL', except that it is
+     used when NAME is shared.  If not defined, `ASM_OUTPUT_LOCAL' will
+     be used.
+
+
+File: gccint.info,  Node: Label Output,  Next: Initialization,  Prev: Uninitialized Data,  Up: Assembler Format
+
+Output and Generation of Labels
+-------------------------------
+
+   This is about outputting labels.
+
+`ASM_OUTPUT_LABEL (STREAM, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM the assembler definition of a label named NAME.  Use the
+     expression `assemble_name (STREAM, NAME)' to output the name
+     itself; before and after that, output the additional assembler
+     syntax for defining the name, and a newline.
+
+`ASM_DECLARE_FUNCTION_NAME (STREAM, NAME, DECL)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM any text necessary for declaring the name NAME of a
+     function which is being defined.  This macro is responsible for
+     outputting the label definition (perhaps using
+     `ASM_OUTPUT_LABEL').  The argument DECL is the `FUNCTION_DECL'
+     tree node representing the function.
+
+     If this macro is not defined, then the function name is defined in
+     the usual manner as a label (by means of `ASM_OUTPUT_LABEL').
+
+`ASM_DECLARE_FUNCTION_SIZE (STREAM, NAME, DECL)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM any text necessary for declaring the size of a function
+     which is being defined.  The argument NAME is the name of the
+     function.  The argument DECL is the `FUNCTION_DECL' tree node
+     representing the function.
+
+     If this macro is not defined, then the function size is not
+     defined.
+
+`ASM_DECLARE_OBJECT_NAME (STREAM, NAME, DECL)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM any text necessary for declaring the name NAME of an
+     initialized variable which is being defined.  This macro must
+     output the label definition (perhaps using `ASM_OUTPUT_LABEL').
+     The argument DECL is the `VAR_DECL' tree node representing the
+     variable.
+
+     If this macro is not defined, then the variable name is defined in
+     the usual manner as a label (by means of `ASM_OUTPUT_LABEL').
+
+`ASM_DECLARE_REGISTER_GLOBAL (STREAM, DECL, REGNO, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM any text necessary for claiming a register REGNO for a
+     global variable DECL with name NAME.
+
+     If you don't define this macro, that is equivalent to defining it
+     to do nothing.
+
+`ASM_FINISH_DECLARE_OBJECT (STREAM, DECL, TOPLEVEL, ATEND)'
+     A C statement (sans semicolon) to finish up declaring a variable
+     name once the compiler has processed its initializer fully and
+     thus has had a chance to determine the size of an array when
+     controlled by an initializer.  This is used on systems where it's
+     necessary to declare something about the size of the object.
+
+     If you don't define this macro, that is equivalent to defining it
+     to do nothing.
+
+`ASM_GLOBALIZE_LABEL (STREAM, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM some commands that will make the label NAME global; that
+     is, available for reference from other files.  Use the expression
+     `assemble_name (STREAM, NAME)' to output the name itself; before
+     and after that, output the additional assembler syntax for making
+     that name global, and a newline.
+
+`ASM_WEAKEN_LABEL (STREAM, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM some commands that will make the label NAME weak; that is,
+     available for reference from other files but only used if no other
+     definition is available.  Use the expression `assemble_name
+     (STREAM, NAME)' to output the name itself; before and after that,
+     output the additional assembler syntax for making that name weak,
+     and a newline.
+
+     If you don't define this macro or `ASM_WEAKEN_DECL', GCC will not
+     support weak symbols and you should not define the `SUPPORTS_WEAK'
+     macro.
+
+`ASM_WEAKEN_DECL (STREAM, DECL, NAME, VALUE)'
+     Combines (and replaces) the function of `ASM_WEAKEN_LABEL' and
+     `ASM_OUTPUT_WEAK_ALIAS', allowing access to the associated function
+     or variable decl.  If VALUE is not `NULL', this C statement should
+     output to the stdio stream STREAM assembler code which defines
+     (equates) the weak symbol NAME to have the value VALUE.  If VALUE
+     is `NULL', it should output commands to make NAME weak.
+
+`SUPPORTS_WEAK'
+     A C expression which evaluates to true if the target supports weak
+     symbols.
+
+     If you don't define this macro, `defaults.h' provides a default
+     definition.  If either `ASM_WEAKEN_LABEL' or `ASM_WEAKEN_DECL' is
+     defined, the default definition is `1'; otherwise, it is `0'.
+     Define this macro if you want to control weak symbol support with
+     a compiler flag such as `-melf'.
+
+`MAKE_DECL_ONE_ONLY'
+     A C statement (sans semicolon) to mark DECL to be emitted as a
+     public symbol such that extra copies in multiple translation units
+     will be discarded by the linker.  Define this macro if your object
+     file format provides support for this concept, such as the `COMDAT'
+     section flags in the Microsoft Windows PE/COFF format, and this
+     support requires changes to DECL, such as putting it in a separate
+     section.
+
+`SUPPORTS_ONE_ONLY'
+     A C expression which evaluates to true if the target supports
+     one-only semantics.
+
+     If you don't define this macro, `varasm.c' provides a default
+     definition.  If `MAKE_DECL_ONE_ONLY' is defined, the default
+     definition is `1'; otherwise, it is `0'.  Define this macro if you
+     want to control one-only symbol support with a compiler flag, or if
+     setting the `DECL_ONE_ONLY' flag is enough to mark a declaration to
+     be emitted as one-only.
+
+`ASM_OUTPUT_EXTERNAL (STREAM, DECL, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM any text necessary for declaring the name of an external
+     symbol named NAME which is referenced in this compilation but not
+     defined.  The value of DECL is the tree node for the declaration.
+
+     This macro need not be defined if it does not need to output
+     anything.  The GNU assembler and most Unix assemblers don't
+     require anything.
+
+`ASM_OUTPUT_EXTERNAL_LIBCALL (STREAM, SYMREF)'
+     A C statement (sans semicolon) to output on STREAM an assembler
+     pseudo-op to declare a library function name external.  The name
+     of the library function is given by SYMREF, which has type `rtx'
+     and is a `symbol_ref'.
+
+     This macro need not be defined if it does not need to output
+     anything.  The GNU assembler and most Unix assemblers don't
+     require anything.
+
+`ASM_OUTPUT_LABELREF (STREAM, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM a reference in assembler syntax to a label named NAME.
+     This should add `_' to the front of the name, if that is customary
+     on your operating system, as it is in most Berkeley Unix systems.
+     This macro is used in `assemble_name'.
+
+`ASM_OUTPUT_SYMBOL_REF (STREAM, SYM)'
+     A C statement (sans semicolon) to output a reference to
+     `SYMBOL_REF' SYM.  If not defined, `assemble_name' will be used to
+     output the name of the symbol.  This macro may be used to modify
+     the way a symbol is referenced depending on information encoded by
+     `ENCODE_SECTION_INFO'.
+
+`ASM_OUTPUT_LABEL_REF (STREAM, BUF)'
+     A C statement (sans semicolon) to output a reference to BUF, the
+     result of ASM_GENERATE_INTERNAL_LABEL.  If not defined,
+     `assemble_name' will be used to output the name of the symbol.
+     This macro is not used by `output_asm_label', or the `%l'
+     specifier that calls it; the intention is that this macro should
+     be set when it is necessary to output a label differently when its
+     address is being taken.
+
+`ASM_OUTPUT_INTERNAL_LABEL (STREAM, PREFIX, NUM)'
+     A C statement to output to the stdio stream STREAM a label whose
+     name is made from the string PREFIX and the number NUM.
+
+     It is absolutely essential that these labels be distinct from the
+     labels used for user-level functions and variables.  Otherwise,
+     certain programs will have name conflicts with internal labels.
+
+     It is desirable to exclude internal labels from the symbol table
+     of the object file.  Most assemblers have a naming convention for
+     labels that should be excluded; on many systems, the letter `L' at
+     the beginning of a label has this effect.  You should find out what
+     convention your system uses, and follow it.
+
+     The usual definition of this macro is as follows:
+
+          fprintf (STREAM, "L%s%d:\n", PREFIX, NUM)
+
+`ASM_OUTPUT_DEBUG_LABEL (STREAM, PREFIX, NUM)'
+     A C statement to output to the stdio stream STREAM a debug info
+     label whose name is made from the string PREFIX and the number
+     NUM.  This is useful for VLIW targets, where debug info labels may
+     need to be treated differently than branch target labels.  On some
+     systems, branch target labels must be at the beginning of
+     instruction bundles, but debug info labels can occur in the middle
+     of instruction bundles.
+
+     If this macro is not defined, then `ASM_OUTPUT_INTERNAL_LABEL'
+     will be used.
+
+`ASM_OUTPUT_ALTERNATE_LABEL_NAME (STREAM, STRING)'
+     A C statement to output to the stdio stream STREAM the string
+     STRING.
+
+     The default definition of this macro is as follows:
+
+          fprintf (STREAM, "%s:\n", LABEL_ALTERNATE_NAME (INSN))
+
+`ASM_GENERATE_INTERNAL_LABEL (STRING, PREFIX, NUM)'
+     A C statement to store into the string STRING a label whose name
+     is made from the string PREFIX and the number NUM.
+
+     This string, when output subsequently by `assemble_name', should
+     produce the output that `ASM_OUTPUT_INTERNAL_LABEL' would produce
+     with the same PREFIX and NUM.
+
+     If the string begins with `*', then `assemble_name' will output
+     the rest of the string unchanged.  It is often convenient for
+     `ASM_GENERATE_INTERNAL_LABEL' to use `*' in this way.  If the
+     string doesn't start with `*', then `ASM_OUTPUT_LABELREF' gets to
+     output the string, and may change it.  (Of course,
+     `ASM_OUTPUT_LABELREF' is also part of your machine description, so
+     you should know what it does on your machine.)
+
+`ASM_FORMAT_PRIVATE_NAME (OUTVAR, NAME, NUMBER)'
+     A C expression to assign to OUTVAR (which is a variable of type
+     `char *') a newly allocated string made from the string NAME and
+     the number NUMBER, with some suitable punctuation added.  Use
+     `alloca' to get space for the string.
+
+     The string will be used as an argument to `ASM_OUTPUT_LABELREF' to
+     produce an assembler label for an internal static variable whose
+     name is NAME.  Therefore, the string must be such as to result in
+     valid assembler code.  The argument NUMBER is different each time
+     this macro is executed; it prevents conflicts between
+     similarly-named internal static variables in different scopes.
+
+     Ideally this string should not be a valid C identifier, to prevent
+     any conflict with the user's own symbols.  Most assemblers allow
+     periods or percent signs in assembler symbols; putting at least
+     one of these between the name and the number will suffice.
+
+`ASM_OUTPUT_DEF (STREAM, NAME, VALUE)'
+     A C statement to output to the stdio stream STREAM assembler code
+     which defines (equates) the symbol NAME to have the value VALUE.
+
+     If `SET_ASM_OP' is defined, a default definition is provided which
+     is correct for most systems.
+
+`ASM_OUTPUT_DEF_FROM_DECLS (STREAM, DECL_OF_NAME, DECL_OF_VALUE)'
+     A C statement to output to the stdio stream STREAM assembler code
+     which defines (equates) the symbol whose tree node is DECL_OF_NAME
+     to have the value of the tree node DECL_OF_VALUE.  This macro will
+     be used in preference to `ASM_OUTPUT_DEF' if it is defined and if
+     the tree nodes are available.
+
+`ASM_OUTPUT_DEFINE_LABEL_DIFFERENCE_SYMBOL (STREAM, SYMBOL, HIGH, LOW)'
+     A C statement to output to the stdio stream STREAM assembler code
+     which defines (equates) the symbol SYMBOL to have a value equal to
+     the difference of the two symbols HIGH and LOW, i.e. HIGH minus
+     LOW.  GCC guarantees that the symbols HIGH and LOW are already
+     known by the assembler so that the difference resolves into a
+     constant.
+
+     If `SET_ASM_OP' is defined, a default definition is provided which
+     is correct for most systems.
+
+`ASM_OUTPUT_WEAK_ALIAS (STREAM, NAME, VALUE)'
+     A C statement to output to the stdio stream STREAM assembler code
+     which defines (equates) the weak symbol NAME to have the value
+     VALUE.  If VALUE is `NULL', it defines NAME as an undefined weak
+     symbol.
+
+     Define this macro if the target only supports weak aliases; define
+     `ASM_OUTPUT_DEF' instead if possible.
+
+`OBJC_GEN_METHOD_LABEL (BUF, IS_INST, CLASS_NAME, CAT_NAME, SEL_NAME)'
+     Define this macro to override the default assembler names used for
+     Objective-C methods.
+
+     The default name is a unique method number followed by the name of
+     the class (e.g. `_1_Foo').  For methods in categories, the name of
+     the category is also included in the assembler name (e.g.
+     `_1_Foo_Bar').
+
+     These names are safe on most systems, but make debugging difficult
+     since the method's selector is not present in the name.
+     Therefore, particular systems define other ways of computing names.
+
+     BUF is an expression of type `char *' which gives you a buffer in
+     which to store the name; its length is as long as CLASS_NAME,
+     CAT_NAME and SEL_NAME put together, plus 50 characters extra.
+
+     The argument IS_INST specifies whether the method is an instance
+     method or a class method; CLASS_NAME is the name of the class;
+     CAT_NAME is the name of the category (or `NULL' if the method is
+     not in a category); and SEL_NAME is the name of the selector.
+
+     On systems where the assembler can handle quoted names, you can
+     use this macro to provide more human-readable names.
+
+`ASM_DECLARE_CLASS_REFERENCE (STREAM, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM commands to declare that the label NAME is an Objective-C
+     class reference.  This is only needed for targets whose linkers
+     have special support for NeXT-style runtimes.
+
+`ASM_DECLARE_UNRESOLVED_REFERENCE (STREAM, NAME)'
+     A C statement (sans semicolon) to output to the stdio stream
+     STREAM commands to declare that the label NAME is an unresolved
+     Objective-C class reference.  This is only needed for targets
+     whose linkers have special support for NeXT-style runtimes.
+
+
+File: gccint.info,  Node: Initialization,  Next: Macros for Initialization,  Prev: Label Output,  Up: Assembler Format
+
+How Initialization Functions Are Handled
+----------------------------------------
+
+   The compiled code for certain languages includes "constructors"
+(also called "initialization routines")--functions to initialize data
+in the program when the program is started.  These functions need to be
+called before the program is "started"--that is to say, before `main'
+is called.
+
+   Compiling some languages generates "destructors" (also called
+"termination routines") that should be called when the program
+terminates.
+
+   To make the initialization and termination functions work, the
+compiler must output something in the assembler code to cause those
+functions to be called at the appropriate time.  When you port the
+compiler to a new system, you need to specify how to do this.
+
+   There are two major ways that GCC currently supports the execution of
+initialization and termination functions.  Each way has two variants.
+Much of the structure is common to all four variations.
+
+   The linker must build two lists of these functions--a list of
+initialization functions, called `__CTOR_LIST__', and a list of
+termination functions, called `__DTOR_LIST__'.
+
+   Each list always begins with an ignored function pointer (which may
+hold 0, -1, or a count of the function pointers after it, depending on
+the environment).  This is followed by a series of zero or more function
+pointers to constructors (or destructors), followed by a function
+pointer containing zero.
+
+   Depending on the operating system and its executable file format,
+either `crtstuff.c' or `libgcc2.c' traverses these lists at startup
+time and exit time.  Constructors are called in reverse order of the
+list; destructors in forward order.
+
+   The best way to handle static constructors works only for object file
+formats which provide arbitrarily-named sections.  A section is set
+aside for a list of constructors, and another for a list of destructors.
+Traditionally these are called `.ctors' and `.dtors'.  Each object file
+that defines an initialization function also puts a word in the
+constructor section to point to that function.  The linker accumulates
+all these words into one contiguous `.ctors' section.  Termination
+functions are handled similarly.
+
+   This method will be chosen as the default by `target-def.h' if
+`TARGET_ASM_NAMED_SECTION' is defined.  A target that does not support
+arbitrary sections, but does support special designated constructor and
+destructor sections may define `CTORS_SECTION_ASM_OP' and
+`DTORS_SECTION_ASM_OP' to achieve the same effect.
+
+   When arbitrary sections are available, there are two variants,
+depending upon how the code in `crtstuff.c' is called.  On systems that
+support a ".init" section which is executed at program startup, parts
+of `crtstuff.c' are compiled into that section.  The program is linked
+by the `gcc' driver like this:
+
+     ld -o OUTPUT_FILE crti.o crtbegin.o ... -lgcc crtend.o crtn.o
+
+   The prologue of a function (`__init') appears in the `.init' section
+of `crti.o'; the epilogue appears in `crtn.o'.  Likewise for the
+function `__fini' in the ".fini" section.  Normally these files are
+provided by the operating system or by the GNU C library, but are
+provided by GCC for a few targets.
+
+   The objects `crtbegin.o' and `crtend.o' are (for most targets)
+compiled from `crtstuff.c'.  They contain, among other things, code
+fragments within the `.init' and `.fini' sections that branch to
+routines in the `.text' section.  The linker will pull all parts of a
+section together, which results in a complete `__init' function that
+invokes the routines we need at startup.
+
+   To use this variant, you must define the `INIT_SECTION_ASM_OP' macro
+properly.
+
+   If no init section is available, when GCC compiles any function
+called `main' (or more accurately, any function designated as a program
+entry point by the language front end calling `expand_main_function'),
+it inserts a procedure call to `__main' as the first executable code
+after the function prologue.  The `__main' function is defined in
+`libgcc2.c' and runs the global constructors.
+
+   In file formats that don't support arbitrary sections, there are
+again two variants.  In the simplest variant, the GNU linker (GNU `ld')
+and an `a.out' format must be used.  In this case,
+`TARGET_ASM_CONSTRUCTOR' is defined to produce a `.stabs' entry of type
+`N_SETT', referencing the name `__CTOR_LIST__', and with the address of
+the void function containing the initialization code as its value.  The
+GNU linker recognizes this as a request to add the value to a "set";
+the values are accumulated, and are eventually placed in the executable
+as a vector in the format described above, with a leading (ignored)
+count and a trailing zero element.  `TARGET_ASM_DESTRUCTOR' is handled
+similarly.  Since no init section is available, the absence of
+`INIT_SECTION_ASM_OP' causes the compilation of `main' to call `__main'
+as above, starting the initialization process.
+
+   The last variant uses neither arbitrary sections nor the GNU linker.
+This is preferable when you want to do dynamic linking and when using
+file formats which the GNU linker does not support, such as `ECOFF'.  In
+this case, `TARGET_HAVE_CTORS_DTORS' is false, initialization and
+termination functions are recognized simply by their names.  This
+requires an extra program in the linkage step, called `collect2'.  This
+program pretends to be the linker, for use with GCC; it does its job by
+running the ordinary linker, but also arranges to include the vectors of
+initialization and termination functions.  These functions are called
+via `__main' as described above.  In order to use this method,
+`use_collect2' must be defined in the target in `config.gcc'.
+
+   The following section describes the specific macros that control and
+customize the handling of initialization and termination functions.
+
+
+File: gccint.info,  Node: Macros for Initialization,  Next: Instruction Output,  Prev: Initialization,  Up: Assembler Format
+
+Macros Controlling Initialization Routines
+------------------------------------------
+
+   Here are the macros that control how the compiler handles
+initialization and termination functions:
+
+`INIT_SECTION_ASM_OP'
+     If defined, a C string constant, including spacing, for the
+     assembler operation to identify the following data as
+     initialization code.  If not defined, GCC will assume such a
+     section does not exist.  When you are using special sections for
+     initialization and termination functions, this macro also controls
+     how `crtstuff.c' and `libgcc2.c' arrange to run the initialization
+     functions.
+
+`HAS_INIT_SECTION'
+     If defined, `main' will not call `__main' as described above.
+     This macro should be defined for systems that control start-up code
+     on a symbol-by-symbol basis, such as OSF/1, and should not be
+     defined explicitly for systems that support `INIT_SECTION_ASM_OP'.
+
+`LD_INIT_SWITCH'
+     If defined, a C string constant for a switch that tells the linker
+     that the following symbol is an initialization routine.
+
+`LD_FINI_SWITCH'
+     If defined, a C string constant for a switch that tells the linker
+     that the following symbol is a finalization routine.
+
+`COLLECT_SHARED_INIT_FUNC (STREAM, FUNC)'
+     If defined, a C statement that will write a function that can be
+     automatically called when a shared library is loaded.  The function
+     should call FUNC, which takes no arguments.  If not defined, and
+     the object format requires an explicit initialization function,
+     then a function called `_GLOBAL__DI' will be generated.
+
+     This function and the following one are used by collect2 when
+     linking a shared library that needs constructors or destructors,
+     or has DWARF2 exception tables embedded in the code.
+
+`COLLECT_SHARED_FINI_FUNC (STREAM, FUNC)'
+     If defined, a C statement that will write a function that can be
+     automatically called when a shared library is unloaded.  The
+     function should call FUNC, which takes no arguments.  If not
+     defined, and the object format requires an explicit finalization
+     function, then a function called `_GLOBAL__DD' will be generated.
+
+`INVOKE__main'
+     If defined, `main' will call `__main' despite the presence of
+     `INIT_SECTION_ASM_OP'.  This macro should be defined for systems
+     where the init section is not actually run automatically, but is
+     still useful for collecting the lists of constructors and
+     destructors.
+
+`SUPPORTS_INIT_PRIORITY'
+     If nonzero, the C++ `init_priority' attribute is supported and the
+     compiler should emit instructions to control the order of
+     initialization of objects.  If zero, the compiler will issue an
+     error message upon encountering an `init_priority' attribute.
+
+ - Target Hook: bool TARGET_HAVE_CTORS_DTORS
+     This value is true if the target supports some "native" method of
+     collecting constructors and destructors to be run at startup and
+     exit.  It is false if we must use `collect2'.
+
+ - Target Hook: void TARGET_ASM_CONSTRUCTOR (rtx SYMBOL, int PRIORITY)
+     If defined, a function that outputs assembler code to arrange to
+     call the function referenced by SYMBOL at initialization time.
+
+     Assume that SYMBOL is a `SYMBOL_REF' for a function taking no
+     arguments and with no return value.  If the target supports
+     initialization priorities, PRIORITY is a value between 0 and
+     `MAX_INIT_PRIORITY'; otherwise it must be `DEFAULT_INIT_PRIORITY'.
+
+     If this macro is not defined by the target, a suitable default will
+     be chosen if (1) the target supports arbitrary section names, (2)
+     the target defines `CTORS_SECTION_ASM_OP', or (3) `USE_COLLECT2'
+     is not defined.
+
+ - Target Hook: void TARGET_ASM_DESTRUCTOR (rtx SYMBOL, int PRIORITY)
+     This is like `TARGET_ASM_CONSTRUCTOR' but used for termination
+     functions rather than initialization functions.
+
+   If `TARGET_HAVE_CTORS_DTORS' is true, the initialization routine
+generated for the generated object file will have static linkage.
+
+   If your system uses `collect2' as the means of processing
+constructors, then that program normally uses `nm' to scan an object
+file for constructor functions to be called.
+
+   On certain kinds of systems, you can define these macros to make
+`collect2' work faster (and, in some cases, make it work at all):
+
+`OBJECT_FORMAT_COFF'
+     Define this macro if the system uses COFF (Common Object File
+     Format) object files, so that `collect2' can assume this format
+     and scan object files directly for dynamic constructor/destructor
+     functions.
+
+`OBJECT_FORMAT_ROSE'
+     Define this macro if the system uses ROSE format object files, so
+     that `collect2' can assume this format and scan object files
+     directly for dynamic constructor/destructor functions.
+
+     These macros are effective only in a native compiler; `collect2' as
+     part of a cross compiler always uses `nm' for the target machine.
+
+`REAL_NM_FILE_NAME'
+     Define this macro as a C string constant containing the file name
+     to use to execute `nm'.  The default is to search the path
+     normally for `nm'.
+
+     If your system supports shared libraries and has a program to list
+     the dynamic dependencies of a given library or executable, you can
+     define these macros to enable support for running initialization
+     and termination functions in shared libraries:
+
+`LDD_SUFFIX'
+     Define this macro to a C string constant containing the name of
+     the program which lists dynamic dependencies, like `"ldd"' under
+     SunOS 4.
+
+`PARSE_LDD_OUTPUT (PTR)'
+     Define this macro to be C code that extracts filenames from the
+     output of the program denoted by `LDD_SUFFIX'.  PTR is a variable
+     of type `char *' that points to the beginning of a line of output
+     from `LDD_SUFFIX'.  If the line lists a dynamic dependency, the
+     code must advance PTR to the beginning of the filename on that
+     line.  Otherwise, it must set PTR to `NULL'.
+

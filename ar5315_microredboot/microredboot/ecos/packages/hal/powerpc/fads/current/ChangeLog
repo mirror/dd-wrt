@@ -1,0 +1,326 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_fads.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-07  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_stub.h: Remove [confusing] platform specific include.
+
+2002-06-27  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/plf_regs.h: New file - platform overrides.
+
+2002-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_cache.h: Cache control is in hal/common CDL.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Moved reset macro to
+	* include/plf_intr.h: this file.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_fads_ram.mlt:
+	Repair RAM layout
+
+	* include/pkgconf/mlt_powerpc_fads_ram.mlt:
+	* include/pkgconf/mlt_powerpc_fads_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_powerpc_fads_ram.h:
+	* include/pkgconf/mlt_powerpc_fads_rom.h:
+	* include/pkgconf/mlt_powerpc_fads_ram.ldi:
+	* include/pkgconf/mlt_powerpc_fads_rom.ldi:
+	Regenerated
+
+2000-07-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_aux.c (hal_platform_init): Don't call hal_if_init just
+	yet.
+
+2000-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_fads.cdl: Removed ROM_DEBUG_CHANNEL option.
+
+2000-06-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: 
+	* src/hal_aux.c: 
+	* include/pkgconf/mlt_powerpc_fads_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_fads_ram.mlt: 
+	* include/plf_stub.h:
+	* include/hal_diag.h:
+	* cdl/hal_powerpc_fads.cdl: 
+	Some changes towards virtual vector table support. Still needs
+	ctrlc support before it can be enabled.
+
+2000-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h: Added.
+
+2000-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c (hal_diag_write_char): fix typo.
+
+2000-03-02  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_fads.cdl: Don't allow USE_MONITOR to be configured.
+
+2000-02-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/fads.S: use arch.inc instead of ppc.inc
+
+2000-02-17  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/pkgconf/hal_powerpc_fads.h: Fix PPC8xx -> MPC8xx typo
+	* cdl/hal_powerpc_fads.cdl: likewise
+
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_aux.c: Cleaned up includes.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: 
+	HAL_STUB_PLATFORM_STUBS_INIT->HAL_STUB_PLATFORM_INIT
+
+2000-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_fads_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_fads_ram.mlt: 
+	Reserve space for vectors.
+	
+	* cdl/hal_powerpc_fads.cdl: 
+	* include/pkgconf/hal_powerpc_fads.h: 
+	Don't rely on ROM monitor (isn't eCos compatible stub).
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_fads.cdl: Specify CPU options in linker flags.
+
+	* cdl/hal_powerpc_fads.cdl:
+	* include/pkgconf/hal_powerpc_fads.h:
+	Use MPC8xx CPU variant.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_fads.cdl:
+	* src/fads.S:
+        CYG_HAL_POWERPC_x->CYGPKG_...
+	
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_cache.h: Added.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_powerpc_fads.cdl: Ensure we "puts" to appropriate CDL header
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_powerpc_fads.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_fads_rom.h: 
+	* include/pkgconf/mlt_powerpc_fads_ram.h: New file(s).
+
+1999-09-02  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): Define a non-empty table
+	for the FADS board so that MM can be enabled.  I don't know why
+	the ROM area is marked non-cachable, but that's as the reporter
+	requested.
+
+	As requested in PR 20270 by not-a-customer.  This is really a
+	merge of that fix.
+
+	* src/quicc_smc2.c (cyg_smc2_init): Re-order initialization so
+	that RxTxBD *is* initialized before use.  Move setup of rx/tx
+	params to the end of the function ie. after the data is set up.
+
+	All as requested in PR 20271 by not-a-customer.  This is really a
+	merge of that fix.
+
+1999-06-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/PKGconf.mak: Build the new file.
+
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): New file, to define this
+	object for per-platform table-driven memory map initialization.
+	The table used to be in hal_misc.c in the architectural HAL; this
+	is platform dependent so better and cleaner here.
+
+1999-06-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/PKGconf.mak: Add quicc_smc2.c, which now lives in here;
+	moved from the architectural HAL.
+
+	* src/hal_diag.c: use local quicc_smc2.c module for IO.
+
+	* include/plf_stub.h: use local quicc_smc2.c module for IO.
+
+	* include/quicc_smc2.h, src/quicc_smc2.c, src/ppc_860.h: new
+	files; renamed and reorganized from the architectural HAL.
+	
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_fads.h: Move RTC setup here.
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c: Disable interrupts when doing diag output so that
+	system "freezes" while this goes on
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+	
+	* src/hal_diag.c (hal_diag_write_char): Changed
+	__output_gdb_string to hal_output_gdb_string.
+
+	* include/hal_stub.h: [removed]
+	* include/plf_stub.h: [added]
+	* src/hal_stub.c:     [removed]
+	* src/PKGconf.mak: 
+	Changed hal_stub to plf_stub. Moved generic HAL stub code to
+	common/.../hal_stub.c.
+
+1999-02-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_fads.h: Put back in the startup
+	CDL. Fixed inconsistency with usage notes.
+
+	* README: Added Kevin's usage notes.
+	
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.mlt: New memory layout save files
+
+1999-02-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/PKGconf.mak: Fix comment.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-01-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* README: Added copyright header.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/ram.ldi:
+	* include/pkgconf/rom.ldi:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1999-01-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+        * include/hal_diag.h:
+        * include/hal_stub.h:
+        * include/ppc_fads.h:
+        * include/pkgconf/hal_powerpc_fads.h:
+        * src/PKGconf.mak:
+        * src/fads.S:
+        * src/hal_diag.c:
+        * src/hal_stub.c:
+	Added UNSUPPORTED headers.
+
+	* README: Added a few comments from Kevin.
+
+1999-01-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_fads.h: Removed startup type CDL.
+
+1999-01-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/fads.S (hal_hardware_init): Renamed CYG_HAL_POWERPC_FADS to
+	CYGPKG_HAL_POWERPC_FADS.
+
+1999-01-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/fads.ld: [removed]
+	* include/pkgconf/ram.ldi: [added]
+	* include/pkgconf/rom.ldi: [added]
+	* src/PKGconf.mak: 
+	Changed to MLT linker scheme.
+	
+1998-12-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Call cyg_ prefixed function names. Put in EMXIFs
+	where functionality has been left out. Removed Cogent spefic
+	code.
+
+	* src/hal_diag.c: Rely on smc code to do full hw
+	initialization. Call cyg_ prefixed function names.
+
+	* src/fads.ld: Added Kevin to contributers.
+
+	* src/fads.S (hal_hardware_init): Removed all #if0 marked code.
+
+1998-10-28  Kevin Hester <khester@opticworks.com>
+
+        * Created based on the cogent implementation
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

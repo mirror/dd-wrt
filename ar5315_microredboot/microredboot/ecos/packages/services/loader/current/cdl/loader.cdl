@@ -1,0 +1,245 @@
+# ====================================================================
+#
+#      loader.cdl
+#
+#      Dynamic loader configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Contributors:
+# Date:           2000-11-20
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LOADER {
+    display       "Dynamic loader"
+    description   "
+                  This package provides support for dynamic code loading."
+    include_dir   cyg/loader
+    compile       loader.cxx dload.cxx
+
+    requires      { CYGBLD_ISO_DLFCN_HEADER == "<cyg/loader/dlfcn.h>" }
+    implements    CYGINT_ISO_DLFCN
+    
+# ====================================================================
+
+    cdl_component CYGPKG_LOADER_OPTIONS {
+        display "Common memory allocator package build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+        cdl_option CYGPKG_LOADER_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LOADER_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "-O2 -fvtable-gc" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LOADER_LDFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+#            default_value { "-L$(PREFIX)/lib -ldlforce" }
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LOADER_LDFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "-Wl,-static -Wl,--gc-sections" }
+            description   "
+                This option modifies the set of compiler flags for
+                building this package. These flags are removed from
+                the set of global flags if present."
+        }
+	
+    }
+
+# ====================================================================
+# Dynamic library build options
+
+    cdl_option CYGBLD_LOADER_DYNAMIC_LD {
+	display    "Build linker script for dynamic libraries"
+	flavor     bool
+	default_value 1
+	description "Build a linker script for creating dynamic libraries"
+
+	make -priority 50 {
+	    <PREFIX>/lib/dynamic.ld: <PACKAGE>/src/dynamic.ld
+	    $(CC) -E -P -Wp,-MD,dynamic.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+	    @echo $@ ": \\" > $(notdir $@).deps
+	    @tail -n +2 dynamic.tmp >> $(notdir $@).deps
+	    @echo >> $(notdir $@).deps
+	    @rm dynamic.tmp
+
+	}
+    }
+
+    cdl_option CYGBLD_LOADER_CRTBEGINS {
+	display "Build special crtbeginS.o for dynamic libraries"
+	flavor   bool
+	default_value 1
+
+	make -priority 110 {
+        <PREFIX>/lib/crtbeginS.o : <PACKAGE>/src/crtbeginS.c
+        $(CC) -Wp,-MD,crtbeginS.tmp $(INCLUDE_PATH) -g0 -Wall -finhibit-size-directive -fno-inline-functions -fno-exceptions -c -o $@ $<	    
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 crtbeginS.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm crtbeginS.tmp
+	}
+    }
+
+    cdl_option CYGBLD_LOADER_CRTENDS {
+	display "Build special crtendS.o for dynamic libraries"
+	flavor   bool
+	default_value 1
+
+	make -priority 110 {
+        <PREFIX>/lib/crtendS.o : <PACKAGE>/src/crtendS.c
+        $(CC) -Wp,-MD,crtendS.tmp $(INCLUDE_PATH) -g0 -Wall -finhibit-size-directive -fno-inline-functions -fno-exceptions -c -o $@ $<	    
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 crtendS.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm crtendS.tmp
+	}
+    }
+    
+    cdl_option CYGBLD_LOADER_DLFORCE_LIB {
+	display    "Build dynamic load library"
+	flavor     bool
+	default_value 1
+	description "Build a shared library that is to be linked with the executable
+	             to force it to be built in such a way that it is suitable for
+	             having some other shared library load against it. This is the
+	             most portable way of achieving this."
+
+	make -priority 160 {
+	    <PREFIX>/lib/libdlforce.so : <PACKAGE>/src/dlforce.c
+	            $(CC) $(CFLAGS) -Wp,-MD,dlforce.tmp $(INCLUDE_PATH) -shared -c -o src/dlforce.o $<
+	            $(CC) -g -nostdlib -L$(PREFIX)/lib -shared -Tdynamic.ld -o $@ $(PREFIX)/lib/crtbeginS.o src/dlforce.o $(PREFIX)/lib/crtendS.o
+	            @echo $@ ": \\" > $(notdir $@).deps
+                    @tail -n +2 dlforce.tmp >> $(notdir $@).deps
+                    @echo >> $(notdir $@).deps
+                    @rm dlforce.tmp
+	}
+    }
+    
+# ====================================================================
+# Tests
+
+
+    cdl_option CYGBLD_LOADER_TEST_FOO_LIB {
+	display    "Build a dynamic load library"
+	flavor     bool
+	default_value 1
+	description "Build a shared library for testing."
+
+	make {
+	    tests/libfoo.so : <PACKAGE>/tests/foo.c
+	            mkdir -p tests
+	            $(CC) $(CFLAGS) -Wp,-MD,foo.tmp $(INCLUDE_PATH) -shared -c -o tests/foo.o $<
+	            $(CC) $(LDFLAGS) -L$(PREFIX)/lib -shared -Tdynamic.ld -o $@ $(PREFIX)/lib/crtbeginS.o tests/foo.o $(PREFIX)/lib/crtendS.o
+	            @echo $@ ": \\" > $(notdir $@).deps
+	            @tail -n +2 foo.tmp >> $(notdir $@).deps
+	            @echo >> $(notdir $@).deps
+	            @rm foo.tmp
+	            cc -o entable $(REPOSITORY)/$(PACKAGE)/tests/entable.c
+	            ./entable libfoo <tests/libfoo.so >tests/libfoo.so.c
+	}
+    }
+
+    cdl_option CYGBLD_LOADER_TEST_LOADFOO {
+	display   "Build library load test program"
+	flavor    bool
+	default_value 1
+	description "Build a test program that will load the test shared library"
+
+	make {
+	    <PREFIX>/tests/services/loader/current/tests/loadfoo : <PACKAGE>/tests/loadfoo.cxx
+	            mkdir -p $(PREFIX)/tests/services/loader/current/tests
+	            $(CC) $(CFLAGS) -Wp,-MD,loadfoo.tmp $(INCLUDE_PATH) -c -o tests/loadfoo.o $< 
+#	            $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -ldlforce -o $@ $(PREFIX)/lib/crtbeginS.o tests/loadfoo.o $(PREFIX)/lib/crtendS.o
+	            $(CC) $(LDFLAGS) -Wl,-E -L$(PREFIX)/lib -Ttarget.ld -ldlforce -o $@ tests/loadfoo.o
+	            @echo $@ ": \\" > $(notdir $@).deps
+	            @tail -n +2 loadfoo.tmp >> $(notdir $@).deps
+	            @echo >> $(notdir $@).deps
+	            @rm loadfoo.tmp
+	    
+	}
+    }
+    
+#    cdl_option CYGPKG_LOADER_TESTS {
+#	display "Tests"
+#	flavor  data
+#	no_define
+#	calculated { "tests/loadfoo" }
+#	description   "
+#	               This option specifies the set of tests for this package."
+#    }
+    
+}
+
+# ====================================================================
+# EOF loader.cdl

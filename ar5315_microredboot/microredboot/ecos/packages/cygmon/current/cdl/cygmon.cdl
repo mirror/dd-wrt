@@ -1,0 +1,140 @@
+# ====================================================================
+#
+#      cygmon.cdl
+#
+#      CygMon package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  gthomas
+# Contributors:   dmoseley
+# Date:           1999-11-03
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_CYGMON {
+    display  "CygMon ROM monitor"
+    requires CYGPKG_LIBC_STRING
+    include_dir   cyg/cygmon
+    define_header cygmon.h
+    description   "
+           This package supports the CygMon \[stand-alone debug monitor\]
+           using eCos as the underlying board support mechanism."
+
+
+    # Since the CYGDAT_CYGMON_CONSOLE_DEV setting ends up in the platform
+    # HAL header, we need to include that here (via hal.h).
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal.h>"
+    }
+
+   cdl_option CYGDAT_CYGMON_USE_HELP {
+       display "Include detailed command help"
+       default_value 1
+       description "
+           When this option is selected, the CygMon image will include
+           detailed help information for all built-in commands.  Without
+           it, only minimal help will be provided."
+   }
+
+    cdl_option CYGBLD_BUILD_CYGMON {
+        display "Build CygMon ROM ELF image"
+        default_value 0
+        requires { CYG_HAL_STARTUP == "ROM" }
+        requires CYGPKG_INFRA
+        requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires ! CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+        requires ! CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+        requires ! CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+        requires CYGPKG_LIBC_STRING
+        requires ! CYGFUN_LIBC_strtod
+        requires ! CYGPKG_LIBC_STDIO
+        requires ! CYGSEM_LIBC_SIGNALS_THREAD_SAFE
+        requires ! CYGIMP_LIBC_SIGNALS_RAISE_INLINE
+        requires ! CYGIMP_LIBC_SIGNALS_SIGNAL_INLINE
+        requires ! CYGSEM_LIBC_SIGNALS_RAISE_SETS_ERRNO
+        requires ! CYGSEM_LIBC_SIGNALS_SIGNAL_SETS_ERRNO
+        requires ! CYGFUN_LIBC_ATEXIT
+        requires ! CYGSEM_LIBC_EXIT_CALLS_FFLUSH
+        requires ! CYGPKG_LIBC_ENVIRONMENT
+        requires ! CYGSEM_LIBC_PER_THREAD_ERRNO
+        requires ! CYGSEM_LIBC_TIME_TIME_WORKING
+        requires ! CYGSEM_LIBC_TIME_SETTIME_WORKING
+        requires { CYGPKG_HAL_ARM || CYGPKG_HAL_MIPS || CYGPKG_HAL_MN10300 }
+
+        no_define
+        description "This option enables the building of the CygMon ELF image.
+                     The image may require further relocation or symbol
+                     stripping before being converted to a binary image.
+                     This is handled by a rule in the target CDL."
+
+        make -priority 320 {
+            <PREFIX>/bin/cygmon.elf : $(PREFIX)/lib/target.ld $(PREFIX)/lib/vectors.o $(PREFIX)/lib/libtarget.a $(PREFIX)/lib/libextras.a <PACKAGE>/misc/ecos_bsp.c <PACKAGE>/misc/ecos_dummy.c <PACKAGE>/misc/cpu-mon.c <PACKAGE>/misc/monitor.c <PACKAGE>/misc/monitor_cmd.c <PACKAGE>/misc/ledit.c <PACKAGE>/misc/breakpoints.c <PACKAGE>/misc/bplist-dynamic.c <PACKAGE>/misc/utils.c <PACKAGE>/misc/generic_fmt32.c <PACKAGE>/misc/generic_mem.c <PACKAGE>/misc/bsp/common/bsp.c <PACKAGE>/misc/bsp/common/bsp_if.c <PACKAGE>/misc/bsp/common/shared-data.c <PACKAGE>/misc/bsp/common/sysinfo.c <PACKAGE>/misc/bsp/common/console-io.c <PACKAGE>/misc/bsp/common/debug-io.c <PACKAGE>/misc/bsp/common/sprintf.c <PACKAGE>/misc/bsp/common/syscall.c <PACKAGE>/misc/bsp/common/printf.c <PACKAGE>/misc/bsp/common/vprintf.c <PACKAGE>/misc/bsp/common/breakpoint.c <PACKAGE>/misc/bsp/common/singlestep.c <PACKAGE>/misc/bsp/common/generic-mem.c <PACKAGE>/misc/bsp/common/bsp_cache.c <PACKAGE>/misc/bsp/common/gdb-cpu.c <PACKAGE>/misc/bsp/common/hex-utils.c
+            @sh -c "mkdir -p misc/bsp/common $(dir $@)"
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/ecos_bsp.o $(REPOSITORY)/$(PACKAGE)/misc/ecos_bsp.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/ecos_dummy.o $(REPOSITORY)/$(PACKAGE)/misc/ecos_dummy.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/cpu-mon.o $(REPOSITORY)/$(PACKAGE)/misc/cpu-mon.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/monitor.o $(REPOSITORY)/$(PACKAGE)/misc/monitor.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/monitor_cmd.o $(REPOSITORY)/$(PACKAGE)/misc/monitor_cmd.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/ledit.o $(REPOSITORY)/$(PACKAGE)/misc/ledit.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/breakpoints.o $(REPOSITORY)/$(PACKAGE)/misc/breakpoints.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bplist-dynamic.o $(REPOSITORY)/$(PACKAGE)/misc/bplist-dynamic.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/utils.o $(REPOSITORY)/$(PACKAGE)/misc/utils.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/generic_fmt32.o $(REPOSITORY)/$(PACKAGE)/misc/generic_fmt32.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/generic_mem.o $(REPOSITORY)/$(PACKAGE)/misc/generic_mem.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/bsp.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/bsp.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/bsp_if.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/bsp_if.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/shared-data.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/shared-data.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/sysinfo.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/sysinfo.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/console-io.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/console-io.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/debug-io.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/debug-io.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/sprintf.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/sprintf.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/syscall.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/syscall.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/printf.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/printf.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/vprintf.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/vprintf.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/breakpoint.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/breakpoint.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/singlestep.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/singlestep.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/generic-mem.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/generic-mem.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/bsp_cache.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/bsp_cache.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/gdb-cpu.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/gdb-cpu.c
+            $(CC) -c -I$(REPOSITORY)/$(PACKAGE)/misc $(INCLUDE_PATH) $(CFLAGS) -DHAVE_BSP -D__ECOS__ -o misc/bsp/common/hex-utils.o $(REPOSITORY)/$(PACKAGE)/misc/bsp/common/hex-utils.c
+            $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ $(filter-out %.ld %vectors.o, $(patsubst $(REPOSITORY)/$(PACKAGE)/%.c,%.o,$^))
+        }
+    }
+}

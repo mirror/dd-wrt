@@ -1,0 +1,99 @@
+2004-08-18  Fredrik Hederstierna  <fredrik@wespot.com>
+2004-08-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/strtoll.cxx, src/strtoull.cxx: New files. Support for long long
+	string conversion.
+	* cdl/stdlib.cdl (CYGFUN_LIBC_STDLIB_CONV_LONGLONG): New option
+	to build above new files configurably.
+	* include/atox.inl: Prototype new functions from above. Add atoll()
+	inline.
+
+2004-02-17  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/rand.cxx (srand): Use correct thread data type.
+	(rand): Ditto.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/stdlib.cdl: Fix doc link.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* tests/atoi.c (main): Fix warning.
+
+2001-06-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/stdlib.cdl: requires string functions, so say so.
+
+2001-02-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/rand.cxx: Fix typo
+
+2000-08-03  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/getenv.cxx: Revert nickg's change of 2000-06-07. environ is
+	meant to be determined by the startup environment (normally in
+	CYGPKG_LIBC_STARTUP), not getenv.
+
+2000-07-27  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/stdlib.cdl: Require CYGINT_ISO_CTYPE because we need the iswhite()
+	etc. funs
+
+2000-07-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/stdlib.cdl: Remove all parts of malloc implementation and
+	move to new separate package CYGPKG_MEMALLOC
+
+	* src/malloc.cxx, tests/malloc1.c, tests/malloc2.c, tests/malloc3.c,
+	tests/realloc.c: remove - moved to CYGPKG_MEMALLOC
+
+2000-06-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/realloc.c: Include correct pkgconf file.
+
+	* src/getenv.cxx: Removed externC from definition of environ, so
+	that is actually gets defined.
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* New package
+	Separated original libc out into separate packages on functional
+	boundaries.
+	Header files are now managed by isoinfra package
+	Plenty of cleanups done, but no major functionality changes
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

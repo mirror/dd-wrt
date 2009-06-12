@@ -1,0 +1,164 @@
+2004-09-03  Mark Salter  <msalter@redhat.com>
+2004-09-03  David Woodhouse  <dwmw2@redhat.com>
+
+	* src/vectors.S (reset_vector): Add some debug-only led setting code.
+	* src/redboot_linux_exec.c: Rename auto-variable for clarity.
+	* include/fr-v.h: Add defines for baud clock prescaler.
+	* src/vectors.S: Fix check for PDM bits in potential resume.
+	* src/vectors.S: Handle resume from sleep modes.
+	* src/redboot_linux_exec.c: Fix argv parsing for exec() command.
+	* include/hal_diag.h src/hal_diag.c: Move support for the built-in
+	16550-like chips found on all known implementations of these CPUs 
+	into the arch directory to avoid duplication.
+	* include/fr400.h include/fr500.h include/fr-v.h: Likewise many
+	other register definitions.
+	* src/hal_breakpoint.c: Likewise breakpoint/watchpoint stuff.
+	* cdl/hal_frv.cdl: Changes to reflect the above.
+	* src/vectors.S: Install exception vectors if not defined
+	CYGSEM_HAL_USE_ROM_MONITOR. This way, syscalls and GDB work
+	in RAM RedBoot.
+	* cdl/hal_frv.cdl, src/redboot_linux_exec.c: Exec command.
+	* src/vectors.S, src/context.S, include/hal_arch.h: Save extra GP
+	and FP regs only when they're actually available on this CPU, if
+	multiple CPUs are supported.
+	* cdl/hal_frv.cdl: Disable use of break insn for trap. Remove 
+		seemingly unnecessary option for hardware debugging.
+	* include/hal_arch.h: Add _PSR_CM bit. It's not always hardwired.
+	* src/hal_mk_defs.c: Ditto. Rename _HAL_THREAD_INIT_CONTEXT
+	* src/vectors.S: Some ifdef cleanup, enable _PSR_CM
+	
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_frv.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/frv.ld:
+	Added .eh_frame to data section. This is a stopgap fix to allow
+	C++ programs that define exceptions to link and run. It does not
+	allow them to actually throw exceptions, since that depends on
+	compiler changes that have not been made. Further, more
+	far-reaching, linker script changes will also be needs when that
+	happens.
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2003-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Let generic syscall code
+	handle exit.
+
+2002-04-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Add extra sig argument to
+	__do_syscall.
+
+2001-12-10  Richard Sandiford  <rsandifo@redhat.com>
+
+	* src/vectors.S (save_state): Remove unnecessary DDR diddling when
+	handling breaks.  Use BPCSR rather than BPCSR-4 as the break address.
+	(restore_state): Take two new arguments: the register that the
+	PC should be loaded into, and the argument to the rett instruction.
+	(_break): If handling a break instruction, return to the following
+	instruction using a normal "ret".  Ignore other kinds of break if
+	they were triggered when traps were disabled; assume that an
+	interrupt or exception handler has triggered a stack watchpoint
+	accidentally.  Correct GP calculation.  Return using "rett #1"
+	rather than "rett #0".
+
+2001-11-28  Hugo Tyson  <hmt@redhat.com>
+
+	* src/vectors.S (_vectors): if defined(CYGPKG_HAL_FRV_FRV400) &&
+	defined(CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS), add macro break_VSR
+	to create a VSR entry which leaps to _break; rearrange the
+	initialization of the VSR table so that the counts are correct;
+	use break_VSR in slot 255; define _break which calls break_handler()
+	much akin to exception handler().	
+
+	Note that there is no need to define CYGSEM_HAL_FRV_HW_DEBUG for
+	the FRV_FRV400 target; while we do use Hardware Debug, we don't
+	use *that* sort of hardware debug, specifically we do not use
+	hardware single-step, because it breaks as soon as we exit debug
+	mode, ie whilst we are still within the stub.  But vectors.S does
+	the same tidy-up of machine state, conditioned on FVR400 instead.
+
+2001-10-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/frv_stub.c: Slight cleanup - only need |VLIW|+1 possible
+	breakpoint locations.
+
+2001-10-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (_exception_return): Remove *bad* workaround code
+	now that single step VLIW works properly.
+
+	* src/frv_stub.c (__clear_single_step): 
+	(__single_step): Restructure to support VLIW sequences.
+
+2001-10-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_arch.h: Remove [bogus] CYG_HAL_TABLE macros since 
+	the common ones work fine on this architecture.
+
+	* src/vectors.S: 
+	* src/frv_stub.c: 
+	* cdl/hal_frv.cdl: Add CDL to describe various [hardware] debug
+	options.
+
+2001-10-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S: [FRV400] can't return from exception to a packed
+	instruction - this yields illegal instruction.
+	
+2001-10-11  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_frv.cdl: 
+	* include/basetype.h: 
+	* include/hal_arch.h: 
+	* include/hal_intr.h: 
+	* include/frv_stub.h: 
+	* include/hal_io.h: 
+	* include/hal_cache.h: 
+	* src/frv_stub.c: 
+	* src/hal_mk_defs.c: 
+	* src/frv.ld: 
+	* src/hal_misc.c: 
+	* src/vectors.S: 
+	* src/context.S: 
+	* src/hal_syscall.c: New port for FRV architecture.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

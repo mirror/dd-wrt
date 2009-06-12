@@ -1,0 +1,2736 @@
+This ChangeLog file is now obsolete. This is the original ChangeLog from when
+libc was one large package, before being separated. It is included for
+historical reasons.
+
+2000-04-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/time/settime.cxx: 
+	* src/time/time.cxx: 
+	Wallclock moved to io/.
+	
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/string.cdl,
+	  cdl/stdlib.cdl,
+	  cdl/stdio.cdl,
+	  cdl/libc.cdl:
+
+	Adjust documentation URLs.
+
+2000-03-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/clibincl/stream.inl (check_this): Use cyb_bool instead of bool.
+
+2000-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* tests/time/strftime.c (test): Adjust test to match below change.
+
+2000-03-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/time/strftime.cxx (do_format): Make sure %m counts from
+	1..12 rather than 0..11. Fix for case 103300
+
+2000-02-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/stdio/output/vfnprintf.cxx: Correctly use 'n' parameter to
+	restrict length. Credit due to Andrew Lunn here as well.
+	Resolves 103057-CR-1
+
+	* tests/stdio/sprintf2.c (test): 
+	Add snprintf tests to verify the correct behaviour of restricting
+	output length
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* tests/signal/signal2.c (main): 
+	Also reclaim DATA_TLB_MISS vector if available.
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/*.cdl:
+
+  Adjust help URLs in line with new doc layout.
+  
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-11-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdl/string.cdl:
+	Switch to a single boolean configuration option for code size vs.
+	speed optimization.
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/libc.cdl: Define tests.
+
+1999-10-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/output/vfnprintf.cxx: We can now remove Berkeley
+	advertising clause
+	* src/stdlib/div.cxx: ditto
+	* src/stdlib/ldiv.cxx: ditto
+	* src/stdlib/strtol.cxx: ditto
+	* src/stdlib/strtoul.cxx: ditto
+	* src/string/strtok.cxx: ditto
+
+1999-10-19  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/libc.cdl:
+
+	Define CDL options for package-specific CFLAGS.
+
+1999-10-08  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h (CYGNUM_LIBC_MAIN_THREAD_PRIORITY): Change
+	default to 10 to keep test farm happy
+	* cdl/startup.cdl: Likewise
+
+1999-10-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/stdlib.cdl, cdl/string.cdl:
+
+	Specify radio buttons using CDL interfaces.
+
+1999-10-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/stdio.cdl: Change default to /dev/ttydiag as per 1999-10-01
+	change below
+	* cdl/startup.cdl: Add new form CDL for the startup changes as
+	per 1999-10-05
+
+1999-10-05  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/libc.h: Add CYGSEM_LIBC_MAIN_STACK_FROM_SYSTEM to allow
+	the user to supply their own stack.
+	Rename CYGNUM_LIBC_MAIN_STACK_SIZE to
+	CYGNUM_LIBC_MAIN_DEFAULT_STACK_SIZE and reparent under
+	CYGSEM_LIBC_MAIN_STACK_FROM_SYSTEM
+	Add CYGNUM_LIBC_MAIN_THREAD_PRIORITY to provide main() thread
+	priority
+	
+	* src/support/mainthread.cxx: Add support for user-supplied stack
+	Allow user to specify thread priority
+
+	These changes fix CR 101069
+
+1999-10-01  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h (CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE): Change
+	default to /dev/ttydiag to get correct console-like behaviour
+	Also don't preclude use if haldiag package isn't included
+	(case 102065)
+
+1999-09-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/signal/signal2.c (cause_fpe): Try both float and integer
+	division by zero.
+
+1999-09-10  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/stdlib/malloc.cxx (cyg_libc_get_malloc_pool): Added for
+	stress_threads test.
+
+1999-09-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PRs 20243, 20433
+	* tests/signal/signal2.c: Disabled test3 on ARM.
+
+1999-09-02  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/assert.h: Make the sense of NDEBUG correct; it is "set"
+	when NOT debugging.  Fix for CR 101983-CR-1
+	See Stroustrup, "The C++ Programming Language."
+
+1999-08-18  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/fopen.cxx (_fopen): Set buffer size 0 when not
+	buffering
+	Fix for case 101868
+
+1999-08-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/stdlib.cdl, cdl/string.cdl:
+
+	Implement radio buttons using "FIXME radio" hack in
+	description field for now.
+
+1999-08-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/stdlib.cdl:
+	Take advantage of MACRONAME_ENUMVAL macros output by CDL.
+
+1999-08-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sprintf2.c (test): Don't rely on 2.345 being exactly
+	representable in binary as a difference of 1 ulp will make it round
+	the wrong way.
+
+1999-07-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/input/fgetc.cxx: 
+	Include outline versions of getc() (actually just a symbol alias for
+	fgetc() ) and getchar()
+	Some minor clean-ups
+	Add tracing/assertions
+
+	* src/stdio/input/fputc.cxx: 
+	Likewise (except applied to putc() and putchar())
+
+	* src/stdio/common/stdioinlines.cxx (_puts):
+	Call fputc() not _fputc()
+
+	* src/clibincl/stdiosupp.hxx:
+	Remove now obsolete prototypes for _fgetc() and _fputc()
+
+	* include/stdio.h:
+	Don't bother with getc()/putc() macros any more, just call
+	them as functions
+	Include protos for getc(), putc(), getchar() and putchar() functions
+
+1999-06-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/signal/signal2.c: Disabled test 3 for SH EDK7708.
+
+1999-06-11  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/stdio.h: Make FILEs array types so they won't be
+	given $gp relocations on MIPS targets
+
+1999-05-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/time/ctime.c: Fixed compiler warning.
+
+1999-05-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/signal/signal2.c (main): 
+	Update CYGPKG_HAL_TX39 -> CYGPKG_HAL_MIPS_TX39 due to recent MIPS
+	HAL changes
+	Fix for PR 20116
+
+1999-04-30  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 19945/19946 workaround
+	* tests/signal/signal2.c: Disabled test 3 for PowerPC sim.
+
+1999-04-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/time.inl:
+	Ensure all calls to cyg_libc_time_year_is_leap() are with the full
+	year, and not the direct contents of a struct tm, which are (year-1900)
+
+1999-04-19  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19308, 19410, 19528
+	* tests/time/clock.c (test): Also disable data cache which may
+	affect timing when tracing/assertions are enabled.
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/stdiosupp.hxx:
+	Add prototype for new cyg_libc_stdio_flush_all_but() function
+
+	* src/clibincl/stream.hxx:
+	Don't include stdiosupp.hxx any more to prevent circular dependency,
+	therefore manually provide _setvbuf prototype
+	Make sure pkgconf/kernel.h is included before mutex.hxx
+
+	* src/clibincl/stream.inl (Cyg_StdioStream::set_error()):
+	Add missing unlock_me()
+
+	* src/stdio/common/fflush.cxx:
+	Separate most of code for fflush(NULL) into separate
+	cyg_libc_stdio_flush_all_but() function, which has the extra
+	capability of omitting one stream
+
+	* src/stdio/common/stderr.cxx:
+	* src/stdio/common/stdin.cxx:
+	* src/stdio/common/stdout.cxx:
+	* src/stdio/common/vsnprintf.cxx:
+	* src/stdio/common/vsscanf.cxx:
+	Add missing clibincl/stdiosupp.hxx include
+
+	* src/stdio/common/stream.cxx (Cyg_StdioStream::read()):
+	When reading, ensure we flush all output streams
+
+	* src/stdio/common/stream.cxx (Cyg_StdioStream::flush_output_unlocked):
+	Flush the device as well
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/streambuf.cxx (set_buffer): 
+	* src/stdio/common/stdioinlines.cxx (_setbuf): 
+	* src/clibincl/streambuf.inl: 
+	* src/clibincl/streambuf.hxx: 
+	* src/clibincl/stream.hxx (class Cyg_StdioStream): 
+	* include/pkgconf/libc.h:
+	* include/stdio.inl (setbuf): 
+	Fix dumb typo: BUFSIZE -> BUFSIZ
+	This fixes PR19837
+
+1999-04-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/stdioinlines.cxx (_setbuf): 
+	* include/stdio.inl (setbuf): 
+	Use _IONBF when buf==NULL, and _IOLBF otherwise.
+	Fix for PR 19836
+
+1999-04-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: Tidy display string capitalization.
+
+1999-04-12  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Clarify CDL description of CYGNUM_LIBC_MALLOC_MEMPOOL_SIZE
+
+	* tests/signal/signal2.c: Try harder to generate an exception by
+	accessing a misaligned address
+	Don't handle SIGTRAP any more
+	Part of fix for PRs 19731/19607
+
+1999-04-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19667
+	* src/support/mainthread.cxx: 
+	Changed to use the new Cyg_Thread constructor.
+
+1999-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/signal/signal2.c (main): Use new macro
+	HAL_VSR_SET_TO_ECOS_HANDLER if defined, to wrest control from
+	CygMon, for example, by reinstalling eCos' default VSRs for
+	exceptions that we are provoking.
+
+1999-03-29  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/signal/siginit.cxx: Include stdlib.h for exit()
+	Fix for PR 19720
+
+1999-03-29  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/time/clock.c (test): Disable instruction cache
+	Hopefully fixes PR 19308
+
+1999-03-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/signal/signal2.c: Disabled test 3 for PPC as it cannot
+	trap division by zero.
+
+1999-03-26  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/main.cxx (main): Invoke cyg_user_start() if no kernel
+	Only sensible thing to do in our default main in a non-kernel config
+
+1999-03-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/time/time.c: 
+	Increase MAX_TIMEOUT since the sparclite gets very close to overrunning
+	it even when working.
+	Should return -1 iff CYGSEM_LIBC_TIME_TIME_WORKING isn't defined
+	Cosmetic changes	
+
+1999-03-25  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/time/time.c (test): Take into account setting of
+	CYGSEM_LIBC_TIME_SETTIME_WORKING ie. does cyg_libc_time_settime()
+	work?  If not, check that it returns an error.
+	This was exposed by the random combo in PR#19479.
+
+1999-03-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	Rename CYGSEM_LIBC_RAND_SIMPLEST and CYGSEM_LIBC_RAND_KNUTH1 to
+	CYGIMP_...
+
+	Add another rand implementation CYGIMP_LIBC_RAND_SIMPLE1 which is
+	the default
+
+	Part of fix for PR 19562
+
+	* include/sys/cstartup.h:
+	Tidy and remove unnecessary dependencies
+
+	* src/stdlib/rand.cxx:
+	Rename algorithms from CYGSEM_... to CYGIMP_...
+	Add new "simple1" algorithm
+
+	* tests/ctype/ctype.c:
+	Tidy
+
+	* tests/stdlib/rand3.c:
+	Fix so that 0..RAND_MAX is split evenly over buckets, which it wasn't
+	before
+	Deal with case of RAND_MAX not being divisible by NUM_BUCKETS
+	exactly
+	Increase TEST_LENGTH to 200000 to provide more representative sample
+	Add CYG_TEST_INFO output to help ensure it doesn't time out
+	Tidy
+
+	* tests/stdlib/rand4.c:
+	Only fail if more than _two_ thirds (rather than one third) match.
+	This is because half would match for a perfectly random distribution
+	This is the rest of the fix for PR 19562
+	Cosmetic changes
+
+1999-03-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/support/mainthread.cxx (CYGNUM_LIBC_MAIN_STACK_SIZE): 
+	Use CYGNUM_HAL_STACK_SIZE_TYPICAL for the stack size instead of
+	CYGNUM_HAL_MINIMUM_STACK_SIZE.
+
+1999-03-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/PKGconf.mak: Add -Wno-format when building strftime otherwise
+	it generates warnings for things that we do want to test (null
+	string, and %y format)
+
+1999-03-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h (CYGNUM_LIBC_TIME_DST_DEFAULT_STATE): 
+	Put brackets back round negative number since sdf says the config
+	tool is fixed now (PR 19537)
+
+	Add new CYGSEM_LIBC_RAND_SIMPLEST and CYGSEM_LIBC_RAND_KNUTH1
+	options for different rand() algorithms in a so far failed attempt
+	to fix PR 19562
+
+	* src/stdlib/rand.cxx:
+	Add new optional algorithm from Knuth vol.2
+
+	* tests/stdlib/rand4.c:
+	Some tidies
+	Don't run test when using simplest algorithm
+
+	* tests/signal/signal2.c (main): 
+	Don't try to make an FPE on tx39 - its possible to detect but requires
+	too much HAL work to be sensible
+
+1999-03-18  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/signal/siginit.cxx (cyg_libc_signals_hwexcept_handler): 
+	Use HAL_ENABLE_INTERRUPTS() rather than kernel to enable interrupts
+
+1999-03-18  Mark Galassi  <rosalia@cygnus.com>
+
+	* tests/PKGconf.mak (TESTS): added rand4 compilation.
+
+	* tests/stdlib/rand4.c: added this test for periodicity in the
+	least significant bit of rand().
+
+1999-03-18  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: Remove CYGFUN_LIBC_TIME_POSIX dependency
+	on CYGPKG_LIBC_STDIO
+
+	* src/stdlib/itoa.cxx:
+	New file to convert integers to ascii
+
+	* include/stdlib.h:
+	Add proto for new cyg_libc_itoa() function
+
+	* include/time.inl:
+	Rework __asctime_r() to use memcpy() and cyg_libc_itoa() rather than
+	sprintf()
+
+	* src/PKGconf.mak:
+	Build stdlib/itoa.cxx
+
+	The above changes fix PR 19448
+
+1999-03-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/time.h: Add #define of __time_t_defined to placate newlib
+	if it is used by accident. This is just a temporary workaround though.
+
+1999-03-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/PKGconf.mak: Add compile option to step around ARM compiler bug.
+
+1999-03-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h (CYGNUM_LIBC_TIME_DST_DEFAULT_STATE): 
+	Don't use parentheses for now
+
+	* src/stdio/common/stream.cxx (refill_read_buffer): 
+	Silence bogus compiler warning
+
+1999-03-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/signal/signal2.c (main): Enable SIGSEGV test for
+	i386/Linux.
+
+
+1999-03-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/signal/siginit.cxx (cyg_libc_signals_hwexcept_handler): 
+	Only enable interrupts if they were disabled
+
+	* include/sys/timeutil.h: 
+	* src/time/timeutil.cxx:
+	Add FIX ME line as a reminder that the workaround there can go away
+	in future
+
+	* include/pkgconf/libc.h:
+	Add proper define for CYGSEM_LIBC_EXIT_CALLS_FFLUSH
+	Put brackets round negative CYGNUM_LIBC_TIME_DST_DEFAULT_STATE define
+	Fix run time typo
+	
+	* include/time.inl (__localtime_r): 
+	Include sys/timeutil.h before this to get
+	cyg_libc_time_normalize_structtm()
+
+1999-03-12  Gary Thomas  <gthomas@cygnus.co.uk>	
+
+	* include/sys/timeutil.h: 
+	* src/time/timeutil.cxx: Remove 'const' from char arrays since
+	this fails [silently] on ARM when -fwritable-strings (PR19440)
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/signal/signal2.c (main): Compiler warnings fix was
+	slightly broken.
+
+1999-03-12  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19473
+	* tests/signal/signal2.c (main): 
+        Disabling SIGTRAP handling on i386/Linux is not a good idea.
+1999-03-11  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19473
+	* tests/signal/signal2.c: 
+	Added compiler warnings fix.
+	Added N/A handling for i386/Linux.
+
+1999-03-10  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: Force "haldiag" device to be present.
+	'asctime' and friends need 'stdio' as well.
+
+	* include/time.inl: Fix syntax error on difftime() declaration.
+
+1999-03-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/clibincl/stream.hxx: <cyg/infra/cyg_ass.h> needed for this file.
+
+	* src/stdio/common/vsscanf.cxx (str_read): Fix problem with string 
+	pointer [created by merge with new I/O package].
+
+1999-03-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	Add legal values for CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET
+	and CYGNUM_LIBC_TIME_DST_DEFAULT_OFFSET.
+
+1999-03-05  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/time.inl (cyg_libc_time_year_is_leap): 
+	Fix bug with modulo year 400
+	Fix typo in asctime_r macro
+	Fix gmtime_r, and mktime as a result of testing
+
+	* tests/time/asctime.c, tests/time/ctime.c, tests/time/gmtime.c,
+	  tests/time/gmtime.c, tests/time/localtime.c, tests/time/mktime.c,
+	  tests/time/strftime.c, tests/time/time.c: 
+	New tests
+
+	* tests/PKGconf.mak:
+	Build above new tests
+
+	* include/pkgconf/libc.h:
+	Add reminder FIX ME about extra config option
+
+	* src/time/strftime.cxx:
+	Fix %w and %Y parameters as a result of testing
+
+	* src/time/timeutil.cxx:
+	Fix cyg_libc_time_normalize_structtm() as a result of testing
+	of mktime()
+
+	* tests/time/clock.c:
+	Reformat, remove obsolete bits and tidy
+
+	* include/time.h:
+	Add Cyg_libc_time_dst type and new functions
+	cyg_libc_time_setzoneoffsets(), cyg_libc_time_setdst(),
+	cyg_libc_time_getzoneoffsets(), cyg_libc_time_settime()
+
+	* include/time.inl:
+	Implement the above functions. This allows us to adjust for timezone
+	diffences and set the time.
+	Change localtime() to adjust for STD/DST
+	Change mktime() to adjust for STD/DST
+
+	* include/libc.h:
+	Add new config options CYGSEM_LIBC_TIME_SETTIME_WORKING
+	and component CYGPKG_LIBC_TIME_ZONES containing options
+	CYGNUM_LIBC_TIME_DST_DEFAULT_STATE,
+	CYGNUM_LIBC_TIME_STD_DEFAULT_OFFSET,
+	CYGNUM_LIBC_TIME_DST_DEFAULT_OFFSET
+
+	* src/strftime.cxx:
+	Adjust handling of %Z to _not_ deal with STD/DST
+
+	* src/time/settime.cxx:
+	New file to implement cyg_libc_time_settime()
+
+	* src/PKGconf.mak:
+	Build settime.cxx
+
+	* src/time/timeutil.cxx: 
+	Supply outline versions of cyg_libc_time_setzoneoffsets(),
+	cyg_libc_time_setdst(), and cyg_libc_time_getzoneoffsets()
+	Add variables for STD/DST state
+	Some minor comment changes
+
+	* include/errno.h:
+	Use CYGBLD_ATTRIB_CONST instead of __attribute__((const)) directly
+
+	* include/signal.h:
+	Change format of function comment headers
+
+	* include/signal.inl:
+	Restrict errno.h inclusion to when its actually used
+	Fix a spelling typo
+
+	* include/stdlib.h:
+	Add CYGBLD_ATTRIB_CONST to abs, div, labs, ldiv
+
+	* include/stdlib.inl:
+	Reformat and tidy
+	Include new versions of div and ldiv which are more portable and
+	are cleanly rewritten so aren't covered by the BSD licence, which
+	is now removed
+
+	* src/stdlib/div.cxx, src/stdlib/ldiv.cxx:
+	Non-inline, non-BSD and portable versions of the new versions of div
+	and ldiv from stdlib.inl
+	
+	* include/time.h:
+	Much reformatting, tidying and improving comments
+	Change CLOCKS_PER_SEC from 1000 to 1000000
+	Add new functions asctime_r, ctime_r, gmtime_r, localtime_r, clock,
+	difftime, mktime, time, asctime, ctime, gmtime, localtime, strftime
+	Include new time.inl file
+
+	* include/pkgconf/libc.h:
+	Add new options CYGSEM_LIBC_TIME_CLOCK_WORKING,
+	CYGSEM_LIBC_TIME_TIME_WORKING, CYGFUN_LIBC_TIME_POSIX,
+	CYGNUM_LIBC_TIME_CLOCK_TRACE_LEVEL, CYGIMP_LIBC_TIME_ASCTIME_INLINE,
+	CYGIMP_LIBC_TIME_CTIME_INLINE, CYGIMP_LIBC_TIME_DIFFTIME_INLINE,
+	CYGIMP_LIBC_TIME_GMTIME_INLINE, CYGIMP_LIBC_TIME_LOCALTIME_INLINE,
+	CYGIMP_LIBC_TIME_MKTIME_INLINE, CYGIMP_LIBC_TIME_ASCTIME_R_INLINE,
+	CYGIMP_LIBC_TIME_CTIME_R_INLINE, CYGIMP_LIBC_TIME_GMTIME_R_INLINE,
+	and CYGIMP_LIBC_TIME_LOCALTIME_R_INLINE
+
+	* time/asctime.cxx, time/asctime_r.cxx, time/clock.cxx, time/ctime.cxx,
+	  time/ctime_r.cxx, time/difftime.cxx, time/gmtime.cxx,
+	  time/gmtime_r.cxx, time/localtime.cxx, time/localtime_r.cxx,
+	  time/mktime.cxx, time/strftime.cxx, time/time.cxx, time/timeutil.cxx,
+	  include/time.inl:
+	New files to implement the new time functions. Many of them simply
+	provide the outline definitions, but the real body of the function
+	comes from time.inl
+
+	* src/PKGconf.mak:
+	Build new .cxx files
+
+	* src/clibincl/stdlibsupp.hxx:
+	Remove _div and _ldiv prototypes since they're no longer needed
+
+	* src/clibincl/timesupp.hxx:
+	Delete as its now obsolete
+
+	* src/time/clock.cxx:
+	Use new CYGSEM_LIBC_TIME_CLOCK_WORKING option to control whether it
+	just returns (clock_t)-1 or not.
+	Much reformatting and tidying
+	Change real imlpementation from _clock to __clock
+	Use CYGBLD_ATTRIB_WEAK_ALIAS now
+
+	* tests/stdlib/div.c, tests/stdlib/ldiv.c:
+	Add some extra tests for handling of negative numbers
+	Reformat and tidy a bit, including removing the test for CYGPKG_LIBC
+	since its now always defined if the test is to be compiled
+
+	* tests/time/clock.c:
+	Remove duplication CYG_TEST_INFO line
+	Check if unimplemented using "(clock_t)-1" and not just "-1"
+
+1999-03-04  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/system.cxx: 
+	Make sure system() is a weak alias for __system()
+
+	* include/pkgconf/libc.h: Rework CDL description for 
+	CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE and change its default to
+	"/dev/haldiag"
+
+	* src/stdio/common/stream.cxx:
+	Check that dev is valid when passed to stream constructor
+
+	* src/stdio/common/stdiosupp.cxx:
+	Tidy
+
+	* src/support/mainthread.cxx: Make this depend on
+	CYGSEM_LIBC_STARTUP_MAIN_THREAD rather than just CYGPKG_KERNEL
+
+1999-03-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	Merged in changes from 'ecos-new_devs-19990216-branch'
+	
+	(1999-02-24  Jonathan Larmour  <jlarmour@cygnus.co.uk>)
+
+	* src/stdio/common/stream.cxx:
+	Add "fix me" comments and remove a couple of commented out lines
+
+	* src/stdio/common/vsnprintf.cxx:
+	* src/stdio/common/vsscanf.cxx:
+	Revert to using pointer to string for private data, not just string.
+	This preserves the state across multiple calls	
+
+	(1999-02-24  Gary Thomas  <gthomas@cygnus.co.uk>)
+
+	* src/stdio/common/vsscanf.cxx: 
+	* src/stdio/common/vsnprintf.cxx: 
+	* src/stdio/common/stream.cxx: 
+	* src/stdio/common/stdiosupp.cxx: 
+	* src/stdio/common/fopen.cxx: 
+	* src/clibincl/stream.inl: 
+	* src/clibincl/stream.hxx: 
+	* src/clibincl/stdiosupp.hxx: 
+	* include/pkgconf/libc.h: Changes for new I/O system.
+
+1999-03-03  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/atexit.c: Forgot to config atexit test for
+	CYGFUN_LIBC_ATEXIT option
+
+	* include/pkgconf/libc.h:
+	Require CYGVAR_KERNEL_THREADS_DATA for CYGSEM_LIBC_PER_THREAD_STRTOK
+	This fixes PR 19362
+	Require CYGPKG_KERNEL for thread safe streams
+	Also don't need "requires CYGPKG_KERNEL" for per-thread rand and errno
+	if we already require a finer granularity kernel option
+
+1999-02-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: Fix CYGNUM_LIBC_MAIN_STACK_SIZE by changing
+	CYGPKG_LIBC_STARTUP_MAIN_THREAD -> CYGSEM_LIBC_STARTUP_MAIN_THREAD
+	Fix for PR 19304
+
+1999-02-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/system.cxx: Add to implement trivial system() call
+	* include/stdlib.h: Add system() prototype
+	* src/PKGconf.mak: Build system.cxx
+
+	* tests/ctype/ctype.c, tests/i18n/setlocale.c, tests/setjmp/setjmp.c,
+	  tests/signal/signal1.c, tests/signal/signal2.c,
+	  tests/stdio/sprintf1.c, tests/stdio/sprintf2.c, tests/stdio/sscanf.c,
+	  tests/stdio/stdiooutput.c, tests/stdlib/atexit.c,
+	  tests/stdlib/atoi.c, tests/stdlib/atol.c, tests/stdlib/bsearch.c,
+	  tests/stdlib/div.c, tests/stdlib/getenv.c, tests/stdlib/labs.c,
+	  tests/stdlib/ldiv.c, tests/stdlib/malloc1.c, tests/stdlib/malloc2.c,
+	  tests/stdlib/malloc3.c, tests/stdlib/qsort.c, tests/stdlib/rand1.c,
+	  tests/stdlib/rand2.c, tests/stdlib/rand3.c, tests/stdlib/realloc.c,
+	  tests/stdlib/srand.c, tests/stdlib/strtol.c, tests/stdlib/strtoul.c,
+	  tests/string/memchr.c, tests/string/memcmp1.c,
+	  tests/string/memcmp2.c, tests/string/memcpy1.c,
+	  tests/string/memcpy2.c, tests/string/memmove1.c,
+	  tests/string/memmove2.c, tests/string/memset.c,
+	  tests/string/strcat1.c, tests/string/strcat2.c,
+	  tests/string/strchr.c, tests/string/strcmp1.c,
+	  tests/string/strcmp2.c, tests/string/strcoll1.c,
+	  tests/string/strcpy1.c, tests/string/strcpy2.c,
+	  tests/string/strcspn.c, tests/string/strlen.c,
+	  tests/string/strncat1.c, tests/string/strncat2.c,
+	  tests/string/strncpy1.c, tests/string/strncpy2.c,
+	  tests/string/strpbrk.c, tests/string/strrchr.c,
+	  tests/string/strspn.c, tests/string/strstr.c, tests/string/strtok.c,
+	  tests/string/strxfrm1.c, tests/string/strxfrm2.c, tests/time/clock.c:
+	Use CYG_TEST_NA() macro for non-applicable test configurations
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/signal.h:
+	* include/signal.inl:
+	* src/signal/raise.cxx:
+	* src/signal/siginit.cxx:
+	* src/signal/signal.cxx:
+	* tests/signal/signal1.c
+	* tests/signal/signal2.c:
+	New files to implement ISO standard signals
+
+	* src/PKGconf.mak (TESTS): 
+	* tests/PKGconf.mak (TESTS): 
+	Update to build new files above
+	
+	* include/stdlib.h: 
+	* src/clibincl/stdlibsupp.hxx:
+	Comment and QA changes (including giving better names to some types)
+
+	* include/libc.h:
+	Add new configuration options for signals
+	Add new CYGSEM_LIBC_STARTUP_MAIN_THREAD option
+	Add a note to CYGNUM_LIBC_MAIN_STACK_SIZE option that it may be
+	overriden by HAL
+	Add new CYGFUN_LIBC_ATEXIT option and move ...ATEXIT_HANDLERS under
+	it
+	Add new CYGSEM_LIBC_EXIT_CALLS_FFLUSH option
+	Require CYGSEM_LIBC_STARTUP_MAIN_THREAD for "Invoke default static
+	constructors" option
+
+	* src/stdlib/atexit.cxx:
+	Support above CYGFUN_LIBC_ATEXIT and QA changes
+
+	* src/stdlib/exit.cxx:
+	Support for above new libc.h options, and some QA changes
+
+	* src/support/cstartup.cxx:
+	Add support for new CYGSEM_LIBC_STARTUP_MAIN_THREAD option
+
+	* src/support/mainthread.cxx:
+	Override main stack size if the HAL has a minimum
+
+	* src/string/strncpy.cxx:
+	Use improved algorithm for aligned copies - imported from newlib
+	QA changes
+
+	* src/stdlib/abort.cxx:
+	Support raise(SIGABRT), and some QA
+	
+	* include/errno.h: 
+	Add const attribute
+
+	* tests/stdlib/abs.c:
+	QA improvements
+
+1999-02-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/support/cstartup.cxx: Only define cyg_libc_main_thread when
+	the kernel is around.
+
+1999-02-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/time/clock.c: Joined the two test/NOP checks into
+	one. 
+	Increased tolerance in attempt to fix PRs 18737,18787,18846.
+	Fixed typo.
+
+1999-01-28  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strtok.cxx: 
+	* src/stdlib/rand.cxx: 
+	Include <pkgconf/kernel.h> if we use kernel header files
+
+1999-01-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sscanf.c (test): 
+	CYGSEM_LIBC_STDIO_PRINTF_FLOATING_POINT should be
+	CYGSEM_LIBC_STDIO_SCANF_FLOATING_POINT
+	Fix for PR 18786
+
+	* src/string/strtok.cxx: 
+	* src/stdio/common/stdiofiles.cxx:
+	* src/errno/errno.cxx: 
+	* src/stdlib/rand.cxx: 
+	Give mutex protection objects a libc constructor priority
+
+	* src/support/invokemain.cxx:
+	Add prototype for cyg_hal_invoke_constructors()
+
+	* src/support/mainthread.cxx:
+	Give cyg_libc_dummy_constructor_obj a libc constructor priority,
+	and make its class have a public constructor
+
+	* src/stdio/common/stderr.cxx: 
+	* src/stdio/common/stdout.cxx: 
+	* src/stdio/common/stdin.cxx: 
+	Give cyg_libc_stdio_stdin/out/err static objects a libc constructor
+	priority
+	
+	* src/clibincl/streambuf.hxx (class Cyg_StdioStreamBuffer): 
+	* src/clibincl/stream.hxx (class Cyg_StdioStream): 
+	Remove private copy constructor. Needed to make prioritised
+	static constructors work. Fix for PR 18898
+
+1999-01-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/errno/errno.cxx: 
+	Include pkgconf/kernel.h otherwise it fails with per-thread errno
+	enabled
+
+	* include/pkgconf/libc.h: 
+	Enable per-thread errno by default since that is what POSIX would
+	want
+
+	* tests/time/clock.c (test): 
+	Placate compiler by initializing clock_first/second/third anyway,
+	even though they won't be in practice. This is only a test program
+	so adding an extra instruction doesn't matter.
+
+	* src/i18n/locale.cxx (_setlocale): 
+	Placate compiler, since it is dumb, by nesting, not serializing, if's
+	This is an idempotent change, but screws up the formatting :-(.
+
+	* src/string/strpbrk.cxx (_strpbrk): 
+	Change while loop to do loop to placate compiler. It'll even save an
+	instruction too (wow!)
+	
+1999-01-22  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Add closing curly brace to CYGPKG_LIBC_STRING_STRTOK definition
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/errno.h: 
+	Tidy up and add to header description 
+	Change cyg_get_errno_p() to cyg_libc_get_errno_p()
+	Remove ifdef CYGPKG_LIBC
+
+	* include/sys/file_if.h:
+	Remove - move contents to stdio.h
+
+	* include/stdio.h:
+	Tidy up header description
+	Move FILE typedef here from sys/file_if.h
+	SEEK_SET, SEEK_CUR, SEEK_END defined to 0, 1, 2 respectively
+	for backwards compatibility with old UNIX
+	Change definitions of stdin/out/err to be addresses of FILE
+	globals - even though they're actually Cyg_StdioStream it'll work
+
+	* include/pkgconf/libc.h:
+	Make CYGPRI_LIBC_WEAK et al macros depend on new ones in infra
+	Reorganise trace options under the individual components they are
+	associated with.
+	Reorganise thread-safety options under the individual components
+	they are associated with.
+	Add new CYGSEM_LIBC_INVOKE_DEFAULT_STATIC_CONSTRUCTORS option
+	Misc. reformatting
+	Remove dependency on pkgconf/kernel.h - Configuration Tool will
+	generate check macros anyway.
+	Remove CYGPKG_LIBC_TRACE, CYGFUN_LIBC_strtok, CYGPKG_LIBC_RAND
+	options
+	Tidy up description header
+
+	* src/clibincl/clibdata.hxx:
+	* src/clibincl/clibdata.inl:
+	* src/support/clibdata.cxx:
+	Remove and instead rely on each component to initialise its own data
+
+	* src/clibincl/stdiofiles.hxx, src/clibincl/stdiofiles.inl:
+	New files to contain global file list and lock (if applicable).
+	Implemented as class with member access functions
+
+	* src/errno/errno.cxx:
+	Reorganise with self-contained per-thread data, if applicable
+	Remove ifdef CYGPKG_LIBC
+	Tidy up description header
+	Rename cyg_get_errno_p() to cyg_libc_get_errno_p()
+
+	* src/stdio/common/fclose.cxx:
+	* src/stdio/common/fflush.cxx:
+	* src/stdio/common/fopen.cxx:
+	* src/stdio/common/freopen.cxx:
+	Remove ifdef CYGPKG_LIBC
+	Use new global file access method from stdiofiles.hxx
+	Tidy up description header
+	Use new CYGBLD_ATTRIB_WEAK_ALIAS
+	Access errno "normally" rather than clibdata way
+
+	* src/stdio/common/stdin.cxx:
+	* src/stdio/common/stdout.cxx
+	* src/stdio/common/stderr.cxx:
+	New files. Implement Cyg_StdioStream objects for each stream. In
+	separate self-contained files so using one doesn't bring in the
+	others
+
+	* src/stdio/common/stdiofiles.cxx:
+	New file. Implements global files array and lock
+
+	* src/stdlib/_exit.cxx:
+	Tidy up description header
+	Remove ifdef CYGPKG_LIBC
+	Use infra CYGBLD* macros
+
+	* src/stdlib/malloc.cxx:
+	Tidy up description header
+	Remove ifdef CYGPKG_LIBC
+	Add pkgconf/kernel.h now that pkgconf/libc.h doesn't have it
+	Use infra CYGBLD* macros
+	Make pool visible externally with weak attribute and new name
+	cyg_libc_malloc_memorypool
+
+	* src/stdlib/rand.cxx:
+	* src/stdlib/strtok.cxx:
+	Reorganise with self-contained per-thread data, if applicable
+	Remove ifdef CYGPKG_LIBC
+	Tidy up description header
+	Use infra CYGBLD* macros
+
+	* src/support/cstartup.cxx:
+	Split into smaller files to make selective linking work better,
+	fix i386 port problem and make GDB happy
+
+	* src/support/environ.cxx:
+	* src/support/invokemain.cxx:
+	* src/support/main.cxx:
+	* src/support/mainthread.cxx:
+	New files from bits of the old cstartup.cxx
+	Add support for CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG
+
+	* src/PKGconf.mak:
+	Update to reflect file additions/deletion
+
+	* tests/stdlib/rand1.c:
+	* tests/stdlib/rand2.c:
+	* tests/stdlib/rand3.c:
+	* tests/stdlib/srand.c:
+	Make conform to coding standards
+	Remove ifdef CYGPKG_LIBC_RAND
+	Tidy up description header
+
+	* tests/string/strtok.c:
+	Make conform to coding standards
+	Remove ifdef CYGFUN_LIBC_strtok
+	Tidy up description header
+
+1999-01-15  Mark Galassi  <rosalia@cygnus.com>
+
+	* tests/stdlib/getenv.c (main): added tests for the case in which
+	the user does not supply environ and in which the user supplies a
+	NULL environ.
+
+1999-01-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/support/cstartup.cxx: Added workaround for weak aliasing
+	problem in i386 gcc.
+
+
+1999-01-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/libc.h (CYGNUM_LIBC_MAIN_STACK_SIZE): 
+	(CYGNUM_LIBC_MALLOC_MEMPOOL_SIZE): Change defaults to be
+	more reasonable on small systems.
+
+1999-01-04  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/clibdata.cxx: 
+	Minor bug with environ not being initialised correctly by
+	default
+
+1998-12-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/clibincl/stream.inl (Cyg_StdioStream):
+	check_this() member functions should now be const
+
+1998-12-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/memchr.cxx (_memchr): 
+	treat search value parameter to memchr as an unsigned byte,
+	not a signed int - copied fix from newlib PR 18471
+
+1998-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/realloc.c: 
+	* tests/stdlib/malloc3.c: 
+	* tests/stdlib/malloc2.c: 
+	Warning cleanup
+
+1998-12-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/malloc2.c, tests/stdlib/malloc3.c,
+	  tests/stdlib/realloc.c: 
+	Only run these tests when we have a coalescing memory allocator
+
+1998-12-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/stream.cxx:
+	Only check buffer init success if buffering
+
+	* src/stdio/common/streambuf.cxx (set_buffer): 
+	Check for diff of requested size against buffer_size, not
+	get_buffer_size(), since this may return -1, which won't be
+	equal to size, and will cause malloc to be called
+
+1998-12-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/stdlib/getenv.c (main): Don't declare variables when they
+	are not used.
+
+Thu Nov 26 17:59:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/string/strncpy1.c: 
+	Fix off-by-one error since it called my_strcmp() and not
+	my_strncmp(), which meant in included the trailing NULL when it
+	shouldn't have.
+
+1998-11-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/stdlib/qsort.cxx (_qsort): 
+	* src/stdlib/rand.cxx (_srand): 
+	Changed CYG_REPORT_FUNCNAMETYPE to CYG_REPORT_FUNCNAME in void
+	functions.
+
+Mon Oct 26 18:49:00 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/cstartup.cxx (cyg_libc_dummy_main): 
+	Silence compiler warning with cast of char * to CYG_ADDRWORD
+
+Wed Oct 28 17:31:21 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/time/clock.cxx (_clock): 
+	Reorder scaling expression as it was both incorrect and risked
+	overflow.
+	Fix for PR 18076
+
+Mon Oct 19 14:40:06 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/stdio.h (EOF): 
+	Change from -64 to (-1), to allow broken code to work :-/
+	Also change other negative defines to be within parentheses
+
+1998-10-19  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/libc.h: updated the doc URL
+
+Thu Oct 15 21:33:44 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.hxx:
+	Only include kernel thread headers when we're in thread-safe mode
+
+	* src/time/clock.cxx:
+	Only include kernel clock headers if there's a kernel with the
+	right functionality available
+
+	* tests/time/clock.c:
+	Remove unnecessary inclusion of <pkgconf/kernel.h>
+
+	Above changes are required for PR 17229
+
+Wed Oct 14 16:38:55 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.hxx, src/clibincl/clibdata.inl: 
+	Conditionalise inclusion of clibincl/stdiosupp.hxx and
+	clibincl/stream.hxx. Tidying up PR 17502
+
+Wed Oct 14 14:08:56 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	Rename CYGPKG_LIBC_STRING_OPTIMISATIONS to
+	CYGPKG_LIBC_STRING_OPTIMIZATIONS to make it truely merkin.
+
+Tue Oct 13 19:34:41 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h (CYGDAT_LIBC_ARGUMENTS): 
+	Add a default argv[0] of "" as many programs assume argc>0
+	The standard allows argv[0] to be "" if the program name
+	is not available
+
+1998-09-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/clibincl/stdiosupp.hxx: 
+	PR 17502: this header file now does nothing if the stdio option
+	is disabled completely. This is the same behaviour is
+	clibincl/stream.hxx, although arguably the #ifdef protection
+	should happen wherever the header file is #include'd rather than
+	in the header file itself.
+	
+	* src/clibincl/clibdata.hxx:
+	PR 17502: this header file still #include's internal stdio-related
+	header files and references the FILE structure, even if stdio is
+	disabled. There were some #ifdef's for CYGPKG_LIBC_STDIO already.
+	One more has been added for _fopen() and _fclose().
+
+1998-09-25  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/clibincl/streambuf.inl (Cyg_StdioStreamBuffer):
+	PR 17487: Reorder the calls to initialize member fields, to
+	eliminate a compiler warning.
+
+Fri Sep 25 19:04:29 1998  Jonathan Larmour  <jlarmour@peshwari.cygnus.co.uk>
+
+	* src/errno/errno.cxx, src/stdlib/bsearch.cxx,
+	  src/stdlib/qsort.cxx, src/stdlib/rand.cxx, src/string/strtok.cxx,
+	  src/time/clock.cxx:
+	Only define tracing variable and tracing level macro when
+	the relevant tracing level config options are set. Otherwise
+	keep the tracing level fixed at 0
+	Fix for PR 17476
+
+	* include/pkgconf/libc.h: 
+	Define trace levels only if parent CYGPKG_LIBC_TRACE is defined
+	for consistency with Configuration Tool
+	
+
+Fri Sep 25 17:24:45 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/stdioinlines.cxx: 
+	Make definition of vscanf() dependent on CYGFUN_LIBC_STDIO_ungetc
+	otherwise _vfscanf() won't be compiled. This therefore would
+	cause a link fail iff selective linking is not enabled.
+	Fix for PR 17455
+
+Fri Sep 25 17:23:17 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/rand.cxx: 
+	Make compilation dependent on CYGPKG_LIBC_RAND
+	Fix for PR 17473
+
+	* tests/stdlib/srand.c: 
+	Make definition of dummy test pass conditional on CYGPKG_LIBC_RAND
+	not being defined, as well as CYGPKG_LIBC
+	Caused compilation failure when testing PR 17473 fix
+
+Mon Sep 21 17:11:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sscanf.c: 
+	Make sscanf test conditional on CYGFUN_LIBC_STDIO_ungetc since
+	_vfscanf() only gets compiled if this is defined
+	Fix for PR 17346
+
+1998-09-20  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/libc.h: updated CDL doc strings.
+
+Fri Sep 18 22:18:47 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.inl (get_errno_p): 
+	Rather than this function only being available in thread-safe mode,
+	instead make what it returns be either the per-thread errno, or
+	global errno depending on the configuration.
+	Include <errno.h> (conditionally) to support this change
+
+Wed Sep 16 11:20:31 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Remove "fix me" comment which I forgot to remove before
+
+Tue Sep 15 19:27:57 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Updated descriptions and a few other minor things after review.
+	Notably though, the NDEBUG config option has been removed
+
+1998-09-15  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	PR 17201: removed dependency on CYGPKG_KERNEL in the option
+	CYGNUM_LIBC_MAIN_STACK_SIZE, since the actual dependencies cannot
+	be expressed sensibly in the current system.
+
+1998-09-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	Sorting out dependencies for error package.
+
+1998-09-10  Mark Galassi  <rosalia@cygnus.com>
+
+	* include/pkgconf/libc.h: started adding doc fields to the
+	cdl_package data, as a pilot for now.
+
+Wed Sep  9 17:41:23 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Add option CYGIMP_LIBC_MALLOC_CXX_DELETE_CALLS_FREE to explicitly
+ 	control whether the empty delete functions (currently) in
+ 	kernel/.../common/delete.cxx are enabled; controls code bloat, see
+ 	the comments in delete.cxx.
+
+Fri Sep  4 16:43:38 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/stdiooutput.c: 
+	Add a default CYG_TEST_PASS() to make sure the test infra doesn't
+	complain.
+	Also remove the unused string functionsa
+
+Fri Sep  4 15:43:48 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/stdlib/exit.cxx (__libc_exit): 
+	* src/stdlib/_exit.cxx (__libc__exit): 
+	* src/stdlib/malloc.cxx (_free): 
+	* src/stdlib/abort.cxx (abort): 
+	* src/support/cstartup.cxx (invoke_main): 
+	Tracing system asserted cos it was being called incorrectly; these
+	are void functions so you shouldn't give a type to the function
+	reporting call.
+
+Fri Sep  4 15:03:10 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Fix CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE description to refer to
+	the table.cxx file, not table.h
+
+Fri Sep  4 14:38:52 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Add description for CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE since
+	Proven won't be making any changes to the device driver
+	implementation after all.
+	Fix for PR 17148
+
+	* src/clibincl/stream.inl (set_position): 
+	Remove "fix me" line. It is obvious that this will have to change
+	with a filesystem interface
+	Fix for PR 17147
+	
+	* src/stdio/common/freopen.cxx: 
+	Remove "fix me" - I know about this issue
+	Fix for PR 17145
+
+	* src/stdio/common/stream.cxx (read): 
+	Remove "fix me" and change to use memcpy
+	Fix for PR 17144
+
+Fri Sep  4 14:36:47 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/stdiooutput.c: 
+	Actually add it this time!
+
+Fri Sep  4 13:48:13 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/stdiooutput.c: 
+	Add new tests for misc stdio output functions
+
+	* tests/PKGconf.mak:
+	Build stdiooutput.c test
+
+Fri Sep  4 12:52:10 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/stream.inl (write_byte): 
+	Remove bogus assert
+
+	* tests/stdlib/getenv.c (main): 
+	Check whether str is NULL before doing a strcmp()
+
+	* tests/stdio/sprintf2.c (main): 
+	Reformat to 76 columns
+
+Fri Sep  4 02:10:54 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/stream.hxx, src/stdio/common/stream.cxx:
+	Add new peek_byte method to Cyg_StdioStream
+
+	* src/stdio/input/vfscanf.cxx (_vfscanf): 
+	Fix up buffer access to work with new peek_byte method above
+	Fix for PR 16954
+
+Thu Sep  3 19:40:11 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/rand1.c, tests/stdlib/rand2.c,
+	  tests/stdlib/rand3.c: 
+	Add extra check for CYGPKG_LIBC_RAND to decide whether the test
+	is applicable or not
+
+	* tests/stdlib/rand2.c (test):
+	Use CYGNUM_LIBC_RAND_SEED for default seed, not 1
+
+	* tests/string/strtok.c:
+	Add extra check for CYGFUN_LIBC_strtok to decide whether the
+	test is applicable or not
+
+Wed Sep  2 19:11:40 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/input/fread.cxx, src/stdio/output/fwrite.cxx:
+	Add fread() and fwrite() functions
+
+	* src/PKGconf.mak:
+	Build fread.cxx and fwrite.cxx from above
+
+	* src/stdio/common/stream.cxx: 
+	Reformat to 76 columns
+	In write(), move initialisation of *bytes_written to start
+	In read(), move initialisation of *bytes_read to start
+
+	* include/stdio.h: 
+	Reformat to 76 columns
+
+	Replace all references to the ANSI
+	standard to instead by the ISO C standard
+
+	Add commented argument names for "documentation"
+
+	Add fread() and fwrite() prototypes
+
+	* src/clibincl/stdiosupp.hxx:
+	Copy the above changes from stdio.h, and add _fread() and _fwrite()
+	prototypes
+
+	* src/stdio/output/fputs.cxx, src/stdio/input/fgets.cxx: 
+	Reformat to 76 columns
+
+Wed Sep  2 15:41:15 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/input/vfscanf.cxx: 
+	Reformat to 76 columns
+
+Wed Sep  2 14:46:18 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/fflush.cxx:
+	Use trylock_me() instead of lock_me(), and loop to prevent
+	deadlocks
+ 	
+	* src/clibincl/stream.hxx, src/clibincl/stream.inl:
+	Add trylock_me() method
+
+	* src/clibincl/stream.hxx, src/clibincl/stream.inl,
+	  src/stdio/common/fflush.cxx:
+	Reformat to 76 columns
+
+Wed Sep  2 12:24:27 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Change 0x7fff to 0x7fffffff. Oops!
+	give main stack size option a legal_values field
+	Undefine tracing by default
+	Add some more description in the header
+
+Tue Sep  1 20:02:07 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/i18n/setlocale.c (cyg_package_start): 
+	Fix typo - extra "x" for no reason at all! :-)
+
+Tue Sep  1 19:44:58 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/i18n/locale.cxx:
+	Fix bug in find_locale_data() that miscalculated size of
+	all_locales
+	
+	Make find_locale_data() match the locale "" and add some
+	other things in _setlocale() to ensure that "C" gets returned
+	when the default locale "" is passed.
+
+	Only check the locale pointer when it is non-NULL
+
+	* tests/i18n/setlocale.c:
+	New tests for setlocale()
+
+	* tests/PKGconf.mak:
+	Update to build setlocale.c test
+
+	* src/support/cstartup.cxx: 
+	Don't actually call system default main() "main" otherwise GDB
+	gets confused and thinks its the entry point. Instead make a weak
+	alias and call the real function something different.
+
+Tue Sep  1 18:31:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/i18n/locale.cxx (_setlocale): 
+	Fix tracing macro name and remove "str maybe used before
+	initialised" warning
+
+	* tests/stdlib/qsort.c: 
+	Correct file description header
+
+Tue Sep  1 17:04:32 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/locale.h, src/clibincl/i18nsupp.hxx, src/i18n/locale.cxx:
+	New files to add support for locales as defined by the ISO C
+	standard. i.e. setlocale() and localeconv() functions and some
+	other bits
+
+	* include/pkgconf/libc.h:
+	Add CYGNUM_LIBC_MAX_LOCALE_NAME_SIZE config option for locale
+	support
+
+	* src/PKGconf.mak:
+	build locale.cxx
+	
+	* include/errno.h, src/clibincl/ctypesupp.hxx: 
+	Tidy up to 76 columns
+
+Tue Sep  1 00:24:22 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	Move environment-related options from stdlib into new
+	CYGPKG_LIBC_STARTUP component. Also add options for main()'s
+	arguments (CYGPKG_LIBC_ARGUMENTS), main()'s default stack size
+	(CYGNUM_LIBC_MAIN_STACK_SIZE), number of atexit handlers
+	(CYGNUM_LIBC_ATEXIT_HANDLERS), and whether _exit() stops the
+	system (CYGSEM_LIBC_EXIT_STOPS_SYSTEM).
+
+	* src/clibincl/stdlibsupp.hxx:
+	Fix a few comment bugs, and add new
+	cyg_libc_invoke_atexit_handlers() function prototype
+
+	* src/stdlib/_exit.cxx, src/stdlib/atexit.cxx, src/stdlib/exit.cxx:
+	Implement exit(), atexit() and _exit() correctly now. Also
+	includes cyg_libc_invoke_atexit_handlers() in atexit.cxx. Now
+	we get the correct behaviour of atexit(), and exit() invokes the
+	atexit handlers and fflushs all the stdio streams. Add plenty of
+	tracing of asserts too.
+
+	* src/support/cstartup.cxx: 
+	Make main_thread object an exported global. Allow user-settable
+	arguments. Add MUCH more tracing and asserts. Improve comments.
+	Tidy up to 76 columns
+
+	* tests/stdlib/atexit.c:
+	Add simple test for atexit() and it calling registered functions
+
+	* tests/PKGconf.mak:
+	Build atexit.c test
+
+Mon Aug 31 18:54:48 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/getenv.cxx, tests/stdlib/getenv.c:
+	Add support for getenv(), and some tests to ensure it works
+
+	* src/PKGconf.mak, tests/PKGconf.mak:
+	Update to include getenv.cxx and getenv.c test
+
+	* src/clibincl/clibdata.hxx:
+	remove prototype for environ - we expect files needing it to
+	define it themselves
+
+	* src/support/clibdata.cxx:
+	Tidy up to 76 columns and add definition of char **environ, but
+	with a configurable initialiser (see libc.h below)
+
+	* tests/stdlib/abs.c (main): 
+	Tidy up to 76 columns
+
+	* src/stdlib/malloc.cxx: 
+	Tidy up to 76 columns and remove warning for undefined _memcpy()
+	by changing to memcpy(), and casting away signedness
+
+	* include/pkgconf/libc.h:
+	Add CYGPKG_LIBC_ENVIRONMENT and CYGDAT_LIBC_DEFAULT_ENVIRONMENT
+	configuration options
+
+	* include/pkgconf/libc.h, src/clibincl/clibdata.hxx: 
+	Tidy up to 76 columns
+
+	* include/stdlib.h: 
+	Add getenv() prototype and tidy up to 76 columns
+
+	* src/clibincl/stdlibsupp.hxx: 
+	Add _getenv() prototype
+	
+Mon Aug 31 13:37:08 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/malloc.cxx:
+	Add realloc()
+
+	* tests/stdlib/realloc.c:
+	Add this file to test new realloc() functionality
+
+	* tests/PKGconf.mak:
+	Build realloc test
+
+	* tests/stdlib/malloc3.c (main), tests/stdlib/malloc2.c (main),
+	  tests/stdlib/malloc1.c (main): 
+	Conditionalise local vars to prevent warnings
+
+	* tests/stdlib/malloc3.c (fill_with_data): 
+	Move '{' into "verb" line
+
+	* include/pkgconf/libc.h: 
+	Require infra tracing support to allow tracing
+
+	* include/stdlib.h:
+	Add realloc()
+
+	* src/clibincl/stdlibsupp.hxx: 
+	Update the commented argument names from stdlib.h, including realloc()
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	* src/clibincl/clibdata.hxx, src/time/clock.cxx:
+	
+	Updated for new kernel configuration option symbol names
+
+Fri Aug 28 19:18:25 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	Changed the entry below to sat "tx39" instead of "mn10300".
+	It's been a long week.
+
+Fri Aug 28 18:59:20 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/support/cstartup.cxx: Add a weakly named main to allow the
+ 	default configuration to link on the tx39 which has no
+ 	scalextric linking yet.  The static Cyg_Thread main_thread object
+ 	below continues to exist, though unreferenced, so all its
+ 	descendants must exist too.
+
+Fri Aug 28 08:54:29 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/stdlib.h: 
+	Add commented argument names Add exit(), and atexit(). And move
+ 	these along with abort() and _exit() to a new section.
+
+	* src/stdlib/atexit.cxx, src/stdlib/exit.cxx:
+	Add trivial versions of atexit() and exit()
+
+	* include/pkgconf/libc.h:
+	Add CYGNUM_LIBC_MAIN_STACK_SIZE config option
+
+	* include/sys/cstartup.h, src/support/cstartup.cxx, src/PKGconf.mak:
+	New files to provide a new function cyg_iso_c_support(), which
+	invokes main "correctly".
+
+	* tests/ctype/ctype.c, tests/setjmp/setjmp.c, tests/stdio/sprintf1.c,
+	  tests/stdio/sprintf2.c, tests/stdio/sscanf.c, tests/stdlib/abs.c,
+	  tests/stdlib/atoi.c, tests/stdlib/atol.c, tests/stdlib/bsearch.c,
+	  tests/stdlib/div.c, tests/stdlib/labs.c, tests/stdlib/ldiv.c,
+	  tests/stdlib/malloc1.c, tests/stdlib/malloc2.c,
+	  tests/stdlib/malloc3.c, tests/stdlib/qsort.c, tests/stdlib/rand1.c,
+	  tests/stdlib/rand2.c, tests/stdlib/rand3.c, tests/stdlib/srand.c,
+	  tests/stdlib/strtol.c, tests/stdlib/strtoul.c,
+	  tests/string/memchr.c, tests/string/memcmp1.c,
+	  tests/string/memcmp2.c, tests/string/memcpy1.c,
+	  tests/string/memcpy2.c, tests/string/memmove1.c,
+	  tests/string/memmove2.c, tests/string/memset.c,
+	  tests/string/strcat1.c, tests/string/strcat2.c,
+	  tests/string/strchr.c, tests/string/strcmp1.c,
+	  tests/string/strcmp2.c, tests/string/strcoll1.c,
+	  tests/string/strcoll2.c, tests/string/strcpy1.c,
+	  tests/string/strcpy2.c, tests/string/strcspn.c,
+	  tests/string/strlen.c, tests/string/strncat1.c,
+	  tests/string/strncat2.c, tests/string/strncpy1.c,
+	  tests/string/strncpy2.c, tests/string/strpbrk.c,
+	  tests/string/strrchr.c, tests/string/strspn.c,
+	  tests/string/strstr.c, tests/string/strtok.c,
+	  tests/string/strxfrm1.c, tests/string/strxfrm2.c,
+	  tests/time/clock.c:
+
+	Modify all tests to use new startup mechanism, and cyg_iso_c_start()
+
+Fri Aug 28 00:29:38 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/stream.cxx: 
+	Add #ifdef CYGSEM_LIBC_STDIO_WANT_BUFFERED_IO around all accesses to
+	flags.last_buffer_op_was_read. Fix for PR 16997
+
+Thu Aug 27 01:12:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/sys/file_if.h: 
+	Fix comments and remove cyg_get_file_star()
+
+Wed Aug 26 20:24:32 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Remove #define CYGPKG_LIBC is that is meant to live in
+	<pkgconf/system.h> after all
+
+Wed Aug 26 19:39:23 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	More fixes to CDL stuff to make it work better, and look better on
+	the screen
+
+Tue Aug 25 20:21:41 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Make some fixes after running the ConfigTool
+
+Tue Aug 25 16:46:28 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h (CYGNUM_LIBC_STDIO_BUFSIZE): 
+	Fix typo of CYGNUM_LIBC_STDIO_BUFSIZE
+
+Tue Aug 25 15:10:57 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Tidy up CDL stuff a bit more, prior to checking it actually works.
+
+Tue Aug 25 11:38:52 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/malloc2.c (main): 
+	Prevent calls to CYG_TEST_STILL_ALIVE for now
+
+Tue Aug 25 05:39:28 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Change cosmetic paragraph alignment.
+	
+Tue Aug 25 03:11:34 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/clibdata.cxx: 
+	Make stderr initialise with buffer size 0.
+	For PR 16955
+
+Mon Aug 24 17:38:46 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	First pass at CDL-ifying the C library configuration. Currently
+	deliberately disabled as there a few outstanding issues.
+
+Mon Aug 24 16:14:22 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/output/vfnprintf.cxx (_vfnprintf):
+	clear up warning for unused argument
+
+	* tests/stdlib/malloc2.c (NUM_ITERATIONS): 
+	Lower to 100 from 50000 so it won't take too long under the simulator
+
+Thu Aug 20 17:48:43 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/malloc.cxx:
+	Remove now unnecessary inclusion of kernel/ktypes.h
+
+Wed Aug 19 19:19:14 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sprintf1.c, tests/stdio/sprintf2.c,
+	  tests/stdio/sscanf.c, tests/stdlib/atoi.c, tests/stdlib/atol.c,
+	  tests/stdlib/rand1.c, tests/stdlib/rand2.c, tests/stdlib/rand3.c,
+	  tests/stdlib/srand.c, tests/stdlib/strtol.c, 
+	  tests/stdlib/strtoul.c, tests/string/strtok.c,
+	  tests/time/clock.c:
+	Add parameters to "main()" to silence warnings
+
+Wed Aug 19 18:52:59 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/stream.cxx (refill_read_buffer): 
+	Put conditional error check into same #ifdef and if as what was being
+	checked in the first place!
+
+Wed Aug 19 18:49:19 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/stream.inl: 
+	Reorder Cyg_StdioStream::check_this() to be first to silence
+	warnings
+
+Tue Aug 18 16:10:03 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* ecc/language/c/libc/current/src/clibincl/clibdata.hxx,
+	  ecc/language/c/libc/current/src/errno/errno.cxx,
+	  ecc/language/c/libc/current/src/stdio/common/fopen.cxx,
+	  ecc/language/c/libc/current/src/stdlib/rand.cxx,
+	  ecc/language/c/libc/current/src/string/strtok.cxx:
+	Rename CYGIMP_LIBC_INTERNAL_DATA_PREAMBLE,
+	CYGIMP_LIBC_INTERNAL_DATA_ALLOC_CHECK_PREAMBLE,
+	CYGVAR_LIBC_INTERNAL_DATA, and
+	CYGIMP_LIBC_INTERNAL_DATA_CHECK to all have CYGPRI_ prefix instead
+	as recommended by the config name rules
+
+
+Tue Aug 18 14:31:19 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/setvbuf.cxx (_setvbuf): 
+	Rename variable names in assert line, otherwise doesn't build
+	with asserts on!
+
+Sun Aug 16 18:15:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/input/vfscanf.cxx (_vfscanf): 
+	Fix some bugs, although there are some left to fix still. Unrelated
+	to the rest of the checkins, so I will check the partial fix in now.
+
+	* src/clibincl/stream.hxx, src/clibincl/stream.inl,
+	  src/stdio/common/stream.cxx:
+	Add parameters to constructor to allow more things to be done at
+	construction time.
+
+	Now we have "new", remove separate "construct" method
+
+	Add more documentation on constructor
+
+	As requested by code review, where possible, move boolean flags
+	into separate packed bitfield structure for space efficiency
+
+	Make readbuf_char be usable all the time rather than when configured
+	not to be buffering, as it is also needed for non-buffered mode i.e.
+	_IONBF
+
+	* src/stdio/common/fopen.cxx:
+	Change to use new method of construction from above, using new
+
+	Use thread-specific data, rather than global. And so change errnos
+	to access errno entry specifically
+
+	Make process_mode() check for append mode too
+
+	Reformat for coding standards to have { in same line as "verb"
+
+	* src/stdio/common/setvbuf.cxx:
+
+	Change to cope with different way of dealing with buffering policy
+	flags etc. in Cyg_StdioStream
+
+	* src/stdio/common/vsnprintf.cxx, src/stdio/common/vsscanf.cxx,
+	  src/support/clibdata.cxx:
+	Change construction of streams to use new parameters added above,
+	and change to use _IONBF mode for string stdio functions,
+	otherwise its a waste of memory. And use _IONBF for stderr as the
+	ISO standard tells us to!
+
+	Reformat for coding standards to have { in same line as "verb"
+
+	* src/clibincl/streambuf.hxx, src/clibincl/streambuf.inl:
+	Change constructor so that it can be set with default size and
+	dynamic buffer (if applicable)
+
+	Fix minor bug in destructor - should only call free when allocated
+	dynamically
+
+	Change get_buffer_size to return -1 if the buffer was not allowed
+	to be set up
+
+	* src/stdio/common/streambuf.cxx:
+	Remove unnecessary stdio.h include and add extra comment to whether
+	to free bit in set_buffer()
+
+	* src/stdio/common/freopen.cxx:
+	Change @@@ to standard fix me string
+
+	* src/stdio/output/fputc.cxx:
+	Remove unnecessary "written" variable
+
+Thu Aug 13 15:37:28 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/_exit.cxx: 
+	Included use of "fix me" line to ensure this is discussed before
+	release
+
+	* include/stdlib.h, src/stdlib/abort.cxx, src/PKGconf.mak:
+	Add abort.cxx to implement abort(), albeit naively
+
+Thu Jul 30 18:03:09 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/vsscanf.cxx (_vsscanf),
+	  src/stdio/common/vsnprintf.cxx (_vsnprintf): 
+	Fix initialiser of pseudo string device table that didn't get updated
+	when the table changed (Bad proven, no biscuit).
+
+	* src/clibincl/stream.inl (~Cyg_StdioStream): 
+	Move invalidation of magic_validity_word to after unlock_me(),
+	otherwise it always fails!
+
+Tue Jul 28 21:29:53 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.hxx: 
+	Shorten over-long lines
+
+Tue Jul 28 20:28:23 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/stream.hxx (class Cyg_StdioStream),
+	  src/clibincl/stream.inl, src/stdio/common/stream.cxx: 
+	Clarify some comments and get the CYGDBG_DEFINE_CHECK_THIS and
+	CYG_ASSERTCLASS stuff going
+
+	* src/clibincl/stream.inl:
+	Put '{'s on same line as "action" as per coding standards
+	Shorten over-long lines
+
+Tue Jul 28 15:31:06 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/streambuf.inl, src/stdio/common/streambuf.cxx: 
+	Move set_buffer() from streambuf.inl to new file streambuf.cxx
+
+	* src/PKGconf.mak (COMPILE): 
+	Build new file streambuf.cxx
+
+	* src/clibincl/streambuf.hxx (class Cyg_StdioStreamBuffer): 
+	Add METHODS comment
+
+	* src/stdio/common/stream.cxx: 
+	Put '{'s on same line as "action" as per coding standards
+	Shorten over-long lines
+
+Tue Jul 28 00:26:36 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/stdlib.inl, src/stdio/input/vfscanf.cxx,
+	  src/stdio/output/vfnprintf.cxx, src/stdlib/div.cxx,
+	  src/stdlib/ldiv.cxx, src/stdlib/qsort.cxx, src/stdlib/strtol.cxx,
+	  src/stdlib/strtoul.cxx, src/string/strtok.cxx:
+
+	Include proper Berkeley license inline in the file, rather than
+	referring to an external file
+
+	* doc/COPYING.UCB:
+	Remove, now that it isn't referred to any more
+
+Mon Jul 27 23:34:26 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/ctype.h, include/ctype.inl, include/errno.h,
+	  include/stdio.h, include/stdio.inl, include/stdlib.h,
+	  include/stdlib.inl, include/string.h, include/string.inl,
+	  include/time.h, include/sys/file_if.h, src/PKGconf.mak,
+	  src/clibincl/clibdata.hxx, src/clibincl/clibdata.inl,
+	  src/clibincl/ctypesupp.hxx, src/clibincl/stdiosupp.hxx,
+	  src/clibincl/stream.hxx, src/clibincl/streambuf.hxx,
+	  src/clibincl/streambuf.inl, src/clibincl/stringsupp.hxx,
+	  src/clibincl/timesupp.hxx, src/ctype/isalnum.cxx,
+	  src/ctype/isalpha.cxx, src/ctype/iscntrl.cxx,
+	  src/ctype/isdigit.cxx, src/ctype/isgraph.cxx,
+	  src/ctype/islower.cxx, src/ctype/isprint.cxx,
+	  src/ctype/ispunct.cxx, src/ctype/isspace.cxx,
+	  src/ctype/isupper.cxx, src/ctype/isxdigit.cxx,
+	  src/ctype/tolower.cxx, src/ctype/toupper.cxx,
+	  src/errno/errno.cxx, src/stdio/common/snprintf.cxx,
+	  src/stdio/common/sprintf.cxx, src/stdio/common/sscanf.cxx,
+	  src/stdio/common/stdioinlines.cxx, src/stdio/common/stream.cxx,
+	  src/stdio/common/ungetc.cxx, src/stdio/common/vsnprintf.cxx,
+	  src/stdio/common/vsscanf.cxx, src/stdio/input/fgetc.cxx,
+	  src/stdio/input/fgets.cxx, src/stdio/input/fscanf.cxx,
+	  src/stdio/input/gets.cxx, src/stdio/input/scanf.cxx,
+	  src/stdio/output/fnprintf.cxx, src/stdio/output/fprintf.cxx,
+	  src/stdio/output/fputc.cxx, src/stdio/output/fputs.cxx,
+	  src/stdio/output/printf.cxx, src/stdlib/_exit.cxx,
+	  src/stdlib/abs.cxx, src/stdlib/atof.cxx, src/stdlib/atoi.cxx,
+	  src/stdlib/atol.cxx, src/stdlib/div.cxx, src/stdlib/labs.cxx,
+	  src/stdlib/ldiv.cxx, src/stdlib/rand.cxx, src/stdlib/strtod.cxx,
+	  src/string/memchr.cxx, src/string/memcmp.cxx,
+	  src/string/memmove.cxx, src/string/strcat.cxx,
+	  src/string/strchr.cxx, src/string/strcmp.cxx,
+	  src/string/strcoll.cxx, src/string/strcpy.cxx,
+	  src/string/strcspn.cxx, src/string/strlen.cxx,
+	  src/string/strncat.cxx, src/string/strncmp.cxx,
+	  src/string/strncpy.cxx, src/string/strpbrk.cxx, 
+	  src/string/strrchr.cxx, src/string/strspn.cxx,
+	  src/string/strstr.cxx, src/string/strsuppt.cxx,
+	  src/string/strtok.cxx, src/string/strxfrm.cxx,
+	  src/support/clibdata.cxx, src/time/clock.cxx:
+	Untabify
+
+Mon Jul 27 23:14:18 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/errno/errno.cxx, src/stdio/input/vfscanf.cxx,
+	  src/stdio/output/vfnprintf.cxx, src/stdlib/strtol.cxx,
+	  src/stdlib/strtoul.cxx, src/stdlib/malloc.cxx, src/stdlib/qsort.cxx,
+	  tests/ctype/ctype.c, tests/stdlib/rand3.c, tests/stdlib/malloc3.c: 
+	Remove all mentions of "register" in variable declarations. Also
+	untabify where needed
+
+	* src/stdlib/bsearch.cxx:
+	Untabify this too
+	
+
+Mon Jul 27 22:18:51 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/output/fputc.cxx (_fputc): 
+	Replace call to stream write() with call to write_byte()
+
+	* src/clibincl/stream.inl (write_byte): 
+	Add asserts for stream write() returning odd values for how much has
+	been written
+	
+	(bytes_available_to_read): 
+	Remove "register" def for variable declaration
+
+Mon Jul 27 22:06:22 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/stdiosupp.cxx: 
+	Remove #if 0'd cyg_get_file_star() and unnecessary pseudo string
+	device definition
+
+Mon Jul 27 21:57:25 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h, src/support/clibdata.cxx: 
+	Change CYGXXX_LIBC_STDIO_DEFAULT_CONSOLE to
+	CYGDAT_LIBC_STDIO_DEFAULT_CONSOLE
+
+Mon Jul 27 21:49:23 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.hxx,   src/clibincl/clibdata.inl,
+	  src/clibincl/ctypesupp.hxx,  src/clibincl/setjmpsupp.hxx,
+	  src/clibincl/stdiosupp.hxx,  src/clibincl/stdlibsupp.hxx,
+	  src/clibincl/stream.hxx,     src/clibincl/stream.inl,
+	  src/clibincl/streambuf.hxx,  src/clibincl/streambuf.inl,
+	  src/clibincl/stringsupp.hxx, src/clibincl/timesupp.hxx: 
+
+	Change CYGONCE_LIBC_*_{HXX,INL} to CYGONCE_LIBC_CLIBINCL_*_{HXX,INL}
+
+Mon Jul 27 21:34:05 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	Change #define XXXXX 1 to #define XXXXX where applicable as per code
+	review
+
+	Also remove obsolete CYGIMP_LIBC_THREAD_START_SUSPENDS_SELF
+
+Mon Jul 27 19:42:27 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/fopen.cxx (_fopen): 
+	Use #ifdef, not #if for config options
+
+Mon Jul 27 15:01:51 BST 1998   Chris Provenzano  <proven@cygnus.com>
+
+	* src/stdio/common/stream.cxx, src/stdio/common/vsnprintf.cxx
+	* src/stdio/common/vsscanf.cxx:
+	Fixes to compile with the new Cyg_IORB field names.
+	
+Thu Jul  9 03:40:21 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/atoi.c, tests/stdlib/atol.c,
+	  tests/stdlib/strtol.c, tests/stdlib/strtoul.c: 
+	Adjust starting of tests to possibly start scheduler since
+	strtol/stroul rely on errno, which may be a per-thread variable
+
+Thu Jul  9 03:06:25 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/stream.hxx, src/clibincl/stream.inl,
+	  src/stdio/common/stream.cxx, src/stdio/common/setvbuf.cxx:
+	Consolidate read and write buffers into single buffer, as it should
+	have been all along
+
+	* src/clibincl/streambuf.hxx, src/clibincl/streambuf.inl:
+	Add drain_buffer() method to speed up the case when we want the
+	buffer completely emptied
+
+Tue Jul  7 21:26:33 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sprintf1.c: 
+	Add a couple of new tests that check that very long strings work too
+
+Wed Jul  1 19:52:39 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/stream.hxx, src/clibincl/streambuf.hxx:
+	Do not permit copy constructors
+
+	* src/clibincl/stream.inl, src/stdio/common/fclose.cxx:
+	Make sure we use #ifdef and not #if
+
+	* src/clibincl/streambuf.inl:
+	Use member initialisation list rather than explicit initialisation to
+	reduce warnings
+
+Wed Jul  1 19:17:55 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h and all files using config options:
+	Rename configuration defines to make them more standard
+
+Thu Jun 25 20:09:30 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strcat.cxx: 
+	Add parentheses on check to silence warning
+	(Verified by proven)
+
+Thu Jun 25 19:30:01 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/malloc.cxx: 
+	Make sure that the malloc pool is initialised before other things
+	can use it. This is done with the hot new constructor ordering
+	feature.
+
+Thu Jun 25 18:27:03 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/input/vfscanf.cxx: 
+	Remove bogus ifdef if floating point is _not_ wanted
+
+Thu Jun 25 17:31:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strtok.cxx: 
+	Fix argument checking to allow first argument of NULL
+
+Thu Jun 25 04:18:50 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.inl (get_strtok_last_p): 
+	Remove bogus assertion
+
+	* src/stdlib/malloc.cxx:
+	Got sense of alignment check assertion the wrong way round, so negate
+	it
+
+Thu Jun 25 03:56:35 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strxfrm.cxx: 
+	Fix argument checking assertions with legitimate nulls here too
+
+Thu Jun 25 03:46:32 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/strtoul.cxx, src/stdlib/strtol.cxx: 
+	Fix argument checking assertions to cope with legitimate nulls
+
+Wed Jun 24 09:01:45 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sprintf1.c:
+	Remove extraneous info messages
+
+Wed Jun 24 05:59:17 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sprintf1.c, tests/stdio/sprintf2.c, tests/stdio/sscanf.c,
+	  tests/stdlib/rand1.c, tests/stdlib/rand2.c, tests/stdlib/rand3.c,
+	  tests/stdlib/srand.c:
+
+	Change large automatic arrays to static arrays to prevent overuse
+	of a potentially small stack
+
+Wed Jun 24 05:45:28 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sprintf1.c, tests/stdio/sprintf2.c, tests/stdio/sscanf.c,
+	  tests/stdlib/rand1.c, tests/stdlib/rand2.c, tests/stdlib/rand3.c,
+	  tests/stdlib/srand.c, tests/string/strtok.c, tests/time/clock.c:
+
+	Increase thread stack size from 4K to 32K as in some cases it was
+	too small.
+
+
+Tue Jun 23 20:12:31 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sscanf.c: 
+	Add extra tests, including floating point conversion testing
+
+Tue Jun 23 17:01:06 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strtok.cxx: 
+	Make sure this is only compiled if CYGFUN_LIBC_strtok is defined
+
+Tue Jun 23 06:10:13 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h: 
+	add some comments - that's all
+
+	* src/stdio/common/stream.cxx:
+	fix case in refill_read_buffer() for what to do when there's nothing
+	left. Now return EAGAIN
+
+	* src/stdio/common/vsscanf.cxx, src/stdio/input/vfscanf.cxx:
+	Get sscanf working properly and passing tests. Also make sure it
+	ignores FP when its not configured
+
+	* src/stdlib/atof.cxx:
+	Only compile at all if strtod() is present
+	
+
+Mon Jun 22 19:13:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.hxx, src/clibincl/clibdata.inl: 
+	Conditionalise strtok_last and rand_seed better
+
+Mon Jun 22 14:14:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/malloc3.c:
+	Add test for checking that mallocing and freeing repeatedly works
+
+	* tests/PKGconf.mak:
+	Update to reflect addition of the above
+
+Mon Jun 22 13:09:33 BST 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* src/stdio/common/fopen.cxx
+	* src/stdio/common/stream.cxx
+	* src/stdio/common/vsnprintf.cxx
+	* src/stdio/common/vsscanf.cxx
+	Include cyg/devs/common/iorb.h instead of iorb.hxx
+
+	* src/stdio/common/stream.cxx
+	Use read_blocking and write_blocking instead of just read and 
+	write when accessing devices through the virtual device table.
+
+Sun Jun 21 18:19:13 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/stdioinlines.cxx:
+	Propagate change of return code handling for puts from stdio.inl
+	into here
+
+	* src/stdio/output/fputc.cxx:
+	make sure the right type is used for output - byte not int
+
+	* src/support/clibdata.cxx:
+	Fix #define config mistook. #endif was in wrong place
+
+Sun Jun 21 16:11:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.hxx, src/clibincl/clibdata.inl:
+	Allow explicit construction to get around a bug when
+	dynamically allocating per-thread structure
+
+Sun Jun 21 16:02:51 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/ctype/ctype.c, tests/setjmp/setjmp.c, tests/stdio/sprintf1.c,
+	  tests/stdio/sprintf2.c, tests/stdio/sscanf.c, tests/stdlib/abs.c,
+	  tests/stdlib/atoi.c, tests/stdlib/atol.c, tests/stdlib/bsearch.c,
+	  tests/stdlib/div.c, tests/stdlib/labs.c, tests/stdlib/ldiv.c,
+	  tests/stdlib/malloc1.c, tests/stdlib/malloc2.c, tests/stdlib/qsort.c,
+	  tests/stdlib/rand1.c, tests/stdlib/rand2.c, tests/stdlib/rand3.c,
+	  tests/stdlib/srand.c, tests/stdlib/strtol.c, tests/stdlib/strtoul.c,
+	  tests/string/memchr.c, tests/string/memcmp1.c,
+	  tests/string/memcmp2.c, tests/string/memcpy1.c,
+	  tests/string/memcpy2.c, tests/string/memmove1.c,
+	  tests/string/memmove2.c, tests/string/memset.c,
+	  tests/string/strcat1.c, tests/string/strcat2.c,
+	  tests/string/strchr.c, tests/string/strcmp1.c,
+	  tests/string/strcmp2.c, tests/string/strcoll1.c,
+	  tests/string/strcpy1.c, tests/string/strcpy2.c,
+	  tests/string/strcspn.c, tests/string/strlen.c,
+	  tests/string/strncat1.c, tests/string/strncat2.c,
+	  tests/string/strncpy1.c, tests/string/strncpy2.c,
+	  tests/string/strpbrk.c, tests/string/strrchr.c,
+	  tests/string/strspn.c, tests/string/strstr.c, tests/string/strtok.c,
+	  tests/string/strxfrm1.c, tests/string/strxfrm2.c, tests/time/clock.c:
+
+	Update tests to "do the right thing" with all configuration settings
+
+
+Sun Jun 21 04:54:14 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/setjmp/setjmp.c: 
+	I have to be careful not to use setjmp() in a way not exactly
+	defined by the standard, so make sure I do, and add a comment
+	documenting these ways.
+
+	Also ensure this test does the right thing in all configurations
+
+Sun Jun 21 04:38:15 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	Add extra checks for invalid configurations
+	Also make default for thread safety OFF
+
+	* src/clibincl/clibdata.inl:
+	Adjust indentation
+
+	* src/stdio/output/vfnprintf.cxx:
+	Make printf of -0.0 floating point do the right thing
+
+Sun Jun 21 04:28:00 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/snprintf.cxx, src/stdio/common/sprintf.cxx,
+	  src/stdio/common/sscanf.cxx, src/stdio/input/fscanf.cxx,
+	  src/stdio/input/scanf.cxx, src/stdio/output/fnprintf.cxx,
+	  src/stdio/output/fprintf.cxx, src/stdio/output/printf.cxx:
+
+	Had to remove inline functions with varargs. Which means separating
+	out each function from stdioinlines.cxx into a separate file, as they
+	no longer belong there. So all the above files were created.
+
+	* include/stdio.inl, src/PKGconf.mak,
+	  src/stdio/common/stdioinlines.cxx:
+	  Changed to take account of the above
+
+
+Sun Jun 21 03:58:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdio/sprintf1.c, tests/stdio/sprintf2.c: 
+	Update with floating-point tests. Also make sure they DTRT in all
+	configurations
+
+Fri Jun 19 19:33:06 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/clibdata.cxx:
+	accidentally initialised stdin/out/err twice
+
+Fri Jun 19 19:09:29 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/clibdata.cxx: 
+	Another typo
+
+Fri Jun 19 18:59:07 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/clibdata.cxx: 
+	Missing #endif typo
+
+Fri Jun 19 18:51:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/clibdata.cxx: 
+	Fix initialisation of static data members. Unsure how it worked at
+	all before!
+
+Fri Jun 19 18:01:01 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/stdio.inl:
+	puts should check whether fputs returns non-negative, rather than
+	non-zero
+
+Fri Jun 19 17:22:52 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/clibincl/clibdata.inl:
+	Make inclusion of get_errno_p conditional on thread-safety
+
+Wed Jun 17 10:55:32 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/input/vfscanf.cxx: 
+	Add weak alias of vfscanf() to _vfscanf()
+
+Wed Jun 17 09:10:41 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdio/common/fflush.cxx:
+	Initialise err to silence compiler warning
+
+Wed Jun 17 08:59:20 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Most important is the addition of floating point support in
+	src/stdio/output/vfnprintf.cxx and src/stdio/input/vfscanf.cxx. This
+	also required the addition of atof() and strtod() in stdlib which is
+	definitely no bad thing! Other than that...
+	
+ 	* Fix a whole bunch of stuff I messed up first time round. Also the
+	sprintf and sscanf tests are included again.
+
+Tue Jun 16 16:38:02 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/PKGconf.mak:
+	Typo with not putting comment character at the beginning. Sigh.
+
+Tue Jun 16 14:53:09 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/PKGconf.mak:
+	Forgot to (temporarily) remove fputs test for now
+
+Mon Jun 15 20:40:03 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	Everything to do with stdio has almost completely changed, so there's
+	not much point documenting individual changes.
+
+Mon Jun 15 18:36:01 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/stdlib/malloc2.c:
+	Stop it moaning quite as much when it fails by making it exit sooner
+
+	* tests/time/clock.c :
+	This isn't a compound testcase
+
+Thu Jun 11 17:59:13 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/assert.h
+	Reverse sense of NDEBUG ifdef, that was left in accidentally due
+	to testing
+
+Thu Jun 11 04:58:08 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/errno.h, include/string.h, src/clibincl/stringsupp.hxx:
+	Modify as I've now added an "error" package which defines the error
+	codes and strerror()
+
+	* src/errno/strerror.cxx:
+	Moved to new error package and thus deleted
+
+Wed Jun 10 18:37:37 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/assert.h:
+	create this header and add assert() function
+
+Wed Jun 10 16:23:57 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/stdlib.h, src/clibincl/stdlibsupp.hxx, src/stdlib/malloc.cxx:
+	Add malloc(), calloc() and free() functions
+
+	* include/pkgconf/libc.h:
+	Add malloc memory pool size option
+
+	* tests/stdlib/malloc1.c, tests/stdlib/malloc2.c:
+	new tests for malloc
+
+	* src/PKGconf.mak, tests/PKGconf.mak:
+	Update for new files
+	
+Wed Jun 10 15:06:16 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/setjmp/setjmp.c:
+	Add another test
+
+Tue Jun  9 18:20:31 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/libc.h:
+	Add some setjmp config's and a macro for the noreturn attribute
+
+	* include/setjmp.h, include/setjmp.inl, src/clibincl/setjmpsupp.hxx,
+	  src/setjmp/longjmp.cxx, tests/setjmp/setjmp.c:
+	Added to implement and test setjmp() and longjmp()
+
+	* src/PKGconf.mak, tests/PKGconf.mak:
+	Update for newly added files
+
+Thu Jun  4 01:29:18 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/memchr.cxx, src/string/memcmp.cxx, src/string/strcat.cxx,
+	  src/string/strchr.cxx, src/string/strcmp.cxx, src/string/strcpy.cxx,
+	  src/string/strlen.cxx, src/string/strncat.cxx,
+	  src/string/strncmp.cxx, src/string/strncpy.cxx:
+	Rename CYGIMP_LIBC_PREFER_SMALL_TO_FAST to
+	CYGIMP_LIBC_STRING_PREFER_SMALL_TO_FAST
+
+	Also use slower but smaller version when __OPTIMIZE_SIZE__ is
+	defined (which comes from using gcc -Os)
+
+Fri May 29 16:15:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/ctype.inl, src/ctype/isxdigit.cxx:
+	Fix bug that numerals aren't considered hex digits
+
+	* include/time.h:
+	Change clock_t and time_t to be signed so that they can accept -1, as
+	required by other libc functions
+
+	* src/clibincl/clibdata.hxx:
+	Fix typo that CYGIMP_LIBC_THREAD_SUPPORT should be ..._SAFETY
+	Also fix macro to allocate thread-specific data to not set variables
+	in a different stack-frame
+
+	* tests/ctype/ctype.c:
+	Fix some misunderstandings in tests, and add a few new ones
+
+	* tests/stdlib/qsort.c:
+	make ctr unsigned to prevent warnings
+
+	* tests/stdlib/strtol.c, tests/stdlib/strtoul.c:
+	Fix some misunderstandings in tests, and add a few new ones
+
+	* tests/string/strrchr.c:
+	Fix off by one error
+
+	* tests/string/strspn.c:
+	Fix case-sensitivity problem, and off-by-one error
+
+	* tests/string/strxfrm1.c:
+	Remove bogus bit of test that doesn't apply to strxfrm, and fix typo
+
+
+Fri May 22 16:33:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak
+	Remove CXXFLAGS line now that its redundant
+	
+ 	* tests/everything!
+	Do a blitz change of all tests - break some of them down into
+	different files, add new tests, standardize format, fix bugs,
+	update for recent header file changes and much more!
+
+Wed May 20 17:50:04 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/PKGconf.mak:
+	interim checkin for different dir structure for Bart
+
+Fri May 15 20:30:46 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Tidy up some loose ends I forgot: rename src/include directory to
+	src/clibincl. And add clibdata.inl and timesupp.hxx in there.
+
+Thu May 14 19:56:32 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Basically everything has changed in the C library. Files have
+	been moved, renamed, deleted and reworked. This is a major
+	revision, and now starts from this new baseline rather than doing
+	incremental changes.
+
+Fri Apr 17 18:43:02 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/ECCconf.mak:
+	added for new build system (actually Bart did this, but didn't
+	update this ChangeLog)
+
+Fri Apr 17 15:03:25 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/stdio/device/sim.cxx:
+	Make it build with CYG_EMPTY_STATEMENT; the unadorned one is being
+        removed.
+
+Thu Apr 16 00:24:24 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* All source files:
+	replace ECCIMP_LIBC_* conditional ifdef with CYGIMP_LIBC_*
+
+	* include/eccconf/libc.h:
+	improve comments and reorder a bit
+
+Wed Apr  8 14:35:20 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Makefile.am, src/Makefile.am, tests/Makefile.am, configure.in:
+	many changes to integrate build structure from release tree
+
+	* src/ctype/Makefile.am, src/ctype/Makefile.in, src/errno/Makefile.am,
+	  src/errno/Makefile.in, src/stdio/Makefile.am, src/stdio/Makefile.in,
+	  src/stdio/common/Makefile.am, src/stdio/common/Makefile.in,
+	  src/stdio/device/Makefile.am, src/stdio/device/Makefile.in,
+	  src/stdio/output/Makefile.am, src/stdio/output/Makefile.in,
+	  src/stdio/input/Makefile.am, src/stdio/input/Makefile.in,
+	  src/stdlib/Makefile.am, src/stdlib/Makefile.in,
+	  src/string/Makefile.am, src/string/Makefile.in,
+	  src/support/Makefile.am, src/support/Makefile.in,
+	  src/time/Makefile.am, src/time/Makefile.in:
+	Remove as they are now redundant with above changes
+	
+	* include/Makefile.am:
+	Add to support above changes
+
+	* include/eccconf/libc.h:
+	Change include file for configuration from kernel to system
+
+	* src/include/kerndiag.hxx, src/stdio/device/kerndiag.cxx,
+	  src/time/clockfn.cxx:
+	Change kernel include file to eccconf/kernel.h
+
+	* src/include/strngdev.h:
+	remove unnecessary kernel include
+	
+	* Makefile.in, aclocal.m4, configure, src/Makefile.in,
+	  tests/Makefile.in, include/Makefile.in:
+	regenerate
+
+Mon Apr  6 20:55:07 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/abs.cxx, src/stdlib/atoi.cxx, src/stdlib/atol.cxx,
+	  src/stdlib/div.cxx, src/stdlib/labs.cxx, src/stdlib/ldiv.cxx:
+	Separated out functions from stdlib.cxx into separate files
+
+	* src/stdlib/stdlib.cxx:
+	removed to be replaced by above files
+	
+	* Makefile.am, src/stdlib/Makefile.am:
+	modified to support building above and not building stdlib.cxx
+
+	* src/support/tsd.cxx:
+	Remove unnecessary header file includes
+
+	* Makefile.in, src/stdlib/Makefile.in:
+	regenerated
+
+Mon Apr  6 19:19:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/tsd.cxx, include/eccconf/libc.h:
+	remove lame hack for tx39 compiler now that its fixed
+
+	* src/include/sim.hxx:
+	define constants as static to placate compiler
+
+Thu Apr  2 21:01:21 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/ctype/ctype.cxx:
+	deleted and separated out into below files
+ 	
+	* src/ctype/isalnum.cxx, src/ctype/isalpha.cxx, src/ctype/iscntrl.cxx,
+	  src/ctype/isdigit.cxx, src/ctype/isgraph.cxx, src/ctype/islower.cxx,
+	  src/ctype/isprint.cxx, src/ctype/ispunct.cxx, src/ctype/isspace.cxx,
+	  src/ctype/isupper.cxx, src/ctype/isxdigit.cxx, src/ctype/tolower.cxx,
+	  src/ctype/toupper.cxx:
+	Separated out individual ctype functions from ctype.cxx into separate
+	files
+
+	* Makefile.am, src/ctype/Makefile.am:
+	modified to reflect above deletion/additions
+
+	* Makefile.in, src/ctype/Makefile.in:
+	regenerated
+	  
+Thu Apr  2 19:08:26 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strxfrm.cxx: optimise using prefix increments
+
+Thu Apr  2 15:18:15 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strchr.cxx: optimise setting of mask a little
+
+Thu Mar 26 14:07:01 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/support/tsd.cxx: fixed some typos
+
+Thu Mar 26 11:58:47 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/eccconf/libc.h, src/support/tsd.cxx:
+	Implement workaround for tx39 compiler bug. 
+
+	* src/include/strsuppt.hxx:
+ 	remove prototypes for _memcpy() and _memset() as they are now in the
+	kernel
+
+Wed Mar 25 18:31:53 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Makefile.am, src/string/Makefile.am: memcpy() and memset() are
+ 	  now in the kernel so remove them from build
+	* include/string.h: add a comment to say as much
+	* Makefile.in, src/string/Makefile.in: regenerate
+
+Wed Mar 25 15:30:42 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/_exit.cxx, src/include/file_if.inl:
+	  Change _exit workaround to not cause a compiler optimisation
+	  problem. Now just references _exit rather than calls it.
+
+Wed Mar 25 14:59:49 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strxfrm.cxx: Fix bug causing tests to fail completely
+	  for this function
+
+Wed Mar 25 12:55:53 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/include/sim.hxx: add types to constants (oops!)
+	* Makefile.am: link src/stdio/device/sim.cxx
+	* Makefile.in: regenerated
+
+Wed Mar 25 04:14:30 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/include/file_if.hxx, src/include/file_if.inl,
+	  src/include/kerndiag.hxx, src/include/sim.hxx,
+	  src/include/stdio_if.hxx, src/include/strngdev.hxx,
+	  src/include/tsd.hxx, src/stdio/common/clearerr.cxx,
+	  src/stdio/common/clearerr.cxx, src/stdio/common/feof.cxx,
+	  src/stdio/common/ferror.cxx, src/stdio/common/file_if.cxx,
+	  src/stdio/common/vsprintf.cxx,
+	  src/stdio/device/kerndiag.cxx, src/stdio/device/sim.cxx,
+	  src/stdio/device/strngdev.cxx, src/stdio/output/fputc.cxx,
+	  src/stdio/output/fputs.cxx, src/stdio/output/puts.cxx,
+	  src/stdio/output/vfnprintf.cxx, src/support/tsd.cxx:
+	  Modified to support buffered reads including renaming
+	  _EccInternalFileStruct to __EccStdioStream which is what affects
+	  most of these files
+	* src/include/file_if.inl, src/stdio/common/file_if.cxx: added for
+	  the above reason
+	* src/stdio/common/sscanf.cxx, src/stdio/input/vfscanf.cxx,
+	  src/stdio/input/Makefile.am: added to provide sscanf() functionality
+	* include/ctype.h, include/stdio.h, include/stdlib.h,
+	  include/string.h, include/eccconf/libc.h, src/ctype/ctype.cxx,
+	  src/stdlib/stdlib.cxx, src/string/strcoll.cxx,
+	  src/stdio/common/stdio.cxx:
+	  rename *_INLINES macros with prefix CYG rather than ECC
+	* include/errno.h, src/errno/errno.cxx, src/errno/strerror.cxx:
+	  rename ErrNo to _ErrNo and add EAGAIN and EWOULDBLOCK error codes
+	* configure.in, Makefile.am, src/stdio/Makefile.am,
+	  src/stdio/input/Makefile.am: add support for building
+	  file_if.cxx sscanf.cxx and vfscanf.cxx
+	* src/stdio/Makefile.in, src/stdio/common/Makefile.in,
+	  src/stdio/input/Makefile.in, configure, Makefile.in: regenerated
+
+Tue Mar 24 19:51:40 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/time/clockfn.cxx, src/time/clock.cxx:
+	  Renamed clock.cxx to clockfn.cxx (preserving CVS history)
+	* Makefile.am, src/time/Makefile.am: updated to reflect name change
+	* Makefile.in, src/time/Makefile.in: regenerated
+
+Tue Mar 24 16:28:06 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/ctype.inl: Swap around definitions to get right order so
+	  inlining works
+
+Tue Mar 24 14:43:05 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/ctype.h, include/stdio.h, include/stdlib.h, include/string.h:
+	  modify to only conditionally include inlines
+	* src/ctype/ctype.cxx, src/stdio/common/stdio.cxx,
+	  src/stdlib/stdlib.cxx, src/string/strcoll.cxx,
+	  src/ctype/Makefile.am: Add to provide real linkable alternatives
+	  to inline functions
+	* Makefile.am, configure.in, src/Makefile.am,
+	  src/stdio/common/Makefile.am, src/stdlib/Makefile.am,
+	  src/string/Makefile.am: modified to support previous additions
+	* include/eccconf/libc.h: redefine inline macro to add extern inline,
+	  and add conditional defines for inline functions. Also rename
+	  space vs. speed macro to have CYG instead of ECC prefix
+	* include/stdio.inl: fix comment typo
+	* src/stdlib/qsort.cxx: fix to define inline functions properly
+	* src/string/memchr.cxx, src/string/memcmp.cxx, src/string/memcpy.cxx,
+	  src/string/memset.cxx, src/string/strcat.cxx, src/string/strchr.cxx,
+ 	  src/string/strcmp.cxx, src/string/strcpy.cxx, src/string/strlen.cxx,
+ 	  src/string/strncat.cxx, src/string/strncmp.cxx,
+	  src/string/strncpy.cxx
+	* Makefile.in, configure, src/Makefile.in, src/ctype/Makefile.in,
+	  src/stdio/common/Makefile.in, src/stdlib/Makefile.in,
+	  src/string/Makefile.in: regenerate
+	
+
+Mon Mar 23 19:19:49 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/stdlib/_exit.cxx: added to support temporary _exit
+	* include/stdlib.h, include/stdlib.inl: added support for _exit and
+	  added abs(), labs(), div() and ldiv() functions
+	* src/include/file_if.hxx: added support for _exit kludge
+	* src/stdlib/qsort.cxx: Added Berkeley copyright message
+	* src/time/clock.cxx: Include correct kernel config header as
+	  CYG_CONFIGURATION rather than <config.h>
+	* Makefile.am src/stdlib/Makefile.am: added support for _exit
+	* Makefile.in, src/stdlib/Makefile.in: regenerated
+
+Mon Mar 23 14:41:07 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Replace ECCPKG_ANSI_LIBC with CYGPKG_ANSI_LIBC in all source files
+
+Mon Mar 23 14:28:44 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/string.inl: add file to provide strcoll()
+	* include/string.h: include string.inl
+	* ctype.h: include ctype.inl (oops!)
+	* include/stdlib.h: include stdlib.inl (oops!)
+
+Mon Mar 23 13:30:38 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/ctype.h, include/ctype.inl: added to provide ANSI ctype
+	  functionality
+	* include/stdlib.h, include/stdlib.inl, src/include/stdlibbsp.hxx,
+	  src/stdlib/Makefile.am, src/stdlib/bsearch.cxx,
+	  src/stdlib/qsort.cxx, src/stdlib/rand.cxx, src/stdlib/srand.cxx,
+	  src/stdlib/strtol.cxx, src/stdlib/strtoul.cxx: Added to provide
+	  many stdlib functions
+	* src/include/tsd.hxx: modified to support rand() random number
+	  seed, and added some comments
+	* configure.in, Makefile.am, src/Makefile.am: modified to support
+	  addition of above new sources
+	* include/eccconf/libc.h: Add extra helpful comments, and #include
+	  kernel config file
+	* src/time/clock.cxx: #include clock.inl and fix to call
+	  get_resolution() properly now
+	* Makefile.in, configure, src/Makefile.in, src/errno/Makefile.in,
+	  src/stdio/Makefile.in, src/stdio/common/Makefile.in,
+	  src/stdio/device/Makefile.in, src/stdio/output/Makefile.in,
+	  src/stdlib/Makefile.in, src/strings/Makefile.in,
+	  src/support/Makefile.in, src/time/Makefile.in,
+	  tests/Makefile.in: regenerated
+	
+
+Sun Mar 22 21:29:25 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/time.h, src/include/timesupp.hxx, src/time/clock.cxx,
+	  src/time/Makefile.am: added to provide clock() function
+	* src/Makefile.am: modified to try to build in src/time directory
+	* include/eccconf/libc.h: added and is now the main configuration
+	  file for this package
+	* acconfig.h, include/libcconf.h.in, include/stamp-h.in: removed
+	  due to usage of libc.h above instead
+	* Almost all *.h, *.hxx and *.cxx: replaced LIBC_CONFIG_HEADER
+	  defined include with simple <pkgconf/libc.h>
+	* configure.in: remove AM_CONFIG_HEADER of libcconf.h and
+	  LIBC_CONFIG_HEADER definition. Also remove usage of builtin
+	  memcpy() etc. from gcc, and generate src/time/Makefile
+	* Makefile.am: link in src/time/clock.o
+	* src/include/file_if.hxx, src/include/sim.hxx: use config header
+	  to decide whether C library is to be used
+	* Makefile.in, aclocal.m4, configure, src/Makefile.in: regenerated
+
+Fri Mar 20 18:08:10 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/string/strxfrm.cxx: Fixed bug with ignoring terminating NULL
+
+1998-03-20  Chris Tarpy  <ctarpy@bhaji.cygnus.co.uk>
+
+	* configure: - regenerated
+	* Makefile.am: - Support added for libc testcases
+	* Makefile.in: regenerated
+	* configure.in: set c compiler, descend test dir
+	* tests/Makefile.in: added
+	* tests/Makefile.am: added
+	* tests/tcdiag.cxx : added
+
+
+Thu Mar 19 11:41:56 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* Initial check-in of everything
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

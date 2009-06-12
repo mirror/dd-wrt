@@ -1,0 +1,337 @@
+# ====================================================================
+#
+#      kernel.cdl
+#
+#      eCos kernel configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  nickg
+# Contributors:
+# Date:           1999-06-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_KERNEL {
+    display       "eCos kernel"
+    doc           ref/kernel.html
+    include_dir   cyg/kernel
+    description   "
+        This package contains the core functionality of the eCos
+        kernel. It relies on functionality provided by various HAL
+        packages and by the eCos infrastructure. In turn the eCos
+        kernel provides support for other packages such as the device
+        drivers and the uITRON compatibility layer."
+    # FIXME: The compile statement should be split up and integrated as
+    #        part of the components - so files only get comiled when they
+    #        will actually be used.
+    compile       common/clock.cxx     common/timer.cxx  common/kapi.cxx   \
+                  common/thread.cxx    common/except.cxx                   \
+                  intr/intr.cxx                                            \
+                  sched/bitmap.cxx     sched/lottery.cxx sched/mlqueue.cxx \
+                  sched/sched.cxx                                          \
+                  sync/bin_sem.cxx     sync/cnt_sem.cxx  sync/flag.cxx     \
+                  sync/cnt_sem2.cxx    sync/mbox.cxx     sync/mutex.cxx    \
+                  debug/dbg-thread-demux.c
+
+    # ---------------------------------------------------------------------
+    # The first component within the kernel is related to interrupt
+    # handling.
+    cdl_component CYGPKG_KERNEL_INTERRUPTS {
+        display       "Kernel interrupt handling"
+        flavor        none
+        doc           ref/kernel-interrupts.html
+        description   "
+            The majority of configuration options related to interrupt
+            handling are in the HAL packages, since usually the code has
+            to be platform-specific. There are a number of options
+            provided within the kernel related to slightly higher-level
+            concepts, for example Delayed Service Routines."
+
+        script        interrupts.cdl
+    }
+
+    # ---------------------------------------------------------------------
+    # Exceptions. Currently there are only two options. The first
+    # determines whether or not exceptions are enabled at all. The
+    # second controls whether they apply globally or on a per-thread
+    # basis. There should probably be more options, but the boundary
+    # between the HAL and kernel becomes blurred.
+    cdl_component CYGPKG_KERNEL_EXCEPTIONS {
+        display       "Exception handling"
+        requires      CYGPKG_HAL_EXCEPTIONS
+        default_value 1
+        doc           ref/kernel-exceptions.html
+        description   "
+            In the context of the eCos kernel exceptions are unexpected
+            events detected by the hardware, for example an attempt to
+            execute an illegal instruction. There is no relation with
+            other forms of exception, for example the catch and throw
+            facilities of languages like C++. It is possible to disable
+            all support for exceptions and thus save some memory."
+
+        cdl_option CYGSEM_KERNEL_EXCEPTIONS_DECODE {
+            display       "Decode exception types in kernel"
+            default_value 0
+            description   "
+                On targets where several different types of exception are
+                possible, for example executing an illegal instruction and
+                division by zero, it is possible for the kernel to do some
+                decoding of the exception type and deliver the different
+                types of exception to different handlers in the application
+                code. Alternatively the kernel can simply pass all
+                exceptions directly to application code, leaving the
+                decoding to be done by the application"
+        }
+
+        cdl_option CYGSEM_KERNEL_EXCEPTIONS_GLOBAL {
+            display       "Use global exception handlers"
+            default_value 1
+            description   "
+                In the context of the eCos kernel exceptions are
+                unexpected events detected by the hardware, for
+                example an attempt to execute an illegal
+                instruction. If the kernel is configured
+                to support exceptions then two implementations are
+                possible. The default implementation involves a single set
+                of exception handlers that are in use for the entire
+                system. The alternative implementation allows different
+                exception handlers to be specified for each thread."
+        }
+    }
+
+    # ---------------------------------------------------------------------
+    cdl_component CYGPKG_KERNEL_SCHED {
+        display       "Kernel schedulers"
+        flavor        none
+        doc           ref/kernel-overview.html#KERNEL-OVERVIEW-SCHEDULERS
+        description   "
+            The eCos kernel provides a choice of schedulers. In addition
+            there are a number of configuration options to control the
+            detailed behaviour of these schedulers."
+
+        script        scheduler.cdl
+    }
+
+    # ---------------------------------------------------------------------
+    # SMP support
+    
+    cdl_component CYGPKG_KERNEL_SMP_SUPPORT {
+	display       "SMP support"
+	flavor        bool
+	requires      CYGPKG_HAL_SMP_SUPPORT
+	default_value 0
+    }
+    
+    # ---------------------------------------------------------------------
+    cdl_component CYGPKG_KERNEL_COUNTERS {
+        display       "Counters and clocks"
+        flavor        none
+        doc           ref/kernel-counters.html
+        description   "
+            The counter objects provided by the kernel provide an
+            abstraction of the clock facility that is generally provided.
+            Application code can associate alarms with counters, where an
+            alarm is identified by the number of ticks until it triggers,
+            the action to be taken on triggering, and whether or not the
+            alarm should be repeated."
+
+        script        counters.cdl
+    }
+
+    # ---------------------------------------------------------------------
+    cdl_component CYGPKG_KERNEL_THREADS {
+        display       "Thread-related options"
+        flavor        none
+        description   "
+            There are a number of configuration options related to the
+            implementation of threads, for example whether or not the
+            eCos kernel supports per-thread data."
+
+        script        thread.cdl
+    }
+
+    # ---------------------------------------------------------------------
+    cdl_component CYGPKG_KERNEL_SYNCH {
+        display       "Synchronization primitives"
+        flavor        none
+        description   "
+            The eCos kernel supports a number of different
+            synchronization primitives such as mutexes, semaphores,
+            condition variables, and message boxes. There are
+            configuration options to control the exact behaviour of some
+            of these synchronization primitives."
+
+        script        synch.cdl
+    }
+
+    # ---------------------------------------------------------------------
+    cdl_component CYGPKG_KERNEL_INSTRUMENT {
+        display       "Kernel instrumentation"
+        flavor        bool
+        default_value 0
+        description   "
+            The current release of the kernel contains an initial version
+            of instrumentation support. The various parts of the kernel
+            will invoke instrumentation routines whenever appropriate
+            events occur, and these will be stored in a circular buffer
+            for later reference."
+
+        compile       instrmnt/meminst.cxx
+        script        instrument.cdl
+    }
+
+    #===================================================================
+    # Options related to source-level debugging and diagnostics.
+    cdl_component CYGPKG_KERNEL_DEBUG {
+        display       "Source-level debugging support"
+        flavor        none
+        description   "
+            If the source level debugger gdb is to be used for debugging
+            application code then it may be necessary to configure in support
+            for this in the kernel."
+
+        # NOTE: does this require any other support ?
+        cdl_option CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT {
+            display       "Include GDB multi-threading debug support"
+            requires      CYGVAR_KERNEL_THREADS_LIST
+            requires      CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            default_value 1
+            compile       debug/dbg_gdb.cxx
+            description "
+            This option enables some extra kernel code which is needed
+            to support multi-threaded source level debugging."
+        }
+    }
+
+    # ---------------------------------------------------------------------
+    # Kernel API's. The C++ one is the default. A C API is optional.
+    # Support for other languages is possible.
+    cdl_component CYGPKG_KERNEL_API {
+        display       "Kernel APIs"
+        flavor        none
+        description   "
+            The eCos kernel is implemented in C++, so a C++ interface
+            to the kernel is always available. There is also an optional
+            C API. Additional API's may be provided in future versions."
+
+        cdl_option CYGFUN_KERNEL_API_C {
+            display       "Provide C API"
+            default_value 1
+            description   "
+                The eCos kernel is implemented in C++, but there is an
+                optional C API for use by application code. This C API can be
+                disabled if the application code does not invoke the kernel
+                directly, but instead uses higher level code such as the
+                uITRON compatibility layer."
+        }
+    }
+
+    define_proc {
+        puts $::cdl_header "/***** proc output start *****/"
+
+        # Clients of pkgconf/kernel.h expects system.h to be included.
+        puts $::cdl_header "#include <pkgconf/system.h>"
+        # FIXME: Some clients may rely on hal.h and infra.h being included.
+        #        This should go away when any such client has been fixed.
+        puts $::cdl_header "#include <pkgconf/hal.h>"
+        puts $::cdl_header "#include <pkgconf/infra.h>"
+
+        # Include HAL/Platform specifics
+        puts $::cdl_header "#include CYGBLD_HAL_PLATFORM_H"
+        # Fallback defaults (in case HAL didn't define these)
+        puts $::cdl_header "#ifndef CYGNUM_HAL_RTC_NUMERATOR"
+        puts $::cdl_header "# define CYGNUM_HAL_RTC_NUMERATOR     1000000000"
+        puts $::cdl_header "# define CYGNUM_HAL_RTC_DENOMINATOR   100"
+        puts $::cdl_header "# define CYGNUM_HAL_RTC_PERIOD        9999"
+        puts $::cdl_header "#endif"
+
+        puts $::cdl_header "/*****  proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_KERNEL_OPTIONS {
+        display "Kernel build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_KERNEL_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the eCos kernel. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_KERNEL_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the eCos kernel. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_KERNEL_TESTS {
+            display "Kernel tests"
+            flavor  data
+            no_define
+            calculated { 
+                "tests/bin_sem0 tests/bin_sem1 tests/bin_sem2 tests/bin_sem3 tests/clock0 tests/clock1 tests/clockcnv tests/clocktruth tests/cnt_sem0 tests/cnt_sem1 tests/except1 tests/flag0 tests/flag1 tests/intr0 tests/kill tests/mbox1 tests/mqueue1 tests/mutex0 tests/mutex1 tests/mutex2 tests/mutex3 tests/release tests/sched1 tests/sync2 tests/sync3 tests/thread0 tests/thread1 tests/thread2" 
+                . ((CYGFUN_KERNEL_API_C) ? " tests/kclock0 tests/kclock1 tests/kexcept1 tests/kflag0 tests/kflag1 tests/kintr0 tests/klock tests/kmbox1 tests/kmutex0 tests/kmutex1 tests/kmutex3 tests/kmutex4 tests/ksched1 tests/ksem0 tests/ksem1 tests/kthread0 tests/kthread1 tests/stress_threads tests/thread_gdb tests/timeslice tests/tm_basic tests/fptest tests/kalarm0" : "")
+                . ((!CYGPKG_INFRA_DEBUG && !CYGPKG_KERNEL_INSTRUMENT && CYGFUN_KERNEL_API_C) ? " tests/dhrystone" : "")
+                . ((CYGPKG_KERNEL_SMP_SUPPORT && CYGFUN_KERNEL_API_C) ? " tests/smp" : "")
+                . ((!CYGINT_HAL_TESTS_NO_CACHES && CYGFUN_KERNEL_API_C) ? " tests/kcache1 tests/kcache2" : "")
+            }
+            description   "
+                This option specifies the set of tests for the eCos kernel."
+        }
+    }
+}
+
+# EOF kernel.cdl

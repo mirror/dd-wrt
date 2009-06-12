@@ -1,0 +1,537 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:610: checking whether to enable maintainer-specific portions of Makefiles
+configure:635: checking for makeinfo
+configure:681: checking for perl
+configure:721: checking host system type
+configure:744: checking build system type
+configure:770: checking for ar
+configure:802: checking for ranlib
+configure:871: checking for gcc
+configure:950: checking whether we are using GNU C
+configure:959: gcc -E conftest.c
+configure:975: checking whether gcc accepts -g
+configure:1007: checking whether gcc and cc understand -c and -o together
+configure:1022: gcc -c conftest.c -o conftest.o 1>&5
+configure:1023: gcc -c conftest.c -o conftest.o 1>&5
+configure:1028: cc -c conftest.c 1>&5
+configure:1030: cc -c conftest.c -o conftest.o 1>&5
+configure:1031: cc -c conftest.c -o conftest.o 1>&5
+configure:1067: checking for POSIXized ISC
+configure:1088: checking for working const
+configure:1142: gcc -c -g -O2  conftest.c 1>&5
+configure:1163: checking for inline
+configure:1177: gcc -c -g -O2  conftest.c 1>&5
+configure:1220: checking for a BSD compatible install
+configure:1281: checking how to run the C preprocessor
+configure:1302: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/file.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/param.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for limits.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for stdlib.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for malloc.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for string.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for unistd.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for strings.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/time.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for time.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/resource.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/stat.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/mman.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for fcntl.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for alloca.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/pstat.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1370:23: error: sys/pstat.h: No such file or directory
+configure: failed program was:
+#line 1369 "configure"
+#include "confdefs.h"
+#include <sys/pstat.h>
+configure:1364: checking for sys/sysmp.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1370:23: error: sys/sysmp.h: No such file or directory
+configure: failed program was:
+#line 1369 "configure"
+#include "confdefs.h"
+#include <sys/sysmp.h>
+configure:1364: checking for sys/sysinfo.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for machine/hal_sysinfo.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1370:33: error: machine/hal_sysinfo.h: No such file or directory
+configure: failed program was:
+#line 1369 "configure"
+#include "confdefs.h"
+#include <machine/hal_sysinfo.h>
+configure:1364: checking for sys/table.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1370:23: error: sys/table.h: No such file or directory
+configure: failed program was:
+#line 1369 "configure"
+#include "confdefs.h"
+#include <sys/table.h>
+configure:1364: checking for sys/sysctl.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1364: checking for sys/systemcfg.h
+configure:1374: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1370:27: error: sys/systemcfg.h: No such file or directory
+configure: failed program was:
+#line 1369 "configure"
+#include "confdefs.h"
+#include <sys/systemcfg.h>
+configure:1401: checking for sys/wait.h that is POSIX.1 compatible
+configure:1422: gcc -c -g -O2  conftest.c 1>&5
+configure:1443: checking whether time.h and sys/time.h may both be included
+configure:1457: gcc -c -g -O2  conftest.c 1>&5
+configure:1479: checking whether errno must be declared
+configure:1491: gcc -c -g -O2  conftest.c 1>&5
+configure:1513: checking for ANSI C header files
+configure:1526: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1593: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:1588: warning: incompatible implicit declaration of built-in function 'exit'
+configure:1617: checking for uintptr_t
+configure:1658: checking for pid_t
+configure:2448: checking whether the C compiler (gcc -g -O2 ) works
+configure:2464: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2490: checking whether the C compiler (gcc -g -O2 ) is a cross-compiler
+configure:2497: checking for asprintf
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for atexit
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for basename
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for bcmp
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'bcmp'
+configure:2497: checking for bcopy
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'bcopy'
+configure:2497: checking for bsearch
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for bzero
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'bzero'
+configure:2497: checking for calloc
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'calloc'
+configure:2497: checking for clock
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for ffs
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'ffs'
+configure:2497: checking for getcwd
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for getpagesize
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for index
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'index'
+configure:2497: checking for insque
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for memchr
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'memchr'
+configure:2497: checking for memcmp
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'memcmp'
+configure:2497: checking for memcpy
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'memcpy'
+configure:2497: checking for memmove
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'memmove'
+configure:2497: checking for memset
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'memset'
+configure:2497: checking for mkstemps
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccCtbx41.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:2519: undefined reference to `mkstemps'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 2502 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char mkstemps(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char mkstemps();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_mkstemps) || defined (__stub___mkstemps)
+choke me
+#else
+mkstemps();
+#endif
+
+; return 0; }
+configure:2497: checking for putenv
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for random
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for rename
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for rindex
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'rindex'
+configure:2497: checking for setenv
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for sigsetmask
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for strcasecmp
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'strcasecmp'
+configure:2497: checking for strchr
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'strchr'
+configure:2497: checking for strdup
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'strdup'
+configure:2497: checking for strncasecmp
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'strncasecmp'
+configure:2497: checking for strrchr
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'strrchr'
+configure:2497: checking for strstr
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'strstr'
+configure:2497: checking for strtod
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for strtol
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for strtoul
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for tmpnam
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccU097Ix.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:2519: warning: the use of `tmpnam' is dangerous, better use `mkstemp'
+configure:2497: checking for vasprintf
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2497: checking for vfprintf
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'vfprintf'
+configure:2497: checking for vprintf
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'vprintf'
+configure:2497: checking for vsprintf
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2509: warning: conflicting types for built-in function 'vsprintf'
+configure:2497: checking for waitpid
+configure:2525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:2552: checking whether alloca needs Cray hooks
+configure:2636: checking stack direction for C alloca
+configure:2663: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:2659: warning: incompatible implicit declaration of built-in function 'exit'
+configure: failed program was:
+#line 2644 "configure"
+#include "confdefs.h"
+find_stack_direction ()
+{
+  static char *addr = 0;
+  auto char dummy;
+  if (addr == 0)
+    {
+      addr = &dummy;
+      return find_stack_direction ();
+    }
+  else
+    return (&dummy > addr) ? 1 : -1;
+}
+main ()
+{
+  exit (find_stack_direction() < 0);
+}
+configure:2685: checking for vfork.h
+configure:2695: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2691:19: error: vfork.h: No such file or directory
+configure: failed program was:
+#line 2690 "configure"
+#include "confdefs.h"
+#include <vfork.h>
+configure:2720: checking for working vfork
+configure:2871: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:2854: warning: incompatible implicit declaration of built-in function 'exit'
+configure:2961: checking for _doprnt
+configure:2989: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/cc0KpAWe.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:2983: undefined reference to `_doprnt'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 2966 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char _doprnt(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char _doprnt();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub__doprnt) || defined (__stub____doprnt)
+choke me
+#else
+_doprnt();
+#endif
+
+; return 0; }
+configure:3017: checking for sys_errlist
+configure:3029: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccYkU32q.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:3025: warning: `sys_errlist' is deprecated; use `strerror' or `strerror_r' instead
+configure:3017: checking for sys_nerr
+configure:3029: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccCAAQGi.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:3025: warning: `sys_nerr' is deprecated; use `strerror' or `strerror_r' instead
+configure:3017: checking for sys_siglist
+configure:3029: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3056: checking for external symbol _system_configuration
+configure:3065: gcc -c -g -O2  conftest.c 1>&5
+configure:3059:27: error: sys/systemcfg.h: No such file or directory
+configure: In function 'main':
+configure:3061: error: '_system_configuration' undeclared (first use in this function)
+configure:3061: error: (Each undeclared identifier is reported only once
+configure:3061: error: for each function it appears in.)
+configure: failed program was:
+#line 3058 "configure"
+#include "confdefs.h"
+#include <sys/systemcfg.h>
+int main() {
+double x = _system_configuration.physmem;
+; return 0; }
+configure:3081: checking whether canonicalize_file_name must be declared
+configure:3108: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:3104: error: 'canonicalize_file_name' undeclared (first use in this function)
+configure:3104: error: (Each undeclared identifier is reported only once
+configure:3104: error: for each function it appears in.)
+configure: failed program was:
+#line 3086 "configure"
+#include "confdefs.h"
+
+#include "confdefs.h"
+#include <stdio.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#else
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+int main() {
+char *(*pfn) = (char *(*)) canonicalize_file_name
+; return 0; }
+configure:3131: checking for getrusage
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for on_exit
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for psignal
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for strerror
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for strsignal
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for sysconf
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for times
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for sbrk
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for gettimeofday
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for realpath
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for canonicalize_file_name
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3131: checking for pstat_getstatic
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccswqknF.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:3153: undefined reference to `pstat_getstatic'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3136 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char pstat_getstatic(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char pstat_getstatic();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_pstat_getstatic) || defined (__stub___pstat_getstatic)
+choke me
+#else
+pstat_getstatic();
+#endif
+
+; return 0; }
+configure:3131: checking for pstat_getdynamic
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccIfTk2T.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:3153: undefined reference to `pstat_getdynamic'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3136 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char pstat_getdynamic(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char pstat_getdynamic();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_pstat_getdynamic) || defined (__stub___pstat_getdynamic)
+choke me
+#else
+pstat_getdynamic();
+#endif
+
+; return 0; }
+configure:3131: checking for sysmp
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/cc2AGXQ0.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:3153: undefined reference to `sysmp'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3136 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char sysmp(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char sysmp();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_sysmp) || defined (__stub___sysmp)
+choke me
+#else
+sysmp();
+#endif
+
+; return 0; }
+configure:3131: checking for getsysinfo
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccURcoSe.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:3153: undefined reference to `getsysinfo'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3136 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char getsysinfo(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char getsysinfo();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_getsysinfo) || defined (__stub___getsysinfo)
+choke me
+#else
+getsysinfo();
+#endif
+
+; return 0; }
+configure:3131: checking for table
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+/tmp/ccSvL9iq.o: In function `main':
+/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/gcc-3.3-initial/libiberty/configure:3153: undefined reference to `table'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 3136 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char table(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char table();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_table) || defined (__stub___table)
+choke me
+#else
+table();
+#endif
+
+; return 0; }
+configure:3131: checking for sysctl
+configure:3159: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3189: checking for unistd.h
+configure:3228: checking for getpagesize
+configure:3281: checking for working mmap
+configure:3429: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:3360: warning: conflicting types for built-in function 'malloc'
+configure: In function 'main':
+configure:3377: warning: incompatible implicit declaration of built-in function 'exit'
+configure:3399: warning: cast from pointer to integer of different size
+configure:3453: checking for working strncmp
+configure:3525: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:3500: warning: incompatible implicit declaration of built-in function 'exit'
+configure:3512: warning: incompatible implicit declaration of built-in function 'strlen'
+configure:3515: warning: incompatible implicit declaration of built-in function 'strcpy'

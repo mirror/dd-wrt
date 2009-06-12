@@ -1,0 +1,199 @@
+# ====================================================================
+#
+#      ser_arm_iop310.cdl
+#
+#      eCos serial IQ80200/80310 configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      msalter
+# Original data:  msalter, gthomas
+# Contributors:
+# Date:           2000-10-10
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+
+cdl_package CYGPKG_IO_SERIAL_ARM_XSCALE_IOP310 {
+    display       "XScale IOP310 serial device drivers"
+
+    parent        CYGPKG_IO_SERIAL_DEVICES
+    active_if     CYGPKG_IO_SERIAL
+    active_if     CYGPKG_HAL_ARM_XSCALE_IOP310
+
+    requires      CYGPKG_ERROR
+    include_dir   cyg/io
+
+    description   "
+           This option enables the serial device drivers for the
+           Xscale board using the IOP310 chipset."
+
+    # FIXME: This really belongs in the GENERIC_16X5X package
+    cdl_interface CYGINT_IO_SERIAL_GENERIC_16X5X_REQUIRED {
+        display   "Generic 16x5x serial driver required"
+    }
+    define_proc {
+        puts $::cdl_header "#define CYGPRI_IO_SERIAL_GENERIC_16X5X_STEP 1"
+    }
+
+
+    define_proc {
+        puts $::cdl_system_header "/***** serial driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_IO_SERIAL_GENERIC_16X5X_INL <cyg/io/arm_iop310_ser.inl>"
+        puts $::cdl_system_header "#define CYGDAT_IO_SERIAL_GENERIC_16X5X_CFG <pkgconf/io_serial_arm_xscale_iop310.h>"
+        puts $::cdl_system_header "/*****  serial driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_ARM_IOP310_SERIAL0 {
+        display       "ARM Xscale IOP310 serial port 0 driver"
+        flavor        bool
+        default_value 1
+        active_if     { CYGHWR_HAL_ARM_IQ80310_SERIAL_PORTA != 0 }
+
+        implements CYGINT_IO_SERIAL_GENERIC_16X5X_REQUIRED
+        implements    CYGINT_IO_SERIAL_FLOW_CONTROL_HW
+        implements    CYGINT_IO_SERIAL_LINE_STATUS_HW
+
+        description   "
+            This option includes the serial device driver for the 
+	    Xscale IOP310 port 0."
+
+        cdl_option CYGDAT_IO_SERIAL_ARM_IOP310_SERIAL0_NAME {
+            display       "Device name for IOP310 serial port 0 driver"
+            flavor        data
+            default_value {"\"/dev/ser0\""}
+            description   "
+                This option specifies the name of the serial device
+                for the Xscale IOP310 port 0."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_ARM_IOP310_SERIAL0_BAUD {
+            display       "Baud rate for the Xscale IOP310 serial port 0 driver"
+            flavor        data
+            legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400
+                            3600 4800 7200 9600 14400 19200 38400
+                            57600 115200 }
+            default_value 38400
+            description   "
+                This option specifies the default baud rate (speed)
+                for the Xscale IOP310 port 0."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_ARM_IOP310_SERIAL0_BUFSIZE {
+            display       "Buffer size for the Xscale IOP310 serial port 0 driver"
+            flavor        data
+            legal_values  0 to 8192
+            default_value 128
+            description   "
+                This option specifies the size of the internal buffers
+                used for the Xscale IOP310 port 0."
+        }
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_ARM_IOP310_SERIAL1 {
+        display       "ARM Xscale IOP310 serial port 1 driver"
+        flavor        bool
+        default_value 1
+        active_if     { CYGHWR_HAL_ARM_IQ80310_SERIAL_PORTB != 0 }
+
+        implements CYGINT_IO_SERIAL_GENERIC_16X5X_REQUIRED
+        implements    CYGINT_IO_SERIAL_FLOW_CONTROL_HW
+        implements    CYGINT_IO_SERIAL_LINE_STATUS_HW
+
+        description   "
+            This option includes the serial device driver for the Xscale
+	    IOP310 port 1."
+
+        cdl_option CYGDAT_IO_SERIAL_ARM_IOP310_SERIAL1_NAME {
+            display       "Device name for IOP310 serial port 1 driver"
+            flavor        data
+            default_value {"\"/dev/ser1\""}
+            description   "
+                This option specifies the name of the serial device
+                for the Xscale IOP310 port 1."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_ARM_IOP310_SERIAL1_BAUD {
+            display       "Baud rate for the Xscale IOP310 serial port 1 driver"
+            flavor        data
+            legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400
+                            3600 4800 7200 9600 14400 19200 38400
+                            57600 115200 }
+            default_value 38400
+            description   "
+                This option specifies the default baud rate (speed)
+                for the Xscale IOP310 port 1."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_ARM_IOP310_SERIAL1_BUFSIZE {
+            display       "Buffer size for the Xscale IOP310 serial port 1 driver"
+            flavor        data
+            legal_values  0 to 8192
+            default_value 128
+            description   "
+                This option specifies the size of the internal buffers
+                used for the Xscale IOP310 port 1."
+        }
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_ARM_IOP310_TESTING {
+        display    "Testing parameters"
+        flavor     bool
+        calculated 1
+        active_if  CYGPKG_IO_SERIAL_ARM_IOP310_SERIAL0
+
+        implements CYGINT_IO_SERIAL_TEST_SKIP_9600
+        implements CYGINT_IO_SERIAL_TEST_SKIP_115200
+        implements CYGINT_IO_SERIAL_TEST_SKIP_PARITY_EVEN
+        
+        cdl_option CYGPRI_SER_TEST_SER_DEV {
+            display       "Serial device used for testing"
+            flavor        data
+            default_value { CYGDAT_IO_SERIAL_ARM_IOP310_SERIAL1_NAME }
+        }
+
+        define_proc {
+            puts $::cdl_header "#define CYGPRI_SER_TEST_CRASH_ID \"iop310\""
+            puts $::cdl_header "#define CYGPRI_SER_TEST_TTY_DEV  \"/dev/tty0\""
+        }
+    }
+}
+
+# EOF ser_arm_iop310.cdl

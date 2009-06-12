@@ -1,0 +1,35 @@
+
+#include <cyg/infra/cyg_type.inc>
+
+MEMORY
+{
+  rom          : ORIGIN = 0x00000000, LENGTH = 0x0006ffff   /* internal flash */
+  ram(WA)      : ORIGIN = 0x00400000, LENGTH = 0x0007ffff   /* external RAM   */
+  iram(WA)     : ORIGIN = 0x003f9800, LENGTH = 0x00006800   /* internal RAM   */
+  eflash(RXIW) : ORIGIN = 0x00800000, LENGTH = 0x0007ffff   /* external FLASH */
+}
+
+SECTIONS
+{
+    SECTIONS_BEGIN
+    CYG_LABEL_DEFN(__reserved_vectors) = 0x00000000; 
+
+    . = 0x3f9800;
+    CYG_LABEL_DEFN(__reserved_vsr_table) = ALIGN (0x10); 
+    . = CYG_LABEL_DEFN(__reserved_vsr_table) + 0x200;
+    CYG_LABEL_DEFN(__reserved_virtual_table) = ALIGN (0x10); 
+    . = 0x00400000;
+
+    SECTION_vectors          (ram, 0x00400000,  LMA_EQ_VMA)
+    SECTION_text             (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_fini             (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_rodata1          (ram, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_rodata           (ram, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_fixup            (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_gcc_except_table (ram, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_data             (ram, ALIGN (0x8), LMA_EQ_VMA)
+    SECTION_sbss             (ram, ALIGN (0x4), LMA_EQ_VMA)
+    SECTION_bss              (ram, ALIGN (0x10), LMA_EQ_VMA)
+    CYG_LABEL_DEFN(__heap1) = ALIGN (0x8);
+    SECTIONS_END
+}

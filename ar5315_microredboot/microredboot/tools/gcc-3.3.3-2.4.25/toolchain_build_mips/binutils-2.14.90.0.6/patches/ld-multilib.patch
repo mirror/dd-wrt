@@ -1,0 +1,633 @@
+2001-08-17  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.h (ldfile_open_command_file): Return void again;
+	* ldfile.c (ldfile_open_command_file): Return if failed to open
+	the file and command_line.multilib_dir is not NULL.
+
+2001-06-29  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.c (ldfile_open_file_search): Don't try
+	command_line.multilib_dir if it starts with a `slash'.
+	* emultempl/elf32.em (gld${EMULATION_NAME}_after_open):
+	Likewise.
+
+	* ldmain.c (set_scripts_dir): Allow the absolute path.
+
+2001-04-25  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.h (ldfile_open_command_file): Return FILE *;
+	* ldfile.c (ldfile_open_command_file): Return NULL if failed
+	to open the file and command_line.multilib_dir is not NULL.
+	Return ldlex_input_stack if ok.
+
+	* ldmain.c (main): Print out the external linker script for
+	--verbose. Try internal linker script if the external linker
+	script doesn't exist.
+
+2001-04-24  H.J. Lu  <hjl@gnu.org>
+
+	* emultempl/elf32.em (gld${EMULATION_NAME}_after_open): Search
+	command_line.multilib_dir first if it is not NULL.
+
+2001-04-24  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.h (slash): Declared.
+
+	* ldfile.c (ldfile_try_open_file): New functon. Try to open
+	a file in a search directory.
+	(ldfile_open_file_search): Search command_line.multilib_dir
+	first if it is not NULL.
+
+	* ldmain.c (set_scripts_dir): Use the relative path only.
+
+Thu Sep 24 21:06:07 1998  H.J. Lu  (hjl@gnu.org)
+
+	From "Brad M. Garcia" <bgarcia@fore.com> on Wed Sep 23 10:21:17 1998.
+	* emultempl/sunos.em (gld${EMULATION_NAME}_set_symbols):
+	Calling ldfile_add_library_path with one more argument, true.
+	* emultempl/gld960.em (gld960_before_parse): Likewise.
+	* emultempl/gld960c.em (gld960_before_parse): Likewise.
+	* emultempl/lnk960.em (lnk960_before_parse): Likewise.
+	
+Wed Sep 16 07:32:44 1998  H.J. Lu  (hjl@gnu.org)
+
+	* ld.h (args_type): Add one field, multilib_dir.
+
+	* ldfile.c (ldfile_add_library_path): Add one argument, append.
+	* ldfile.h (ldfile_add_library_path): Likewise.
+
+	* ldgram.y: Calling ldfile_add_library_path with one more
+	argument, true.
+	* ldmain.c: Likewise.
+	* lexsup.c: Likewise.
+
+	* ldmain.c (check_for_scripts_dir): Add one argument, append.
+	(main): Initialize command_line.multilib_dir to NULL.
+	(set_scripts_dir): If command_line.multilib_dir is not NULL,
+	prepend it to search path.
+
+	* lexsup.c (OPTION_MULTILIB_DIR): New.
+	(parse_args): Handle OPTION_MULTILIB_DIR.
+
+	* emultempl/elf32.em (gld${EMULATION_NAME}_get_script): If
+	command_line.multilib_dir != NULL, get linker scripts from
+	files.
+
+--- ld/emultempl/elf32.em.multilib	Fri Jan 17 09:23:13 2003
++++ ld/emultempl/elf32.em	Fri Jan 17 09:33:31 2003
+@@ -704,6 +704,22 @@ cat >>e${EMULATION_NAME}.c <<EOF
+ 
+ 	      if (search->cmdline)
+ 		continue;
++
++	      if (command_line.multilib_dir != NULL
++		  && *command_line.multilib_dir != '/')
++	        {
++		  filename = (char *) xmalloc (strlen (search->name)
++					       + strlen (command_line.multilib_dir)
++					       + len
++					       + 3);
++		  sprintf (filename, "%s/%s/%s", search->name,
++			   command_line.multilib_dir, l->name);
++
++		  if (gld${EMULATION_NAME}_try_needed (filename, force))
++		    break;
++		  free (filename);
++		}
++
+ 	      filename = (char *) xmalloc (strlen (search->name) + len + 2);
+ 	      sprintf (filename, "%s/%s", search->name, l->name);
+ 	      if (gld${EMULATION_NAME}_try_needed (filename, force))
+@@ -1413,10 +1429,12 @@ sc="-f stringify.sed"
+ 
+ cat >>e${EMULATION_NAME}.c <<EOF
+ {
+-  *isfile = 0;
++  if (command_line.multilib_dir == NULL)
++    {
++      *isfile = 0;
+ 
+-  if (link_info.relocateable && config.build_constructors)
+-    return
++      if (link_info.relocateable && config.build_constructors)
++	return
+ EOF
+ sed $sc ldscripts/${EMULATION_NAME}.xu                 >> e${EMULATION_NAME}.c
+ echo '  ; else if (link_info.relocateable) return'     >> e${EMULATION_NAME}.c
+@@ -1443,11 +1461,17 @@ echo '  ; else return'                  
+ sed $sc ldscripts/${EMULATION_NAME}.x                  >> e${EMULATION_NAME}.c
+ echo '; }'                                             >> e${EMULATION_NAME}.c
+ 
+-else
++fi
+ # Scripts read from the filesystem.
+ 
++if test -z "$COMPILE_IN"
++then
+ cat >>e${EMULATION_NAME}.c <<EOF
+ {
++EOF
++fi
++
++cat >>e${EMULATION_NAME}.c <<EOF
+   *isfile = 1;
+ 
+   if (link_info.relocateable && config.build_constructors)
+@@ -1466,7 +1490,6 @@ cat >>e${EMULATION_NAME}.c <<EOF
+ 
+ EOF
+ fi
+-fi
+ 
+ if test -n "$PARSE_AND_LIST_ARGS_CASES" -o x"$GENERATE_SHLIB_SCRIPT" = xyes; then
+ 
+--- ld/emultempl/gld960.em.multilib	Fri Jan 17 09:23:13 2003
++++ ld/emultempl/gld960.em	Fri Jan 17 09:33:31 2003
+@@ -59,7 +59,7 @@ gld960_before_parse()
+       ldfile_add_library_path (concat (env,
+ 				       "/lib/libbout",
+ 				       (const char *) NULL),
+-			       FALSE);
++			       FALSE, TRUE);
+     }
+   }
+   ldfile_output_architecture = bfd_arch_i960;
+@@ -72,11 +72,12 @@ static void gld960_before_parse()
+   char *env ;
+   env =  getenv("G960LIB");
+   if (env) {
+-    ldfile_add_library_path(env, FALSE);
++    ldfile_add_library_path(env, FALSE, TRUE);
+   }
+   env = getenv("G960BASE");
+   if (env)
+-    ldfile_add_library_path (concat (env, "/lib", (const char *) NULL), FALSE);
++    ldfile_add_library_path (concat (env, "/lib", (const char *) NULL),
++			     FALSE, TRUE);
+   ldfile_output_architecture = bfd_arch_i960;
+ }
+ 
+--- ld/emultempl/gld960c.em.multilib	Fri Jan 17 09:23:13 2003
++++ ld/emultempl/gld960c.em	Fri Jan 17 09:33:31 2003
+@@ -61,7 +61,7 @@ gld960_before_parse()
+       ldfile_add_library_path (concat (env,
+ 				       "/lib/libcoff",
+ 				       (const char *) NULL),
+-			       FALSE);
++			       FALSE, TRUE);
+     }
+   }
+   ldfile_output_architecture = bfd_arch_i960;
+@@ -74,12 +74,12 @@ static void gld960_before_parse()
+   char *env ;
+   env =  getenv("G960LIB");
+   if (env) {
+-    ldfile_add_library_path(env, FALSE);
++    ldfile_add_library_path(env, FALSE, TRUE);
+   }
+   env = getenv("G960BASE");
+   if (env)
+     ldfile_add_library_path (concat (env, "/lib", (const char *) NULL),
+-			     FALSE);
++			     FALSE, TRUE);
+   ldfile_output_architecture = bfd_arch_i960;
+ }
+ 
+--- ld/emultempl/lnk960.em.multilib	Fri Jan 17 09:23:13 2003
++++ ld/emultempl/lnk960.em	Fri Jan 17 09:33:31 2003
+@@ -110,12 +110,13 @@ lnk960_before_parse ()
+     {
+       env = (char *) getenv (*p);
+       if (env)
+-	ldfile_add_library_path (concat (env, "/lib/libcoff", ""), FALSE);
++	ldfile_add_library_path (concat (env, "/lib/libcoff", ""),
++				 FALSE, TRUE);
+     }
+ 
+   env = (char *) getenv ("I960BASE");
+   if (env)
+-    ldfile_add_library_path(concat (env, "/lib", ""), FALSE);
++    ldfile_add_library_path(concat (env, "/lib", ""), FALSE, TRUE);
+ 
+   ldfile_output_architecture = bfd_arch_i960;
+   ldfile_output_machine = bfd_mach_i960_core;
+@@ -136,7 +137,7 @@ lnk960_before_parse ()
+     }
+ 
+ 
+-  ldfile_add_library_path (concat (name, "/lib", ""), FALSE);
++  ldfile_add_library_path (concat (name, "/lib", ""), FALSE, TRUE);
+   ldfile_output_architecture = bfd_arch_i960;
+   ldfile_output_machine = bfd_mach_i960_core;
+ }
+--- ld/emultempl/sunos.em.multilib	Fri Jan 17 09:23:13 2003
++++ ld/emultempl/sunos.em	Fri Jan 17 09:33:31 2003
+@@ -131,7 +131,7 @@ cat >>e${EMULATION_NAME}.c <<EOF
+ 	  if (c != NULL)
+ 	    *c++ = '\0';
+ 	  if (*l != '\0')
+-	    ldfile_add_library_path (l, FALSE);
++	    ldfile_add_library_path (l, FALSE, TRUE);
+ 	  if (c == NULL)
+ 	    break;
+ 	  l = c;
+--- ld/ld.h.multilib	Fri Jan 17 09:23:13 2003
++++ ld/ld.h	Fri Jan 17 09:33:31 2003
+@@ -154,6 +154,8 @@ typedef struct {
+      input files.  */
+   bfd_boolean accept_unknown_input_arch;
+ 
++  /* It is used to specify where to find some multilib files. */
++  char *multilib_dir;
+ } args_type;
+ 
+ extern args_type command_line;
+--- ld/ldfile.c.multilib	Fri Jan 17 09:23:13 2003
++++ ld/ldfile.c	Fri Jan 17 09:33:31 2003
+@@ -71,11 +71,16 @@ static search_arch_type *search_arch_hea
+ static search_arch_type **search_arch_tail_ptr = &search_arch_head;
+ 
+ static FILE *try_open PARAMS ((const char *name, const char *exten));
++static bfd_boolean ldfile_try_open_file
++  PARAMS ((const char *arch, lang_input_statement_type *entry,
++	   search_dirs_type *search, const char *lib,
++	   const char *suffix));
+ 
+ void
+-ldfile_add_library_path (name, cmdline)
++ldfile_add_library_path (name, cmdline, append)
+      const char *name;
+      bfd_boolean cmdline;
++     bfd_boolean append;
+ {
+   search_dirs_type *new;
+ 
+@@ -83,11 +88,21 @@ ldfile_add_library_path (name, cmdline)
+     return;
+ 
+   new = (search_dirs_type *) xmalloc (sizeof (search_dirs_type));
+-  new->next = NULL;
+   new->name = name;
+   new->cmdline = cmdline;
+-  *search_tail_ptr = new;
+-  search_tail_ptr = &new->next;
++  if (append)
++    {
++      new->next = NULL;
++      *search_tail_ptr = new;
++      search_tail_ptr = &new->next;
++    }
++  else
++    {
++      new->next = search_head;
++      search_head = new;
++      if (search_tail_ptr == &search_head)
++	search_tail_ptr = &new->next;
++    }
+ }
+ 
+ /* Try to open a BFD for a lang_input_statement.  */
+@@ -244,6 +259,55 @@ ldfile_try_open_bfd (attempt, entry)
+   return TRUE;
+ }
+ 
++static bfd_boolean
++ldfile_try_open_file (arch, entry, search, lib, suffix)
++     const char *arch;
++     lang_input_statement_type *entry;
++     search_dirs_type *search;
++     const char *lib;
++     const char *suffix;
++{
++  char *string;
++
++  if (entry->dynamic && ! link_info.relocateable)
++    {
++      if (ldemul_open_dynamic_archive (arch, search, entry))
++	return TRUE;
++    }
++
++  string = (char *) xmalloc (strlen (search->name)
++			     + strlen (slash)
++			     + strlen (lib)
++			     + strlen (entry->filename)
++			     + strlen (arch)
++			     + strlen (suffix)
++			     + 1);
++
++  if (entry->is_archive)
++    sprintf (string, "%s%s%s%s%s%s", search->name, slash,
++	     lib, entry->filename, arch, suffix);
++  else if (entry->filename[0] == '/' || entry->filename[0] == '.'
++#if defined (__MSDOS__) || defined (_WIN32)
++	   || entry->filename[0] == '\\'
++	   || (ISALPHA (entry->filename[0])
++	       && entry->filename[1] == ':')
++#endif
++      )
++    strcpy (string, entry->filename);
++  else
++    sprintf (string, "%s%s%s", search->name, slash, entry->filename);
++
++  if (ldfile_try_open_bfd (string, entry))
++    {
++      entry->filename = string;
++      return TRUE;
++    }
++
++  free (string);
++
++  return FALSE;
++}
++
+ /* Search for and open the file specified by ENTRY.  If it is an
+    archive, use ARCH, LIB and SUFFIX to modify the file name.  */
+ 
+@@ -268,43 +332,33 @@ ldfile_open_file_search (arch, entry, li
+        search != (search_dirs_type *) NULL;
+        search = search->next)
+     {
+-      char *string;
+-
+-      if (entry->dynamic && ! link_info.relocateable)
++      if (command_line.multilib_dir != NULL
++	  && *command_line.multilib_dir != *slash)
+ 	{
+-	  if (ldemul_open_dynamic_archive (arch, search, entry))
+-	    return TRUE;
+-	}
++	  const char *saved_name;
++	  char *name;
++	  bfd_boolean found;
++
++	  saved_name = search->name;
++	  name = (char *) xmalloc (strlen (search->name)
++				   + strlen (slash)
++				   + strlen (command_line.multilib_dir)
++				   + 1);
++	  sprintf (name, "%s%s%s", saved_name, slash,
++		   command_line.multilib_dir);
++
++	  search->name = name;
++	  found = ldfile_try_open_file (arch, entry, search, lib,
++					suffix);
++	  search->name = saved_name;
+ 
+-      string = (char *) xmalloc (strlen (search->name)
+-				 + strlen (slash)
+-				 + strlen (lib)
+-				 + strlen (entry->filename)
+-				 + strlen (arch)
+-				 + strlen (suffix)
+-				 + 1);
+-
+-      if (entry->is_archive)
+-	sprintf (string, "%s%s%s%s%s%s", search->name, slash,
+-		 lib, entry->filename, arch, suffix);
+-      else if (entry->filename[0] == '/' || entry->filename[0] == '.'
+-#if defined (__MSDOS__) || defined (_WIN32)
+-	       || entry->filename[0] == '\\'
+-	       || (ISALPHA (entry->filename[0])
+-	           && entry->filename[1] == ':')
+-#endif
+-	  )
+-	strcpy (string, entry->filename);
+-      else
+-	sprintf (string, "%s%s%s", search->name, slash, entry->filename);
+-
+-      if (ldfile_try_open_bfd (string, entry))
+-	{
+-	  entry->filename = string;
+-	  return TRUE;
++	  free (name);
++	  if (found)
++	    return found;
+ 	}
+ 
+-      free (string);
++      if (ldfile_try_open_file (arch, entry, search, lib, suffix))
++	return TRUE;
+     }
+ 
+   return FALSE;
+@@ -442,8 +496,14 @@ ldfile_open_command_file (name)
+ 
+   if (ldlex_input_stack == (FILE *) NULL)
+     {
+-      bfd_set_error (bfd_error_system_call);
+-      einfo (_("%P%F: cannot open linker script file %s: %E\n"), name);
++      if (command_line.multilib_dir == NULL)
++	{
++	  bfd_set_error (bfd_error_system_call);
++	  einfo (_("%P%F: cannot open linker script file %s: %E\n"),
++		name);
++	}
++      else
++	return;
+     }
+ 
+   lex_push_file (ldlex_input_stack, name);
+--- ld/ldfile.h.multilib	Fri Jan 17 09:23:13 2003
++++ ld/ldfile.h	Fri Jan 17 09:33:31 2003
+@@ -21,6 +21,7 @@
+ #ifndef LDFILE_H
+ #define LDFILE_H
+ 
++extern char *slash;
+ extern const char *ldfile_input_filename;
+ extern bfd_boolean ldfile_assumed_script;
+ extern unsigned long ldfile_output_machine;
+@@ -44,7 +45,7 @@ extern search_dirs_type *search_head;
+ extern void ldfile_add_arch
+   PARAMS ((const char *));
+ extern void ldfile_add_library_path
+-  PARAMS ((const char *, bfd_boolean cmdline));
++  PARAMS ((const char *, bfd_boolean cmdline, bfd_boolean append));
+ extern void ldfile_open_command_file
+   PARAMS ((const char *name));
+ extern void ldfile_open_file
+--- ld/ldgram.y.multilib	Fri Jan 17 09:23:13 2003
++++ ld/ldgram.y	Fri Jan 17 09:33:31 2003
+@@ -319,7 +319,7 @@ ifile_p1:
+ 	|	TARGET_K '(' NAME ')'
+ 		{ lang_add_target($3); }
+ 	|	SEARCH_DIR '(' filename ')'
+-		{ ldfile_add_library_path ($3, FALSE); }
++		{ ldfile_add_library_path ($3, FALSE, TRUE); }
+ 	|	OUTPUT '(' filename ')'
+ 		{ lang_add_output($3, 1); }
+         |	OUTPUT_FORMAT '(' NAME ')'
+--- ld/ldmain.c.multilib	Fri Jan 17 09:23:13 2003
++++ ld/ldmain.c	Fri Jan 17 09:33:31 2003
+@@ -95,7 +95,7 @@ args_type command_line;
+ ld_config_type config;
+ 
+ static void remove_output PARAMS ((void));
+-static bfd_boolean check_for_scripts_dir PARAMS ((char *dir));
++static bfd_boolean check_for_scripts_dir PARAMS ((char *dir, bfd_boolean append));
+ static bfd_boolean add_archive_element PARAMS ((struct bfd_link_info *, bfd *,
+ 					    const char *));
+ static bfd_boolean multiple_definition PARAMS ((struct bfd_link_info *,
+@@ -221,6 +221,7 @@ main (argc, argv)
+   command_line.warn_mismatch = TRUE;
+   command_line.check_section_addresses = TRUE;
+   command_line.accept_unknown_input_arch = FALSE;
++  command_line.multilib_dir = NULL;
+ 
+   /* We initialize DEMANGLING based on the environment variable
+      COLLECT_NO_DEMANGLE.  The gcc collect2 program will demangle the
+@@ -331,12 +332,34 @@ main (argc, argv)
+       char *s = ldemul_get_script (&isfile);
+ 
+       if (isfile)
+-	ldfile_open_command_file (s);
+-      else
+-	{
++        {
++	  ldfile_open_command_file (s);
++
++	  if (saved_script_handle == NULL)
++	    {
++	      /* We thought there was an external linker script. But
++		 we couldn't find it. Let's try again for the internal
++		 one without command_line.multilib_dir.  */
++	      char *saved = command_line.multilib_dir;
++	      command_line.multilib_dir = NULL;
++	      s = ldemul_get_script (&isfile);
++	      command_line.multilib_dir = saved;
++	      if (isfile)
++		{
++		  /* It should never happen.  */
++		  bfd_set_error (bfd_error_system_call);
++		  einfo (_("%P%F: cannot open linker script file %s: %E\n"),
++			 s);
++		}
++	    }
++	}
++
++      if (!isfile)
++	{	
+ 	  lex_string = s;
+ 	  lex_redirect (s);
+ 	}
++
+       parser_input = input_script;
+       yyparse ();
+       lex_string = NULL;
+@@ -587,8 +610,9 @@ get_emulation (argc, argv)
+    else return FALSE.  */
+ 
+ static bfd_boolean
+-check_for_scripts_dir (dir)
++check_for_scripts_dir (dir, append)
+      char *dir;
++     bfd_boolean append;
+ {
+   size_t dirlen;
+   char *buf;
+@@ -603,7 +627,7 @@ check_for_scripts_dir (dir)
+   res = stat (buf, &s) == 0 && S_ISDIR (s.st_mode);
+   free (buf);
+   if (res)
+-    ldfile_add_library_path (dir, FALSE);
++    ldfile_add_library_path (dir, FALSE, append);
+   return res;
+ }
+ 
+@@ -621,7 +645,32 @@ set_scripts_dir ()
+   char *end, *dir;
+   size_t dirlen;
+ 
+-  if (check_for_scripts_dir (SCRIPTDIR))
++  if (command_line.multilib_dir != NULL)
++    {
++      bfd_boolean found;
++
++      if (*command_line.multilib_dir == *slash)
++        {
++	  found = check_for_scripts_dir (command_line.multilib_dir,
++					 FALSE);
++	}
++      else
++	{
++	  dir = xmalloc (strlen (SCRIPTDIR)
++			  + strlen (slash)
++			  + strlen (command_line.multilib_dir) + 1);
++	  sprintf (dir, "%s%s%s", SCRIPTDIR, slash,
++		   command_line.multilib_dir);
++
++	  found = check_for_scripts_dir (dir, FALSE);
++	  free (dir);
++	}
++
++      if (found)
++	return;
++    }
++
++  if (check_for_scripts_dir (SCRIPTDIR, TRUE))
+     /* We've been installed normally.  */
+     return;
+ 
+@@ -650,13 +699,13 @@ set_scripts_dir ()
+   strncpy (dir, program_name, dirlen);
+   dir[dirlen] = '\0';
+ 
+-  if (check_for_scripts_dir (dir))
++  if (check_for_scripts_dir (dir, TRUE))
+     /* Don't free dir.  */
+     return;
+ 
+   /* Look for "ldscripts" in <the dir where our binary is>/../lib.  */
+   strcpy (dir + dirlen, "/../lib");
+-  if (check_for_scripts_dir (dir))
++  if (check_for_scripts_dir (dir, TRUE))
+     return;
+ 
+   /* Well, we tried.  */
+--- ld/lexsup.c.multilib	Fri Jan 17 09:23:13 2003
++++ ld/lexsup.c	Fri Jan 17 09:33:31 2003
+@@ -138,6 +138,7 @@ int parsing_defsym = 0;
+ #define OPTION_NO_STRIP_DISCARDED	(OPTION_STRIP_DISCARDED + 1)
+ #define OPTION_ACCEPT_UNKNOWN_INPUT_ARCH    (OPTION_NO_STRIP_DISCARDED + 1)
+ #define OPTION_NO_ACCEPT_UNKNOWN_INPUT_ARCH (OPTION_ACCEPT_UNKNOWN_INPUT_ARCH + 1)
++#define OPTION_MULTILIB_DIR		(OPTION_NO_ACCEPT_UNKNOWN_INPUT_ARCH + 1)
+ 
+ /* The long options.  This structure is used for both the option
+    parsing and the help text.  */
+@@ -329,6 +330,8 @@ static const struct ld_option ld_options
+      '\0', N_("SYMBOL"), N_("Call SYMBOL at load-time"), ONE_DASH },
+   { {"Map", required_argument, NULL, OPTION_MAP},
+       '\0', N_("FILE"), N_("Write a map file"), ONE_DASH },
++  { {"multilib-dir", required_argument, NULL, OPTION_MULTILIB_DIR},
++      '\0', N_("PATH"), N_("Specify a target directory"), TWO_DASHES },
+   { {"no-define-common", no_argument, NULL, OPTION_NO_DEFINE_COMMON},
+       '\0', NULL, N_("Do not define Common storage"), TWO_DASHES },
+   { {"no-demangle", no_argument, NULL, OPTION_NO_DEMANGLE },
+@@ -739,7 +742,7 @@ parse_args (argc, argv)
+ 	  xexit (0);
+ 	  break;
+ 	case 'L':
+-	  ldfile_add_library_path (optarg, TRUE);
++	  ldfile_add_library_path (optarg, TRUE, TRUE);
+ 	  break;
+ 	case 'l':
+ 	  lang_add_input_file (optarg, lang_input_file_is_l_enum,
+@@ -962,6 +965,9 @@ parse_args (argc, argv)
+ 	  parser_input = input_script;
+ 	  yyparse ();
+ 	  break;
++	case OPTION_MULTILIB_DIR:
++	  command_line.multilib_dir = xstrdup (optarg);
++	  break;
+ 	case OPTION_SECTION_START:
+ 	  {
+ 	    char *optarg2;
+@@ -1195,7 +1201,7 @@ set_default_dirlist (dirlist_ptr)
+       if (p != NULL)
+ 	*p = '\0';
+       if (*dirlist_ptr != '\0')
+-	ldfile_add_library_path (dirlist_ptr, TRUE);
++	ldfile_add_library_path (dirlist_ptr, TRUE, TRUE);
+       if (p == NULL)
+ 	break;
+       dirlist_ptr = p + 1;

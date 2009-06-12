@@ -1,0 +1,1246 @@
+# ====================================================================
+#
+#      isoinfra.cdl
+#
+#      ISO C and POSIX standards infrastructure package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-04-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_ISOINFRA {
+    display       "ISO C and POSIX infrastructure"
+    description   "
+        eCos supports implementations of ISO C libraries and POSIX
+        implementations. This package provides infrastructure used by
+        all such implementations."
+
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_STARTUP {
+        display       "Startup and termination"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_MAIN_STARTUP {
+            display       "main() startup implementations"
+            description   "
+                Implementations of this interface arrange for a user-supplied
+                main() to be called in an ISO compatible environment."
+            requires      { 1 >= CYGINT_ISO_MAIN_STARTUP }
+        }
+
+        cdl_interface CYGINT_ISO_ENVIRON {
+            display       "environ implementations"
+            description   "
+                Implementations of this interface provide the environ
+                variable required by POSIX."
+            requires      { 1 >= CYGINT_ISO_ENVIRON }
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_CTYPE_H {
+        display       "ctype.h functions"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_CTYPE {
+            display       "Number of implementations of ctype functions"
+            requires      { 1 >= CYGINT_ISO_CTYPE }
+        }
+    
+        cdl_option CYGBLD_ISO_CTYPE_HEADER {
+            display       "Ctype implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_ERRNO {
+        display       "Error handling"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_ERRNO_CODES {
+            display       "Number of implementations of error codes"
+            requires      { 1 >= CYGINT_ISO_ERRNO_CODES }
+        }
+    
+        cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+            display       "Error codes implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    
+        cdl_interface CYGINT_ISO_ERRNO {
+            display       "Number of implementations of errno variable"
+            requires      { 1 >= CYGINT_ISO_ERRNO }
+        }
+    
+        cdl_option CYGBLD_ISO_ERRNO_HEADER {
+            display       "errno variable implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_LOCALE {
+        display       "Locale-related functions"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_LOCALE {
+            display       "Number of implementations of locale functions"
+            requires      { 1 >= CYGINT_ISO_LOCALE }
+        }
+    
+        cdl_option CYGBLD_ISO_LOCALE_HEADER {
+            display       "Locale implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_STDIO {
+        display       "Standard I/O-related functionality"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_STDIO_FILETYPES {
+            display       "Number of implementations of stdio file types"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_FILETYPES }
+        }
+
+        cdl_option CYGBLD_ISO_STDIO_FILETYPES_HEADER {
+            display       "Stdio file types implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_STREAMS {
+            display       "Stdio standard streams implementations"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_STREAMS }
+        }
+
+        cdl_option CYGBLD_ISO_STDIO_STREAMS_HEADER {
+            display       "Stdio standard streams implementation header"
+            description   "This header file must define stdin, stdout
+                           and stderr."
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_FILEOPS {
+            display       "Number of implementations of stdio file operations"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_FILEOPS }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_FILEOPS_HEADER {
+            display       "Stdio file operations implementation header"
+            description   "
+                This header controls the file system operations on a file
+                such as remove(), rename(), tmpfile(), tmpnam() and associated
+                constants."
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_FILEACCESS {
+            display       "Number of implementations of stdio file access \
+                          functionals"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_FILEACCESS }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_FILEACCESS_HEADER {
+            display       "Stdio file access implementation header"
+            description   "
+                This header controls the file access operations
+                such as fclose(), fflush(), fopen(), freopen(), setbuf(),
+                setvbuf(), and associated constants."
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_FORMATTED_IO {
+            display       "Number of implementations of stdio formatted I/O"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_FORMATTED_IO }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_FORMATTED_IO_HEADER {
+            display       "Stdio formatted I/O implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_CHAR_IO {
+            display       "Number of implementations of stdio character I/O"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_CHAR_IO }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_CHAR_IO_HEADER {
+            display       "Stdio character I/O implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_DIRECT_IO {
+            display       "Number of implementations of stdio direct I/O"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_DIRECT_IO }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_DIRECT_IO_HEADER {
+            display       "Stdio direct I/O implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_FILEPOS {
+            display       "Number of implementations of stdio file positioning"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_FILEPOS }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_FILEPOS_HEADER {
+            display       "Stdio file positioning implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_ERROR {
+            display       "Number of implementations of stdio error handling"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_STDIO_ERROR }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_ERROR_HEADER {
+            display       "Stdio error handling implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDIO_POSIX_FDFUNCS {
+            display       "POSIX fd-related function implementations"
+            flavor        booldata
+            requires      { 1 >=  CYGINT_ISO_STDIO_POSIX_FDFUNCS }
+        }
+    
+        cdl_option CYGBLD_ISO_STDIO_POSIX_FDFUNCS_HEADER {
+            display       "POSIX fd-related function implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_STDLIB {
+        display       "Standard general utility functions"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_STDLIB_STRCONV {
+            display       "String conversion function implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_STRCONV }
+        }
+    
+        cdl_option CYGBLD_ISO_STDLIB_STRCONV_HEADER {
+            display       "String conversion function implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDLIB_STRCONV_FLOAT {
+            display       "String to FP conversion function implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_STRCONV_FLOAT }
+        }
+    
+        cdl_option CYGBLD_ISO_STDLIB_STRCONV_FLOAT_HEADER {
+            display       "String to FP conversion function implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_RAND {
+            display       "Random number generator implementations"
+            requires      { 1 >= CYGINT_ISO_RAND }
+        }
+    
+        cdl_option CYGBLD_ISO_RAND_HEADER {
+            display       "Random number generator implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_MALLOC {
+            display       "Malloc implementations"
+            requires      { 1 >= CYGINT_ISO_MALLOC }
+        }
+    
+        cdl_option CYGBLD_ISO_MALLOC_HEADER {
+            display       "Malloc implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_MALLINFO {
+            display       "Mallinfo() implementations"
+            requires      { 1 >= CYGINT_ISO_MALLINFO }
+        }
+    
+        cdl_option CYGBLD_ISO_MALLINFO_HEADER {
+            display       "Mallinfo() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_EXIT {
+            display       "Program exit functionality implementations"
+            requires      { 1 >= CYGINT_ISO_EXIT }
+        }
+    
+        cdl_option CYGBLD_ISO_EXIT_HEADER {
+            display       "Program exit functionality implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDLIB_ENVIRON {
+            display       "Program environment implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_ENVIRON }
+        }
+    
+        cdl_option CYGBLD_ISO_STDLIB_ENVIRON_HEADER {
+            display       "Program environment implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDLIB_SYSTEM {
+            display       "system() implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_SYSTEM }
+        }
+    
+        cdl_option CYGBLD_ISO_STDLIB_SYSTEM_HEADER {
+            display       "system() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_BSEARCH {
+            display       "bsearch() implementations"
+            requires      { 1 >= CYGINT_ISO_BSEARCH }
+        }
+    
+        cdl_option CYGBLD_ISO_BSEARCH_HEADER {
+            display       "bsearch() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_QSORT {
+            display       "qsort() implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_QSORT }
+        }
+    
+        cdl_option CYGBLD_ISO_QSORT_HEADER {
+            display       "qsort() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_ABS {
+            display       "abs()/labs() implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_ABS }
+        }
+    
+        cdl_option CYGBLD_ISO_STDLIB_ABS_HEADER {
+            display       "abs()/labs() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_DIV {
+            display       "div()/ldiv() implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_DIV }
+        }
+    
+        cdl_option CYGBLD_ISO_STDLIB_DIV_HEADER {
+            display       "div()/ldiv() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGBLD_ISO_STDLIB_MB_CUR_MAX_HEADER {
+            display       "Header defining the implementation's MB_CUR_MAX"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STDLIB_MULTIBYTE {
+            display       "Multibyte character implementations"
+            requires      { 1 >= CYGINT_ISO_STDLIB_MULTIBYTE }
+        }
+    
+        cdl_option CYGBLD_ISO_STDLIB_MULTIBYTE_HEADER {
+            display       "Multibyte character implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_STRING {
+        display       "String functions"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_STRERROR {
+            display       "Number of implementations of strerror() function"
+            requires      { 1 >= CYGINT_ISO_STRERROR }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_STRERROR_HEADER {
+            display       "strerror() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGBLD_ISO_MEMCPY_HEADER {
+            display       "memcpy() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGBLD_ISO_MEMSET_HEADER {
+            display       "memset() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STRTOK_R {
+            display       "Number of implementations of strtok_r() function"
+            requires      { 1 >= CYGINT_ISO_STRTOK_R }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+            display       "strtok_r() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STRING_LOCALE_FUNCS {
+            display       "Number of implementations of locale-specific string \
+                           functions"
+            description   "
+                This covers locale-dependent string functions such as strcoll()
+                and strxfrm()."
+            requires      { 1 >= CYGINT_ISO_STRING_LOCALE_FUNCS }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+            display       "Locale-specific string functions' implementation \
+                           header"
+            description   "
+                This covers locale-dependent string functions such as strcoll()
+                and strxfrm()."
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STRING_BSD_FUNCS {
+            display       "Number of implementations of BSD string functions"
+            requires      { 1 >= CYGINT_ISO_STRING_BSD_FUNCS }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+            display       "BSD string functions' implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STRING_MEMFUNCS {
+            display       "Number of implementations of other mem*() functions"
+            requires      { 1 >= CYGINT_ISO_STRING_MEMFUNCS }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+            display       "Other mem*() functions' implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_STRING_STRFUNCS {
+            display       "Number of implementations of other ISO C str*() \
+                           functions"
+            description   "
+                This covers the other str*() functions defined by ISO C."
+            requires      { 1 >= CYGINT_ISO_STRING_STRFUNCS }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+            display       "Other ISO C str*() functions' implementation \
+                           header"
+            description   "
+                This covers the other str*() functions defined by ISO C."
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_TIME {
+        display       "Clock and time functionality"
+        flavor        none
+        no_define
+
+        cdl_option CYGBLD_ISO_TIME_T_HEADER {
+            display       "time_t implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGBLD_ISO_CLOCK_T_HEADER {
+            display       "clock_t implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGBLD_ISO_STRUCTTIMEVAL_HEADER {
+            display       "struct timeval implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_POSIX_TIMER_TYPES {
+            display       "Number of implementations of POSIX timer types"
+            requires      { 1 >= CYGINT_ISO_POSIX_TIMER_TYPES }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_POSIX_TIMER_TYPES_HEADER {
+            display       "POSIX timer types implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_POSIX_CLOCK_TYPES {
+            display       "Number of implementations of POSIX clock types"
+            requires      { 1 >= CYGINT_ISO_POSIX_CLOCK_TYPES }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_POSIX_CLOCK_TYPES_HEADER {
+            display       "POSIX clock types implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_C_TIME_TYPES {
+            display       "Number of implementations of ISO C types"
+            requires      { 1 >= CYGINT_ISO_C_TIME_TYPES }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_C_TIME_TYPES_HEADER {
+            display       "ISO C time types implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_POSIX_TIMERS {
+            display       "Number of implementations of POSIX timers"
+            requires      { 1 >= CYGINT_ISO_POSIX_TIMERS }
+            define        _POSIX_TIMERS
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_POSIX_TIMERS_HEADER {
+            display       "POSIX timer implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_POSIX_CLOCKS {
+            display       "Number of implementations of POSIX clocks"
+            requires      { 1 >= CYGINT_ISO_POSIX_CLOCKS }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_POSIX_CLOCKS_HEADER {
+            display       "POSIX clocks implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_C_CLOCK_FUNCS {
+            display       "Number of implementations of ISO C clock functions"
+            requires      { 1 >= CYGINT_ISO_C_CLOCK_FUNCS }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_C_CLOCK_FUNCS_HEADER {
+            display       "ISO C clock functions' implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_TZSET {
+            display       "Number of implementations of tzset() function"
+            requires      { 1 >= CYGINT_ISO_TZSET }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_TZSET_HEADER {
+            display       "tzset() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_SIGNAL {
+        display       "Signal functionality"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_SIGNAL_NUMBERS {
+            display       "Number of implementations of signal numbers"
+            requires      { 1 >= CYGINT_ISO_SIGNAL_NUMBERS }
+        }
+    
+        cdl_option CYGBLD_ISO_SIGNAL_NUMBERS_HEADER {
+            display       "Signal numbering implementation header"
+            description   "This header provides the mapping of signal
+                           names (e.g. SIGBUS) to numbers."
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_SIGNAL_IMPL {
+            display       "Number of signal implementations"
+            requires      { 1 >= CYGINT_ISO_SIGNAL_IMPL }
+        }
+    
+        cdl_option CYGBLD_ISO_SIGNAL_IMPL_HEADER {
+            display       "Signals implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_POSIX_REALTIME_SIGNALS {
+	    display       "POSIX real time signals feature test macro"
+	    description   "This defines the POSIX feature test macro
+	                   that indicates that the POSIX real time signals
+                           are present."
+            requires { 1 >= CYGINT_POSIX_REALTIME_SIGNALS }
+# FIXME  should use this:           define        _POSIX_REALTIME_SIGNALS
+            define_proc {
+                puts $::cdl_header "#if CYGINT_POSIX_REALTIME_SIGNALS"
+                puts $::cdl_header "# define _POSIX_REALTIME_SIGNALS 1"
+                puts $::cdl_header "#endif"
+            }
+	}
+
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_SETJMP {
+        display       "Non-local jumps functionality"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_SETJMP {
+            display       "setjmp() / longjmp() implementations"
+            requires      { 1 >= CYGINT_ISO_SETJMP }
+        }
+    
+        cdl_option CYGBLD_ISO_SETJMP_HEADER {
+            display       "setjmp() / longjmp() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_SIGSETJMP {
+            display       "sigsetjmp() / siglongjmp() implementations"
+            requires      { 1 >= CYGINT_ISO_SIGSETJMP }
+        }
+    
+        cdl_option CYGBLD_ISO_SIGSETJMP_HEADER {
+            display       "sigsetjmp() / siglongjmp() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+
+# ====================================================================
+
+    cdl_option CYGBLD_ISO_ASSERT_HEADER {
+        display       "Assertions implementation header"
+        flavor        booldata
+        default_value 0
+    }
+
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_POSIX_FCNTL {
+        display       "POSIX file control"
+        description   "This covers the POSIX file control definitions,
+                       normally found in <fcntl.h>"
+        flavor        none
+        no_define
+
+        cdl_option CYGBLD_ISO_OFLAG_HEADER {
+            display       "POSIX open flags implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_FCNTL {
+            display       "POSIX fcntl() implementations"
+            requires      { 1 >= CYGINT_ISO_FCNTL }
+        }
+    
+        cdl_option CYGBLD_ISO_FCNTL_HEADER {
+            display       "POSIX fcntl() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_OPEN {
+            display       "POSIX file open implementations"
+            requires      { 1 >= CYGINT_ISO_OPEN }
+        }
+    
+        cdl_option CYGBLD_ISO_OPEN_HEADER {
+            display       "POSIX file open implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_option CYGBLD_ISO_STAT_DEFS_HEADER {
+        display       "<sys/stat.h> definitions implementation header"
+        flavor        booldata
+        default_value 0
+    }
+
+
+# ====================================================================
+
+    cdl_interface CYGINT_ISO_DIRENT {
+            display       "POSIX directory reading implementation"
+            requires      { 1 >= CYGINT_ISO_DIRENT }
+    }
+
+    cdl_option CYGBLD_ISO_DIRENT_HEADER {
+        display       "<dirent.h> definitions implementation header"
+        flavor        booldata
+        default_value 0
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_POSIX_TYPES {
+        display       "POSIX <sys/types.h> contents"
+        description   "This covers the types required by POSIX to be in
+                       <sys/types.h>"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_PTHREADTYPES {
+            display       "POSIX thread types implementations"
+            requires      { 1 >= CYGINT_ISO_PTHREADTYPES }
+        }
+    
+        cdl_option CYGBLD_ISO_PTHREADTYPES_HEADER {
+            display       "POSIX thread types implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_PMUTEXTYPES {
+            display       "POSIX mutex types implementations"
+            requires      { 1 >= CYGINT_ISO_PTHREADTYPES }
+        }
+    
+        cdl_option CYGBLD_ISO_PMUTEXTYPES_HEADER {
+            display       "POSIX mutex types implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGBLD_ISO_SSIZE_T_HEADER {
+            display       "ssize_t implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        cdl_option CYGBLD_ISO_FSTYPES_HEADER {
+            display       "Filesystem types implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        cdl_option CYGBLD_ISO_SCHEDTYPES_HEADER {
+            display       "gid_t, pid_t, uid_t implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_EXTRA_TYPES {
+        display       "Non-POSIX <sys/types.h> contents"
+        description   "This covers the extra types required by non-POSIX
+                       packages to be in <sys/types.h>. These would normally
+	               only be visible if _POSIX_SOURCE is not defined."
+        flavor        none
+        no_define
+
+	cdl_interface CYGINT_ISO_BSDTYPES {
+	    display   "BSD compatible types"
+	    requires  { 1 >= CYGINT_ISO_BSDTYPES }
+	}
+
+        cdl_option CYGBLD_ISO_BSDTYPES_HEADER {
+            display       "BSD types header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_UTSNAME {
+	display       "Utsname structure"
+	flavor        none
+	no_define
+
+	cdl_option CYGBLD_ISO_UTSNAME_HEADER {
+	    display    "Utsname header"
+	    flavor     booldata
+	    default_value 0
+	}
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_SCHED {
+        display       "POSIX scheduler"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_SCHED_IMPL {
+            display       "POSIX scheduler implementations"
+            requires      { 1 >= CYGINT_ISO_SCHED_IMPL }
+        }
+    
+        cdl_option CYGBLD_ISO_SCHED_IMPL_HEADER {
+            display       "POSIX scheduler implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_SEMAPHORES {
+        display       "POSIX semaphores"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_SEMAPHORES {
+            display       "POSIX semaphore implementations"
+            requires      { 1 >= CYGINT_ISO_SEMAPHORES }
+# FIXME  should use this:           define        _POSIX_SEMAPHORES
+            define_proc {
+                puts $::cdl_header "#if CYGINT_ISO_SEMAPHORES"
+                puts $::cdl_header "# define _POSIX_SEMAPHORES 1"
+                puts $::cdl_header "#endif"
+            }
+        }
+    
+        cdl_option CYGBLD_ISO_SEMAPHORES_HEADER {
+            display       "POSIX semaphore implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_MQUEUE {
+        display       "POSIX message queues"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_MQUEUE {
+            display       "Implementations"
+            requires      { 1 >= CYGINT_ISO_MQUEUE }
+# FIXME should use this:            define        _POSIX_MESSAGE_PASSING
+            define_proc {
+                puts $::cdl_header "#if CYGINT_ISO_MQUEUE"
+                puts $::cdl_header "# define _POSIX_MESSAGE_PASSING 1"
+                puts $::cdl_header "#endif"
+            }
+        }
+
+        cdl_option CYGBLD_ISO_MQUEUE_HEADER {
+            display       "Implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGNUM_ISO_MQUEUE_OPEN_MAX {
+            display       "Maximum number of open message queues"
+            flavor        booldata
+            active_if     CYGINT_ISO_MQUEUE
+            define MQ_OPEN_MAX
+# FIXME: shouldn't be specific to the implementation, see CR
+            default_value { CYGNUM_POSIX_MQUEUE_OPEN_MAX > 0 ? CYGNUM_POSIX_MQUEUE_OPEN_MAX : 0 }
+        }
+        
+        cdl_option CYGNUM_ISO_MQUEUE_PRIO_MAX {
+            display       "Maximum number of message priorities"
+            flavor        booldata
+# FIXME: again like CYGNUM_ISO_MQUEUE_OPEN_MAX, should be able to be set by
+# the implementation
+            default_value 65535
+            active_if     CYGINT_ISO_MQUEUE
+            define        MQ_PRIO_MAX
+        }
+        
+
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_PTHREAD {
+        display       "POSIX threads"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_PTHREAD_IMPL {
+            display       "POSIX pthread implementations"
+            requires      { 1 >= CYGINT_ISO_PTHREAD_IMPL }
+            flavor        booldata
+        }
+    
+        cdl_option CYGBLD_ISO_PTHREAD_IMPL_HEADER {
+            display       "POSIX pthread implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_PTHREAD_MUTEX {
+            display       "POSIX mutex/cond var implementations"
+            requires      { 1 >= CYGINT_ISO_PTHREAD_MUTEX }
+            flavor booldata
+        }
+    
+        cdl_option CYGBLD_ISO_PTHREAD_MUTEX_HEADER {
+            display       "POSIX mutex/cond var implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_LIMITS {
+        display       "Limits"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_POSIX_LIMITS {
+            display       "POSIX pthread limits implementations"
+            requires      { 1 >= CYGINT_ISO_POSIX_LIMITS }
+        }
+    
+        cdl_option CYGBLD_ISO_POSIX_LIMITS_HEADER {
+            display       "POSIX pthread limits implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_option CYGBLD_ISO_OPEN_MAX_HEADER {
+            display       "OPEN_MAX implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        cdl_option CYGBLD_ISO_LINK_MAX_HEADER {
+            display       "LINK_MAX implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        cdl_option CYGBLD_ISO_NAME_MAX_HEADER {
+            display       "NAME_MAX implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        cdl_option CYGBLD_ISO_PATH_MAX_HEADER {
+            display       "PATH_MAX implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_TERMIOS {
+        display       "POSIX termios"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_TERMIOS {
+            display       "POSIX termios implementations"
+            requires      { 1 >= CYGINT_ISO_TERMIOS }
+        }
+    
+        cdl_option CYGBLD_ISO_TERMIOS_HEADER {
+            display       "POSIX termios implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_DLFCN {
+        display       "Dynamic load API"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_DLFCN {
+            display       "Dynamic load implementations"
+            requires      { 1 >= CYGINT_ISO_DLFCN }
+        }
+    
+        cdl_option CYGBLD_ISO_DLFCN_HEADER {
+            display       "Dynamic load implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+    
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_UNISTD {
+        display       "UNIX standard functions"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_POSIX_TIMER_OPS {
+            display       "POSIX timer operations implementations"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_POSIX_TIMER_OPS }
+        }
+    
+        cdl_option CYGBLD_ISO_POSIX_TIMER_OPS_HEADER {
+            display       "POSIX timer operations implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_POSIX_SLEEP {
+            display       "POSIX sleep() implementations"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_POSIX_SLEEP }
+        }
+    
+        cdl_option CYGBLD_ISO_POSIX_SLEEP_HEADER {
+            display       "POSIX sleep() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_SELECT {
+        display       "select()/poll() functions"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_SELECT {
+            display       "select() implementations"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_SELECT }
+        }
+    
+        cdl_option CYGBLD_ISO_SELECT_HEADER {
+            display       "select() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+
+        cdl_interface CYGINT_ISO_POLL {
+            display       "poll() implementations"
+            flavor        booldata
+            requires      { 1 >= CYGINT_ISO_POLL }
+        }
+    
+        cdl_option CYGBLD_ISO_POLL_HEADER {
+            display       "poll() implementation header"
+            flavor        booldata
+            default_value 0
+        }
+    }
+
+# ====================================================================
+
+    cdl_component CYGPKG_ISO_NETDB {
+        display       "NetDB utility functions"
+        flavor        none
+        no_define
+
+        cdl_interface CYGINT_ISO_DNS {
+            display       "DNS implementations"
+            flavor        bool
+            requires      { 1 >= CYGINT_ISO_DNS }
+        }
+    
+        cdl_option CYGBLD_ISO_DNS_HEADER {
+            display       "DNS implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        
+        cdl_interface CYGINT_ISO_NETDB_PROTO {
+            display       "Protocol network database implementations"
+            flavor        bool
+            requires      { 1 >= CYGINT_ISO_NETDB_PROTO }
+        }
+    
+        cdl_option CYGBLD_ISO_NETDB_PROTO_HEADER {
+            display       "Protocol network database implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        
+        cdl_interface CYGINT_ISO_NETDB_SERV {
+            display       "Services network database implementations"
+            flavor        bool
+            requires      { 1 >= CYGINT_ISO_NETDB_SERV }
+        }
+    
+        cdl_option CYGBLD_ISO_NETDB_SERV_HEADER {
+            display       "Services network database implementation header"
+            flavor        booldata
+            default_value 0
+        }
+        
+    }
+
+# ====================================================================
+    
+        cdl_component CYGPKG_ISOINFRA_OPTIONS {
+        display "Build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_ISOINFRA_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the ISO C and POSIX infrastructure package.
+                These flags are used in addition to the set of global flags."
+        }
+
+        cdl_option CYGPKG_ISOINFRA_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the ISO C and POSIX infrastructure package.
+                These flags are removed from the set of global flags
+                if present."
+        }
+    }
+}
+
+# ====================================================================
+# End of isoinfra.cdl

@@ -1,0 +1,1385 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     uitron.sgml                                                 -->
+<!--                                                                 -->
+<!--     uITRON Compatibility                                        -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="compat-uitron">
+  <title>&micro;ITRON</title>
+<CHAPTER id="compat-uitron-microitron-api">
+<TITLE><!-- <xref> -->&micro;ITRON API</TITLE>
+<SECT1 id="compat-uitron-introduction">
+<TITLE><!-- <index></index> -->Introduction to &micro;ITRON</TITLE>
+<PARA>The <!-- <index></index> -->&micro;ITRON specification
+defines a highly flexible operating system architecture designed
+specifically for application in embedded systems. The specification addresses
+features which are common to the majority of processor architectures and
+deliberately avoids virtualization which would adversely impact
+real-time performance. The &micro;ITRON specification
+may be implemented on many hardware platforms and provides significant
+advantages by reducing the effort involved in understanding and
+porting application software to new processor architectures. </PARA>
+<PARA>Several revisions of the &micro;ITRON specification exist.
+	In this release, <EMPHASIS>eCos</EMPHASIS> supports the
+	&micro;ITRON version 3.02 specification, with complete
+	&ldquo;Standard functionality&rdquo; (level S), plus many
+	&ldquo;Extended&rdquo; (level E) functions. The definitive
+	reference on &micro;ITRON is Dr. Sakamura&rsquo;s book:
+	  <CITETITLE>&micro;ITRON 3.0, An Open and Portable Real-Time Operating
+	  System for Embedded Systems</CITETITLE>. 
+	The book can be purchased from the IEEE Press, and
+	an ASCII version of the standard can be found online at
+<ulink url="http://www.itron.gr.jp/">http://www.itron.gr.jp/</ulink>.
+The old address 
+<ulink url="http://tron.um.u-tokyo.ac.jp/TRON/ITRON/">
+http://tron.um.u-tokyo.ac.jp/TRON/ITRON/</ulink>
+still exists as a mirror site. </PARA>
+</SECT1>
+<SECT1 id="compat-uitron-over-ecos">
+<TITLE><!-- <index></index> -->&micro;ITRON and <EMPHASIS>eCos</EMPHASIS></TITLE>
+<PARA>The <EMPHASIS>eCos</EMPHASIS> kernel implements the functionality
+used by the &micro;ITRON compatibility subsystem.
+The configuration of the kernel influences the behavior of &micro;ITRON
+programs.</PARA>
+<PARA>In particular, the default configuration has time slicing
+(also known as round-robin scheduling) switched on; this means that
+a task can be moved from <varname>RUN</varname> state
+to <varname>READY</varname> state at any time, in
+order that one of its peers may run. This is not strictly conformant
+to the &micro;ITRON specification, which
+states that timeslicing may be implemented by periodically issuing
+a <literal>rot_rdq(0)</literal> call from
+within a periodic task or cyclic handler; otherwise it is expected
+that a task runs until it is pre-empted in consequence of synchronization
+or communication calls it makes, or the effects of an interrupt
+or other external event on a higher priority task cause that task
+to become <varname>READY</varname>. To disable timeslicing
+functionality in the kernel and &micro;ITRON
+compatibility environment, please disable the 
+<LITERAL>CYGSEM_KERNEL_SCHED_TIMESLICE</LITERAL>
+configuration option in the kernel package. A description of kernel
+scheduling is in <xref linkend="kernel-overview">. </PARA>
+<PARA>For another example, the semantics of task queueing when waiting
+on a synchronization object depend solely on the way the underlying
+kernel is configured. As discussed above, the multi-level queue
+scheduler is the only one which is &micro;ITRON
+compliant, and it queues waiting tasks in FIFO order. Future releases
+of that scheduler might be configurable to support priority ordering
+of task queues. Other schedulers might be different again: for example
+the bitmap scheduler can be used with the &micro;ITRON
+compatibility layer, even though it only allows one task at each
+priority and as such is not &micro;ITRON
+compliant, but it supports only priority ordering of task queues.
+So which queueing scheme is supported is not really a property of
+the &micro;ITRON compatibility layer; it
+depends on the kernel. </PARA>
+<PARA>In this version of the &micro;ITRON
+compatibility layer, the calls to disable and enable scheduling
+and interrupts (<FUNCTION>dis_dsp()</FUNCTION>,
+<FUNCTION>ena_dsp()</FUNCTION>, <FUNCTION>loc_cpu()</FUNCTION>
+and <FUNCTION>unl_cpu()</FUNCTION>)
+call underlying kernel functions; in particular, the <FUNCTION>xxx_dsp()</FUNCTION> functions
+lock the scheduler entirely, which prevents dispatching of DSRs; functions
+implemented by DSRs include clock counters and alarm timers. Thus time &ldquo;stops&rdquo; while
+dispatching is disabled with <FUNCTION>dis_dsp()</FUNCTION>. </PARA>
+<PARA>Like all parts of the <EMPHASIS>eCos</EMPHASIS> system, the
+detailed semantics of the &micro;ITRON layer
+are dependent on its configuration and the configuration of other components
+that it uses. The &micro;ITRON configuration
+options are all defined in the file <filename>pkgconf/uitron.h</filename>,
+and can be set using the configuration tool or editing the
+<filename>.ecc</filename>
+file in your build directory by hand. </PARA>
+<PARA>An important configuration option for the &micro;ITRON
+compatibility layer is &ldquo;Option: Return Error Codes for Bad Params&rdquo;
+(
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+), which allows a lot of the error
+checking code in the &micro;ITRON compatibility layer to
+be removed. Of course this leaves a program open to undetected errors,
+so it should only be used once an application is fully debugged and
+tested. Its benefits include reduced code size and faster execution.
+However, it affects the API significantly, in that with this option
+enabled, bad calls do not return errors, but cause an assert
+failure (if that is itself enabled) or malfunction internally. There
+is discussion in more detail about this in each section below.</PARA>
+<PARA>We now give a brief description of the &micro;ITRON
+functions which are implemented in this release. Note that all C
+and C&plus;&plus; source files should have the following <literal>#include</literal> statement: </PARA>
+<PROGRAMLISTING>#include &lt;cyg/compat/uitron/uit_func.h&gt;</PROGRAMLISTING>
+</SECT1>
+<SECT1 id="compat-uitron-task-management-functions">
+<TITLE><!-- <index></index> -->Task Management Functions</TITLE>
+<PARA>The following functions are fully supported in this release: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>sta_tsk</FUNCTION>( 
+  ID <EMPHASIS>tskid,</EMPHASIS>
+  INT <EMPHASIS>stacd</EMPHASIS> )</programlisting>
+	<programlisting>
+void <FUNCTION>ext_tsk</FUNCTION>( void )</programlisting>
+	<programlisting>
+void <FUNCTION>exd_tsk</FUNCTION>( void )</programlisting>
+	<programlisting>
+ER <FUNCTION>dis_dsp</FUNCTION>( void )</programlisting>
+	<programlisting>
+ER <FUNCTION>ena_dsp</FUNCTION>( void )</programlisting>
+	<programlisting>
+ER <FUNCTION>chg_pri</FUNCTION>( 
+  ID <EMPHASIS>tskid,</EMPHASIS>
+  PRI <EMPHASIS>tskpri</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>rot_rdq</FUNCTION>( 
+  PRI <EMPHASIS>tskpri</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>get_tid</FUNCTION>( 
+  ID *<EMPHASIS>p_tskid</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>ref_tsk</FUNCTION>( 
+  T_RTSK *<EMPHASIS>pk_rtsk,</EMPHASIS>
+  ID <EMPHASIS>tskid</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>ter_tsk</FUNCTION>( 
+  ID <EMPHASIS>tskid</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>rel_wai</FUNCTION>( 
+  ID <EMPHASIS>tskid</EMPHASIS> )</PROGRAMLISTING>
+<PARA>The following two functions are supported in this release,
+when enabled with the configuration option 
+<LITERAL>CYGPKG_UITRON_TASKS_CREATE_DELETE</LITERAL>
+with some restrictions:</PARA>
+<PROGRAMLISTING>ER <FUNCTION>cre_tsk</FUNCTION>( 
+  ID <EMPHASIS>tskid,</EMPHASIS>
+  T_CTSK *<EMPHASIS>pk_ctsk</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>del_tsk</FUNCTION>( 
+  ID <EMPHASIS>tskid</EMPHASIS> )</PROGRAMLISTING>
+<PARA>These functions are restricted as follows:</PARA>
+<PARA>Because of the static initialization facilities provided for
+system objects, a task is allocated stack space statically in the
+configuration. So while tasks can be created and deleted, the same
+stack space is used for that task (task ID number) each time. Thus
+the stack size (pk_ctsk-&gt;stksz) requested in <FUNCTION>cre_tsk()</FUNCTION> is
+checked for being less than that which was statically allocated,
+and otherwise ignored. This ensures that the new task will have
+enough stack to run. For this reason <FUNCTION>del_tsk()</FUNCTION> does
+not in any sense free the memory that was in use for the task's
+stack. </PARA>
+<PARA>The task attributes (pk_ctsk-&gt;tskatr) are
+ignored; current versions of <EMPHASIS>eCos</EMPHASIS> do not need
+to know whether a task is written in assembler or C/C&plus;&plus; so
+long as the procedure call standard appropriate to the CPU is followed.</PARA>
+<PARA>Extended information (pk_ctsk-&gt;exinf) is
+	  ignored.</PARA>
+<SECT2>
+<TITLE>Error checking</TITLE>
+<PARA>For all these calls, an invalid task id (tskid) (less than
+1 or greater than the number of configured tasks) only returns E_ID
+when bad params return errors (
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+is enabled, see above).</PARA>
+<PARA>Similarly, the following conditions are only checked for,
+and only return errors if 
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+is enabled:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>pk_crtk in 
+<FUNCTION>cre_tsk()</FUNCTION>
+ is a valid pointer, otherwise return E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>ter_tsk()</FUNCTION>
+ or 
+<FUNCTION>rel_wai()</FUNCTION>
+ on the calling task returns E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>the CPU is not locked already in 
+<FUNCTION>dis_dsp()</FUNCTION>
+ and 
+<FUNCTION>ena_dsp()</FUNCTION>
+; returns E_CTX</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>priority level in 
+<FUNCTION>chg_pri()</FUNCTION>
+ and 
+<FUNCTION>rot_rdq()</FUNCTION>
+ is checked for validity, E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>return value pointer in 
+<FUNCTION>get_tid()</FUNCTION>
+ and 
+<FUNCTION>ref_tsk()</FUNCTION>
+ is a valid pointer, or E_PAR</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The following conditions are checked for, and return
+	    error codes if appropriate, regardless of the setting of
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>When create and delete functions 
+<FUNCTION>cre_tsk()</FUNCTION>
+ and 
+<FUNCTION>del_tsk()</FUNCTION>
+ are supported, all calls which use a valid task ID number check
+that the task exists; if not, E_NOEXS is returned</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When supported, 
+<FUNCTION>cre_tsk()</FUNCTION>
+: the task must not already exist; otherwise E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When supported, 
+<FUNCTION>cre_tsk()</FUNCTION>
+: the requested stack size must not be larger than that statically
+configured for the task; see the configuration options
+&ldquo;Static initializers&rdquo;, and &ldquo;Default stack size&rdquo;.
+Else E_NOMEM</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When supported, 
+<FUNCTION>del_tsk()</FUNCTION>
+: the underlying 
+<EMPHASIS>eCos</EMPHASIS>
+ thread must not be running - this would imply either a bug or some
+program bypassing the 
+&micro;ITRON compatibility layer and manipulating the thread directly.
+E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>sta_tsk()</FUNCTION>
+: the task must be dormant, else E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>ter_tsk()</FUNCTION>
+: the task must not be dormant, else E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>chg_pri()</FUNCTION>
+: the task must not be dormant, else E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>rel_wai()</FUNCTION>
+: the task must be in 
+<varname>WAIT</varname> or <varname>WAIT-SUSPEND</varname>
+ state, else E_OBJ</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="compat-uitron-task-dependent-synch-functions">
+<TITLE><!-- <index></index> -->Task-Dependent Synchronization Functions</TITLE>
+<PARA>These functions are fully supported in this release: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>sus_tsk</FUNCTION>( 
+    ID <EMPHASIS>tskid</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>rsm_tsk</FUNCTION>( 
+    ID <EMPHASIS>tskid</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>frsm_tsk</FUNCTION>( 
+    ID <EMPHASIS>tskid</EMPHASIS> )</programlisting>
+<programlisting>
+ER <FUNCTION>slp_tsk</FUNCTION>( void )</programlisting>
+	<programlisting>
+ER <FUNCTION>tslp_tsk</FUNCTION>( 
+    TMO <EMPHASIS>tmout</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>wup_tsk</FUNCTION>( 
+    ID <EMPHASIS>tskid</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>can_wup</FUNCTION>( 
+    INT *<EMPHASIS>p_wupcnt,</EMPHASIS>    ID <EMPHASIS>tskid</EMPHASIS> )</PROGRAMLISTING>
+<SECT2>
+<TITLE>Error checking</TITLE>
+<PARA>The following conditions are only checked for, and only return
+errors if 
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+is enabled (see the configuration option &ldquo;Return Error Codes for Bad
+Params&rdquo;):</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>invalid tskid; less than 1 or greater than 
+<LITERAL>CYGNUM_UITRON_TASKS</LITERAL>
+returns E_ID</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>wup_tsk()</FUNCTION>
+, 
+<FUNCTION>sus_tsk()</FUNCTION>
+, 
+<FUNCTION>rsm_tsk()</FUNCTION>
+, 
+<FUNCTION>frsm_tsk()</FUNCTION>
+ on the calling task returns E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>dispatching is enabled in 
+<FUNCTION>tslp_tsk()</FUNCTION>
+ and 
+<FUNCTION>slp_tsk()</FUNCTION>
+, or E_CTX</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>tmout must be positive, otherwise E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>return value pointer in 
+<FUNCTION>can_wup()</FUNCTION>
+ is a valid pointer, or E_PAR</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The following conditions are checked for, and can
+	    return error codes, regardless of the setting of
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>:
+</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>When create and delete functions 
+<FUNCTION>cre_tsk()</FUNCTION>
+ and 
+<FUNCTION>del_tsk()</FUNCTION>
+ are supported, all calls which use a valid task ID number check
+that the task exists; if not, E_NOEXS is returned</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>sus_tsk()</FUNCTION>
+: the task must not be dormant, else E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>frsm/rsm_tsk()</FUNCTION>
+: the task must be suspended, else E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>tslp/slp_tsk()</FUNCTION>
+: return codes E_TMOUT, E_RLWAI and E_DLT
+are returned depending on the reason for terminating the sleep</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>wup_tsk()</FUNCTION>
+ and 
+<FUNCTION>can_wup()</FUNCTION>
+: the task must not be dormant, or E_OBJ is returned</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="compat-uitron-sync-and-comm-functions">
+<TITLE><!-- <index></index> -->	  Synchronization and Communication Functions</TITLE>
+<PARA>These functions are fully supported in this release: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>sig_sem</FUNCTION>( 
+    ID <EMPHASIS>semid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>wai_sem</FUNCTION>( 
+    ID <EMPHASIS>semid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>preq_sem</FUNCTION>( 
+    ID <EMPHASIS>semid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>twai_sem</FUNCTION>( 
+    ID <EMPHASIS>semid,</EMPHASIS>    TMO <EMPHASIS>tmout</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ref_sem</FUNCTION>( 
+    T_RSEM *<EMPHASIS>pk_rsem ,</EMPHASIS>    ID <EMPHASIS>semid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>set_flg</FUNCTION>( 
+    ID <EMPHASIS>flgid,</EMPHASIS>    UINT <EMPHASIS>setptn</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>clr_flg</FUNCTION>( 
+    ID <EMPHASIS>flgid,</EMPHASIS>    UINT <EMPHASIS>clrptn</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>wai_flg</FUNCTION>( 
+    UINT *<EMPHASIS>p_flgptn,</EMPHASIS>    ID <EMPHASIS>flgid ,</EMPHASIS>
+    UINT <EMPHASIS>waiptn ,</EMPHASIS>    UINT <EMPHASIS>wfmode</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>pol_flg</FUNCTION>( 
+    UINT *<EMPHASIS>p_flgptn,</EMPHASIS>    ID <EMPHASIS>flgid ,</EMPHASIS>
+    UINT <EMPHASIS>waiptn ,</EMPHASIS>    UINT <EMPHASIS>wfmode</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>twai_flg</FUNCTION>( 
+    UINT *<EMPHASIS>p_flgptn</EMPHASIS>    ID <EMPHASIS>flgid ,</EMPHASIS>
+    UINT <EMPHASIS>waiptn ,</EMPHASIS>    UINT <EMPHASIS>wfmode,</EMPHASIS>    TMO <EMPHASIS>tmout</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ref_flg</FUNCTION>( 
+    T_RFLG *<EMPHASIS>pk_rflg,</EMPHASIS>    ID <EMPHASIS>flgid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>snd_msg</FUNCTION>( 
+    ID <EMPHASIS>mbxid,</EMPHASIS>    T_MSG <EMPHASIS>*pk_msg</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>rcv_msg</FUNCTION>( 
+    T_MSG **<EMPHASIS>ppk_msg,</EMPHASIS>    ID <EMPHASIS>mbxid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>prcv_msg</FUNCTION>( 
+    T_MSG **<EMPHASIS>ppk_msg,</EMPHASIS>    ID <EMPHASIS>mbxid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>trcv_msg</FUNCTION>( 
+    T_MSG **<EMPHASIS>ppk_msg,</EMPHASIS>    ID <EMPHASIS>mbxid ,</EMPHASIS>    TMO <EMPHASIS>tmout</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ref_mbx</FUNCTION>( 
+    T_RMBX *<EMPHASIS>pk_rmbx,</EMPHASIS>    ID <EMPHASIS>mbxid</EMPHASIS> )</PROGRAMLISTING>
+<PARA>The following functions are supported in this release (with
+some restrictions) if enabled with the appropriate configuration
+option for the object type (for example 
+<LITERAL>CYGPKG_UITRON_SEMAS_CREATE_DELETE</LITERAL>):
+</PARA>
+<PROGRAMLISTING>ER <FUNCTION>cre_sem</FUNCTION>( 
+    ID <EMPHASIS>semid,</EMPHASIS>    T_CSEM *<EMPHASIS>pk_csem</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>del_sem</FUNCTION>( 
+    ID <EMPHASIS>semid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>cre_flg</FUNCTION>( 
+    ID <EMPHASIS>flgid,</EMPHASIS>    T_CFLG *<EMPHASIS>pk_cflg</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>del_flg</FUNCTION>( 
+    ID <EMPHASIS>flgid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>cre_mbx</FUNCTION>( 
+    ID <EMPHASIS>mbxid,</EMPHASIS>    T_CMBX *<EMPHASIS>pk_cmbx</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>del_mbx</FUNCTION>( 
+    ID <EMPHASIS>mbxid</EMPHASIS> )</PROGRAMLISTING>
+<PARA>In general the queueing order when waiting on a synchronization
+object depends on the underlying kernel configuration. The multi-level
+queue scheduler is required for strict &micro;ITRON
+conformance and it queues tasks in FIFO order, so requests to create
+an object with priority queueing of tasks (<literal>pk_cxxx-&gt;xxxatr = TA_TPRI</literal>)
+are rejected with E_RSATR. Additional undefined bits in
+the attributes fields must be zero. </PARA>
+<PARA>In general, extended information (pk_cxxx-&gt;exinf)
+is ignored. </PARA>
+<PARA>For semaphores, the initial semaphore count (pk_csem-&gt;isemcnt)
+is supported; the new semaphore's count is set. The maximum
+count is not supported, and is not in fact defined in type pk_csem. </PARA>
+<PARA>For flags, multiple tasks are allowed to wait. Because single
+task waiting is a subset of this, the W bit (TA_WMUL) of
+the flag attributes is ignored; all other bits must be zero. The
+initial flag value is supported. </PARA>
+<PARA>For mailboxes, the buffer count is defined statically by kernel
+configuration option 
+<LITERAL>CYGNUM_KERNEL_SYNCH_MBOX_QUEUE_SIZE</LITERAL>;
+therefore the buffer count field is not supported and is not in
+fact defined in type pk_cmbx. Queueing of messages is FIFO
+ordered only, so TA_MPRI (in pk_cmbx-&gt;mbxatr)
+is not supported. </PARA>
+<SECT2>
+<TITLE>Error checking</TITLE>
+<PARA>The following conditions are only checked for, and only return
+errors if 
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+is enabled:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>invalid object id; less than 1 or greater than 
+<LITERAL>CYGNUM_UITRON_TASKS/SEMAS/MBOXES</LITERAL>
+as appropriate returns E_ID</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>dispatching is enabled in any call which can sleep, or
+E_CTX</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>tmout must be positive, otherwise E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>pk_cxxx pointers in 
+<FUNCTION>cre_xxx()</FUNCTION>
+ must be valid pointers, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>return value pointer in 
+<FUNCTION>ref_xxx()</FUNCTION>
+ is valid pointer, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>flag wait pattern must be non-zero, and mode must be valid,
+or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>return value pointer in flag wait calls is a valid pointer,
+or E_PAR</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The following conditions are checked for, and can return error
+codes, regardless of the setting of
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>When create and delete functions 
+<FUNCTION>cre_xxx()</FUNCTION>
+ and 
+<FUNCTION>del_xxx()</FUNCTION>
+ are supported, all calls which use a valid object ID number check
+that the object exists. If not, E_NOEXS is returned.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In create functions 
+<FUNCTION>cre_xxx()</FUNCTION>
+, when supported, if the object already exists, then E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In any call which can sleep, such as 
+<FUNCTION>twai_sem()</FUNCTION>
+: return codes E_TMOUT, E_RLWAI, E_DLT
+or of course E_OK are returned depending on the reason
+for terminating the sleep</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In polling functions such as 
+<FUNCTION>preq_sem()</FUNCTION>
+return codes E_TMOUT or E_OK are returned depending
+on the state of the synchronization object</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In creation functions, the attributes must be compatible
+with the selected underlying kernel configuration: in 
+<FUNCTION>cre_sem()</FUNCTION>
+ <literal>pk_csem-&gt;sematr</literal>
+ must be equal to 
+<literal>TA_TFIFO</literal>
+ else E_RSATR.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In 
+<FUNCTION>cre_flg()</FUNCTION>
+ <literal>pk_cflg-&gt;flgatr</literal>
+ must be either 
+<varname>TA_WMUL</varname>
+ or 
+<varname>TA_WSGL</varname>
+ else <varname>E_RSATR</varname>.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In 
+<FUNCTION>cre_mbx()</FUNCTION>
+ 
+<LITERAL>pk_cmbx-&gt;mbxatr</LITERAL>
+ must be 
+<LITERAL>TA_TFIFO &plus; TA_MFIFO</LITERAL>
+ else E_RSATR.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="compat-uitron-extended-sync-comm-functions">
+<TITLE><!-- <index></index> -->Extended Synchronization and Communication Functions</TITLE>
+<PARA>None of these functions are supported in this release. </PARA>
+</SECT1>
+<SECT1 id="compat-uitron-interrupt-management-functions">
+<TITLE><!-- <index></index> -->Interrupt management functions</TITLE>
+<PARA>These functions are fully supported in this release:</PARA>
+<PROGRAMLISTING>void	<FUNCTION> ret_int</FUNCTION>( void )
+</programlisting>
+<programlisting>
+ER <FUNCTION>loc_cpu</FUNCTION>( void )
+</programlisting>
+<programlisting>
+ER <FUNCTION>unl_cpu</FUNCTION>( void )
+</programlisting>
+<programlisting>
+ER <FUNCTION>dis_int</FUNCTION>( 
+    UINT <EMPHASIS>eintno</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ena_int</FUNCTION>( 
+    UINT <EMPHASIS>eintno</EMPHASIS> )
+</programlisting>
+<programlisting>
+void	<FUNCTION>ret_wup</FUNCTION>( 
+    ID <EMPHASIS>tskid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>iwup_tsk</FUNCTION>( 
+    ID <EMPHASIS>tskid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>isig_sem</FUNCTION>( 
+    ID <EMPHASIS>semid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>iset_flg</FUNCTION>( 
+    ID <EMPHASIS>flgid ,</EMPHASIS>
+    UID<EMPHASIS> setptn</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>isend_msg</FUNCTION>( 
+    ID <EMPHASIS>mbxid ,</EMPHASIS>
+    T_MSG<EMPHASIS> *pk_msg</EMPHASIS> )</PROGRAMLISTING>
+<PARA>Note that <FUNCTION>ret_int()</FUNCTION> and
+the <FUNCTION>ret_wup()</FUNCTION> are  implemented
+as macros, containing a &ldquo;return&rdquo; statement.</PARA>
+<PARA>Also note that <FUNCTION>ret_wup()</FUNCTION> and
+the <FUNCTION>ixxx_yyy()</FUNCTION> style functions
+will only work when called from an ISR whose associated DSR is <FUNCTION>cyg_uitron_dsr()</FUNCTION>,
+as specified in include file <filename>&lt;cyg/compat/uitron/uit_ifnc.h&gt;</filename>,
+which defines the <FUNCTION>ixxx_yyy()</FUNCTION> style
+functions also.</PARA>
+<PARA>If you are writing interrupt handlers more in the
+<EMPHASIS>eCos</EMPHASIS> style, with separate ISR and DSR routines both of
+your own devising, do not use these special functions from a DSR: use plain
+<FUNCTION>xxx_yyy()</FUNCTION> style functions (with no &lsquo;i&rsquo; prefix)
+instead, and do not call any &micro;ITRON functions from the ISR at
+all.</PARA>
+<PARA>The following functions are not supported in this release: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>def_int</FUNCTION>( 
+    UINT <EMPHASIS>dintno,</EMPHASIS>
+  T_DINT *<EMPHASIS>pk_dint</EMPHASIS> )</programlisting>
+	<programlisting>
+ER <FUNCTION>chg_iXX</FUNCTION>( 
+    UINT <EMPHASIS>iXXXX</EMPHASIS> )
+  </programlisting>
+	<programlisting>
+ER <FUNCTION>ref_iXX</FUNCTION>( 
+    UINT * <EMPHASIS>p_iXXXX</EMPHASIS> )</PROGRAMLISTING>
+<PARA>These unsupported functions are all Level C (CPU dependent).
+Equivalent functionality is available via other <EMPHASIS>eCos</EMPHASIS>-specific
+APIs. </PARA>
+<SECT2>
+<TITLE>Error checking</TITLE>
+<PARA>The following conditions are only checked for, and only return
+errors if 
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+is enabled:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA><FUNCTION>loc/unl_cpu()</FUNCTION>
+: these must only be called in a 
+&micro;ITRON task context, else E_CTX.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>dis/ena_int()</FUNCTION>
+: the interrupt number must be in range as specified by the platform
+HAL in qustion, else E_PAR.</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="compat-uitron-memory-pool-mgmt-functions">
+<TITLE><!-- <index></index> -->	  Memory pool Management Functions</TITLE>
+<PARA>These functions are fully supported in this release: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>get_blf</FUNCTION>( 
+    VP *<EMPHASIS>p_blf,</EMPHASIS>    ID <EMPHASIS>mpfid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>pget_blf</FUNCTION>( 
+    VP *<EMPHASIS>p_blf,</EMPHASIS>    ID <EMPHASIS>mpfid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>tget_blf</FUNCTION>( 
+    VP *<EMPHASIS>p_blf,</EMPHASIS>    ID <EMPHASIS>mpfid,</EMPHASIS>    TMO <EMPHASIS>tmout</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>rel_blf</FUNCTION>( 
+    ID <EMPHASIS>mpfid,</EMPHASIS>    VP <EMPHASIS>blf</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ref_mpf</FUNCTION>( 
+    T_RMPF *<EMPHASIS>pk_rmpf,</EMPHASIS>    ID <EMPHASIS>mpfid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>get_blk</FUNCTION>( 
+    VP *<EMPHASIS>p_blk,</EMPHASIS>    ID <EMPHASIS>mplid,</EMPHASIS>    INT <EMPHASIS>blksz</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>pget_blk</FUNCTION>( 
+    VP *<EMPHASIS>p_blk,</EMPHASIS>    ID <EMPHASIS>mplid,</EMPHASIS>    INT <EMPHASIS>blksz</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>tget_blk</FUNCTION>( 
+    VP *<EMPHASIS>p_blk,</EMPHASIS>    ID <EMPHASIS>mplid,</EMPHASIS>    INT <EMPHASIS>blksz,</EMPHASIS>    TMO <EMPHASIS>tmout</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>rel_blk</FUNCTION>( 
+    ID <EMPHASIS>mplid,</EMPHASIS>    VP <EMPHASIS>blk</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ref_mpl</FUNCTION>( 
+    T_RMPL *<EMPHASIS>pk_rmpl,</EMPHASIS>    ID <EMPHASIS>mplid )
+</EMPHASIS></programlisting>
+
+<PARA>Note that of the memory provided for a particular pool to
+manage in the static initialization of the memory pool objects,
+some memory will be used to manage the pool itself. Therefore the
+number of blocks * the blocksize will be less than the total
+memory size. </PARA>
+<PARA>The following functions are supported in this release, when
+enabled with 
+<LITERAL>CYGPKG_UITRON_MEMPOOLVAR_CREATE_DELETE</LITERAL>
+or 
+<LITERAL>CYGPKG_UITRON_MEMPOOLFIXED_CREATE_DELETE</LITERAL>
+as appropriate, with some restrictions: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>cre_mpl</FUNCTION>( 
+    ID <EMPHASIS>mplid,</EMPHASIS>    T_CMPL *<EMPHASIS>pk_cmpl</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>del_mpl</FUNCTION>( 
+    ID <EMPHASIS>mplid</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>cre_mpf</FUNCTION>( 
+    ID <EMPHASIS>mpfid,</EMPHASIS>    T_CMPF *<EMPHASIS>pk_cmpf</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>del_mpf</FUNCTION>( 
+    ID <EMPHASIS>mpfid</EMPHASIS> )</PROGRAMLISTING>
+<PARA>Because of the static initialization facilities provided for
+system objects, a memory pool is allocated a region of memory to
+manage statically in the configuration. So while memory pools can
+be created and deleted, the same area of memory is used for that
+memory pool (memory pool ID number) each time. The requested variable pool
+size (pk_cmpl-&gt;mplsz) or the number of fixed-size
+blocks (pk_cmpf-&gt;mpfcnt) times the block size
+(pk_cmpf-&gt;blfsz) are checked for fitting within
+the statically allocated memory area, so if a create call succeeds,
+the resulting pool will be at least as large as that requested.
+For this reason <FUNCTION>del_mpl()</FUNCTION> and <FUNCTION>del_mpf()</FUNCTION> do
+not in any sense free the memory that was managed by the deleted
+pool for use by other pools; it may only be managed by a pool of
+the same object id. </PARA>
+<PARA>For both fixed and variable memory pools, the queueing order
+when waiting on a synchronization object depends on the underlying
+kernel configuration. The multi-level queue scheduler is required
+for strict &micro;ITRON conformance and
+it queues tasks in FIFO order, so requests to create an object with
+priority queueing of tasks (pk_cxxx-&gt;xxxatr = TA_TPRI)
+are rejected with E_RSATR. Additional undefined bits in
+the attributes fields must be zero. </PARA>
+<PARA>In general, extended information (pk_cxxx-&gt;exinf)
+is ignored. </PARA>
+<SECT2>
+<TITLE>Error checking</TITLE>
+<PARA>The following conditions are only checked for, and only return
+errors if 
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+is enabled:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>invalid object id; less than 1 or greater than 
+<LITERAL>CYGNUM_UITRON_MEMPOOLVAR/MEMPOOLFIXED</LITERAL>
+as appropriate returns E_ID</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>dispatching is enabled in any call which can sleep, or
+E_CTX</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>tmout must be positive, otherwise E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>pk_cxxx pointers in 
+<FUNCTION>cre_xxx()</FUNCTION>
+ must be valid pointers, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>return value pointer in 
+<FUNCTION>ref_xxx()</FUNCTION>
+ is a valid pointer, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>return value pointers in get block routines is a valid
+pointer, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>blocksize request in get variable block routines is greater
+than zero, or E_PAR</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The following conditions are checked for, and can return error
+codes, regardless of the setting of 
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>:
+</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>When create and delete functions 
+<FUNCTION>cre_xxx()</FUNCTION>
+ and 
+<FUNCTION>del_xxx()</FUNCTION>
+ are supported, all calls which use a valid object ID number check
+that the object exists. If not, E_NOEXS is returned.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When create functions 
+<FUNCTION>cre_xxx()</FUNCTION>
+ are supported, if the object already exists, then E_OBJ</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In any call which can sleep, such as 
+<FUNCTION>get_blk()</FUNCTION>
+: return codes E_TMOUT, E_RLWAI, E_DLT
+or of course E_OK are returned depending on the reason
+for terminating the sleep</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In polling functions such as 
+<FUNCTION>pget_blk()</FUNCTION>
+return codes E_TMOUT or E_OK are returned depending
+on the state of the synchronization object</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In creation functions, the attributes must be compatible
+with the selected underlying kernel configuration: in 
+<FUNCTION>cre_mpl()</FUNCTION>
+ 
+<LITERAL>pk_cmpl-&gt;mplatr</LITERAL>
+ must be equal to 
+<LITERAL>TA_TFIFO</LITERAL>
+ else E_RSATR.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In 
+<FUNCTION>cre_mpf()</FUNCTION>
+ 
+<LITERAL>pk_cmpf-&gt;mpfatr</LITERAL>
+ must be equal to 
+<LITERAL>TA_TFIFO</LITERAL>
+ else E_RSATR.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In creation functions, the requested size of the memory
+pool must not be larger than that statically configured for the
+pool else E_RSATR; see the configuration option
+&ldquo;Option: Static initializers&rdquo;.
+ In 
+<FUNCTION>cre_mpl()</FUNCTION>
+ 
+<LITERAL>pk_cmpl-&gt;mplsz</LITERAL>
+ is the field of interest</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In 
+<FUNCTION>cre_mpf()</FUNCTION>
+ the product of 
+<LITERAL>pk_cmpf-&gt;blfsz</LITERAL>
+ and 
+<LITERAL>pk_cmpf-&gt;mpfcnt</LITERAL>
+ must be smaller than the memory statically configured for the pool
+else E_RSATR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>In functions which return memory to the pool 
+<FUNCTION>rel_blk()</FUNCTION>
+ and 
+<FUNCTION>rel_blf()</FUNCTION>
+, if the free fails, for example because the memory did not come
+from that pool originally, then E_PAR is returned</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="compat-uitron-time-mgmt-functions">
+<TITLE><!-- <index></index> -->Time Management Functions</TITLE>
+<PARA>These functions are fully supported in this release: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>set_tim</FUNCTION>( 
+    SYSTIME *<EMPHASIS>pk_tim</EMPHASIS> )</PROGRAMLISTING>
+<CAUTION>
+<PARA>	    Setting the time may cause erroneous operation of the
+	    kernel, for example a task performing a wait with a
+	    time-out may never awaken.</PARA>
+</CAUTION>
+<PROGRAMLISTING>ER <FUNCTION>get_tim</FUNCTION>( 
+    SYSTIME *<EMPHASIS>pk_tim</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>dly_tsk</FUNCTION>( 
+    DLYTIME <EMPHASIS>dlytim</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>def_cyc</FUNCTION>( 
+    HNO <EMPHASIS>cycno,</EMPHASIS>    T_DCYC *<EMPHASIS>pk_dcyc</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>act_cyc</FUNCTION>( 
+    HNO <EMPHASIS>cycno,</EMPHASIS>    UINT <EMPHASIS>cycact</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ref_cyc</FUNCTION>( 
+    T_RCYC *<EMPHASIS>pk_rcyc,</EMPHASIS>    HNO <EMPHASIS>cycno</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>def_alm</FUNCTION>( 
+    HNO <EMPHASIS>almno,</EMPHASIS>    T_DALM *<EMPHASIS>pk_dalm</EMPHASIS> )
+</programlisting>
+<programlisting>
+ER <FUNCTION>ref_alm</FUNCTION>( 
+    T_RALM *<EMPHASIS>pk_ralm,</EMPHASIS>    HNO <EMPHASIS>almno</EMPHASIS> )
+</programlisting>
+<programlisting>
+void <FUNCTION>ret_tmr</FUNCTION>( void )</programlisting>
+	<sect2>
+	  <title>Error checking</title>
+<PARA>The following conditions are only checked for, and only return
+errors if 
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+is enabled:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>invalid handler number; less than 1 or greater than 
+<LITERAL>CYGNUM_UITRON_CYCLICS/ALARMS</LITERAL>
+as appropriate, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>dispatching is enabled in 
+<FUNCTION>dly_tsk()</FUNCTION>
+, or E_CTX</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>dlytim must be positive or zero, otherwise E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>return value pointer in 
+<FUNCTION>ref_xxx()</FUNCTION>
+ is a valid pointer, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>params within pk_dalm and pk_dcyc must
+be valid, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>cycact in 
+<FUNCTION>act_cyc()</FUNCTION>
+ must be valid, or E_PAR</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>handler must be defined in 
+<FUNCTION>ref_xxx()</FUNCTION>
+ and 
+<FUNCTION>act_cyc()</FUNCTION>
+, or E_NOEXS</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>parameter pointer must be a good pointer in 
+<FUNCTION>get_tim()</FUNCTION>
+ and 
+<FUNCTION>set_tim()</FUNCTION>
+, otherwise E_PAR is returned</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>The following conditions are checked for, and can return
+	  error codes, regardless of the setting of
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA><FUNCTION>dly_tsk()</FUNCTION>
+: return code E_RLWAI is returned depending on the reason
+for terminating the sleep</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</sect2>
+</SECT1>
+<SECT1 id="compat-uitron-system-mgmt-functions">
+<TITLE><!-- <index></index> -->	  System Management Functions</TITLE>
+<PARA>These functions are fully supported in this release:
+	</PARA>
+<PROGRAMLISTING>ER <FUNCTION>get_ver</FUNCTION>( 
+    T_VER *<EMPHASIS>pk_ver</EMPHASIS> )
+</PROGRAMLISTING>
+<PROGRAMLISTING>ER <FUNCTION>ref_sys</FUNCTION>( 
+    T_RSYS *<EMPHASIS>pk_rsys</EMPHASIS> )
+</PROGRAMLISTING>
+<PROGRAMLISTING>ER <FUNCTION>ref_cfg</FUNCTION>( 
+    T_RCFG *<EMPHASIS>pk_rcfg</EMPHASIS> )
+</PROGRAMLISTING>
+<PARA>Note that the information returned by each of these calls
+may be configured to match the user's own versioning system,
+and the values supplied by the default configuration may be inappropriate. </PARA>
+<PARA>These functions are not supported in this release: </PARA>
+<PROGRAMLISTING>ER <FUNCTION>def_svc</FUNCTION>( 
+    FN <EMPHASIS>s_fncd,</EMPHASIS>
+    T_DSVC *<EMPHASIS>pk_dsvc</EMPHASIS> )
+</PROGRAMLISTING>
+<PROGRAMLISTING>ER <FUNCTION>def_exc</FUNCTION>( 
+    UINT <EMPHASIS>exckind,</EMPHASIS>
+    T_DEXC *<EMPHASIS>pk_dexc</EMPHASIS> )
+</PROGRAMLISTING>
+<SECT2>
+<TITLE>Error checking</TITLE>
+<PARA>The following conditions are only checked for, and
+	    only return errors if
+	    
+<LITERAL>CYGSEM_UITRON_BAD_PARAMS_RETURN_ERRORS</LITERAL>
+ is enabled: </PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>return value pointer in all calls is a valid
+	      pointer, or E_PAR</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+</SECT2>
+</SECT1>
+<SECT1 id="compat-uitron-network-support-functions">
+<TITLE><!-- <index></index> -->	  Network Support Functions</TITLE>
+<PARA>None of these functions are supported in this release.
+	</PARA>
+</SECT1>
+<SECT1 id="compat-uitron-configuration-faq">
+<TITLE><!-- <index></index> -->&micro;ITRON Configuration FAQ</TITLE>
+<PARA><EMPHASIS>Q: How are &micro;ITRON objects created?</EMPHASIS>
+</PARA>
+<PARA>
+For each type of uITRON object (tasks, semaphores, flags, mboxes, mpf, mpl)
+these two quantities are controlled by configuration:
+</PARA>
+<ITEMIZEDLIST>
+<LISTITEM><PARA>
+The <EMPHASIS>maximum</EMPHASIS> number of this type of object.
+</PARA></LISTITEM>
+<LISTITEM><PARA>
+The number of these objects which exist <EMPHASIS>initially</EMPHASIS>.
+</PARA></LISTITEM>
+</ITEMIZEDLIST>
+<PARA>
+This is assuming that for the relevant object type,
+<EMPHASIS>create</EMPHASIS> and <EMPHASIS>delete</EMPHASIS>
+operations are enabled; enabled is the default.  For example, the option
+<LITERAL>CYGPKG_UITRON_MBOXES_CREATE_DELETE</LITERAL>
+controls whether the functions
+<FUNCTION>cre_mbx()</FUNCTION>
+and
+<FUNCTION>del_mbx()</FUNCTION>
+exist in the API.  If not, then the maximum number of
+mboxes is the same as the initial number of mboxes, and so on for all
+&micro;ITRON object types.
+</PARA>
+<PARA>
+Mboxes have no initialization, so there are only a few, simple
+configuration options:
+</PARA>
+<ITEMIZEDLIST>
+<LISTITEM><PARA>
+<LITERAL>CYGNUM_UITRON_MBOXES</LITERAL>
+is the total number of mboxes that you can have in the
+system.  By default this is 4, so you can use mboxes 1,2,3 and 4.  You
+cannot create mboxes outside this range; trying to
+<FUNCTION>cre_mbx(5,...)</FUNCTION>
+will return an error.
+</PARA></LISTITEM>
+<LISTITEM><PARA>
+<LITERAL>CYGNUM_UITRON_MBOXES_INITIALLY</LITERAL>
+is the number of mboxes created
+automatically for you, during startup.  By default this is 4, so all 4
+mboxes exist already, and an attempt to create one of these
+eg. <FUNCTION>cre_mbx(3,...)</FUNCTION>
+will return an error because the mbox in quesion already
+exists.  You can delete a pre-existing mbox, and then re-create it.
+</PARA></LISTITEM>
+</ITEMIZEDLIST>
+<PARA>
+If you change 
+<LITERAL>CYGNUM_UITRON_MBOXES_INITIALLY</LITERAL>,
+for example to 0, no mboxes
+are created automatically for you during startup.  Any attempt to use an
+mbox without creating it will return E_NOEXS because the mbox does not
+exist.  You can create an mbox, say <FUNCTION>cre_mbx(3,...)</FUNCTION>
+and then use it, say
+<FUNCTION>snd_msg(3,&amp;foo)</FUNCTION>, and all will be well.
+</PARA>
+<PARA><EMPHASIS>Q: How are &micro;ITRON objects initialized?</EMPHASIS>
+</PARA>
+<PARA>
+Some object types have optional initialization.  Semaphores are an
+example.  You could have 
+<LITERAL>CYGNUM_UITRON_SEMAS</LITERAL>=10 and
+<LITERAL>CYGNUM_UITRON_SEMAS_INITIALLY</LITERAL>=5
+which means you can use semaphores 1-5
+straight off, but you must create semaphores 6-10 before you can use them.
+If you decide not to initialize semaphores, semaphores 1-5 will have an
+initial count of zero.  If you decide to initialize them, you must supply
+a dummy initializer for semaphores 6-10 also.  For example,
+in terms of the configuration output in
+<filename>pkgconf/uitron.h</filename>:
+</PARA>
+<PROGRAMLISTING>
+   #define CYGDAT_UITRON_SEMA_INITIALIZERS \
+        CYG_UIT_SEMA(  1 ),     \
+        CYG_UIT_SEMA(  0 ),     \
+        CYG_UIT_SEMA(  0 ),     \
+        CYG_UIT_SEMA( 99 ),     \
+        CYG_UIT_SEMA(  1 ),     \
+        CYG_UIT_SEMA_NOEXS,     \
+        CYG_UIT_SEMA_NOEXS,     \
+        CYG_UIT_SEMA_NOEXS,     \
+        CYG_UIT_SEMA_NOEXS,     \
+        CYG_UIT_SEMA_NOEXS
+</PROGRAMLISTING>
+<PARA>
+Semaphore 1 will have initial count 1, semaphores 2 and 3 will be zero,
+number 4 will be 99 initially, 5 will be one and numbers 6 though 10 do not
+exist initially.
+</PARA>
+<PARA>
+Aside: this is how the definition of the symbol would appear in the
+configuration header file <filename>pkgconf/uitron.h</filename> &mdash;
+unfortunately editing such a long, multi-line definition is somewhat
+cumbersome in the GUI config tool in current releases.  The macros
+<LITERAL>CYG_UIT_SEMA()</LITERAL>
+&mdash; to create a semaphore initializer &mdash; and
+<LITERAL>CYG_UIT_SEMA_NOEXS</LITERAL>
+&mdash; to invoke a dummy initializer &mdash;
+are provided in in the environment to help with this.  Similar macros are
+provided for other object types.  The resulting #define symbol is used in
+the context of a C++ array initializer, such as:
+<PROGRAMLISTING>
+Cyg_Counting_Semaphore2 cyg_uitron_SEMAS[ CYGNUM_UITRON_SEMAS ] = {
+	CYGDAT_UITRON_SEMA_INITIALIZERS
+};
+</PROGRAMLISTING>
+which is eventually macro-processed to give
+<PROGRAMLISTING>
+Cyg_Counting_Semaphore2 cyg_uitron_SEMAS[ 10 ] = {
+	Cyg_Counting_Semaphore2( ( 1 ) ), 
+	Cyg_Counting_Semaphore2( ( 0 ) ), 
+	Cyg_Counting_Semaphore2( ( 0 ) ), 
+	Cyg_Counting_Semaphore2( ( 99 ) ), 
+	Cyg_Counting_Semaphore2( ( 1 ) ), 
+	Cyg_Counting_Semaphore2(0), 
+	Cyg_Counting_Semaphore2(0), 
+	Cyg_Counting_Semaphore2(0), 
+	Cyg_Counting_Semaphore2(0), 
+	Cyg_Counting_Semaphore2(0), 
+};
+</PROGRAMLISTING>
+so you can see how it is necessary to include the dummy entries in that
+definition, otherwise the resulting code will not compile correctly.
+</PARA>
+<PARA>
+If you choose 
+<LITERAL>CYGNUM_UITRON_SEMAS_INITIALLY</LITERAL>=0
+it is meaningless to initialize them, for they must be created and so
+initialized then, before use.
+</PARA>
+<PARA><EMPHASIS>Q: What about &micro;ITRON tasks?</EMPHASIS>
+</PARA>
+<PARA>
+Some object types require initialization.  Tasks are an example of this.
+You must provide a task with a priority, a function to enter when the task
+starts, a name (for debugging purposes), and some memory to use for the stack.
+For example (again in terms of the resulting
+definitions in <filename>pkgconf/uitron.h</filename>):
+</PARA>
+<PROGRAMLISTING>
+#define CYGNUM_UITRON_TASKS 4           // valid task ids are 1,2,3,4
+#define CYGNUM_UITRON_TASKS_INITIALLY 4 // they all exist at start
+
+#define CYGDAT_UITRON_TASK_EXTERNS          	\
+extern "C" void startup( unsigned int );    	\
+extern "C" void worktask( unsigned int );   	\
+extern "C" void lowtask( unsigned int );        \
+static char stack1[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack2[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack3[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack4[ CYGNUM_UITRON_STACK_SIZE ];
+
+#define CYGDAT_UITRON_TASK_INITIALIZERS \
+ CYG_UIT_TASK("main task", 8, startup,  &amp;stack1, sizeof( stack1 )), \
+ CYG_UIT_TASK("worker 2" , 9, worktask, &amp;stack2, sizeof( stack2 )), \
+ CYG_UIT_TASK("worker 3" , 9, worktask, &amp;stack3, sizeof( stack3 )), \
+ CYG_UIT_TASK("low task" ,20, lowtask,  &amp;stack4, sizeof( stack4 )), \
+
+</PROGRAMLISTING>
+<PARA>
+So this example has all four tasks statically configured to exist, ready to
+run, from the start of time.  The &ldquo;main task&rdquo; runs a routine
+called <FUNCTION>startup()</FUNCTION> at priority 8.  Two
+&ldquo;worker&rdquo; tasks run both a priority 9, and a &ldquo;low
+priority&rdquo; task runs at priority 20 to do useful non-urgent background
+work.
+</PARA>
+<screen>
+Task ID | Exists at | Function | Priority | Stack   | Stack
+ number |  startup  |  entry   |          | address | size
+--------+-----------+----------+----------+---------+----------
+   1    |    Yes    |  startup |    8     | &amp;stack1 | CYGNUM...
+   2    |    Yes    | worktask |    9 	  | &amp;stack2 | CYGNUM...
+   3    |    Yes    | worktask |    9 	  | &amp;stack3 | CYGNUM...
+   4    |    Yes    |  lowtask |   20 	  | &amp;stack4 | CYGNUM...
+--------+-----------+----------+----------+---------+----------
+</screen>
+<PARA><EMPHASIS>Q: How can I create &micro;ITRON tasks in the program?</EMPHASIS>
+</PARA>
+<PARA>
+You must provide free slots in the task table in which to create new tasks,
+by configuring the number of tasks existing initially to be smaller than
+the total.
+For a task ID which does not initially exist, it will be told what routine
+to call, and what priority it is, when the task is created.  But you must
+still set aside memory for the task to use for its stack, and give it a
+name during initialization.  For example:
+</PARA>
+
+<PROGRAMLISTING>
+#define CYGNUM_UITRON_TASKS 4           // valid task ids are 1-4
+#define CYGNUM_UITRON_TASKS_INITIALLY 1 // only task #1 exists
+
+#define CYGDAT_UITRON_TASK_EXTERNS \
+extern "C" void startup( unsigned int ); \
+static char stack1[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack2[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack3[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack4[ CYGNUM_UITRON_STACK_SIZE ];
+
+#define CYGDAT_UITRON_TASK_INITIALIZERS \
+   CYG_UIT_TASK( "main", 8, startup, &amp;stack1, sizeof( stack1 ) ), \
+   CYG_UIT_TASK_NOEXS( "slave",      &amp;stack2, sizeof( stack2 ) ), \
+   CYG_UIT_TASK_NOEXS( "slave2",     &amp;stack3, sizeof( stack3 ) ), \
+   CYG_UIT_TASK_NOEXS( "slave3",     &amp;stack4, sizeof( stack4 ) ), \
+
+</PROGRAMLISTING>
+<PARA>
+So tasks numbered 2,3 and 4 have been given their stacks during startup,
+though they do not yet exist in terms of <FUNCTION>cre_tsk()</FUNCTION> and
+<FUNCTION>del_tsk()</FUNCTION> so you can create tasks 2&ndash;4 at
+runtime.
+</PARA>
+<screen>
+Task ID | Exists at | Function | Priority | Stack   | Stack
+ number |  startup  |  entry   |          | address | size
+--------+-----------+----------+----------+---------+----------
+   1    |    Yes    |  startup |    8     | &amp;stack1 | CYGNUM...
+   2    |    No     |   N/A    |   N/A    | &amp;stack2 | CYGNUM...
+   3    |    No     |   N/A    |   N/A    | &amp;stack3 | CYGNUM...
+   4    |    No     |   N/A    |   N/A    | &amp;stack4 | CYGNUM...
+--------+-----------+----------+----------+---------+----------
+</screen>
+<PARA>
+(you must have at least one task at startup in order that the system can
+ actually run; this is not so for other uITRON object types)
+</PARA>
+<PARA><EMPHASIS>Q: Can I have different stack sizes for &micro;ITRON tasks?</EMPHASIS>
+</PARA>
+<PARA>
+Simply set aside different amounts of memory for each task to use for its
+stack.  Going back to a typical default setting for the &micro;ITRON tasks,
+the definitions in <filename>pkgconf/uitron.h</filename> might look like this:
+</PARA>
+<PROGRAMLISTING>
+#define CYGDAT_UITRON_TASK_EXTERNS \
+extern "C" void task1( unsigned int ); \
+extern "C" void task2( unsigned int ); \
+extern "C" void task3( unsigned int ); \
+extern "C" void task4( unsigned int ); \
+static char stack1[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack2[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack3[ CYGNUM_UITRON_STACK_SIZE ], \
+            stack4[ CYGNUM_UITRON_STACK_SIZE ];
+  
+#define CYGDAT_UITRON_TASK_INITIALIZERS \
+  CYG_UIT_TASK( "t1", 1, task1, &amp;stack1, CYGNUM_UITRON_STACK_SIZE ), \
+  CYG_UIT_TASK( "t2", 2, task2, &amp;stack2, CYGNUM_UITRON_STACK_SIZE ), \
+  CYG_UIT_TASK( "t3", 3, task3, &amp;stack3, CYGNUM_UITRON_STACK_SIZE ), \
+  CYG_UIT_TASK( "t4", 4, task4, &amp;stack4, CYGNUM_UITRON_STACK_SIZE )
+
+</PROGRAMLISTING>
+<PARA>
+Note that 
+<LITERAL>CYGNUM_UITRON_STACK_SIZE</LITERAL>
+is used to control the size of the stack
+objects themselves, and to tell the system what size stack is being provided.
+</PARA>
+<PARA>
+Suppose instead stack sizes of 2000, 1000, 800 and 800 were required:
+this could be achieved by using the GUI config tool to edit these
+options, or editting the <filename>.ecc</filename> file to get these
+results in <filename>pkgconf/uitron.h</filename>:
+</PARA>
+<PROGRAMLISTING>
+#define CYGDAT_UITRON_TASK_EXTERNS \
+extern "C" void task1( unsigned int ); \
+extern "C" void task2( unsigned int ); \
+extern "C" void task3( unsigned int ); \
+extern "C" void task4( unsigned int ); \
+static char stack1[ 2000 ], \
+            stack2[ 1000 ], \
+            stack3[  800 ], \
+            stack4[  800 ];
+ 
+#define CYGDAT_UITRON_TASK_INITIALIZERS \
+      CYG_UIT_TASK( "t1", 1, task1, &amp;stack1, sizeof( stack1 ) ), \
+      CYG_UIT_TASK( "t2", 2, task2, &amp;stack2, sizeof( stack2 ) ), \
+      CYG_UIT_TASK( "t3", 3, task3, &amp;stack3, sizeof( stack3 ) ), \
+      CYG_UIT_TASK( "t4", 4, task4, &amp;stack4, sizeof( stack4 ) )
+</PROGRAMLISTING>
+<PARA>
+Note that the sizeof() operator has been used to tell the system what size
+stacks are provided, rather than quoting a number (which is difficult for
+maintenance) or the symbol 
+<LITERAL>CYGNUM_UITRON_STACK_SIZE</LITERAL>
+(which is wrong).
+</PARA>
+<PARA>
+We recommend using (if available in your release) the stacksize symbols
+provided in the architectural HAL for your target, called
+<LITERAL>CYGNUM_HAL_STACK_SIZE_TYPICAL</LITERAL>
+and 
+<LITERAL>CYGNUM_HAL_STACK_SIZE_MINIMUM</LITERAL>.
+So a better (more portable) version of the above might be:
+</PARA>
+<PROGRAMLISTING>
+#define CYGDAT_UITRON_TASK_EXTERNS \
+extern "C" void task1( unsigned int ); \
+extern "C" void task2( unsigned int ); \
+extern "C" void task3( unsigned int ); \
+extern "C" void task4( unsigned int ); \
+static char stack1[ CYGNUM_HAL_STACK_SIZE_TYPICAL + 1200 ], \
+            stack2[ CYGNUM_HAL_STACK_SIZE_TYPICAL +  200 ], \
+            stack3[ CYGNUM_HAL_STACK_SIZE_TYPICAL        ], \
+            stack4[ CYGNUM_HAL_STACK_SIZE_TYPICAL        ];
+
+#define CYGDAT_UITRON_TASK_INITIALIZERS \
+      CYG_UIT_TASK( "t1", 1, task1, &amp;stack1, sizeof( stack1 ) ), \
+      CYG_UIT_TASK( "t2", 2, task2, &amp;stack2, sizeof( stack2 ) ), \
+      CYG_UIT_TASK( "t3", 3, task3, &amp;stack3, sizeof( stack3 ) ), \
+      CYG_UIT_TASK( "t4", 4, task4, &amp;stack4, sizeof( stack4 ) )
+</PROGRAMLISTING>
+</SECT1>
+</CHAPTER>
+</part>

@@ -1,0 +1,81 @@
+<html>
+<body>
+<pre>
+NAME
+       accept - accept a connection on a socket
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       int accept(int s, struct sockaddr *addr, int *addrlen);
+
+DESCRIPTION
+       The  argument  s  is  a  socket that has been created with
+       socket(2), bound to an address with bind(2), and  is  lis-
+       tening  for  connections  after  a  listen(2).  The accept
+       function extracts the  first  connection  request  on  the
+       queue  of  pending  connections, creates a new socket with
+       the same  properties  of  s,  and  allocates  a  new  file
+       descriptor  for the socket.  If no pending connections are
+       present on the queue, and the socket is not marked as non-
+       blocking,  accept  blocks the caller until a connection is
+       present.  If the socket  is  marked  non-blocking  and  no
+       pending  connections  are  present  on  the  queue, accept
+       returns an error as described below.  The socket  returned
+       by accept may not be used to accept more connections.  The
+       original socket s remains open.
+
+       The argument addr is a result parameter that is filled  in
+       with the address of the connecting entity, as known to the
+       communications layer.  The exact format of the addr param-
+       eter  is  determined by the domain in which the communica-
+       tion is occurring.  addrlen is a  value-result  parameter:
+       it should initially contain the amount of space pointed to
+       by addr; on return it will contain the actual  length  (in
+       bytes)  of  the  address returned.  This call is used with
+       connection-based socket types, currently with SOCK_STREAM.
+
+       It  is  possible to select(2) a socket for the purposes of
+       doing an accept by selecting it for read.
+
+       For certain protocols which require an explicit  confirma-
+       tion,  such  as DECNet, accept can be thought of as merely
+       dequeuing the next connection  request  and  not  implying
+       confirmation.   Confirmation  can  be  implied by a normal
+       read or write on the new file  descriptor,  and  rejection
+       can  be  implied by closing the new socket. Currently only
+       DECNet has these semantics on Linux.
+
+NOTES
+       If you want accept to never  block  the  listening  socket
+       needs  to  have  the  non blocking flag set. Assuming that
+       there is always a connection waiting after select returned
+       true  is  not  reliable,  because  the connection might be
+       removed by  an  asynchronous  network  error  between  the
+       select/poll returning and the accept call. The application
+       would hang then if the listen socket is not non  blocking.
+
+RETURN VALUES
+       The  call returns -1 on error.  If it succeeds, it returns
+       a non-negative  integer  that  is  a  descriptor  for  the
+       accepted socket.
+
+ERRORS
+       EBADF   The descriptor is invalid.
+
+       ENOTSOCK
+               The descriptor references a file, not a socket.
+
+       EOPNOTSUPP
+               The referenced socket is not of type  SOCK_STREAM.
+
+       EAGAIN  The socket is marked non-blocking and  no  connec-
+               tions are present to be accepted.
+
+       ENOBUFS, ENOMEM
+               Not enough free memory.
+
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,4 @@
+#define fromnet_width 8
+#define fromnet_height 8
+static unsigned char fromnet_bits[] = {
+   0x00, 0x87, 0xa5, 0x95, 0xfd, 0x95, 0xa5, 0x87};

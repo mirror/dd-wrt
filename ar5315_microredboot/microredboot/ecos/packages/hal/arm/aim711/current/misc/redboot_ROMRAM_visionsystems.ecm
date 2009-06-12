@@ -1,0 +1,239 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    aim711 ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_ARM current ;
+    package -hardware CYGPKG_HAL_ARM_AIM711 current ;
+    package -hardware CYGPKG_DEVS_FLASH_ARM_AIM711 current ;
+    package -hardware CYGPKG_DEVS_FLASH_SST_39VFXXX current ;
+    package -hardware CYGPKG_DEVS_ETH_ARM_KS32C5000 current ;
+    package -hardware CYGPKG_IO_SERIAL_ARM_AIM711 current ;
+    package -hardware CYGPKG_IO_SERIAL_ARM_S3C4510 current ;
+    package -hardware CYGPKG_IO_SERIAL_ARM_AIM711_S3C4510 current ;
+    package -hardware CYGPKG_IO_SERIAL_GENERIC_16X5X current ;
+    package -hardware CYGPKG_IO_SERIAL_ARM_AIM711_16X5X current ;
+    package -hardware CYGPKG_DEVICES_WALLCLOCK_ARM_AIM711 current ;
+    package -hardware CYGPKG_DEVICES_WALLCLOCK_DALLAS_DS1307 current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package CYGPKG_ISOINFRA current ;
+    package CYGPKG_LIBC_STRING current ;
+    package CYGPKG_CRC current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_IO_ETH_DRIVERS current ;
+    package CYGPKG_NS_DNS current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+    package CYGPKG_IO_WALLCLOCK current ;
+};
+
+cdl_option CYGFUN_LIBC_STRING_BSD_FUNCS {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_IO_ETH_DRIVERS_DEBUG_VERBOSITY {
+    user_value 0
+};
+
+cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_DEBUG_LEVEL {
+    user_value 0
+};
+
+cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_LXT970 {
+    user_value 0
+};
+
+cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHY_RTL8201 {
+    user_value 1
+};
+
+cdl_option CYGPKG_DEVS_ETH_ARM_KS32C5000_PHYADDR {
+    user_value 2
+};
+
+cdl_component CYGPKG_DEVS_ETH_ARM_KS32C5000_REDBOOT_HOLDS_ESA {
+    user_value 1
+};
+
+cdl_option CYGIMP_HAL_COMMON_INTERRUPTS_USE_INTERRUPT_STACK {
+    user_value 0
+};
+
+cdl_option CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE {
+    user_value 6144
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_INIT_WHOLE_TABLE {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_RESET {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_VERSION {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DELAY_US {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_CACHE {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_DATA {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_COMMS {
+    user_value 1
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    user_value 0 0
+};
+
+cdl_option CYGPKG_HAL_GDB_FILEIO {
+    user_value 1
+};
+
+cdl_option CYGPKG_HAL_BUILD_COMPILER_TESTS {
+    user_value 0
+};
+
+cdl_option CYGHWR_HAL_ARM_BIGENDIAN {
+    user_value 1
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value ROMRAM
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_option CYGBLD_BUILD_REDBOOT_WITH_THREADS {
+    user_value 1
+};
+
+cdl_option CYGDAT_REDBOOT_CUSTOM_VERSION {
+    user_value 1 "VS 1.1.0"
+};
+
+cdl_option CYGNUM_REDBOOT_CMD_LINE_EDITING {
+    user_value 16
+};
+
+cdl_component CYGDAT_REDBOOT_DEFAULT_IP_ADDR {
+    user_value 1 192,168,1,254
+};
+
+cdl_option CYGSEM_REDBOOT_DEFAULT_NO_BOOTP {
+    user_value 1
+};
+
+cdl_component CYGPKG_REDBOOT_NETWORKING_DNS {
+    user_value 1
+};
+
+cdl_option CYGPKG_REDBOOT_ANY_CONSOLE {
+    user_value 0
+};
+
+cdl_option CYGSEM_REDBOOT_PLF_STARTUP {
+    user_value 0
+};
+
+cdl_option CYGBLD_REDBOOT_MIN_IMAGE_SIZE {
+    user_value 0x00025000
+};
+
+cdl_option CYGBLD_REDBOOT_FLASH_BOOT_OFFSET {
+    user_value 0
+};
+
+cdl_option CYGSEM_REDBOOT_FLASH_COMBINED_FIS_AND_CONFIG {
+    user_value 0
+};
+
+cdl_component CYGPKG_REDBOOT_DISK {
+    user_value 0
+};
+
+cdl_option CYGNUM_REDBOOT_BOOT_SCRIPT_TIMEOUT_RESOLUTION {
+    user_value 1
+};
+
+cdl_option CYGNUM_REDBOOT_BOOT_SCRIPT_DEFAULT_TIMEOUT {
+    user_value 10
+};
+
+cdl_component CYGSEM_REDBOOT_BSP_SYSCALLS {
+    user_value 1
+};
+
+cdl_component CYGPKG_REDBOOT_AIM711_EEPROM_RDWR {
+    user_value 1
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_DNS_HEADER {
+    user_value 1 <cyg/ns/dns/dns.h>
+};
+
+cdl_option CYGNUM_DEVS_FLASH_ARM_AIM711_SIZE {
+    user_value 2
+};
+
+cdl_option CYGPKG_NS_DNS_BUILD {
+    user_value 0
+};
+
+

@@ -1,0 +1,161 @@
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-08-28  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c: Obsolete file - removed.
+
+	* src/plf_redboot_linux_exec.c: New file - platform specifics
+	for booting Linux kernel from RedBoot.
+
+	* cdl/hal_powerpc_csb281.cdl: Linux booting from RedBoot is 
+	now supported at the architecture level.  Changes to support 
+	architecture/platform layering.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_csb281.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-06-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/csb281.S (HW_init): Initialize SDRAM drivers to 40 Ohm (less
+	current/noise, more reliable).
+
+2003-03-18  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c (_csb281_pci_init): Display PCI bus - disabled.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Call eth_drv_stop as necessary.
+
+2003-02-26  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/lcd_support.c (lcd_on): Enable/disable is still not stable.
+
+2003-02-25  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/lcd_support.c (lcd_on): Fix enable/disable code.
+
+2003-02-01  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/sed135x_16bit.c: 
+	* src/sed1356_16bit.h: 
+	* src/lcd_support.c
+	* src/font.h: 
+	* src/banner.xpm: 
+	* include/lcd_support.h: New file(s).
+
+	* src/hal_aux.c: 
+	* cdl/hal_powerpc_csb281.cdl: Add support for LCD/CRT+PS/2 keyboard
+	as console device.  Hardware support contributed by Mike Kelly of
+	Cogent.
+
+2003-01-22  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/pkgconf/mlt_powerpc_csb281_ram.h (CYGMEM_SECTION_heap1_SIZE): 
+	Make this match the .mlt and .ldi definition.
+
+2003-01-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_ROMRAM.ecm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: New config - with ESA in RedBoot/fconfig.
+
+	* cdl/hal_powerpc_csb281.cdl: Deprecate "tests" since there are none
+	at the moment, but leave the code as comments in case they return.
+
+2003-01-03  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_diag.c (cyg_hal_plf_serial_error): New function - fixed
+	some random [timing?] problems with getc().
+
+	* src/csb281.S: Fix ROMRAM startup.  Minor cleanups.
+
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: Update.
+
+	* include/pkgconf/mlt_powerpc_csb281_romram.mlt: 
+	* include/pkgconf/mlt_powerpc_csb281_romram.ldi: 
+	* include/pkgconf/mlt_powerpc_csb281_romram.h: Fix RAM size.
+
+	* src/hal_aux.c: 
+	* include/plf_io.h: Define uncached, separately mapped, PCI space.
+
+2003-01-02  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_aux.c (hal_platform_init): Need to clear all interrupt
+	sources - very manually - reset doesn't do this.
+
+	* include/platform.inc: Don't run EOI cycle for spurious interrupts.
+
+2002-12-24  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c: 
+	* src/hal_diag.c: 
+	* src/hal_aux.c: 
+	* src/csb281.S: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: 
+	* include/pkgconf/mlt_powerpc_csb281_romram.mlt: 
+	* include/pkgconf/mlt_powerpc_csb281_romram.ldi: 
+	* include/pkgconf/mlt_powerpc_csb281_romram.h: 
+	* include/pkgconf/mlt_powerpc_csb281_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_csb281_rom.ldi: 
+	* include/pkgconf/mlt_powerpc_csb281_rom.h: 
+	* include/pkgconf/mlt_powerpc_csb281_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_csb281_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_csb281_ram.h: 
+	* include/plf_stub.h: 
+	* include/plf_regs.h: 
+	* include/plf_io.h: 
+	* include/plf_intr.h: 
+	* include/plf_cache.h: 
+	* include/platform.inc: 
+	* include/hal_diag.h: 
+	* cdl/hal_powerpc_csb281.cdl: New package - HAL support
+	for Cogent CSB281 (PowerPC 8245) board.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+// Copyright (C) 2002 Gary Thomas
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

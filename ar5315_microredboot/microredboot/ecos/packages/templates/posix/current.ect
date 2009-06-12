@@ -1,0 +1,149 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration template_posix {
+    description "This configuration provides HAL, infrastructure, the kernel and POSIX packages." ;
+    package     CYGPKG_HAL current ;
+    package     CYGPKG_IO current ;
+    package     CYGPKG_INFRA current ;
+    package     CYGPKG_KERNEL current ;
+    package     CYGPKG_MEMALLOC current ;    
+    package     CYGPKG_ERROR current ;
+    package     CYGPKG_ISOINFRA current ;
+    package     CYGPKG_POSIX current ;
+    package	CYGPKG_IO_FILEIO current ;
+    package     CYGPKG_LIBC current ;
+    package     CYGPKG_LIBC_SETJMP current ;
+    package     CYGPKG_LIBC_STRING current ;
+    package     CYGPKG_LIBC_STARTUP current ;
+};
+
+cdl_option CYGIMP_KERNEL_SCHED_SORTED_QUEUES {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_KERNEL_SCHED_TIMESLICE_ENABLE {
+    inferred_value 1
+};
+
+cdl_component CYGSEM_KERNEL_SCHED_ASR_SUPPORT {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_KERNEL_SCHED_ASR_GLOBAL {
+    inferred_value 1
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    inferred_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    inferred_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_TIMER_TYPES_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_TIMERS_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_NUMBERS_HEADER {
+    inferred_value 1 <cyg/posix/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_IMPL_HEADER {
+    inferred_value 1 <cyg/posix/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SETJMP_HEADER {
+    inferred_value 1 <cyg/libc/setjmp/setjmp.h>
+};
+
+cdl_option CYGBLD_ISO_DIRENT_HEADER {
+    inferred_value 1 <cyg/fileio/dirent.h>
+};
+
+cdl_option CYGBLD_ISO_PTHREADTYPES_HEADER {
+    inferred_value 1 <cyg/posix/types.h>
+};
+
+cdl_option CYGBLD_ISO_UTSNAME_HEADER {
+    inferred_value 1 <cyg/posix/utsname.h>
+};
+
+cdl_option CYGBLD_ISO_SEMAPHORES_HEADER {
+    inferred_value 1 <cyg/posix/semaphore.h>
+};
+
+cdl_option CYGBLD_ISO_PTHREAD_IMPL_HEADER {
+    inferred_value 1 <cyg/posix/pthread.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_LIMITS_HEADER {
+    inferred_value 1 <cyg/posix/limits.h>
+};
+
+cdl_option CYGBLD_ISO_SIGSETJMP_HEADER {
+    inferred_value 1 <cyg/posix/sigsetjmp.h>
+};
+
+cdl_option CYGBLD_ISO_OPEN_MAX_HEADER {
+    inferred_value 1 <cyg/fileio/limits.h>
+};
+
+cdl_option CYGBLD_ISO_PMUTEXTYPES_HEADER {
+    inferred_value 1 <cyg/posix/muttypes.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_CLOCK_TYPES_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_POSIX_CLOCKS_HEADER {
+    inferred_value 1 <cyg/posix/time.h>
+};
+
+cdl_option CYGBLD_ISO_PTHREAD_MUTEX_HEADER {
+    inferred_value 1 <cyg/posix/mutex.h>
+};
+
+cdl_option CYGBLD_ISO_NAME_MAX_HEADER {
+    inferred_value 1 <cyg/fileio/limits.h>
+};
+
+cdl_option CYGFUN_LIBC_STRING_BSD_FUNCS {
+    inferred_value 0
+};

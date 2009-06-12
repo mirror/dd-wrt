@@ -1,0 +1,276 @@
+2003-05-23  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Run patches/README.
+
+2003-05-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: No need to apply mips patches.
+
+2003-03-21  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Updated.
+
+2003-03-19  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Updated.
+
+2003-02-28  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Don't apply bfd-mips-got.patch.
+
+2003-01-02  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Don't apply binutils-mips-isa.patch.
+
+2002-12-16  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Add "make configure-bfd".
+
+2002-12-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply gas-mips-gprel.patch for mips.
+
+2002-11-22  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Include c++filt.
+
+2002-11-20  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply bfd-mips-got.patch for mips.
+
+2002-10-23  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Don't apply gas-mips-relax.patch.
+
+2002-10-13  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply gas-mips-relax.patch for mips.
+
+2002-10-10  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (ADDITIONAL_TARGETS): Add ppc64-linux.
+
+2002-06-18  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (ADDITIONAL_TARGETS): Add x86_64-linux.
+
+2002-05-23  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Support --with all/coff.
+
+2002-05-21  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: No need to apply bfd-mips-visibility.patch
+	for mips now.
+
+2002-05-12  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Update the cross compile.
+
+2002-05-02  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Update URL.
+
+2002-04-23  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Fix the cross compile.
+
+2002-04-22  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply bfd-mips-visibility.patch for mips.
+
+2002-04-22  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (Buildroot): Set to
+	%{_tmppath}/%{name}-%{version}-%{release}-root.
+
+2002-03-26  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Don't apply mips/build.patch for cross
+	compile. It shouldn't be needed any more.
+
+2002-03-07  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Remove gasp.info.gz.
+
+2002-02-07  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply mips/build.patch for cross compile.
+
+2002-02-03  H.J. Lu <hjl@gnu.org>
+
+	* libtool.m4 (lt_cv_deplibs_check_method): Updated for
+	Linux/mips.
+
+2001-11-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply binutils-mips-isa.patch for mips.
+
+2001-10-22  H.J. Lu <hjl@gnu.org>
+
+	* ltmain.sh: Allow link against an archive when building a
+	shared library.
+
+	* libtool.m4 (lt_cv_deplibs_check_method): Always use
+	file_magic for Linux ELF.
+
+2001-10-15  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: No need to apply any mips patches.
+
+2001-10-05  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Don't apply binutils-mips64.patch nor
+	gas-mips.patch, and apply gas-mips-kernel.patch for mips.
+
+2001-08-02  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Remove gas-mips-dwarf2.patch.
+
+2001-07-26  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply gas-mips-dwarf2.patch for mips.
+
+2001-07-04  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Don't apply binutils-march.patch nor
+	binutils-mips-reloc.patch. They are not needed anymore.
+
+2001-06-26  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Pass CFLAGS=-O for building bfd headers.
+
+2001-06-23  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Set LD to %{__ld} for configuration.
+
+2001-06-22  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Set NM to %{__nm} for configuration.
+
+2001-06-22  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Set AR to %{__ar} and RANLIB to %{__ranlib}
+	for configuration.
+
+2001-06-19  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Don't apply binutils-mips-rodata.patch. It
+	is not needed anymore.
+
+2001-06-16  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Apply binutils-mips-rodata.patch for mips.
+
+2001-06-11  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Abort if any mips patch fails to apply.
+
+2001-06-11  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (cross_compile): New.
+	Apply mips/binutils-mips64.patch, mips/gas-mips.patch,
+	mips/binutils-march.patch and mips/binutils-mips-reloc.patch
+	for mips.
+	Set CC to %{__cc} for configuration.
+	Pass --build=%{_build_alias} to configure if %{cross_compile}
+	is not 0.
+
+2001-06-08  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Enable all Linux targets if ALL_TARGETS is
+	defined as 1.
+
+2001-06-07  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Enable all Linux targets.
+
+2001-04-25  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Regenerate BFD headers.
+
+2001-03-27  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Update the source URL.
+
+2001-02-15  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Change %{_lib} to lib for rpm 3.0.
+
+2001-02-10  H.J. Lu <hjl@gnu.org>
+
+	* README-I370: Removed.
+
+2001-02-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (ExcludeArch): Remove ia64.
+
+2001-01-23  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (Prereq): Add /sbin/install-info.
+
+2000-10-08  H.J. Lu <hjl@gnu.org>
+
+	* ltmain.sh (relink_command): Redirect all messages to
+	/dev/null to avoid unecessary linker messages for "make check".
+
+2000-10-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (%install): Support both rpm 3.0 and 4.0.
+
+2000-09-30  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Updated for RedHat 7.0.
+
+2000-09-02  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (__libtoolize): Set to `:'.
+
+2000-06-13  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in (COFF): New. For ia32 only. 1 for adding
+	i386-coff, otherwise for i386-pe. Defined as 0.
+	(Version): Append .coff if %{COFF} is not 0.
+
+2000-05-08  Horst von Brand <vonbrand@sleipnir.valparaiso.cl>
+
+	* binutils.spec.in: Also support i486, i586 and i686.
+	Pass RPM_OPT_FLAGS to configure.
+
+Fri Feb 18 18:27:56 2000  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Use /usr/bin/getconf to detect the number
+	of processors.
+
+Tue Feb  1 13:54:25 2000  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Enable i386-linuxaout and i386-coff for
+	IA32.
+
+Fri Jan 21 09:26:33 2000  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Update from RedHat 6.2.
+
+Thu Jan 13 13:42:01 2000  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: Change the tarfile from .bz2 to .gz.
+
+Thu Jan 13 13:28:11 2000  H.J. Lu <hjl@gnu.org>
+
+	* binutils.spec.in: New.
+
+Sun Oct 10 10:36:31 1999  H.J. Lu <hjl@gnu.org>
+
+	* ltconfig: Undo the change on Sat Jun  5 17:56:55 1999.
+	* ltmain.sh: Likewise.
+
+Sat Jun  5 17:56:55 1999  H.J. Lu <hjl@gnu.org>
+
+	* ltconfig: Updated from libtool 1.3.2.
+	* ltmain.sh: Likewise.
+
+	* ltconfig: Fix the GNU linker ELF detection.
+
+Tue Feb 23 01:57:53 1999  Linas Vepstas (linas@linas.org)
+
+	* README-I370: New.

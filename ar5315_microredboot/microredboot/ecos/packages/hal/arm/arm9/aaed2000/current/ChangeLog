@@ -1,0 +1,396 @@
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_primary_RAM.ecm: 
+	* misc/redboot_primary_ROMRAM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-02-13  Patrick Doyle  <wpd@delcomsys.com>
+	* src/aaed2000_misc.c: Replaced explicit prototype of memset with
+	#include <string.h>.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/aaed2000_misc.c (hal_mmu_init): Fixed warning.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-04-15  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Switch to use arm-elf.
+
+2002-03-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/lcd_support.c (lcd_comm_init): Fix missing rename. Disable
+	assembly that breaks GCC.
+
+2002-03-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/kbd_drvr.c: New file.
+
+	* src/lcd_support.c: 
+	* src/aaed2000_misc.c: 
+	* cdl/hal_arm_arm9_aaed2000.cdl: Split out keyboard driver.
+
+2002-03-09  Gary Thomas  <gthomas@redhat.com>
+
+	* src/aaed2000_misc.c (plf_hardware_init): 
+	Configure touch screen interrupt.
+
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.ldi: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.h: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.mlt: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.mlt: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.ldi: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.h: 
+	LCD screen needs 0xA0000 bytes.
+
+	* include/lcd_support.h: Remove warnings (when built for eCos).
+
+	* include/aaed2000.h: Add definitions for Synchronous Serial Port
+	(SSP) which is used by the touch screen.
+
+2002-01-29  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Use generic linux exec command.
+	* src/redboot_linux_exec.c: Removed.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Removed explicit plf_io.h
+	declaration.
+
+2002-01-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/lcd_support.c (KeyboardScan): Increase debouce stability
+	period to counter the incresed CPU/bus speed. 100 seems fine,
+	using 120 for good measure.
+
+2001-12-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/aaed2000.h: Increase waitstates.
+
+2001-12-11  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Removed custom clocking. Changed
+	clocking mode to generic instead of Agilent specific. 
+	* include/aaed2000.h: Same. Also add idle cycles to static mem
+	controller options. Don't do autoprecharge of SDRAM.
+
+	* include/hal_platform_setup.h: Add idle cycles to static mem
+	controller options. Change CPU clock to synchronous mode. Correct
+	SDRAM refresh count calculation.
+	
+
+2001-11-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/lcd_support.c (KeyboardScan): Instead of just debouncing for
+	a fixed time (loop of 1000), look for changes in the state and
+	break out early if the reading is stable.
+
+2001-11-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/aaed2000.h (AAEC_CSC_CLKSET_INIT): Fix definition.
+
+	* src/lcd_support.c: Swap " and @.
+
+2001-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Use HOST_CC instead of 'cc'.
+
+2001-11-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_setup.h: Removed unused code. Don't mess
+	with the system setup in RAM startup mode.
+
+2001-11-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Use CYGARC_PHYSICAL_ADDRESS
+	instead of UNMAPPED_ADDR.
+
+	* include/plf_io.h: Added CYGARC_PHYSICAL_ADDRESS and
+	CYGARC_VIRTUAL_ADDRESS.
+
+	* include/aaed2000.h: Added definitions for memory areas.
+
+	* src/redboot_linux_exec.c (do_exec): Use load start/end
+	parameters as defaults. Don't copy image if specified length is
+	zero.
+
+2001-11-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Use 508kHz timer for kernel
+	clock.
+	* src/aaed2000_misc.c (hal_clock_initialize): Same.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_putc): Wait for TX to
+	complete before returning.
+
+2001-11-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c (KeyboardScan): Reduce bounce time.
+	(lcd_comm_getc_timeout): Scan code is slow - adjust timeout.
+
+2001-11-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Include platform header.
+
+2001-11-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_arm_arm9_aaed2000_rom.ldi: Updated.
+	* include/pkgconf/mlt_arm_arm9_aaed2000_rom.h: Same.
+	* include/pkgconf/mlt_arm_arm9_aaed2000_rom.mlt: Same.
+
+	* src/lcd_support.c: Fix compiler warning.
+
+	* src/hal_diag.c: Calculate baud rate clock properly.
+	Removed some unused code. Clear more registers on init.
+	Added interrupt handling code. Also enable RX timeout.
+
+	* src/aaed2000_misc.c: Added more interrupt ack details. Minor
+	reorg of code.
+
+	* include/aaed2000.h: Fixed SDRAM RAS definition. Added some
+	interrupt-end registers.
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Set default baud rates to 38400.
+
+2001-11-12  Gary Thomas  <gthomas@redhat.com>
+
+	* include/lcd_support.h: Add frame buffer type (RGB555).
+
+	* src/lcd_support.c: 
+	* cdl/hal_arm_arm9_aaed2000.cdl: Reorg LCD support, separating
+	basic LCD functionality with virtual screen [console] support.
+
+2001-11-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/aaed2000_misc.c (hal_interrupt_acknowledge): 
+	(hal_interrupt_configure): 
+
+	* include/aaed2000.h: Flush out interrupt control & support.
+	Ethernet now works interrupt driven.
+
+2001-11-09  Jesper Skov  <jskov@redhat.com>
+
+	* misc/redboot_primary_RAM.ecm: Added.
+	* misc/redboot_primary_ROMRAM.ecm: Added.
+
+2001-11-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/aaed2000_misc.c: Set up RTC. Added interrupt handling.
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Calculate correct RTC
+	period. Removed prescaler option.
+
+
+	* include/hal_platform_setup.h: Also set up ether/GPIO access
+	details for RAM startup (to support running under the ARM
+	monitor).
+
+2001-11-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: 
+	* src/banner.xpm: Minor adjustments to logo & screen colors.
+
+2001-11-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_ints.h: Added descriptions for external
+	interrupt sources.
+
+	* src/aaed2000_misc.c: Fixed warnings.
+	* src/lcd_support.c: Same.
+
+	* misc/redboot_ROMRAM.ecm: Removed ESA settings.
+	* misc/redboot_ROM.ecm: Same.
+	* misc/redboot_RAM.ecm: Same.
+
+2001-11-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_setup.h: Set SDRAM refresh rate according
+	to bus speed.
+
+	* include/aaed2000.h: Added more "clock and state" definitions.
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Added configury for cpu/bus clock
+	speeds.
+
+	* include/aaed2000.h: Added more interrupt controller
+	definitions.
+
+	* include/hal_platform_setup.h: Disable interrupts and MMU/cache
+	before setting up SDRAM.
+
+2001-11-06  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Remove unnecessary HAL_VIRT_TO_PHYS_ADDRESS().
+	Tighten up reset/init timings.  Improve lcd_clear() so it runs a
+	bit faster.
+	(lcd_drawc): 
+	(lcd_scroll): Add hand-crafted optimizations.
+
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.mlt: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.ldi: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.h: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.mlt: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.ldi: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.h: 
+	Setup for true ROMRAM mode.
+
+2001-11-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm_mon.c: Fill memory with the flash clear value (0xff).
+
+	* include/aaed2000.h: Added SDRAM details.
+
+	* include/hal_platform_setup.h: Initialize bus controllers,
+	including [presently disabled] SDRAM setup.
+
+	* src/aaed2000_misc.c (plf_hardware_init): Removed bus controller
+	setup.
+
+2001-11-05  Gary Thomas  <gthomas@redhat.com>
+
+	* src/lcd_support.c: Minor tinkering, mostly with scrolling.
+
+	* src/aaed2000_misc.c (hal_delay_us): Rewrite using timer #3.
+
+	* include/aaed2000.h: Add timer definitions.
+
+2001-11-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/lcd_support.h: 
+	* src/lcd_support.c: 
+	* src/font.h: 
+	* src/banner.xpm: New file(s) - LCD/KBD virtual console support.
+
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.mlt: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.ldi: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_romram.h: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.mlt: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.ldi: 
+	* include/pkgconf/mlt_arm_arm9_aaed2000_ram.h: Leave space for LCD.
+
+	* include/aaed2000.h: Add definitions for LCD, extended GPIO.
+
+	* src/aaed2000_misc.c (plf_if_init): 
+	* cdl/hal_arm_arm9_aaed2000.cdl: Add LCD/KBD as virtual console.
+
+2001-11-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/redboot_linux_exec.c: Updated header
+
+	* src/hal_diag.c: Changed interrupt vector.
+
+	* src/aaed2000_misc.c (plf_hardware_init): Cleanup. Fixed
+	warnings.
+
+	* include/plf_stub.h: Header updated.
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: Changed clock setting.
+
+	* include/hal_platform_setup.h: Removed unused LED macro.
+
+	* include/hal_diag.h: Cleaned up.
+
+	* include/aaed2000.h: Removed non-AAEC definitions.
+
+	* include/hal_platform_ints.h: Added AAEC vectors.
+
+2001-11-02  Gary Thomas  <gthomas@redhat.com>
+
+	* src/aaed2000_misc.c (hal_mmu_init): Map in Compact Flash / PCMCIA.
+
+2001-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Workaround for compiler
+	bug.
+
+	* include/aaed2000.h: Fix daft register address typos.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_init_channel): Enable device
+	before setting it up (from dwmw2).
+
+	* include/hal_platform_ints.h: Try to soft reset the board.
+
+	* include/pkgconf/mlt_arm_arm9_aaed2000_rom.ldi: Changed base
+	address to flash+128k
+	* include/pkgconf/mlt_arm_arm9_aaed2000_rom.mlt: Same.
+	* include/pkgconf/mlt_arm_arm9_aaed2000_rom.h: Same.
+
+	* src/arm_mon.c (IMAGE_BASE, LOAD_ADDRESS): Moved RedBoot to flash
+	base +0x20000. Made LOAD_ADDRESS depend on startup type.
+
+	* misc/redboot_ROMRAM.ecm: Move FIS and config blocks to their
+	default positions (at end of flash). Removed
+	CYGNUM_REDBOOT_FLASH_RESERVED_BASE setting.
+	* misc/redboot_ROM.ecm: Removed	CYGNUM_REDBOOT_FLASH_RESERVED_BASE
+	setting. 
+	* misc/redboot_RAM.ecm: Same.
+
+2001-10-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm_mon.c: Added.
+
+	* include/plf_io.h (_ADDR_REDBOOT_TO_ARM): undo mistaken commit.
+
+	* src/aaed2000_misc.c (plf_hardware_init): Added PIO setup.
+
+	* include/plf_io.h (_ADDR_REDBOOT_TO_ARM): added.
+
+	* cdl/hal_arm_arm9_aaed2000.cdl: define CYGBLD_HAL_PLATFORM_IO_H.
+
+2001-10-30  Jesper Skov  <jskov@redhat.com>
+
+	* Updated MLT files for the new tools.
+	
+	* Imported sources from Gary Thomas.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

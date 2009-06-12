@@ -1,0 +1,362 @@
+# ====================================================================
+#
+#      io_serial.cdl
+#
+#      eCos IO configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_IO_SERIAL {
+    display       "Serial device drivers"
+    active_if     CYGPKG_IO
+    requires      CYGPKG_ERROR
+    include_dir   cyg/io
+    description   "
+        This option enables drivers for basic I/O services on
+        serial devices."
+    doc           ref/io.html
+
+    compile       -library=libextras.a common/serial.c
+ 
+    define_proc {
+	puts $::cdl_header "/***** proc output start *****/"
+	puts $::cdl_header "#include <pkgconf/system.h>"
+	puts $::cdl_header "#ifdef CYGDAT_IO_SERIAL_DEVICE_HEADER"
+	puts $::cdl_header "# include CYGDAT_IO_SERIAL_DEVICE_HEADER"
+	puts $::cdl_header "#endif "
+	puts $::cdl_header "/****** proc output end ******/"
+    }
+
+    cdl_option CYGOPT_IO_SERIAL_SUPPORT_NONBLOCKING {
+        display       "Support non-blocking read and write calls"
+        default_value 0
+        description   "
+            This option enables extra code in the generic serial driver
+            which allows clients to switch read() and write() call
+            semantics from blocking to non-blocking."
+    }
+
+    cdl_interface CYGINT_IO_SERIAL_BLOCK_TRANSFER {
+        display       "Driver requires block transfer callback functions"
+        description   "
+            Some low-level drivers can be optimized to transfer blocks
+            of data instead of a single character at a time. These usually
+            rely on a hardware FIFO of some sort."
+    }
+
+    cdl_interface CYGINT_IO_SERIAL_LINE_STATUS_HW {
+        display "Serial driver supports line status"
+    }
+
+    cdl_option CYGOPT_IO_SERIAL_SUPPORT_LINE_STATUS {
+        display       "Support line status callbacks"
+        requires      { CYGINT_IO_SERIAL_LINE_STATUS_HW > 0 }
+        default_value { 0 != CYGINT_IO_SERIAL_LINE_STATUS_HW }
+        description "
+            This option indicates that if the serial driver supports it,
+            serial line status and modem status information should be
+            propagated to higher layers via callbacks."
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_FLOW_CONTROL {
+        display           "Flow control"
+        description       "
+                This component contains options related to flow control."
+        flavor            bool
+        requires          (CYGOPT_IO_SERIAL_FLOW_CONTROL_SOFTWARE || \
+                           CYGOPT_IO_SERIAL_FLOW_CONTROL_HW)
+        default_value     0
+
+        cdl_component CYGOPT_IO_SERIAL_FLOW_CONTROL_SOFTWARE {
+                display       "Software flow control"
+                default_value 1
+                description   "
+                        This component enables support of software flow control."
+
+                cdl_option CYGDAT_IO_SERIAL_FLOW_CONTROL_XON_CHAR {
+                    display       "Start character"
+                    flavor        data
+                    default_value 17
+                    legal_values  0 to 255
+                    description   "
+                        This option specifies the ascii character used to
+                        indicate that transmission should start."
+                }
+
+                cdl_option CYGDAT_IO_SERIAL_FLOW_CONTROL_XOFF_CHAR {
+                    display       "Stop character"
+                    flavor        data
+                    default_value 19
+                    legal_values  0 to 255
+                    description   "
+                        This option specifies the ascii character used to
+                        indicate that transmission should stop."
+                }
+        }
+
+        cdl_option CYGOPT_IO_SERIAL_FLOW_CONTROL_HW {
+                display       "Hardware flow control"
+                active_if     { CYGINT_IO_SERIAL_FLOW_CONTROL_HW > 0 }
+                requires      { CYGINT_IO_SERIAL_FLOW_CONTROL_HW > 0 }
+                requires      CYGOPT_IO_SERIAL_SUPPORT_LINE_STATUS
+                default_value { CYGINT_IO_SERIAL_FLOW_CONTROL_HW > 0 ? \
+                                CYGOPT_IO_SERIAL_SUPPORT_LINE_STATUS : 0 }
+                description   "
+                        If the hardware supports it, this option allows hardware
+                        flow control to be enabled. This may be in the form of
+                        either or both of RTS/CTS, or DSR/DTR flow control."
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_FLOW_CONTROL_HW {
+                display "Serial h/w supports hardware flow control"
+        }
+
+        cdl_option CYGDAT_IO_SERIAL_FLOW_CONTROL_DEFAULT {
+                display       "Default flow control method"
+                flavor        data
+                legal_values  { "NONE" "XONXOFF" "RTSCTS" "DSRDTR" }
+                default_value { "NONE" }
+                description   "This option allows a default flow control method
+                               to be defined. Combinations of flow control methods
+                               may also be set, but this is only possible by
+                               using the cyg_io_set_config() API in source code."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_FLOW_CONTROL_LOW_WATER_PERCENT {
+                display       "Rx flow control low water mark"
+                flavor        data
+                legal_values  1 to 100
+                default_value 33
+                description   "This sets the water mark used for determining
+                               when to disable flow control, expressed
+                               as a percentage of the buffer size. When the
+                               receive buffer size is lower than this percentage,
+                               if the transmitter had previously been throttled, it
+                               will now be informed it can restart."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_FLOW_CONTROL_HIGH_WATER_PERCENT {
+                display       "Rx flow control high water mark"
+                flavor        data
+                legal_values  1 to 100
+                default_value 66
+                requires      { CYGNUM_IO_SERIAL_FLOW_CONTROL_HIGH_WATER_PERCENT >= \
+                                CYGNUM_IO_SERIAL_FLOW_CONTROL_LOW_WATER_PERCENT }
+                description   "This sets the water mark used for determining
+                               when to enable flow control, expressed
+                               as a percentage of the buffer size. When the
+                               receive buffer size exceeds this percentage,
+                               signals are sent to the transmitter to tell it
+                               to throttle tranmission."
+        }
+
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_TTY {
+        display       "TTY-mode serial device drivers"
+        flavor        bool
+        default_value 1
+        description   "
+            This option enables a simple terminal-like device driver 
+            that can be used for serial devices that interact with humans,
+            such as a system console."
+        
+        script        tty.cdl
+        compile       -library=libextras.a common/tty.c
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_TERMIOS {
+        display       "Termios compatible TTY drivers"
+        flavor        bool
+        requires      CYGPKG_ISOINFRA
+        requires      CYGPKG_IO_FILEIO
+        requires      CYGINT_ISO_ERRNO_CODES
+        requires      CYGINT_ISO_ERRNO
+        requires      CYGINT_ISO_MALLOC
+        default_value { 0 != CYGPKG_ISOINFRA && 0 != CYGPKG_IO_FILEIO && \
+                        0 != CYGINT_ISO_ERRNO_CODES && \
+                        0 != CYGINT_ISO_ERRNO }
+        implements    CYGINT_ISO_TERMIOS
+        description   "
+            This option enables terminal drivers compatible with
+            POSIX termios."
+        
+        script        termios.cdl
+        compile       common/termios.c
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_DEVICES {
+        display       "Hardware serial device drivers"
+        flavor        bool
+        default_value 0
+        description   "
+            This option enables the hardware device drivers
+	    for the current platform."
+    }
+
+    cdl_option CYGBLD_IO_SERIAL_EXTRA_TESTS {
+        display "Build extra serial tests"
+        default_value 0
+        no_define
+        description "
+            This option enables the building of some extra tests which
+            can be used when testing / debugging serial drivers. These
+            are not built by default since they do not use the dedicated
+            testing infrastructure."
+
+        make -priority 320 {
+            <PREFIX>/bin/serial_echo : <PACKAGE>/tests/serial_echo.c
+            @sh -c "mkdir -p tests $(dir $@)"
+            $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o tests/serial_echo.o $<
+            @echo $@ ": \\" > $(notdir $@).deps
+            @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+            @tail -n +2 deps.tmp >> $(notdir $@).deps
+            @echo >> $(notdir $@).deps
+            @rm deps.tmp
+            $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ tests/serial_echo.o
+        }
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_OPTIONS {
+        display "Serial device driver build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_IO_SERIAL_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the serial device drivers. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_IO_SERIAL_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the serial device drivers. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_IO_SERIAL_TESTS {
+            display "Serial device driver tests"
+            flavor  data
+            no_define
+            calculated { CYGPKG_IO_SERIAL_DEVICES ? "tests/serial1 tests/serial2 tests/serial3 tests/serial4 tests/serial5 tests/tty1 tests/tty2 tests/flow1 tests/flow2" : "" }
+            description   "
+                This option specifies the set of tests for the serial device drivers."
+        }
+    }
+
+    cdl_option CYGPKG_IO_SERIAL_SELECT_SUPPORT {
+	display "Enable serial device select support"
+	flavor bool
+	active_if CYGPKG_IO_FILEIO
+	requires  CYGPKG_IO_FILEIO
+	default_value 1
+	description "
+	    This option enables support for the select() API function on all
+	    serial devices."
+    }
+
+    # These could be regular define_proc outputs, but keeping them as
+    # CDL interfaces allow us to possibly skip building/running some
+    # tests.
+    cdl_component CYGPKG_IO_SERIAL_TEST_SPECS {
+        display "Serial testing specification"
+        flavor     bool
+        calculated 1
+        no_define
+       
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_9600 {
+            display "Skip 9600 baud testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_14400 {
+            display "Skip 14400 baud testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_19200 {
+            display "Skip 19200 baud testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_38400 {
+            display "Skip 38400 baud testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_57600 {
+            display "Skip 57600 baud testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_115200 {
+            display "Skip 115200 baud testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_PARITY_EVEN {
+            display "Skip even-parity testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_PARITY_ODD {
+            display "Skip odd-parity testing"
+        }
+
+        cdl_interface CYGINT_IO_SERIAL_TEST_SKIP_STOP_2 {
+            display "Skip 2-stop bit testing"
+        }
+    }
+}
+
+# EOF io_serial.cdl

@@ -1,0 +1,162 @@
+5 September, 2004
+
+Installing RedBoot on Fujitsu FRV400 system.
+
+Orient the motherboard like this:
+
++-------------------------------------------------------------+
+|                                                             |
+|   |========================|  |==========================|  |
+|   |========================|  |==========================|  |
+|               CPU board                                     |
+| +-+-+                                                       |
+| |o|o|                                                       |
+| |o|o|                                                       |
+| |o|o|                                                       |
+| |o|o|    +-+                                                |
+| |o|o|    |o|  Special power                                 |
+| |o|o|    |o|  cable to CPU board                            |
+| |o|o|    |o|                                                |
+| |o|o|    |o|                                                |
+| +-+-+    +-+                                                |
+|                                                             |
+| ATX                                                         |
+|Power                                                        |
+|                           +------------------------------+  |
+|                           |      |                       |  |
+|                           +------------------------------+  |
+|                                  PCI slot                   |
+|                                                             |
+|                           +------------------------------+  |
+|                           |      |                       |  |
+|                           +------------------------------+  |
+|                                  PCI slot                   |
+|                                                             |
+|                           +------------------------------+  |
+|                           |      |                       |  |
+|                           +------------------------------+  |
+|                                  PCI slot                   |
+|                                                             |
+|         +--------+  +--------+  +--------+                  |
+|         |xxoooooX|  |oooooooo|  |xxoxxxxx|            R1    |
+|         +--------+  +--------+  +--------+            R     |
+|           SW1          CLK1        CLK2               R  SS==]
+|                                                       R  SS  ]
+|                                                       R  SS  ]
+|                                                       R  SS==]
+|                                                       R     |
+|                                                             |
+|                                                             |
+|                                                             |
++-------------------------------------------------------------+
+
+For the switches, x is down (on this diagram), o is up and X
+will be both.
+
+There is also a ribbon cable from the CPU board to the serial
+connectors.  Orient this cable so that the red stripe connects
+to pin R1 and is at the bottom of the CPU board.  Directions
+are in the hardware installation guide, but this part wasn't
+terribly clear to me.
+
+1. Bring up the existing Fujitsu board monitor.
+
+   Attach a serial cable to the top serial port - 38400/8N1.
+   Make sure that SW1-1 (X above) is up.
+   Turn on power.  You will also have to press the RED button.
+
+2. Download RedBoot into the FLASH.
+
+   Using the attached programs (minicom has a terrible time
+   with ASCII downloads - use these instead), download the
+   frv.ROM image.  Use these commands
+   
+      *************************************************************
+      ** VDK LOADER for FR400 (BOOT ROM:IC8)                     **
+      **                                                         **
+      **                                           Version 1.02  **
+      ** ALL RIGHTS RESERVED, COPYRIGHT(C) FUJITSU LIMITED 2000  **
+      *************************************************************
+
+      Would you like to check SDRAM and SRAM ? (Y/N) : n
+
+      >r 3f00000
+      Flash ROM : IC7. OK ? (Y/N) Y
+      Blank check
+      Blank error !! Erase ? (Y/N) Y
+      Erase..
+      Work memory clear
+      Hex Data Offset Address=0x03F00000
+      Recieve....
+  
+   At this point, send the file frv.ROM using simple ASCII protocol.
+   Since minicom does this poorly, I use the attached 'dl_slow' script.
+   I set up minicom like this:
+lqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqk
+x     Name             Program                 Name U/D FullScr IO-Red. Multi  x
+x A  zmodem     /usr/bin/sz -vv -b              Y    U    N       Y       Y    x
+x B  ymodem     /usr/bin/sb -vv                 Y    U    N       Y       Y    x
+x C  xmodem     /usr/bin/sx -vv -k              Y    U    N       Y       N    x
+x D  zmodem     /usr/bin/rz -vv -b -E           N    D    N       Y       Y    x
+x E  ymodem     /usr/bin/rb -vv                 N    D    N       Y       Y    x
+x F  xmodem     /usr/bin/rx -vv                 Y    D    N       Y       N    x
+x G  kermit     /usr/bin/kermit -i -l %l -s     Y    U    Y       N       N    x
+x H  kermit     /usr/bin/kermit -i -l %l -r     N    D    Y       N       N    x
+x I  ascii      /usr/bin/ascii-xfr -dsv         Y    U    N       Y       N    x
+x J  slow       /home/gthomas/bin/dl_slow       Y    U    N       Y       N    x
+x K    -                                                                       x
+x L    -                                                                       x
+x M  Zmodem download string activates... D                                     x
+x N  Use filename selection window...... No                                    x
+x O  Prompt for download directory...... No                                    x
+x                                                                              x
+x   Change which setting? (SPACE to delete)                                    x
+mqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqj
+
+   You'll know if the file is being transferred correctly by the LEDs doing a
+   little address dance (i.e. they are showing the address being loaded).
+
+   When the download completes, you may need to hit 'enter' a couple of times.
+   Then you should see:
+      Write Start...
+      Write OK!
+      Verify Start...
+      Verify OK!
+      Complete !!
+
+
+      >
+
+   At this point, change SW1-1 to be down (x).  Press reset (the bottom blue
+   button on the CPU).  You should get:
+
+      +FLASH configuration checksum error or invalid key
+      
+      RedBoot(tm) bootstrap and debug environment [ROMRAM]
+      Non-certified release, version UNKNOWN - built 13:39:14, Oct  2 2001
+
+      Platform: MB93091-CB10 evaluation board (Fujitsu FR400) 
+      Copyright (C) 2000, 2001, Red Hat, Inc.
+
+      RAM: 0x00000000-0x04000000, 0x00007000-0x03fed000 available
+      FLASH: 0xff000000 - 0xff200000, 32 blocks of 0x00010000 bytes each.
+      RedBoot> 
+
+   Be sure and run 'fis init'.
+
+Notes:
+
+* There are two FLASH devices on the motherboard.  Using SW1-1, they swap
+  memory addresses.  We use one (IC7) and the Fujitsu loader uses the other.
+  I see no reason (ATM) to replace the Fujitsu monitor other than to let
+  RedBoot be the primary.  This way, reverting SW1-1, at least you can always
+  reprogram RedBoot.
+
+  CAUTION!! Do not change SW1-1 until after you've programmed RedBoot.  If
+  you do it beforehand, you'll overwrite the Fujitsu monitor.
+
+
+
+
+
+

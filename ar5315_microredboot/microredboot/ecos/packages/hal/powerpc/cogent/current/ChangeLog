@@ -1,0 +1,780 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_powerpc_cogent.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-03-23  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/hal_powerpc_cogent.cdl: New options for setting processor type.
+
+2003-03-07  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/plf_stub.h: Remove [confusing] platform specific include.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/hal_diag.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-06-27  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/plf_regs.h: New file - platform overrides.
+
+2002-05-21  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/gdb_module.ecm: New file - ecosconfig data used to
+	build ROM based GDB stubs.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl: Removed implemntation of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2002-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_cache.h: Cache control is in hal/common CDL.
+
+2002-01-25  Jesper Skov  <jskov@redhat.com>
+
+	* src/cogent.S (hal_hardware_init): Set IMMR base.
+	* src/plf_misc.c: Change MMU mapping to follow IMMR base.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl: Does not guarantee virtual vector
+	support.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Moved reset macro to
+	* include/plf_intr.h: this file.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_cogent_ram.h:
+	* include/pkgconf/mlt_powerpc_cogent_rom.h:
+	* include/pkgconf/mlt_powerpc_cogent_ram.ldi:
+	* include/pkgconf/mlt_powerpc_cogent_rom.ldi:
+	Regenerated with updated host tools
+
+2000-10-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_cogent_ram.h: Added heap1 label.
+	* include/pkgconf/mlt_powerpc_cogent_ram.mlt: Same.
+	* include/pkgconf/mlt_powerpc_cogent_ram.ldi: Same.
+	* include/pkgconf/mlt_powerpc_cogent_rom.h: Same.
+	* include/pkgconf/mlt_powerpc_cogent_rom.mlt: Same.
+	* include/pkgconf/mlt_powerpc_cogent_rom.ldi: Same.
+
+2000-06-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_stub.c (hal_plf_stub_init): calling i/f macro
+	changes. Always write to LCD for ROM monitor configs.
+
+	* src/hal_diag.c: Use per-channel struct instead of code
+	cruft. calling i/f macro changes.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Cleanup.
+
+2000-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl: Removed ROM_DEBUG option.
+
+	* include/plf_intr.h: 
+	* src/plf_misc.c: Removed Ctrl-c code.
+
+	* src/hal_diag.c: Snip cruft. Added non-block/timout
+	features. Moved Ctrl-c support code here.
+
+2000-06-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_stub.c: Provide plf stub init which prints build date
+	on LCD for ROM monitor configs.
+
+	* src/cma_ser.inl: [deleted]
+	* src/hal_diag.c: 
+	* include/plf_stub.h: 
+	* include/hal_diag.h: 
+	* cdl/hal_powerpc_cogent.cdl: 
+	Added LCD as the 3rd comms channel. Cleanups to support full procs
+	table.
+
+2000-06-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_cogent_ram.h: 
+	* include/pkgconf/mlt_powerpc_cogent_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_cogent_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_cogent_rom.h: 
+	* include/pkgconf/mlt_powerpc_cogent_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_cogent_rom.ldi: 
+	Updated.
+
+2000-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_stub.c:
+	* src/cma_ser.inl: Removed BREAK handling.
+
+	* include/plf_stub.h: Changed to virtual vector style.
+
+	* src/plf_misc.c:
+	* include/plf_intr.h: Added ctrlc handling.
+
+	* src/hal_diag.c: 
+	* include/hal_diag.h: virtual vector changes.
+
+	* hal_aux.c renamed to plf_misc.c
+
+	* cdl/hal_powerpc_cogent.cdl: Added virtual vector options.
+
+	* include/pkgconf/mlt_powerpc_cogent_rom.ldi: 
+	* include/pkgconf/mlt_powerpc_cogent_rom.mlt: 
+	* include/pkgconf/mlt_powerpc_cogent_ram.ldi: 
+	* include/pkgconf/mlt_powerpc_cogent_rom.mlt: 
+	Added space for virtual table.
+
+2000-06-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h: Added.
+
+2000-04-04  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c (hal_diag_write_char): Add GDB critical IO region
+	handling.
+
+2000-03-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c (ai_write_char): fix typos.
+
+2000-02-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_powerpc_cogent.cdl: Add CYGHWR_HAL_POWERPC_BOARD_SPEED.
+
+2000-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl: Remove hardcoded copy_vectors
+	definition.
+
+2000-02-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/cogent.S: use arch.inc instead of ppc.inc
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_powerpc_cogent.cdl (CYGBLD_BUILD_GDB_STUBS): When building
+	stubs, define every dependency required here rather than in the
+	template
+
+2000-02-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_aux.c: Cleaned up includes.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h:
+	HAL_STUB_PLATFORM_STUBS_INIT->HAL_STUB_PLATFORM_INIT
+
+	* misc/STUBS_config: 
+	Removed stubs as a legal startup type.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_powerpc_cogent_ram.mlt: 
+	* include/pkgconf/mlt_powerpc_cogent_rom.mlt:
+	Fixed some typos.
+
+	* src/hal_diag.c: Depend on CYGSEM_HAL_ROM_MONITOR instead of
+	STARTUP_STUBS.
+
+	* include/pkgconf/mlt*.*: Updated to new stubs scheme.
+	* include/pkgconf/hal_powerpc_cogent.h: Removed stubs startup
+	type. Use MPC8xx variant code.
+
+
+	* cdl/hal_powerpc_cogent.cdl:  Removed stubs startup type. Use
+	MPC8xx variant code.
+	Specify CPU options in linker flags.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl:
+	* src/cma_ser.inl:
+	* src/cogent.S:
+	* src/hal_diag.c:
+	CYG_HAL_POWERPC_x->CYGPKG_...
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl: Implements stubs.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl: Moved part of stubs build rule to
+	common HAL. Changed description.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_cache.h: Added.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_powerpc_cogent.cdl: Fix display string.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_powerpc_cogent.cdl: Add stubs build rule.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_powerpc_cogent.cdl: Ensure we "puts" to appropriate CDL header
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_powerpc_cogent.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_powerpc_cogent_stubs.h: 
+	* include/pkgconf/mlt_powerpc_cogent_rom.h: 
+	* include/pkgconf/mlt_powerpc_cogent_ram.h: New file(s).
+
+1999-09-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/STUBS_config: Added.
+
+1999-06-11  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/PKGconf.mak: Build the new file.
+
+	* src/hal_aux.c (CYGARC_MEMDESC_TABLE): New file, to define this
+	object for per-platform table-driven memory map initialization.
+	The table used to be in hal_misc.c in the architectural HAL; this
+	is platform dependent so better and cleaner here.
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_cogent.h: Move RTC setup here.
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-04-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Moved a declaration out of a local scope.
+
+	* include/plf_stub.h: 
+	* src/plf_stub.c:
+	* src/cma_ser.inl: 
+	Use separate cma function prefix for stub. Fixed naming buglet in
+	cma_ser.inl.
+	
+1999-03-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Fix type warning.
+
+1999-03-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Made serial O-packetization match that of the
+	other archs.
+
+1999-03-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cma_ser.inl: Wrapped in CYGONCE and changed hal_stub.h
+	inclusion to ppc_stub.h.
+
+1999-03-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c: Disable interrupts when doing diag output so that
+	system "freezes" while this goes on
+
+1999-03-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: 
+	* src/cogent.S:
+	Cleaned up some FIX MEs.
+
+1999-03-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/plf_stub.h: Changed config macro names.
+
+1999-03-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/plf_stub.h: Only initialize serial line when no DD is
+	around to do it.
+
+1999-03-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cma_ser.inl (put_char): Hang until character is sent.
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/cma_ser.inl: 
+	Rename CYG_VECTOR_SIU_IRQ1 -> CYGNUM_HAL_INTERRUPT_SIU_IRQ1 in
+	line with recent HAL changes
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Changed
+	__output_gdb_string to hal_output_gdb_string.
+
+	* include/hal_stub.h: [removed]
+	* include/plf_stub.h: [added]
+	* src/hal_stub.c:     [removed]
+	* src/plf_stub.c:     [added]
+	* src/PKGconf.mak: 
+	Changed hal_stub to plf_stub. Moved generic HAL stub code to
+	common/.../hal_stub.c.
+
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.mlt: New memory layout save files
+
+1999-02-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.S: 
+	* src/cma_ser.inl: 
+        Cleaned up the MPC823/850 code.
+	
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_cogent.h:
+        Rename startup type 'stub' to 'stubs'.
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-02-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cma_ser.inl: Undefine macros at end of file.
+
+1999-02-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cma_ser.inl: Added naming prefix.
+
+1999-02-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cma_ser.inl (hal_cma_init_serial): Proper initialization of
+	ST16C552.
+
+1999-01-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.S: 
+	* src/cma_ser.inl: 
+	Added MPC823/850 support. Some of it needs cleaning up a bit.
+
+1999-01-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: 
+	* src/hal_diag.c: 
+	Got rid of CYG_HAL_ROM_MONITOR.
+	
+	* src/hal_stub.c: 
+	* src/hal_diag.c: 
+	* src/cma_ser.inl: [added]
+	Moved minimal serial driver into its own file.
+	
+	* include/pkgconf/hal_powerpc_cogent.h: Added CDL for Diag port.
+	Disabled both.
+
+1999-01-26  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/stubs.ldi: 
+	* include/pkgconf/ram.ldi:
+	* include/pkgconf/rom.ldi:
+	Add copyright notice.  (Though these files will later be generated
+	by a tool and so not copyright, these default setups are.)
+
+1999-01-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: 
+	* include/pkgconf/hal_powerpc_cogent.h: Added
+	CYGHWR_HAL_POWERPC_COGENT_GDB_PORT option.
+
+1999-01-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/stub.ldi:  [removed]
+	* include/pkgconf/stubs.ldi: [added]
+	Renamed 'stub' to 'stubs'.
+
+1999-01-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/stub.ldi:
+	* include/pkgconf/rom.ldi:
+	* include/pkgconf/hal_powerpc_cogent.h: 
+	Added STUB configuration type; allow ROM to use all of memory.
+
+1999-01-07  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18680
+
+	* src/hal_diag.c (hal_diag_init): 
+	* src/hal_stub.c (serial_init): 
+	Disable serial interrupts properly.
+
+1999-01-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Changed to use the interrupt controller macros.
+
+1998-12-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Improved performance by
+	sending in batches.
+
+1998-12-14  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/hal_diag.c: Replaced CYGDBG_KERNEL_DEBUG_GDB_INCLUDE_STUBS with
+	CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS.
+
+1998-12-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.S (hal_hardware_init): Added a sync instruction
+	before return to caller.
+
+1998-12-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.S (hal_hardware_init): Cleaned up use of magic
+	constants.
+
+1998-12-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (lcd_dis, hal_diag_init): Wait a bit before
+	writing to the LCD after it clears BUSY.
+
+1998-12-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (initHardware): Call diag_init when building a
+	ROM monitor.
+
+1998-12-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.S (hal_hardware_init): Also set pitrtc dicisor.
+
+1998-12-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Comment change.
+
+	* src/cogent.S (hal_hardware_init): Set timebase divisor.
+
+1998-12-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Added a few CYGARC_REG_ prefixes.
+
+1998-12-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (serial_init): Enable FIFO.
+
+1998-11-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Changes due to ppc_regs.h cleanup.
+
+	* src/hal_diag.c: Removed bogus ppc_regs.h include.
+
+1998-11-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.S: Renamed CYG_HAL_POWERPC_MP860 to
+	CYG_HAL_POWERPC_MPC860.
+
+
+1998-11-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Rearranged header inclusion to avoid conflicts.
+
+1998-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (cyg_hal_gdb_isr): Call generic PPC GDB break
+	handler rather than triggering a breakpoint in the interrupt
+	handler.
+
+1998-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Added proper CYG_HAL_ROM_MONITOR behavior.
+
+1998-10-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Add special initialization of serial for CMA102
+	support.
+
+1998-10-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Replaced CYGDBG_KERNEL_DEBUG_GDB_INCLUDE_STUBS
+	with CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS.
+
+        PR 17986
+	* include/hal_stub.h: Removed superfluous pkgconf/kernel.h
+	include.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: Include generic-stub.h from hal.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.ld: Added copyright notice.
+
+1998-10-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_cogent.h: Undid 1998-10-16 change.
+
+1998-10-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_diag.h: Add declaration for hal_diag_read_char.
+
+1998-10-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_cogent.h: Changed
+	CYGPKG_HAL_POWERPC_COGENT to CYG_HAL_POWERPC_COGENT.
+
+1998-10-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Changed CYG_HAL_GDB_BREAK to
+	CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT.
+	Removed conditionals for simulator which will never be used.
+
+1998-10-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_stub.c: 
+	* src/hal_diag.c:
+	Some changes to allow building without kernel.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_diag.h
+	* src/cogent.ld
+	* src/hal_diag.c
+	Changed /**/ comments to //.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/makefile: Removed.
+
+1998-10-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Fix warning.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_diag.h
+	* include/hal_stub.h
+	* include/pkgconf/hal_powerpc_cogent.h
+	* src/cogent.S
+	* src/cogent.ld
+	* src/hal_diag.c
+	* src/hal_stub.c
+	Expanded TABs.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/hal_stub.c: Removed HAL_IO_BARRIER calls.
+	Added GDB interrupt support.
+
+1998-10-08  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/hal_diag.c: Removed HAL_IO_BARRIER calls.
+
+1998-10-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Changed baud rate to 38400.
+
+1998-10-01  Jesper Skov  <jskov@cygnus.co.uk>
+	
+	* src/hal_stub.c: Changed baud rate to 38400.
+
+	* src/hal_diag.c (hal_diag_read_char): Added for LCD (dummy
+	function).
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_cogent.h:
+	Added missing descriptions (PR 17184)
+
+1998-09-04  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_cogent.h: 
+	Temporary change to the type of the startup option, needed by the
+	configuration tool.
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal_powerpc_cogent.h:
+	New header file for platform-specific options
+
+	* tests/PKGconf.mak: 
+	* src/PKGconf.mak: 
+	Sort out package naming conventions.
+
+Wed Sep  2 17:30:21 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.S (hal_hardware_init): Set Bus Monitor to generate
+	bus errors if read/write cycles are not properly terminated after
+	some time.
+
+Tue Sep  1 15:47:03 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Include correct header file for previous change.
+
+Tue Sep  1 15:41:54 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_init, hal_diag_write_char): 
+	When compiled with gdb stub support, let gdb handle diag output.
+
+Mon Aug 31 10:51:32 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_read_char): Removed GDB C-c check.
+
+	* include/hal_diag.h (HAL_DIAG_READ_CHAR): Added.
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/hal_diag.c, src/hal_stub.c: 
+	Updated for new kernel configuration option symbol names
+
+Fri Aug 28 11:12:34 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (serial_init): Set serial speed to 115200 baud.
+
+Fri Aug 28 09:25:40 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Moved strcpy/strlen to generic-stub.c
+
+Thu Aug 27 10:11:22 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (initHardware): Initialize serial. 
+	Also initialize LCD when building ROM.
+
+	* src/hal_diag.c: Added LCD init string for eCos ROM.
+
+Wed Aug 26 15:56:56 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: 
+	* src/hal_diag.c: 
+	Changed to use HAL_READ/WRITE macros.
+
+	* src/hal_diag.c (hal_diag_read_char): Added GDB C-C check.
+
+Wed Aug 26 09:01:02 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/cogent.ld: Cleaned up a bit. Sort constructors.
+	Fixed alignment problem.
+
+Mon Aug 24 17:20:44 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: 
+	* src/hal_diag.c:
+	Now using the same macro definitions as 16550.hxx.
+
+Mon Aug 24 13:11:51 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/cogent.ld: Move data to top of memory when building as
+	ROM_MONITOR.
+
+Mon Aug 24 10:33:22 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Now initializes the UART to 19200 baud.
+
+Mon Aug 24 10:30:44 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/cogent.ld: Don't put .fini* at 0x00000000.
+
+Thu Aug 20 17:52:25 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_diag.h: Fixed prototype.
+
+Thu Aug 20 17:45:19 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/cogent.ld: Moved stack definition to arch/../vectors.S.
+
+Thu Aug 20 17:32:02 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_read_char): Added.
+	(hal_diag_init): Handle non-guarded IO registers properly. Also
+	 	cleaned up a bit.
+	(lcd_dis): Same.
+	(hal_diag_write_char): Handle truncation correctly.
+
+Thu Aug 20 16:07:44 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/PKGconf.mak: Include GDB support files.
+
+Thu Aug 20 16:02:00 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* include/hal_stub.h:
+	* src/hal_stub.c:
+	Added for GDB support.
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/cogent.S: 
+	* src/hal_diag.c: 
+	* include/hal_diag.h: 
+	* src/cogent.ld:
+	Now uses hal.h rather than kernel.h.
+
+Tue Aug 18 11:46:53 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/cogent.ld: Reorder GROUP line
+
+Mon Aug 17 22:13:41 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/cogent.ld: 
+	Add GROUP(libgcc.a libtarget.a) to prevent need for explicit linking
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

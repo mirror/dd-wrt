@@ -1,0 +1,679 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "CTres.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+#include "CTCommonres.h"
+#include "PkgAdminres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON    DISCARDABLE     "res\\ConfigTool.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDR_MAINFRAME           BITMAP  MOVEABLE PURE   "res\\Toolbar.bmp"
+IDB_SPLASH              BITMAP  DISCARDABLE     "res\\Splsh16.bmp"
+IDR_MISCBAR             BITMAP  DISCARDABLE     "res\\miscbar.bmp"
+IDB_HTML                BITMAP  DISCARDABLE     "res\\html.bmp"
+IDB_HELP                BITMAP  DISCARDABLE     "res\\help.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_MAINFRAME TOOLBAR DISCARDABLE  16, 16
+BEGIN
+    BUTTON      ID_FILE_NEW
+    BUTTON      ID_FILE_OPEN
+    BUTTON      ID_FILE_SAVE
+    SEPARATOR
+    BUTTON      ID_EDIT_CUT
+    BUTTON      ID_EDIT_COPY
+    BUTTON      ID_EDIT_PASTE
+    BUTTON      ID_EDIT_FIND
+    SEPARATOR
+    BUTTON      ID_BUILD_STOP
+    BUTTON      ID_BUILD_CONFIGURE
+    BUTTON      ID_APP_ABOUT
+END
+
+IDR_MISCBAR TOOLBAR DISCARDABLE  16, 15
+BEGIN
+    BUTTON      ID_HELP
+    BUTTON      ID_VIEW_URL
+    BUTTON      ID_POPUP_PROPERTIES
+    BUTTON      ID_LOG_SAVE
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU DISCARDABLE
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
+        MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
+        MENUITEM "&Save\tCtrl+S",               ID_FILE_SAVE
+        MENUITEM "Save &As...",                 ID_FILE_SAVE_AS
+        MENUITEM SEPARATOR
+        MENUITEM "&Import...",                  ID_FILE_IMPORT
+        MENUITEM "&Export...",                  ID_FILE_EXPORT
+        MENUITEM SEPARATOR
+        MENUITEM "Recent File",                 ID_FILE_MRU_FILE1, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_APP_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Cut\tCtrl+X",                ID_EDIT_CUT
+        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+        MENUITEM "&Paste\tCtrl+V",              ID_EDIT_PASTE
+        MENUITEM "&Find\tCtrl+F",               ID_EDIT_FIND
+        MENUITEM "C&lear",                      ID_EDIT_CLEAR_ALL
+        MENUITEM "Select &All\tCtrl+A",         ID_EDIT_SELECT_ALL
+        MENUITEM SEPARATOR
+        MENUITEM "&Save",                       ID_EDIT_SAVE
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Settings...",                ID_MENU_VIEW_SETTINGS
+        MENUITEM SEPARATOR
+        POPUP "&Toolbars"
+        BEGIN
+            MENUITEM "&Standard",                   ID_VIEW_TOOLBAR
+            MENUITEM "&Memory Layout",              ID_VIEW_MLTBAR
+        END
+        MENUITEM "&Properties\tAlt+1",          ID_VIEW_PROPERTIES, CHECKED
+        MENUITEM "&Output\tAlt+2",              ID_VIEW_OUTPUT, CHECKED
+        MENUITEM "S&hort Description\tAlt+3",   ID_VIEW_SHORTDESC, CHECKED
+        MENUITEM "&Memory Layout\tAlt+4",       ID_VIEW_MLT
+        MENUITEM "&Conflicts\tAlt+5",           ID_VIEW_CONFLICTS
+        MENUITEM SEPARATOR
+        MENUITEM "&Next\tAlt+F6",               ID_WINDOW_NEXT
+        MENUITEM "Pre&vious\tShift+Alt+F6",     ID_WINDOW_PREV
+    END
+    POPUP "&Build"
+    BEGIN
+        MENUITEM "&Library\tF7",                ID_BUILD_CONFIGURE
+        MENUITEM "&Tests\tShift+F7",            ID_BUILD_TESTS
+        MENUITEM "&Clean",                      ID_BUILD_CLEAN
+        MENUITEM "&Stop",                       ID_BUILD_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "&Options...",                 ID_BUILD_OPTIONS
+        MENUITEM "&Repository...",              ID_CONFIGURATION_REPOSITORY
+        MENUITEM "Te&mplates...",               ID_BUILD_TEMPLATES
+        MENUITEM "&Packages...",                ID_BUILD_PACKAGES
+    END
+    POPUP "&Tools"
+    BEGIN
+        POPUP "&Paths"
+        BEGIN
+            MENUITEM "&Build Tools...",             ID_TOOLS_PATHS
+            MENUITEM "&User Tools...",              ID_USERTOOLS_PATHS
+        END
+        MENUITEM "&Shell...",                   ID_TOOLS_SHELL
+        MENUITEM "&Run Tests...\tCtrl+F5",      ID_RUN_SIM
+        MENUITEM "P&latforms...",               ID_EDIT_PLATFORMS
+        MENUITEM "Resolve &Conflicts...",       ID_RESOLVE_CONFLICTS
+        MENUITEM "&Administration...",          ID_TOOLS_ADMINISTRATION
+        MENUITEM SEPARATOR
+        MENUITEM "&Options...",                 ID_TOOLS_OPTIONS
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&Configuration Tool Help\tF1", ID_HELP
+        MENUITEM "&eCos Documentation",         ID_GO_HOME
+        MENUITEM SEPARATOR
+        POPUP "Red Hat on the &Web"
+        BEGIN
+            MENUITEM "&Red Hat Home Page",          ID_HELP_RED_HATONTHEWEB
+            MENUITEM "&eCos Product Page",          ID_HELP_ECOSHOME
+            MENUITEM "eCos &Net Release Page",      ID_HELP_ECOS
+            MENUITEM SEPARATOR
+            MENUITEM "µ&ITRON Specification",       ID_HELP_UITRON
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "&About the Configuration Tool...", ID_APP_ABOUT
+    END
+END
+
+IDR_OUTPUT_CONTEXT MENU DISCARDABLE
+BEGIN
+    POPUP "Popup"
+    BEGIN
+        MENUITEM "&Copy",                       ID_EDIT_COPY
+        MENUITEM "C&lear",                      ID_EDIT_CLEAR_ALL
+        MENUITEM "Select &All",                 ID_EDIT_SELECT_ALL
+        MENUITEM SEPARATOR
+        MENUITEM "&Save...",                    ID_LOG_SAVE
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 217, 198
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Configuration Tool"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,178,7,32,14,WS_GROUP
+    LTEXT           "eCos Configuration Tool 1.3.net",IDC_STATIC,40,10,119,8,
+                    SS_NOPREFIX
+    ICON            IDR_MAINFRAME,IDC_STATIC,11,17,21,20
+    LTEXT           "Date/Time info",IDC_STATIC_DATETIME,40,23,119,8
+    LTEXT           "Copyright © 1998-2002 Red Hat, Inc.",IDC_STATIC,40,36,
+                    170,8
+    CONTROL         "",IDC_STATIC,"Static",SS_GRAYFRAME,8,57,201,133,
+                    WS_EX_DLGMODALFRAME | WS_EX_TRANSPARENT
+    CTEXT           "Paul Beskeen\r\nJohn Dallaway\r\nRobert Erksine\r\nSimon FitzMaurice\r\nMark Galassi\r\nNick Garnett\r\nTim Goodwin\r\nStu Grossman\r\nEugene Kulesha\r\nJonathan Larmour\r\nDavid Moore\r\nDrew Moseley",
+                    IDC_STATIC_ABOUT,17,82,84,102
+    CTEXT           "Daniel Neades\r\nGary Oliverio\r\nChris Provenzano\r\nMark Salter\r\nRob Savoye\r\nAlex Schuilenburg\r\nJesper Skov\r\nJulian Smart\r\nChris Tarpy\r\nGary Thomas\r\nHugo Tyson\r\nBart Veer",
+                    IDC_STATIC_ABOUT2,115,82,84,101
+    LTEXT           "The eCos engineering team is:",IDC_STATIC,60,64,109,8
+END
+
+IDD_VIEW_SETTINGS_DIALOG DIALOG DISCARDABLE  0, 0, 234, 302
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Settings"
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "View header files using",IDC_STATIC,7,3,220,66
+    CONTROL         "&Associated viewer",IDC_RADIO_ASSOCIATED,"Button",
+                    BS_AUTORADIOBUTTON,14,14,205,10
+    CONTROL         "This &viewer:",IDC_RADIO_CUSTOM,"Button",
+                    BS_AUTORADIOBUTTON,14,28,54,10
+    EDITTEXT        IDC_EDIT,14,46,205,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "B&rowse...",IDC_BROWSE,169,26,50,14,WS_GROUP
+    GROUPBOX        "View documentation using",IDC_STATIC,7,74,220,80
+    CONTROL         "&Built-in viewer",IDC_RADIO_INTERNAL_BROWSER,"Button",
+                    BS_AUTORADIOBUTTON,15,86,59,10
+    CONTROL         "A&ssociated browser",IDC_RADIO_ASSOCIATED_BROWSER,
+                    "Button",BS_AUTORADIOBUTTON,15,100,204,10
+    CONTROL         "This &browser:",IDC_RADIO_CUSTOM_BROWSER,"Button",
+                    BS_AUTORADIOBUTTON,15,114,58,10
+    EDITTEXT        IDC_EDIT_BROWSER,15,132,205,14,ES_AUTOHSCROLL |
+                    WS_DISABLED
+    PUSHBUTTON      "Br&owse...",IDC_BROWSE_BROWSER,170,112,50,14,
+                    WS_DISABLED | WS_GROUP
+    GROUPBOX        "Configuration Pane",IDC_STATIC,7,159,220,81
+    GROUPBOX        "Labels",IDC_STATIC,16,172,201,26
+    CONTROL         "Use &macro names",IDC_RADIO_MACRO_NAMES,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,25,183,73,10
+    CONTROL         "Use descriptive &names",IDC_RADIO_DESCRIPTIVE_NAMES,
+                    "Button",BS_AUTORADIOBUTTON,102,183,87,10
+    GROUPBOX        "Integer items",IDC_STATIC,16,202,201,26
+    CONTROL         "&Decimal",IDC_RADIO_DECIMAL,"Button",BS_AUTORADIOBUTTON |
+                    WS_GROUP,25,213,41,10
+    CONTROL         "He&xadecimal",IDC_RADIO_HEXADECIMAL,"Button",
+                    BS_AUTORADIOBUTTON,102,213,57,10
+    GROUPBOX        "Font",IDC_STATIC,7,244,220,31
+    LTEXT           "&Window:",IDC_STATIC,18,257,29,8
+    COMBOBOX        IDC_PANECOMBO,49,255,79,67,CBS_DROPDOWNLIST | WS_VSCROLL |
+                    WS_TABSTOP
+    PUSHBUTTON      "Change &Font...",IDC_FONT,165,254,52,14
+    PUSHBUTTON      "OK",IDOK,121,281,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,177,281,50,14
+END
+
+IDD_HEADERS_DIALOG DIALOG DISCARDABLE  0, 0, 278, 148
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Header Files"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&Close",IDOK,221,7,50,14
+    LISTBOX         IDC_LIST,7,29,264,112,LBS_SORT | LBS_NOINTEGRALHEIGHT |
+                    WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    LTEXT           "Double-click any item below to edit the file",
+                    IDC_HEADERSTATIC,7,13,133,8
+END
+
+IDD_TOOLCHAINFOLDER_DIALOG DIALOG DISCARDABLE  0, 0, 271, 82
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Choose Folder"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,214,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,214,25,50,14
+    PUSHBUTTON      "&Browse...",IDC_FOLDER_DIALOG_BROWSE,214,43,50,14
+    LTEXT           "Static",IDC_STATIC_DESC,8,7,196,46
+    COMBOBOX        IDC_FOLDER,6,61,258,57,CBS_DROPDOWN | CBS_AUTOHSCROLL |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_CONFIGURATION_VIEW_OPTIONS_DIALOG DIALOG DISCARDABLE  0, 0, 242, 122
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Configuration View Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Using this dialog you can change the way in which items in the Configuration view are displayed",
+                    IDC_STATIC,7,7,228,22
+    GROUPBOX        "Labels",IDC_STATIC,7,30,228,31
+    CONTROL         "Use &macro names",IDC_RADIO_MACRO_NAMES,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,18,44,73,10
+    CONTROL         "Use &descriptive names",IDC_RADIO_DESCRIPTIVE_NAMES,
+                    "Button",BS_AUTORADIOBUTTON,142,44,87,10
+    GROUPBOX        "Integer items",IDC_STATIC,7,65,228,31
+    CONTROL         "D&ecimal",IDC_RADIO_DECIMAL,"Button",BS_AUTORADIOBUTTON |
+                    WS_GROUP,19,79,41,10
+    CONTROL         "He&xadecimal",IDC_RADIO_HEXADECIMAL,"Button",
+                    BS_AUTORADIOBUTTON,142,79,57,10
+    DEFPUSHBUTTON   "OK",IDOK,128,101,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,185,101,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS MOVEABLE PURE
+BEGIN
+    "1",            ID_VIEW_PROPERTIES,     VIRTKEY, ALT, NOINVERT
+    "2",            ID_VIEW_CONFLICTS,      VIRTKEY, ALT, NOINVERT
+    "3",            ID_VIEW_SHORTDESC,      VIRTKEY, ALT, NOINVERT
+    "4",            ID_VIEW_MLT,            VIRTKEY, ALT, NOINVERT
+    "5",            ID_VIEW_OUTPUT,         VIRTKEY, ALT, NOINVERT
+    "F",            ID_EDIT_FIND,           VIRTKEY, CONTROL, NOINVERT
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    "P",            ID_ENABLE_EXTENSIONS,   VIRTKEY, SHIFT, CONTROL, ALT,
+                                                    NOINVERT
+    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL, NOINVERT
+    VK_F3,          ID_EDIT_FINDAGAIN,      VIRTKEY, NOINVERT
+    VK_F5,          ID_RUN_SIM,             VIRTKEY, CONTROL, NOINVERT
+    VK_F6,          ID_WINDOW_NEXT,         VIRTKEY, ALT, NOINVERT
+    VK_F6,          ID_WINDOW_PREV,         VIRTKEY, SHIFT, ALT, NOINVERT
+    VK_F7,          ID_BUILD_CONFIGURE,     VIRTKEY, NOINVERT
+    VK_F7,          ID_BUILD_TESTS,         VIRTKEY, SHIFT, NOINVERT
+    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT, NOINVERT
+    VK_RETURN,      ID_POPUP_PROPERTIES,    VIRTKEY, ALT, NOINVERT
+END
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,3,0,0
+ PRODUCTVERSION 1,3,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Red Hat\0"
+            VALUE "FileDescription", "ConfigTool MFC Application\0"
+            VALUE "FileVersion", "1, 3, 0, 0\0"
+            VALUE "InternalName", "ConfigTool\0"
+            VALUE "LegalCopyright", "Copyright (C) 1998-2000 Red Hat, Inc.\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "ConfigTool.EXE\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "ConfigTool Application\0"
+            VALUE "ProductVersion", "1, 3, 0, 0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 193
+    END
+
+    IDD_VIEW_SETTINGS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 227
+        BOTTOMMARGIN, 295
+        HORZGUIDE, 50
+    END
+
+    IDD_CONFIGURATION_VIEW_OPTIONS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 235
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 115
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "CTres.h\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif\r\n"
+    "#include ""TestTool.rc""\r\n"
+    "#include ""PkgAdmin.rc""\r\n"
+    "#include ""CTCommon.rc""\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#include ""afxprint.rc""       // printing/print preview resources\r\n"
+    "#endif\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "#include ""CTCommonres.h""\r\n"
+    "#include ""PkgAdminres.h""\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    AFX_IDS_APP_TITLE       "Configuration Tool"
+    AFX_IDS_IDLEMESSAGE     "Ready"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDC_RADIO_INTERNAL_BROWSER
+                            "Select the internal HTML help mechanism to display HTML-based help."
+    IDC_PANECOMBO           "Selects a window for which the font is to be changed."
+    IDC_FONT                "Changes the font of the chosen window."
+    IDS_ECOS_HOME_URL       "http://www.redhat.com/products/ecos"
+    IDS_ECOS_SOURCEWARE_URL "http://sources.redhat.com/ecos"
+    IDS_RED_HAT_HOME_URL    "http://www.redhat.com"
+    IDS_UITRON_HOME_URL     "http://www.itron.gr.jp/"
+    IDS_ECOS_PR_URL         "http://www.cygnus.com/ecos/ecos-pr.html"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_THERMOMETER          "."
+    ID_RUN_SIM              "Runs the configuration tests\nRun Tests"
+    ID_VIEW_REFRESH         "Refreshes current page\nRefresh"
+    ID_GO_HOME              "Displays the documentation home page\nHome"
+    ID_VIEW_PROPERTIES      "Activates the properties window\nProperties window"
+    ID_VIEW_SHORTDESC       "Activates the short description pane\nShort description"
+    ID_BUILD_CONFIGURE      "Builds the library\nBuild Library"
+    ID_VIEW_OUTPUT          "Activates the output window\nOutput window"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_BUILD_STOP           "Stops the build\nStop Build"
+    ID_CONFIGURATION_OPTIONS "Changes configuration options\nChange options"
+    ID_BUILD_TESTS          "Builds the configuration tests\nBuild tests"
+    ID_CONFIGURATION_CHECKRULES
+                            "Checks rules immediately\nCheck option dependency rules immediately options are changed "
+    ID_CONFIGURATION_REFRESH
+                            "Reloads configuration settings from header files\nReload configuration"
+    ID_CONFIGURATION_REPOSITORY "Selects repository\nSelect repository"
+    ID_VIEW_SETTINGS        "Enables you to change settings\nChange settings"
+    ID_LOG_SAVE             "Saves the output window to a file\nSave"
+    ID_TOOLS_PATHS          "Specifies the folder containing the build tools\nSpecify Build Tools Folder"
+    ID_EDIT_SAVE            "Saves the contents of the output pane\nSave"
+    ID_DOC_RED_HAT          "Opens the Red Hat home page\nRed Hat home page"
+    ID_WINDOW_NEXT          "Selects the next visible pane\nNext Pane"
+    ID_WINDOW_PREV          "Activates the previous visible pane\nPrevious Pane"
+    ID_HELP_RED_HATONTHEWEB "Opens the Red Hat home page\nRed Hat Home Page"
+    ID_SUBMIT_PR            "Opens a page to submit a problem report\nPR Page"
+    ID_GNUPRO_DOCUMENTATION "Opens the GNUPro documentation page\nGNUPro Documentation"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_HELP_SUBMIT_PR       "Opens a page to submit an eCos problem report\nSubmit Problem Report"
+    ID_HELP_GNUPRO_DOCUMENTATION
+                            "Opens the GNUPro documentation page\nGNUPro Documentation Page"
+    ID_HELP_ECOS            "Opens the eCos net release page\neCos Net Release Page"
+    ID_HELP_UITRON          "Opens the µITRON specification page\nµITRON Specification"
+    ID_HELP_ECOSHOME        "Opens the eCos product page\neCos Product Page"
+    ID_BUILD_CLEAN          "Deletes intermediate and output files (performs a Make Clean)\nBuild clean"
+    ID_TOOLS_SHELL          "Invokes a command shell\nCommand shell"
+    ID_VIEW_RULES           "Displays current state of consistency rules\nConsistency rules"
+    ID_BUILD_OPTIONS        "Changes build options\nChange options"
+    ID_TOOLS_OPTIONS        "Changes configuration options\nChange options"
+    ID_USERTOOLS_PATHS      "Specifies the folder containing the user tools\nSpecify User Tools Folder"
+    ID_VIEW_MLT             "Activates the memory layout window\nMemory layout window"
+    ID_BUILD_TEMPLATES      "Selects the package templates\nSelect templates"
+    ID_BUILD_PACKAGES       "Selects individual packages\nSelect packages"
+    ID_VIEW_CONFLICTS       "Activates the conflicts window\nConflicts window"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDC_BROWSE_BROWSER      "Browses for a browser to be used to display HTML-based help."
+    IDC_RADIO_ASSOCIATED    "Select the default viewer to display header files."
+    IDC_RADIO_CUSTOM        "Select a viewer of your choice to display header files."
+    IDC_RADIO_ASSOCIATED_BROWSER
+                            "Select the default browser to display HTML-based help."
+    IDC_RADIO_CUSTOM_BROWSER
+                            "Select a browser of your choice to display HTML-based help."
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_INDICATOR_EXT        "EXT"
+    ID_INDICATOR_CAPS       "CAP"
+    ID_INDICATOR_NUM        "NUM"
+    ID_INDICATOR_SCRL       "SCRL"
+    ID_INDICATOR_OVR        "OVR"
+    ID_INDICATOR_REC        "REC"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_FILE_NEW             "Creates a new document\nNew"
+    ID_FILE_OPEN            "Opens an existing document\nOpen"
+    ID_FILE_CLOSE           "Closes the active document\nClose"
+    ID_FILE_SAVE            "Saves the active document\nSave"
+    ID_FILE_SAVE_AS         "Saves the active document with a new name\nSave As"
+    ID_FILE_PAGE_SETUP      "Changes the printing options\nPage Setup"
+    ID_FILE_PRINT_SETUP     "Changes the printer and printing options\nPrint Setup"
+    ID_FILE_PRINT           "Prints the active document\nPrint"
+    ID_FILE_PRINT_PREVIEW   "Displays full pages\nPrint Preview"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_APP_ABOUT            "Displays program information, version number and copyright\nAbout"
+    ID_APP_EXIT             "Quits the application; prompts to save documents\nExit"
+    ID_HELP                 "Displays help\nHelp"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_FILE_MRU_FILE1       "Opens this document"
+    ID_FILE_MRU_FILE2       "Opens this document"
+    ID_FILE_MRU_FILE3       "Opens this document"
+    ID_FILE_MRU_FILE4       "Opens this document"
+    ID_FILE_MRU_FILE5       "Opens this document"
+    ID_FILE_MRU_FILE6       "Opens this document"
+    ID_FILE_MRU_FILE7       "Opens this document"
+    ID_FILE_MRU_FILE8       "Opens this document"
+    ID_FILE_MRU_FILE9       "Opens this document"
+    ID_FILE_MRU_FILE10      "Opens this document"
+    ID_FILE_MRU_FILE11      "Opens this document"
+    ID_FILE_MRU_FILE12      "Opens this document"
+    ID_FILE_MRU_FILE13      "Opens this document"
+    ID_FILE_MRU_FILE14      "Opens this document"
+    ID_FILE_MRU_FILE15      "Opens this document"
+    ID_FILE_MRU_FILE16      "Opens this document"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_WINDOW_SPLIT         "Splits the active window into panes\nSplit"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_EDIT_CLEAR           "Clears the output pane\nClear"
+    ID_EDIT_CLEAR_ALL       "Erases everything in the output pane\nErase All"
+    ID_EDIT_COPY            "Copies the output pane selection to the Clipboard\nCopy"
+    ID_EDIT_CUT             "Cuts the output pane selection and moves it to the Clipboard\nCut"
+    ID_EDIT_FIND            "Finds the specified text\nFind"
+    ID_EDIT_PASTE           "Inserts Clipboard contents\nPaste"
+    ID_EDIT_REPEAT          "Repeats the last action\nRepeat"
+    ID_EDIT_REPLACE         "Replaces specific text with different text\nReplace"
+    ID_EDIT_SELECT_ALL      "Selects the entire output pane\nSelect All"
+    ID_EDIT_UNDO            "Undoes the last action\nUndo"
+    ID_EDIT_REDO            "Redoes the previously undone action\nRedo"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_VIEW_TOOLBAR         "Shows or hides the standard toolbar\nToggle Standard ToolBar"
+    ID_VIEW_STATUS_BAR      "Shows or hide the status bar\nToggle StatusBar"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDS_REGKEY              "Red Hat\\eCos"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_POPUP_PROPERTIES     "Displays the properties of the selected item"
+    ID_EDIT_NEW_REGION      "Add a new memory region\nNew Region"
+    ID_EDIT_NEW_SECTION     "Add a new memory section\nNew Section"
+    ID_EDIT_DELETE_SECTION  "Delete a memory region or section\nDelete"
+    ID_EDIT_PROPERTIES      "Show the properties of a memory region or section\nProperties"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_VIEW_MLTBAR          "Shows or hides the memory layout toolbar\nToggle Memory Layout ToolBar"
+    ID_TOOLS_ADMINISTRATION "Performs Repository Administration Tasks\nAdminister repository"
+    ID_FILE_EXPORT          "Exports a minimal configuration for importing into another configuration\nExport"
+    ID_FILE_IMPORT          "Imports a minimal configuration exported from another configuration\nImport"
+    ID_EDIT_PLATFORMS       "Edits the platform list\nEdit Platforms"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDC_EDIT                "Specify the viewer executable to be used to display header files."
+    IDC_EDIT_BROWSER        "Specify the browser executable to be used to display header files."
+    IDR_MAINFRAME           "eCos Configuration Tool\n\nConfiguration\neCos Configurations (*.ecc)\n.ecc\neCos Configuration.Document\neCos Configuration Document"
+    IDC_BROWSE              "Browses for a viewer to be used to display header files."
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    ID_RESOLVE_CONFLICTS    "Resolves conflicts\nResolve conflicts"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif
+#include "TestTool.rc"
+#include "PkgAdmin.rc"
+#include "CTCommon.rc"
+#include "afxres.rc"         // Standard components
+#include "afxprint.rc"       // printing/print preview resources
+#endif
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

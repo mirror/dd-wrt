@@ -1,0 +1,42 @@
+NAME
+       getprotobyname,  getprotobynumber - get protocol entry
+
+SYNOPSIS
+       #include <network.h>
+
+       struct protoent *getprotobyname(const char *name);
+
+       struct protoent *getprotobynumber(int proto);
+
+DESCRIPTION
+       The getprotobyname() function returns a protoent structure
+       for the line from /etc/protocols that matches the protocol
+       name name.
+
+       The  getprotobynumber() function returns a protoent struc­
+       ture for the line that matches the protocol number number.
+
+       The protoent structure is defined in <netdb.h> as follows:
+
+              struct protoent {
+                      char    *p_name;        /* official protocol name */
+                      char    **p_aliases;    /* alias list */
+                      int     p_proto;        /* protocol number */
+              }
+
+       The members of the protoent structure are:
+
+       p_name The official name of the protocol.
+
+       p_aliases
+              A zero terminated list of alternative names for the
+              protocol.
+       p_proto
+              The protocol number.
+
+RETURN VALUE
+       The getprotobyname() and getprotobynumber()
+       functions return the protoent structure, or a NULL pointer
+       if an error occurs.
+
+

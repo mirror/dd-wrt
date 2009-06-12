@@ -1,0 +1,986 @@
+2004-07-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/diag.cxx (_vprintf): Fix return length for %%
+
+2004-06-30  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/diag.cxx (_vprintf): Returned [length] was wrong for %p
+
+2004-04-16  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/cxxsupp.cxx: Allow inline function to be correctly inlined.
+
+2004-04-15  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/cyg_type.h: added CYG_ATTRIB_ALIGN_MAX and
+	CYGBLD_ATTRIB_ALIGNOFTYPE. Inspired by Robert Larice.
+	
+2004-01-08  Jani Monoses <jani@iv.ro>
+
+	* src/diag.cxx (diag_check_string): Allow '\t' in format strings.
+	
+2004-01-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/fc_test.c: 
+	* src/tcdiag.cxx (cyg_assert_msg): 'fconfig' API changed again.
+
+2003-12-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/fc_test.c: New test/demonstration of 'fconfig' access.
+
+	* src/tcdiag.cxx (cyg_assert_msg): Interface to 'fconfig' data
+	has changed.
+
+2003-10-11  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/tcdiag.cxx (cyg_test_exit): 
+	* cdl/infra.cdl: New option CYGSEM_INFRA_RESET_ON_TEST_EXIT which
+	[if defined] indicates that "cyg_test_exit()" should reset the 
+	platform instead of the default hang.
+
+2003-10-03  Nick Garnett  <nickg@balti.calivar.com>
+
+	* tests/cxxsupp.cxx: Added ifdef to disable this test on H8/300
+	targets. The H8/300 toolchain does not currently have C++ support.
+
+2003-07-01  Michael Checky  <Michael_Checky@ThermoKing.com>
+
+	* src/diag.cxx: Added support for the 'z' qualifier in format strings.
+
+2003-05-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/infra.cdl: Add option to control number of times tests run.
+
+2003-04-25  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/cxxsupp.cxx: don't include <pkgconf/kernel.h> as it's not
+	needed.
+	(cyg_start): CYGINT_ISO_MALLOC needs a #if test.
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* tests/cxxsupp.cxx: Added this test program to check that basic
+	C++ support is present. It checks that pure virtual functions can
+	be defined, that new and delete are present and functional, and
+	that calls to as-yet undefined inline functions work. Most of
+	these are linker and runtime system issues, so the actual run of
+	the program is almost a non-event.
+
+	* cdl/infra.cdl:
+	Added CYGFUN_INFRA_DUMMY_ABORT and CYGFUN_INFRA_DUMMY_STRLEN
+	options to control inclusion of dummy abort() and strlen()
+	functions. These are needed to be present by the compiler's C++
+	runtime system, although they should never be called.
+	Added CYGPKG_INFRA_TESTS to define test programs.
+	Added CYGPKG_INFRA_LDFLAGS_REMOVE and CYGPKG_INFRA_LDFLAGS_ADD to
+	modify the linkage options for the infra package
+	tests. Specifically they remove the --gc-sections option and make
+	all linker warning fatal. This is necessary if cxxsupp.cxx is to
+	test what it needs correctly.
+	
+	* src/abort.cxx: Added this dummy implementation of abort() to
+	satisfy references in the C++ runtime system.
+
+	* src/strlen.cxx: Added this dummy implementation of strlen() to
+	satisfy references in the C++ runtime system.
+
+2003-03-27  Bart Veer  <bartv@ecoscentric.com>
+
+	* src/pure.cxx, cdl/infra.cdl: new function __cxa_pure_virtual(),
+	needed when building with g++ v3.x if the code uses pure
+	virtual functions.
+
+2003-01-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/cyg_ass.h (CYG_CHECK_FUNC_PTRC): Define with const pointer
+	arguments.
+	(CYG_CHECK_DATA_PTRC): Ditto. 
+	(CYG_CHECK_FUNC_PTR): Ditto. 
+	(CYG_CHECK_DATA_PTR): Ditto. 
+	* src/null.cxx: Define cyg_check_data/func_ptr() with const args.
+	* src/buffer.cxx: Ditto.
+	* src/fancy.cxx: Ditto.
+	* src/simple.cxx: Ditto.
+
+2002-07-18  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/diag.h: 
+	* src/diag.cxx (diag_vdump_buf_with_offset): New function.
+
+2002-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/infra.cdl: Added two options to control CFLAGS.
+
+2002-05-17  Martin Buck <martin.buck@ascom.ch>
+ 
+ 	* include/cyg_type.h (CYGBLD_ATTRIB_PRINTF_FORMAT): Add.
+ 
+2002-05-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx (_vprintf): Mapping of '\n'=>'\r\n' must be done
+	at the _putc() level.
+
+2002-04-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx (diag_dump_buf_with_offset): Fix pad for short lines.
+
+2002-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx: Return proper length result for sprintf() functions.
+
+2002-04-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/cyg_type.h: Allow HALs to override certain attrib macros.
+
+2002-02-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx (diag_snprintf): 
+	* include/diag.h: Change function signature on diag_snprintf()
+	to match snprintf() found in stdio.
+
+2002-02-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/cyg_trac.h: Make message type of trace functions be
+	const char * to help avoid warnings with callers.
+	* src/null.cxx: Reflect that in actual functions.
+	* src/fancy.cxx: Ditto.
+	* src/simple.cxx: Ditto.
+	* src/buffer.cxx: Ditto.
+
+2002-01-31  Hugo Tyson  <hmt@redhat.com>
+
+	* src/tcdiag.cxx (cyg_assert_msg): Enable this function
+	universally; given the extra usefulness it now has (see below)
+	it's worth always having around by default in asserted builds.
+	It can be disabled with CYGDBG_INFRA_DEBUG_ASSERT_MESSAGE = 0.
+
+2002-01-30  Hugo Tyson  <hmt@redhat.com>
+
+	* src/tcdiag.cxx (cyg_assert_msg): Collect from RedBoot flash
+	config, whether or not to dump to a specific console.
+
+2002-01-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx (diag_snprintf): 
+	* include/diag.h: New function diag_snprintf().
+
+2002-01-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/cyg_type.h: Define CYG_INIT_IO_FS used by filesystems
+	so that they init *after* the devices they depend on.
+
+2002-01-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/tcdiag.cxx (cyg_test_exit): Work around problem with recent
+	SH tools that isn't likely to get fixed soon.
+
+2002-01-17  Jeroen Dobbelaere  <jeroen.dobbelaere@acunia.com>
+
+	* src/diag.cxx (diag_check_string): enlarge valid string length to 2048
+
+2001-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/diag.cxx: Added functions to do memory dump in 16 and 32 bit
+	units. Based on changes from Warren Jasper <warrenj@bops.com>.
+	* include/diag.h: Function declarations.
+	
+2001-09-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/eprintf.c (__eprintf): Tolerate absence of standard ISO C
+	functions better.
+
+2001-09-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/diag.cxx (diag_check_string): Also accept \b.
+
+2001-08-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx (_vprintf): Fix confusion between signed and unsigned
+	descriptors (only %d is signed).
+
+2001-08-24  Gary Thomas  <gthomas@redhat.com>
+
+	* include/diag.h: Export diag_dump_buf_with_offset.
+
+	* src/diag.cxx (_vprintf): Fix problems with signed/unsigned prints.
+	(diag_dump_buf_with_offset): Export.
+
+2001-08-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx (_vprintf): Restore functionality of %D,%U,%X,%B,%S,%C
+	which were present in old code.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/diag.cxx: 
+	* include/diag.h: 
+	* cdl/infra.cdl: Restructuring to support more flexible versions
+	of diag_printf() and related functions.  Remove old cruft which
+	was workaround for possibly failing compilers [K&R support].
+	These versions of printf(), etc, were part of the RedBoot package
+	and have been moved here (and renamed) to reduce code duplication.
+
+2001-08-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/eprintf.c: New file to implement __eprintf called from libgcc.
+	* cdl/infra.cdl: Build it.
+	* include/cyg_type.h: Provide __THROW default empty throw specifier.
+	* include/cyg_ass.h (cyg_assert_fail): Add __THROW.
+	(cyg_assert_msg): Ditto.
+	* src/buffer.cxx (cyg_assert_fail): Ditto.
+	* src/fancy.cxx (cyg_assert_fail): Ditto.
+	* src/null.cxx (cyg_assert_fail): Ditto (twice).
+	* src/simple.cxx (cyg_assert_fail): Ditto.
+	* src/tcdiag.cxx (cyg_assert_msg): Ditto.
+
+2001-08-03  Nick Garnett  <nickg@cygnus.co.uk>
+
+	Imported from a development branch:
+	
+	2001-06-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* src/diag.cxx: 
+		* src/tcdiag.cxx:
+		Added use of CYG_HAL_DIAG_LOCK() and CYG_HAL_DIAG_UNLOCK() to
+		diag_printf(), cyg_assert_msg() and cyg_test_output() to prevent
+		messages from different CPUs being mingled.
+
+	2001-05-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* include/cyg_type.h (CYGBLD_ANNOTATE_VARIABLE_*):
+		Added better way of supplying default definitions for these.
+
+	2001-04-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* include/cyg_type.h:
+		Added default variable annotation macros.
+
+2001-07-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/cyg_type.h (CYG_INIT_MEMALLOC): Add.
+
+2001-07-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/diag.cxx (diag_vprintf): Fix long longs (patch from
+	Motoya Kurotsu <kurotsu [at] allied-telesis.co.jp>
+
+	* cdl/debug.cdl: Make tracing styles be mutually exclusive properly
+	using an interface.
+
+2001-06-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/clist.hxx (Cyg_DNode_T): Don't qualify constructor or
+	destructor with <T>.
+	(Cyg_CList_T): Ditto.
+
+2001-02-23  Robin Farine  <acnrf@dial.eunet.ch>
+
+	* include/cyg_type.h: Do alignment consistency check.
+
+2001-01-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/clist.hxx: Many changes to make these classes usable in
+	the MLQ scheduler and alarm objects.
+
+2000-12-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/clist.hxx: Added this implementation of simple circular
+	list classes. This is not immediately useful, except to the
+	dynamic loader, but it is intended to simplify the MLQ scheduler
+	with these classes eventually.
+
+2000-12-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/cyg_type.h (CYGBLD_ATTRIB_ASM_ALIAS): Mangle assembler
+	symbols properly.
+
+2000-09-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/cyg_type.h (CYGBLD_ATTRIB_SECTION): Don't stringify arg.
+
+2000-09-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/cyg_type.h (CYGARC_ALIGNMENT): Add default of 8
+	(CYGARC_P2ALIGNMENT): Add corresponding default of 3
+	(CYGBLD_ATTRIB_ALIGN): Define to allow alignment
+	* include/cyg_type.inc: As above for CYGARC_ALIGNMENT and
+	CYGARC_P2ALIGNMENT
+
+2000-07-25  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/cyg_type.inc: Create. Used for the equivalent stuff of
+	cyg_type.h in assembler and linker scripts
+
+2000-07-19  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/pkgstart.cxx (cyg_package_start): Remove POSIX startup option
+	* cdl/startup.cdl: Likewise
+
+2000-07-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/buffer.cxx (increment_buffer_pos): Reset buffer pos *before*
+	we try to print the buffer
+	Thanks to Chris Morrow (cmorrow at YottaYotta.com ) for spotting
+	the problem.
+
+2000-07-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/infra.cdl: Add CYGFUN_INFRA_EMPTY_DELETE_FUNCTIONS option
+	to control presence of empty C++ delete functions
+
+	* src/delete.cxx: Move comments into above option, and simplify
+	the configuration now that it's more straightforward
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/simple.cxx: 
+	* src/null.cxx: 
+	* src/fancy.cxx: 
+	* src/buffer.cxx:
+	Removed use of CYG_LABEL_NAME() and added extra underscores to
+	_stext and _etext.
+
+	* include/cyg_type.h: Changed default for CYG_LABEL_DEFN() to
+	define labels without an extra underscore. This reflects the
+	practice of most of the targets we support.
+
+2000-06-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/cyg_type.h:
+	Added CYGBLD_ATTRIB_SECTION to assign variables to a named
+	section.
+	Added CYG_LABEL_DEFN() macro for defining labels in asm and linker
+	scripts. This is particularly useful for generating labels in
+	inline assembler fragments.
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/startup.cdl:
+	* src/pkgstart.cxx:
+	Remove CYGSEM_START_ISO_C_COMPATIBILITY: startup is now handled
+	via extras.o
+	* include/cyg_type.h: Define __externC alternative to externC
+
+2000-04-12  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/infra.cdl: Allow build flags to be tweaked.
+
+2000-03-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* cdl/startup.cdl: 
+	* src/pkgstart.cxx:
+	Added POSIX startup option.
+
+2000-03-28  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/cyg_trac.h: Also update internal documentation for below
+	const char * changes (2000-03-27)
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/infra.cdl:
+
+	Adjust documentation URLs.
+
+2000-03-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/tcdiag.cxx: HAL architecture ports may override default
+	behavior for 'cyg_test_exit()'.
+
+	* src/diag.cxx (diag_vprintf): Add support for %llX modifier, which
+	allows for printing of (long long) operands.
+
+2000-03-27  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/cyg_trac.h: Use const qualifier on function and file name
+	strings to be compatible with the C++ standard
+	* src/buffer.cxx: likewise
+	* src/fancy.cxx: likewise
+	* src/null.cxx: likewise
+
+2000-03-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/cyg_type.h: Make cyg_halbool the same for C and C++
+	code.
+
+	* include/cyg_ass.h (CYGDBG_DEFINE_CHECK_THIS): Use cyg_bool
+	instead of bool.
+
+2000-03-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/buffer.cxx: Fix some compiler warnings.
+
+2000-03-03  Jesper Skov  <jskov@redhat.com>
+
+	* include/cyg_type.h (CYGBLD_ATTRIB_WEAK): disarm bomb for !GCC.
+
+2000-03-01  Jesper Skov  <jskov@redhat.com>
+	103290
+	* include/cyg_ass.h: Make cyg_assert_fail a weak symbol.
+
+2000-02-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/diag.h: 
+	* src/diag.cxx (diag_dump_buf): Add diagnostic "dump buffer" function.
+
+2000-02-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/tcdiag.cxx (cyg_test_is_simulator): set this true if ugly
+	new cdl_option CYGHWR_TARGET_SIMULATOR_NO_GDB_WORKING is set.
+	This means we cannot diddle the variable using GDB.
+
+2000-02-18  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/tcdiag.cxx (cyg_test_exit): Add the facility for a platform
+	HAL to define an action to take at CYG_TEST_EXIT time; this is
+	useful for some simulators that are not (yet) Gdb integrated.
+	The action is CYGHWR_TEST_PROGRAM_EXIT() if defined.
+
+	* src/simple.cxx (cyg_assert_fail): Add the facility for a
+	platform HAL to define an action to take when an assertion failure
+	occurs.  Ditto.
+
+	* src/fancy.cxx (cyg_assert_fail): Ditto.
+
+	* src/buffer.cxx (cyg_assert_fail): Ditto.
+
+	[no change to null.cxx because, well, it's null isn't it]
+
+2000-02-08  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/cyg_trac.h: Define and document CYG_TRACE_PRINT() and
+	CYG_TRACE_DUMP() macros for outputting buffered trace output, and
+	kernel state dump respectively
+
+	* cdl/debug.cdl (CYGDBG_INFRA_DEBUG_TRACE_ASSERT_BUFFER): 
+	replace (incorrect) mention of cyg_trace_output() with CYG_TRACE_PRINT()
+	macro.
+
+	* src/fancy.cxx (cyg_trace_dump): Add (from buffer.cxx)
+	* src/simple.cxx (cyg_trace_dump): Add (from buffer.cxx)
+	* src/null.cxx (cyg_trace_dump): Add as empty function
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl\infra.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl\infra.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+1999-11-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/cyg_type.h: Add MLT symbols CYGMEM_REGION_ATTR_R/W.
+
+1999-11-23  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/debug.cdl: Add "active_if CYGDBG_USE_TRACING" to all tracing
+	only options in the buffered flavour of assert'n'trace.  Otherwise
+	enabling asserts but no tracing does not build; oldCDL dealt with
+	this by a string of ifdefs in the header.  Active_if is my friend.
+	This also prevents the confusion of having active options that
+	have no effect whatsoever.
+	Aside: the default is buffered assert'n'trace so that the test
+	farm can enable tracing and not get swamped by output.
+
+1999-05-14  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/cyg_type.h (CYG_INIT_COMPAT): add a new init priority
+	level for compatibility layers (for uITRON that is, but
+	potentially POSIX also perhaps, after libc anyway).
+
+1999-04-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/infra.h: Add cdl_package doc attribute.
+
+1999-04-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/cyg_type.h: Added new init priority for IO devices.
+
+	* include/diag.h: 
+	* src/diag.cxx: 
+	Use device for diag if configured so.
+
+1999-03-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/diag.cxx (diag_vprintf): Support '%%' printf modifier.
+
+1999-03-05  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/cyg_type.h:
+	Add CYGBLD_ATTRIB_CONST and tidy define indentation
+
+1999-03-04  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/diag.h:
+	Added a #include for <pkgconf/infra.h> so that the header file
+	can correctly check for CYGDBG_INFRA_DIAG_PRINTF_USE_VARARG
+
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/cyg_type.h:
+	Added CYGBLD_ATTRIB_ASM_ALIAS() macro to supply an alias for a
+	variable while it is being defined.
+
+1999-02-24  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/cyg_type.h (CYG_INIT_APPLICATION): Add CYG_INIT_DRIVERS
+	priority
+
+	* src/tcdiag.cxx (cyg_test_output): Re-include angle brackets
+	for CYG_TEST_GDBCMD command
+
+1999-02-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/testcase.h (CYG_TEST_NA): 
+	Add call to cyg_test_exit()
+
+1999-02-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/cyg_type.h: 
+	Add CYGBLD_ATTRIB_INIT_PRI/BEFORE/AFTER macros.
+	Remove CYG_INIT_BEFORE/AFTER as they were unusable
+
+	* include/testcase.h:
+	* src/tcdiag.cxx:
+	Add CYGNUM_TEST_NA() macro for not applicable state
+	Don't need to call diag_init() any more from cyg_test_init()
+
+	* src/diag.c:
+	* src/diag.cxx: 
+	Rename diag.c to diag.cxx
+	Add dummy constructor object to do initialization right after the
+	HAL has started. Needed to get asserts working correctly at
+	constructor time, and for CYGNUM_TEST_GDBCMD to work as intended
+	(i.e. before calling CYG_TEST_INIT())
+
+1999-02-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/tcdiag.cxx (cyg_test_output): Remove angle brackets round
+	GDBCMD output
+
+1999-02-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/fancy.cxx (trim_func): 
+	* src/simple.cxx (trim_func):
+	* src/buffer.cxx (trim_func):
+	Don't delete bits before a space as it may not always be a
+	type, if using CYG_FUNCNAME rather than relying on
+	__PRETTY_FUNCTION__
+
+	* src/tcdiag.cxx (cyg_test_output): 
+	Add new GDBCMD output and do some tidying vis a vis coding standards
+	etc.
+
+	* include/testcase.h:
+	Do some tidying vis a vis coding standards etc.
+
+1999-02-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/cyg_type.h (CYGBLD_ATTRIB_CONSTRUCTOR): 
+	New macro, used to define a 'C' routine to be run with 'C++'
+	constructors.
+
+1999-01-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/cyg_type.h (CYGBLD_ATTRIB_NORET):
+	Updated the non-GNUC version of the macro
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/cyg_type.h:
+	Remove all traces of CYG_KERNEL_USE_INIT_PRIORITY option - now
+	compulsory. Consequently can remove include of pkgconf/infra.h.
+	Add CYG_INIT_PREDEFAULT priority for
+	CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG implementation.
+	Change CYGBLD_NORET to CYGBLD_ATTRIB_NORET
+	Add CYGBLD_ATTRIB_ALIAS and CYGBLD_ATTRIB_WEAK_ALIAS macros
+
+	* include/cyg_ass.h: 
+	* include/testcase.h
+	Change CYGBLD_NORET to CYGBLD_ATTRIB_NORET
+
+	* src/startup.cxx:
+	Split up into smaller files to make GDB happier when debuggin
+
+	* src/pkgstart.cxx:
+	* src/prestart.cxx:
+	* src/userstart.cxx:
+	New files with contents originally from startup.cxx
+
+1999-01-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/cyg_type.h (CYG_REFERENCE_OBJECT): 
+	Make this work with no overhead, although it doesn't work with
+	anything other than objects with constructors. I _believe_ this
+	is the only relevant situation though. Bite me.
+	Fix for PR 18782
+
+1999-01-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/cyg_type.h (CYG_REFERENCE_SYMBOL): Added.
+
+1999-01-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/cyg_type.h: Default handling of 'CYG_DOUBLE_BYTEORDER'
+
+1999-01-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/cyg_type.h (CYG_UNUSED_PARAM): Don't assign to the
+	unused parameter; it might be a macro constant.
+
+1999-01-11  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/tcdiag.cxx (cyg_test_output): 
+	* include/testcase.h:
+	Use const where appropriate in cyg_test_output()
+
+1999-01-06  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/cyg_trac.h (CYG_REPORT_FUNCARG8):
+	Removed spurious comma so that the macro actually compiles.
+
+1998-12-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/simple.cxx: 
+	* src/null.cxx: 
+	* src/fancy.cxx: 
+	* src/diag.c: 
+	* src/buffer.cxx: 
+	* include/diag.h:
+	In the assertion support, use const where appropriate.
+	
+1998-12-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/cyg_ass.h:
+	The prototype for cyg_assert_fail() is now always present.
+	const is used wherever appropriate.
+	A number of additional assertion macros are now defined.
+	Host-specific assertion support has been added.
+	Some minor tweaks for greater consistency in macro usage.
+
+1998-12-21  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/cyg_type.h:
+	Allow for platforms where pointers are not 32 bits wide.
+	
+1998-12-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/testcase.h (cyg_test_is_simulator): 
+	* src/tcdiag.cxx (cyg_test_is_simulator): 
+	Change the type to int so that all gdb's understand it.
+	(it was impossible to assign to from the prompt as a bool)
+
+1998-12-09  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/testcase.h:
+	Hide a __noreturn__ attribute inside a macro so that the
+	header file can be used for host-side code.
+
+1998-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/memset.c (_memset): Use type casted pointer to avoid
+	compiler warning.
+
+Mon Oct 26 21:20:13 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/buffer.cxx: 
+	Make write_thread_id() conditional on CYGDBG_USE_ASSERTS as that's
+	the only time it is used. This silences a compiler warning
+
+Mon Oct 26 19:40:48 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/memset.c, src/memcpy.c:
+	Conditionalise out all tracing for now
+	Fix for PR 17996
+
+Fri Oct 23 05:42:36 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/cyg_ass.h (CYGASSERT_docall): 
+	Make a dummy reference to _msg_ argument when
+	CYGDBG_INFRA_DEBUG_ASSERT_MESSAGE is disabled, otherwise we may get
+	"unused variable" warnings
+	Fix for PR 17889
+
+1998-10-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/buffer.cxx (increment_buffer_pos): 
+	Use the correctly named print_trace_buffer() rather than some
+	typo/globaleditto.
+	(cyg_trace_dump): only refer to thread->get_saved_context() if
+	CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT is defined.
+
+1998-10-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/buffer.cxx (write_thread_id): 
+	Make get_tid() be there when used.
+
+	* include/pkgconf/infra.h: 
+	Only enable all the buffered tracing stuff if USE_TRACING is
+	selected; otherwise link errors ensue if only USE_ASSERTS is
+	enabled.
+
+1998-10-22  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17914
+
+	* src/simple.cxx (CYG_NO_THREADID): Set if there is no Kernel
+	support.
+
+1998-10-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/null.cxx:
+	Removed fix for PR 17471 since the required macros have been moved
+	to cyg_type.h.
+
+	* include/diag.h (diag_printf):
+	* src/diag.c (diag_printf):
+	Made use of variadic arguments optional in this function.
+
+	* include/pkgconf/infra.h:
+	Added configury to support buffered tracing.
+
+	* src/fancy.cxx (trim_func):
+	Fixed fencepost bug.
+
+	* src/PKGconf.mak:
+	* src/buffer.cxx:
+	Added buffer.cxx to implement buffered trace log.
+
+Thu Oct 15 21:27:23 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/delete.cxx, src/memcpy.c, src/memset.c:
+	Moved here from ecc/kernel/current/src/common, as they should
+	be present even if the kernel is disabled
+
+	* include/pkgconf/infra.h:
+	Add new config options CYGIMP_INFRA_PREFER_SMALL_TO_FAST_MEMCPY
+	and CYGIMP_INFRA_PREFER_SMALL_TO_FAST_MEMSET to support the
+	functionality available in memcpy.c and memset.c
+
+	* src/PKGconf.mak:
+	build above new files
+
+	Above changes are required for PR 17229
+
+1998-10-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/cyg_type.h:
+	Moved CYG_LABEL_NAME() macro here from ktypes.h.
+
+Wed Oct 14 17:10:12 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/diag.c: 
+	Change warning message from previous change to match compiler
+	output exactly
+
+Tue Oct 13 17:23:37 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+	
+	* src/diag.c: 
+	Output another warning so that people know that diag.c produces
+	a warning
+	Reformat to 76 columns
+	Change args of diag_printf to be ANSI-style, not K&R to
+	silence warning
+
+1998-09-25  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/null.cxx:
+	PR 17471: null.cxx relies on the macro CYG_LABEL_NAME(), which on
+	the mn10300 is defined only if <cyg/kernel/ktypes.h> is included.
+	As a temporary fix this header file is now always included. In the
+	medium term there will have to be proper fixes to ktypes.h and to
+	cyg_type.h 
+
+Wed Sep 16 03:42:16 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/startup.cxx, src/dummyxxmain.cxx: 
+	Move __main() to a separate dummyxxmain.cxx source file to resolve
+	linking bogosities on some targets
+	Fix for PR 17279 - kudos to Tim Goodwin really
+
+	* src/PKGconf.mak:
+	Build src/dummyxxmain.cxx
+
+Tue Sep 15 19:14:33 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* include/pkgconf/infra.h: Cleaned up comments.
+
+Tue Sep 15 14:34:34 1998  David Moore  <dsm@cygnus.co.uk>
+
+	* src/startup.cxx: 
+	* include/cyg_type.h: 
+	CYGBLD_ATTRIB_WEAK moved from src/startup.cxx to
+ 	include/cyg_type.h
+
+Tue Sep 15 12:26:36 1998  Jonathan Larmour  <jlarmour@peshwari.cygnus.co.uk>
+
+	* src/null.cxx, src/simple.cxx, src/fancy.cxx:
+ 	Change cyg_check_data_ptr() to not compare with _end symbol from
+	linker scripts as this is a bogus thing to do when starting in
+	ROM. Some better magic can be done later with the memory layout
+	tool.
+
+	* src/simple.cxx (cyg_assert_fail),
+	  src/fancy.cxx (cyg_assert_fail): 
+	If an assert is thrown, loop forever no matter what the platform
+	rather than resetting the jmr board.
+
+Fri Sep 11 12:52:59 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/tcdiag.cxx: 
+	* src/diag.c: 
+	Remove dependencies on the kernel:
+	 o types are available from here, infra.
+	 o Diag and its mates are here and the HAL.
+	
+Thu Sep 10 21:59:09 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/fancy.cxx: 
+	* src/simple.cxx: 
+	* src/null.cxx: 
+	Remove dependencies on the kernel:
+ 	 o interrupt stuff is available	from the HAL.
+	 o types are available from here, infra.
+	 o Diag and its mates are here and the HAL.
+	 o Only consider printing thread information if there is a kernel.
+	
+Thu Sep 10 21:29:55 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/infra.h: 
+	Fix CDL descriptions (mainly) resulting from review of
+	configury here.
+
+Thu Sep 10 17:38:00 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/null.cxx: 
+	Add an empty cyg_assert_fail() if not CYGDBG_USE_ASSERTS, so that
+ 	clib's assert() can use it, in common with but regardless of the
+	internal assert setup.  Of course if internal asserts are used,
+	the same routine is used.
+
+Thu Sep  3 19:05:29 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/startup.cxx (__main): 
+	...and its mates.  Correct the bad usage of the tracing macros - a
+	type was implied when the type was void, so an assert fires.
+
+	* include/diag.h (diag_printf): 
+	Remove 'useful' prototype; this function deliberately has a K&R
+	prototype to avoid having to use varargs, or pad arglists or
+	anything grody like that.  Comment to that effect added too.
+	
+	* src/fancy.cxx: 
+	Condition out routines which are only used by tracing system;
+	prevent warnings.  Also changed the default widths setup to
+	something more suitable to our long function names; viewing on
+	about a 200 column screen recommended - or use 'simple' instead.
+
+Tue Sep  1 19:09:39 1998  Hugo Tyson  <hmt@masala.cygnus.co.uk>
+
+	* include/pkgconf/infra.h: 
+	Fancy tracing by default, as I've been requested.
+	Move definition (or not) of CYGDBG_INFRA_DIAG_USE_DEVICE from the
+	kernel, correcting the symbol construction as we go.
+
+	* include/cyg_type.h: 
+	Correct multiple-inclusion protection, remove
+	<dollar>Version<Dollar> nonsense, correct Usage: field, put in
+	definition of CYGBLD_NORET.
+
+	* include/cyg_ass.h: 
+	Correct Usage: field, remove definition of CYGDBG_NORET, correct
+ 	definition of cyg_assert_fail to use CYGBLD_NORET as intended.
+
+	* include/cyg_trac.h: 
+	Tidy up comments.
+
+	* src/PKGconf.mak (COMPILE): 
+	Added all the new units below.
+
+	* src/fancy.cxx: 
+	* src/simple.cxx: 
+	* src/null.cxx: 
+	Moved here from the kernel; comments changed accordingly.
+
+	* src/tcdiag.cxx: 
+	* include/diag.h: 
+	* src/diag.c: 
+	Moved here from the kernel; comments changed accordingly.
+	Also use config symbol CYGDBG_INFRA_DIAG_USE_DEVICE rather than
+	(badly named) CYG_DIAG_USE_DEVICE.
+
+Fri Aug 28 15:22:16 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/infra.h: 
+	Add lots of lovely cdl comments and new, correct, names for the
+	config options themselves.
+	* include/cyg_trac.h: 
+	* include/cyg_ass.h: 
+	Use the newly named options.
+
+	[KERNEL] see also changes to src/trace/{fancy,null,simple}.cxx
+	which should soon move into this package instead.
+
+Fri Aug 28 09:57:21 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/infra.h:
+	Add CYGSEM_START_ISO_C_COMPATIBILITY and
+	CYGSEM_START_UITRON_COMPATIBILITY options, along with some comment.
+
+	* src/PKGconf.mak, src/startup.cxx:
+	Add these two files for the new file startup.cxx that provides the
+	generic startup mechanism, using new cyg_start() functions. This
+	is to remove the dependency on main(), which is defined in ISO and
+	POSIX as having certain properties we wouldn't be able to give it
+	otherwise.
+
+Tue Aug 25 11:47:58 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/startup.cxx: 
+	Add this to provide new startup method
+
+1998-08-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/cyg_type.h:
+	Moved constructor priority ordering stuff here from
+	kernel/ktypes.h.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

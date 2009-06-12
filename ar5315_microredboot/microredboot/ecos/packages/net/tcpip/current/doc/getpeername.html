@@ -1,0 +1,40 @@
+<html>
+<body>
+<pre>
+NAME
+       getpeername - get name of connected peer
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       int  getpeername(int  s,  struct sockaddr *name, socklen_t
+       *namelen);
+
+DESCRIPTION
+       Getpeername returns the name  of  the  peer  connected  to
+       socket  s.  The namelen parameter should be initialized to
+       indicate the amount of  space  pointed  to  by  name.   On
+       return  it  contains  the actual size of the name returned
+       (in bytes).  The name is truncated if the buffer  provided
+       is too small.
+
+RETURN VALUE
+       On  success,  zero is returned.  On error, -1 is returned,
+       and errno is set appropriately.
+
+ERRORS
+       EBADF   The argument s is not a valid descriptor.
+
+       ENOTSOCK
+               The argument s is a file, not a socket.
+
+       ENOTCONN
+               The socket is not connected.
+
+       ENOBUFS Insufficient resources were available in the  sys-
+               tem to perform the operation.
+
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,1577 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Machine Constraints,  Prev: Modifiers,  Up: Constraints
+
+Constraints for Particular Machines
+-----------------------------------
+
+   Whenever possible, you should use the general-purpose constraint
+letters in `asm' arguments, since they will convey meaning more readily
+to people reading your code.  Failing that, use the constraint letters
+that usually have very similar meanings across architectures.  The most
+commonly used constraints are `m' and `r' (for memory and
+general-purpose registers respectively; *note Simple Constraints::), and
+`I', usually the letter indicating the most common immediate-constant
+format.
+
+   For each machine architecture, the `config/MACHINE/MACHINE.h' file
+defines additional constraints.  These constraints are used by the
+compiler itself for instruction generation, as well as for `asm'
+statements; therefore, some of the constraints are not particularly
+interesting for `asm'.  The constraints are defined through these
+macros:
+
+`REG_CLASS_FROM_LETTER'
+     Register class constraints (usually lower case).
+
+`CONST_OK_FOR_LETTER_P'
+     Immediate constant constraints, for non-floating point constants of
+     word size or smaller precision (usually upper case).
+
+`CONST_DOUBLE_OK_FOR_LETTER_P'
+     Immediate constant constraints, for all floating point constants
+     and for constants of greater than word size precision (usually
+     upper case).
+
+`EXTRA_CONSTRAINT'
+     Special cases of registers or memory.  This macro is not required,
+     and is only defined for some machines.
+
+   Inspecting these macro definitions in the compiler source for your
+machine is the best way to be certain you have the right constraints.
+However, here is a summary of the machine-dependent constraints
+available on some particular machines.
+
+_ARM family--`arm.h'_
+
+    `f'
+          Floating-point register
+
+    `F'
+          One of the floating-point constants 0.0, 0.5, 1.0, 2.0, 3.0,
+          4.0, 5.0 or 10.0
+
+    `G'
+          Floating-point constant that would satisfy the constraint `F'
+          if it were negated
+
+    `I'
+          Integer that is valid as an immediate operand in a data
+          processing instruction.  That is, an integer in the range 0
+          to 255 rotated by a multiple of 2
+
+    `J'
+          Integer in the range -4095 to 4095
+
+    `K'
+          Integer that satisfies constraint `I' when inverted (ones
+          complement)
+
+    `L'
+          Integer that satisfies constraint `I' when negated (twos
+          complement)
+
+    `M'
+          Integer in the range 0 to 32
+
+    `Q'
+          A memory reference where the exact address is in a single
+          register (``m'' is preferable for `asm' statements)
+
+    `R'
+          An item in the constant pool
+
+    `S'
+          A symbol in the text segment of the current file
+
+_AMD 29000 family--`a29k.h'_
+
+    `l'
+          Local register 0
+
+    `b'
+          Byte Pointer (`BP') register
+
+    `q'
+          `Q' register
+
+    `h'
+          Special purpose register
+
+    `A'
+          First accumulator register
+
+    `a'
+          Other accumulator register
+
+    `f'
+          Floating point register
+
+    `I'
+          Constant greater than 0, less than 0x100
+
+    `J'
+          Constant greater than 0, less than 0x10000
+
+    `K'
+          Constant whose high 24 bits are on (1)
+
+    `L'
+          16-bit constant whose high 8 bits are on (1)
+
+    `M'
+          32-bit constant whose high 16 bits are on (1)
+
+    `N'
+          32-bit negative constant that fits in 8 bits
+
+    `O'
+          The constant 0x80000000 or, on the 29050, any 32-bit constant
+          whose low 16 bits are 0.
+
+    `P'
+          16-bit negative constant that fits in 8 bits
+
+    `G'
+    `H'
+          A floating point constant (in `asm' statements, use the
+          machine independent `E' or `F' instead)
+
+_AVR family--`avr.h'_
+
+    `l'
+          Registers from r0 to r15
+
+    `a'
+          Registers from r16 to r23
+
+    `d'
+          Registers from r16 to r31
+
+    `w'
+          Registers from r24 to r31.  These registers can be used in
+          `adiw' command
+
+    `e'
+          Pointer register (r26-r31)
+
+    `b'
+          Base pointer register (r28-r31)
+
+    `q'
+          Stack pointer register (SPH:SPL)
+
+    `t'
+          Temporary register r0
+
+    `x'
+          Register pair X (r27:r26)
+
+    `y'
+          Register pair Y (r29:r28)
+
+    `z'
+          Register pair Z (r31:r30)
+
+    `I'
+          Constant greater than -1, less than 64
+
+    `J'
+          Constant greater than -64, less than 1
+
+    `K'
+          Constant integer 2
+
+    `L'
+          Constant integer 0
+
+    `M'
+          Constant that fits in 8 bits
+
+    `N'
+          Constant integer -1
+
+    `O'
+          Constant integer 8, 16, or 24
+
+    `P'
+          Constant integer 1
+
+    `G'
+          A floating point constant 0.0
+
+_IBM RS6000--`rs6000.h'_
+
+    `b'
+          Address base register
+
+    `f'
+          Floating point register
+
+    `h'
+          `MQ', `CTR', or `LINK' register
+
+    `q'
+          `MQ' register
+
+    `c'
+          `CTR' register
+
+    `l'
+          `LINK' register
+
+    `x'
+          `CR' register (condition register) number 0
+
+    `y'
+          `CR' register (condition register)
+
+    `z'
+          `FPMEM' stack memory for FPR-GPR transfers
+
+    `I'
+          Signed 16-bit constant
+
+    `J'
+          Unsigned 16-bit constant shifted left 16 bits (use `L'
+          instead for `SImode' constants)
+
+    `K'
+          Unsigned 16-bit constant
+
+    `L'
+          Signed 16-bit constant shifted left 16 bits
+
+    `M'
+          Constant larger than 31
+
+    `N'
+          Exact power of 2
+
+    `O'
+          Zero
+
+    `P'
+          Constant whose negation is a signed 16-bit constant
+
+    `G'
+          Floating point constant that can be loaded into a register
+          with one instruction per word
+
+    `Q'
+          Memory operand that is an offset from a register (`m' is
+          preferable for `asm' statements)
+
+    `R'
+          AIX TOC entry
+
+    `S'
+          Constant suitable as a 64-bit mask operand
+
+    `T'
+          Constant suitable as a 32-bit mask operand
+
+    `U'
+          System V Release 4 small data area reference
+
+_Intel 386--`i386.h'_
+
+    `q'
+          `a', `b', `c', or `d' register for the i386.  For x86-64 it
+          is equivalent to `r' class. (for 8-bit instructions that do
+          not use upper halves)
+
+    `Q'
+          `a', `b', `c', or `d' register. (for 8-bit instructions, that
+          do use upper halves)
+
+    `R'
+          Legacy register--equivalent to `r' class in i386 mode.  (for
+          non-8-bit registers used together with 8-bit upper halves in
+          a single instruction)
+
+    `A'
+          Specifies the `a' or `d' registers.  This is primarily useful
+          for 64-bit integer values (when in 32-bit mode) intended to
+          be returned with the `d' register holding the most
+          significant bits and the `a' register holding the least
+          significant bits.
+
+    `f'
+          Floating point register
+
+    `t'
+          First (top of stack) floating point register
+
+    `u'
+          Second floating point register
+
+    `a'
+          `a' register
+
+    `b'
+          `b' register
+
+    `c'
+          `c' register
+
+    `d'
+          `d' register
+
+    `D'
+          `di' register
+
+    `S'
+          `si' register
+
+    `x'
+          `xmm' SSE register
+
+    `y'
+          MMX register
+
+    `I'
+          Constant in range 0 to 31 (for 32-bit shifts)
+
+    `J'
+          Constant in range 0 to 63 (for 64-bit shifts)
+
+    `K'
+          `0xff'
+
+    `L'
+          `0xffff'
+
+    `M'
+          0, 1, 2, or 3 (shifts for `lea' instruction)
+
+    `N'
+          Constant in range 0 to 255 (for `out' instruction)
+
+    `Z'
+          Constant in range 0 to `0xffffffff' or symbolic reference
+          known to fit specified range.  (for using immediates in zero
+          extending 32-bit to 64-bit x86-64 instructions)
+
+    `e'
+          Constant in range -2147483648 to 2147483647 or symbolic
+          reference known to fit specified range.  (for using
+          immediates in 64-bit x86-64 instructions)
+
+    `G'
+          Standard 80387 floating point constant
+
+_Intel 960--`i960.h'_
+
+    `f'
+          Floating point register (`fp0' to `fp3')
+
+    `l'
+          Local register (`r0' to `r15')
+
+    `b'
+          Global register (`g0' to `g15')
+
+    `d'
+          Any local or global register
+
+    `I'
+          Integers from 0 to 31
+
+    `J'
+          0
+
+    `K'
+          Integers from -31 to 0
+
+    `G'
+          Floating point 0
+
+    `H'
+          Floating point 1
+
+_MIPS--`mips.h'_
+
+    `d'
+          General-purpose integer register
+
+    `f'
+          Floating-point register (if available)
+
+    `h'
+          `Hi' register
+
+    `l'
+          `Lo' register
+
+    `x'
+          `Hi' or `Lo' register
+
+    `y'
+          General-purpose integer register
+
+    `z'
+          Floating-point status register
+
+    `I'
+          Signed 16-bit constant (for arithmetic instructions)
+
+    `J'
+          Zero
+
+    `K'
+          Zero-extended 16-bit constant (for logic instructions)
+
+    `L'
+          Constant with low 16 bits zero (can be loaded with `lui')
+
+    `M'
+          32-bit constant which requires two instructions to load (a
+          constant which is not `I', `K', or `L')
+
+    `N'
+          Negative 16-bit constant
+
+    `O'
+          Exact power of two
+
+    `P'
+          Positive 16-bit constant
+
+    `G'
+          Floating point zero
+
+    `Q'
+          Memory reference that can be loaded with more than one
+          instruction (`m' is preferable for `asm' statements)
+
+    `R'
+          Memory reference that can be loaded with one instruction (`m'
+          is preferable for `asm' statements)
+
+    `S'
+          Memory reference in external OSF/rose PIC format (`m' is
+          preferable for `asm' statements)
+
+_Motorola 680x0--`m68k.h'_
+
+    `a'
+          Address register
+
+    `d'
+          Data register
+
+    `f'
+          68881 floating-point register, if available
+
+    `x'
+          Sun FPA (floating-point) register, if available
+
+    `y'
+          First 16 Sun FPA registers, if available
+
+    `I'
+          Integer in the range 1 to 8
+
+    `J'
+          16-bit signed number
+
+    `K'
+          Signed number whose magnitude is greater than 0x80
+
+    `L'
+          Integer in the range -8 to -1
+
+    `M'
+          Signed number whose magnitude is greater than 0x100
+
+    `G'
+          Floating point constant that is not a 68881 constant
+
+    `H'
+          Floating point constant that can be used by Sun FPA
+
+_Motorola 68HC11 & 68HC12 families--`m68hc11.h'_
+
+    `a'
+          Register 'a'
+
+    `b'
+          Register 'b'
+
+    `d'
+          Register 'd'
+
+    `q'
+          An 8-bit register
+
+    `t'
+          Temporary soft register _.tmp
+
+    `u'
+          A soft register _.d1 to _.d31
+
+    `w'
+          Stack pointer register
+
+    `x'
+          Register 'x'
+
+    `y'
+          Register 'y'
+
+    `z'
+          Pseudo register 'z' (replaced by 'x' or 'y' at the end)
+
+    `A'
+          An address register: x, y or z
+
+    `B'
+          An address register: x or y
+
+    `D'
+          Register pair (x:d) to form a 32-bit value
+
+    `L'
+          Constants in the range -65536 to 65535
+
+    `M'
+          Constants whose 16-bit low part is zero
+
+    `N'
+          Constant integer 1 or -1
+
+    `O'
+          Constant integer 16
+
+    `P'
+          Constants in the range -8 to 2
+
+_SPARC--`sparc.h'_
+
+    `f'
+          Floating-point register that can hold 32- or 64-bit values.
+
+    `e'
+          Floating-point register that can hold 64- or 128-bit values.
+
+    `I'
+          Signed 13-bit constant
+
+    `J'
+          Zero
+
+    `K'
+          32-bit constant with the low 12 bits clear (a constant that
+          can be loaded with the `sethi' instruction)
+
+    `L'
+          A constant in the range supported by `movcc' instructions
+
+    `M'
+          A constant in the range supported by `movrcc' instructions
+
+    `N'
+          Same as `K', except that it verifies that bits that are not
+          in the lower 32-bit range are all zero.  Must be used instead
+          of `K' for modes wider than `SImode'
+
+    `G'
+          Floating-point zero
+
+    `H'
+          Signed 13-bit constant, sign-extended to 32 or 64 bits
+
+    `Q'
+          Floating-point constant whose integral representation can be
+          moved into an integer register using a single sethi
+          instruction
+
+    `R'
+          Floating-point constant whose integral representation can be
+          moved into an integer register using a single mov instruction
+
+    `S'
+          Floating-point constant whose integral representation can be
+          moved into an integer register using a high/lo_sum
+          instruction sequence
+
+    `T'
+          Memory address aligned to an 8-byte boundary
+
+    `U'
+          Even register
+
+    `W'
+          Memory address for `e' constraint registers.
+
+_TMS320C3x/C4x--`c4x.h'_
+
+    `a'
+          Auxiliary (address) register (ar0-ar7)
+
+    `b'
+          Stack pointer register (sp)
+
+    `c'
+          Standard (32-bit) precision integer register
+
+    `f'
+          Extended (40-bit) precision register (r0-r11)
+
+    `k'
+          Block count register (bk)
+
+    `q'
+          Extended (40-bit) precision low register (r0-r7)
+
+    `t'
+          Extended (40-bit) precision register (r0-r1)
+
+    `u'
+          Extended (40-bit) precision register (r2-r3)
+
+    `v'
+          Repeat count register (rc)
+
+    `x'
+          Index register (ir0-ir1)
+
+    `y'
+          Status (condition code) register (st)
+
+    `z'
+          Data page register (dp)
+
+    `G'
+          Floating-point zero
+
+    `H'
+          Immediate 16-bit floating-point constant
+
+    `I'
+          Signed 16-bit constant
+
+    `J'
+          Signed 8-bit constant
+
+    `K'
+          Signed 5-bit constant
+
+    `L'
+          Unsigned 16-bit constant
+
+    `M'
+          Unsigned 8-bit constant
+
+    `N'
+          Ones complement of unsigned 16-bit constant
+
+    `O'
+          High 16-bit constant (32-bit constant with 16 LSBs zero)
+
+    `Q'
+          Indirect memory reference with signed 8-bit or index register
+          displacement
+
+    `R'
+          Indirect memory reference with unsigned 5-bit displacement
+
+    `S'
+          Indirect memory reference with 1 bit or index register
+          displacement
+
+    `T'
+          Direct memory reference
+
+    `U'
+          Symbolic address
+
+_S/390 and zSeries--`s390.h'_
+
+    `a'
+          Address register (general purpose register except r0)
+
+    `d'
+          Data register (arbitrary general purpose register)
+
+    `f'
+          Floating-point register
+
+    `I'
+          Unsigned 8-bit constant (0-255)
+
+    `J'
+          Unsigned 12-bit constant (0-4095)
+
+    `K'
+          Signed 16-bit constant (-32768-32767)
+
+    `L'
+          Unsigned 16-bit constant (0-65535)
+
+    `Q'
+          Memory reference without index register
+
+    `S'
+          Symbolic constant suitable for use with the `larl' instruction
+
+_Xstormy16--`stormy16.h'_
+
+    `a'
+          Register r0.
+
+    `b'
+          Register r1.
+
+    `c'
+          Register r2.
+
+    `d'
+          Register r8.
+
+    `e'
+          Registers r0 through r7.
+
+    `t'
+          Registers r0 and r1.
+
+    `y'
+          The carry register.
+
+    `z'
+          Registers r8 and r9.
+
+    `I'
+          A constant between 0 and 3 inclusive.
+
+    `J'
+          A constant that has exactly one bit set.
+
+    `K'
+          A constant that has exactly one bit clear.
+
+    `L'
+          A constant between 0 and 255 inclusive.
+
+    `M'
+          A constant between -255 and 0 inclusive.
+
+    `N'
+          A constant between -3 and 0 inclusive.
+
+    `O'
+          A constant between 1 and 4 inclusive.
+
+    `P'
+          A constant between -4 and -1 inclusive.
+
+    `Q'
+          A memory reference that is a stack push.
+
+    `R'
+          A memory reference that is a stack pop.
+
+    `S'
+          A memory reference that refers to an constant address of
+          known value.
+
+    `T'
+          The register indicated by Rx (not implemented yet).
+
+    `U'
+          A constant that is not between 2 and 15 inclusive.
+
+_Xtensa--`xtensa.h'_
+
+    `a'
+          General-purpose 32-bit register
+
+    `b'
+          One-bit boolean register
+
+    `A'
+          MAC16 40-bit accumulator register
+
+    `I'
+          Signed 12-bit integer constant, for use in MOVI instructions
+
+    `J'
+          Signed 8-bit integer constant, for use in ADDI instructions
+
+    `K'
+          Integer constant valid for BccI instructions
+
+    `L'
+          Unsigned constant valid for BccUI instructions
+
+
+File: gcc.info,  Node: Asm Labels,  Next: Explicit Reg Vars,  Prev: Constraints,  Up: C Extensions
+
+Controlling Names Used in Assembler Code
+========================================
+
+   You can specify the name to be used in the assembler code for a C
+function or variable by writing the `asm' (or `__asm__') keyword after
+the declarator as follows:
+
+     int foo asm ("myfoo") = 2;
+
+This specifies that the name to be used for the variable `foo' in the
+assembler code should be `myfoo' rather than the usual `_foo'.
+
+   On systems where an underscore is normally prepended to the name of
+a C function or variable, this feature allows you to define names for
+the linker that do not start with an underscore.
+
+   It does not make sense to use this feature with a non-static local
+variable since such variables do not have assembler names.  If you are
+trying to put the variable in a particular register, see *Note Explicit
+Reg Vars::.  GCC presently accepts such code with a warning, but will
+probably be changed to issue an error, rather than a warning, in the
+future.
+
+   You cannot use `asm' in this way in a function _definition_; but you
+can get the same effect by writing a declaration for the function
+before its definition and putting `asm' there, like this:
+
+     extern func () asm ("FUNC");
+     
+     func (x, y)
+          int x, y;
+     ...
+
+   It is up to you to make sure that the assembler names you choose do
+not conflict with any other assembler symbols.  Also, you must not use a
+register name; that would produce completely invalid assembler code.
+GCC does not as yet have the ability to store static variables in
+registers.  Perhaps that will be added.
+
+
+File: gcc.info,  Node: Explicit Reg Vars,  Next: Alternate Keywords,  Prev: Asm Labels,  Up: C Extensions
+
+Variables in Specified Registers
+================================
+
+   GNU C allows you to put a few global variables into specified
+hardware registers.  You can also specify the register in which an
+ordinary register variable should be allocated.
+
+   * Global register variables reserve registers throughout the program.
+     This may be useful in programs such as programming language
+     interpreters which have a couple of global variables that are
+     accessed very often.
+
+   * Local register variables in specific registers do not reserve the
+     registers.  The compiler's data flow analysis is capable of
+     determining where the specified registers contain live values, and
+     where they are available for other uses.  Stores into local
+     register variables may be deleted when they appear to be dead
+     according to dataflow analysis.  References to local register
+     variables may be deleted or moved or simplified.
+
+     These local variables are sometimes convenient for use with the
+     extended `asm' feature (*note Extended Asm::), if you want to
+     write one output of the assembler instruction directly into a
+     particular register.  (This will work provided the register you
+     specify fits the constraints specified for that operand in the
+     `asm'.)
+
+* Menu:
+
+* Global Reg Vars::
+* Local Reg Vars::
+
+
+File: gcc.info,  Node: Global Reg Vars,  Next: Local Reg Vars,  Up: Explicit Reg Vars
+
+Defining Global Register Variables
+----------------------------------
+
+   You can define a global register variable in GNU C like this:
+
+     register int *foo asm ("a5");
+
+Here `a5' is the name of the register which should be used.  Choose a
+register which is normally saved and restored by function calls on your
+machine, so that library routines will not clobber it.
+
+   Naturally the register name is cpu-dependent, so you would need to
+conditionalize your program according to cpu type.  The register `a5'
+would be a good choice on a 68000 for a variable of pointer type.  On
+machines with register windows, be sure to choose a "global" register
+that is not affected magically by the function call mechanism.
+
+   In addition, operating systems on one type of cpu may differ in how
+they name the registers; then you would need additional conditionals.
+For example, some 68000 operating systems call this register `%a5'.
+
+   Eventually there may be a way of asking the compiler to choose a
+register automatically, but first we need to figure out how it should
+choose and how to enable you to guide the choice.  No solution is
+evident.
+
+   Defining a global register variable in a certain register reserves
+that register entirely for this use, at least within the current
+compilation.  The register will not be allocated for any other purpose
+in the functions in the current compilation.  The register will not be
+saved and restored by these functions.  Stores into this register are
+never deleted even if they would appear to be dead, but references may
+be deleted or moved or simplified.
+
+   It is not safe to access the global register variables from signal
+handlers, or from more than one thread of control, because the system
+library routines may temporarily use the register for other things
+(unless you recompile them specially for the task at hand).
+
+   It is not safe for one function that uses a global register variable
+to call another such function `foo' by way of a third function `lose'
+that was compiled without knowledge of this variable (i.e. in a
+different source file in which the variable wasn't declared).  This is
+because `lose' might save the register and put some other value there.
+For example, you can't expect a global register variable to be
+available in the comparison-function that you pass to `qsort', since
+`qsort' might have put something else in that register.  (If you are
+prepared to recompile `qsort' with the same global register variable,
+you can solve this problem.)
+
+   If you want to recompile `qsort' or other source files which do not
+actually use your global register variable, so that they will not use
+that register for any other purpose, then it suffices to specify the
+compiler option `-ffixed-REG'.  You need not actually add a global
+register declaration to their source code.
+
+   A function which can alter the value of a global register variable
+cannot safely be called from a function compiled without this variable,
+because it could clobber the value the caller expects to find there on
+return.  Therefore, the function which is the entry point into the part
+of the program that uses the global register variable must explicitly
+save and restore the value which belongs to its caller.
+
+   On most machines, `longjmp' will restore to each global register
+variable the value it had at the time of the `setjmp'.  On some
+machines, however, `longjmp' will not change the value of global
+register variables.  To be portable, the function that called `setjmp'
+should make other arrangements to save the values of the global register
+variables, and to restore them in a `longjmp'.  This way, the same
+thing will happen regardless of what `longjmp' does.
+
+   All global register variable declarations must precede all function
+definitions.  If such a declaration could appear after function
+definitions, the declaration would be too late to prevent the register
+from being used for other purposes in the preceding functions.
+
+   Global register variables may not have initial values, because an
+executable file has no means to supply initial contents for a register.
+
+   On the Sparc, there are reports that g3 ... g7 are suitable
+registers, but certain library functions, such as `getwd', as well as
+the subroutines for division and remainder, modify g3 and g4.  g1 and
+g2 are local temporaries.
+
+   On the 68000, a2 ... a5 should be suitable, as should d2 ... d7.  Of
+course, it will not do to use more than a few of those.
+
+
+File: gcc.info,  Node: Local Reg Vars,  Prev: Global Reg Vars,  Up: Explicit Reg Vars
+
+Specifying Registers for Local Variables
+----------------------------------------
+
+   You can define a local register variable with a specified register
+like this:
+
+     register int *foo asm ("a5");
+
+Here `a5' is the name of the register which should be used.  Note that
+this is the same syntax used for defining global register variables,
+but for a local variable it would appear within a function.
+
+   Naturally the register name is cpu-dependent, but this is not a
+problem, since specific registers are most often useful with explicit
+assembler instructions (*note Extended Asm::).  Both of these things
+generally require that you conditionalize your program according to cpu
+type.
+
+   In addition, operating systems on one type of cpu may differ in how
+they name the registers; then you would need additional conditionals.
+For example, some 68000 operating systems call this register `%a5'.
+
+   Defining such a register variable does not reserve the register; it
+remains available for other uses in places where flow control determines
+the variable's value is not live.  However, these registers are made
+unavailable for use in the reload pass; excessive use of this feature
+leaves the compiler too few available registers to compile certain
+functions.
+
+   This option does not guarantee that GCC will generate code that has
+this variable in the register you specify at all times.  You may not
+code an explicit reference to this register in an `asm' statement and
+assume it will always refer to this variable.
+
+   Stores into local register variables may be deleted when they appear
+to be dead according to dataflow analysis.  References to local
+register variables may be deleted or moved or simplified.
+
+
+File: gcc.info,  Node: Alternate Keywords,  Next: Incomplete Enums,  Prev: Explicit Reg Vars,  Up: C Extensions
+
+Alternate Keywords
+==================
+
+   The option `-traditional' disables certain keywords; `-ansi' and the
+various `-std' options disable certain others.  This causes trouble
+when you want to use GNU C extensions, or ISO C features, in a
+general-purpose header file that should be usable by all programs,
+including ISO C programs and traditional ones.  The keywords `asm',
+`typeof' and `inline' cannot be used since they won't work in a program
+compiled with `-ansi' (although `inline' can be used in a program
+compiled with `-std=c99'), while the keywords `const', `volatile',
+`signed', `typeof' and `inline' won't work in a program compiled with
+`-traditional'.  The ISO C99 keyword `restrict' is only available when
+`-std=gnu99' (which will eventually be the default) or `-std=c99' (or
+the equivalent `-std=iso9899:1999') is used.
+
+   The way to solve these problems is to put `__' at the beginning and
+end of each problematical keyword.  For example, use `__asm__' instead
+of `asm', `__const__' instead of `const', and `__inline__' instead of
+`inline'.
+
+   Other C compilers won't accept these alternative keywords; if you
+want to compile with another compiler, you can define the alternate
+keywords as macros to replace them with the customary keywords.  It
+looks like this:
+
+     #ifndef __GNUC__
+     #define __asm__ asm
+     #endif
+
+   `-pedantic' and other options cause warnings for many GNU C
+extensions.  You can prevent such warnings within one expression by
+writing `__extension__' before the expression.  `__extension__' has no
+effect aside from this.
+
+
+File: gcc.info,  Node: Incomplete Enums,  Next: Function Names,  Prev: Alternate Keywords,  Up: C Extensions
+
+Incomplete `enum' Types
+=======================
+
+   You can define an `enum' tag without specifying its possible values.
+This results in an incomplete type, much like what you get if you write
+`struct foo' without describing the elements.  A later declaration
+which does specify the possible values completes the type.
+
+   You can't allocate variables or storage using the type while it is
+incomplete.  However, you can work with pointers to that type.
+
+   This extension may not be very useful, but it makes the handling of
+`enum' more consistent with the way `struct' and `union' are handled.
+
+   This extension is not supported by GNU C++.
+
+
+File: gcc.info,  Node: Function Names,  Next: Return Address,  Prev: Incomplete Enums,  Up: C Extensions
+
+Function Names as Strings
+=========================
+
+   GCC predefines two magic identifiers to hold the name of the current
+function.  The identifier `__FUNCTION__' holds the name of the function
+as it appears in the source.  The identifier `__PRETTY_FUNCTION__'
+holds the name of the function pretty printed in a language specific
+fashion.
+
+   These names are always the same in a C function, but in a C++
+function they may be different.  For example, this program:
+
+     extern "C" {
+     extern int printf (char *, ...);
+     }
+     
+     class a {
+      public:
+       sub (int i)
+         {
+           printf ("__FUNCTION__ = %s\n", __FUNCTION__);
+           printf ("__PRETTY_FUNCTION__ = %s\n", __PRETTY_FUNCTION__);
+         }
+     };
+     
+     int
+     main (void)
+     {
+       a ax;
+       ax.sub (0);
+       return 0;
+     }
+
+gives this output:
+
+     __FUNCTION__ = sub
+     __PRETTY_FUNCTION__ = int  a::sub (int)
+
+   The compiler automagically replaces the identifiers with a string
+literal containing the appropriate name.  Thus, they are neither
+preprocessor macros, like `__FILE__' and `__LINE__', nor variables.
+This means that they catenate with other string literals, and that they
+can be used to initialize char arrays.  For example
+
+     char here[] = "Function " __FUNCTION__ " in " __FILE__;
+
+   On the other hand, `#ifdef __FUNCTION__' does not have any special
+meaning inside a function, since the preprocessor does not do anything
+special with the identifier `__FUNCTION__'.
+
+   Note that these semantics are deprecated, and that GCC 3.2 will
+handle `__FUNCTION__' and `__PRETTY_FUNCTION__' the same way as
+`__func__'.  `__func__' is defined by the ISO standard C99:
+
+     The identifier `__func__' is implicitly declared by the translator
+     as if, immediately following the opening brace of each function
+     definition, the declaration
+          static const char __func__[] = "function-name";
+     
+     appeared, where function-name is the name of the lexically-enclosing
+     function.  This name is the unadorned name of the function.
+
+   By this definition, `__func__' is a variable, not a string literal.
+In particular, `__func__' does not catenate with other string literals.
+
+   In `C++', `__FUNCTION__' and `__PRETTY_FUNCTION__' are variables,
+declared in the same way as `__func__'.
+
+
+File: gcc.info,  Node: Return Address,  Next: Vector Extensions,  Prev: Function Names,  Up: C Extensions
+
+Getting the Return or Frame Address of a Function
+=================================================
+
+   These functions may be used to get information about the callers of a
+function.
+
+ - Built-in Function: void * __builtin_return_address (unsigned int
+          LEVEL)
+     This function returns the return address of the current function,
+     or of one of its callers.  The LEVEL argument is number of frames
+     to scan up the call stack.  A value of `0' yields the return
+     address of the current function, a value of `1' yields the return
+     address of the caller of the current function, and so forth.
+
+     The LEVEL argument must be a constant integer.
+
+     On some machines it may be impossible to determine the return
+     address of any function other than the current one; in such cases,
+     or when the top of the stack has been reached, this function will
+     return `0' or a random value. In addition,
+     `__builtin_frame_address' may be used to determine if the top of
+     the stack has been reached.
+
+     This function should only be used with a nonzero argument for
+     debugging purposes.
+
+ - Built-in Function: void * __builtin_frame_address (unsigned int
+          LEVEL)
+     This function is similar to `__builtin_return_address', but it
+     returns the address of the function frame rather than the return
+     address of the function.  Calling `__builtin_frame_address' with a
+     value of `0' yields the frame address of the current function, a
+     value of `1' yields the frame address of the caller of the current
+     function, and so forth.
+
+     The frame is the area on the stack which holds local variables and
+     saved registers.  The frame address is normally the address of the
+     first word pushed on to the stack by the function.  However, the
+     exact definition depends upon the processor and the calling
+     convention.  If the processor has a dedicated frame pointer
+     register, and the function has a frame, then
+     `__builtin_frame_address' will return the value of the frame
+     pointer register.
+
+     On some machines it may be impossible to determine the frame
+     address of any function other than the current one; in such cases,
+     or when the top of the stack has been reached, this function will
+     return `0' if the first frame pointer is properly initialized by
+     the startup code.
+
+     This function should only be used with a nonzero argument for
+     debugging purposes.
+
+
+File: gcc.info,  Node: Vector Extensions,  Next: Other Builtins,  Prev: Return Address,  Up: C Extensions
+
+Using vector instructions through built-in functions
+====================================================
+
+   On some targets, the instruction set contains SIMD vector
+instructions that operate on multiple values contained in one large
+register at the same time.  For example, on the i386 the MMX, 3Dnow!
+and SSE extensions can be used this way.
+
+   The first step in using these extensions is to provide the necessary
+data types.  This should be done using an appropriate `typedef':
+
+     typedef int v4si __attribute__ ((mode(V4SI)));
+
+   The base type `int' is effectively ignored by the compiler, the
+actual properties of the new type `v4si' are defined by the
+`__attribute__'.  It defines the machine mode to be used; for vector
+types these have the form `VNB'; N should be the number of elements in
+the vector, and B should be the base mode of the individual elements.
+The following can be used as base modes:
+
+`QI'
+     An integer that is as wide as the smallest addressable unit,
+     usually 8 bits.
+
+`HI'
+     An integer, twice as wide as a QI mode integer, usually 16 bits.
+
+`SI'
+     An integer, four times as wide as a QI mode integer, usually 32
+     bits.
+
+`DI'
+     An integer, eight times as wide as a QI mode integer, usually 64
+     bits.
+
+`SF'
+     A floating point value, as wide as a SI mode integer, usually 32
+     bits.
+
+`DF'
+     A floating point value, as wide as a DI mode integer, usually 64
+     bits.
+
+   Not all base types or combinations are always valid; which modes can
+be used is determined by the target machine.  For example, if
+targetting the i386 MMX extensions, only `V8QI', `V4HI' and `V2SI' are
+allowed modes.
+
+   There are no `V1xx' vector modes - they would be identical to the
+corresponding base mode.
+
+   There is no distinction between signed and unsigned vector modes.
+This distinction is made by the operations that perform on the vectors,
+not by the data type.
+
+   The types defined in this manner are somewhat special, they cannot be
+used with most normal C operations (i.e., a vector addition can _not_
+be represented by a normal addition of two vector type variables).  You
+can declare only variables and use them in function calls and returns,
+as well as in assignments and some casts.  It is possible to cast from
+one vector type to another, provided they are of the same size (in
+fact, you can also cast vectors to and from other datatypes of the same
+size).
+
+   A port that supports vector operations provides a set of built-in
+functions that can be used to operate on vectors.  For example, a
+function to add two vectors and multiply the result by a third could
+look like this:
+
+     v4si f (v4si a, v4si b, v4si c)
+     {
+       v4si tmp = __builtin_addv4si (a, b);
+       return __builtin_mulv4si (tmp, c);
+     }
+
+
+File: gcc.info,  Node: Other Builtins,  Next: Target Builtins,  Prev: Vector Extensions,  Up: C Extensions
+
+Other built-in functions provided by GCC
+========================================
+
+   GCC provides a large number of built-in functions other than the ones
+mentioned above.  Some of these are for internal use in the processing
+of exceptions or variable-length argument lists and will not be
+documented here because they may change from time to time; we do not
+recommend general use of these functions.
+
+   The remaining functions are provided for optimization purposes.
+
+   GCC includes built-in versions of many of the functions in the
+standard C library.  The versions prefixed with `__builtin_' will
+always be treated as having the same meaning as the C library function
+even if you specify the `-fno-builtin' option. (*note C Dialect
+Options::) Many of these functions are only optimized in certain cases;
+if they are not optimized in a particular case, a call to the library
+function will be emitted.
+
+   The functions `abort', `exit', `_Exit' and `_exit' are recognized
+and presumed not to return, but otherwise are not built in.  `_exit' is
+not recognized in strict ISO C mode (`-ansi', `-std=c89' or
+`-std=c99').  `_Exit' is not recognized in strict C89 mode (`-ansi' or
+`-std=c89').
+
+   Outside strict ISO C mode, the functions `alloca', `bcmp', `bzero',
+`index', `rindex', `ffs', `fputs_unlocked', `printf_unlocked' and
+`fprintf_unlocked' may be handled as built-in functions.  All these
+functions have corresponding versions prefixed with `__builtin_', which
+may be used even in strict C89 mode.
+
+   The ISO C99 functions `conj', `conjf', `conjl', `creal', `crealf',
+`creall', `cimag', `cimagf', `cimagl', `llabs' and `imaxabs' are
+handled as built-in functions except in strict ISO C89 mode.  There are
+also built-in versions of the ISO C99 functions `cosf', `cosl',
+`fabsf', `fabsl', `sinf', `sinl', `sqrtf', and `sqrtl', that are
+recognized in any mode since ISO C89 reserves these names for the
+purpose to which ISO C99 puts them.  All these functions have
+corresponding versions prefixed with `__builtin_'.
+
+   The ISO C89 functions `abs', `cos', `fabs', `fprintf', `fputs',
+`labs', `memcmp', `memcpy', `memset', `printf', `sin', `sqrt', `strcat',
+`strchr', `strcmp', `strcpy', `strcspn', `strlen', `strncat',
+`strncmp', `strncpy', `strpbrk', `strrchr', `strspn', and `strstr' are
+all recognized as built-in functions unless `-fno-builtin' is specified
+(or `-fno-builtin-FUNCTION' is specified for an individual function).
+All of these functions have corresponding versions prefixed with
+`__builtin_'.
+
+   GCC provides built-in versions of the ISO C99 floating point
+comparison macros that avoid raising exceptions for unordered operands.
+They have the same names as the standard macros ( `isgreater',
+`isgreaterequal', `isless', `islessequal', `islessgreater', and
+`isunordered') , with `__builtin_' prefixed.  We intend for a library
+implementor to be able to simply `#define' each standard macro to its
+built-in equivalent.
+
+ - Built-in Function: int __builtin_types_compatible_p (TYPE1, TYPE2)
+     You can use the built-in function `__builtin_types_compatible_p' to
+     determine whether two types are the same.
+
+     This built-in function returns 1 if the unqualified versions of the
+     types TYPE1 and TYPE2 (which are types, not expressions) are
+     compatible, 0 otherwise.  The result of this built-in function can
+     be used in integer constant expressions.
+
+     This built-in function ignores top level qualifiers (e.g., `const',
+     `volatile').  For example, `int' is equivalent to `const int'.
+
+     The type `int[]' and `int[5]' are compatible.  On the other hand,
+     `int' and `char *' are not compatible, even if the size of their
+     types, on the particular architecture are the same.  Also, the
+     amount of pointer indirection is taken into account when
+     determining similarity.  Consequently, `short *' is not similar to
+     `short **'.  Furthermore, two types that are typedefed are
+     considered compatible if their underlying types are compatible.
+
+     An `enum' type is considered to be compatible with another `enum'
+     type.  For example, `enum {foo, bar}' is similar to `enum {hot,
+     dog}'.
+
+     You would typically use this function in code whose execution
+     varies depending on the arguments' types.  For example:
+
+          #define foo(x)                                                  \
+            ({                                                           \
+              typeof (x) tmp;                                             \
+              if (__builtin_types_compatible_p (typeof (x), long double)) \
+                tmp = foo_long_double (tmp);                              \
+              else if (__builtin_types_compatible_p (typeof (x), double)) \
+                tmp = foo_double (tmp);                                   \
+              else if (__builtin_types_compatible_p (typeof (x), float))  \
+                tmp = foo_float (tmp);                                    \
+              else                                                        \
+                abort ();                                                 \
+              tmp;                                                        \
+            })
+
+     _Note:_ This construct is only available for C.
+
+
+ - Built-in Function: TYPE __builtin_choose_expr (CONST_EXP, EXP1, EXP2)
+     You can use the built-in function `__builtin_choose_expr' to
+     evaluate code depending on the value of a constant expression.
+     This built-in function returns EXP1 if CONST_EXP, which is a
+     constant expression that must be able to be determined at compile
+     time, is nonzero.  Otherwise it returns 0.
+
+     This built-in function is analogous to the `? :' operator in C,
+     except that the expression returned has its type unaltered by
+     promotion rules.  Also, the built-in function does not evaluate
+     the expression that was not chosen.  For example, if CONST_EXP
+     evaluates to true, EXP2 is not evaluated even if it has
+     side-effects.
+
+     This built-in function can return an lvalue if the chosen argument
+     is an lvalue.
+
+     If EXP1 is returned, the return type is the same as EXP1's type.
+     Similarly, if EXP2 is returned, its return type is the same as
+     EXP2.
+
+     Example:
+
+          #define foo(x)                                                               \
+            __builtin_choose_expr (__builtin_types_compatible_p (typeof (x), double),  \
+              foo_double (x),                                                          \
+              __builtin_choose_expr (__builtin_types_compatible_p (typeof (x), float), \
+                foo_float (x),                                                         \
+                /* The void expression results in a compile-time error             \
+                   when assigning the result to something.  */                     \
+                (void)0))
+
+     _Note:_ This construct is only available for C.  Furthermore, the
+     unused expression (EXP1 or EXP2 depending on the value of
+     CONST_EXP) may still generate syntax errors.  This may change in
+     future revisions.
+
+
+ - Built-in Function: int __builtin_constant_p (EXP)
+     You can use the built-in function `__builtin_constant_p' to
+     determine if a value is known to be constant at compile-time and
+     hence that GCC can perform constant-folding on expressions
+     involving that value.  The argument of the function is the value
+     to test.  The function returns the integer 1 if the argument is
+     known to be a compile-time constant and 0 if it is not known to be
+     a compile-time constant.  A return of 0 does not indicate that the
+     value is _not_ a constant, but merely that GCC cannot prove it is
+     a constant with the specified value of the `-O' option.
+
+     You would typically use this function in an embedded application
+     where memory was a critical resource.  If you have some complex
+     calculation, you may want it to be folded if it involves
+     constants, but need to call a function if it does not.  For
+     example:
+
+          #define Scale_Value(X)      \
+            (__builtin_constant_p (X) \
+            ? ((X) * SCALE + OFFSET) : Scale (X))
+
+     You may use this built-in function in either a macro or an inline
+     function.  However, if you use it in an inlined function and pass
+     an argument of the function as the argument to the built-in, GCC
+     will never return 1 when you call the inline function with a
+     string constant or compound literal (*note Compound Literals::)
+     and will not return 1 when you pass a constant numeric value to
+     the inline function unless you specify the `-O' option.
+
+     You may also use `__builtin_constant_p' in initializers for static
+     data.  For instance, you can write
+
+          static const int table[] = {
+             __builtin_constant_p (EXPRESSION) ? (EXPRESSION) : -1,
+             /* ... */
+          };
+
+     This is an acceptable initializer even if EXPRESSION is not a
+     constant expression.  GCC must be more conservative about
+     evaluating the built-in in this case, because it has no
+     opportunity to perform optimization.
+
+     Previous versions of GCC did not accept this built-in in data
+     initializers.  The earliest version where it is completely safe is
+     3.0.1.
+
+ - Built-in Function: long __builtin_expect (long EXP, long C)
+     You may use `__builtin_expect' to provide the compiler with branch
+     prediction information.  In general, you should prefer to use
+     actual profile feedback for this (`-fprofile-arcs'), as
+     programmers are notoriously bad at predicting how their programs
+     actually perform.  However, there are applications in which this
+     data is hard to collect.
+
+     The return value is the value of EXP, which should be an integral
+     expression.  The value of C must be a compile-time constant.  The
+     semantics of the built-in are that it is expected that EXP == C.
+     For example:
+
+          if (__builtin_expect (x, 0))
+            foo ();
+
+     would indicate that we do not expect to call `foo', since we
+     expect `x' to be zero.  Since you are limited to integral
+     expressions for EXP, you should use constructions such as
+
+          if (__builtin_expect (ptr != NULL, 1))
+            error ();
+
+     when testing pointer or floating-point values.
+
+ - Built-in Function: void __builtin_prefetch (const void *ADDR, ...)
+     This function is used to minimize cache-miss latency by moving
+     data into a cache before it is accessed.  You can insert calls to
+     `__builtin_prefetch' into code for which you know addresses of
+     data in memory that is likely to be accessed soon.  If the target
+     supports them, data prefetch instructions will be generated.  If
+     the prefetch is done early enough before the access then the data
+     will be in the cache by the time it is accessed.
+
+     The value of ADDR is the address of the memory to prefetch.  There
+     are two optional arguments, RW and LOCALITY.  The value of RW is a
+     compile-time constant one or zero; one means that the prefetch is
+     preparing for a write to the memory address and zero, the default,
+     means that the prefetch is preparing for a read.  The value
+     LOCALITY must be a compile-time constant integer between zero and
+     three.  A value of zero means that the data has no temporal
+     locality, so it need not be left in the cache after the access.  A
+     value of three means that the data has a high degree of temporal
+     locality and should be left in all levels of cache possible.
+     Values of one and two mean, respectively, a low or moderate degree
+     of temporal locality.  The default is three.
+
+          for (i = 0; i < n; i++)
+            {
+              a[i] = a[i] + b[i];
+              __builtin_prefetch (&a[i+j], 1, 1);
+              __builtin_prefetch (&b[i+j], 0, 1);
+              /* ... */
+            }
+
+     Data prefetch does not generate faults if ADDR is invalid, but the
+     address expression itself must be valid.  For example, a prefetch
+     of `p->next' will not fault if `p->next' is not a valid address,
+     but evaluation will fault if `p' is not a valid address.
+
+     If the target does not support data prefetch, the address
+     expression is evaluated if it includes side effects but no other
+     code is generated and GCC does not issue a warning.
+
+
+File: gcc.info,  Node: Target Builtins,  Next: Pragmas,  Prev: Other Builtins,  Up: C Extensions
+
+Built-in Functions Specific to Particular Target Machines
+=========================================================
+
+   On some target machines, GCC supports many built-in functions
+specific to those machines.  Generally these generate calls to specific
+machine instructions, but allow the compiler to schedule those calls.
+
+* Menu:
+
+* X86 Built-in Functions::
+* PowerPC AltiVec Built-in Functions::
+

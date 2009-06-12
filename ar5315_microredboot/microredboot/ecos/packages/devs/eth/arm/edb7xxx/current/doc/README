@@ -1,0 +1,18 @@
+Preliminary documentation for Cirrus Logic EDB72xx Ethernet driver
+==================================================================
+
+This driver has been tested on both the EDB7211 (EDB7111-2) and
+EDB7209 boards.  
+
+There is a problem with some EDB7209 boards which keeps the ethernet
+chip from generating interrupts.  The following hardware change will
+allow this (and thus the driver to work), but it precludes the
+generation of interrupts when using the parallel port.
+
+   Remove resistor R168
+   Remove all jumpers from JP45
+
+This problem is known to exist at least through EDB7209-2B.0.  It is
+unknown [by the eCos team] if later revisions from Cirrus Logic have
+fixed this problem.
+

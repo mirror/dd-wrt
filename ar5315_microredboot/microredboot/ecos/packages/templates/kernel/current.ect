@@ -1,0 +1,32 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration template_kernel {
+    description "This configuration provides HAL, infrastructure, and the kernel packages." ;
+    package     CYGPKG_HAL current ;
+    package     CYGPKG_IO current ;
+    package     CYGPKG_IO_SERIAL current ;
+    package     CYGPKG_INFRA current ;
+    package     CYGPKG_KERNEL current ;
+    package     CYGPKG_ERROR current ;
+    package     CYGPKG_MEMALLOC current ;
+    package     CYGPKG_ISOINFRA current ;
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    inferred_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    inferred_value 1 <cyg/error/strerror.h>
+};

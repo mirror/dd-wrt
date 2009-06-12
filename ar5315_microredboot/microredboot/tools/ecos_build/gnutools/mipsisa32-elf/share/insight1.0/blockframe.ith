@@ -1,0 +1,63 @@
+# Class definitions for blocks and frames for GDBtk.
+# Copyright 1997, 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+class Block {
+
+  public {
+    method constructor {start end args}
+    method destructor {}
+    method variables {}
+    method update {}
+    method info {}
+  }
+
+  private {
+    # Start and end address for this block
+    variable _start
+    variable _end
+
+    # List of variables (new) variables defined in this block
+    variable _variables
+
+    method _findVariables {}
+  }
+}
+
+class Frame {
+
+  public {
+    method constructor {addr}
+    method destructor {}
+    method variables {}
+    method update {}
+    method new {}
+    method old {}
+    method deleteOld {}
+    method address {} { return $_addr }
+  }
+
+  private {
+    method _createBlocks {blocks}
+    method _addBlock {block}
+    method _findBlock {block}
+    method _findBlockIndex {block}
+    method _removeBlock {blockObj}
+    method _oldBlocks {}
+
+    # Our address
+    variable _addr
+
+    # A list of all blocks
+    variable _blocks
+  }
+}

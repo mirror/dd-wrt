@@ -1,0 +1,92 @@
+2004-02-26 Yuxin Jiang <yjiang@matrics.com>
+
+	* src/sntp.c: When a new server is added to the list of unicast
+	servers don't wait 30 minutes before querying it for the first
+	time.
+
+2003-10-15  Dan Jakubiec  <djakubiec@yahoo.com>
+            Andrew Lunn   <andrew.lunn@ascom.ch>
+
+	* src/sntp.c: Added DHCP support for SNTP unicast mode.
+	* src/sntp.cdl: Added DHCP support for SNTP unicast mode.
+	* src/sntp.h: Removed UDP port constant.
+	* src/sntp1.c: Added test code for SNTP unicast mode.
+	* src/sntp.sgml: Added documentation for SNTP unicast mode.
+
+2003-09-29  Dan Jakubiec  <firstname.lastname@systech.com>
+
+	* src/sntp.c: Added support for SNTP unicast mode.
+	* src/sntp.h: Added support for SNTP unicast mode.
+	* src/sntp.cdl: Added support for SNTP unicast mode.
+
+2003-05-19  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/sntp.c: Added support for IPv6 multicast NTP packets.
+
+2003-04-09  Michael Checky  <Michael_Checky@Thermoking.com>
+
+	* src/sntp.c: In function sntp_fn() changed 'version' to
+	'new_srv.version' in the CYG_TRACE1() call.
+
+2003-02-25  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/sntp.h: Include <cyg/infra/cyg_type.h> for __externC.
+
+2003-02-25  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/sntp1.c (net_test): Strip the trailing "\n" making it more
+	  readable.
+	
+2003-02-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* doc/sntp.sgml: Added license banner and added missing </para>
+	* include/sntp.h (cyg_sntp_start): C++ safe
+	* cdl/sntp.cdl: Stricture requirements and same description as in
+  	  ecos.db.  Only build the test if CYGPKH_NET_BUILD_HW_TESTS
+	* tests/sntp1.c (net_test): Check we have the required
+	  packages. Require the time to be within 90 days of the build
+	  date of the test
+		
+	
+2003-02-16  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/sntp.c: First import of SNTP client code.
+	* include/sntp.c: Ditto
+	* test/sntp1.c: Ditto
+	* cdl/sntp.cdl: Ditto
+	* doc/sntp.sgml: Ditto
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 2003 Andrew Lunn
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

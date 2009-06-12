@@ -1,0 +1,787 @@
+# ====================================================================
+#
+#      net.cdl
+#
+#      Networking configuration data
+#
+# ====================================================================
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2000, 2001, 2002 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-11-29
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_NET {
+    display       "Basic networking framework"
+    doc           ref/net-common-tcpip.html
+    include_dir   .
+    requires      CYGPKG_IO
+    requires      CYGPKG_ISOINFRA
+    requires      CYGINT_ISO_C_TIME_TYPES
+    requires      CYGINT_ISO_STRERROR
+    requires      CYGINT_ISO_ERRNO
+    requires      CYGINT_ISO_ERRNO_CODES
+    requires      CYGINT_ISO_MALLOC
+    requires      CYGINT_ISO_STRING_BSD_FUNCS
+    description   "Basic networking support, including TCP/IP."
+
+    cdl_interface     CYGPKG_NET_DRIVER_FRAMEWORK {
+        display   "Suitable driver framework interface, used by network package"
+        description "
+          In order to decouple the network stack from driver specifics, the
+          driver framework must be defined in a separate package."
+    }
+
+    # Commonly exported infrastructure
+    implements    CYGINT_ISO_NETDB_PROTO
+    implements    CYGINT_ISO_NETDB_SERV
+    requires      { CYGBLD_ISO_NETDB_PROTO_HEADER == "<net/netdb.h>" }
+    requires      { CYGBLD_ISO_NETDB_SERV_HEADER == "<net/netdb.h>" }
+
+    cdl_interface CYGPKG_NET_STACK {
+        display   "Suitable network stack implementation, used by network package"
+        description "
+          In order to decouple the network support from most stack specifics, the
+          actual stack implementation must be defined in a separate package."
+    }
+    requires      { CYGPKG_NET_STACK == 1 }
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/system.h>"
+        puts $::cdl_header "#include CYGDAT_NET_STACK_CFG"
+    }
+
+    cdl_interface CYGPKG_NET_STACK_INET {
+        display   "Network stack support for IPv4"
+    }
+    cdl_interface CYGPKG_NET_STACK_INET6 {
+        display   "Network stack support for IPv6"
+    }
+    cdl_interface CYGPKG_NET_STACK_IPSEC {
+        display   "Network stack support for IPSEC"
+    }
+
+    cdl_component CYGPKG_NET_INET {
+        display       "INET support"
+        active_if     CYGPKG_NET_STACK_INET
+        flavor        bool
+        no_define
+        default_value 1
+        description   "
+            This option enables support for INET (IP) network processing."
+        define INET
+        compile \
+            inet_addr.c \
+            inet_ntoa.c \
+            inet_ntop.c \
+            inet_pton.c \
+            bootp_support.c \
+            dhcp_support.c \
+            dhcp_prot.c \
+            network_support.c \
+            getproto.c \
+            getserv.c 
+        compile   getaddrinfo.c \
+            ifaddrs.c
+
+        cdl_option CYGPKG_NET_INET6 {
+            display       "IPv6 support"
+            active_if     CYGPKG_NET_STACK_INET6
+            requires      CYGINT_IO_ETH_MULTICAST
+            flavor        bool
+            default_value 0
+            description   "
+                This option enables support for IPv6 networks."
+            define INET6
+        }
+
+        cdl_option CYGPKG_NET_IPSEC {
+            display       "IPSEC support"
+            active_if     CYGPKG_NET_STACK_IPSEC
+            flavor        bool
+            default_value 1
+            description   "
+                This option enables support for IPSEC"
+            define IPSEC
+            define IPSEC_ESP
+        }
+        cdl_option CYGSEM_NET_ROUTING {
+            display "Multicast routing support"
+            flavor  bool
+            no_define
+            default_value 0
+            description   "
+                This option enables support for packet routing."
+            define MROUTING
+        }
+
+        cdl_option CYGSEM_NET_RANDOMID {
+            display "Use random sequence for IP packet identifiers"
+            flavor  bool
+            no_define
+            default_value 0
+            description   "
+                This option enables the use of random IP packet sequence
+            identifiers, rather than a purely sequential sequence.  It is
+            believed that use of random identifiers improves security, at
+            a fairly substantial computational overhead."
+            define RANDOM_IP_ID
+        }
+
+    }
+
+    cdl_component CYGPKG_NET_TFTP {
+        display        "TFTP (RFC-1350) support"
+        requires       CYGPKG_NET_INET
+        flavor         bool
+        default_value  1
+        compile        tftp_client.c \
+                       tftp_server.c
+        description    "
+          This option provides additional library support for
+          the TFTP (Trivial File Transfer Protocol)."
+
+        cdl_option CYGPKG_NET_TFTPD_THREAD_PRIORITY {
+            display "Priority level for TFTP daemon thread."
+            flavor  data
+            default_value 10
+            description   "
+            This option allows the thread priority level used by the
+            TFTP server thread to be adjusted by the user.  It should be set
+            high enough that sufficient CPU resources are available to
+            process network data, but may be adjusted so that application
+            threads can have precedence over TFTP server processing."
+        }
+
+        cdl_option CYGPKG_NET_TFTPD_THREAD_STACK_SIZE {
+            display "Stack size for TFTP threads."
+            flavor  data
+            default_value (CYGNUM_HAL_STACK_SIZE_TYPICAL+(3*(SEGSIZE+4)))
+            description   "
+               This option controls the size of the stack used for the 
+               TFTP server. The default should be sufficient for most cases
+               but some applications my require bigger stacks when the 
+               implementation of file operations are complex."
+        }
+
+	cdl_component CYGSEM_NET_TFTPD_MULTITHREADED {
+	    display "Multiple TFTPD server threads on the same port."
+	    flavor  bool
+	    default_value 1
+	    description "
+		This option controls the tftp server ability to be
+        	multi-threaded. When enabled, multiple server can be
+	        started on the same port number. This allows multiple
+	        concurrent transfers to be active. When this option is
+	        not enabled, while one transfer is active, other
+	        requests will be delayed or even ignored."
+		
+            cdl_option CYGNUM_NET_TFTPD_MULTITHREADED_PORTS {
+		display "Number of different ports with servers"
+	        flavor data
+	        default_value 1
+	        description "
+		   Each set of servers running on the same port number
+	           require a semaphore to synchronise there operation. This option
+		   controls the number of semaphores and so the number
+                   of port numbers multithreaded servers which can be
+		   running on."
+            }
+        }
+
+        cdl_option CYGPKG_NET_TFTP_FILE_ACCESS {
+            display       "File I/O functions for TFTP server"
+            flavor        bool
+            default_value 1
+            compile       tftp_dummy_file.c
+            description   "
+              Minimal in-memory file I/O support for TFTP server."
+        }
+    }
+
+    cdl_component CYGPKG_NET_DHCP {
+        display "Use full DHCP instead of BOOTP"
+        requires       CYGPKG_NET_INET
+        active_if (CYGHWR_NET_DRIVERS > 0)
+        flavor bool
+        default_value 1
+        description "
+            Provide DHCP for initializing the IP address
+            of network interfaces.  The DHCP client is capable of falling
+            back to BOOTP usage if the server does not support DHCP, so it
+            should never be necessary to disable this option.  However,
+            depending on other configuration the DHCP client may provide or
+            require a kernel thread of its own; this consumes quite a lot
+            of resource which a BOOTP solution does not require."
+
+        cdl_option CYGOPT_NET_DHCP_DHCP_THREAD {
+            display "DHCP management thread"
+            flavor bool
+            default_value 1
+            description "
+                Provide a separate thread to renew DHCP leases; otherwise
+                the application MUST periodically examine the semaphore
+                dhcp_needs_attention and call dhcp_bind() if it is
+                signalled.  If enabled, this thread does all that for you.
+                Independent of this option, initialization of the
+                interfaces still occurs in init_all_network_interfaces()
+                and your startup code must call that.  It will start the
+                DHCP management thread if necessary.  If a lease fails to
+                be renewed, the management thread will shut down all
+                interfaces and attempt to initialize all the interfaces
+                again from scratch.  This may cause application problems,
+                in which case managing the DHCP state in an application
+                aware thread is recommended.  See comments in dhcp.h"
+        }
+
+        cdl_option CYGOPT_NET_DHCP_DHCP_THREAD_PARAM {
+            display "DHCP management thread loops forever"
+            flavor  data
+            default_value 1
+            active_if CYGOPT_NET_DHCP_DHCP_THREAD
+            description "
+                If the parameter is nonzero, it loops forever; if zero,
+                the thread exits if a lease expires, and the application
+                must detect this and tidy up or reboot the whole machine."
+        }
+
+        cdl_option CYGPKG_NET_DHCP_THREAD_PRIORITY {
+            display "DHCP management thread priority"
+            flavor  data
+            default_value CYGPKG_NET_THREAD_PRIORITY + 1
+            active_if CYGOPT_NET_DHCP_DHCP_THREAD
+            description "
+            This option sets the thread priority level used by the DHCP
+            management thread.  It should be high enough that it can run
+            when necessary, but it does not need to be as high as the
+            network thread itself."
+        }
+
+        cdl_option CYGOPT_NET_DHCP_PARM_REQ_LIST_REPLACE {
+            display "Replace DHCP request options"
+            flavor  booldata
+            default_value 0
+            active_if CYGOPT_NET_DHCP_DHCP_THREAD
+            description "
+                This option replaces the default list of requested
+                options in the DHCP/BOOTP request list.  These are a
+                comma separated list of TAG_xxx values."
+        }
+
+        cdl_option CYGOPT_NET_DHCP_PARM_REQ_LIST_ADDITIONAL {
+            display "Additional DHCP request options"
+            flavor  booldata
+            default_value 0
+            active_if CYGOPT_NET_DHCP_DHCP_THREAD
+            description " 
+                This option adds additional options to the list of
+                requested options in the DHCP/BOOTP request list.
+                These are a comma separated list of TAG_xxx values."
+        }
+
+        cdl_component CYGOPT_NET_DHCP_OPTION_HOST_NAME {
+            display "DHCP host name option"
+            flavor  bool
+            default_value 0
+            active_if CYGOPT_NET_DHCP_DHCP_THREAD
+            description "
+                This option adds the TAG_HOST_NAME option to the DHCP/BOOTP
+                requests.  The host name is defined by calling the function
+                dhcp_set_hostname(), prior to calling init_all_network_interfaces()."
+
+            cdl_option CYGNUM_NET_DHCP_OPTION_HOST_NAME_LEN {
+                display "DHCP host name maximum length"
+                flavor  data
+                default_value 60
+                legal_values 0 to 255
+                active_if CYGOPT_NET_DHCP_OPTION_HOST_NAME
+                description "
+                    This option defines the maximum length allowed for the 
+                    host name set by dhcp_set_hostname()."
+            }
+        }
+
+        cdl_option CYGOPT_NET_DHCP_OPTION_DHCP_CLIENTID_MAC {
+            display "DHCP client ID option"
+            flavor  bool
+            default_value 0
+            active_if CYGOPT_NET_DHCP_DHCP_THREAD
+            description "
+                This option adds the TAG_DHCP_CLIENTID option to the DHCP/BOOTP
+                requests.  It uses the interface MAC address for the identifier."
+        }
+
+        cdl_option CYGNUM_NET_DHCP_MIN_RETRY_TIME {
+            display "DHCP minimum retry time"
+            flavor        data
+            legal_values  0 to 100
+            default_value 100
+            description "
+               This option allows the application to specify the
+               minimum number of seconds for DHCP discovery. If DHCP
+               discovery fails, the action to be taken is application
+               specific. Multiple discovery attempts are made during
+               the time specified with each subsequent attempt having
+               a longer timeout. Attempts begin at approximately 1, 5,
+               15, 35, and 65 seconds with the last attempt timing out
+               after the total of 125 seconds. A new attempt will not
+               begin if the minimum time has been reached. Although,
+               an attempt in progress will run past the minimum time
+               specified. For example: Specifying 30 seconds would
+               timeout at 35 seconds. Specifying 70 seconds has the
+               same effect as specifying 100 seconds where it would
+               run for the total of 125 seconds."  
+        } 
+    }
+
+    cdl_component CYGPKG_NET_IPV6_ROUTING {
+        display       "Options controlling IPv6 routing"
+        active_if     CYGPKG_NET_INET6
+        flavor        bool
+        default_value 1
+        description "
+            Various options which control how routing is done for the
+            IPv6 enabled interfaces."
+
+        cdl_component CYGOPT_NET_IPV6_ROUTING_THREAD {
+            display       "Thread for IPv6 routing"
+            requires      CYGPKG_POSIX
+            flavor        bool
+            default_value 1
+            description "
+                Provide a separate thread to send router solicitation
+                messages."
+
+            compile ipv6_routing_thread.c
+
+            cdl_option CYGINT_NET_IPV6_ROUTING_THREAD_PRIORITY {
+                display       "IPv6 routing thread priority"
+                flavor        data
+                default_value CYGPKG_NET_THREAD_PRIORITY + 1
+                description "
+                    This option sets the thread priority level used by the IPv6
+                    routing thread.  It should be high enough that it can run
+                    when necessary, but it does not need to be as high as the
+                    network thread itself."
+            }
+
+            cdl_option CYGINT_NET_IPV6_ROUTING_THREAD_PERIOD {
+                display       "IPv6 routing thread rate"
+                flavor        data
+                default_value 5*60
+                description "
+                    This option sets the rate at which router solicitations will
+                    be sent out by the routing thread (in seconds)."
+            }
+        }
+    }
+
+    cdl_component CYGPKG_NET_DEBUG {
+        display       "Debug output"
+        default_value 0 
+        description   "
+                This component controls whether there is diagnostic output
+                for stack operations. Options within this component allow
+                even more verbose output for certain areas."
+
+        cdl_option CYGDBG_NET_DHCP_CHATTER {
+                display       "Extra debug output for DHCP"
+                default_value 0
+        }
+    }
+
+    cdl_option CYGDBG_NET_TIMING_STATS {
+        display       "Network timing statistics"
+        default_value 0
+        description   "
+                This component controls whether there is diagnostic 
+                information about how long memcpy, malloc, mbuf_alloc
+                etc take to perform."
+    }
+
+    cdl_option CYGDBG_NET_SHOW_MBUFS {
+        display       "Network MBUF diagnostics"
+        default_value 0
+        description   "
+                This option controls whether diagnostic 
+                information about the state of all mbufs is collected.
+                This information will be displayed whenever the network
+                stack runs out of mbufs."
+    }
+
+    cdl_component CYGPKG_NET_OPTIONS {
+        display "Networking support build options"
+        flavor  none
+        no_define
+
+        cdl_option CYGPKG_NET_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS -D__INSIDE_NET" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the networking package.
+                These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_NET_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the networking package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+
+    cdl_component CYGPKG_NET_BUILD_TESTS {
+        display "Testing options"
+        flavor  none
+        no_define
+        description "
+                This component contains options related to testing the network
+                stack."
+
+        cdl_option CYGPKG_NET_BUILD_HW_TESTS {
+            display "Build hardware networking tests (demo programs)"
+            flavor  bool
+            no_define
+            requires { CYGHWR_NET_DRIVER_ETH0_SETUP || CYGHWR_NET_DRIVER_ETH1_SETUP }
+            default_value 0
+            description   "
+             This option enables the building of additional network tests
+             that use real ethernet devices. At this time these are just
+             demos. With this option disabled, only loopback
+             interface tests will be built."
+        }
+
+        cdl_option CYGPKG_NET_TESTS {
+            display "Networking tests"
+            flavor  data
+            no_define
+            calculated { CYGPKG_NET_BUILD_HW_TESTS ? \
+                    "tests/mbuf_test \
+                    tests/socket_test \
+                    tests/ftp_test \
+                    tests/server_test \
+                    tests/nc_test_slave \
+                    tests/tftp_client_test \
+                    tests/tftp_server_test \
+                    tests/tcp_echo \
+                    tests/set_mac_address \
+                    tests/bridge \
+                    tests/flood \
+                    tests/ping_test \
+                    tests/dhcp_test \
+                    tests/dhcp_test2 \
+                    tests/ping_lo_test \
+                    tests/tcp_lo_test \
+                    tests/udp_lo_test \
+                    tests/multi_lo_select \
+                    tests/tcp_lo_select \
+                    tests/addr_test.c " 
+            :
+                    "tests/ping_lo_test \
+                    tests/tcp_lo_test \
+                    tests/udp_lo_test \
+                    tests/multi_lo_select \
+                    tests/tcp_lo_select"
+            }
+            description   "
+             This option specifies the set of tests
+             for the networking package."
+        }
+        
+        cdl_option CYGPKG_NET_TESTS_USE_RT_TEST_HARNESS {
+            display "Use real-time response test harness (if available)"
+            default_value 0
+            description "
+                    Platform and/or ethernet device driver packages may
+                    provide a test harness to verify that interrupts are
+                    not disabled or flooded for too long during a test.  If
+                    such is provided, CYGTST_DEVS_ETH_TEST_NET_REALTIME is
+                    defined and can be #include'd to acquire the support.
+                    Some tests in the TCP/IP stack can use this harness;
+                    this option controls whether they do.  The StrongARM
+                    EBSA285 Ethernet device driver is one package that
+                    provides such a harness.  See the file
+                    tests/test_net_realtime.h in there for details."
+        }
+    }
+
+# Description and control over different interfaces
+
+    cdl_interface CYGHWR_NET_DRIVER_ETH0 {
+        display "Does the hardware provide an 'eth0' device?"
+        requires { CYGHWR_NET_DRIVER_ETH0 <= 1 }
+        flavor   bool
+    }
+
+    cdl_component CYGHWR_NET_DRIVER_ETH0_SETUP_OPTIONS {
+        display "Initialization options for 'eth0'"
+        active_if (CYGHWR_NET_DRIVER_ETH0 == 1)
+        flavor none
+        no_define
+
+        cdl_interface CYGHWR_NET_DRIVER_ETH0_SETUP {
+            display "Initialization options for 'eth0'"
+            requires 1 == CYGHWR_NET_DRIVER_ETH0_SETUP
+            no_define
+        }
+
+        cdl_component CYGHWR_NET_DRIVER_ETH0_MANUAL {
+            display "Initialize 'eth0' manually?"
+            default_value 0
+            implements CYGHWR_NET_DRIVER_ETH0_SETUP
+            description "
+                If this option is selected, the eCos library provides no
+                initialization code for this interface; you must perform
+                all the initialization in the application, by means of
+                appropriate ioctl() calls, or by calling init_net() with an
+                appropriate bootp record you have constructed yourself."
+        }
+
+        cdl_component CYGHWR_NET_DRIVER_ETH0_BOOTP {
+            display "Use BOOTP/DHCP to initialize 'eth0'?"
+            default_value 1
+            implements CYGHWR_NET_DRIVER_ETH0_SETUP     
+            description "
+                If this option is selected, init_all_network_interfaces()
+                will use DHCP or BOOTP to acquire initialization data for
+                this interface, and then set it up accordingly."
+
+            cdl_option CYGHWR_NET_DRIVER_ETH0_DHCP {
+                display "Use DHCP rather than BOOTP for 'eth0'?"
+                flavor  bool
+                default_value 1
+                active_if CYGPKG_NET_DHCP
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH0_BOOTP_SHOW {
+                display "Show BOOTP/DHCP initialization values?"
+                flavor  bool
+                default_value 1
+            }
+        }
+
+        cdl_option CYGHWR_NET_DRIVER_ETH0_IPV6_PREFIX {
+            display "Static IPv6 address prefix for 'eth0'"
+            flavor  booldata
+            active_if CYGPKG_NET_INET6
+            default_value { "3ffe:302:11:2" }
+            description "
+               This option allows a specific, static address prefix to be set
+               for an interface running IPv6.  When used, the lower 64 bits
+               of the address will be set to the IPv4 IP address.  Note: this
+               should not be confused with the standard IPv4->IPv6 mapped
+               addresses, but rather just a simple way to assign addresses
+               to nodes within an IPv6 network."
+        }
+
+        cdl_component CYGHWR_NET_DRIVER_ETH0_ADDRS {
+            display "Address setups for 'eth0'"
+            implements CYGHWR_NET_DRIVER_ETH0_SETUP     
+            no_define
+
+            description "
+                These options let you configure all the initialization data
+                that init_all_network_interfaces() will use
+                for 'eth0' statically.  Be careful when doing this, because
+                if you run the same application image on multiple boards,
+                they will have identical IP addresses and so on; this is a
+                Bad Thing.
+                The values you set are inserted in a bootp-style record
+                that is fed into a common setup routine to configure the
+                interface.  That routine does not in fact use the 'Server
+                IP address' field.
+                The bootp record is also available to application code, and
+                some eCos networking test programs use the 'Server IP
+                address' field to mean 'a machine we can interact with' for
+                example to ping or perform ftp with.  That is the rationale
+                for its inclusion here.
+                The gateway address is used to set up a default route if
+                nonzero.  If you have more than one interface, setting up
+                more than one default route is will cause malfunctions.  A
+                gateway address of 0.0.0.0 can be set to prevent that route
+                setup.  Of course, your application can add real routes
+                once the interface(s) initialization is complete."
+
+            cdl_option CYGHWR_NET_DRIVER_ETH0_ADDRS_IP {
+                display "IP address for 'eth0'"
+                flavor  data
+                default_value { "192.168.1.2" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH0_ADDRS_NETMASK {
+                display "Network mask address for 'eth0'"
+                flavor  data
+                default_value { "255.255.255.0" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH0_ADDRS_BROADCAST {
+                display "Broadcast address for 'eth0'"
+                flavor  data
+                default_value { "192.168.1.255" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH0_ADDRS_GATEWAY {
+                display "Gateway/router IP address for 'eth0'"
+                flavor  data
+                default_value { "192.168.1.1" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH0_ADDRS_SERVER {
+                display "Server IP address for 'eth0'"
+                flavor  data
+                default_value { "192.168.1.101" }
+            }
+        }
+    }
+
+    cdl_interface CYGHWR_NET_DRIVER_ETH1 {
+        display "Does the hardware provide an 'eth1' device?"
+        requires { CYGHWR_NET_DRIVER_ETH1 <= 1 }
+        flavor   bool
+    }
+
+    cdl_component CYGHWR_NET_DRIVER_ETH1_SETUP_OPTIONS {
+        display "Initialization options for 'eth1'"
+        active_if (CYGHWR_NET_DRIVER_ETH1 == 1)
+        flavor none
+        no_define
+
+        cdl_interface CYGHWR_NET_DRIVER_ETH1_SETUP {
+            display "Initialization options for 'eth1'"
+            requires 1 == CYGHWR_NET_DRIVER_ETH1_SETUP
+            no_define
+        }
+
+        cdl_component CYGHWR_NET_DRIVER_ETH1_MANUAL {
+            display "Initialize 'eth1' manually?"
+            default_value 0
+            implements CYGHWR_NET_DRIVER_ETH1_SETUP     
+            description "
+                If this option is selected, the eCos library provides no
+                initialization code for this interface; you must perform
+                all the initialization in the application, by means of
+                appropriate ioctl() calls, or by calling init_net() with an
+                appropriate bootp record you have constructed yourself."
+        }
+
+        cdl_component CYGHWR_NET_DRIVER_ETH1_BOOTP {
+            display "Use BOOTP/DHCP to initialize 'eth1'?"
+            default_value 1
+            implements CYGHWR_NET_DRIVER_ETH1_SETUP     
+            description "
+                If this option is selected, init_all_network_interfaces()
+                will use DHCP or BOOTP to acquire initialization data for
+                this interface, and then set it up accordingly."
+
+            cdl_option CYGHWR_NET_DRIVER_ETH1_DHCP {
+                display "Use DHCP rather than BOOTP for 'eth1'?"
+                flavor  bool
+                default_value 1
+                active_if CYGPKG_NET_DHCP
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH1_BOOTP_SHOW {
+                display "Show BOOTP/DHCP initialization values?"
+                flavor  bool
+                default_value 1
+            }
+        }
+
+        cdl_option CYGHWR_NET_DRIVER_ETH1_IPV6_PREFIX {
+            display "Static IPv6 address prefix for 'eth1'"
+            flavor  booldata
+            active_if CYGPKG_NET_INET6
+            default_value { "3ffe:302:12:2" }
+            description "
+               This option allows a specific, static address prefix to be set
+               for an interface running IPv6.  When used, the lower 64 bits
+               of the address will be set to the IPv4 IP address.  Note: this
+               should not be confused with the standard IPv4->IPv6 mapped
+               addresses, but rather just a simple way to assign addresses
+               to nodes within an IPv6 network."
+        }
+
+        cdl_component CYGHWR_NET_DRIVER_ETH1_ADDRS {
+            display "Address setups for 'eth1'"
+            implements CYGHWR_NET_DRIVER_ETH1_SETUP     
+            no_define
+
+            description "
+                These options let you configure all the initialization data
+                that init_all_network_interfaces() will use
+                for 'eth1' statically.  Be careful when doing this, because
+                if you run the same application image on multiple boards,
+                they will have identical IP addresses and so on; this is a
+                Bad Thing.
+                The values you set are inserted in a bootp-style record
+                that is fed into a common setup routine to configure the
+                interface.  That routine does not in fact use the 'Server
+                IP address' field.
+                The bootp record is also available to application code, and
+                some eCos networking test programs use the 'Server IP
+                address' field to mean 'a machine we can interact with' for
+                example to ping or perform ftp with.  That is the rationale
+                for its inclusion here.
+                The gateway address is used to set up a default route if
+                nonzero.  If you have more than one interface, setting up
+                more than one default route is will cause malfunctions.  A
+                gateway address of 0.0.0.0 can be set to prevent that route
+                setup.  Of course, your application can add real routes
+                once the interface(s) initialization is complete.
+                This interface 'eth1' has no route set up in the default
+                configuration."
+
+            cdl_option CYGHWR_NET_DRIVER_ETH1_ADDRS_IP {
+                display "IP address for 'eth1'"
+                flavor  data
+                default_value { "192.168.1.2" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH1_ADDRS_NETMASK {
+                display "Network mask address for 'eth1'"
+                flavor  data
+                default_value { "255.255.255.0" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH1_ADDRS_BROADCAST {
+                display "Broadcast address for 'eth1'"
+                flavor  data
+                default_value { "192.168.1.255" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH1_ADDRS_GATEWAY {
+                display "Gateway/router IP address for 'eth1'"
+                flavor  data
+                default_value { "0.0.0.0" }
+            }
+
+            cdl_option CYGHWR_NET_DRIVER_ETH1_ADDRS_SERVER {
+                display "Server IP address for 'eth1'"
+                flavor  data
+                default_value { "192.168.1.101" }
+            }
+        }
+    }
+}

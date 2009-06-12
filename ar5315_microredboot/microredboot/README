@@ -1,0 +1,21 @@
+This sourcecode is the smallest every builded redboot (less than 64 kb). it uses a decompression stub to load a lzma compressed redboot image
+into ram. the device initialisation itself is done within the stub itself. you can find the stub source within the ./boot dir
+if you build it manually, take care about the RESETBUTTON environment variable. it defines the gpio configuration for the gpio.
+the lower 4 bits are for the gpio itself and the higher 4 bits are for the type (1 means inverted, 0 means normal)
+for senao devices that means 0x15 (inverted gpio 5)
+
+this reset button is used to trigger the recovery redboot.
+so the stub will boot up linux directly if this button is not pressed. this will decrease the bootup time alot.
+if the button is pushed, the redboot will be started and can be used like known from the past.
+if the reset button is pushed longer than 5 seconds, the dd-wrt nvram config will be resetted (this feature is not yet tested and under development)
+
+
+the build_targets.sh script will build all available memory, flash, ethernet phy and reset button configurations
+for building the source you need the ecos mips toolchain (included ./tools dir) and any dd-wrt mips big endian toolchain (see dd-wrt download directory, you will find it if you seek for it)
+
+
+12th June, Sebastian Gottschall aka BrainSlayer / DD-WRT.COM
+
+
+licensing:
+since the whole source is builded upon GPL sources, this source is licensed and released under GPL as well

@@ -1,0 +1,52 @@
+<!--#include file="header.html" -->
+
+
+<h3>Toolchains</h3>
+To use uClibc, you need to have a toolchain, which is composed
+of <a href="http://sources.redhat.com/binutils/">binutils</a>, 
+<a href="http://gcc.gnu.org/">gcc</a>, and of course uClibc.
+
+<ul>
+
+    <li>You can build your own 
+	<a href="/cgi-bin/cvsweb/toolchain/gcc-3.3.x/">uClibc toolchain</a>
+	using this to automagically download all the needed source code
+	and compile everything for you.
+    <p> 
+
+    <li>Steven J. Hill has kindly provided 
+	<a href="ftp://ftp.realitydiluted.com/linux/MIPS/toolchains">RPMs and SRPMs</a>
+	with toolchains for mips.
+    <p> 
+
+    <li>You can compile your own uClibc development system using
+	<a href="/cgi-bin/cvsweb/buildroot/">buildroot</a>.
+    <p> 
+
+    <li>Prebuilt uClibc development systems for
+	<a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">i386</a>
+	and
+	<a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">arm</a>
+	and 
+	<a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_mipsel.bz2">mipsel</a>
+	are available and contain complete native gcc 3.3.2 toolchains.  These
+	are development systems are ext2 filesystems that runs natively on the
+	specified architecture.  They contain all the development software you
+	need to build your own uClibc applications, including bash, coreutils,
+	findutils, diffutils, patch, sed, ed, flex, bison, file, gawk, tar,
+	grep gdb, strace, make, gcc, g++,  autoconf, automake, ncurses, zlib,
+	openssl, openssh perl, and more.   And of course, everything is
+	dynamically linked against uClibc.  By using a uClibc only system, you
+	can avoid all the painful cross-configuration problems that have made
+	using uClibc somewhat painful in the past.  If you want to quickly get
+	started with testing or using uClibc you should give these images a
+	try.  You can loop mount them and then chroot into them.  You can boot
+	into them using user-mode Linux.  You can even 'dd' them to a spare
+	partition and use resize2fs to make them fill the drive, and then boot
+	into them.  Whatever works for you.
+    <p> 
+
+</ul>
+
+<!--#include file="footer.html" -->
+

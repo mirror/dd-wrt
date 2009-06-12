@@ -1,0 +1,11 @@
+outb
+sem
+fdopen
+dirent
+dirent.out
+dirent_glibc
+dirent_glibc.out
+dirent64
+dirent64.out
+dirent64_glibc
+dirent64_glibc.out
