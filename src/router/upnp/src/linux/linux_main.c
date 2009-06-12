@@ -96,10 +96,7 @@ main(int argc, char *argv[])
 	/*
 	 * Process arguments
 	 */
-	snprintf(prefix, sizeof(prefix), "wan%d_", wan_primary_ifunit());
-	wanif = nvram_match(strcat_r(prefix, "proto", var), "pppoe") ? \
-		nvram_safe_get(strcat_r(prefix, "pppoe_ifname", var)) : \
-		nvram_safe_get(strcat_r(prefix, "ifname", var));
+	wanif = get_wan_face(); // uses dd-wrt api
 
 	while (argp < &argv[argc]) {
 		if (strcasecmp(*argp, "-W") == 0) {
