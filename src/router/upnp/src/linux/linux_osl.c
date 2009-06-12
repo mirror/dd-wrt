@@ -484,7 +484,7 @@ upnp_osl_wan_link_status()
 
 	struct ifreq ifr;
 	int fd, err;
-	uint if_up = 0;
+	uint if_up = 1;
 	struct ethtool_cmd ecmd;
 
 	/* Setup our control structures. */
@@ -523,7 +523,7 @@ upnp_osl_wan_max_bitrates(unsigned long *rx, unsigned long *tx)
 	struct ethtool_cmd ecmd;
 	struct ifreq ifr;
 	int fd, err;
-	long speed = 0;
+	long speed = (100 * 1000000);
 
 	/* Setup our control structures. */
 	memset(&ifr, 0, sizeof(ifr));
