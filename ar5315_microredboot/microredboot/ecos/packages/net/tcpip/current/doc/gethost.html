@@ -1,0 +1,110 @@
+<html>
+<body>
+<pre>
+NAME
+       gethostbyname, gethostbyaddr, herror, hstrerror - get network host entry
+
+SYNOPSIS
+       #include &lt;network.h&gt;
+
+       struct hostent *gethostbyname(const char *name);
+
+       struct hostent *gethostbyaddr(const char *addr, int len, int type);
+
+       void herror(const char *s);
+
+       const char * hstrerror(int err);
+
+DESCRIPTION
+       The gethostbyname() function returns a structure  of  type
+       hostent  for  the  given host name.  Here name is either a
+       host name, or an IPv4 address in standard dot notation, or
+       an IPv6 address in colon (and possibly dot) notation. (See
+       RFC 1884 for the description of IPv6 addresses.)  If  name
+       is  an  IPv4  or  IPv6 address, no lookup is performed and
+       gethostbyname() simply copies name into the  h_name  field
+       and  its struct in_addr equivalent into the h_addr_list[0]
+       field of the returned hostent structure.  If name  doesn't
+       end  in  a dot and the environment variable HOSTALIASES is
+       set, the alias file pointed to by HOSTALIASES  will  first
+       be  searched for name.  (See hostname(7) for the file for­
+       mat.)  The current domain and  its  parents  are  searched
+       unless name ends in a dot.
+
+       The  gethostbyaddr()  function returns a structure of type
+       hostent for the given host address addr of length len  and
+       address  type  type.   The only valid address type is cur­
+       rently AF_INET.
+
+       The  (obsolete) herror() function prints the error message
+       associated with the current value of h_errno on stderr.
+
+       The (obsolete) hstrerror() function takes an error  number
+       (typically  h_errno) and returns the corresponding message
+       string.
+
+       The domain name queries carried out by gethostbyname() and
+       gethostbyaddr()  use  a  combination  of any or all of the
+       name server named(8), a broken out line  from  /etc/hosts,
+       and the Network Information Service (NIS or YP), depending
+       upon the contents of the  order  line  in  /etc/host.conf.
+       (See   resolv+(8)).    The  default  action  is  to  query
+       named(8), followed by /etc/hosts.
+
+       The hostent structure is defined in &lt;netdb.h&gt; as follows:
+
+              struct hostent {
+                      char    *h_name;        /* official name of host */
+                      char    **h_aliases;    /* alias list */
+                      int     h_addrtype;     /* host address type */
+                      int     h_length;       /* length of address */
+                      char    **h_addr_list;  /* list of addresses */
+              }
+              #define h_addr  h_addr_list[0]  /* for backward compatibility */
+
+       The members of the hostent structure are:
+
+       h_name The official name of the host.
+
+       h_aliases
+              A zero-terminated array of  alternative  names  for
+              the host.
+
+       h_addrtype
+              The type of address; always AF_INET at present.
+
+       h_length
+              The length of the address in bytes.
+
+       h_addr_list
+              A  zero-terminated  array  of network addresses for
+              the host in network byte order.
+
+       h_addr The first address in h_addr_list for backward  com­
+              patibility.
+
+RETURN VALUE
+       The  gethostbyname()  and gethostbyaddr() functions return
+       the hostent structure  or  a  NULL  pointer  if  an  error
+       occurs.   On  error,  the  h_errno variable holds an error
+       number.
+
+ERRORS
+       The variable h_errno can have the following values:
+
+       HOST_NOT_FOUND
+              The specified host is unknown.
+
+       NO_ADDRESS or NO_DATA
+              The requested name is valid but does not have an IP
+              address.
+
+       NO_RECOVERY
+              A non-recoverable name server error occurred.
+
+       TRY_AGAIN
+              A temporary error occurred on an authoritative name
+              server.  Try again later.
+</pre>
+</body>
+</html>

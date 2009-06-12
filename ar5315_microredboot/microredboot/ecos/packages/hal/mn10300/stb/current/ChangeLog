@@ -1,0 +1,263 @@
+2002-11-19  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Remove virtual vector comm support.
+	Add options to select AM33 serial ports for comm channels. Add
+	override for default processor clock frequency.
+	* src/ser_stb.c: Removed.
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/ser_stb.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2001-10-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Indicate support of variable baud rates.
+
+2001-09-05  David Howells  <dhowells@redhat.com>
+
+	* src/plf_misc.c: made inclusion here of hal_ctrlc_isr()
+	contingent on the lack of virtual vector support.
+
+2001-08-15  David Howells  <dhowells@redhat.com>
+
+	* src/hal_diag.c: included hal_misc.h.
+	* src/plf_misc.c: included hal_misc.h and stopped declaring
+	hal_virtual_vector_table directly.
+
+2001-08-03  David Howells  <dhowells@redhat.com>
+
+	* cdl/hal_mn10300_am33_stb.cdl: added vector support and made to
+	work with RedBoot and flash.
+	* include/plf_intr.h: ditto.
+	* include/plf_io.h: ditto.
+	* include/plf_stub.h: ditto.
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.h: ditto.
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.mlt: ditto.
+	* include/pkgconf/mlt_mn10300_am33_stb_sram1.h: ditto.
+	* include/pkgconf/mlt_mn10300_am33_stb_sram1.ldi: ditto.
+	* include/pkgconf/mlt_mn10300_am33_stb_sram1.mlt: ditto.
+	* misc/redboot_RAM.ecm: ditto.
+	* misc/redboot_ROM.ecm: ditto.
+	* misc/redboot_SRAM1.ecm: ditto.
+	* src/plf_misc.c: ditto.
+	* src/plf_stub.c: ditto.
+	* src/ser_stb.c: ditto.
+
+2001-08-02  Nick Garnett  <nickg@redhat.com>
+
+	* include/plf_io.h:
+	Added this file to match assumption now made in arch files that it
+	exists.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Reset macros moved
+	* include/plf_intr.h: to this file.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.mlt:
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.h:
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.h:
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.ldi:
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.ldi:
+	Regenerated
+
+2000-03-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/plf_stub.c (cyg_hal_gdb_isr): Use serial 0 interrupt macros
+	consistently
+	(hal_stb_interruptible): Likewise
+	(hal_stb_init_break_irq): Likewise
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_mn10300_am33_stb.cdl (CYGBLD_BUILD_GDB_STUBS): When building
+	stubs, define every dependency required here rather than in the
+	template
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: 
+	Renoved HAL_STUB_PLATFORM_STUBS_INIT.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am33_stb.cdl: use cpu options when linking.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Implements stubs.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Moved part of stubs build rule to
+	common HAL. Changed description.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Fix display string.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Add stubs build rule.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c (CYG_KERNEL_DIAG_GDB): Rename
+	CYG_HAL_USE_ROM_MONITOR_GDB_STUBS ->
+	CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs
+
+	* src/plf_misc.c (hal_platform_init): Likewise
+	(cyg_hal_user_break): Likewise
+
+	* misc/stubrom.perm: Don't need to enable CYG_HAL_ROM_MONITOR - it has
+	no effect in this HAL
+
+	* cdl/hal_mn10300_am33_stb.cdl: Add new platform-specific
+	CYGSEM_HAL_USE_ROM_MONITOR option to control ROM monitor support
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.h: 
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.h: New file(s).
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mn10300_am33_stb.cdl: Added.
+
+1999-08-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Added code to disable
+	watchdog while emitting a debug message. This is solely to cope
+	with shortcomings in the test farm.
+
+1999-08-16  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_am33_stb.h:
+
+	Comment out descriptions of non-configurable options for now.
+
+1999-08-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/plf_misc.c: 
+	* src/plf_stub.c:
+	Correct comment from am32 to am33
+
+1999-08-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c (hal_platform_init): Only enable the caches if we
+	are in ROM. When we are in RAM we let the ROM monitor decide how
+	the caches are to be used.
+
+1999-08-10  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal_mn10300_am33_stb.h:
+	Ensure CYGPKG_HAL_MN10300_AM33_STB requires CYGPKG_HAL_MN10300_AM33
+
+1999-08-06  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_stub.c: 
+	* src/hal_diag.c:
+	Changed timers used for baud rate generation for all serial lines
+	so we can use timer0 as a prescaler for lower baud rates.
+
+1999-07-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_stub.c: Enabled asynchronous breakpoint handler in
+	virtual vector table.
+
+	* src/plf_misc.c: Implemented Ctrl-C support.
+	[Later] Changed return code of hal_ctrlc_isr() to 1.
+	
+	* src/hal_diag.c: Added Ctrl-C support to GDB protocol handling.
+	[Later] Added interrupt acknowledge calls to all serial line reads
+	to eliminate spurious interrupts.
+
+	* include/pkgconf/hal_mn10300_am33_stb.h: Renamed defines
+	correctly. Added defined for DIAG and GDB ports.
+
+	* include/plf_intr.h: Fixed typo in Ctrl-C support.
+
+1999-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/plf_misc.c: Changed test for call to patch_dbg_syscalls() to
+	check CYG_HAL_USE_ROM_MONITOR_GDB_STUBS.
+
+	* src/hal_diag.c: Added configuration to use GDB O packets via
+	serial0 when running under GDB stubs.
+	Modified baud rate selection for serial2. Left code to determine
+	serial line speed in place for future use.
+
+	* misc/stubrom.perm: Added this file to package configuration for
+	the stubrom.
+
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.ldi: 
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.ldi: 
+	Moved ROM to 0x40000000 and RAM to 0x50000000.
+	
+	* src/plf_stub.c: 
+	* include/plf_stub.h:
+	Did some renaming, added HAL_STUB_PLATFORM_INIT(). Switched over
+	to serial0 for GDB protocol.
+
+	* include/platform.inc:
+	Added diagnostic macros to output digits onto front panel LEDs.
+
+1999-07-16  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c:
+	Added code to diag via serial0. Miscellaneous other tidies.
+
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.ldi:
+	Increased RAM size to 4M.
+
+	* include/pkgconf/hal_mn10300_am33_stb.h:
+	Set CYGNUM_HAL_RTC_PERIOD to correct value for this board.
+
+1999-07-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.ldi:
+	Moved RAM memory segment to 0x40000000.
+
+	* src/hal_diag.c:
+	Added buffer based diagnostic option.
+
+1999-06-30  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_diag.h:
+	* include/platform.inc:
+	* include/plf_intr.h:
+	* include/plf_stub.h:
+	* include/pkgconf/hal_mn10300_am33_stb.h:
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.ldi:
+	* include/pkgconf/mlt_mn10300_am33_stb_ram.mlt:
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.ldi:
+	* include/pkgconf/mlt_mn10300_am33_stb_rom.mlt:
+	* src/PKGconf.mak:
+	* src/hal_diag.c:
+	* src/plf_misc.c:
+	* src/plf_stub.c:
+	Added these files to contain HAL code and definitions for STB
+	target board.
+

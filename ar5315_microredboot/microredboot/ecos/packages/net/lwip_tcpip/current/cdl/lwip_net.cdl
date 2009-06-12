@@ -1,0 +1,679 @@
+#====================================================================
+#
+#      lwip_net.cdl
+#
+#      lwIP network stack configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2004 eCosCentric 
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):	 cris@iv.ro, jani@iv.ro
+# Original data: jani@iv.ro 
+# Contributors:   
+# Date:           2002-06-21
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_NET_LWIP {
+	display "lwIP"
+	description	"Lightweight TCP/IP stack"	
+	requires {(CYGPKG_LWIP_ETH ==  1) || (CYGPKG_LWIP_SLIP == 1) || (CYGPKG_LWIP_PPP == 1)}
+
+	compile	core/mem.c	\
+		core/memp.c	\
+		core/netif.c	\
+		core/pbuf.c	\
+		core/stats.c	\
+		core/sys.c	\
+		core/tcp.c	\
+		core/tcp_in.c	\
+		core/tcp_out.c	\
+		core/inet.c	\
+		core/ipv4/icmp.c	\
+		core/ipv4/ip.c	\
+		core/ipv4/ip_addr.c	\
+		core/ipv4/ip_frag.c	\
+		api/api_lib.c	\
+		api/api_msg.c	\
+		api/tcpip.c	\
+		api/err.c	\
+		api/sockets.c	\
+		ecos/sys_arch.c	\
+		ecos/init.c	
+	
+	
+	cdl_component CYGPKG_LWIP_STATS {
+		display		"Turn ON/OFF statistics"
+		flavor 		bool
+		default_value	0
+		description	"
+			Check this box to turn ON statistics options for lwIP."
+	}
+		
+	cdl_component CYGPKG_LWIP_DEBUG {
+		display		"Turn ON/OFF debug options"
+		flavor 		bool
+		default_value	0
+		description	"
+			Check this box to turn ON debug options for lwIP."
+
+		cdl_option CYGPKG_LWIP_DEBUG_TCP {
+			display	"Control TCP debug"
+			flavor 		bool
+			default_value	0
+			description	"
+				Generic TCP debug switch."
+			
+		}
+		
+	}
+
+	cdl_component CYGPKG_LWIP_ASSERTS {
+		display		"Turn ON/OFF assertions"
+		flavor 		bool
+		default_value	0
+		description	"
+			Check this box to turn ON assertions for lwIP."
+	}
+
+	cdl_component CYGPKG_LWIP_IPV4_CONF {
+		display		"IPV4 netconf"
+		flavor 		none
+		no_define
+		description   	"
+			See suboptions to define gateway IP, local IP and netmask."
+		
+		cdl_option CYGPKG_LWIP_SERV_ADDR {
+			display		"Gateway IP"
+			flavor		data
+			default_value 	{"192,168,1,1"}
+			description   	"
+				Gateway's IP address."
+
+		}
+		cdl_option CYGPKG_LWIP_MY_ADDR {
+			display		"My IP"
+			flavor		data
+			default_value 	{"192,168,1,222"}
+			description   	"
+				The IP address for this device."
+
+		}
+		cdl_option CYGPKG_LWIP_NETMASK {
+			display		"Netmask"
+			flavor		data
+			default_value 	{"255,255,255,0"}
+			description   	"
+				Netmask of the local network."
+
+		}
+	}
+	
+	cdl_component CYGPKG_LWIP_MEM_OPTIONS {
+		display		"Memory options"
+		flavor 		none
+		no_define
+		description   	"
+			Tunables for various aspects of memory usage throughout the stack."
+			
+		
+		
+		cdl_option CYGPKG_LWIP_MEM_ALIGNMENT {
+			display		"Memory alignment"
+			flavor		data
+			default_value 	4
+			description   	"
+				 MEM_ALIGNMENT: should be set to the alignment of the CPU for which
+				 lwIP is compiled. 4 byte alignment -> define MEM_ALIGNMENT to 4,
+				 2 byte alignment -> define MEM_ALIGNMENT to 2."
+		}		 
+		cdl_option CYGPKG_LWIP_MEM_SIZE {
+			display		"Memory size"
+			flavor		data
+			default_value 	4000
+			description   	"
+				MEM_SIZE: the size of the heap memory. If the application will send
+				a lot of data that needs to be copied, this should be set high."
+				
+		}		 
+		cdl_option CYGPKG_LWIP_MEMP_NUM_PBUF {
+			display		"Number of memp struct pbufs"
+			flavor		data
+			default_value 	8
+			description   	"
+				 MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
+				 sends a lot of data out of ROM (or other static memory), this
+				 should be set high."
+				 
+		}		 
+		cdl_option CYGPKG_LWIP_MEMP_NUM_UDP_PCB {
+			display		"Simultaneous UDP control blocks "
+			flavor		data
+			default_value 	4
+			description   	"
+				MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
+				per active UDP 'connection'."
+				
+		}		 
+		cdl_option CYGPKG_LWIP_MEMP_NUM_TCP_PCB {
+			display		"Simultaneous active TCP connections "
+			flavor		data
+			default_value 	5
+			description   	"
+				MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
+				connections."
+				
+		}		 
+		cdl_option CYGPKG_LWIP_MEMP_NUM_TCP_PCB_LISTEN {
+			display		"Listening TCP connections"
+			flavor		data
+			default_value 	8
+			description   	"
+				 MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP
+				 connections."
+				 
+		}		 
+		cdl_option CYGPKG_LWIP_MEMP_NUM_TCP_SEG {
+			display		"Simultaneous TCP segments queued"
+			flavor		data
+			default_value 	8
+			description   	"
+				MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
+				segments."
+				
+		}		 
+		cdl_option CYGPKG_LWIP_MEMP_NUM_SYS_TIMEOUT {
+			display		"Simultaneous active timeouts"
+			flavor		data
+			default_value 	3
+			description   	"
+				MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
+				timeouts."
+		
+		}		 
+		cdl_component CYGPKG_LWIP_CYGPKG_LWIP_MEM_SEQ_API {
+			display		"Sequential API settings"
+			flavor 		none
+			no_define
+			description	"
+				The following four are used only with the sequential API and can be
+  			        set to 0 if the application only will use the raw API."
+		
+
+			cdl_option CYGPKG_LWIP_MEMP_NUM_NETBUF {
+				display		"Struct netbufs"
+				flavor		data
+				default_value 	2
+				description   	"
+					MEMP_NUM_NETBUF: the number of struct netbufs."
+					
+			}		 
+			cdl_option CYGPKG_LWIP_MEMP_NUM_NETCONN {
+				display		"Struct netconns"
+				flavor		data
+				default_value 	4
+				description   	"
+					MEMP_NUM_NETCONN: the number of struct netconns."
+					
+			}		 
+			cdl_option CYGPKG_LWIP_MEMP_NUM_APIMSG {
+				display		"Struct api_msgs"
+				flavor		data
+				default_value 	8
+				description   	"
+					MEMP_NUM_APIMSG: the number of struct api_msg, used for
+					communication between the TCP/IP stack and the sequential
+					programs."
+					
+			}		 
+			cdl_option CYGPKG_LWIP_MEMP_NUM_TCPIP_MSG {
+				display		"Struct tcpip_msgs"
+				flavor		data
+				default_value 	8
+				description   	"
+					MEMP_NUM_TCPIPMSG: the number of struct tcpip_msg, which is used
+					for sequential API communication and incoming packets. Used in
+					src/api/tcpip.c."
+
+			}		 
+		}
+
+	}
+	
+	cdl_component CYGPKG_LWIP_PBUF_OPTIONS {
+		display		"PBUF"
+		flavor 		none
+		no_define
+		description   	"
+		Packet buffer related tunings."
+
+			
+		cdl_option CYGPKG_LWIP_PBUF_POOL_SIZE {
+			display		"PBUF pool size"
+			flavor		data
+			default_value 	60
+			description   	"
+			PBUF_POOL_SIZE: the number of buffers in the pbuf pool."
+	
+		}
+		
+		cdl_option CYGPKG_LWIP_PBUF_POOL_BUFSIZE {
+			display		"PBUF buffer size"
+			flavor		data
+			default_value 	1024
+			description   	"
+			PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool."
+
+		}		 
+		cdl_option CYGPKG_LWIP_PBUF_LINK_HLEN {
+			display		"Allocation for a link level header"
+			flavor		data
+			calculated 	{CYGPKG_LWIP_SLIP || CYGPKG_LWIP_PPP ? 0 : 16}
+			description   	"
+				PBUF_LINK_HLEN: the number of bytes that should be allocated for a
+				link level header."
+			}		 
+	}
+	
+	cdl_component CYGPKG_LWIP_TCP_OPTIONS {
+		display		"TCP"
+		flavor 		none
+		no_define
+		description   	"
+		Tune the TCP protocol details"
+			
+		cdl_option CYGPKG_LWIP_TCP {
+			display		"Activate TCP"
+			flavor		bool
+			default_value 	1
+			description   	""
+
+		}
+		
+		cdl_option CYGPKG_LWIP_TCPIP_THREAD_PRIORITY {
+			display "tcpip thread priority"
+			flavor data
+			default_value	7
+			description "Pririty of the lwIP network thread.This thread handles all API messages and
+					network packets."
+		}		 
+		
+		cdl_option CYGPKG_LWIP_TCP_TTL {
+			display		"Time To Live"
+			flavor		data
+			default_value 	255
+			description   	""
+
+		}		 
+		cdl_option CYGPKG_LWIP_TCP_QUEUE_OOSEQ {
+			display		"Queue segments"
+			flavor		bool
+			default_value 	1
+			description   	"
+				Controls if TCP should queue segments that arrive out of
+				order. Define to 0 if your device is low on memory."
+		
+		}		 
+		cdl_option CYGPKG_LWIP_TCP_MSS {
+			display		"Maximum segment size"
+			flavor		data
+			default_value 	2048
+			description   	"
+				TCP Maximum segment size."
+		}		 
+		cdl_option CYGPKG_LWIP_TCP_SND_BUF {
+			display		"Sender buffer space"
+			flavor		data
+			default_value 	2048	
+			description   	"
+				TCP sender buffer space (bytes)."
+
+		}		 
+		cdl_option CYGPKG_LWIP_TCP_SND_QUEUELEN {
+			display		"Sender pbufs"
+			flavor		data
+			calculated 	"4 * CYGPKG_LWIP_TCP_SND_BUF/CYGPKG_LWIP_TCP_MSS"
+			description   	"
+				TCP sender buffer space (pbufs). This must be at least = 2 *
+				TCP_SND_BUF/TCP_MSS for things to work."
+
+		}		 
+		cdl_option CYGPKG_LWIP_TCP_WND {
+			display		"Receive window"
+			flavor		data
+			default_value 	4096
+			description   	"
+				TCP receive window."
+
+		}		 
+		cdl_option CYGPKG_LWIP_TCP_MAXRTX {
+			display		"Segment retransmissions"
+			flavor		data
+			default_value 	12
+			description   	"
+				 Maximum number of retransmissions of data segments."
+
+		}		 
+		cdl_option CYGPKG_LWIP_TCP_SYNMAXRTX {
+			display		"Syn retransmissions"
+			flavor		data
+			default_value 	4
+			description   	"
+				Maximum number of retransmissions of SYN segments."
+			}		 
+	}	
+	
+	cdl_component CYGPKG_LWIP_ARP_OPTIONS {
+		display		"ARP"
+		flavor 		none
+		no_define
+		
+		cdl_option CYGPKG_LWIP_ARP_TABLE_SIZE {
+			display		"ARP table size"
+			flavor		data
+			default_value 	10
+			description   	""
+		
+		}
+	}
+
+	cdl_component CYGPKG_LWIP_IP {
+		display		"IP"
+		flavor		none
+		no_define
+	
+		cdl_option CYGPKG_LWIP_IP_FORWARD {
+			display		"IP forwarding"
+			flavor		bool
+			default_value 	1
+			description   	"
+				Define IP_FORWARD to 1 if you wish to have the ability to forward
+				IP packets across network interfaces. If you are going to run lwIP
+				on a device with only one network interface, define this to 0."
+		
+		}
+		cdl_option CYGPKG_LWIP_IP_OPTIONS {
+			display		"Allow IP options"
+			flavor		bool
+			default_value 	1
+			description   	"
+				If defined to 1, IP options are allowed (but not parsed). If
+				   defined to 0, all packets with IP options are dropped."
+		
+		}
+		
+		cdl_option CYGPKG_LWIP_IP_FRAG {
+			display		"Support IP fragmentation"
+			flavor		bool
+			default_value 	1
+			description   	"
+			"	
+		}
+
+		cdl_option CYGPKG_LWIP_IP_REASS {
+			display		"Support IP reassembly"
+			flavor		bool
+			default_value 	1
+			description   	"
+			"	
+		}
+
+	}
+
+	cdl_component CYGPKG_LWIP_ICMP_OPTIONS {
+		display		"ICMP"
+		flavor		none
+		no_define
+
+		cdl_option CYGPKG_LWIP_ICMP_TTL {
+			display		"ICMP Time To Live"
+			flavor		data
+			default_value 	255
+			description   	""
+		}
+	}
+
+	cdl_component CYGPKG_LWIP_DHCP_OPTIONS {
+		display		"DHCP"
+		flavor		none
+		no_define
+
+
+		cdl_option CYGPKG_LWIP_DHCP {
+			display		"Activate DHCP"
+			flavor		bool
+			default_value 	0
+			description   	"
+				Define LWIP_DHCP to 1 if you want DHCP configuration of
+				interfaces."
+			compile core/dhcp.c
+		}
+
+
+		cdl_option CYGPKG_LWIP_DHCP_DOES_ARP_CHECK {
+			display		"Check offered address"
+			flavor		bool
+			default_value 	0
+			description   	"
+				1 if you want to do an ARP check on the offered address
+				(recommended)."
+		}
+	}
+	
+	cdl_component CYGPKG_LWIP_LOOPIF {
+		display		"Support loop interface (127.0.0.1)"
+		flavor		bool
+		default_value 	1
+		compile netif/loopif.c
+	}
+
+	cdl_component CYGPKG_LWIP_ETH {
+		display "Ethernet support"
+		flavor bool
+		requires CYGPKG_IO_ETH_DRIVERS
+		default_value	1
+		description "Ethernet support"
+		compile netif/etharp.c
+		
+		cdl_option CYGPKG_LWIP_ETH_THREAD_PRIORITY {
+			display "ethernet input thread priority"
+			flavor data
+			default_value	6
+			description "Priority of the thernet input thread"
+		}
+		
+	}
+
+	cdl_component CYGPKG_LWIP_SLIP {
+		display "SLIP"
+		flavor bool
+		requires CYGPKG_IO_SERIAL_DEVICES
+		default_value	0
+		description "IP over Serial Line"
+		compile netif/slipif.c ecos/sio.c
+		
+		cdl_option CYGPKG_LWIP_SLIPIF_THREAD_PRIORITY {
+			display "SLIP thread priority"
+			flavor data
+			default_value	8
+			description "Priority of the SLIP input thread"
+		}
+		
+		cdl_option CYGPKG_LWIP_SLIP_DEV {
+			display "Serial device"
+			flavor 	data
+			default_value {"\"/dev/ser0\""}
+			description "
+			Which serial port to use SLIP on."
+		}
+	}
+	
+	cdl_component CYGPKG_LWIP_PPP {
+		display "PPP"
+		flavor bool
+		requires CYGPKG_IO_SERIAL_DEVICES
+		default_value	0
+		description "The Point-to-Point Protocol"
+		compile netif/ppp/ppp.c		\
+			netif/ppp/auth.c	\
+			netif/ppp/chpms.c	\
+			netif/ppp/fsm.c		\
+			netif/ppp/ipcp.c	\
+			netif/ppp/lcp.c		\
+			netif/ppp/magic.c	\
+			netif/ppp/md5.c		\
+			netif/ppp/randm.c	\
+			netif/ppp/vj.c		\
+			ecos/sio.c
+			
+
+		cdl_option CYGPKG_LWIP_PPP_PAP_AUTH {
+			display "Support PAP authentication"
+			flavor bool
+			default_value 1
+			compile netif/ppp/pap.c		
+		}
+		
+		cdl_option CYGPKG_LWIP_PPP_CHAP_AUTH {
+			display "Support CHAP authentication"
+			flavor bool
+			default_value 1
+			compile netif/ppp/chap.c		
+		}
+	
+		cdl_option CYGPKG_LWIP_PPP_DEV {
+			display "Serial device for PPP"
+			flavor 	data
+			default_value {"\"/dev/ser0\""}
+			description "
+			Which serial port to use PPP on."
+		}
+
+		cdl_option CYGPKG_LWIP_PPP_THREAD_PRIORITY {
+			display "PPP main thread priority"
+			flavor data
+			default_value	8
+			description "Priority of the PPP input thread"
+		}	
+	}
+
+	cdl_component CYGPKG_LWIP_UDP_OPTIONS {
+		display		"UDP"
+		flavor		none
+		no_define
+
+		cdl_option CYGPKG_LWIP_UDP {
+			display		"Activate UDP"
+			flavor		bool
+			default_value 	1
+			description   	""
+			compile core/udp.c
+		}
+
+		cdl_option CYGPKG_LWIP_UDP_TTL {
+			display		"Time To Live"
+			flavor		data
+			default_value 	255
+			description   	""
+		}
+	}
+	
+	cdl_option CYGPKG_LWIP_RAW {
+		display		"Enable RAW socket support"
+		flavor		bool
+		default_value 	1
+		description   	""
+		compile core/raw.c
+	}
+
+	cdl_component CYGPKG_LWIP_APP_MEM_OPTIONS {
+		display		"Memory options for apps"
+		flavor 		none
+		no_define
+		description   	"Memory options for applications."
+
+		cdl_option CYGNUM_LWIP_VARMEMPOOL_SIZE {
+			display		"Size of variable memory pool"
+			flavor		data
+			default_value 	2048	
+			description   	"
+					Memory required to hold semaphore, mbox and thread structures
+					are allocated from this memory pool.
+					"
+		}
+
+	
+
+		cdl_option CYGNUM_LWIP_APP_THREADS {
+			display		"Number of network threads in application"
+			flavor		data
+			default_value 	1
+			description   	"
+					At startup at least two lwIP threads are created:the polling(input) thread 
+					and the TCP/IP (output) thread.Additionally your application creates one
+					or more threads.
+					Set this option to the maximum number of threads you will create through
+					sys_thread_new().Threads which you create through cyg_thread_create() 
+					are not lwIP threads and don't count.This number is needed so that enough
+					static memory is reserved for stack space.
+					"
+		}
+	
+		cdl_option CYGNUM_LWIP_THREAD_STACK_SIZE {
+			display		"Size of per thread stack in lwIP"
+			flavor		data
+			default_value 	4096
+			description	"
+					Since stack space for threads needs to be statically allocated you can
+					specify the amount of memory to use for each network thread.
+					"
+		}				
+	}
+	
+	    
+    	cdl_option CYGPKG_NET_LWIP_TESTS {
+       		display "Some lwIP tests"
+	        flavor  data
+       		no_define
+        	calculated { 
+                   	"tests/tcpecho tests/udpecho tests/httpd tests/socket tests/nc_test_slave tests/sys_timeout"
+		}  
+       		description   "
+        	    This option specifies the set of tests for lwIP.They show the usage of 
+		    the raw, the sequential and the BSD socket compatible APIs"
+    	}
+		
+}

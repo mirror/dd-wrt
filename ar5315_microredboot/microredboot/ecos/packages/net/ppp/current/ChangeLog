@@ -1,0 +1,400 @@
+2004-08-19  Oyvind Harboe <oyvind.harboe@zylin.com>
+2004-09-08  Andrew Lunn <andrew.lunn@ascom.ch>
+	
+	* windows_telnet.c: now demonstrates chat script TIMEOUT, which
+	makes connection more snappy. It also repeatably attempts at
+	connect until a connection is established instead of a single try.
+	Once a telnet session is aborted, a new one can be established.
+	Also cleaned up the indentation to make it more readable.
+
+2004-06-29	Matt Jerdonek <maj1224@yahoo.com>
+
+	* cdl/ppp.cdl:
+	* src/ipcp.c:
+		Add option to disallow negotiation of old-style VJ compression
+	* include/ppp.h:
+		Add structure to track ppp failure reasons
+	* include/pppd.h:
+		Fix compiler warning
+	* src/auth.c:
+	* src/lcp.c:
+	* src/pppd.c:
+		Add code to track ppp failure reasons
+	* src/chat.c:
+		Fixes to clear out buffer space to allow chat script to run 
+		multiple times.  Note: function is still not thread-safe
+	* src/sys-ecos.c:
+		Reset carrier detected bit when carrier lost
+		Reset ppp_tty control block when PPP started
+
+2004-06-24  Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* tests/windows_telnet.c:
+	* cdl/ppp.cdl:
+	Added windows_telnet example application. Connects to Windows PPP 
+	server and waits for a telnet session.
+		
+2004-05-06  Mark Retallack <mark.retallack@siemens.com>
+
+	* src/ppp_io.c: 
+	* src/sys-ecos.c: 	
+	* src/ppp_io.h:	
+	The wait_input function sometimes blocked even if a packet was
+	available for processing. Now checks the tty queue and then the 
+	serial driver before blocking.
+
+2004-05-06  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/auth.c: Don't use non-eCos <paths.h>
+	* src/pppd.c: Don't use non-eCos <sys/wait.h> and <sys/resource.h>
+	* src/sys-ecos.c: netmask must be extern - not all tools have
+	COMMON section support.
+
+2004-04-15  Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* src/chat.c: Script now returns success when it runs to completion
+
+2004-03-31  John Dallaway  <jld@ecoscentric.com>
+
+	* cdl/ppp.cdl: Correct capitalisation in display strings.
+
+2004-03-24  Nick Garnett  <nickg@ecoscentric.com>
+
+	* cdl/ppp.cdl: Add CYGPKG_PPP_DEBUG_WARN_ONLY option to control
+	which syslog() messages actually get printed.
+
+	* include/ppp.h: Widen kdebugflag option to 5 bits.
+
+	* src/ppp_io.c: Converted some db_printf() calls to diag_printf().
+
+	* src/sys-ecos.c: Delay return of cyg_ppp_wait_up() until IP
+	addresses have been set. Add ifdef for CYGPKG_PPP_DEBUG_WARN_ONLY
+	to syslog().
+
+	* doc/ppp.sgml: Added documentation of CYGPKG_PPP_DEBUG_WARN_ONLY
+	option. Improved documentation of kdebugflag runtime option.
+
+2004-01-09  John Dallaway  <jld@ecoscentric.com>
+
+	* cdl/ppp.cdl: Fix typographical error.
+
+2004-01-08  Nick Garnett  <nickg@ecoscentric.com>
+
+	* tests/test_server.sh: Added a dbecho of the PPPD command line.
+
+2003-12-23  Nick Garnett  <nickg@ecoscentric.com>
+
+	* doc/ppp.sgml: Added A&M Adder boards to list of those that
+	support hardware flow control.
+
+2003-12-22  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/pppd.c (vfmtmsg): Disabled PowerPC-specific ifndef, we don't
+	have the differences in va_list that this is coping with.
+
+2003-11-12  John Dallaway  <jld@ecoscentric.com>
+
+	* doc/ppp.sgml: Addition comments concerning serial flow control from
+	Nick Garnett.
+
+2003-10-10  John Dallaway  <jld@ecoscentric.com>
+
+	* doc/ppp.sgml: Fix documentation build error.
+
+2003-09-25  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/magic.c (magic_init): Added pseudo-pid to seed
+	initialization to add some variety.
+
+	* include/pppd.h: 
+	* include/names.h: 
+	* src/pppd.c: Added flowctl global variable to control flow
+	control of serial line. Removed crtscts variable.
+
+	* cdl/ppp.cdl: Fixed enable of CHAP support, it was zero.
+
+	* src/ppp_io.h:
+	* src/ppp_io.c:
+	* src/sys-ecos.c (set_up_tty): Added switch to set flow control of
+	serial line depending on flowctl variable. Added ifdefs around use
+	of line status callbacks -- not all drivers support them.
+	
+	* include/ppp.h: Added flowctl field to cyg_ppp_options_t
+	structure plus a set of defines for its possible values.
+
+	* doc/ppp.sgml: Added documentation of flowctl field.
+
+	* tests/test_server.sh:
+	* tests/nc_test_slave.c:
+	* tests/tcp_echo.c:
+	Added ability to use software flow control in these tests and an
+	option on test_server commandline to select it for the host.
+	
+2003-07-18  Nick Garnett  <nickg@ecoscentric.com>
+
+	* tests/test_server.sh: Changed to /bin/bash on first line, just
+	in case. Added "nodetach" option to pppd. It seems that some
+	versions of pppd fork into the background by default, and some,
+	like the one I tested all this with initially, do not. This option
+	should make them all behave the same.
+
+2003-07-15  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/magic.c (magic): Removed use of getpid(), since this is the
+	only dependency here on the POSIX library.
+
+2003-07-14  Nick Garnett  <nickg@ecoscentric.com>
+
+	* doc/ppp.sgml: Updated configuration section to mention
+	requirement for net and serial packages. Various other fixes.
+
+	* cdl/ppp.cdl: Added requirements for CYGPKG_IO_SERIAL and
+	CYGPKG_IO_SERIAL_DEVICES. Various other tidies.
+
+	* src/sys-ecos.c: Added dummy versions of various PAP and CHAP
+	functions to satisfy references in auth.c when PAP and CHAP have
+	been configured out.
+
+	* tests/test_server.sh: Added some comments and tidied a little.
+	
+2003-07-11  Nick Garnett  <nickg@ecoscentric.com>
+
+	* cdl/ppp.cdl: Added CYGPKG_PPP_TESTS_ALL to control which tests
+	get made. Changed default value of CYGPKG_PPP_TESTS_AUTOMATE to
+	build automated tests by default.
+
+	* tests/ppp_updown.c: Changed ping timeout to seven seconds. The
+	larger packets can take a long time to exchange at the lower baud
+	rates.
+	
+	* doc/ppp.sgml: Updated to reflect latest changes.
+
+2003-07-08  Nick Garnett  <nickg@ecoscentric.com>
+
+	* cdl/ppp.cdl: Added CYGPKG_PPP_TESTS_AUTOMATE and
+	CYGDAT_PPP_TEST_BAUD_RATES options.
+	
+	* src/sys-ecos.c: Close sockfd correctly.
+
+	* src/chat.c: Some small fixes to make system re-entrant. Fixed
+	success flag to comply with documentation.
+	
+	* tests/ppp_test_support.inl: File added to contain the common
+	parts for all PPP tests. This mostly involves the sending of
+	commands to the test_server.sh script.
+
+	* tests/test_server.sh: Modified to respond to baud rate change
+	commands and to loop until a finish command is added. Added
+	various extra tests for authentication and chat testing.
+
+
+	* tests/ppp_auth.c: Test added to test PAP and CHAP
+	authentication.
+
+	* doc/ppp.sgml: Updated to reflect latest test changes.
+	
+	* tests/ppp_up.c: 
+	* tests/ppp_updown.c: 
+	* tests/chat.c: 
+	* tests/nc_test_slave.c: 
+	* tests/tcp_echo.c:
+	Tests converted to use ppp_test_support.inl and to run multiple
+	tests in some instances.
+
+2003-07-03  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/ppp_io.c (pppasyncstart): Removed a couple of spurious
+	breaks. These were causing the TX thread to loop unnecessarily,
+	and also seemed to cause some occasional packet corruptions.
+
+	* tests/ppp_up.c: Fixed loop to be more responsive to the PPP link
+	going down.
+	
+2003-07-01  Nick Garnett  <nickg@ecoscentric.com>
+
+	* doc/ppp.sgml: Added further documentation on testing.
+
+	* tests/test_server.sh: Various fixes.
+
+2003-06-26  Nick Garnett  <nickg@ecoscentric.com>
+
+	* cdl/ppp.cdl: Added CYGPKG_PPP_TEST_DEVICE to specify device used
+	by test programs.
+	Added requirement for CYGPKG_IO_SERIAL_FLOW_CONTROL. 
+	
+	* doc/ppp.sgml: Added descriptions of test programs. Various
+	tidies and fixes.
+
+	* src/chat.c: Added some local debug support.
+	
+	* tests/ppp_up.c:
+	* tests/ppp_updown.c:
+	* tests/chat.c:
+	* tests/nc_test_slave.c:
+	* tests/tcp_echo.c:
+	Added chat script (or modified existing one) to announce the name
+	of the test over the serial line. This is to interface to the
+	test_server.sh script. Use CYGPKG_PPP_TEST_DEVICE. ppp_updown now
+	interrogates the ppp0 interface for the remote end's IP
+	address. chat now switches to 115200 baud.
+
+	* tests/isp.c: Use CYGPKG_PPP_TEST_DEVICE.
+
+	* tests/test_server.sh: Shell script to act as a remote end for
+	PPP testing. Each test announces itself over the link and this
+	script executes the correct set of commands to run the test.
+	
+2003-06-20  Nick Garnett  <nickg@ecoscentric.com>
+
+	* cdl/ppp.cdl: Removed CYGNUM_PPP_THREAD_COUNT. Updated
+	descriptions of other options.
+
+	* src/chat.c:
+	* src/sys-ecos.c:
+	* include/ppp.h: Some minor tidying, and API semantic changes
+	mostly prompted by trying to document the API and discovering some
+	inconsistencies.
+
+	* tests/ppp_up.c: Modified in line with API semantic changes.
+	
+	* doc/ppp.sgml:
+	* doc/makefile:
+	* doc/ppp_sa.sgml:
+	Added documentation. The actual documentation is in ppp.sgml. The
+	makefile and ppp_sa.sgml allow a stand-alone copy of the
+	documentation to be generated.
+
+2003-06-17  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/ppp.h: Removed some unused options from
+	cyg_ppp_options_t.
+
+	* include/syslog.h: Tidied and commented.
+
+	* src/auth.c:
+	* src/ipcp.c:
+	* src/lcp.c:
+	* src/ppp_io.c:
+	* src/pppd.c:
+	* src/sys-ecos.c:
+	Removed some defunct BSD code, tidied up a little.
+
+	* src/chat.c: Some tidying.
+	
+	* cdl/ppp.cdl:
+	* tests/nc_test_slave.c:
+	* tests/nc_test_framework.h:
+	Added nc_test_slave test.
+
+	* tests/ppp_up.c: Changed wait to print out TCP/IP tables every
+	minute.
+
+	* tests/tcp_echo.c: Tidied up a little.
+	
+2003-06-13  Nick Garnett  <nickg@ecoscentric.com>
+
+	* cdl/ppp.cdl: Added dialup number, control over compression, and
+	some extra tests.
+
+	* include/pppd.h: Changed inspeed to be a cyg_serial_baud_rate_t
+	enum.
+
+	* include/ppp.h: Added default_route, modem, baud and script
+	options to cyg_ppp_options_t.
+
+	* include/names.h: Header added to redefine all external names in
+	the PPP package so that they do not pollute to application's
+	namespace.
+	
+	* src/chat.c:
+	* include/syslog.h:
+	* include/ppp_io.h: Tidied and commented.
+
+
+	* src/if_ppp.c: Added include of pkgconf/ppp.h.
+
+	* src/ppp_io.c: Expunged some unnecessary BSD code, various tides.
+	
+	* src/pppd.c: Added handling of CHAT scripting during bring-up,
+	carrier detect and proper shutdown.
+	Expunged some unnecessary BSD code, various tides.
+	
+	* src/sys-ecos.c: Improved startup and shutdown synchronization,
+	added carrier detect handling.
+	Expunged some unnecessary BSD code, various tides.
+
+	* tests/isp.c:
+	* tests/ppp_up.c:
+	* tests/ppp_updown.c:
+	Generally tidied and cleaned up a bit. Added ping functionality to
+	some tests to check routing.
+	
+	* tests/tcp_echo.c:
+	New test, an adaptation of the standard tcp_echo net test that
+	brings the PPP link up before starting the test.
+	
+	* include/zlib.h:
+	* src/bsd_comp.c:
+	* src/ppp_deflate.c:
+	* src/zlib.c:
+	Added these files to implement PPP compression. However at present
+	there seem to be problems with this code, so compression is
+	disabled by default. In any case, these algorithms need enormous
+	amounts of working memory, so may not be useful in an embedded
+	system.
+	
+2003-06-10  Nick Garnett  <nickg@ecoscentric.com>
+
+	* cdl/ppp.cdl:
+	* include/cbcp.h:
+	* include/ccp.h:
+	* include/chap.h:
+	* include/chap_ms.h:
+	* include/fsm.h:
+	* include/ipcp.h:
+	* include/lcp.h:
+	* include/magic.h:
+	* include/ppp.h:
+	* include/ppp_io.h:
+	* include/pppd.h:
+	* include/slcompress.h:
+	* include/syslog.h:
+	* include/upap.h:
+	* include/net/bpf.h:
+	* include/net/if_ppp.h:
+	* include/net/if_pppvar.h:
+	* include/net/ppp_comp.h:
+	* include/net/ppp_defs.h:
+	* src/auth.c:
+	* src/cbcp.c:
+	* src/ccp.c:
+	* src/chap.c:
+	* src/chap_ms.c:
+	* src/chat.c:
+	* src/fsm.c:
+	* src/if_ppp.c:
+	* src/ipcp.c:
+	* src/lcp.c:
+	* src/magic.c:
+	* src/ppp_io.c:
+	* src/pppd.c:
+	* src/slcompress.c:
+	* src/sys-ecos.c:
+	* src/upap.c:
+	* tests/chat.c:
+	* tests/isp.c:
+	* tests/ppp_up.c:
+	* tests/ppp_updown.c:
+	Initial checkin of PPP code -- mainly as a safety/backup
+	measure. There is still a good deal of tidying up to be done
+	here. At present there is a lot of ifdeffed out BSD code present,
+	which is there as a reminder of what should be done in the eCos
+	code. The tests are incomplete, and there is no documentation.
+
+# Copyright (C) 2003 eCosCentric Ltd.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+		
+	

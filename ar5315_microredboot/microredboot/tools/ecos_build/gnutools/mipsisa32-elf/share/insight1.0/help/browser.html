@@ -1,0 +1,82 @@
+<HTML>
+<HEAD>
+<TITLE>Function Browser Help</TITLE>
+</HEAD>
+<BODY>
+<CENTER><H1>The Function Browser</H1></CENTER>
+<BR>The Function Browser may be used to search for specific functions
+in the executable, allowing the user to easily browse through source
+code and set and clear breakpoints at anywhere in the executable
+with ease.
+
+<H3><A HREF="#display">Function Browser Display</A></H3>
+<UL>
+    <LI><A HREF="#display_search">Searching for a Function</A>
+    <LI><A HREF="#display_limit">Limiting the Search</A>
+    <LI><A HREF="#display_break">Toggling Breakpoints</A>
+    <LI><A HREF="#display_source">Viewing Source Code</A>
+</UL></P>
+
+<H2><A NAME="display">Function Browser Display</A></H2>
+The Function Browser display shows all the current search
+parameters specified by the user: search type, search expression,
+and files to search.
+
+<H4><A NAME="display_search">Searching for a Function</A></H4>
+To search for a function, enter
+the name of the function into the "Search for" field at the top
+of the Function Browser and press the Enter key on the keyboard
+or press the Search button in the lower right-hand corner. The
+Function Browser searches through every file contained in the
+executable (including libraries and included files) for the
+specified function. If the function is found in the executable's
+symbol table, the Functions listing will contain the function's
+name.
+
+<H4><A NAME="display_limit">Limiting the Search</A></H4>
+Searches are not confined to one specific function. The Function
+Browser is capable of searching for any function which matches
+the expression entered into the "Search for" field. For example,
+to list all functions which start with the letters c, y, and g,
+enter "cyg" into the search field and press enter. Every function
+which begins with these three letters is displayed. To search
+for all functions which do <I>not</I> begin with the letters "a",
+"b", and "c", enter the regular expression "^[^a-c]" into the search
+field, click the "Use regular expression" checkbox, and then click
+Search (or press the Enter key on the keyboard). The Browser returns 
+the names of all matching functions.
+
+<P>Additionally, any search may be limited in two more ways:
+the Browser may be configured to search only specified files and
+list only static functions.</P>
+
+<P>To search specific files only, select the files to be searched
+using the Files list. To select all files for searching, click the
+Select All button at the bottom of the Files listing. Note that
+the Select All button changes to Select None, allowing the user to
+deselect all selected files. With no files selected, the Browser
+will search all files in the project.</P>
+
+<P>To search for static functions only, click the "Only show
+functions declared 'static'" before searching.</P>
+
+<H4><A NAME="display_break">Toggling Breakpoints</A></H4>
+There are numerous ways to toggle
+breakpoints on functions using the Function Browser. To toggle the
+breakpoint at all listed matches in the Functions list, press the
+Toggle Breakpoint button. To toggle a breakpoint at some subset
+of functions listed in the Functions list, click the right mouse
+button on each function's name in the list. The last way to toggle
+breakpoints using the function browser involves viewing the function's
+source code.
+
+<H4><A NAME="display_source">Viewing Source Code</A></H4>
+To view the source code for a function,
+select the function in the Functions list and click the "View Source"
+dropdown (if it is not already dropped down). A Source Viewer
+similar to the <A HREF="source.html#display">Source Window Display</A>
+appears at the bottom. Toggle breakpoints as described in
+<A HREF="source.html#setting_a_breakpoint">Setting a Breakpoint</A>
+in <A HREF="source.html">Source Window Help</A>.
+</BODY>
+</HTML>

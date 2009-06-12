@@ -1,0 +1,157 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_tx49.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-08-06  Andy Dyer <adyer@righthandtech.com>
+
+	* src/mips_tx49.ld:
+	Removed the "& defined(CYGPKG_IO)" which was causing libextras.a
+	not to get built for a redboot configuration.  The offsets for the
+	exception vectors were wrong for a ROM build of redboot.  For
+	R4000 class mips, the utlb vector is at 0xbfc00200, and the
+	general exception vector is at 0xbfc00380 Added *.2ram sections
+	which were missing from the data segment.
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/mips_tx49.ld: 
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2003-04-09  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/mips_tx49.ld:
+        Fix .gnulinkonce.s -> .gnu.linkonce.s typo.
+
+2000-12-05  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h (HAL_MIPS_CACHE_INSN_USES_LSB): The TX49
+	uses LSB in the cache macro.
+
+2000-09-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Enable div-by-zero FPU exceptions.
+
+2000-09-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Enable the cache after clearing it.
+
+2000-09-01  Jonathan Larmour  <jlarmour@redhat.com>
+ 
+        * include/var_arch.h: tx49 GDB stubs now use 32-bits internally to
+        represent registers
+
+2000-08-31  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/mips_tx49.ld: Use HAL table sections instead of devtab sections
+
+2000-06-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h: Define HAL_ICACHE_INVALIDATE_ALL which
+	disables cache during operation.
+
+2000-05-25  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx49.cdl: Use FPU double-LE layout in 32bit mode.
+
+2000-05-24  Jesper Skov  <jskov@redhat.com>
+
+	* src/mips_tx49.ld: Application contructors run after eCos
+	constructors.
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: Flush all ways of cache on startup.
+
+	* include/var_cache.h: 
+	* cdl/hal_mips_tx49.cdl: Comment cleanups.
+
+	* include/var_cache.h: Cleaned up. Use arch macros.
+
+2000-05-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/mips_tx49.ld: Exclude libgcc constructors from CTOR list.
+
+	* cdl/hal_mips_tx49.cdl: Set cache size to 32kB.
+
+2000-05-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/mips_tx49.ld (hal_virtual_vector_table): Added.
+
+2000-05-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx49.cdl: Platform can select FPU mode.
+
+2000-05-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/variant.inc: 
+	* include/var_cache.h:
+	The cache-enable bits must be 0 to enable. Enable
+	caching/writeback for kseg0.
+	
+	* src/variant.S: 
+	* include/var_arch.h: 
+	Cleanup.
+
+	* include/variant.inc: Copied in various stuff from VR4300 file.
+
+	* include/var_cache.h: Cleanup. Added enabled macros.
+
+	* cdl/hal_mips_tx49.cdl: Cleanup. Enable FPU.
+
+2000-05-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/mips_tx49.ld: Workaround minor tool problem.
+
+	* src/variant.S: Emptied.
+
+	* src/mips_tx49.ld: Move vsr to avoid conflict with 'other'
+	exception entry having vectors in RAM.
+
+	* include/var_arch.h: GDB expects 64 bit registers.
+
+	* cdl/hal_mips_tx49.cdl: Add (disabled) 64 bit related options.
+
+	* src/mips_tx49.ld: Workaround for linker buglet.
+
+	* include/var_cache.h: Minor tweaks.
+
+2000-05-09  Jesper Skov  <jskov@redhat.com>
+
+	* Cloned from hal/mips/tx39
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

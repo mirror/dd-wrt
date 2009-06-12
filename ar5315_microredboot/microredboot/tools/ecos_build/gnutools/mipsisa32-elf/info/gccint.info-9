@@ -1,0 +1,840 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: Machine Constraints,  Prev: Modifiers,  Up: Constraints
+
+Constraints for Particular Machines
+-----------------------------------
+
+   Whenever possible, you should use the general-purpose constraint
+letters in `asm' arguments, since they will convey meaning more readily
+to people reading your code.  Failing that, use the constraint letters
+that usually have very similar meanings across architectures.  The most
+commonly used constraints are `m' and `r' (for memory and
+general-purpose registers respectively; *note Simple Constraints::), and
+`I', usually the letter indicating the most common immediate-constant
+format.
+
+   For each machine architecture, the `config/MACHINE/MACHINE.h' file
+defines additional constraints.  These constraints are used by the
+compiler itself for instruction generation, as well as for `asm'
+statements; therefore, some of the constraints are not particularly
+interesting for `asm'.  The constraints are defined through these
+macros:
+
+`REG_CLASS_FROM_LETTER'
+     Register class constraints (usually lower case).
+
+`CONST_OK_FOR_LETTER_P'
+     Immediate constant constraints, for non-floating point constants of
+     word size or smaller precision (usually upper case).
+
+`CONST_DOUBLE_OK_FOR_LETTER_P'
+     Immediate constant constraints, for all floating point constants
+     and for constants of greater than word size precision (usually
+     upper case).
+
+`EXTRA_CONSTRAINT'
+     Special cases of registers or memory.  This macro is not required,
+     and is only defined for some machines.
+
+   Inspecting these macro definitions in the compiler source for your
+machine is the best way to be certain you have the right constraints.
+However, here is a summary of the machine-dependent constraints
+available on some particular machines.
+
+_ARM family--`arm.h'_
+
+    `f'
+          Floating-point register
+
+    `F'
+          One of the floating-point constants 0.0, 0.5, 1.0, 2.0, 3.0,
+          4.0, 5.0 or 10.0
+
+    `G'
+          Floating-point constant that would satisfy the constraint `F'
+          if it were negated
+
+    `I'
+          Integer that is valid as an immediate operand in a data
+          processing instruction.  That is, an integer in the range 0
+          to 255 rotated by a multiple of 2
+
+    `J'
+          Integer in the range -4095 to 4095
+
+    `K'
+          Integer that satisfies constraint `I' when inverted (ones
+          complement)
+
+    `L'
+          Integer that satisfies constraint `I' when negated (twos
+          complement)
+
+    `M'
+          Integer in the range 0 to 32
+
+    `Q'
+          A memory reference where the exact address is in a single
+          register (``m'' is preferable for `asm' statements)
+
+    `R'
+          An item in the constant pool
+
+    `S'
+          A symbol in the text segment of the current file
+
+_AMD 29000 family--`a29k.h'_
+
+    `l'
+          Local register 0
+
+    `b'
+          Byte Pointer (`BP') register
+
+    `q'
+          `Q' register
+
+    `h'
+          Special purpose register
+
+    `A'
+          First accumulator register
+
+    `a'
+          Other accumulator register
+
+    `f'
+          Floating point register
+
+    `I'
+          Constant greater than 0, less than 0x100
+
+    `J'
+          Constant greater than 0, less than 0x10000
+
+    `K'
+          Constant whose high 24 bits are on (1)
+
+    `L'
+          16-bit constant whose high 8 bits are on (1)
+
+    `M'
+          32-bit constant whose high 16 bits are on (1)
+
+    `N'
+          32-bit negative constant that fits in 8 bits
+
+    `O'
+          The constant 0x80000000 or, on the 29050, any 32-bit constant
+          whose low 16 bits are 0.
+
+    `P'
+          16-bit negative constant that fits in 8 bits
+
+    `G'
+    `H'
+          A floating point constant (in `asm' statements, use the
+          machine independent `E' or `F' instead)
+
+_AVR family--`avr.h'_
+
+    `l'
+          Registers from r0 to r15
+
+    `a'
+          Registers from r16 to r23
+
+    `d'
+          Registers from r16 to r31
+
+    `w'
+          Registers from r24 to r31.  These registers can be used in
+          `adiw' command
+
+    `e'
+          Pointer register (r26-r31)
+
+    `b'
+          Base pointer register (r28-r31)
+
+    `q'
+          Stack pointer register (SPH:SPL)
+
+    `t'
+          Temporary register r0
+
+    `x'
+          Register pair X (r27:r26)
+
+    `y'
+          Register pair Y (r29:r28)
+
+    `z'
+          Register pair Z (r31:r30)
+
+    `I'
+          Constant greater than -1, less than 64
+
+    `J'
+          Constant greater than -64, less than 1
+
+    `K'
+          Constant integer 2
+
+    `L'
+          Constant integer 0
+
+    `M'
+          Constant that fits in 8 bits
+
+    `N'
+          Constant integer -1
+
+    `O'
+          Constant integer 8, 16, or 24
+
+    `P'
+          Constant integer 1
+
+    `G'
+          A floating point constant 0.0
+
+_IBM RS6000--`rs6000.h'_
+
+    `b'
+          Address base register
+
+    `f'
+          Floating point register
+
+    `h'
+          `MQ', `CTR', or `LINK' register
+
+    `q'
+          `MQ' register
+
+    `c'
+          `CTR' register
+
+    `l'
+          `LINK' register
+
+    `x'
+          `CR' register (condition register) number 0
+
+    `y'
+          `CR' register (condition register)
+
+    `z'
+          `FPMEM' stack memory for FPR-GPR transfers
+
+    `I'
+          Signed 16-bit constant
+
+    `J'
+          Unsigned 16-bit constant shifted left 16 bits (use `L'
+          instead for `SImode' constants)
+
+    `K'
+          Unsigned 16-bit constant
+
+    `L'
+          Signed 16-bit constant shifted left 16 bits
+
+    `M'
+          Constant larger than 31
+
+    `N'
+          Exact power of 2
+
+    `O'
+          Zero
+
+    `P'
+          Constant whose negation is a signed 16-bit constant
+
+    `G'
+          Floating point constant that can be loaded into a register
+          with one instruction per word
+
+    `Q'
+          Memory operand that is an offset from a register (`m' is
+          preferable for `asm' statements)
+
+    `R'
+          AIX TOC entry
+
+    `S'
+          Constant suitable as a 64-bit mask operand
+
+    `T'
+          Constant suitable as a 32-bit mask operand
+
+    `U'
+          System V Release 4 small data area reference
+
+_Intel 386--`i386.h'_
+
+    `q'
+          `a', `b', `c', or `d' register for the i386.  For x86-64 it
+          is equivalent to `r' class. (for 8-bit instructions that do
+          not use upper halves)
+
+    `Q'
+          `a', `b', `c', or `d' register. (for 8-bit instructions, that
+          do use upper halves)
+
+    `R'
+          Legacy register--equivalent to `r' class in i386 mode.  (for
+          non-8-bit registers used together with 8-bit upper halves in
+          a single instruction)
+
+    `A'
+          Specifies the `a' or `d' registers.  This is primarily useful
+          for 64-bit integer values (when in 32-bit mode) intended to
+          be returned with the `d' register holding the most
+          significant bits and the `a' register holding the least
+          significant bits.
+
+    `f'
+          Floating point register
+
+    `t'
+          First (top of stack) floating point register
+
+    `u'
+          Second floating point register
+
+    `a'
+          `a' register
+
+    `b'
+          `b' register
+
+    `c'
+          `c' register
+
+    `d'
+          `d' register
+
+    `D'
+          `di' register
+
+    `S'
+          `si' register
+
+    `x'
+          `xmm' SSE register
+
+    `y'
+          MMX register
+
+    `I'
+          Constant in range 0 to 31 (for 32-bit shifts)
+
+    `J'
+          Constant in range 0 to 63 (for 64-bit shifts)
+
+    `K'
+          `0xff'
+
+    `L'
+          `0xffff'
+
+    `M'
+          0, 1, 2, or 3 (shifts for `lea' instruction)
+
+    `N'
+          Constant in range 0 to 255 (for `out' instruction)
+
+    `Z'
+          Constant in range 0 to `0xffffffff' or symbolic reference
+          known to fit specified range.  (for using immediates in zero
+          extending 32-bit to 64-bit x86-64 instructions)
+
+    `e'
+          Constant in range -2147483648 to 2147483647 or symbolic
+          reference known to fit specified range.  (for using
+          immediates in 64-bit x86-64 instructions)
+
+    `G'
+          Standard 80387 floating point constant
+
+_Intel 960--`i960.h'_
+
+    `f'
+          Floating point register (`fp0' to `fp3')
+
+    `l'
+          Local register (`r0' to `r15')
+
+    `b'
+          Global register (`g0' to `g15')
+
+    `d'
+          Any local or global register
+
+    `I'
+          Integers from 0 to 31
+
+    `J'
+          0
+
+    `K'
+          Integers from -31 to 0
+
+    `G'
+          Floating point 0
+
+    `H'
+          Floating point 1
+
+_MIPS--`mips.h'_
+
+    `d'
+          General-purpose integer register
+
+    `f'
+          Floating-point register (if available)
+
+    `h'
+          `Hi' register
+
+    `l'
+          `Lo' register
+
+    `x'
+          `Hi' or `Lo' register
+
+    `y'
+          General-purpose integer register
+
+    `z'
+          Floating-point status register
+
+    `I'
+          Signed 16-bit constant (for arithmetic instructions)
+
+    `J'
+          Zero
+
+    `K'
+          Zero-extended 16-bit constant (for logic instructions)
+
+    `L'
+          Constant with low 16 bits zero (can be loaded with `lui')
+
+    `M'
+          32-bit constant which requires two instructions to load (a
+          constant which is not `I', `K', or `L')
+
+    `N'
+          Negative 16-bit constant
+
+    `O'
+          Exact power of two
+
+    `P'
+          Positive 16-bit constant
+
+    `G'
+          Floating point zero
+
+    `Q'
+          Memory reference that can be loaded with more than one
+          instruction (`m' is preferable for `asm' statements)
+
+    `R'
+          Memory reference that can be loaded with one instruction (`m'
+          is preferable for `asm' statements)
+
+    `S'
+          Memory reference in external OSF/rose PIC format (`m' is
+          preferable for `asm' statements)
+
+_Motorola 680x0--`m68k.h'_
+
+    `a'
+          Address register
+
+    `d'
+          Data register
+
+    `f'
+          68881 floating-point register, if available
+
+    `x'
+          Sun FPA (floating-point) register, if available
+
+    `y'
+          First 16 Sun FPA registers, if available
+
+    `I'
+          Integer in the range 1 to 8
+
+    `J'
+          16-bit signed number
+
+    `K'
+          Signed number whose magnitude is greater than 0x80
+
+    `L'
+          Integer in the range -8 to -1
+
+    `M'
+          Signed number whose magnitude is greater than 0x100
+
+    `G'
+          Floating point constant that is not a 68881 constant
+
+    `H'
+          Floating point constant that can be used by Sun FPA
+
+_Motorola 68HC11 & 68HC12 families--`m68hc11.h'_
+
+    `a'
+          Register 'a'
+
+    `b'
+          Register 'b'
+
+    `d'
+          Register 'd'
+
+    `q'
+          An 8-bit register
+
+    `t'
+          Temporary soft register _.tmp
+
+    `u'
+          A soft register _.d1 to _.d31
+
+    `w'
+          Stack pointer register
+
+    `x'
+          Register 'x'
+
+    `y'
+          Register 'y'
+
+    `z'
+          Pseudo register 'z' (replaced by 'x' or 'y' at the end)
+
+    `A'
+          An address register: x, y or z
+
+    `B'
+          An address register: x or y
+
+    `D'
+          Register pair (x:d) to form a 32-bit value
+
+    `L'
+          Constants in the range -65536 to 65535
+
+    `M'
+          Constants whose 16-bit low part is zero
+
+    `N'
+          Constant integer 1 or -1
+
+    `O'
+          Constant integer 16
+
+    `P'
+          Constants in the range -8 to 2
+
+_SPARC--`sparc.h'_
+
+    `f'
+          Floating-point register that can hold 32- or 64-bit values.
+
+    `e'
+          Floating-point register that can hold 64- or 128-bit values.
+
+    `I'
+          Signed 13-bit constant
+
+    `J'
+          Zero
+
+    `K'
+          32-bit constant with the low 12 bits clear (a constant that
+          can be loaded with the `sethi' instruction)
+
+    `L'
+          A constant in the range supported by `movcc' instructions
+
+    `M'
+          A constant in the range supported by `movrcc' instructions
+
+    `N'
+          Same as `K', except that it verifies that bits that are not
+          in the lower 32-bit range are all zero.  Must be used instead
+          of `K' for modes wider than `SImode'
+
+    `G'
+          Floating-point zero
+
+    `H'
+          Signed 13-bit constant, sign-extended to 32 or 64 bits
+
+    `Q'
+          Floating-point constant whose integral representation can be
+          moved into an integer register using a single sethi
+          instruction
+
+    `R'
+          Floating-point constant whose integral representation can be
+          moved into an integer register using a single mov instruction
+
+    `S'
+          Floating-point constant whose integral representation can be
+          moved into an integer register using a high/lo_sum
+          instruction sequence
+
+    `T'
+          Memory address aligned to an 8-byte boundary
+
+    `U'
+          Even register
+
+    `W'
+          Memory address for `e' constraint registers.
+
+_TMS320C3x/C4x--`c4x.h'_
+
+    `a'
+          Auxiliary (address) register (ar0-ar7)
+
+    `b'
+          Stack pointer register (sp)
+
+    `c'
+          Standard (32-bit) precision integer register
+
+    `f'
+          Extended (40-bit) precision register (r0-r11)
+
+    `k'
+          Block count register (bk)
+
+    `q'
+          Extended (40-bit) precision low register (r0-r7)
+
+    `t'
+          Extended (40-bit) precision register (r0-r1)
+
+    `u'
+          Extended (40-bit) precision register (r2-r3)
+
+    `v'
+          Repeat count register (rc)
+
+    `x'
+          Index register (ir0-ir1)
+
+    `y'
+          Status (condition code) register (st)
+
+    `z'
+          Data page register (dp)
+
+    `G'
+          Floating-point zero
+
+    `H'
+          Immediate 16-bit floating-point constant
+
+    `I'
+          Signed 16-bit constant
+
+    `J'
+          Signed 8-bit constant
+
+    `K'
+          Signed 5-bit constant
+
+    `L'
+          Unsigned 16-bit constant
+
+    `M'
+          Unsigned 8-bit constant
+
+    `N'
+          Ones complement of unsigned 16-bit constant
+
+    `O'
+          High 16-bit constant (32-bit constant with 16 LSBs zero)
+
+    `Q'
+          Indirect memory reference with signed 8-bit or index register
+          displacement
+
+    `R'
+          Indirect memory reference with unsigned 5-bit displacement
+
+    `S'
+          Indirect memory reference with 1 bit or index register
+          displacement
+
+    `T'
+          Direct memory reference
+
+    `U'
+          Symbolic address
+
+_S/390 and zSeries--`s390.h'_
+
+    `a'
+          Address register (general purpose register except r0)
+
+    `d'
+          Data register (arbitrary general purpose register)
+
+    `f'
+          Floating-point register
+
+    `I'
+          Unsigned 8-bit constant (0-255)
+
+    `J'
+          Unsigned 12-bit constant (0-4095)
+
+    `K'
+          Signed 16-bit constant (-32768-32767)
+
+    `L'
+          Unsigned 16-bit constant (0-65535)
+
+    `Q'
+          Memory reference without index register
+
+    `S'
+          Symbolic constant suitable for use with the `larl' instruction
+
+_Xstormy16--`stormy16.h'_
+
+    `a'
+          Register r0.
+
+    `b'
+          Register r1.
+
+    `c'
+          Register r2.
+
+    `d'
+          Register r8.
+
+    `e'
+          Registers r0 through r7.
+
+    `t'
+          Registers r0 and r1.
+
+    `y'
+          The carry register.
+
+    `z'
+          Registers r8 and r9.
+
+    `I'
+          A constant between 0 and 3 inclusive.
+
+    `J'
+          A constant that has exactly one bit set.
+
+    `K'
+          A constant that has exactly one bit clear.
+
+    `L'
+          A constant between 0 and 255 inclusive.
+
+    `M'
+          A constant between -255 and 0 inclusive.
+
+    `N'
+          A constant between -3 and 0 inclusive.
+
+    `O'
+          A constant between 1 and 4 inclusive.
+
+    `P'
+          A constant between -4 and -1 inclusive.
+
+    `Q'
+          A memory reference that is a stack push.
+
+    `R'
+          A memory reference that is a stack pop.
+
+    `S'
+          A memory reference that refers to an constant address of
+          known value.
+
+    `T'
+          The register indicated by Rx (not implemented yet).
+
+    `U'
+          A constant that is not between 2 and 15 inclusive.
+
+_Xtensa--`xtensa.h'_
+
+    `a'
+          General-purpose 32-bit register
+
+    `b'
+          One-bit boolean register
+
+    `A'
+          MAC16 40-bit accumulator register
+
+    `I'
+          Signed 12-bit integer constant, for use in MOVI instructions
+
+    `J'
+          Signed 8-bit integer constant, for use in ADDI instructions
+
+    `K'
+          Integer constant valid for BccI instructions
+
+    `L'
+          Unsigned constant valid for BccUI instructions
+

@@ -1,0 +1,318 @@
+2004-09-02  Mark Salter  <msalter@redhat.com>
+
+	* src/flash_query.c (CYGHWR_FLASH_READ_QUERY): Add platform hook
+	to handle access to query info.
+	* src/flash_program_buf.c (CYGHWR_FLASH_WRITE_BUF): Add platform
+	hook handle access to write buffer.
+
+2004-08-21  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/flash_unlock_block.c (flash_unlock_block): 
+	* cdl/flash_strata.cdl: CDL to control the maximum number of
+	blocks the driver supports. Some of the newer strata device has more
+	than the default maximum of 128. Problem pointed out by Kevin Zhang.
+
+2005-01-26  Scott Wilkinson <scott@alliantnetworks.com>
+	* src/strata.h:
+	* src/strata.c:
+	Flash from STMicro is compatible with the Intel strata chips, 
+	so detect them as well.  Check for manuf id 0x20.
+
+2003-10-29  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/flash_unlock_block.c (flash_unlock_block): test lock bit
+	explicitly - newer flash parts use the reserved bits in the
+	returned data.
+
+2003-09-11  Jani Monoses <jani@iv.ro>
+
+	* src/flash_erase_block.c (flash_erase_block): 
+	* src/flash_program_buf.c (flash_program_buf): Fix bootblock handling
+	in erase. Fix erase and word-program for Synchronous Strata and later
+	chips where block address and word address are required in the first
+	cycle of the operation while for earlier parts any address was good.
+	
+2003-09-10  Jani Monoses <jani@iv.ro>
+	
+	* cdl/flash_strata.cdl:
+	* src/flash_lock_block.c (flash_lock_block): 
+	* src/flash_unlock_block.c (flash_unlock_block): 
+	* src/flash_erase_block.c (flash_erase_block): 
+	* src/flash_query.c (flash_query): 
+	* src/flash_program_buf.c (flash_program_buf): Use .2ram sections 
+	for putting flash functions to RAM instead of the old method.
+	
+2003-05-02  Jani Monoses <jani@iv.ro>
+
+	* src/strata.c: Switch to using generic flash_query_dev.
+	The previous cache related changes broke flash_query for
+	Strata because in the query case the generic flash driver was not
+	called to handle the caches but the internal handling was removed
+	nevertheless.
+	
+2003-04-04  Jani Monoses <jani@iv.ro>
+	
+	* src/strata.h:
+	Use generic flash_dev.h for providing the FLASHWORD macro for
+	different widths and device numbers.No reason to duplicate that
+	here.This implicitely fixes the case when CYGNUM_FLASH_WIDTH is 16
+	and CYGNUM_FLASH_DEVICES is 4.
+
+2003-04-03  Jani Monoses <jani@iv.ro>
+
+	* src/flash_lock_block.c (flash_lock_block): 
+	* src/flash_unlock_block.c (flash_unlock_block): 
+	* src/flash_erase_block.c (flash_erase_block): 
+	* src/flash_query.c (flash_query): 
+	* src/flash_program_buf.c (flash_program_buf): 
+	Cache enabling and disabling are already handled by generic flash
+	
+2002-08-12  Mark Salter  <msalter@redhat.com>
+
+	* src/flash_unlock_block.c: Add synchronous strataflash support.
+	* src/strata.h: Add comments regarding synchronous strataflash.
+
+2002-04-30  Christoph Csebits  <christoph.csebits@frequentis.com>
+
+	* src/flash_unlock_block.c: Getting the current block lock
+	state for flashes in 8-Bit mode is now working correctly.
+
+2002-04-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/flash_strata.cdl: Invoke $(CC) with $(CFLAGS) to ensure the
+        correct flags are passed.
+
+2002-04-12  Gary Thomas  <gthomas@redhat.com>
+
+	* src/strata.c: Clean up warnings.
+
+2002-01-22  Mark Salter  <msalter@redhat.com>
+
+	* cdl/flash_strata.cdl: Add ".text" before "_end" markers in .s files.
+
+2001-10-23  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/flash_strata.cdl: Provide an option so that RedBoot .ecm
+	files can turn off the functionality of copying flash driver code
+	to separate RAM for execution; it's not needed for RAM and ROMRAM
+	startup, and for some platforms it is required to *not* copy thus.
+
+2001-08-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash_program_buf.c (flash_program_buf): Allow configuration
+	specific code sequence for actual writing of data.  Define by the
+	macro CYGHWR_FLASH_WRITE_ELEM.  Note: this is required on some
+	hardware, like the Intel SA185, which handles flash writes in
+	strange/obscure fashion.
+
+2001-07-17 Jeroen Dobbelaere  <jeroen.dobbelaere@acunia.com>
+
+	* src/flash_query.c (flash_query): Query needs to be done on even
+	addresses for byte-enabled strata flash 
+
+	* src/flash_program_buf.c (flash_program_buf): Fix of conversion of
+	write buffer length (in bytes) to the length in 'flash_t' words.
+
+2001-06-22  Hugo Tyson  <hmt@redhat.com>
+
+	* src/strata.c (flash_hwr_init): Need to refer to the query code
+	as extern char flash_query[], flash_query_end[]; (with the []) or
+	MIPS code gen assumes these are short offsets and linking fails.
+	The generic flash code in io/flash already uses this idiom.
+
+2001-06-22  Hugo Tyson  <hmt@redhat.com>
+
+	* src/strata.c (flash_hwr_init): Warnings reduced.  No arithmetic
+	on void *.
+
+2001-06-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash_program_buf.c (flash_program_buf): The buffered write
+	code didn't jump out if there was a write error, nor verify the
+	data by reading back.  This isn't consistent with the slow case,
+	and made it take an age if the device is unhappy, and then report
+	a bizarre error code.  Both issues fixed.
+
+2001-06-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/strata.c (flash_hwr_init): If shrinking to fit, must also
+	adjust the flash_info.blocks field, else unlock crashes trying to
+	get status of all those extra blocks that we cannot actually see.
+
+2001-06-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/strata.c: Remove dependency on printf() via user functions.
+
+2001-06-07  Hugo Tyson  <hmt@redhat.com>
+
+	* src/strata.c (flash_hwr_init): If we find a flash device that is
+	larger than is possible given the memory map, shrink to fit.
+	We know about the memory map from CYGNUM_FLASH_BASE_MASK (if
+	defined); it tells us the stride from one device to another.
+
+	This is to cope with installing, say, a 28F640 in a slot designed
+	for a 28F320 because of supply issues - it all works fine so long
+	as A22 is grounded.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/flash_strata.cdl: Needs IO driver to copy functions to RAM.
+
+2001-04-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/strata.c: Be more careful when enable/flush/disable caches.
+
+	* src/flash_erase_block.c (flash_erase_block): Boot block devices
+	may require additional erase commands to erase entire 'block'.
+
+2001-03-21  Hugo Tyson  <hmt@redhat.com>
+
+	* src/strata.h (FLASH_Write_Buffer): Do not define this if
+	CYGOPT_FLASH_IS_NOT_ADVANCED is defined; Advanced (xxxJ3) flash is
+	usual these days.  Also added documentation of the options that
+	can be used to control this module.
+	
+	* src/flash_program_buf.c (flash_program_buf): Reduce warnings
+	about unused variables if no FLASH_Write_Buffer command available.
+
+2001-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash_program_buf.c (flash_program_buf): Buffered write code
+	fixups, only on platforms with it defined.
+
+2001-03-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/strata.h: 
+	* src/strata.c: Support buffered writes.
+
+	* src/flash_program_buf.c: Use buffered writes if possible. This
+	mode allows the chip to do parallelized writes which is much faster.
+	It does require additional information, now provided by upper layer.
+
+2001-02-15  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash_query.c (flash_query): Depending on whether
+	CYGOPT_FLASH_IS_BOOTBLOCK (just a #define from the instantiator,
+	not really a cdl_option) is set, do the full Read_Query or just
+	acquire two codes for manufacturer and device type using Read_ID.
+
+	* src/strata.c (flash_hwr_init): Again depending on whether
+	CYGOPT_FLASH_IS_BOOTBLOCK, decode the device type into a size and
+	so on, or use the full Read_Query data as before.
+
+	* src/strata.h (FLASH_Read_ID): Undefine those commands which we
+	do not use.  Conditionally define those that we use depending on
+	CYGOPT_FLASH_IS_BOOTBLOCK.  Thus we should be able to deal with
+	StrataFlash and BootBlock flash with the same code.
+
+	* cdl/flash_strata.cdl: Do not implement (in the CDL sense)
+	CYGHWR_IO_FLASH_BLOCK_LOCKING leave it up to the instantiating
+	package instead.  Also move the build of the two objects that do
+	locking and unlocking into a compenent which is only active if
+	CYGHWR_IO_FLASH_BLOCK_LOCKING is indeed (requested to be)
+	implemented somewhere.
+
+2001-02-14  Hugo Tyson  <hmt@redhat.com>
+
+	* devs/flash/intel/strata/...: New package, generic strataFlash
+	driver based on several others; a portion of its history
+	follows...
+
+	flash.h -> strata.h
+	flash<platform>.c -> strata.c
+
+2001-02-06  Hugo Tyson  <hmt@redhat.com>
+
+	* src/flash.h: Much more generic again.  Not yet separated into
+	generic component and invocation header, but the structure is
+	there.  Also included support for a mapping from the physical
+	flash address we're thinking of to the virtual address we use to
+	access it.  More documentation.  Generalization to 8,16,32 and
+	64-bit access, made up from 8,16 or 32-bit devices.  Command and
+	status macros modified to accommodate these options.
+
+	* src/flash_lock_block.c (flash_lock_block): 
+	* src/flash_erase_block.c (flash_erase_block): 
+	* src/flash_query.c (flash_query): 
+	* src/flash_program_buf.c (flash_program_buf): 
+	All now acquire when possible the ROM address from the block
+	address, and use the physical to virtual macro as needed.
+
+	* src/flash_unlock_block.c (flash_unlock_block): 
+	The same changes, but a little more complex because of the need to
+	clear-all then re-lock some semantics.  Shadow pointer to virtual
+	address is used each time round the loop.
+
+	* cdl/flash_strata.cdl: Add explicit dependencies on flash.h, for
+	there were none - or they were ignored - for the specially built
+	compilation units that get copied to RAM for execution.
+
+2001-02-01  Hugo Tyson  <hmt@redhat.com>
+
+	* all: copied from the assabet flash driver.
+
+2000-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/assabet_flash.c (flash_code_overlaps): Define stext/etext
+	as array types so no assumptions can be made by the compiler about
+	location.
+
+2000-10-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash_unlock_block.c (flash_unlock_block): 
+	* src/flash_lock_block.c (flash_lock_block): 
+	* src/flash_program_buf.c (flash_program_buf): 
+	* src/flash_erase_block.c (flash_erase_block): Support up to 32M FLASH.
+
+2000-09-10  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash_unlock_block.c: 
+	* src/flash_lock_block.c: New file(s).
+
+	* src/flash.h: 
+	* cdl/flash_assabet.cdl: Add region locking functions.
+
+2000-08-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/assabet_flash.c: Improve error decoding.
+
+2000-08-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/flash_query.c: 
+	* src/flash_erase_block.c: 
+	* src/flash.h: FLASH support for Intel SA1110 Assabet.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,219 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Network Device for the eCos TCP/IP Stack</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Support for Developing USB-ethernet Peripherals"
+HREF="io-usb-slave-eth.html"><LINK
+REL="PREVIOUS"
+TITLE="USB-ethernet State Handling"
+HREF="usbseth-control.html"><LINK
+REL="NEXT"
+TITLE="Example Host-side Device Driver"
+HREF="usbseth-host.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Support for Developing USB-ethernet Peripherals</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbseth-control.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbseth-host.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBSETH-NETDEV"
+>Network Device for the eCos TCP/IP Stack</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN221"
+></A
+><H2
+>Name</H2
+>Network Device&nbsp;--&nbsp;USB-ethernet support for the eCos TCP/IP Stack</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN224"
+></A
+><H2
+>Description</H2
+><P
+>If the USB peripheral involves running the eCos TCP/IP stack and that
+stack needs to use USB-ethernet as a transport layer (or as one of the
+transports), then the USB-ethernet package can provide a suitable
+network device driver. It is still necessary for higher-level code to
+perform appropriate initialization by calling <A
+HREF="usbseth-init.html"
+><TT
+CLASS="FUNCTION"
+>usbs_eth_init</TT
+></A
+>, but
+after that it will be the TCP/IP stack rather than application code
+that transmits or receives ethernet frames.</P
+><P
+>Not all peripherals involving the USB-ethernet package will require a
+TCP/IP stack. Hence the provision of the network device is controlled
+by a configuration option <TT
+CLASS="LITERAL"
+>CYGPKG_USBS_ETHDRV</TT
+>. By
+default this will be enabled if the TCP/IP package
+<TT
+CLASS="LITERAL"
+>CYGPKG_NET</TT
+> is loaded, and disabled otherwise. </P
+><P
+>There are a number of other configuration options related to the
+network device. <TT
+CLASS="LITERAL"
+>CYGFUN_USBS_ETHDRV_STATISTICS</TT
+>
+determines whether or not the package will maintain statistics, mainly
+intended for SNMP: by default this will be enabled if the SNMP support
+package <TT
+CLASS="LITERAL"
+>CYGPKG_SNMPAGENT</TT
+> is loaded, and disabled
+otherwise. The name of the ethernet device is controlled by
+<TT
+CLASS="LITERAL"
+>CYGDATA_USBS_ETHDRV_NAME</TT
+>, and has a default value
+of either <TT
+CLASS="LITERAL"
+>eth0</TT
+> or <TT
+CLASS="LITERAL"
+>eth1</TT
+>
+depending on whether or not there is another network device driver
+present in the configuration.</P
+><P
+>Usually eCos network device drivers default to using DHCP for
+obtaining necessary information such as IP addresses. This is not
+appropriate for USB-ethernet devices. On the host-side the
+USB-ethernet network device will not exist until the USB peripheral
+has been plugged in and communication has been established. Therefore
+any DHCP daemon on the host would not be listening on that network
+device at the point that eCos requests its IP and other information. A
+related issue is that the use of DHCP would imply the presence of a
+DHCP daemon on every affected host machine, as opposed to a single
+daemon (plus backups) for the network as a whole. For these reasons
+the USB-ethernet package precludes the use of DHCP as a way of setting
+the IP address, instead requiring alternatives such as manual
+configuration.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbseth-control.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave-eth.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbseth-host.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>USB-ethernet State Handling</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Example Host-side Device Driver</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

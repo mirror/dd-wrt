@@ -1,0 +1,630 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_arm_aeb.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_aeb.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-01-29  John Dallaway  <jld@ecoscentric.com>
+
+	* src/flash_cksum.tcl: Accommodate latest Cygwin Tcl shell
+	(tclsh83.exe)
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Don't run cache tests.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Removed implemntation of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES defined.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2002-01-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h (HAL_UCACHE_SYNC): Fixed to use word
+	access.
+	* include/hal_platform_setup.h: Set up mapping for cache
+	region. It should fall back to SDR8, but that does not appear to
+	work for some reason.
+
+2001-10-02  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl (CYGBLD_BUILD_REDBOOT_BIN): cygtclsh80 on
+	Cygwin can't deal with absolute paths correctly, so copy
+	flash_cksum.tcl into build directory.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Add CDL to describe CPU family.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Does not guarantee virtual vector support.
+
+2001-02-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/aeb_misc.c (hal_IRQ_handler): Use CYGNUM_HAL_INTERRUPT_NONE
+	for spurious interrupt.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Respect channel configuration constraints.
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_None
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Moved reset macro to
+	* include/hal_platform_ints.h: this file.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_arm_aebC_ram.mlt:
+	* include/pkgconf/mlt_arm_aebC_rom.mlt:
+	* include/pkgconf/mlt_arm_aeb_ram.mlt:
+	* include/pkgconf/mlt_arm_aeb_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_arm_aebC_ram.h:
+	* include/pkgconf/mlt_arm_aebC_rom.h:
+	* include/pkgconf/mlt_arm_aeb_ram.h:
+	* include/pkgconf/mlt_arm_aeb_rom.h:
+	* include/pkgconf/mlt_arm_aebC_ram.ldi:
+	* include/pkgconf/mlt_arm_aebC_rom.ldi:
+	* include/pkgconf/mlt_arm_aeb_ram.ldi:
+	* include/pkgconf/mlt_arm_aeb_rom.ldi:
+	Regenerate
+
+2000-07-03  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: 
+	* src/aeb_misc.c:
+	* src/plf_stub.c: [deleted]
+	* include/plf_stub.h:
+	* include/hal_diag.h: 
+	* cdl/hal_arm_aeb.cdl: 
+	Changed to use virtual vectors.
+
+2000-06-21  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/flash_cksum.tcl: Fix quoting when invoking TCL interpreter 
+
+2000-06-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_aebC_ram.ldi: 
+	* include/pkgconf/mlt_arm_aebC_ram.mlt: 
+	* include/pkgconf/mlt_arm_aebC_rom.ldi: 
+	* include/pkgconf/mlt_arm_aebC_rom.mlt: 
+	* include/pkgconf/mlt_arm_aeb_ram.ldi: 
+	* include/pkgconf/mlt_arm_aeb_ram.mlt: 
+	* include/pkgconf/mlt_arm_aeb_rom.ldi: 
+	* include/pkgconf/mlt_arm_aeb_rom.mlt: 
+	Incorporate new fixed vectors (used on all ARM platforms).
+
+2000-06-06  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/flash_cksum.tcl: Make sure it invokes the interpreter correctly
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash_cksum.tcl: Use correct intepreter.
+
+2000-04-07  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/flash_cksum.tcl:
+	Apply the below change to this file now that it's moved here
+
+2000-03-12  Bart Veer  <bartv@redhat.com>
+
+	* misc/flash_cksum.tcl:
+	Avoid problems with Tcl on 64-bit hosts.
+
+2000-02-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+        * include/pkgconf/mlt_arm_aebC_ram.h:
+        * include/pkgconf/mlt_arm_aebC_ram.ldi:
+        * include/pkgconf/mlt_arm_aebC_ram.mlt:
+        * include/pkgconf/mlt_arm_aebC_rom.h:
+        * include/pkgconf/mlt_arm_aebC_rom.ldi:
+        * include/pkgconf/mlt_arm_aebC_rom.mlt:
+        * include/pkgconf/mlt_arm_aeb_ram.h:
+        * include/pkgconf/mlt_arm_aeb_ram.ldi:
+        * include/pkgconf/mlt_arm_aeb_ram.mlt:
+        * include/pkgconf/mlt_arm_aeb_rom.h:
+        * include/pkgconf/mlt_arm_aeb_rom.ldi:
+        * include/pkgconf/mlt_arm_aeb_rom.mlt:
+	Align all sections on word boundaries
+	
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_arm_aeb.cdl (CYGBLD_BUILD_GDB_STUBS): When
+	building stubs, define every dependency required here rather than
+	in the template
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h:
+	HAL_STUB_PLATFORM_STUBS_INIT->HAL_STUB_PLATFORM_INIT
+
+	* misc/STUBS_config: 
+	* include/pkgconf/hal_arm_aeb.h:
+	Removed stubs as a legal startup type.
+
+2000-02-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Added remaining build dependencies.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Implements stubs.
+	Has own stub code, precludes common stubs.
+	
+2000-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Changed description.
+
+2000-01-27  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_aeb_rom.ldi,
+	  include/pkgconf/mlt_arm_aeb_rom.mlt:
+
+	Modify memory layout to make the VMA of the user-defined
+	section	'reserved_not_mapped' absolute.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_arm_aeb_rom.ldi: Fix bad ordering of
+	sections. [needs to be done for .mlt and .h as well]
+
+	* src/Notes_GDB_stub: Updated.
+	* src/gdb_module.c: Set date of stub on build day.
+
+	* cdl/hal_arm_aeb.cdl: Removed stubs startup.
+	Moved files to src from misc directory.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_aeb.cdl: Fix CDL display.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl: Minor changes to stubs build rule.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl: Add stubs build rule.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+2000-01-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl: Add -mcpu=arm7di to LDFLAGS so that the correct
+	libgcc multilib is chosen - important for the AEB
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl: Add -Wl for linker options.
+
+1999-11-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c: Conditionalize def of diag_buffer for only when it's
+	explicitly wanted and someone hacks the code
+	(hal_diag_write_char): Likewise
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_aeb_stubs.h: 
+	* include/pkgconf/mlt_arm_aebC_stubs.h: New file.
+
+	* include/pkgconf/mlt_arm_aeb_rom.h: 
+	* include/pkgconf/mlt_arm_aeb_ram.h: 
+	* include/pkgconf/mlt_arm_aebC_rom.h: 
+	* include/pkgconf/mlt_arm_aebC_ram.h: Update "do not edit" string.
+
+1999-11-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_aebC_ram.h: 
+	* include/pkgconf/mlt_arm_aebC_rom.h: 
+	* include/pkgconf/mlt_arm_aeb_ram.h: 
+	* include/pkgconf/mlt_arm_aeb_rom.h: New files.
+
+	* include/pkgconf/mlt_arm_aebC_ram.ldi: 
+	* include/pkgconf/mlt_arm_aebC_ram.mlt: 
+	* include/pkgconf/mlt_arm_aebC_rom.ldi: 
+	* include/pkgconf/mlt_arm_aebC_rom.mlt: 
+	* include/pkgconf/mlt_arm_aeb_ram.ldi: 
+	* include/pkgconf/mlt_arm_aeb_ram.mlt: 
+	* include/pkgconf/mlt_arm_aeb_rom.ldi: 
+	* include/pkgconf/mlt_arm_aeb_rom.mlt: Correct memory layout.
+
+	* src/hal_diag.c: Honor GDB_DISABLE option.
+
+1999-11-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl: Remove define_proc comments.
+
+1999-10-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/PKGconf.mak: Don't strip symbols when making .img.
+
+1999-10-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/PKGconf.mak: Build UU encoded stubs per default.
+
+	* misc/STUBS_config: 
+	Updated stub scripts. Allow to configure for revC.
+	
+	* src/hal_diag.c: Fixed conditional include.
+
+1999-10-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Use new macro
+	CYG_HAL_GDB_ENTER_CRITICAL_IO_REGION and its mate to control
+	stepping through gdb $O packet output.
+
+1999-10-26  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl:
+
+	Rename CYGBLD_GLOBAL_PREFIX to
+	CYGBLD_GLOBAL_COMMAND_PREFIX
+
+1999-10-20  Simon FitzMaurice <sdf@cygnus.co.uk>
+	* cdl/hal_arm_aeb.cdl:
+
+	Remove -Wl options from compiler flags
+
+1999-10-19  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl:
+
+	Define cdl_options for the memory layout linker script
+	fragment and the memory layout header file.
+
+	Define cdl_options for build flags and command prefix.
+
+1999-10-18  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl:
+
+	Require that CYGHWR_THUMB is not defined.
+
+1999-10-12  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_aeb.h: Add CT config of revision.
+	aebC instead of aebc.
+
+1999-10-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_platform_setup.h: Disable cache for now.
+
+1999-10-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl: 
+	* include/pkgconf/hal_arm_aeb.h:
+	* include/hal_platform_setup.h:
+	Use CYGHWR_HAL_ARM_AEB_REVISION_C to select revision behavior.
+
+1999-10-06  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl:
+	Define CYGTST_TESTING_IDENTIFIER.
+
+1999-10-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_platform_setup.h: Added support for AEB rev C.
+
+	* src/aeb_misc.c (hal_hardware_init): Use UCACHE macros.
+	* include/hal_cache.h: Fixed cache macros.
+
+1999-09-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/plf_stub.h: 
+	* src/plf_stub.c (hal_aeb_reset): 
+	Added reset on detach.
+	
+1999-08-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_aeb.cdl:
+	Define CYG_HAL_STARTUP and CYGHWR_MEMORY_LAYOUT.
+
+1999-08-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/Notes: 
+	* misc/STUBS_config: Update patch for new hal.h.
+
+1999-05-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/gdb_module.c: Fix up symbols for new ABI.
+
+1999-05-24  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: Clean up direct access code.
+
+1999-05-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_aeb.h: Move RTC setup here.
+
+1999-04-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/aeb_misc.c: Add some testing code using a second timer.
+
+	* include/hal_platform_setup.h: New file
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_aeb_rom.ldi: Fix SECTION macro which
+	was missed during recent macro arguments change
+
+1999-04-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Revised SECTION_* macro arguments to
+	avoid padded output sections (PR 19787)
+
+1999-03-23  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Make GDB 'O' transaction
+	run with interrupts disabled.
+
+1999-03-23  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_aeb.h: Modify display string for
+	consistency.
+
+1999-03-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Don't disable all
+ 	interrupts, just the serial port during output.
+
+	* src/aeb_misc.c: Add support for "abort" button.  This works
+	like ^C if GDB break support is compiled in.
+	(hal_clock_read): Only return "reasonable" deltas - hardware
+	sometimes gives flakey/implausible counts.
+
+	* include/hal_platform_ints.h: Improve interrupt assignments.
+
+1999-03-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: 
+	* include/plf_stub.h: 
+	* src/plf_stub.c: Add GDB break support.
+
+1999-03-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_cache.h (HAL_DCACHE_PURGE_ALL): Add macro.
+
+	* include/hal_platform_ints.h: Add additional interrupt sources
+	(UARTs and WATCHDOG).
+
+1999-03-11  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: add copyright notices
+
+1999-03-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: give all LDI files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+	* include/pkgconf/*.mlt: give all MLT files unique names so
+        that they can co-exist in an eCos build tree (PR 19184)
+
+1999-02-26  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/Notes: 
+	* misc/PKGconf.mak: Fix stubs build for new layout.
+
+	* misc/gdb_module.c: Update version.  Build with new stubs.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_platform_ints.h: 
+	Reorganise vector/interrupt/exception names according to purpose
+	QA improvements
+
+	* src/aeb_misc.c: 
+	Change interrupt names due to above
+	QA improvements
+
+1999-02-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/ram.mlt: Relocate the GDB stubs
+	* include/pkgconf/ram.ldi: Relocate the GDB stubs
+	* include/pkgconf/stubs.mlt: Relocate the GDB stubs
+	* include/pkgconf/stubs.ldi: Relocate the GDB stubs
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Changed
+	__output_gdb_string to hal_output_gdb_string.
+
+	* include/hal_stub.h: [removed]
+	* include/plf_stub.h: [added]
+	* src/hal_stub.c:     [removed]
+	* src/plf_stub.c:     [added]
+	* src/PKGconf.mak: 
+	Changed hal_stub to plf_stub. Moved generic HAL stub code to
+	common/.../hal_stub.c.
+
+1999-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.mlt: New memory layout save files
+
+1999-02-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/rom.ldi: Add segment for ROM
+
+1999-02-05  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/*.ldi: Remove LMA_EQ_VMA macro definition.
+
+1999-02-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_aeb.h: Correct the specified platform.
+
+1999-01-19  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/rom.ldi: Modified for new layouts.
+
+	* include/pkgconf/stubs.ldi: New file.
+
+	* misc/gdb_module.c: Start of module changed name (due to rework
+	of exception handling in the GDB stubs).
+
+	* src/hal_stub.c: Reorg - move common routines to "arch" directory.
+
+1999-01-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/rom.ldi: Add configurations for GDB stubs/normal ROM.
+
+1999-01-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/Notes: Update for new directory layout.
+
+	* include/hal_diag.h: Add prototype for 'hal_diag_read_char()'
+
+	* src/hal_stub.c: Take out memory trace buffer (debug only).
+
+	* src/hal_diag.c: Reduce buffer size.
+
+	* misc/PKGconf.mak (SRC): Fix path.
+
+1999-01-14  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* misc/PKGconf.mak: Rename 'TESTS' to 'PROGS' due to
+	changes in "makrules.prv".
+
+	* include/pkgconf/ram.ldi: 
+	* include/pkgconf/rom.ldi: New files.
+
+	* src/PKGconf.mak: Change to MLT script linking.
+
+1999-01-12  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/flash_cksum.tcl: Always swap to Little Endian format.
+
+	* src/aeb.ld: Change DATA address for ROM (GDB) configuration.
+
+1999-01-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/gdb_module.c: Clean up to work in all configurations.
+
+	* tests/PKGconf.mak (TESTS): Clean up.
+
+1999-01-06  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/PKGconf.mak: Update to use tcl checksum program.
+
+	* tests/Notes: Advise on required zeroes.
+
+	* tests/gdb_module.c: Update module name/info.
+
+1998-12-22  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_cache.h: New [moved] file.
+
+1998-12-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/aeb_misc.c (hal_clock_initialize): Set timer0 scale.
+
+1998-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/flash_cksum.c: Handle big/little endian hosts.
+
+	* src/hal_stub.c: Remove unused '__set_mem_fault'.
+	Blink LED1 with GDB I/O (semblance of life).
+
+1998-12-18  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/gdb_module_ncs.c: 
+	* tests/PKGconf.mak: 
+	* tests/gdb_module.c: New file(s) used to build FLASH module
+
+1998-12-17  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/aeb.ld: Change log address to use all available RAM.
+
+	* include/pkgconf/hal_arm_aeb.h: New file
+
+1998-12-16  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/hal_platform_ints.h: New file for platform
+	interrupt specifics.
+
+	* src/hal_diag.c: 
+	* src/aeb.ld: 
+	* src/aeb_misc.c: Complete initial port.
+
+1998-12-15  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_stub.c: 
+	* src/hal_diag.c: 
+	* src/PKGconf.mak: 
+	* src/aeb.ld: 
+	* include/hal_stub.h: 
+	* include/hal_diag.h: 
+	* include/pkgconf/hal_arm_aeb.h: New file.
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

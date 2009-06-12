@@ -1,0 +1,61 @@
+2004-07-01  Savin Zlobec  <savin@elatec.si> 
+
+        * src/synthdisk.c:
+        Updated to work with the new DISK_CHANNEL macro definition.
+
+2004-01-15  Nick Garnett  <nickg@calivar.com>
+
+	* cdl/synthdisk.cdl:
+	* src/synthdisk.c: 	
+	Added _FILENAME option for disk instances to map device to an
+	arbitrary cinfigured file.
+	
+	* src/synthdisk.c: Removed block_pos arguments from read
+	and write calls: it is not necessary.
+
+2003-09-01 Savin Zlobec <savin@elatec.si>
+
+        * cdl/synthdisk.cdl: 
+        * src/synthdisk.c: 
+        Updated to work with the current disk interface.
+
+2003-08-19 Savin Zlobec <savin@elatec.si>
+
+        * cdl/synthdisk.cdl:
+        * src/synthdisk.c:
+        A synthetic block device driver.
+
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 2003 Savin Zlobec 
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,28 @@
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_diag.h: hal_delay_us() is a C function.
+
+2003-08-06  Michael Anburaj <embeddedeng@hotmail.com>
+
+	* cdl/hal_arm_arm9_smdk2410.cdl:
+	* include/hal_diag.h:
+	* include/hal_platform_ints.h:
+	* include/hal_platform_setup.h:
+	* include/memcfg.h:
+	* include/pkgconf/mlt_arm_arm9_smdk2410_ram.h:
+	* include/pkgconf/mlt_arm_arm9_smdk2410_ram.ldi:
+	* include/pkgconf/mlt_arm_arm9_smdk2410_rom.h:
+	* include/pkgconf/mlt_arm_arm9_smdk2410_rom.ldi:
+	* include/pkgconf/mlt_arm_arm9_smdk2410_romram.h:
+	* include/pkgconf/mlt_arm_arm9_smdk2410_romram.ldi:
+	* include/plf_io.h:
+	* include/plf_stub.h:
+	* include/s3c2410x.h:
+	* misc/smdk2410_redboot_RAM.ecm:
+	* misc/smdk2410_redboot_ROMRAM.ecm:
+	* src/hal_diag.c:
+	* src/smdk2410_misc.c:
+	New package for the Samsung ARM9/SMDK2410 development
+	board.
+
+

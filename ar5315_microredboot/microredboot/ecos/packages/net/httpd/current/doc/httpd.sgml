@@ -1,0 +1,550 @@
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     httpd.sgml                                                  -->
+<!--                                                                 -->
+<!--     eCos HTTP Server                                            -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2002 Nick Garnett                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<part id="net-httpd">
+<title>Embedded HTTP Server</title>
+<chapter id="net-httpd-chapter">
+<title>Embedded HTTP Server</title>
+
+<sect1 id="net-httpd-intro">
+<title>Intrduction</title>
+<para>
+The <emphasis>eCos</emphasis> HTTPD package provides a simple HTTP
+server for use with applications in eCos. This server is specifically
+aimed at the remote control and monitoring requirements of embedded
+applications. For this reason the emphasis is on dynamically generated
+content, simple forms handling and a basic CGI interface. It is
+<emphasis>not</emphasis> intended to be a general purpose server for
+delivering arbitrary web content. For these purposes a port of the
+GoAhead web server is available from <ulink
+url="www.goahead.com">www.goahead.com</ulink>.
+</para>
+<para>This server is also capable of serving content using IPv6 when
+the eCos configuration contains IPv6.
+</para>
+</sect1>
+
+<sect1 id="net-httpd-organization">
+<title>Server Organization</title>
+<para>
+The server consists of one or more threads running in parallel to any
+application threads and which serve web pages to clients. Apart from
+defining content, the application does not need to do anything to
+start the HTTP server.
+</para>
+<para>
+The HTTP server is, by default, started by a static constructor. This
+simply creates an initial thread and sets it running. Since this is
+called before the scheduler is started, nothing will happen until the
+application calls <function>cyg_scheduler_start()</function>. The
+server thread can also be started explicitly by the application, see
+the <literal>CYGNUM_HTTPD_SERVER_AUTO_START</literal> option for
+details.
+</para>
+<para>
+When the thread gets to run it first optionally delays for some period
+of time. This is to allow the application to perform any
+initialization free of any interference from the HTTP server. When the
+thread does finally run it creates a socket, binds it to the HTTP
+server port, and puts it into listen mode. It will then create any
+additional HTTPD server threads that have been configured before
+becoming a server thread itself.
+</para>
+<para>
+Each HTTPD server thread simply waits for a connection to be made to
+the server port. When the connection is made it reads the HTTP request
+and extracts the filename being accessed. If the request also contains
+form data, this is also preserved. The filename is then looked up in a
+table.
+</para>
+<para>
+Each table entry contains a filename pattern string, a
+pointer to a handler function, and a user defined argument for the
+function. Table entries are defined using the same link-time table
+building mechanism used to generate device tables. This is all handled
+by the <literal>CYG_HTTPD_TABLE_ENTRY()</literal> macro which has the
+following format:
+</para>
+<programlisting width=72>
+
+#include &lt;cyg/httpd/httpd.h&gt;
+
+CYG_HTTPD_TABLE_ENTRY( __name, __pattern, __handler, __arg )
+
+</programlisting>
+<para>
+The <parameter>__name</parameter> argument is a variable name for the
+table entry since C does not allow us to define anonymous data
+structures. This name should be chosen so that it is unique and does
+not pollute the name space. The <parameter>__pattern</parameter>
+argument is the match pattern. The <parameter>__handler</parameter>
+argument is a pointer to the handler function and
+<parameter>__arg</parameter> the user defined value.
+</para>
+<para>
+The link-time table building means that several different pieces of
+code can define server table entries, and so long as the patterns do
+not clash they can be totally oblivious of each other. However, note
+also that this mechanism does not guarantee the order in which entries
+appear, this depends on the order of object files in the link, which
+could vary from one build to the next. So any tricky pattern matching
+that relies on this may not always work.
+</para>
+<para>
+A request filename matches an entry in the table if either it exactly
+matches the pattern string, or if the pattern ends in an asterisk, and
+it matches everything up to that point. So for example the pattern
+&quot;/monitor/threads.html&quot; will only match that exact filename,
+but the pattern &quot;/monitor/thread-*&quot; will match
+&quot;/monitor/thread-0040.html&quot;,
+&quot;/monitor/thread-0100.html&quot; and any other filename starting
+with &quot;/monitor/thread-&quot;.
+</para>
+<para>
+When a pattern is matched, the hander function is called. It has the
+following prototype:
+</para>
+<programlisting width=72>
+cyg_bool cyg_httpd_handler(FILE *client,
+                           char *filename,
+                           char *formdata,
+                           void *arg);
+</programlisting>
+<para>
+The <parameter>client</parameter> argument is the TCP connection to
+the client: anything output through this stream will be returned to
+the browser. The <parameter>filename</parameter> argument is the
+filename from the HTTP request and the <parameter>formdata</parameter>
+argument is any form response data, or NULL if none was sent. The
+<parameter>arg</parameter> argument is the user defined value from the
+table entry.
+</para>
+<para>
+The handler is entirely responsible for generating the response to the
+client, both HTTP header and content. If the handler decides that it
+does not want to generate a response it can return
+<literal>false</literal>, in which case the table scan is resumed for
+another match. If no match is found, or no handler returns true, then
+a default response page is generated indicating that the requested
+page cannot be found.
+</para>
+<para>
+Finally, the server thread closes the connection to the client and
+loops back to accept a new connection.
+</para>
+</sect1>
+
+<!-- =============================================================== -->
+
+<sect1 id="net-httpd-configuration">
+<title>Server Configuration</title>
+<para>
+The HTTP server has a number of configuration options:
+</para>
+
+<sect2>
+<title><literal>CYGNUM_HTTPD_SERVER_PORT</literal></title>
+<para>
+This option defines the TCP port that the server will listen on. It
+defaults to the standard HTTP port number 80. It may be changed to a
+different number if, for example, another HTTP server is using the
+main HTTP port.
+</para>
+</sect2>
+
+<sect2>
+<title><literal>CYGDAT_HTTPD_SERVER_ID</literal></title>
+<para>
+This is the string that is reported to the client in the
+&quot;Server:&quot; field of the HTTP header. 
+</para>
+</sect2>
+
+<sect2>
+<title><literal>CYGNUM_HTTPD_THREAD_COUNT</literal></title>
+<para>
+The HTTP server can be configured to use more than one thread to
+service HTTP requests. If you expect to serve complex pages with many
+images or other components that are fetched separately, or if any
+pages may take a long time to send, then it may be useful to increase
+the number of server threads. For most uses, however, the connection
+queuing in the TCP/IP stack and the speed with which each page is
+generated, means that a single thread is usually adequate.
+</para>
+</sect2>
+
+<sect2>
+<title><literal>CYGNUM_HTTPD_THREAD_PRIORITY</literal></title>
+<para>
+The HTTP server threads can be run at any priority. The exact priority
+depends on the importance of the server relative to the rest of the
+system. The default is to put them in the middle of the priority range
+to provide reasonable response without impacting genuine high priority
+threads.
+</para>
+</sect2>
+
+<sect2>
+<title><literal>CYGNUM_HTTPD_THREAD_STACK_SIZE</literal></title>
+<para>
+This is the amount of stack to be allocated for each of the HTTPD
+threads. The actual stack size allocated will be this value plus the
+values of <literal>CYGNUM_HAL_STACK_SIZE_MINIMUM</literal> and
+<literal>CYGNUM_HTTPD_SERVER_BUFFER_SIZE</literal>.
+</para>
+</sect2>
+
+<sect2>
+<title><literal>CYGNUM_HTTPD_SERVER_BUFFER_SIZE</literal></title>
+<para>
+This defines the size of the buffer used to receive the first line of
+each HTTP request. If you expect to use particularly long URLs or have
+very complex forms, this should be increased.
+</para>
+</sect2>
+
+<sect2>
+<title><literal>CYGNUM_HTTPD_SERVER_AUTO_START</literal></title>
+<para>
+This option causes the HTTP Daemon to be started automatically during
+system initialization. If this option is not set then the application
+must start the daemon explicitly by calling
+<function>cyg_httpd_startup()</function>. This option is set by
+default.
+</para>
+</sect2>
+
+<sect2>
+<title><literal>CYGNUM_HTTPD_SERVER_DELAY</literal></title>
+<para>
+This defines the number of system clock ticks that the HTTP server
+will wait before initializing itself and spawning any extra server
+threads. This is to give the application a chance to initialize
+properly without any interference from the HTTPD.
+</para>
+</sect2>
+
+</sect1>
+
+<!-- =============================================================== -->
+
+<sect1 id="net-httpd-html">
+<title>Support Functions and Macros</title>
+<para>
+The emphasis of this server is on dynamically generated content,
+rather than fetching it from a filesystem. To do this the handler
+functions make calls to <function>fprintf()</function> and
+<function>fputs()</function>. Such handler functions would end up a
+mass of print calls, with the actual structure of the HTML page hidden
+in the format strings and arguments, making maintenance and debugging
+very difficult. Such an approach would also result in the definition
+of many, often only slightly different, format strings, leading to
+unnecessary bloat.
+</para>
+<para>
+In an effort to expose the structure of the HTML in the structure of
+the C code, and to maximize the sharing of string constants, the
+<filename>cyg/httpd/httpd.h</filename> header file defines a set of
+helper functions and macros. Most of these are wrappers for predefined
+print calls on the <parameter>client</parameter> stream passed to the
+hander function. For examples of their use, see the System Monitor
+example.
+</para>
+<note>
+<para>
+All arguments to macros are pointers to strings, unless otherwise
+stated. In general, wherever a function or macro has an
+<parameter>attr</parameter> or <parameter>__attr</parameter>
+parameter, then the contents of this string will be inserted into the
+tag being defined as HTML attributes. If it is a NULL or empty string
+it will be ignored.
+</para>
+</note>
+
+<sect2>
+<title>HTTP Support</title>
+<programlisting width=72>
+void cyg_http_start( FILE *client, char *content_type, int content_length );
+void cyg_http_finish( FILE *client );
+#define html_begin(__client)
+#define html_end( __client )
+</programlisting>
+<para>
+The function <function>cyg_http_start()</function> generates a simple
+HTTP response header containing the value of
+<literal>CYGDAT_HTTPD_SERVER_ID</literal> in the &quot;Server&quot; field, and the
+values of <parameter>content_type</parameter> and
+<parameter>content_length</parameter> in the &quot;Content-type&quot;
+and &quot;Content-length&quot; field respectively. The function
+<function>cyg_http_finish()</function> just adds an extra newline to
+the end of the output and then flushes it to force the data out to the
+client.
+</para>
+<para>
+The macro <literal>html_begin()</literal> generates an HTTP header
+with a &quot;text/html&quot; content type followed by an opening
+&quot;&lt;html&gt;&quot; tag. <literal>html_end()</literal> generates
+a closing &quot;&lt;/html&gt;&quot; tag and calls
+<function>cyg_http_finish()</function>.
+</para>
+</sect2>
+
+<sect2>
+<title>General HTML Support</title>
+<programlisting width=72>
+void cyg_html_tag_begin( FILE *client, char *tag, char *attr );
+void cyg_html_tag_end( FILE *client, char *tag );
+#define html_tag_begin( __client, __tag, __attr )
+#define html_tag_end( __client, __tag )
+#define html_head( __client, __title, __meta )
+#define html_body_begin( __client, __attr )
+#define html_body_end( __client )
+#define html_heading( __client, __level, __heading )
+#define html_para_begin( __client, __attr )
+#define html_url( __client, __text, __link )
+#define html_image( __client, __source, __alt, __attr )
+</programlisting>
+<para>
+The function <function>cyg_html_tag_begin()</function> generates an
+opening tag with the given name. The function
+<function>cyg_html_tag_end()</function> generates a closing tag with
+the given name. The macros <literal>html_tag_begin()</literal> and
+<literal>html_tag_end</literal> are just wrappers for these functions.
+</para>
+<para>
+The macro <literal>html_head()</literal> generates an HTML header
+section with <parameter>__title</parameter> as the title. The
+<parameter>__meta</parameter> argument defines any meta tags that will
+be inserted into the header. <literal>html_body_begin()</literal> and
+<literal>html_body_end</literal> generate HTML body begin and end
+tags.
+</para>
+<para>
+<literal>html_heading()</literal> generates a complete HTML header
+where <parameter>__level</parameter> is a numerical level, between 1
+and 6, and <parameter>__heading</parameter> is the heading
+text. <literal>html_para_begin()</literal> generates a paragraph
+break.
+</para>
+<para>
+<literal>html_url()</literal> inserts a URL where
+<parameter>__text</parameter> is the displayed text and
+<parameter>__link</parameter> is the URL of the linked
+page. <literal>html_image()</literal> inserts an image tag where
+<parameter>__source</parameter> is the URL of the image to be
+included and <parameter>__alt</parameter> is the alternative text for
+when the image is not displayed.
+</para>
+</sect2>
+
+<sect2>
+<title>Table Support</title>
+<programlisting width=72>
+#define html_table_begin( __client, __attr )
+#define html_table_end( __client )
+#define html_table_header( __client, __content, __attr )        
+#define html_table_row_begin( __client, __attr )     
+#define html_table_row_end( __client )               
+#define html_table_data_begin( __client, __attr )     
+#define html_table_data_end( __client )               
+</programlisting>
+<para>
+<literal>html_table_begin()</literal> starts a table and
+<literal>html_table_end()</literal> end
+it. <literal>html_table_header()</literal> generates a simple table
+column header containg the string <parameter>__content</parameter>. 
+</para>
+<para>
+<literal>html_table_row_begin()</literal> and
+<literal>html_table_row_end()</literal> begin and end a table row,
+and similarly <literal>html_table_data_begin()</literal> and
+<literal>html_table_data_end()</literal> begin and end a table
+entry. 
+</para>
+</sect2>
+
+<sect2>
+<title>Forms Support</title>
+<programlisting width=72>
+#define html_form_begin( __client, __url, __attr )      
+#define html_form_end( __client )               
+#define html_form_input( __client, __type, __name, __value, __attr )            
+#define html_form_input_radio( __client, __name, __value, __checked )
+#define html_form_input_checkbox( __client, __name, __value, __checked )
+#define html_form_input_hidden( __client, __name, __value ) 
+#define html_form_select_begin( __client, __name, __attr )      
+#define html_form_option( __client, __value, __label, __selected )      
+#define html_form_select_end( __client ) 
+void cyg_formdata_parse( char *data, char *list[], int size );
+char *cyg_formlist_find( char *list[], char *name );
+</programlisting>
+<para>
+<literal>html_form_begin()</literal> begins a form, the
+<parameter>__url</parameter> argument is the value for the
+<literal>action</literal>
+attribute. <literal>html_form_end()</literal> ends the form.
+</para>
+<para>
+<literal>html_form_input()</literal> defines a general form input
+element with the given type, name and
+value. <literal>html_form_input_radio</literal> creates a radio button
+with the given name and value; the <parameter>__checked</parameter>
+argument is a boolean expression that is used to determine whether the
+<literal>checked</literal> attribute is added to the tag. Similarly
+<literal>html_form_input_checkbox()</literal> defines a checkbox
+element. <literal>html_form_input_hidden()</literal> defines a hidden
+form element with the given name and value.
+</para>
+<para>
+<literal>html_form_select_begin()</literal> begins a multiple choice
+menu with the given name. <literal>html_form_select_end()</literal>
+end it. <literal>html_form_option()</literal> defines a menu entry
+with the given value and label; the <parameter>__selected</parameter>
+argument is a boolean expression controlling whether the
+<literal>selected</literal> attribute is added to the tag.
+</para>
+<para>
+<function>cyg_formdata_parse()</function> converts a form response
+string into an <literal>NULL</literal>-terminated array of
+&quot;name=value&quot; entries. The <parameter>data</parameter>
+argument is the string as passed to the handler function; note that
+this string is not copied and will be updated in place to form the
+list entries.  <parameter>list</parameter> is a pointer to an array of
+character pointers, and is <parameter>size</parameter> elements long.
+<function>cyg_formlist_find()</function> searches a list generated by
+<function>cyg_formdata_parse()</function> and returns a pointer to the
+value part of the string whose name part matches
+<parameter>name</parameter>; if there is no match it will return
+<literal>NULL</literal>.
+</para>
+</sect2>
+
+<sect2>
+<title>Predefined Handlers</title>
+<programlisting width=72>
+
+cyg_bool cyg_httpd_send_html( FILE *client, char *filename, char *request, void *arg );
+
+typedef struct
+{
+    char        *content_type;
+    cyg_uint32  content_length;
+    cyg_uint8   *data;
+} cyg_httpd_data;
+#define CYG_HTTPD_DATA( __name, __type, __length, __data )
+
+cyg_bool cyg_httpd_send_data( FILE *client, char *filename, char *request, void *arg );
+
+</programlisting>
+<para>
+The HTTP server defines a couple of predefined handers to make it
+easier to deliver simple, static content.
+</para>
+<para>
+<function>cyg_httpd_send_html()</function> takes a
+<literal>NULL</literal>-terminated string as the argument and sends it
+to the client with an HTTP header indicating that it is HTML. The
+following is an example of its use:
+</para>
+<programlisting width=72>
+
+char cyg_html_message[] = "&lt;head&gt;&lt;title&gt;Welcome&lt;/title&gt;&lt;/head&gt;\n"
+                          "&lt;body&gt;&lt;h2&gt;Welcome to my Web Page&lt;/h2&gt;&lt;/body&gt;\n"
+
+CYG_HTTPD_TABLE_ENTRY( cyg_html_message_entry,
+                       "/message.html",
+                       cyg_httpd_send_html,
+                       cyg_html_message );
+
+</programlisting>
+<para>
+<function>cyg_httpd_send_data()</function> Sends arbitrary data to the
+client. The argument is a pointer to a <type>cyg_httpd_data</type>
+structure that defines the content type and length of the data, and a
+pointer to the data itself. The <literal>CYG_HTTPD_DATA()</literal>
+macro automates the definition of the structure. Here is a typical
+example of its use:
+</para>
+<programlisting width=72>
+
+static cyg_uint8 ecos_logo_gif[] = {
+    ...
+};
+
+CYG_HTTPD_DATA( cyg_monitor_ecos_logo_data,
+                "image/gif",
+                sizeof(ecos_logo_gif),
+                ecos_logo_gif );
+
+CYG_HTTPD_TABLE_ENTRY( cyg_monitor_ecos_logo,
+                       "/monitor/ecos.gif",
+                       cyg_httpd_send_data,
+                       &amp;cyg_monitor_ecos_logo_data );
+
+</programlisting>
+</sect2>
+
+</sect1>
+
+<!-- =============================================================== -->
+
+<sect1 id="net-httpd-monitor">
+<title>System Monitor</title>
+<para>
+Included in the HTTPD package is a simple System Monitor that is
+intended to act as a test and an example of how to produce servers.
+It is also hoped that it might be of some use in and of itself.
+</para>
+<para>
+The System Monitor is intended to work in the background of any
+application. Adding the network stack and the HTTPD package to any
+configuration will enable the monitor by default. It may be disabled
+by disabling the <literal>CYGPKG_HTTPD_MONITOR</literal> option.
+</para>
+<para>
+The monitor is intended to be simple and self-explanatory in use. It
+consists of four main pages. The thread monitor page presents a table
+of all current threads showing such things as id, state, priority,
+name and stack dimensions. Clicking on the thread ID will link to a
+thread edit page where the thread's state and priority may be
+manipulated. The interrupt monitor just shows a table of the current
+interrupts and indicates which are active. The memory monitor shows a
+256 byte page of memory, with controls to change the base address and
+display element size. Note: Accessing invalid memory locations can cause
+memory exceptions and the program to crash. The network monitor page shows
+information extracted from the active network interfaces and
+protocols. Finally, if kernel instrumentation is enabled, the
+instrumentation page provides some controls over the instrumentation
+mechanism, and displays the instrumentation buffer.
+</para>
+</sect1>
+
+<!-- =============================================================== -->
+
+</chapter>
+</part>

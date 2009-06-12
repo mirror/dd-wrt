@@ -1,0 +1,9 @@
+
+The support directory provides tools for programming a ROM startup eCos
+applications into the FLASH memory of the EBSA-285.
+
+Support for LINUX users is in the "linux" directory, in the safl_util
+directory therein.  Either make in situ or (if your eCos repository is
+read-only) copy its contents to a scratch directory and type make.
+
+

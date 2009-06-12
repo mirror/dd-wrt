@@ -1,0 +1,265 @@
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/if_upd985xx.c: 
+	Need to include <pkgconf/io_eth_drivers.h> for proper configuration
+	of stand-alone (polled) vs. system (interrupt driven) mode.
+
+2001-09-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (upd985xx_eth_upd985xx_init): Fake an ESA if
+	we see all ones from the EEPROM as well as all zeros.
+
+2001-08-30  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/upd985xx_eth_drivers.cdl: Make the "..._E2ONLY" workaround
+	option on by default since this is how it will be used - the CPU
+	load does suffer somewhat if promisc mode is set in the hardware.
+	This should be unset to allow the workaround for E1 at 100Mbit.
+
+2001-08-30  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (PacketRxReady): Re-write the manual
+	implementation of ESA matching for workaround E1E2 when the device
+	is in promiscuous mode.  It was having problems with the previous
+	version; this works better.
+
+2001-08-24  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/upd985xx_eth_drivers.cdl: Configury for an alternate case
+	where we workaround hardware bug E2 only, as a subset of the E1E2
+	complete fix.  Added more description to the options too.
+
+	* src/if_upd985xx.c (eth_upd985xx_configure): Handle an alternate
+	case where we workaround hardware bug E2 only.  This means leaving
+	the device in normal mode (unless set to promisc) and doing MAC
+	address filtering by hand anyway.
+
+2001-08-20  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c: Guard all entrypoints that can mess with
+	hardware state by "active" check.  If the net is included in an
+	app, but not used, it is init'd but not started - this can leave a
+	pending interrupt from RedBoot's use of the network to take us
+	completely by surprise.  So init() acks and masks the interrupt,
+	can_send(), recv() and deliver() now demur if not active.
+	Also some additional STATIC's on entrypoint functions.
+
+2001-08-16  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (upd985xx_eth_upd985xx_init): If the EEPROM
+	contains nothing (or isn't fitted?) fake an ESA so we can get
+	RedBoot going on the board without special configury.
+
+2001-08-16  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (eth_upd985xx_configure): Use smaller numbers
+	for the Tx Fill Threshold [TX_FLTH] and DMA Tx Burst Size [DTBS]
+	because the hardware is even more broken than first throught -
+	this is new information on fault E4.  I also tagged this with the
+	name of the option we would use if this were cdl controlled - but
+	since it's just setup I see no need to change it, so no CDL.
+
+2001-08-16  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (TxDone): Since it still wedged occasionally,
+	with an "out of rx buffers" status but nothing else, this is a
+	much simplified workaround for bug E8.  If we see the suspect
+	transmit status, simply reset the whole subsystem there and then.
+	This leaves it in far more of a known state.  It's neater anyway.
+
+2001-08-15  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (eth_upd985xx_send): Small hacks to recover
+	from various wedged states with bogus or unexpected ETH_ISR
+	values...  0x80000000: We detect this in the deliver routine and
+	totally reset the system.  "out of rx buffers" with no "good rx":
+	we unmask and check for all these RX interrupts, not just "good
+	rx".  Also PacketRxReady() shortcuts to resetting the receive
+	engine when it sees the problem.  I suspect these might be caused
+	by the E8 workaround below, perhaps introducing some race
+	condition with turning off the receiver just when it rx'd - and of
+	course E1E2 means it receives far more packets.
+
+2001-08-07  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c: Workaround various bugs in the hardware;
+	these workarounds are conditionally compiled via CDL options named
+	CYGOPT_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS_xxx in general; 'xxx'
+	is the reference for the mis-feature.  All are enabled by default.
+
+	To summarize:
+	(eth_upd985xx_reset): xxx=S1: insert reads between writes to the
+	device to avoid a possible deadlock; macro FLUSH_WRITES().
+	(PacketRxReady): xxx=E1E2: we set the device in promiscuous mode
+	always, and implement ESA matching in code.  The cost is small.
+	If promisc mode is set by the stack, we pass all packets.
+	(eth_upd985xx_send): xxx=E3: we copy any transmit that uses 3 or
+	more SGs into a static contiguous buffer and transmit from that
+	thus using only one buffer descriptor.
+	(eth_upd985xx_send):
+	(TxDone): xxx=E8: we make a note that a tx ended badly and when
+	starting the next tx, we disable and reset the transmitter.
+
+	* cdl/upd985xx_eth_drivers.cdl: New subcomponent for controlling
+	these workarounds: CYGPKG_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS.
+	"Workarounds for Ethernet Hardware bugs"
+
+2001-07-16  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (PacketRxReady): Test for, rather than assert,
+	packet size in range.  The hardware can report a tiny packet as
+	AOK, with no bad in the status, despite the doc's reassurances.
+
+2001-07-13  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/upd985xx_eth_drivers.cdl: Turn off the startup chatter.
+
+2001-07-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (TxDone): Test a few more bits for tx
+	complete; it turns out you can get tx underruns when the CPU us
+	heavily loaded, as in the tcp_echo tests with high load.
+
+2001-07-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (eth_upd985xx_send): Use HAL_DCACHE_STORE()
+	rather than syncing the whole of cache every sglist entry(=mbuf).
+	Turns out the cache op must be cache line aligned to work on the
+	4120, boo, unlike other MIPS and unlike the doc, even.
+
+2001-07-12  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/upd985xx_eth_drivers.cdl (CYGPKG_DEVS_ETH_MIPS_UPD985XX_ETH0):
+	Whole new section to address configuring the source of the MAC
+	address.  Also allows configury of the device's name ("eth0") for
+	cohabitation with additional devices.
+
+	* src/if_upd985xx.c (upd985xx_eth_upd985xx_init): Pick up the ESA
+	from EEPROM if it's available, also support a fixed ESA from CDL
+	configuration land.  A few minor changes to the structure
+	initialization to accommodate this; also pick up the interrupt
+	vector from struct init.
+	(eth_set_mac_address): New routine available via the ioctl()
+	entry, for use when neither a fixed nor EEPROM address is
+	available.
+
+2001-07-12  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (NUM_RXBUFS): Reduce NUM_RXBUFS to 8; IME
+	fewer results in lost rx's in typical systems.  Enlarge rx buffers
+	slightly, to accommodate oversize VLAN packets.  128 bytes extra
+	should be enough.  Implemented eth_upd985xx_configure() selection
+	of promiscuous mode and allow oversize packets - up to the allowed
+	oversize.  Otherwise we would get confused if a packet ate more
+	than 1 rx buffer.
+
+2001-07-12  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c: Tidy up debug print defaults; make functions
+	static; add a few extra statistics to the device object; pass a
+	p_eth_upd985xx around more consistently for if we switch to
+	multiple devices in future; comment out mii_write(); handle
+	stopping the device with a tx pending; remove some commented-out
+	templates copied from another driver; and fill in SNMP statistics.
+	In other words, many minor changes.
+
+2001-07-11  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c (PacketRxReady): Recover from running out of
+	receive buffers.  All very dodgy, but it seems to work.
+	Additional efforts are also made to reset the device, having
+	realized how hard it is to re-initialize the receive engine once
+	it has been awakened.
+
+2001-07-11  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c: Efficient Rx now essentially working, with a
+	simple circular buffer, always linked into a ring, and one entry
+	of which is always NULL,NULL to bring the rx machinery to a halt.
+	If it reaches thus far the rx mechanism seems to jam; will deal
+	with that next.
+
+2001-07-09  Hugo Tyson  <hmt@redhat.com>
+
+	* src/if_upd985xx.c: Rejigged version of the rx buffer system;
+	still not working properly, still not a good match for the
+	hardware's elusive semantics.  Committed anyway, to keep it around
+	for reference.
+	(eth_upd985xx_status): Also removed all the cruft about
+	renegotiating line status; it's not needed.
+
+2001-07-06  Hugo Tyson  <hmt@redhat.com>
+
+	* include/upd985xx_eth.h (ETH_MADR_PHY_DEVICE_PHYS_ADDRESS):
+	Change name of PHY address symbol to generic not SEEQ.  
+	Comment out the non-standard symbols for useful bits that the
+	previous PHY device supported.
+
+	* src/if_upd985xx.c (eth_upd985xx_reset): If there is a valid ESA
+	in the MAC already, run with it - it would have come from the
+	not-fitted serial EEPROM, via some different registers.
+	(upd985xx_eth_upd985xx_init): Moved the call to reset about to
+	accommodate this.
+	(eth_upd985xx_status): Omit renegotiation of link properties and
+	use the intersection of the capabilities bits to report what
+	speed, duplex, we are running at.  More portable.
+	(mii_write):
+	(mii_read): Change name of PHY address symbol to generic not SEEQ
+	'cos the board has changed.
+
+2001-07-06  Hugo Tyson  <hmt@redhat.com>
+
+	* ChangeLog:
+	* cdl/upd985xx_eth_drivers.cdl:
+	* include/upd985xx_eth.h:
+	* src/if_upd985xx.c:
+	New files.  Initial checkin of limping along version of 
+	NEC upd985xx ethernet driver.
+
+	Limitations:
+	ESA is hard coded.
+	It talks to the PHY just to make sure - helped with debug anyway.
+	No SNMP data exported.
+	No ioctl() for promiscuous mode or VLAN mode.
+	Only one TX at once.
+	Only one RX buffer, so no RX until serviced.
+	It seems to loose interrupts - inevitably, for an eth device - and
+	there's no "catchup" defense against this yet.
+
+	It's oriented to the "old" (already) board - so the particular PHY
+	and GPIO layout.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

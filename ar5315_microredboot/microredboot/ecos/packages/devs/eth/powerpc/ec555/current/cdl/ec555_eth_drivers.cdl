@@ -1,0 +1,146 @@
+# ====================================================================
+#
+#      ec555_eth_drivers.cdl
+#
+#      Ethernet drivers - platform dependent support for ether555 on ec555
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Bob Koninckx
+# Contributors:   Bob Koninckx
+# Date:           2002-11-20
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_POWERPC_EC555 {
+    display       "Crystal LAN ethernet driver for ec555 boards"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_HAL_POWERPC_EC555
+
+    implements    CYGINT_DEVS_ETH_CL_CS8900A_REQUIRED 
+    implements    CYGINT_DEVS_ETH_CL_CS8900A_STATIC_ESA
+    
+    requires      CYGPKG_DEVS_ETH_CL_CS8900A
+
+    include_dir   cyg/io
+
+    description   "Ethernet driver for Crystal LAN based ether555 ethernet card for ec555"
+
+    # FIXME: This really belongs in the CL CS8900A package
+    cdl_interface CYGINT_DEVS_ETH_CL_CS8900A_REQUIRED {
+        display   "CS8900A ethernet driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_CL_CS8900A_INL <cyg/io/devs_eth_powerpc_ec555.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_CL_CS8900A_CFG <pkgconf/devs_eth_powerpc_ec555.h>"
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_POWERPC_EC555_ETH0 {
+        display       "ec555 ethernet port driver"
+        flavor        bool
+        default_value 1
+        description   "
+            This option includes the ethernet device driver for the
+            ec555 port."
+
+        implements CYGHWR_NET_DRIVER_ETH0
+        implements CYGINT_DEVS_ETH_CL_CS8900A_REQUIRED
+        implements CYGINT_DEVS_ETH_CL_CS8900A_STATIC_ESA
+ 
+        cdl_option CYGDAT_DEVS_ETH_POWERPC_EC555_ETH0_NAME {
+            display       "Device name for the ETH0 ethernet driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device."
+        }
+
+        cdl_option CYGNUM_DEVS_ETH_POWERPC_EC555_ETH0_CS {
+            display       "Memory bank (CS2 / CS3) to use for accessing the device"
+            flavor        data
+            default_value 2
+            legal_values  2 to 3
+            description   "
+                This option controls which memory controller will be set up for access to
+                the ethernet card. The choise must correspond to the position of jumper
+                X3 on the device"
+        }
+
+        cdl_option CYGNUM_DEVS_ETH_POWERPC_EC555_ETH0_BASE {
+            display       "Base address to use for accessing the device"
+            flavor        data
+			calculated    { CYGNUM_DEVS_ETH_POWERPC_EC555_ETH0_CS == 2 ? 0x04000000 : 0x08000000 }
+            description   "
+                This option determines the base address to use for the memory controller"
+        }
+
+        cdl_option CYGNUM_DEVS_ETH_POWERPC_EC555_ETH0_IRQ {
+            display       "Interrupt line on the ec555 to use"
+            flavor        data
+            default_value 4
+            legal_values  4 to 7
+            description   "
+                This option determines which interrupt line of the ec555 will be used by the
+                device. The choise must match the position of jumper X2."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_POWERPC_EC555_ETH0_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA."
+            
+            cdl_option CYGDAT_DEVS_ETH_POWERPC_EC555_ETH0_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x08, 0x88, 0x12, 0x34, 0x56, 0x78}"}
+                description   "The ethernet station address"
+            }
+        }
+    }
+
+}
+

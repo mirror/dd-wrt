@@ -1,0 +1,251 @@
+# ====================================================================
+#
+#      eth_drivers.cdl
+#
+#      Ethernet drivers - platform independent support
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:
+# Date:           2000-01-25
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_IO_ETH_DRIVERS {
+    display       "Common ethernet support"
+    include_dir   cyg/io/eth
+    parent        CYGPKG_IO
+    description   "Platform independent ethernet drivers"
+    doc           ref/io-eth-drv-generic.html
+
+    implements    CYGPKG_NET_DRIVER_FRAMEWORK
+
+    cdl_interface CYGHWR_NET_DRIVERS {
+        display "Network drivers"
+    }
+
+    cdl_interface     CYGINT_IO_ETH_MULTICAST {
+        display   "Driver supports multicast addressing"
+        description "
+          This interface defines whether or not a driver can handle
+          requests for multicast addressing."
+    }
+
+    cdl_component CYGDBG_IO_ETH_DRIVERS_DEBUG {
+        display          "Support printing driver debug information"
+        flavor           bool
+        default_value    1
+        description      "
+           Selecting this option will include code to allow the driver to
+           print lots of information on diagnostic output such as full
+           packet dumps."
+
+        cdl_option    CYGDBG_IO_ETH_DRIVERS_DEBUG_VERBOSITY {
+            display       "Driver debug output verbosity"
+            flavor        data
+            default_value 0
+            description   "
+                The value of this option indicates the default verbosity
+                level of debugging output. 0 means no debugging output
+                is made by default. Higher values indicate higher verbosity.
+                The verbosity level may also be changed at run time by
+                changing the variable cyg_io_eth_net_debug."
+        }
+    }
+
+    cdl_option CYGNUM_IO_ETH_DRIVERS_SG_LIST_SIZE {
+      display       "Size of scatter-gather I/O lists"
+      flavor        data
+      default_value 32
+      description   "
+         A scatter-gather list is used to pass requests to/from
+         the physical device driver.  This list can typically be
+         small, as the data is normally already packed into reasonable
+         chunks."
+    }
+
+    cdl_component CYGPKG_IO_ETH_DRIVERS_NET {
+        display       "Support for standard eCos TCP/IP stack."
+        flavor        bool
+        active_if     CYGPKG_NET
+        requires      CYGINT_ISO_STRING_STRFUNCS
+        implements    CYGINT_IO_ETH_INT_SUPPORT_REQUIRED
+        default_value 1
+        compile       net/eth_drv.c
+
+    	cdl_component CYGPKG_IO_ETH_DRIVERS_WARN_NO_MBUFS {
+	    display	"Warn when there are no more mbufs"
+	    flavor	bool
+	    default_value 1
+	    description "
+	        Warnings about running out of mbufs are printed to the
+	        diagnostic output channel via diag_printf() if this option
+	        is enabled.  Mbufs are the network stack's basic dynamic
+	        memory objects that hold all packets in transit; running
+	        out is bad for performance but not fatal, not a crash.
+                You might want to turn off the warnings to preserve realtime
+                properties of the system even in extremis."
+	}
+
+	cdl_component CYGPKG_IO_ETH_DRIVERS_SIMULATED_FAILURES {
+	    display		"Simulate network failures for testing"
+	    flavor		bool
+	    default_value	0
+	    description	"
+		This package contains a suite of simulated failure modes
+		for the ethernet device layer, including dropping and/or
+		corrupting received packets, dropping packets queued for
+		transmission, and simulating a complete network break.
+	        It requires the kernel as a source of time information."
+
+	    cdl_option CYGPKG_IO_ETH_DRIVERS_SIMULATE_DROP_RX {
+		display	"Drop incoming packets (percentage)"
+		flavor	booldata
+		legal_values 10 50 80
+		default_value 10
+	    }
+
+	    cdl_option CYGPKG_IO_ETH_DRIVERS_SIMULATE_CORRUPT_RX {
+		display	"Corrupt incoming packets (percentage)"
+		flavor	booldata
+		legal_values 10 50 80
+		default_value 10
+	    }
+
+	    cdl_option CYGPKG_IO_ETH_DRIVERS_SIMULATE_DROP_TX {
+		display	"Drop outgoing packets (percentage)"
+		flavor	booldata
+		legal_values 10 50 80
+		default_value 10
+	    }
+
+	    cdl_option CYGPKG_IO_ETH_DRIVERS_SIMULATE_LINE_CUT {
+		display	"Simulate a line cut from time to time"
+		flavor	bool
+		default_value 0
+		description "
+	    	This option causes the system to drop all packets for a
+	    	short random period (10s of seconds), and then act
+	    	normally for up to 4 times that long.  This simulates your
+	    	sysadmin fiddling with plugs in the network switch
+	    	cupboard."
+	    }
+	}
+    }
+
+    cdl_component CYGPKG_IO_ETH_DRIVERS_STAND_ALONE {
+        display       "Support for stand-alone network stack."
+        flavor        bool
+        active_if     !CYGPKG_NET
+        requires      CYGINT_ISO_STRING_MEMFUNCS 
+        default_value 1
+        compile       stand_alone/eth_drv.c
+
+        cdl_option CYGSEM_IO_ETH_DRIVERS_PASS_PACKETS {
+            display          "Pass packets to an alternate stack"
+            flavor           bool
+            default_value    { 0 != CYGPKG_REDBOOT_NETWORKING }
+            description      "
+                 Define this to allow packets seen by this layer to be
+                 passed on to the previous logical layer, i.e. when
+                 stand-alone processing replaces system (eCos) processing."
+        }
+
+        cdl_option CYGNUM_IO_ETH_DRIVERS_NUM_PKT {
+            display          "Number of \[network\] buffers"
+            flavor           data
+            default_value    4
+            legal_values     2 to 32
+            description      "
+               This option is used to allocate space to buffer incoming network
+               packets.  These buffers are used to hold data until they can be
+               logically processed by higher layers."
+        }
+
+        cdl_option CYGSEM_IO_ETH_DRIVERS_WARN {
+            display          "Show driver warnings"
+            active_if        CYGPKG_REDBOOT
+            flavor           bool
+            default_value    0
+            description      "
+               Selecting this option will allows the stand-alone ethernet driver
+               to display warnings on the system console when incoming network
+               packets are being discarded due to lack of buffer space."
+        }
+    }
+
+    cdl_component CYGPKG_IO_ETH_DRIVERS_LWIP {
+        display       "Support for lwIP network stack."
+        flavor        bool
+        requires      !CYGPKG_NET
+        active_if     CYGPKG_NET_LWIP
+        default_value 1
+        implements    CYGINT_IO_ETH_INT_SUPPORT_REQUIRED
+        compile       lwip/eth_drv.c
+    }	
+
+    cdl_interface CYGINT_IO_ETH_INT_SUPPORT_REQUIRED {
+        display       "Interrupt support required"
+        flavor        booldata
+        description   "This interface is used to indicate to the low
+                       level device drivers that interrupt driven operation
+                       is required by higher layers."
+    }
+
+    cdl_component CYGPKG_IO_ETH_DRIVERS_OPTIONS {
+        display "Common ethernet support build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_IO_ETH_DRIVERS_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the common ethernet support package. These flags are used in addition
+                to the set of global flags."
+        }
+    }
+}
+
+# EOF eth_drivers.cdl

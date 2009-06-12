@@ -1,0 +1,210 @@
+#! /bin/sh
+# Generated automatically by configure.
+# Run this file to recreate the current configuration.
+# This directory was configured as follows,
+# on host dd-wrt:
+#
+# /home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler/configure  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler
+#
+# Compiler output produced by configure, useful for debugging
+# configure, is in ./config.log if it exists.
+
+ac_cs_usage="Usage: ./config.status [--recheck] [--version] [--help]"
+for ac_option
+do
+  case "$ac_option" in
+  -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
+    echo "running ${CONFIG_SHELL-/bin/sh} /home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler/configure  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler --no-create --no-recursion"
+    exec ${CONFIG_SHELL-/bin/sh} /home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler/configure  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler --no-create --no-recursion ;;
+  -version | --version | --versio | --versi | --vers | --ver | --ve | --v)
+    echo "./config.status generated by autoconf version 2.13"
+    exit 0 ;;
+  -help | --help | --hel | --he | --h)
+    echo "$ac_cs_usage"; exit 0 ;;
+  *) echo "$ac_cs_usage"; exit 1 ;;
+  esac
+done
+
+ac_given_srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler
+ac_given_INSTALL="/usr/bin/install -c"
+
+trap 'rm -fr Makefile lib/Makefile conftest*; exit 1' 1 2 15
+
+# Protect against being on the right side of a sed subst in config.status.
+sed 's/%@/@@/; s/@%/@@/; s/%g$/@g/; /@g$/s/[\\&%]/\\&/g;
+ s/@@/%@/; s/@@/@%/; s/@g$/%g/' > conftest.subs <<\CEOF
+
+
+s%@SHELL@%/bin/sh%g
+s%@CFLAGS@%-g -O2%g
+s%@CPPFLAGS@%%g
+s%@CXXFLAGS@%-g -O2%g
+s%@FFLAGS@%%g
+s%@DEFS@%%g
+s%@LDFLAGS@%%g
+s%@LIBS@%%g
+s%@exec_prefix@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips%g
+s%@prefix@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips%g
+s%@program_transform_name@%s,^,mips-linux-,; %g
+s%@bindir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin%g
+s%@sbindir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin%g
+s%@libexecdir@%${exec_prefix}/libexec%g
+s%@datadir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share%g
+s%@sysconfdir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc%g
+s%@sharedstatedir@%${prefix}/com%g
+s%@localstatedir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var%g
+s%@libdir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib%g
+s%@includedir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include%g
+s%@oldincludedir@%/usr/include%g
+s%@infodir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info%g
+s%@mandir@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man%g
+s%@libdemangler_basedir@%%g
+s%@host@%x86_64-pc-linux-gnu%g
+s%@host_alias@%x86_64-pc-linux-gnu%g
+s%@host_cpu@%x86_64%g
+s%@host_vendor@%pc%g
+s%@host_os@%linux-gnu%g
+s%@CC@%gcc%g
+s%@CXX@%c++%g
+s%@build@%x86_64-pc-linux-gnu%g
+s%@build_alias@%x86_64-pc-linux-gnu%g
+s%@build_cpu@%x86_64%g
+s%@build_vendor@%pc%g
+s%@build_os@%linux-gnu%g
+s%@LN_S@%ln -s%g
+s%@OBJEXT@%o%g
+s%@EXEEXT@%%g
+s%@RANLIB@%ranlib%g
+s%@STRIP@%strip%g
+s%@LIBTOOL@%$(SHELL) $(top_builddir)/libtool%g
+s%@CXXCPP@%c++ -E%g
+s%@INSTALL_PROGRAM@%${INSTALL}%g
+s%@INSTALL_SCRIPT@%${INSTALL_PROGRAM}%g
+s%@INSTALL_DATA@%${INSTALL} -m 644%g
+s%@PACKAGE@%demangler%g
+s%@VERSION@%1.0%g
+s%@ACLOCAL@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/missing aclocal-1.4%g
+s%@AUTOCONF@%autoconf%g
+s%@AUTOMAKE@%/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/missing automake-1.4%g
+s%@AUTOHEADER@%autoheader%g
+s%@MAKEINFO@%makeinfo%g
+s%@SET_MAKE@%%g
+s%@MAINTAINER_MODE_TRUE@%#%g
+s%@MAINTAINER_MODE_FALSE@%%g
+s%@MAINT@%#%g
+s%@libiberty_target@%old_demangler%g
+s%@SUBDIRS@%.%g
+s%@toolexecdir@%$(libdir)/gcc-lib/$(target_alias)%g
+s%@toolexeclibdir@%$(libdir)/../lib64%g
+
+CEOF
+
+# Split the substitutions into bite-sized pieces for seds with
+# small command number limits, like on Digital OSF/1 and HP-UX.
+ac_max_sed_cmds=90 # Maximum number of lines to put in a sed script.
+ac_file=1 # Number of current file.
+ac_beg=1 # First line for current file.
+ac_end=$ac_max_sed_cmds # Line after last line for current file.
+ac_more_lines=:
+ac_sed_cmds=""
+while $ac_more_lines; do
+  if test $ac_beg -gt 1; then
+    sed "1,${ac_beg}d; ${ac_end}q" conftest.subs > conftest.s$ac_file
+  else
+    sed "${ac_end}q" conftest.subs > conftest.s$ac_file
+  fi
+  if test ! -s conftest.s$ac_file; then
+    ac_more_lines=false
+    rm -f conftest.s$ac_file
+  else
+    if test -z "$ac_sed_cmds"; then
+      ac_sed_cmds="sed -f conftest.s$ac_file"
+    else
+      ac_sed_cmds="$ac_sed_cmds | sed -f conftest.s$ac_file"
+    fi
+    ac_file=`expr $ac_file + 1`
+    ac_beg=$ac_end
+    ac_end=`expr $ac_end + $ac_max_sed_cmds`
+  fi
+done
+if test -z "$ac_sed_cmds"; then
+  ac_sed_cmds=cat
+fi
+
+CONFIG_FILES=${CONFIG_FILES-"Makefile lib/Makefile"}
+for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
+  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
+  case "$ac_file" in
+  *:*) ac_file_in=`echo "$ac_file"|sed 's%[^:]*:%%'`
+       ac_file=`echo "$ac_file"|sed 's%:.*%%'` ;;
+  *) ac_file_in="${ac_file}.in" ;;
+  esac
+
+  # Adjust a relative srcdir, top_srcdir, and INSTALL for subdirectories.
+
+  # Remove last slash and all that follows it.  Not all systems have dirname.
+  ac_dir=`echo $ac_file|sed 's%/[^/][^/]*$%%'`
+  if test "$ac_dir" != "$ac_file" && test "$ac_dir" != .; then
+    # The file is in a subdirectory.
+    test ! -d "$ac_dir" && mkdir "$ac_dir"
+    ac_dir_suffix="/`echo $ac_dir|sed 's%^\./%%'`"
+    # A "../" for each directory in $ac_dir_suffix.
+    ac_dots=`echo $ac_dir_suffix|sed 's%/[^/]*%../%g'`
+  else
+    ac_dir_suffix= ac_dots=
+  fi
+
+  case "$ac_given_srcdir" in
+  .)  srcdir=.
+      if test -z "$ac_dots"; then top_srcdir=.
+      else top_srcdir=`echo $ac_dots|sed 's%/$%%'`; fi ;;
+  /*) srcdir="$ac_given_srcdir$ac_dir_suffix"; top_srcdir="$ac_given_srcdir" ;;
+  *) # Relative path.
+    srcdir="$ac_dots$ac_given_srcdir$ac_dir_suffix"
+    top_srcdir="$ac_dots$ac_given_srcdir" ;;
+  esac
+
+  case "$ac_given_INSTALL" in
+  [/$]*) INSTALL="$ac_given_INSTALL" ;;
+  *) INSTALL="$ac_dots$ac_given_INSTALL" ;;
+  esac
+
+  echo creating "$ac_file"
+  rm -f "$ac_file"
+  configure_input="Generated automatically from `echo $ac_file_in|sed 's%.*/%%'` by configure."
+  case "$ac_file" in
+  *Makefile*) ac_comsub="1i\\
+# $configure_input" ;;
+  *) ac_comsub= ;;
+  esac
+
+  ac_file_inputs=`echo $ac_file_in|sed -e "s%^%$ac_given_srcdir/%" -e "s%:% $ac_given_srcdir/%g"`
+  sed -e "$ac_comsub
+s%@configure_input@%$configure_input%g
+s%@srcdir@%$srcdir%g
+s%@top_srcdir@%$top_srcdir%g
+s%@INSTALL@%$INSTALL%g
+" $ac_file_inputs | (eval "$ac_sed_cmds") > $ac_file
+fi; done
+rm -f conftest.s*
+
+srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler
+host=x86_64-pc-linux-gnu
+target=mips-linux
+with_multisubdir=
+ac_configure_args="--enable-multilib  --cache-file=.././config.cache --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mips-linux --with-gnu-as --with-gnu-ld --with-stabs --prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --exec-prefix=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --bindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin --sbindir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/sbin --sysconfdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/etc --datadir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/share --includedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/include --libdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/lib --localstatedir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/var --mandir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/man --infodir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips/info --enable-targets=mips-linux --with-sysroot=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_mips --program-prefix=mips-linux- --srcdir=/home/xfs/projects/AR531X/WLAN/5.3.1.48/tools/gcc-3.3.3-2.4.25/toolchain_build_mips/binutils-2.14.90.0.6/demangler"
+CONFIG_SHELL=/bin/sh
+libdemangler_basedir=
+CC="gcc"
+DEFS=""
+ORIGINAL_LD_FOR_MULTILIBS="/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld"
+
+
+if test -n "$CONFIG_FILES"; then
+  if test -n "${with_target_subdir}"; then
+    LD="${ORIGINAL_LD_FOR_MULTILIBS}"
+    ac_file=Makefile . ${srcdir}/${libdemangler_basedir}../config-ml.in
+  fi
+fi
+
+exit 0

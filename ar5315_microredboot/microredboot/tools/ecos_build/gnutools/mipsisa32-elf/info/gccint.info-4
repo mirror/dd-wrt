@@ -1,0 +1,1011 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: Function Bodies,  Prev: Function Basics,  Up: Functions
+
+Function Bodies
+---------------
+
+   A function that has a definition in the current translation unit will
+have a non-`NULL' `DECL_INITIAL'.  However, back ends should not make
+use of the particular value given by `DECL_INITIAL'.
+
+   The `DECL_SAVED_TREE' macro will give the complete body of the
+function.  This node will usually be a `COMPOUND_STMT' representing the
+outermost block of the function, but it may also be a `TRY_BLOCK', a
+`RETURN_INIT', or any other valid statement.
+
+Statements
+..........
+
+   There are tree nodes corresponding to all of the source-level
+statement constructs.  These are enumerated here, together with a list
+of the various macros that can be used to obtain information about
+them.  There are a few macros that can be used with all statements:
+
+`STMT_LINENO'
+     This macro returns the line number for the statement.  If the
+     statement spans multiple lines, this value will be the number of
+     the first line on which the statement occurs.  Although we mention
+     `CASE_LABEL' below as if it were a statement, they do not allow
+     the use of `STMT_LINENO'.  There is no way to obtain the line
+     number for a `CASE_LABEL'.
+
+     Statements do not contain information about the file from which
+     they came; that information is implicit in the `FUNCTION_DECL'
+     from which the statements originate.
+
+`STMT_IS_FULL_EXPR_P'
+     In C++, statements normally constitute "full expressions";
+     temporaries created during a statement are destroyed when the
+     statement is complete.  However, G++ sometimes represents
+     expressions by statements; these statements will not have
+     `STMT_IS_FULL_EXPR_P' set.  Temporaries created during such
+     statements should be destroyed when the innermost enclosing
+     statement with `STMT_IS_FULL_EXPR_P' set is exited.
+
+   Here is the list of the various statement nodes, and the macros used
+to access them.  This documentation describes the use of these nodes in
+non-template functions (including instantiations of template functions).
+In template functions, the same nodes are used, but sometimes in
+slightly different ways.
+
+   Many of the statements have substatements.  For example, a `while'
+loop will have a body, which is itself a statement.  If the substatement
+is `NULL_TREE', it is considered equivalent to a statement consisting
+of a single `;', i.e., an expression statement in which the expression
+has been omitted.  A substatement may in fact be a list of statements,
+connected via their `TREE_CHAIN's.  So, you should always process the
+statement tree by looping over substatements, like this:
+     void process_stmt (stmt)
+          tree stmt;
+     {
+       while (stmt)
+         {
+           switch (TREE_CODE (stmt))
+             {
+             case IF_STMT:
+               process_stmt (THEN_CLAUSE (stmt));
+               /* More processing here.  */
+               break;
+     
+             ...
+             }
+     
+           stmt = TREE_CHAIN (stmt);
+         }
+     }
+   In other words, while the `then' clause of an `if' statement in C++
+can be only one statement (although that one statement may be a
+compound statement), the intermediate representation will sometimes use
+several statements chained together.
+
+`ASM_STMT'
+     Used to represent an inline assembly statement.  For an inline
+     assembly statement like:
+          asm ("mov x, y");
+     The `ASM_STRING' macro will return a `STRING_CST' node for `"mov
+     x, y"'.  If the original statement made use of the
+     extended-assembly syntax, then `ASM_OUTPUTS', `ASM_INPUTS', and
+     `ASM_CLOBBERS' will be the outputs, inputs, and clobbers for the
+     statement, represented as `STRING_CST' nodes.  The
+     extended-assembly syntax looks like:
+          asm ("fsinx %1,%0" : "=f" (result) : "f" (angle));
+     The first string is the `ASM_STRING', containing the instruction
+     template.  The next two strings are the output and inputs,
+     respectively; this statement has no clobbers.  As this example
+     indicates, "plain" assembly statements are merely a special case
+     of extended assembly statements; they have no cv-qualifiers,
+     outputs, inputs, or clobbers.  All of the strings will be
+     `NUL'-terminated, and will contain no embedded `NUL'-characters.
+
+     If the assembly statement is declared `volatile', or if the
+     statement was not an extended assembly statement, and is therefore
+     implicitly volatile, then the predicate `ASM_VOLATILE_P' will hold
+     of the `ASM_STMT'.
+
+`BREAK_STMT'
+     Used to represent a `break' statement.  There are no additional
+     fields.
+
+`CASE_LABEL'
+     Use to represent a `case' label, range of `case' labels, or a
+     `default' label.  If `CASE_LOW' is `NULL_TREE', then this is a
+     `default' label.  Otherwise, if `CASE_HIGH' is `NULL_TREE', then
+     this is an ordinary `case' label.  In this case, `CASE_LOW' is an
+     expression giving the value of the label.  Both `CASE_LOW' and
+     `CASE_HIGH' are `INTEGER_CST' nodes.  These values will have the
+     same type as the condition expression in the switch statement.
+
+     Otherwise, if both `CASE_LOW' and `CASE_HIGH' are defined, the
+     statement is a range of case labels.  Such statements originate
+     with the extension that allows users to write things of the form:
+          case 2 ... 5:
+     The first value will be `CASE_LOW', while the second will be
+     `CASE_HIGH'.
+
+`CLEANUP_STMT'
+     Used to represent an action that should take place upon exit from
+     the enclosing scope.  Typically, these actions are calls to
+     destructors for local objects, but back ends cannot rely on this
+     fact.  If these nodes are in fact representing such destructors,
+     `CLEANUP_DECL' will be the `VAR_DECL' destroyed.  Otherwise,
+     `CLEANUP_DECL' will be `NULL_TREE'.  In any case, the
+     `CLEANUP_EXPR' is the expression to execute.  The cleanups
+     executed on exit from a scope should be run in the reverse order
+     of the order in which the associated `CLEANUP_STMT's were
+     encountered.
+
+`COMPOUND_STMT'
+     Used to represent a brace-enclosed block.  The first substatement
+     is given by `COMPOUND_BODY'.  Subsequent substatements are found by
+     following the `TREE_CHAIN' link from one substatement to the next.
+     The `COMPOUND_BODY' will be `NULL_TREE' if there are no
+     substatements.
+
+`CONTINUE_STMT'
+     Used to represent a `continue' statement.  There are no additional
+     fields.
+
+`CTOR_STMT'
+     Used to mark the beginning (if `CTOR_BEGIN_P' holds) or end (if
+     `CTOR_END_P' holds of the main body of a constructor.  See also
+     `SUBOBJECT' for more information on how to use these nodes.
+
+`DECL_STMT'
+     Used to represent a local declaration.  The `DECL_STMT_DECL' macro
+     can be used to obtain the entity declared.  This declaration may
+     be a `LABEL_DECL', indicating that the label declared is a local
+     label.  (As an extension, GCC allows the declaration of labels
+     with scope.)  In C, this declaration may be a `FUNCTION_DECL',
+     indicating the use of the GCC nested function extension.  For more
+     information, *note Functions::.
+
+`DO_STMT'
+     Used to represent a `do' loop.  The body of the loop is given by
+     `DO_BODY' while the termination condition for the loop is given by
+     `DO_COND'.  The condition for a `do'-statement is always an
+     expression.
+
+`EMPTY_CLASS_EXPR'
+     Used to represent a temporary object of a class with no data whose
+     address is never taken.  (All such objects are interchangeable.)
+     The `TREE_TYPE' represents the type of the object.
+
+`EXPR_STMT'
+     Used to represent an expression statement.  Use `EXPR_STMT_EXPR' to
+     obtain the expression.
+
+`FILE_STMT'
+     Used to record a change in filename within the body of a function.
+     Use `FILE_STMT_FILENAME' to obtain the new filename.
+
+`FOR_STMT'
+     Used to represent a `for' statement.  The `FOR_INIT_STMT' is the
+     initialization statement for the loop.  The `FOR_COND' is the
+     termination condition.  The `FOR_EXPR' is the expression executed
+     right before the `FOR_COND' on each loop iteration; often, this
+     expression increments a counter.  The body of the loop is given by
+     `FOR_BODY'.  Note that `FOR_INIT_STMT' and `FOR_BODY' return
+     statements, while `FOR_COND' and `FOR_EXPR' return expressions.
+
+`GOTO_STMT'
+     Used to represent a `goto' statement.  The `GOTO_DESTINATION' will
+     usually be a `LABEL_DECL'.  However, if the "computed goto"
+     extension has been used, the `GOTO_DESTINATION' will be an
+     arbitrary expression indicating the destination.  This expression
+     will always have pointer type.  Additionally the `GOTO_FAKE_P'
+     flag is set whenever the goto statement does not come from source
+     code, but it is generated implicitly by the compiler.  This is
+     used for branch prediction.
+
+`HANDLER'
+     Used to represent a C++ `catch' block.  The `HANDLER_TYPE' is the
+     type of exception that will be caught by this handler; it is equal
+     (by pointer equality) to `CATCH_ALL_TYPE' if this handler is for
+     all types.  `HANDLER_PARMS' is the `DECL_STMT' for the catch
+     parameter, and `HANDLER_BODY' is the `COMPOUND_STMT' for the block
+     itself.
+
+`IF_STMT'
+     Used to represent an `if' statement.  The `IF_COND' is the
+     expression.
+
+     If the condition is a `TREE_LIST', then the `TREE_PURPOSE' is a
+     statement (usually a `DECL_STMT').  Each time the condition is
+     evaluated, the statement should be executed.  Then, the
+     `TREE_VALUE' should be used as the conditional expression itself.
+     This representation is used to handle C++ code like this:
+
+          if (int i = 7) ...
+
+     where there is a new local variable (or variables) declared within
+     the condition.
+
+     The `THEN_CLAUSE' represents the statement given by the `then'
+     condition, while the `ELSE_CLAUSE' represents the statement given
+     by the `else' condition.
+
+`LABEL_STMT'
+     Used to represent a label.  The `LABEL_DECL' declared by this
+     statement can be obtained with the `LABEL_STMT_LABEL' macro.  The
+     `IDENTIFIER_NODE' giving the name of the label can be obtained from
+     the `LABEL_DECL' with `DECL_NAME'.
+
+`RETURN_INIT'
+     If the function uses the G++ "named return value" extension,
+     meaning that the function has been defined like:
+          S f(int) return s {...}
+     then there will be a `RETURN_INIT'.  There is never a named
+     returned value for a constructor.  The first argument to the
+     `RETURN_INIT' is the name of the object returned; the second
+     argument is the initializer for the object.  The object is
+     initialized when the `RETURN_INIT' is encountered.  The object
+     referred to is the actual object returned; this extension is a
+     manual way of doing the "return-value optimization."  Therefore,
+     the object must actually be constructed in the place where the
+     object will be returned.
+
+`RETURN_STMT'
+     Used to represent a `return' statement.  The `RETURN_EXPR' is the
+     expression returned; it will be `NULL_TREE' if the statement was
+     just
+          return;
+
+`SCOPE_STMT'
+     A scope-statement represents the beginning or end of a scope.  If
+     `SCOPE_BEGIN_P' holds, this statement represents the beginning of a
+     scope; if `SCOPE_END_P' holds this statement represents the end of
+     a scope.  On exit from a scope, all cleanups from `CLEANUP_STMT's
+     occurring in the scope must be run, in reverse order to the order
+     in which they were encountered.  If `SCOPE_NULLIFIED_P' or
+     `SCOPE_NO_CLEANUPS_P' holds of the scope, back ends should behave
+     as if the `SCOPE_STMT' were not present at all.
+
+`SUBOBJECT'
+     In a constructor, these nodes are used to mark the point at which a
+     subobject of `this' is fully constructed.  If, after this point, an
+     exception is thrown before a `CTOR_STMT' with `CTOR_END_P' set is
+     encountered, the `SUBOBJECT_CLEANUP' must be executed.  The
+     cleanups must be executed in the reverse order in which they
+     appear.
+
+`SWITCH_STMT'
+     Used to represent a `switch' statement.  The `SWITCH_COND' is the
+     expression on which the switch is occurring.  See the documentation
+     for an `IF_STMT' for more information on the representation used
+     for the condition.  The `SWITCH_BODY' is the body of the switch
+     statement.   The `SWITCH_TYPE' is the original type of switch
+     expression as given in the source, before any compiler conversions.
+
+`TRY_BLOCK'
+     Used to represent a `try' block.  The body of the try block is
+     given by `TRY_STMTS'.  Each of the catch blocks is a `HANDLER'
+     node.  The first handler is given by `TRY_HANDLERS'.  Subsequent
+     handlers are obtained by following the `TREE_CHAIN' link from one
+     handler to the next.  The body of the handler is given by
+     `HANDLER_BODY'.
+
+     If `CLEANUP_P' holds of the `TRY_BLOCK', then the `TRY_HANDLERS'
+     will not be a `HANDLER' node.  Instead, it will be an expression
+     that should be executed if an exception is thrown in the try
+     block.  It must rethrow the exception after executing that code.
+     And, if an exception is thrown while the expression is executing,
+     `terminate' must be called.
+
+`USING_STMT'
+     Used to represent a `using' directive.  The namespace is given by
+     `USING_STMT_NAMESPACE', which will be a NAMESPACE_DECL.  This node
+     is needed inside template functions, to implement using directives
+     during instantiation.
+
+`WHILE_STMT'
+     Used to represent a `while' loop.  The `WHILE_COND' is the
+     termination condition for the loop.  See the documentation for an
+     `IF_STMT' for more information on the representation used for the
+     condition.
+
+     The `WHILE_BODY' is the body of the loop.
+
+
+File: gccint.info,  Node: Attributes,  Next: Expression trees,  Prev: Declarations,  Up: Trees
+
+Attributes in trees
+===================
+
+   Attributes, as specified using the `__attribute__' keyword, are
+represented internally as a `TREE_LIST'.  The `TREE_PURPOSE' is the
+name of the attribute, as an `IDENTIFIER_NODE'.  The `TREE_VALUE' is a
+`TREE_LIST' of the arguments of the attribute, if any, or `NULL_TREE'
+if there are no arguments; the arguments are stored as the `TREE_VALUE'
+of successive entries in the list, and may be identifiers or
+expressions.  The `TREE_CHAIN' of the attribute is the next attribute
+in a list of attributes applying to the same declaration or type, or
+`NULL_TREE' if there are no further attributes in the list.
+
+   Attributes may be attached to declarations and to types; these
+attributes may be accessed with the following macros.  All attributes
+are stored in this way, and many also cause other changes to the
+declaration or type or to other internal compiler data structures.
+
+ - Tree Macro: tree DECL_ATTRIBUTES (tree DECL)
+     This macro returns the attributes on the declaration DECL.
+
+ - Tree Macro: tree TYPE_ATTRIBUTES (tree TYPE)
+     This macro returns the attributes on the type TYPE.
+
+
+File: gccint.info,  Node: Expression trees,  Prev: Attributes,  Up: Trees
+
+Expressions
+===========
+
+   The internal representation for expressions is for the most part
+quite straightforward.  However, there are a few facts that one must
+bear in mind.  In particular, the expression "tree" is actually a
+directed acyclic graph.  (For example there may be many references to
+the integer constant zero throughout the source program; many of these
+will be represented by the same expression node.)  You should not rely
+on certain kinds of node being shared, nor should rely on certain kinds
+of nodes being unshared.
+
+   The following macros can be used with all expression nodes:
+
+`TREE_TYPE'
+     Returns the type of the expression.  This value may not be
+     precisely the same type that would be given the expression in the
+     original program.
+
+   In what follows, some nodes that one might expect to always have type
+`bool' are documented to have either integral or boolean type.  At some
+point in the future, the C front end may also make use of this same
+intermediate representation, and at this point these nodes will
+certainly have integral type.  The previous sentence is not meant to
+imply that the C++ front end does not or will not give these nodes
+integral type.
+
+   Below, we list the various kinds of expression nodes.  Except where
+noted otherwise, the operands to an expression are accessed using the
+`TREE_OPERAND' macro.  For example, to access the first operand to a
+binary plus expression `expr', use:
+
+     TREE_OPERAND (expr, 0)
+
+As this example indicates, the operands are zero-indexed.
+
+   The table below begins with constants, moves on to unary expressions,
+then proceeds to binary expressions, and concludes with various other
+kinds of expressions:
+
+`INTEGER_CST'
+     These nodes represent integer constants.  Note that the type of
+     these constants is obtained with `TREE_TYPE'; they are not always
+     of type `int'.  In particular, `char' constants are represented
+     with `INTEGER_CST' nodes.  The value of the integer constant `e' is
+     given by
+          ((TREE_INT_CST_HIGH (e) << HOST_BITS_PER_WIDE_INT)
+          + TREE_INST_CST_LOW (e))
+
+     HOST_BITS_PER_WIDE_INT is at least thirty-two on all platforms.
+     Both `TREE_INT_CST_HIGH' and `TREE_INT_CST_LOW' return a
+     `HOST_WIDE_INT'.  The value of an `INTEGER_CST' is interpreted as
+     a signed or unsigned quantity depending on the type of the
+     constant.  In general, the expression given above will overflow,
+     so it should not be used to calculate the value of the constant.
+
+     The variable `integer_zero_node' is an integer constant with value
+     zero.  Similarly, `integer_one_node' is an integer constant with
+     value one.  The `size_zero_node' and `size_one_node' variables are
+     analogous, but have type `size_t' rather than `int'.
+
+     The function `tree_int_cst_lt' is a predicate which holds if its
+     first argument is less than its second.  Both constants are
+     assumed to have the same signedness (i.e., either both should be
+     signed or both should be unsigned.)  The full width of the
+     constant is used when doing the comparison; the usual rules about
+     promotions and conversions are ignored.  Similarly,
+     `tree_int_cst_equal' holds if the two constants are equal.  The
+     `tree_int_cst_sgn' function returns the sign of a constant.  The
+     value is `1', `0', or `-1' according on whether the constant is
+     greater than, equal to, or less than zero.  Again, the signedness
+     of the constant's type is taken into account; an unsigned constant
+     is never less than zero, no matter what its bit-pattern.
+
+`REAL_CST'
+     FIXME: Talk about how to obtain representations of this constant,
+     do comparisons, and so forth.
+
+`COMPLEX_CST'
+     These nodes are used to represent complex number constants, that
+     is a `__complex__' whose parts are constant nodes.  The
+     `TREE_REALPART' and `TREE_IMAGPART' return the real and the
+     imaginary parts respectively.
+
+`VECTOR_CST'
+     These nodes are used to represent vector constants, whose parts are
+     constant nodes.  Each individual constant node is either an
+     integer or a double constant node.  The first operand is a
+     `TREE_LIST' of the constant nodes and is accessed through
+     `TREE_VECTOR_CST_ELTS'.
+
+`STRING_CST'
+     These nodes represent string-constants.  The `TREE_STRING_LENGTH'
+     returns the length of the string, as an `int'.  The
+     `TREE_STRING_POINTER' is a `char*' containing the string itself.
+     The string may not be `NUL'-terminated, and it may contain
+     embedded `NUL' characters.  Therefore, the `TREE_STRING_LENGTH'
+     includes the trailing `NUL' if it is present.
+
+     For wide string constants, the `TREE_STRING_LENGTH' is the number
+     of bytes in the string, and the `TREE_STRING_POINTER' points to an
+     array of the bytes of the string, as represented on the target
+     system (that is, as integers in the target endianness).  Wide and
+     non-wide string constants are distinguished only by the `TREE_TYPE'
+     of the `STRING_CST'.
+
+     FIXME: The formats of string constants are not well-defined when
+     the target system bytes are not the same width as host system
+     bytes.
+
+`PTRMEM_CST'
+     These nodes are used to represent pointer-to-member constants.  The
+     `PTRMEM_CST_CLASS' is the class type (either a `RECORD_TYPE' or
+     `UNION_TYPE' within which the pointer points), and the
+     `PTRMEM_CST_MEMBER' is the declaration for the pointed to object.
+     Note that the `DECL_CONTEXT' for the `PTRMEM_CST_MEMBER' is in
+     general different from the `PTRMEM_CST_CLASS'.  For example, given:
+          struct B { int i; };
+          struct D : public B {};
+          int D::*dp = &D::i;
+
+     The `PTRMEM_CST_CLASS' for `&D::i' is `D', even though the
+     `DECL_CONTEXT' for the `PTRMEM_CST_MEMBER' is `B', since `B::i' is
+     a member of `B', not `D'.
+
+`VAR_DECL'
+     These nodes represent variables, including static data members.
+     For more information, *note Declarations::.
+
+`NEGATE_EXPR'
+     These nodes represent unary negation of the single operand, for
+     both integer and floating-point types.  The type of negation can be
+     determined by looking at the type of the expression.
+
+`BIT_NOT_EXPR'
+     These nodes represent bitwise complement, and will always have
+     integral type.  The only operand is the value to be complemented.
+
+`TRUTH_NOT_EXPR'
+     These nodes represent logical negation, and will always have
+     integral (or boolean) type.  The operand is the value being
+     negated.
+
+`PREDECREMENT_EXPR'
+`PREINCREMENT_EXPR'
+`POSTDECREMENT_EXPR'
+`POSTINCREMENT_EXPR'
+     These nodes represent increment and decrement expressions.  The
+     value of the single operand is computed, and the operand
+     incremented or decremented.  In the case of `PREDECREMENT_EXPR' and
+     `PREINCREMENT_EXPR', the value of the expression is the value
+     resulting after the increment or decrement; in the case of
+     `POSTDECREMENT_EXPR' and `POSTINCREMENT_EXPR' is the value before
+     the increment or decrement occurs.  The type of the operand, like
+     that of the result, will be either integral, boolean, or
+     floating-point.
+
+`ADDR_EXPR'
+     These nodes are used to represent the address of an object.  (These
+     expressions will always have pointer or reference type.)  The
+     operand may be another expression, or it may be a declaration.
+
+     As an extension, GCC allows users to take the address of a label.
+     In this case, the operand of the `ADDR_EXPR' will be a
+     `LABEL_DECL'.  The type of such an expression is `void*'.
+
+     If the object addressed is not an lvalue, a temporary is created,
+     and the address of the temporary is used.
+
+`INDIRECT_REF'
+     These nodes are used to represent the object pointed to by a
+     pointer.  The operand is the pointer being dereferenced; it will
+     always have pointer or reference type.
+
+`FIX_TRUNC_EXPR'
+     These nodes represent conversion of a floating-point value to an
+     integer.  The single operand will have a floating-point type,
+     while the the complete expression will have an integral (or
+     boolean) type.  The operand is rounded towards zero.
+
+`FLOAT_EXPR'
+     These nodes represent conversion of an integral (or boolean) value
+     to a floating-point value.  The single operand will have integral
+     type, while the complete expression will have a floating-point
+     type.
+
+     FIXME: How is the operand supposed to be rounded?  Is this
+     dependent on `-mieee'?
+
+`COMPLEX_EXPR'
+     These nodes are used to represent complex numbers constructed from
+     two expressions of the same (integer or real) type.  The first
+     operand is the real part and the second operand is the imaginary
+     part.
+
+`CONJ_EXPR'
+     These nodes represent the conjugate of their operand.
+
+`REALPART_EXPR'
+
+`IMAGPART_EXPR'
+     These nodes represent respectively the real and the imaginary parts
+     of complex numbers (their sole argument).
+
+`NON_LVALUE_EXPR'
+     These nodes indicate that their one and only operand is not an
+     lvalue.  A back end can treat these identically to the single
+     operand.
+
+`NOP_EXPR'
+     These nodes are used to represent conversions that do not require
+     any code-generation.  For example, conversion of a `char*' to an
+     `int*' does not require any code be generated; such a conversion is
+     represented by a `NOP_EXPR'.  The single operand is the expression
+     to be converted.  The conversion from a pointer to a reference is
+     also represented with a `NOP_EXPR'.
+
+`CONVERT_EXPR'
+     These nodes are similar to `NOP_EXPR's, but are used in those
+     situations where code may need to be generated.  For example, if an
+     `int*' is converted to an `int' code may need to be generated on
+     some platforms.  These nodes are never used for C++-specific
+     conversions, like conversions between pointers to different
+     classes in an inheritance hierarchy.  Any adjustments that need to
+     be made in such cases are always indicated explicitly.  Similarly,
+     a user-defined conversion is never represented by a
+     `CONVERT_EXPR'; instead, the function calls are made explicit.
+
+`THROW_EXPR'
+     These nodes represent `throw' expressions.  The single operand is
+     an expression for the code that should be executed to throw the
+     exception.  However, there is one implicit action not represented
+     in that expression; namely the call to `__throw'.  This function
+     takes no arguments.  If `setjmp'/`longjmp' exceptions are used, the
+     function `__sjthrow' is called instead.  The normal GCC back end
+     uses the function `emit_throw' to generate this code; you can
+     examine this function to see what needs to be done.
+
+`LSHIFT_EXPR'
+`RSHIFT_EXPR'
+     These nodes represent left and right shifts, respectively.  The
+     first operand is the value to shift; it will always be of integral
+     type.  The second operand is an expression for the number of bits
+     by which to shift.  Right shift should be treated as arithmetic,
+     i.e., the high-order bits should be zero-filled when the
+     expression has unsigned type and filled with the sign bit when the
+     expression has signed type.  Note that the result is undefined if
+     the second operand is larger than the first operand's type size.
+
+`BIT_IOR_EXPR'
+`BIT_XOR_EXPR'
+`BIT_AND_EXPR'
+     These nodes represent bitwise inclusive or, bitwise exclusive or,
+     and bitwise and, respectively.  Both operands will always have
+     integral type.
+
+`TRUTH_ANDIF_EXPR'
+`TRUTH_ORIF_EXPR'
+     These nodes represent logical and and logical or, respectively.
+     These operators are not strict; i.e., the second operand is
+     evaluated only if the value of the expression is not determined by
+     evaluation of the first operand.  The type of the operands, and
+     the result type, is always of boolean or integral type.
+
+`TRUTH_AND_EXPR'
+`TRUTH_OR_EXPR'
+`TRUTH_XOR_EXPR'
+     These nodes represent logical and, logical or, and logical
+     exclusive or.  They are strict; both arguments are always
+     evaluated.  There are no corresponding operators in C or C++, but
+     the front end will sometimes generate these expressions anyhow, if
+     it can tell that strictness does not matter.
+
+`PLUS_EXPR'
+`MINUS_EXPR'
+`MULT_EXPR'
+`TRUNC_DIV_EXPR'
+`TRUNC_MOD_EXPR'
+`RDIV_EXPR'
+     These nodes represent various binary arithmetic operations.
+     Respectively, these operations are addition, subtraction (of the
+     second operand from the first), multiplication, integer division,
+     integer remainder, and floating-point division.  The operands to
+     the first three of these may have either integral or floating
+     type, but there will never be case in which one operand is of
+     floating type and the other is of integral type.
+
+     The result of a `TRUNC_DIV_EXPR' is always rounded towards zero.
+     The `TRUNC_MOD_EXPR' of two operands `a' and `b' is always `a -
+     a/b' where the division is as if computed by a `TRUNC_DIV_EXPR'.
+
+`ARRAY_REF'
+     These nodes represent array accesses.  The first operand is the
+     array; the second is the index.  To calculate the address of the
+     memory accessed, you must scale the index by the size of the type
+     of the array elements.  The type of these expressions must be the
+     type of a component of the array.
+
+`ARRAY_RANGE_REF'
+     These nodes represent access to a range (or "slice") of an array.
+     The operands are the same as that for `ARRAY_REF' and have the same
+     meanings.  The type of these expressions must be an array whose
+     component type is the same as that of the first operand.  The
+     range of that array type determines the amount of data these
+     expressions access.
+
+`EXACT_DIV_EXPR'
+     Document.
+
+`LT_EXPR'
+`LE_EXPR'
+`GT_EXPR'
+`GE_EXPR'
+`EQ_EXPR'
+`NE_EXPR'
+     These nodes represent the less than, less than or equal to, greater
+     than, greater than or equal to, equal, and not equal comparison
+     operators.  The first and second operand with either be both of
+     integral type or both of floating type.  The result type of these
+     expressions will always be of integral or boolean type.
+
+`MODIFY_EXPR'
+     These nodes represent assignment.  The left-hand side is the first
+     operand; the right-hand side is the second operand.  The left-hand
+     side will be a `VAR_DECL', `INDIRECT_REF', `COMPONENT_REF', or
+     other lvalue.
+
+     These nodes are used to represent not only assignment with `=' but
+     also compound assignments (like `+='), by reduction to `='
+     assignment.  In other words, the representation for `i += 3' looks
+     just like that for `i = i + 3'.
+
+`INIT_EXPR'
+     These nodes are just like `MODIFY_EXPR', but are used only when a
+     variable is initialized, rather than assigned to subsequently.
+
+`COMPONENT_REF'
+     These nodes represent non-static data member accesses.  The first
+     operand is the object (rather than a pointer to it); the second
+     operand is the `FIELD_DECL' for the data member.
+
+`COMPOUND_EXPR'
+     These nodes represent comma-expressions.  The first operand is an
+     expression whose value is computed and thrown away prior to the
+     evaluation of the second operand.  The value of the entire
+     expression is the value of the second operand.
+
+`COND_EXPR'
+     These nodes represent `?:' expressions.  The first operand is of
+     boolean or integral type.  If it evaluates to a nonzero value, the
+     second operand should be evaluated, and returned as the value of
+     the expression.  Otherwise, the third operand is evaluated, and
+     returned as the value of the expression.  As a GNU extension, the
+     middle operand of the `?:' operator may be omitted in the source,
+     like this:
+
+          x ? : 3
+
+     which is equivalent to
+
+          x ? x : 3
+
+     assuming that `x' is an expression without side-effects.  However,
+     in the case that the first operation causes side effects, the
+     side-effects occur only once.  Consumers of the internal
+     representation do not need to worry about this oddity; the second
+     operand will be always be present in the internal representation.
+
+`CALL_EXPR'
+     These nodes are used to represent calls to functions, including
+     non-static member functions.  The first operand is a pointer to the
+     function to call; it is always an expression whose type is a
+     `POINTER_TYPE'.  The second argument is a `TREE_LIST'.  The
+     arguments to the call appear left-to-right in the list.  The
+     `TREE_VALUE' of each list node contains the expression
+     corresponding to that argument.  (The value of `TREE_PURPOSE' for
+     these nodes is unspecified, and should be ignored.)  For non-static
+     member functions, there will be an operand corresponding to the
+     `this' pointer.  There will always be expressions corresponding to
+     all of the arguments, even if the function is declared with default
+     arguments and some arguments are not explicitly provided at the
+     call sites.
+
+`STMT_EXPR'
+     These nodes are used to represent GCC's statement-expression
+     extension.  The statement-expression extension allows code like
+     this:
+          int f() { return ({ int j; j = 3; j + 7; }); }
+     In other words, an sequence of statements may occur where a single
+     expression would normally appear.  The `STMT_EXPR' node represents
+     such an expression.  The `STMT_EXPR_STMT' gives the statement
+     contained in the expression; this is always a `COMPOUND_STMT'.  The
+     value of the expression is the value of the last sub-statement in
+     the `COMPOUND_STMT'.  More precisely, the value is the value
+     computed by the last `EXPR_STMT' in the outermost scope of the
+     `COMPOUND_STMT'.  For example, in:
+          ({ 3; })
+     the value is `3' while in:
+          ({ if (x) { 3; } })
+     (represented by a nested `COMPOUND_STMT'), there is no value.  If
+     the `STMT_EXPR' does not yield a value, it's type will be `void'.
+
+`BIND_EXPR'
+     These nodes represent local blocks.  The first operand is a list of
+     temporary variables, connected via their `TREE_CHAIN' field.  These
+     will never require cleanups.  The scope of these variables is just
+     the body of the `BIND_EXPR'.  The body of the `BIND_EXPR' is the
+     second operand.
+
+`LOOP_EXPR'
+     These nodes represent "infinite" loops.  The `LOOP_EXPR_BODY'
+     represents the body of the loop.  It should be executed forever,
+     unless an `EXIT_EXPR' is encountered.
+
+`EXIT_EXPR'
+     These nodes represent conditional exits from the nearest enclosing
+     `LOOP_EXPR'.  The single operand is the condition; if it is
+     nonzero, then the loop should be exited.  An `EXIT_EXPR' will only
+     appear within a `LOOP_EXPR'.
+
+`CLEANUP_POINT_EXPR'
+     These nodes represent full-expressions.  The single operand is an
+     expression to evaluate.  Any destructor calls engendered by the
+     creation of temporaries during the evaluation of that expression
+     should be performed immediately after the expression is evaluated.
+
+`CONSTRUCTOR'
+     These nodes represent the brace-enclosed initializers for a
+     structure or array.  The first operand is reserved for use by the
+     back end.  The second operand is a `TREE_LIST'.  If the
+     `TREE_TYPE' of the `CONSTRUCTOR' is a `RECORD_TYPE' or
+     `UNION_TYPE', then the `TREE_PURPOSE' of each node in the
+     `TREE_LIST' will be a `FIELD_DECL' and the `TREE_VALUE' of each
+     node will be the expression used to initialize that field.  You
+     should not depend on the fields appearing in any particular order,
+     nor should you assume that all fields will be represented.
+     Unrepresented fields may be assigned any value.
+
+     If the `TREE_TYPE' of the `CONSTRUCTOR' is an `ARRAY_TYPE', then
+     the `TREE_PURPOSE' of each element in the `TREE_LIST' will be an
+     `INTEGER_CST'.  This constant indicates which element of the array
+     (indexed from zero) is being assigned to; again, the `TREE_VALUE'
+     is the corresponding initializer.  If the `TREE_PURPOSE' is
+     `NULL_TREE', then the initializer is for the next available array
+     element.
+
+     Conceptually, before any initialization is done, the entire area of
+     storage is initialized to zero.
+
+`COMPOUND_LITERAL_EXPR'
+     These nodes represent ISO C99 compound literals.  The
+     `COMPOUND_LITERAL_EXPR_DECL_STMT' is a `DECL_STMT' containing an
+     anonymous `VAR_DECL' for the unnamed object represented by the
+     compound literal; the `DECL_INITIAL' of that `VAR_DECL' is a
+     `CONSTRUCTOR' representing the brace-enclosed list of initializers
+     in the compound literal.  That anonymous `VAR_DECL' can also be
+     accessed directly by the `COMPOUND_LITERAL_EXPR_DECL' macro.
+
+`SAVE_EXPR'
+     A `SAVE_EXPR' represents an expression (possibly involving
+     side-effects) that is used more than once.  The side-effects should
+     occur only the first time the expression is evaluated.  Subsequent
+     uses should just reuse the computed value.  The first operand to
+     the `SAVE_EXPR' is the expression to evaluate.  The side-effects
+     should be executed where the `SAVE_EXPR' is first encountered in a
+     depth-first preorder traversal of the expression tree.
+
+`TARGET_EXPR'
+     A `TARGET_EXPR' represents a temporary object.  The first operand
+     is a `VAR_DECL' for the temporary variable.  The second operand is
+     the initializer for the temporary.  The initializer is evaluated,
+     and copied (bitwise) into the temporary.
+
+     Often, a `TARGET_EXPR' occurs on the right-hand side of an
+     assignment, or as the second operand to a comma-expression which is
+     itself the right-hand side of an assignment, etc.  In this case,
+     we say that the `TARGET_EXPR' is "normal"; otherwise, we say it is
+     "orphaned".  For a normal `TARGET_EXPR' the temporary variable
+     should be treated as an alias for the left-hand side of the
+     assignment, rather than as a new temporary variable.
+
+     The third operand to the `TARGET_EXPR', if present, is a
+     cleanup-expression (i.e., destructor call) for the temporary.  If
+     this expression is orphaned, then this expression must be executed
+     when the statement containing this expression is complete.  These
+     cleanups must always be executed in the order opposite to that in
+     which they were encountered.  Note that if a temporary is created
+     on one branch of a conditional operator (i.e., in the second or
+     third operand to a `COND_EXPR'), the cleanup must be run only if
+     that branch is actually executed.
+
+     See `STMT_IS_FULL_EXPR_P' for more information about running these
+     cleanups.
+
+`AGGR_INIT_EXPR'
+     An `AGGR_INIT_EXPR' represents the initialization as the return
+     value of a function call, or as the result of a constructor.  An
+     `AGGR_INIT_EXPR' will only appear as the second operand of a
+     `TARGET_EXPR'.  The first operand to the `AGGR_INIT_EXPR' is the
+     address of a function to call, just as in a `CALL_EXPR'.  The
+     second operand are the arguments to pass that function, as a
+     `TREE_LIST', again in a manner similar to that of a `CALL_EXPR'.
+     The value of the expression is that returned by the function.
+
+     If `AGGR_INIT_VIA_CTOR_P' holds of the `AGGR_INIT_EXPR', then the
+     initialization is via a constructor call.  The address of the third
+     operand of the `AGGR_INIT_EXPR', which is always a `VAR_DECL', is
+     taken, and this value replaces the first argument in the argument
+     list.  In this case, the value of the expression is the `VAR_DECL'
+     given by the third operand to the `AGGR_INIT_EXPR'; constructors do
+     not return a value.
+
+`VTABLE_REF'
+     A `VTABLE_REF' indicates that the interior expression computes a
+     value that is a vtable entry.  It is used with `-fvtable-gc' to
+     track the reference through to front end to the middle end, at
+     which point we transform this to a `REG_VTABLE_REF' note, which
+     survives the balance of code generation.
+
+     The first operand is the expression that computes the vtable
+     reference.  The second operand is the `VAR_DECL' of the vtable.
+     The third operand is an `INTEGER_CST' of the byte offset into the
+     vtable.
+
+
+File: gccint.info,  Node: RTL,  Next: Machine Desc,  Prev: Trees,  Up: Top
+
+RTL Representation
+******************
+
+   Most of the work of the compiler is done on an intermediate
+representation called register transfer language.  In this language,
+the instructions to be output are described, pretty much one by one, in
+an algebraic form that describes what the instruction does.
+
+   RTL is inspired by Lisp lists.  It has both an internal form, made
+up of structures that point at other structures, and a textual form
+that is used in the machine description and in printed debugging dumps.
+The textual form uses nested parentheses to indicate the pointers in
+the internal form.
+
+* Menu:
+
+* RTL Objects::       Expressions vs vectors vs strings vs integers.
+* RTL Classes::       Categories of RTL expression objects, and their structure.
+* Accessors::         Macros to access expression operands or vector elts.
+* Flags::             Other flags in an RTL expression.
+* Machine Modes::     Describing the size and format of a datum.
+* Constants::         Expressions with constant values.
+* Regs and Memory::   Expressions representing register contents or memory.
+* Arithmetic::        Expressions representing arithmetic on other expressions.
+* Comparisons::       Expressions representing comparison of expressions.
+* Bit-Fields::        Expressions representing bit-fields in memory or reg.
+* Vector Operations:: Expressions involving vector datatypes.
+* Conversions::       Extending, truncating, floating or fixing.
+* RTL Declarations::  Declaring volatility, constancy, etc.
+* Side Effects::      Expressions for storing in registers, etc.
+* Incdec::            Embedded side-effects for autoincrement addressing.
+* Assembler::         Representing `asm' with operands.
+* Insns::             Expression types for entire insns.
+* Calls::             RTL representation of function call insns.
+* Sharing::           Some expressions are unique; others *must* be copied.
+* Reading RTL::       Reading textual RTL from a file.
+
+
+File: gccint.info,  Node: RTL Objects,  Next: RTL Classes,  Up: RTL
+
+RTL Object Types
+================
+
+   RTL uses five kinds of objects: expressions, integers, wide integers,
+strings and vectors.  Expressions are the most important ones.  An RTL
+expression ("RTX", for short) is a C structure, but it is usually
+referred to with a pointer; a type that is given the typedef name `rtx'.
+
+   An integer is simply an `int'; their written form uses decimal
+digits.  A wide integer is an integral object whose type is
+`HOST_WIDE_INT'; their written form uses decimal digits.
+
+   A string is a sequence of characters.  In core it is represented as a
+`char *' in usual C fashion, and it is written in C syntax as well.
+However, strings in RTL may never be null.  If you write an empty
+string in a machine description, it is represented in core as a null
+pointer rather than as a pointer to a null character.  In certain
+contexts, these null pointers instead of strings are valid.  Within RTL
+code, strings are most commonly found inside `symbol_ref' expressions,
+but they appear in other contexts in the RTL expressions that make up
+machine descriptions.
+
+   In a machine description, strings are normally written with double
+quotes, as you would in C.  However, strings in machine descriptions may
+extend over many lines, which is invalid C, and adjacent string
+constants are not concatenated as they are in C.  Any string constant
+may be surrounded with a single set of parentheses.  Sometimes this
+makes the machine description easier to read.
+
+   There is also a special syntax for strings, which can be useful when
+C code is embedded in a machine description.  Wherever a string can
+appear, it is also valid to write a C-style brace block.  The entire
+brace block, including the outermost pair of braces, is considered to be
+the string constant.  Double quote characters inside the braces are not
+special.  Therefore, if you write string constants in the C code, you
+need not escape each quote character with a backslash.
+
+   A vector contains an arbitrary number of pointers to expressions.
+The number of elements in the vector is explicitly present in the
+vector.  The written form of a vector consists of square brackets
+(`[...]') surrounding the elements, in sequence and with whitespace
+separating them.  Vectors of length zero are not created; null pointers
+are used instead.
+
+   Expressions are classified by "expression codes" (also called RTX
+codes).  The expression code is a name defined in `rtl.def', which is
+also (in upper case) a C enumeration constant.  The possible expression
+codes and their meanings are machine-independent.  The code of an RTX
+can be extracted with the macro `GET_CODE (X)' and altered with
+`PUT_CODE (X, NEWCODE)'.
+
+   The expression code determines how many operands the expression
+contains, and what kinds of objects they are.  In RTL, unlike Lisp, you
+cannot tell by looking at an operand what kind of object it is.
+Instead, you must know from its context--from the expression code of
+the containing expression.  For example, in an expression of code
+`subreg', the first operand is to be regarded as an expression and the
+second operand as an integer.  In an expression of code `plus', there
+are two operands, both of which are to be regarded as expressions.  In
+a `symbol_ref' expression, there is one operand, which is to be
+regarded as a string.
+
+   Expressions are written as parentheses containing the name of the
+expression type, its flags and machine mode if any, and then the
+operands of the expression (separated by spaces).
+
+   Expression code names in the `md' file are written in lower case,
+but when they appear in C code they are written in upper case.  In this
+manual, they are shown as follows: `const_int'.
+
+   In a few contexts a null pointer is valid where an expression is
+normally wanted.  The written form of this is `(nil)'.
+

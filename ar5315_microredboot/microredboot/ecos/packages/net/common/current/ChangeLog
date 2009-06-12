@@ -1,0 +1,821 @@
+2004-10-04  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/tftp_support.h: Use the definitions of O_RDONLY and
+	O_WRONLY from fcntl.h instead of defining them ourselves. 
+
+2004-06-17  Oyvind Harboe  <oyvind.harboe@zylin.com>
+
+	* src/tftp_server.c:
+	* cdl/net.cdl: Made tftp server stack size configurable via cdl.
+
+2004-06-17  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ifaddrs.c (getifaddrs): Return destination address for P2P
+	devices. Also don't bother trying to get the broadcast address for
+	interfaces that don't have a valid broadcast address. Inspired by
+	Kelvin Lawson
+
+2004-06-08  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/network.h: Added a __THROW to perror so that it matches
+	what is in stdio.h. Problem pointed out by Øyvid Harboe.
+
+2004-05-04  Jay Foster <jay.foster@systech.com>
+
+        * src/bootp_support.c (get_bootp_option, show_bootp):
+        * src/dhcp_prot.c (scan_dhcp_size): Fixed bug that didn't handle
+        the pad option.
+	
+2004-04-19  Oyvind Harboe <oyvind.harboe@zylin.com>
+
+	* src/tftp_server.c: files are now created with the
+	O_CREAT|O_TRUNC|O_WRONLY so it is possible to write to
+	non-existing files and that overwriting a larger file with
+	a smaller file does not leave a garbage at the end.
+
+2004-04-19  John Dallaway  <jld@ecoscentric.com>
+
+	* doc/tcpip.sgml: Remove reference to RedBoot documentation
+	which is now built separately.
+
+2004-04-13  Sandeep Kumar <sandeep@codito.com>
+
+	* src/network_support.c (init_all_network_interfaces): Fix argument to
+        cyg_dns_res_start and removed errneaous extra closing brace around it.
+
+2004-04-13  Jay Foster <jay.foster@systech.com>
+
+	* src/bootp_support.c (do_bootp): Return false when we should.
+	* src/dhcp_prot.c (do_dhcp_down_net): correctly close the IPv6 socket.
+
+2004-04-11  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/bootp_support.c: 
+	* src/dhcp_prot.c: Close sockets before exiting so we don't leak
+	them.
+	* src/dhcp_prot.c (new_lease): Use a smaller infinite so we don't get
+	a compiler warning.
+	
+2004-02-27     Robert Chenault <robertchenault@yahoo.com>
+
+        * cdl/net.cdl:
+	* src/dhcp_prot.c: Added CYGNUM_NET_DHCP_MIN_RETRY_TIME
+
+2004-02-17	Matt Jerdonek <maj1224@yahoo.com>
+
+	* src/dhcp_prot.c: Fix initialization of DHCP sec field
+
+2003-12-10  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/inet_ntoa.c: Add thread safe inet_ntoa_r() and change
+	inet_ntoa() to use it.  Inspired by Matt Jerdonek.
+
+	* include/net/netdb.h: 
+	* include/arpa/inet.h: Prototype for inet_ntoa_r()
+
+2003-11-25  Manu Sharma <manu.sharma@ascom.com>
+
+         * tests/bridge.c: Changes to enable Spanning Tree Protocol if the
+	 corresponding CDL component is enabled.
+ 
+2003-11-24  Jani Monoses <jani@iv.ro>
+
+	* cdl/net.cdl: Close quote for test list.
+	
+2003-11-22  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/net.cdl: Added control for IPSEC 
+	* doc/ipsec.sgml: General documentation of ipsec.
+
+2003-10-30  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/ping_test.c: Enable profiling if configured in - example use only.
+
+2003-10-16  Jay Foster  <jay@systech.com>
+            Andrew Lunn <andrew.lunn@ascom.ch>
+	
+         * doc/tcpip.sgml: Added documentation for
+         CYGOPT_NET_DHCP_OPTION_HOST_NAME, 
+         CYGNUM_NET_DHCP_OPTION_HOST_NAME_LEN,
+         CYGOPT_NET_DHCP_OPTION_DHCP_CLIENTID_MAC,
+         CYGOPT_NET_DHCP_PARM_REQ_LIST_REPLACE and
+         CYGOPT_NET_DHCP_PARM_REQ_LIST_ADDITIONAL.
+         * cdl/net.cdl: Added legal_values definition for the 
+         CYGNUM_NET_DHCP_OPTION_HOST_NAME_LEN option.
+ 
+2003-10-21  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+        * src/dhcp_prot.c (set_default_dhcp_tags): 
+        * src/bootp_support.c (show_bootp): Added support for TAG_NTP_SERVER
+
+2003-10-13  Jay Foster  <jay@systech.com>
+
+        * include/dhcp.h: Added prototype for dhcp_set_hostname().
+        * src/dhcp_prot.c (set_default_dhcp_tags): Added TAG_HOST_NAME and
+        TAG_DHCP_CLIENTID DHCP/BOOTP option support.
+        * cdl/net.cdl: Added host name (CYGOPT_NET_DHCP_OPTION_HOST_NAME) and
+        MAC address client ID (CYGOPT_NET_DHCP_OPTION_DHCP_CLIENTID_MAC) 
+        support.
+
+2003-10-12  Jay Foster  <jay@systech.com>
+ 
+ 	* cdl/net.cdl: Added configuration interface for
+	CYGOPT_NET_DHCP_PARM_REQ_LIST_REPLACE and
+	CYGOPT_NET_DHCP_PARM_REQ_LIST_ADDITIONAL.
+
+2003-10-09  Eric Doenges <Eric.Doenges@DynaPel.com>
+
+        * src/tftp_client.c: Changed the code so that if a packet is
+        received out of sequence we don't close the connection but wait
+        for the missing packets.
+ 
+2003-10-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* tests/bridge.c: Build the test when we have the bridge
+	handler code enabled and so presumably a bridge.
+
+2003-09-16  Jay Foster  <jay@systech.com>
+ 
+ 	* src/ifaddrs.c (getifaddrs): Fix up allocation and freeing of
+    work buffers and data buffers.
+ 
+2003-07-29  Motoya Kurotsu  <kurotsu@allied-telesis.co.jp>
+
+        * src/dhcp_prot.c (do_dhcp): (re)Initialize the lease when
+        dhcp is (re)initialized or retried.
+        Return true when the state falls into DHCPSTATE_NOTBOUND so that it 
+        knows the interface it still up and can later bring it down when 
+        cleaning up.
+
+2003-07-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ipv6_routing_thread.c: Fix compiler warnings
+	* cd/net.cdl: The routing thread needs the posix package.
+
+2003-07-24  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/dhcp_prot.c: Added a declaration for cyg_arc4random() to
+	eliminate a compiler warning.
+
+2003-07-15  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/net/netdb.h: Added include for <sys/param.h>. the in.h
+	file included later needs this.
+
+2003-05-23  Andrew Lunn  <andrew.lunn@ascom.ch>
+ 
+ 	* src/network_support.c (init_all_network_interfaces): Allow IPv4
+ 	or IPv6 addresses to be used when configuring a default DNS
+ 	server.
+ 
+2003-05-21  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/getaddrinfo.c (getaddrinfo): Corrected a bad patch merge
+	from earlier which failed to delete some code. This fixed the dns1
+	tests for IPv6 lookups.
+
+2003-05-19  Michael Checky  <Michael_Checky@ThermoKing.com>
+            Andrew Lunn     <andrew.lunn@ascom.ch>
+	
+	* src/getaddrinfo.c: Changed '#ifdef CYGPKG_NS_DNS' to
+	'#ifdef CYGPKG_NS_DNS_BUILD', so it would compile if this CDL
+	option is not selected.  Changed the call to 'numeric_node_addr'
+	so it uses the correct number of arguments.
+
+2003-05-14  Bob Holmberg  <bob_holmberg@yahoo.com>
+
+	* src/tftp_server.c (tftpd_read_file): Open the file for reading,
+	not writing.
+
+2003-05-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ifaddrs.c (getifaddrs): Fill in flags, netmask and broadcast
+	addresses, for both IPv4 and IPv6 and enabled.
+	* src/ipv6_routing_thread.c (ipv6_start_routing_thread): Only
+	start the thread once. 
+
+2003-04-26  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/getaddrinfo.c (getaddrinfo): Correctly return TCP when it is!
+	* tests/addr_test.c (net_test): Added a test which uses protocol TCP
+	* src/tftp_client.c (tftp_get): If we timeout on the first block,
+	try other addresses for the server if we have any.
+	* src/network_support.c (init_all_network_interfaces): After
+	router solicitation has given us an address, wait a couple of
+	seconds for duplicate address detection to do its work. While DAD
+	is active, we cannot use the new address.
+
+2003-04-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/tcpip.sgml: Fix some docbook errors only reported by certain
+	Jade versions.
+
+2003-04-24  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/tftp_client.c (tftp_client_put): Fixed compiler warning. 
+
+2003-04-21  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/getaddrinfo.c (getnameinfo): Fixed some endian issues with
+	port numbers and a typo. Added an interface to the DNS client for 
+	reverse lookups.
+	* tests/addr_test.c (net_test): Added tests for getnameinfo. Fixed
+	some memory leaks.
+
+2003-04-20  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/getaddrinfo.c (getaddrinfo): Virtually a re-write to
+	interface to the DNS client.
+
+2003-04-14  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/net/netdb.h: const correctness. 
+
+2003-04-12  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/network_support.c (init_loopback_interface): Close the
+	socket when things go wrong otherwise we leak sockets.
+
+	* src/tftp_server.c (tftpd_server): Added support for IPv6 as well
+	as IPv4. Extended the multithreading support so that it works
+	correctly when there are multiple servers on multiple ports.  
+	* doc/tcpip.sgml: Documentation for the changes made to the tftp
+	server.
+
+2003-04-11  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* tests/linux_echo.c: Renamed to....
+	* tests/host_echo.c: this new file. Change comment to indicate this.
+
+	* tests/make.linux: Renamed to....
+	* tests/make.host: this new file. Change comment to indicate this.
+	Also linux_echo -> host_echo, and add clean target.
+
+	* doc/tcpip.sgml: Reflect above.
+
+2003-04-11  Michael Checky  <Michael_Checky@Thermoking.com>
+
+	* tests/nc_test_framework.h: deleted '#include <net/route.h>'.
+	* tests/linux_echo.c: added '#include <netinet/in_systm.h>',
+	deleted '#include <net/route.h>'.
+	* tests/tcp_sink.c: ditto.
+	* tests/tcp_souce.c: ditto.
+	* tests/nc_test_slave.c: changed 'bool' to 'int' because the compiler
+	didn't like 'bool'.
+
+2003-04-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/network_support.c (init_all_network_interfaces): Wait upto 4
+	seconds for a router solicit message to be received. Once we have
+	received the message we know we have a valid IPv6 address.
+
+	* src/tftp_client.c: Added support for IPv6. This requires two new
+	functions, tftp_client_{get|put} which are protocol version
+        independent.
+	* tests/tftp_client_test.c (tftp_test): Added tests which use IPv6
+	addresses.
+	
+2003-04-07  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/getaddrinfo.c (getaddrinfo): Correctly deal with node when
+	its not NULL. Its OK for the address to not parse for an address
+	family when AF_UNSPEC is passed in hints. Also get the socktype
+	correct when wildcarding for services that use UDP.
+	* tests/addr_test.c: Added more test cases which test IP addresses
+	in number format as node.
+
+2003-04-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* cdl/net.cdl: Added addr_tests to the HW tests.
+	* tests/addr_test.c (net_test): void function not int.
+	* tests/ping_test.c (net_test): Added IPv6 ping test. This pings
+	the router which answers our router solicit message.
+	* src/ipv6_routing_thread.c (cyg_rs): Print out the router
+	advertisement message. Cleaned up the debug messages so they can
+	be disabled.
+	* src/ipv6_routing_thread.c (cyg_net_get_ipv6_advrouter): New
+	function to return the address of the router.
+	* include/network.h: Added prototype for above and
+	ipv6_start_routing_thread which did not have a prototype.
+	* src/ipv6_routing_thread.c (cyg_rs): Only wait 2 seconds before 
+	sending the first solicit request rather than 10. 
+	* src/dhcp_prot.c (do_dhcp_down_net): clear the if_laddrreq
+	before using it. If the request fails finish the IPv4 code rather 
+	than returning,.
+	
+2003-04-02  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* tests/ping_lo_test.c: Added IPv6 ping test.
+	* src/getproto.c: Added the protocol ipv6-icmp.
+
+2003-04-02  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/dhcp_prot.c (do_dhcp_down_net): SIOCGLIFADDR and
+	SIOCDLIFADDR take if_laddrreq not ifreq. This caused stack
+	corruption. Also initialise the if_laddrreq to zero and only do
+	the second IOCTL call if the first once succeeds.
+
+2003-03-21  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/network.h: Added include of pkgconf/io_eth_drivers.h
+	since the recent move of CYGHWR_NET_DRIVERS prevented some tests
+	building. This fixes the problem.
+
+	* tests/dhcp_test2.c: Sorted out ifdefs so that this test builds
+	when DHCP is disabled.
+
+	* cdl/net.cdl: Reinstated dhcp_test2 into list of tests: it was
+	accidentally removed in the 2003-03-14 checkin.
+	
+2003-03-20  Mark Salter  <msalter@redhat.com>
+
+	* cdl/net.cdl (CYGHWR_NET_DRIVERS): Removed to io/eth.
+
+2003-03-18 Barton Meeks  <bartonm2002@yahoo.com>
+
+        * src/tftp_client.c: Reduce size of initial request packet
+        for compatibility with some tftp servers.
+	
+2003-03-14  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/net.cdl: Added CYGDBG_NET_SHOW_MBUFS option to turn on
+	accumulation and display of mbuf state information. 
+
+2003-03-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/getaddrinfo.c: Need to clear any addresses - malloc() can
+	return garbage which the stack desn't like.
+
+2003-03-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/getaddrinfo.c: Allow getaddrinfo() to use DNS gethostbyXXX()
+	routines if DNS is present.  Also, eliminate some debug messages.
+
+2003-02-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/getserv.c: Added a servent structure for SNTP.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/net.cdl: Improve doc links.
+
+	* doc/prepare-manpages.sh: Generate namespaced IDs, without shouting.
+	* doc/tcpip-manpages.sgml: Regenerated.
+
+2003-01-31  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/net.cdl (CYGPKG_NET_BUILD_HW_TESTS): Requires eth hardware
+	devices.
+	(CYGPKG_NET_TESTS): Remove from under CYGPKG_NET_BUILD_TESTS (which
+	became CYGPKG_NET_BUILD_HW_TESTS) so the loopback tests are always
+	built.
+
+2003-01-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* tests/nc_test_slave.c: Improve handling of UDP buffer space - try
+	to minimize amount of "idle" time when this occurs.  Since this test
+	is just for show, these changes just make the numbers "look" better.
+
+2003-01-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/network_support.c (init_all_network_interfaces): Define buf
+	as const.
+
+2003-01-10  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/network_support.c (init_all_network_interfaces): Added
+	support for a hard coded domain name. Inspired by Motoya Kurotsu.
+	 
+2003-01-09  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/network_support.c (init_all_network_interfaces): Added
+	support for a hard coded, default DNS server address.
+
+2003-01-12  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/bootp_support.c: Fix licence which should always have been
+	GPL since no BSD licensed code was in fact involved.
+	* src/dhcp_prot.c: Ditto.
+	* src/dhcp_support.c: Ditto.
+	* src/network_support.c: Ditto.
+	* src/tftp_client.c: Ditto.
+	* src/tftp_dummy_file.c: Ditto.
+	* src/tftp_server.c: Ditto.
+
+2003-01-04  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/tcpip.sgml: Use new entity name for tcpip manpages.
+
+2002-10-06  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* tests/multi_lo_select.c: Need the io_fileio.h header file
+	* tests/tcp_echo.c: (max): definition clashes with the one in
+	the header file lib/libkern/libkern.h
+
+2002-08-16  Gary Thomas  <gthomas@ecoscentric.com> (on behalf of)
+2002-08-16  Louis Hamilton <hamilton@redhat.com>	
+
+	* src/ipv6_routing_thread.c: General improvements (from Red Hat)
+	for better compliance.
+
+2002-08-14  Jonathan Larmour  <jifl@ecoscentric.com>
+
+	* src/getserv.c: Include errno.h as errno is used.
+
+2002-08-07  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/tftp_server.c: 
+	* src/tftp_client.c: 
+	* include/arpa/tftp.h: Make block numbers unsigned to handle files
+	larger than 16MB.
+
+2002-07-26  Gary Thomas  <gary@chez-thomas.org>
+2002-07-26  Ken Cox <jkc@redhat.com>
+
+	* src/dhcp_prot.c: The IPv6 link local address would not be 
+	recognized if configured to use dhcp.  When dhcp reconfigures 
+	the interface after obtaining it's info, it needs to delete 
+	the IPv6 link local address (as well as the IPv4) address before 
+	reconfiguring.
+
+2002-07-10  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/inet_addr.c: 
+	* src/getproto.c: 
+	* src/dhcp_prot.c: 
+	* src/bootp_support.c: Pedantic - make sure "errno" is defined.
+
+2002-07-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/dhcp_prot.c (_dhcp_copy): Remove. Unnecessary as we can never
+	receive a packet longer than sizeof(struct bootp)
+	(do_dhcp): Also set giaddr to 0 before sends.
+	Verify length of received packets, especially to check for truncation.
+
+2002-06-20  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/inet_ntop.c: Fix build error when used with newer compilers.
+
+2002-06-05  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/dhcp_prot.c (_dhcp_copy): New function used to better handle
+	replies that can be variable length.
+
+2002-05-30  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/tcp_echo.c: Build with either stack (no libkern.h).
+
+	* tests/bridge.c: Don't do anything (should not even be built,
+	but that's a CDL complication) if no BRIDGE support in system.
+
+2002-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* tests/flood.c (floodsend): Fixed warning.
+
+2002-05-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/dhcp_prot.c (do_dhcp): xmit2 need not be static.
+
+2002-05-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/dhcp_prot.c (do_dhcp): Suppress my_ip and server_ip fields
+	in all messages where they should not be set.  Also be more careful
+	about size of messages as they are copied.
+	
+2002-05-24  Gary Thomas  <gthomas@redhat.com>
+
+	* src/dhcp_prot.c (do_dhcp): Suppress my_ip and server_ip fields
+	when returning DHCP request (acceptance phase) because some DHCP
+	servers insist (and the RFC says it must be this way).
+
+2002-05-21  Jesper Skov  <jskov@redhat.com>
+
+	* include/net/netdb.h: Include netinet/in.h for the in_addr use in
+	declarations.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/tftp_dummy_file.c: Fixed warnings.
+
+	* src/getaddrinfo.c: Fixed warnings.
+
+2002-04-26  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/net.cdl: Add option for making random IP packet IDs random.
+
+2002-04-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ifaddrs.c: Reorg include files - remove warnings.
+
+2002-04-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ipv6_routing_thread.c: New function - separate thread used to 
+	send router soliciation messages periodically.
+
+	* cdl/net.cdl:
+	* src/network_support.c (init_all_network_interfaces): 
+	Support IPv6 routing thread.
+
+	* src/getaddrinfo.c (_getaddr): Set ai_addrlen fields.
+
+2002-04-11  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/ga_server_test.c: 
+	* tests/nc6_test_slave.c: Fix handling of multiple sockets.	
+
+2002-04-05  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/ga_server_test.c: Use getnameinfo().
+
+	* include/net/netdb.h: 
+	* src/getaddrinfo.c (getnameinfo): New [minimal] implementation.
+
+2002-04-04  Gary Thomas  <gthomas@redhat.com>
+
+	* src/network_support.c (build_bootp_record): Query device for hardware
+	address (required change in function profile).  Bug #59369
+
+2002-03-27  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/make.linux: Add slave tests.
+
+	* tests/nc_test_framework.h: 
+	* tests/nc6_test_master.c: 
+	* tests/nc6_test_slave.c: Fixing build problems on Linux & FreeBSD.
+
+	* include/machine/types.h: Added [empty to keep OpenBSD stack happy].
+
+2002-03-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* doc/tcpip.sgml: Place TCP/IP manpages here.
+
+2002-03-25  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/nc_test_master.c:  Fix problem with buffer size (static
+	buffer was only 8192 bytes, but the code tried to use 10240!)
+
+	* tests/nc6_test_slave.c: Print memory statistics on failures and
+	at the end of each test.
+
+	* tests/nc6_test_master.c: Fix problem with buffer size (static
+	buffer was only 8192 bytes, but the code tried to use 10240!)
+	Lots of improvements, including command line processing to suppress
+	certain classes of tests.
+
+	* src/inet_addr.c: Add cast to isascii() macro to avoid warnings.
+
+2002-03-21  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/nc6_test_slave.c: Minor cleanups - allow building without IPv6.
+
+2002-03-20  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/tcp_source.c: 
+	* tests/tcp_sink.c: Fix build problems on Linux (no sin_len).
+
+	* tests/make.linux: 
+	* tests/nc6_test_slave.c: 
+	* tests/nc6_test_master.c: New tests using getaddrinfo() which
+	can test both IPv4 and IPv6 environments.
+
+2002-03-19  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/addr_test.c: New test of getaddrinfo() functionality.
+
+	* src/inet_ntop.c (_inet_port): 
+	* src/getaddrinfo.c (_getaddr): Fix some byte-order problems.
+
+	* src/network_support.c: Fix build when PCMCIA defined.
+
+	* src/bootp_support.c (do_bootp): 
+	* include/network.h: route_reinit renamed cyg_route_reinit.
+
+	* include/bootp.h: Clean up warnings (add prototypes, etc).
+
+2002-03-12  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/dhcp_test2.c (cyg_user_start): Change priority of test
+	thread to CYGPKG_NET_DHCP_THREAD_PRIORITY, so that it is lower
+	than the network service thread.  Otherwise down-up cycling the
+	state of some types of driver leaks MBUFs because of tx-done
+	events being lost.
+
+2002-03-11  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/net.cdl: Add dhcp_test2 to the list.
+
+	* tests/dhcp_test2.c: New testcase: repeatedly cycle interface(s)
+	up and down using DHCP to test for storeleaks.  The test cannot
+	tell unless you run it forever, of course, but that it completes
+	without timeout is a fair test in itself.
+
+2002-03-08  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/tcp_lo_test.c (server): Need to set 'len', otherwise
+	the source socket address is undefined.
+
+2002-03-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/dhcp_prot.c: Some [internal] function names have changed.
+	In particular, route_reinit() and arc4random().
+
+2002-03-06  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/ga_server_test.c: New test - used to exercise getaddrinfo().
+
+	* src/inet_pton.c: Minor source code cleanups.
+
+	* src/inet_ntop.c (_inet_ntop): Add [non-standard] functions 
+	which make it easier for code to be generic in the handling
+	of network addresses (struct sockaddr).
+
+	* include/net/netdb.h: 
+	* include/network.h: Reorg - network address functions are now
+	all in <net/netdb.h>
+
+	* cdl/net.cdl: Add getaddrinfo support.
+	* src/getaddrinfo.c: New file.
+
+	* include/arpa/nameser.h: Fix some warnings.
+
+2002-02-26  Hugo Tyson  <hmt@redhat.com>
+
+	* src/dhcp_prot.c (do_dhcp): Two things: a) not all ACK packets
+	contain all the information that we in the OFFER packet, so do not
+	overwrite the offer with any ACKs we receive.  b) REQUEST packets
+	when in the RENEWING or REBINDING states "MUST NOT" contain REQ_IP
+	nor SERVER_ID tags.  So remove 'em.  Hence:
+	(unset_tag): New routine.
+
+2002-02-22  Hugo Tyson  <hmt@redhat.com>
+
+	* doc/tcpip.sgml: New file.  Separated generic documentation
+	of network support from the specific stack docs.  Also much
+	tidying and improvement.
+
+2002-02-19  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/ipv6_server_test.c: New file.  Test TCP/IPv6 sockets.
+
+	* src/bootp_support.c:
+	* src/inet_pton.c: Remove some warnings.
+
+	* src/inet_ntop.c: New file().
+	* cdl/net.cdl:
+	* include/network.h: Add prototypes for inet_ntop() and
+	inet_pton() - generic [numeric] address support.
+
+2002-02-18  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/net.cdl: 
+	Add new interface CYGINT_IO_ETH_MULTICAST which is used to
+	insure that drivers support multicast addresses if IPv6 is used.
+
+2002-02-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/bootp_support.c (init_net_IPv6): Fix problem with static address
+	prefix mask(length).  This kept the stack from accepting neighborhood
+	routing for that same prefix.
+
+2002-02-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/inet_pton.c: 
+	New file - parse from presentation (ASCII) to network.  
+	Useful for handling IPv6 addresses.
+
+2002-02-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/network_support.c (init_all_network_interfaces): Set IPv6
+	static addresses if configured.
+
+	* src/bootp_support.c (init_net_IPv6): New function used to set
+	static IPv6 addresses.
+
+	* cdl/net.cdl: Improve layering to better support multiple
+	stacks.  Move IPv4/IPv6 control to this level.
+
+2002-02-01  Hugo Tyson  <hmt@redhat.com>
+
+	* tests/nc_test_slave.c (do_tcp_test): Make it build.  There is no
+	test_chan here, only test_chan_slave and test_chan_master.
+
+2002-02-01  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/udp_lo_test.c (server): 
+	* tests/tcp_source.c (source_test): 
+	* tests/tcp_sink.c (sink_test): 
+	* tests/tcp_lo_test.c (server): 
+	* tests/tcp_lo_select.c (server): 
+	* tests/ping_test.c (ping_test): 
+	* tests/ping_lo_test.c (ping_test_loopback): 
+	* tests/nc_test_slave.c (do_udp_test): 
+	* tests/multi_lo_select.c (dummy): 
+	* tests/ftp_test.c (ftp_test): 
+	* tests/flood.c (net_test): 
+	* tests/dhcp_test.c (ping_test): 
+	* src/tftp_server.c (tftpd_write_file): 
+	* src/tftp_client.c (tftp_get): 
+	* src/network_support.c (init_loopback_interface): 
+	* src/dhcp_prot.c (bring_half_up): Need valid value for sin_len.
+
+2002-01-31  Hugo Tyson  <hmt@redhat.com>
+
+	* src/dhcp_prot.c (do_dhcp): Also check the ESA in any received
+	answer matches, in case of an XID clash anyway.
+
+2002-01-31  Hugo Tyson  <hmt@redhat.com>
+
+	* src/dhcp_prot.c (do_dhcp): Generate a new XID (transaction ID)
+	every time this routine is entered.  Use the ESA and a random
+	source to avoid clashes with other net presences.  (The ESA was
+	used uninitialized before this change.)  Also use new macro
+	NEW_XID to increment the XID when we move to a new phase of the
+	protocol - one XID covers a question (identically transmitted
+	several times if necessary) and its answer.  A new question => a
+	new XID.
+
+	Also fixed a gedankenbug about the timeouts.  Old version tried
+	RENEWING the lease when T1 timed out as it should; but if that
+	failed (after the normal retries), it went straight into REBINDING
+	whether or not T2 had already timed out.  Likewise if REBINDING
+	failed, it terminated the lease, whether or not the EX time had
+	timed out.  This is wrong - it meant that a lease of 600 seconds
+	would actually shutdown the interface after about 340 (T1 + some)
+	if the server was gone.
+
+	The fix is to return to state BOUND from either RENEWING or
+	REBINDING (without resetting the lease timeouts) even if the
+	attempt failed; the rest of the lease machinery will take care of
+	things as and when the right time ticks by.  It's still the case
+	that if a timeout occurs whilst trying on part or another, the
+	machine will be forced to the next state - all that is in order as
+	it always was.
+
+2002-01-29  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/server_test.c (server_test): Add message for timeout.
+
+2002-01-28  Gary Thomas  <gthomas@redhat.com>
+
+	* tests/udp_lo_test.c: 
+	* tests/tftp_server_test.c: 
+	* tests/tftp_client_test.c: 
+	* tests/tcp_source.c: 
+	* tests/tcp_sink.c: 
+	* tests/tcp_lo_test.c: 
+	* tests/tcp_lo_select.c: 
+	* tests/tcp_echo.c: 
+	* tests/socket_test.c: 
+	* tests/set_mac_address.c: 
+	* tests/server_test.c: 
+	* tests/ping_test.c: 
+	* tests/ping_lo_test.c: 
+	* tests/nc_test_slave.c: 
+	* tests/nc_test_master.c: 
+	* tests/nc_test_framework.h: 
+	* tests/multi_lo_select.c: 
+	* tests/mbuf_test.c: 
+	* tests/make.linux: 
+	* tests/linux_echo.c: 
+	* tests/ftp_test.c: 
+	* tests/flood.c: 
+	* tests/dhcp_test.c: 
+	* tests/bridge.c: 
+
+	* src/tftp_server.c: 
+	* src/tftp_dummy_file.c: 
+	* src/tftp_client.c: 
+	* src/network_support.c: 
+	* src/inet_ntoa.c: 
+	* src/inet_addr.c: 
+	* src/getserv.c: 
+	* src/getproto.c: 
+	* src/dhcp_support.c: 
+	* src/dhcp_prot.c: 
+	* src/bootp_support.c: 
+
+	* include/net/netdb.h: 
+	* include/machine/endian.h: 
+	* include/machine/ansi.h: 
+	* include/arpa/tftp.h: 
+	* include/arpa/telnet.h: 
+	* include/arpa/nameser.h: 
+	* include/arpa/inet.h: 
+	* include/arpa/ftp.h: 
+	* include/tftp_support.h: 
+	* include/network.h: 
+	* include/dhcp.h: 
+	* include/bootp.h: 
+
+	* cdl/net.cdl: New [common] networking package.  Actual stacks
+	are implementations provided alongside this package.
+
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2002 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####

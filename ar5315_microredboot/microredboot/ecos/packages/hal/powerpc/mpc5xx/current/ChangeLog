@@ -1,0 +1,67 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_powerpc_mpc5xx.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2004-04-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/var_intr.c: 
+	* include/var_regs.h: Changes to allow compilation with latest GCC.
+
+2003-11-30  Bob Koninckx  <bob.koninckx@fmtc.be>
+
+    * include/var_intr.h: Added definitions for maximum/minimum interrupt
+      priorites on SIU/IMB3
+
+2002-11-11  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+
+    * include/var_regs.h: Removed double definitions for ICTRL, ICTRL_SERSHOW
+    and ICTRL_NOSERSHOW
+    * src/var_intr.c: Added a very simple serial arbitration isr to make GDB-CTRC
+    work in the absence of any device drivers.
+    * include/var_intr.h: Added a definition for hal_arbitration_isr_sci
+    * include/variant.inc: Make sure FREEZE gets negated before returning from an
+    exception. Failing to do so prevents proper operation of timers etc when
+    debugging.
+    * tests/intr0.c: completely rewritten to something that actually tests something.
+    Not completely finished.
+
+2002-04-25  Bob Koninckx  <bob.koninckx@mech.kuleuven.ac.be>
+2002-04-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* New package.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

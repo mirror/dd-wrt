@@ -1,0 +1,163 @@
+# ====================================================================
+#
+#      hal_mips_rm7000.cdl
+#
+#      MIPS/RM7000 variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  bartv, nickg
+# Contributors:
+# Date:           2000-05-15
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_RM7000 {
+    display       "RM7000 variant"
+    parent        CYGPKG_HAL_MIPS
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mips_rm7000.h
+    description   "
+           The RM7000 architecture HAL package provides generic support
+           for this processor architecture. It is also necessary to
+           select a specific target platform HAL package."
+
+    cdl_component CYGPKG_HAL_MIPS_RM7000A {
+        display       "RM7000A microprocessor"
+        default_value 1
+        implements    CYGINT_HAL_MIPS_VARIANT
+        description "
+            The RM7000A microprocessor. This is chip which in addition to
+            the RM7000 processor core has built in second level cache
+            of 256kB."               
+
+        define_proc {
+            # Sizes are configurable (on the core). Should be configurable.
+            puts $::cdl_header "#define CYGHWR_HAL_DCACHE_SIZE 16384"
+            puts $::cdl_header "#define CYGHWR_HAL_ICACHE_SIZE 16384"
+        }
+
+        cdl_option CYGHWR_HAL_MIPS_64BIT {
+            display    "Variant 64 bit architecture support"
+            description "
+                While the RM7000 is a 64bit CPU, only its 32bit mode is
+                currently supported in eCos."
+            calculated 0
+        }
+
+        # This is optional (on the core). Should be configurable.
+        cdl_option CYGHWR_HAL_MIPS_FPU {
+            display    "Variant FPU support"
+            calculated 1
+        }
+
+        cdl_interface CYGINT_HAL_MIPS_FPU_64BIT {
+            display "Variant 64 bit FPU support interface"
+        }
+
+        cdl_option CYGHWR_HAL_MIPS_FPU_64BIT {
+            display    "Variant 64 bit FPU support"
+            calculated { CYGINT_HAL_MIPS_FPU_64BIT == 1 ? 1 : 0 }
+        }
+
+        cdl_option CYGHWR_HAL_MIPS_FPU_32BIT {
+            display    "Variant 32 bit FPU support"
+            calculated { CYGINT_HAL_MIPS_FPU_64BIT == 0 ? 1 : 0 }
+        }
+
+        # FGRn+1 is most significant part of the FGRn&FGRn+1 pair of FPRn/2
+        # This is true for BE mips2 mode at least. Not sure about fp64 mode
+        cdl_option CYGPKG_HAL_MIPS_DOUBLE_LSBFIRST {
+            active_if CYGHWR_HAL_MIPS_FPU_32BIT
+            calculated 1
+        }
+
+        cdl_interface CYGINT_HAL_MIPS_MSBFIRST {
+            no_define
+            display    "CPU Variant big-endian interface"
+        }
+
+        cdl_option CYGPKG_HAL_MIPS_MSBFIRST {
+            display    "CPU Variant big-endian"
+            calculated { CYGINT_HAL_MIPS_MSBFIRST == 0 ? 0 : 1 }
+        }
+
+        cdl_option CYGPKG_HAL_MIPS_LSBFIRST {
+            display    "CPU Variant little-endian"
+            calculated { CYGINT_HAL_MIPS_MSBFIRST != 0 ? 0 : 1 }
+        }
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_mips.h>"
+    }
+
+    compile       var_misc.c variant.S var_mk_defs.c
+
+    # The "-o file" is a workaround for CR100958 - without it the
+    # output file would end up in the source directory under CygWin.
+    # n.b. grep does not behave itself under win32
+    make -priority 1 {
+        <PREFIX>/include/cyg/hal/var_defs.inc : <PACKAGE>/src/var_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,var_defs.tmp -o var_mk_defs.tmp -S $<
+        fgrep .equ var_mk_defs.tmp | sed s/#// > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 var_defs.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm var_defs.tmp var_mk_defs.tmp
+    }
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/mips_rm7000.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/mips_rm7000.ld" }
+    }
+}

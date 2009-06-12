@@ -1,0 +1,139 @@
+2003-02-13  Patrick Doyle  <wpd@delcomsys.com>
+	* src/sa1100mm_misc.c: Replaced explicit prototype of memset with
+	#include <string.h>.
+
+2003-02-10  Nick Garnett  <nickg@calivar.com>
+
+	* misc/redboot_ROM.ecm:
+	* misc/redboot_RAM.ecm:
+	Removed setting of CYGSEM_HAL_VIRTUAL_VECTOR_DIAG, otherise it
+	causes a configuration error.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/sa1100mm_misc.c (hal_mmu_init): Fixed warning.
+
+2002-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_sa1100mm.cdl: 
+	Standardize CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT usage.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_sa1100mm.cdl: Need CDL for UART interfaces.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_sa1100mm.cdl:  Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROM.ecm: Renamed from redboot_ROM.cfg
+
+	* misc/redboot_RAM.ecm: Renamed from redboot_RAM.cfg
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_sa1100mm.cdl: Respect channel configuration
+	constraints.
+
+2001-01-05  Hugo Tyson  <hmt@redhat.com>
+
+	* include/plf_mmap.h: New file.  Statically defined macros for
+	translation from virtual to physical and back, and to get an
+	uncached address for a normally-cached object.  HAL_MM_PAGESIZE()
+	HAL_VIRT_TO_PHYS_ADDRESS() HAL_PHYS_TO_VIRT_ADDRESS()
+	HAL_VIRT_TO_UNCACHED_ADDRESS().  This included by the variant
+	hal's hal_cache.h for convenience and proximity to other memory
+	and cache features.
+
+	* src/sa1100mm_misc.c (hal_mmu_init): Add double mapping for
+	uncached access to SDRAM area, at its physical address.
+
+2000-12-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/sa1100mm_misc.c: Use <cyg/hal/hal_mm.h> from the variant HAL
+	for definitions of all MM tables and so on.
+
+	* include/hal_platform_ints.h: Removed; it was the same in all
+	platforms so is now in the common variant hal, "hal_var_ints.h"
+	and accessible as CYGBLD_HAL_VAR_INTS_H <cyg/hal/hal_var_ints.h>
+
+2000-11-27  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/sa1100mm_misc.c (sa1100mm_program_new_stack): New function
+	for switching to an application stack when running a program under
+	a ROM monitor.
+
+	* cdl/hal_arm_sa11x0_sa1100mm. Define HAL_ARCH_PROGRAM_NEW_STACK.
+
+2000-11-13  Drew Moseley  <dmoseley@st-kitts.caribbean>
+
+	* misc/redboot_ROM.cfg: Turn on REDBOOT_BSP_SYSCALLS.
+	* misc/redboot_RAM.cfg: Ditto.
+
+2000-11-09  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/redboot_ROM.cfg: New import file for ecosconfig.
+	* misc/redboot_RAM.cfg: Ditto.
+
+2000-11-06  Drew Moseley  <dmoseley@redhat.com>
+
+	* cdl/hal_arm_sa11x0_sa1100mm.cdl: Use the "-mapcs-frame" compile option.
+
+2000-10-25  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/sa1100mm_misc.c: New file.  Support for SA1100 Multimedia
+	board.
+	* include/pkgconf/mlt_arm_sa11x0_sa1100mm_rom.mlt: Ditto.
+	* include/pkgconf/mlt_arm_sa11x0_sa1100mm_rom.ldi: Ditto.
+	* include/pkgconf/mlt_arm_sa11x0_sa1100mm_rom.h: Ditto.
+	* include/pkgconf/mlt_arm_sa11x0_sa1100mm_ram.mlt: Ditto.
+	* include/pkgconf/mlt_arm_sa11x0_sa1100mm_ram.ldi: Ditto.
+	* include/pkgconf/mlt_arm_sa11x0_sa1100mm_ram.h: Ditto.
+	* include/sa1100mm.h: Ditto.
+	* include/hal_platform_setup.h: Ditto.
+	* include/hal_platform_ints.h: Ditto.
+	* cdl/hal_arm_sa11x0_sa1100mm.cdl: Ditto.
+	* Changelog: Ditto.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

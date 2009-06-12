@@ -1,0 +1,508 @@
+2004-08-18  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ecos/support.c (show_net_times): Removed stats_in_cksum.
+	It does not exist in the FreeBSD stack. Pointed out by
+	Philip Keller.
+	
+2004-08-17  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/sys/kern/sockio.c (bsd_bind): Pass a copy of the sa into
+	bind so that the "kernel" code does not modify the "user" codes
+	version of the socket address.
+
+2004-07-15 Oyvind Harboe <oyvind.harboe@zylin.com>	
+	
+	*cdl/freebsd_net.cdl:
+	*src/ecos/support.c: made memory pools default to current size, 
+	but separately controllable from the cdl file. This is useful for 
+	systems with tight memory budgets.
+	
+2004-06-01  Sandeep Kumar  <sandeep@codito.com>
+
+	* tests/sysctl1.c: Call CYG_TEST_EXIT at the end of the test.
+
+2004-05-25  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/sys/netinet/if_ether.c: Clean up some log messages - remove
+	extraneous ":" which caused incorrect printouts.
+
+2004-04-30  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/ecos/timeout.c (callout_reset): Clarify assert message on
+	expiry date from ages ago and also add comment explaining further.
+
+2004-03-30  Horst Kronstorfer  <horst.kronstorfer@frequentis.com>
+ 
+        * src/sys/kern/uipc_mbuf.c
+        * src/ecos/support.c
+        * include/sys/mbuf.h: Avoid blocking alloc from (empty) mbuf pool.
+        Freed mbufs are never returned to the pool, but to the mbuf
+        "free list". This can cause a deadlock situation.
+        Duplicated incrementing of mbuf statistics removed.
+ 
+2004-03-27  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ecos/support.c (_dumpentry): Don't skip routes which don't
+	have a netmask. These are seem to be valid host routes.
+
+2004-02-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/freebsd.sgml: Import text from openbsd doc about use of __ECOS
+	<network.h>, etc.
+
+2004-01-17  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/sys/kern/sockio.c (bsd_connect): Set the sa_len field in
+	the sockaddr structure. Real FreeBSD does this.
+
+2003-12-21  Nick Garnett  <nickg@calivar.com>
+
+	* include/sys/param.h: Restored MD5 function mappings. These were
+	accidentally removed earlier.
+
+2003-12-16  Gary Thomas  <gary@mlbassoc.com>
+
+	* cdl/freebsd_net.cdl: Increase default memory pool size to
+	include at least enough space to allocate PCBs and SOCKETs.
+	Without this, if the number of open files was raised, the
+	memory pool was inadequate.
+
+2003-12-10  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/netinet/in.h: Prototype for inet_ntoa_r()
+
+2003-11-22  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/net/if_gif.h include/net/if_sec.h include/net/zlib.h
+	include/netinet/ip_ecn.h include/netinet6/ah.h
+	include/netinet6/esp.h include/netinet6/esp_rijndael.h
+	include/netinet6/esp_twofish.h include/netinet6/in6_gif.h
+	include/netinet6/ipcomp.h include/netkey/key.h
+	include/netkey/key_debug.h include/netkey/keysock.h src/sys/netkey
+	src/sys/netinet/ip_ecn.c src/sys/netinet6/ah_core.c
+	src/sys/netinet6/ah_input.c src/sys/netinet6/ah_output.c
+	src/sys/netinet6/esp_core.c src/sys/netinet6/esp_input.c
+	src/sys/netinet6/esp_output.c src/sys/netinet6/esp_rijndael.c
+	src/sys/netinet6/esp_twofish.c src/sys/netinet6/in6_gif.c
+	src/sys/netinet6/ipcomp_core.c src/sys/netinet6/ipcomp_input.c
+	src/sys/netinet6/ipcomp_output.c src/sys/netinet6/ipsec.c: 
+	Added back the original KAME FreeBSD IPSEC files.  
+	* cdl/freebsd_net.cdl: CDl to control the compilation of IPSEC 
+	* include/sys/malloc.h: New memory type needed by IPSEC 
+	* include/sys/param.h: Name munging for IPSEC symbols 
+	* src/ecos/support.c: read_random_unlimited() should return the
+	number of random bytes in the buffer.
+	* src/sys/kern/kern_sysctl.c: Added missing copyright header.
+	* src/sys/netinet/ip_output.c: Removed user() checks in IPSEC code.
+	* src/sys/netinet6/ip6_output.c: Compiler warning fixes.
+
+2003-11-08  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/sys/kern/kern_sysctl.c (sysctl): Update the oldlen value at
+	the end of the sysctl call.
+
+2003-10-28  Matt Jerdonek  <maj1224@yahoo.com>
+
+	* src/sys/netinet/tcp_output.c (tcp_setpersist): Use variable
+	tcp_rexmit_shift_max instead of TCP_MAXRXTSHIFT
+	* src/sys/netinet/tcp_subr.c (tcp_newtcpcb): Add FreeBSD
+	changes to control minimum retransmit time
+	* src/sys/netinet/tcp_timer.c : Use variable tcp_rexmit_shift_max
+	instead of TCP_MAXRXTSHIFT.  Also add FreeBSD changes to control
+	minimum retransmit time
+	* include/netinet/tcp_timer.h : Add external declarations to 
+	support above.
+	
+2003-10-15  Roland Cassebohm  <roland.cassebohm@visionsystems.de>
+
+	* src/sys/net/if.c (ifinit): Change printf(...) to log(LOG_INIT,...) to
+        make it possible to disable output while initialization.
+ 
+2003-09-17  Reinhard Jessich  <Reinhard.Jessich@frequentis.com>
+
+	* src/sys/kern/uipc_mbuf.c: Now using flags (how) argument in call to
+	cyg_net_mbuf_alloc, to avoid a (blocking) call to alloc method of mempool 
+	during interrupts. This problem occurred under heavy IP traffic in case the 
+	mempool became empty (alloc blocked).
+	* src/sys/net/if_ethersubr.c: Avoid dereferencing NULL pointer in case of
+	failing m_copy. Note that this problem was (at least sometimes) hidden 
+	due to the bug in uipc_mbuf.c (described above).
+
+2003-09-08  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ecos/support.c (read_random): New function which is needed
+	when CYGSEM_NET_RANDOMID is enabled.
+	* include/sys/param.h: Prototype for new function.
+
+2003-07-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/netinet/icmp_var.h 
+	* include/netinet/igmp_var.h
+	* include/netinet/in_var.h
+	* include/netinet/udp_var.h
+	* include/netinet6/tcp6_var.h
+	* include/netinet6/udp6_var.h
+	* include/sys/socket.h
+	* src/sys/net/if.c
+	* src/sys/net/if_ethersubr.c
+	* src/sys/net/rtsock.c
+	* sys/netinet/if_ether.c
+	* sys/netinet/igmp.c
+	* src/sys/netinet/in.c
+	* src/sys/netinet/in_pcb.c
+	* src/sys/netinet/in_proto.c
+	* src/sys/netinet/in_rmx.c
+	* src/sys/netinet/ip_flow.c
+	* src/sys/netinet/ip_icmp.c
+	* src/sys/netinet/ip_input.c
+	* src/sys/netinet/ip_output.c
+	* src/sys/netinet/raw_ip.c
+	* src/sys/netinet/tcp_input.c
+	* src/sys/netinet/tcp_output.c
+	* src/sys/netinet/tcp_output.c
+	* src/sys/netinet/tcp_subr.c
+	* src/sys/netinet/tcp_timer.c
+	* src/sys/netinet/tcp_usrreq.c
+	* src/sys/netinet/udp_usrreq.c
+	* src/sys/netinet6/in6_proto.c
+	* src/sys/netinet6/in6_rmx.c
+	* src/sys/netinet6/nd6.c
+	* src/sys/netinet6/udp6_output.c
+	* sys/netinet6/udp6_usrreq.c: Added back the support for sysctl 
+	which was removed in the port of the stack into eCos.
+	* include/sys/malloc.h (M_SYSCTL): SYSCTL types for malloc
+	* sys/kern/kern_sysctl.c (NEW): sysctl system call and support 
+	functions
+	* include/sys/sysctrl.h (NEW): header file for sysctl. 
+	* cdl/freebsd_net.cdl: CDL to enable/disable sysctl and a test case.
+	* tests/sysctl1.c (NEW): Test program for sysctl.
+	
+2003-07-25  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/sys/param.h: Fixed some compiler warnings.
+	* src/sys/netinet6/in6_ifattach.c: More fixes.
+	* src/sys/netinet6/in6.c: And some more.
+	* src/sys/netinet6/in6_pcb.c: YACW.	
+	* include/netinet6/ip6protosw.h: Maybe the last one?
+	* include/netinet6/ip6protosw.h: Nope
+	* include/sys/param.h:
+	* sys/kern/uipc_socket.c: More warnings
+	* src/sys/netinet6/in6_pcb.c: rename errno to _errno to avoid conflict.
+	* src/sys/netinet6/in6_ifattach.c: Prototype for _show_ifp().
+	* src/sys/netinet6/in6.c: Prototype for _show_ifp().
+
+2003-07-28  Jay Foster  <jay@systech.com>
+
+	* src/sys/kern/sockio.c:
+	Fixed memory leak in accept() call.
+
+2003-07-24  Nick Garnett  <nickg@balti.calivar.com>
+
+	* include/netinet/in.h:
+	* src/sys/kern/uipc_accf.c:
+	* src/sys/kern/uipc_socket.c:
+	* src/sys/net/route.c:
+	* src/sys/netinet/ip_icmp.c:
+	* src/sys/netinet/ip_input.c:
+	Fixed some compiler warnings.
+
+2003-06-12  Motoya Kurotsu  <kurotsu@allied-telesis.co.jp>
+
+        * src/sys/netinet/ip_input.c(ip_reass):
+	ip_nfragpackets is increasing by dropping fragments due to mbuf 
+	starvation and eventually exceeds ip_maxfragpackets, which 
+	results in refusing all fragments later. On the other hand, nipq 
+	and maxnipq can be used as a substitute for ip_nfragpackets and 
+	ip_maxfragpackets. This fix is the collection of the fixes done 
+	at the following revisions of freebsd main branch; 1.221, 1.222, 
+	1.223 and 1.229.
+
+2003-06-23  Michael Checky  <Michael_Checky@ThermoKing.com>
+ 
+	* include/netinet/icmp_var.h: Changed icmpstat definition to a
+	declaration so stopping ld from generating a multiple symbol
+	definition error if combining of common symbols is disabled in the
+	toolchain.
+	* src/sys/netinet/ip_icmp.c: Added an icmpstat definition.
+
+2003-06-23  Jay Foster  <jay@systech.com>
+
+	* src/ecos/support.c: Increase the stack size for the background
+	thread when IPv6 is enabled otherwise the stack overflows.
+
+2003-06-09  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/ecos/synch.c (spl_any): Put call to cyg_mutex_lock() into a
+	loop so that releases of the current thread do not get mistaken
+	for locks and trigger the asserts.
+
+	* include/sys/malloc.h (M_DEVBUF): Added this definition.
+
+	* include/netinet/in.h: Changed size of sockaddr_in.sin_zero[] to
+	24 bytes. This makes a sockaddr_in the same size as a sockaddr.
+	Otherwise the definitions of things like ifaliasreq and
+	in_aliasreq do not match when they should.
+
+2003-05-12  Motoya Kurotsu  <kurotsu@allied-telesis.co.jp>
+
+	* src/ecos/timeout.c (do_timeout): The head of the linked list of
+	timers is timeout, not _timeout.
+	* src/ecos/timeout.c (timeout): Linear search the array for empty 
+	entries and don't walk it like a linked list, because it is not.
+	* src/ecos/timeout.c (untimeout): Linear search is faster since 
+	there are many entries in the linked list which are not in the 
+	array.
+
+2003-05-12  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ecos/support.c (_show_ifp): Display the IPv6 flag
+	information.
+
+2003-05-04  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/ecos/support.c: 
+	* cdl/freebsd_net.cdl: Add option to force initialization [debug]
+	messages to go to a serial console.  This seems to be necessary
+	on some hardware as the init sequence can totally foul up a
+	network [debug] connection.
+
+2003-04-28  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ecos/support.c (cyg_net_malloc): Honour the flag M_ZERO,
+	otherwise we end up with junk where we don't want it.
+
+2003-04-11  Michael Checky  <Michael_Checky@Thermoking.com>
+
+	* cdl/freebsd_net.cdl: Deleted the 
+	'CYGPKG_NET_FREEBSD_STACK_BUILD_TESTS'
+	component because these tests are in the net.cdl component
+	'CYGPKG_NET_BUILD_TESTS' and selecting this option in freebsd_net.cdl
+	causes build errors.
+
+2003-04-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/ecos/support.c (_show_ifp): Now understands IPv6 
+	addresses and network masks and added a few more flags
+	* src/sys/net/route.c (rt_reinit_rtdelete): Only delete IPv4
+	routes so that DHCP and BOOTP works and leave IPv6 routes so IPv6
+	also keeps working.
+
+2003-03-14  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/ecos/support.c: Added function cyg_net_show_mbufs() and code
+	in cyg_net_mbuf_alloc() to accumulate and optionally display
+	information about the current set of mbufs. This is mostly a
+	debugging feature and is disabled by default.
+
+	* include/sys/mbuf.h: Added prototype for cyg_net_show_mbufs().
+
+2003-03-14  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* src/sys/net/if.c (if_attach): Removed printf which causes the
+	ethernet device to become corrupt. At this point the app driver
+	has started but not completed taking over from the redboot
+	driver. It is unsafe for redboot to use the ethernet device.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/freebsd_net.cdl: Fix doc link.
+
+2003-02-18  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/freebsd_net.cdl: Remove unused NBPFILTER and BRIDGE CDL options.
+
+2003-02-14  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/freebsd.sgml: new_net template is now just "net".
+
+2003-02-12  Jani Monoses  <jani@iv.ro>
+
+	* src/sys/kern/sockio.c: bsd_getinfo/bsd_setinfo should have
+	void * args. Silences warnings.
+	* src/sys/kern/uipc_socket.c (sopoll): Use __FUNCTION__ correctly
+	for GCC 3.x.
+	* src/sys/net/if_ethersubr.c: Put comments for stuff after endifs
+	to silence warnings.
+	* src/sys/net/if_loop.c: Ditto.
+
+2003-02-04  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/sys/bsdtypes.h: Workaround when building with new
+	Linux compatability package (which over-defines some symols
+	defined in this module).
+
+2002-12-03  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/ecos/support.c (show_network_tables): New function to
+	print information about network tables (interfaces, routing).
+
+2002-11-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/ecos/timeout.c (callout_reset): Check for finding the
+	correct "delta" was wrong - only used with asserts enabled.
+
+	* include/sys/uio.h: Compatability wrapper to expose 'iovec'
+	functions - used by many network programs.
+
+2002-11-04  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/sys/net/if.c (if_attach): Moved check for ifq_maxlen to
+	this function since it can't be checked until the device comes
+	online, which may not be a sysinit time for PCMCIA devices.
+
+2002-11-03  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/sys/kern/sockio.c (bsd_getname): Fix error where getsockname()
+	was actually performing getpeername().
+
+	* include/sys/uio.h: New file - compatability wrapper.
+
+2002-07-31  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/sys/netinet/in_cksum.c: Fix problem on big endian machines.
+
+2002-07-26  Gary Thomas  <gary@chez-thomas.org>
+2002-07-26  Ken Cox <jkc@redhat.com>
+
+	* src/ecos/support.c (ovbcopy): ovbcopy() must handle the case 
+	where the src and dst regions are overlayed.  memcpy() does not 
+	handle this case, but memmove() does.
+
+2002-07-10  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/sys/netinet/udp_usrreq.c: 
+	* src/sys/netinet/tcp_subr.c: 
+	* src/sys/netinet/in_pcb.c: Rename 'errno' function parameter
+	since some compilers have problems with this.
+
+2002-07-08  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/sys/param.h: Need <errno.h> which may or may not be
+	already present, depending on configuration.
+
+2002-06-20  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/sys/param.h (sprintf): Map to diag_sprintf().
+
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/ecos/support.c: 
+	Fix compile errors when CYGDBG_NET_TIMING_STATS enabled.
+
+2002-06-05  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/netinet/in.h: Rename 'ip_opts' field (using the same
+	name as the structure is illegal in C++).
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/netinet6/in6.h: Fixed warnings.
+
+2002-04-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/netinet6/nd6.c: Make debug (on) default.
+
+	* include/netinet/tcp_debug.h: Fully conditionalize debug facility.
+
+2002-04-17  Gary Thomas  <gthomas@redhat.com>
+
+	* include/sys/socket.h: Remove definitions only used by sysctl
+	since their presence could be misleading.
+
+	* src/ecos/support.c (STACK_SIZE): Remove [debug/testing] bloat.
+
+2002-03-30  Gary Thomas  <gthomas@redhat.com>
+
+	* include/machine/types.h: [Placeholder] needed for some compilers.
+
+2002-03-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/netinet/ip_icmp.c: 
+	* include/sys/param.h: 
+	* include/netinet/icmp_var.h: Export status structure for SNMP.
+
+	* cdl/freebsd_net.cdl: Augment log facilities to what SNMP uses.
+
+2002-03-27  Gary Thomas  <gthomas@redhat.com>
+
+	* include/sys/param.h (log): Remove warning.
+
+2002-03-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/ecos/support.c (zinit): Add more record keeping (and debug
+	prints) for zones.
+
+	* src/ecos/timeout.c (do_timeout): Don't reset ACTIVE when running
+	a timeout (since it confuses the TCP timer code).
+
+2002-03-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/netinet/in_cksum.c (in_addword): Changed to use uint32 since
+	uint64 was wasteful (and failed on some architectures!)
+
+2002-03-20  Gary Thomas  <gthomas@redhat.com>
+
+	* include/sys/socket.h: Force struct sockaddr to be at least as
+	big as IPv4 or IPv6 sockets.  Possibly this could be a little
+	cleaner, but at least now it's safe for programs to use sockaddr
+	variables in either environment.
+
+2002-03-11  Hugo Tyson  <hmt@redhat.com> 
+
+	[Case 107110]
+
+	* src/sys/netinet/in.c (in_control): SIOCSIFADDR switch entry
+	moved to before the scan for this same address being in the list
+	already, along with Add and Delete (SIOCAIFADDR,SIOCDIFADDR) arms.
+	It falls through into the same alloc-if-needed code anyway.
+	Thus repeatedly setting the same address does not leak store.
+
+	* src/sys/net/route.c (route_reinit): Rewrite to delete all routes
+	individually rather than en-masse (leaking store).
+	(rt_reinit_rtdelete): New function; callback for individual
+	deletion.
+	(rtioctl): Do not pass in a "route **" to return a pointer to the
+	route removed or added; this results in an extra reference, by the
+	returned pointer, and so a storeleak.
+	(rtrequest): RTM_DELETE arm: do not free a gateway route if the
+	gateway pointer is the same as the route itself - it gets freed
+	*again* at the end of the routine if you do.  Just dec the refcnt.
+
+2002-03-08  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/net/if_loop.c (loioctl): Force IFF_LOOPBACK setting.
+
+	* src/sys/kern/uipc_mbuf.c: Remove some warnings [from munging].
+
+	* src/ecos/support.c (cyg_net_init): Identify init messages.
+
+	* include/sys/param.h (nstab,nstab_end): These are not defined
+	within the network package and thus should not be munged.
+
+	* include/net/if.h: Add "IFF_LOOPBACK" to set of flags which
+	cannot be changed outside the kernel.  Note: this is a change
+	from the "normal" BSD code.  It was done to keep old code
+	working, but it may break some new code.
+
+2002-03-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/sys/kern/uipc_mbuf.c: Work over for the namespace changes.
+
+	* include/sys/param.h: Complete namespace munging; privatize
+	all kernel symbols via "cyg_" prefix.
+
+2002-02-05  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/freebsd_net.cdl: Position this package below CYGPKG_NET
+	ie. the common networking package.  Only affects the view in the
+	GUI CT, no big deal.
+
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2000, 2001, 2002 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####

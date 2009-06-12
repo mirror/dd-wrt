@@ -1,0 +1,151 @@
+#ifndef CYGONCE_HAL_HALBOOT_SI /* -*-asm-*- */
+#define CYGONCE_HAL_HALBOOT_SI
+// ====================================================================
+//
+//	<platform>/halboot.si
+//
+//	HAL bootup platform-oriented code (assembler)
+//
+// ====================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+// ====================================================================
+//#####DESCRIPTIONBEGIN####
+//
+// Author(s): 	        hmt
+// Contributors:	hmt
+// Date:	        1999-02-01
+// Purpose:	        Bootup code, platform oriented.
+// Description:
+//
+//####DESCRIPTIONEND####
+//
+// ====================================================================
+
+// External Platform Initial Setup
+//
+// This should set up RAM and caches, and calm down any external
+// interrupt sources.
+//
+// It is just plain included in vectors.S
+//
+// RAM has not yet been touched at all; in fact all you have is a
+// register window selected.
+
+
+	! Empty macro for debugging vectors.S
+	.macro led val
+        .endm
+
+	! Set memory according to simulator config
+
+	set	0x80000000, %l0		! LEON register base address
+
+        ld      [%l0 + 0x14], %l1       ! chech if we have been initialized
+	andcc	%l1, 0x1, %g0
+	bne	4f
+	nop
+
+	flush				! if we are here, we are running on
+	set	0x1000f, %l1		! the simulator....
+
+        st      %l1, [%l0 + 0x14]       ! enable caches
+
+        st      %g0, [%l0 + 0x1c]       ! clear LEON registers
+        st      %g0, [%l0 + 0x20]       ! 
+        st      %g0, [%l0 + 0x90]       ! 
+        st      %g0, [%l0 + 0x94]       ! 
+        st      %g0, [%l0 + 0x98]       ! 
+        st      %g0, [%l0 + 0x9C]       ! 
+        st      %g0, [%l0 + 0xA0]       ! 
+        st      %g0, [%l0 + 0xA4]       ! 
+        st      %g0, [%l0 + 0xA4]       ! 
+        st      %g0, [%l0 + 0x78]       ! 
+        st      %g0, [%l0 + 0x88]       ! 
+
+        ld      [%l0 + 0xF8], %g1	! load simulator rom size
+	clr	%l2
+	subcc	%g1, 0, %g0
+	be	3f
+	srl	%g1, 13, %g1		! calculate appropriate rom size
+1:
+	srl	%g1, 1, %g1
+	tst	%g1
+	bne,a	1b
+	inc	%l2
+	sll	%l2, 14, %l2
+	st	%l2, [%l0 + 0x00]	! set prom size in memcfg1
+
+	set	0, %l2
+        ld      [%l0 + 0xF4], %g2	! load simulator ram size
+	srl	%g2, 13, %g1		! calculate appropriate ram size
+1:
+	srl	%g1, 1, %g1
+	tst	%g1
+	bne,a	1b
+	inc	%l2
+	sll	%l2, 9, %l2
+	or	%l2, 0x20, %l2
+	st	%l2, [%l0 + 0x04]	! set ram size in memcfg2
+	set	0x40000000, %l2
+	add	%g2, %l2, %fp
+	sub	%fp, 96*4, %sp
+3:
+ 	st	%g0, [%sp]		!probe for FPU
+!	ld	[%sp], %fsr
+	set	49, %l1
+        st      %l1, [%l0 + 0x64]       ! scaler = 49
+        st      %l1, [%l0 + 0x60]       ! scaler = 49
+
+2:
+
+	set	-1, %l1
+        st      %l1, [%l0 + 0x44]       ! timer 1 = 0xffffff
+	set	7, %l1
+        st      %l1, [%l0 + 0x48]       ! start timer 1 
+  	st	%l1, [%l0 + 0x78] 	! enable UARTS
+  	st	%l1, [%l0 + 0x88]
+
+4:
+	! then copy the branch instructions into the vector
+	rd	%tbr, %g1
+	andn	%g1, 0xfff, %g1		! clear non-address bits
+	sethi	%hi(real_vector_instructions), %l0
+	or	%l0, %lo(real_vector_instructions), %l0
+	ld	[ %l0 ], %l1
+	st	%l1, [ %g1 ]		! into the vector
+	ld	[ %l0 + 4 ], %l1
+	st	%l1, [ %g1 + 4 ]	! into the vector
+
+#endif  /* CYGONCE_HAL_HALBOOT_SI */
+/* EOF halboot.si */

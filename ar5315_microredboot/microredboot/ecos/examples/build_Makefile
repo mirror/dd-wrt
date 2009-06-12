@@ -1,0 +1,39 @@
+#! /bin/sh
+
+# This script will create a generic Makefile template
+# suitable for use with an installed eCos configuration.
+
+# usage: <eCos_repository>/build_Makefile [<eCos_install_dir>]
+# env:   ${SRCS} - the default list of source files
+#        ${DST}  - the default target
+ECOS_DIR=${1-`pwd`}
+
+cat <<EOF >Makefile
+#
+# Makefile for eCos tests
+#
+
+# Platform specific setups
+include Make.params
+
+# Simple build rules
+
+.c.o:
+	\$(CC) -c \$(ECOS_GLOBAL_CFLAGS) -I\$(PREFIX)/include \$*.c
+
+.o:
+	\$(CC) \$(ECOS_GLOBAL_LDFLAGS) -L\$(PREFIX)/lib -Ttarget.ld \$*.o -o \$@
+
+SRCS=${SRCS-source_file.c}
+OBJS=\${SRCS:%.c=%.o}
+DST=${DST-result_prog}
+
+\${DST}: \${OBJS}
+
+EOF
+
+# Create actual parameters
+
+`dirname $0`/build_Make.params ${ECOS_DIR}
+
+

@@ -1,0 +1,638 @@
+<html>
+<head>
+<title>VNC server for eCos</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body bgcolor="#FFFFFF">
+<h1>VNC server for eCos</h1>
+<h2>Introduction</h2>
+<p>VNC stands for Virtual Network Computing. It is in essence, a remote display 
+  system which allows you to view a computing 'desktop' environment not only on 
+  the machine where it is running, but from anywhere on the Internet and from 
+  a wide variety of machine architectures. For full details of VNC, and to get 
+  the vncviewer program see: <a href="http://www.uk.research.att.com/vnc/" target="VNC_PAGE">http://www.uk.research.att.com/vnc/</a>. 
+</p>
+<p>The VNC server for eCos runs on the target platform and waits for a client 
+  (vncviewer program running on a PC) to connect via an ethernet connection (port 
+  5900). Once a client has connected, the target platform has a virtual screen, 
+  keyboard and mouse.</p>
+<p>&nbsp;</p>
+<h2>Limitations</h2>
+<p>The eCos port of the VNC server has been designed with some limitations in 
+  order to keep memory and processor power requirements to a minimum.</p>
+<ol>
+  <li>The VNC client must accept the settings that the VNC server suggests (bits-per-pixel, 
+    number-of-colours and so on as specified at build time with the eCos configuration 
+    tool) or the VNC server will just disconnect.</li>
+  <li>The VNC server only supports CoRRE encoding and RAW encoding for sending 
+    display data to the client.</li>
+  <li>The VNC server does not support password authentication, the client is able 
+    to connect without the user typing in a password.</li>
+  <li>Only one VNC client may connect to the VNC server at a time.</li>
+</ol>
+<p>In reality these limitations are not a problem.</p>
+<p>&nbsp;</p>
+<h2>VNC server API</h2>
+<p>If the VNC server is to be used with the eCos port of MicroWindows, then VNC 
+  server API may be ignored and the application should just use one of the API 
+  supplied by MicroWindows.</p>
+<h3>VNC server display API</h3>
+<p>To use the VNC server display API the application should include the VNC server 
+  header file by adding the following line to their C application:</p>
+<p><font face="Courier New, Courier, mono"><font size="-1">#include &lt;vnc-server.h&gt; 
+  &nbsp;&nbsp;/* VNC server header file *</font></font></p>
+<p>This file specifies several function to manipulate the display.</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><b>vnc_frame_forma</b></font><b><font face="Courier New, Courier, mono">t_t* 
+        VncGetInfo(void)</font></b></font></p>
+      <p>The VNC get info function returns a pointer to a 'vnc_frame_format_t' 
+        type structure and is used to get information about the VNC display. 'vnc_frame_format_t' 
+        is defined in the vnc-server.h file as:</p>
+      <p><font face="Courier New, Courier, mono" size="-1">typedef struct<br>
+        {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;cyg_uint16 frame_width;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;cyg_uint16 frame_height;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;void * frame_buffer;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;bool rgb332;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;</font><font face="Courier New, Courier, mono" size="-1">bool 
+        rgb555;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;bool rgb565;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;</font><font face="Courier New, Courier, mono" size="-1">bool 
+        bgr233;<br>
+        } vnc_frame_format_t;</font></p>
+      <p>The frame_width and frame height fields contain the VNC server display 
+        size in pixels.</p>
+      <p>The * frame_buffer pointer contains the address of the actual frame buffer 
+        the VNC server uses, though the application should never write to this 
+        buffer directly.</p>
+      <p>The final 4 (bool) fields specifiy the pixel format - only one of them 
+        will be set to true.</p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp;</p><table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b><font face="Courier New, Courier, mono">void 
+        VncInit(vnc_colour_t colour)</font></b></font></p>
+      <p>The VNC initialise function, initialises the VNC server and paints the 
+        display with the specified colour. This funcftion must be called before 
+        any of the other VNC server display functions are used, except for VncGetInfo() 
+        - which may be called at any time.</p>
+      <p>The type 'vnc_colour_t' is defined in the vnc-server.h file - and is 
+        used to represent a colour. If the VNC server is built to support 8-bit 
+        pixel data then 'vnc_colour_t' will be type cyg_uint8, but if 16-bit pixel 
+        data is being used then 'vnc_colour_t' will be type cyg_uint16.</p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><b><font face="Courier New, Courier, mono">void 
+        VncDrawPixel(cyg_uint16 x,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cyg_uint16 
+        y, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        vnc_colour_t colour)</font></b><font face="Courier New, Courier, mono"></font></font></p>
+      <p>The VNC draw pixel function simply draws a pixel of colour, 'colour', 
+        at position ('x', 'y') on the VNC server display. Note that pixel (0, 
+        0) is the top-left pixel in the display.</p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><b><font face="Courier New, Courier, mono">vnc_colour_t 
+        VncReadPixel(cyg_uint16 x<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y)</font></b></font></p>
+      <p>The VNC read pixel function simply returns the colour of the pixel at 
+        position ('x', 'y') on the VNC server display. Note that pixel (0, 0) 
+        is the top-left pixel in the display.</p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp;</p><table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b>void 
+        VncDrawHorzLine(cyg_uint16 x1,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x2, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        vnc_colour_t colour)</b></font></p>
+      <p>The VNC draw horizontal line function simply draws a line of pixels of 
+        colour, 'colour', from position ('x1', 'y') to position ('x2', 'y') (inclusive) 
+        on the VNC server display. Note that pixel (0, 0) is the top-left pixel 
+        in the display.</p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b><font face="Courier New, Courier, mono">void 
+        VncDrawVertLine(cyg_uint16 x,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y1,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y2, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        vnc_colour_t colour)</font></b></font></p>
+      <p>The VNC draw vertical line function simply draws a line of pixels of 
+        colour, 'colour', from position ('x', 'y1') to position ('x', 'y2') (inclusive) 
+        on the VNC server display. Note that pixel (0, 0) is the top-left pixel 
+        in the display.</p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b><font face="Courier New, Courier, mono">void 
+        VncFillRect(cyg_uint16 x1,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y1,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x2, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y2, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        vnc_colour_t colour)</font></b></font></p>
+      <p>The VNC fill rectangle function draws a solid rectangle of colour, 'colour', 
+        with top-left corner at ('x1', 'y1') and bottom right corner at ('x2', 
+        'y2') (inclusive) on the VNC server display. Note that pixel (0, 0) is 
+        the top-left pixel in the display.</p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b>void 
+        VncCopyRect(cyg_uint16 x1,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y1, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 width, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 height,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x2,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y2)</b></font></p>
+      <p>The VNC copy rectangle function copies a rectangle from one part of the 
+        VNC display to another. The source rectangle is of width 'width', and 
+        height 'height', with its top-left corner at ('x1', 'y1'). The destination 
+        rectangle is the same size with its top-left corner at ('x2', 'y2'). Note 
+        that pixel (0, 0) is the top-left pixel in the display.</p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b>void 
+        VncCopyRect2Buffer(cyg_uint16 x,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 width,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 height,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        void *buffer,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 buff_w,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 buff_h,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x_off,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y_off)</b></font></p>
+      <p>The VNC copy rectangle to buffer function copies a rectangle of the VNC 
+        server display to a buffer supplied by the application. This function 
+        is useful for saving areas of the display which will need to be restored 
+        later, such as the area under a mouse cursor.</p>
+      <p>The rectangle of the display to be copied is of width 'width' and height 
+        'height' with its top-left corner at position ('x', 'y'). The address 
+        of the buffer supplied to copy the image data is specified by '*buffer'. 
+        This buffer is of width 'buff_w' and height 'buff_height'. If the buffer 
+        width and height is larger than the rectangle being copied from the display, 
+        an x and y offset may be supplied ('x_off' and 'y_off' respectively) to 
+        offset where the rectangle of display data in the buffer.</p>
+      <p>For example a buffer of width = 50 and height = 40 could be defined with:</p>
+      <p><font face="Courier New, Courier, mono"><font size="-1">vnc_colour_t 
+        my_buffer[40][50];</font></font></p>
+      <p>Then VncCopyRect2Buffer() could be called with:</p>
+      <p><font face="Courier New, Courier, mono"><font size="-1">VncCopyRect2Buffer(10, 
+        &nbsp;/* x-pos on display */<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10, 
+        &nbsp;/* y-pos on display */</font></font><br>
+        <font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30, 
+        &nbsp;/* rectangle width on display */</font></font> <br>
+        <font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20, 
+        &nbsp;/* rectangle heigth on display */</font></font> <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font face="Courier New, Courier, mono"><font size="-1">(void 
+        *)my_buffer, /* Address of buffer */<br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;50, 
+        &nbsp;/* buffer width */</font></font> <font size="-1"> <br>
+        </font><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;40, 
+        &nbsp;/* buffer height */</font></font> <br>
+        </font></font><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5, 
+        &nbsp;&nbsp;/* buffer x-offset */</font></font> <font size="-1"> <br>
+        </font><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6); 
+        &nbsp;/* buffer y-offset */</font></font> <font size="-1"> </font></font><font size="-1"> 
+        <br>
+        </font></font></font></p>
+      <p>This would copy a 30 pixel wide, 20 pixel high rectangle from (10, 10) 
+        of the VNC server display to the buffer 'my_buffer'. Inside the buffer 
+        there would by an x-offset of 5 and a y offset of 6. Thus pixel (10, 10) 
+        from the VNC server display would now be copied to my_buffer[6][5] - and 
+        so on for the rest of the rectangle.</p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp; </p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b>void 
+        VncCopyBuffer2Rect(void *buffer,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 buff_w,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 buff_h, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x_off,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y_off,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 width,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 height)</b></font></p>
+      <p>The VNC copy buffer to rectangle function copies a rectangle from a buffer 
+        supplied by the application to the VNC server display. This function is 
+        usefull for restoring previously saved areas of the display.</p>
+      <p>For example, to restore the rectangle saved in the previous example use 
+        of the VncCopyRect2Buffer() function above, the VncCopyBuff2Rect() would 
+        be called with:</p>
+      <p><font face="Courier New, Courier, mono"><font size="-1">VncCopyBuffer2Rect(</font><font face="Courier New, Courier, mono"><font size="-1">(void 
+        *)my_buffer, /* Address of buffer */</font></font><font size="-1"><br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;50, 
+        &nbsp;/* buffer width */</font></font> <font size="-1"> <br>
+        </font><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;40, 
+        &nbsp;/* buffer height */</font></font> <br>
+        </font></font><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5, 
+        &nbsp;&nbsp;/* buffer x-offset */</font></font> <font size="-1"> <br>
+        </font><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6, 
+        &nbsp;&nbsp;/* buffer y-offset */</font></font> <font size="-1"> </font></font><br>
+        </font></font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10, 
+        &nbsp;/* x-pos on display */<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10, 
+        &nbsp;/* y-pos on display */</font></font><br>
+        <font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30, 
+        &nbsp;/* rectangle width on display */</font></font> <br>
+        <font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20); 
+        /* rectangle heigth on display */</font></font> </p>
+      <p>Note that in most uses of the VncCopyBuff2Rect() and VncCopyRect2Buffer() 
+        functions would be called with:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;width = buff_w<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;heigth = buff_h<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;x_off = 0<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;y_off = 0.</p>
+      <p>In this case there is no offset into the buffer and the buffer is used 
+        100% to store the rectangle from the display. <font face="Courier New, Courier, mono"><font size="-1"> 
+        </font></font></p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp;</p><table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b>void 
+        VncCopyBuffer2RectMask(void *buffer,<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 buff_w,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 buff_h, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x_off,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y_off,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 x, <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 y,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 width,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        cyg_uint16 height,<br>
+        <font face="Courier New, Courier, mono">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vnc_colour_t 
+        mask_colour</font> )</b></font></p>
+      <p>The VNC copy buffer to rectangle with mask function works exactly like 
+        VncCopyRect2Buffer(), except that a mask colour is also specified. Any 
+        pixels in the buffer that have the value mask_colour, will not be copied 
+        to the frame buffer - leaving the original pixels untouched.<font face="Courier New, Courier, mono"><font size="-1"> 
+        </font></font></p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><font face="Courier New, Courier, mono"></font><b>vnc_printf_return_t 
+        VncPrintf(MWCFONT* font,<br>
+        </b></font><font face="Courier New, Courier, mono"><b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int 
+        do_print,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vnc_colour_t 
+        colour,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int 
+        x,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int 
+        y,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const 
+        char *fmt, ... );)</b></font></p>
+      <p>The VNC printf function writes test to a specified position in the VNC 
+        frame buffer, using the specified font and colour.</p>
+      <p>The '* font' argument is a pointer to a MWCFONT font structure. This 
+        is the same font structure as used by MicroWindows, though the VNC server 
+        has its own copy of the font description files. The available fonts are:</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;font_rom8x16<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_rom8x8<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_winFreeSansSerif11x13<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_winFreeSystem14x16<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_helvB10<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_helvB12<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_helvR10<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_X5x7<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;font_X6x13</p>
+      <p>If the font argument is set to '0', then the default font (winFreeSystem14x16) 
+        is used.</p>
+      <p>The 'do_print' argument is used to specify whether the function should 
+        actually write the text to the frame buffer. If do_print is non-zero, 
+        then the text will be written to the frame buffer. If do_print is zero, 
+        then no text will be written, but the return value from the function will 
+        sill be valid.</p>
+      <p>The 'colour' argument specifies the colour to use to write the text.</p>
+      <p>The 'x' and 'y' arguments specify the pixel position (x, y) in the frame 
+        buffer of the top left pixel of the first character to be printed.</p>
+      <p>The 'const char *fmt, ...' argumets are used as in a normal printf statement.</p>
+      <p>The function returns a data structure of type vnc_printf_return_t, this 
+        is defined as:</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;typedef struct<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;{<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int chars;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cyg_uint16 width;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cyg_uint16 height;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;} vnc_printf_return_t;</p>
+      <p>The 'chars' values is exactly as would have been returned by the printf() 
+        function.</p>
+      <p>The width and height attributes specify the width and height of a rectangle 
+        surrounding the text written to the screen. This data can be used to know 
+        how much of the frame buffer needs to be painted to delete the text, or 
+        (used together with the 'do_print' argument set to 0) to calculate how 
+        much of the screen should be saved before printing to it so that it may 
+        be restored later.</p>
+      <p>An example of writing some text to position (250, 200) of the frame buffer, 
+        using the colout cyan and the font, winFreeSansSerif11x13:</p>
+      <p><font face="Courier New, Courier, mono"></font><font face="Courier New, Courier, mono"><font size="-1">vnc_printf_return_t 
+        print_area;</font></font></p>
+      <p><font face="Courier New, Courier, mono"><font size="-1">print_area = 
+        VncPrintf(&font_winFreeSansSerif11x13,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1,<br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font><font size="-1"> 
+        VNC_CYAN, <br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font><font size="-1"> 
+        250,<br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font><font size="-1"> 
+        200,<br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font><font size="-1"> 
+        </font></font><font face="Courier New, Courier, mono"><font size="-1">"Hello 
+        World!\nUsing winFreeSansSerif11x13 font");</font></font></p>
+      <p>Note: 'print_area.width' and 'print_area.height' will be set to indicate 
+        how much of the frame buffer was used to print this text.</p>
+      <p>Another example, using the default font this time:</p>
+      <p><font face="Courier New, Courier, mono"><font size="-1">print_area = 
+        VncPrintf(0,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1,<br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font><font size="-1">VNC_BLACK, 
+        <br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font><font size="-1">250,<br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font><font size="-1">200,<br>
+        </font><font face="Courier New, Courier, mono"><font size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></font></font><font face="Courier New, Courier, mono"><font size="-1">"50 
+        * 34 = %d", 50*34);</font></font></p>
+      <p></p>
+      </td>
+  </tr>
+</table>
+<p>Also included in the vnc-server.h header file are 16 predefined colours:</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td><font face="Courier New, Courier, mono"><b>VNC_BLACK<br>
+      VNC_BLUE<br>
+      VNC_GREEN<br>
+      VNC_CYAN<br>
+      VNC_RED<br>
+      VNC_MAGENTA<br>
+      VNC_BROWN<br>
+      VNC_LTGRAY<br>
+      VNC_LTGREY&nbsp; /* Same as VNC_LTGRAY */<br>
+      VNC_GRAY<br>
+      VNC_GREY&nbsp; /* Same as VNC_GRAY */<br>
+      VNC_LTBLUE<br>
+      VNC_LTGREEN<br>
+      VNC_LTCYAN<br>
+      VNC_LTRED<br>
+      VNC_LTMAGENTA<br>
+      VNC_YELLOW<br>
+      VNC_WHITE</b></font> 
+      <p>These colours are all of type vnc_colour_t and are always correct for the selected 
+        pixel type.</p>
+      </td>
+  </tr>
+</table>
+<p>Also contained in the vnc-server.h header file is a macro to convert from a 
+  full RGB colour value to the nearest colour that the type vnc_colour_t can represent. 
+  This macro is:</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td>
+      <p><font face="Courier New, Courier, mono"><b>VNC_RGB2COL(red, green, blue)</b></font></p>
+      <p>The arguments red, green and blue each have a value from 0 to 255.</p>
+      <p>For example, to initialise the VNC server display with a colour as close 
+        to a very specific shade of green [red=156, green=229, blue=91] - the 
+        VncInit() function could be called as follows:</p>
+      <p><font face="Courier New, Courier, mono" size="-1">VncInit( VNC_RGB2COL(156, 
+        229, 91) );</font></p>
+      <p>Obviously the colour match will be better if the VNC server had been 
+        built with 16 bits per pixel rather than with 8 bits per pixel, but in 
+        each case the best available colour will be used.</p>
+    </td>
+  </tr>
+</table>
+<p>Though not strictly a display function, a function to sound a bell on the client 
+  is available.</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono"><b><font face="Courier New, Courier, mono">void 
+        VncSoundBell(void)</font></b></font></p>
+      <p>The VNC Sound Bell function simply sounds a bell on the client - if the 
+        client supports this.</p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp; </p>
+<h3>VNC server mouse API</h3>
+<p>The VNC server mouse device driver is a standard eCos IO device driver. The 
+  device name is &quot;/dev/vnc_mouse&quot; by default, but this may be modified 
+  with the configuration tool. The first step in using the mouse device driver 
+  is to use the cyg_io_lookup() function:</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p> <font face="Courier New, Courier, mono" size="-1">Cyg_ErrNo mouse_err;<br>
+        cyg_io_handle_t mouse_handle;<br>
+        cyg_uint8 mouse_data[8];<br>
+        cyg_uint32 mouse_len;</font><br>
+        <br>
+        <font face="Courier New, Courier, mono" size="-1">mouse_err = cyg_io_lookup("/dev/vnc_mouse", 
+        &mouse_handle); /* Open mouse device */ if (mouse_err == -ENOENT)<br>
+        { <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;diag_printf("Could not open mouse device\n"); 
+        <br>
+        } </font></p>
+      </td>
+  </tr>
+</table>
+<p>Once the cyg_io_lookup() function has found the mouse device driver, the driver 
+  is active and should be read regularly to prevent the receive buffer from overflowing 
+  with data. Data is read using the cyg_io_read() function:</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono" size="-1">mouse_len = 8;&nbsp;&nbsp;/* 
+        Try to read 8 bytes from mouse */ <br>
+        cyg_io_read(mouse_handle, mouse_data, &mouse_len ); <br>
+        if (mouse_len == 0)<br>
+        {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;diag_printf(&quot;Mouse has no new data\n&quot;);<br>
+        }<br>
+        else<br>
+        { <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;diag_printf(&quot;Have New mouse data:\n&quot;);</font><br>
+        <font face="Courier New, Courier, mono" size="-1">&nbsp;&nbsp;&nbsp;&nbsp;<font face="Courier New, Courier, mono" size="-1">diag_printf(&quot;&nbsp;&nbsp;Mouse 
+        button data: 0x%x\n&quot;, mouse_data[1]);</font> </font> <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font face="Courier New, Courier, mono" size="-1">diag_printf(&quot;&nbsp;&nbsp;Mouse 
+        x-coord: %d\n&quot;, mouse_data[2]*256 + mouse_data[3]);</font><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font face="Courier New, Courier, mono" size="-1">diag_printf(&quot;&nbsp;&nbsp;Mouse 
+        y-coord: %d\n&quot;, mouse_data[4]*256 + mouse_data[5]);<br>
+        }</font> </p>
+      </td>
+  </tr>
+</table>
+<p>The cyg_io_read() function is a non-blocking function and each mouse event 
+  generates 8 bytes of data:</p>
+<p>Byte 0: Padding - always zero<br>
+  Byte 1: Button data (bit 0 = 1 if the left button is pressed, bit 2 = 1 if the 
+  right button is pressed)<br>
+  Byte 2: Mose position x-coord MSB<br>
+  Byte 3: Mose position x-coord LSB<br>
+  Byte 4: Mose position y-coord MSB<br>
+  Byte 5: Mose position y-coord LSB<br>
+  Byte 6: Padding - always zero<br>
+  Byte 7: Padding - always zero </p>
+<p>&nbsp;</p>
+<h3>VNC server keyboard API</h3>
+<p>The VNC server keyboard device driver is a standard eCos IO device driver. 
+  The device name is &quot;/dev/vnc_kbd&quot; by default, but this may be modified 
+  with the configuration tool. The first step in using the keyboard device driver 
+  is to use the cyg_io_lookup() function:</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p> <font face="Courier New, Courier, mono" size="-1">Cyg_ErrNo kdb_err;<br>
+        cyg_io_handle_t kbd_handle;<br>
+        cyg_uint8 kbd_data[8];<br>
+        cyg_uint32 kbd_len;</font><br>
+        <br>
+        <font face="Courier New, Courier, mono" size="-1">kbd_err = cyg_io_lookup("/dev/vnc_kbd", 
+        &kbd_handle); /* Open kbd device */ <br>
+        if (kbd_err == -ENOENT)<br>
+        { <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;diag_printf("Could not open kbd device\n"); <br>
+        } </font></p>
+    </td>
+  </tr>
+</table>
+<p>Once the cyg_io_lookup() function has found the keyboard device driver, the 
+  driver is active and should be read regularly to prevent the receive buffer 
+  from overflowing with data. Data is read using the cyg_io_read() function:</p>
+<table width="91%" border="1" cellspacing="0" cellpadding="0" bgcolor="#FFFFCC">
+  <tr> 
+    <td> 
+      <p><font face="Courier New, Courier, mono" size="-1">kbd_len = 4;&nbsp;&nbsp;/* 
+        Try to read 4 bytes from keyboard */ <br>
+        cyg_io_read(kbd_handle, kbd_data, &kbd_len ); <br>
+        if (kbd_len == 0)<br>
+        {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;diag_printf(&quot;Keyboard has no new data\n&quot;);<br>
+        }<br>
+        else<br>
+        { <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;diag_printf(&quot;Have New keyboard data:\n&quot;);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;if (kbd_data[1])<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;{ </font><br>
+        <font face="Courier New, Courier, mono" size="-1"><font face="Courier New, Courier, mono" size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;diag_printf(&quot;&nbsp;&nbsp;Keysym 
+        value 0x%x pressed\n&quot;,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;kbd_data[2]*256 
+        + kbd_data[3]</font></font><font face="Courier New, Courier, mono" size="-1"><font face="Courier New, Courier, mono" size="-1">);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;else<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;{<br>
+        <font face="Courier New, Courier, mono" size="-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;diag_printf(&quot;&nbsp;&nbsp;Keysym 
+        value 0x%x released\n&quot;,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;kbd_data[2]*256 
+        + kbd_data[3]</font></font><font face="Courier New, Courier, mono" size="-1"><font face="Courier New, Courier, mono" size="-1">);</font></font><font face="Courier New, Courier, mono" size="-1"> 
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;} </font></font><br>
+        <font face="Courier New, Courier, mono" size="-1">}</font> </p>
+      </td>
+  </tr>
+</table>
+<p>The cyg_io_read() function is a non-blocking function and each keystroke event 
+  generates 4 bytes of data:</p>
+<p>Byte 0: Padding - always zero<br>
+  Byte 1: Key pressed/released (1 when key pressed)<br>
+  Byte 2: Keysym value for key MSB<br>
+  Byte 3: Keysym value for key LSB<br>
+</p>
+<p>The actual key values are specified using the &quot;keysym&quot; values defined 
+  by the X Window System. For most ordinary keys the keysym value is the same 
+  as the corresponding ASCII value. For full details see either the Xlib Reference 
+  Manual, published by O'Reilly &amp; Associates or see the header file &lt;X11/keysymdef.h&gt; 
+  from any X Window System installation (a google search for 'keysymdef.h' should 
+  find it).</p>
+<p>&nbsp;</p>
+<h3>&nbsp;</h3>
+</body>
+</html>

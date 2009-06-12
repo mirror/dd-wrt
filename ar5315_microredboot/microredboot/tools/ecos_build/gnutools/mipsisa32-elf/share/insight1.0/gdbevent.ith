@@ -1,0 +1,220 @@
+# GDBEvent class definitions for Insight.
+# Copyright 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# For reasons unknown to me, I cannot put any of the constructors
+# in the implementation files. The very first instance of the class
+# will call the (empty) constructor in here instead of the one
+# defined in the implementation file. Sigh.
+
+class GDBEvent {
+  public method get {what} { return "" }
+  public method handler {} { return "unknown" }
+}
+
+# BREAKPOINT EVENT
+#
+# This event is created/dispatched whenever a breakpoint is created,
+# deleted, or modified.
+#
+# action ....... what type of BP event ("create", "delete", "modify")
+# number ....... gdb's internal token for the BP
+# file ......... filename in which event occurred
+# function ..... function in which event occurred
+# line ......... line number in file
+# address ...... address of BP
+# type ......... breakpoint type ("breakpoint", "hw breakpoint", "step resume", etc)
+# enabled ...... BP enabled?
+# disposition .. BP's disposition ("delete", "delstop", "disable", "donttouch")
+# ignore_count . BP's ignore count
+# commands ..... list of commands to run when BP hit
+# condition .... BP condition
+# thread ....... thread in which BP is set (or -1 for all threads) 
+# hit_count .... number of times BP has been hit
+# user_specification
+#             .. text the user initially used to set this breakpoint
+class BreakpointEvent {
+  inherit GDBEvent
+
+  public variable action {}
+  public variable number {}
+
+  #constructor {args} {}
+  constructor {args} {
+    eval configure $args
+
+    # If creating/modifying a breakpoint, then get
+    # all info about it and save it away.
+    _init
+  }
+  #destructor { dbug I "" }
+
+  public method get {what}
+  public method handler {} { return "breakpoint" }
+
+  private variable _file         {}
+  private variable _function     {}
+  private variable _line         {}
+  private variable _address      {}
+  private variable _type         {}
+  private variable _enabled      {}
+  private variable _disposition  {}
+  private variable _ignore_count {}
+  private variable _commands     {}
+  private variable _condition    {}
+  private variable _thread       {}
+  private variable _hit_count    {}
+  private variable _user_specification {}
+
+  private method _init {}
+}
+
+# TRACEPOINT EVENT
+#
+# This event is created/dispatched whenever a tracepoint is created,
+# deleted, or modified.
+#
+# action ....... what type of BP event ("create", "delete", "modify")
+# number ....... gdb's internal token for the BP
+# file ......... filename in which event occurred
+# function ..... function in which event occurred
+# line ......... line number in file
+# address ...... address of BP
+# enabled ...... BP enabled?
+# pass_count ...
+# step_count ...
+# thread ....... thread in which BP is set (or -1 for all threads) 
+# hit_count .... number of times BP has been hit
+# actions ...... a list of actions to be performed when the tracepoint is hit
+class TracepointEvent {
+  inherit GDBEvent
+
+  public variable action {}
+  public variable number {}
+
+  # For reasons unknown to me, I cannot put this in the implementation
+  # file. The very first instance of the class will call this empty
+  # constructor instead of the one defined in the implementation file.
+  #constructor {args} {}
+  constructor {args} {
+    eval configure $args
+
+    # If creating/modifying a tracepoint, then get
+    # all info about it and save it away.
+    _init
+  }
+  #destructor { dbug I "" }
+  public method get {what}
+  public method handler {} { return "tracepoint" }
+
+  private variable _file       {}
+  private variable _function   {}
+  private variable _line       {}
+  private variable _address    {}
+  private variable _enabled    {}
+  private variable _pass_count {}
+  private variable _step_count {}
+  private variable _thread     {}
+  private variable _hit_count  {}
+  private variable _actions    {}
+
+  private method _init {}
+}
+
+# SET VARIABLE EVENT
+#
+# This event is created/dispatched whenever a "set" command successfully
+# completes in gdb's command interpreter.
+#
+# variable ..... the variable that was changed
+# value ........ the variable's new value
+class SetVariableEvent {
+  inherit GDBEvent
+
+  public variable variable
+  public variable value
+
+  constructor {args} {
+    eval configure $args
+  }
+  #destructor { dbug I "" }
+  public method get {what}
+  public method handler {} { return "set_variable" }
+}
+
+# BUSY EVENT
+#
+# This event is created/dispatched whenever the GUI or GDB is "busy".
+# This could happen when the inferior is executing or when the GUI
+# is, for example, fetching memory from the target.
+
+class BusyEvent {
+  inherit GDBEvent
+
+  public method handler {} { return "busy" }
+}
+
+# IDLE EVENT
+#
+# This event is created/dispatched whenever the GUI and GDB is not
+# "busy". Receipt of this event means that the GUI should be put into
+# a state to accept input by the user.
+
+class IdleEvent {
+  inherit GDBEvent
+
+  public method handler {} { return "idle" }
+}
+
+# UPDATE EVENT
+#
+# This event is created/dispatched whenever the target's state
+# has changed. When an UpdateEvent is received, widgets should
+# update their contents to reflect the inferior's new state.
+#
+# Right now, this just holds the output of gdb_loc...
+#
+# compile_filename - Filename stored in the symtab
+# full_filename    - Full filename of file, if found in source search dir
+# function         - Function name
+# line             - Line number
+# frame_pc         - Frame's PC
+# pc               - Real stop PC
+# shlib            - Shared library stopped in
+#
+# FIXME: Should probably put frame_pc and pc into different
+# types of update events...
+class UpdateEvent {
+  inherit GDBEvent
+
+  constructor {args} {}
+  public method get {what}
+  public method handler {} { return "update" }
+
+  private variable _compile_filename {}
+  private variable _function         {}
+  private variable _full_filename    {}
+  private variable _line             {}
+  private variable _frame_pc         {}
+  private variable _pc               {}
+  private variable _shlib            {}
+}
+
+# ARCHITECTURE CHANGED EVENT
+#
+# This event is posted whenever the target architecture changes
+
+class ArchChangedEvent {
+  inherit GDBEvent
+
+  public method handler {} { return "arch_changed" }
+}

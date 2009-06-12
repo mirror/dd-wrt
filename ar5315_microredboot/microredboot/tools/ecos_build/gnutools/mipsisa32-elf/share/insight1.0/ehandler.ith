@@ -1,0 +1,48 @@
+# GDBEventHandler class definition for Insight.
+# Copyright 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+class GDBEventHandler {
+
+  constructor {args} {}
+  destructor {}
+
+  # Dispatching proc. ALL events should be funneled through this
+  # procedure.
+  public proc dispatch {event}
+
+  #
+  # Events
+  #
+
+  # See gdbevent.ith for descriptions of event
+  public {
+    # Breakpiont/tracepoint events
+    method breakpoint {event} {}
+    method tracepoint {event} {}
+
+    # Set variable
+    method set_variable {event} {}
+
+    # Busy event
+    method busy {event} {}
+
+    # Idle event
+    method idle {event} {}
+
+    # Update event
+    method update {event} {}
+
+    # Architecture changed event
+    method arch_changed {event} {}
+  }
+}

@@ -1,0 +1,160 @@
+2003-01-08  Patrick Doyle  <wpd@delcomsys.com>
+
+	* include/hal_cache.h: Changed HAL_ICACHE_LINE_SIZE and
+	HAL_DCACHE_LINE_SIZE to match the documentation from TI.  Now the
+	kcache2 test passes the two tests that it runs.
+
+2002-03-06  Nick Garnett  <nickg@redhat.com>
+
+	* include/hal_cache.h: Added support for ARM966E. This does not
+	have a cache, so this involved adding support for cacheless ARM9s
+	in general.
+
+	* cdl/hal_arm_arm9.cdl: Added option for ARM966E.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h: Only define HAL_VIRT_TO_PHYS_ADDRESS if it
+	isn't already defined. This needs renaming and a cleanup, but this
+	quick #ifdef hack fixes a compiler warning.
+
+	* cdl/hal_arm_arm9.cdl: Declare var_io.h.
+
+	* include/var_io.h: Added.
+
+2001-11-16  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm9_misc.c (hal_hardware_init): Don't invalidate caches on
+	RAM startup.
+
+2001-11-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm9_misc.c (cyg_hal_arm9_soft_reset): Also put CPU in SVC
+	mode (as after a reset). Still broken though.
+
+2001-11-06  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_cache.h: Add virtual->physical translation setup.
+
+2001-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm9_misc.c (cyg_hal_arm9_soft_reset): Attempt at soft
+	reset. Doesn't quite work though, and it's unclear why.
+
+2001-10-28  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_cache.h: Fix DATA cache flush for 920,922.  This was
+	off-by-one, leaving part of the cache unflushed.
+
+2001-08-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h: Support ARM variants 920, 922, 925 and 940.
+
+2001-04-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/arm9_misc.c (hal_hardware_init): Use CDL configuration to
+	decide which caches should be enabled at startup time.
+
+2001-04-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/arm9_misc.c (hal_hardware_init): Caches just don't seem to work.
+
+	* include/hal_cache.h: Fix cache parameters - 16K x 16K
+
+2001-04-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm9_misc.c: Update copyright.
+	* include/hal_cache.h: Same.
+	* cdl/hal_arm_arm9.cdl: Same.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_arm9.cdl: Add CDL to describe CPU family.
+
+2001-04-03  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm9_misc.c: Removed hal_arm9.h
+	* include/hal_cache.h: Same.
+	* include/hal_arm9.h: Deleted.
+
+2000-12-04  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_cache.h: Consistently ensure that ARM registers used
+	in MCR ops to cache-control coprocessors, where the data doesn't
+	matter, all actually have data zero ("SBZ") as in the Jaggar book.
+	This may well not be necessary, but for the sake of making sure...
+
+2000-11-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h
+	(HAHAL_FLASH_CACHES_ON/HAL_FLASH_CACHES_OFF): Defined.
+
+	* src/arm9_misc.c (hal_hardware_init): Disable caches. Wasted too
+	much time on this already.
+
+2000-11-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h (HAL_DCACHE_SYNC): Wait for cache dirty flag
+	to clear.
+
+2000-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm9_misc.c (hal_hardware_init): Don't disable caches.
+
+2000-11-21  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h (HAL_DCACHE_INVALIDATE_ALL): Remove
+	writeback buffer flush.
+
+	* cdl/hal_arm_arm9.cdl: Removed clock options.
+
+	* src/arm9_misc.c: Cleaned up, enabled caches.
+
+	* include/hal_cache.h: Enable cache controls, fix invalidate
+	macro.
+
+2000-11-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/arm9_misc.c: Disable/clear caches. Removed clock handling.
+
+	* include/hal_cache.h: Changed to match ARM925, but prevent
+	enabling. Messes up flash programming.
+
+2000-11-14  Jesper Skov  <jskov@redhat.com>
+
+	* Created.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

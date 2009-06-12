@@ -1,0 +1,116 @@
+# ====================================================================
+#
+#      vrc4375_eth_drivers.cdl
+#
+#      Ethernet drivers - support for i21143 ethernet controller
+#      on the NEC VRC4375 "Blue Nile" board.
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      hmt
+# Contributors:   
+# Date:           2001-09-17
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_VRC4375 {
+    display       "NEC vrc4375 ethernet driver"
+    description   "
+	Ethernet driver for vrc4375 'Blue Nile' board with one Intel
+	i21143 Ethernet controller attached via the PCI bus."
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_HAL_MIPS_VR4300_VRC4375
+
+    include_dir   cyg/io
+
+    cdl_interface CYGINT_DEVS_ETH_INTEL_I21143_REQUIRED {
+        display   "Intel i21143 ethernet driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I21143_INL <cyg/io/devs_eth_vrc4375.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I21143_CFG <pkgconf/devs_eth_mips_vrc4375.h>"
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_VRC4375_ETH0 {
+        display       "Vrc4375 ethernet port 0 driver"
+        flavor        bool
+        default_value 1
+        description   "
+            This option includes the ethernet device driver for the
+            vrc4375Engine or vrc4375Bridge port 0 - that is the connector one
+	    slot in from the corner of the board, or the only connector
+	    depending on your particular hardware."
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH0
+        implements CYGINT_DEVS_ETH_INTEL_I21143_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_MIPS_VRC4375_ETH0_NAME {
+            display       "Device name for the ethernet port 0 driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                ethernet port 0."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_MIPS_VRC4375_ETH0_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA."
+            
+            cdl_option CYGDAT_DEVS_ETH_MIPS_VRC4375_ETH0_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x00, 0x12, 0x34, 0x55, 0x55, 0x66}"}
+                description   "The ethernet station address"
+            }
+        }
+    }
+}
+
+# EOF vrc4375_eth_drivers.cdl

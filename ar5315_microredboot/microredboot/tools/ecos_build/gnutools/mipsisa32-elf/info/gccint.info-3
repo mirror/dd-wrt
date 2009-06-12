@@ -1,0 +1,891 @@
+This is doc/gccint.info, produced by makeinfo version 4.2 from
+doc/gccint.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gccint: (gccint).            Internals of the GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the internals of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gccint.info,  Node: Types,  Next: Scopes,  Prev: Tree overview,  Up: Trees
+
+Types
+=====
+
+   All types have corresponding tree nodes.  However, you should not
+assume that there is exactly one tree node corresponding to each type.
+There are often several nodes each of which correspond to the same type.
+
+   For the most part, different kinds of types have different tree
+codes.  (For example, pointer types use a `POINTER_TYPE' code while
+arrays use an `ARRAY_TYPE' code.)  However, pointers to member functions
+use the `RECORD_TYPE' code.  Therefore, when writing a `switch'
+statement that depends on the code associated with a particular type,
+you should take care to handle pointers to member functions under the
+`RECORD_TYPE' case label.
+
+   In C++, an array type is not qualified; rather the type of the array
+elements is qualified.  This situation is reflected in the intermediate
+representation.  The macros described here will always examine the
+qualification of the underlying element type when applied to an array
+type.  (If the element type is itself an array, then the recursion
+continues until a non-array type is found, and the qualification of this
+type is examined.)  So, for example, `CP_TYPE_CONST_P' will hold of the
+type `const int ()[7]', denoting an array of seven `int's.
+
+   The following functions and macros deal with cv-qualification of
+types:
+`CP_TYPE_QUALS'
+     This macro returns the set of type qualifiers applied to this type.
+     This value is `TYPE_UNQUALIFIED' if no qualifiers have been
+     applied.  The `TYPE_QUAL_CONST' bit is set if the type is
+     `const'-qualified.  The `TYPE_QUAL_VOLATILE' bit is set if the
+     type is `volatile'-qualified.  The `TYPE_QUAL_RESTRICT' bit is set
+     if the type is `restrict'-qualified.
+
+`CP_TYPE_CONST_P'
+     This macro holds if the type is `const'-qualified.
+
+`CP_TYPE_VOLATILE_P'
+     This macro holds if the type is `volatile'-qualified.
+
+`CP_TYPE_RESTRICT_P'
+     This macro holds if the type is `restrict'-qualified.
+
+`CP_TYPE_CONST_NON_VOLATILE_P'
+     This predicate holds for a type that is `const'-qualified, but
+     _not_ `volatile'-qualified; other cv-qualifiers are ignored as
+     well: only the `const'-ness is tested.
+
+`TYPE_MAIN_VARIANT'
+     This macro returns the unqualified version of a type.  It may be
+     applied to an unqualified type, but it is not always the identity
+     function in that case.
+
+   A few other macros and functions are usable with all types:
+`TYPE_SIZE'
+     The number of bits required to represent the type, represented as
+     an `INTEGER_CST'.  For an incomplete type, `TYPE_SIZE' will be
+     `NULL_TREE'.
+
+`TYPE_ALIGN'
+     The alignment of the type, in bits, represented as an `int'.
+
+`TYPE_NAME'
+     This macro returns a declaration (in the form of a `TYPE_DECL') for
+     the type.  (Note this macro does _not_ return a `IDENTIFIER_NODE',
+     as you might expect, given its name!)  You can look at the
+     `DECL_NAME' of the `TYPE_DECL' to obtain the actual name of the
+     type.  The `TYPE_NAME' will be `NULL_TREE' for a type that is not
+     a built-in type, the result of a typedef, or a named class type.
+
+`CP_INTEGRAL_TYPE'
+     This predicate holds if the type is an integral type.  Notice that
+     in C++, enumerations are _not_ integral types.
+
+`ARITHMETIC_TYPE_P'
+     This predicate holds if the type is an integral type (in the C++
+     sense) or a floating point type.
+
+`CLASS_TYPE_P'
+     This predicate holds for a class-type.
+
+`TYPE_BUILT_IN'
+     This predicate holds for a built-in type.
+
+`TYPE_PTRMEM_P'
+     This predicate holds if the type is a pointer to data member.
+
+`TYPE_PTR_P'
+     This predicate holds if the type is a pointer type, and the
+     pointee is not a data member.
+
+`TYPE_PTRFN_P'
+     This predicate holds for a pointer to function type.
+
+`TYPE_PTROB_P'
+     This predicate holds for a pointer to object type.  Note however
+     that it does not hold for the generic pointer to object type `void
+     *'.  You may use `TYPE_PTROBV_P' to test for a pointer to object
+     type as well as `void *'.
+
+`same_type_p'
+     This predicate takes two types as input, and holds if they are the
+     same type.  For example, if one type is a `typedef' for the other,
+     or both are `typedef's for the same type.  This predicate also
+     holds if the two trees given as input are simply copies of one
+     another; i.e., there is no difference between them at the source
+     level, but, for whatever reason, a duplicate has been made in the
+     representation.  You should never use `==' (pointer equality) to
+     compare types; always use `same_type_p' instead.
+
+   Detailed below are the various kinds of types, and the macros that
+can be used to access them.  Although other kinds of types are used
+elsewhere in G++, the types described here are the only ones that you
+will encounter while examining the intermediate representation.
+
+`VOID_TYPE'
+     Used to represent the `void' type.
+
+`INTEGER_TYPE'
+     Used to represent the various integral types, including `char',
+     `short', `int', `long', and `long long'.  This code is not used
+     for enumeration types, nor for the `bool' type.  Note that GCC's
+     `CHAR_TYPE' node is _not_ used to represent `char'.  The
+     `TYPE_PRECISION' is the number of bits used in the representation,
+     represented as an `unsigned int'.  (Note that in the general case
+     this is not the same value as `TYPE_SIZE'; suppose that there were
+     a 24-bit integer type, but that alignment requirements for the ABI
+     required 32-bit alignment.  Then, `TYPE_SIZE' would be an
+     `INTEGER_CST' for 32, while `TYPE_PRECISION' would be 24.)  The
+     integer type is unsigned if `TREE_UNSIGNED' holds; otherwise, it
+     is signed.
+
+     The `TYPE_MIN_VALUE' is an `INTEGER_CST' for the smallest integer
+     that may be represented by this type.  Similarly, the
+     `TYPE_MAX_VALUE' is an `INTEGER_CST' for the largest integer that
+     may be represented by this type.
+
+`REAL_TYPE'
+     Used to represent the `float', `double', and `long double' types.
+     The number of bits in the floating-point representation is given
+     by `TYPE_PRECISION', as in the `INTEGER_TYPE' case.
+
+`COMPLEX_TYPE'
+     Used to represent GCC built-in `__complex__' data types.  The
+     `TREE_TYPE' is the type of the real and imaginary parts.
+
+`ENUMERAL_TYPE'
+     Used to represent an enumeration type.  The `TYPE_PRECISION' gives
+     (as an `int'), the number of bits used to represent the type.  If
+     there are no negative enumeration constants, `TREE_UNSIGNED' will
+     hold.  The minimum and maximum enumeration constants may be
+     obtained with `TYPE_MIN_VALUE' and `TYPE_MAX_VALUE', respectively;
+     each of these macros returns an `INTEGER_CST'.
+
+     The actual enumeration constants themselves may be obtained by
+     looking at the `TYPE_VALUES'.  This macro will return a
+     `TREE_LIST', containing the constants.  The `TREE_PURPOSE' of each
+     node will be an `IDENTIFIER_NODE' giving the name of the constant;
+     the `TREE_VALUE' will be an `INTEGER_CST' giving the value
+     assigned to that constant.  These constants will appear in the
+     order in which they were declared.  The `TREE_TYPE' of each of
+     these constants will be the type of enumeration type itself.
+
+`BOOLEAN_TYPE'
+     Used to represent the `bool' type.
+
+`POINTER_TYPE'
+     Used to represent pointer types, and pointer to data member types.
+     The `TREE_TYPE' gives the type to which this type points.  If the
+     type is a pointer to data member type, then `TYPE_PTRMEM_P' will
+     hold.  For a pointer to data member type of the form `T X::*',
+     `TYPE_PTRMEM_CLASS_TYPE' will be the type `X', while
+     `TYPE_PTRMEM_POINTED_TO_TYPE' will be the type `T'.
+
+`REFERENCE_TYPE'
+     Used to represent reference types.  The `TREE_TYPE' gives the type
+     to which this type refers.
+
+`FUNCTION_TYPE'
+     Used to represent the type of non-member functions and of static
+     member functions.  The `TREE_TYPE' gives the return type of the
+     function.  The `TYPE_ARG_TYPES' are a `TREE_LIST' of the argument
+     types.  The `TREE_VALUE' of each node in this list is the type of
+     the corresponding argument; the `TREE_PURPOSE' is an expression
+     for the default argument value, if any.  If the last node in the
+     list is `void_list_node' (a `TREE_LIST' node whose `TREE_VALUE' is
+     the `void_type_node'), then functions of this type do not take
+     variable arguments.  Otherwise, they do take a variable number of
+     arguments.
+
+     Note that in C (but not in C++) a function declared like `void f()'
+     is an unprototyped function taking a variable number of arguments;
+     the `TYPE_ARG_TYPES' of such a function will be `NULL'.
+
+`METHOD_TYPE'
+     Used to represent the type of a non-static member function.  Like a
+     `FUNCTION_TYPE', the return type is given by the `TREE_TYPE'.  The
+     type of `*this', i.e., the class of which functions of this type
+     are a member, is given by the `TYPE_METHOD_BASETYPE'.  The
+     `TYPE_ARG_TYPES' is the parameter list, as for a `FUNCTION_TYPE',
+     and includes the `this' argument.
+
+`ARRAY_TYPE'
+     Used to represent array types.  The `TREE_TYPE' gives the type of
+     the elements in the array.  If the array-bound is present in the
+     type, the `TYPE_DOMAIN' is an `INTEGER_TYPE' whose
+     `TYPE_MIN_VALUE' and `TYPE_MAX_VALUE' will be the lower and upper
+     bounds of the array, respectively.  The `TYPE_MIN_VALUE' will
+     always be an `INTEGER_CST' for zero, while the `TYPE_MAX_VALUE'
+     will be one less than the number of elements in the array, i.e.,
+     the highest value which may be used to index an element in the
+     array.
+
+`RECORD_TYPE'
+     Used to represent `struct' and `class' types, as well as pointers
+     to member functions and similar constructs in other languages.
+     `TYPE_FIELDS' contains the items contained in this type, each of
+     which can be a `FIELD_DECL', `VAR_DECL', `CONST_DECL', or
+     `TYPE_DECL'.  You may not make any assumptions about the ordering
+     of the fields in the type or whether one or more of them overlap.
+     If `TYPE_PTRMEMFUNC_P' holds, then this type is a pointer-to-member
+     type.  In that case, the `TYPE_PTRMEMFUNC_FN_TYPE' is a
+     `POINTER_TYPE' pointing to a `METHOD_TYPE'.  The `METHOD_TYPE' is
+     the type of a function pointed to by the pointer-to-member
+     function.  If `TYPE_PTRMEMFUNC_P' does not hold, this type is a
+     class type.  For more information, see *note Classes::.
+
+`UNION_TYPE'
+     Used to represent `union' types.  Similar to `RECORD_TYPE' except
+     that all `FIELD_DECL' nodes in `TYPE_FIELD' start at bit position
+     zero.
+
+`QUAL_UNION_TYPE'
+     Used to represent part of a variant record in Ada.  Similar to
+     `UNION_TYPE' except that each `FIELD_DECL' has a `DECL_QUALIFIER'
+     field, which contains a boolean expression that indicates whether
+     the field is present in the object.  The type will only have one
+     field, so each field's `DECL_QUALIFIER' is only evaluated if none
+     of the expressions in the previous fields in `TYPE_FIELDS' are
+     nonzero.  Normally these expressions will reference a field in the
+     outer object using a `PLACEHOLDER_EXPR'.
+
+`UNKNOWN_TYPE'
+     This node is used to represent a type the knowledge of which is
+     insufficient for a sound processing.
+
+`OFFSET_TYPE'
+     This node is used to represent a data member; for example a
+     pointer-to-data-member is represented by a `POINTER_TYPE' whose
+     `TREE_TYPE' is an `OFFSET_TYPE'.  For a data member `X::m' the
+     `TYPE_OFFSET_BASETYPE' is `X' and the `TREE_TYPE' is the type of
+     `m'.
+
+`TYPENAME_TYPE'
+     Used to represent a construct of the form `typename T::A'.  The
+     `TYPE_CONTEXT' is `T'; the `TYPE_NAME' is an `IDENTIFIER_NODE' for
+     `A'.  If the type is specified via a template-id, then
+     `TYPENAME_TYPE_FULLNAME' yields a `TEMPLATE_ID_EXPR'.  The
+     `TREE_TYPE' is non-`NULL' if the node is implicitly generated in
+     support for the implicit typename extension; in which case the
+     `TREE_TYPE' is a type node for the base-class.
+
+`TYPEOF_TYPE'
+     Used to represent the `__typeof__' extension.  The `TYPE_FIELDS'
+     is the expression the type of which is being represented.
+
+   There are variables whose values represent some of the basic types.
+These include:
+`void_type_node'
+     A node for `void'.
+
+`integer_type_node'
+     A node for `int'.
+
+`unsigned_type_node.'
+     A node for `unsigned int'.
+
+`char_type_node.'
+     A node for `char'.
+
+It may sometimes be useful to compare one of these variables with a type
+in hand, using `same_type_p'.
+
+
+File: gccint.info,  Node: Scopes,  Next: Functions,  Prev: Types,  Up: Trees
+
+Scopes
+======
+
+   The root of the entire intermediate representation is the variable
+`global_namespace'.  This is the namespace specified with `::' in C++
+source code.  All other namespaces, types, variables, functions, and so
+forth can be found starting with this namespace.
+
+   Besides namespaces, the other high-level scoping construct in C++ is
+the class.  (Throughout this manual the term "class" is used to mean the
+types referred to in the ANSI/ISO C++ Standard as classes; these include
+types defined with the `class', `struct', and `union' keywords.)
+
+* Menu:
+
+* Namespaces::          Member functions, types, etc.
+* Classes::             Members, bases, friends, etc.
+
+
+File: gccint.info,  Node: Namespaces,  Next: Classes,  Up: Scopes
+
+Namespaces
+----------
+
+   A namespace is represented by a `NAMESPACE_DECL' node.
+
+   However, except for the fact that it is distinguished as the root of
+the representation, the global namespace is no different from any other
+namespace.  Thus, in what follows, we describe namespaces generally,
+rather than the global namespace in particular.
+
+   The following macros and functions can be used on a `NAMESPACE_DECL':
+
+`DECL_NAME'
+     This macro is used to obtain the `IDENTIFIER_NODE' corresponding to
+     the unqualified name of the name of the namespace (*note
+     Identifiers::).  The name of the global namespace is `::', even
+     though in C++ the global namespace is unnamed.  However, you
+     should use comparison with `global_namespace', rather than
+     `DECL_NAME' to determine whether or not a namespaces is the global
+     one.  An unnamed namespace will have a `DECL_NAME' equal to
+     `anonymous_namespace_name'.  Within a single translation unit, all
+     unnamed namespaces will have the same name.
+
+`DECL_CONTEXT'
+     This macro returns the enclosing namespace.  The `DECL_CONTEXT' for
+     the `global_namespace' is `NULL_TREE'.
+
+`DECL_NAMESPACE_ALIAS'
+     If this declaration is for a namespace alias, then
+     `DECL_NAMESPACE_ALIAS' is the namespace for which this one is an
+     alias.
+
+     Do not attempt to use `cp_namespace_decls' for a namespace which is
+     an alias.  Instead, follow `DECL_NAMESPACE_ALIAS' links until you
+     reach an ordinary, non-alias, namespace, and call
+     `cp_namespace_decls' there.
+
+`DECL_NAMESPACE_STD_P'
+     This predicate holds if the namespace is the special `::std'
+     namespace.
+
+`cp_namespace_decls'
+     This function will return the declarations contained in the
+     namespace, including types, overloaded functions, other
+     namespaces, and so forth.  If there are no declarations, this
+     function will return `NULL_TREE'.  The declarations are connected
+     through their `TREE_CHAIN' fields.
+
+     Although most entries on this list will be declarations,
+     `TREE_LIST' nodes may also appear.  In this case, the `TREE_VALUE'
+     will be an `OVERLOAD'.  The value of the `TREE_PURPOSE' is
+     unspecified; back ends should ignore this value.  As with the
+     other kinds of declarations returned by `cp_namespace_decls', the
+     `TREE_CHAIN' will point to the next declaration in this list.
+
+     For more information on the kinds of declarations that can occur
+     on this list, *Note Declarations::.  Some declarations will not
+     appear on this list.  In particular, no `FIELD_DECL',
+     `LABEL_DECL', or `PARM_DECL' nodes will appear here.
+
+     This function cannot be used with namespaces that have
+     `DECL_NAMESPACE_ALIAS' set.
+
+
+File: gccint.info,  Node: Classes,  Prev: Namespaces,  Up: Scopes
+
+Classes
+-------
+
+   A class type is represented by either a `RECORD_TYPE' or a
+`UNION_TYPE'.  A class declared with the `union' tag is represented by
+a `UNION_TYPE', while classes declared with either the `struct' or the
+`class' tag are represented by `RECORD_TYPE's.  You can use the
+`CLASSTYPE_DECLARED_CLASS' macro to discern whether or not a particular
+type is a `class' as opposed to a `struct'.  This macro will be true
+only for classes declared with the `class' tag.
+
+   Almost all non-function members are available on the `TYPE_FIELDS'
+list.  Given one member, the next can be found by following the
+`TREE_CHAIN'.  You should not depend in any way on the order in which
+fields appear on this list.  All nodes on this list will be `DECL'
+nodes.  A `FIELD_DECL' is used to represent a non-static data member, a
+`VAR_DECL' is used to represent a static data member, and a `TYPE_DECL'
+is used to represent a type.  Note that the `CONST_DECL' for an
+enumeration constant will appear on this list, if the enumeration type
+was declared in the class.  (Of course, the `TYPE_DECL' for the
+enumeration type will appear here as well.)  There are no entries for
+base classes on this list.  In particular, there is no `FIELD_DECL' for
+the "base-class portion" of an object.
+
+   The `TYPE_VFIELD' is a compiler-generated field used to point to
+virtual function tables.  It may or may not appear on the `TYPE_FIELDS'
+list.  However, back ends should handle the `TYPE_VFIELD' just like all
+the entries on the `TYPE_FIELDS' list.
+
+   The function members are available on the `TYPE_METHODS' list.
+Again, subsequent members are found by following the `TREE_CHAIN'
+field.  If a function is overloaded, each of the overloaded functions
+appears; no `OVERLOAD' nodes appear on the `TYPE_METHODS' list.
+Implicitly declared functions (including default constructors, copy
+constructors, assignment operators, and destructors) will appear on
+this list as well.
+
+   Every class has an associated "binfo", which can be obtained with
+`TYPE_BINFO'.  Binfos are used to represent base-classes.  The binfo
+given by `TYPE_BINFO' is the degenerate case, whereby every class is
+considered to be its own base-class.  The base classes for a particular
+binfo can be obtained with `BINFO_BASETYPES'.  These base-classes are
+themselves binfos.  The class type associated with a binfo is given by
+`BINFO_TYPE'.  It is always the case that `BINFO_TYPE (TYPE_BINFO (x))'
+is the same type as `x', up to qualifiers.  However, it is not always
+the case that `TYPE_BINFO (BINFO_TYPE (y))' is always the same binfo as
+`y'.  The reason is that if `y' is a binfo representing a base-class
+`B' of a derived class `D', then `BINFO_TYPE (y)' will be `B', and
+`TYPE_BINFO (BINFO_TYPE (y))' will be `B' as its own base-class, rather
+than as a base-class of `D'.
+
+   The `BINFO_BASETYPES' is a `TREE_VEC' (*note Containers::).  Base
+types appear in left-to-right order in this vector.  You can tell
+whether or `public', `protected', or `private' inheritance was used by
+using the `TREE_VIA_PUBLIC', `TREE_VIA_PROTECTED', and
+`TREE_VIA_PRIVATE' macros.  Each of these macros takes a `BINFO' and is
+true if and only if the indicated kind of inheritance was used.  If
+`TREE_VIA_VIRTUAL' holds of a binfo, then its `BINFO_TYPE' was
+inherited from virtually.
+
+   The following macros can be used on a tree node representing a
+class-type.
+
+`LOCAL_CLASS_P'
+     This predicate holds if the class is local class _i.e._ declared
+     inside a function body.
+
+`TYPE_POLYMORPHIC_P'
+     This predicate holds if the class has at least one virtual function
+     (declared or inherited).
+
+`TYPE_HAS_DEFAULT_CONSTRUCTOR'
+     This predicate holds whenever its argument represents a class-type
+     with default constructor.
+
+`CLASSTYPE_HAS_MUTABLE'
+
+`TYPE_HAS_MUTABLE_P'
+     These predicates hold for a class-type having a mutable data
+     member.
+
+`CLASSTYPE_NON_POD_P'
+     This predicate holds only for class-types that are not PODs.
+
+`TYPE_HAS_NEW_OPERATOR'
+     This predicate holds for a class-type that defines `operator new'.
+
+`TYPE_HAS_ARRAY_NEW_OPERATOR'
+     This predicate holds for a class-type for which `operator new[]'
+     is defined.
+
+`TYPE_OVERLOADS_CALL_EXPR'
+     This predicate holds for class-type for which the function call
+     `operator()' is overloaded.
+
+`TYPE_OVERLOADS_ARRAY_REF'
+     This predicate holds for a class-type that overloads `operator[]'
+
+`TYPE_OVERLOADS_ARROW'
+     This predicate holds for a class-type for which `operator->' is
+     overloaded.
+
+
+File: gccint.info,  Node: Declarations,  Next: Attributes,  Prev: Functions,  Up: Trees
+
+Declarations
+============
+
+   This section covers the various kinds of declarations that appear in
+the internal representation, except for declarations of functions
+(represented by `FUNCTION_DECL' nodes), which are described in *Note
+Functions::.
+
+   Some macros can be used with any kind of declaration.  These include:
+`DECL_NAME'
+     This macro returns an `IDENTIFIER_NODE' giving the name of the
+     entity.
+
+`TREE_TYPE'
+     This macro returns the type of the entity declared.
+
+`DECL_SOURCE_FILE'
+     This macro returns the name of the file in which the entity was
+     declared, as a `char*'.  For an entity declared implicitly by the
+     compiler (like `__builtin_memcpy'), this will be the string
+     `"<internal>"'.
+
+`DECL_SOURCE_LINE'
+     This macro returns the line number at which the entity was
+     declared, as an `int'.
+
+`DECL_ARTIFICIAL'
+     This predicate holds if the declaration was implicitly generated
+     by the compiler.  For example, this predicate will hold of an
+     implicitly declared member function, or of the `TYPE_DECL'
+     implicitly generated for a class type.  Recall that in C++ code
+     like:
+          struct S {};
+
+     is roughly equivalent to C code like:
+          struct S {};
+          typedef struct S S;
+     The implicitly generated `typedef' declaration is represented by a
+     `TYPE_DECL' for which `DECL_ARTIFICIAL' holds.
+
+`DECL_NAMESPACE_SCOPE_P'
+     This predicate holds if the entity was declared at a namespace
+     scope.
+
+`DECL_CLASS_SCOPE_P'
+     This predicate holds if the entity was declared at a class scope.
+
+`DECL_FUNCTION_SCOPE_P'
+     This predicate holds if the entity was declared inside a function
+     body.
+
+   The various kinds of declarations include:
+`LABEL_DECL'
+     These nodes are used to represent labels in function bodies.  For
+     more information, see *Note Functions::.  These nodes only appear
+     in block scopes.
+
+`CONST_DECL'
+     These nodes are used to represent enumeration constants.  The
+     value of the constant is given by `DECL_INITIAL' which will be an
+     `INTEGER_CST' with the same type as the `TREE_TYPE' of the
+     `CONST_DECL', i.e., an `ENUMERAL_TYPE'.
+
+`RESULT_DECL'
+     These nodes represent the value returned by a function.  When a
+     value is assigned to a `RESULT_DECL', that indicates that the
+     value should be returned, via bitwise copy, by the function.  You
+     can use `DECL_SIZE' and `DECL_ALIGN' on a `RESULT_DECL', just as
+     with a `VAR_DECL'.
+
+`TYPE_DECL'
+     These nodes represent `typedef' declarations.  The `TREE_TYPE' is
+     the type declared to have the name given by `DECL_NAME'.  In some
+     cases, there is no associated name.
+
+`VAR_DECL'
+     These nodes represent variables with namespace or block scope, as
+     well as static data members.  The `DECL_SIZE' and `DECL_ALIGN' are
+     analogous to `TYPE_SIZE' and `TYPE_ALIGN'.  For a declaration, you
+     should always use the `DECL_SIZE' and `DECL_ALIGN' rather than the
+     `TYPE_SIZE' and `TYPE_ALIGN' given by the `TREE_TYPE', since
+     special attributes may have been applied to the variable to give
+     it a particular size and alignment.  You may use the predicates
+     `DECL_THIS_STATIC' or `DECL_THIS_EXTERN' to test whether the
+     storage class specifiers `static' or `extern' were used to declare
+     a variable.
+
+     If this variable is initialized (but does not require a
+     constructor), the `DECL_INITIAL' will be an expression for the
+     initializer.  The initializer should be evaluated, and a bitwise
+     copy into the variable performed.  If the `DECL_INITIAL' is the
+     `error_mark_node', there is an initializer, but it is given by an
+     explicit statement later in the code; no bitwise copy is required.
+
+     GCC provides an extension that allows either automatic variables,
+     or global variables, to be placed in particular registers.  This
+     extension is being used for a particular `VAR_DECL' if
+     `DECL_REGISTER' holds for the `VAR_DECL', and if
+     `DECL_ASSEMBLER_NAME' is not equal to `DECL_NAME'.  In that case,
+     `DECL_ASSEMBLER_NAME' is the name of the register into which the
+     variable will be placed.
+
+`PARM_DECL'
+     Used to represent a parameter to a function.  Treat these nodes
+     similarly to `VAR_DECL' nodes.  These nodes only appear in the
+     `DECL_ARGUMENTS' for a `FUNCTION_DECL'.
+
+     The `DECL_ARG_TYPE' for a `PARM_DECL' is the type that will
+     actually be used when a value is passed to this function.  It may
+     be a wider type than the `TREE_TYPE' of the parameter; for
+     example, the ordinary type might be `short' while the
+     `DECL_ARG_TYPE' is `int'.
+
+`FIELD_DECL'
+     These nodes represent non-static data members.  The `DECL_SIZE' and
+     `DECL_ALIGN' behave as for `VAR_DECL' nodes.  The
+     `DECL_FIELD_BITPOS' gives the first bit used for this field, as an
+     `INTEGER_CST'.  These values are indexed from zero, where zero
+     indicates the first bit in the object.
+
+     If `DECL_C_BIT_FIELD' holds, this field is a bit-field.
+
+`NAMESPACE_DECL'
+     *Note Namespaces::.
+
+`TEMPLATE_DECL'
+     These nodes are used to represent class, function, and variable
+     (static data member) templates.  The
+     `DECL_TEMPLATE_SPECIALIZATIONS' are a `TREE_LIST'.  The
+     `TREE_VALUE' of each node in the list is a `TEMPLATE_DECL's or
+     `FUNCTION_DECL's representing specializations (including
+     instantiations) of this template.  Back ends can safely ignore
+     `TEMPLATE_DECL's, but should examine `FUNCTION_DECL' nodes on the
+     specializations list just as they would ordinary `FUNCTION_DECL'
+     nodes.
+
+     For a class template, the `DECL_TEMPLATE_INSTANTIATIONS' list
+     contains the instantiations.  The `TREE_VALUE' of each node is an
+     instantiation of the class.  The `DECL_TEMPLATE_SPECIALIZATIONS'
+     contains partial specializations of the class.
+
+`USING_DECL'
+     Back ends can safely ignore these nodes.
+
+
+File: gccint.info,  Node: Functions,  Next: Declarations,  Prev: Scopes,  Up: Trees
+
+Functions
+=========
+
+   A function is represented by a `FUNCTION_DECL' node.  A set of
+overloaded functions is sometimes represented by a `OVERLOAD' node.
+
+   An `OVERLOAD' node is not a declaration, so none of the `DECL_'
+macros should be used on an `OVERLOAD'.  An `OVERLOAD' node is similar
+to a `TREE_LIST'.  Use `OVL_CURRENT' to get the function associated
+with an `OVERLOAD' node; use `OVL_NEXT' to get the next `OVERLOAD' node
+in the list of overloaded functions.  The macros `OVL_CURRENT' and
+`OVL_NEXT' are actually polymorphic; you can use them to work with
+`FUNCTION_DECL' nodes as well as with overloads.  In the case of a
+`FUNCTION_DECL', `OVL_CURRENT' will always return the function itself,
+and `OVL_NEXT' will always be `NULL_TREE'.
+
+   To determine the scope of a function, you can use the
+`DECL_REAL_CONTEXT' macro.  This macro will return the class (either a
+`RECORD_TYPE' or a `UNION_TYPE') or namespace (a `NAMESPACE_DECL') of
+which the function is a member.  For a virtual function, this macro
+returns the class in which the function was actually defined, not the
+base class in which the virtual declaration occurred.  If a friend
+function is defined in a class scope, the `DECL_CLASS_CONTEXT' macro
+can be used to determine the class in which it was defined.  For
+example, in
+     class C { friend void f() {} };
+   the `DECL_REAL_CONTEXT' for `f' will be the `global_namespace', but
+the `DECL_CLASS_CONTEXT' will be the `RECORD_TYPE' for `C'.
+
+   The `DECL_REAL_CONTEXT' and `DECL_CLASS_CONTEXT' are not available
+in C; instead you should simply use `DECL_CONTEXT'.  In C, the
+`DECL_CONTEXT' for a function maybe another function.  This
+representation indicates that the GNU nested function extension is in
+use.  For details on the semantics of nested functions, see the GCC
+Manual.  The nested function can refer to local variables in its
+containing function.  Such references are not explicitly marked in the
+tree structure; back ends must look at the `DECL_CONTEXT' for the
+referenced `VAR_DECL'.  If the `DECL_CONTEXT' for the referenced
+`VAR_DECL' is not the same as the function currently being processed,
+and neither `DECL_EXTERNAL' nor `DECL_STATIC' hold, then the reference
+is to a local variable in a containing function, and the back end must
+take appropriate action.
+
+* Menu:
+
+* Function Basics::     Function names, linkage, and so forth.
+* Function Bodies::     The statements that make up a function body.
+
+
+File: gccint.info,  Node: Function Basics,  Next: Function Bodies,  Up: Functions
+
+Function Basics
+---------------
+
+   The following macros and functions can be used on a `FUNCTION_DECL':
+`DECL_MAIN_P'
+     This predicate holds for a function that is the program entry point
+     `::code'.
+
+`DECL_NAME'
+     This macro returns the unqualified name of the function, as an
+     `IDENTIFIER_NODE'.  For an instantiation of a function template,
+     the `DECL_NAME' is the unqualified name of the template, not
+     something like `f<int>'.  The value of `DECL_NAME' is undefined
+     when used on a constructor, destructor, overloaded operator, or
+     type-conversion operator, or any function that is implicitly
+     generated by the compiler.  See below for macros that can be used
+     to distinguish these cases.
+
+`DECL_ASSEMBLER_NAME'
+     This macro returns the mangled name of the function, also an
+     `IDENTIFIER_NODE'.  This name does not contain leading underscores
+     on systems that prefix all identifiers with underscores.  The
+     mangled name is computed in the same way on all platforms; if
+     special processing is required to deal with the object file format
+     used on a particular platform, it is the responsibility of the
+     back end to perform those modifications.  (Of course, the back end
+     should not modify `DECL_ASSEMBLER_NAME' itself.)
+
+`DECL_EXTERNAL'
+     This predicate holds if the function is undefined.
+
+`TREE_PUBLIC'
+     This predicate holds if the function has external linkage.
+
+`DECL_LOCAL_FUNCTION_P'
+     This predicate holds if the function was declared at block scope,
+     even though it has a global scope.
+
+`DECL_ANTICIPATED'
+     This predicate holds if the function is a built-in function but its
+     prototype is not yet explicitly declared.
+
+`DECL_EXTERN_C_FUNCTION_P'
+     This predicate holds if the function is declared as an ``extern
+     "C"'' function.
+
+`DECL_LINKONCE_P'
+     This macro holds if multiple copies of this function may be
+     emitted in various translation units.  It is the responsibility of
+     the linker to merge the various copies.  Template instantiations
+     are the most common example of functions for which
+     `DECL_LINKONCE_P' holds; G++ instantiates needed templates in all
+     translation units which require them, and then relies on the
+     linker to remove duplicate instantiations.
+
+     FIXME: This macro is not yet implemented.
+
+`DECL_FUNCTION_MEMBER_P'
+     This macro holds if the function is a member of a class, rather
+     than a member of a namespace.
+
+`DECL_STATIC_FUNCTION_P'
+     This predicate holds if the function a static member function.
+
+`DECL_NONSTATIC_MEMBER_FUNCTION_P'
+     This macro holds for a non-static member function.
+
+`DECL_CONST_MEMFUNC_P'
+     This predicate holds for a `const'-member function.
+
+`DECL_VOLATILE_MEMFUNC_P'
+     This predicate holds for a `volatile'-member function.
+
+`DECL_CONSTRUCTOR_P'
+     This macro holds if the function is a constructor.
+
+`DECL_NONCONVERTING_P'
+     This predicate holds if the constructor is a non-converting
+     constructor.
+
+`DECL_COMPLETE_CONSTRUCTOR_P'
+     This predicate holds for a function which is a constructor for an
+     object of a complete type.
+
+`DECL_BASE_CONSTRUCTOR_P'
+     This predicate holds for a function which is a constructor for a
+     base class sub-object.
+
+`DECL_COPY_CONSTRUCTOR_P'
+     This predicate holds for a function which is a copy-constructor.
+
+`DECL_DESTRUCTOR_P'
+     This macro holds if the function is a destructor.
+
+`DECL_COMPLETE_DESTRUCTOR_P'
+     This predicate holds if the function is the destructor for an
+     object a complete type.
+
+`DECL_OVERLOADED_OPERATOR_P'
+     This macro holds if the function is an overloaded operator.
+
+`DECL_CONV_FN_P'
+     This macro holds if the function is a type-conversion operator.
+
+`DECL_GLOBAL_CTOR_P'
+     This predicate holds if the function is a file-scope initialization
+     function.
+
+`DECL_GLOBAL_DTOR_P'
+     This predicate holds if the function is a file-scope finalization
+     function.
+
+`DECL_THUNK_P'
+     This predicate holds if the function is a thunk.
+
+     These functions represent stub code that adjusts the `this' pointer
+     and then jumps to another function.  When the jumped-to function
+     returns, control is transferred directly to the caller, without
+     returning to the thunk.  The first parameter to the thunk is
+     always the `this' pointer; the thunk should add `THUNK_DELTA' to
+     this value.  (The `THUNK_DELTA' is an `int', not an `INTEGER_CST'.)
+
+     Then, if `THUNK_VCALL_OFFSET' (an `INTEGER_CST') is nonzero the
+     adjusted `this' pointer must be adjusted again.  The complete
+     calculation is given by the following pseudo-code:
+
+          this += THUNK_DELTA
+          if (THUNK_VCALL_OFFSET)
+            this += (*((ptrdiff_t **) this))[THUNK_VCALL_OFFSET]
+
+     Finally, the thunk should jump to the location given by
+     `DECL_INITIAL'; this will always be an expression for the address
+     of a function.
+
+`DECL_NON_THUNK_FUNCTION_P'
+     This predicate holds if the function is _not_ a thunk function.
+
+`GLOBAL_INIT_PRIORITY'
+     If either `DECL_GLOBAL_CTOR_P' or `DECL_GLOBAL_DTOR_P' holds, then
+     this gives the initialization priority for the function.  The
+     linker will arrange that all functions for which
+     `DECL_GLOBAL_CTOR_P' holds are run in increasing order of priority
+     before `main' is called.  When the program exits, all functions for
+     which `DECL_GLOBAL_DTOR_P' holds are run in the reverse order.
+
+`DECL_ARTIFICIAL'
+     This macro holds if the function was implicitly generated by the
+     compiler, rather than explicitly declared.  In addition to
+     implicitly generated class member functions, this macro holds for
+     the special functions created to implement static initialization
+     and destruction, to compute run-time type information, and so
+     forth.
+
+`DECL_ARGUMENTS'
+     This macro returns the `PARM_DECL' for the first argument to the
+     function.  Subsequent `PARM_DECL' nodes can be obtained by
+     following the `TREE_CHAIN' links.
+
+`DECL_RESULT'
+     This macro returns the `RESULT_DECL' for the function.
+
+`TREE_TYPE'
+     This macro returns the `FUNCTION_TYPE' or `METHOD_TYPE' for the
+     function.
+
+`TYPE_RAISES_EXCEPTIONS'
+     This macro returns the list of exceptions that a (member-)function
+     can raise.  The returned list, if non `NULL', is comprised of nodes
+     whose `TREE_VALUE' represents a type.
+
+`TYPE_NOTHROW_P'
+     This predicate holds when the exception-specification of its
+     arguments if of the form ``()''.
+
+`DECL_ARRAY_DELETE_OPERATOR_P'
+     This predicate holds if the function an overloaded `operator
+     delete[]'.
+

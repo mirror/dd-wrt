@@ -1,0 +1,31 @@
+To build the PDF version of docs (on Linux), simply use:
+make pdfa4 for A4 size or
+make pdfletter for US letter size
+
+If Your pdfjadetex complains with
+	> ! TeX capacity exceeded, sorry [save size=5000].
+then define
+	save_size.pdfjadetex=10000 (at least) in
+	/usr/share/texmf/web2c/texmf.cnf instead of 5000.
+
+If Your pdfjadetex complains with
+	> ! TeX capacity exceeded, sorry [number of strings=55000].
+then define
+	max_strings.pdfjadetex=155000 (for instance) in
+	/usr/share/texmf/web2c/texmf.cnf instead of 5000.
+
+If You don't get coloured links in Your output, or if You 
+wish to modify the pdfjadetex default behaviour then add
+a file named jadetex.cfg into each directory where the build
+takes place and put something like that into:
+
+\hypersetup{pdfpagemode=None,  pdfauthor=eCos (pdfjadetex) ,  colorlinks=true,
+ linkcolor=blue,  pdfstartview=FitH}
+
+Regards
+Iztok
+<iz@vsr.si>
+
+
+
+

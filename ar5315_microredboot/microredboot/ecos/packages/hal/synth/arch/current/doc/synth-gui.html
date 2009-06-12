@@ -1,0 +1,738 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>The I/O Auxiliary's User Interface</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="eCos Synthetic Target"
+HREF="hal-synth-arch.html"><LINK
+REL="PREVIOUS"
+TITLE="Running a Synthetic Target Application"
+HREF="synth-running.html"><LINK
+REL="NEXT"
+TITLE="The Console Device"
+HREF="synth-console.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Synthetic Target</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="synth-running.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="synth-console.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="SYNTH-GUI">The I/O Auxiliary's User Interface</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN304"
+></A
+><H2
+>Name</H2
+>User Interface&nbsp;--&nbsp;Controlling the I/O Auxiliary</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-GUI-DESCRIPTION"
+></A
+><H2
+>Description</H2
+><P
+>The synthetic target auxiliary is designed to support both extensions
+and user customization. Support for the desired devices is dynamically
+loaded, and each device can extend the user interface. For example it
+is possible for a device to add menu options, place new buttons on the
+toolbar, create its own sub-window within the overall layout, or even
+create entire new toplevel windows. These subwindows or toplevels
+could show graphs of activity such as interrupts or packets being
+transferred. They could also allow users to interact with the eCos
+application, for example by showing a number of buttons which will be
+mapped on to digital inputs in the eCos application. Different
+applications will have their own I/O requirements, changing the
+host-side support files that get loaded and that may modify the user
+interface. The I/O auxiliary also reads in user configuration scripts
+which can enhance the interface in the same way. Therefore the exact
+user interface will depend on the user and on the eCos application
+being run. However the overall layout is likely to remain the same.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN310"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="screen_main.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>The title bar identifies the window as belonging to an eCos synthetic
+target application and lists both the application name and its process
+id. The latter is especially useful if the application was started
+directly from a shell prompt and the user now wants to attach a gdb
+session. The window has a conventional menu bar with the usual
+entries, plus a toolbar with buttons for common operations such as cut
+and paste. Balloon help is supported.
+    </P
+><P
+>There is a central <A
+HREF="synth-gui.html#SYNTH-GUI-TEXT"
+>text window</A
+>,
+possibly surrounded by various sub-windows for various devices. For
+example there could be a row of emulated LED's above the text window,
+and monitors of ethernet traffic and interrupt activity on the right.
+At the bottom of the window is a status line, including a small
+animation that shows whether or not the eCos application is still
+running.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-GUI-MENUS"
+></A
+><H2
+>Menus and the Toolbar</H2
+><P
+>Usually there will be four menus on the menu bar:
+<SPAN
+CLASS="GUIMENU"
+>File</SPAN
+>, <SPAN
+CLASS="GUIMENU"
+>Edit</SPAN
+>,
+<SPAN
+CLASS="GUIMENU"
+>View</SPAN
+> and <SPAN
+CLASS="GUIMENU"
+>Help</SPAN
+>.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN324"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="menu_file.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>On the <SPAN
+CLASS="GUIMENU"
+>File</SPAN
+> menu there are three entries related to
+saving the current contents of the central text window.
+<SPAN
+CLASS="GUIMENUITEM"
+>Save</SPAN
+> is used to save the currently visible
+contents of the text window. Any text that is hidden because of
+filters will not be written to the savefile. If there has been a
+previous <SPAN
+CLASS="GUIMENUITEM"
+>Save</SPAN
+> or <SPAN
+CLASS="GUIMENUITEM"
+>Save
+As</SPAN
+> operation then the existing savefile will be re-used,
+otherwise the user will be asked to select a suitable file.
+<SPAN
+CLASS="GUIMENUITEM"
+>Save As</SPAN
+> also saves just the currently
+visible contents but will always prompt the user for a filename.
+<SPAN
+CLASS="GUIMENUITEM"
+>Save All</SPAN
+> can be used to save the full
+contents of the text window, including any text that is currently
+hidden. It will always prompt for a new filename, to avoid confusion
+with partial savefiles.
+    </P
+><P
+>Usually the eCos application will be run from inside gdb or from a
+shell prompt. Killing off the application while it is being debugged
+in a gdb session is not a good idea, it would be better to use gdb's
+own <B
+CLASS="COMMAND"
+>kill</B
+> command. Alternatively the eCos
+application itself can use the <TT
+CLASS="FUNCTION"
+>CYG_TEST_EXIT</TT
+> or
+<TT
+CLASS="FILENAME"
+>cyg_hal_sys_exit</TT
+> functionality. However it is
+possible to terminate the application from the I/O auxiliary using
+<SPAN
+CLASS="GUIMENUITEM"
+>Kill eCos</SPAN
+>. A clean shutdown will be
+attempted, but that can fail if the application is currently halted
+inside gdb or if it has crashed completely. As a last resort
+<TT
+CLASS="CONSTANT"
+>SIGKILL</TT
+> will be used.
+    </P
+><P
+>When operating in graphical mode the I/O auxiliary will normally
+continue to run even after the eCos application has exited. This
+allows the user to examine the last few lines of output, and perhaps
+perform actions such as saving the output to a file. The
+<SPAN
+CLASS="GUIMENUITEM"
+>Exit</SPAN
+> menu item can be used to shut down the
+auxiliary. Note that this behaviour can be changed with command line
+arguments <A
+HREF="synth-running.html#SYNTH-RUNNING-ARGUMENTS"
+><TT
+CLASS="OPTION"
+>--exit</TT
+></A
+> and
+<A
+HREF="synth-running.html#SYNTH-RUNNING-ARGUMENTS"
+><TT
+CLASS="OPTION"
+>--no-exit</TT
+></A
+>.
+    </P
+><P
+>If <SPAN
+CLASS="GUIMENUITEM"
+>Exit</SPAN
+> is used while the eCos application
+is still running then the I/O auxiliary will first attempt to
+terminate the application cleanly, and then exit.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN349"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="menu_edit.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>The <SPAN
+CLASS="GUIMENU"
+>Edit</SPAN
+> menu contains the usual entries for
+text manipulation: <SPAN
+CLASS="GUIMENUITEM"
+>Cut</SPAN
+>,
+<SPAN
+CLASS="GUIMENUITEM"
+>Copy</SPAN
+>, <SPAN
+CLASS="GUIMENUITEM"
+>Paste</SPAN
+>,
+<SPAN
+CLASS="GUIMENUITEM"
+>Clear</SPAN
+> and <SPAN
+CLASS="GUIMENUITEM"
+>Select
+All</SPAN
+>. These all operate on the central text window. By
+default this window cannot be edited so the cut, paste and clear
+operations are disabled. If the user wants to edit the contents of the
+text window then the <SPAN
+CLASS="GUIMENUITEM"
+>Read Only</SPAN
+> checkbutton
+should be toggled.
+    </P
+><P
+>The <SPAN
+CLASS="GUIMENUITEM"
+>Preferences</SPAN
+> menu item brings up a
+miscellaneous preferences dialog. One of the preferences relates to
+online help: the I/O auxiliary does not currently have a built-in html
+viewer; instead it will execute an external browser of some sort. With
+the example settings shown, the I/O auxiliary will first attempt to
+interact with an existing mozilla session. If that fails it will try
+to run a new mozilla instance, or as a last result use the Gnome help
+viewer. 
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN363"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="preferences.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>The <SPAN
+CLASS="GUIMENU"
+>View</SPAN
+> menu contains the <SPAN
+CLASS="GUIMENUITEM"
+>System
+Filters</SPAN
+> entry, used to edit the settings for the current
+<A
+HREF="synth-gui.html#SYNTH-GUI-TEXT"
+>filters</A
+>.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN371"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="menu_view.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>The <SPAN
+CLASS="GUIMENU"
+>Help</SPAN
+> menu can be used to activate online help
+for eCos generally, for the synthetic target as a whole, and for
+specific devices supported by the generic target. The Preferences
+dialog can be used to select the browser that will be used.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN377"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="menu_help.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>At the time of writing there is no well-defined toplevel index file
+for all eCos documentation. Hence the relevant menu item is disabled.
+Documentation for the synthetic target and the supported devices
+is stored as part of the package itself so can usually be found fairly
+easily. It may be necessary to set the <TT
+CLASS="ENVAR"
+>ECOS_REPOSITORY</TT
+>
+environment variable.
+    </P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-GUI-TEXT"
+></A
+><H2
+>The Main Text Window</H2
+><P
+>The central text window holds the console output from the eCos
+application: the screen shot above shows DHCP initialization data from
+the TCP/IP stack, and some output from the <TT
+CLASS="FUNCTION"
+>main</TT
+>
+thread at the bottom. Some devices can insert text of their own, for
+example the ethernet device support can be configured to show details
+of incoming and outgoing packets. Mixing the output from the eCos
+application and the various devices can make it easier to understand
+the order in which events occur.
+    </P
+><P
+>The appearance of text from different sources can be controlled by
+means of filters, and it is also possible to hide some of the text.
+For example, if tracing is enabled in the eCos configuration then the
+trace output can be given its own colour scheme, making it stand out
+from the rest of the output. In addition the trace output is generally
+voluminous so it can be hidden by default, made visible only to find
+out more about what was happening when a particular problem occurred.
+Similarly the ethernet device support can output details of the
+various packets being transferred, and using a different background
+colour for this output again makes it easier to distinguish from
+console output.
+    </P
+><P
+>The default appearance for most filters is controlled via the
+<A
+HREF="synth-running.html#SYNTH-RUNNING-TDF"
+>target definition file</A
+>. An
+example entry might be:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  filter trace {^TRACE:.*} -foreground HotPink1 -hide 1</PRE
+></TD
+></TR
+></TABLE
+><P
+>The various colours and the hide flag for each filter can be changed
+at run-time, using the <SPAN
+CLASS="GUIMENUITEM"
+>System Filters</SPAN
+> item
+on the <SPAN
+CLASS="GUIMENU"
+>View</SPAN
+> menu. This will bring up a dialog like
+the following:
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN395"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="filters.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>It should be noted that the text window is line-oriented, not
+character-oriented. If an eCos application sends a partial line of
+text then that will remain buffered until a newline character is
+received, rather than being displayed immediately. This avoids
+confusion when there is concurrent output from several sources.
+    </P
+><P
+>By default the text window is read-only. This means it will not allow
+cut, paste and clear operations, and keyboard input will be ignored.
+The <SPAN
+CLASS="GUIMENU"
+>Edit</SPAN
+> menu has a checkbutton <SPAN
+CLASS="GUIMENUITEM"
+>Read
+Only</SPAN
+> which can be toggled to allow write operations. For
+example, a user could type in a reminder of what was happening at this
+time, or paste in part of a gdb session. Such keyboard input does not
+get forwarded to the eCos application: if the latter requires keyboard
+input then that should happen via a separate keyboard device.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-GUI-LAYOUT"
+></A
+><H2
+>Positioning Optional Windows</H2
+><P
+>Some devices may create their own subwindows, for example to monitor
+ethernet traffic or to provide additional I/O facilities such as
+emulated LED's or buttons. Usually the target definition file can be
+used to control the <A
+HREF="synth-gui.html#SYNTH-GUI-LAYOUT"
+>layout</A
+> of
+these windows. This requires an understanding of the overall layout of
+the display.
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN407"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="layout.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>Subwindows are generally packed in one of eight frames surrounding the
+central text window: <TT
+CLASS="VARNAME"
+>.main.nw</TT
+>,
+<TT
+CLASS="VARNAME"
+>.main.n</TT
+>, <TT
+CLASS="VARNAME"
+>.main.ne</TT
+>,
+<TT
+CLASS="VARNAME"
+>.main.w</TT
+>, <TT
+CLASS="VARNAME"
+>.main.e</TT
+>,
+<TT
+CLASS="VARNAME"
+>.main.sw</TT
+>, <TT
+CLASS="VARNAME"
+>.main.s</TT
+>, and
+<TT
+CLASS="VARNAME"
+>.main.se</TT
+>. To position a row of LED's above the text
+window and towards the left, a target definition file could contain an
+entry such as:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device led {
+    pack -in .main.n -side left
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>Similarly, to put a traffic monitor window on the right of the text
+window would involve something like:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    &#8230;
+    monitor_pack -in .main.e -side bottom
+    &#8230;</PRE
+></TD
+></TR
+></TABLE
+><P
+>Often it will be sufficient to specify a container frame and one of
+<TT
+CLASS="CONSTANT"
+>left</TT
+>, <TT
+CLASS="CONSTANT"
+>right</TT
+>,
+<TT
+CLASS="CONSTANT"
+>top</TT
+> or <TT
+CLASS="CONSTANT"
+>bottom</TT
+>. Full control
+over the positioning requires an understanding of Tcl/Tk and in
+particular the packing algorithm, and an appropriate reference work
+should be consulted.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SYNTH-GUI-GLOBAL-CONFIG"
+></A
+><H2
+>Global Settings</H2
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>This section still to be written - it should document the interaction
+between X resources and ecosynth, and how users can control settings
+such as the main foreground and background colours.
+    </P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="synth-running.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="hal-synth-arch.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="synth-console.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Running a Synthetic Target Application</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>The Console Device</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,83 @@
+<HTML>
+<HEAD>
+<TITLE>Locals Window Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Locals Window</H1>
+<H2>Overview</H2>
+<P>The Locals Window displays all local variables in scope. It may be used to
+visualize local variables. Local variables need to be collected
+before they can be viewed. See <A HREF="tracedlg.html#t_actions_add">Adding
+an Action</A> in the Tracepoint Dialog for more information.</P>
+
+<P>Locals Window topics:
+<UL>
+    <LI><UL><A HREF="#menus">Variable Menu</A>
+            <LI><A HREF="#menus_fmt">Format</A>
+        </UL>
+    <LI><UL><A HREF="#display">Locals Display</A>
+            <LI><A HREF="#display_deref">Dereferencing Pointers</A>
+            <LI><A HREF="#display_struct">Viewing a Structure or Class</A>
+            <LI><A HREF="#display_popup">Locals Pop-up Menu</A>
+        </UL>
+</UL></P>
+
+<H3><A NAME="menus">Variable Menu</A></H3>
+The Variable Menu gives on-screen access to the funtions of the Locals Window.
+To use any of these functions, first use the left mouse button to select a
+variable from the display. Then select:
+
+<DL>
+    <DT><A NAME="menus_fmt">Format</A>
+        <DD>Change the display format of the variable
+</DL>
+
+<H3><A NAME="display">Locals Display</A></H4>
+The Locals Window Display consists of a scrolled listbox which contains all
+local variables, one per line. Locals which were not collected at the current
+tracepoint will display a memory-access error. To use any of the functions of
+the Locals Window, use the left mouse button to select any element from the
+Display.
+
+<P>Pointers, structures, and classes appear in the display with small exapansion
+box before their names. To <A NAME="display_deref">dereference pointers</A> or
+<A NAME="display_struct">view the members of classes or structures</A>, click
+the closed expansion box (which appears as a small plus sign, "+") to "expand"
+the listing. The expansion box changes to a minus sign, "-", indicating that the
+display is now open. Pointers, structures and classes may be expanded recursively
+to allow multiple pointer dereferences and embedded structure viewing.
+
+<P>The Locals Display updates as the trace buffer is navigated, highlighting
+in blue those variables whose values have changed.</P>
+
+<P>The Locals Window will, by default, display all pointers in hexadecimal and all
+other variables in decimal. To change the default display of variables, use the
+"set output-radix" command in the console window. (Type "help set output-radix" in the
+console window for help. To make this change permanent, it must be added to the user's
+init file -- .gdbinit under unix and gdb.ini under Windows.) To change the display
+format for a variable, select the Format option from either the Variable Menu or the
+<A HREF="#display_popup">Locals Pop-up Menu</A>.
+<BR>
+
+<H4><A NAME="display_popup">Locals Pop-up Menu</A></H4>
+The Locals Pop-up Menu provides quick access to the functions of the Locals Window.
+To use the Locals Pop-up Menu, first select a variable from the Display (by clicking
+the left mouse button on it) and click the right mouse button, choosing from the
+pop-up:
+<DL>
+    <DT>Format
+        <DD>Change the display format of the variable. The variable may be displayed
+            as:
+            <DL>
+                <DT>Hex
+                    <DD>hexadecimal (base 16)
+                <DT>Decimal
+                    <DD>decimal (base 10)
+                <DT>Binary
+                    <DD>binary (base 2)
+                <DT>Octal
+                    <DD>octal (base 8)
+            </DL>
+</DL>
+</BODY>
+</HTML>

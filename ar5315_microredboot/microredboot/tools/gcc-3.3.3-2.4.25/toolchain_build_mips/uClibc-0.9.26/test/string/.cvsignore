@@ -1,0 +1,9 @@
+string
+string.o
+string_glibc
+string_glibc.o
+testcopy.out
+testcopy.gnu.out 
+testcopy
+testcopy_glibc
+strerror

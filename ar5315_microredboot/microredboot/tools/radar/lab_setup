@@ -1,0 +1,22 @@
+HP 8116A
+    E.WID mode
+    enable trig output
+        set 8.00 hil
+        set 0.00 lol
+    enable output
+
+SME06
+
+    set PULSE modulation, ext source, 10K input impedance
+
+
+hookup
+    laptop cable to ext input on 8116A
+    trig output to scope
+    output to SME06
+
+Spectrum Analyzer
+    push preset
+    set freq
+    set zero span
+

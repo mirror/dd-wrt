@@ -1,0 +1,22 @@
+#! /bin/sh
+
+# If you don't use rpm, you can use this file to apply additional Linux
+# patches. At the top level of the binutils source tree, do
+#
+# /bin/sh patches/README
+#
+# You may have to do
+#
+# cd bfd
+# make headers
+#
+# if the build fails.
+
+dir=`dirname $0`
+
+patch -p1 -b --suffix .dso < $dir/libtool-dso.patch && \
+true
+[ $? = 0 ] || exit 1
+find -name "*.rej" | grep rej && exit 1
+find -name "*.orig" | xargs rm -fv
+find -name "*.gmo" | xargs rm -fv

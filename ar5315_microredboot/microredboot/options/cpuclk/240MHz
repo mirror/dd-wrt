@@ -1,0 +1,3 @@
+cdl_option CYGNUM_CPU_CLOCK_RATE {
+    user_value 240000000
+};

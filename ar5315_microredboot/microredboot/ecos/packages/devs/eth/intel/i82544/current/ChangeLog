@@ -1,0 +1,118 @@
+2003-01-17  Andrew Lunn	 <andrew.lunn@ascom.ch>
+
+	* src/if_i82544.c: Fixed a few compiler warnings.
+	
+2004-01-15  Kevin Lemay  <kevin.lemay@agilent.com>
+
+	* src/if_i82544.c: Added support for the i82540 device. 
+
+2003-05-16  Mark Salter  <msalter@redhat.com>
+
+	* include/i82544_info.h: Add link flag.
+	* src/if_i82544.c: Allow booting when not using ASD and link is down.
+
+2003-03-19  Mark Salter  <msalter@redhat.com>
+
+	* src/if_i82544.c (i82544_setup): More 82546 EEPROM fixes (EE_PRES
+	appears to be unreliable).
+
+2003-03-17  Mark Salter  <msalter@redhat.com>
+
+	* src/if_i82544.c: Fix 82546 EEPROM access. Fix ESA address for second
+	port of 82546.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/if_i82544.c (find_82544s_match_func): Add 82546 devid.
+
+2003-02-05  Nick Garnett  <nickg@calivar.com>
+
+	* src/if_i82544.c (BUS_TO_VIRT): Added default definition of this
+	macro.
+
+2002-11-12  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/if_i82544.c: Minor fixes - use HAL_DELAY_US(), additional
+	PCI device type (0x100D) which is present on the NPWR Linux Engine.
+
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/if_i82544.c: 
+	Need to include <pkgconf/io_eth_drivers.h> for proper configuration
+	of stand-alone (polled) vs. system (interrupt driven) mode.
+
+2002-02-25  Mark Salter  <msalter@redhat.com>
+
+	* src/if_i82544.c: Don't call PacketRxReady in standalone configuration
+	unless ready to accept a packet. Limit packet delivery to one packet at
+	a time in standalone configuration.
+
+2002-02-22  Mark Salter  <msalter@redhat.com>
+
+	* src/if_i82544.c: Remove unnecessary eth_dsr declaration.
+
+2002-02-19  Mark Salter  <msalter@redhat.com>
+
+	* src/if_i82544.c (pci_init_find_82544s): Don't use IRQ support if
+	CYGPKG_IO_ETH_DRIVERS_STAND_ALONE.
+
+2002-01-22  Mark Salter  <msalter@redhat.com>
+
+	* src/if_i82544.c (i82544_send): Add HAL_DCACHE_STORE before passing
+	buffer to NIC.
+
+2002-01-21  Mark Salter  <msalter@redhat.com>
+
+	* cdl/intel_i82544_eth_drivers.cdl: Add
+	CYGNUM_DEVS_ETH_INTEL_I82544_MAX_RX_DESCRIPTORS and
+	CYGNUM_DEVS_ETH_INTEL_I82544_MAX_TX_DESCRIPTORS.
+
+	* src/if_i82544.c: Add appropriate BUS_TO_VIRT and VIRT_TO_BUS
+	conversions.
+	Remove check that assumes driver owns entire PCI window.
+	(i82544_setup): Add option to use auto-speed detection.
+
+2001-11-27  Nick Garnett  <nickg@redhat.com>
+
+	* cdl/intel_i82544_eth_drivers.cdl: 
+	* include/i82544_info.h: 
+	* src/if_i82544.c: 
+	Created driver by copying i82559 driver and editing.
+	
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

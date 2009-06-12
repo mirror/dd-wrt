@@ -1,0 +1,42 @@
+# Data-type class definitions for GDBtk.
+# Copyright 1997, 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# Generic Stack
+class Stack {
+
+  public {
+    method constructor {}
+    method destructor {}
+
+    # Pop the stack. Empty string means empty stack.
+    method pop {}
+
+    # Push ARGS onto the stack.
+    method push {args}
+  }
+
+  protected variable _stack
+}
+
+# Generic Queue
+class Queue {
+  inherit Stack
+
+  public {
+    method constructor {}
+    method destructor {}
+
+    # Pop the queue. Empty string means empty queue.
+    method pop {}
+  }
+}

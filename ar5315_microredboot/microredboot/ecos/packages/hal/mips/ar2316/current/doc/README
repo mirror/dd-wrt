@@ -1,0 +1,13 @@
+RedBoot on Atheros AR5312/AR2313 WiSoc
+
+Documentation included in this directory:
+
+    README.BUILD -- describes how to build ROM-based and RAM-based versions
+                    of the eCos RedBoot bootrom loader.
+
+    README.FLASH -- describes how to use the RAM-based RedBoot to flash the
+                    ROM-based RedBoot onto your board.
+
+    README.USAGE -- describes a few useful RedBoot commands, and describes
+                    how to set up your board to automatically boot a Linux
+                    kernel after a power-on or reset.

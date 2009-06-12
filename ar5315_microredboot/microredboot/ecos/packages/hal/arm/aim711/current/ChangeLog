@@ -1,0 +1,108 @@
+2004-06-07  Roland Cassebohm <roland.cassebohm@visionsystems.de>
+
+        * src/aim711_misc.c: 
+        The I2C transfer routine waits now while the bus is busy
+        instead of just return an error.
+
+2004-04-28  Roland Cassebohm <roland.cassebohm@visionsystems.de>
+
+	* include/plf_aux.h:
+	* include/plf_io.h:
+        Removed plf_aux.h, instead put the prototypes of the functions
+        in plf_io.h.
+
+2004-04-28  Roland Cassebohm <roland.cassebohm@visionsystems.de>
+
+        * src/aim711_misc.c: 
+	* include/hal_platform_ints.h:
+        Removed unused RedBoot startup code.
+
+2004-04-28  Roland Cassebohm <roland.cassebohm@visionsystems.de>
+
+        * cdl/hal_arm_aim711.cdl: 
+	* include/hal_platform_ints.h:
+        Added cdl option to get delays between POST codes.
+
+2004-04-27  Roland Cassebohm <roland.cassebohm@visionsystems.de>
+
+        * cdl/hal_arm_aim711.cdl: Fixed typos.
+
+2003-10-02  Roland Cassebohm <roland.cassebohm@visionsystems.de>
+
+	* cdl/hal_arm_aim711.cdl:
+        Implement CYGINT_HAL_ARM_BIGENDIAN.
+        Use "-mno-short-load-words" in compiler flags to avoid unaligned
+        access, which would cause exceptions.
+
+	* include/hal_cache.h:
+	* include/hal_diag.h: 
+
+	* include/hal_platform_ints.h: Set HAL_PLATFORM_RESET() to
+        hal_reset().
+
+	* include/hal_platform_setup.h: Changed for direct initial 
+	SDRAM setup. External IO is maped to 0x3fd0000. Changed LED macros
+	to use only the first three bits of PIO.
+
+	* include/plf_io.h:
+
+	* include/plf_stub.h: Remove HAL_STUB_PLATFORM_RESET defines,
+        because they are not used anymore.
+
+	* include/pkgconf/mlt_arm_aim711_ram.h: Moved FLASH to 0x2000000 
+	and changed the size to 0x200000. Changed size of RAM to 0x800000.
+        RedBoot is used as main bootloader. To be sure there is enough
+        space in future, the RAM version resevers RAM up to 0x30000.
+	* include/pkgconf/mlt_arm_aim711_ram.ldi: Same.
+	* include/pkgconf/mlt_arm_aim711_rom.h: Same.
+	* include/pkgconf/mlt_arm_aim711_rom.ldi: Same.
+	* include/pkgconf/mlt_arm_aim711_romram.h: Same.
+	* include/pkgconf/mlt_arm_aim711_romram.ldi: Same.
+
+	* misc/redboot_RAM.ecm:
+	* misc/redboot_ROM.ecm:
+	* misc/redboot_ROMRAM.ecm:
+
+	* src/hal_diag.c: Implement hal_diag_led() for the diagnostic board
+        of the AIM.
+
+	* src/aim711_misc.c:
+        Implemented reset functionality of the AIM 711 board.
+
+	New package for the ARM Industrial Module AIM 711 cloned from
+	SNDS package.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

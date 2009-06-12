@@ -1,0 +1,195 @@
+dnl Process this file with autoconf to produce a configure script.
+dnl ====================================================================
+dnl
+dnl     configure.in
+dnl
+dnl     Top-level configure script for eCos software.
+dnl
+dnl ====================================================================
+dnl ####ECOSHOSTGPLCOPYRIGHTBEGIN####
+dnl ----------------------------------------------------------------------------
+dnl Copyright (C) 2002, 2003 Bart Veer
+dnl Copyright (C) 1998, 1999, 2000, 2001 Red Hat, Inc.
+dnl
+dnl This file is part of the eCos host tools.
+dnl
+dnl This program is free software; you can redistribute it and/or modify it 
+dnl under the terms of the GNU General Public License as published by the Free 
+dnl Software Foundation; either version 2 of the License, or (at your option) 
+dnl any later version.
+dnl 
+dnl This program is distributed in the hope that it will be useful, but WITHOUT 
+dnl ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+dnl FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+dnl more details.
+dnl 
+dnl You should have received a copy of the GNU General Public License along with
+dnl this program; if not, write to the Free Software Foundation, Inc., 
+dnl 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+dnl ----------------------------------------------------------------------------
+dnl ####ECOSHOSTGPLCOPYRIGHTEND####
+dnl ====================================================================
+dnl#####DESCRIPTIONBEGIN####
+dnl
+dnl Author(s):	bartv
+dnl Contact(s):	bartv
+dnl Date:	1998/12/17
+dnl Version:	0.01
+dnl
+dnl####DESCRIPTIONEND####
+dnl ====================================================================
+
+dnl eCos is a componentized architecture for deeply embedded systems.
+dnl It requires a very different configuration system from typical
+dnl autoconfiscated software such as the various GNU packages.
+dnl
+dnl The main eCos host-side software is autoconfiscated to some extent,
+dnl in that the usual sequence of "configure;make;make install" will
+dnl work under the right conditions. However it does not conform to
+dnl the GNU coding standards in numerous ways, for example "make dist"
+dnl will not work. The main eCos host-side software lives in the
+dnl "host" subdirectory, and is built unconditionally.
+dnl
+dnl The eCos target-side software lives in the "packages" subdirectory,
+dnl and is organized in numerous subdirectories corresponding to different
+dnl packages and potentially different versions of each package. In the
+dnl master repository managed by CVS there will only be one version of
+dnl each package, "current", which simplifies things somewhat. Other
+dnl repositories will not be quite so straightforward and require a
+dnl suitable administration tool.
+dnl
+dnl The various eCos packages are not currently auto-confiscated.
+dnl In particular building eCos requires the use of eCos configuration
+dnl technology, not autoconf - there is simply no good way of handling
+dnl a system as highly configurable as eCos using a few command-line
+dnl options passed to "configure". There would also be serious confusion
+dnl between host and target, especially when e.g. cross-compiling the
+dnl host tools. However a possible future enhancement
+dnl would involve making eCos releases via configure and make, thus
+dnl allowing for a release process that combines building the various
+dnl host-side tools such as gcc with creating eCos epk's for the various
+dnl packages.
+dnl
+dnl A complication is that some of the eCos target-side packages also
+dnl contain package-specific host-side support. For example the
+dnl Linux synthetic target support uses special host-side software
+dnl to provide I/O facilities: the architectural HAL package provdes
+dnl generic support, the synthetic ethernet package extends this
+dnl with ethernet support, and so on. Such package-specific host-side
+dnl software does not belong in the main host subdirectory, that
+dnl would make it very difficult to distribute new packages or
+dnl new versions of a package. However keeping the code with the
+dnl various packages makes building more complicated.
+dnl
+dnl   1) if the entire repository is managed by CVS or anoncvs, this
+dnl      configure script will search the packages tree for any packages
+dnl      that have host-side software that needs to be built -
+dnl      specifically, that have a file "configure" inside a "host"
+dnl      subdirectory in a version of a package.
+dnl
+dnl   2) if instead the repository contains additional packages
+dnl      installed as epk's and managed by an administration tool then
+dnl	 it is the responsibility of that tool to let the users build
+dnl      and rebuild the host-side software as required, for whichever
+dnl      host platform or platforms are being used. In other words
+dnl      it is the responsibility of the admin tool to create a
+dnl      suitable build directory and run "configure; make; make install",
+dnl      usually as part of the installation process. Note that several
+dnl	 versions of a package may be installed, and it is the
+dnl	 responsibility of each package to take this into account
+dnl      (although the configure macros are aware of this to some extent,
+dnl      and will e.g. generate suitable install directory names).	 	 
+dnl      Also note that the top-level configure script will not pick
+dnl      up such packages because they will be versioned, i.e. the
+dnl      test for current/host/configure will fail because the
+dnl      version will not be "current".
+dnl
+dnl   3) as a special case it may be desirable to ship pre-built binaries
+dnl      of some of the package-specific software. It is not clear
+dnl	 just what would be the best way of shipping these - putting
+dnl      them into the epk's would not be quite right because that would
+dnl      make the epk's host-specific rather than generic.
+dnl
+dnl There is an unresolved problem with possible dependencies between
+dnl packages, if e.g. the host-side of the synthetic ethernet package could
+dnl only be built after the architectural synthetic target package.
+
+dnl Some of the eCos documentation is generic and lives in the "doc"
+dnl subdirectory. Other eCos documentation is package-specific and lives
+dnl in the appropriate package directory. At present there is no support
+dnl for building the documentation via configure and make, but such
+dnl support may be added in future.
+dnl
+dnl There is a subdirectory acsupport containing various files such
+dnl as config.guess and install.sh that are common. This also contains
+dnl an acinclude.m4 file with various macros that are useful for
+dnl eCos.
+
+dnl Generic initialization.
+AC_INIT(acsupport/config.guess)
+AC_CONFIG_AUX_DIR(acsupport)
+AC_CANONICAL_HOST
+AM_INIT_AUTOMAKE(eCos,2.0,0)
+AM_MAINTAINER_MODE
+ECOS_CHECK_BUILD_ne_SRC
+
+dnl Nothing actually gets built in this directory, so there should be no
+dnl need to worry about compiler flags etc. Instead, the problem is
+dnl figuring out what should actually get built.
+dnl
+dnl  1) the host subdirectory should always get built, if it exists.
+dnl     With the 2.0 release system the directory gets moved to
+dnl     tools/src
+		     
+if test -f "${srcdir}/host/configure" ; then
+   SUBDIRS="host"
+elif test -f "${srcdir}/tools/src/configure" ; then
+   SUBDIRS="tools/src"
+else   
+   SUBDIRS=""
+fi   
+
+dnl  2) any package which has a configure script in a
+dnl     current/host subdirectory should also get built.
+dnl
+dnl     Searching the directory tree is currently done by shell globbing.
+dnl     Invoking "find" with suitable arguments might be quicker, but
+dnl     less portable. On some hosts there may be problems with environmental
+dnl     limits if too many packages provide host-side software.
+dnl
+dnl     Currently there is no ordering of packages, so e.g. a device
+dnl     driver's host-side support cannot depend on some HAL package
+dnl     because the latter may not have been built and installed yet.
+dnl     This is a good thing because packages are meant to be self-contained
+dnl     whenever possible. Interaction between packages is typically handled
+dnl     at the Tcl level at run-time, so there are no build-time complications.
+
+PKGHOSTDIRS=""
+FOUND_CONFIGURES=""
+FOUND_CONFIGURES="${FOUND_CONFIGURES} ${srcdir}/packages/*/*/host/configure"
+FOUND_CONFIGURES="${FOUND_CONFIGURES} ${srcdir}/packages/*/*/*/host/configure"
+FOUND_CONFIGURES="${FOUND_CONFIGURES} ${srcdir}/packages/*/*/*/*/host/configure"
+FOUND_CONFIGURES="${FOUND_CONFIGURES} ${srcdir}/packages/*/*/*/*/*/host/configure"
+FOUND_CONFIGURES="${FOUND_CONFIGURES} ${srcdir}/packages/*/*/*/*/*/*/host/configure"
+for configure in ${FOUND_CONFIGURES}; do
+    if test -f ${configure}; then
+        dnl A configure script has been found in the source tree.
+        dnl First turn it into a directory, then replace the absolute path
+        dnl with a relative one.
+        hostdir=`dirname ${configure}`
+        hostdir=`echo ${hostdir} | sed -e "s:^${srcdir}/::"`
+        PKGHOSTDIRS="${PKGHOSTDIRS} ${hostdir}"
+    fi
+done
+
+SUBDIRS="${SUBDIRS} ${PKGHOSTDIRS}"
+
+dnl Because the eCos directory layout does not conform to GNU conventions
+dnl it is necessary to create various levels of intermediate directories.
+dnl This happens via config.status, prior to the recursion into the
+dnl appropriate directories.
+AC_OUTPUT_COMMANDS([${CONFIG_SHELL-/bin/sh} ${top_srcdir}/acsupport/mkinstalldirs ${REQUIRED_DIRS}],REQUIRED_DIRS="${SUBDIRS}")
+
+AC_SUBST(SUBDIRS)
+AC_CONFIG_SUBDIRS(${SUBDIRS})
+AC_OUTPUT(Makefile)

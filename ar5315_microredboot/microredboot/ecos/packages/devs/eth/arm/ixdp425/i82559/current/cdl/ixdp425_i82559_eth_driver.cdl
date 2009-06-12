@@ -1,0 +1,150 @@
+# ====================================================================
+#
+#       ixdp425_i82559_eth_driver.cdl
+#
+#       Ethernet driver
+#       IXDP425 and Intel PRO/100+ platform specific support
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      
+# Original data:  hmt
+# Contributors:   gthomas
+# Date:           2002-04-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_ARM_IXDP425_I82559 {
+    display       "IXDP425 with Intel PRO/100+ (PCI) ethernet driver"
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_HAL_ARM_XSCALE_IXDP425
+
+    include_dir   cyg/io
+
+    # FIXME: This really belongs in the INTEL_I82559 package
+    cdl_interface CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED {
+        display   "Intel i82559 ethernet driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** ethernet driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I82559_INL <cyg/io/ixdp425_i82559.inl>"
+ 
+ 	puts $::cdl_system_header "#define CYGDAT_DEVS_ETH_INTEL_I82559_CFG <pkgconf/devs_eth_arm_ixdp425_i82559.h>"
+
+        puts $::cdl_system_header "/*****  ethernet driver proc output end  *****/"
+    }
+
+
+    cdl_component CYGPKG_DEVS_ETH_ARM_IXDP425_I82559_ETH0 {
+        display       "IXDP425 ethernet port driver for an I82559-based ethernet NIC card"
+        flavor        bool
+        default_value 1
+        description   "
+            This option includes the IXDP425 ethernet device driver for a
+            I82559-based ethernet PCI card."
+
+        implements CYGHWR_NET_DRIVERS
+        implements CYGHWR_NET_DRIVER_ETH0
+        implements CYGINT_DEVS_ETH_INTEL_I82559_REQUIRED
+
+        cdl_option CYGDAT_DEVS_ETH_ARM_IXDP425_I82559_ETH0_NAME {
+            display       "Device name for the ETH0 ethernet port driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device for a
+                I82559-based ethernet NIC card."
+        }
+    }
+
+
+    # note that this option's name is NOT ixdp-specific, but i82559
+    # generic - other instantiations can set these also.
+    cdl_component CYGPKG_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA {
+	display         "RedBoot manages ESA initialization data"
+	flavor          bool
+	default_value	0
+
+	active_if     CYGSEM_HAL_VIRTUAL_VECTOR_SUPPORT
+
+	description   "Enabling this option will allow the ethernet
+	station address to be acquired from RedBoot's configuration data,
+	stored in flash memory.  It can be overridden individually by the
+	'Set the ethernet station address' option for each interface."
+
+	cdl_component CYGPKG_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA_VARS {
+	    display        "Build-in flash config fields for ESAs"
+	    flavor         bool
+	    default_value  1
+
+	    active_if       CYGPKG_REDBOOT
+	    active_if       CYGPKG_REDBOOT_FLASH
+	    active_if       CYGSEM_REDBOOT_FLASH_CONFIG
+	    active_if 	    CYGPKG_REDBOOT_NETWORKING
+
+	    description	"
+	    This option controls the presence of RedBoot flash
+	    configuration fields for the ESAs of the interfaces when you
+	    are building RedBoot.  It is independent of whether RedBoot
+	    itself uses the network or any particular interface; this
+	    support is more for the application to use than for RedBoot
+	    itself, though the application gets at the data by vector
+	    calls; this option cannot be enabled outside of building
+	    RedBoot."
+	
+	    cdl_option CYGVAR_DEVS_ETH_I82559_ETH_REDBOOT_HOLDS_ESA_ETH0 {
+		display         "RedBoot manages ESA for eth0"
+		flavor          bool
+		default_value   1
+	    }
+
+            cdl_option CYGDAT_DEVS_ETH_ARM_IXDP425_ETH0_DEFAULT_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x00, 0x03, 0x47, 0xdf, 0x32, 0xa8}"}
+                description   "The default ethernet station address. This is the
+                               address used as the default value in the RedBoot
+                               flash configuration field."
+            }
+	}
+    }
+}
+

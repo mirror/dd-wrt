@@ -1,0 +1,192 @@
+2003-02-13  Patrick Doyle  <wpd@delcomsys.com>
+	* src/brutus_misc.c: Replaced explicit prototype of memset with
+	#include <string.h>.
+
+2002-05-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/brutus_misc.c (hal_mmu_init): Fixed warning.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-08-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/plf_mmap.h (HAL_VIRT_TO_PHYS_ADDRESS): 
+	(HAL_PHYS_TO_VIRT_ADDRESS): 
+	(HAL_VIRT_TO_UNCACHED_ADDRESS): Fix these macros - they didn't
+	handle the holes in DRAM properly.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl:  Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED which is now the
+	default.
+
+2001-02-23  Gary Thomas  <gthomas@redhat.com>
+
+	* misc/redboot_ROM.ecm: Renamed from redboot_ROM.cfg
+	
+	* misc/redboot_RAM.ecm: Renamed from redboot_RAM.cfg
+
+2001-02-20  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: New CDL describing serial
+	ports - CYGHWR_HAL_ARM_SA11X0_UART1,3.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Respect channel configuration
+	constraints.
+
+2001-01-05  Hugo Tyson  <hmt@redhat.com>
+
+	* include/plf_mmap.h: New file.  Statically defined macros for
+	translation from virtual to physical and back, and to get an
+	uncached address for a normally-cached object.  HAL_MM_PAGESIZE()
+	HAL_VIRT_TO_PHYS_ADDRESS() HAL_PHYS_TO_VIRT_ADDRESS()
+	HAL_VIRT_TO_UNCACHED_ADDRESS().	 This included by the variant
+	hal's hal_cache.h for convenience and proximity to other memory
+	and cache features.
+
+2000-12-13  Hugo Tyson  <hmt@redhat.com>
+
+	* src/brutus_misc.c: Use <cyg/hal/hal_mm.h> from the variant HAL
+	for definitions of all MM tables and so on.
+
+	* include/hal_platform_ints.h: Removed; it was the same in all
+	platforms so is now in the common variant hal, "hal_var_ints.h"
+	and accessible as CYGBLD_HAL_VAR_INTS_H <cyg/hal/hal_var_ints.h>
+
+2000-11-28  Drew Moseley  <dmoseley@redhat.com>
+
+	* misc/redboot_RAM.cfg: Implement CYGSEM_REDBOOT_BSP_SYSCALLS.
+	* misc/redboot_ROM.cfg: Ditto.
+
+	* src/brutus_misc.c (brutus_program_new_stack): New function
+	for switching to an application stack when running a program under
+	a ROM monitor.
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Define HAL_ARCH_PROGRAM_NEW_STACK.
+
+2000-11-25  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* misc/redboot_RAM.cfg: Added new import file for redboot
+	* misc/redboot_ROM.cfg: Ditto
+
+2000-11-10  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Add RedBoot configuration.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_brutus_ram.mlt:
+	* include/pkgconf/mlt_arm_sa11x0_brutus_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_arm_sa11x0_brutus_ram.h:
+	* include/pkgconf/mlt_arm_sa11x0_brutus_rom.h:
+	* include/pkgconf/mlt_arm_sa11x0_brutus_ram.ldi:
+	* include/pkgconf/mlt_arm_sa11x0_brutus_rom.ldi:
+	Regenerate
+
+2000-09-17  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Add platform/cpu identification strings.
+
+2000-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Cleanup channel options.
+
+2000-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_platform_ints.h: Removed Ctrl-c handling.
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Removed ROM_DEBUG_CHANNEL option.
+
+2000-06-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/brutus_misc.c: Define proper MMU initialization.
+
+	* include/hal_platform_setup.h: Rework MMU initialization to
+	be closer to other SA1xx platforms (Assabet, EBSA285)
+
+2000-06-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_sa11x0_brutus_rom.ldi: 
+	* include/pkgconf/mlt_arm_sa11x0_brutus_rom.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_brutus_ram.mlt: 
+	* include/pkgconf/mlt_arm_sa11x0_brutus_ram.ldi: 
+	Incorporate new fixed vectors (used on all ARM platforms).
+
+2000-06-08  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: Adding ROM startup support.
+
+2000-06-05  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Default serial port is 0
+	(maps to UART 3 on J23).
+
+	* include/hal_platform_ints.h: Add missing GPIO interrupts.
+
+2000-06-04  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_platform_setup.h: 'sa1100' stuff renamed to 'sa11x0'.
+
+2000-06-01  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl: Adding ROM startup support.
+
+2000-05-12  John Dallaway  <jld@redhat.com>
+
+	* cdl/hal_arm_sa11x0_brutus.cdl:
+
+	Fix calculation of CYGHWR_MEMORY_LAYOUT.
+
+2000-05-10  Gary Thomas  <gthomas@redhat.com>
+
+	* current/include/pkgconf/mlt_arm_sa11x0_brutus_rom.h: 
+	* current/include/pkgconf/mlt_arm_sa11x0_brutus_rom.ldi: 
+	* current/include/pkgconf/mlt_arm_sa11x0_brutus_rom.mlt: 
+	* current/include/pkgconf/mlt_arm_sa11x0_brutus_ram.mlt: 
+	* current/include/pkgconf/mlt_arm_sa11x0_brutus_ram.h: 
+	* current/include/pkgconf/mlt_arm_sa11x0_brutus_ram.ldi: 
+	* current/include/hal_platform_ints.h: 
+	* current/include/hal_platform_setup.h: 
+	* current/cdl/hal_arm_sa11x0_brutus.cdl: New file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

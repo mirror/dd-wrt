@@ -1,0 +1,736 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     redboot.sgml                                                -->
+<!--                                                                 -->
+<!--     RedBoot package                                             -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<!-- uncomment to build this documentation as a DocBook part
+<part id="redboot"><beginpage>
+<title>RedBoot&trade; User's Guide</title>
+-->
+<toc id="Getting-Started-with-Redboot2"></toc>
+<chapter id="Getting-Started-with-RedBoot">
+<title>Getting Started with RedBoot</title>
+<para><indexterm><primary>Red Boot</primary><secondary>getting started</secondary>
+</indexterm>RedBoot&trade; is an acronym for "Red Hat Embedded Debug and Bootstrap",
+and is the standard embedded system debug/bootstrap environment from Red Hat,
+replacing the previous generation of debug firmware: <indexterm><primary>CygMon</primary>
+</indexterm>CygMon and <indexterm><primary>GDB stubs</primary></indexterm>GDB
+stubs. It provides a complete bootstrap environment for a range of embedded
+operating systems, such as embedded Linux&trade; and eCos&trade;, and includes facilities
+such as network downloading and debugging. It also provides a simple flash
+file system for boot images.</para>
+<para>RedBoot provides a wide set of tools for downloading and executing programs
+on embedded target systems, as well as tools for manipulating the target system's
+environment. It can be used for both product development (debug support) and
+for end product deployment (flash and network booting).</para>
+<para>Here are some highlights of <indexterm><primary>RedBoot's capabilities
+</primary></indexterm>RedBoot&rsquo;s capabilities:  </para>
+<itemizedlist>
+<listitem><para>Boot scripting support</para>
+</listitem>
+<listitem><para>Simple command line interface for RedBoot configuration and
+management, accessible via serial (terminal) or Ethernet (telnet) </para>
+</listitem>
+<listitem><para>Integrated GDB stubs for connection to a host-based debugger
+via serial or ethernet. (Ethernet connectivity is limited to local network
+only)</para>
+</listitem>
+<listitem><para>Attribute Configuration - user control of aspects such as
+system time and date (if applicable), default Flash image to boot from, default
+failsafe image, static IP address, etc.</para>
+</listitem>
+<listitem><para>Configurable and extensible, specifically adapted to the target
+environment </para>
+</listitem>
+<listitem><para>Network bootstrap support including setup and download, via
+BOOTP, DHCP and TFTP</para>
+</listitem>
+<listitem><para>X/YModem support for image download via serial</para>
+</listitem>
+<listitem><para>Power On Self Test</para>
+</listitem>
+</itemizedlist>
+<para>Although RedBoot is derived from eCos, it may be used as a generalized
+system debug and bootstrap control software for any embedded system and any
+operating system. For example, with appropriate additions, RedBoot could replace
+the commonly used BIOS of PC (and certain other) architectures. Red Hat is
+currently installing RedBoot on all embedded platforms as a standard practice,
+and RedBoot is now generally included as part of all Red Hat Embedded Linux
+and eCos ports. Users who specifically wish to use RedBoot with the eCos operating
+system should refer to the <emphasis>Getting Started with eCos</emphasis>
+document, which provides information about the portability and extendability
+of RedBoot in an eCos environment.</para>
+<sect1 id="redboot-on-the-web">
+<title>More information about RedBoot on the web</title>
+<para>The <ulink url="http://sources.redhat.com/redboot/">RedBoot Net
+Distribution web site</ulink> contains downloadable sources and documentation
+for all publically released targets, including the latest features and updates.
+</para>
+</sect1>
+<sect1 id="installing-redboot">
+<title>Installing RedBoot</title>
+<para><indexterm><primary>installing RedBoot</primary><secondary>general procedures
+</secondary></indexterm><indexterm><primary>RedBoot installation</primary>
+<secondary>general procedures</secondary></indexterm>To install the RedBoot
+package, follow the procedures detailed in the accompanying README. </para>
+<para>Although there are other possible configurations, RedBoot is usually
+run from the target platform&rsquo;s flash boot sector or boot ROM, and is
+designed to run when your system is initially powered on. The method used
+to install the RedBoot image into non-volatile storage varies from platform
+to platform. In general, it requires that the image be programmed into flash
+in situ or programmed into the flash or ROM using a device programmer. In
+some cases this will be done at manufacturing time; the platform being delivered
+with RedBoot already in place. In other cases, you will have to program RedBoot
+into the appropriate device(s) yourself. Installing to flash in situ may require
+special cabling or interface devices and software provided by the board manufacturer.
+The details of this installation process for a given platform will be found
+in Installation and Testing. Once installed, user-specific configuration options
+may be applied, using the <command>fconfig</command> command,
+providing that persistent data storage in flash is present in the relevant
+RedBoot version. See <xref linkend="Configuring-the-RedBoot-Environment">
+for details.</para>
+</sect1>
+<sect1 id="user-interface">
+<title>User Interface</title>
+<para><indexterm><primary>user interface</primary></indexterm><indexterm>
+<primary>ui</primary></indexterm><indexterm><primary>cli</primary></indexterm>RedBoot
+provides a command line user interface (CLI). At the minimum, this interface
+is normally available on a serial port on the platform. If more than one serial
+interface is available, RedBoot is normally configured to try to use any one
+of the ports for the CLI. Once command input has been received on one port,
+that port is used exclusively until the board is reset or the channel
+is manually changed by the
+user. If the platform has networking
+capabilities, the RedBoot CLI is also accessible using the <computeroutput>
+telnet</computeroutput> access protocol. By default, RedBoot runs <computeroutput><indexterm>
+<primary>telnet</primary></indexterm>telnet</computeroutput> on port TCP/9000,
+but this is configurable and/or settable by the user. </para>
+<para>RedBoot also contains a set of <indexterm><primary>GDB stubs</primary>
+</indexterm>GDB "stubs", consisting of code which supports the GDB remote
+protocol. GDB stub mode is automatically invoked when the '$' character appears
+anywhere on a command line unless escaped using the '\' character. 
+The platform will remain in GDB
+stub mode until explicitly disconnected (via the GDB protocol). The GDB stub
+mode is available regardless of the connection method; either serial or network.
+Note that if a GDB connection is made via the network, then special care must
+be taken to preserve that connection when running user code. eCos contains
+special network sharing code to allow for this situation, and can be used
+as a model if this methodology is required in other OS environments.</para>
+</sect1>
+
+<sect1 id="RedBoot-Editing-Commands">
+<title>RedBoot Editing Commands</title>
+<para><indexterm><primary>RedBoot</primary><secondary>editing commands</secondary>
+</indexterm><indexterm><primary>editing commands</primary></indexterm><indexterm>
+<primary>commands</primary><secondary>editing</secondary></indexterm>RedBoot
+uses the following line editing commands. 
+<note><title>NOTE</title>
+<para>
+In this description, <guibutton>^A</guibutton> means the character formed
+by typing the letter &ldquo;A&rdquo; while holding down the control key.
+</para></note>
+<itemizedlist>
+<listitem><para><guibutton>Delete</guibutton> (0x7F) or 
+<guibutton>Backspace</guibutton> (0x08) 
+erases the character to the left of the cursor.
+</para></listitem>
+<listitem><para>
+<guibutton>^A</guibutton>
+moves the cursor (insertion point) to the beginning of the line.
+</para></listitem>
+<listitem><para>
+<guibutton>^K</guibutton>
+erases all characters on the line from the cursor to the end.
+</para></listitem>
+<listitem><para>
+<guibutton>^E</guibutton>
+positions the cursor to the end of the line.
+</para></listitem>
+<listitem><para>
+<guibutton>^D</guibutton>
+erases the character under the cursor.
+</para></listitem>
+<listitem><para>
+<guibutton>^F</guibutton>
+moves the cursor one character to the right.
+</para></listitem>
+<listitem><para>
+<guibutton>^B</guibutton>
+moves the cursor one character to the left.
+</para></listitem>
+<listitem><para>
+<guibutton>^P</guibutton>
+replaces the current line by a previous line from the history buffer.  
+A small number of lines
+can be kept as history.  Using ^P (and ^N), the current line can be replaced
+by any one of the previously typed lines.
+</para></listitem>
+<listitem><para>
+<guibutton>^N</guibutton>
+replaces the current line by the next line from the history buffer.  
+</para></listitem>
+</itemizedlist></para>
+<para>In the case of the <command>fconfig</command>
+command, additional editing commands are possible. 
+As data are entered for this command, the current/previous value
+will be displayed and the cursor placed at the end of that data.
+The user may use the editing keys (above) to move around in the data
+to modify it as appropriate.
+Additionally, when certain
+characters are entered at the end of the current value, 
+i.e. entered separately, certain behavior is elicited.</para>
+<para><itemizedlist>
+<listitem>
+<para>^ (caret) switch to editing the previous item in the 
+<command>fconfig</command> list. If fconfig edits item A, followed by item B,
+pressing ^ when changing item B, allows you to change item A. This is similar
+to the up arrow.
+Note: ^P and ^N do not have the same meaning while editing 
+<command>fconfig</command> data and should not be used.
+</para>
+</listitem>
+<listitem><para>. (period) stop editing any further items. This does not change
+the current item.</para>
+</listitem>
+<listitem><para><guibutton>Return</guibutton> leaves the value
+for this item unchanged. Currently it is not possible to step through the
+value for the start-up script; it must always be retyped.</para>
+</listitem>
+</itemizedlist></para>
+</sect1>
+
+<sect1 id="RedBoot-Command-History">
+<title>RedBoot Command History</title>
+<para>
+<indexterm><primary>RedBoot</primary><secondary>command history</secondary></indexterm>
+<indexterm><primary>command history</primary></indexterm>
+<indexterm><primary>commands</primary><secondary>history</secondary></indexterm>
+RedBoot provides support for listing and repeating previously entered commands. A
+list of previously entered commands may be obtained by typing <command>history</command>
+at the command line:
+<screen>
+RedBoot> <userinput>history</userinput>
+  0 fis list
+  1 fconfig -l
+  2 load -m ymodem
+  3 history
+</screen>
+</para><para>
+The following history expansions may be used to execute commands in the history list:
+<itemizedlist>
+<listitem><para>
+!! repeats last command.
+</para></listitem>
+<listitem><para>
+!<userinput>n</userinput> repeats command <userinput>n</userinput>.
+</para></listitem>
+<listitem><para>
+!<userinput>string</userinput> repeats most recent command starting with
+<userinput>string</userinput>.
+</para></listitem>
+</itemizedlist>
+</para>
+</sect1>
+
+<sect1 id="startup-mode">
+<title>RedBoot Startup Mode</title>
+<para>
+  <indexterm><primary>RedBoot</primary><secondary>mode</secondary></indexterm>
+  <indexterm><primary>RedBoot</primary><secondary>startup mode</secondary></indexterm>
+</para>
+
+<para>RedBoot can normally be configured to run in a number of startup
+modes (or just "modes" for short), determining its location of
+residence and execution:
+<variablelist>
+ <varlistentry><term>ROM mode</term>
+ <listitem><para>In this mode, RedBoot both resides and executes from
+ ROM memory (flash or EPROM). This mode is used when there are limited
+ RAM resources. The flash commands cannot update the region of flash
+ where the RedBoot image resides. In order to update the RedBoot image
+ in flash, it is necessary to run a RAM mode instance of
+ RedBoot.</para></listitem>
+ </varlistentry>
+
+ <varlistentry><term>ROMRAM mode</term>
+ <listitem><para>In this mode, RedBoot resides in ROM memory (flash or
+ EPROM), but is copied to RAM memory before it starts executing. The
+ RAM footprint is larger than for ROM mode, but there are two
+ advantages to make up for this: it normally runs faster (relevant
+ only on slower boards) and it is able to update the flash region
+ where the image resides.</para></listitem>
+ </varlistentry>
+
+ <varlistentry><term>RAM mode</term>
+ <listitem><para>In this mode, RedBoot both resides and executes from
+ RAM memory. This is used for updating a primary ROM
+ mode image in situ and sometimes as part of the RedBoot installation
+ on the board when there's already an existing (non-RedBoot) boot
+ monitor available.</para>
+
+ <para> You can only use ROM and ROMRAM mode images for booting a
+ board - a RAM mode image cannot run unless loaded by another ROM
+ monitor. There is no need for this startup mode if a RedBoot ROMRAM
+ mode image is the primary boot monitor.  When this startup mode is
+ programmed into flash (as a convenience as it's fast to load from
+ flash) it will generally be named as "RedBoot[RAM]" in the FIS
+ directory.  </para></listitem>
+ </varlistentry>
+</variablelist>
+
+The chosen mode has influence on flash and RAM resource usage (see
+<xref linkend="resource-usage">) and the procedure of an in situ update
+of RedBoot in flash (see <xref linkend="Updating-Redboot">).</para>
+
+<para>The startup mode is controlled by the option CYG_HAL_STARTUP
+which resides in the platform HAL. Some platforms provide only some of
+the RAM, ROM, and ROMRAM modes, others provide additional
+modes.</para>
+
+<para>To see mode of a currently executing RedBoot, issue the
+<command>version</command> command, which prints the RedBoot banner,
+including the startup mode (here ROM):
+<screen>RedBoot><userinput>version</userinput>
+
+RedBoot(tm) bootstrap and debug environment <emphasis>[ROM]</emphasis>
+Non-certified release, version UNKNOWN - built 13:31:57, May 17 2002
+</screen>
+</para>
+
+</sect1>
+
+<sect1 id="resource-usage">
+<title>RedBoot Resource Usage</title>
+<para>
+  <indexterm><primary>RedBoot</primary><secondary>resource usage</secondary></indexterm>
+</para>
+
+<para>RedBoot takes up both flash and RAM resources depending on its
+startup mode and number of enabled features. There are also other
+resources used by RedBoot, such as timers. Platform-specific resources
+used by RedBoot are listed in the platform specific parts of this
+manual.</para>
+
+<para>Both flash and RAM resources used by RedBoot depend to some
+degree on the features enabled in the RedBoot configuration. It is
+possible to reduce in particular the RAM resources used by RedBoot by
+removing features that are not needed. Flash resources can also be
+reduced, but due to the granularity of the flash (the block sizes),
+reductions in feature size do not always result in flash resource
+savings.</para>
+
+
+<sect2>
+<title>Flash Resources</title>
+<para>On many platforms, a ROM mode RedBoot image resides in the first
+flash sectors, working as the board's primary boot monitor. On these
+platforms, it is also normal to reserve a similar amount of flash for
+a secondary RAM mode image, which is used when updating the primary
+ROM mode image.</para>
+<para>On other platforms, a ROMRAM mode RedBoot image is used as the
+primary boot monitor. On these platforms there is not normally
+reserved space for a RAM mode RedBoot image, since the ROMRAM mode
+RedBoot is capable of updating the primary boot monitor image.</para>
+<para>Most platforms also contain a FIS directory (keeping track of
+available flash space) and a RedBoot config block (containing RedBoot
+board configuration data).</para>
+<para>To see the amount of reserved flash memory, run the <command>fis
+list</command> command:
+<screen>RedBoot> <userinput>fis list</userinput>
+Name              FLASH addr  Mem addr    Length      Entry point
+RedBoot           0x00000000  0x00000000  0x00020000  0x00000000
+RedBoot[RAM]      0x00020000  0x06020000  0x00020000  0x060213C0
+RedBoot config    0x0007F000  0x0007F000  0x00001000  0x00000000
+FIS directory     0x00070000  0x00070000  0x0000F000  0x00000000
+</screen>
+</para>
+
+<para>To save flash resources, use a ROMRAM mode RedBoot, or if using
+a ROM mode RedBoot, avoid reserving space for the RedBoot[RAM] image
+(this is done by changing the RedBoot configuration) and download the
+RAM mode RedBoot whenever it is needed. If the RedBoot image takes up
+a fraction of an extra flash block, it may be possible to reduce the
+image size enough to free this block by removing some features.</para>
+
+</sect2>
+
+<sect2>
+<title>RAM Resources</title>
+
+<para>RedBoot reserves RAM space for its run-time data, and such
+things as CPU exception/interrupt tables. It normally does so at the
+bottom of the memory map. It may also reserve space at the top of the
+memory map for configurable RedBoot features such as the net stack
+and zlib decompression support.</para>
+<para>To see the actual amount of reserved space, issue the
+<command>version</command> command, which prints the RedBoot banner,
+including the RAM usage:
+<screen>RedBoot> <userinput>version</userinput>
+
+RedBoot(tm) bootstrap and debug environment [ROM]
+Non-certified release, version UNKNOWN - built 13:31:57, May 17 2002
+
+Platform: FooBar (SH 7615)
+Copyright (C) 2000, 2001, 2002, Red Hat, Inc.
+
+<emphasis>RAM: 0x06000000-0x06080000, 0x06012498-0x06061000 available</emphasis>
+FLASH: 0x00000000 - 0x00080000, 8 blocks of 0x00010000 bytes each.
+</screen>
+</para>
+
+<para>To simplify operations that temporarily need data in free
+memory, the limits of free RAM are also available as aliases (aligned
+to the nearest kilo-byte limit). These are named
+<indexterm><primary>FREEMEMLO</primary></indexterm>FREEMEMLO and
+<indexterm><primary>FREEMEMHI</primary></indexterm>FREEMEMHI, and can
+be used in commands like any user defined alias:
+<screen>RedBoot> <userinput>load -r -b %{FREEMEMLO} file</userinput>
+Raw file loaded 0x06012800-0x06013e53, assumed entry at 0x06012800
+</screen>
+<screen>
+RedBoot> <userinput>x -b %{FREEMEMHI}</userinput>
+06061000: 86 F5 EB D8 3D 11 51 F2  96 F4 B2 DC 76 76 8F 77  |....=.Q.....vv.w|
+06061010: E6 55 DD DB F3 75 5D 15  E0 F3 FC D9 C8 73 1D DA  |.U...u]......s..|
+</screen>
+</para>
+
+<para>To reduce RedBoot's RAM resource usage, use a ROM mode
+RedBoot. The RedBoot features that use most RAM are the net stack, the
+flash support and the gunzip support. These, and other features, can
+be disabled to reduce the RAM footprint, but obviously at the cost of
+lost functionality.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="Configuring-the-RedBoot-Environment">
+<title>Configuring the RedBoot Environment</title>
+<para><indexterm><primary>configuring the RedBoot environment</primary><secondary></secondary>
+</indexterm><indexterm><primary>RedBoot </primary><secondary>environment configuration
+</secondary></indexterm><indexterm><primary>environment configuration</primary>
+</indexterm>Once installed, RedBoot will operate fairly generically. However,
+there are some features that can be configured for a particular installation.
+These depend primarily on whether <indexterm><primary>flash and/or networking
+support</primary></indexterm><indexterm><primary>networking and/or flash support
+</primary></indexterm>flash and/or networking support are available. The remainder
+of this discussion assumes that support for both of these options is included
+in RedBoot.</para>
+<sect2 id=target-network-configuration>
+<title>Target Network Configuration</title>
+<para><indexterm><primary>target network configuration</primary></indexterm><indexterm>
+<primary>network configuration</primary></indexterm><indexterm><primary>configuration
+</primary><secondary>secondary</secondary></indexterm>Each node in a networked
+system needs to have a unique address. Since the network support in RedBoot
+is based on <indexterm><primary>TCP/IP</primary></indexterm>TCP/IP, this address
+is an IP (Internet Protocol) address. <indexterm><primary>IP address type
+</primary></indexterm>There are two ways for a system to &ldquo;know&rdquo;
+its IP address. First, it can be stored locally on the platform. This is known
+as having a static IP address. Second, the system can use the network itself
+to discover its IP address. This is known as a dynamic IP address. RedBoot
+supports this dynamic IP address mode by use of the <indexterm><primary>BOOTP
+</primary></indexterm>BOOTP (a subset of <indexterm><primary>DHCP</primary>
+</indexterm>DHCP) protocol. In this case, RedBoot will ask the network (actually
+some generic server on the network) for the IP address to use.</para>
+<note><title>NOTE</title>
+<para>Currently, RedBoot only supports BOOTP. In future releases, DHCP may
+also be supported, but such support will be limited to additional data items,
+not lease-based address allocation.</para>
+</note>
+<para>The choice of <indexterm><primary>IP address type</primary></indexterm>IP
+address type is made via the <indexterm><primary>fconfig command</primary>
+</indexterm><command>fconfig</command> command. Once a selection
+is made, it will be stored in flash memory. RedBoot only queries the flash
+configuration information at reset, so any changes will require restarting
+the platform.</para>
+<para>Here is an example of the RedBoot <command>fconfig</command>
+command, showing network addressing:    </para>
+<programlisting>RedBoot> <userinput>fconfig -l</userinput>
+Run script at boot: false
+Use BOOTP for network configuration: false
+Local IP address: 192.168.1.29
+Default server IP address: 192.168.1.101
+DNS server IP address: 192.168.1.1
+GDB connection port: 9000
+Network debug at boot time: false  </programlisting>
+<para>In this case, the board has been configured with a static IP address
+listed as the Local IP address. The default server IP address specifies which
+network node to communicate with for TFTP service. This address can be overridden
+directly in the <indexterm><primary>TFTP commands</primary></indexterm>TFTP
+commands.</para>
+<para>The <computeroutput>DNS server IP address</computeroutput> option
+controls where RedBoot should make DNS lookups<indexterm><primary>DNS
+lookups</primary></indexterm>. A setting of 0.0.0.0 will disable DNS
+lookups. The DNS server IP address can also be set at runtime.</para>
+<para>If the selection for <computeroutput>Use BOOTP for network configuration
+</computeroutput> had been <computeroutput>true</computeroutput>, these IP
+addresses would be determined at boot time, via the BOOTP protocol. The final
+number which needs to be configured, regardless of IP address selection mode,
+is the <indexterm><primary>GDB connection port</primary></indexterm><computeroutput>
+GDB connection port</computeroutput>. RedBoot allows for incoming commands
+on either the available serial ports or via the network. This port number
+is the TCP port that RedBoot will use to accept incoming connections.  </para>
+<para>These connections can be used for GDB sessions, but they can also be
+used for generic RedBoot commands. In particular, it is possible to communicate
+with RedBoot via the <indexterm><primary>telnet</primary></indexterm>telnet
+protocol. For example, on Linux&reg;: </para>
+<programlisting>% telnet redboot_board 9000
+Connected to redboot_board
+Escape character is &lsquo;^]&rsquo;.
+RedBoot>  </programlisting>
+</sect2>
+<sect2>
+<title>Host Network Configuration</title>
+<para><indexterm><primary>host network configuration</primary></indexterm><indexterm>
+<primary>network configuration</primary><secondary>host</secondary></indexterm><indexterm>
+<primary>configuration</primary><secondary>network</secondary></indexterm>RedBoot
+may require three different classes of service from a network host:   </para>
+<itemizedlist>
+<listitem><para>dynamic IP address allocation, using BOOTP   </para>
+</listitem>
+<listitem><para>TFTP service for file downloading </para>
+</listitem>
+<listitem><para>DNS server for hostname lookups </para>
+</listitem>
+</itemizedlist>
+<para>Depending on the host system, these services may or may not be available
+or enabled by default. See your system documentation for more details.</para>
+<para>In particular, on Red Hat Linux, neither of these services will be configured
+out of the box. The following will provide a limited explanation of how to
+set them up. These configuration setups must be done as <computeroutput>root
+</computeroutput> on the host or server machine.</para>
+<sect3>
+<title>Enable TFTP on Red Hat Linux 6.2</title>
+<procedure>
+<step><para><indexterm><primary>TFTP</primary><secondary>enabling on Red Hat
+Linux 6.2</secondary></indexterm><indexterm><primary>Red Hat Linux</primary>
+<secondary>enabling TFTP on version 6.2</secondary></indexterm>Ensure that
+you have the tftp-server RPM package installed. By default, this installs
+the TFTP server in a disabled state. These steps will enable it:</para>
+</step>
+<step><para>Make sure that the following line is uncommented in the control
+file <filename>/etc/inetd.conf</filename> <screen>tftp dgram   udp     wait    root    /usr/sbin/tcpd      /usr/sbin/in.tftpd
+</screen></para>
+<para></para>
+</step>
+<step><para>If it was necessary to change the line in Step 2, then the inetd
+server must be restarted, which can be done via the command:    <programlisting>
+# service inet reload</programlisting></para>
+</step>
+</procedure>
+</sect3>
+<sect3>
+<title>Enable TFTP on Red Hat Linux 7 (or newer)</title>
+<procedure>
+<step><para><indexterm><primary>TFTP</primary><secondary>enabling on Red Hat
+Linux 7</secondary></indexterm><indexterm><primary>Red Hat Linux</primary>
+<secondary>enabling TFTP on version 7</secondary></indexterm>Ensure that the
+xinetd RPM is installed.</para>
+</step>
+<step><para>Ensure that the tftp-server RPM is installed.</para>
+</step>
+<step><para>Enable TFTP by means of the following: <programlisting>/sbin/chkconfig tftp on
+</programlisting>Reload the xinetd configuration using the command:<programlisting>
+ /sbin/service xinetd reload </programlisting>Create the directory /tftpboot
+using the command <programlisting>mkdir /tftpboot</programlisting></para>
+</step>
+<step><para>If you are using Red Hat 8 or newer, you may need to configure
+the built-in firewall to allow through TFTP. Either edit
+<filename>/etc/sysconfig/iptables</filename> or run
+<command>redhat-config-securitylevel</command> on the command line or from
+the menu as System Settings->Security Settings to lower the security level.
+You should only do this with the permission of your systems administrator and
+if you are already behind a separate firewall.</para>
+</step>
+</procedure>
+<note><title>NOTE</title>
+<para>Under Red Hat 7 you must address files by absolute pathnames, for example: <filename>
+/tftpboot/boot.img</filename> not <filename>/boot.img</filename>, as you may have done with
+other implementations.
+On systems newer than Red Hat 7 (7.1 and beyond), filenames are once again relative to the
+<filename>/tftpboot</filename> directory.
+</para>
+</note>
+</sect3>
+<sect3>
+<title>Enable BOOTP/DHCP server on Red Hat Linux</title>
+<para><indexterm><primary>DHCP</primary><secondary>enabling on Red Hat Linux
+</secondary></indexterm><indexterm><primary>BOOTP</primary><secondary>
+enabling on Red Hat Linux</secondary></indexterm>First, ensure that you have
+the proper package, <computeroutput>dhcp</computeroutput> (not <computeroutput>
+dhcpd</computeroutput>) installed. The DHCP server provides Dynamic Host Configuration,
+that is, IP address and other data to hosts on a network. It does this in
+different ways. Next, there can be a fixed relationship between a certain
+node and the data, based on that node&rsquo;s unique Ethernet Station Address
+(ESA, sometimes called a MAC address). The other possibility is simply to
+assign addresses that are free. The sample DHCP configuration file shown does
+both. Refer to the DHCP documentation for more details.</para>
+<example><title>Sample DHCP configuration file</title>
+<programlisting>--------------- /etc/dhcpd.conf -----------------------------
+default-lease-time 600;
+max-lease-time 7200;
+option subnet-mask 255.255.255.0;
+option broadcast-address 192.168.1.255;
+option domain-name-servers 198.41.0.4, 128.9.0.107;
+option domain-name &ldquo;bogus.com&rdquo;;
+allow bootp;
+shared-network BOGUS {
+subnet 192.168.1.0 netmask 255.255.255.0 {
+         option routers 192.168.1.101;
+         range 192.168.1.1 192.168.1.254;
+}
+ }
+host mbx {
+         hardware ethernet 08:00:3E:28:79:B8;
+         fixed-address 192.168.1.20;
+         filename &ldquo;/tftpboot/192.168.1.21/zImage&rdquo;;
+         default-lease-time -1;
+         server-name &ldquo;srvr.bugus.com&rdquo;;
+         server-identifier 192.168.1.101;
+         option host-name &ldquo;mbx&rdquo;;
+} </programlisting></example>
+<para>Once the DHCP package has been installed and the configuration file
+set up, type:<screen>
+# <userinput>service dhcpd start</userinput></screen></para>
+</sect3>
+<sect3>
+<title>Enable DNS server on Red Hat Linux</title>
+<para><indexterm><primary>DNS</primary><secondary>enabling on Red Hat
+Linux</secondary></indexterm>First, ensure that you have the proper
+RPM package, <computeroutput>caching-nameserver</computeroutput>
+installed. Then change the configuration
+(in <filename>/etc/named.conf</filename>) so that the
+<computeroutput>forwarders</computeroutput> point to the primary
+nameservers for your machine, normally using the nameservers listed in
+<filename>/etc/resolv.conf</filename>.</para>
+
+<example><title>
+Sample <filename>/etc/named.conf</filename> for Red Hat Linux 7.x
+</title>
+
+<programlisting>--------------- /etc/named.conf -----------------------------
+// generated by named-bootconf.pl
+
+options {
+        directory "/var/named";
+        /*
+         * If there is a firewall between you and nameservers you want
+         * to talk to, you might need to uncomment the query-source
+         * directive below.  Previous versions of BIND always asked
+         * questions using port 53, but BIND 8.1 uses an unprivileged
+         * port by default.
+         */
+        // query-source address * port 53;
+
+
+        forward first;
+        forwarders {
+                212.242.40.3;
+                212.242.40.51;
+        };
+};
+
+//
+// a caching only nameserver config
+//
+// Uncomment the following for Red Hat Linux 7.2 or above:
+// controls {
+//         inet 127.0.0.1 allow { localhost; } keys { rndckey; };
+// };
+// include "/etc/rndc.key";
+zone "." IN {
+        type hint;
+        file "named.ca";
+};
+
+zone "localhost" IN {
+        type master;
+        file "localhost.zone";
+        allow-update { none; };
+};
+
+zone "0.0.127.in-addr.arpa" IN {
+        type master;
+        file "named.local";
+        allow-update { none; };
+};
+
+</programlisting></example>
+
+<para>Make sure the server is started with the command:
+<screen># <userinput>service named start</userinput></screen> and is
+started on next reboot with the command
+<screen># <userinput>chkconfig named on</userinput></screen>
+Finally, you may wish to change
+<filename>/etc/resolv.conf</filename> to use
+<computeroutput>127.0.0.1</computeroutput> as the nameserver for your
+local machine.</para>
+</sect3>
+<sect3>
+<title>RedBoot network gateway</title>
+<para><indexterm><primary>RedBoot network gateway</primary></indexterm><indexterm>
+<primary>network gateway</primary></indexterm>RedBoot cannot communicate with
+machines on different subnets because it does not support routing. It always
+assumes that it can get to an address directly, therefore it always tries
+to ARP and then send packets directly to that unit. This means that whatever
+it talks to must be on the same subnet. If you need to talk to a host on a
+different subnet (even if it's on the same &lsquo;wire&rsquo;), you need to
+go through an ARP proxy, providing that there is a Linux box connected to
+the network which is able to route to the TFTP server. For example: <filename>
+/proc/sys/net/ipv4/conf/<replaceable>&lt;interface></replaceable>/proxy_arp </filename>where <replaceable>
+&lt;interface></replaceable>should be replaced with whichever network interface
+is directly connected to the board.</para>
+</sect3></sect2>
+<sect2>
+<title>Verification</title>
+<para><indexterm><primary>verification (network)</primary></indexterm><indexterm>
+<primary>network verification</primary></indexterm>Once your network setup
+has been configured, perform simple verification tests as follows: <itemizedlist>
+<listitem><para>Reboot your system, to enable the setup, and then try to &lsquo;ping&rsquo;
+the target board from a host.</para>
+</listitem>
+<listitem><para>Once communication has been established, try to ping
+a host using the RedBoot ping command - both by IP address and hostname.</para>
+</listitem>
+<listitem><para>Try using the RedBoot load command to download a file
+from a host.</para>
+</listitem>
+</itemizedlist></para>
+</sect2></sect1></chapter>
+
+<!-- Commands -->
+<!-- &redboot-current-doc-redboot-cmds-sgml; -->
+
+<!-- Rebuilding -->
+<!-- &redboot-current-doc-redboot-rebuilding-sgml; -->
+
+<!-- Installing and testing -->
+<!-- &redboot-current-doc-redboot-installing-sgml; -->
+
+<!-- Epilogue -->
+<!-- &redboot-current-doc-redboot-epilogue-sgml; -->

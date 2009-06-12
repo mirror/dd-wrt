@@ -1,0 +1,600 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     snmp.sgml                                                   -->
+<!--                                                                 -->
+<!--     eCos TCP/IP Stacks                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART id="net-snmp">
+<TITLE>SNMP</TITLE>
+<CHAPTER id="net-snmp-ecos-port">
+<TITLE><!-- <xref> -->SNMP for <EMPHASIS>eCos</EMPHASIS></TITLE>
+<SECT1 id="net-snmp-version">
+<TITLE>Version</TITLE>
+<PARA>
+This is a port of <!-- <index></index> -->UCD-SNMP-4.1.2
+</PARA>
+<PARA>Originally this document said: See
+<ulink url="http://ucd-snmp.ucdavis.edu/">http://ucd-snmp.ucdavis.edu/</ulink>
+for details.  And send them a postcard.
+</PARA>
+<PARA>
+The project has since been renamed &ldquo;net-snmp&rdquo; and re-homed at
+<ulink url="http://net-snmp.sourceforge.net/">
+            http://net-snmp.sourceforge.net/</ulink>
+where various new releases (of the original, not <EMPHASIS>eCos</EMPHASIS>
+ports) are available.
+</PARA>
+<PARA>
+The original source base from which we worked to create the
+<EMPHASIS>eCos</EMPHASIS> port is available from various archive sites such
+as
+<ulink url="ftp://ftp.freesnmp.com/mirrors/net-snmp/">
+            ftp://ftp.freesnmp.com/mirrors/net-snmp/</ulink>
+or
+<ulink url="ftp://sunsite.cnlab-switch.ch/mirror/ucd-snmp/">
+            ftp://sunsite.cnlab-switch.ch/mirror/ucd-snmp/</ulink>
+generally with this filename and details:
+<screen>
+<ulink url="ftp://ftp.freesnmp.com/mirrors/net-snmp/ucd-snmp-4.1.2.tar.gz">
+ucd-snmp-4.1.2.tar.gz. . . . . . Nov  2  2000   1164k</ulink>
+</screen>
+</PARA>
+</SECT1>
+<SECT1 id="net-snmp-package-contents">
+<TITLE>SNMP packages in the <EMPHASIS>eCos</EMPHASIS> source repository</TITLE>
+<PARA>
+The SNMP/eCos package consists of two eCos packages;
+the SNMP library and the SNMP agent.
+</PARA>
+<PARA>
+The sources are arranged this way partly for consistency with
+the original release from UCD, and so as to accommodate possible
+future use of the SNMP library without having an agent present.
+That could be used to build an eCos-based SNMP client application.
+</PARA>
+<PARA>
+The library contains support code for talking SNMP over the
+net - the SNMP protocol itself - and a MIB file parser (ASN-1) which
+is not used in the agent case.
+</PARA>
+<PARA>
+The agent contains the application specific handler files
+to get information about the system into the SNMP world, together
+with the SNMP agent thread
+(<LITERAL>snmpd</LITERAL> in <LITERAL>UNIX</LITERAL> terms).
+</PARA>
+</SECT1>
+<SECT1 id="net-snmp-mibs-supported">
+<TITLE>MIBs supported</TITLE>
+<PARA>
+The standard set in MIB-II, together with the Ether-Like MIB, are supported
+by default.  The MIB files used to compile the handlers in the agent and to
+&ldquo;drive&rdquo; the testing (<command>snmpwalk</command> <EMPHASIS>et
+al</EMPHASIS> under <LITERAL>LINUX</LITERAL>)
+are those acquired from that same UCD distribution.
+</PARA>
+<PARA>
+These are the supported MIBs; all are below mib2 == 1.3.6.1.2.1:
+</PARA>
+<PROGRAMLISTING>
+system        { mib2 1 }   
+interfaces    { mib2 2 }
+              [ address-translation &ldquo;at&rdquo; { mib2 3 } is deprecated ]
+ip            { mib2 4 }   
+icmp          { mib2 5 }   
+tcp           { mib2 6 }   
+udp           { mib2 7 }
+              [ exterior gateway protocol &ldquo;egp&rdquo; { mib2 8 } not supported ]
+              [ cmot { mib2 9 } is &ldquo;historic&rdquo;, just a placeholder ]
+dot3          { mib2 10 7 } == { transmission 7 } &ldquo;EtherLike MIB&rdquo;
+snmp          { mib2 11 }
+</PROGRAMLISTING>
+<PARA>
+On inclusion of SNMPv3 support packages, the following MIBs are added to the
+default set of MIBs enumerated above : 
+</PARA>
+<PROGRAMLISTING>
+snmpEngine    { snmpFrameworkMIBObjects 1 }  SNMP-FRAMEWORK-MIB, as described in
+                                             RFC-2571 for support of SNMPv3
+                                             framework.
+
+usmStats      {           usmMIBObjects 1 }  SNMP-USER-BASED-SM-MIB, as 
+usmUser       {           usmMIBObjects 2 }  specified in RFC-2574 for support 
+                                             of user based security model in 
+                                             SNMPv3 management domains.
+</PROGRAMLISTING>
+</SECT1>
+<SECT1 id="net-snmp-ecos-changes">
+<TITLE>Changes to eCos sources</TITLE>
+<PARA>
+Small changes have been made in three areas:
+</PARA>
+<orderedlist>
+<listitem><PARA>Various hardware-specific ethernet drivers.</para></listitem>
+<listitem><para>The generic ethernet device driver.</PARA></listitem>
+<listitem><para>The OpenBSD TCP/IP networking package.</PARA></listitem>
+</orderedlist>
+<PARA>
+These changes were made in order to export information about the driver and
+the network that the SNMP agent must report.  The changes were trivial in
+the case of the network stack, since it was already SNMP-friendly.  The
+generic ethernet device driver was re-organized to have an extensive header
+file and to add a couple of APIs to extract statistics that the
+hardware-specific device drivers keep within themselves.
+</PARA>
+<PARA>
+There may be a performance hit for recording that data; disabling
+a config option named something like
+<LITERAL>CYGDBG_DEVS_ETH_xxxx_xxxx_KEEP_STATISTICS</LITERAL>
+depending on the specific device driver will prevent that.
+</PARA>
+<PARA>
+Not all platform ethernet device drivers export complete SNMP statistical
+information; if the exported information is missing, SNMP will report zero
+values for such data (in the dot3 MIB).
+</PARA>
+<PARA>
+The interface chipset has an ID which is an OID; not all the latest greatest
+devices are listed in the abailable database, so new chipsets may need to
+be added to the client MIB, if not defined in those from UCD.
+</PARA>
+</SECT1>
+<SECT1 id="net-snmp-starting-the-snmp-agent">
+<TITLE>Starting the SNMP Agent</TITLE>
+<PARA>
+A routine to instantiate and start the SNMP agent thread in the default
+configuration is provided in
+<filename>PACKAGES/net/snmp/agent/VERSION/src/snmptask.c</filename>
+</PARA>
+<PARA>
+It starts the snmpd thread at priority
+<LITERAL>CYGPKG_NET_THREAD_PRIORITY+1</LITERAL>
+by default, ie. one step less important than the TCP/IP stack service
+thread.
+It also statically creates and uses a very large stack of around 100
+KiloBytes.
+To use that convenience function, this code fragment may be copied (in
+plain C).
+</PARA>
+<PROGRAMLISTING>
+#ifdef CYGPKG_SNMPAGENT
+{
+                extern void cyg_net_snmp_init(void);
+                cyg_net_snmp_init();
+            
+}
+#endif
+</PROGRAMLISTING>
+<PARA>
+In case you need to perform initialization, for example setting up SNMPv3
+security features, when the snmp agent starts and every time it restarts,
+you can register a callback function by simply writing the global variable:
+<PROGRAMLISTING>
+externC void (*<EMPHASIS>snmpd_reinit_function</EMPHASIS>)( void );
+</PROGRAMLISTING>
+with a suitable function pointer.
+</PARA>
+<PARA>
+The entry point to the SNMP agent is
+<PROGRAMLISTING>
+externC void <FUNCTION>snmpd</FUNCTION>( void (*<EMPHASIS>initfunc</EMPHASIS>)( void ) );
+</PROGRAMLISTING>
+so you can of course easily start it in a thread of your choice at another
+priority instead if required, after performing whatever other
+initialization your SNMP MIBs need.  A larger than default stacksize is
+required.  The <LITERAL>initfunc</LITERAL> parameter is the callback
+function mentioned above &mdash; a NULL parameter there is safe and
+obviously means no callback is registered.
+</PARA>
+<PARA>
+Note that if you call <LITERAL>snmpd();</LITERAL> yourself and do
+<EMPHASIS>not</EMPHASIS> call <LITERAL>cyg_net_snmp_init();</LITERAL> then
+that routine, global variable, and the default large stack will not be
+used.  This is the recommended way control such features from your
+application; create and start the thread yourself at the appropriate
+moment.
+</PARA>
+<PARA>
+Other APIs from the <LITERAL>snmpd</LITERAL> module are available,
+specifically:
+<PROGRAMLISTING>
+void <FUNCTION>SnmpdShutDown</FUNCTION>(int <EMPHASIS>a</EMPHASIS>);
+</PROGRAMLISTING>
+which causes the <LITERAL>snmpd</LITERAL> to restart itself &mdash;
+including the callback to your init function &mdash; as soon as possible.
+</PARA>
+<PARA>
+The parameter <EMPHASIS>a</EMPHASIS> is ignored.  It is there because in
+<LITERAL>snmpd</LITERAL>'s &ldquo;natural environment&rdquo; this routine
+is a <LITERAL>UNIX</LITERAL> signal handler.
+</PARA>
+<PARA>
+The helper functions in the network stack for managing
+<LITERAL>DHCP</LITERAL>
+leases will call <FUNCTION>SnmpdShutDown()</FUNCTION>
+when necessary, for example if network interfaces go down and/or come up
+again.
+</PARA>
+</SECT1>
+<SECT1 id="net-snmp-configuring-ecos">
+<TITLE>Configuring eCos</TITLE>
+<PARA>
+To use the SNMP agent, the SNMP library and agent packages must be
+included in your configuration. To incorporate the stack into your
+configuration select the SNMP library and SNMP agent packages in the
+eCos Configuration Tool, or at the command line type:
+<SCREEN>
+$ <USERINPUT>ecosconfig add snmplib snmpagent</USERINPUT>
+</SCREEN>
+</PARA>
+<PARA>
+After adding the networking, common ethernet device drivers,
+snmp library and snmp agent packages, there is no configuration
+required. However there are a number of configuration options
+that can be set such as some details for the System MIB, and
+disabling SNMPv3 support (see below).
+</PARA>
+<PARA>
+Starting the SNMP agent is not integrated into network
+tests other than <FILENAME>snmpping</FILENAME> below, nor is it
+started automatically in normal eCos startup -
+it is up to the application to start the agent when it is ready,
+at least after the network interfaces are both &lsquo;up&rsquo;.
+</PARA>
+<SECT2 id="net-snmp-version-usage">
+<TITLE>Version usage (v1, v2 or v3)</TITLE>
+<PARA>
+The default build supports all three versions of the SNMP protocol, but without
+any dispatcher functionality (rfc 2571, section 3.1.1.2). This has the
+following implications :
+</PARA>
+<PARA> 1. There is no community authentication for v1 and v2c.</PARA>
+<PARA>2. Security provided by v3 can be bypassed by using v1/v2c protocol.</PARA>
+<PARA>
+To provide the dispatcher with rfc 2571 type functionality, it is required to
+set up security models and access profiles. This can be provided in the normal
+Unix style by writing the required configurations in <LITERAL>snmpd.conf</LITERAL> 
+file. Application code may setup profiles in <LITERAL>snmpd.conf</LITERAL> and 
+optionally set the environment variable <LITERAL>SNMPCONFPATH</LITERAL> to 
+point to the file if it is not in the usual location. The whole concept works
+in the usual way as with the standard UCD-SNMP distribution.
+</PARA>
+</SECT2>
+<SECT2 id="Traps">
+<TITLE>Traps</TITLE>
+<PARA>
+The support of the <LITERAL>trapsink</LITERAL> command in the
+<link linkend="net-snmp-agent-manpages-snmpd.conf">snmpd.conf</link> file is not tested 
+and there may be problems for it working as expected. Moreover, in systems that do not 
+have filesystem support, there is no way to configure a trap-session in the
+conventional way.
+</PARA>
+<PARA>
+For reasons mentioned above, applications need to initialize their own trap
+sessions and pass it the details of trap-sink. The following is a small sample
+for initializing a v1 trap session :
+</PARA>
+<PROGRAMLISTING>
+typedef struct trap {
+        unsigned char ip [4];
+        unsigned int  port;
+        unsigned char community [256];
+}
+
+trap            trapsink;
+unsinged char   sink [16]; 
+
+...
+...
+
+if (trapsink.ip != 0) {
+        sprintf (sink, "%d.%d.%d.%d",
+                 trapsink[0], trapsink[1], trapsink[2], trapsink[3]);
+        if (create_trap_session (sink,
+                trapsink.port,
+                (char *)trapsink.community,
+                SNMP_VERSION_1,
+                SNMP_MSG_TRAP) == 0) {
+                log_error ("Creation of trap session failed \n");
+        }
+}
+</PROGRAMLISTING>
+</SECT2>
+<SECT2 id="net-snmp-snmpd-conf">
+<TITLE><LITERAL>snmpd.conf</LITERAL> file</TITLE>
+<PARA>
+Using snmpd.conf requires the inclusion of one of the file-system packages
+(eg. CYGPKG_RAMFS) and CYGPKG_FILEIO. With these two packages included, the
+SNMP sub-system will read the snmpd.conf file from the location specified in
+<LITERAL>SNMPCONFPATH</LITERAL>, or the standard builtin locations, and use
+these profiles. Only the profiles specified in the <LITERAL>ACCESS-CONTROL</LITERAL>
+section of <link linkend="net-snmp-agent-manpages-snmpd.conf">snmpd.conf</link> file have 
+been tested and shown to work. Other profiles which have been implemented in 
+<LITERAL>UCD-SNMP-4.1.2</LITERAL>'s <LITERAL>snmpd.conf</LITERAL> may not work
+because the sole purpose of adding support for the snmpd.conf file has been to
+set up <LITERAL>ACCESS-CONTROL</LITERAL> models.
+</PARA>
+<PARA>
+At startup, the SNMP module tries to look for file <FILENAME>snmp.conf</FILENAME>. 
+If this file is not available, the module successively looks for files
+<FILENAME>snmpd.conf</FILENAME>, <FILENAME>snmp.local.conf</FILENAME> and 
+<FILENAME>snmpd.local.conf</FILENAME> at the locations pointed to by <LITERAL>
+SNMPCONFPATH</LITERAL> environment variable. In case <LITERAL>SNMPCONFPATH
+</LITERAL> is not defined, the search sequence is carried out in default directories.
+The default directories are :<FILENAME>/usr/share/snmp</filename>, <filename>
+/usr/local/share/snmp</filename> and <filename>$(HOME)/.snmp</filename>.
+The configurations read from these files are used to control both, SNMP 
+applications and the SNMP agent; in the usual UNIX fashion.
+</PARA>
+<PARA>
+The inclusion of snmpd.conf support is enabled by default when suitable 
+filesystems and FILEIO packages are active.
+</PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="net-snmp-test-cases">
+<TITLE>Test cases</TITLE>
+<PARA>
+Currently only one test program is provided which uses SNMP.
+</PARA>
+<PARA>
+"snmpping" in the SNMP agent package runs the ping test from
+the TCPIP package, with the snmpd running also. This allows you
+to interrogate it using host tools of your choice. It supports MIBs
+as documented above, so eg. <COMMAND>snmpwalk
+<REPLACEABLE>&lt;hostname&gt;</REPLACEABLE> public dot3</COMMAND> under
+Linux/UNIX should have the desired effect.
+</PARA>
+<PARA>
+For serious testing, you should increase the length of time
+the test runs by setting CYGNUM_SNMPAGENT_TESTS_ITERATIONS
+to something big (e.g., 999999). Build the test
+(<COMMAND>make -C net/snmp/agent/current tests</COMMAND>)
+and run it on the target.
+</PARA>
+<PARA>
+Then start several jobs, some for pinging the board (to make
+the stats change) and some for interrogating the snmpd. Set &dollar;IP
+to whatever IP address the board has:
+</PARA>
+<PROGRAMLISTING>
+# in a root shell, for flood ping
+while(1)
+date
+ping -f -c 3001 &dollar;IP
+sleep 5
+ping -c 32 -s 2345 &dollar;IP
+end</PROGRAMLISTING>
+<PROGRAMLISTING>
+# have more than one of these going at once
+setenv MIBS all
+while (1)
+snmpwalk -OS &dollar;IP  public
+date
+end</PROGRAMLISTING>
+<PARA>
+Leave to run for a couple of days or so to test stability.
+</PARA>
+<PARA>
+The test program can also test snmpd.conf support. It tries to build a minimal
+snmpd.conf file on a RAM filesystem and passes it to the snmp sub-system. With
+this profile on target, the following snmp[cmd] (cmd=walk, get, set) should
+work :
+</PARA>
+<PROGRAMLISTING>
+snmp[cmd] -v1 $IP crux $OID
+snmp[cmd] -v2 $IP crux $OID
+snmp[cmd] -v3 $IP -u root -L noAuthNoPriv $OID
+snmp[cmd] -v3 $IP -u root -L authNoPriv -A MD5 -a md5passwd $OID
+</PROGRAMLISTING>
+<PARA>
+The following commands would however fail since they violate the access model :
+</PARA>
+<PROGRAMLISTING>
+snmp[cmd] $IP public $OID
+snmp[cmd] -v1 $IP public $OID
+snmp[cmd] -v2c $IP public $OID
+snmp[cmd] -v3 $IP -u no_user -L noAuthNoPriv $OID
+snmp[cmd] -v3 $IP -u root -L authNoPriv -A MD5 -a badpasswd $OID
+</PROGRAMLISTING>
+</SECT1>
+<SECT1 id="net-snmp-clients-and-package-use">
+<TITLE>SNMP clients and package use</TITLE>
+<PARA>
+SNMP clients may use these packages, but this usage is currently
+untested: the reason why this port to eCos exists is to acquire
+the SNMP agent.  The fact that that the SNMP API (for clients) exists
+is a side-effect.  See the standard man page SNMP_API(3)
+for details.  There are further caveats below about client-side
+use of the SNMP library.
+</PARA>
+<PARA>
+All of the SNMP header files are installed beneath .../include/ucd-snmp
+in the install tree.  The SNMP code itself assumes that directory
+is on its include path, so we recommend that client code does the
+same.  Further, like the TCP/IP stack, compiling SNMP code
+requires definition of _KERNEL and __ECOS,
+and additionally IN_UCD_SNMP_SOURCE.
+</PARA>
+<PARA>
+Therefore, add all of these to your compile lines if you wish
+to include SNMP header files:
+</PARA>
+<PROGRAMLISTING>-D_KERNEL 
+-D__ECOS 	
+-DIN_UCD_SNMP_SOURCE=1	 	
+-I&dollar;(PREFIX)/include/ucd-snmp</PROGRAMLISTING>
+</SECT1>
+<SECT1 id="net-snmp-unimplemented-features">
+<TITLE>Unimplemented features</TITLE>
+<PARA>
+Currently, the filesystem and persistent storage areas are
+left undone, to be implemented by the application.
+</PARA>
+<PARA>
+The SNMP library package is intended to support client and
+agent code alike.  It therefore contains lots of assumptions about
+the presence of persistent storage ie. a filesystem.  Currently,
+by default, eCos has no such thing, so those areas have been simply
+commented out and made to return empty lists or say &ldquo;no
+data here.&rdquo;
+</PARA>
+<PARA>
+Specifically the following files have omitted/unimplemented code :
+</PARA>
+<PARA>
+<filename>PACKAGES/net/snmp/lib/VERSION/src/parse.c</filename>
+</PARA>
+<PARA>
+contains code to enumerate MIB files discovered in the system
+MIB directories (&ldquo;<filename>/usr/share/snmp/mibs</filename>&rdquo;),
+and read them all in, building data structures that are used by
+client programs to interrogate an agent.  This is not required in
+an agent, so the routine which enumerates the directories returns
+an empty list.
+</PARA>
+<PARA>
+<filename>PACKAGES/net/snmp/lib/VERSION/src/read_config.c</filename>
+contains two systems:
+</PARA>
+<PARA>
+The first tries to read the configuration file as described in the
+<link linkend="net-snmp-configuring-ecos">snmpd.conf file</link> section and 
+the second system contains code to record persistent data as files in a
+directory (typically <filename>/var/ucd-snmp</filename>) thus preserving the 
+state permanently.
+</PARA>
+<PARA>
+The first part is partially implemented to support multiple profiles and enables
+dispatcher functionality as discussed in <xref linkend="net-snmp-version-usage">.
+The second part is not supported at all in the default implementation. As required, 
+a cleaner interface to permit application code to manage persistent data will be 
+developed in consultation with customers.
+</PARA>
+</SECT1>
+<SECT1 id="net-snmp-mib-compiler">
+<TITLE>MIB Compiler </TITLE>
+<PARA>In the directory
+	  <filename>/snmp/agent/VERSION/utils/mib2c</filename>,
+there are the following files:</PARA>
+<PROGRAMLISTING>
+README-eCos             notes about running with a nonstandard 
+                        perl path.
+README.mib2c            the README from UCD; full instructions on
+                        using mib2c   
+mib2c                   the perl program
+mib2c.conf              a configuration file altered to include the
+                        eCos/UCD   
+mib2c.conf-ORIG         copyright and better #include paths; and
+                        the ORIGinal.   
+mib2c.storage.conf      other config files, not modified.   
+mib2c.vartypes.conf
+</PROGRAMLISTING>
+<PARA>
+mib2c is provided BUT it requires the SNMP perl package SNMP-3.1.0,
+and that in turn requires perl nsPerl5.005_03 (part of
+Red Hat Linux from 6.0, April 1999).</PARA>
+<PARA>These are available from the CPAN (&ldquo;the Comprehensive
+Perl Archive Network&rdquo;) as usual;
+<ulink url="http://www.cpan.org/">http://www.cpan.org/</ulink>
+and links from there. Specifically:
+</PARA>
+<itemizedlist>
+<listitem><PARA>
+PERL itself:
+<ulink url="http://people.netscape.com/kristian/nsPerl/">
+http://people.netscape.com/kristian/nsPerl/
+</ulink></para></listitem>
+<listitem><para>
+<ulink url="http://people.netscape.com/richm/nsPerl/nsPerl5.005_03-11-i686-linux.tar.gz">
+http://people.netscape.com/richm/nsPerl/nsPerl5.005_03-11-i686-linux.tar.gz
+</ulink></para></listitem>
+<listitem><para>
+SNMP.pl
+<ulink url="http://www.cpan.org/modules/01modules.index.html">
+http://www.cpan.org/modules/01modules.index.html
+</ulink></para></listitem>
+<listitem><para>
+<ulink url="http://cpan.valueclick.com/modules/by-category/05_Networking_Devices_IPC/SNMP/">
+http://cpan.valueclick.com/modules/by-category/05_Networking_Devices_IPC/SNMP/
+</ulink></para></listitem>
+<listitem><para>
+<ulink url="http://www.cpan.org/authors/id/G/GS/GSM/SNMP.tar.gz">
+http://www.cpan.org/authors/id/G/GS/GSM/SNMP.tar.gz
+</ulink></para></listitem>
+</itemizedlist>
+<PARA>(note that the .tar.gz files are not browsable)</PARA>
+<PARA>
+For documentation on the files produced, see the documentation
+available at
+<ulink url="http://ucd-snmp.ucdavis.edu/">http://ucd-snmp.ucdavis.edu/
+</ulink>
+in general, and file <filename>AGENT.txt</filename> in particular.
+</PARA>
+<PARA>
+It is likely that the output of mib2c will be further customized
+depending on eCos customer needs; it&rsquo;s easy to do this
+by editing the mib2c.conf file to add or remove whatever you need
+with the resulting C sources.
+</PARA>
+<PARA>
+The UCD autoconf-style configuration does not apply to eCos.
+ So if you add a completely new MIB to the agent, and support it
+using mib2c so that the my_new_mib.c file contains
+a init_my_new_mib() routine to register
+the MIB handler, you will also need to edit a couple of control
+files; these claim to be auto-generated, but in the eCos release,
+they&rsquo;re not, don&rsquo;t worry.
+</PARA>
+<PROGRAMLISTING>PACKAGES/net/snmp/agent/VERSION/include/mib_module_includes.h</PROGRAMLISTING>
+<PARA>
+contains a number of lines like
+</PARA>
+<PROGRAMLISTING>#include &ldquo;mibgroup/mibII/interfaces.h&rdquo;</PROGRAMLISTING>
+<PARA>
+so add your new MIB thus:
+</PARA>
+<PROGRAMLISTING>#include &ldquo;mibgroup/mibII/my_new_mib.h&rdquo;</PROGRAMLISTING>
+<PROGRAMLISTING>PACKAGES/net/snmp/agent/VERSION/include/mib_module_inits.h </PROGRAMLISTING>
+<PARA>
+contains a number of lines like
+</PARA>
+<PROGRAMLISTING>init_interfaces();         
+init_dot3(); </PROGRAMLISTING>
+<PARA>
+and so on; add your new MIB as follows:
+</PARA>
+<PROGRAMLISTING>init_my_new_mib(); </PROGRAMLISTING>
+<PARA>
+and this should work correctly.
+</PARA>
+</SECT1>
+
+&net-snmp-agent-snmp-manpages-sgml
+</CHAPTER>
+</PART>

@@ -1,0 +1,50 @@
+<HTML>
+  <HEAD>
+    <TITLE>Stack Window Help</TITLE>
+  </HEAD>
+  <BODY>
+
+    <CENTER>
+      <H2>The Stack Window</H2>
+    </CENTER>
+    
+
+    <BR>The Stack Window allows users to view the call stack and jump between
+    levels of the stack.
+    
+    <UL>
+      <LI><A HREF="#display">Stack Display</A></LI>
+      <LI><A HREF="#display_nav">Navigating the Stack Window</A></LI>
+      <LI><A HREF="#display_lvl">Changing the Stack Level</A></LI>
+    </UL>
+    
+    <H2><A NAME="display">Stack Display</A></H2>
+    The Stack Display consists of a listbox which displays levels of the call stack
+    on per line. Each line contains the level number (useful when using the 
+    <A HREF="console.html">Console Window</A>) and a description of the function executing
+    in that level. Typically, the function name and either the address of the function
+    or the file and line number where the function is defined are displayed. The
+    Stack Window may also be used to jump between levels of the stack.
+    <BR>
+
+    <H2><A NAME="display_nav">Navigating the Stack Window</A></H2>
+    Navigation of the Stack Window is accomplished by clicking on the desired level
+    with the left mouse button. The <A HREF="source.html#display">Source Window
+      Display</A> updates to show the selected frame. All other secondary windows,
+    <A HREF="register.html">Registers</A>, <A HREF="watch.html">Watch</A>, and
+    <A HREF="locals.html">Locals</A> update their displays for the selected frame.
+    <BR>
+    
+    <H2><A NAME="display_lvl">Changing Stack Levels</A></H2>
+    To switch frames, simply click the left mouse button on the desired frame and the
+    debugger will switch contexts, updating all windows. The selected frame is highlighted
+    (in gold, by default).
+    
+    <P>As an alternative, changing stack levels may be accomplished via the
+      <A HREF="source.html#toolbar_frame">Frame Control Buttons</A> on the Source Window's
+      Toolbar. These buttons may be used to change frames one level at a time (either
+      immediately up or immediately down) or to jump to the bottom-most stack frame.
+      See <A HREF="source.html#toolbar_frame">Source Frame Control Buttons</A> for more
+      information.</P>
+  </BODY>
+</HTML>

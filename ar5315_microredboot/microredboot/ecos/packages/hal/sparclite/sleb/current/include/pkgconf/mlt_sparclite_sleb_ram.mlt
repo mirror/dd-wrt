@@ -1,0 +1,13 @@
+version 0
+region ram 4010000 3f0000 0 !
+section ram_vectors 0 1 0 1 1 1 1 1 4010000 4010000 rom_vectors rom_vectors !The ram_vectors section is to allow some free space to copy vectors into from the ROM.  This is required to be variable size to accomodate SVT or MVT; 80 bytes vs 4kB.  Copying is not necessary with MVT, but it is optional because it may offer performance gains.  Copying is required for SVT because the (aligned) start of ROM contains initialization instructions.  RAM copy is used rather than leave a big gap in the ROM to get an aligned address for the trampoline code.  For RAM startup, ram_vectors will usually be of size zero, unless MVT and copying are enabled for memory estimation reasons.
+section rom_vectors 0 8 0 1 0 1 0 1 text text !
+section text 0 4 0 1 0 1 0 1 fini fini !
+section fini 0 4 0 1 0 1 0 1 rodata rodata !
+section rodata 0 8 0 1 0 1 0 1 rodata1 rodata1 !
+section rodata1 0 8 0 1 0 1 0 1 fixup fixup !
+section fixup 0 8 0 1 0 1 0 1 gcc_except_table gcc_except_table !
+section gcc_except_table 0 8 0 1 0 1 0 1 data data !
+section data 0 8 0 1 0 1 0 1 bss bss !
+section bss 0 8 0 1 0 1 0 1 heap1 heap1 !
+section heap1 0 8 0 0 0 0 0 0 !

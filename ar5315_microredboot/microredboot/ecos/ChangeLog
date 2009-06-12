@@ -1,0 +1,116 @@
+2003-03-27  Bart Veer  <bartv@ecoscentric.com>
+
+	* configure.in, configure:
+	Look for the host-side sources in tools/src as well as in host, as
+	per the 2.0 release tree.
+	Look for per-package host-side software in any/all versions of a
+	package, not just "current".
+
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* README.host: update Tcl-related instructions
+
+	* Makefile.in: regenerate
+
+2002-08-13  Bart Veer  <bartv@ecoscentric.com>
+
+	* README.host: update host-side build instructions
+	
+2002-08-03  Bart Veer  <bartv@ecoscentric.com>
+
+	* acinclude.m4, configure.in, Makefile.am:
+	Rework host-side autoconf support
+
+1999-11-10  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure.in
+	* configure
+	Added host/tools/configtool/standalone/common
+
+1999-11-09  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure:
+	* configure.in:
+	Added host/tools/ecostest/common, suppressed the configtool
+	support for now.
+
+1999-08-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* Makefile.in:
+	* acinclude.m4:
+	* aclocal.m4:
+	* configure.in:
+	* configure:
+	First attempt at autoconfiscation of the configtool.
+
+1999-06-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* acinclude.m4:
+	Trying to sort out the compiler flags a bit better.
+
+1999-06-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* acinclude.m4:
+	Added -enable-debuginfo flag which will do the right thing
+	for both gcc/g++ (add -g) and VC++ (add -MDd or -MD)
+
+1999-03-25  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure.in: 
+	* aclocal.m4:
+	* acinclude.m4: 
+	* Makefile.am:
+	Sorting out the banner.
+
+1999-01-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure.in:
+	* configure:
+	* aclocal.m4:
+	* Makefile.in
+	Update to use autoconf 2.13 and automake 1.4
+
+	* acinclude.m4 (CYG_AC_PATH_TCL):
+	Improve the support for linking with Tcl
+
+1999-01-21  Bart Veer  <bartv@cygnus.co.uk>
+
+	* acinclude.m4:
+	Added new macro CYG_AC_SUBST_VERSION so that different packages
+	can use different symbols for versioning.
+
+1999-01-19  Bart Veer  <bartv@cygnus.co.uk>
+
+	* acinclude.m4:
+	* aclocal.m4:
+	* Makefile.in:
+	Added new macros: CYG_AC_MSVC_PATH for handling pathname
+	problems between cygwin and VC++; and CYG_AC_PATH_TCL so
+	that the user can specify the location of a suitable Tcl
+	installation.
+
+1998-12-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure.in: 
+	* configure: 
+	* aclocal.m4: 
+	* acinclude.m4: 
+	* Makefile.in: 
+	* Makefile.am: 
+	Provide support for building all host-side packages.
+	
+1998-07-13  Bart Veer  <bartv@cygnus.co.uk>
+
+	* ltconfig
+	* ltmain-sh
+	Merge with latest versions from devo
+
+	* missing
+	* mkinstalldirs
+	* config.guess
+	* config.sub
+	* install-sh
+	* ltconfig
+	* ltmain-sh
+	Restore files that had been removed prematurely
+	

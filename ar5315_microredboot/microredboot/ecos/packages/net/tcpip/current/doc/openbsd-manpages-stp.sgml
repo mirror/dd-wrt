@@ -1,0 +1,137 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     openbsd-manpages-stp.sgml                                   -->
+<!--                                                                 -->
+<!--     eCos TCP/IP Stacks                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<SECT1 id="openbsd-manpages-stp">
+<TITLE>Spanning Tree Protocol</TITLE>
+<SCREEN>
+NAME
+     stp - Spanning Tree Protocol
+
+SYNOPSIS
+
+
+DESCRIPTION
+     Spanning Tree (STP) is a layer 2 protocol designed to run on bridges. The
+     main purpose of STP is to ensure that there are no loop situations when
+     redundant paths are provisioned in the network. STP detects and disables
+     creation of network loops by blocking certain ports on some of the bridges
+     in the network. The process of selection of blocking ports (on occurance
+     of redundant paths) is governed by the following three parameters :
+
+     - Relative priority of each bridge. A higher value means lower priority.
+     - Relative priority of each port within a bridge. A higher value means
+       lower priority.
+     - Path cost (based on physical media type) associated with each port.
+
+     A given port/interface participates in STP if the flag IFBIF_STP is 
+     set for the interface. A possible time for setting this flag is at the 
+     time when the interface in context is added to bridge. 
+
+IOCTLS
+     The STP code is invoked for all ioctl calls specified in <link linkend="openbsd-manpages-bridge">bridge</link> section.
+     The following ioctl calls are specific to STP functionality. They are
+     defined in &lt;sys/sockio.h>.
+
+     SIOCBRDGGPRI         (struct ifbrparam) Get the configured priority of this
+                          bridge. The priority value could vary from 0 to 65535.
+                          0 being the highest priority and 65535 the lowest. The
+                          configured value is returned in field ifbrp_prio.
+
+     SIOCBRDGSPRI         (struct ifbrparam) Set priority of this bridge to the
+                          value specified in field ifbrp_prio.
+
+     SIOCBRDGGHT          (struct ifbrparam) Get the configured frequency of
+                          transmission of hello packets from non-blocking
+                          interfaces on this bridge. The configured frequency is
+                          returned in field ifbrp_hellotime.  
+
+     SIOCBRDGSHT          (struct ifbrparam) Set the frequency of transmission
+                          of hello packets to the value specified in field
+                          ifbrp_hellotime. The specified value should be greater
+                          than 0, else EINVAL is returned.
+
+     SIOCBRDGGFD          (struct ifbrparam) Get the forwarding delay time 
+                          associated with ports/interfaces on this bridge. The
+                          forwarding delay time is the time taken by a port
+                          to transit from one state to other (for eg. from 
+                          LEARNING state to FORWARDING state). The configured
+                          value if returned in field ifbrp_fwddelay.
+
+     SIOCBRDGSFD          (struct ifbrparam) Set the forwarding delay for ports
+                          attached to this bridge to a value specified in 
+                          field ifbrp_fwddelay. The specified value should be
+                          greater than 0, else EINVAL is returned.
+
+     SIOCBRDGGMA          (struct ifbrparam) Get aging timeout values of 
+                          spanning data. The timeout value is returned in field
+                          ifbrp_maxage. 
+
+     SIOCBRDGSMA          (struct ifbrparam) Set the aging timeout value of 
+                          BPDUs to the value specified in ifbrp_maxage. The 
+                          specified value should be greater than 0, else 
+                          EINVAL is returned.
+
+     SIOCBRDGSIFPRIO      (struct ifbreq) Set the priority of specified 
+                          interface to the value given in field ifbr_priority.
+
+     SIOCBRDGSIFCOST      (struct ifbreq) Set the cost associated with the 
+                          given interface to the value specified in field 
+                          ifbr_path_cost.
+
+
+ERRORS
+     Same as the ones specified for <link linkend="openbsd-manpages-bridge">bridge</link>.
+
+SEE ALSO
+     <link linkend="openbsd-manpages-netintro">netintro</link>, <link linkend="openbsd-manpages-bridge">bridge</link>
+
+</SCREEN>
+</SECT1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:nil
+sgml-shorttag:t
+sgml-namecase-general:t
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:("tcpip.sgml" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+sgml-doctype:"book"
+End:
+-->
+

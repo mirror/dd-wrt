@@ -1,0 +1,13 @@
+--- OLD/devs/flash/amd/am29xxxxx/v2_0/include/flash_am29xxxxx.inl	2003-11-16 16:20:50.000000000 -0600
++++ packages/devs/flash/amd/am29xxxxx/v2_0/include/flash_am29xxxxx.inl	2003-12-03 16:11:42.000000000 -0600
+@@ -267,6 +267,10 @@
+     flash_info.blocks = flash_dev_info->block_count * CYGNUM_FLASH_SERIES;
+     flash_info.start = (void *)CYGNUM_FLASH_BASE;
+     flash_info.end = (void *)(CYGNUM_FLASH_BASE+ (flash_dev_info->device_size * CYGNUM_FLASH_SERIES));
++#ifdef CYGNUM_FLASH_END_RESERVED_BYTES
++    flash_info.end = (void *)((unsigned int)flash_info.end - CYGNUM_FLASH_END_RESERVED_BYTES);
++    flash_info.blocks -= (CYGNUM_FLASH_END_RESERVED_BYTES / flash_dev_info->block_size);
++#endif
+     return FLASH_ERR_OK;
+ }
+ 

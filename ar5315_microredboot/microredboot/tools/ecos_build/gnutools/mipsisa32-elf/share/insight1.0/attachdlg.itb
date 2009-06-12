@@ -1,0 +1,231 @@
+#
+# attachdlg.itb - itcl implementations for class AttachDlg
+# ----------------------------------------------------------------------
+# Implements Attach to process window...
+#
+# ----------------------------------------------------------------------
+#   Copyright (C) 1999 Cygnus Solutions
+#
+
+body AttachDlg::constructor {args} {
+
+  window_name "Attach To Process"
+  build_win
+  eval itk_initialize $args
+
+}
+
+body AttachDlg::build_win {} {
+  
+  # CHOOSE_PID: the list box with list or processes.  Also an entry
+  # for typing in the PID by hand.
+
+  itk_component add choose_pid {
+    iwidgets::scrolledlistbox $itk_interior.cpid -visibleitems 30x15 \
+      -labeltext "Choose process" -labelpos nw \
+      -labelrelief groove -labelborderwidth 2 \
+      -ipadx 8 -ipady 6 -childsitepos s -hscrollmode none \
+      -textbackground white -exportselection 0 \
+      -selectioncommand [code $this select_pid] \
+      -dblclickcommand [code $this doit]
+  }
+
+  itk_component add pid_filter {
+    iwidgets::entryfield [$itk_component(choose_pid) childsite].filt \
+      -labeltext Filter: -textbackground white \
+      -focuscommand [code $this clear_pid_selection] \
+      -command [code $this filter_pid_selection]
+  }
+
+  $itk_component(pid_filter) insert 0 *
+
+  itk_component add pid_sep {
+    frame [$itk_component(choose_pid) childsite].sep \
+      -height 2 -borderwidth 1 -relief sunken
+  }
+
+  # PID_ENTRY: this is the PID entry box.  You can enter the pid
+  # by hand here, or click on the listbox to have it entered for you.
+
+  itk_component add pid_entry {
+    iwidgets::entryfield [$itk_component(choose_pid) childsite].lab \
+      -labeltext PID: -validate numeric -textbackground white \
+      -focuscommand [code $this clear_pid_selection]
+  }
+  pack $itk_component(pid_filter) -fill x -side top -pady 4
+  pack $itk_component(pid_sep) -fill x -side top -pady 8
+  pack $itk_component(pid_entry) -fill x -side bottom -pady 4
+  
+
+  itk_component add symbol_label {
+    iwidgets::labeledframe $itk_interior.sym -labeltext "Choose Exec file" \
+      -labelpos nw -labelrelief groove -labelborderwidth 2 \
+      -ipadx 8 -ipady 6 
+  }
+
+  itk_component add symbol_file {
+    iwidgets::entryfield [$itk_interior.sym childsite].f -labeltext File: \
+      -textbackground white
+  }
+  pack $itk_component(symbol_file) -pady 4 -padx 4 -fill x
+  # can't use the -state in the entryfield, 'cause that affects the
+  # label as well...
+  $itk_component(symbol_file) component entry configure -state disabled
+  
+  $itk_component(symbol_file) configure -state normal
+  $itk_component(symbol_file) insert 0 $::gdb_exe_name
+  $itk_component(symbol_file) configure -state disabled
+  
+  itk_component add symbol_browse {
+    button [$itk_component(symbol_file) childsite].br -text Choose... \
+      -command [code $this choose_symbol_file]
+  }
+  pack $itk_component(symbol_browse) -pady 4 -padx 4 -ipadx 4
+
+  itk_component add button_box {
+    frame $itk_interior.b
+  }
+  
+  itk_component add cancel {
+    button $itk_component(button_box).cancel -text Cancel \
+      -command [code $this cancel]
+  }
+
+  itk_component add ok {
+    button $itk_component(button_box).ok -text OK -command [code $this doit]
+  }
+  
+  if {$::gdb_exe_name == ""} {
+    $itk_component(ok) configure -state disabled
+  }  
+
+  ::standard_button_box $itk_component(button_box)
+
+  pack $itk_component(button_box) -side bottom -fill x \
+    -pady 4 -padx 4
+  pack $itk_component(symbol_label) -side bottom -fill x -pady 4 -padx 4
+  pack $itk_component(choose_pid) -fill both -expand 1 -pady 4 -padx 4
+
+  after idle [list update idletasks;  $this list_pids]
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  doit - This accepts the attach command.
+# ------------------------------------------------------------------
+
+body AttachDlg::doit {} {
+  set AttachDlg::last_button 1
+  set AttachDlg::last_pid [$itk_component(pid_entry) get]
+  set AttachDlg::symbol_file [$itk_component(symbol_file) get]
+  debug "About to unpost"
+  unpost
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  cancel - unpost the dialog box without attaching.
+# ------------------------------------------------------------------
+
+body AttachDlg::cancel {} {
+  set AttachDlg::last_button 0
+  set AttachDlg::last_pid {}
+  unpost
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  choose_symbol_file - Query for a new symbol file.
+# ------------------------------------------------------------------
+
+body AttachDlg::choose_symbol_file {} {
+  set file [tk_getOpenFile -parent . -title "Load New Executable"]
+  if {$file != ""} {
+    $itk_component(symbol_file) configure -state normal
+    $itk_component(symbol_file) clear
+    $itk_component(symbol_file) insert 0 $file
+    $itk_component(symbol_file) configure -state disabled
+    $itk_component(ok) configure -state active
+  }
+}
+
+
+# ------------------------------------------------------------------
+#  METHOD:  list_pids - List the available processes.  Right now,
+#           this just spawns ps, which means we have to deal with
+#           all the different ps flags & output formats.  At some
+#           point we should steal some C code to do it by hand.
+# ------------------------------------------------------------------
+
+body AttachDlg::list_pids {{pattern *}} {
+  global tcl_platform
+
+  switch $tcl_platform(os) {
+    Linux {
+      set ps_cmd "ps axw"
+    }
+    default {
+      set ps_cmd "ps w"
+    }
+  }
+  if {[catch {::open "|$ps_cmd" r} psH]} {
+    set errTxt "Could not exec ps: $psH
+You will have to enter the PID by hand."
+    ManagedWin::open WarningDlg -message [list $errTxt]
+    return
+  }
+  gets $psH header
+
+  set nfields [llength $header]
+  set nfields_m_1 [expr {$nfields - 1}]
+  set regexp {^ *([^ ]*) +}
+  for {set i 1} {$i < $nfields_m_1} {incr i} {
+    append regexp {[^ ]* +}
+  }
+  append regexp {(.*)$}
+  
+  $itk_component(choose_pid) clear
+  set pid_list {}
+
+  while {[gets $psH line] >= 0} {
+    regexp $regexp $line dummy PID COMMAND
+    if {[string match $pattern $COMMAND]} {
+      lappend pid_list [list $PID $COMMAND]
+      $itk_component(choose_pid) insert end $COMMAND
+    }
+  }
+
+  close $psH
+  $itk_component(choose_pid) selection set 0
+  select_pid
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  select_pid - Grab the selected element from the PID listbox
+#           and insert the associated PID into the entry form.
+# ------------------------------------------------------------------
+
+body AttachDlg::select_pid {} {
+  set hit [$itk_component(choose_pid) curselection]
+  if {$hit != ""} {
+    $itk_component(pid_entry) clear
+    $itk_component(pid_entry) insert 0 [lindex [lindex $pid_list $hit] 0]
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  clear_pid_selection - Clear the current PID selection.
+# ------------------------------------------------------------------
+
+body AttachDlg::clear_pid_selection {} {
+  $itk_component(choose_pid) selection clear 0 end
+  $itk_component(pid_entry) selection range 0 end
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  filter_pid_selection - Filters the pid box.
+# ------------------------------------------------------------------
+
+body AttachDlg::filter_pid_selection {} {
+  
+  list_pids [$itk_component(pid_filter) get]
+}

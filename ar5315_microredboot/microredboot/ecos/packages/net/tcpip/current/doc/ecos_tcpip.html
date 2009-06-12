@@ -1,0 +1,88 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; Linux 2.2.10 i686) [Netscape]">
+</head>
+<body>
+
+<center>
+<h1>
+TCP/IP Networking for eCos</h1></center>
+eCos now provides a complete TCP/IP networking stack.&nbsp; This package
+was derived from the latest stable release of <a href="http://www.openbsd.org/">OpenBSD</a>.&nbsp;&nbsp;
+At this time, the networking support is considered "beta" quality although
+it is already fully featured and well tested within the eCos environment.
+<p>Ethernet drivers are provided for these standard supported platforms:
+<blockquote>
+<li>
+Motorola PowerPC MBX/860</li>
+
+<li>
+Cirrus Logic EDB72xx</li>
+</blockquote>
+Other drivers for supported platforms are planned or underway.
+<h4>
+Networking Stack Features</h4>
+Since this networking package is based on the venerable BSD code, it is
+very complete and robust.&nbsp; The eCos implementation includes support
+for these protocols:
+<blockquote>
+<li>
+IPv4</li>
+
+<li>
+UDP</li>
+
+<li>
+TCP</li>
+
+<li>
+ICMP</li>
+
+<li>
+raw packet interface</li>
+</blockquote>
+These additional features are also present in the package.&nbsp; However
+they are not yet supported:
+<blockquote>
+<li>
+Berkeley Packet Filter</li>
+
+<li>
+Multi-cast and uni-cast support, including multi-casting routing</li>
+
+<li>
+IPv6</li>
+</blockquote>
+
+<h4>
+Provided Documentation</h4>
+Since the networking package is "beta", documentation is still a bit thin.&nbsp;
+However, you will find a complete set of pages documenting the supported
+networking functions (user code API) <a href="tcpip_library.html">here</a>.
+<h4>
+Ethernet Driver Design</h4>
+Note: Currently, the networking stack only supports ethernet based networking.
+<p>The network drivers use a two-layer design.&nbsp; One layer is hardware
+independent but contains all the stack specific code.&nbsp; The other layer
+is platform dependent and communicates with the hardware independent layer
+via a very simple API.&nbsp; In this way, hardware device drivers can actually
+be used with other stacks, if the same API can be provided by that stack.&nbsp;
+We designed the drivers this way to encourage the development of other
+stacks in eCos while allowing reuse of the actual hardware specific code.
+<p>Complete documentation of the ethernet device driver and the associated
+API can be found in the file <tt>net/drivers/eth/common/<i>version</i>/doc/driver_doc</tt>.
+<h4>
+Sample Code</h4>
+Many examples using the networking support are provided.&nbsp; These are
+arranged as eCos test programs, primarily for us to verify the package,
+but also can serve as useful frameworks for program design.&nbsp; We have
+taken a <i>KISS </i>approach to building programs which use the network.&nbsp;
+A single include file <tt>&lt;network.h></tt> is all that is required to
+access the stack.&nbsp; A complete, annotated test program can be found
+<a href="sample_program.html">here</a>.
+<br>&nbsp;
+<br>&nbsp;
+</body>
+</html>

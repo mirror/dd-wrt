@@ -1,0 +1,102 @@
+2003-10-02  Roland Cassebohm  <r.cassebohm@visionsystems.de>
+
+	* include/flash_at29cxxxx.inl: Improves driver, to work with 16 bit
+	wide access. The driver have to write 256 times after each command 
+	sequence, but with two 8 bit divices parallel, the driver writes
+	only 128 times.
+
+2001-09-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_at29cxxxx.inl: Added support for AT29LV1024. Added
+	code to erase blocks. Made driver work with 16bit wide
+	parts. Fixed flash size calculations.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/flash_atmel_at29cxxxx.cdl: Links functions to RAM. IO driver
+	need not copy.
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_at29cxxxx.inl: Include type macros from IO driver.
+
+2001-02-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_at29cxxxx.inl: Moved flash_query function. Call it
+	indirectly through the IO driver.
+
+2001-02-20  Jesper Skov  <jskov@redhat.com>
+
+	* .../atmel/at29cxxxx: Cloned from am29xxxxx driver.
+
+2000-12-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.h: Addresses and sizes are also affected by
+	interleaving.
+	* src/flash_erase_block.c: Plug in working loop.
+	* src/flash_program_buf.c: Same.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/am29f040b_flash.c (flash_hwr_init): Use new query semantics.
+	* src/flash_query.c (flash_query): Changed accordingly.
+
+	* src/flash.h (FLASH_Sector_Erase_Timer): Added.
+
+	* src/flash_erase_block.c: Do not check error flag after operation
+	completes.
+	* src/flash_program_buf.c: Same.
+
+2000-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/am29f040b_flash.c (flash_code_overlaps): Define stext/etext
+	as array types so no assumptions can be made by the compiler about
+	location.
+
+2000-12-05  Jesper Skov  <jskov@redhat.com>
+
+	* Cloned from MBX driver.
+
+2000-10-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/mbx_flash.c: 
+	* src/flash_query.c: 
+	* src/flash_program_buf.c: 
+	* src/flash_erase_block.c: 
+	* src/flash.h: 
+	* cdl/flash_mbx.cdl: New package/file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

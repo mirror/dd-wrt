@@ -1,0 +1,1220 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Debugging Options,  Next: Optimize Options,  Prev: Warning Options,  Up: Invoking GCC
+
+Options for Debugging Your Program or GCC
+=========================================
+
+   GCC has various special options that are used for debugging either
+your program or GCC:
+
+`-g'
+     Produce debugging information in the operating system's native
+     format (stabs, COFF, XCOFF, or DWARF).  GDB can work with this
+     debugging information.
+
+     On most systems that use stabs format, `-g' enables use of extra
+     debugging information that only GDB can use; this extra information
+     makes debugging work better in GDB but will probably make other
+     debuggers crash or refuse to read the program.  If you want to
+     control for certain whether to generate the extra information, use
+     `-gstabs+', `-gstabs', `-gxcoff+', `-gxcoff', `-gdwarf-1+',
+     `-gdwarf-1', or `-gvms' (see below).
+
+     Unlike most other C compilers, GCC allows you to use `-g' with
+     `-O'.  The shortcuts taken by optimized code may occasionally
+     produce surprising results: some variables you declared may not
+     exist at all; flow of control may briefly move where you did not
+     expect it; some statements may not be executed because they
+     compute constant results or their values were already at hand;
+     some statements may execute in different places because they were
+     moved out of loops.
+
+     Nevertheless it proves possible to debug optimized output.  This
+     makes it reasonable to use the optimizer for programs that might
+     have bugs.
+
+     The following options are useful when GCC is generated with the
+     capability for more than one debugging format.
+
+`-ggdb'
+     Produce debugging information for use by GDB.  This means to use
+     the most expressive format available (DWARF 2, stabs, or the
+     native format if neither of those are supported), including GDB
+     extensions if at all possible.
+
+`-gstabs'
+     Produce debugging information in stabs format (if that is
+     supported), without GDB extensions.  This is the format used by
+     DBX on most BSD systems.  On MIPS, Alpha and System V Release 4
+     systems this option produces stabs debugging output which is not
+     understood by DBX or SDB.  On System V Release 4 systems this
+     option requires the GNU assembler.
+
+`-gstabs+'
+     Produce debugging information in stabs format (if that is
+     supported), using GNU extensions understood only by the GNU
+     debugger (GDB).  The use of these extensions is likely to make
+     other debuggers crash or refuse to read the program.
+
+`-gcoff'
+     Produce debugging information in COFF format (if that is
+     supported).  This is the format used by SDB on most System V
+     systems prior to System V Release 4.
+
+`-gxcoff'
+     Produce debugging information in XCOFF format (if that is
+     supported).  This is the format used by the DBX debugger on IBM
+     RS/6000 systems.
+
+`-gxcoff+'
+     Produce debugging information in XCOFF format (if that is
+     supported), using GNU extensions understood only by the GNU
+     debugger (GDB).  The use of these extensions is likely to make
+     other debuggers crash or refuse to read the program, and may cause
+     assemblers other than the GNU assembler (GAS) to fail with an
+     error.
+
+`-gdwarf'
+     Produce debugging information in DWARF version 1 format (if that is
+     supported).  This is the format used by SDB on most System V
+     Release 4 systems.
+
+`-gdwarf+'
+     Produce debugging information in DWARF version 1 format (if that is
+     supported), using GNU extensions understood only by the GNU
+     debugger (GDB).  The use of these extensions is likely to make
+     other debuggers crash or refuse to read the program.
+
+`-gdwarf-2'
+     Produce debugging information in DWARF version 2 format (if that is
+     supported).  This is the format used by DBX on IRIX 6.
+
+`-gvms'
+     Produce debugging information in VMS debug format (if that is
+     supported).  This is the format used by DEBUG on VMS systems.
+
+`-gLEVEL'
+`-ggdbLEVEL'
+`-gstabsLEVEL'
+`-gcoffLEVEL'
+`-gxcoffLEVEL'
+`-gvmsLEVEL'
+     Request debugging information and also use LEVEL to specify how
+     much information.  The default level is 2.
+
+     Level 1 produces minimal information, enough for making backtraces
+     in parts of the program that you don't plan to debug.  This
+     includes descriptions of functions and external variables, but no
+     information about local variables and no line numbers.
+
+     Level 3 includes extra information, such as all the macro
+     definitions present in the program.  Some debuggers support macro
+     expansion when you use `-g3'.
+
+     Note that in order to avoid confusion between DWARF1 debug level 2,
+     and DWARF2, neither `-gdwarf' nor `-gdwarf-2' accept a
+     concatenated debug level.  Instead use an additional `-gLEVEL'
+     option to change the debug level for DWARF1 or DWARF2.
+
+`-p'
+     Generate extra code to write profile information suitable for the
+     analysis program `prof'.  You must use this option when compiling
+     the source files you want data about, and you must also use it when
+     linking.
+
+`-pg'
+     Generate extra code to write profile information suitable for the
+     analysis program `gprof'.  You must use this option when compiling
+     the source files you want data about, and you must also use it when
+     linking.
+
+`-a'
+     Generate extra code to write profile information for basic blocks,
+     which will record the number of times each basic block is
+     executed, the basic block start address, and the function name
+     containing the basic block.  If `-g' is used, the line number and
+     filename of the start of the basic block will also be recorded.
+     If not overridden by the machine description, the default action is
+     to append to the text file `bb.out'.
+
+     This data could be analyzed by a program like `tcov'.  Note,
+     however, that the format of the data is not what `tcov' expects.
+     Eventually GNU `gprof' should be extended to process this data.
+
+`-Q'
+     Makes the compiler print out each function name as it is compiled,
+     and print some statistics about each pass when it finishes.
+
+`-ftime-report'
+     Makes the compiler print some statistics about the time consumed
+     by each pass when it finishes.
+
+`-fmem-report'
+     Makes the compiler print some statistics about permanent memory
+     allocation when it finishes.
+
+`-fprofile-arcs'
+     Instrument "arcs" during compilation to generate coverage data or
+     for profile-directed block ordering.  During execution the program
+     records how many times each branch is executed and how many times
+     it is taken.  When the compiled program exits it saves this data
+     to a file called `SOURCENAME.da' for each source file.
+
+     For profile-directed block ordering, compile the program with
+     `-fprofile-arcs' plus optimization and code generation options,
+     generate the arc profile information by running the program on a
+     selected workload, and then compile the program again with the same
+     optimization and code generation options plus
+     `-fbranch-probabilities' (*note Options that Control Optimization:
+     Optimize Options.).
+
+     The other use of `-fprofile-arcs' is for use with `gcov', when it
+     is used with the `-ftest-coverage' option.
+
+     With `-fprofile-arcs', for each function of your program GCC
+     creates a program flow graph, then finds a spanning tree for the
+     graph.  Only arcs that are not on the spanning tree have to be
+     instrumented: the compiler adds code to count the number of times
+     that these arcs are executed.  When an arc is the only exit or
+     only entrance to a block, the instrumentation code can be added to
+     the block; otherwise, a new basic block must be created to hold
+     the instrumentation code.
+
+`-ftest-coverage'
+     Create data files for the `gcov' code-coverage utility (*note
+     `gcov': a GCC Test Coverage Program: Gcov.).  The data file names
+     begin with the name of your source file:
+
+    `SOURCENAME.bb'
+          A mapping from basic blocks to line numbers, which `gcov'
+          uses to associate basic block execution counts with line
+          numbers.
+
+    `SOURCENAME.bbg'
+          A list of all arcs in the program flow graph.  This allows
+          `gcov' to reconstruct the program flow graph, so that it can
+          compute all basic block and arc execution counts from the
+          information in the `SOURCENAME.da' file.
+
+     Use `-ftest-coverage' with `-fprofile-arcs'; the latter option
+     adds instrumentation to the program, which then writes execution
+     counts to another data file:
+
+    `SOURCENAME.da'
+          Runtime arc execution counts, used in conjunction with the arc
+          information in the file `SOURCENAME.bbg'.
+
+     Coverage data will map better to the source files if
+     `-ftest-coverage' is used without optimization.
+
+`-dLETTERS'
+     Says to make debugging dumps during compilation at times specified
+     by LETTERS.  This is used for debugging the compiler.  The file
+     names for most of the dumps are made by appending a pass number
+     and a word to the source file name (e.g.  `foo.c.00.rtl' or
+     `foo.c.01.sibling').  Here are the possible letters for use in
+     LETTERS, and their meanings:
+
+    `A'
+          Annotate the assembler output with miscellaneous debugging
+          information.
+
+    `b'
+          Dump after computing branch probabilities, to `FILE.14.bp'.
+
+    `B'
+          Dump after block reordering, to `FILE.29.bbro'.
+
+    `c'
+          Dump after instruction combination, to the file
+          `FILE.16.combine'.
+
+    `C'
+          Dump after the first if conversion, to the file `FILE.17.ce'.
+
+    `d'
+          Dump after delayed branch scheduling, to `FILE.31.dbr'.
+
+    `D'
+          Dump all macro definitions, at the end of preprocessing, in
+          addition to normal output.
+
+    `e'
+          Dump after SSA optimizations, to `FILE.04.ssa' and
+          `FILE.07.ussa'.
+
+    `E'
+          Dump after the second if conversion, to `FILE.26.ce2'.
+
+    `f'
+          Dump after life analysis, to `FILE.15.life'.
+
+    `F'
+          Dump after purging `ADDRESSOF' codes, to `FILE.09.addressof'.
+
+    `g'
+          Dump after global register allocation, to `FILE.21.greg'.
+
+    `h'
+          Dump after finalization of EH handling code, to `FILE.02.eh'.
+
+    `k'
+          Dump after reg-to-stack conversion, to `FILE.28.stack'.
+
+    `o'
+          Dump after post-reload optimizations, to `FILE.22.postreload'.
+
+    `G'
+          Dump after GCSE, to `FILE.10.gcse'.
+
+    `i'
+          Dump after sibling call optimizations, to `FILE.01.sibling'.
+
+    `j'
+          Dump after the first jump optimization, to `FILE.03.jump'.
+
+    `k'
+          Dump after conversion from registers to stack, to
+          `FILE.32.stack'.
+
+    `l'
+          Dump after local register allocation, to `FILE.20.lreg'.
+
+    `L'
+          Dump after loop optimization, to `FILE.11.loop'.
+
+    `M'
+          Dump after performing the machine dependent reorganisation
+          pass, to `FILE.30.mach'.
+
+    `n'
+          Dump after register renumbering, to `FILE.25.rnreg'.
+
+    `N'
+          Dump after the register move pass, to `FILE.18.regmove'.
+
+    `r'
+          Dump after RTL generation, to `FILE.00.rtl'.
+
+    `R'
+          Dump after the second scheduling pass, to `FILE.27.sched2'.
+
+    `s'
+          Dump after CSE (including the jump optimization that
+          sometimes follows CSE), to `FILE.08.cse'.
+
+    `S'
+          Dump after the first scheduling pass, to `FILE.19.sched'.
+
+    `t'
+          Dump after the second CSE pass (including the jump
+          optimization that sometimes follows CSE), to `FILE.12.cse2'.
+
+    `w'
+          Dump after the second flow pass, to `FILE.23.flow2'.
+
+    `X'
+          Dump after SSA dead code elimination, to `FILE.06.ssadce'.
+
+    `z'
+          Dump after the peephole pass, to `FILE.24.peephole2'.
+
+    `a'
+          Produce all the dumps listed above.
+
+    `m'
+          Print statistics on memory usage, at the end of the run, to
+          standard error.
+
+    `p'
+          Annotate the assembler output with a comment indicating which
+          pattern and alternative was used.  The length of each
+          instruction is also printed.
+
+    `P'
+          Dump the RTL in the assembler output as a comment before each
+          instruction.  Also turns on `-dp' annotation.
+
+    `v'
+          For each of the other indicated dump files (except for
+          `FILE.00.rtl'), dump a representation of the control flow
+          graph suitable for viewing with VCG to `FILE.PASS.vcg'.
+
+    `x'
+          Just generate RTL for a function instead of compiling it.
+          Usually used with `r'.
+
+    `y'
+          Dump debugging information during parsing, to standard error.
+
+`-fdump-unnumbered'
+     When doing debugging dumps (see `-d' option above), suppress
+     instruction numbers and line number note output.  This makes it
+     more feasible to use diff on debugging dumps for compiler
+     invocations with different options, in particular with and without
+     `-g'.
+
+`-fdump-translation-unit (C and C++ only)'
+`-fdump-translation-unit-OPTIONS (C and C++ only)'
+     Dump a representation of the tree structure for the entire
+     translation unit to a file.  The file name is made by appending
+     `.tu' to the source file name.  If the `-OPTIONS' form is used,
+     OPTIONS controls the details of the dump as described for the
+     `-fdump-tree' options.
+
+`-fdump-class-hierarchy (C++ only)'
+`-fdump-class-hierarchy-OPTIONS (C++ only)'
+     Dump a representation of each class's hierarchy and virtual
+     function table layout to a file.  The file name is made by
+     appending `.class' to the source file name.  If the `-OPTIONS'
+     form is used, OPTIONS controls the details of the dump as
+     described for the `-fdump-tree' options.
+
+`-fdump-tree-SWITCH (C++ only)'
+`-fdump-tree-SWITCH-OPTIONS (C++ only)'
+     Control the dumping at various stages of processing the
+     intermediate language tree to a file.  The file name is generated
+     by appending a switch specific suffix to the source file name.  If
+     the `-OPTIONS' form is used, OPTIONS is a list of `-' separated
+     options that control the details of the dump. Not all options are
+     applicable to all dumps, those which are not meaningful will be
+     ignored. The following options are available
+
+    `address'
+          Print the address of each node.  Usually this is not
+          meaningful as it changes according to the environment and
+          source file. Its primary use is for tying up a dump file with
+          a debug environment.
+
+    `slim'
+          Inhibit dumping of members of a scope or body of a function
+          merely because that scope has been reached. Only dump such
+          items when they are directly reachable by some other path.
+
+    `all'
+          Turn on all options.
+
+     The following tree dumps are possible:
+    `original'
+          Dump before any tree based optimization, to `FILE.original'.
+
+    `optimized'
+          Dump after all tree based optimization, to `FILE.optimized'.
+
+    `inlined'
+          Dump after function inlining, to `FILE.inlined'.
+
+`-fsched-verbose=N'
+     On targets that use instruction scheduling, this option controls
+     the amount of debugging output the scheduler prints.  This
+     information is written to standard error, unless `-dS' or `-dR' is
+     specified, in which case it is output to the usual dump listing
+     file, `.sched' or `.sched2' respectively.  However for N greater
+     than nine, the output is always printed to standard error.
+
+     For N greater than zero, `-fsched-verbose' outputs the same
+     information as `-dRS'.  For N greater than one, it also output
+     basic block probabilities, detailed ready list information and
+     unit/insn info.  For N greater than two, it includes RTL at abort
+     point, control-flow and regions info.  And for N over four,
+     `-fsched-verbose' also includes dependence info.
+
+`-fpretend-float'
+     When running a cross-compiler, pretend that the target machine
+     uses the same floating point format as the host machine.  This
+     causes incorrect output of the actual floating constants, but the
+     actual instruction sequence will probably be the same as GCC would
+     make when running on the target machine.
+
+`-save-temps'
+     Store the usual "temporary" intermediate files permanently; place
+     them in the current directory and name them based on the source
+     file.  Thus, compiling `foo.c' with `-c -save-temps' would produce
+     files `foo.i' and `foo.s', as well as `foo.o'.  This creates a
+     preprocessed `foo.i' output file even though the compiler now
+     normally uses an integrated preprocessor.
+
+`-time'
+     Report the CPU time taken by each subprocess in the compilation
+     sequence.  For C source files, this is the compiler proper and
+     assembler (plus the linker if linking is done).  The output looks
+     like this:
+
+          # cc1 0.12 0.01
+          # as 0.00 0.01
+
+     The first number on each line is the "user time," that is time
+     spent executing the program itself.  The second number is "system
+     time," time spent executing operating system routines on behalf of
+     the program.  Both numbers are in seconds.
+
+`-print-file-name=LIBRARY'
+     Print the full absolute name of the library file LIBRARY that
+     would be used when linking--and don't do anything else.  With this
+     option, GCC does not compile or link anything; it just prints the
+     file name.
+
+`-print-multi-directory'
+     Print the directory name corresponding to the multilib selected by
+     any other switches present in the command line.  This directory is
+     supposed to exist in `GCC_EXEC_PREFIX'.
+
+`-print-multi-lib'
+     Print the mapping from multilib directory names to compiler
+     switches that enable them.  The directory name is separated from
+     the switches by `;', and each switch starts with an `@' instead of
+     the `-', without spaces between multiple switches.  This is
+     supposed to ease shell-processing.
+
+`-print-prog-name=PROGRAM'
+     Like `-print-file-name', but searches for a program such as `cpp'.
+
+`-print-libgcc-file-name'
+     Same as `-print-file-name=libgcc.a'.
+
+     This is useful when you use `-nostdlib' or `-nodefaultlibs' but
+     you do want to link with `libgcc.a'.  You can do
+
+          gcc -nostdlib FILES... `gcc -print-libgcc-file-name`
+
+`-print-search-dirs'
+     Print the name of the configured installation directory and a list
+     of program and library directories gcc will search--and don't do
+     anything else.
+
+     This is useful when gcc prints the error message `installation
+     problem, cannot exec cpp0: No such file or directory'.  To resolve
+     this you either need to put `cpp0' and the other compiler
+     components where gcc expects to find them, or you can set the
+     environment variable `GCC_EXEC_PREFIX' to the directory where you
+     installed them.  Don't forget the trailing '/'.  *Note Environment
+     Variables::.
+
+`-dumpmachine'
+     Print the compiler's target machine (for example,
+     `i686-pc-linux-gnu')--and don't do anything else.
+
+`-dumpversion'
+     Print the compiler version (for example, `3.0')--and don't do
+     anything else.
+
+`-dumpspecs'
+     Print the compiler's built-in specs--and don't do anything else.
+     (This is used when GCC itself is being built.)  *Note Spec Files::.
+
+
+File: gcc.info,  Node: Optimize Options,  Next: Preprocessor Options,  Prev: Debugging Options,  Up: Invoking GCC
+
+Options That Control Optimization
+=================================
+
+   These options control various sorts of optimizations:
+
+`-O'
+`-O1'
+     Optimize.  Optimizing compilation takes somewhat more time, and a
+     lot more memory for a large function.
+
+     Without `-O', the compiler's goal is to reduce the cost of
+     compilation and to make debugging produce the expected results.
+     Statements are independent: if you stop the program with a
+     breakpoint between statements, you can then assign a new value to
+     any variable or change the program counter to any other statement
+     in the function and get exactly the results you would expect from
+     the source code.
+
+     With `-O', the compiler tries to reduce code size and execution
+     time, without performing any optimizations that take a great deal
+     of compilation time.
+
+`-O2'
+     Optimize even more.  GCC performs nearly all supported
+     optimizations that do not involve a space-speed tradeoff.  The
+     compiler does not perform loop unrolling or function inlining when
+     you specify `-O2'.  As compared to `-O', this option increases
+     both compilation time and the performance of the generated code.
+
+     `-O2' turns on all optional optimizations except for loop
+     unrolling, function inlining, and register renaming.  It also
+     turns on the `-fforce-mem' option on all machines and frame
+     pointer elimination on machines where doing so does not interfere
+     with debugging.
+
+     Please note the warning under `-fgcse' about invoking `-O2' on
+     programs that use computed gotos.
+
+`-O3'
+     Optimize yet more.  `-O3' turns on all optimizations specified by
+     `-O2' and also turns on the `-finline-functions' and
+     `-frename-registers' options.
+
+`-O0'
+     Do not optimize.
+
+`-Os'
+     Optimize for size.  `-Os' enables all `-O2' optimizations that do
+     not typically increase code size.  It also performs further
+     optimizations designed to reduce code size.
+
+     If you use multiple `-O' options, with or without level numbers,
+     the last such option is the one that is effective.
+
+   Options of the form `-fFLAG' specify machine-independent flags.
+Most flags have both positive and negative forms; the negative form of
+`-ffoo' would be `-fno-foo'.  In the table below, only one of the forms
+is listed--the one which is not the default.  You can figure out the
+other form by either removing `no-' or adding it.
+
+`-ffloat-store'
+     Do not store floating point variables in registers, and inhibit
+     other options that might change whether a floating point value is
+     taken from a register or memory.
+
+     This option prevents undesirable excess precision on machines such
+     as the 68000 where the floating registers (of the 68881) keep more
+     precision than a `double' is supposed to have.  Similarly for the
+     x86 architecture.  For most programs, the excess precision does
+     only good, but a few programs rely on the precise definition of
+     IEEE floating point.  Use `-ffloat-store' for such programs, after
+     modifying them to store all pertinent intermediate computations
+     into variables.
+
+`-fno-default-inline'
+     Do not make member functions inline by default merely because they
+     are defined inside the class scope (C++ only).  Otherwise, when
+     you specify `-O', member functions defined inside class scope are
+     compiled inline by default; i.e., you don't need to add `inline'
+     in front of the member function name.
+
+`-fno-defer-pop'
+     Always pop the arguments to each function call as soon as that
+     function returns.  For machines which must pop arguments after a
+     function call, the compiler normally lets arguments accumulate on
+     the stack for several function calls and pops them all at once.
+
+`-fforce-mem'
+     Force memory operands to be copied into registers before doing
+     arithmetic on them.  This produces better code by making all memory
+     references potential common subexpressions.  When they are not
+     common subexpressions, instruction combination should eliminate
+     the separate register-load.  The `-O2' option turns on this option.
+
+`-fforce-addr'
+     Force memory address constants to be copied into registers before
+     doing arithmetic on them.  This may produce better code just as
+     `-fforce-mem' may.
+
+`-fomit-frame-pointer'
+     Don't keep the frame pointer in a register for functions that
+     don't need one.  This avoids the instructions to save, set up and
+     restore frame pointers; it also makes an extra register available
+     in many functions.  *It also makes debugging impossible on some
+     machines.*
+
+     On some machines, such as the VAX, this flag has no effect, because
+     the standard calling sequence automatically handles the frame
+     pointer and nothing is saved by pretending it doesn't exist.  The
+     machine-description macro `FRAME_POINTER_REQUIRED' controls
+     whether a target machine supports this flag.  *Note Register
+     Usage: (gccint)Registers.
+
+`-foptimize-sibling-calls'
+     Optimize sibling and tail recursive calls.
+
+`-ftrapv'
+     This option generates traps for signed overflow on addition,
+     subtraction, multiplication operations.
+
+`-fno-inline'
+     Don't pay attention to the `inline' keyword.  Normally this option
+     is used to keep the compiler from expanding any functions inline.
+     Note that if you are not optimizing, no functions can be expanded
+     inline.
+
+`-finline-functions'
+     Integrate all simple functions into their callers.  The compiler
+     heuristically decides which functions are simple enough to be worth
+     integrating in this way.
+
+     If all calls to a given function are integrated, and the function
+     is declared `static', then the function is normally not output as
+     assembler code in its own right.
+
+`-finline-limit=N'
+     By default, gcc limits the size of functions that can be inlined.
+     This flag allows the control of this limit for functions that are
+     explicitly marked as inline (ie marked with the inline keyword or
+     defined within the class definition in c++).  N is the size of
+     functions that can be inlined in number of pseudo instructions
+     (not counting parameter handling).  The default value of N is 600.
+     Increasing this value can result in more inlined code at the cost
+     of compilation time and memory consumption.  Decreasing usually
+     makes the compilation faster and less code will be inlined (which
+     presumably means slower programs).  This option is particularly
+     useful for programs that use inlining heavily such as those based
+     on recursive templates with C++.
+
+     _Note:_ pseudo instruction represents, in this particular context,
+     an abstract measurement of function's size.  In no way, it
+     represents a count of assembly instructions and as such its exact
+     meaning might change from one release to an another.
+
+`-fkeep-inline-functions'
+     Even if all calls to a given function are integrated, and the
+     function is declared `static', nevertheless output a separate
+     run-time callable version of the function.  This switch does not
+     affect `extern inline' functions.
+
+`-fkeep-static-consts'
+     Emit variables declared `static const' when optimization isn't
+     turned on, even if the variables aren't referenced.
+
+     GCC enables this option by default.  If you want to force the
+     compiler to check if the variable was referenced, regardless of
+     whether or not optimization is turned on, use the
+     `-fno-keep-static-consts' option.
+
+`-fmerge-constants'
+     Attempt to merge identical constants (string constants and
+     floating point constants) accross compilation units.
+
+     This option is default for optimized compilation if assembler and
+     linker support it.  Use `-fno-merge-constants' to inhibit this
+     behavior.
+
+`-fmerge-all-constants'
+     Attempt to merge identical constants and identical variables.
+
+     This option implies `-fmerge-constants'.  In addition to
+     `-fmerge-constants' this considers e.g. even constant initialized
+     arrays or initialized constant variables with integral or floating
+     point types.  Languages like C or C++ require each non-automatic
+     variable to have distinct location, so using this option will
+     result in non-conforming behavior.
+
+`-fno-branch-count-reg'
+     Do not use "decrement and branch" instructions on a count register,
+     but instead generate a sequence of instructions that decrement a
+     register, compare it against zero, then branch based upon the
+     result.  This option is only meaningful on architectures that
+     support such instructions, which include x86, PowerPC, IA-64 and
+     S/390.
+
+`-fno-function-cse'
+     Do not put function addresses in registers; make each instruction
+     that calls a constant function contain the function's address
+     explicitly.
+
+     This option results in less efficient code, but some strange hacks
+     that alter the assembler output may be confused by the
+     optimizations performed when this option is not used.
+
+`-ffast-math'
+     Sets `-fno-math-errno', `-funsafe-math-optimizations', and
+     `-fno-trapping-math'.
+
+     This option causes the preprocessor macro `__FAST_MATH__' to be
+     defined.
+
+     This option should never be turned on by any `-O' option since it
+     can result in incorrect output for programs which depend on an
+     exact implementation of IEEE or ISO rules/specifications for math
+     functions.
+
+`-fno-math-errno'
+     Do not set ERRNO after calling math functions that are executed
+     with a single instruction, e.g., sqrt.  A program that relies on
+     IEEE exceptions for math error handling may want to use this flag
+     for speed while maintaining IEEE arithmetic compatibility.
+
+     This option should never be turned on by any `-O' option since it
+     can result in incorrect output for programs which depend on an
+     exact implementation of IEEE or ISO rules/specifications for math
+     functions.
+
+     The default is `-fmath-errno'.
+
+`-funsafe-math-optimizations'
+     Allow optimizations for floating-point arithmetic that (a) assume
+     that arguments and results are valid and (b) may violate IEEE or
+     ANSI standards.  When used at link-time, it may include libraries
+     or startup files that change the default FPU control word or other
+     similar optimizations.
+
+     This option should never be turned on by any `-O' option since it
+     can result in incorrect output for programs which depend on an
+     exact implementation of IEEE or ISO rules/specifications for math
+     functions.
+
+     The default is `-fno-unsafe-math-optimizations'.
+
+`-fno-trapping-math'
+     Compile code assuming that floating-point operations cannot
+     generate user-visible traps.  Setting this option may allow faster
+     code if one relies on "non-stop" IEEE arithmetic, for example.
+
+     This option should never be turned on by any `-O' option since it
+     can result in incorrect output for programs which depend on an
+     exact implementation of IEEE or ISO rules/specifications for math
+     functions.
+
+     The default is `-ftrapping-math'.
+
+`-fbounds-check'
+     For front-ends that support it, generate additional code to check
+     that indices used to access arrays are within the declared range.
+     This is currenly only supported by the Java and Fortran 77
+     front-ends, where this option defaults to true and false
+     respectively.
+
+   The following options control specific optimizations.  The `-O2'
+option turns on all of these optimizations except `-funroll-loops' and
+`-funroll-all-loops'.  On most machines, the `-O' option turns on the
+`-fthread-jumps' and `-fdelayed-branch' options, but specific machines
+may handle it differently.
+
+   You can use the following flags in the rare cases when "fine-tuning"
+of optimizations to be performed is desired.
+
+   Not all of the optimizations performed by GCC have `-f' options to
+control them.
+
+`-fstrength-reduce'
+     Perform the optimizations of loop strength reduction and
+     elimination of iteration variables.
+
+`-fthread-jumps'
+     Perform optimizations where we check to see if a jump branches to a
+     location where another comparison subsumed by the first is found.
+     If so, the first branch is redirected to either the destination of
+     the second branch or a point immediately following it, depending
+     on whether the condition is known to be true or false.
+
+`-fcse-follow-jumps'
+     In common subexpression elimination, scan through jump instructions
+     when the target of the jump is not reached by any other path.  For
+     example, when CSE encounters an `if' statement with an `else'
+     clause, CSE will follow the jump when the condition tested is
+     false.
+
+`-fcse-skip-blocks'
+     This is similar to `-fcse-follow-jumps', but causes CSE to follow
+     jumps which conditionally skip over blocks.  When CSE encounters a
+     simple `if' statement with no else clause, `-fcse-skip-blocks'
+     causes CSE to follow the jump around the body of the `if'.
+
+`-frerun-cse-after-loop'
+     Re-run common subexpression elimination after loop optimizations
+     has been performed.
+
+`-frerun-loop-opt'
+     Run the loop optimizer twice.
+
+`-fgcse'
+     Perform a global common subexpression elimination pass.  This pass
+     also performs global constant and copy propagation.
+
+     _Note:_ When compiling a program using computed gotos, a GCC
+     extension, you may get better runtime performance if you disable
+     the global common subexpression elmination pass by adding
+     `-fno-gcse' to the command line.
+
+`-fgcse-lm'
+     When `-fgcse-lm' is enabled, global common subexpression
+     elimination will attempt to move loads which are only killed by
+     stores into themselves.  This allows a loop containing a
+     load/store sequence to be changed to a load outside the loop, and
+     a copy/store within the loop.
+
+`-fgcse-sm'
+     When `-fgcse-sm' is enabled, A store motion pass is run after
+     global common subexpression elimination.  This pass will attempt
+     to move stores out of loops.  When used in conjunction with
+     `-fgcse-lm', loops containing a load/store sequence can be changed
+     to a load before the loop and a store after the loop.
+
+`-fdelete-null-pointer-checks'
+     Use global dataflow analysis to identify and eliminate useless
+     checks for null pointers.  The compiler assumes that dereferencing
+     a null pointer would have halted the program.  If a pointer is
+     checked after it has already been dereferenced, it cannot be null.
+
+     In some environments, this assumption is not true, and programs can
+     safely dereference null pointers.  Use
+     `-fno-delete-null-pointer-checks' to disable this optimization for
+     programs which depend on that behavior.
+
+`-fexpensive-optimizations'
+     Perform a number of minor optimizations that are relatively
+     expensive.
+
+`-foptimize-register-move'
+`-fregmove'
+     Attempt to reassign register numbers in move instructions and as
+     operands of other simple instructions in order to maximize the
+     amount of register tying.  This is especially helpful on machines
+     with two-operand instructions.  GCC enables this optimization by
+     default with `-O2' or higher.
+
+     Note `-fregmove' and `-foptimize-register-move' are the same
+     optimization.
+
+`-fdelayed-branch'
+     If supported for the target machine, attempt to reorder
+     instructions to exploit instruction slots available after delayed
+     branch instructions.
+
+`-fschedule-insns'
+     If supported for the target machine, attempt to reorder
+     instructions to eliminate execution stalls due to required data
+     being unavailable.  This helps machines that have slow floating
+     point or memory load instructions by allowing other instructions
+     to be issued until the result of the load or floating point
+     instruction is required.
+
+`-fschedule-insns2'
+     Similar to `-fschedule-insns', but requests an additional pass of
+     instruction scheduling after register allocation has been done.
+     This is especially useful on machines with a relatively small
+     number of registers and where memory load instructions take more
+     than one cycle.
+
+`-fno-sched-interblock'
+     Don't schedule instructions across basic blocks.  This is normally
+     enabled by default when scheduling before register allocation, i.e.
+     with `-fschedule-insns' or at `-O2' or higher.
+
+`-fno-sched-spec'
+     Don't allow speculative motion of non-load instructions.  This is
+     normally enabled by default when scheduling before register
+     allocation, i.e.  with `-fschedule-insns' or at `-O2' or higher.
+
+`-fsched-spec-load'
+     Allow speculative motion of some load instructions.  This only
+     makes sense when scheduling before register allocation, i.e. with
+     `-fschedule-insns' or at `-O2' or higher.
+
+`-fsched-spec-load-dangerous'
+     Allow speculative motion of more load instructions.  This only
+     makes sense when scheduling before register allocation, i.e. with
+     `-fschedule-insns' or at `-O2' or higher.
+
+`-ffunction-sections'
+`-fdata-sections'
+     Place each function or data item into its own section in the output
+     file if the target supports arbitrary sections.  The name of the
+     function or the name of the data item determines the section's name
+     in the output file.
+
+     Use these options on systems where the linker can perform
+     optimizations to improve locality of reference in the instruction
+     space.  HPPA processors running HP-UX and Sparc processors running
+     Solaris 2 have linkers with such optimizations.  Other systems
+     using the ELF object format as well as AIX may have these
+     optimizations in the future.
+
+     Only use these options when there are significant benefits from
+     doing so.  When you specify these options, the assembler and
+     linker will create larger object and executable files and will
+     also be slower.  You will not be able to use `gprof' on all
+     systems if you specify this option and you may have problems with
+     debugging if you specify both this option and `-g'.
+
+`-fcaller-saves'
+     Enable values to be allocated in registers that will be clobbered
+     by function calls, by emitting extra instructions to save and
+     restore the registers around such calls.  Such allocation is done
+     only when it seems to result in better code than would otherwise
+     be produced.
+
+     This option is always enabled by default on certain machines,
+     usually those which have no call-preserved registers to use
+     instead.
+
+     For all machines, optimization level 2 and higher enables this
+     flag by default.
+
+`-funroll-loops'
+     Unroll loops whose number of iterations can be determined at
+     compile time or upon entry to the loop.  `-funroll-loops' implies
+     both `-fstrength-reduce' and `-frerun-cse-after-loop'.  This
+     option makes code larger, and may or may not make it run faster.
+
+`-funroll-all-loops'
+     Unroll all loops, even if their number of iterations is uncertain
+     when the loop is entered.  This usually makes programs run more
+     slowly.  `-funroll-all-loops' implies the same options as
+     `-funroll-loops',
+
+`-fprefetch-loop-arrays'
+     If supported by the target machine, generate instructions to
+     prefetch memory to improve the performance of loops that access
+     large arrays.
+
+`-fmove-all-movables'
+     Forces all invariant computations in loops to be moved outside the
+     loop.
+
+`-freduce-all-givs'
+     Forces all general-induction variables in loops to be
+     strength-reduced.
+
+     _Note:_ When compiling programs written in Fortran,
+     `-fmove-all-movables' and `-freduce-all-givs' are enabled by
+     default when you use the optimizer.
+
+     These options may generate better or worse code; results are highly
+     dependent on the structure of loops within the source code.
+
+     These two options are intended to be removed someday, once they
+     have helped determine the efficacy of various approaches to
+     improving loop optimizations.
+
+     Please let us (<gcc@gcc.gnu.org> and <fortran@gnu.org>) know how
+     use of these options affects the performance of your production
+     code.  We're very interested in code that runs _slower_ when these
+     options are _enabled_.
+
+`-fno-peephole'
+`-fno-peephole2'
+     Disable any machine-specific peephole optimizations.  The
+     difference between `-fno-peephole' and `-fno-peephole2' is in how
+     they are implemented in the compiler; some targets use one, some
+     use the other, a few use both.
+
+`-fbranch-probabilities'
+     After running a program compiled with `-fprofile-arcs' (*note
+     Options for Debugging Your Program or `gcc': Debugging Options.),
+     you can compile it a second time using `-fbranch-probabilities',
+     to improve optimizations based on the number of times each branch
+     was taken.  When the program compiled with `-fprofile-arcs' exits
+     it saves arc execution counts to a file called `SOURCENAME.da' for
+     each source file  The information in this data file is very
+     dependent on the structure of the generated code, so you must use
+     the same source code and the same optimization options for both
+     compilations.
+
+     With `-fbranch-probabilities', GCC puts a `REG_EXEC_COUNT' note on
+     the first instruction of each basic block, and a `REG_BR_PROB'
+     note on each `JUMP_INSN' and `CALL_INSN'.  These can be used to
+     improve optimization.  Currently, they are only used in one place:
+     in `reorg.c', instead of guessing which path a branch is mostly to
+     take, the `REG_BR_PROB' values are used to exactly determine which
+     path is taken more often.
+
+`-fno-guess-branch-probability'
+     Do not guess branch probabilities using a randomized model.
+
+     Sometimes gcc will opt to use a randomized model to guess branch
+     probabilities, when none are available from either profiling
+     feedback (`-fprofile-arcs') or `__builtin_expect'.  This means that
+     different runs of the compiler on the same program may produce
+     different object code.
+
+     In a hard real-time system, people don't want different runs of the
+     compiler to produce code that has different behavior; minimizing
+     non-determinism is of paramount import.  This switch allows users
+     to reduce non-determinism, possibly at the expense of inferior
+     optimization.
+
+`-fstrict-aliasing'
+     Allows the compiler to assume the strictest aliasing rules
+     applicable to the language being compiled.  For C (and C++), this
+     activates optimizations based on the type of expressions.  In
+     particular, an object of one type is assumed never to reside at
+     the same address as an object of a different type, unless the
+     types are almost the same.  For example, an `unsigned int' can
+     alias an `int', but not a `void*' or a `double'.  A character type
+     may alias any other type.
+
+     Pay special attention to code like this:
+          union a_union {
+            int i;
+            double d;
+          };
+          
+          int f() {
+            a_union t;
+            t.d = 3.0;
+            return t.i;
+          }
+     The practice of reading from a different union member than the one
+     most recently written to (called "type-punning") is common.  Even
+     with `-fstrict-aliasing', type-punning is allowed, provided the
+     memory is accessed through the union type.  So, the code above
+     will work as expected.  However, this code might not:
+          int f() {
+            a_union t;
+            int* ip;
+            t.d = 3.0;
+            ip = &t.i;
+            return *ip;
+          }
+
+     Every language that wishes to perform language-specific alias
+     analysis should define a function that computes, given an `tree'
+     node, an alias set for the node.  Nodes in different alias sets
+     are not allowed to alias.  For an example, see the C front-end
+     function `c_get_alias_set'.
+
+`-falign-functions'
+`-falign-functions=N'
+     Align the start of functions to the next power-of-two greater than
+     N, skipping up to N bytes.  For instance, `-falign-functions=32'
+     aligns functions to the next 32-byte boundary, but
+     `-falign-functions=24' would align to the next 32-byte boundary
+     only if this can be done by skipping 23 bytes or less.
+
+     `-fno-align-functions' and `-falign-functions=1' are equivalent
+     and mean that functions will not be aligned.
+
+     Some assemblers only support this flag when N is a power of two;
+     in that case, it is rounded up.
+
+     If N is not specified, use a machine-dependent default.
+
+`-falign-labels'
+`-falign-labels=N'
+     Align all branch targets to a power-of-two boundary, skipping up to
+     N bytes like `-falign-functions'.  This option can easily make
+     code slower, because it must insert dummy operations for when the
+     branch target is reached in the usual flow of the code.
+
+     If `-falign-loops' or `-falign-jumps' are applicable and are
+     greater than this value, then their values are used instead.
+
+     If N is not specified, use a machine-dependent default which is
+     very likely to be `1', meaning no alignment.
+
+`-falign-loops'
+`-falign-loops=N'
+     Align loops to a power-of-two boundary, skipping up to N bytes
+     like `-falign-functions'.  The hope is that the loop will be
+     executed many times, which will make up for any execution of the
+     dummy operations.
+
+     If N is not specified, use a machine-dependent default.
+
+`-falign-jumps'
+`-falign-jumps=N'
+     Align branch targets to a power-of-two boundary, for branch targets
+     where the targets can only be reached by jumping, skipping up to N
+     bytes like `-falign-functions'.  In this case, no dummy operations
+     need be executed.
+
+     If N is not specified, use a machine-dependent default.
+
+`-fssa'
+     Perform optimizations in static single assignment form.  Each
+     function's flow graph is translated into SSA form, optimizations
+     are performed, and the flow graph is translated back from SSA
+     form.  Users should not specify this option, since it is not yet
+     ready for production use.
+
+`-fssa-ccp'
+     Perform Sparse Conditional Constant Propagation in SSA form.
+     Requires `-fssa'.  Like `-fssa', this is an experimental feature.
+
+`-fssa-dce'
+     Perform aggressive dead-code elimination in SSA form.  Requires
+     `-fssa'.  Like `-fssa', this is an experimental feature.
+
+`-fsingle-precision-constant'
+     Treat floating point constant as single precision constant instead
+     of implicitly converting it to double precision constant.
+
+`-frename-registers'
+     Attempt to avoid false dependencies in scheduled code by making use
+     of registers left over after register allocation.  This
+     optimization will most benefit processors with lots of registers.
+     It can, however, make debugging impossible, since variables will
+     no longer stay in a "home register".
+
+`-fno-cprop-registers'
+     After register allocation and post-register allocation instruction
+     splitting, we perform a copy-propagation pass to try to reduce
+     scheduling dependencies and occasionally eliminate the copy.
+
+`--param NAME=VALUE'
+     In some places, GCC uses various constants to control the amount of
+     optimization that is done.  For example, GCC will not inline
+     functions that contain more that a certain number of instructions.
+     You can control some of these constants on the command-line using
+     the `--param' option.
+
+     In each case, the VALUE is an integer.  The allowable choices for
+     NAME are given in the following table:
+
+    `max-delay-slot-insn-search'
+          The maximum number of instructions to consider when looking
+          for an instruction to fill a delay slot.  If more than this
+          arbitrary number of instructions is searched, the time
+          savings from filling the delay slot will be minimal so stop
+          searching.  Increasing values mean more aggressive
+          optimization, making the compile time increase with probably
+          small improvement in executable run time.
+
+    `max-delay-slot-live-search'
+          When trying to fill delay slots, the maximum number of
+          instructions to consider when searching for a block with
+          valid live register information.  Increasing this arbitrarily
+          chosen value means more aggressive optimization, increasing
+          the compile time.  This parameter should be removed when the
+          delay slot code is rewritten to maintain the control-flow
+          graph.
+
+    `max-gcse-memory'
+          The approximate maximum amount of memory that will be
+          allocated in order to perform the global common subexpression
+          elimination optimization.  If more memory than specified is
+          required, the optimization will not be done.
+
+    `max-gcse-passes'
+          The maximum number of passes of GCSE to run.
+
+    `max-pending-list-length'
+          The maximum number of pending dependencies scheduling will
+          allow before flushing the current state and starting over.
+          Large functions with few branches or calls can create
+          excessively large lists which needlessly consume memory and
+          resources.
+
+    `max-inline-insns'
+          If an function contains more than this many instructions, it
+          will not be inlined.  This option is precisely equivalent to
+          `-finline-limit'.
+

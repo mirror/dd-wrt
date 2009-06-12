@@ -1,0 +1,190 @@
+# ====================================================================
+#
+#      counters.cdl
+#
+#      configuration data related to the kernel counters and clocks
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg
+# Contributors:
+# Date:           1999-07-05
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGVAR_KERNEL_COUNTERS_CLOCK {
+    display       "Provide real-time clock"
+    requires      CYGIMP_KERNEL_INTERRUPTS_DSRS
+    default_value 1
+    description   "
+        On all current target systems the kernel can provide a
+        real-time clock. This clock serves two purposes. First it is
+        necessary to support clock and alarm related functions.
+        Second it is needed to implement timeslicing in some of the
+        schedulers including the mlqueue scheduler. If the
+        application does not require any of these facilities then it
+        is possible to disable the real time clock support
+        completely."
+}
+
+cdl_option CYGNUM_KERNEL_COUNTERS_CLOCK_ISR_PRIORITY {
+    display		"Interrupt priority for the real-time clock"
+    active_if		CYGVAR_KERNEL_COUNTERS_CLOCK
+    flavor		data
+    default_value	{ is_loaded(CYGNUM_HAL_KERNEL_COUNTERS_CLOCK_ISR_DEFAULT_PRIORITY) ?
+ 	                      CYGNUM_HAL_KERNEL_COUNTERS_CLOCK_ISR_DEFAULT_PRIORITY : 1 }
+    description "
+        The implementation of the kernel's real-time clock typically
+        involves installing an interrupt handler on a suitable hardware
+        timer. This option controls the priority level used for that
+        interrupt. On most platforms the value is not important because 
+        the clock ISR leaves most of the work to be done by the DSR. 
+        However some processors have interrupt controllers with special
+        requirements for the interrupt priorities, in which case
+        application developers must be able to manipulate the clock's
+        priority."
+}
+
+cdl_interface CYGINT_KERNEL_COUNTERS {
+    requires 1 == CYGINT_KERNEL_COUNTERS
+    no_define
+}
+
+# NOTE: these option should really be a single enum.
+cdl_option CYGIMP_KERNEL_COUNTERS_SINGLE_LIST {
+    display       "Implement counters using a single list"
+    default_value 1
+    implements    CYGINT_KERNEL_COUNTERS
+    description "
+        There are two different implementations of the counter
+        objects. The first implementation stores all alarms in a
+        single linked list. The alternative implementation uses a
+        table of linked lists. A single list is more efficient in
+        terms of memory usage and is generally adequate when the
+        application only makes use of a small number of alarms."
+}
+
+cdl_component CYGIMP_KERNEL_COUNTERS_MULTI_LIST {
+    display       "Implement counters using a table of lists"
+    default_value 0
+    implements    CYGINT_KERNEL_COUNTERS
+    description   "
+        There are two different implementations of the counter
+        objects. The first implementation stores all alarms in a
+        single linked list. The alternative implementation uses a
+        table of linked lists, with the size of the table being a
+        separate configurable option. For more complicated
+        operations it is better to have a table of lists since this
+        reduces the amount of computation whenever the timer goes
+        off. Assuming a table size of 8 (the default value) on
+        average the timer code will only need to check 1/8 of the
+        pending alarms instead of all of them."
+
+    cdl_option CYGNUM_KERNEL_COUNTERS_MULTI_LIST_SIZE {
+	display       "Size of counter list table"
+	flavor        data
+	legal_values  1 to 1024
+	default_value 8
+	description   "
+	    If counters are implemented using an array of linked lists
+	    then this option controls the size of the array. A larger
+	    size reduces the amount of computation that needs to take
+	    place whenever the timer goes off, but requires extra
+	    memory."
+    }
+}
+
+cdl_option CYGIMP_KERNEL_COUNTERS_SORT_LIST {
+    display       "Sort the counter list"
+    default_value 0
+    description   "
+        Sorting the counter lists reduces the amount of work that
+        has to be done when a counter tick is processed, since the
+        next alarm to expire is always at the front of the list.
+        However, it makes adding an alarm to the list more expensive
+        since a search must be done for the correct place to put it.
+        Many alarms are used to implement timeouts, which seldom trigger,
+        so it is worthwhile optimizing this case. For this reason
+        sorted list are disabled by default."
+}
+
+cdl_option CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY {
+    display       "Measure real-time \[clock\] interrupt latency"
+    requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+    default_value 0
+    description   "
+    Measure the interrupt latency as seen by the real-time clock
+    timer interrupt.  This requires hardware support, defined by
+    the HAL_CLOCK_LATENCY() macro."
+}
+
+cdl_option CYGVAR_KERNEL_COUNTERS_CLOCK_DSR_LATENCY {
+    display       "Measure real-time \[clock\] DSR latency"
+    requires      CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY
+    default_value CYGVAR_KERNEL_COUNTERS_CLOCK_LATENCY
+    description   "
+          Measure the DSR latency as seen by the real-time clock
+          timer interrupt.  This requires hardware support, defined by
+          the HAL_CLOCK_LATENCY() macro."
+}
+
+cdl_option CYGNUM_KERNEL_COUNTERS_RTC_RESOLUTION {
+    display       "RTC resolution"
+    flavor        data
+    calculated    {"{CYGNUM_HAL_RTC_NUMERATOR, CYGNUM_HAL_RTC_DENOMINATOR}"}
+    description   "
+	This option automatically defines the tuple which is used to
+	initialize the RTC resolution, consisting of a numerator and
+	denominator. The values of the numerator and denominator are
+        defined by the HAL."
+}
+
+cdl_option CYGNUM_KERNEL_COUNTERS_RTC_PERIOD {
+    display       "RTC period"
+    flavor        data
+    calculated    {"CYGNUM_HAL_RTC_PERIOD"}
+    description   "
+	This option defines the RTC period to be used in
+	setting the system clock hardware. It is essentially
+        an alias for CYGNUM_HAL_RTC_PERIOD, which is defined
+        in the HAL."
+}
+
+# EOF counters.cdl

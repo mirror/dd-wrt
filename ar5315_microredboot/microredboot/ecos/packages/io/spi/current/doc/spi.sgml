@@ -1,0 +1,711 @@
+<!-- DOCTYPE part  PUBLIC "-//OASIS//DTD DocBook V3.1//EN" -->
+
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     spi.sgml                                                    -->
+<!--                                                                 -->
+<!--     Generic SPI documentation.                                  -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2004 eCosCentric Limited                          -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Date:        2004/04/23                                         -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<part id="io-spi"><title>SPI Support</title>
+
+<refentry id="spi">
+  <refmeta>
+    <refentrytitle>Overview</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Overview</refname>
+    <refpurpose>eCos Support for SPI, the Serial Peripheral Interface</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="spi-description"><title>Description</title>
+    <para>
+The Serial Peripheral Interface (SPI) is one of a number of serial bus
+technologies. It can be used to connect a processor to one or more
+peripheral chips, for example analog-to-digital convertors or real
+time clocks, using only a small number of pins and PCB tracks. The
+technology was originally developed by Motorola but is now also
+supported by other vendors.
+    </para>
+    <para>
+A typical SPI system might look like this:
+    </para>
+    <informalfigure PgWide=1>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="spi_net.png" Scalefit=1 Align="Center">
+        </imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>
+At the start of a data transfer the master cpu asserts one of the chip
+select signals and then generates a clock signal. During each clock
+tick the cpu will output one bit on its master-out-slave-in line and
+read one bit on the master-in-slave-out line. Each device is connected
+to the clock line, the two data lines, and has its own chip select. If
+a device's chip select is not asserted then it will ignore any
+incoming data and will tristate its output. If a device's chip select
+is asserted then during each clock tick it will read one bit of data
+on its input pin and output one bit on its output pin.
+    </para>
+    <para>
+The net effect is that the cpu can write an arbitrary amount of data
+to one of the attached devices at a time, and simultaneously read the
+same amount of data. Some devices are inherently uni-directional. For
+example an LED unit would only accept data from the cpu: it will not
+send anything meaningful back; the cpu will still sample its input
+every clock tick, but this should be discarded.
+    </para>
+    <para>
+A useful feature of SPI is that there is no flow control from the
+device back to the cpu. If the cpu tries to communicate with a device
+that is not currently present, for example an MMC socket which does
+not contain a card, then the I/O will still proceed. However the cpu
+will read random data. Typically software-level CRC checksums or
+similar techniques will be used to allow the cpu to detect this.
+    </para>
+    <para>
+SPI communication is not fully standardized. Variations between
+devices include the following:
+    </para>
+    <orderedlist>
+      <listitem><para>
+Many devices involve byte transfers, where the unit of data is 8 bits.
+Others use larger units, up to 16 bits.
+      </para></listitem>
+      <listitem><para>
+Chip selects may be active-high or active-low. If the attached devices
+use a mixture of polarities then this can complicate things.
+      </para></listitem>
+      <listitem><para>
+Clock rates can vary from 128KHz to 20MHz or greater. With some
+devices it is necessary to interrogate the device using a slow clock,
+then use the obtained information to select a faster clock for
+subsequent transfers.
+      </para></listitem>
+      <listitem><para>
+The clock is inactive between data transfers. When inactive the
+clock's polarity can be high or low.
+      </para></listitem>
+      <listitem><para>
+Devices depend on the phase of the clock. Data may be sampled on
+either the rising edge or the falling edge of the clock.
+      </para></listitem>
+      <listitem><para>
+A device may need additional delays, for example between asserting
+the chip select and the first clock tick.
+      </para></listitem>
+      <listitem><para>
+Some devices involve complicated transactions: perhaps a command from
+cpu to device; then an initial status response from the device; a data
+transfer; and a final status response. From the cpu's perspective
+these are separate stages and it may be necessary to abort the
+operation after the initial status response. However the device may
+require that the chip select remain asserted for the whole
+transaction. A side effect of this is that it is not possible to do a
+quick transfer with another device in the middle of the transaction.
+      </para></listitem>
+      <listitem><para>
+Certain devices, for example MMC cards, depend on a clock signal after
+a transfer has completed and the chip select has dropped. This clock
+is used to finish some processing within the device.
+      </para></listitem>
+    </orderedlist>
+    <para>
+Inside the cpu the clock and data signals are usually managed by
+dedicated hardware. Alternatively SPI can be implemented using
+bit-banging, but that approach is normally used for other serial bus
+technologies such as I2C. The chip selects may also be implemented by
+the dedicated SPI hardware, but often GPIO pins are used instead.
+    </para>
+  </refsect1>
+
+  <refsect1 id="spi-ecos-implementation"><title>eCos Support for SPI</title>
+    <para>
+The eCos SPI support for any given platform is spread over a number of
+different packages:
+    </para>
+    <itemizedlist>
+      <listitem><para>
+This package, <varname>CYGPKG_IO_SPI</varname>, exports an API for
+accessing devices attached to an SPI bus. This API handles issues such
+as locking between threads. The package does not contain any
+hardware-specific code, instead it will call into an SPI bus driver
+package.
+      </para>
+      <para>
+In future this package may be extended with a bit-banging
+implementation of an SPI bus driver. This would depend on lower-level
+code for manipulating the GPIO pins used for the clock, data and chip
+select signals, but timing and framing could be handled by generic code.
+      </para></listitem>
+      <listitem><para>
+There will be a bus driver package for the specific SPI hardware on
+the target hardware, for example
+<varname>CYGPKG_DEVS_SPI_MCF52xx_QSPI</varname>. This is responsible
+for the actual I/O. A bus driver may be used on many different boards,
+all with the same SPI bus but with different devices attached to that
+bus. Details of the actual devices should be supplied by other code.
+      </para></listitem>
+      <listitem><para>
+The generic API depends on <structname>cyg_spi_device</structname>
+data structures. These contain the information needed by a bus driver,
+for example the appropriate clock rate and the chip select to use.
+Usually the data structures are provided by the platform HAL since it
+is that package which knows about all the devices on the board.
+      </para>
+      <para>
+On some development boards the SPI pins are brought out to expansion
+connectors, allowing end users to add extra devices. In such cases the
+platform HAL may not know about all the devices on the board. Data
+structures for the additional devices can instead be supplied by
+application code.
+      </para></listitem>
+      <listitem><para>
+Some types of SPI devices may have their own driver package. For
+example one common use for SPI buses is to provide low-cost
+MultiMediaCard (MMC) support. An MMC is a non-trivial device so there
+is an eCos package specially for that, providing a block device
+interface for higher-level code such as file systems. Other SPI
+devices such as analog-to-digital converters are much simpler and
+come in many varieties. There are no dedicated packages to support
+each such device: the chances are low that another board would use the
+exact same device, so there are no opportunities for code re-use.
+Instead the devices may be accessed directly by application code or by
+extra functions in the platform HAL.
+      </para></listitem>
+    </itemizedlist>
+    <para>
+Typically all appropriate packages will be loaded automatically when
+you configure eCos for a given target. If the application does not use
+of the SPI I/O facilities, directly or indirectly, then linker garbage
+collection should eliminate all unnecessary code and data. All
+necessary initialization should happen automatically. However the
+exact details may depend on the target, so the platform HAL
+documentation should be checked for further details.
+    </para>
+    <para>
+There is one important exception to this: if the SPI devices are
+attached to an expansion connector then the platform HAL will not know
+about these devices. Instead more work will have to be done by
+application code.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<refentry id="spi-api">
+  <refmeta>
+    <refentrytitle>SPI Interface</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>SPI Functions</refname>
+    <refpurpose>allow applications and other packages to access SPI devices</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <funcsynopsis>
+      <funcsynopsisinfo>
+#include &lt;cyg/io/spi.h&gt;
+      </funcsynopsisinfo>
+      <funcprototype>
+        <funcdef>void <function>cyg_spi_transfer</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+        <paramdef>cyg_bool <parameter>polled</parameter></paramdef>
+        <paramdef>cyg_uint32 <parameter>count</parameter></paramdef>
+        <paramdef>const cyg_uint8* <parameter>tx_data</parameter></paramdef>
+        <paramdef>cyg_uint8* <parameter>rx_data</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>void <function>cyg_spi_tick</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+        <paramdef>cyg_bool <parameter>polled</parameter></paramdef>
+        <paramdef>cyg_uint32 <parameter>count</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>int <function>cyg_spi_get_config</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+        <paramdef>cyg_uint32 <parameter>key</parameter></paramdef>
+        <paramdef>void* <parameter>buf</parameter></paramdef>
+        <paramdef>cyg_uint32* <parameter>len</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>int <function>cyg_spi_set_config</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+        <paramdef>cyg_uint32 <parameter>key</parameter></paramdef>
+        <paramdef>const void* <parameter>buf</parameter></paramdef>
+        <paramdef>cyg_uint32* <parameter>len</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>void <function>cyg_spi_transaction_begin</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>cyg_bool <function>cyg_spi_transaction_begin_nb</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>void <function>cyg_spi_transaction_transfer</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+        <paramdef>cyg_bool <parameter>polled</parameter></paramdef>
+        <paramdef>cyg_uint32 <parameter>count</parameter></paramdef>
+        <paramdef>const cyg_uint8* <parameter>tx_data</parameter></paramdef>
+        <paramdef>cyg_uint8* <parameter>rx_data</parameter></paramdef>
+        <paramdef>cyg_bool <parameter>drop_cs</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>void <function>cyg_spi_transaction_tick</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+        <paramdef>cyg_bool <parameter>polled</parameter></paramdef>
+        <paramdef>cyg_uint32 <parameter>count</parameter></paramdef>
+      </funcprototype>
+      <funcprototype>
+        <funcdef>void <function>cyg_spi_transaction_end</function></funcdef>
+        <paramdef>cyg_spi_device* <parameter>device</parameter></paramdef>
+      </funcprototype>
+    </funcsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="spi-api-description"><title>Description</title>
+    <para>
+All SPI functions take a pointer to a
+<structname>cyg_spi_device</structname> structure as their first
+argument. This is an opaque data structure, usually provided by the
+platform HAL. It contains the information needed by the SPI bus driver
+to interact with the device, for example the required clock rate and
+polarity.
+    </para>
+    <para>
+An SPI transfer involves the following stages:
+    </para>
+    <orderedlist>
+      <listitem><para>
+Perform thread-level locking on the bus. Only one thread at a time is
+allowed to access an SPI bus. This eliminates the need to worry about
+locking at the bus driver level. If a platform involves multiple SPI
+buses then each one will have its own lock. Prepare the bus for
+transfers to the specified device, for example by making sure it will
+tick at the right clock rate.
+      </para></listitem>
+      <listitem><para>
+Assert the chip select on the specified device, then transfer data to
+and from the device. There may be a single data transfer or a
+sequence. It may or may not be necessary to keep the chip select
+asserted throughout a sequence.
+      </para></listitem>
+      <listitem><para>
+Optionally generate some number of clock ticks without asserting a
+chip select, for those devices which need this to complete an
+operation.
+      </para></listitem>
+      <listitem><para>
+Return the bus to a quiescent state. Then unlock the bus, allowing
+other threads to perform SPI operations on devices attached to this
+bus.
+      </para></listitem>
+    </orderedlist>
+    <para>
+The simple functions <function>cyg_spi_transfer</function> and
+<function>cyg_spi_tick</function> perform all these steps in a single
+call. These are suitable for simple I/O operations. The alternative
+transaction-oriented functions each perform just one of these steps.
+This makes it possible to perform multiple transfers while only
+locking and unlocking the bus once, as required for more complicated
+devices.
+    </para>
+    <para>
+With the exception of
+<function>cyg_spi_transaction_begin_nb</function> all the functions
+will block until completion. There are no error conditions. An SPI
+transfer will always take a predictable amount of time, depending on
+the transfer size and the clock rate. The SPI bus does not receive any
+feedback from a device about possible errors, instead those have to be
+handled by software at a higher level. If a thread cannot afford the
+time it will take to perform a complete large transfer then a number
+of smaller transfers can be used instead.
+    </para>
+    <para>
+SPI operations should always be performed at thread-level or during
+system initialization, and not inside an ISR or DSR. This greatly
+simplifies locking. Also a typical ISR or DSR should not perform a
+blocking operation such as an SPI transfer.
+    </para>
+    <para>
+SPI transfers can happen in either polled or interrupt-driven mode.
+Typically polled mode should be used during system initialization,
+before the scheduler has been started and interrupts have been
+enabled. Polled mode should also be used in single-threaded
+applications such as RedBoot. A typical multi-threaded application
+should normally use interrupt-driven mode because this allows for more
+efficient use of cpu cycles. Polled mode may be used in a
+multi-threaded application but this is generally undesirable: the cpu
+will spin while waiting for a transfer to complete, wasting cycles;
+also the current thread may get preempted or timesliced, making the
+timing of an SPI transfer much less predictable. On some hardware
+interrupt-driven mode is impossible or would be very inefficient. In
+such cases the bus drivers will only support polled mode and will
+ignore the <varname>polled</varname> argument.
+    </para>
+  </refsect1>
+
+  <refsect1 id="spi-api-transfer"><title>Simple Transfers</title>
+    <para>
+<function>cyg_spi_transfer</function> can be used for SPI operations
+to simple devices. It takes the following arguments:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><type>cyg_spi_device*</type> <varname>device</varname></term>
+        <listitem><para>
+This identifies the SPI device that should be used.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><type>cyg_bool</type> <varname>polled</varname></term>
+        <listitem><para>
+Polled mode should be used during system initialization and in a
+single-threaded application. Interrupt-driven mode should normally be
+used in a multi-threaded application.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><type>cyg_uint32</type> <varname>count</varname></term>
+        <listitem><para>
+This identifies the number of data items to be transferred. Usually
+each data item is a single byte, but some devices use a larger size up
+to 16 bits.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><type>const cyg_uint8*</type> <varname>tx_data</varname></term>
+        <listitem><para>
+The data to be transferred to the device. If the device will only
+output data and ignore its input then a null pointer can be used.
+Otherwise the array should contain <varname>count</varname> data
+items, usually bytes. For devices where each data item is larger than
+one byte the argument will be interpreted as an array of shorts
+instead, and should be aligned to a 2-byte boundary. The bottom n bits
+of each short will be sent to the device. The buffer need not be
+aligned to a cache-line boundary, even for SPI devices which use DMA
+transfers, but some bus drivers may provide better performance if the
+buffer is suitably aligned. The buffer will not be modified by the
+transfer. 
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><type>cyg_uint8*</type> <varname>rx_data</varname></term>
+        <listitem><para>
+A buffer for the data to be received from the device. If the device
+does not generate any output then a null pointer can be used.
+The same size and alignment rules apply as for <varname>tx_data</varname>.
+        </para></listitem>
+      </varlistentry>
+    </variablelist>
+    <para>
+<function>cyg_spi_transfer</function> performs all the stages of an
+SPI transfer: locking the bus; setting it up correctly for the
+specified device; asserting the chip select and transferring the data;
+dropping the chip select at the end of the transfer; returning the bus
+to a quiescent state; and unlocking the bus.
+    </para>
+  </refsect1>
+
+  <refsect1 id="spi-api-tick"><title>Additional Clock Ticks</title>
+    <para>
+Some devices require a number of clock ticks on the SPI bus between
+transfers so that they can complete some internal processing. These
+ticks must happen at the appropriate clock rate but no chip select
+should be asserted and no data transfer will happen.
+<function>cyg_spi_tick</function> provides this functionality.
+The <varname>device</varname> argument identifies the SPI bus, the
+required clock rate and the size of each data item. The
+<varname>polled</varname> argument has the usual meaning. The
+<varname>count</varname> argument specifies the number of data items
+that would be transferred, which in conjunction with the size of each
+data item determines the number of clock ticks.
+    </para>
+  </refsect1>
+
+  <refsect1 id="spi-api-transaction"><title>Transactions</title>
+    <para>
+A transaction-oriented API is available for interacting with more
+complicated devices. This provides separate functions for each of the
+steps in an SPI transfer.
+    </para>
+    <para>
+<function>cyg_spi_transaction_begin</function> must be used at the
+start of a transaction. This performs thread-level locking on the bus,
+blocking if it is currently in use by another thread. Then it prepares
+the bus for transfers to the specified device, for example by making
+sure it will tick at the right clock rate.
+    </para>
+    <para>
+<function>cyg_spi_transaction_begin_nb</function> is a non-blocking
+variant, useful for threads which cannot afford to block for an
+indefinite period. If the bus is currently locked the function returns
+false immediately. If the bus is not locked then it acts as
+<filename>cyg_spi_transaction_begin</filename> and returns true.
+    </para>
+    <para>
+Once the bus has been locked it is possible to perform one or more
+data transfers by calling
+<function>cyg_spi_transaction_transfer</function>. This takes the same
+arguments as <function>cyg_spi_transfer</function>, plus an additional
+one <varname>drop_cs</varname>. A non-zero value specifies that
+the device's chip select should be dropped at the end of the transfer,
+otherwise the chip select remains asserted. It is essential that the
+chip select be dropped in the final transfer of a transaction. If the
+protocol makes this difficult then
+<function>cyg_spi_transaction_tick</function> can be used to generate
+dummy ticks with all chip selects dropped.
+    </para>
+    <para>
+If the device requires additional clock ticks in the middle of a
+transaction without being selected,
+<function>cyg_spi_transaction_tick</function> can be used. This will
+drop the device's chip select if necessary, then generate the
+appropriate number of ticks. The arguments are the same as for
+<function>cyg_spi_tick</function>.
+    </para>
+    <para>
+<function>cyg_spi_transaction_end</function> should be called at the
+end of a transaction. It returns the SPI bus to a quiescent state,
+then unlocks it so that other threads can perform I/O.
+    </para>
+    <para>
+A typical transaction might involve the following. First a command
+should be sent to the device, consisting of four bytes. The device
+will then respond with a single status byte, zero for failure,
+non-zero for success. If successful then the device can accept another
+n bytes of data, and will generate a 2-byte response including a
+checksum. The device's chip select should remain asserted throughout.
+The code for this would look something like:
+    </para>
+    <programlisting>
+#include &lt;cyg/io/spi.h&gt;
+#include &lt;cyg/hal/hal_io.h&gt;    // Defines the SPI devices
+&hellip;
+    cyg_spi_transaction_begin(&amp;hal_spi_eprom);
+    // Interrupt-driven transfer, four bytes of command
+    cyg_spi_transaction_transfer(&amp;hal_spi_eprom, 0, 4, command, NULL, 0);
+    // Read back the status
+    cyg_spi_transaction_transfer(&amp;hal_spi_eprom, 0, 1, NULL, status, 0);
+    if (!status[0]) {
+        // Command failed, generate some extra ticks to drop the chip select
+        cyg_spi_transaction_tick(&amp;hal_spi_eprom, 0, 1);
+    } else {
+        // Transfer the data, then read back the final status. The
+        // chip select should be dropped at the end of this.
+        cyg_spi_transaction_transfer(&amp;hal_spi_eprom, 0, n, data, NULL, 0);
+        cyg_spi_transaction_transfer(&amp;hal_spi_eprom, 0, 2, NULL, status, 1);
+        // Code for checking the final status should go here 
+    }
+    // Transaction complete so clean up
+    cyg_spi_transaction_end(&amp;hal_spi_eprom);
+    </programlisting>
+    <para>
+A number of variations are possible. For example the command and
+status could be packed into the beginning and end of two 5-byte
+arrays, allowing a single transfer.
+    </para>
+  </refsect1>
+
+  <refsect1 id="spi-api-config"><title>Device Configuration</title>
+    <para>
+The functions <function>cyg_spi_get_config</function> and
+<function>cyg_spi_set_config</function> can be used to examine and
+change parameters associated with SPI transfers. The only keys that
+are defined for all devices are
+<varname>CYG_IO_GET_CONFIG_SPI_CLOCKRATE</varname> and
+<varname>CYG_IO_SET_CONFIG_SPI_CLOCKRATE</varname>. Some types of
+device, for example MMC cards, support a range of clock rates. The
+<structname>cyg_spi_device</structname> structure will be initialized
+with a low clock rate. During system initialization the device will be
+queried for the optimal clock rate, and the
+<structname>cyg_spi_device</structname> should then be updated. The
+argument should be a clock rate in Hertz. For example the following
+code switches communication to 1Mbit/s:
+    </para>
+    <programlisting>
+    cyg_uint32    new_clock_rate = 1000000;
+    cyg_uint32    len            = sizeof(cyg_uint32);
+    if (cyg_spi_set_config(&amp;hal_mmc_device,
+                           CYG_IO_SET_CONFIG_SPI_CLOCKRATE,
+                           (const void *)&amp;new_clock_rate, &amp;len)) {
+        // Error recovery code
+    }
+    </programlisting>
+    <para>
+If an SPI bus driver does not support the exact clock rate specified
+it will normally use the nearest valid one. SPI bus drivers may define
+additional keys appropriate for specific hardware. This means that the
+valid keys are not known by the generic code, and theoretically it is
+possible to use a key that is not valid for the SPI bus to which the
+device is attached. It is also possible that the argument used with
+one of these keys is invalid. Hence both
+<function>cyg_spi_get_config</function> and
+<function>cyg_spi_set_config</function> can return error codes. The
+return value will be 0 for success, non-zero for failure. The SPI bus
+driver's documentation should be consulted for further details.
+    </para>
+    <para>
+Both configuration functions will lock the bus, in the same way as
+<function>cyg_spi_transfer</function>. Changing the clock rate in the
+middle of a transfer or manipulating other parameters would have
+unexpected consequences.
+    </para>
+  </refsect1>
+
+</refentry>
+
+<refentry id="spi-porting">
+  <refmeta>
+    <refentrytitle>Porting to New Hardware</refentrytitle>
+  </refmeta>
+  <refnamediv>
+    <refname>Porting</refname>
+    <refpurpose>Adding SPI support to new hardware</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="spi-porting-description"><title>Description</title>
+    <para>
+Adding SPI support to an eCos port can take two forms. If there is
+already an SPI bus driver for the target hardware then both that
+driver and this generic SPI package <varname>CYGPKG_IO_SPI</varname>
+should be included in the <database>ecos.db</database> target entry.
+Typically the platform HAL will need to supply some platform-specific
+information needed by the bus driver. In addition the platform HAL
+should provide <structname>cyg_spi_device</structname> structures for
+every device attached to the bus. The exact details of this depend on
+the bus driver so its documentation should be consulted for further
+details. If there is no suitable SPI bus driver yet then a new driver
+package will have to be written.
+    </para>
+  </refsect1>
+
+  <refsect1 id="spi-porting-devices"><title>Adding a Device</title>
+    <para>
+The generic SPI package <varname>CYGPKG_IO_SPI</varname> defines a
+data structure <structname>cyg_spi_device</structname>. This contains
+the information needed by the generic package, but not the additional
+information needed by a bus driver to interact with the device. Each
+bus driver will define a larger data structure, for example
+<structname>cyg_mcf52xx_qspi_device</structname>, which contains a
+<structname>cyg_spi_device</structname> as its first field. This is
+analogous to C++ base and derived classes, but without any use of
+virtual functions. The bus driver package should be consulted for the
+details.
+    </para>
+    <para>
+During initialization an SPI bus driver may need to know about all the
+devices attached to that bus. For example it may need to know which
+cpu pins should be configured as chip selects rather than GPIO pins.
+To achieve this all device definitions should specify the particular
+bus to which they are attached, for example:
+    </para>
+    <programlisting>
+struct cyg_mcf52xx_qspi_device hal_spi_atod = {
+    .spi_common.spi_bus = &amp;cyg_mcf52xx_qspi_bus,
+    &hellip;
+} CYG_SPI_DEVICE_ON_BUS(0);
+    </programlisting>
+    <para>
+The <function>CYG_SPI_DEVICE_ON_BUS</function> macro adds information
+to the structure which causes the linker to group all such structures
+in a single table. The bus driver's initialization code can then
+iterate over this table. 
+    </para>
+  </refsect1>
+
+  <refsect1 id="spi-porting-bus"><title>Adding Bus Support</title>
+    <para>
+An SPI bus driver usually involves a new hardware package. This needs
+to perform the following:
+    </para>
+    <orderedlist>
+      <listitem><para>
+Define a device structure which contains a
+<structname>cyg_spi_device</structname> as its first element. This
+should contain all the information needed by the bus driver to
+interact with a device on that bus.
+      </para></listitem>
+      <listitem><para>
+Provide functions for the following operations:
+      </para>
+      <simplelist type="vert" columns="1">
+        <member><function>spi_transaction_begin</function></member>
+        <member><function>spi_transaction_transfer</function></member>
+        <member><function>spi_transaction_tick</function></member>
+        <member><function>spi_transaction_end</function></member>
+        <member><function>spi_get_config</function></member>
+        <member><function>spi_set_config</function></member>
+      </simplelist>
+      <para>
+These correspond to the main API functions, but can assume that the
+bus is already locked so no other thread will be manipulating the bus
+or any of the attached devices. Some of these operations may be no-ops.
+      </para></listitem>
+      <listitem><para>
+Define a bus structure which contains a
+<structname>cyg_spi_bus</structname> as its first element. This should
+contain any additional information needed by the bus driver.
+      </para></listitem>
+      <listitem><para>
+Optionally, instantiate the bus structure. The instance should have a
+well-known name since it needs to be referenced by the device
+structure initializers. For some drivers it may be best to create the
+bus inside the driver package. For other drivers it may be better to
+leave this to the platform HAL or the application. It depends on how
+much platform-specific knowledge is needed to fill in the bus
+structure.
+      </para></listitem>
+      <listitem><para>
+Create a HAL table for the devices attached to this bus.
+      </para></listitem>
+      <listitem><para>
+Arrange for the bus to be initialized early on during system
+initialization. Typically this will happen via a prioritized static
+constructor. As part of this initialization the bus driver should
+invoke the <function>CYG_SPI_BUS_COMMON_INIT</function> macro on its
+<structname>cyg_spi_bus</structname> field.
+      </para></listitem>
+      <listitem><para>
+Provide the appropriate documentation, including details of how the
+SPI device structures should be initialized.
+      </para></listitem>
+    </orderedlist>
+    <para>
+There are no standard SPI testcases. It is not possible to write SPI
+code without knowing about the devices attached to the bus, and those
+are inherently hardware-specific.
+    </para>
+  </refsect1>
+
+</refentry>
+</part>

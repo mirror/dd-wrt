@@ -1,0 +1,75 @@
+NAME
+       connect - initiate a connection on a socket
+
+SYNOPSIS
+       #include <network.h>
+
+       int  connect(int  sockfd,  struct sockaddr *serv_addr, int
+       addrlen);
+
+DESCRIPTION
+       The parameter sockfd is a socket.  If  the  socket  is  of
+       type  SOCK_DGRAM,  this call specifies the peer with which
+       the socket is to be associated; this address  is  that  to
+       which  datagrams are to be sent, and the only address from
+       which datagrams are to be received.  If the socket  is  of
+       type  SOCK_STREAM, this call attempts to make a connection
+       to another socket.   The  other  socket  is  specified  by
+       serv_addr, which is an address in the communications space
+       of the socket.  Each communications space  interprets  the
+       serv_addr  parameter  in  its  own way.  Generally, stream
+       sockets may successfully connect only once; datagram sock-
+       ets may use connect multiple times to change their associ-
+       ation.  Datagram sockets may dissolve the  association  by
+       connecting  to an address with the sa_family sockaddr mem-
+       ber set to AF_UNSPEC.
+
+RETURN VALUE
+       If the connection or binding succeeds, zero  is  returned.
+       On  error, -1 is returned, and errno is set appropriately.
+
+ERRORS
+       The following are general socket errors only.   There  may
+       be other domain-specific error codes.
+
+       EBADF   Bad descriptor.
+
+       ENOTSOCK
+               The descriptor is not associated with a socket.
+
+       EISCONN The socket is already connected.
+
+       ECONNREFUSED
+               Connection refused at server.
+
+       ETIMEDOUT
+               Timeout while attempting connection.
+
+       ENETUNREACH
+               Network is unreachable.
+
+       EADDRINUSE
+               Address is already in use.
+
+       EINPROGRESS
+               The socket is non-blocking and the connection can-
+               not  be  completed immediately.  It is possible to
+               select(2) or poll(2) for completion  by  selecting
+               the  socket  for  writing.  After select indicates
+               writability,  use  getsockopt(2)   to   read   the
+               SO_ERROR  option  at level SOL_SOCKET to determine
+               whether connect completed  successfully  (SO_ERROR
+               is zero) or unsuccessfully (SO_ERROR is one of the
+               usual error codes  listed  above,  explaining  the
+               reason for the failure).
+
+       EALREADY
+               The  socket is non-blocking and a previous connec-
+               tion attempt has not yet been completed.
+
+       EAFNOSUPPORT
+               The passed address didn't have the correct address
+               family in its sa_family field.
+
+       EACCES  The  user  tried to connect to a broadcast address
+               without having the socket broadcast flag  enabled.

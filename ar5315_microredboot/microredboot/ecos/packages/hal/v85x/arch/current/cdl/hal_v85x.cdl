@@ -1,0 +1,107 @@
+# ====================================================================
+#
+#      hal_v85x.cdl
+#
+#      NEC architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Contributors:   jlarmour
+# Date:           2001-03-21
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_V85X {
+    display "NEC V85x architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_v85x.h
+    description   "
+        The NEC V85x architecture HAL package provides generic support
+        for this processor architecture. It is also necessary to
+        select a CPU variant and a specific target platform HAL
+        package."
+
+    cdl_interface CYGINT_HAL_V85X_VARIANT {
+        display  "Number of variant implementations in this configuration"
+        no_define
+        requires 1 == CYGINT_HAL_V85X_VARIANT
+    }
+
+    compile hal_misc.c
+
+    make -priority 1 {
+        <PREFIX>/include/cyg/hal/nec_offsets.inc : <PACKAGE>/src/hal_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,nec_offsets.tmp -o hal_mk_defs.tmp -S $<
+        fgrep .equ hal_mk_defs.tmp | sed s/#// > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 nec_offsets.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm nec_offsets.tmp hal_mk_defs.tmp
+    }
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+
+    cdl_option CYGSEM_HAL_V85X_INLINE_INTERRUPT_FUNCTIONS {
+        display        "In-line interrupt functions"
+        flavor         bool
+        default_value  1
+        description "
+           This option allows for the HAL interrupt functions, 
+           e.g. HAL_ENABLE_INTERRUPTS() to be coded as either in-line
+           assembly code or real functions.  The primary motivations
+           for the latter would be debugging, tracing, etc."
+    }
+
+    cdl_interface CYGINT_HAL_V85X_ICE_DEBUG {
+        display        "Debugging via ICE support"
+        description "
+           This interface is enabled when the underlying variant or platform
+           supports ICE debugging."
+    }
+}

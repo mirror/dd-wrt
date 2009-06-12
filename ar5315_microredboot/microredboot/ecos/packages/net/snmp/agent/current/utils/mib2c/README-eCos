@@ -1,0 +1,24 @@
+To generate the code to allow the agent to understand a MIB:
+
+1) You will need to set the environment variable "MIBS" to "ALL" in your
+environment, e.g.:
+
+setenv MIBS ALL        (for csh)
+MIBS=ALL ; export MIBS (for sh/bash)
+
+2) Download the SNMP PERL module
+
+Download the SNMP module from http://www.cpan.org/
+
+This seems to be at:
+http://cpan.valueclick.com/modules/by-category/05_Networking_Devices_IPC/SNMP/
+
+3) Place your MIBs in /usr/local/share/snmp/mibs/
+
+3) Run the mib2c script
+
+perl -I<location of PERL SNMP module> mib2c <mib to generate code for>
+
+e.g.
+
+perl -I~/perl.pl/nsPerl5.005_03/lib/site/i686-linux mib2c interfaces

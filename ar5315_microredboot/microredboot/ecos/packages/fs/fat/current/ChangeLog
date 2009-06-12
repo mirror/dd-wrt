@@ -1,0 +1,155 @@
+2004-10-23  David Brennan  <eCos@brennanhome.com>
+
+	* tests/fileio1.c: fixed check for return value for attribute
+	tests.
+
+2004-10-17  David Brennan  <eCos@brennanhome.com>
+
+	* src/fatfs.c:
+	* src/fatfs_supp.c:
+	* include/fatfs.h (NEW):
+	* tests/fileio1.c:
+	* cdl/fatfs.cdl: Added configurable support for FAT filesystem
+	attributes.
+
+2004-10-13  David Brennan  <eCos@brennanhome.com>
+
+	* src/fatfs.c: Added code to setinfo to allow performing a
+	file-system sync
+
+2004-10-06  David Brennan  <eCos@brennanhome.com>
+
+	* tests/fileio1.c: Added include of <stdio.h> to fix compiler
+	warning for rename().
+
+2004-08-10  Savin Zlobec  <savin@elatec.si>
+
+        * src/fatfs.h:
+        * src/fatfs_supp.c:
+        Added FAT32 support.
+
+2004-07-13  Savin Zlobec  <savin@elatec.si>
+
+        * cdl/fatfs.cdl:
+        * src/fatfs.h:
+        * src/fatfs.c:
+        * src/fatfs_supp.c:
+        * src/fatfs_ncache.c:
+        Refactored the code and changed file node cache memory 
+        allocation from malloc to custom pool based one.
+
+2004-07-05  Savin Zlobec  <savin@elatec.si>
+
+        * cdl/fatfs.cdl:
+        * src/fatfs.h:
+        * src/fatfs.c:
+        * src/fatfs_supp.c:
+        * src/fatfs_ncache.c:
+        Removed FAT table cache - it added little or no speed gain to
+        the fatfs. Implemented private data for fatfs file descriptors which
+        holds the current FAT cluster position, this greatly improves
+        read/write times for big files comparing to the old implementation.
+        * src/fatfs_tcache.c: Removed.
+
+2004-06-24  Savin Zlobec  <savin@elatec.si>
+
+        * src/fatfs.h:
+        * src/fatfs_supp.c:
+        Implemented fatfs_get_disk_usage function for 
+        getting the number of total and free clusters.
+
+2004-01-19  Nick Garnett  <nickg@calivar.com>
+
+
+	* doc/README.txt: 
+	* doc/fatfs.ecm: 
+	* doc/fat16.ecm: 
+	* doc/mkdisk0:
+	Added some initial basic documentation, sample configurations and
+	shell script to manufacture test disk image.
+	
+2003-10-18 Savin Zlobec <savin@elatec.si>
+
+        * cdl/fatfs.cdl:
+        * src/fatfs.h:
+        * src/fatfs_ncache.c:
+        Fixed node allocation tresholds (there should be no
+        more unnecessary node memory allocation/deallocation).
+        Added more sanity checks and a cdl option to enable them.
+
+2003-10-17 Savin Zlobec <savin@elatec.si>
+    
+        * src/fatfs_supp.c: Fixed dos to unix date conversion.
+
+2003-10-16 Savin Zlobec <savin@elatec.si>
+
+        * src/fatfs.c: Fixed dir entry searching.
+        * src/fatfs_ncache.c: Added more sanity checks.
+
+2003-10-13 Savin Zlobec <savin@elatec.si>
+
+        * src/fatfs.h:
+        * src/fatfs.c:
+        * src/fatfs_supp.c:
+        Added FAT12 support and FAT type detection.
+        Fixed file deletion.
+        Fixed reusing of deleted directory entries.
+        Fixed free clusters search.
+        Fixed directory renaming.
+        Fixed out of space situation while writting.
+
+2003-09-01 Savin Zlobec <savin@elatec.si>
+
+        * cdl/fatfs.cdl:
+        * src/fatfs.h:
+        * src/fatfs.c:
+        * src/fatfs_supp.c:
+        * src/fatfs_tcache.c:
+        * src/fatfs_ncache.c:
+        Implemented block IO with BLib, fixed FAT data access
+        problems and added FAT table cache memory constraints. 
+        
+2003-07-07 Savin Zlobec <savin@elatec.si>
+
+        * cdl/fatfs.cdl:
+        * src/fatfs.h:
+        * src/fatfs.c:
+        * src/fatfs_supp.c:
+        * src/fatfs_ncache.c:
+        * src/fatfs_tcache.c:
+        A FAT16 filesystem implementation
+
+
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

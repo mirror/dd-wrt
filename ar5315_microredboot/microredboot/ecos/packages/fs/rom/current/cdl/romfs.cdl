@@ -1,0 +1,121 @@
+# ====================================================================
+#
+#      romfs.cdl
+#
+#      ROM Filesystem configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      nickg
+# Original data:  nickg
+# Contributors:   richard.panton@3glab.com
+# Date:           2000-08-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_FS_ROM {
+    display        "ROM filesystem"
+    doc            ref/fileio.html
+    include_dir    cyg/romfs
+
+    requires       CYGPKG_IO_FILEIO
+
+    requires       CYGPKG_ISOINFRA
+    requires       CYGINT_ISO_ERRNO
+    requires       CYGINT_ISO_ERRNO_CODES
+
+    implements     CYGINT_IO_FILEIO_FS
+    
+    compile        -library=libextras.a romfs.c
+
+    # ----------------------------------------------------------------
+    # Tests
+
+    cdl_component CYGTST_ROMFS_BUILD_TESTS {
+        display       "Build ROM filesystem tests"
+        flavor        bool
+        no_define
+        default_value 0
+        requires      CYGINT_LIBC_STARTUP_CONTEXT
+        requires      CYGINT_ISO_STDIO_FORMATTED_IO
+        requires      CYGINT_ISO_STRERROR
+        description   "
+                This option enables the building of the ROM filesystem tests."
+
+        # FIXME: host compiler/flags should be provided by config system
+        make -priority 100 {
+            <PREFIX>/bin/mk_romfs: <PACKAGE>/support/mk_romfs.c
+            @mkdir -p "$(dir $@)"
+            @$(HOST_CC) -g -O2 -o $@ $< || cc -g -O2 -o $@ $< || gcc -g -O2 -o $@ $<
+        }
+    
+        make -priority 100 {
+            <PREFIX>/include/cyg/romfs/testromfs_le.h : $(PREFIX)/bin/mk_romfs <PACKAGE>/support/file2c.tcl
+            $(PREFIX)/bin/mk_romfs $(REPOSITORY)/$(PACKAGE)/tests/testromfs testromfs_le.bin
+            @mkdir -p "$(dir $@)"
+            # work around cygwin path problems by copying to build dir
+            @cp $(REPOSITORY)/$(PACKAGE)/support/file2c.tcl .
+            sh file2c.tcl testromfs_le.bin testromfs_le.h
+            @rm -f $@ file2c.tcl
+            @cp testromfs_le.h $@
+        }
+    
+        make -priority 100 {
+            <PREFIX>/include/cyg/romfs/testromfs_be.h : $(PREFIX)/bin/mk_romfs <PACKAGE>/support/file2c.tcl
+            $(PREFIX)/bin/mk_romfs -b $(REPOSITORY)/$(PACKAGE)/tests/testromfs testromfs_be.bin
+            @mkdir -p "$(dir $@)"
+            # work around cygwin path problems by copying to build dir
+            @cp $(REPOSITORY)/$(PACKAGE)/support/file2c.tcl .
+            sh file2c.tcl testromfs_be.bin testromfs_be.h
+            @rm -f $@ file2c.tcl
+            @cp testromfs_be.h $@
+        }
+    
+        cdl_option CYGPKG_FS_ROM_TESTS {
+            display "ROM filesystem tests"
+            flavor  data
+            no_define
+            calculated { "tests/fileio1" }
+                description   "
+                    This option specifies the set of tests for the ROM filesystem package."
+        }
+    }
+}
+
+# End of romfs.cdl

@@ -1,0 +1,397 @@
+# ====================================================================
+#
+#      hal_mips_rm7000_ocelot.cdl
+#
+#      RM7000/OCELOT board HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  bartv
+# Contributors:
+# Date:           2000-05-15
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_RM7000_OCELOT {
+    display       "QED Ocelot board"
+    parent        CYGPKG_HAL_MIPS
+    requires      CYGPKG_HAL_MIPS_RM7000
+    define_header hal_mips_rm7000_ocelot.h
+    include_dir   cyg/hal
+    description   "
+           The Ocelot HAL package should be used when targetting the
+           actual hardware."
+
+    compile       platform.S plf_misc.c plf_stub.c ns16552.c
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_mips_rm7000.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_mips_rm7000_ocelot.h>"
+
+        puts $::cdl_header "#define CYGHWR_HAL_MIPS_WARMSTART_COLDSTART"
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  {"RAM" "ROM"}
+        default_value {"RAM"}
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+           When targetting the Ocelot board it is possible to build
+           the system for either RAM bootstrap or ROM bootstrap. RAM
+           bootstrap generally requires that the board
+           is equipped with ROMs containing a suitable ROM monitor or
+           equivalent software that allows GDB to download the eCos
+           application on to the board. The ROM bootstrap typically
+           requires that the eCos application be blown into EPROMs or
+           equivalent technology."
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_RM7000_OCELOT_ENDIAN {
+        display "Board endian mode"
+        flavor data
+        legal_values {"big" "little"}
+        default_value {"big"}
+        no_define
+        description "
+            The Ocelot platform can be used in either big or
+            little endian mode. This option select which. The board
+            will also need to be reconfigured if this option changes."
+    }
+    cdl_option CYGHWR_HAL_MIPS_RM7000_OCELOT_ENDIAN_SET {
+        display "Communicate endian setting to variant HAL"
+        active_if {CYGHWR_HAL_MIPS_RM7000_OCELOT_ENDIAN == "big"}
+        calculated 1
+        implements CYGINT_HAL_MIPS_MSBFIRST
+    }
+
+   cdl_option CYGHWR_HAL_MIPS_RM7000_OCELOT_PCI_MEM_MAP_BASE {
+       display            "Base of memory accessible via PCI space"
+       flavor             data
+       legal_values       {	0xf200000 0xf300000 0xf400000 0xf500000
+       				0xf600000 0xf700000 0xf800000 0xf900000
+       				0xfa00000 0xfb00000 0xfc00000 0xfd00000
+                                0xfe00000 0xff00000
+                          }
+       default_value      0x0ff00000
+       active_if          CYGPKG_IO_PCI
+       description "
+           This option determines the base of the Ocelot memory which
+           can be accessed via the PCI bus. The default is to allow
+           access to the upper 1MB of a 256MB system.
+           NB: We advise *against* changing this option.
+           The value MUST match the base address of the section
+           'pci_window' in the Memory Layout Tool else this memory area
+           will be consumed by the malloc heap.
+           This error condition can only be detected at runtime in
+           current versions of the configuration tools.
+           CLI users can edit include/pkgconf/mlt_mips_rm7000_ocelot_*.h
+           and include/pkgconf/mlt_mips_rm7000_ocelot_*.ldi to achieve the
+           same effects as moving that region in the MLT."
+   }
+
+   cdl_option CYGHWR_HAL_MIPS_RM7000_OCELOT_PCI_MEM_MAP_SIZE {
+       display            "Size of memory accessible via PCI space"
+       flavor             data
+       legal_values       {	0x100000 0x200000 0x300000 0x400000
+                                0x500000 0x600000 0x700000 0x800000
+                          }
+       default_value      0x00100000
+       active_if          CYGPKG_IO_PCI
+       description "
+           This option determines the size of the Ocelot memory which
+           can be accessed via the PCI bus. The default is to allow
+           access to the upper 1MB of a 256MB system.
+           NB: We advise *against* changing this option.
+           The value MUST match the size of the section 'pci_window' in the
+           Memory Layout Tool else this memory area will be consumed by the
+           malloc heap.
+           Further caveats in the PCI base option."
+   }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+        display      "Number of communication channels on the board"
+        flavor       data
+        calculated   2
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+        display          "Debug serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           The Ocelot board has two separate serial ports.  This option
+           chooses which of these ports will be used to connect to a host
+           running GDB."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+        display          "Diagnostic serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+           The Ocelot board has two separate serial ports.  This option
+           chooses which of these ports will be used for diagnostic output."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CHANNELS_DEFAULT_BAUD {
+        display       "Default baud rate used for serial ports"
+        flavor        data
+        legal_values  9600 19200 38400 115200
+        default_value 38400
+        description   "
+            This option selects the baud rate used for the serial ports."
+    }
+
+    # The "-o file" is a workaround for CR100958 - without it the
+    # output file would end up in the source directory under CygWin.
+    # n.b. grep does not behave itself under win32
+    make -priority 1 {
+        <PREFIX>/include/cyg/hal/plf_defs.inc : <PACKAGE>/src/plf_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+        fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm plf_defs.tmp plf_mk_defs.tmp
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_RM7000_CPU_CLOCK {
+        display       "CPU clock speed"
+        flavor        data
+        legal_values  { 300000000 400000000 500000000 600000000 }
+        default_value 300000000
+        description   "
+            The CPU clock speed in Hz."
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value { (CYGHWR_HAL_MIPS_RM7000_CPU_CLOCK / 2) / CYGNUM_HAL_RTC_DENOMINATOR }
+            description   "
+                The count and compare registers of the RM7000 are used
+                to drive the eCos kernel RTC. The count register
+                increments at half the CPU clock speed."
+        }
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        parent  CYGPKG_NONE
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "mipsisa32-elf" }
+#            default_value { "mips-tx49-elf" }
+#            default_value { "mips64vr5000-elf" }
+#            default_value { "mips64vr4300-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+# -mabi=eabi -mips2
+            default_value { CYGPKG_HAL_MIPS_MSBFIRST ? "-G0 -mips2 -EB -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" : "-G0 -mips2 -EL -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+#  -mabi=eabi -mips2
+            default_value { CYGPKG_HAL_MIPS_MSBFIRST ? "-G0 -g -mips32 -EB -nostdlib -Wl,--gc-sections -Wl,-static" : "-g -mips2 -EL -mabi=eabi -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "ROM" }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            requires ! CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+            requires CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                SREC data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.srec : <PREFIX>/bin/gdb_module.img
+            }
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "mips_rm7000_ocelot_ram" : \
+                                                "mips_rm7000_ocelot_rom" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_mips_rm7000_ocelot_ram.ldi>" : \
+                                                    "<pkgconf/mlt_mips_rm7000_ocelot_rom.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_mips_rm7000_ocelot_ram.h>" : \
+                                                    "<pkgconf/mlt_mips_rm7000_ocelot_rom.h>" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        booldata
+        legal_values  { "GDB_stubs" }
+        default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        description   "
+            Support can be enabled for GDB stubs.
+            This support changes various eCos semantics such as the encoding
+            of diagnostic output, or the overriding of hardware interrupt
+            vectors.
+            \"GDB_stubs\" provides support when GDB stubs are
+            included in the ROM monitor or boot ROM, allowing debugging
+            via GDB."
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+
+    cdl_component CYGPKG_REDBOOT_HAL_OPTIONS {
+        display       "Redboot HAL options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_option CYGBLD_BUILD_REDBOOT_BIN {
+            display       "Build Redboot ROM binary image"
+            active_if     CYGBLD_BUILD_REDBOOT
+            default_value 1
+            no_define
+            description "This option enables the conversion of the Redboot ELF
+                         image to the various relocated SREC images needed
+                         for flash updating."
+
+            make -priority 325 {
+                <PREFIX>/bin/redboot.bin : <PREFIX>/bin/redboot.elf
+                $(OBJCOPY) --strip-unneeded $< $(@:.bin=.img)
+                $(OBJCOPY) -O srec $(@:.bin=.img) $(@:.bin=.srec)
+                $(OBJCOPY) -O binary $(@:.bin=.img) $@
+            }
+        }
+    }
+}

@@ -1,0 +1,106 @@
+# Source window class definition for GDBtk.
+# Copyright 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+# ----------------------------------------------------------------------
+# Implements a source display widget using primitive widgets as the
+# building blocks.
+#
+# The main display for SrcWin is a SrcTextWin widget.  This file
+# should contain all the code for controlling the SrcTextWin.
+# SrcTextWin should just display the requested file and lines, without
+# having to be very intelligent.  If there are problems, error codes
+# should be returned and SrcWin should figure out what to do.
+# ----------------------------------------------------------------------
+
+class SrcWin {
+  inherit TopLevelWin GDBWin
+
+  public {
+    method constructor {args}
+    method destructor {}
+    method download_progress { section num tot {msg ""} }
+    method edit {}
+    method enable_ui { on }
+    method fillNameCB {}
+    method fillFuncCB {name}
+    method goto_func {w {val ""}}
+    method location {tag linespec}
+    method mode {w new_mode {go 1}}
+    method no_inferior {}
+    method print {}
+    method reconfig {}
+    method reset {}
+    method set_status { {msg ""} {tmp 0} }
+    method set_execution_status { {line ""} {pc ""}}
+    method stack {cmd}
+    method test_get {var {private_func 0}}
+    method toggle_updates {value}
+    method toolbar {state}
+    method inferior {action}
+    method clear_file {}
+    method get_file {}
+    method is_fixed {}
+    method search {direction string}
+
+    proc choose_and_update {}
+    proc choose_and_display {tag linespec}
+    proc point_to_main {}
+
+    #
+    # GDB Events
+    #
+    method busy {event}
+    method idle {event}
+    method update {event}
+  }
+
+  private {
+    method _build_win {}
+    method _exit {}
+    method _name {w {val ""}}
+    method _set_name { val {found 1} }
+    method _set_state {varname}
+    method _update_title {name}
+    method _update {loc}
+    method get_top {}
+    method _set_tag_to_stack {}
+    proc _choose_window {file}
+    variable _statbar
+    variable _status
+    variable _toolbar
+    variable _statusframe
+    variable top
+    variable twin
+    variable current
+    variable need_files 0
+    variable do_updates 1	;# if the window does updates
+    variable _mangled_func
+    variable Tracing  
+    variable saved_msg ""	;# static
+
+    # statics used for downloads
+    variable last_section ""
+    variable last_section_start 0
+    variable last_done 0
+
+    # These keep track of the current PC window and the list of all
+    # source windows.
+    common window_list ""
+    common pc_window ""
+
+    # fenceposts
+    variable Running 0
+    variable NoRun 0
+  }  
+}

@@ -1,0 +1,365 @@
+# ====================================================================
+#
+#      hal_v85x_v850_ceb.cdl
+#
+#      V850/CEB board HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas, jlarmour
+# Original data:  bartv, jskov
+# Contributors:
+# Date:           2000-03-10
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_V85X_V850_CEB {
+    display       "Cosmo CEB-V850 board"
+    parent        CYGPKG_HAL_V85X
+    requires      CYGPKG_HAL_V85X_V850
+    define_header hal_v85x_v850_ceb.h
+    include_dir   cyg/hal
+    description   "
+           The CEB-v850 HAL supports the CEB-V850 evaluation board fitted
+           with a NEC V850/SA1 or NEC V850/SB1."
+
+    compile  plf_misc.c plf_stub.c
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS_BREAK
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+    implements    CYGINT_HAL_V850_DIAG_ONCHIP_SERIAL0
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_v85x_v850.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_v85x_v850_ceb.h>"
+
+        puts $::cdl_header "#define CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES 20000"
+    }
+
+    cdl_option CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  {"RAM" "ROM" "ROMRAM" }
+        default_value {"RAM"}
+        no_define
+        define -file system.h CYG_HAL_STARTUP
+        description   "
+           When targetting the CEB board it is possible to build
+           the system for either RAM bootstrap, ROM bootstrap, or ROMRAM
+           bootstrap. RAM bootstrap generally requires that the board
+           is equipped with ROMs containing a suitable ROM monitor or
+           equivalent software that allows GDB to download the eCos
+           application on to the board. The ROM bootstrap typically
+           requires that the eCos application be blown into EPROMs or
+           equivalent technology. ROMRAM bootstrap is similar to ROM
+           bootstrap, but everything is copied to RAM before execution 
+           starts thus improving performance, but at the cost of an
+           increased RAM footprint."
+    }
+
+    cdl_option CYG_HAL_V85X_STARTUP_FLASH {
+        display       "Build for on-chip FLASH"
+        active_if     {CYG_HAL_STARTUP == "ROM"} || \
+                      {CYG_HAL_STARTUP == "ROMRAM"}
+        default_value 0
+        description   "
+           When building for ROM or ROMRAM startup, you can specify
+           that you actually wish to target the internal FLASH rather
+           than the external EPROM."
+    }
+
+   cdl_component CYGHWR_HAL_V85X_V850_VARIANT {
+        display        "V850 variant"
+        flavor         none
+        no_define
+        description "
+            This component allows you to choose the V850 variant
+            you have on your board."
+
+        cdl_option CYGHWR_HAL_V85X_V850_VARIANT_SA1 {
+            display       "SA1"
+            default_value 1
+            requires { 0 == CYGHWR_HAL_V85X_V850_VARIANT_SB1 }
+            implements CYGINT_HAL_V850_VARIANT_SA1
+            description "
+                Choose this if you have the V850/SA1."
+        }
+
+        cdl_option CYGHWR_HAL_V85X_V850_VARIANT_SB1 {
+            display       "SB1"
+            default_value 0
+            requires { 0 == CYGHWR_HAL_V85X_V850_VARIANT_SA1 }
+            implements CYGINT_HAL_V850_VARIANT_SB1
+            description "
+                Choose this if you have the V850/SB1."
+        }
+   }
+
+    cdl_option CYGHWR_HAL_V85X_CPU_FREQ {
+        display       "CPU frequency in Hz"
+        flavor        data
+        legal_values  { 4194304 5000000 8000000 10000000 12580000 16000000 \
+                        17000000 20000000 }
+        default_value { CYGHWR_HAL_V85X_V850_VARIANT_SA1 ? 17000000 : 16000000 }
+        description "
+           This option contains the frequency of the board oscillator
+           connected to the CPU, in Hertz.
+           Choose the frequency to match the oscillator on your board.
+           This may affect thing like serial device, interval clock and
+           memory access speed settings."
+    }
+
+   cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+        display    "Number of communication channels on the board"
+        flavor     data
+#        calculated { CYGDBG_HAL_V85X_V850_ICE_DIAG ? 2 : 1 }
+        calculated 1
+   }
+        
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+        display          "Debug serial port"
+#        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+        flavor           data
+        calculated       0
+#        description      "
+#            The CEB board has one serial port (channel 0), and a
+#            communication channel for communicating with an ICE, if support
+#            has been included (channel 1). This option chooses which port
+#            will be used to connect to a host running GDB."
+     }
+ 
+     cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+         display          "Diagnostic serial port"
+#         active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+         flavor data
+         calculated        0
+#         legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+#         default_value    0
+#         description      "
+#            The CEB board has one serial port (channel 0), and a
+#            communication channel for communicating with an ICE, if support
+#            has been included (channel 1). This option chooses which port
+#            will be used for diagnostic output."
+     }
+
+   cdl_option CYGHWR_HAL_V85X_V850_DIAG_BAUD {
+       display          "Diagnostic serial port baud rate"
+       flavor data
+       legal_values     1200 2400 4800 9600 19200 38400 
+       default_value    38400
+       description      "
+           This option selects the baud rate used for the diagnostic port."
+   }
+
+#   cdl_option CYGDBG_HAL_V85X_V850_ICE_DIAG {
+#        display         "Enable diagnostic output channel via ICE"
+#        flavor          bool
+#        default_value   0
+#        parent          CYGDBG_HAL_V850_ICE
+#        description     "
+#                This allows a channel to be made available to output
+#                diagnostic output via the ICE, talking to a correctly
+#                configured gdbserv process running on the host.
+#                To make this channel the default, set
+#                CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL to channel 1."
+#   }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            default_value { CYGHWR_HAL_V85X_CPU_FREQ / 400 }
+        }
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        parent  CYGPKG_NONE
+        no_define
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "v850-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-mv850 -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-g -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "ROM" }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            requires ! CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+            requires CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                binary data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) -O binary $< $@
+            }
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.sre : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) -O srec $< $@
+            }
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "v85x_v850_ceb_ram" : \
+                     CYG_HAL_STARTUP == "ROM" ? \
+                     CYG_HAL_V85X_STARTUP_FLASH == 0 ? "v85x_v850_ceb_rom" : "v85x_v850_ceb_flash" : \
+                     CYG_HAL_V85X_STARTUP_FLASH == 0 ? "v85x_v850_ceb_romram" : "v85x_v850_ceb_flashromram" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_v85x_v850_ceb_ram.ldi>" : \
+                         CYG_HAL_STARTUP == "ROM" ? \
+                         CYG_HAL_V85X_STARTUP_FLASH == 0 ? "<pkgconf/mlt_v85x_v850_ceb_rom.ldi>" : "<pkgconf/mlt_v85x_v850_ceb_flash.ldi>" : \
+                         CYG_HAL_V85X_STARTUP_FLASH == 0 ? "<pkgconf/mlt_v85x_v850_ceb_romram.ldi>" : "<pkgconf/mlt_v85x_v850_ceb_flashromram.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_v85x_v850_ceb_ram.h>" : \
+                         CYG_HAL_STARTUP == "ROM" ? \
+                         CYG_HAL_V85X_STARTUP_FLASH == 0 ? "<pkgconf/mlt_v85x_v850_ceb_rom.h>" : "<pkgconf/mlt_v85x_v850_ceb_flash.h>" : \
+                         CYG_HAL_V85X_STARTUP_FLASH == 0 ? "<pkgconf/mlt_v85x_v850_ceb_romram.h>" : "<pkgconf/mlt_v85x_v850_ceb_flashromram.h>" }
+        }
+    }
+
+   cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        booldata
+        legal_values  { "Generic" "GDB_stubs" }
+        default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        description   "
+            Support can be enabled for three different varieties of ROM monitor.
+            This support changes various eCos semantics such as the encoding
+            of diagnostic output, or the overriding of hardware interrupt
+            vectors.
+            Firstly there is \"Generic\" support which prevents the HAL
+            from overriding the hardware vectors that it does not use, to
+            instead allow an installed ROM monitor to handle them. This is
+            the most basic support which is likely to be common to most
+            implementations of ROM monitor.
+            \"GDB_stubs\" provides support when GDB stubs are included in
+            the ROM monitor or boot ROM."
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+}

@@ -1,0 +1,394 @@
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_arm_cma230.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-04-11  Bart Veer  <bartv@ecoscentric.com>
+
+	* cdl/hal_arm_cma230.cdl: building for thumb now involves
+	arm-elf-gcc -mthumb, not thumb-elf-gcc
+
+2002-08-06  Gary Thomas  <gary@chez-thomas.org>
+2002-08-06  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>	
+
+	* src/hal_diag.c: I/O channel data can't be constant - contains
+	timeout information which can be changed.
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Don't run cache tests.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Removed implemntation of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2002-04-24  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: CYGPRI_KERNEL_TESTS_DHRYSTONE_PASSES
+	defined.
+
+2002-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-06-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_cache.h: Correctly indicate absence of cache in CMA230
+	variant.
+
+2001-04-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Add CDL to describe CPU family.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Does not guarantee virtual vector
+	support.
+
+2001-02-20  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Also enable -mthumb-interwork when
+	building ROM monitors (or calls from Thumb code would die on
+	return).
+	Reworked a bit.
+
+2001-02-13  Gary Thomas  <gthomas@redhat.com>
+
+	* src/cma230_misc.c (hal_IRQ_handler): 
+	Return CYGNUM_HAL_INTERRUPT_NONE for spurious interrupts.
+	
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Respect channel configuration
+	constraints.
+
+	* src/hal_diag.c: Replace CYGSEM_HAL_DIAG_MANGLER_None with
+	CYGDBG_HAL_DIAG_TO_DEBUG_CHAN.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Replaced CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	with CYGSEM_HAL_DIAG_MANGLER_None
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+	* include/plf_stub.h: Moved reset macro to
+	* include/hal_platform_ints.h: this file.
+
+2000-12-04  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_cache.h: Consistently ensure that ARM registers used
+	in MCR ops to cache-control coprocessors, where the data doesn't
+	matter, all actually have data zero ("SBZ") as in the Jaggar book.
+	This may well not be necessary, but for the sake of making sure...
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_arm_cma222_ram.mlt:
+	* include/pkgconf/mlt_arm_cma222_rom.mlt:
+	* include/pkgconf/mlt_arm_cma230_ram.mlt:
+	* include/pkgconf/mlt_arm_cma230_rom.mlt:
+	Add heap1 section
+
+	* include/pkgconf/mlt_arm_cma222_ram.h:
+	* include/pkgconf/mlt_arm_cma222_rom.h:
+	* include/pkgconf/mlt_arm_cma230_ram.h:
+	* include/pkgconf/mlt_arm_cma230_rom.h:
+	* include/pkgconf/mlt_arm_cma222_ram.ldi:
+	* include/pkgconf/mlt_arm_cma222_rom.ldi:
+	* include/pkgconf/mlt_arm_cma230_ram.ldi:
+	* include/pkgconf/mlt_arm_cma230_rom.ldi:
+	Regenerate
+
+2000-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl:
+	* include/hal_diag.h:
+	* include/plf_stub.h:
+	* src/cma230_misc.c:
+	* src/hal_diag.c:
+	* src/plf_stub.c: [deleted]
+	Changed to support virtual vectors.
+
+2000-06-18  Gary Thomas  <gthomas@redhat.com>
+
+	* include/pkgconf/mlt_arm_cma222_ram.ldi: 
+	* include/pkgconf/mlt_arm_cma222_ram.mlt: 
+	* include/pkgconf/mlt_arm_cma222_rom.ldi: 
+	* include/pkgconf/mlt_arm_cma222_rom.mlt: 
+	* include/pkgconf/mlt_arm_cma230T_ram.ldi: 
+	* include/pkgconf/mlt_arm_cma230T_ram.mlt: 
+	* include/pkgconf/mlt_arm_cma230T_rom.ldi: 
+	* include/pkgconf/mlt_arm_cma230T_rom.mlt: 
+	* include/pkgconf/mlt_arm_cma230_ram.ldi: 	
+	* include/pkgconf/mlt_arm_cma230_ram.mlt: 
+	* include/pkgconf/mlt_arm_cma230_rom.ldi: 
+	* include/pkgconf/mlt_arm_cma230_rom.mlt: 
+	Incorporate new fixed vectors (used on all ARM platforms).
+
+2000-02-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+        * include/pkgconf/mlt_arm_cma222_ram.h:
+        * include/pkgconf/mlt_arm_cma222_ram.ldi:
+        * include/pkgconf/mlt_arm_cma222_ram.mlt:
+        * include/pkgconf/mlt_arm_cma222_rom.h:
+        * include/pkgconf/mlt_arm_cma222_rom.ldi:
+        * include/pkgconf/mlt_arm_cma222_rom.mlt:
+        * include/pkgconf/mlt_arm_cma230_ram.h:
+        * include/pkgconf/mlt_arm_cma230_ram.ldi:
+        * include/pkgconf/mlt_arm_cma230_ram.mlt:
+        * include/pkgconf/mlt_arm_cma230_rom.h:
+        * include/pkgconf/mlt_arm_cma230_rom.ldi:
+        * include/pkgconf/mlt_arm_cma230_rom.mlt:
+	Align all sections on word boundaries
+	
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_arm_cma230.cdl (CYGBLD_BUILD_GDB_STUBS): When
+	building stubs, define every dependency required here rather than
+	in the template
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h:
+	HAL_STUB_PLATFORM_STUBS_INIT->HAL_STUB_PLATFORM_INIT
+
+	* misc/STUBS_config: 
+	* include/pkgconf/hal_arm_cma230.h: 
+	Removed stubs as a legal startup type.
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Use cpu options when linking.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Implements stubs.
+
+2000-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Use common stub code and build rule.
+
+2000-01-28  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl:  Changed description.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_arm_cma230.cdl: Fix CDL display.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl: Add stubs build rule.
+
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl: Add -Wl for linker options.
+
+1999-12-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl: Add support for cma230T
+
+1999-12-08  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl: Update for CMA222 support.
+
+1999-12-02  Mark Salter  <msalter@cygnus.com>
+
+	* include/hal_platform_setup.h: Add support for CMA222 (ARM710T).
+	* include/hal_cache.h: Add support for unified CMA222 caches.
+	* include/hal_platform_extras.h: New file with static MMU tables.
+
+1999-11-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_cma230T_stubs.ldi,
+	include/pkgconf/mlt_arm_cma230T_stubs.mlt:
+	Delete - we don't have stubs startup for thumb mode
+
+	* src/hal_diag.c: Conditionalize def of diag_buffer for only when it's
+	explicitly wanted and someone hacks the code
+	(hal_diag_write_char): Likewise
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_cma230_stubs.h: New file.
+
+	* include/pkgconf/mlt_arm_cma230T_rom.h: 
+	* include/pkgconf/mlt_arm_cma230T_ram.h:
+	* include/pkgconf/mlt_arm_cma230_rom.h: 
+	* include/pkgconf/mlt_arm_cma230_ram.h:  Update "do not edit" strings.
+
+1999-11-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_arm_cma230T_ram.h:
+	* include/pkgconf/mlt_arm_cma230T_rom.h:
+	* include/pkgconf/mlt_arm_cma230_ram.h:
+	* include/pkgconf/mlt_arm_cma230_rom.h: New files.
+
+	* include/pkgconf/mlt_arm_cma230T_ram.ldi: 
+	* include/pkgconf/mlt_arm_cma230T_ram.ldi: 
+	* include/pkgconf/mlt_arm_cma230_rom.ldi: 
+	* include/pkgconf/mlt_arm_cma230_rom.mlt: Update with correct memory layout.
+
+1999-11-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_cma230.h:
+
+	Add platform attribute to CYGPKG_HAL_ARM_CMA230.
+
+1999-11-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_diag.c: Honor GDB_DISABLE option.
+
+1999-11-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl: Remove define_proc comments.
+
+1999-10-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/PKGconf.mak: Don't strip symbols when making .img.
+
+1999-10-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c: Fixed conditional include.
+
+1999-10-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Use new macro
+	CYG_HAL_GDB_ENTER_CRITICAL_IO_REGION and its mate to control
+	stepping through gdb $O packet output.
+
+1999-10-26  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl:
+
+	Rename CYGBLD_GLOBAL_PREFIX to
+	CYGBLD_GLOBAL_COMMAND_PREFIX
+
+1999-10-20  Simon FitzMaurice <sdf@cygnus.co.uk>
+	* cdl/hal_arm_aeb.cdl:
+
+	Remove -Wl options from compiler flags
+
+1999-10-20  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl:
+	Define memory layout-related CDL options.
+
+
+1999-10-19  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_cma230.h: Fix ifdefs and comments to be for
+	the cma230, not any other board
+	* misc/gdb_module.c: Likewise
+	* src/PKGconf.mak: Likewise
+
+1999-10-18  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl:
+
+	Define CYGTST_TESTING_IDENTIFIER and
+	CYGBLD_GLOBAL_PREFIX as a functions of CYGHWR_THUMB.
+
+	Define CYGBLD_GLOBAL_CFLAGS and CYGBLD_GLOBAL_LDFLAGS.
+
+1999-10-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/STUBS_config: Updated.
+
+1999-10-06  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl:
+	Define CYGTST_TESTING_IDENTIFIER.
+
+1999-09-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_cma230.h: 
+	* cdl/hal_arm_cma230.cdl: 
+	Removed arm/thumb options [defined by platform template].
+	
+1999-08-16  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_cma230.h:
+
+	Proper case various display strings.
+
+1999-08-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_arm_cma230.cdl:
+	Define CYG_HAL_STARTUP and CYGHWR_MEMORY_LAYOUT.
+
+1999-06-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/hal_arm_cma320.h: Remove the platform attribute
+	from cdl_package CYGPKG_HAL_ARM_CMA230 since the platform
+	is now specified by cdl_option CYGHWR_HAL_ARM_CMA230_*.
+
+1999-06-07  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* images/: 
+	* images/gdb_module.rom: New files - prebuilt ROM image.
+
+	* misc/STUBS_config: Was using wrong platform.
+
+1999-06-04  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/cma230_misc.c: Fix problems with interrupts.  First the
+	interrupt source register (ISR) contains all pending interrupts
+	and thus needs to be manually masked against those that are
+	enabled.  Second, the interrupt mask register does not read
+	back properly, so a memory shadow is necessary.
+
+	* include/pkgconf/hal_arm_cma230.h: Add 'cma230T' (Thumb mode)
+	as a platform.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

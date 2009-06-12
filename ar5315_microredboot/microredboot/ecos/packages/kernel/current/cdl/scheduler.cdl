@@ -1,0 +1,256 @@
+# ====================================================================
+#
+#      scheduler.cdl
+#
+#      configuration data related to the kernel schedulers
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg
+# Contributors:
+# Date:           1999-07-05
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_interface CYGINT_KERNEL_SCHEDULER {
+    display  "Number of schedulers in this configuration"
+    no_define
+    requires 1 == CYGINT_KERNEL_SCHEDULER
+}
+
+cdl_interface CYGINT_KERNEL_SCHEDULER_UNIQUE_PRIORITIES {
+    display  "Non-zero if the active schedule only has unique priorities"
+    description "
+        Not all schedulers allow mutiple threads to use the same
+        priority. That property is signalled via this option, allowing
+        scheduler and tests to behave accordingly."
+}
+
+# FIXME: The two below options must be mutually exclusive
+cdl_component CYGSEM_KERNEL_SCHED_MLQUEUE {
+    display       "Multi-level queue scheduler"
+    default_value 1
+    implements    CYGINT_KERNEL_SCHEDULER
+    description   "
+        The multi-level queue scheduler supports multiple priority
+        levels and multiple threads at each priority level.
+        Preemption between priority levels is automatic. Timeslicing
+        within a given priority level is controlled by a separate
+        configuration option."
+
+    cdl_option CYGDBG_KERNEL_TRACE_TIMESLICE {
+        display       "Output timeslices when tracing"
+        active_if     CYGDBG_USE_TRACING
+        requires      !CYGDBG_INFRA_DEBUG_TRACE_ASSERT_SIMPLE
+        requires      !CYGDBG_INFRA_DEBUG_TRACE_ASSERT_FANCY
+        default_value 0
+        description   "
+                When tracing is enabled, output trace messages every
+                timeslice. This can be quite verbose so is disabled by
+                default."
+    }
+}
+
+cdl_option CYGSEM_KERNEL_SCHED_BITMAP {
+    display       "Bitmap scheduler"
+    default_value 0
+    implements    CYGINT_KERNEL_SCHEDULER
+    implements    CYGINT_KERNEL_SCHEDULER_UNIQUE_PRIORITIES
+    requires      !CYGPKG_KERNEL_SMP_SUPPORT
+    description   "
+        The bitmap scheduler supports multiple priority levels but
+        only one thread can exist at each priority level. This means
+        that scheduling decisions are very simple and hence the
+        scheduler is efficient. Preemption between priority levels is
+        automatic. Timeslicing within a given priority level is
+        irrelevant since there can be only one thread at each
+        priority level."
+}
+
+#cdl_option CYGSEM_KERNEL_SCHED_LOTTERY {
+#    display      "Lottery scheduler"
+#    type          radio
+#    description "
+#       This scheduler is not yet available."
+#}
+
+cdl_option CYGPRI_KERNEL_SCHED_IMPL_HXX {
+    display       "Scheduler header file"
+    flavor        data
+    description   "
+	This option sets a preprocessor symbol which names the header
+	file for the selected scheduler.  It is used internally by the
+	common scheduler code to include the correct header file."
+    calculated { \
+               CYGSEM_KERNEL_SCHED_BITMAP  ? "<cyg/kernel/bitmap.hxx>"  :\
+               CYGSEM_KERNEL_SCHED_MLQUEUE ? "<cyg/kernel/mlqueue.hxx>" :\
+               CYGSEM_KERNEL_SCHED_LOTTERY ? "<cyg/kernel/lottery.hxx>" :\
+               "!!!-- Configuration broken - no scheduler selected --!!!"}
+}
+
+
+
+# NOTE: This option only makes sense if the current scheduler
+#       supports multiple priority levels.
+cdl_component CYGNUM_KERNEL_SCHED_PRIORITIES {
+    display       "Number of priority levels"
+    flavor        data
+    legal_values  1 to 32
+    default_value 32
+    #active_if     CYGINT_KERNEL_SCHED_PRIORITY_SCHEDULER
+    description "
+        This option controls the number of priority levels that are
+        available. For some types of scheduler including the bitmap
+        scheduler this may impose an upper bound on the number of
+        threads in the system. For other schedulers such as the
+        mlqueue scheduler the number of threads is independent from
+        the number of priority levels. Note that the lowest priority
+        level is normally used only by the idle thread, although
+        application threads can run at this priority if necessary."
+
+    cdl_option CYGNUM_KERNEL_SCHED_BITMAP_SIZE {
+        display       "Bitmap size"
+        flavor        data
+        calculated    {"CYGNUM_KERNEL_SCHED_PRIORITIES"}
+	description   "
+		This option automatically defines the size of bitmap
+		used to track occupied priority levels."
+    }
+
+        
+    cdl_option CYGIMP_KERNEL_SCHED_SORTED_QUEUES {
+        display       "Dequeue oldest threads first"
+        flavor        bool
+        default_value 0
+        description   "
+            With this option enabled, threads queued in a thread queue
+            will be dequeued in priority order, rather than last in,
+            first out (LIFO). Threads of equal priority are dequeued
+            oldest first. The only exception is the scheduler run 
+            queues where order is less important as each is already
+            sorted by priority. Note that this makes the thread queueing
+            less deterministic."
+    }
+}
+
+# ---------------------------------------------------------------------
+# Timeslice options
+
+# NOTE: this option only makes sense for some of the schedulers.
+# Timeslicing is irrelevant for bitmap schedulers.
+cdl_component CYGSEM_KERNEL_SCHED_TIMESLICE {
+    display       "Scheduler timeslicing"
+    requires      !CYGSEM_KERNEL_SCHED_BITMAP
+    requires      CYGVAR_KERNEL_COUNTERS_CLOCK
+    default_value 1
+    description "
+        Some schedulers including the mlqueue scheduler support
+        timeslicing. This means that the kernel will check regularly
+        whether or not there is another runnable thread with the
+        same priority, and if there is such a thread there will be
+        an automatic context switch. Not all applications require
+        timeslicing, for example because every thread performs a
+        blocking operation regularly. For these applications it is
+        possible to disable timeslicing, which reduces the overheads
+        associated with timer interrupts."
+
+    cdl_option CYGNUM_KERNEL_SCHED_TIMESLICE_TICKS {
+        display       "Number of clock ticks between timeslices"
+        flavor        data
+        legal_values  1 to 65535
+        default_value 5
+        description "
+            Assuming timeslicing is enabled, how frequently should it
+            take place? The value of this option corresponds to the
+            number of clock ticks that should occur before a timeslice
+            takes place, so increasing the value reduces the frequency
+            of timeslices."
+    }
+
+    cdl_option CYGSEM_KERNEL_SCHED_TIMESLICE_ENABLE {
+        display       "Support runtime enable of timeslice per-thread"
+        flavor        bool
+        default_value false
+        description "This option makes timslicing a per-thread runtime
+                     option. When enabled, threads may have timeslicing
+		     turned on or off dynamically. This is generally used
+                     by higher level APIs (such as POSIX) to implement
+		     differing scheduling policies."
+
+    }
+}
+
+# ---------------------------------------------------------------------
+# ASR support options
+
+cdl_component CYGSEM_KERNEL_SCHED_ASR_SUPPORT {
+    display       "Enable ASR support"
+    flavor        bool
+    default_value false
+    description   "
+         This component controls support for Asynchronous Service
+         Routines (ASRs). This is a function that may be called
+         from the scheduler when it has just exited the scheduler
+         lock. This is primarily for use by API compatibility layers."
+
+    cdl_option CYGSEM_KERNEL_SCHED_ASR_GLOBAL {
+	display       "Make ASR function global"
+	flavor        bool
+	default_value true
+	description "
+	     This option controls whether the ASR function is shared by
+	     all threads, or whether each thread may have its own ASR
+	     function."
+    }
+
+    cdl_option CYGSEM_KERNEL_SCHED_ASR_DATA_GLOBAL {
+	display       "Make ASR data global"
+	flavor        bool
+	default_value true
+	description "
+	     This option controls whether the ASR data is shared by
+	     all threads, or whether each thread may have its own ASR
+	     data. This is independent of the previous option because
+	     it may be useful to pass per-thread data to a shared ASR
+	     function."
+    }
+}
+
+# EOF scheduler.cdl

@@ -1,0 +1,103 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!-- {{{ Banner         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     main.sgml                                                   -->
+<!--                                                                 -->
+<!--     Entry point for the Component Writer's Guide.               -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2000, 2001, 2002 Red Hat, Inc.                    -->
+<!--                                                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2000/02/06                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<!ENTITY chap1          SYSTEM "concepts.sgml">
+<!ENTITY chap2          SYSTEM "package.sgml">
+<!ENTITY chap3          SYSTEM "language.sgml">
+<!ENTITY chap4          SYSTEM "build.sgml">
+<!ENTITY chap5          SYSTEM "reference.sgml">
+<!ENTITY chap6          SYSTEM "advanced.sgml">
+<!ENTITY eCos           "<Application class=software>eCos</Application>">
+<!ENTITY CDL            "<Application class=software>CDL</Application>">
+<!ENTITY CVS            "<Application class=software>CVS</Application>">
+<!ENTITY Tcl            "<Application class=software>Tcl</Application>">
+<!ENTITY uITRON         "&micro;ITRON">
+<!ENTITY cdl-option     "<literal>cdl_option</literal>">
+<!ENTITY cdl-component  "<literal>cdl_component</literal>">
+<!ENTITY cdl-package    "<literal>cdl_package</literal>">
+<!ENTITY cdl-interface  "<literal>cdl_interface</literal>">
+<!ENTITY active-if      "<property>active_if</property>">
+<!ENTITY calculated     "<property>calculated</property>">
+<!ENTITY compile        "<property>compile</property>">
+<!ENTITY default-value  "<property>default_value</property>">
+<!ENTITY define         "<property>define</property>">
+<!ENTITY define-format  "<property>define_format</property>">
+<!ENTITY define-header  "<property>define_header</property>">
+<!ENTITY define-proc    "<property>define_proc</property>">
+<!ENTITY description    "<property>description</property>">
+<!ENTITY display        "<property>display</property>">
+<!ENTITY doc            "<property>doc</property>">
+<!ENTITY flavor         "<property>flavor</property>">
+<!ENTITY hardware       "<property>hardware</property>">
+<!ENTITY if-define      "<property>if_define</property>">
+<!ENTITY implements     "<property>implements</property>">
+<!ENTITY include-dir    "<property>include_dir</property>">
+<!ENTITY include-files  "<property>include_files</property>">
+<!ENTITY legal-values   "<property>legal_values</property>">
+<!ENTITY library        "<property>library</property>">
+<!ENTITY make           "<property>make</property>">
+<!ENTITY make-object    "<property>make_object</property>">
+<!ENTITY no-define      "<property>no_define</property>">
+<!ENTITY parent         "<property>parent</property>">
+<!ENTITY requires       "<property>requires</property>">
+<!ENTITY script         "<property>script</property>">
+]>
+
+<book id="cdl-guide">
+  <title>The &eCos; Component Writer's Guide</title>
+  <bookinfo>
+    <title>The &eCos; Component Writer's Guide</title>
+    <authorgroup>
+      <author><firstname>Bart</firstname><surname>Veer</surname></author>
+      <author><firstname>John</firstname><surname>Dallaway</surname></author>
+    </authorgroup>
+    <pubdate>2001</pubdate>
+    <copyright><year>2000</year><year>2001</year>
+      <holder>Red Hat Inc.</holder>
+      </copyright>
+    </bookinfo>
+
+  &chap1;
+  &chap2;
+  &chap3;
+  &chap4;
+  &chap5;
+  &chap6;
+</book>
+

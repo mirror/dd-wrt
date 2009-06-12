@@ -1,0 +1,23 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	default "powerpc"
+
+config HAVE_ELF
+	bool
+	select UCLIBC_HAS_MMU
+	select ARCH_BIG_ENDIAN
+	default y
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+

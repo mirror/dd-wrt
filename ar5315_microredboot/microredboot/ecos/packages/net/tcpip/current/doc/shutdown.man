@@ -1,0 +1,27 @@
+NAME
+       shutdown - shut down part of a full-duplex connection
+
+SYNOPSIS
+       #include <network.h>
+
+       int shutdown(int s, int how);
+
+DESCRIPTION
+       The shutdown call causes all or part of a full-duplex con-
+       nection on the socket associated with s to be  shut  down.
+       If  how is 0, further receives will be disallowed.  If how
+       is 1, further sends will be disallowed.  If how is 2, fur-
+       ther sends and receives will be disallowed.
+
+RETURN VALUE
+       On  success,  zero is returned.  On error, -1 is returned,
+       and errno is set appropriately.
+
+ERRORS
+       EBADF   s is not a valid descriptor.
+
+       ENOTSOCK
+               s is a file, not a socket.
+
+       ENOTCONN
+               The specified socket is not connected.

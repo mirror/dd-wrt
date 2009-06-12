@@ -1,0 +1,110 @@
+2003-03-07  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/mainthread.cxx: Align stack to relevant architecture alignment.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/startup.cdl: Fix doc link.
+
+2002-04-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/_exit.cxx (_exit): Assert on non-zero error.
+
+2001-10-09  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/invokemain.cxx (cyg_libc_invoke_main): CYGINT_ISO_PTHREAD_IMPL
+	needs #ifdef not #if now.
+
+2000-12-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/startup.cdl: Allow others to say whether main() can be invoked
+	elsewhere.
+	Use defaults for startup context implementor using above interface
+	rather than POSIX pthread package.
+	Allow main() stack to be visible for other implementors, except
+	when called from the init context since the stack size isn't used
+	there, or when the implementation says it doesn't use it.
+	Define an interface to express that the stack size option
+	isn't used in such cases.
+	
+2000-10-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/startup.cdl (CYGSEM_LIBC_INVOKE_DEFAULT_STATIC_CONSTRUCTORS):
+	Special case for POSIX package startup since we know it calls
+	cyg_libc_invoke_main() rather than main directly.
+
+2000-08-07  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/invokemain.cxx: Declare cyg_hal_stop_constructors
+
+2000-07-31  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/cstartup.cxx: Fix typo
+
+2000-07-19  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/startup.cdl:
+	Make a "radio button" choice between how main() gets invoked (eCos
+	thread vs. cyg_user_start vs. someone else doing it)
+
+	* src/mainthread.cxx: Move cyg_libc_dummy_constructor_class to
+	src/invokemain.cxx
+
+	* src/invokemain.cxx: Invoke pthread_exit() instead of exit() if
+	relevant
+
+	* src/cstartup.cxx:
+	Only fiddle with cyg_user_start() if
+	CYGSEM_LIBC_STARTUP_MAIN_INITCONTEXT defined
+
+2000-07-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/abort.cxx: Fix configuration dependency on CYGINT_ISO_SIGNAL_IMPL
+
+2000-05-20  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/startup.cdl (CYGSEM_LIBC_EXIT_STOPS_SYSTEM): 
+	default to 0 always
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* New package
+	Separated original libc out into separate packages on functional
+	boundaries.
+	Header files are now managed by isoinfra package
+	Plenty of cleanups done, but no major functionality changes
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

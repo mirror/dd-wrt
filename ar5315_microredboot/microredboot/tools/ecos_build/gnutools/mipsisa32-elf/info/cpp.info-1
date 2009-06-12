@@ -1,0 +1,1240 @@
+This is doc/cpp.info, produced by makeinfo version 4.2 from
+doc/cpp.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* Cpp: (cpp).		       The GNU C preprocessor.
+END-INFO-DIR-ENTRY
+
+
+File: cpp.info,  Node: Top,  Next: Overview,  Up: (dir)
+
+
+
+   The C preprocessor implements the macro language used to transform C,
+C++, and Objective-C programs before they are compiled.  It can also be
+useful on its own.
+
+* Menu:
+
+* Overview::
+* Header Files::
+* Macros::
+* Conditionals::
+* Diagnostics::
+* Line Control::
+* Pragmas::
+* Other Directives::
+* Preprocessor Output::
+* Traditional Mode::
+* Implementation Details::
+* Invocation::
+* Environment Variables::
+* GNU Free Documentation License::
+* Option Index::
+* Index of Directives::
+* Concept Index::
+
+ --- The Detailed Node Listing ---
+
+Overview
+
+* Initial processing::
+* Tokenization::
+* The preprocessing language::
+
+Header Files
+
+* Include Syntax::
+* Include Operation::
+* Search Path::
+* Once-Only Headers::
+* Computed Includes::
+* Wrapper Headers::
+* System Headers::
+
+Macros
+
+* Object-like Macros::
+* Function-like Macros::
+* Macro Arguments::
+* Stringification::
+* Concatenation::
+* Variadic Macros::
+* Predefined Macros::
+* Undefining and Redefining Macros::
+* Macro Pitfalls::
+
+Predefined Macros
+
+* Standard Predefined Macros::
+* Common Predefined Macros::
+* System-specific Predefined Macros::
+* C++ Named Operators::
+
+Macro Pitfalls
+
+* Misnesting::
+* Operator Precedence Problems::
+* Swallowing the Semicolon::
+* Duplication of Side Effects::
+* Self-Referential Macros::
+* Argument Prescan::
+* Newlines in Arguments::
+
+Conditionals
+
+* Conditional Uses::
+* Conditional Syntax::
+* Deleted Code::
+
+Conditional Syntax
+
+* Ifdef::
+* If::
+* Defined::
+* Else::
+* Elif::
+
+Implementation Details
+
+* Implementation-defined behavior::
+* Implementation limits::
+* Obsolete Features::
+* Differences from previous versions::
+
+Obsolete Features
+
+* Assertions::
+* Obsolete once-only headers::
+* Miscellaneous obsolete features::
+
+   Copyright (C) 1987, 1989, 1991, 1992, 1993, 1994, 1995, 1996, 1997,
+1998, 1999, 2000, 2001 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the section entitled "GNU Free Documentation
+License".
+
+   This manual contains no Invariant Sections.  The Front-Cover Texts
+are (a) (see below), and the Back-Cover Texts are (b) (see below).
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise funds
+for GNU development.
+
+
+File: cpp.info,  Node: Overview,  Next: Header Files,  Prev: Top,  Up: Top
+
+Overview
+********
+
+   The C preprocessor, often known as "cpp", is a "macro processor"
+that is used automatically by the C compiler to transform your program
+before compilation.  It is called a macro processor because it allows
+you to define "macros", which are brief abbreviations for longer
+constructs.
+
+   The C preprocessor is intended to be used only with C, C++, and
+Objective-C source code.  In the past, it has been abused as a general
+text processor.  It will choke on input which does not obey C's lexical
+rules.  For example, apostrophes will be interpreted as the beginning of
+character constants, and cause errors.  Also, you cannot rely on it
+preserving characteristics of the input which are not significant to
+C-family languages.  If a Makefile is preprocessed, all the hard tabs
+will be removed, and the Makefile will not work.
+
+   Having said that, you can often get away with using cpp on things
+which are not C.  Other Algol-ish programming languages are often safe
+(Pascal, Ada, etc.) So is assembly, with caution.  `-traditional' mode
+preserves more white space, and is otherwise more permissive.  Many of
+the problems can be avoided by writing C or C++ style comments instead
+of native language comments, and keeping macros simple.
+
+   Wherever possible, you should use a preprocessor geared to the
+language you are writing in.  Modern versions of the GNU assembler have
+macro facilities.  Most high level programming languages have their own
+conditional compilation and inclusion mechanism.  If all else fails,
+try a true general text processor, such as GNU M4.
+
+   C preprocessors vary in some details.  This manual discusses the GNU
+C preprocessor, which provides a small superset of the features of ISO
+Standard C.  In its default mode, the GNU C preprocessor does not do a
+few things required by the standard.  These are features which are
+rarely, if ever, used, and may cause surprising changes to the meaning
+of a program which does not expect them.  To get strict ISO Standard C,
+you should use the `-std=c89' or `-std=c99' options, depending on which
+version of the standard you want.  To get all the mandatory
+diagnostics, you must also use `-pedantic'.  *Note Invocation::.
+
+* Menu:
+
+* Initial processing::
+* Tokenization::
+* The preprocessing language::
+
+
+File: cpp.info,  Node: Initial processing,  Next: Tokenization,  Up: Overview
+
+Initial processing
+==================
+
+   The preprocessor performs a series of textual transformations on its
+input.  These happen before all other processing.  Conceptually, they
+happen in a rigid order, and the entire file is run through each
+transformation before the next one begins.  GNU CPP actually does them
+all at once, for performance reasons.  These transformations correspond
+roughly to the first three "phases of translation" described in the C
+standard.
+
+  1. The input file is read into memory and broken into lines.
+
+     GNU CPP expects its input to be a text file, that is, an
+     unstructured stream of ASCII characters, with some characters
+     indicating the end of a line of text.  Extended ASCII character
+     sets, such as ISO Latin-1 or Unicode encoded in UTF-8, are also
+     acceptable.  Character sets that are not strict supersets of
+     seven-bit ASCII will not work.  We plan to add complete support
+     for international character sets in a future release.
+
+     Different systems use different conventions to indicate the end of
+     a line.  GCC accepts the ASCII control sequences `LF', `CR LF',
+     `CR', and `LF CR' as end-of-line markers.  The first three are the
+     canonical sequences used by Unix, DOS and VMS, and the classic Mac
+     OS (before OSX) respectively.  You may therefore safely copy
+     source code written on any of those systems to a different one and
+     use it without conversion.  (GCC may lose track of the current
+     line number if a file doesn't consistently use one convention, as
+     sometimes happens when it is edited on computers with different
+     conventions that share a network file system.)  `LF CR' is
+     included because it has been reported as an end-of-line marker
+     under exotic conditions.
+
+     If the last line of any input file lacks an end-of-line marker,
+     the end of the file is considered to implicitly supply one.  The C
+     standard says that this condition provokes undefined behavior, so
+     GCC will emit a warning message.
+
+  2. If trigraphs are enabled, they are replaced by their corresponding
+     single characters.
+
+     These are nine three-character sequences, all starting with `??',
+     that are defined by ISO C to stand for single characters.  They
+     permit obsolete systems that lack some of C's punctuation to use
+     C.  For example, `??/' stands for `\', so '??/n' is a character
+     constant for a newline.  By default, GCC ignores trigraphs, but if
+     you request a strictly conforming mode with the `-std' option, then
+     it converts them.
+
+     Trigraphs are not popular and many compilers implement them
+     incorrectly.  Portable code should not rely on trigraphs being
+     either converted or ignored.  If you use the `-Wall' or
+     `-Wtrigraphs' options, GCC will warn you when a trigraph would
+     change the meaning of your program if it were converted.
+
+     In a string constant, you can prevent a sequence of question marks
+     from being confused with a trigraph by inserting a backslash
+     between the question marks.  "(??\?)" is the string `(???)', not
+     `(?]'.  Traditional C compilers do not recognize this idiom.
+
+     The nine trigraphs and their replacements are
+
+          Trigraph:       ??(  ??)  ??<  ??>  ??=  ??/  ??'  ??!  ??-
+          Replacement:      [    ]    {    }    #    \    ^    |    ~
+
+  3. Continued lines are merged into one long line.
+
+     A continued line is a line which ends with a backslash, `\'.  The
+     backslash is removed and the following line is joined with the
+     current one.  No space is inserted, so you may split a line
+     anywhere, even in the middle of a word.  (It is generally more
+     readable to split lines only at white space.)
+
+     The trailing backslash on a continued line is commonly referred to
+     as a "backslash-newline".
+
+     If there is white space between a backslash and the end of a line,
+     that is still a continued line.  However, as this is usually the
+     result of an editing mistake, and many compilers will not accept
+     it as a continued line, GCC will warn you about it.
+
+  4. All comments are replaced with single spaces.
+
+     There are two kinds of comments.  "Block comments" begin with `/*'
+     and continue until the next `*/'.  Block comments do not nest:
+
+          /* this is /* one comment */ text outside comment
+
+     "Line comments" begin with `//' and continue to the end of the
+     current line.  Line comments do not nest either, but it does not
+     matter, because they would end in the same place anyway.
+
+          // this is // one comment
+          text outside comment
+
+   It is safe to put line comments inside block comments, or vice versa.
+
+     /* block comment
+        // contains line comment
+        yet more comment
+      */ outside comment
+     
+     // line comment /* contains block comment */
+
+   But beware of commenting out one end of a block comment with a line
+comment.
+
+      // l.c.  /* block comment begins
+         oops! this isn't a comment anymore */
+
+   Comments are not recognized within string literals.  "/* blah */" is
+the string constant `/* blah */', not an empty string.
+
+   Line comments are not in the 1989 edition of the C standard, but they
+are recognized by GCC as an extension.  In C++ and in the 1999 edition
+of the C standard, they are an official part of the language.
+
+   Since these transformations happen before all other processing, you
+can split a line mechanically with backslash-newline anywhere.  You can
+comment out the end of a line.  You can continue a line comment onto the
+next line with backslash-newline.  You can even split `/*', `*/', and
+`//' onto multiple lines with backslash-newline.  For example:
+
+     /\
+     *
+     */ # /*
+     */ defi\
+     ne FO\
+     O 10\
+     20
+
+is equivalent to `#define FOO 1020'.  All these tricks are extremely
+confusing and should not be used in code intended to be readable.
+
+   There is no way to prevent a backslash at the end of a line from
+being interpreted as a backslash-newline.
+
+     "foo\\
+     bar"
+
+is equivalent to `"foo\bar"', not to `"foo\\bar"'.  To avoid having to
+worry about this, do not use the deprecated GNU extension which permits
+multi-line strings.  Instead, use string literal concatenation:
+
+        "foo\\"
+        "bar"
+
+Your program will be more portable this way, too.
+
+
+File: cpp.info,  Node: Tokenization,  Next: The preprocessing language,  Prev: Initial processing,  Up: Overview
+
+Tokenization
+============
+
+   After the textual transformations are finished, the input file is
+converted into a sequence of "preprocessing tokens".  These mostly
+correspond to the syntactic tokens used by the C compiler, but there are
+a few differences.  White space separates tokens; it is not itself a
+token of any kind.  Tokens do not have to be separated by white space,
+but it is often necessary to avoid ambiguities.
+
+   When faced with a sequence of characters that has more than one
+possible tokenization, the preprocessor is greedy.  It always makes
+each token, starting from the left, as big as possible before moving on
+to the next token.  For instance, `a+++++b' is interpreted as
+`a ++ ++ + b', not as `a ++ + ++ b', even though the latter
+tokenization could be part of a valid C program and the former could
+not.
+
+   Once the input file is broken into tokens, the token boundaries never
+change, except when the `##' preprocessing operator is used to paste
+tokens together.  *Note Concatenation::.  For example,
+
+     #define foo() bar
+     foo()baz
+          ==> bar baz
+     _not_
+          ==> barbaz
+
+   The compiler does not re-tokenize the preprocessor's output.  Each
+preprocessing token becomes one compiler token.
+
+   Preprocessing tokens fall into five broad classes: identifiers,
+preprocessing numbers, string literals, punctuators, and other.  An
+"identifier" is the same as an identifier in C: any sequence of
+letters, digits, or underscores, which begins with a letter or
+underscore.  Keywords of C have no significance to the preprocessor;
+they are ordinary identifiers.  You can define a macro whose name is a
+keyword, for instance.  The only identifier which can be considered a
+preprocessing keyword is `defined'.  *Note Defined::.
+
+   This is mostly true of other languages which use the C preprocessor.
+However, a few of the keywords of C++ are significant even in the
+preprocessor.  *Note C++ Named Operators::.
+
+   In the 1999 C standard, identifiers may contain letters which are not
+part of the "basic source character set," at the implementation's
+discretion (such as accented Latin letters, Greek letters, or Chinese
+ideograms).  This may be done with an extended character set, or the
+`\u' and `\U' escape sequences.  GCC does not presently implement
+either feature in the preprocessor or the compiler.
+
+   As an extension, GCC treats `$' as a letter.  This is for
+compatibility with some systems, such as VMS, where `$' is commonly
+used in system-defined function and object names.  `$' is not a letter
+in strictly conforming mode, or if you specify the `-$' option.  *Note
+Invocation::.
+
+   A "preprocessing number" has a rather bizarre definition.  The
+category includes all the normal integer and floating point constants
+one expects of C, but also a number of other things one might not
+initially recognize as a number.  Formally, preprocessing numbers begin
+with an optional period, a required decimal digit, and then continue
+with any sequence of letters, digits, underscores, periods, and
+exponents.  Exponents are the two-character sequences `e+', `e-', `E+',
+`E-', `p+', `p-', `P+', and `P-'.  (The exponents that begin with `p'
+or `P' are new to C99.  They are used for hexadecimal floating-point
+constants.)
+
+   The purpose of this unusual definition is to isolate the preprocessor
+from the full complexity of numeric constants.  It does not have to
+distinguish between lexically valid and invalid floating-point numbers,
+which is complicated.  The definition also permits you to split an
+identifier at any position and get exactly two tokens, which can then be
+pasted back together with the `##' operator.
+
+   It's possible for preprocessing numbers to cause programs to be
+misinterpreted.  For example, `0xE+12' is a preprocessing number which
+does not translate to any valid numeric constant, therefore a syntax
+error.  It does not mean `0xE + 12', which is what you might have
+intended.
+
+   "String literals" are string constants, character constants, and
+header file names (the argument of `#include').(1)  String constants
+and character constants are straightforward: "..." or '...'.  In either
+case embedded quotes should be escaped with a backslash: '\'' is the
+character constant for `''.  There is no limit on the length of a
+character constant, but the value of a character constant that contains
+more than one character is implementation-defined.  *Note
+Implementation Details::.
+
+   Header file names either look like string constants, "...", or are
+written with angle brackets instead, <...>.  In either case, backslash
+is an ordinary character.  There is no way to escape the closing quote
+or angle bracket.  The preprocessor looks for the header file in
+different places depending on which form you use.  *Note Include
+Operation::.
+
+   In standard C, no string literal may extend past the end of a line.
+GNU CPP accepts multi-line string constants, but not multi-line
+character constants or header file names.  This extension is deprecated
+and will be removed in GCC 3.1.  You may use continued lines instead,
+or string constant concatenation.  *Note Differences from previous
+versions::.
+
+   "Punctuators" are all the usual bits of punctuation which are
+meaningful to C and C++.  All but three of the punctuation characters in
+ASCII are C punctuators.  The exceptions are `@', `$', and ``'.  In
+addition, all the two- and three-character operators are punctuators.
+There are also six "digraphs", which the C++ standard calls
+"alternative tokens", which are merely alternate ways to spell other
+punctuators.  This is a second attempt to work around missing
+punctuation in obsolete systems.  It has no negative side effects,
+unlike trigraphs, but does not cover as much ground.  The digraphs and
+their corresponding normal punctuators are:
+
+     Digraph:        <%  %>  <:  :>  %:  %:%:
+     Punctuator:      {   }   [   ]   #    ##
+
+   Any other single character is considered "other." It is passed on to
+the preprocessor's output unmolested.  The C compiler will almost
+certainly reject source code containing "other" tokens.  In ASCII, the
+only other characters are `@', `$', ``', and control characters other
+than NUL (all bits zero).  (Note that `$' is normally considered a
+letter.)  All characters with the high bit set (numeric range
+0x7F-0xFF) are also "other" in the present implementation.  This will
+change when proper support for international character sets is added to
+GCC.
+
+   NUL is a special case because of the high probability that its
+appearance is accidental, and because it may be invisible to the user
+(many terminals do not display NUL at all).  Within comments, NULs are
+silently ignored, just as any other character would be.  In running
+text, NUL is considered white space.  For example, these two directives
+have the same meaning.
+
+     #define X^@1
+     #define X 1
+
+(where `^@' is ASCII NUL).  Within string or character constants, NULs
+are preserved.  In the latter two cases the preprocessor emits a
+warning message.
+
+   ---------- Footnotes ----------
+
+   (1) The C standard uses the term "string literal" to refer only to
+what we are calling "string constants".
+
+
+File: cpp.info,  Node: The preprocessing language,  Prev: Tokenization,  Up: Overview
+
+The preprocessing language
+==========================
+
+   After tokenization, the stream of tokens may simply be passed
+straight to the compiler's parser.  However, if it contains any
+operations in the "preprocessing language", it will be transformed
+first.  This stage corresponds roughly to the standard's "translation
+phase 4" and is what most people think of as the preprocessor's job.
+
+   The preprocessing language consists of "directives" to be executed
+and "macros" to be expanded.  Its primary capabilities are:
+
+   * Inclusion of header files.  These are files of declarations that
+     can be substituted into your program.
+
+   * Macro expansion.  You can define "macros", which are abbreviations
+     for arbitrary fragments of C code.  The preprocessor will replace
+     the macros with their definitions throughout the program.  Some
+     macros are automatically defined for you.
+
+   * Conditional compilation.  You can include or exclude parts of the
+     program according to various conditions.
+
+   * Line control.  If you use a program to combine or rearrange source
+     files into an intermediate file which is then compiled, you can
+     use line control to inform the compiler where each source line
+     originally came from.
+
+   * Diagnostics.  You can detect problems at compile time and issue
+     errors or warnings.
+
+   There are a few more, less useful, features.
+
+   Except for expansion of predefined macros, all these operations are
+triggered with "preprocessing directives".  Preprocessing directives
+are lines in your program that start with `#'.  Whitespace is allowed
+before and after the `#'.  The `#' is followed by an identifier, the
+"directive name".  It specifies the operation to perform.  Directives
+are commonly referred to as `#NAME' where NAME is the directive name.
+For example, `#define' is the directive that defines a macro.
+
+   The `#' which begins a directive cannot come from a macro expansion.
+Also, the directive name is not macro expanded.  Thus, if `foo' is
+defined as a macro expanding to `define', that does not make `#foo' a
+valid preprocessing directive.
+
+   The set of valid directive names is fixed.  Programs cannot define
+new preprocessing directives.
+
+   Some directives require arguments; these make up the rest of the
+directive line and must be separated from the directive name by
+whitespace.  For example, `#define' must be followed by a macro name
+and the intended expansion of the macro.
+
+   A preprocessing directive cannot cover more than one line.  The line
+may, however, be continued with backslash-newline, or by a block comment
+which extends past the end of the line.  In either case, when the
+directive is processed, the continuations have already been merged with
+the first line to make one long line.
+
+
+File: cpp.info,  Node: Header Files,  Next: Macros,  Prev: Overview,  Up: Top
+
+Header Files
+************
+
+   A header file is a file containing C declarations and macro
+definitions (*note Macros::) to be shared between several source files.
+You request the use of a header file in your program by "including"
+it, with the C preprocessing directive `#include'.
+
+   Header files serve two purposes.
+
+   * System header files declare the interfaces to parts of the
+     operating system.  You include them in your program to supply the
+     definitions and declarations you need to invoke system calls and
+     libraries.
+
+   * Your own header files contain declarations for interfaces between
+     the source files of your program.  Each time you have a group of
+     related declarations and macro definitions all or most of which
+     are needed in several different source files, it is a good idea to
+     create a header file for them.
+
+   Including a header file produces the same results as copying the
+header file into each source file that needs it.  Such copying would be
+time-consuming and error-prone.  With a header file, the related
+declarations appear in only one place.  If they need to be changed, they
+can be changed in one place, and programs that include the header file
+will automatically use the new version when next recompiled.  The header
+file eliminates the labor of finding and changing all the copies as well
+as the risk that a failure to find one copy will result in
+inconsistencies within a program.
+
+   In C, the usual convention is to give header files names that end
+with `.h'.  It is most portable to use only letters, digits, dashes, and
+underscores in header file names, and at most one dot.
+
+* Menu:
+
+* Include Syntax::
+* Include Operation::
+* Search Path::
+* Once-Only Headers::
+* Computed Includes::
+* Wrapper Headers::
+* System Headers::
+
+
+File: cpp.info,  Node: Include Syntax,  Next: Include Operation,  Up: Header Files
+
+Include Syntax
+==============
+
+   Both user and system header files are included using the
+preprocessing directive `#include'.  It has two variants:
+
+`#include <FILE>'
+     This variant is used for system header files.  It searches for a
+     file named FILE in a standard list of system directories.  You can
+     prepend directories to this list with the `-I' option (*note
+     Invocation::).
+
+`#include "FILE"'
+     This variant is used for header files of your own program.  It
+     searches for a file named FILE first in the directory containing
+     the current file, then in the same directories used for `<FILE>'.
+
+   The argument of `#include', whether delimited with quote marks or
+angle brackets, behaves like a string constant in that comments are not
+recognized, and macro names are not expanded.  Thus, `#include <x/*y>'
+specifies inclusion of a system header file named `x/*y'.
+
+   However, if backslashes occur within FILE, they are considered
+ordinary text characters, not escape characters.  None of the character
+escape sequences appropriate to string constants in C are processed.
+Thus, `#include "x\n\\y"' specifies a filename containing three
+backslashes.  (Some systems interpret `\' as a pathname separator.  All
+of these also interpret `/' the same way.  It is most portable to use
+only `/'.)
+
+   It is an error if there is anything (other than comments) on the line
+after the file name.
+
+
+File: cpp.info,  Node: Include Operation,  Next: Search Path,  Prev: Include Syntax,  Up: Header Files
+
+Include Operation
+=================
+
+   The `#include' directive works by directing the C preprocessor to
+scan the specified file as input before continuing with the rest of the
+current file.  The output from the preprocessor contains the output
+already generated, followed by the output resulting from the included
+file, followed by the output that comes from the text after the
+`#include' directive.  For example, if you have a header file
+`header.h' as follows,
+
+     char *test (void);
+
+and a main program called `program.c' that uses the header file, like
+this,
+
+     int x;
+     #include "header.h"
+     
+     int
+     main (void)
+     {
+       puts (test ());
+     }
+
+the compiler will see the same token stream as it would if `program.c'
+read
+
+     int x;
+     char *test (void);
+     
+     int
+     main (void)
+     {
+       puts (test ());
+     }
+
+   Included files are not limited to declarations and macro definitions;
+those are merely the typical uses.  Any fragment of a C program can be
+included from another file.  The include file could even contain the
+beginning of a statement that is concluded in the containing file, or
+the end of a statement that was started in the including file.  However,
+a comment or a string or character constant may not start in the
+included file and finish in the including file.  An unterminated
+comment, string constant or character constant in an included file is
+considered to end (with an error message) at the end of the file.
+
+   To avoid confusion, it is best if header files contain only complete
+syntactic units--function declarations or definitions, type
+declarations, etc.
+
+   The line following the `#include' directive is always treated as a
+separate line by the C preprocessor, even if the included file lacks a
+final newline.
+
+
+File: cpp.info,  Node: Search Path,  Next: Once-Only Headers,  Prev: Include Operation,  Up: Header Files
+
+Search Path
+===========
+
+   GCC looks in several different places for headers.  On a normal Unix
+system, if you do not instruct it otherwise, it will look for headers
+requested with `#include <FILE>' in:
+
+     /usr/local/include
+     /usr/lib/gcc-lib/TARGET/VERSION/include
+     /usr/TARGET/include
+     /usr/include
+
+   For C++ programs, it will also look in `/usr/include/g++-v3', first.
+In the above, TARGET is the canonical name of the system GCC was
+configured to compile code for; often but not always the same as the
+canonical name of the system it runs on.  VERSION is the version of GCC
+in use.
+
+   You can add to this list with the `-IDIR' command line option.  All
+the directories named by `-I' are searched, in left-to-right order,
+_before_ the default directories.  The only exception is when `dir' is
+already searched by default.  In this case, the option is ignored and
+the search order for system directories remains unchanged.
+
+   Duplicate directories are removed from the quote and bracket search
+chains before the two chains are merged to make the final search chain.
+Thus, it is possible for a directory to occur twice in the final search
+chain if it was specified in both the quote and bracket chains.
+
+   You can prevent GCC from searching any of the default directories
+with the `-nostdinc' option.  This is useful when you are compiling an
+operating system kernel or some other program that does not use the
+standard C library facilities, or the standard C library itself.  `-I'
+options are not ignored as described above when `-nostdinc' is in
+effect.
+
+   GCC looks for headers requested with `#include "FILE"' first in the
+directory containing the current file, then in the same places it would
+have looked for a header requested with angle brackets.  For example,
+if `/usr/include/sys/stat.h' contains `#include "types.h"', GCC looks
+for `types.h' first in `/usr/include/sys', then in its usual search
+path.
+
+   `#line' (*note Line Control::) does not change GCC's idea of the
+directory containing the current file.
+
+   You may put `-I-' at any point in your list of `-I' options.  This
+has two effects.  First, directories appearing before the `-I-' in the
+list are searched only for headers requested with quote marks.
+Directories after `-I-' are searched for all headers.  Second, the
+directory containing the current file is not searched for anything,
+unless it happens to be one of the directories named by an `-I' switch.
+
+   `-I. -I-' is not the same as no `-I' options at all, and does not
+cause the same behavior for `<>' includes that `""' includes get with
+no special options.  `-I.' searches the compiler's current working
+directory for header files.  That may or may not be the same as the
+directory containing the current file.
+
+   If you need to look for headers in a directory named `-', write
+`-I./-'.
+
+   There are several more ways to adjust the header search path.  They
+are generally less useful.  *Note Invocation::.
+
+
+File: cpp.info,  Node: Once-Only Headers,  Next: Computed Includes,  Prev: Search Path,  Up: Header Files
+
+Once-Only Headers
+=================
+
+   If a header file happens to be included twice, the compiler will
+process its contents twice.  This is very likely to cause an error,
+e.g. when the compiler sees the same structure definition twice.  Even
+if it does not, it will certainly waste time.
+
+   The standard way to prevent this is to enclose the entire real
+contents of the file in a conditional, like this:
+
+     /* File foo.  */
+     #ifndef FILE_FOO_SEEN
+     #define FILE_FOO_SEEN
+     
+     THE ENTIRE FILE
+     
+     #endif /* !FILE_FOO_SEEN */
+
+   This construct is commonly known as a "wrapper #ifndef".  When the
+header is included again, the conditional will be false, because
+`FILE_FOO_SEEN' is defined.  The preprocessor will skip over the entire
+contents of the file, and the compiler will not see it twice.
+
+   GNU CPP optimizes even further.  It remembers when a header file has
+a wrapper `#ifndef'.  If a subsequent `#include' specifies that header,
+and the macro in the `#ifndef' is still defined, it does not bother to
+rescan the file at all.
+
+   You can put comments outside the wrapper.  They will not interfere
+with this optimization.
+
+   The macro `FILE_FOO_SEEN' is called the "controlling macro" or
+"guard macro".  In a user header file, the macro name should not begin
+with `_'.  In a system header file, it should begin with `__' to avoid
+conflicts with user programs.  In any kind of header file, the macro
+name should contain the name of the file and some additional text, to
+avoid conflicts with other header files.
+
+
+File: cpp.info,  Node: Computed Includes,  Next: Wrapper Headers,  Prev: Once-Only Headers,  Up: Header Files
+
+Computed Includes
+=================
+
+   Sometimes it is necessary to select one of several different header
+files to be included into your program.  They might specify
+configuration parameters to be used on different sorts of operating
+systems, for instance.  You could do this with a series of conditionals,
+
+     #if SYSTEM_1
+     # include "system_1.h"
+     #elif SYSTEM_2
+     # include "system_2.h"
+     #elif SYSTEM_3
+     ...
+     #endif
+
+   That rapidly becomes tedious.  Instead, the preprocessor offers the
+ability to use a macro for the header name.  This is called a "computed
+include".  Instead of writing a header name as the direct argument of
+`#include', you simply put a macro name there instead:
+
+     #define SYSTEM_H "system_1.h"
+     ...
+     #include SYSTEM_H
+
+`SYSTEM_H' will be expanded, and the preprocessor will look for
+`system_1.h' as if the `#include' had been written that way originally.
+`SYSTEM_H' could be defined by your Makefile with a `-D' option.
+
+   You must be careful when you define the macro.  `#define' saves
+tokens, not text.  The preprocessor has no way of knowing that the macro
+will be used as the argument of `#include', so it generates ordinary
+tokens, not a header name.  This is unlikely to cause problems if you
+use double-quote includes, which are close enough to string constants.
+If you use angle brackets, however, you may have trouble.
+
+   The syntax of a computed include is actually a bit more general than
+the above.  If the first non-whitespace character after `#include' is
+not `"' or `<', then the entire line is macro-expanded like running
+text would be.
+
+   If the line expands to a single string constant, the contents of that
+string constant are the file to be included.  CPP does not re-examine
+the string for embedded quotes, but neither does it process backslash
+escapes in the string.  Therefore
+
+     #define HEADER "a\"b"
+     #include HEADER
+
+looks for a file named `a\"b'.  CPP searches for the file according to
+the rules for double-quoted includes.
+
+   If the line expands to a token stream beginning with a `<' token and
+including a `>' token, then the tokens between the `<' and the first
+`>' are combined to form the filename to be included.  Any whitespace
+between tokens is reduced to a single space; then any space after the
+initial `<' is retained, but a trailing space before the closing `>' is
+ignored.  CPP searches for the file according to the rules for
+angle-bracket includes.
+
+   In either case, if there are any tokens on the line after the file
+name, an error occurs and the directive is not processed.  It is also
+an error if the result of expansion does not match either of the two
+expected forms.
+
+   These rules are implementation-defined behavior according to the C
+standard.  To minimize the risk of different compilers interpreting your
+computed includes differently, we recommend you use only a single
+object-like macro which expands to a string constant.  This will also
+minimize confusion for people reading your program.
+
+
+File: cpp.info,  Node: Wrapper Headers,  Next: System Headers,  Prev: Computed Includes,  Up: Header Files
+
+Wrapper Headers
+===============
+
+   Sometimes it is necessary to adjust the contents of a system-provided
+header file without editing it directly.  GCC's `fixincludes' operation
+does this, for example.  One way to do that would be to create a new
+header file with the same name and insert it in the search path before
+the original header.  That works fine as long as you're willing to
+replace the old header entirely.  But what if you want to refer to the
+old header from the new one?
+
+   You cannot simply include the old header with `#include'.  That will
+start from the beginning, and find your new header again.  If your
+header is not protected from multiple inclusion (*note Once-Only
+Headers::), it will recurse infinitely and cause a fatal error.
+
+   You could include the old header with an absolute pathname:
+     #include "/usr/include/old-header.h"
+
+This works, but is not clean; should the system headers ever move, you
+would have to edit the new headers to match.
+
+   There is no way to solve this problem within the C standard, but you
+can use the GNU extension `#include_next'.  It means, "Include the
+_next_ file with this name."  This directive works like `#include'
+except in searching for the specified file: it starts searching the
+list of header file directories _after_ the directory in which the
+current file was found.
+
+   Suppose you specify `-I /usr/local/include', and the list of
+directories to search also includes `/usr/include'; and suppose both
+directories contain `signal.h'.  Ordinary `#include <signal.h>' finds
+the file under `/usr/local/include'.  If that file contains
+`#include_next <signal.h>', it starts searching after that directory,
+and finds the file in `/usr/include'.
+
+   `#include_next' does not distinguish between `<FILE>' and `"FILE"'
+inclusion, nor does it check that the file you specify has the same
+name as the current file.  It simply looks for the file named, starting
+with the directory in the search path after the one where the current
+file was found.
+
+   The use of `#include_next' can lead to great confusion.  We
+recommend it be used only when there is no other alternative.  In
+particular, it should not be used in the headers belonging to a specific
+program; it should be used only to make global corrections along the
+lines of `fixincludes'.
+
+
+File: cpp.info,  Node: System Headers,  Prev: Wrapper Headers,  Up: Header Files
+
+System Headers
+==============
+
+   The header files declaring interfaces to the operating system and
+runtime libraries often cannot be written in strictly conforming C.
+Therefore, GCC gives code found in "system headers" special treatment.
+All warnings, other than those generated by `#warning' (*note
+Diagnostics::), are suppressed while GCC is processing a system header.
+Macros defined in a system header are immune to a few warnings
+wherever they are expanded.  This immunity is granted on an ad-hoc
+basis, when we find that a warning generates lots of false positives
+because of code in macros defined in system headers.
+
+   Normally, only the headers found in specific directories are
+considered system headers.  These directories are determined when GCC
+is compiled.  There are, however, two ways to make normal headers into
+system headers.
+
+   The `-isystem' command line option adds its argument to the list of
+directories to search for headers, just like `-I'.  Any headers found
+in that directory will be considered system headers.
+
+   All directories named by `-isystem' are searched _after_ all
+directories named by `-I', no matter what their order was on the
+command line.  If the same directory is named by both `-I' and
+`-isystem', the `-I' option is ignored.  GCC provides an informative
+message when this occurs if `-v' is used.
+
+   There is also a directive, `#pragma GCC system_header', which tells
+GCC to consider the rest of the current include file a system header,
+no matter where it was found.  Code that comes before the `#pragma' in
+the file will not be affected.  `#pragma GCC system_header' has no
+effect in the primary source file.
+
+   On very old systems, some of the pre-defined system header
+directories get even more special treatment.  GNU C++ considers code in
+headers found in those directories to be surrounded by an `extern "C"'
+block.  There is no way to request this behavior with a `#pragma', or
+from the command line.
+
+
+File: cpp.info,  Node: Macros,  Next: Conditionals,  Prev: Header Files,  Up: Top
+
+Macros
+******
+
+   A "macro" is a fragment of code which has been given a name.
+Whenever the name is used, it is replaced by the contents of the macro.
+There are two kinds of macros.  They differ mostly in what they look
+like when they are used.  "Object-like" macros resemble data objects
+when used, "function-like" macros resemble function calls.
+
+   You may define any valid identifier as a macro, even if it is a C
+keyword.  The preprocessor does not know anything about keywords.  This
+can be useful if you wish to hide a keyword such as `const' from an
+older compiler that does not understand it.  However, the preprocessor
+operator `defined' (*note Defined::) can never be defined as a macro,
+and C++'s named operators (*note C++ Named Operators::) cannot be
+macros when you are compiling C++.
+
+* Menu:
+
+* Object-like Macros::
+* Function-like Macros::
+* Macro Arguments::
+* Stringification::
+* Concatenation::
+* Variadic Macros::
+* Predefined Macros::
+* Undefining and Redefining Macros::
+* Macro Pitfalls::
+
+
+File: cpp.info,  Node: Object-like Macros,  Next: Function-like Macros,  Up: Macros
+
+Object-like Macros
+==================
+
+   An "object-like macro" is a simple identifier which will be replaced
+by a code fragment.  It is called object-like because it looks like a
+data object in code that uses it.  They are most commonly used to give
+symbolic names to numeric constants.
+
+   You create macros with the `#define' directive.  `#define' is
+followed by the name of the macro and then the token sequence it should
+be an abbreviation for, which is variously referred to as the macro's
+"body", "expansion" or "replacement list".  For example,
+
+     #define BUFFER_SIZE 1024
+
+defines a macro named `BUFFER_SIZE' as an abbreviation for the token
+`1024'.  If somewhere after this `#define' directive there comes a C
+statement of the form
+
+     foo = (char *) malloc (BUFFER_SIZE);
+
+then the C preprocessor will recognize and "expand" the macro
+`BUFFER_SIZE'.  The C compiler will see the same tokens as it would if
+you had written
+
+     foo = (char *) malloc (1024);
+
+   By convention, macro names are written in upper case.  Programs are
+easier to read when it is possible to tell at a glance which names are
+macros.
+
+   The macro's body ends at the end of the `#define' line.  You may
+continue the definition onto multiple lines, if necessary, using
+backslash-newline.  When the macro is expanded, however, it will all
+come out on one line.  For example,
+
+     #define NUMBERS 1, \
+                     2, \
+                     3
+     int x[] = { NUMBERS };
+          ==> int x[] = { 1, 2, 3 };
+
+The most common visible consequence of this is surprising line numbers
+in error messages.
+
+   There is no restriction on what can go in a macro body provided it
+decomposes into valid preprocessing tokens.  Parentheses need not
+balance, and the body need not resemble valid C code.  (If it does not,
+you may get error messages from the C compiler when you use the macro.)
+
+   The C preprocessor scans your program sequentially.  Macro
+definitions take effect at the place you write them.  Therefore, the
+following input to the C preprocessor
+
+     foo = X;
+     #define X 4
+     bar = X;
+
+produces
+
+     foo = X;
+     bar = 4;
+
+   When the preprocessor expands a macro name, the macro's expansion
+replaces the macro invocation, then the expansion is examined for more
+macros to expand.  For example,
+
+     #define TABLESIZE BUFSIZE
+     #define BUFSIZE 1024
+     TABLESIZE
+          ==> BUFSIZE
+          ==> 1024
+
+`TABLESIZE' is expanded first to produce `BUFSIZE', then that macro is
+expanded to produce the final result, `1024'.
+
+   Notice that `BUFSIZE' was not defined when `TABLESIZE' was defined.
+The `#define' for `TABLESIZE' uses exactly the expansion you
+specify--in this case, `BUFSIZE'--and does not check to see whether it
+too contains macro names.  Only when you _use_ `TABLESIZE' is the
+result of its expansion scanned for more macro names.
+
+   This makes a difference if you change the definition of `BUFSIZE' at
+some point in the source file.  `TABLESIZE', defined as shown, will
+always expand using the definition of `BUFSIZE' that is currently in
+effect:
+
+     #define BUFSIZE 1020
+     #define TABLESIZE BUFSIZE
+     #undef BUFSIZE
+     #define BUFSIZE 37
+
+Now `TABLESIZE' expands (in two stages) to `37'.
+
+   If the expansion of a macro contains its own name, either directly or
+via intermediate macros, it is not expanded again when the expansion is
+examined for more macros.  This prevents infinite recursion.  *Note
+Self-Referential Macros::, for the precise details.
+
+
+File: cpp.info,  Node: Function-like Macros,  Next: Macro Arguments,  Prev: Object-like Macros,  Up: Macros
+
+Function-like Macros
+====================
+
+   You can also define macros whose use looks like a function call.
+These are called "function-like macros".  To define a function-like
+macro, you use the same `#define' directive, but you put a pair of
+parentheses immediately after the macro name.  For example,
+
+     #define lang_init()  c_init()
+     lang_init()
+          ==> c_init()
+
+   A function-like macro is only expanded if its name appears with a
+pair of parentheses after it.  If you write just the name, it is left
+alone.  This can be useful when you have a function and a macro of the
+same name, and you wish to use the function sometimes.
+
+     extern void foo(void);
+     #define foo() /* optimized inline version */
+     ...
+       foo();
+       funcptr = foo;
+
+   Here the call to `foo()' will use the macro, but the function
+pointer will get the address of the real function.  If the macro were to
+be expanded, it would cause a syntax error.
+
+   If you put spaces between the macro name and the parentheses in the
+macro definition, that does not define a function-like macro, it defines
+an object-like macro whose expansion happens to begin with a pair of
+parentheses.
+
+     #define lang_init ()    c_init()
+     lang_init()
+          ==> () c_init()()
+
+   The first two pairs of parentheses in this expansion come from the
+macro.  The third is the pair that was originally after the macro
+invocation.  Since `lang_init' is an object-like macro, it does not
+consume those parentheses.
+
+
+File: cpp.info,  Node: Macro Arguments,  Next: Stringification,  Prev: Function-like Macros,  Up: Macros
+
+Macro Arguments
+===============
+
+   Function-like macros can take "arguments", just like true functions.
+To define a macro that uses arguments, you insert "parameters" between
+the pair of parentheses in the macro definition that make the macro
+function-like.  The parameters must be valid C identifiers, separated
+by commas and optionally whitespace.
+
+   To invoke a macro that takes arguments, you write the name of the
+macro followed by a list of "actual arguments" in parentheses, separated
+by commas.  The invocation of the macro need not be restricted to a
+single logical line--it can cross as many lines in the source file as
+you wish.  The number of arguments you give must match the number of
+parameters in the macro definition.  When the macro is expanded, each
+use of a parameter in its body is replaced by the tokens of the
+corresponding argument.  (You need not use all of the parameters in the
+macro body.)
+
+   As an example, here is a macro that computes the minimum of two
+numeric values, as it is defined in many C programs, and some uses.
+
+     #define min(X, Y)  ((X) < (Y) ? (X) : (Y))
+       x = min(a, b);          ==>  x = ((a) < (b) ? (a) : (b));
+       y = min(1, 2);          ==>  y = ((1) < (2) ? (1) : (2));
+       z = min(a + 28, *p);    ==>  z = ((a + 28) < (*p) ? (a + 28) : (*p));
+
+(In this small example you can already see several of the dangers of
+macro arguments.  *Note Macro Pitfalls::, for detailed explanations.)
+
+   Leading and trailing whitespace in each argument is dropped, and all
+whitespace between the tokens of an argument is reduced to a single
+space.  Parentheses within each argument must balance; a comma within
+such parentheses does not end the argument.  However, there is no
+requirement for square brackets or braces to balance, and they do not
+prevent a comma from separating arguments.  Thus,
+
+     macro (array[x = y, x + 1])
+
+passes two arguments to `macro': `array[x = y' and `x + 1]'.  If you
+want to supply `array[x = y, x + 1]' as an argument, you can write it
+as `array[(x = y, x + 1)]', which is equivalent C code.
+
+   All arguments to a macro are completely macro-expanded before they
+are substituted into the macro body.  After substitution, the complete
+text is scanned again for macros to expand, including the arguments.
+This rule may seem strange, but it is carefully designed so you need
+not worry about whether any function call is actually a macro
+invocation.  You can run into trouble if you try to be too clever,
+though.  *Note Argument Prescan::, for detailed discussion.
+
+   For example, `min (min (a, b), c)' is first expanded to
+
+       min (((a) < (b) ? (a) : (b)), (c))
+
+and then to
+
+     ((((a) < (b) ? (a) : (b))) < (c)
+      ? (((a) < (b) ? (a) : (b)))
+      : (c))
+
+(Line breaks shown here for clarity would not actually be generated.)
+
+   You can leave macro arguments empty; this is not an error to the
+preprocessor (but many macros will then expand to invalid code).  You
+cannot leave out arguments entirely; if a macro takes two arguments,
+there must be exactly one comma at the top level of its argument list.
+Here are some silly examples using `min':
+
+     min(, b)        ==> ((   ) < (b) ? (   ) : (b))
+     min(a, )        ==> ((a  ) < ( ) ? (a  ) : ( ))
+     min(,)          ==> ((   ) < ( ) ? (   ) : ( ))
+     min((,),)       ==> (((,)) < ( ) ? ((,)) : ( ))
+     
+     min()      error--> macro "min" requires 2 arguments, but only 1 given
+     min(,,)    error--> macro "min" passed 3 arguments, but takes just 2
+
+   Whitespace is not a preprocessing token, so if a macro `foo' takes
+one argument, `foo ()' and `foo ( )' both supply it an empty argument.
+Previous GNU preprocessor implementations and documentation were
+incorrect on this point, insisting that a function-like macro that
+takes a single argument be passed a space if an empty argument was
+required.
+
+   Macro parameters appearing inside string literals are not replaced by
+their corresponding actual arguments.
+
+     #define foo(x) x, "x"
+     foo(bar)        ==> bar, "x"
+

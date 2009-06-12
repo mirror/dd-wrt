@@ -1,0 +1,290 @@
+# ====================================================================
+#
+#      hal_mn10300_am33.cdl
+#
+#      MN10300/AM33 variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg
+# Contributors:   dmoseley
+# Date:           1999-11-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MN10300_AM33 {
+    display "MN10300 AM33 variant"
+    parent        CYGPKG_HAL_MN10300
+    implements    CYGINT_HAL_MN10300_VARIANT
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT
+    implements    CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+    hardware
+    include_dir   cyg/hal
+    define_header hal_mn10300_am33.h
+    description   "
+           The MN10300 AM33 variant HAL package provides generic
+           support for this processor architecture. It is also
+           necessary to select a specific target platform HAL
+           package."
+
+    cdl_option CYGHWR_HAL_MN10300_AM33_REVISION {
+        display       "AM33 architecture revision"
+        flavor        data
+        if {1} {
+                legal_values  {1 2}
+                default_value {1}
+        } else {
+        calculated {1}
+        }
+        description   "
+            The AM33 architecture revision."
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_mn10300.h>"
+    }
+
+    compile       var_misc.c variant.S am33_serial.c
+
+    cdl_option CYGHWR_HAL_MN10300_PROCESSOR_OSC {
+        display       "Processor Oscillator input"
+        flavor        data
+        legal_values  16666667 to 33333333
+        default_value { CYGHWR_HAL_MN10300_PROCESSOR_OSC_DEFAULT ?
+                        CYGHWR_HAL_MN10300_PROCESSOR_OSC_DEFAULT : 25000000}
+        description   "
+           The MN10300 processor can run at various frequencies. These
+           values are expressed in Hz.  Note that there are several
+           steppings of the MN10300 rated to run at different maximum
+           frequencies.  Check the specs to make sure that your
+           particular processor can run at the rate you select here."
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        description   "
+            The NUMERATOR divided by the DENOMINATOR gives the number of
+            nanoseconds per tick. The PERIOD is the divider to be programmed
+            into a hardware timer that is driven from an appropriate hardware
+            clock, such that the timer overflows once per tick (normally
+            generating a CPU interrupt to mark the end of a tick). The tick
+            rate is typically 100Hz.
+            The clock is generated with onboard 16-bit timers TM4 and TM5
+            cascaded together to form a 32-bit timer."
+        flavor none
+
+        cdl_option CYGHWR_HAL_MN10300_IOCLK_SPEED {
+            display          "Processor I/O clock speed (Hz)"
+            flavor           data
+            calculated       CYGHWR_HAL_MN10300_PROCESSOR_OSC
+            description      "
+                The processor I/O clock speed, from which onboard timers can
+                draw their sources."
+        }
+
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value (1000 * 1000 * 1000)
+        }
+
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+            description   "
+              This option selects the heartbeat rate for the real-time clock.
+              The rate is specified in ticks per second.  Change this value
+              with caution - too high and your system will become saturated
+              just handling clock interrupts, too low and some operations
+              such as thread scheduling may become sluggish."
+        }
+
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock divisor"
+            flavor        data
+            default_value (CYGHWR_HAL_MN10300_IOCLK_SPEED / CYGNUM_HAL_RTC_DENOMINATOR)
+        }
+    }
+
+    cdl_option CYGHWR_HAL_MN10300_VSR_TABLE_BASE {
+        display       "AM33 VSR table base address"
+        flavor        data
+        calculated    { CYGHWR_HAL_MN10300_PLATFORM_VSR_TABLE_BASE ?
+                        CYGHWR_HAL_MN10300_PLATFORM_VSR_TABLE_BASE : \
+		        (CYGHWR_HAL_MN10300_AM33_REVISION > 1) ? 0x90000000 : 0x50000100 }
+        description   "
+            Base address of the VSR table."
+    }
+
+    cdl_option CYGHWR_HAL_MN10300_VV_TABLE_BASE {
+        display       "AM33 Virtual Vectors table base address"
+        flavor        data
+        calculated    { CYGHWR_HAL_MN10300_PLATFORM_VV_TABLE_BASE ?
+                        CYGHWR_HAL_MN10300_PLATFORM_VV_TABLE_BASE : \
+		        CYGHWR_HAL_MN10300_PLATFORM_VSR_TABLE_BASE + 0x100 }
+        description   "
+            Base address of the virtual vectors table."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT {
+        display      "Default console channel."
+        flavor       data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        calculated   0
+    }
+ 
+    cdl_option CYGNUM_HAL_AM33_SERIAL_CHANNELS {
+        display      "Number of AM33 serial ports used on the board"
+        flavor       data
+        calculated   { (CYGSEM_HAL_AM33_PLF_USES_SERIAL0 && CYGSEM_HAL_AM33_PLF_USES_SERIAL1) ? 2 : \
+ 	               (CYGSEM_HAL_AM33_PLF_USES_SERIAL0 || CYGSEM_HAL_AM33_PLF_USES_SERIAL1) ? 1 : \
+                        0 }
+    }
+ 
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+        display      "Number of communication channels on the board"
+        flavor       data
+        calculated   { CYGNUM_HAL_AM33_SERIAL_CHANNELS + \
+                       CYGNUM_HAL_AM33_PLF_SERIAL_CHANNELS }
+    }
+ 
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+        display          "Debug serial port"
+        active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+        flavor data
+        legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+        default_value    0
+        description      "
+            This option chooses which port will be used to connect to a host
+            running GDB."
+     }
+ 
+     cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+         display          "Diagnostic serial port"
+         active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+         flavor data
+         legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+         default_value    CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_DEFAULT
+         description      "
+            The AM33 board has two serial ports.  This option
+            chooses which port will be used for diagnostic output."
+     }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+        display       "Diagnostic serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 57600 115200
+        default_value 115200
+        description   "
+            This option selects the baud rate used for the diagnostic port.
+            Note: this should match the value chosen for the GDB port if the
+            diagnostic and GDB port are the same."
+    }
+
+    cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_BAUD {
+        display       "Debug serial port baud rate"
+        flavor        data
+        legal_values  9600 19200 38400 57600 115200
+        default_value 115200
+        description   "
+            This option selects the baud rate used for the GDB port."
+    }
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/mn10300_am33.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/mn10300_am33.ld" }
+    }
+
+    cdl_option CYGSEM_HAL_UNCACHED_FLASH_ACCESS {
+        display       "Caching needn't be disabled to access flash"
+        flavor        bool
+        default_value 0
+        description   "
+            Enable this option if the hardware is able to program the flash
+            without turning off CPU data caching."
+    }
+
+    cdl_component CYGPKG_REDBOOT_MN10300_AM33_OPTIONS {
+        display       "Redboot for AM33 options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_component CYGPKG_REDBOOT_AM33_LINUX_EXEC {
+            display        "Provide the exec command in RedBoot"
+            flavor         none
+            parent         CYGPKG_REDBOOT_MN10300_AM33_OPTIONS
+            active_if      CYGBLD_BUILD_REDBOOT_WITH_EXEC
+            description    "
+                This option contains requirements for booting linux
+                from RedBoot. The component is enabled/disabled from
+                RedBoots CDL."
+            compile -library=libextras.a redboot_linux_exec.c
+
+            cdl_option CYGHWR_REDBOOT_AM33_LINUX_CMD_ADDRESS {
+                display       "Base address of linux kernel command line"
+                flavor        data
+                default_value 0x8C001000
+                description   "
+                   This is the base address of the area of memory used to
+                   pass a command line to the Linux kernel. This should be
+                   chosen to avoid overlap with the kernel and any ramdisk
+                   image."
+            }
+        }
+    }
+}

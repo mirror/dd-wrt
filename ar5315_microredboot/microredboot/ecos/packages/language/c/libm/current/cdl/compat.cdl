@@ -1,0 +1,142 @@
+# ====================================================================
+#
+#      compat.cdl
+#
+#      Maths library compatibility related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  jlarmour
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_interface CYGINT_LIBM_COMPAT {
+    requires 1 == CYGINT_LIBM_COMPAT
+}
+
+cdl_option CYGSEM_LIBM_COMPAT_IEEE_ONLY {
+    display       "IEEE-only"
+    default_value 0
+    implements    CYGINT_LIBM_COMPAT
+    description   "
+        The math library can be hard-coded to only
+        behave in one compatibility mode - IEEE. This
+        cannot be changed at run-time. IEEE mode is the
+        most minimal of the compatibility modes, and so
+        this will best help code size and speed, as well
+        as omitting the code for other compatibility
+        modes. If not defined, the math library can be
+        set at run-time to any of the supported
+        compatibility modes."
+}
+
+cdl_component CYGNUM_LIBM_COMPATIBILITY {
+    display       "Default mode"
+    flavor        booldata
+    requires      CYGPKG_LIBC
+    implements    CYGINT_LIBM_COMPAT
+    legal_values  { "POSIX" "IEEE" "XOPEN" "SVID" }
+    default_value { "POSIX" }
+    define        CYGPKG_LIBM_COMPATIBILITY_DEFAULT
+    description   "
+        If you want to have support for more than one
+        compatibility mode settable at run-time, rather
+        than hard-coded IEEE mode, this component lets
+        you choose which mode should be the default."
+
+    cdl_option CYGNUM_LIBM_COMPAT_DEFAULT {
+      	display       "Numeric representation"
+	flavor        data
+	calculated   { \
+            CYGNUM_LIBM_COMPATIBILITY == "POSIX" ? "CYGNUM_LIBM_COMPAT_POSIX" :\
+            CYGNUM_LIBM_COMPATIBILITY == "IEEE"  ? "CYGNUM_LIBM_COMPAT_IEEE" :\
+            CYGNUM_LIBM_COMPATIBILITY == "XOPEN" ? "CYGNUM_LIBM_COMPAT_XOPEN" :\
+            CYGNUM_LIBM_COMPATIBILITY == "SVID"  ? "CYGNUM_LIBM_COMPAT_SVID" :\
+	    "<undefined>" \
+        }
+	description	"
+	    This option automatically defines the default compatibility
+	    mode for numeric representation in terms of the values used
+	    to set that mode at run-time."
+    }
+}
+
+cdl_option CYGFUN_LIBM_SVID3_scalb {
+    display       "SVID3-style scalb()"
+    default_value 1
+    description   "
+        SVID3 defined the scalb() function as double
+        scalb(double, double) rather than double
+        scalb(double, int) which is used by IBM, DEC, and
+        probably others. Enabling this option chooses
+        the (double, double) version. Note there is a
+        function double scalbn(double, int) which is
+        unaffected by this choice."
+}
+
+cdl_option CYGSYM_LIBM_NO_XOPEN_SVID_NAMESPACE_POLLUTION {
+    display       "Reduce namespace pollution"
+    default_value 0
+    description   "
+        If you do not want to use either the X/Open or
+        SVID3 compatibility modes, you may want to define
+        this option to reduce the chance of namespace
+        pollution. This is particularly likely to occur
+        here as these standards define symbols with
+        names that often appear in applications, such as
+        exception, DOMAIN, OVERFLOW, etc. If your
+        application also used these names, it may cause
+        problems."
+}
+
+cdl_option CYGSEM_LIBM_USE_STDERR {
+    display       "Output to stderr for math errors"
+    requires      !CYGSEM_LIBM_COMPAT_IEEE_ONLY
+    requires      CYGPKG_LIBC_STDIO
+    default_value 0
+    description   "
+        The SVID3 standard says that error
+        messages should be output on the stderr console
+        output stream. This option allows this ability
+        to be explicitly controlled. However, this still
+        only has an effect in SVID3 compatibility mode."
+}

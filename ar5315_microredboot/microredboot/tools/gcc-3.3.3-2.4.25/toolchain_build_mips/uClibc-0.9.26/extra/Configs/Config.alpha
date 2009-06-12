@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config HAVE_ELF
+	select UCLIBC_HAS_MMU
+	select ARCH_LITTLE_ENDIAN
+	select HAVE_NO_SHARED
+	select ARCH_HAS_NO_LDSO
+	select HAS_NO_THREADS
+	bool
+	default y
+
+config TARGET_ARCH
+	default "alpha"
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+

@@ -1,0 +1,136 @@
+2003-01-17  H.J. Lu <hjl@gnu.org>
+
+	* emultempl/elf32.em: Back out the multilib change.
+	* emultempl/gld960.em: Likewise.
+	* emultempl/gld960c.em: Likewise.
+	* emultempl/lnk960.em: Likewise.
+	* emultempl/sunos.em: Likewise.
+	* ld.h: Likewise.
+	* ldfile.c: Likewise.
+	* ldfile.h: Likewise.
+	* ldgram.y: Likewise.
+	* ldmain.c: Likewise.
+	* lexsup.c: Likewise.
+
+2002-07-05  H.J. Lu <hjl@gnu.org>
+
+	* ldlang.c (lang_size_sections_1): Partially undo the last
+	change.
+
+2002-06-25  H.J. Lu <hjl@gnu.org>
+
+	* ldlang.c (lang_size_sections_1): Don't skip removed output
+	sections. But don't warn about them.
+
+2002-03-07  H.J. Lu <hjl@gnu.org>
+
+	* ldmain.c (main): Set link_info.combreloc to true by default.
+
+2001-10-21  H.J. Lu <hjl@gnu.org>
+
+	* configure: Rebuid for ../libtool.m4 change.
+
+2001-08-17  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.h (ldfile_open_command_file): Return void again;
+	* ldfile.c (ldfile_open_command_file): Return if failed to open
+	the file and command_line.multilib_dir is not NULL.
+
+2001-08-10  H.J. Lu  <hjl@gnu.org>
+
+	* ldmain.c (main): Fix a typo in comments.
+
+2001-06-29  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.c (ldfile_open_file_search): Don't try
+	command_line.multilib_dir if it starts with a `slash'.
+	* emultempl/elf32.em (gld${EMULATION_NAME}_after_open):
+	Likewise.
+
+	* ldmain.c (set_scripts_dir): Allow the absolute path.
+
+2001-05-02  H.J. Lu  <hjl@gnu.org>
+
+	* lexsup.c: Replace buystring with xstrdup.
+
+2001-04-25  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.h (ldfile_open_command_file): Return FILE *;
+	* ldfile.c (ldfile_open_command_file): Return NULL if failed
+	to open the file and command_line.multilib_dir is not NULL.
+	Return ldlex_input_stack if ok.
+
+	* ldmain.c (main): Print out the external linker script for
+	--verbose. Try internal linker script if the external linker
+	script doesn't exist.
+
+2001-04-24  H.J. Lu  <hjl@gnu.org>
+
+	* emultempl/elf32.em (gld${EMULATION_NAME}_after_open): Search
+	command_line.multilib_dir first if it is not NULL.
+
+2001-04-24  H.J. Lu  <hjl@gnu.org>
+
+	* ldfile.h (slash): Declared.
+
+	* ldfile.c (ldfile_try_open_file): New functon. Try to open
+	a file in a search directory.
+	(ldfile_open_file_search): Search command_line.multilib_dir
+	first if it is not NULL.
+
+	* ldmain.c (set_scripts_dir): Use the relative path only.
+
+2000-09-02  H.J. Lu  <hjl@gnu.org>
+
+	* acinclude.m4: Include ../libiberty/aclibdl.m4.
+	* aclocal.m4: Rebuild.
+
+	* configure.in (AC_SEARCH_LIBS): Added dlopen/dl.
+	(LIBIBERTY_HAVE_WEAK_SYMBOL): New. Check before checking
+	dlopen.
+	* configure: Rebuild.
+
+	* lexsup.c: Include "demangle.h".
+	(OPTION_DEMANGLER, OPTION_STYLE): New.
+	(ld_options): Add entries for OPTION_DEMANGLER and
+	OPTION_STYLE.
+	(parse_args): Handle OPTION_DEMANGLER and OPTION_STYLE. Call
+	init_demangler ().
+	(help): Call get_demangler_list () to get the list of supported
+	demangler styles.
+
+	* ldmisc.c (demangle): Call cplus_demangle () with
+	demangle_symbol () instead of "DMGL_ANSI | DMGL_PARAMS".
+
+Thu Sep 24 21:06:07 1998  H.J. Lu  (hjl@gnu.org)
+
+	From "Brad M. Garcia" <bgarcia@fore.com> on Wed Sep 23 10:21:17 1998.
+	* emultempl/sunos.em (gld${EMULATION_NAME}_set_symbols):
+	Calling ldfile_add_library_path with one more argument, true.
+	* emultempl/gld960.em (gld960_before_parse): Likewise.
+	* emultempl/gld960c.em (gld960_before_parse): Likewise.
+	* emultempl/lnk960.em (lnk960_before_parse): Likewise.
+	
+Wed Sep 16 07:32:44 1998  H.J. Lu  (hjl@gnu.org)
+
+	* ld.h (args_type): Add one field, multilib_dir.
+
+	* ldfile.c (ldfile_add_library_path): Add one argument, append.
+	* ldfile.h (ldfile_add_library_path): Likewise.
+
+	* ldgram.y: Calling ldfile_add_library_path with one more
+	argument, true.
+	* ldmain.c: Likewise.
+	* lexsup.c: Likewise.
+
+	* ldmain.c (check_for_scripts_dir): Add one argument, append.
+	(main): Initialize command_line.multilib_dir to NULL.
+	(set_scripts_dir): If command_line.multilib_dir is not NULL,
+	prepend it to search path.
+
+	* lexsup.c (OPTION_MULTILIB_DIR): New.
+	(parse_args): Handle OPTION_MULTILIB_DIR.
+
+	* emultempl/elf32.em (gld${EMULATION_NAME}_get_script): If
+	command_line.multilib_dir != NULL, get linker scripts from
+	files.

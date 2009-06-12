@@ -1,0 +1,213 @@
+# ====================================================================
+#
+#      synch.cdl
+#
+#      configuration data related to the kernel synchronization primitives
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg
+# Contributors:
+# Date:           1999-07-05
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+
+cdl_component CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL {
+    display      "Priority inversion protection protocols"
+    flavor       booldata
+    doc          ref/kernel-mutexes.html
+    legal_values { "SIMPLE" }
+    default_value { "SIMPLE" }
+    active_if    { CYGSEM_KERNEL_SCHED_MLQUEUE }
+    requires     { CYGINT_KERNEL_SCHEDULER_UNIQUE_PRIORITIES == 0 }
+    description "
+        This component controls the protocols used to protect mutexes against
+        priority inversion. If this option is enabled it defines which
+        algorithm is used to implement this protection. At present only
+        one such algorithm is defined: \"SIMPLE\". The implementation
+        will only work in the mlqueue scheduler, and it does not handle the
+        rare case of nested mutexes completely correctly. However it is
+        both fast and deterministic."
+
+    cdl_option  CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_INHERIT {
+	display       "Enable priority inheritance protocol"
+	default_value 1
+	implements CYGINT_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_COUNT
+	description   "
+	    This option enables priority inheritance protocol. This protocol
+	    causes the owner of a mutex to be executed at the highest priority
+	    of the threads waiting for access to the mutex."
+    }
+
+    cdl_component CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_CEILING {
+	display       "Enable priority ceiling protocol"
+	default_value 1
+	implements CYGINT_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_COUNT	
+	description   "
+	    This option enables priority ceiling protocol. This protocol
+	    causes the owner of a mutex to be executed at a  priority
+	    associated with the mutex."
+	cdl_option CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_DEFAULT_PRIORITY {
+	    display       "Default priority ceiling"
+	    flavor        data
+	    legal_values  0 to { CYGNUM_KERNEL_SCHED_PRIORITIES - 1 }
+	    default_value 0
+	    active_if     CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_CEILING
+	    description   "
+	    This option defines the default priority ceiling to be
+	    used if the chosen default priority inversion protocol is
+	    priority ceoptioniling protocol. The default value for this is zero,
+	    making all such mutexes boost threads to the maximum priority."
+	}
+    }
+
+    cdl_option CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_NONE {
+	display       "No priority inversion protocol"
+	default_value 1
+	implements CYGINT_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_COUNT	
+	description   "
+	    This option enables the ability to have no priority inversion protocol.
+	    It is equivalent to disabling the priority inversion protocol at
+	    the top level, but is necessary for the runtime and default
+	    selection options."
+    }
+
+    cdl_option CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_DEFAULT {
+	display      "Default priority inversion protocol"
+	flavor       data
+	active_if      { CYGINT_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_COUNT > 1 }
+	legal_values { "INHERIT" "CEILING" "NONE" }
+	default_value { CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_INHERIT ?
+                        "INHERIT" :
+                        CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_CEILING ?
+                        "CEILING" : "NONE" }
+	description   "
+	    This option defines the default inversion protocol used for mutexes that
+	    are created without an explicit protocol being specified. The protocol
+	    chosen by default is to use priority inheritance if it is present otherwise
+	    priority ceiling, or none if neither is present."
+    }
+
+    cdl_option CYGSEM_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_DYNAMIC {
+	display        "Specify mutex priority inversion protocol at runtime"
+	default_value  1
+	active_if      { CYGINT_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_COUNT > 1 }
+	description    "
+	    This option controls whether the priority inversion protocol used by
+	    a mutex can be specified when that mutex is created."
+    }
+    
+    cdl_interface CYGINT_KERNEL_SYNCH_MUTEX_PRIORITY_INVERSION_PROTOCOL_COUNT {
+	display      "Number of protocols selected"
+    }
+    
+}
+
+cdl_option CYGMFN_KERNEL_SYNCH_MBOXT_PUT_CAN_WAIT {
+    display       "Message box blocking put support"
+    doc           ref/kernel-mail-boxes.html
+    default_value 1
+    description   "
+        Message boxes can support three different versions of the
+        put-message operation. The first is tryput(), which will fail
+        if the message box is already full. The other two are the
+        ordinary put() function which will block if the message box
+        is full, and a timed put() operation which will block for
+        upto a certain length of time if the message box is currently
+        full. The blocking versions require extra memory in the
+        message box data structure and extra code in the other
+        message box functions, so they can be disabled if the
+        application does not require them. If this option is enabled
+        then the system will always provide the blocking put()
+        function, and it will also provide the timed put() function
+        if thread timers are enabled."
+}
+
+cdl_option CYGNUM_KERNEL_SYNCH_MBOX_QUEUE_SIZE {
+    display       "Message box queue size"
+    doc           ref/kernel-mail-boxes.html
+    flavor        data
+    legal_values  1 to 65535
+    default_value 10
+    description   "
+        This configuration option controls the number of messages
+        that can be queued in a message box before a non-blocking
+        put() operation will fail or a blocking put() operation will
+        block. The cost in memory is one pointer per message box for
+        each possible message."
+}
+
+cdl_option CYGMFN_KERNEL_SYNCH_CONDVAR_TIMED_WAIT {
+    display       "Condition variable timed-wait support"
+    doc           ref/kernel-condition-variables.html
+    requires      CYGFUN_KERNEL_THREADS_TIMER
+    default_value 1
+    description   "
+        This option enables the condition variable timed wait
+        facility."
+}
+
+cdl_option CYGMFN_KERNEL_SYNCH_CONDVAR_WAIT_MUTEX {
+    display       "Condition variable explicit mutex wait support"
+    doc           ref/kernel-condition-variables.html
+    default_value 1
+    description   "
+        This option enables the condition variable explicit mutex wait
+        facility. By default condition variables in eCos are created with
+        a statically associated mutex. This option permits wait (and timed wait
+        if CYGMFN_KERNEL_SYNCH_CONDVAR_TIMED_WAIT is enabled) to provide a
+        different mutex as an argument. This makes no difference to the semantics
+        the wait operation except that a different mutex will be used during it."
+}
+
+cdl_option CYGIMP_KERNEL_SYNCH_MQUEUE_NOT_INLINE {
+    display       "Avoid inlines in mqueue implementation"
+    default_value 0
+    description   "
+        With this option disabled, the 'mqueue' message queue implementation
+        provides most of its implementation via inlines. However this can
+        adversely affect code size in application that make lots of mqueue
+        calls from different places, so enabling this option provides
+        non-inline versions to be used instead."
+    compile       sync/mqueue.cxx
+}
+
+# EOF synch.cdl

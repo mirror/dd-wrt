@@ -1,0 +1,377 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Data Endpoints</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Control Endpoints"
+HREF="usbs-control.html"><LINK
+REL="NEXT"
+TITLE="Writing a USB Device Driver"
+HREF="usbs-writing.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-control.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-writing.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-DATA"
+>Data Endpoints</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN623"
+></A
+><H2
+>Name</H2
+>Data Endpoints&nbsp;--&nbsp;Data endpoint data structures</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN626"
+></A
+><H2
+>Synopsis</H2
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>#include &lt;cyg/io/usb/usbs.h&gt;
+
+typedef struct usbs_rx_endpoint {
+    void                 (*start_rx_fn)(struct usbs_rx_endpoint*);
+    void                 (*set_halted_fn)(struct usbs_rx_endpoint*, cyg_bool);
+    void                 (*complete_fn)(void*, int);
+    void*                complete_data;
+    unsigned char*       buffer;
+    int                  buffer_size;
+    cyg_bool             halted;
+} usbs_rx_endpoint;
+
+typedef struct usbs_tx_endpoint {
+    void                 (*start_tx_fn)(struct usbs_tx_endpoint*);
+    void                 (*set_halted_fn)(struct usbs_tx_endpoint*, cyg_bool);
+    void                 (*complete_fn)(void*, int);
+    void*                complete_data;
+    const unsigned char* buffer;
+    int                  buffer_size;
+    cyg_bool             halted;
+} usbs_tx_endpoint;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN628"
+></A
+><H2
+>Receive and Transmit Data Structures</H2
+><P
+>In addition to a single <SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+>
+data structure per USB slave device, the USB device driver should also
+provide receive and transmit data structures corresponding to the
+other endpoints. The names of these are determined by the device
+driver. For example, the SA1110 USB device driver package provides
+<TT
+CLASS="LITERAL"
+>usbs_sa11x0_ep1</TT
+> for receives and
+<TT
+CLASS="LITERAL"
+>usbs_sa11x0_ep2</TT
+> for transmits.</P
+><P
+>Unlike control endpoints, the common USB slave package does provide a
+number of utility routines to manipulate data endpoints. For example
+<A
+HREF="usbs-start-rx.html"
+><TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+></A
+>
+can be used to receive data from the host into a buffer. In addition
+the USB device driver can provide devtab entries such as
+<TT
+CLASS="LITERAL"
+>/dev/usbs1r</TT
+> and <TT
+CLASS="LITERAL"
+>/dev/usbs2w</TT
+>, so
+higher-level code can <TT
+CLASS="FUNCTION"
+>open</TT
+> these devices and then
+perform blocking <TT
+CLASS="FUNCTION"
+>read</TT
+> and
+<TT
+CLASS="FUNCTION"
+>write</TT
+> operations.</P
+><P
+>However, the operation of data endpoints and the various
+endpoint-related functions is relatively straightforward. First
+consider a <SPAN
+CLASS="STRUCTNAME"
+>usbs_rx_endpoint</SPAN
+> structure. The
+device driver will provide the members
+<TT
+CLASS="STRUCTFIELD"
+><I
+>start_rx_fn</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>set_halted_fn</I
+></TT
+>, and it will maintain the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>halted</I
+></TT
+> field. To receive data, higher-level
+code sets the <TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+>,
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+>,
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_fn</I
+></TT
+> and optionally the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_data</I
+></TT
+> fields. Next the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>start_rx_fn</I
+></TT
+> member should be called. When
+the transfer has finished the device driver will invoke the completion
+function, using <TT
+CLASS="STRUCTFIELD"
+><I
+>complete_data</I
+></TT
+> as the first
+argument and a size field for the second argument. A negative size
+indicates an error of some sort: <TT
+CLASS="LITERAL"
+>-EGAIN</TT
+> indicates
+that the endpoint has been halted, usually at the request of the host;
+<TT
+CLASS="LITERAL"
+>-EPIPE</TT
+> indicates that the connection between the
+host and the peripheral has been broken. Certain device drivers may
+generate other error codes.</P
+><P
+>If higher-level code needs to halt or unhalt an endpoint then it can
+invoke the <TT
+CLASS="STRUCTFIELD"
+><I
+>set_halted_fn</I
+></TT
+> member. When an
+endpoint is halted, invoking <TT
+CLASS="STRUCTFIELD"
+><I
+>start_rx_fn</I
+></TT
+>
+wit <TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+> set to 0 indicates that
+higher-level code wants to block until the endpoint is no longer
+halted; at that point the completion function will be invoked.</P
+><P
+>USB device drivers are allowed to assume that higher-level protocols
+ensure that host and peripheral agree on the amount of data that will
+be transferred, or at least on an upper bound. Therefore there is no
+need for the device driver to maintain its own buffers, and copy
+operations are avoided. If the host sends more data than expected then
+the resulting behaviour is undefined.</P
+><P
+>Transmit endpoints work in essentially the same way as receive
+endpoints. Higher-level code should set the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+> fields to point at the data to
+be transferred, then call <TT
+CLASS="STRUCTFIELD"
+><I
+>start_tx_fn</I
+></TT
+>, and
+the device driver will invoked the completion function when the
+transfer has completed.</P
+><P
+>USB device drivers are not expected to perform any locking. If at any
+time there are two concurrent receive operations for a given endpoint,
+or two concurrent transmit operations, then the resulting behaviour is
+undefined. It is the responsibility of higher-level code to perform
+any synchronisation that may be necessary. In practice, conflicts are
+unlikely because typically a given endpoint will only be accessed
+sequentially by just one part of the overall system.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-control.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-writing.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Control Endpoints</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Writing a USB Device Driver</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

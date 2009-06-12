@@ -1,0 +1,1217 @@
+2004-05-27  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/redboot_linux_exec.c (do_exec): Be sensitive to value in
+	"entry_address" as this can indicate if the image to be executed
+	is valid (the "load" functions set it to "NO_MEMORY" when invalid)
+
+2004-04-30  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* src/sh.ld: Add entry section for targets, like Dreamcast, that
+	need special entry code.
+
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_sh.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2004-02-05  Kelvin Lawson  <klawson@ad-holdings.co.uk>
+
+	* include/hal_var_bank.inc: Fix build error on non-FPU systems due to
+	CYG_FPSCR.
+
+2003-12-05  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* include/hal_intr_excevt.h: 
+	* include/hal_intr_vecs.h: hal_delay_us() is a C function.
+
+2003-09-21  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/hal_sh.cdl: CYGHWR_HAL_SH_FPU_REGS is only needed if there's an
+	FPU.
+
+	* include/hal_var_bank.h (HAL_THREAD_INIT_CONTEXT_FPU): Use FPSCR
+	init value from HAL register definitions.
+
+2003-09-19  John Dallaway  <jld@ecoscentric.com>
+
+	* cdl/hal_sh.cdl: Specify default CDL values for sh4_202_md target.
+
+2003-09-11  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/hal_var_bank.h (HAL_THREAD_INIT_CONTEXT_FPU): Changed
+	initial value of fpscr to do round-to-nearest rather than
+	round-to-zero.
+
+2003-09-08  Nick Garnett  <nickg@ecoscentric.com>
+
+	* src/vectors.S (cyg_hal_default_exception_vsr): Added code to
+	switch to interrupt stack when fielding exceptions from RedBoot or
+	some other ROM monitor. Without this we get potential stack
+	overflows when debugging via the network.
+
+2003-09-05  Nick Garnett  <nickg@ecoscentric.com>
+
+	* include/hal_arch.h:
+	* include/hal_var_bank.h:
+	* include/hal_var_bank.inc:
+	* src/context.S:
+	Added support for floating point state save and restore and GDB 
+
+	* src/hal_misc.c (hal_delay_us): Fixed implementation of this
+	routine so that it actually works.
+
+	* src/hal_syscall.c:
+	Added support for all supportable syscalls.
+
+	* src/sh_stub.c:
+	Added check in __is_bsp_syscall() for trap 34 traps using the TRA
+	register.
+
+	* src/vectors.S: Set startup stack size to the same as the
+	interrupt stack size. In some configurations of RedBoot the
+	previous value was too small.
+	
+	* include/sh_stub.h:
+	Fixed HAL_STUB_PLATFORM_STUBS_FIXUP() to only rewind for a
+	breakpoint. Traps are not rewound.
+	
+	* cdl/hal_sh.cdl: Added option for SH architecture FP register
+	count.
+
+2003-07-29  Gary Thomas  <gary@mlbassoc.com> on behalf of
+2003-07-29  Yoshinori Sato <ysato@users.sourceforge.jp>	
+
+	* src/sh.ld: Handle all bss* sections (newer compilers).
+
+2003-07-18  Nick Garnett  <nickg@balti.calivar.com>
+
+	* cdl/hal_sh.cdl:
+        Changed values for CYGNUM_HAL_RTC_NUMERATOR,
+        CYGNUM_HAL_RTC_DENOMINATOR and CYGNUM_HAL_RTC_PERIOD to
+        "default_value" from "calculated". This makes it easier
+        to change these values globally.
+        
+2003-04-17  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/hal_var_bank.h (HAL_THREAD_INIT_CONTEXT): Align stack
+	pointer before using it.
+	* include/hal_var_sp.h (HAL_THREAD_INIT_CONTEXT): Ditto.
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/sh.ld:
+	Added entry for .stack section in data section.
+
+2003-03-11  Mark Salter  <msalter@redhat.com>
+
+	* src/redboot_linux_exec.c (do_exec): Call eth_drv_stop as necessary.
+
+2003-01-31  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Let generic syscall code
+	handle exit.
+
+2002-08-02  Andrew Lunn <Andrew.Lunn@ascom.ch>
+
+	* cdl/hal_sh.cdl: The Redboot exec command can now be 
+	  disabled by CDL
+	
+2002-04-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_sp.inc: Allow variant to provide custom
+	interrupt vector layout. This means the size of
+	hal_interrupt_handlers/objects/data can be reduced if the vector
+	layout is sparse. Something similar could be done for
+	_HW_EXEC_ENTRY_TABLE, saving exception_vector_int entries in the
+	$vectors_code block. However, this code usually resides in flash
+	so there's not much point given todays flash block sizes.
+
+	* cdl/hal_sh.cdl: Added CYGHWR_HAL_SH_FPU and
+	CYGHWR_HAL_SH_NO_FPU, allowing an arch level control of FPU
+	related tests.
+	Skipping test handled in a different way now, so the implements
+	statement has been deleted again.
+
+2002-04-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_bank.inc: Define hal_exception_entry_extras and
+	hal_interrupt_entry_extras.
+	* include/hal_var_sp.inc: Define hal_exception_entry_extras and
+	hal_interrupt_entry_extras. Disable interrupts on exception
+	entry.
+	* src/vectors.S: Call hal_exception_entry_extras and
+	hal_interrupt_entry_extras.
+
+2002-04-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S:
+	Don't use .file as it can confuse debugging since the .file
+	doesn't contain the path and therefore the debugger will never
+	know where it lives! This conflicts with using -Wa,--gstabs.
+
+2002-04-15  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Add extra sig argument to
+	__do_syscall.
+
+2002-04-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_sp.inc: 7044 needs different vector layout than
+	76xx since its vectors are hardwired.
+
+2002-04-18  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_sp.inc: Do no translation of entry address if
+	cache module defines CYGARC_SH_MOD_CAC_NO_WINDOWS.
+
+	* include/hal_intr_vecs.h: Move all vectors after IRQ7 to variant
+	header. Define _IRQ and _LVL for all of the first 7
+	interrupts. Define CYGNUM_HAL_INTERRUPT_LVL_MAX
+
+2002-03-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_sp.inc: Fix asm comments.
+
+2002-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_syscall.c (hal_syscall_handler): Added.
+	* src/sh_stub.c (__is_bsp_syscall): Added.
+	* cdl/hal_sh.cdl: Build hal_syscall.c
+
+2002-02-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_stub.c (__computeSignal): Changed to use DATA_ACCESS
+	names as well.
+	* include/hal_intr_vecs.h (_CYGNUM_HAL_VECTOR_FIRST_MEM_FAULT,
+	_CYGNUM_HAL_VECTOR_LAST_MEM_FAULT): Same.
+
+2002-02-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr_vecs.h: Use DATA_ACCESS vector names instead of
+	ADDRESS_ERROR names.
+
+2002-02-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_stub.c (__single_step): Use normal breakpoint instruction
+	(trapa #32) for single-stepping.
+        On the SH2 the use of trapa#255 causes a different (and unhandled)
+	exception, in the range reserved for application
+	exceptions/interrupts.
+
+2002-02-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_bank.h: Switch mach/macl entries.
+	* include/hal_var_sp.h: Same.
+
+	* include/hal_var_sp.inc: Reserve (additional) trampoline for NMI
+	to make eCos interrupt numbers match. Make traps use trap numbers
+	32-64.
+	(hal_cpu_save_regs): Remember to adjust SP for R0 save location.
+	(hal_cpu_restore_regs_return): Rewritten to fix errors and allow
+	SP to be changed from GDB.
+
+2002-02-13  Jesper Skov  <jskov@redhat.com>
+
+	* src/context.S (hal_thread_load_context): Load up stack pointer
+	before enabling interrupts.
+	
+	* include/hal_var_sp.inc: Fetch the VSR pointer and jump to it
+	instead of into the VSR table.
+	(hal_cpu_restore_regs_return): adjust sp to point to exception
+	state before returning.
+
+2002-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: tweak ROMRAM relocation code.
+
+2002-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_sp.inc: Moved _reset code to below vectors.
+
+2002-01-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_bank.inc: Include SH3 register references. Make
+	better use of some delay slots.
+
+	* src/vectors.S: Don't save exception/interrupt state on stack
+	with debug markers. Load up event value in R4 before calling
+	hal_intc_decode so it can be a nop if desired. Removed some SH3
+	register references.
+
+	* include/hal_var_sp.inc: Include SH2 offsets, export
+	_HW_EXC_ENTRY_TABLE, fix some typos.
+
+	* include/hal_intr_vecs.h: IRL vectors renamed. Added IRQ
+	vectors.
+
+2002-01-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_var_bank.h: Fix typo.
+
+	* src/sh_stub.c (__computeSignal): Only handle defined vectors.
+
+	* include/hal_intr_vecs.h: Decode NMI as interrupt 0, moved all
+	other vectors. Provide MEM_FAULT vector range.
+	* include/hal_var_sp.inc: Changes for NMI-as-interrupt-0.
+	* include/hal_var_sp.h: Renamed vector to event to share code.
+
+	* include/hal_intr_excevt.h: Added MEM_FAULT vector ranges and
+	CYGHWR_SH_RTC_TIMER_IS_TMU.
+	* src/hal_misc.c (hal_delay_us): Only build if
+	CYGHWR_SH_RTC_TIMER_IS_TMU. Use MEM_FAULT vector range.
+
+	* include/hal_intr.h: Deleted clock controls.
+
+	* cdl/hal_sh.cdl: Use CYGNUM_HAL_RTC_PRESCALE instread of
+	module-specific prescale variable.
+
+	* include/hal_intr_excevt.h (_CYGNUM_HAL_VECTOR_FIRST_MEM_FAULT,
+	_CYGNUM_HAL_VECTOR_LAST_MEM_FAULT): Define.
+	* include/hal_intr_vecs.h: Same. 
+	* src/hal_misc.c (cyg_hal_exception_handler): Use new _MEM_FAULT
+	vector range.
+
+
+	* include/hal_intr_vecs.h: Removed RTC code.
+
+	* include/hal_arch.h: Changed breakpoint instruction to match that
+	used in GDB 5.1.
+	It also makes better sense on the SH2.
+
+	* include/hal_intr_excevt.h: Interrupt/exception vectors and clock
+	handling code moved here...
+	* include/hal_intr.h: From here.
+	* include/hal_intr_vecs.h: Interrupt/exception vector layout +
+	clock handling for SH1/SH2 variants.
+
+	* include/hal_var_sp.inc: Added some comments, fixed number of
+	pre-VSR vectors, renamed HW_VSR_TABLE to HW_EXC_ENTRY_TABLE to
+	avoid confusion (it has nothing to do with eCos VSRs). Finally,
+	made the pre-VSR stuff only compile when really required (since
+	it's 4KiB).
+
+2002-01-14  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h: Moved HAL_SavedRegisters structure to
+	bank variant headers. Same with HAL_THREAD_INIT_CONTEXT,
+	HAL_THREAD_GET_SAVED_REGISTERS, HAL_GET_GDB_REGISTERS,
+	HAL_SET_GDB_REGISTERS, CYGARC_BUS_ADDRESS, CYGARC_CACHED_ADDRESS,
+	and CYGARC_UNCACHED_ADDRESS.
+	* src/vectors.S: Moved exception/interrupt entry code to bank
+	variant include file.
+	* include/hal_var_sp.inc: Added. Contains (new) vectors.S stuff
+	for SH2.
+	* include/hal_var_sp.h: Added. Contains (new) hal_arch.h stuff for
+	SH2 variant.
+	* include/hal_var_bank.inc: Added. Contains old vectors.S stuff
+	for SH3/SH4 variants.
+	* include/hal_var_bank.h: Added. Contains old hal_arch.h stuff for
+	SH3/SH4 variants.
+
+	* src/hal_mk_defs.c: Added conversion for entry stack.
+
+2001-11-16  Nick Garnett  <nickg@redhat.com>
+
+	* src/hal_misc.c (hal_msbit_index): Fixed this function so that it
+	actually works!	
+
+2001-10-15  David Howells  <dhowells@redhat.com>
+
+	* cdl/hal_sh.cdl: improved the description on the RTC constants
+	component.
+
+2001-10-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_mk_defs.c (main): Fixed warning.
+
+2001-10-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/sh.ld: Make separate section for GOT and .eh_frame.
+	Make macro section for all reloc sections.
+	Input extras.o unconditionally.
+	* cdl/hal_sh.cdl: Don't bother with -DEXTRAS=1 - unconditional now.
+
+2001-09-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Don't include C intr header.
+
+2001-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_sh.cdl (CYGHWR_HAL_SH_BIGENDIAN): Set the default
+	from what the platform requests, using the new
+	CYGINT_HAL_SH_PLF_LITTLEENDIAN_DEFAULT CDL interface.
+
+	* src/sh.ld: Support .rel.got input sections.
+
+2001-09-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_stub.c (__single_step): Changed type 2 handling.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/redboot_linux_exec.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-07-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_stub.c: Fixed potential SH4 problem in UBC handling.
+
+2001-07-02  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h: CYGARC_PHYSICAL_ADDRESS renamed to
+	CYGARC_BUS_ADDRESS.
+
+2001-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h: Added CPU address space translation macros.
+
+2001-06-19  Jesper Skov  <jskov@redhat.com>
+
+	* src/redboot_linux_exec.c: Only base address, entry and cmdline
+	options are always used. Other commands only affect image if
+	set. This allows combined kernel&initrd images to be loaded in one
+	file where the initrd address & size is already recorded at the
+	start of the image.
+
+	From YAEGASHI Takeshi <t@keshi.org> with a few changes:
+	* cdl/hal_sh.cdl: Added RedBoot exec command options.
+	* src/redboot_linux_exec.c: Added.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_io.h: Include var_io.h
+
+2001-05-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh.ld: Added .2ram section handling.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* tests/intr0.c: Moved test header inclusion to proper location.
+
+2001-01-18  Jesper Skov  <jskov@redhat.com>
+
+	Case 105302
+	* src/vectors.S: Moved ILVL table to variant code.
+	* tests/intr0.c: Added.
+
+2001-01-04  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh.ld: Make sure .data and .bss section sizes are aligned.
+
+2000-12-13  Jesper Skov  <jskov@redhat.com>
+2000-12-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/vectors.S (__reset): Use proper entry pointer for ROMRAM
+	startup type.
+
+2000-12-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S (cyg_scheduler_sched_lock): Changed to use
+	SYM_PTR_REF. Brian Danilko spotted this.
+
+2000-11-24  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/sh.ld: _reset should be adorned with CYG_LABEL_DEFN
+	* src/vectors.S: CYG_LABEL_DEFN should have been used everywhere
+	that CYG_LABEL_NAME was used, except for the scheduler lock which
+	is special as it is defined in C as an asm alias.
+	* include/arch.inc: Similarly here for symbol macros
+
+	* include/basetype.h (CYG_LABEL_NAME): Delete. This is now obsolete.
+
+2000-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh.ld: Added mangling to all symbols.
+	* src/vectors.S: Same. Plus introduce macro to simplify (a bit)
+	the definition of inline immediate constants.
+
+	* include/sh_regs.h: Include HAL config.
+
+	* include/hal_arch.h: Don't prefix with _ in HAL_BREAKPOINT.
+	* src/sh_stub.c: Matching changes - hack to handle both
+	conventions.
+
+	* include/basetype.h: Made CYG_LABEL_DEFN depend on toolchain.
+
+	* include/arch.inc: Added symbol ref/def macros.
+	* src/context.S: Removed FUNC_START macro.
+
+2000-11-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_stub.c (__single_step): Fix CPP problem.
+
+2000-10-31  Jesper Skov  <jskov@redhat.com>
+
+
+	* include/mod_7707a.h: Moved to SH3 HAL.
+	* include/mod_7708.h: Same.
+	* include/mod_7709a.h: Same.
+	* include/mod_7729.h: Same.
+	* include/sh3_sci.h: Same.
+	* include/sh3_scif.h: Same.
+	* src/sh3_sci.c: Same.
+	* src/sh3_scif.c: Same.
+
+	* include/hal_cache.h: Moved SH3 code out to new SH3 HAL.
+	* cdl/hal_sh.cdl: Same.
+	* include/hal_intr.h: Same.
+	* include/sh_regs.h: Same.
+	* src/hal_misc.c: Same.
+	* src/hal_mk_defs.c: Same.
+
+	* src/vectors.S: Changed to support SH4. Moved CPU post-reset init
+	code to variant HALs. Moved interrupt decoding to variant HAL
+	macros. Moved cache code to variant HALs.
+
+2000-10-24  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S (hal_hw_init): Added errata comment.
+
+2000-10-23  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c: Always include hal_intr.h
+
+	* src/sh3_sci.c: Use specified value for default baud rate.
+	* src/sh3_scif.c: Same.
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c: Update __mem_fault_handler declaration.
+
+2000-10-19  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh_regs.h (CYGARC_REG_WCR1_0WS, CYGARC_REG_WCR2_0WS):
+	Added for consistent init code.
+	
+2000-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S (__reset_platform): Rearrange constants used in
+	early init code.
+
+2000-10-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_arch.h (CYGARC_JMP_BUF_SIZE): Define hal_jmp_buf in
+	terms of this.
+
+2000-10-11  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S (__reset_platform): Clear watchdog control flags.
+	Added missing NOP in bra delay slot.
+
+	* src/hal_misc.c (hal_delay_us): Updated to use the correct config
+	constants.
+
+	* cdl/hal_sh.cdl: Fix typo.
+
+	* include/sh_regs.h: Added macros to compute CYGARC_RTCSR init
+	values for SDRAM refresh. Needs to be backed up by generic CDL
+	configury for memory controller.
+
+2000-10-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh_regs.h: Compute CPG init value for all versions.
+
+	* include/mod_7707a.h: Added CPG version.
+	* include/mod_7708.h: Same.
+	* include/mod_7709a.h: Same.
+	* include/mod_7729.h: Same.
+
+	* cdl/hal_sh.cdl: Support various CPG versions. 
+
+2000-10-05  Jesper Skov  <jskov@redhat.co.uk>
+
+	* src/sh_stub.c: Handle UBC versions in CPUs currently supported
+	by HAL.
+	* include/sh_regs.h: Added UBC version differences.
+	* include/mod_7707a.h: Specify UBC version.
+	* include/mod_7708.h: Ditto.
+	* include/mod_7709a.h: Ditto.
+	* include/mod_7729.h: Ditto.
+
+	* src/hal_misc.c: Skip IRQ0-3 handling in IRQIRL mode.
+	* include/sh_regs.h: Define interrupt controler init value.
+	* src/vectors.S: Use interrupt controller init value.
+	* cdl/hal_sh.cdl: Put CPU type/endian mode in a component. Added
+	interrupt control options.
+
+2000-10-03  Jesper Skov  <jskov@redhat.co.uk>
+
+	* src/vectors.S: Added flush function. Changes to cache_write_mode
+	function.
+
+	* src/hal_mk_defs.c: Added cache definitions.
+
+	* src/hal_misc.c (cyg_hal_enable_caches): Let config control cache
+	init.  
+	* include/hal_cache.h: Added flush macro. Changes to allow
+	mode function to handle different settings for the two
+	controllable areas.
+
+	* cdl/hal_sh.cdl: Added cache controls.
+
+2000-09-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh_regs.h: Added computation of initial FRQCR
+	value. Made watchdog timeout time depend on the proper clock
+	setting.
+
+	* include/hal_intr.h (HAL_CLOCK_INITIALIZE): Allow timer
+	prescaling to be controlled. Fix typo.
+
+	* cdl/hal_sh.cdl: Added options to properly compute/control the
+	various clock signals.
+
+2000-09-25  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh3_scif.c (cyg_hal_plf_scif_init_channel): Use _SCBRR_
+	macros.
+
+	* include/sh_regs.h (CYGARC_SCBRR_CKSx, CYGARC_SCBRR_N): Removed
+	duplicates of the macros. Compute _CKSx properly.
+
+2000-09-06  Gary Thomas  <gthomas@redhat.com>
+
+	* include/mod_7729.h: Includes PFC (programmable I/O) module.
+
+2000-09-06  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh.cdl: Added 7729 option.
+
+2000-08-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7709a.h: Added UBC definition.
+	* include/mod_7708.h: Same.
+	* include/mod_7729.h: Same.
+	* include/mod_7707a.h: Same.
+	* include/sh_regs.h: Extra UBC definitions.
+	* src/sh_stub.c: If core supports UBC, use it for
+	single-stepping.
+
+2000-08-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7729.h: Added.
+
+2000-07-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh_stub.c (__single_step): Skip trap instructions.
+
+2000-07-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S (__reset): Change calculation of uncached startup
+	address.
+	* include/mod_7707a.h: 7707a has 32K caches (we believe).
+
+2000-07-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_misc.c (cyg_hal_exception_handler): Handle exception caused by
+	GDB stubs memory accesses.
+
+2000-07-16  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_intr.h: Define HAL_DELAY_US() - see below.
+
+	* src/hal_misc.c (hal_delay_us): New function.  Used in ROM/stand-alone
+	applications when there is no kernel.
+
+2000-07-15  Gary Thomas  <gthomas@redhat.com>
+
+	* include/sh_regs.h: Add additional 7707 registers.
+
+2000-07-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: 
+	* include/mod_7707a.h:
+	* include/hal_intr.h:
+	* include/sh_regs.h:
+	Added additional 7707 interrupt vectors.
+	
+2000-06-30  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S (__reset): Jump to VMA for RAM startup.
+	(_complete_setup): Fix merge bug.
+
+	* src/sh3_scif.c:
+	* src/sh3_sci.c:
+	calling i/f macro changes.
+
+	* src/vectors.S (__reset): Fix alignment problem.
+
+2000-06-29  Gary Thomas  <gthomas@redhat.com>
+
+	* src/vectors.S: Reorg initialization (reset) code to be all
+	in one, non-fixed location.  Required for platforms with more
+	complex initialization sequences.
+
+2000-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh3_sci.c:
+	* src/sh3_scif.c:
+	Use per-channel data structure instead of code cruft.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh3_sci.h:    [added]
+	* include/sh3_scif.h:   [added] 
+	* include/sh3_scif.inl: [removed]
+	* include/sh_sci.inl:   [removed]
+	* src/sh3_sci.c:        [added]
+	* src/sh3_scif.c:       [added]
+	* cdl/hal_sh.cdl:
+	Rewrote serial drivers for comm procs usage.
+	
+2000-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Added arch and platform init calls. Added ctrlc
+	init call. Replaced old BREAK magic with new ctrlc magic.
+
+	* src/sh.ld: Added extra _ on NETDEVTAB labels. Define
+	hal_virtual_vector_table.
+
+	* src/hal_misc.c: hal_default_isr moved to common HAL.
+
+	* cdl/hal_sh.cdl: Also build simple drivers.
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/sh_stub.c (__is_breakpoint_function): Removed use of
+	CYG_LABEL_NAME() and added underscore to _breakinst.
+
+	* src/context.S: Switched use of CYG_LABEL_NAME() to
+	CYG_LABEL_DEFN().
+
+	* include/basetype.h: Removed definition of CYG_LABEL_NAME() and
+	added CYG_LABEL_DEFN().
+
+	* src/sh.ld: Switched to new table definition mechanism.
+
+2000-06-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h: Added HAL_DEFAULT_ISR.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_arch.h (CYGARC_HAL_SAVE_GP, CYGARC_HAL_RESTORE_GP):
+	Added.
+
+	* include/mod_7708.h: 
+	* include/mod_7709a.h: 
+	* src/vectors.S:
+	Minor config change to get rid of growing list of variant checks.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7707a.h: 
+	* src/vectors.S:
+	* cdl/hal_sh.cdl: 
+	Added first level of support for 7707A variant.
+
+2000-06-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: INTEVT2 is not defined on all variants. Protect
+	accordingly. (Haruki Kashiwaya)
+
+2000-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh.cdl: Make sure CPU variant definition ends up in
+	system.h
+
+2000-05-01  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7709a.h:
+	* include/sh_regs.h:
+	Add PFC/C definitions.
+	
+2000-04-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_mk_defs.c: Added some caching data.
+
+	* src/vectors.S:
+	* include/hal_cache.h:
+	Rewrote caching functions in assembly with appropriate magic to
+	have the code execute out of a non-cachable memory shadow.
+
+2000-04-25  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_cache.h (HAL_UCACHE_WRITE_MODE): Also wiggle the WT
+	bit. It has opposite polarity of the CB bit.
+
+2000-04-25  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Init IPRC-E. Force IRQ mode.
+	* include/hal_intr.h: Added IRQ0-IRQ3 entries. Added simple
+	interrupt configuration and acknowledge.
+	* include/sh_regs.h: Added more interrupt control definitions.
+
+2000-04-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Entry code rewritten to allow ROMRAM startups.
+
+	* src/sh.ld: Change LMA alignment to 16 (workaround
+	902557-CR). Provide vector LMA address.
+
+	* include/sh_sci.inl: Replaced hardcoded baud rate constant with 
+	macro function.
+
+	* cdl/hal_sh.cdl: Don't let interface define anything.
+
+2000-04-10  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Get interrupt event code from the proper register.
+	Removed some platform specific debug code. Let cyg_hal_gdb_isr
+	deal with C-c issues.
+	
+	* include/sh_regs.h: Moved module registers to
+	0xa0000000-0xc0000000 which is also non-cachable. The reason is
+	that EVENT2 can only be accessed at 0xa4000000.
+
+	* include/sh3_scif.inl: Read back SR before clearing it (or the
+	clear don't have an effect).
+
+	* include/hal_intr.h: Mask/unmask functions handle entire ISR
+	range now.
+
+2000-04-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh3_scif.inl: Status register is 16 bit wide, not 8.
+
+	* include/sh_regs.h: Access all module registers in the space
+	0xe0000000-0xffffffff since caching is disabled here.
+
+2000-04-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh.ld (_hal_vsr_table): Get address from platform CDL.
+
+2000-04-04  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh3_scif.inl: Should be able to work with FIFO enabled.
+	* include/sh_regs.h: Fixed RCOUNT/TCOUNT and added some comments.
+
+2000-04-03  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh3_scif.inl: Can drive either IRDA or SCIF module.
+
+	* include/sh_regs.h: 
+	* include/mod_7709a.h:
+	Added IRDA definitions (mostly a copy of SCIF definitions).
+	
+2000-03-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh_regs.h: Added bit definitions for BSC.
+
+	* include/sh3_scif.inl: Added.
+	* include/hal_intr.h: Added hack to work around macro
+	problem. Need to rewrite macro as inline function, but need to
+	investigate a optimization problem first.
+	* include/sh_regs.h: Replaced hardcoded baud rate constants with
+	a macro which calculates the proper values based on baud rate
+	and CPU clock speed.
+
+	* include/sh_regs.h:
+	* include/hal_intr.h (HAL_INTERRUPT_SET_LEVEL):
+	Level handling for 7709a added.
+
+	* src/vectors.S: ISR mask tables enabled per CPU variant, not
+	target.
+
+2000-03-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_intr.h: Added 7709a interrupt definitions.
+
+2000-03-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/sh_regs.h: Add definitions for RTC module.
+
+2000-03-20  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_mk_defs.c: Added CYGNUM_HAL_VSR_EXCEPTION_COUNT
+
+2000-03-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/mod_7709a.h: 
+	* include/mod_7708.h: 
+	* include/sh_regs.h: 
+	Adding new module definitions, conditionally included depending on
+	chosen CPU implementation. Each CPU defines its own set of
+	included modules (and module versions).
+
+	* include/hal_cache.h: Get cache specs from CPU module file.
+
+	* cdl/hal_sh.cdl: Added CPU implementation controls.
+
+2000-03-03  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/sh_stub.h: Make C++ safe
+
+2000-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S:
+	* src/hal_mk_defs.c: 
+	* src/context.S: 
+	* include/hal_arch.h: 
+	* cdl/hal_sh.cdl: 
+	Added hal_mk_defs allowing assembly to use C symbols.
+	Cleaned up setjmp/longjmp structure.
+
+	* include/arch.inc: Added interrupt macros.
+	* src/vectors.S: Leave interrupt enable to interrupt_end, ensuring
+	proper use of interrupt_stack. Use range-checking instead of
+	counter for switches to interrupt_stack.
+	* src/context.S: Save and restore interrupt state on thread
+	switches.
+	* include/hal_arch.h: Set thread initial SR state to allow
+	interrupts.
+
+2000-02-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/context.S: Fix comment character.
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh.cdl: 
+	* include/basetype.h:
+	Added LE support.
+
+2000-02-15  Jesper Skov  <jskov@redhat.com>
+
+	* src/vectors.S: Leave vector initialization to platform. Get rid
+	of stubs startup type.
+
+	* src/sh.ld: Define hal_vsr_table address.
+
+	* include/hal_intr.h: provide CYGNUM_HAL_VSR_EXCEPTION_COUNT.
+
+2000-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/sh.ld: Fix typo.
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/sh.ld: Add support for network package.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S (__interrupt_stack): Remove stubs config check for
+	CYGIMP_HAL_COMMON_INTERRUPTS_USE_INTERRUPT_STACK.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_cache.h: Rename CYG_HAL_SH_SH7708 ->
+	CYGPKG_HAL_SH_EDK7708
+
+	* include/sh_regs.h: Likewise
+
+	* src/vectors.S: Likewise
+	Rename CYG_HAL_USE_ROM_MONITOR_GDB_STUBS ->
+	CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_sh.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_sh.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_sh.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-10-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_sh.cdl: Added.
+
+1999-09-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/sh_regs.h: Added watchdog registers.
+
+1999-07-30  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh_stub.c (__single_step): Added handling of bt/s and bf/s.
+
+1999-07-12  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/sh_stub.c: Use UCOND_RBR_MASK instead of BRAF_MASK.
+
+1999-07-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh_stub.c (__single_step): And of bsrf.
+
+1999-07-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh_stub.c (__single_step): Added handling of braf
+	instruction.
+
+1999-06-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S (__startup_stack): Increased size to allow the
+	twothreads example to run.
+
+1999-06-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS overrides use
+	of stubs in ROM.
+
+	* src/sh_stub.c (__computeSignal): Renamed _IO_ vectors to _DATA_.
+
+1999-06-21  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 20200
+	* include/hal_intr.h: Renamed _IO_ error vectors to _DATA_.
+
+	* src/vectors.S: Increased size of startup stack.
+
+1999-06-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_sh.h: Added CDL for
+	CYGHWR_HAL_SH_HANDLE_SPURIOUS_INTERRUPTS.
+
+	* src/vectors.S: 
+	* include/hal_intr.h: 
+	Decode exceptions before the VSR level.
+
+1999-06-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Cleaned up the interrupt entry/exit code.
+	Made it have consistent register-bank usage.
+
+1999-06-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/context.S (hal_thread_switch_context): Save PC when thread
+	debugging enabled.
+
+	* src/vectors.S:
+	* include/hal_arch.h: 
+	* include/sh.inc: 
+	Added handling of VBR and GBR.
+
+	* include/hal_intr.h: 
+	* src/vectors.S:
+	Added proper handling of nested interrupts.
+
+	* src/vectors.S (__interrupt): Added handling of spurious event=0
+	interrupts. 
+
+1999-05-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Fixed comment.
+
+	* include/sh_sci.inl (cyg_hal_gdb_isr): Alter CR using the proper
+	mask.
+
+	* include/hal_cache.h (HAL_UCACHE_WRITE_MODE): Fixed typo.
+
+	* src/hal_misc.c (cyg_hal_enable_caches): Enable write-back mode.
+
+	* src/sh_stub.c	(__computeSignal): 
+	Added proper cause->signal decoding.
+	
+	* src/sh_stub.c: 
+	* src/hal_misc.c:
+	* include/hal_intr.h: 
+	* include/hal_arch.h:
+	Cleaned up some FIX MEs.
+
+	* include/sh_regs.h: Added CYGARC_REG_SCSSR_CLEARMASK.
+
+1999-05-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_arch.h: 
+	* src/vectors.S: 
+	Fixed stack size macros.
+
+1999-05-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_cache.h: Include io and register header files.
+
+	* include/hal_intr.h: 
+	* src/vectors.S (_hal_interrupt_stack_call_pending_DSRs):
+	Added DSR-calls-on-interrupt-stack support.	
+
+1999-05-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_cache.h: Force cache macros to use registers, or
+	they fail when compiled without optimization.
+
+1999-05-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_intr.h:
+	Fix asm constraints.
+
+	* src/vectors.S: Fixed cyg_instrument call.
+	Added forgotten delay-slot nop after bra.
+	
+1999-05-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/sh_regs.h: Added some more baud rate values.
+
+1999-05-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Get ISR count from hal_intr.h.
+	Define regions of interrupt/exception handlers that are debugging
+	safe.
+
+	* include/hal_intr.h: Split in two parts - top is assembly safe.
+
+1999-05-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_misc.c (cyg_hal_enable_caches): Disable writeback for
+	now.
+
+	* include/hal_cache.h: 
+	Fixed typos and compiler warnings.
+
+	* src/hal_misc.c:
+	Renamed BCACHE to U(nified)CACHE.
+
+1999-05-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/sh_regs.h: Added cache register definitions.
+
+	* include/hal_cache.h: Defined cache macros.
+
+	* src/hal_misc.c (cyg_hal_enable_caches): Use BCACHE macros.
+
+	* src/vectors.S (_start): Call cache init function.
+
+	* include/hal_intr.h: Ignore reserved vectors when accessed by ISR
+	macros.
+	(HAL_CLOCK_INITIALIZE): Removed hack that made clock run at 1/4 speed.
+
+	* include/hal_arch.h:
+	* src/context.S: 
+	Implemented setjmp/longjmp functions.
+
+1999-05-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/sh.ld: Fix _stext/_etext naming.
+
+	* include/hal_intr.h: Added missing interrupt sources.
+
+	* include/sh_sci.inl: Added GDB_BREAK support.
+
+	* src/vectors.S (__default_interrupt_vsr): Added GDB_BREAK
+	support.
+	Fixed register overwrite.
+	Set SR on exception/interrupt entry to allow breakpoints in
+	handlers.
+	
+1999-05-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Added support for handling of exceptions by stub
+	in ROM.
+
+	* include/sh_sci.inl (init_serial): Added comment.
+
+	* src/vectors.S (_cyg_interrupt_stack_base, _cyg_interrupt_stack): 
+	Fixed naming.
+
+	* src/context.S: Removed MINIMUM_CONTEXT handling as it was
+	flawed. A better version doesn't save many cycles.
+
+1999-05-21  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_intr.h: Define HAL_INTERRUPT_STACK_BASE and
+	HAL_INTERRUPT_STACK_TOP so that stack usage macros in
+	kernel/.../stackmon.hxx can work.
+
+	* src/vectors.S (cyg_interrupt_stack_base): Define this symbol for
+	the interrupt stack and its friend for the stack top so that we
+	can publish them with nice names.
+
+1999-05-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S (__default_exception_vsr): Decode cause of
+	exception.
+
+	* src/sh_stub.c	(__clear_single_step): Let fixup code handle PC
+	decrementing.
+
+	* include/sh_stub.h: Fix PC after a trap instruction was hit.
+
+1999-05-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: 
+	* include/hal_intr.h: 
+	Use IMASK to control interrupts rather than BL.
+
+	* src/sh_stub.c: Added single step code.
+	Don't skip instructions when single stepping.
+
+1999-05-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Fixed errors due to trunk-move cleanup.
+	Added counter to debug code. Fixed bug in debug code(!).
+	Doubled startup stack size.
+
+1999-05-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* Moved files to CVS trunk.
+
+1999-05-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S: Fixed comment.
+
+	* include/sh_sci.inl: Set speed to 38400 when not RAM startup.
+
+	* include/hal_arch.h: Enable interrupts before a trap. 
+
+1999-05-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/vectors.S (__reset): Added initial jump to get from address
+	0 to ROM.
+
+	* include/sh_regs.h: Added BSC register definitions.
+
+1999-05-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+        * Most things working now. Will start keeping track of changes.
+	
+
+1999-04-22  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* Set up directory structure.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

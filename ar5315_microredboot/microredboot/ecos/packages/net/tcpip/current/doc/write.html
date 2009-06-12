@@ -1,0 +1,42 @@
+<html>
+<body>
+<pre>
+NAME
+       write - write to a file descriptor
+
+SYNOPSIS
+       ssize_t write(int fd, const void *buf, size_t count);
+
+DESCRIPTION
+       write  writes  up to count bytes to the file referenced by
+       the file descriptor fd from the buffer  starting  at  buf.
+
+RETURN VALUE
+       On success, the number of bytes written are returned (zero
+       indicates nothing was written).  On error, -1 is returned,
+       and  errno is set appropriately.
+
+ERRORS
+       EBADF  fd is not a valid file descriptor or  is  not  open
+              for writing.
+
+       EINVAL fd is attached to an object which is unsuitable for
+              writing.
+
+       EPIPE  fd is connected to a socket  whose  reading
+              end  is closed.
+
+       EAGAIN Non-blocking I/O has been selected using O_NONBLOCK
+              and  there  was  no room in the pipe or socket con­
+              nected to fd to write the data immediately.
+
+       EINTR  The call was interrupted before  any
+              data was written.
+
+       ENOSPC The  device  containing  the file referred to by fd
+              has no room for the data.
+
+       EIO    A low-level I/O error occurred.
+</pre>
+</body>
+</html>

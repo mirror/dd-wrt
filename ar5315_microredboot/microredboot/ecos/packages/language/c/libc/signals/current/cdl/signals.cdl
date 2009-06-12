@@ -1,0 +1,280 @@
+# ====================================================================
+#
+#      signals.cdl
+#
+#      C library signal related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBC_SIGNALS {
+    display       "ISO C library signal functions"
+    description   "
+            This component controls signal functionality,
+            as implemented in ISO/IEC 9899:1990 chapter 7.7 with
+            the signal() and raise() functions. As well as
+            allowing a program to send itself signals, it is
+            also possible to cause hardware exceptions to
+            be signalled to the program in a similar way."
+    doc           ref/libc.html
+    include_dir   cyg/libc/signals
+    parent        CYGPKG_LIBC
+    implements    CYGINT_ISO_SIGNAL_NUMBERS
+    implements    CYGINT_ISO_SIGNAL_IMPL
+    requires      { CYGBLD_ISO_SIGNAL_NUMBERS_HEADER == \
+                    "<cyg/libc/signals/signal.h>" }
+    requires      { CYGBLD_ISO_SIGNAL_IMPL_HEADER == \
+                    "<cyg/libc/signals/signal.h>" }
+    requires      CYGPKG_ISOINFRA
+    compile       raise.cxx   siginit.cxx   signal.cxx
+
+# ====================================================================
+
+    cdl_option CYGSEM_LIBC_SIGNALS_THREAD_SAFE {
+        display       "Thread safe signals"
+        requires      CYGPKG_KERNEL
+        default_value 1
+        description   "
+            Because signal handlers are global, and not
+            thread-specific (as mandated by POSIX 1003.1)
+            it is possible for multiple threads to clash
+            and corrupt data if setting the same signal
+            handler at the same time. With this option
+            enabled, a kernel mutex will be used to protect
+            the shared data."
+    }
+
+    cdl_component CYGSEM_LIBC_SIGNALS_HWEXCEPTIONS {
+        display       "Hardware exceptions cause signals"
+        flavor        bool
+        requires      CYGSEM_KERNEL_EXCEPTIONS_GLOBAL
+        requires      CYGSEM_KERNEL_EXCEPTIONS_DECODE
+        default_value 0
+        description   "
+            This causes hardware exceptions like
+            arithmetic exceptions (e.g. divide by zero)
+            or bad memory accesses to be passed through as
+            signals. It is thus possible for a program to
+            handle these exceptions in a generic way using
+            the appropriate signal handlers. The details of
+            exactly which exceptions are passed through
+            under what circumstances depend on the
+            underlying HAL implementation. Consequently it
+            must be remembered that signal handlers cannot
+            be guaranteed to be invoked in the expected
+            circumstances if you do not know about the
+            underlying HAL implementation - it is possible
+            that the architecture is unable to detect that
+            exception."
+    
+        cdl_option CYGSEM_LIBC_SIGNALS_CHAIN_HWEXCEPTIONS {
+            display       "Chain old exception handlers"
+            default_value 1
+            description   "
+                When hardware exceptions are generated, it
+                is possible to chain into the old kernel exception
+                handler before calling any registered signal
+                handler. If this is not required, disable this
+                option and only the signal handler will be
+                called when this exception occurs. Disabling
+                this option will also save some space and code
+                usage."
+        }
+    }
+    
+    cdl_component CYGPKG_LIBC_SIGNALS_INLINE {
+        display       "Inline versions of functions"
+        flavor        none
+        description   "
+            Some functions can be made inline instead of
+            being function calls. These can be set here."
+    
+        cdl_option CYGIMP_LIBC_SIGNALS_RAISE_INLINE {
+            display       "raise()"
+            default_value 1
+            description   "
+                Enabling this option makes raise() an inline function."
+        }
+    
+        cdl_option CYGIMP_LIBC_SIGNALS_SIGNAL_INLINE {
+            display       "signal()"
+            default_value 1
+            description   "
+                Enabling this option makes signal() an inline function."
+        }
+    }
+    
+    cdl_component CYGPKG_LIBC_SIGNALS_ERROR_HANDLING {
+        display       "Error handling"
+        flavor        none 
+        description   "
+            You may or may not want errno to be set by
+            certain functions. Not using errno could save
+            both space, code, and avoid worrying about
+            interactions between multiple threads when
+            setting it."
+    
+        cdl_option CYGSEM_LIBC_SIGNALS_BAD_SIGNAL_FATAL {
+            display       "Bad signal fatal"
+            requires      CYGDBG_USE_ASSERTS
+            default_value 0
+            description   "
+                Enabling this option will cause an assertion
+                failure if the signal handling code is
+                passed a bad signal. Otherwise an error will
+                be returned, or in the case of a
+                hardware-generated exception it will be silently
+                ignored."
+        }
+    
+        cdl_option CYGSEM_LIBC_SIGNALS_RAISE_SETS_ERRNO {
+            display       "raise() sets errno"
+            requires      CYGINT_ISO_ERRNO
+            requires      CYGINT_ISO_ERRNO_CODES
+            default_value 1
+            description   "
+                You may or may not want errno to be set by
+                raise() on error conditions. Not using errno
+                could save both space, code, and avoid worrying
+                about interactions between multiple threads when
+                setting it. Strictly ISO C does not mandate
+                that errno be set by raise()."
+        }
+    
+        cdl_option CYGSEM_LIBC_SIGNALS_SIGNAL_SETS_ERRNO {
+            display       "signal() sets errno"
+            requires      CYGINT_ISO_ERRNO
+            requires      CYGINT_ISO_ERRNO_CODES
+            default_value 1
+            description   "
+                You may or may not want errno to be set by
+                signal() on error conditions. Not using errno
+                could save both space, code, and avoid worrying
+                about interactions between multiple threads when
+                setting it. Strictly ISO C mandates
+                that errno be set by signal()."
+        }
+    }
+    
+    cdl_component CYGPKG_LIBC_SIGNALS_TRACING {
+        display       "Tracing"
+        flavor        none
+        description   "
+            These options control the trace output for the C
+            library internal signal implementation."
+    
+        cdl_option CYGNUM_LIBC_SIGNALS_RAISE_TRACE_LEVEL {
+            display       "Default trace level for raise()"
+            flavor        data
+            legal_values  0 to 1
+            default_value 0
+            description   "
+                This gives the default tracing level for the
+                raise() function. Higher numbers are more
+                verbose."
+        }
+    
+        cdl_option CYGNUM_LIBC_SIGNALS_HWHANDLER_TRACE_LEVEL {
+            display       "Default hardware exception handler trace level"
+            flavor        data
+            legal_values  0 to 1
+            default_value 0
+            description   "
+                This gives the default tracing level for the
+                hardware exception handler function (if enabled).
+                Higher numbers are more verbose."
+        }
+    }
+    
+# ====================================================================
+
+    cdl_component CYGPKG_LIBC_SIGNALS_OPTIONS {
+        display "C library signal functions build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBC_SIGNALS_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBC_SIGNALS_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBC_SIGNALS_TESTS {
+            display "C library signal function tests"
+            flavor  data
+            no_define
+            calculated { 
+                "tests/signal1"
+                . ((CYGSEM_LIBC_SIGNALS_HWEXCEPTIONS) ? " tests/signal2" : "")
+            }
+            description   "
+                This option specifies the set of tests for the C library
+                signal functions."
+        }
+    }
+}
+
+# ====================================================================
+# EOF signals.cdl

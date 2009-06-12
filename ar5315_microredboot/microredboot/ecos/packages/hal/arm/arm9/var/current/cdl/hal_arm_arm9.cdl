@@ -1,0 +1,131 @@
+# ====================================================================
+#
+#      hal_arm_arm9.cdl
+#
+#      ARM Arm9 architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Contributors:   jskov
+# Date:           2000-11-10
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_ARM_ARM9 {
+    display       "ARM ARM9 architecture"
+    parent        CYGPKG_HAL_ARM
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm_arm9.h
+    description   "
+        This HAL variant package provides generic
+        support for the ARM ARM9 processors. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    implements    CYGINT_HAL_ARM_ARCH_ARM9
+
+    compile       arm9_misc.c
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_ARM_VAR_IO_H"
+    }
+
+    cdl_interface CYGINT_HAL_ARM_ARM9_VARIANT {
+        display  "Number of variant implementations in this configuration"
+        no_define
+        requires 1 == CYGINT_HAL_ARM_ARM9_VARIANT
+    }
+
+    # CPU variant supported
+    cdl_option CYGPKG_HAL_ARM_ARM9_ARM920T {
+        display       "ARM ARM920T microprocessor"
+        implements    CYGINT_HAL_ARM_ARM9_VARIANT
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_ARM_ARM9_ARM920T
+        description "
+            The ARM920T has 16k data cache, 16k instruction cache, 16 word
+            write buffer and an MMU."
+    }
+
+    cdl_option CYGPKG_HAL_ARM_ARM9_ARM922T {
+        display       "ARM ARM922T microprocessor"
+        implements    CYGINT_HAL_ARM_ARM9_VARIANT
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_ARM_ARM9_ARM922T
+        description "
+            The ARM922T has 8k data cache, 8k instruction cache, 16 word
+            write buffer and an MMU."
+    }
+
+    cdl_option CYGPKG_HAL_ARM_ARM9_ARM925T {
+        display       "ARM ARM925T microprocessor"
+        implements    CYGINT_HAL_ARM_ARM9_VARIANT
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_ARM_ARM9_ARM925T
+        description "
+            The ARM925T has 8k data cache, 16k instruction cache, 16 word
+            write buffer and an MMU."
+    }
+
+    cdl_option CYGPKG_HAL_ARM_ARM9_ARM940T {
+        display       "ARM ARM940T microprocessor"
+        implements    CYGINT_HAL_ARM_ARM9_VARIANT
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_ARM_ARM9_ARM940T
+        description "
+            The ARM920T has 4k data cache, 4k instruction cache, 8 word
+            write buffer and a protection unit."
+    }
+
+    cdl_option CYGPKG_HAL_ARM_ARM9_ARM966E {
+        display       "ARM ARM966E microprocessor"
+        implements    CYGINT_HAL_ARM_ARM9_VARIANT
+        default_value 0
+        no_define
+        define        -file=system.h CYGPKG_HAL_ARM_ARM9_ARM966E
+        description "
+            The ARM966E has no data cache, no instruction cache, a
+            write buffer and no protection unit."
+    }
+}

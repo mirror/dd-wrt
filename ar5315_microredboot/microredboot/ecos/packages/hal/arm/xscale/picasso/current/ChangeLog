@@ -1,0 +1,75 @@
+2003-09-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* misc/redboot_RAM.ecm: 
+	* misc/redboot_ROM.ecm:  Adjust for changes in RedBoot
+	template - DNS now must be enabled manually.
+
+2003-09-20  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/picasso_ide.c: IDE init needs to return number of controllers found.
+
+2003-08-22  Gary Thomas  <gary@mind.be>
+
+	* src/xilinx-load.c: 
+	* src/vga_support.c: 
+	* src/picasso_pci_bitstream.h: 
+	* src/picasso_pci.c: 
+	* src/picasso_misc.c: 
+	* src/picasso_ide.c: 
+	* src/font.h: 
+	* src/banner.xpm: 
+	* misc/redboot_ROM.ecm: 
+	* misc/redboot_RAM.ecm: 
+	* include/pkgconf/mlt_arm_xscale_picasso_rom.mlt: 
+	* include/pkgconf/mlt_arm_xscale_picasso_rom.ldi: 
+	* include/pkgconf/mlt_arm_xscale_picasso_rom.h: 
+	* include/pkgconf/mlt_arm_xscale_picasso_ram.mlt: 
+	* include/pkgconf/mlt_arm_xscale_picasso_ram.ldi: 
+	* include/pkgconf/mlt_arm_xscale_picasso_ram.h: 
+	* include/vga_support.h: 
+	* include/plx.h: 
+	* include/plf_mmap.h: 
+	* include/plf_io.h: 
+	* include/picasso.h: 
+	* include/hal_plf_ints.h: 
+	* include/hal_platform_setup.h: 
+	* cdl/hal_arm_xscale_picasso.cdl: 
+	New package - support for NMI uEngine based "picasso" board
+
+2003-06-04  Gary Thomas  <gary@mind.be>
+
+	* src/xilinx-load.c: Improve feedback during FPGA downloads.
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

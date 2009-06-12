@@ -1,0 +1,10 @@
+{Source Window} {source.html} {The Source Window}
+{Register Window} {register.html} {The Register Window}
+{Memory Window} {memory.html} {The Memory Window}
+{Locals Window} {locals.html} {The Locals Window}
+{Watch Window} {watch.html} {The Watch Window}
+{Tracepoint Window} {tp.html} {The Tracepoint Window}
+{Console Window} {console.html} {The Console Window}
+{Stack Window} {stack.html} {The Stack Window}
+{TDump Window} {tdump.html} {The Tracepoint Dump Window}
+{GPL} {license.html} {The GNU Public License}

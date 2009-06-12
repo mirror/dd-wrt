@@ -1,0 +1,90 @@
+	Building the VC++ Windows Configuration Tool
+	============================================
+
+NOTE: this tool is no longer supported. Users wanting a graphical
+configuration tool under Windows should instead consider the
+wxWindows-based tool, ../wxwin/ReadMe.
+
+The graphical configuration tool can be built using a Developer Studio
+project, tools/ecosconfig/standalone/win32/Configtool.dsw
+Even if building the host tools from Visual Studio, it is still
+necessary to install Cygwin and Tcl 8.x. Additionally, there is a
+dependency on either the Microsoft Platform SDK or the Microsoft HTML
+Help Workshop. The latter is available at:
+http://msdn.microsoft.com/library/tools/htmlhelp/wkshp/download.htm
+
+To prepare the machine for the build, it is necessary to:
+
+1) Set the TCLHOME environment variable to the root of the Tcl
+installation. (For example, TCLHOME=C:\tcl) This can be set from the
+Enviroment Variables dialog on the Advanced tab of the System
+Properties dialog.
+
+2) It is also necessary to add several directories to Visual Studio's
+default file search paths. This is set from the Directories tab in the
+Options menu.
+
+The following entries will need to be added (full paths are shown for
+clarity, the actual path may be different):
+
+	a) Executable Files
+		c:\cygwin\bin
+	b) Include Files
+		c:\tcl\include
+		c:\program files\microsoft platform sdk\include _OR_
+		c:\program files\html help workshop\include
+	c) Library Files
+		c:\tcl\lib
+		c:\program files\microsoft platform sdk\lib _OR_
+		c:\program files\html help workshop\lib
+
+3) The build process as setup by default in the sources available from
+CVS is setup to build the host tools on the DOS v:\ drive. If this
+drive doesn't exist, it may be preferable to do a "subst v:\ c:\temp"
+command from a Windows command shell. This will effectively create a
+virtual disk which is located at c:\temp, and the build process will
+place all intermediate and build files in this location.
+(Alternatively, it is possible to go through the project settings in
+Visual Studio and adjust the drive letters manually.)
+
+4) If you have installed a version of Tcl other than version 8.2, it
+will be necessary to change the names of libraries linked with the
+projects. This can be done by:
+
+a) Selecting "Settings..." on the ChangeLog file in the cdl project in
+the Configtool workspace, you will see the custom build step for the
+project. At the end of the first line of the custom build step, there
+is an option --with-tcl_version=82. Change this value (82) to
+correspond to the version of Tcl installed on the machine.
+
+b) Selecting "Settings..." on the Configtool project in the workspace,
+you should go to the Link tab in the right-hand pane. In this pane you
+will see a line listing all the Libraries with which the project is
+being linked. Change the tcl82.lib entry to the name appropriate for
+the version of Tcl installed.
+
+(NOTE: These settings must be applied to all configurations you intend
+to build separately. The eCos host tools as shipped by RedHat were
+built using the "Win32 ANSI Release" Configuration. If you build the
+"Win32 Release" Configuration, you will also need to have the Unicode
+version of the MFC libraries and DLLs.)
+
+5) Click "Build... (F7)". The compiled binaries will be located in the
+Configtool folder on the V:\ drive.
+
+
+NOTES:
+
+1) When using WinCVS, make sure to use the default Windows mode to get
+the tools. Using UNIX mode will break the Visual Studio project files
+and you won't be able to open them. (It is preferable, in general, to
+use Windows mode for all eCos files.)
+
+2) There will be many warnings related to STL header compilation.
+These are benign. There are also some warnings related to missing help
+files at the beginning of the Configtool project compilation. These
+can also be ignored.
+
+3) To build the other Win32 projects in the host tools, it may be
+necessary to repeat step 4.b) above. (Again, this depends on which
+version of Tcl is in use.)

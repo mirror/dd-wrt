@@ -1,0 +1,30 @@
+#
+# Simple *HOST SIDE* makefile for network tests
+#
+
+CC = cc
+CFLAGS = -O2 -g
+
+ALL = nc_test_master nc_test_slave tcp_source tcp_sink host_echo
+ALL += nc6_test_master nc6_test_slave
+
+all: ${ALL}
+
+clean:
+	rm -f $(ALL)
+
+nc_test_master: nc_test_framework.h nc_test_master.c
+	$(CC) -o $@ ${CFLAGS} nc_test_master.c
+
+nc_test_slave: nc_test_framework.h nc_test_slave.c
+	$(CC) -o $@ ${CFLAGS} nc_test_slave.c
+
+tcp_source: tcp_source.c
+	$(CC) -o $@ ${CFLAGS} tcp_source.c
+
+tcp_sink: tcp_sink.c
+	$(CC) -o $@ ${CFLAGS} tcp_sink.c
+
+host_echo: host_echo.c
+	$(CC) -o $@ ${CFLAGS} host_echo.c
+

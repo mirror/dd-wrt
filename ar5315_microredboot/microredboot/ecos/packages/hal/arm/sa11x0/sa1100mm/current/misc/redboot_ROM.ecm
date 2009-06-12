@@ -1,0 +1,55 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    sa1100mm ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_ARM current ;
+    package -hardware CYGPKG_HAL_ARM_SA11X0_SA1100MM current ;
+    package -hardware CYGPKG_IO_PCI current ;
+    package -hardware CYGPKG_IO_SERIAL_ARM_SA11X0 current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_DEVS_FLASH_SA1100MM current ;
+};
+
+cdl_option CYGBLD_BUILD_GDB_STUBS {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT {
+    inferred_value 0
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    inferred_value 0 0
+};
+
+cdl_option CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value ROM
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    user_value 1
+};
+
+cdl_option CYGSEM_REDBOOT_BSP_SYSCALLS {
+  inferred_value 1
+};

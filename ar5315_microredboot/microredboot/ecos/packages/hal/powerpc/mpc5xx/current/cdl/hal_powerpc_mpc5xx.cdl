@@ -1,0 +1,365 @@
+# ====================================================================
+#
+#      hal_powerpc_mpc5xx.cdl
+#
+#      PowerPC/MPC5xx variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Bob Koninckx
+# Contributors:
+# Date:           2001-08-12
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_POWERPC_MPC5xx {
+    display       "PowerPC 5xx variant HAL"
+    parent        CYGPKG_HAL_POWERPC
+    hardware
+    include_dir   cyg/hal
+    define_header hal_powerpc_mpc5xx.h
+    description   "
+           The PowerPC 5xx variant HAL package provides generic support
+           for this processor variant. It is also necessary to
+           select a specific target platform HAL package."
+
+    cdl_interface CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED {
+        display       "ROM monitor configuration is unsupported"
+        no_define
+    }
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        bool
+        default_value { (CYG_HAL_STARTUP == "RAM" &&
+                        !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS &&
+                        !CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED &&
+                        !CYGSEM_HAL_POWERPC_COPY_VECTORS) ? 1 : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        requires      ! CYGSEM_HAL_POWERPC_COPY_VECTORS
+        requires      ! CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires      ! CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED
+        description   "
+            Allow coexistence with ROM monitor (GDB stubs) by
+            only initializing interrupt vectors on startup, thus leaving
+            exception handling to the ROM monitor."
+    }
+
+    #cdl_option CYGSEM_HAL_ENABLE_DCACHE_ON_STARTUP {
+    #    calculated 0
+    #}
+
+    #cdl_option CYGSEM_HAL_ENABLE_ICACHE_ON_STARTUP {
+    #    calculated 0
+    #}
+
+    # FIXME: the option above should be adjusted to select between monitor
+    #        variants
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs {
+        display "Bad CDL workaround"
+        calculated 1
+        active_if CYGSEM_HAL_USE_ROM_MONITOR
+    }
+
+
+    # Note: This should be sub-variant specific to reduce memory use.
+    define_proc {
+        puts $cdl_header "#define CYGHWR_HAL_VSR_TABLE (CYGHWR_HAL_POWERPC_VECTOR_BASE + 0x3f9800)"
+        puts $cdl_header "#define CYGHWR_HAL_VIRTUAL_VECTOR_TABLE (CYGHWR_HAL_VSR_TABLE + 0x200)"
+    }
+
+    cdl_component CYGPKG_HAL_POWERPC_MPC555 {
+        display       "PowerPC 555 microcontroller"
+        implements    CYGINT_HAL_POWERPC_VARIANT
+        description "
+            The PowerPC 555 microcontroller. This is an embedded part that in
+            addition to the PowerPC processor core has built in peripherals
+            such as memory controllers, DMA controllers, serial ports and
+            timers/counters."               
+
+        cdl_option CYGHWR_HAL_POWERPC_FPU {
+            display       "Variant FPU support"
+            flavor        bool
+            default_value 0
+            description "
+                Enable or disable hardware support for floating point operations."
+        }
+
+        cdl_option CYGSEM_HAL_POWERPC_IEEE_FLOATING_POINT {
+            display       "Fully IEEE floating point compliant"
+            flavor        bool
+            default_value 0
+            active_if     CYGHWR_HAL_POWERPC_FPU
+            requires      CYGHWR_HAL_POWERPC_FPU
+            description   "
+                Generate a floating point exception when the limits of the
+                floating point unit are reached. A software envelope can then
+                be used to generate the correct IEEE result for e.g. denormalized
+                numbers. If not enabled, the hardware will generate more than acceptable
+                values for these situation."
+        }
+
+        cdl_option CYGSEM_HAL_POWERPC_MPC5XX_OCD_ENABLE {
+            display       "Enable On Chip Debugging (OCD, BDM)"
+            flavor        bool
+            default_value 0
+            description "
+                This option forces the startup code to leave the OCD registers
+                unchanged. This allows for debugging with a BDM debugger."
+        }
+
+        cdl_option CYGHWR_HAL_POWERPC_MPC5XX_IFLASH_ENABLE {
+            display       "Enable internal flash"
+            flavor        bool
+            default_value 0
+            description "
+                Enable or disable the internal flash on the MPC5xx micro."
+        }
+
+        cdl_option CYGSEM_HAL_POWERPC_MPC5XX_IFLASH_DUAL_MAP {
+            display       "Dual mapping of the internal flash"
+            default_value 1
+            active_if     !CYGHWR_HAL_POWERPC_MPC5XX_IFLASH_ENABLE 
+            requires      !CYGHWR_HAL_POWERPC_MPC5XX_IFLASH_ENABLE 
+            description "
+                This option allows to re-map the internal flash array to external RAM
+                memory."
+        }
+
+        cdl_option CYGHWR_HAL_POWERPC_DISABLE_MMU {
+            display       "Disable Memory Management Unit (MMU)"
+            calculated    1
+            description "
+                The MPC5xx does not have an MMU, there is no use in enabling it."
+        }
+
+        cdl_option CYGSEM_HAL_POWERPC_MPC5XX_IMB3_ARBITER {
+            display       "IMB3 arbitration ISR"
+            flavor        bool
+            default_value 1
+            description "
+                The MPC5XX maps all IMB3 interrupt levels above 7 to SIU interrupt
+                level 7. If more than one IMB3 module is used at an interrupt level
+                higher than 7, interrupt arbiters must be chained on this level. This
+                option allows to chain multiple interrupt arbiters on SIU level 7.
+                This can be done using the functions hal_mpc5xx_install_imb3_arbiter
+                and hal_mpc5xx_remove_imb3_arbiter"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_TB {
+            display       "Time base interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_PIT {
+            display       "PIT interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_RTC {
+            display       "RTC interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_PLL {
+            display       "PLL interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_QUADC_A_QUEUE1 {
+            display       "QUADC A, QUEUE 1 interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_QUADC_A_QUEUE2 {
+            display       "QUADC A, QUEUE 2 interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_QUADC_B_QUEUE1 {
+            display       "QUADC B, QUEUE 1 interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_QUADC_B_QUEUE2 {
+            display       "QUADC B, QUEUE 2 interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_QSCI {
+            display       "QSCI interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_QSPI {
+            display       "QSPI interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_TOUCAN_A {
+            display       "TOUCAN A interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_TOUCAN_B {
+            display       "TOUCAN B interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_TPU_A {
+            display       "TPU A interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_TPU_B {
+            display       "TPU B interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_MIOS_A {
+            display       "MIOS A interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+
+        cdl_option CYGNUM_HAL_ISR_SOURCE_PRIORITY_MIOS_B {
+            display       "MIOS B interrupt source priority"
+            flavor        data
+            legal_values  0 to 31
+            default_value 0
+            description   "Time base interrupt source priority. O-6 are mapped to SIU levels 0-6. 
+                7-31 are mapped to SIU level 7"
+        }
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_powerpc.h>"
+    }
+
+    compile       var_intr.c var_misc.c variant.S
+
+    cdl_option CYGPKG_HAL_POWERPC_MPC5xx_TESTS {
+        display "PowerPC MPC5xx tests"
+        flavor  data
+        no_define
+        calculated { "tests/intr0" }
+
+        description   "
+            This option specifies the set of tests for the PowerPC MPC5xx HAL."
+    }
+
+    cdl_option CYGBLD_BUILD_VERSION_TOOL {
+        display "Build MPC5xx version dump tool"
+        default_value 0
+        requires { CYG_HAL_STARTUP == "RAM" }
+        no_define
+        description "This option enables the building of a tool which will print the version identifiers of the CPU."
+        make -priority 320 {
+            <PREFIX>/bin/mpc5xxrev : <PACKAGE>/src/mpc5xxrev.c
+            @sh -c "mkdir -p src $(dir $@)"
+            $(CC) -c $(INCLUDE_PATH) -Wp,-MD,deps.tmp -I$(dir $<) $(CFLAGS) -o src/mpc5xxrev.o $<
+            @echo $@ ": \\" > $(notdir $@).deps
+            @echo $(wildcard $(PREFIX)/lib/*) " \\" >> $(notdir $@).deps
+            @tail -n +2 deps.tmp >> $(notdir $@).deps
+            @echo >> $(notdir $@).deps
+            @rm deps.tmp
+            $(CC) $(LDFLAGS) -L$(PREFIX)/lib -Ttarget.ld -o $@ src/mpc5xxrev.o
+        }
+    }
+
+}

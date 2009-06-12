@@ -1,0 +1,67 @@
+# Managed window class definition for GDBtk.
+# Copyright 1998, 1999, 2000, 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class ManagedWin {
+  inherit itk::Widget
+  
+  public {
+    method constructor {args}
+    method destructor {}
+
+    method reconfig {} {}
+    method destroy_toplevel {}
+    method quit_if_last {} {return 1}
+    method pickle {}
+    method reveal {}
+    method window_name {wname {iname ""}}
+
+    proc find {win}
+    proc open {class args}
+    proc open_dlg {class args}
+    proc init {}
+    proc restart {}
+    proc startup {}
+    proc shutdown {}
+  }
+
+  protected {
+    # The Tk's toplevel window for this ManagedWin
+    variable _top
+
+    # Variable which holds the geometry of this window
+    variable _geometry {}
+
+    # this is the counter of TopLevelWins open
+    # when it hits 0, exit.
+    common numTopWins 0
+
+    common _screenwidth
+    common _screenheight
+
+    method _freeze_me {}
+    method _thaw_me {}
+
+    # Should this window be reopened when we startup?
+    method _ignore_on_save {} { return 0 }
+
+    # Should this window's size be remembered?
+    proc dont_remember_size {} { return 0 }
+  }
+
+  private {
+    proc _create {class args}
+    proc _open {class args}
+    proc _make_icon_window {name {file "gdbtk_icon"}}
+  }
+}

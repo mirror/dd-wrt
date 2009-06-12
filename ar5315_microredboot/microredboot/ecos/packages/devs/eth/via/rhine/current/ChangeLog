@@ -1,0 +1,172 @@
+2004-08-12  Jani Monoses <jani@iv.ro>
+
+	* src/if_rhine.c: Fix builing with lwip.
+
+2002-06-14  Gary Thomas  <gary@chez-thomas.org>
+
+	* src/if_rhine.c: 
+	Need to include <pkgconf/io_eth_drivers.h> for proper configuration
+	of stand-alone (polled) vs. system (interrupt driven) mode.
+
+2001-08-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/via_rhine.h: 
+	* src/if_rhine.c: 
+	printf() is no longer a part of RedBoot.  Thus all programs
+	must use diag_printf() and related functions instead.
+
+2001-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/via_rhine.h: Define IMR init value.
+	* src/if_rhine.c: And use it.
+	
+	* src/if_rhine.c: Remove unused code.
+	* src/via_rhine.h: Remove unused variable.
+	
+	* src/if_rhine.c (find_rhine_match_func): Added debug output. Fix
+	some warnings and an error.
+
+2001-07-04  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_rhine.c: Added D-Link pre-reset magic. Disabled driver
+	polls (leave it to interrupt handler).
+
+	* src/via_rhine.h: Added more definitions.
+
+	* src/if_rhine.c (rhine_can_send): Force MII status update by
+	reading from PHY controller.
+
+2001-07-02  Jesper Skov  <jskov@redhat.com>
+
+	* src/via_rhine.h: Fail to build if CPU to PCI address translation
+	macros are not provided.
+
+2001-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/via_rhine.h: Fix macro typos.
+
+	* src/if_rhine.c (rhine_poll): Put a mutex on this function.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_rhine.c: Comment out unused function to silence warning.
+	Removed unused mem_base. Set interrupt priority to non-zero.
+	
+	* src/via_rhine.h (INCR_STAT): Fix typo.
+
+2001-06-27  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_rhine.c (rhine_can_send): Read MII status which appears
+	to make link magic work. Not at all clear why this is so, but it
+	works.
+
+	* src/via_rhine.h: Disable debug output.
+
+	* src/if_rhine.c (rhine_start): Name magic registers.
+	(rhine_start): Remove some verbose output.
+
+	* src/via_rhine.h: Added register definitions. Removed unused key
+	IDs.
+
+2001-06-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_rhine.c: Rename PCI IO macros. 
+	* src/via_rhine.h: Same. And include PCI header.
+
+	* cdl/via_rhine_eth_drivers.cdl: Require PCI package.
+
+2001-06-25  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_rhine.c: Some cleanups, more debug code added, use macros
+	for accessing PCI IO space which platform can override. Some of
+	these changes from David Woodhouse.
+	* src/via_rhine.h: All macros moved to this file.
+
+2001-06-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/via_rhine.h: Rename MII definitions.
+	* src/if_rhine.c: Don't reset the controller when stopping. This
+	fixes the problem with the link state being weird. Clean up the
+	renegotiate code a bit.
+
+	* src/if_rhine.c: Added code to gather statistics.
+	Some output cleanup, sanity checking of RX queue only when
+	assertions enabled.
+
+2001-06-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/via_rhine.h: MII definitions.
+	* src/if_rhine.c: Added MII accessor functions to allow a forced
+	renegotiate of the connection on a link fail.
+
+	* src/if_rhine.c: Use PCI information to configure devices. Mask
+	interrupts in handlers.
+	(rhine_dsr): Oops, skipped driver synchronization.
+
+	* src/via_rhine.h: Added more private data.
+
+	* cdl/via_rhine_eth_drivers.cdl: Removed static ESA config option
+	- it belongs in the platform configury. Added device count for PCI
+	configury.
+	* src/if_rhine.c: Fix static ESA configury.
+	* src/via_rhine.h: Changed private data accordingly.
+
+	* src/if_rhine.c: Fix buglet in handling of small packets, small
+	hacks to interrupt handling.
+
+2001-06-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/if_rhine.c: Tell stack the ESA. Pad short packets.
+
+	* src/via_rhine.h: Added defs.
+
+	* src/if_rhine.c: Mask off PCI addresses - need proper macros for
+	this, or rather, use PCI API to get correct addresses. Close RX/TX
+	descriptor loops. Load RX/TX base pointers into NIC. Enable TX.
+
+2001-05-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/via_rhine.h: Make TX/RX descriptor entries 32 bit only to
+	avoid endian issues with offsets.
+
+	* src/if_rhine.c: Hacking code to (more or less) comply to
+	Rhine. Needs debugging though - manual is really thin!
+
+2001-05-30  Jesper Skov  <jskov@redhat.com>
+
+	* Cloned from AMD PCNet driver.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

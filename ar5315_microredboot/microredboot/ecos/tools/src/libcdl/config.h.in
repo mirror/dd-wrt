@@ -1,0 +1,21 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+#undef PACKAGE
+#undef VERSION
+#undef CYGNUM_LIBCDL_VERSION
+
+#undef CYGDBG_USE_ASSERTS
+#undef CYGDBG_INFRA_DEBUG_PRECONDITIONS
+#undef CYGDBG_INFRA_DEBUG_POSTCONDITIONS
+#undef CYGDBG_INFRA_DEBUG_INVARIANTS
+#undef CYGDBG_INFRA_DEBUG_LOOP_INVARIANTS
+
+#undef CYGDBG_USE_TRACING
+#undef CYGDBG_INFRA_DEBUG_FUNCTION_REPORTS
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+

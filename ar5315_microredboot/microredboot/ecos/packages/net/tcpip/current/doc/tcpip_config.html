@@ -1,0 +1,22 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; Linux 2.2.10 i686) [Netscape]">
+</head>
+<body>
+
+<center>
+<h1>
+eCos TCP/IP Package Configuration</h1></center>
+&nbsp;Follow these steps to enable networking:
+<blockquote><tt>% ecosconfig add CYGPKG_NET</tt>
+<br><tt>% ecosconfig add CYGPKG_NET_ETH_DRIVERS</tt></blockquote>
+For the Motorola PowerPC (MBX/860) board:
+<blockquote><tt>% ecosconfig add CYGPKG_NET_QUICC_ETH_DRIVERS</tt></blockquote>
+For the Cirrus Logic EDB7xxx board:
+<blockquote><tt>% ecosconfig add CYGPKG_NET_EDB7XXX_ETH_DRIVERS</tt></blockquote>
+
+<br>&nbsp;
+</body>
+</html>

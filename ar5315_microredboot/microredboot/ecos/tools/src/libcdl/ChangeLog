@@ -1,0 +1,967 @@
+2003-05-01  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* doc/package.sgml: Use PNGs instead of GIFs.
+	* doc/jadetex.cfg: Add this to configure PDF output nicely with index
+	and coloured links.
+
+2003-02-12  Bart Veer  <bartv@ecoscentric.com>
+
+	* Makefile.in, configure, testsuite/Makefile.in:
+	Regenerate after acinclude.m4 update
+
+2003-02-11  Bart Veer  <bartv@ecoscentric.com>
+
+	* build.cxx (compare_and_copy):
+	Work around problem with cygwin tclsh84 - "file rename" may
+	spuriously report failure.
+
+2003-02-03  John Dallaway  <jld@ecoscentric.com>
+
+	* cdl.dsp: Call tclsh rather than cygtclsh80 in custom build rule.
+
+2002-12-22  Nick Garnett  <nickg@ecoscentric.com>
+
+	* doc/.cvsignore: Added this file to ignore generated HTML files.
+
+2002-09-21  Bart Veer  <bartv@ecoscentric.com>
+
+	* cdlcore.hxx, cdl.hxx, build.cxx, component.cxx, config.cxx,
+	  database.cxx, dialog.cxx, interface.cxx, interp.cxx,
+	  option.cxx, package.cxx, parse.cxx, property.cxx,
+	  value.cxx, wizards.cxx
+	Avoid const compatibility problems with Tcl 8.4
+
+2002-08-03  Bart Veer  <bartv@ecoscentric.com>
+
+	* acinclude.m4, configure.in, Makefile.am, testsuite/Makefile.am,
+	testsuite/config/default.exp:
+	Rework host-side autoconf support
+	
+2002-03-04  Gary Thomas  <gthomas@redhat.com>
+
+	* build.cxx (update_header_file_info): 
+	Suppress include files which and in "~" - these are backup
+	files and are transient.  Keeping them can break a build
+	tree if the backup files are removed.
+
+2002-02-18  Bart Veer  <bartv@redhat.com>
+
+	* transact.cxx (user_confirmation_required):
+	Making a valuable with a user_value inactive requires
+	user confirmation, it should not be done automatically
+	by the inference engine.
+
+2001-12-07  Bart Veer  <bartv@redhat.com>
+
+	* doc/language.sgml, doc/*.html:
+	Add a footnote clarifying a particular Tcl expression
+	(bug 57097). Regenerate html.
+
+	* doc/fixhtml.tcl
+	Removed, the master copy now lives in pkgconf
+
+2001-12-06  Bart Veer  <bartv@redhat.com>
+
+	* cdlcore.hxx, build.cxx, interp.cxx:
+	Move #include of <cctype> to common header rather than to
+	individual source files, avoiding build problems with
+	newer compilers. Reported by Jeff Law.
+
+	* infer.cxx (inner_resolve):
+	CdlTransaction::is_preferable_to() is not symmetric. Rearrange
+	some expressions so that disabling options or making them
+	inactive is subtly discouraged rather than encouraged.
+
+2001-07-20  Bart Veer  <bartv@redhat.com>
+
+	* value.cxx (save):
+	Complicated "requires" expressions spread over multiple lines
+	were not being turned into multiline comments, leading to
+	illegal savefiles.
+
+2001-07-11  Bart Veer  <bartv@redhat.com>
+
+	* transact.cxx (is_preferable_to):
+	Consider active changes as well as value changes.
+
+2001-07-10  Bart Veer  <bartv@redhat.com>
+
+	* transact.cxx (is_preferable_to): 
+	Fine-tune the determination of which of two transactions has less
+	impact on the system.
+	
+	* infer.cxx (infer_handle_interface_value):
+	Add inference engine support for constraints of the form
+	(xxx == 0) and (xxx = 1), where xxx is an interface.
+	
+2001-07-08  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* interp.cxx: include <cctype> as isspace() is used.
+
+2001-06-21  Bart Veer  <bartv@redhat.com>
+
+	<merge of development work>
+	* base.cxx, cdlcore.hxx, property.cxx, parse.cxx, value.cxx, refer.cxx:
+	Allow an empty string to be used for parent properties, implying
+	reparenting below the root
+
+	* expr.cxx, cdlcore.hxx, infer.cxx:
+	Add support for new operators implies, xor and eqv
+
+	* func.cxx:
+	Add new function is_xsubstr(), is_loaded(), is_active(),
+	is_enabled(), get_data() and version_cmp()
+
+	* doc/main.sgml: 
+	Add 2001 to copyright year.
+	
+	* doc/language.sgml, doc/reference.sgml:
+	Document the above changes
+
+	* doc/*.html:
+	Regenerate following above changes, and using newer stylesheets
+	etc. 
+
+2001-06-20  Bart Veer  <bartv@redhat.com>
+
+	* database.cxx, cdl.hxx:
+	
+	Add a verbosity flag to control whether or not certain warnings
+	are issued. The main warnings of interest are inconsistencies
+	between the database and the repository, e.g. packages listed
+	but not actually installed, as can happen in anoncvs checkouts.
+
+2001-05-16  Bart Veer  <bartv@redhat.com>
+
+	* Makefile.am: use new compiler flag support
+
+	* configure, Makefile.in, testsuite/Makefile.in: regenerate
+	
+2001-05-14  Bart Veer  <bartv@redhat.com>
+
+	* func.cxx (get_args_count): Avoid compiler warning.
+	* func.cxx (is_substr_find): fix VC++ build problem (patch
+	provided by Julian) 
+
+2001-04-27  Bart Veer  <bartv@redhat.com>
+
+	* doc/language.sgml:
+	Added documentation on functions
+
+	* func.cxx, Makefile.am, Makefile.in:
+	New module for function support inside expressions
+
+	* expr.cxx
+	Add support for functions and the string concatenation operator. 
+
+	* infer.cxx
+	Clean-up, add support for functions, and implement more inference
+	functionalitity generally.
+
+2001-04-19  Bart Veer  <bartv@redhat.com>
+
+	* doc/*.sgml, *.html:
+	Update as per current corporate doc conventions.
+
+2001-02-27  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* interp.cxx (locate_subdirs): Accept "cvs" as a synonym for "CVS"
+	* database.cxx (new_package): Ditto.
+
+2000-08-18  Bart Veer  <bartv@redhat.com>
+
+	* configure.in:
+	Allow cross-compilation.
+
+	* configure, Makefile.in, testsuite/Makefile.in:
+	Regenerate.
+
+	* base.cxx, build.cxx, cdl.hxx, cdlcore.hxx, component.cxx,
+	config.cxx, database.cxx, dialog.cxx, expr.cxx, interface.cxx,
+	interp.cxx, option.cxx, package.cxx, parse.cxx, value.cxx,
+	wizard.cxx
+	Remove C++ exception specifications, because they cause problems
+	with some versions of the tools.
+
+2000-07-06  Bart Veer  <bartv@redhat.com>
+
+	* conflict.cxx (get_explanation):
+	Put quotes around "requires" in the conflict explanation.
+	Requested by the eCos team.
+
+2000-07-04  Bart Veer  <bartv@redhat.com>
+
+	* value.cxx (save):
+	The comment "# This value cannot be modified here." was being
+	added even for modifiable options, courtesy of some earlier
+	code rearrangement.
+
+	* config.cxx (change_package_version):
+	Prevent assertion failure/crash when changing the version of a
+	package that has not been loaded (not uncommon when using
+	ecosconfig and confusing the order of the version and the
+	package(s)).
+
+2000-06-28  Bart Veer  <bartv@redhat.com>
+
+	* transact.cxx, cdlcore.hxx:
+	Add details of the current transaction to the transaction callback
+	class. Previously there was no way of getting hold of the current
+	transaction and hence the toplevel from inside the callback
+	without using statics.
+
+	* value.cxx (set_flavor):
+	Temporarily undo some of the previous value clean-ups, they were
+	causing problems at the application level. The API needs to be
+	changed to eliminate confusion between value and the data part
+	of a bool/value pair.
+
+2000-06-22  Bart Veer  <bartv@redhat.com>
+
+	* value.cxx, interface.cxx:
+	Allow the flavor property to be used on interfaces. booldata
+	interfaces allow the use of #ifdef to determine whether or not
+	a feature is available. Clean up some of the value stuff to match,
+	especially when it comes to savefiles.
+
+	* build.cxx, cdlmisc.cxx, cdlcore.hxx:
+	Add version #define support.
+
+2000-06-15  John Dallaway  <jld@redhat.com>
+
+	* cdl.dsp:
+	Build libCDL to v:\cdl rather than v:\ide. Build debug versions
+	against tcl82d.lib rather than tcl82.lib.
+
+2000-06-02  Bart Veer  <bartv@redhat.com>
+
+	* config.cxx (load_package):
+	Diagnostic function pointers were not being installed at the
+	package level, so error messages due to invalid CDL were
+	disappearing.
+
+2000-05-11  Bart Veer  <bartv@redhat.com>
+
+	* value.cxx (implements_update_handler):
+	Cope gracefully with implements properties where the destination
+	is not an interface.
+
+	* transact.cxx (clear_structural_conflicts):
+	Prevent a structural conflict from being destroyed twice (only
+	likely to happen during a major delete operation).
+
+2000-04-14  Bart Veer  <bartv@redhat.com>
+
+	* infer.cxx (infer_set_valuable_value):
+	Extend the == operator inference support to cope with bool and
+	booldata options.
+
+2000-04-11  Bart Veer  <bartv@redhat.com>
+
+	* infer.cxx (infer_make_active):
+	Fix infinite recursion. Naughty inference engine.
+
+	* interp.cxx (eval):
+	Diagnostics enhancement tweak.
+
+	* build.cxx (generate_config_header):
+	Add a context when generating header files.
+
+	* base.cxx (CdlLoadableBody):
+	Add a context to the CdlInterpreter on creation, for better
+	diagnostics.
+	Do not raise errors in the internal Tcl scripts, since those
+	may now get reported.
+
+	* database.cxx (new_package):
+	A single spurious subdirectory in a package should not invalidate
+	the entire package.
+
+2000-04-10  Bart Veer  <bartv@redhat.com>
+
+	* base.cxx, build.cxx, cdl.hxx, cdlcore.hxx, cdlmisc.cxx,
+	component.cxx, config.cxx, database.cxx, dialog.cxx, expr.cxx,
+	interface.cxx, interp.cxx, option.cxx, package.cxx, parse.cxx,
+	property.cxx, value.cxx, wizard.cxx
+	Improved diagnostics support.
+
+	* build.cxx, property.cxx, parse.cxx:
+	Allow for string vector properties with no elements. Use this
+	for the include_files property.
+
+2000-03-13  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl.dsp:
+	Modify libCDL custom build step to calculate the short form
+	of the host tools root directory to allow rebuilding using an
+	eCos installation in its default location (containing spaces).
+
+	Use the presence of the last file generated by the
+	configure phase (the ecosconfig makefile) to determine whether
+	to invoke configure. This provides some	further robustness
+	against failed or interrupted builds.
+
+2000-03-08  Simon FitzMaurice <sdf@cygnus.co.uk>
+        * cdl.dsp : Modify libCDL custom build step to add --enable-maintainer-mode
+
+2000-03-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl.dsp:
+	Modify libCDL custom build step to configure in the host tools
+	directory rather than the root of the eCos repository.
+
+2000-03-08  Simon FitzMaurice <sdf@cygnus.co.uk>
+        * cdl.dsp : Modify libCDL custom build step to avoid running configure every time.
+
+2000-03-07  John Dallaway  <jld@cygnus.co.uk>
+
+ 	* cdl.dsp:
+	Modify libCDL custom build step to accommodate the migration
+	if libCDL sources.
+
+2000-03-01  Bart Veer  <bartv@redhat.com>
+
+	* expr.cxx (eval_internal):
+	If there is an eval exception, only manipulate conflicts if we are
+	in a transaction.
+
+	* value.cxx:
+	Make the code more robust against eval exceptions
+
+2000-02-15  Bart Veer  <bartv@redhat.com>
+
+	* build.cxx (generate_config_header):
+	Fix the symbol that gets used for define properties.
+
+	* package.cxx (get_config_header):
+	Completely suppress the generation of <pkgconf/hardware.h> until
+	further notice. Allow active_if properties in packages.
+	Comment a need for default_value properties.
+	
+2000-02-11  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl.dsp
+	Configure and make 'quietly' for release builds to help contain
+	the length of the release logs.
+
+	* cdl.mak:
+	Remove this obsolete file.
+
+2000-02-10  Bart Veer  <bartv@redhat.com>
+
+	* package.cxx (parse_package):
+	Allow packages to have active_if properties.
+	Add a comment that default_value in a package should be allowed as
+	a way of controlling enabled/disabled state.
+
+2000-02-03  Bart Veer  <bartv@redhat.com>
+
+	* infer.cxx (infer_handle_reference_bool):
+	Earlier fix missed yet more sub-transactions that should have been
+	cancelled. 
+
+2000-02-02  Bart Veer  <bartv@redhat.com>
+
+	* infer.cxx (infer_make_inactive):
+	Earlier fix missed a sub-transaction that should have been
+	cancelled.
+
+	* value.cxx (implements_update_handler):
+	Also recalculate an interface if the destination is created.
+	Otherwise an interface will have the wrong value if it is loaded
+	after all its implementors.
+
+	*  infer.cxx, transact.cxx:
+	Make sure that sub-transactions are either cancelled or committed
+	before they get deleted.
+
+2000-01-26  Bart Veer  <bartv@redhat.com>
+
+	* config.cxx (save):
+	Always output the description field for a standard savefile.
+
+	* base.cxx (save_conflicts):
+	Add missing newline
+
+	* infer.cxx (infer_subexpr_bool):
+	Fix the handling of && and ||
+
+	* infer.cxx (infer_handle_reference_value):
+	Do not try modifying inactive data items, there is no point
+	and it could cause an assertion failure
+
+2000-01-25  Bart Veer  <bartv@redhat.com>
+
+	* config.cxx:
+	Extend the savefile support to remember which packages
+	belong to the hardware and which ones belong to the
+	template.
+
+2000-01-24  Bart Veer  <bartv@redhat.com>
+
+	* cdlcore.hxx, parse.cxx, wizard.cxx (parse_screen): 
+	Change parse_property_options() to parse_options() so that it can
+	be used for more than just properties
+
+	* cdlcore.hxx, config.cxx:
+	Make sure that a LocalTransaction always gets cancelled if
+	things go wrong and an exception is thrown, prior to the
+	transaction being deleted.
+
+	* base.cxx, interp.cxx, value.cxx:
+	Savefile format tweaks.
+
+2000-01-21  Bart Veer  <bartv@redhat.com>
+
+	* base.cxx (add_node_to_toplevel):
+	When a loadable was re-added to the toplevel after an unload was
+	cancelled, its parent was not set correctly.
+
+	* infer.cxx:
+	Add partial support for dependencies of the form X==Y
+
+2000-01-20  Bart Veer  <bartv@redhat.com>
+
+	* Makefile.am, Makefile.in:
+	Fix dependencies for interface.cxx and transact.cxx, these
+	were sometimes rebuilt unnecessarily
+
+	* cdlcore.hxx, base.cxx, transact.cxx, config.cxx, package.cxx:
+	All file I/O related operations now happen in the context
+	of a transaction.
+
+1999-12-17  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdl.hxx, config.cxx, database.cxx:
+	Add support for set_value commands in ecos.db target entries.
+
+	* database.cxx:
+	Remove old support for template definitions in ecos.db
+
+1999-12-16  Bart Veer  <bartv@cygnus.co.uk>
+
+	* nearly all files:
+	Add support for memory leak detection, by maintaining per-class
+	object counts via the appropriate constructors and destructors.
+
+	* database.cxx:
+	Plug a one-off memory leak.
+
+1999-12-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* interp.cxx:
+	Modify CdlInterpreterBody::locate_subdirs(),
+	CdlInterpreterBody::locate_files(),
+	CdlInterpreterBody::is_directory() and
+	CdlInterpreterBody::is_file() to accommodate
+	spaces in paths.
+
+1999-12-13  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdlcore.hxx, interface.cxx, transact.cxx, value.cxx:
+	Calculate values for interfaces.
+
+	* base.cxx, cdl.hxx, cdlcore.hxx, component.cxx, config.cxx,
+	  database.cxx, dialog.cxx, interface.cxx, interp.cxx, option.cxx,
+	  package.cxx, value.cxx, wizard.cxx:
+	Implementation of templates in the form of the partial savefiles.
+
+1999-12-10  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdlcore.hxx:
+	Use '#pragma warning()' under VC++ only.
+
+1999-12-09  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdlmisc.cxx (compare_versions):
+	V1.3.1 and V1.3B6 were not compared correctly.
+
+1999-12-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* build.cxx (update_header_file_info):
+	If a package has no include subdirectory and no include_files
+	property, search the package directory tree for anything
+	resembling a header file and install that.
+
+1999-11-30  Bart Veer  <bartv@cygnus.co.uk>
+
+	* base.cxx:
+	Made the multiple conflict solution code more robust when side
+	effects occur.
+
+	* transact.cxx:
+	When a new conflict is committed and becomes global its solution
+	must be cleared, since no attempt is made to preserve the validity
+	of global solutions.
+
+	* transact.cxx (resolve):
+	Try to make sure that the inference callback gets invoked whenever
+	appropriate.
+
+	* base.cxx:
+	When resolving multiple global conflicts, fixing the first one may
+	have the side effect of fixing subsequent ones as well, resulting
+	in an assertion failure because the inference engine reported a
+	success with no changes being required. This situation is now
+	checked for.
+
+	* parse.cxx (parse_property_options):
+	Allow for a NULL options descriptor
+
+1999-11-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* transact.cxx:
+	Global conflict resolution support
+	
+	* infer.cxx:
+	Clean-up for resolving global conflicts
+	Cancel undesirable transactions before they are deleted
+
+	* conflict.cxx: 
+	Add support for resolving global conflicts
+	Implement get_transaction() member
+	
+	* cdlcore.hxx:
+	Add support for resolving global conflicts
+	Tidy up the transaction and transaction callback classes a bit.
+	
+	* base.cxx:
+	Add support for resolving global conflicts
+
+1999-11-26  John Dallaway  <jld@cygnus.co.uk>
+
+	* build.cxx:
+	Modify CdlToplevelBody::generate_config_headers() and
+	compare_and_copy() to accommodate spaces in the path to the
+	headers directory.
+
+1999-11-23  Bart Veer  <bartv@cygnus.co.uk>
+
+	* database.cxx (new_target):
+	command_prefix is no longer compulsory for ecos.db target entries,
+	since this is now handled in the config data. command_prefix and
+	cflags are still allowed in ecos.db for now, but will be removed
+	in future.
+
+1999-11-22  Bart Veer  <bartv@cygnus.co.uk>
+
+	* base.cxx:
+	During an unload operation a conflict may be cleared for multiple
+	reasons: the requires condition may now be satisfied, e.g
+	"requires !xxx" where "xxx" is also being unloaded; and the
+	node containing the requires property may be disappearing as well.
+	
+	* transact.cxx (save_solution):
+	If any parts of a solution involve calculated options then there
+	is no point in exposing this to the user. The re-calculation will
+	happen automatically during the next propagation.
+
+	* base.cxx:
+	* config.cxx:
+	Stop the inference engine from running when packages are loaded or
+	unloaded. The user has no opportunity to cancel or undo the
+	operation, and there may be unexpected behaviour because the
+	inference engine has no clear view of what the overall
+	configuration is going to be.
+
+	* transact.cxx (resolve):
+	Resolving one conflict may affect others in the new_conflicts
+	list. Using an iterator to examine all conflicts is a bad idea.
+	Instead each loop needs to search for a conflict that may
+	have a solution.
+
+	* base.cxx:
+	* config.cxx:
+	* cdlcore.hxx:
+	Rearrange how a CdlConfiguration gets destroyed, to allow dynamic
+	casts to be used on the toplevel as packages are unloaded.
+
+1999-11-22  John Dallaway  <jld@cygnus.co.uk>
+
+	* config.cxx:
+	Modify CdlConfigurationBody::load_package() to accommodate
+	spaces in the path to the eCos repository.
+
+1999-11-21  Bart Veer  <bartv@cygnus.co.uk>
+
+	* infer.cxx:
+	* transact.cxx:
+	* cdlcore.hxx:
+	First implementation of inference code
+
+	* conflict.cxx:
+	Added missing is_structural() member
+	
+1999-11-18  Bart Veer  <bartv@cygnus.co.uk>
+
+	* value.cxx:
+	Created a CdlSimpleValue constructor for booleans, to match the
+	assignment operator.
+
+	* expr.cxx :
+	Modify list expression evaluation code so that any terms which
+	evaluate to empty strings are discarded.
+
+1999-11-08  Bart Veer  <bartv@cygnus.co.uk>
+
+	* database.cxx:
+	Switched to ECOS_REPOSITORY environment variable.
+	
+	* transact.cxx:
+	* cdlcore.hxx:
+	Separated out normal and structural conflicts in the transaction
+	callback class.
+	
+	* value.cxx:
+	* interp.cxx:
+	* cdlcore.hxx:
+	Added new member CdlInterpreterBody::extend_comment(), for better
+	support of multiline comments in savefiles.
+
+1999-11-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdlcore.hxx, base.cxx, transact.cxx, value.cxx:
+	Newly loaded nodes were starting out as active, and were not being
+	turned inactive if the parent was disabled. By default nodes are
+	now inactive and there is explicit code in the transaction
+	propagate member function to check whether or not each node should
+	be active.
+
+	* Most files
+	Install the new transaction model
+
+1999-11-03  John Dallaway  <jld@cygnus.co.uk>
+
+	* value.cxx:
+	Apply patch to correct the omission of a comment char from
+	continuation lines of calculated value comments in
+	configuration save files.
+
+1999-10-25 Simon FitzMaurice <sdf@cygnus.co.uk>
+	* value.cxx:
+	Apply fix (supplied by Bart) to correct omission of comment symbol
+	from start of second and subsequent lines of split statement.
+
+1999-10-14  Bart Veer  <bartv@cygnus.co.uk>
+
+	* database.cxx:
+	* cdl.hxx:
+	Add support for new per-target commands enable and disable,
+	which provide limited control over hardware-related configuration
+	options.
+
+	* config.cxx (set_hardware):
+	Process per-target enable/disable commands from the database
+
+1999-10-12  John Dallaway  <jld@cygnus.co.uk>
+
+	* build.cxx (generate_config_headers):
+
+	Workaround problem with assignment of standard channels
+	which was causing system.h to not be generated.
+
+1999-10-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl.dsp, cdl.mak:
+
+	Link against Tcl 8.2.1.
+
+1999-10-07  Bart Veer  <bartv@cygnus.co.uk>
+
+	* value.cxx (get_widget_hint):
+	For some expressions this was corrupting the expression data,
+	because of the use of a reference rather than a pointer.
+
+1999-10-06  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdlcore.hxx, database.cxx, expr.cxx, interface.cxx, value.cxx
+	Partial implementations of interfaces and get_widget_hint()
+
+1999-09-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* interp.cxx:
+	Fix use of an uninitialized variable.
+
+	* config.cxx:
+	Fix the handling of package versions in save files.
+
+1999-09-15  Bart Veer  <bartv@cygnus.co.uk>
+
+	* value.cxx
+	Fix output of multiline legal_values expressions
+	
+	* value.cxx
+	Fix variable that might be used uninitialized.
+
+	* all files
+	First implementation of the savefile support
+
+1999-09-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl.dsp, cdl.mak:
+
+	Add ANSI build configurations.
+
+1999-09-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl.dsp, cdl.mak:
+
+	Update libCDL project file and VC++ makefile to use current
+	configure switches.
+
+1999-08-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure.in:
+	* configure:
+	* stamp-h.in:
+	First attempt at autoconfiscating the configtool
+
+1999-08-10  Bart Veer  <bartv@cygnus.co.uk>
+
+	* expr.cxx, value.cxx:
+	Fixed some problems related to double precision numbers.
+
+1999-08-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* parse.cxx:
+	Added an implementation of the "unknown" command which
+	goes via the normal diagnostics routines.
+
+1999-07-22  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdlcore.hxx, value.cxx, expr.cxx, cdlmisc.cxx:
+	Try to preserve some input data formatting information, such as
+	whether a number appeared as decimal or hexadecimal.
+
+1999-07-21  Bart Veer  <bartv@cygnus.co.uk>
+
+	* value.cxx:
+	Added some assertions to make sure that entities with a
+	"calculated" property cannot be modified.
+
+1999-07-20  Bart Veer  <bartv@cygnus.co.uk>
+
+	* value.cxx, transact.cxx:
+	Fixed some value propagation problems.
+
+	* cdlcore.hxx, value.cxx, expr.cxx:
+	Detect invalid numbers in expressions.
+	A CdlListValue object now contains a single vector of
+	CdlSimpleValue objects, not separate vectors of strings, integers
+	and doubles. This allows ordering to be preserved.
+
+	* most files:
+	Sync development version with repository, there is now
+	full value support.
+
+1999-07-13  Bart Veer  <bartv@cygnus.co.uk>
+
+	* expr.cxx:
+	Implement operator precedence
+	Fix parsing of conditional expressions.
+
+1999-07-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* most files:
+	Sync development version with repository, there is now partial
+	expression support.
+
+1999-07-05  Bart Veer  <bartv@cygnus.co.uk>
+
+	* all files:
+	Merge development work from the libcdl branch.
+	
+
+1999-06-10  John Dallaway <jld@cygnus.co.uk>
+
+	* cdl.dsp:
+	Convert to a Visual C++ utility project.
+
+1999-06-08  John Dallaway <jld@cygnus.co.uk>
+
+	* cdl.dsp:
+	Project file outputs libCDL to the project-specified output
+	directory rather than the intermediate directory
+
+1999-06-07  John Dallaway <jld@cygnus.co.uk>
+
+	* cdl.dsp:
+	Project file is no-longer dependent on the ECOSHOME environment
+	variable
+
+1999-06-07  John Dallaway <jld@cygnus.co.uk>
+
+	* cdl.dsp:
+	New Visual C++ 6.0 project file for libCDL
+
+1999-06-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure:
+	Regenerated again after further updates to toplevel acinclude.m4
+
+1999-06-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* configure:
+	Regenerated after updating toplevel acinclude.m4, new
+	--enable-debuginfo option.
+
+	* libcdl.hxx:
+	CdlBaseBody is now an ordinary base class for CdlContainerBody,
+	not a virtual base class, allowing old-style casts inside the
+	config tool to work. There is no need for virtual inheritance just
+	yet.
+	The CdlGoalExpressionBody copy constructor is now public, not
+	protected, for use by the config tool.
+
+1999-05-24  Bart Veer  <bartv@cygnus.co.uk>
+
+	* package.cxx:
+	* component.cxx:
+	* option.cxx:
+	* base.cxx: 
+	* libcdl.hxx:
+	Allow target and platform properties inside components and
+	options, and startup properties inside packages and components,
+	for continued compatibility with libnotcdl.
+
+1999-03-10  Bart Veer  <bartv@cygnus.co.uk>
+
+	* option.cxx (parse_option): 
+	* component.cxx (parse_component):
+	Fixed the handling of container inheritance for full libnotcdl
+	compatibility. 
+
+1999-03-09  Bart Veer  <bartv@cygnus.co.uk>
+
+	* parse.cxx (parse_...expression_property):
+	Do not try to parse options just yet, there is confusion if
+	the expression begins with a negative number.
+
+1999-03-08  Bart Veer  <bartv@cygnus.co.uk>
+
+	* interp.cxx (eval):
+	Make sure that C strings passed to the Tcl interpreter
+	are properly terminated.
+
+	* property.cxx:
+	Remove strict checking of property id's, so that the library
+	code can be re-used for other purposes e.g. hardware CDL.
+
+	* expr.cxx:
+	Added temporary parsers for libnotcdl compatibility.
+
+	* cdlmisc.cxx:
+	Added routines to convert between strings and flavors.
+	Added routines to validate CDL names.
+	Minor layout tweaks.
+
+	* README:
+	Examples now refer to Tcl8.1b1 instead of 8.1a2, the alpha
+	version caused problems.
+	
+
+1999-02-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* testsuite/libcdl/cdl1.cxx (test_double_to_string): 
+	* cdlmisc.cxx (string_to_double):
+	Added double conversion support, needed for the CdlResult class
+
+	* testsuite/libcdl/cdl5.cxx (main): 
+	* database.cxx:
+	Change CdlInputOutputError to CdlInputOutputException in the
+	interests of a more consistent naming convention.
+
+1999-01-29  Bart Veer  <bartv@cygnus.co.uk>
+
+	* interp.cxx (eval):
+	Add new member function to evaluate Tcl code embedded in
+	CDL data.
+
+	* cdlmisc.cxx (is_valid_property_id):
+	Added the properties IncludeDir and ExportTo, and the flavor "dummy"
+
+
+1999-01-26  Bart Veer  <bartv@cygnus.co.uk>
+
+	* testsuite/libcdl/cdl4.cxx: 
+	* testsuite/libcdl/cdl1.cxx (test_string_to_integer):
+	Change array initializers to avoid having to supply a constructor.
+
+	* aclocal.m4:
+	* config.h.in:
+	* configure:
+	* stamp-h.in:
+	* testsuite/Makefile.in:
+	Updated to use autoconf 2.13 and automake 1.4, plus to reflect
+	tweaks to toplevel acinclude.m4 and local configure.in
+	
+	* configure.in:
+	No longer insist on the infra having been built already. This
+	allows a configure from the top-level to work.
+
+	* testsuite/libcdl/cdl4.cxx:
+	Changed the initializer for a static array of structures to work
+	around compiler problems.
+
+	* testsuite/libcdl/cdl3.cxx (main):
+	Changed the way inline Tcl scripts are defined to avoid compiler
+	problems. 
+
+	* testsuite/libcdl/cdl2.cxx (main):
+	Added missing return statement to avoid compiler warning.
+
+	* testsuite/config/default.exp:
+	Use new variable cyg_ac_tcl_libs
+
+	* interp.cxx (eval):
+	Do not distinguish between TCL_OK and TCL_RETURN return codes,
+	clients are unlikely to be interested.
+	Fix definition of set_assoc_data().
+
+	* cdlmisc.cxx (compare_versions):
+	Fix syntax problem in while loop.
+
+1999-01-22  Bart Veer  <bartv@cygnus.co.uk>
+
+	* interp.cxx
+	(set_assoc_data): added new functions so that clients can
+	associate arbitrary data with interpreters
+	(set_variable) : and to provide access to Tcl global variables.
+	(make_safe)    : also, the ability to make an interpreter safe.
+	(set_result)   : not to mention, controlling the result field.
+
+	* cdlmisc.cxx (compare_versions):
+	Added new function Cdl::compare_versions()
+
+1999-01-21  Bart Veer  <bartv@cygnus.co.uk>
+
+	* cdlmisc.cxx
+	Added routines get_library_version(), set_interactive() and
+	get_interactive().
+
+//===========================================================================
+//####COPYRIGHTBEGIN####
+//                                                                          
+// ----------------------------------------------------------------------------
+// Copyright (C) 1999, 2000, 2001 Red Hat, Inc.
+//
+// This file is part of the eCos host tools.
+//
+// This program is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU General Public License as published by the Free 
+// Software Foundation; either version 2 of the License, or (at your option) 
+// any later version.
+// 
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+// more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this program; if not, write to the Free Software Foundation, Inc., 
+// 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+//
+// ----------------------------------------------------------------------------
+//                                                                          
+//####COPYRIGHTEND####
+//===========================================================================

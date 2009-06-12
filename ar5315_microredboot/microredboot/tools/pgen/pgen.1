@@ -1,0 +1,202 @@
+.TH PGEN 1  "7 June 2005" "Version alpha" "PGEN Manual Page"
+.Os Linux
+.SH NAME
+.B pgen, phone, pget, ap, apts, staut
+\- generate, receive, echo, and log 802.11 QoS and voip frames
+.SH SYNOPSIS
+.B pgen
+[-period] [-wmeload] [-broadcastflag] ipaddr
+
+.B phone
+[-period] ipaddr
+
+.B pget
+[-hist]
+
+.B ap
+
+.B apts
+[testname]
+
+.B staut
+ipaddr
+
+.SH DESCRIPTION
+.B Pgen
+and companion programs may be used to send and receive UDP frames.
+They is useful for testing Diffserv queues that use dscp or vlan classification.
+It is also useful for generating traffic profiles of various kinds.
+
+The programs are compiled from the same source file, but linked
+with different names.  It is a single source file for ease of development.
+The code is simple and meant to be easily modified for test generation
+and traffic analysis.
+
+The programs send and receive UDP packets on port 12345 which is a compilation
+constant.  The programs that send packets (
+.B pgen, 
+.B phone
+) must be given
+a destination IP address.  The address can be given 
+on the command line either
+as a host name (e.g. "pgen test_machine_1") or 
+with dot notation (e.g. "phone 192.168.171.22").   
+
+The 
+.B pget, ap, and apst
+programs do not require an address.
+.B Pget
+simply logs all packets received on its port.
+The
+.B ap
+program echoes each received packet back to the sender.
+.B Apts
+is described below.
+
+The default behavior for
+.B Pgen 
+is to send a packet every 2 seconds to the destination.
+The "-period <value>" option can be given on the command line to change
+the packet interval to <value> microseconds.  For example,
+.br
+	"pgen -period 5000"
+.br
+	"pgen -period 500000"
+.br
+will send a packet every 5 ms, or 1/sec respectively.
+
+The default diffserv priority sent by pgen is zero (no priority).
+If pgen is used with the -wmeload option, the program will cycle
+through the list of dscp types compiled into the program.
+This version of the program does not contain a mechanism for modifying
+the list without editing and compiling the source.
+
+The "-broadcastflag" option causes pgen to send broadcast packets
+rather than the normal unicast packets.   The broadcast address
+is compiled into the program.
+
+The
+.B phone
+program sends a 128-byte UDP frame to the destination every <period>
+seconds.   The default value for <period> is 10ms, but this can be changed
+via the -period option on the command line.  After each packet is sent
+the program waits for a response.  The read will time out after 1 sec.
+In this version of the program, the timeout value can be changed
+by editing the source code.   The program attempts to time the interval
+between sending a frame and receiving a response.   The message number
+and response time are printed after every exchange.  The expected
+output looks like this:
+
+
+.in +1i
+.nf
+% phone borg
+phone mode
+dst: 10.10.10.169
+r128 msg(0) delta 	 0:91
+r128 msg(1) delta 	 0:9
+r128 msg(2) delta 	 0:9
+r128 msg(3) delta 	 0:8
+r128 msg(4) delta 	 0:18
+r128 msg(5) delta 	 0:9
+r128 msg(6) delta 	 0:8
+r128 msg(7) delta 	 0:13
+r128 msg(8) delta 	 0:8
+r128 msg(9) delta 	 0:8
+r128 msg(10) delta 	 0:19
+r128 msg(11) delta 	 0:10
+r128 msg(12) delta 	 0:9
+r128 msg(13) delta 	 0:8
+r128 msg(14) delta 	 0:8
+.in -1i
+.fi
+
+The received message size is noted by the "r128" and the message
+numbers is also indicated.  The time delta is printed to the right.
+The notation is seconds:microseconds.   Sometimes it is useful to operate
+the phone program at a slower than normal rate, e.g.
+	phone -period 500000 192.168.171.99
+in order to examine the packets in transit through intermediate equipment.
+
+This version of the program does not include a timestamp in the message.
+
+If the phone program is run with the -hist option,
+then it remains silent as messages are received.
+Instead the interval time for each message is logged in a histogram
+data structure.   The contents of the structure are printed after
+every 1000 iterations of the packet exchange loop.
+Expected output looks like this:
+
+.in +.2i
+.nf
+[greg@xtp]$ phone -hist borg
+phone mode
+dst: 10.10.10.169
+avg 63.765999   min(0.000000)   max(8181.000000)
+ 10     20     30     40     50    100    500   1000   2000   5000      0
+  513   384    76     0     0     0    13     4     1     5     4
+.fi
+.in -.2i
+
+The histogram buckets start at 10us and range to 5ms.   In this example
+about half of the 1000 packets were echoed in 10us, and 384 were echoed
+in the 10-20us range.
+ 
+
+The
+.B pget
+program listens on the port and prints whatever it receives.
+
+The 
+.B apts
+and
+.B staut
+programs are derived from
+.B ap
+and
+.B upsd
+respectively.
+.B Apsd
+with no arguments will print a list of available tests meant to coincide
+with wifi APSD test procedures, e.g. "B.2".   Operate the program by giving
+the name of a test as the (single) argument, e.g. "apts B.2".
+The
+.B staut
+program complements
+.B apts
+by providing the Station Under Test functionality.
+Operate the station program by giving it the ip address of the
+.B apts
+program, e.g. "staut 192.168.1.10".
+The program will send a frame to the apts program which will respond with
+a frame that selects the test behavior at the station.
+Unlike the other programs
+.B upsd
+or
+.B phone,
+statistics gathering and timing information is meant to be collected
+by a passive sniffer application.
+
+
+.SH DIAGNOSTICS
+Missing arguments and some errors are diagnosed.
+.SH NOTES
+It is not possible to operate pgen and pget simultaneously on the same system
+because they bind to the same port.
+
+This is an engineering test program, not a "product".
+Don't expect too much.
+.SH BUGS
+There are several optional behaviors and flags not described on this man page.
+If you have this man page, you also have the source code (hint).
+
+The delta time reporting needs to be calibrated
+and amended with a method uses round-trip timestamps.
+This version of the program doesn't generate or record vlan tags.
+
+The program should figure out the broadcast IP address instead
+of using a compiled-in value although this is not an important feature
+of the program and probably could be removed.
+
+The raw socket interface may not exist or may require additional code
+on some platforms.

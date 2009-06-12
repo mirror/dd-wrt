@@ -1,0 +1,2267 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Testing</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Writing a USB Device Driver"
+HREF="usbs-writing.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-writing.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-TESTING"
+>Testing</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN831"
+></A
+><H2
+>Name</H2
+>Testing&nbsp;--&nbsp;Testing of USB Device Drivers</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN834"
+></A
+><H2
+>Introduction</H2
+><P
+>The support for USB testing provided by the eCos USB common slave
+package is somewhat different in nature from the kind of testing used
+in many other packages. One obvious problem is that USB tests cannot
+be run on just a bare target platform: instead the target platform
+must be connected to a suitable USB host machine, and that host
+machine must be running appropriate software for the test code to
+interact with. This is very different from say a kernel test which
+typically will have no external dependencies. Another important
+difference between USB testing and say a C library
+<TT
+CLASS="FUNCTION"
+>strcmp</TT
+> test is sensitivity to timing and to
+hardware boundary conditions: although a simple test case that just
+performs a small number of USB transfers is better than no testing at
+all, it should also be possible to run tests for hours or days on end,
+under a variety of loads. In order to provide the required
+functionality the basic architecture of the USB testing support is as
+follows: </P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>    There is a single target-side program
+    <SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+>. By default when this is run
+    on a target platform it will appear to do nothing. In fact it is
+    waiting to be contacted by another program
+    <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> which will tell it what test or
+    tests to run. <SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> provides
+    mechanisms for running a wide range of tests.
+  </P
+></LI
+><LI
+><P
+>    <SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> is a generic program, but USB
+    testing depends to some extent on the functionality provided by the
+    hardware. For example there is no point in testing bulk transmits
+    to endpoint 12 if the target hardware does not support an endpoint
+    12. Therefore each USB device driver should supply information about
+    what the hardware is actually capable of, in the form of an array of
+    <SPAN
+CLASS="STRUCTNAME"
+>usbs_testing_endpoint</SPAN
+> data structures.
+  </P
+></LI
+><LI
+><P
+>    There is a single host-side program
+    <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+>, which acts as a counterpart to
+    <SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+>. Again
+    <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> has no built-in knowledge of
+    the test or tests that are supposed to run, it only provides
+    mechanisms for running a wide range of tests. On start-up
+    <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> will search the USB bus for
+    hardware running the target-side program, specifically a USB device
+    that identifies itself as the product <TT
+CLASS="LITERAL"
+>&quot;Red Hat eCos
+    USB test&quot;</TT
+>.
+  </P
+></LI
+><LI
+><P
+>    <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> contains a Tcl interpreter, and
+    will execute any Tcl scripts specified on the command line
+    together with appropriate arguments. The Tcl interpreter has been
+    extended with various commands such as
+    <TT
+CLASS="LITERAL"
+>usbtest::bulktest</TT
+>, so the script can perform
+    the desired test or tests.
+  </P
+></LI
+><LI
+><P
+>    Adding a new test simply involves writing a short Tcl script that
+    invokes the appropriate USB-specific commands. Running multiple
+    tests involves passing appropriate arguments to
+    <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+>, or alternatively writing a
+    single script that just invokes other scripts.
+  </P
+></LI
+></OL
+><P
+>The current implementation of <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+>
+depends heavily on functionality provided by the Linux kernel and in
+particular the usbdevfs support. It uses
+<TT
+CLASS="FILENAME"
+>/proc/bus/usb/devices</TT
+> to find out what devices
+are attached to the bus, and will then access the device by opening
+<TT
+CLASS="FILENAME"
+>/proc/bus/usb/xxx/yyy</TT
+> and performing
+<TT
+CLASS="FUNCTION"
+>ioctl</TT
+> operations. This allows USB testing to take
+place without having to write a new host-side device driver, but
+getting the code working on host machines not running Linux would
+obviously be problematical.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN867"
+></A
+><H2
+>Building and Running the Target-side Code</H2
+><P
+>The target-side component of the USB testing software consists of a
+single program <SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> which contains
+support for a range of different tests, under the control of host-side
+software. This program is not built by default alongside other eCos
+test cases since it will only operate in certain environments,
+specifically when the target board's connector is plugged into a Linux
+host, and when the appropriate host-side software has been installed
+on that host. Instead the user must enable a configuration option
+<TT
+CLASS="LITERAL"
+>CYGBLD_IO_USB_SLAVE_USBTEST</TT
+> to add the program to
+the list of tests for the current configuration.</P
+><P
+>Starting the <SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> program does not
+require anything unusual, so it can be run in a normal
+<SPAN
+CLASS="APPLICATION"
+>gdb</SPAN
+> session just like any eCos application.
+After initialization the program will wait for activity from the host.
+Depending on the hardware, the Linux host will detect that a new USB
+peripheral is present on the bus either when the
+<SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> initialization is complete or
+when the cable between target and host is connected. The host will
+perform the normal USB enumeration sequence and discover that the
+peripheral does not match any known vendor or product id and that
+there is no device driver for <TT
+CLASS="LITERAL"
+>&quot;Red Hat eCos USB
+test&quot;</TT
+>, so it will ignore the peripheral. When the
+<SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> program is run on the host it will
+connect to the target-side software, and testing can now commence.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN878"
+></A
+><H2
+>Building and Running the Host-side Code</H2
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>In theory the host-side software should be built when the package is
+installed in the component repository, and removed when a package
+is uninstalled. The current eCos administration tool does not provide
+this functionality.</P
+></BLOCKQUOTE
+></DIV
+><P
+>The host-side software should be built via the usual sequence of
+&quot;configure/make/make install&quot;. It can only be built on a
+Linux host and the <B
+CLASS="COMMAND"
+>configure</B
+> script contains an
+explicit test for this. Because the eCos component repository should
+generally be treated as a read-only resource the configure script will
+also prevent you from trying to build inside the source tree. Instead
+a separate build tree is required. Hence a typical sequence for
+building the host-side software would be as follows:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ mkdir usbhost_build
+$ cd usbhost_build
+$ &lt;repo&gt;packages/io/usb/slave/current/host/configure <A
+NAME="PATH"
+><IMG
+SRC="../images/callouts/1.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(1)"></A
+> <A
+NAME="VERSION"
+><IMG
+SRC="../images/callouts/2.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(2)"></A
+> &lt;args&gt; <A
+NAME="ARGS"
+><IMG
+SRC="../images/callouts/3.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(3)"></A
+>
+$ make
+&lt;output from make&gt;
+$ su <A
+NAME="ROOT"
+><IMG
+SRC="../images/callouts/4.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(4)"></A
+>
+$ make install
+&lt;output from make install&gt;
+$</PRE
+></TD
+></TR
+></TABLE
+><DIV
+CLASS="CALLOUTLIST"
+><DL
+COMPACT="COMPACT"
+><DT
+><A
+HREF="usbs-testing.html#PATH"
+><IMG
+SRC="../images/callouts/1.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(1)"></A
+></DT
+><DD
+>The location of the eCos component repository should be substituted
+for <TT
+CLASS="LITERAL"
+>&lt;repo&gt;</TT
+>.</DD
+><DT
+><A
+HREF="usbs-testing.html#VERSION"
+><IMG
+SRC="../images/callouts/2.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(2)"></A
+></DT
+><DD
+>If the package has been obtained via CVS or anonymous CVS then the
+package version will be <TT
+CLASS="FILENAME"
+>current</TT
+>, as per the
+example. If instead the package has been obtained as part of a full
+eCos release or as a separate <TT
+CLASS="FILENAME"
+>.epk</TT
+> file then the
+appropriate package version should be used instead of
+<TT
+CLASS="FILENAME"
+>current</TT
+>.</DD
+><DT
+><A
+HREF="usbs-testing.html#ARGS"
+><IMG
+SRC="../images/callouts/3.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(3)"></A
+></DT
+><DD
+>The <B
+CLASS="COMMAND"
+>configure</B
+> script takes the usual arguments such
+as <TT
+CLASS="PARAMETER"
+><I
+>--prefix=</I
+></TT
+> to specify where the executables
+and support files should be installed. The only other parameter that
+some users may wish to specify is the location of a suitable Tcl
+installation. By default <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> will use
+the existing Tcl installation in <TT
+CLASS="FILENAME"
+>/usr</TT
+>,
+as provided by your Linux distribution. An alternative Tcl
+installation can be specified using the parameter
+<TT
+CLASS="PARAMETER"
+><I
+>--with-tcl=</I
+></TT
+>, or alternatively using some
+combination of <TT
+CLASS="PARAMETER"
+><I
+>--with-tcl-include</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>--with-tcl-lib</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>--with-tcl-version</I
+></TT
+>. </DD
+><DT
+><A
+HREF="usbs-testing.html#ROOT"
+><IMG
+SRC="../images/callouts/4.gif"
+HSPACE="0"
+VSPACE="0"
+BORDER="0"
+ALT="(4)"></A
+></DT
+><DD
+>One of the host-side executables that gets built,
+<SPAN
+CLASS="APPLICATION"
+>usbchmod</SPAN
+>, needs to be installed with suid
+root privileges. Although the Linux kernel makes it possible for
+applications to perform low-level USB operations such as transmitting
+bulk packets, by default access to this functionality is restricted to
+programs with superuser privileges. It is undesirable to run a complex
+program such as <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> with such
+privileges, especially since the program contains a general-purpose
+Tcl interpreter. Therefore when <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+>
+starts up and discovers that it does not have sufficient access to the
+appropriate entries in <TT
+CLASS="FILENAME"
+>/proc/bus/usb</TT
+>, 
+it spawns an instance of <SPAN
+CLASS="APPLICATION"
+>usbchmod</SPAN
+> to modify
+the permissions on these entries. <SPAN
+CLASS="APPLICATION"
+>usbchmod</SPAN
+>
+will only do this for a USB device <TT
+CLASS="LITERAL"
+>&quot;Red Hat eCos USB
+test&quot;</TT
+>, so installing this program suid root should not
+introduce any security problems.</DD
+></DL
+></DIV
+><P
+>During <B
+CLASS="COMMAND"
+>make install</B
+> the following actions will take
+place: </P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+><SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> will be installed in <TT
+CLASS="FILENAME"
+>/usr/local/bin</TT
+>,
+or some other <TT
+CLASS="FILENAME"
+>bin</TT
+> directory if
+the default location is changed at configure-time using a
+<TT
+CLASS="PARAMETER"
+><I
+>--prefix=</I
+></TT
+> or similar option. It will be
+installed as the executable
+<SPAN
+CLASS="APPLICATION"
+>usbhost_&lt;version&gt;</SPAN
+>, for example
+<SPAN
+CLASS="APPLICATION"
+>usbhost_current</SPAN
+>, thus allowing several
+releases of the USB slave package to co-exist. For convenience a
+symbolic link from <TT
+CLASS="FILENAME"
+>usbhost</TT
+> to this executable
+will be created, so users can just run <B
+CLASS="COMMAND"
+>usbhost</B
+> to
+access the most recently-installed version.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="APPLICATION"
+>usbchmod</SPAN
+> will be installed in
+<TT
+CLASS="FILENAME"
+>/usr/local/libexec/ecos/io_usb_slave_&lt;version&gt;</TT
+>.
+This program should only be run by <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+>,
+not invoked directly, so it is not placed in the <TT
+CLASS="FILENAME"
+>bin</TT
+> 
+directory. Again the presence of the package version in the directory
+name allows multiple releases of the package to co-exist.</P
+></LI
+><LI
+><P
+>A Tcl script <TT
+CLASS="FILENAME"
+>usbhost.tcl</TT
+> will get installed in
+the same directory as <SPAN
+CLASS="APPLICATION"
+>usbchmod</SPAN
+>. This Tcl
+script is loaded automatically by the
+<SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> executable. </P
+></LI
+><LI
+><P
+>A number of additional Tcl scripts, for example
+<TT
+CLASS="FILENAME"
+>list.tcl</TT
+> will get installed alongside
+<TT
+CLASS="FILENAME"
+>usbhost.tcl</TT
+>. These correspond to various test
+cases provided as standard. If a given test case is specified on the
+command line and cannot be found relative to the current directory
+then <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> will search the install
+directory for these test cases.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Strictly speaking installing the <TT
+CLASS="FILENAME"
+>usbhost.tcl</TT
+> and
+other Tcl scripts below the <TT
+CLASS="FILENAME"
+>libexec</TT
+>
+directory deviates from standard practice: they are
+architecture-independent data files so should be installed below
+the <TT
+CLASS="FILENAME"
+>share</TT
+> subdirectory. In
+practice the files are sufficiently small that there is no point in
+sharing them, and keeping them below <TT
+CLASS="FILENAME"
+>libexec</TT
+>
+simplifies the host-side software somewhat.</P
+></BLOCKQUOTE
+></DIV
+></LI
+></OL
+><P
+>The <B
+CLASS="COMMAND"
+>usbhost</B
+> should be run only when there is a
+suitable target attached to the USB bus and running the
+<SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> program. It will search
+<TT
+CLASS="FILENAME"
+>/proc/bus/usb/devices</TT
+> for an entry corresponding
+to this program, invoke <SPAN
+CLASS="APPLICATION"
+>usbchmod</SPAN
+> if
+necessary to change the access rights, and then interact with
+<SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> over the USB bus.
+<B
+CLASS="COMMAND"
+>usbhost</B
+> should be invoked as follows:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>$ usbhost [-v|--version] [-h|--help] [-V|--verbose] &lt;test&gt; [&lt;test parameters&gt;]</PRE
+></TD
+></TR
+></TABLE
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>The <TT
+CLASS="PARAMETER"
+><I
+>-v</I
+></TT
+> or <TT
+CLASS="PARAMETER"
+><I
+>--version</I
+></TT
+>
+option will display version information for
+<SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> including the version of the USB
+slave package that was used to build the executable.</P
+></LI
+><LI
+><P
+>The <TT
+CLASS="PARAMETER"
+><I
+>-h</I
+></TT
+> or <TT
+CLASS="PARAMETER"
+><I
+>--help</I
+></TT
+> option
+will display usage information.</P
+></LI
+><LI
+><P
+>The <TT
+CLASS="PARAMETER"
+><I
+>-V</I
+></TT
+> or <TT
+CLASS="PARAMETER"
+><I
+>--verbose</I
+></TT
+>
+option can be used to obtain more information at run-time, for example
+some output for every USB transfer. This option can be repeated
+multiple times to increase the amount of output.</P
+></LI
+><LI
+><P
+>The first argument that does not begin with a hyphen specifies a test
+that should be run, in the form of a Tcl script. For example an
+argument of <TT
+CLASS="PARAMETER"
+><I
+>list.tcl</I
+></TT
+> will cause
+<SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> to look for a script with that
+name, adding a <TT
+CLASS="FILENAME"
+>.tcl</TT
+> suffix if necessarary, and
+run that script. <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> will look in the
+current directory first, then in the install tree for standard test
+scripts provided by the USB slave package.</P
+></LI
+><LI
+><P
+>Some test scripts may want their own parameters, for example a
+duration in seconds. These can be passed on the command line after
+the name of the test, for example
+<B
+CLASS="COMMAND"
+>usbhost&nbsp;mytest&nbsp;60</B
+>. </P
+></LI
+></OL
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN983"
+></A
+><H2
+>Writing a Test</H2
+><P
+>Each test is defined by a Tcl script, running inside an interpreter
+provided by <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+>. In addition to the
+normal Tcl functionality this interpreter provides a number of
+variables and functions related to USB testing. For example there is a
+variable <TT
+CLASS="VARNAME"
+>bulk_in_endpoints</TT
+> that lists all the
+endpoints on the target that can perform bulk IN operations, and a
+related array <TT
+CLASS="VARNAME"
+>bulk_in</TT
+> which contains information
+such as the minimum and maximum packets sizes. There is a function
+<TT
+CLASS="FUNCTION"
+>bulktest</TT
+> which can be used to perform bulk tests
+on a particular endpoint. A simple test script aimed at specific
+hardware could ignore the information variables since it would know
+exactly what USB hardware is available on the target, whereas a
+general-purpose script would use the information to adapt to the
+hardware capabilities.</P
+><P
+>To avoid namespace pollution all USB-related Tcl variables and
+functions live in the <TT
+CLASS="VARNAME"
+>usbtest::</TT
+> namespace.
+Therefore accessing requires either explicitly including the
+namespace any references, for example
+<TT
+CLASS="LITERAL"
+>$usbtest::bulk_in_endpoints</TT
+>, or by using Tcl's
+<TT
+CLASS="FUNCTION"
+>namespace import</TT
+> facility.</P
+><P
+>A very simple test script might look like this:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>usbtest::bulktest 1 out 4000
+usbtest::bulktest 2 in  4000
+if { [usbtest::start 60] } {
+    puts "Test successful"
+} else
+    puts "Test failed"
+    foreach result $usbtest::results {
+        puts $result
+    }
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>This would perform a test run involving 4000 bulk transfers from the
+host to the target's endpoint 1, and concurrently 4000 bulk transfers
+from endpoint 2. Default settings for packet sizes, contents, and
+delays would be used. The actual test would not start running until
+<TT
+CLASS="FILENAME"
+>usbtest</TT
+> is invoked, and it is expected that the
+test would complete within 60 seconds. If any failures occur then they
+are reported.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN998"
+></A
+><H2
+>Available Hardware</H2
+><P
+>Each target-side USB device driver provides information about the
+actual capabilities of the hardware, for example which endpoints are
+available. Strictly speaking it provides information about what is
+actually supported by the device driver, which may be a subset of what
+the hardware is capable of. For example, the hardware may support
+isochronous transfers on a particular endpoint but if there is no
+software support for this in the driver then this endpoint will not be
+listed. When <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> first contacts the
+<SPAN
+CLASS="APPLICATION"
+>usbtarget</SPAN
+> program running on the target
+platform, it obtains this information and makes it available to test
+scripts via Tcl variables:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="VARNAME"
+>bulk_in_endpoints</TT
+></DT
+><DD
+><P
+>    This is a simple list of the endpoints which can support bulk IN
+    transfers. For example if the target-side hardware supports
+    these transfers on endpoints 3 and 5 then the value would be
+    <TT
+CLASS="LITERAL"
+>&quot;3 5&quot;</TT
+> Typical test scripts would
+    iterate over the list using something like:
+  </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  if { 0 != [llength $usbtest::bulk_in_endpoints] } {
+      puts"Bulk IN endpoints: $usbtest::bulk_in_endpoints"
+      foreach endpoint $usbtest:bulk_in_endpoints {
+          &#8230;
+      }
+  }
+  </PRE
+></TD
+></TR
+></TABLE
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>bulk_in()</TT
+></DT
+><DD
+><P
+>  This array holds additional information about each bulk IN endpoint.
+  The array is indexed by two fields, the endpoint number and one of
+  <TT
+CLASS="LITERAL"
+>min_size</TT
+>, <TT
+CLASS="LITERAL"
+>max_size</TT
+>,
+  <TT
+CLASS="LITERAL"
+>max_in_padding</TT
+> and <TT
+CLASS="LITERAL"
+>devtab</TT
+>:
+  </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="LITERAL"
+>min_size</TT
+></DT
+><DD
+><P
+>    This field specifies a lower bound on the size of bulk transfers,
+    and will typically will have a value of 1.
+    </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>    The typical minimum transfer size of a single byte is not strictly
+    speaking correct, since under some circumstances it can make sense
+    to have a transfer size of zero bytes. However current target-side
+    device drivers interpret a request to transfer zero bytes as a way
+    for higher-level code to determine whether or not an endpoint is
+    stalled, so it is not actually possible to perform zero-byte
+    transfers. This issue will be addressed at some future point.
+    </P
+></BLOCKQUOTE
+></DIV
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>max_size</TT
+></DT
+><DD
+><P
+>    This field specifies an upper bound on the size of bulk transfers.
+    Some target-side drivers may be limited to transfers of say
+    0x0FFFF bytes because of hardware limitations. In practice the
+    transfer size is likely to be limited primarily to limit memory
+    consumption of the test code on the target hardware, and to ensure
+    that tests complete reasonably quickly. At the time of writing
+    transfers are limited to 4K.
+    </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>max_in_padding</TT
+></DT
+><DD
+><P
+>    On some hardware it may be necessary for the target-side device
+    driver to send more data than is actually intended. For example
+    the SA11x0 USB hardware cannot perform bulk transfers that are
+    an exact multiple of 64 bytes, instead it must pad such
+    transfers with an extra byte and the host must be ready to
+    accept and discard this byte. The
+    <TT
+CLASS="LITERAL"
+>max_in_padding</TT
+> field indicates the amount of
+    padding that is required. The low-level code inside
+    <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> will use this field
+    automatically, and there is no need for test scripts to adjust
+    packet sizes for padding. The field is provided for
+    informational purposes only.
+    </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>devtab</TT
+></DT
+><DD
+><P
+>    This is a string indicating whether or not the
+    target-side USB device driver supports access to this endpoint
+    via entries in the device table, in other words through
+    conventional calls like <TT
+CLASS="FUNCTION"
+>open</TT
+> and
+    <TT
+CLASS="FUNCTION"
+>write</TT
+>. Some device drivers may only
+    support low-level USB access because typically that is what gets
+    used by USB class-specific packages such as USB-ethernet.
+    An empty string indicates that no devtab entry is available,
+    otherwise it will be something like
+    <TT
+CLASS="LITERAL"
+>&quot;/dev/usbs2w&quot;</TT
+>. 
+    </P
+></DD
+></DL
+></DIV
+><P
+>  Typical test scripts would access this data using something like:
+  </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  foreach endpoint $usbtest:bulk_in_endpoints {
+      puts "Endpoint $endpoint: "
+      puts "    minimum transfer size $usbtest::bulk_in($endpoint,min_size)"
+      puts "    maximum transfer size $usbtest::bulk_in($endpoint,max_size)"
+      if { 0 == $usbtest::bulk_in($endpoint,max_in_padding) } {
+          puts "    no IN padding required"
+      } else {
+          puts "    $usbtest::bulk_in($endpoint,max_in_padding) bytes of IN padding required"
+      }
+      if { "" == $usbtest::bulk_in($endpoint,devtab) } {
+          puts "    no devtab entry provided"
+      } else {
+          puts "    corresponding devtab entry is $usbtest::bulk_in($endpoint,devtab)"
+      }
+  }
+  </PRE
+></TD
+></TR
+></TABLE
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>bulk_out_endpoint</TT
+></DT
+><DD
+><P
+>    This is a simple list of the endpoints which can support bulk OUT
+    transfers. It is analogous to
+    <TT
+CLASS="VARNAME"
+>bulk_in_endpoints</TT
+>.
+  </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>bulk_out()</TT
+></DT
+><DD
+><P
+>  This array holds additional information about each bulk OUT
+  endpoint. It can be accessed in the same way as
+  <TT
+CLASS="VARNAME"
+>bulk_in()</TT
+>, except that there is no
+  <TT
+CLASS="LITERAL"
+>max_in_padding</TT
+> field because that field only
+  makes sense for IN transfers.
+  </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>control()</TT
+></DT
+><DD
+><P
+>  This array holds information about the control endpoint. It contains
+  two fields, <TT
+CLASS="LITERAL"
+>min_size</TT
+> and
+  <TT
+CLASS="LITERAL"
+>max_size</TT
+>. Note that there is no variable
+  <TT
+CLASS="VARNAME"
+>control_endpoints</TT
+> because a USB target always
+  supports a single control endpoint <TT
+CLASS="LITERAL"
+>0</TT
+>. Similarly
+  the <TT
+CLASS="VARNAME"
+>control</TT
+> array does not use an endpoint number
+  as the first index because that would be redundant.
+  </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>isochronous_in_endpoints</TT
+> and
+        <TT
+CLASS="VARNAME"
+>isochronous_in()</TT
+></DT
+><DD
+><P
+>  These variables provide the same information as
+  <TT
+CLASS="VARNAME"
+>bulk_in_endpoints</TT
+> and <TT
+CLASS="VARNAME"
+>bulk_in</TT
+>,
+  but for endpoints that support isochronous IN transfers.
+  </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>isochronous_out_endpoints</TT
+> and
+        <TT
+CLASS="VARNAME"
+>isochronous_out()</TT
+></DT
+><DD
+><P
+>  These variables provide the same information as
+  <TT
+CLASS="VARNAME"
+>bulk_out_endpoints</TT
+> and <TT
+CLASS="VARNAME"
+>bulk_out</TT
+>,
+  but for endpoints that support isochronous OUT transfers.
+  </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>interrupt_in_endpoints</TT
+> and
+        <TT
+CLASS="VARNAME"
+>interrupt_in()</TT
+></DT
+><DD
+><P
+>  These variables provide the same information as
+  <TT
+CLASS="VARNAME"
+>bulk_in_endpoints</TT
+> and <TT
+CLASS="VARNAME"
+>bulk_in</TT
+>,
+  but for endpoints that support interrupt IN transfers.
+  </P
+></DD
+><DT
+><TT
+CLASS="VARNAME"
+>interrupt_out_endpoints</TT
+> and
+        <TT
+CLASS="VARNAME"
+>interrupt_out()</TT
+></DT
+><DD
+><P
+>  These variables provide the same information as
+  <TT
+CLASS="VARNAME"
+>bulk_out_endpoints</TT
+> and <TT
+CLASS="VARNAME"
+>bulk_out</TT
+>,
+  but for endpoints that support interrupt OUT transfers.
+  </P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN1105"
+></A
+><H2
+>Testing Bulk Transfers</H2
+><P
+>The main function for initiating a bulk test is
+<TT
+CLASS="FUNCTION"
+>usbtest::bulktest</TT
+>. This takes three compulsory
+arguments, and can be given a number of additional arguments to
+control the exact behaviour. The compulsory arguments are:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>endpoint</DT
+><DD
+><P
+>    This specifies the endpoint to use. It should correspond to
+    one of the entries in
+    <TT
+CLASS="VARNAME"
+>usbtest::bulk_in_endpoints</TT
+> or
+    <TT
+CLASS="VARNAME"
+>usbtest::bulk_out_endpoints</TT
+>, depending on the
+    transfer direction.
+  </P
+></DD
+><DT
+>direction</DT
+><DD
+><P
+>  This should be either <TT
+CLASS="LITERAL"
+>in</TT
+> or <TT
+CLASS="LITERAL"
+>out</TT
+>.
+  </P
+></DD
+><DT
+>number of transfers</DT
+><DD
+><P
+>  This specifies the number of transfers that should take place. The
+  testing software does not currently support the concept of performing
+  transfers for a given period of time because synchronising this on
+  both the host and a wide range of targets is difficult. However it
+  is relatively easy to work out the approximate time a number of bulk
+  transfers should take place, based on a typical bandwidth of
+  1MB/second and assuming say a 1ms overhead per transfer.
+  Alternatively a test script could perform a small initial run to
+  determine what performance can actually be expected from a given
+  target, and then use this information to run a much longer test.
+  </P
+></DD
+></DL
+></DIV
+><P
+>Additional arguments can be used to control the exact transfer. For
+example a <TT
+CLASS="PARAMETER"
+><I
+>txdelay+</I
+></TT
+> argument can be used to
+slowly increase the delay between transfers. All such arguments involve
+a value which can be passed either as part of the argument itself,
+for example <TT
+CLASS="LITERAL"
+>txdelay+=5</TT
+>, or as a subsequent
+argument, <TT
+CLASS="LITERAL"
+>txdelay+ 5</TT
+>. The possible arguments fall
+into a number of categories: data, I/O mechanism, transmit size,
+receive size, transmit delay, and receive delay.</P
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN1130"
+></A
+><H3
+>Data</H3
+><P
+>An obvious parameter to control is the actual data that gets sent.
+This can be controlled by the argument <TT
+CLASS="PARAMETER"
+><I
+>data</I
+></TT
+>
+which can take one of five values: <TT
+CLASS="LITERAL"
+>none</TT
+>,
+<TT
+CLASS="LITERAL"
+>bytefill</TT
+>, <TT
+CLASS="LITERAL"
+>intfill</TT
+>,
+<TT
+CLASS="LITERAL"
+>byteseq</TT
+> and <TT
+CLASS="LITERAL"
+>wordseq</TT
+>. The default
+value is <TT
+CLASS="LITERAL"
+>none</TT
+>.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="LITERAL"
+>none</TT
+></DT
+><DD
+><P
+>  The transmit code will not attempt to fill the buffer in any way,
+  and the receive code will not check it. The actual data that gets
+  transferred will be whatever happened to be in the buffer before
+  the transfer started.
+  </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>bytefill</TT
+></DT
+><DD
+><P
+>  The entire buffer will be filled with a single byte, as per
+  <TT
+CLASS="FUNCTION"
+>memset</TT
+>. 
+  </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>intfill</TT
+></DT
+><DD
+><P
+>  The buffer will be treated as an array of 32-bit integers, and will
+  be filled with the same integer repeated the appropriate number of
+  times. If the buffer size is not a multiple of four bytes then
+  the last few bytes will be set to 0.
+  </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>byteseq</TT
+></DT
+><DD
+><P
+>  The buffer will be filled with a sequence of bytes, generated by
+  a linear congruential generator. If the first byte in the buffer is
+  filled with the value <TT
+CLASS="LITERAL"
+>x</TT
+>, the next byte will be
+  <TT
+CLASS="LITERAL"
+>(m*x)+i</TT
+>. For example a sequence of slowly
+  incrementing bytes can be achieved by setting both the multiplier
+  and the increment to 1. Alternatively a pseudo-random number
+  sequence can be achieved using values 1103515245 and 12345, as
+  per the standard C library <TT
+CLASS="FUNCTION"
+>rand</TT
+> function.
+  For convenience these two constants are available as Tcl
+  variables <TT
+CLASS="VARNAME"
+>usbtest::MULTIPLIER</TT
+> and
+  <TT
+CLASS="VARNAME"
+>usbtest::INCREMENT</TT
+>.
+  </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>wordseq</TT
+></DT
+><DD
+><P
+>  This acts like <TT
+CLASS="LITERAL"
+>byteseq</TT
+>, except that the buffer is
+  treated as an array of 32-bit integers rather than as an array of
+  bytes. If the buffer is not a multiple of four bytes then the last
+  few bytes will be filled with zeroes.
+  </P
+></DD
+></DL
+></DIV
+><P
+>The above requires three additional parameters
+<TT
+CLASS="PARAMETER"
+><I
+>data1</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>data*</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>data+</I
+></TT
+>. <TT
+CLASS="PARAMETER"
+><I
+>data1</I
+></TT
+> specifies
+the value to be used for byte or word fills, or the first number when
+calculating a sequence. The default value is <TT
+CLASS="LITERAL"
+>0</TT
+>.
+<TT
+CLASS="PARAMETER"
+><I
+>data*</I
+></TT
+> and <TT
+CLASS="PARAMETER"
+><I
+>data+</I
+></TT
+> specify
+the multiplier and increment for a sequence, and have default values
+of <TT
+CLASS="LITERAL"
+>1</TT
+> and <TT
+CLASS="LITERAL"
+>0</TT
+> respectively. For
+example, to perform a bulk transfer of a pseudo-random sequence of
+integers starting with 42 the following code could be used:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>bulktest 2 IN 1000 data=wordseq data1=42 \
+    data* $usbtest::MULTIPLIER data+ $usbtest::INCREMENT</PRE
+></TD
+></TR
+></TABLE
+><P
+>The above parameters define what data gets transferred for the first
+transfer, but a test can involve multiple transfers. The data format
+will be the same for all transfers, but it is possible to adjust the
+current value, the multiplier, and the increment between each
+transfer. This is achieved with parameters <TT
+CLASS="PARAMETER"
+><I
+>data1*</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>data1+</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>data**</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>data*+</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>data+*</I
+></TT
+>, and
+<TT
+CLASS="PARAMETER"
+><I
+>data++</I
+></TT
+>, with default values of 1 for each
+multiplier and 0 for each increment. For example, if the multiplier
+for the first transfer is set to <TT
+CLASS="LITERAL"
+>2</TT
+> using
+<TT
+CLASS="PARAMETER"
+><I
+>data*</I
+></TT
+>, and arguments
+<TT
+CLASS="LITERAL"
+>data**&nbsp;2</TT
+> and <TT
+CLASS="LITERAL"
+>data*+&nbsp;-1</TT
+> are also
+supplied, then the multiplier for subsequent transfers will be
+<TT
+CLASS="LITERAL"
+>3</TT
+>, <TT
+CLASS="LITERAL"
+>5</TT
+>, <TT
+CLASS="LITERAL"
+>9</TT
+>,
+&#8230;.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Currently it is not possible for a test script to send specific data,
+for example a specific sequence of bytes captured by a protocol analyser
+that caused a problem. If the transfer was from host to target then
+the target would have to know the exact sequence of bytes to expect,
+which means transferring data over the USB bus when that data is known
+to have caused problems in the past. Similarly for target to host
+transfers the target would have to know what bytes to send. A possible
+future extension of the USB testing support would allow for bounce
+operations, where a given message is first sent to the target and then
+sent back to the host, with only the host checking that the data was
+returned correctly.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN1200"
+></A
+><H3
+>I/O Mechanism</H3
+><P
+>On the target side USB transfers can happen using either low-level
+USB calls such as <TT
+CLASS="FUNCTION"
+>usbs_start_rx_buffer</TT
+>, or by
+higher-level calls which go through the device table. By default the
+target-side code will use the low-level calls. If it is desired to
+test the higher-level calls instead, for example because those are
+what the application uses, then that can be achieved with an
+argument <TT
+CLASS="PARAMETER"
+><I
+>mechanism=devtab</I
+></TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN1205"
+></A
+><H3
+>Transmit Size</H3
+><P
+>The next set of arguments can be used to control the size of the
+transmitted buffer: <TT
+CLASS="PARAMETER"
+><I
+>txsize1</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>txsize&gt;=</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>txsize&lt;=</I
+></TT
+>
+<TT
+CLASS="PARAMETER"
+><I
+>txsize*</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>txsize/</I
+></TT
+>,
+and <TT
+CLASS="PARAMETER"
+><I
+>txsize+</I
+></TT
+>.</P
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>txsize1</I
+></TT
+> determines the size of the first
+transfer, and has a default value of 32 bytes. The size of the next
+transfer is calculated by first multiplying by the
+<TT
+CLASS="PARAMETER"
+><I
+>txsize*</I
+></TT
+> value, then dividing by the
+<TT
+CLASS="PARAMETER"
+><I
+>txsize/</I
+></TT
+> value, and finally adding the
+<TT
+CLASS="PARAMETER"
+><I
+>txsize+</I
+></TT
+> value. The defaults for these are
+<TT
+CLASS="LITERAL"
+>1</TT
+>, <TT
+CLASS="LITERAL"
+>1</TT
+>, and <TT
+CLASS="LITERAL"
+>0</TT
+>
+respectively, which means that the transfer size will remain
+unchanged. If for example the transfer size should increase by
+approximately 50 per cent each time then suitable values might be
+<TT
+CLASS="LITERAL"
+>txsize*&nbsp;3</TT
+>, <TT
+CLASS="LITERAL"
+>txsize/&nbsp;2</TT
+>,
+and <TT
+CLASS="LITERAL"
+>txsize+&nbsp;1</TT
+>. </P
+><P
+>The <TT
+CLASS="PARAMETER"
+><I
+>txsize&gt;=</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>txsize&lt;=</I
+></TT
+> arguments can be used to impose
+lower and upper bounds on the transfer. By default the
+<TT
+CLASS="LITERAL"
+>min_size</TT
+> and <TT
+CLASS="LITERAL"
+>max_size</TT
+> values
+appropriate for the endpoint will be used. If at any time the
+current size falls outside the bounds then it will be normalized.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN1230"
+></A
+><H3
+>Receive Size</H3
+><P
+>The receive size, in other words the number of bytes that either host
+or target will expect to receive as opposed to the number of bytes
+that actually get sent, can be adjusted using a similar set of
+arguments: <TT
+CLASS="PARAMETER"
+><I
+>rxsize1</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>rxsize&gt;=</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>rxsize&lt;=</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>rxsize*</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>rxsize/</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>rxsize+</I
+></TT
+>. The current receive size will be
+adjusted between transfers just like the transmit size. However when
+communicating over USB it is not a good idea to attempt to receive
+less data than will actually be sent: typically neither the hardware
+nor the software will be able to do anything useful with the excess,
+so there will be problems. Therefore if at any time the calculated
+receive size is less than the transmit size, the actual receive will
+be for the exact number of bytes that will get transmitted. However
+this will not affect the calculations for the next receive size.</P
+><P
+>The default values for <TT
+CLASS="PARAMETER"
+><I
+>rxsize1</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>rxsize*</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>rxsize/</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>rxsize+</I
+></TT
+> are <TT
+CLASS="LITERAL"
+>0</TT
+>,
+<TT
+CLASS="LITERAL"
+>1</TT
+>, <TT
+CLASS="LITERAL"
+>1</TT
+> and <TT
+CLASS="LITERAL"
+>0</TT
+>
+respectively. This means that the calculated receive size will always
+be less than the transmit size, so the receive operation will be for
+the exact number of bytes transmitted. For some USB protocols this
+would not accurately reflect the traffic that will happen. For example
+with USB-ethernet transfer sizes will vary between 16 and 1516 bytes,
+so the receiver will always expect up to 1516 bytes. This can be
+achieved using <TT
+CLASS="LITERAL"
+>rxsize1&nbsp;1516</TT
+>, leaving the
+other parameters at their default values.</P
+><P
+>For target hardware which involves non-zero
+<TT
+CLASS="LITERAL"
+>max_in_padding</TT
+>, on the host side the padding will
+be added automatically to the receive size if necessary.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN1251"
+></A
+><H3
+>Transmit and Receive Delays</H3
+><P
+>Typically during the testing there will be some minor delays between
+transfers on both host and target. Some of these delays will be caused
+by timeslicing, for example another process running on the host, or a
+concurrent test thread running inside the target. Other delays will be
+caused by the USB bus itself, for example activity from another device
+on the bus. However it is desirable that test cases be allowed to
+inject additional and somewhat more controlled delays into the system,
+for example to make sure that the target behaves correctly even if the
+target is not yet ready to receive data from the host.</P
+><P
+>The transmit delay is controlled by six parameters:
+<TT
+CLASS="PARAMETER"
+><I
+>txdelay1</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>txdelay*</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>txdelay/</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>txdelay+</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>txdelay&gt;=</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>txdelay&lt;=</I
+></TT
+>. The default values for these are
+<TT
+CLASS="LITERAL"
+>0</TT
+>, <TT
+CLASS="LITERAL"
+>1</TT
+>, <TT
+CLASS="LITERAL"
+>1</TT
+>,
+<TT
+CLASS="LITERAL"
+>0</TT
+>, <TT
+CLASS="LITERAL"
+>0</TT
+> and
+<TT
+CLASS="LITERAL"
+>1000000000</TT
+> respectively, so that by default
+transmits will happen as quickly as possible. Delays are measured in
+nanoseconds, so a value of <TT
+CLASS="LITERAL"
+>1000000</TT
+> would correspond
+to a delay of 0.001 seconds or one millisecond. By default delays have
+an upper bound of one second. Between transfers the transmit delay is
+updated in much the same was as the transfer sizes.</P
+><P
+>The receive delay is controlled by a similar set of six parameters:
+<TT
+CLASS="PARAMETER"
+><I
+>rxdelay1</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>rxdelay*</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>rxdelay/</I
+></TT
+>, <TT
+CLASS="PARAMETER"
+><I
+>rxdelay+</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>rxdelay&gt;=</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>rxdelay&lt;=</I
+></TT
+>. The default values for these are
+the same as for transmit delays.</P
+><P
+>The transmit delay is used on the side which sends data over the USB
+bus, so for a bulk IN transfer it is the target that sends data and
+hence sleeps for the specified transmit delay, while the host receives
+data sleeps for the receive delay. For an OUT transfer the positions
+are reversed.</P
+><P
+>It should be noted that although the delays are measured in
+nanoseconds, the actual delays will be much less precise and are
+likely to be of the order of milliseconds. The exact details will
+depend on the kernel clock speed.</P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN1277"
+></A
+><H2
+>Other Types of Transfer</H2
+><P
+>Support for testing other types of USB traffic such as isochronous
+transfers is not yet implemented.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN1280"
+></A
+><H2
+>Starting a Test and Collecting Results</H2
+><P
+>A USB test script should prepare one or more transfers using
+appropriate functions such as <TT
+CLASS="FUNCTION"
+>usbtest::bulktest</TT
+>.
+Once all the individual tests have been prepared they can be started
+by a call to <TT
+CLASS="FUNCTION"
+>usbtest::start</TT
+>. This takes a single
+argument, a maximum duration measured in seconds. If all transfers
+have not been completed in the specified time then any remaining
+transfers will be aborted.</P
+><P
+><TT
+CLASS="FUNCTION"
+>usbtest::start</TT
+> will return <TT
+CLASS="LITERAL"
+>1</TT
+>
+if all the tests have succeeded, or <TT
+CLASS="LITERAL"
+>0</TT
+> if any of
+them have failed. More detailed reports will be stored in the
+Tcl variable <TT
+CLASS="VARNAME"
+>usbtests::results</TT
+>, which will be a
+list of string messages.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN1290"
+></A
+><H2
+>Existing Test Scripts</H2
+><P
+>A number of test scripts are provided as standard. These are located
+in the <TT
+CLASS="FILENAME"
+>host</TT
+> subdirectory of the
+common USB slave package, and will be installed as part of the process
+of building the host-side software. When a script is specified on the
+command line <SPAN
+CLASS="APPLICATION"
+>usbhost</SPAN
+> will first search for
+it in the current directory, then in the install tree. Standard
+test scripts include the following:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>list.tcl</TT
+></DT
+><DD
+><P
+>      This script simply displays information about the capabilities
+      of the target platform, as provided by the target-side USB
+      device driver. It can help with tracking down problems, but its
+      primary purpose is to let users check that everything is working
+      correctly: if running <B
+CLASS="COMMAND"
+>usbhost list.tcl</B
+>
+      outputs sensible information then the user knows that the
+      target side is running correctly and that communication between
+      host and target is possible.
+    </P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>verbose.tcl</TT
+></DT
+><DD
+><P
+>      The target-side code can provide information about what
+      is happening while tests are prepared and run. This facility
+      should not normally be used since the extra I/O involved will
+      significantly affect the behaviour of the system, but in some
+      circumstances it may prove useful. Since an eCos application
+      cannot easily be given command-line arguments the target-side
+      verbosity level cannot be controlled using
+      <TT
+CLASS="PARAMETER"
+><I
+>-V</I
+></TT
+> or <TT
+CLASS="PARAMETER"
+><I
+>--verbose</I
+></TT
+>
+      options. Instead it can be controlled from inside
+      <SPAN
+CLASS="APPLICATION"
+>gdb</SPAN
+> by changing the integer
+      variable <TT
+CLASS="VARNAME"
+>verbose</TT
+>. Alternatively it can
+      be manipulated by running the test script
+      <TT
+CLASS="FILENAME"
+>verbose.tcl</TT
+>. This script takes a single
+      argument, the desired verbosity level, which should be a small
+      integer. For example, to disable target-side run-time logging
+      the command <B
+CLASS="COMMAND"
+>usbhost&nbsp;verbose&nbsp;0</B
+> can
+      be used.
+    </P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN1313"
+></A
+><H2
+>Possible Problems</H2
+><P
+>If all transfers succeed within the specified time then both host and
+target remain in synch and further tests can be run without problem.
+However, if at any time a failure occurs then things get more
+complicated. For example, if the current test involves a series of
+bulk OUT transfers and the target detects that for one of these
+transfers it received less data than was expected then the test has
+failed, and the target will stop accepting data on this endpoint.
+However the host-side software may not have detected anything wrong
+and is now blocked trying to send the next lot of data.</P
+><P
+>The test code goes to considerable effort to recover from problems
+such as these. On the host-side separate threads are used for
+concurrent transfers, and on the target-side appropriate asynchronous
+I/O mechanisms are used. In addition there is a control thread on the
+host that checks the state of all the main host-side threads, and the
+state of the target using private control messages. If it discovers
+that one side has stopped sending or receiving data because of an
+error and the other side is blocked as a result, it will set certain
+flags and then cause one additional transfer to take place. That
+additional transfer will have the effect of unblocking the other side,
+which then discovers that an error has occurred by checking the
+appropriate flags. In this way both host and target should end up back
+in synch, and it is possible to move on to the next set of tests.</P
+><P
+>However, the above assumes that the testing has not triggered any
+serious hardware conditions. If instead the target-side hardware has
+been left in some strange state so that, for example, it will no
+longer raise an interrupt for traffic on a particular endpoint then
+recovery is not currently possible, and the testing software will just
+hang.</P
+><P
+>A possible future enhancement to the testing software would allow the
+host-side to raise a USB reset signal whenever a failure occurs, in
+the hope that this would clear any remaining problems within the
+target-side USB hardware.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-writing.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Writing a USB Device Driver</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

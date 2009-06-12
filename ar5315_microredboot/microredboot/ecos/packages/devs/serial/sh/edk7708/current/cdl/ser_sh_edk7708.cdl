@@ -1,0 +1,131 @@
+# ====================================================================
+#
+#      ser_sh_edk7708.cdl
+#
+#      eCos serial SH/EDK7708 configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Contributors:
+# Date:           1999-07-08
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+
+cdl_package CYGPKG_IO_SERIAL_SH_EDK7708 {
+    display       "SH3 EDK7708 serial device drivers"
+
+    parent        CYGPKG_IO_SERIAL_DEVICES
+    active_if     CYGPKG_IO_SERIAL
+    active_if     CYGPKG_HAL_SH_EDK7708
+
+    requires      CYGPKG_ERROR
+    include_dir   cyg/io
+
+    description   "
+        This option enables the serial device drivers for the
+        Hitachi SH3 EDK7708 board, based on the generic SH SCI driver."
+
+    # FIXME: This really belongs in the SH_SCI package
+    cdl_interface CYGINT_IO_SERIAL_SH_SCI_REQUIRED {
+        display   "SH SCI driver required"
+    }
+
+    define_proc {
+        puts $::cdl_system_header "/***** serial driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_IO_SERIAL_SH_SCI_INL <cyg/io/sh_sh3_edk7708_sci.inl>"
+        puts $::cdl_system_header "#define CYGDAT_IO_SERIAL_SH_SCI_CFG <pkgconf/io_serial_sh_edk7708.h>"
+        puts $::cdl_system_header "/*****  serial driver proc output end  *****/"
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_SH_EDK7708_SERIAL1 {
+        display       "SH EDK7708 serial 1 driver (SCI)"
+        flavor        bool
+        default_value 1
+        description   "
+            This option includes the serial device driver for the SCI
+            port."
+
+        implements CYGINT_IO_SERIAL_SH_SCI_REQUIRED
+
+        cdl_option CYGDAT_IO_SERIAL_SH_EDK7708_SERIAL1_NAME {
+            display       "Device name for SH3 EDK7708 SCI"
+            flavor        data
+            default_value {"\"/dev/ser1\""}
+            description   "
+                This option specifies the device name for the SCI port."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_SH_EDK7708_SERIAL1_BAUD {
+            display       "Baud rate for the SH SCI driver"
+            flavor        data
+            legal_values  { 4800 9600 14400 19200 38400 57600 115200 }
+            default_value 38400
+            description   "
+                This option specifies the default baud rate (speed)
+                for the SCI port."
+        }
+
+        cdl_option CYGNUM_IO_SERIAL_SH_EDK7708_SERIAL1_BUFSIZE {
+            display       "Buffer size for the SH SCI driver"
+            flavor        data
+            legal_values  0 to 8192
+            default_value 128
+            description   "
+                This option specifies the size of the internal buffers
+                used for the SCI port."
+        }
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_SH_EDK7708_TESTING {
+        display    "Testing parameters"
+        flavor     bool
+        calculated 1
+        no_define
+        active_if  CYGPKG_IO_SERIAL_SH_EDK7708_SERIAL1
+
+        define_proc {
+            puts $::cdl_header "#define CYGPRI_SER_TEST_CRASH_ID \"sh-edk7708\""
+            puts $::cdl_header "#define CYGPRI_SER_TEST_SER_DEV  CYGDAT_IO_SERIAL_SH_EDK7708_SERIAL1_NAME"
+            puts $::cdl_header "#define CYGPRI_SER_TEST_TTY_DEV  \"/dev/tty1\""
+        }
+    }
+}
+# EOF ser_sh_edk7708.cdl

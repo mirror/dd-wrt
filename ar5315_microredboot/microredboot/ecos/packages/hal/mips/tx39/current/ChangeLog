@@ -1,0 +1,235 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_tx39.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/mips_tx39.ld: 
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2003-04-09  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/mips_tx39.ld:
+        Fix .gnulinkonce.s -> .gnu.linkonce.s typo.
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_cache.h (HAL_DCACHE_INVALIDATE_ALL): Move volatile
+	keyword before type.
+
+2000-08-03  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/mips_tx39.ld: Revert below change. It was correct before.
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mips_tx39.ld:
+	Added underscore to _stext and _etext.
+	Switched to new table definition mechanism.
+
+2000-06-06  Jesper Skov  <jskov@redhat.com>
+
+	* include/var_intr.h (HAL_INTERRUPT_ACKNOWLEDGE,
+	HAL_INTERRUPT_CONFIGURE): Change the right bits. 
+	(Haruki	Kashiwaya)
+
+2000-04-06  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/mips_tx39.ld: Define __CTOR_LIST__, __CTOR_END__, __DTOR_LIST__,
+	__DTOR_END__ regardless, for compatibility with old toolchains
+
+2000-04-04  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/mips_tx39.ld: Make sure some potentially empty sections are
+	output.	Replace __rom_data_start which was accidentally removed.
+	Split lit section into lit8 and lit4.
+
+2000-03-16  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/mips_tx39.ld: Update from latest "mips-tx39-elf-ld --verbose"
+	output so that it properly reflects what the tools expect
+
+2000-02-23  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/var_intr.h: CYG_HAL_MIPS_SIM -> CYGPKG_HAL_MIPS_SIM
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_mips_tx39.cdl: removed fix me.
+
+2000-01-28  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/mips_tx39.ld: Add support for network package.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/var_arch.h: Rename CYG_HAL_USE_ROM_MONITOR_CYGMON ->
+	CYGSEM_HAL_USE_ROM_MONITOR_CygMon
+
+	* src/hal_diag.c: Likewise. Also CYG_HAL_USE_ROM_MONITOR -> 
+	CYGSEM_HAL_USE_ROM_MONITOR throughout
+
+	* include/pkgconf/hal_mips_tx39.h: Fix typo
+
+	* cdl/hal_mips_tx39.cdl: Some cosmetic layout changes and fixed typos
+	Ensure we "puts" to correct CDL header
+	Add CYGHWR_HAL_MIPS_TX3904_TRR_REQUIRES_SYNC which for some reason
+	wasn't brought over from ~CDL
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips_tx39.cdl:
+
+	Use the <PACKAGE> token in custom rules.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips_tx39.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal_mips_tx39.cdl:
+
+	Output custom rule dependency information to .deps files in
+	the current directory.
+
+	Dispense with the need to create a 'src' sub-directory.
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_mips_tx39.cdl: Added.
+
+1999-10-26  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc: Added implementations of hal_intc_translate
+	macro.
+
+1999-10-06  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/PKGconf.mak: Don't create extras.o here any more
+
+1999-10-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal_mips_tx39.h: Added define of
+	CYGPKG_HAL_MIPS_MSBFIRST.
+
+1999-09-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/hal_diag.c: Only avoid SERIAL0 if CYG_HAL_USE_ROM_MONITOR_CYGMON
+	since we default to assuming Cygmon
+
+	* include/variant.inc (hal_memc_init): Don't make conditional on
+	ROM startup - makes sense anyway so that users can change amount
+	of memory in system
+	(hal_memc_init_dram): Likewise
+
+	* include/var_arch.h (HAL_DIAG_IRQ_CHECK): Give extra return parameter
+	rather than relying on this being an expression which evaluates
+	
+1999-09-16  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	This set of changes with matching ones in arch comes from Mark
+	Salter's work to make jmr3904 CygMon talk Ethernet.
+
+	* include/variant.inc: Do not re-initialize and disable all
+	interrupts if RAM start, this stops networked CygMon working.
+	Likewise don't re-init memory.
+
+	* src/hal_diag.c: Add alternate hal_diag...() routines that talk
+	via CygMon so that ethernet debugging works.
+
+	* include/var_arch.h: If CYG_HAL_USE_ROM_MONITOR, export macro for
+	polling unknown interrupts in CygMon, HAL_DIAG_IRQ_CHECK.
+ 	
+1999-08-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/variant.inc: Added clock-speed dependent values for the
+	DRAM DWR0 register. Values as suggested by Toshiba in PR20094.
+	Added improved work-around for TOE problem suggested by Toshiba
+	in PR20233.
+	Some code rearranged to eliminate assembler warning messages.
+	Some general tidying.
+
+	* include/var_cache.h (HAL_ICACHE_DISABLE): Added jump to aligned
+	label after disable to avoid potential race with cache. Suggested
+	by Toshiba in PR20091.
+
+1999-06-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/var_intr.h: Added TX39 specific variant of
+	HAL_CLOCK_LATENCY().
+
+	* include/var_cache.h: Added TX39 specific implementation of
+	HAL_ICACHE_INVALIDATE_ALL().
+
+1999-06-16  Jesper Skov  <jskov@cygnus.co.uk>
+        CR 100804 workaround
+	* src/mips_tx39.ld: Suppress .mdebug in the final output.
+
+1999-06-02  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mips_tx39.ld: 
+	Add .ctors and .dtors sections as required by new compilers, but
+	keep around old SORT(CONSTRUCTORS) for use by old compilers.
+
+1999-05-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Tidied away defunct code
+	and made use of HAL support for user break detection and delivery.
+
+1999-05-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/var_misc.c: Added definition of hal_interrupt_level[].
+
+	* include/variant.inc:
+	* src/variant.S:
+	Added these files. They contain stuff that was previously in the
+	jmr3904 platform files.
+
+	* src/PKGconf.mak (COMPILE): Added variant.S
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	Imported whole directory tree into main trunk of repository.
+	
+1999-05-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/imp_cache.h
+	* include/imp_intr.h
+	* include/impl.h
+	* src/imp_misc.c: 	
+	* include/var_cache.h
+	* include/var_intr.h
+	* include/variant.inc
+	* src/var_misc.c: 
+	Changed references to "imp" and "implementation" to "var" and
+	"variant" respectively.
+
+	* include/var_arch.h
+	File added.
+	
+	* include/pkgconf/hal_tx39.h: 
+	* include/pkgconf/hal_mips_tx39.h:
+	File hal_tx39.h renamed to match name synthesized by pkgconf.tcl.
+
+1999-04-22  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/imp_cache.h: Move cache enables and disables here from
+	hal_cache.h since they are tx39 specific.
+
+1999-04-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/imp_misc.c: Added this file to contain
+	hal_implementation_init().
+
+	* src/PKGconf.mak (COMPILE): Added imp_misc.c.
+
+1999-04-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal_tx39.h: Removed superfluous variant level
+	from configuration data.
+

@@ -1,0 +1,486 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Power Management Information</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Power Management Support"
+HREF="services-power.html"><LINK
+REL="PREVIOUS"
+TITLE="Introduction"
+HREF="power-intro.html"><LINK
+REL="NEXT"
+TITLE="Changing Power Modes"
+HREF="power-change.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Power Management Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="power-intro.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="power-change.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="POWER-INFO"
+>Power Management Information</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN97"
+></A
+><H2
+>Name</H2
+>Obtaining Power Management Information&nbsp;--&nbsp;finding out about the various power controllers in the system</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN100"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN101"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/power/power.h&gt;
+
+extern PowerController __POWER__[], __POWER_END__;
+extern PowerController power_controller_cpu;
+extern cyg_handle_t    power_thread_handle;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    PowerMode power_get_mode
+  </CODE
+>(void);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    PowerMode power_get_desired_mode
+  </CODE
+>(void);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    PowerMode power_get_controller_mode
+  </CODE
+>(    PowerController* controller
+  );</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    PowerMode power_get_controller_desired_mode
+  </CODE
+>(    PowerController* controller
+  );</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    const char* power_get_controller_id
+  </CODE
+>(    PowerController* controller
+  );</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INFO-ACCESS"
+></A
+><H2
+>Accessing Power Controllers</H2
+><P
+>All the power controllers in a system are held in a table, filled in
+at link-time. The symbols <TT
+CLASS="VARNAME"
+>__POWER__</TT
+> and
+<TT
+CLASS="VARNAME"
+>__POWER_END</TT
+> can be used to iterate through this
+table, for example:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>PowerController* controller;
+for (controller  = &#38;(__POWER__[0]);
+     controller != &#38;(__POWER_END__);
+     controller++) {
+
+     &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>Each controller has an associated priority, controlling the order in
+which they appear in the table. Typically a software-only component
+such as a TCP/IP stack would use a small number for the priority, so
+that it appears near the start of the table, whereas a device driver
+would be nearer the back of the table. When switching to a
+lower-powered mode the power management package will iterate through
+this table from front to back, thus ensuring that for example the
+TCP/IP stack gets a chance to shut down before the underlying ethernet
+or other hardware that the stack depends on. Similarly when switching
+to a higher-powered mode the power management package will iterate
+through this table from back to front.</P
+><P
+>In most systems there will be one special controller,
+<TT
+CLASS="VARNAME"
+>power_controller_cpu</TT
+>, which should be provided by
+one of the architectural, variant or platform HAL packages. This
+controller will always be the last entry in the table. It is
+responsible for the final power down operation when switching to
+<SPAN
+CLASS="TYPE"
+>off</SPAN
+> mode. Other packages such as device drivers may or
+may not declare variable identifiers for their power controllers,
+allowing those controllers to be accessed by name as well as by their
+entries in the global table.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INFO-GLOBAL"
+></A
+><H2
+>Global Power Modes</H2
+><P
+>The function <TT
+CLASS="FUNCTION"
+>power_get_mode</TT
+> can be called at any
+time to determine the current power mode for the system as a whole.
+The return value will be one of <TT
+CLASS="LITERAL"
+>PowerMode_Active</TT
+>,
+<TT
+CLASS="LITERAL"
+>PowerMode_Idle</TT
+>, <TT
+CLASS="LITERAL"
+>PowerMode_Sleep</TT
+>
+or <TT
+CLASS="LITERAL"
+>PowerMode_Off</TT
+>. In normal circumstances it is
+unlikely that <TT
+CLASS="LITERAL"
+>PowerMode_Off</TT
+> would be returned since
+that mode generally means that the cpu is no longer running.</P
+><P
+>The function <TT
+CLASS="FUNCTION"
+>power_get_desired_mode</TT
+> returns the
+power mode that the system should be running at. Most of the time this
+will be the same value as returned by
+<TT
+CLASS="FUNCTION"
+>power_get_mode</TT
+>. However a different value may be
+returned when in the middle of changing power modes. For example, if
+the current thread runs at a higher priority than the power management
+thread then the latter may have been pre-empted in the middle of a
+mode change: <TT
+CLASS="FUNCTION"
+>power_get_mode</TT
+> will return the mode
+the system was running at before the mode change started, and
+<TT
+CLASS="FUNCTION"
+>power_get_desired_mode</TT
+> will return the mode the
+system should end up in when the mode change completes, barring
+further calls to <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INFO-INDIVIDUAL"
+></A
+><H2
+>Individual Controller Power Modes</H2
+><P
+>The power management package keeps track of the current and desired
+modes for each power controller, as well as the modes for the system as
+a whole. The function <TT
+CLASS="FUNCTION"
+>power_get_controller_mode</TT
+>
+takes a single argument, a pointer to a power controller, and returns
+the power mode that controller is currently running at. Similarly
+<TT
+CLASS="FUNCTION"
+>power_get_controller_desired_mode</TT
+> returns the
+power mode that controller should be running at. Most of the time the
+current and desired modes for a given controller will be the same, and
+will also be the same as the global power mode. However if the power
+management thread is preeempted in the middle of a mode change then
+some of the controllers will have been updated to the desired global
+mode, whereas others will still be at the old mode. The power
+management package also provides functionality for manipulating
+<A
+HREF="power-change.html#POWER-CHANGE-CONTROLLER"
+>individual controllers</A
+>, and for <A
+HREF="power-attached.html"
+>detaching</A
+> controllers from
+global mode changes.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INFO-IDS"
+></A
+><H2
+>Power Controller Identification</H2
+><P
+>In some scenarios the power management package will run completely
+automated, and there is no need to identify individual power
+controllers. Any form of identification such as a string
+description would serve no purpose, but would still consume memory in
+the final system. In other scenarios it may be very desirable to
+provide some means of identification. For example, while still
+debugging it may be useful to see a simple string when printing the
+contents of a power controller structure. Alternatively, if the
+application is expected to provide some sort of user interface that
+gives control over which parts of the system are enabled or disabled,
+a string identifier for each controller would be useful. To cope with
+these scenarios the power management package provides a configuration
+option <TT
+CLASS="VARNAME"
+>CYGIMP_POWER_PROVIDE_STRINGS</TT
+>. When enabled,
+each power controller will contain a pointer to a constant string
+which can be accessed via a function
+<TT
+CLASS="FUNCTION"
+>power_get_controller_id</TT
+>. When disabled the system
+will not contain these strings, and the function will not be provided.
+The following code illustrates how to use this function.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;stdio.h&gt;
+#include &lt;pkgconf/system.h&gt;
+#ifndef CYGPKG_POWER
+# error The power management package is not present.
+#endif
+#include &lt;pkgconf/power.h&gt;
+#ifndef CYGIMP_POWER_PROVIDE_STRINGS
+# error Power controller identifiers are not available.
+#endif
+#include &lt;cyg/power/power.h&gt;
+
+static const char*
+mode_to_string(PowerMode mode)
+{
+    const char* result;
+    switch(mode) {
+      case PowerMode_Active : result = "active"; break;
+      case PowerMode_Idle   : result = "idle"; break;
+      case PowerMode_Sleep  : result = "sleep"; break;
+      case PowerMode_Off    : result = "off"; break;
+      default               : result = "&lt;unknown&gt;"; break;
+    }
+    return result;
+}
+
+int
+main(int argc, char** argv)
+{
+    PowerController* controller;
+
+    for (controller = &amp;(__POWER__[0]);
+         controller != &amp;(__POWER_END__);
+         controller++) {
+        printf("Controller @ %p: %s, %s\n", controller,
+               power_get_controller_id(controller),
+               mode_to_string(power_get_controller_mode(controller)));
+    }
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-INFO-THREAD"
+></A
+><H2
+>The Power Management Thread</H2
+><P
+>If the power management package is configured to use a separate thread
+then a handle for that thread is made available to higher-level code
+via the variable <TT
+CLASS="VARNAME"
+>power_thread_handle</TT
+>. This handle
+can be used for a variety of purposes, including manipulating that
+thread's priority.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="power-intro.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="services-power.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="power-change.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Introduction</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Changing Power Modes</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

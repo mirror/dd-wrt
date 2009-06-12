@@ -1,0 +1,1 @@
+#define RAM_SIZE 0x2000000

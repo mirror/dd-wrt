@@ -1,0 +1,225 @@
+# ====================================================================
+#
+#      hal_powerpc_ppc40x.cdl
+#
+#      PowerPC/PPC40x variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002, 2003, 2004 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Contributors:   gthomas
+# Date:           2000-08-27
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_POWERPC_PPC40x {
+    display       "PowerPC 40x variant HAL"
+    parent        CYGPKG_HAL_POWERPC
+    hardware
+    include_dir   cyg/hal
+    define_header hal_powerpc_ppc40x.h
+    description   "
+           The PowerPC 40x variant HAL package provides generic support
+           for this processor variant. It is also necessary to
+           select a specific target platform HAL package."
+
+    # Note: This should be sub-variant specific to reduce memory use.
+    define_proc {
+        puts $cdl_header "#define CYGHWR_HAL_VSR_TABLE (CYGHWR_HAL_POWERPC_VECTOR_BASE + 0x3000)"
+        puts $cdl_header "#define CYGHWR_HAL_VIRTUAL_VECTOR_TABLE (CYGHWR_HAL_VSR_TABLE + 0x200)"
+        puts $::cdl_system_header "#define CYGBLD_HAL_VAR_IO_H   <cyg/hal/var_io.h>"
+    }
+
+    cdl_component CYGHWR_HAL_POWERPC_PPC4XX {
+        display       "PowerPC 4xx microprocessor family"
+        flavor        data
+	legal_values  { "403" "405" "405GP" }
+        default_value { "405GP" }
+        implements    CYGINT_HAL_POWERPC_VARIANT
+        description "
+            The PowerPC 4xx microprocessor family. These are embedded parts 
+            that in addition to the PowerPC processor core have built in peripherals
+            such as memory controllers, DMA controllers, serial ports and
+            timers/counters."               
+
+        cdl_option CYGHWR_HAL_POWERPC_FPU {
+            display    "Variant FPU support"
+            calculated 0
+        }
+
+        cdl_option CYGPKG_HAL_POWERPC_MSBFIRST {
+            display    "CPU Variant big-endian"
+            calculated 1
+        }
+
+    }
+
+    cdl_component CYGHWR_HAL_POWERPC_PPC405_PCI {
+        display       "PCI support"
+        requires      { (CYGHWR_HAL_POWERPC_PPC4XX == "405GP") }
+        active_if     CYGPKG_IO_PCI
+        description   "Variant PCI support - only for 405GP"
+        default_value 1
+        compile       ppc405_pci.c
+
+        cdl_option CYGSEM_HAL_POWERPC_PPC405_PCI_SHOW_BUS {
+            display       "Display PCI Bus devices"
+            default_value 1
+        }
+    }
+
+    cdl_component CYGHWR_HAL_POWERPC_PPC405_IO {
+        display       "Misc I/O support, including diagnostic serial ports"
+        active_if     { (CYGHWR_HAL_POWERPC_PPC4XX == "405GP") }
+        description   "Variant I/O support - only for 405GP"
+        default_value 1
+        compile       hal_diag.c 
+
+       cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS {
+           display      "Number of communication channels on the board"
+           flavor       data
+           default_value 2+CYGNUM_HAL_PLF_VIRTUAL_VECTOR_COMM_CHANNELS
+       }
+    
+       cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL {
+           display          "Debug serial port"
+           active_if        CYGPRI_HAL_VIRTUAL_VECTOR_DEBUG_CHANNEL_CONFIGURABLE
+           flavor data
+           legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+           default_value    0
+           description      "
+               The PPC405GP supports multiple serial ports. Additionally,
+               a platform may define other 'console' devices. This option
+               chooses which port will be used to connect to a host
+               running GDB."
+        }
+    
+        cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL {
+            display          "Diagnostic serial port"
+            active_if        CYGPRI_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_CONFIGURABLE
+            flavor data
+            legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+            default_value    0
+            description      "
+               This option chooses which console port will be used for diagnostic output."
+        }
+    
+        cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD {
+            display       "Baud rate for the HAL diagnostic port"
+            flavor        data
+            legal_values  { 50 75 110 "134_5" 150 200 300 600 1200 1800 2400 3600
+                          4800 7200 9600 14400 19200 38400 57600 115200 230400
+            }
+            default_value 38400
+            description   "
+                This option specifies the default baud rate (speed) for the 
+                HAL diagnostic port."
+        }
+    
+        # This option is only used when USE_ROM_MONITOR is enabled - but
+        # it cannot be a sub-option to that option, since the code uses the
+        # definition in a preprocessor comparison.
+        cdl_option CYGNUM_HAL_VIRTUAL_VECTOR_ROM_DEBUG_CHANNEL {
+            display          "Debug serial port used by ROM monitor"
+            flavor data
+            legal_values     0 to CYGNUM_HAL_VIRTUAL_VECTOR_COMM_CHANNELS-1
+            default_value    0
+            description      "
+                This option tells the code which console port is in use by 
+                the ROM monitor. It should only be necessary to change this
+                option if a non-standard configurated eCos GDB stub is
+                used."
+        }
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        description   "
+            Period is busclock/100."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            calculated    1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            calculated    100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            calculated    { (((CYGHWR_HAL_POWERPC_CPU_SPEED*1000000))/CYGNUM_HAL_RTC_DENOMINATOR) }
+        }
+    }
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_powerpc.h>"
+    }
+
+
+    cdl_interface CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED {
+        display       "ROM monitor configuration is unsupported"
+        no_define
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        bool
+        default_value { (CYG_HAL_STARTUP == "RAM" &&
+                        !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS &&
+                        !CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED &&
+                        !CYGSEM_HAL_POWERPC_COPY_VECTORS) ? 1 : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        requires      ! CYGSEM_HAL_POWERPC_COPY_VECTORS
+        requires      ! CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires      ! CYGINT_HAL_USE_ROM_MONITOR_UNSUPPORTED
+        description   "
+            Allow coexistence with ROM monitor (RedBoot or GDB stubs) by
+            only initializing interrupt vectors on startup, thus leaving
+            exception handling to the ROM monitor."
+    }
+
+    compile       var_intr.c var_misc.c variant.S
+}

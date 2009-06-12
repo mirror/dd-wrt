@@ -1,0 +1,101 @@
+*) Fix ldd to not multiply list libs
+*) Check cris architecture
+
+Erik's TODO list for the next release:
+
+    *) When options are disabled, also disable them in the
+	include files as well.
+    *) Make all configured out symbols optionally add a linker warning saying
+	"Hey!  You are trying to use a function that you have configured out.  
+	If you really want to use this function, enable CONFIG_FOO and rebuild
+	uClibc".
+    *) Make all small objects (>~50 bytes) into either inlines or
+	into a static library
+    *) Document all differences between the feature set of uClibc 
+	and glibc.
+    *) Fix regex so it isn't so stinking big
+    *) Fix glob so it isn't so stinking big
+    *)  Fix the dlopen() bug with handling of symbols that are already
+	resolved.  Seems if it is already resolved it ignores them rather than
+	resolving the new symbol and overriding.
+    *) Adapt uClibc to use Linux 2.5.x pthreads
+    *) Remove all use of kernel headers (i.e. copy the needed bits
+	to completely specify the per-arch kernel ABI).
+    *) Fix x86 profiling.  It currently only works when static + PIC...
+
+
+-----------------------------------------------------------------------------
+Manuel's todo:
+
+  1) Little things that need fixing:
+  ----------------------------------
+  a) Fix bug in *printf: outdigit precison bug
+  b) Check that gnu/bsd extension members tm_gmtoff and tm_zone in struct tm
+     are respected where they should be.
+  c) Implement the obstack printf funcs for glibc compat.
+  d) Implement glibc 'a' flag for scanf string conversions.
+  e) Allow use of the older non-table-based ctype functions when using
+     stub locale support. (smaller)
+  
+  2) Additional str{f|p}time issues.
+  ----------------------------------
+  a) Spacing issue wrt strptime.
+  b) Support locale specific alternate digits.  (data is in place)
+  c) Support locale era in year designations.   (data is in place)
+  d) Deal with mb format string issues in strftime.
+  e) Implement wcsftime.
+  
+  3) Other locale issues (my implementation):
+  -------------------------------------------
+  a) Do a little more clean up of ctype and wctype.
+  b) Rework of the locale data organization to make using locales reasonable
+     when staticly linking.  (mmap)
+  c) Rewrite the locale data generation tools to process the text specifications
+     rather than relying on glibc.
+  d) Adapt regex lib to use my collation data and add the necessary collating
+     item tables to support SUSv3 required features.
+  e) transliteration of unsupported wchars in 8-bit locales (like glibc).
+  f) Support ISO/IEC 14652 draft locale extensions (LC_PAPER, etc).
+  g) Implement strfrom.
+  h) Shift-state codeset locale support?
+
+  4) Misc:
+  --------
+  a) Port uClibc to other OSs (including elks), or even bare metal (libgloss).
+  b) Write a space-efficient gettext substitute, to avoid storing large amounts
+     of redundant data.
+
+
+Other stuff:
+
+Move the target-specific sysconf.c generator to extra (as it needs to be
+	run on the target) and fix libc/unistd/Makefile.
+
+-----------------------------------------------------------------------------
+ds's list:
+
+Search for string literals that are not in the .rodata section.  (Varies
+by architecture and gcc version.)
+
+man pages for binaries
+
+check compiling without FP support -- are FP instructions still generated?
+Needs a uClibc_config.h entry dependent on HAS_FLOATING_POINT.
+
+Why does ld.so search /usr/powerpc-uclibc/lib before LD_LIBRARY_PATH?
+
+-----------------------------------------------------------------------------
+
+Any takers?
+
+*) Documentation
+	- List all differences between the feature set of uClibc and glibc.
+*) run 'nm -D --size-sort -t d libuClibc-0.9.5.so' and work on the biggest things 
+	(i.e. stuff at the end of the list) to make them smaller.
+*) make inb/outb work for all arches.  This is complete for i386 and arm.  
+	Other archs like powerpc, still need fixing.
+
+-----------------------------------------------------------------------------
+
+
+

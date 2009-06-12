@@ -1,0 +1,52 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    mbx ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_POWERPC current ;
+    package -hardware CYGPKG_HAL_POWERPC_MPC8xx current ;
+    package -hardware CYGPKG_HAL_POWERPC_MBX current ;
+    package -hardware CYGPKG_HAL_QUICC current ;
+    package -hardware CYGPKG_IO_SERIAL_POWERPC_QUICC_SMC current ;
+    package -hardware CYGPKG_DEVS_ETH_POWERPC_QUICC current ;
+    package -hardware CYGPKG_DEVS_FLASH_MBX current ;
+    package -hardware CYGPKG_DEVS_FLASH_AMD_AM29XXXXX current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package CYGPKG_IO_FLASH current ;
+    package CYGPKG_IO_ETH_DRIVERS current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+    package CYGPKG_MEMALLOC current ;
+    package CYGPKG_ISOINFRA current ;
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGHWR_HAL_POWERPC_BOARD_SPEED {
+    user_value 40
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+

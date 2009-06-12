@@ -1,0 +1,91 @@
+2004-09-20  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_grg.cdl: Add -mcpu=xscale to LDFLAGS.
+
+2004-09-19  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_grg.cdl: Add -mcpu=xscale to CFLAGS.
+
+	* misc/redboot_ROM.ecm: Add CYGSEM_REDBOOT_NETWORK_INIT_ONE_DEVICE.
+	* misc/redboot_RAM.ecm: Ditto.
+	* misc/redboot_ROMLE.ecm: Ditto.
+	* misc/redboot_RAMLE.ecm: Ditto.
+
+2004-09-02  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_extras.h: Removed.
+	* misc/redboot_ROMLE.ecm: New file.
+	* misc/redboot_RAMLE.ecm: New file.
+	* cdl/hal_arm_xscale_grg.cdl: Add little-endian support.
+	* misc/redboot_RAM.ecm: Ditto.
+	* misc/redboot_ROM.ecm: Ditto.
+	* include/hal_platform_setup.h: Ditto.
+	* include/grg.h: Add some defines for use in page table setup.
+
+2003-06-30  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_setup.h: Fix CYGINT_HAL_ARM_BIGENDIAN test.
+	Remove unused ROMRAM cruft.
+
+2003-04-04  Mark Salter  <msalter@redhat.com>
+
+	* include/grg.h: Add GPIO line definitions.
+	* include/hal_plf_ints.h: Add GPIO IRQ definitions.
+	* src/grg_misc.c (plf_hardware_init): Initialize GPIO lines.
+
+2003-04-02  Mark Salter  <msalter@redhat.com>
+
+	* misc/redboot_ROM.ecm: Don't set I82559_WRITE_EEPROM.
+	* misc/redboot_RAM.ecm: Ditto.
+
+2003-02-22  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal_arm_xscale_grg.cdl: Fix HAL_PLATFORM_MACHINE_TYPE.
+
+2003-02-13  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_platform_extras.h: Move uncached area. Create RAM
+	alias area.
+
+2003-02-12  Mark Salter  <msalter@redhat.com>
+
+	* misc/*.ecm: Turn on CYGPKG_DEVS_ETH_INTEL_I82559_WRITE_EEPROM.
+
+2003-02-07  Mark Salter  <msalter@redhat.com>
+
+	* Initial checkin.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

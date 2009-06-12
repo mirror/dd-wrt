@@ -1,0 +1,8 @@
+   
+The safl_util directory supports flashing Intel(R) StrongARM(R)
+Evaluation Boards (EBSA-285 and SA-IOP) over the PCI bus of a PC
+running Linux.
+
+Intel is a Registered Trademark of Intel Corporation.
+StrongARM is a Registered Trademark of Advanced RISC Machines Limited.
+Other Brands and Trademarks are the property of their respective owners.

@@ -1,0 +1,978 @@
+This is doc/gcc.info, produced by makeinfo version 4.2 from
+doc/gcc.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* gcc: (gcc).                  The GNU Compiler Collection.
+END-INFO-DIR-ENTRY
+   This file documents the use of the GNU compilers.
+
+   Published by the Free Software Foundation
+59 Temple Place - Suite 330
+Boston, MA 02111-1307 USA
+
+   Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+1999, 2000, 2001, 2002 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding Free
+Software", the Front-Cover texts being (a) (see below), and with the
+Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+   (a) The FSF's Front-Cover Text is:
+
+   A GNU Manual
+
+   (b) The FSF's Back-Cover Text is:
+
+   You have freedom to copy and modify this GNU Manual, like GNU
+software.  Copies published by the Free Software Foundation raise
+funds for GNU development.
+
+
+File: gcc.info,  Node: Type Attributes,  Next: Alignment,  Prev: Variable Attributes,  Up: C Extensions
+
+Specifying Attributes of Types
+==============================
+
+   The keyword `__attribute__' allows you to specify special attributes
+of `struct' and `union' types when you define such types.  This keyword
+is followed by an attribute specification inside double parentheses.
+Five attributes are currently defined for types: `aligned', `packed',
+`transparent_union', `unused', and `deprecated'.  Other attributes are
+defined for functions (*note Function Attributes::) and for variables
+(*note Variable Attributes::).
+
+   You may also specify any one of these attributes with `__' preceding
+and following its keyword.  This allows you to use these attributes in
+header files without being concerned about a possible macro of the same
+name.  For example, you may use `__aligned__' instead of `aligned'.
+
+   You may specify the `aligned' and `transparent_union' attributes
+either in a `typedef' declaration or just past the closing curly brace
+of a complete enum, struct or union type _definition_ and the `packed'
+attribute only past the closing brace of a definition.
+
+   You may also specify attributes between the enum, struct or union
+tag and the name of the type rather than after the closing brace.
+
+   *Note Attribute Syntax::, for details of the exact syntax for using
+attributes.
+
+`aligned (ALIGNMENT)'
+     This attribute specifies a minimum alignment (in bytes) for
+     variables of the specified type.  For example, the declarations:
+
+          struct S { short f[3]; } __attribute__ ((aligned (8)));
+          typedef int more_aligned_int __attribute__ ((aligned (8)));
+
+     force the compiler to insure (as far as it can) that each variable
+     whose type is `struct S' or `more_aligned_int' will be allocated
+     and aligned _at least_ on a 8-byte boundary.  On a Sparc, having
+     all variables of type `struct S' aligned to 8-byte boundaries
+     allows the compiler to use the `ldd' and `std' (doubleword load and
+     store) instructions when copying one variable of type `struct S' to
+     another, thus improving run-time efficiency.
+
+     Note that the alignment of any given `struct' or `union' type is
+     required by the ISO C standard to be at least a perfect multiple of
+     the lowest common multiple of the alignments of all of the members
+     of the `struct' or `union' in question.  This means that you _can_
+     effectively adjust the alignment of a `struct' or `union' type by
+     attaching an `aligned' attribute to any one of the members of such
+     a type, but the notation illustrated in the example above is a
+     more obvious, intuitive, and readable way to request the compiler
+     to adjust the alignment of an entire `struct' or `union' type.
+
+     As in the preceding example, you can explicitly specify the
+     alignment (in bytes) that you wish the compiler to use for a given
+     `struct' or `union' type.  Alternatively, you can leave out the
+     alignment factor and just ask the compiler to align a type to the
+     maximum useful alignment for the target machine you are compiling
+     for.  For example, you could write:
+
+          struct S { short f[3]; } __attribute__ ((aligned));
+
+     Whenever you leave out the alignment factor in an `aligned'
+     attribute specification, the compiler automatically sets the
+     alignment for the type to the largest alignment which is ever used
+     for any data type on the target machine you are compiling for.
+     Doing this can often make copy operations more efficient, because
+     the compiler can use whatever instructions copy the biggest chunks
+     of memory when performing copies to or from the variables which
+     have types that you have aligned this way.
+
+     In the example above, if the size of each `short' is 2 bytes, then
+     the size of the entire `struct S' type is 6 bytes.  The smallest
+     power of two which is greater than or equal to that is 8, so the
+     compiler sets the alignment for the entire `struct S' type to 8
+     bytes.
+
+     Note that although you can ask the compiler to select a
+     time-efficient alignment for a given type and then declare only
+     individual stand-alone objects of that type, the compiler's
+     ability to select a time-efficient alignment is primarily useful
+     only when you plan to create arrays of variables having the
+     relevant (efficiently aligned) type.  If you declare or use arrays
+     of variables of an efficiently-aligned type, then it is likely
+     that your program will also be doing pointer arithmetic (or
+     subscripting, which amounts to the same thing) on pointers to the
+     relevant type, and the code that the compiler generates for these
+     pointer arithmetic operations will often be more efficient for
+     efficiently-aligned types than for other types.
+
+     The `aligned' attribute can only increase the alignment; but you
+     can decrease it by specifying `packed' as well.  See below.
+
+     Note that the effectiveness of `aligned' attributes may be limited
+     by inherent limitations in your linker.  On many systems, the
+     linker is only able to arrange for variables to be aligned up to a
+     certain maximum alignment.  (For some linkers, the maximum
+     supported alignment may be very very small.)  If your linker is
+     only able to align variables up to a maximum of 8 byte alignment,
+     then specifying `aligned(16)' in an `__attribute__' will still
+     only provide you with 8 byte alignment.  See your linker
+     documentation for further information.
+
+`packed'
+     This attribute, attached to an `enum', `struct', or `union' type
+     definition, specified that the minimum required memory be used to
+     represent the type.
+
+     Specifying this attribute for `struct' and `union' types is
+     equivalent to specifying the `packed' attribute on each of the
+     structure or union members.  Specifying the `-fshort-enums' flag
+     on the line is equivalent to specifying the `packed' attribute on
+     all `enum' definitions.
+
+     You may only specify this attribute after a closing curly brace on
+     an `enum' definition, not in a `typedef' declaration, unless that
+     declaration also contains the definition of the `enum'.
+
+`transparent_union'
+     This attribute, attached to a `union' type definition, indicates
+     that any function parameter having that union type causes calls to
+     that function to be treated in a special way.
+
+     First, the argument corresponding to a transparent union type can
+     be of any type in the union; no cast is required.  Also, if the
+     union contains a pointer type, the corresponding argument can be a
+     null pointer constant or a void pointer expression; and if the
+     union contains a void pointer type, the corresponding argument can
+     be any pointer expression.  If the union member type is a pointer,
+     qualifiers like `const' on the referenced type must be respected,
+     just as with normal pointer conversions.
+
+     Second, the argument is passed to the function using the calling
+     conventions of first member of the transparent union, not the
+     calling conventions of the union itself.  All members of the union
+     must have the same machine representation; this is necessary for
+     this argument passing to work properly.
+
+     Transparent unions are designed for library functions that have
+     multiple interfaces for compatibility reasons.  For example,
+     suppose the `wait' function must accept either a value of type
+     `int *' to comply with Posix, or a value of type `union wait *' to
+     comply with the 4.1BSD interface.  If `wait''s parameter were
+     `void *', `wait' would accept both kinds of arguments, but it
+     would also accept any other pointer type and this would make
+     argument type checking less useful.  Instead, `<sys/wait.h>' might
+     define the interface as follows:
+
+          typedef union
+            {
+              int *__ip;
+              union wait *__up;
+            } wait_status_ptr_t __attribute__ ((__transparent_union__));
+          
+          pid_t wait (wait_status_ptr_t);
+
+     This interface allows either `int *' or `union wait *' arguments
+     to be passed, using the `int *' calling convention.  The program
+     can call `wait' with arguments of either type:
+
+          int w1 () { int w; return wait (&w); }
+          int w2 () { union wait w; return wait (&w); }
+
+     With this interface, `wait''s implementation might look like this:
+
+          pid_t wait (wait_status_ptr_t p)
+          {
+            return waitpid (-1, p.__ip, 0);
+          }
+
+`unused'
+     When attached to a type (including a `union' or a `struct'), this
+     attribute means that variables of that type are meant to appear
+     possibly unused.  GCC will not produce a warning for any variables
+     of that type, even if the variable appears to do nothing.  This is
+     often the case with lock or thread classes, which are usually
+     defined and then not referenced, but contain constructors and
+     destructors that have nontrivial bookkeeping functions.
+
+`deprecated'
+     The `deprecated' attribute results in a warning if the type is
+     used anywhere in the source file.  This is useful when identifying
+     types that are expected to be removed in a future version of a
+     program.  If possible, the warning also includes the location of
+     the declaration of the deprecated type, to enable users to easily
+     find further information about why the type is deprecated, or what
+     they should do instead.  Note that the warnings only occur for
+     uses and then only if the type is being applied to an identifier
+     that itself is not being declared as deprecated.
+
+          typedef int T1 __attribute__ ((deprecated));
+          T1 x;
+          typedef T1 T2;
+          T2 y;
+          typedef T1 T3 __attribute__ ((deprecated));
+          T3 z __attribute__ ((deprecated));
+
+     results in a warning on line 2 and 3 but not lines 4, 5, or 6.  No
+     warning is issued for line 4 because T2 is not explicitly
+     deprecated.  Line 5 has no warning because T3 is explicitly
+     deprecated.  Similarly for line 6.
+
+     The `deprecated' attribute can also be used for functions and
+     variables (*note Function Attributes::, *note Variable
+     Attributes::.)
+
+   To specify multiple attributes, separate them by commas within the
+double parentheses: for example, `__attribute__ ((aligned (16),
+packed))'.
+
+
+File: gcc.info,  Node: Inline,  Next: Extended Asm,  Prev: Alignment,  Up: C Extensions
+
+An Inline Function is As Fast As a Macro
+========================================
+
+   By declaring a function `inline', you can direct GCC to integrate
+that function's code into the code for its callers.  This makes
+execution faster by eliminating the function-call overhead; in
+addition, if any of the actual argument values are constant, their known
+values may permit simplifications at compile time so that not all of the
+inline function's code needs to be included.  The effect on code size is
+less predictable; object code may be larger or smaller with function
+inlining, depending on the particular case.  Inlining of functions is an
+optimization and it really "works" only in optimizing compilation.  If
+you don't use `-O', no function is really inline.
+
+   Inline functions are included in the ISO C99 standard, but there are
+currently substantial differences between what GCC implements and what
+the ISO C99 standard requires.
+
+   To declare a function inline, use the `inline' keyword in its
+declaration, like this:
+
+     inline int
+     inc (int *a)
+     {
+       (*a)++;
+     }
+
+   (If you are writing a header file to be included in ISO C programs,
+write `__inline__' instead of `inline'.  *Note Alternate Keywords::.)
+You can also make all "simple enough" functions inline with the option
+`-finline-functions'.
+
+   Note that certain usages in a function definition can make it
+unsuitable for inline substitution.  Among these usages are: use of
+varargs, use of alloca, use of variable sized data types (*note
+Variable Length::), use of computed goto (*note Labels as Values::),
+use of nonlocal goto, and nested functions (*note Nested Functions::).
+Using `-Winline' will warn when a function marked `inline' could not be
+substituted, and will give the reason for the failure.
+
+   Note that in C and Objective-C, unlike C++, the `inline' keyword
+does not affect the linkage of the function.
+
+   GCC automatically inlines member functions defined within the class
+body of C++ programs even if they are not explicitly declared `inline'.
+(You can override this with `-fno-default-inline'; *note Options
+Controlling C++ Dialect: C++ Dialect Options..)
+
+   When a function is both inline and `static', if all calls to the
+function are integrated into the caller, and the function's address is
+never used, then the function's own assembler code is never referenced.
+In this case, GCC does not actually output assembler code for the
+function, unless you specify the option `-fkeep-inline-functions'.
+Some calls cannot be integrated for various reasons (in particular,
+calls that precede the function's definition cannot be integrated, and
+neither can recursive calls within the definition).  If there is a
+nonintegrated call, then the function is compiled to assembler code as
+usual.  The function must also be compiled as usual if the program
+refers to its address, because that can't be inlined.
+
+   When an inline function is not `static', then the compiler must
+assume that there may be calls from other source files; since a global
+symbol can be defined only once in any program, the function must not
+be defined in the other source files, so the calls therein cannot be
+integrated.  Therefore, a non-`static' inline function is always
+compiled on its own in the usual fashion.
+
+   If you specify both `inline' and `extern' in the function
+definition, then the definition is used only for inlining.  In no case
+is the function compiled on its own, not even if you refer to its
+address explicitly.  Such an address becomes an external reference, as
+if you had only declared the function, and had not defined it.
+
+   This combination of `inline' and `extern' has almost the effect of a
+macro.  The way to use it is to put a function definition in a header
+file with these keywords, and put another copy of the definition
+(lacking `inline' and `extern') in a library file.  The definition in
+the header file will cause most calls to the function to be inlined.
+If any uses of the function remain, they will refer to the single copy
+in the library.
+
+   For future compatibility with when GCC implements ISO C99 semantics
+for inline functions, it is best to use `static inline' only.  (The
+existing semantics will remain available when `-std=gnu89' is
+specified, but eventually the default will be `-std=gnu99' and that
+will implement the C99 semantics, though it does not do so yet.)
+
+   GCC does not inline any functions when not optimizing unless you
+specify the `always_inline' attribute for the function, like this:
+
+     /* Prototype.  */
+     inline void foo (const char) __attribute__((always_inline));
+
+
+File: gcc.info,  Node: Extended Asm,  Next: Constraints,  Prev: Inline,  Up: C Extensions
+
+Assembler Instructions with C Expression Operands
+=================================================
+
+   In an assembler instruction using `asm', you can specify the
+operands of the instruction using C expressions.  This means you need
+not guess which registers or memory locations will contain the data you
+want to use.
+
+   You must specify an assembler instruction template much like what
+appears in a machine description, plus an operand constraint string for
+each operand.
+
+   For example, here is how to use the 68881's `fsinx' instruction:
+
+     asm ("fsinx %1,%0" : "=f" (result) : "f" (angle));
+
+Here `angle' is the C expression for the input operand while `result'
+is that of the output operand.  Each has `"f"' as its operand
+constraint, saying that a floating point register is required.  The `='
+in `=f' indicates that the operand is an output; all output operands'
+constraints must use `='.  The constraints use the same language used
+in the machine description (*note Constraints::).
+
+   Each operand is described by an operand-constraint string followed by
+the C expression in parentheses.  A colon separates the assembler
+template from the first output operand and another separates the last
+output operand from the first input, if any.  Commas separate the
+operands within each group.  The total number of operands is currently
+limited to 30; this limitation may be lifted in some future version of
+GCC.
+
+   If there are no output operands but there are input operands, you
+must place two consecutive colons surrounding the place where the output
+operands would go.
+
+   As of GCC version 3.1, it is also possible to specify input and
+output operands using symbolic names which can be referenced within the
+assembler code.  These names are specified inside square brackets
+preceding the constraint string, and can be referenced inside the
+assembler code using `%[NAME]' instead of a percentage sign followed by
+the operand number.  Using named operands the above example could look
+like:
+
+     asm ("fsinx %[angle],%[output]"
+          : [output] "=f" (result)
+          : [angle] "f" (angle));
+
+Note that the symbolic operand names have no relation whatsoever to
+other C identifiers.  You may use any name you like, even those of
+existing C symbols, but must ensure that no two operands within the same
+assembler construct use the same symbolic name.
+
+   Output operand expressions must be lvalues; the compiler can check
+this.  The input operands need not be lvalues.  The compiler cannot
+check whether the operands have data types that are reasonable for the
+instruction being executed.  It does not parse the assembler instruction
+template and does not know what it means or even whether it is valid
+assembler input.  The extended `asm' feature is most often used for
+machine instructions the compiler itself does not know exist.  If the
+output expression cannot be directly addressed (for example, it is a
+bit-field), your constraint must allow a register.  In that case, GCC
+will use the register as the output of the `asm', and then store that
+register into the output.
+
+   The ordinary output operands must be write-only; GCC will assume that
+the values in these operands before the instruction are dead and need
+not be generated.  Extended asm supports input-output or read-write
+operands.  Use the constraint character `+' to indicate such an operand
+and list it with the output operands.
+
+   When the constraints for the read-write operand (or the operand in
+which only some of the bits are to be changed) allows a register, you
+may, as an alternative, logically split its function into two separate
+operands, one input operand and one write-only output operand.  The
+connection between them is expressed by constraints which say they need
+to be in the same location when the instruction executes.  You can use
+the same C expression for both operands, or different expressions.  For
+example, here we write the (fictitious) `combine' instruction with
+`bar' as its read-only source operand and `foo' as its read-write
+destination:
+
+     asm ("combine %2,%0" : "=r" (foo) : "0" (foo), "g" (bar));
+
+The constraint `"0"' for operand 1 says that it must occupy the same
+location as operand 0.  A number in constraint is allowed only in an
+input operand and it must refer to an output operand.
+
+   Only a number in the constraint can guarantee that one operand will
+be in the same place as another.  The mere fact that `foo' is the value
+of both operands is not enough to guarantee that they will be in the
+same place in the generated assembler code.  The following would not
+work reliably:
+
+     asm ("combine %2,%0" : "=r" (foo) : "r" (foo), "g" (bar));
+
+   Various optimizations or reloading could cause operands 0 and 1 to
+be in different registers; GCC knows no reason not to do so.  For
+example, the compiler might find a copy of the value of `foo' in one
+register and use it for operand 1, but generate the output operand 0 in
+a different register (copying it afterward to `foo''s own address).  Of
+course, since the register for operand 1 is not even mentioned in the
+assembler code, the result will not work, but GCC can't tell that.
+
+   As of GCC version 3.1, one may write `[NAME]' instead of the operand
+number for a matching constraint.  For example:
+
+     asm ("cmoveq %1,%2,%[result]"
+          : [result] "=r"(result)
+          : "r" (test), "r"(new), "[result]"(old));
+
+   Some instructions clobber specific hard registers.  To describe this,
+write a third colon after the input operands, followed by the names of
+the clobbered hard registers (given as strings).  Here is a realistic
+example for the VAX:
+
+     asm volatile ("movc3 %0,%1,%2"
+                   : /* no outputs */
+                   : "g" (from), "g" (to), "g" (count)
+                   : "r0", "r1", "r2", "r3", "r4", "r5");
+
+   You may not write a clobber description in a way that overlaps with
+an input or output operand.  For example, you may not have an operand
+describing a register class with one member if you mention that register
+in the clobber list.  There is no way for you to specify that an input
+operand is modified without also specifying it as an output operand.
+Note that if all the output operands you specify are for this purpose
+(and hence unused), you will then also need to specify `volatile' for
+the `asm' construct, as described below, to prevent GCC from deleting
+the `asm' statement as unused.
+
+   If you refer to a particular hardware register from the assembler
+code, you will probably have to list the register after the third colon
+to tell the compiler the register's value is modified.  In some
+assemblers, the register names begin with `%'; to produce one `%' in the
+assembler code, you must write `%%' in the input.
+
+   If your assembler instruction can alter the condition code register,
+add `cc' to the list of clobbered registers.  GCC on some machines
+represents the condition codes as a specific hardware register; `cc'
+serves to name this register.  On other machines, the condition code is
+handled differently, and specifying `cc' has no effect.  But it is
+valid no matter what the machine.
+
+   If your assembler instruction modifies memory in an unpredictable
+fashion, add `memory' to the list of clobbered registers.  This will
+cause GCC to not keep memory values cached in registers across the
+assembler instruction.  You will also want to add the `volatile'
+keyword if the memory affected is not listed in the inputs or outputs
+of the `asm', as the `memory' clobber does not count as a side-effect
+of the `asm'.
+
+   You can put multiple assembler instructions together in a single
+`asm' template, separated by the characters normally used in assembly
+code for the system.  A combination that works in most places is a
+newline to break the line, plus a tab character to move to the
+instruction field (written as `\n\t').  Sometimes semicolons can be
+used, if the assembler allows semicolons as a line-breaking character.
+Note that some assembler dialects use semicolons to start a comment.
+The input operands are guaranteed not to use any of the clobbered
+registers, and neither will the output operands' addresses, so you can
+read and write the clobbered registers as many times as you like.  Here
+is an example of multiple instructions in a template; it assumes the
+subroutine `_foo' accepts arguments in registers 9 and 10:
+
+     asm ("movl %0,r9\n\tmovl %1,r10\n\tcall _foo"
+          : /* no outputs */
+          : "g" (from), "g" (to)
+          : "r9", "r10");
+
+   Unless an output operand has the `&' constraint modifier, GCC may
+allocate it in the same register as an unrelated input operand, on the
+assumption the inputs are consumed before the outputs are produced.
+This assumption may be false if the assembler code actually consists of
+more than one instruction.  In such a case, use `&' for each output
+operand that may not overlap an input.  *Note Modifiers::.
+
+   If you want to test the condition code produced by an assembler
+instruction, you must include a branch and a label in the `asm'
+construct, as follows:
+
+     asm ("clr %0\n\tfrob %1\n\tbeq 0f\n\tmov #1,%0\n0:"
+          : "g" (result)
+          : "g" (input));
+
+This assumes your assembler supports local labels, as the GNU assembler
+and most Unix assemblers do.
+
+   Speaking of labels, jumps from one `asm' to another are not
+supported.  The compiler's optimizers do not know about these jumps, and
+therefore they cannot take account of them when deciding how to
+optimize.
+
+   Usually the most convenient way to use these `asm' instructions is to
+encapsulate them in macros that look like functions.  For example,
+
+     #define sin(x)       \
+     ({ double __value, __arg = (x);   \
+        asm ("fsinx %1,%0": "=f" (__value): "f" (__arg));  \
+        __value; })
+
+Here the variable `__arg' is used to make sure that the instruction
+operates on a proper `double' value, and to accept only those arguments
+`x' which can convert automatically to a `double'.
+
+   Another way to make sure the instruction operates on the correct data
+type is to use a cast in the `asm'.  This is different from using a
+variable `__arg' in that it converts more different types.  For
+example, if the desired type were `int', casting the argument to `int'
+would accept a pointer with no complaint, while assigning the argument
+to an `int' variable named `__arg' would warn about using a pointer
+unless the caller explicitly casts it.
+
+   If an `asm' has output operands, GCC assumes for optimization
+purposes the instruction has no side effects except to change the output
+operands.  This does not mean instructions with a side effect cannot be
+used, but you must be careful, because the compiler may eliminate them
+if the output operands aren't used, or move them out of loops, or
+replace two with one if they constitute a common subexpression.  Also,
+if your instruction does have a side effect on a variable that otherwise
+appears not to change, the old value of the variable may be reused later
+if it happens to be found in a register.
+
+   You can prevent an `asm' instruction from being deleted, moved
+significantly, or combined, by writing the keyword `volatile' after the
+`asm'.  For example:
+
+     #define get_and_set_priority(new)              \
+     ({ int __old;                                  \
+        asm volatile ("get_and_set_priority %0, %1" \
+                      : "=g" (__old) : "g" (new));  \
+        __old; })
+
+If you write an `asm' instruction with no outputs, GCC will know the
+instruction has side-effects and will not delete the instruction or
+move it outside of loops.
+
+   The `volatile' keyword indicates that the instruction has important
+side-effects.  GCC will not delete a volatile `asm' if it is reachable.
+(The instruction can still be deleted if GCC can prove that
+control-flow will never reach the location of the instruction.)  In
+addition, GCC will not reschedule instructions across a volatile `asm'
+instruction.  For example:
+
+     *(volatile int *)addr = foo;
+     asm volatile ("eieio" : : );
+
+Assume `addr' contains the address of a memory mapped device register.
+The PowerPC `eieio' instruction (Enforce In-order Execution of I/O)
+tells the CPU to make sure that the store to that device register
+happens before it issues any other I/O.
+
+   Note that even a volatile `asm' instruction can be moved in ways
+that appear insignificant to the compiler, such as across jump
+instructions.  You can't expect a sequence of volatile `asm'
+instructions to remain perfectly consecutive.  If you want consecutive
+output, use a single `asm'.  Also, GCC will perform some optimizations
+across a volatile `asm' instruction; GCC does not "forget everything"
+when it encounters a volatile `asm' instruction the way some other
+compilers do.
+
+   An `asm' instruction without any operands or clobbers (an "old
+style" `asm') will be treated identically to a volatile `asm'
+instruction.
+
+   It is a natural idea to look for a way to give access to the
+condition code left by the assembler instruction.  However, when we
+attempted to implement this, we found no way to make it work reliably.
+The problem is that output operands might need reloading, which would
+result in additional following "store" instructions.  On most machines,
+these instructions would alter the condition code before there was time
+to test it.  This problem doesn't arise for ordinary "test" and
+"compare" instructions because they don't have any output operands.
+
+   For reasons similar to those described above, it is not possible to
+give an assembler instruction access to the condition code left by
+previous instructions.
+
+   If you are writing a header file that should be includable in ISO C
+programs, write `__asm__' instead of `asm'.  *Note Alternate Keywords::.
+
+i386 floating point asm operands
+--------------------------------
+
+   There are several rules on the usage of stack-like regs in
+asm_operands insns.  These rules apply only to the operands that are
+stack-like regs:
+
+  1. Given a set of input regs that die in an asm_operands, it is
+     necessary to know which are implicitly popped by the asm, and
+     which must be explicitly popped by gcc.
+
+     An input reg that is implicitly popped by the asm must be
+     explicitly clobbered, unless it is constrained to match an output
+     operand.
+
+  2. For any input reg that is implicitly popped by an asm, it is
+     necessary to know how to adjust the stack to compensate for the
+     pop.  If any non-popped input is closer to the top of the
+     reg-stack than the implicitly popped reg, it would not be possible
+     to know what the stack looked like--it's not clear how the rest of
+     the stack "slides up".
+
+     All implicitly popped input regs must be closer to the top of the
+     reg-stack than any input that is not implicitly popped.
+
+     It is possible that if an input dies in an insn, reload might use
+     the input reg for an output reload.  Consider this example:
+
+          asm ("foo" : "=t" (a) : "f" (b));
+
+     This asm says that input B is not popped by the asm, and that the
+     asm pushes a result onto the reg-stack, i.e., the stack is one
+     deeper after the asm than it was before.  But, it is possible that
+     reload will think that it can use the same reg for both the input
+     and the output, if input B dies in this insn.
+
+     If any input operand uses the `f' constraint, all output reg
+     constraints must use the `&' earlyclobber.
+
+     The asm above would be written as
+
+          asm ("foo" : "=&t" (a) : "f" (b));
+
+  3. Some operands need to be in particular places on the stack.  All
+     output operands fall in this category--there is no other way to
+     know which regs the outputs appear in unless the user indicates
+     this in the constraints.
+
+     Output operands must specifically indicate which reg an output
+     appears in after an asm.  `=f' is not allowed: the operand
+     constraints must select a class with a single reg.
+
+  4. Output operands may not be "inserted" between existing stack regs.
+     Since no 387 opcode uses a read/write operand, all output operands
+     are dead before the asm_operands, and are pushed by the
+     asm_operands.  It makes no sense to push anywhere but the top of
+     the reg-stack.
+
+     Output operands must start at the top of the reg-stack: output
+     operands may not "skip" a reg.
+
+  5. Some asm statements may need extra stack space for internal
+     calculations.  This can be guaranteed by clobbering stack registers
+     unrelated to the inputs and outputs.
+
+
+   Here are a couple of reasonable asms to want to write.  This asm
+takes one input, which is internally popped, and produces two outputs.
+
+     asm ("fsincos" : "=t" (cos), "=u" (sin) : "0" (inp));
+
+   This asm takes two inputs, which are popped by the `fyl2xp1' opcode,
+and replaces them with one output.  The user must code the `st(1)'
+clobber for reg-stack.c to know that `fyl2xp1' pops both inputs.
+
+     asm ("fyl2xp1" : "=t" (result) : "0" (x), "u" (y) : "st(1)");
+
+
+File: gcc.info,  Node: Constraints,  Next: Asm Labels,  Prev: Extended Asm,  Up: C Extensions
+
+Constraints for `asm' Operands
+==============================
+
+   Here are specific details on what constraint letters you can use with
+`asm' operands.  Constraints can say whether an operand may be in a
+register, and which kinds of register; whether the operand can be a
+memory reference, and which kinds of address; whether the operand may
+be an immediate constant, and which possible values it may have.
+Constraints can also require two operands to match.
+
+* Menu:
+
+* Simple Constraints::  Basic use of constraints.
+* Multi-Alternative::   When an insn has two alternative constraint-patterns.
+* Modifiers::           More precise control over effects of constraints.
+* Machine Constraints:: Special constraints for some particular machines.
+
+
+File: gcc.info,  Node: Simple Constraints,  Next: Multi-Alternative,  Up: Constraints
+
+Simple Constraints
+------------------
+
+   The simplest kind of constraint is a string full of letters, each of
+which describes one kind of operand that is permitted.  Here are the
+letters that are allowed:
+
+whitespace
+     Whitespace characters are ignored and can be inserted at any
+     position except the first.  This enables each alternative for
+     different operands to be visually aligned in the machine
+     description even if they have different number of constraints and
+     modifiers.
+
+`m'
+     A memory operand is allowed, with any kind of address that the
+     machine supports in general.
+
+`o'
+     A memory operand is allowed, but only if the address is
+     "offsettable".  This means that adding a small integer (actually,
+     the width in bytes of the operand, as determined by its machine
+     mode) may be added to the address and the result is also a valid
+     memory address.
+
+     For example, an address which is constant is offsettable; so is an
+     address that is the sum of a register and a constant (as long as a
+     slightly larger constant is also within the range of
+     address-offsets supported by the machine); but an autoincrement or
+     autodecrement address is not offsettable.  More complicated
+     indirect/indexed addresses may or may not be offsettable depending
+     on the other addressing modes that the machine supports.
+
+     Note that in an output operand which can be matched by another
+     operand, the constraint letter `o' is valid only when accompanied
+     by both `<' (if the target machine has predecrement addressing)
+     and `>' (if the target machine has preincrement addressing).
+
+`V'
+     A memory operand that is not offsettable.  In other words,
+     anything that would fit the `m' constraint but not the `o'
+     constraint.
+
+`<'
+     A memory operand with autodecrement addressing (either
+     predecrement or postdecrement) is allowed.
+
+`>'
+     A memory operand with autoincrement addressing (either
+     preincrement or postincrement) is allowed.
+
+`r'
+     A register operand is allowed provided that it is in a general
+     register.
+
+`i'
+     An immediate integer operand (one with constant value) is allowed.
+     This includes symbolic constants whose values will be known only at
+     assembly time.
+
+`n'
+     An immediate integer operand with a known numeric value is allowed.
+     Many systems cannot support assembly-time constants for operands
+     less than a word wide.  Constraints for these operands should use
+     `n' rather than `i'.
+
+`I', `J', `K', ... `P'
+     Other letters in the range `I' through `P' may be defined in a
+     machine-dependent fashion to permit immediate integer operands with
+     explicit integer values in specified ranges.  For example, on the
+     68000, `I' is defined to stand for the range of values 1 to 8.
+     This is the range permitted as a shift count in the shift
+     instructions.
+
+`E'
+     An immediate floating operand (expression code `const_double') is
+     allowed, but only if the target floating point format is the same
+     as that of the host machine (on which the compiler is running).
+
+`F'
+     An immediate floating operand (expression code `const_double') is
+     allowed.
+
+`G', `H'
+     `G' and `H' may be defined in a machine-dependent fashion to
+     permit immediate floating operands in particular ranges of values.
+
+`s'
+     An immediate integer operand whose value is not an explicit
+     integer is allowed.
+
+     This might appear strange; if an insn allows a constant operand
+     with a value not known at compile time, it certainly must allow
+     any known value.  So why use `s' instead of `i'?  Sometimes it
+     allows better code to be generated.
+
+     For example, on the 68000 in a fullword instruction it is possible
+     to use an immediate operand; but if the immediate value is between
+     -128 and 127, better code results from loading the value into a
+     register and using the register.  This is because the load into
+     the register can be done with a `moveq' instruction.  We arrange
+     for this to happen by defining the letter `K' to mean "any integer
+     outside the range -128 to 127", and then specifying `Ks' in the
+     operand constraints.
+
+`g'
+     Any register, memory or immediate integer operand is allowed,
+     except for registers that are not general registers.
+
+`X'
+     Any operand whatsoever is allowed.
+
+`0', `1', `2', ... `9'
+     An operand that matches the specified operand number is allowed.
+     If a digit is used together with letters within the same
+     alternative, the digit should come last.
+
+     This number is allowed to be more than a single digit.  If multiple
+     digits are encountered consecutavely, they are interpreted as a
+     single decimal integer.  There is scant chance for ambiguity,
+     since to-date it has never been desirable that `10' be interpreted
+     as matching either operand 1 _or_ operand 0.  Should this be
+     desired, one can use multiple alternatives instead.
+
+     This is called a "matching constraint" and what it really means is
+     that the assembler has only a single operand that fills two roles
+     which `asm' distinguishes.  For example, an add instruction uses
+     two input operands and an output operand, but on most CISC
+     machines an add instruction really has only two operands, one of
+     them an input-output operand:
+
+          addl #35,r12
+
+     Matching constraints are used in these circumstances.  More
+     precisely, the two operands that match must include one input-only
+     operand and one output-only operand.  Moreover, the digit must be a
+     smaller number than the number of the operand that uses it in the
+     constraint.
+
+`p'
+     An operand that is a valid memory address is allowed.  This is for
+     "load address" and "push address" instructions.
+
+     `p' in the constraint must be accompanied by `address_operand' as
+     the predicate in the `match_operand'.  This predicate interprets
+     the mode specified in the `match_operand' as the mode of the memory
+     reference for which the address would be valid.
+
+OTHER-LETTERS
+     Other letters can be defined in machine-dependent fashion to stand
+     for particular classes of registers or other arbitrary operand
+     types.  `d', `a' and `f' are defined on the 68000/68020 to stand
+     for data, address and floating point registers.
+
+
+File: gcc.info,  Node: Multi-Alternative,  Next: Modifiers,  Prev: Simple Constraints,  Up: Constraints
+
+Multiple Alternative Constraints
+--------------------------------
+
+   Sometimes a single instruction has multiple alternative sets of
+possible operands.  For example, on the 68000, a logical-or instruction
+can combine register or an immediate value into memory, or it can
+combine any kind of operand into a register; but it cannot combine one
+memory location into another.
+
+   These constraints are represented as multiple alternatives.  An
+alternative can be described by a series of letters for each operand.
+The overall constraint for an operand is made from the letters for this
+operand from the first alternative, a comma, the letters for this
+operand from the second alternative, a comma, and so on until the last
+alternative.
+
+   If all the operands fit any one alternative, the instruction is
+valid.  Otherwise, for each alternative, the compiler counts how many
+instructions must be added to copy the operands so that that
+alternative applies.  The alternative requiring the least copying is
+chosen.  If two alternatives need the same amount of copying, the one
+that comes first is chosen.  These choices can be altered with the `?'
+and `!' characters:
+
+`?'
+     Disparage slightly the alternative that the `?' appears in, as a
+     choice when no alternative applies exactly.  The compiler regards
+     this alternative as one unit more costly for each `?' that appears
+     in it.
+
+`!'
+     Disparage severely the alternative that the `!' appears in.  This
+     alternative can still be used if it fits without reloading, but if
+     reloading is needed, some other alternative will be used.
+
+
+File: gcc.info,  Node: Modifiers,  Next: Machine Constraints,  Prev: Multi-Alternative,  Up: Constraints
+
+Constraint Modifier Characters
+------------------------------
+
+   Here are constraint modifier characters.
+
+`='
+     Means that this operand is write-only for this instruction: the
+     previous value is discarded and replaced by output data.
+
+`+'
+     Means that this operand is both read and written by the
+     instruction.
+
+     When the compiler fixes up the operands to satisfy the constraints,
+     it needs to know which operands are inputs to the instruction and
+     which are outputs from it.  `=' identifies an output; `+'
+     identifies an operand that is both input and output; all other
+     operands are assumed to be input only.
+
+     If you specify `=' or `+' in a constraint, you put it in the first
+     character of the constraint string.
+
+`&'
+     Means (in a particular alternative) that this operand is an
+     "earlyclobber" operand, which is modified before the instruction is
+     finished using the input operands.  Therefore, this operand may
+     not lie in a register that is used as an input operand or as part
+     of any memory address.
+
+     `&' applies only to the alternative in which it is written.  In
+     constraints with multiple alternatives, sometimes one alternative
+     requires `&' while others do not.  See, for example, the `movdf'
+     insn of the 68000.
+
+     An input operand can be tied to an earlyclobber operand if its only
+     use as an input occurs before the early result is written.  Adding
+     alternatives of this form often allows GCC to produce better code
+     when only some of the inputs can be affected by the earlyclobber.
+     See, for example, the `mulsi3' insn of the ARM.
+
+     `&' does not obviate the need to write `='.
+
+`%'
+     Declares the instruction to be commutative for this operand and the
+     following operand.  This means that the compiler may interchange
+     the two operands if that is the cheapest way to make all operands
+     fit the constraints.
+
+`#'
+     Says that all following characters, up to the next comma, are to be
+     ignored as a constraint.  They are significant only for choosing
+     register preferences.
+
+`*'
+     Says that the following character should be ignored when choosing
+     register preferences.  `*' has no effect on the meaning of the
+     constraint as a constraint, and no effect on reloading.
+

@@ -1,0 +1,178 @@
+2003-05-05  H.J. Lu <hjl@gnu.org>
+
+	* elf32-ppc.c (ppc_elf_relocate_section): Updated.
+
+2003-02-27  H.J. Lu <hjl@gnu.org>
+
+	* elf32-ppc.c (ppc_elf_check_relocs): Updated.
+	(ppc_elf_relocate_section): Likewise.
+
+2002-10-02  H.J. Lu <hjl@gnu.org>
+
+	* elf32-ppc.c (ppc_elf_check_relocs): Do output relocations for
+	non-debugging sections.
+	(ppc_elf_relocate_section): Likewise.
+
+2001-12-17  H.J. Lu <hjl@gnu.org>
+
+	* elflink.h (elf_link_check_versioned_symbol): Updated the call
+	to elf_swap_symbol_in.
+
+2001-10-22  H.J. Lu <hjl@gnu.org>
+
+	* configure.in (WIN32LIBADD): Use -L../libiberty for
+	mips*-*-linux*.
+
+2001-10-21  H.J. Lu <hjl@gnu.org>
+
+	* configure.in (WIN32LIBADD): Include -L../libiberty/pic -liberty
+	if shared library is enabled only for Linux hosts.
+	* configure: Rebuild.
+
+2001-10-21  H.J. Lu <hjl@gnu.org>
+
+	* configure: Rebuid for ../libtool.m4 change.
+
+2001-10-21  H.J. Lu <hjl@gnu.org>
+
+	* configure.in (WIN32LIBADD): Check if PICFLAG is defined in
+	../libiberty/Makefile instead of $enable_shared.
+	* configure: Rebuild.
+
+2001-10-17  H.J. Lu <hjl@gnu.org>
+
+	* elfcode.h (elf_object_p): Don't clear D_PAGED if the section
+	size is empty.
+
+2001-10-15  H.J. Lu <hjl@gnu.org>
+
+	* elflink.h (elf_link_input_bfd): Set type to BFD_RELOC_NONE
+	for relocations against discarded link-once section.
+
+2001-10-15  H.J. Lu <hjl@gnu.org>
+
+	* elf32-hppa.c (elf32_hppa_copy_indirect_symbol): Undo the last
+	change.
+	* elf32-i386.c (elf_i386_copy_indirect_symbol): Likewise.
+	* elf64-ppc.c (ppc64_elf_copy_indirect_symbol): Likewise.
+
+	* elf32-ppc.c (ppc_elf_adjust_dynamic_symbol): Undo the last
+	change.
+	* elf32-hppa.c (elf32_hppa_adjust_dynamic_symbol): Likewise.
+	* elf32-s390.c (elf_s390_adjust_dynamic_symbol): Likewise.
+	* elf64-s390.c (elf_s390_adjust_dynamic_symbol): Likewise.
+	* elf64-x86-64.c (elf64_x86_64_adjust_dynamic_symbol):
+	Likewise.
+
+2001-10-13  H.J. Lu <hjl@gnu.org>
+
+	* elf32-hppa.c (elf32_hppa_copy_indirect_symbol): Don't abort
+	if this is a weakdef.
+	* elf32-i386.c (elf_i386_copy_indirect_symbol): Likewise.
+	* elf64-ppc.c (ppc64_elf_copy_indirect_symbol): Likewise.
+
+	* elf32-ppc.c (ppc_elf_adjust_dynamic_symbol): Set plt.offset
+	to -1 and clear the ELF_LINK_HASH_NEEDS_PLT bit if the symbol
+	is not a function.
+	* elf32-hppa.c (elf32_hppa_adjust_dynamic_symbol): Likewise.
+	* elf32-s390.c (elf_s390_adjust_dynamic_symbol): Likewise.
+	* elf64-s390.c (elf_s390_adjust_dynamic_symbol): Likewise.
+	* elf64-x86-64.c (elf64_x86_64_adjust_dynamic_symbol):
+	Likewise.
+
+2001-10-11  H.J. Lu  <hjl@gnu.org>
+
+	* elf32-mips.c (mips_elf_calculate_relocation): Don't create
+	dynamic relocation for symbols defined in regular objects when
+	creating executables.
+
+2001-10-11  H.J. Lu  <hjl@gnu.org>
+
+	* elflink.h (elf_merge_symbol): Revert the change made on
+	2001-10-03.
+
+2001-10-07  Jakub Jelinek  <jakub@redhat.com>
+
+	* elf32-ppc.c (ppc_elf_check_relocs): Don't output relocations
+	for debugging sections.
+	(ppc_elf_relocate_section): Likewise.
+
+2001-10-05  Alan Modra  <amodra@bigpond.net.au>
+
+	* elflink.h (elf_link_input_bfd): Don't fudge discarded link-once
+	section sym values.  Instead fudge any relocs against them.
+
+2001-10-05  H.J. Lu  <hjl@gnu.org>
+
+	* elf32-mips.c (mips_elf_calculate_relocation): Back out the
+	last change.
+
+2001-10-04  H.J. Lu  <hjl@gnu.org>
+
+	* elf32-mips.c (mips_elf_calculate_relocation): Don't create
+	the dynamic relocation if a symbol is from a removed linkonce
+	section.
+
+2001-10-03  H.J. Lu  <hjl@gnu.org>
+
+	* elflink.h (elf_link_check_versioned_symbol): Update types of
+	variables.
+
+2001-10-03  H.J. Lu  <hjl@gnu.org>
+
+	* elflink.h (elf_link_check_versioned_symbol): Use bfd_bread
+	instead of bfd_read.
+
+2001-10-03  H.J. Lu  <hjl@gnu.org>
+
+	* elflink.h (elf_merge_symbol): Allow a definition in a shared
+	object to override a weak definition in a regular object.
+
+2001-05-12  H.J. Lu  <hjl@gnu.org>
+
+	* elf-bfd.h (elf_link_loaded_list): New structure.
+	(elf_link_hash_table): Add "loaded".
+
+	* elf.c (_bfd_elf_link_hash_table_init): Initialize the
+	 "loaded" field to NULL.
+
+	* elflink.h (elf_link_check_versioned_symbol): New function.
+	Return true if there is one hidden definition for the undefined
+	symbol.
+
+	* elflink.h (elf_link_output_extsym): For undefined symbol in
+	DSO from DT_NEEDED, Call elf_link_check_versioned_symbol to
+	check if there is one hidden definition.
+
+2000-11-08  H.J. Lu  <hjl@gnu.org>
+
+	* elflink.h (elf_link_add_archive_symbols): For the default
+	version, check references with only one `@' first.
+
+2000-06-24  H.J. Lu  <hjl@gnu.org>
+
+	* cofflink.c (_bfd_coff_generic_relocate_section): Undo
+	the last change.
+
+2000-06-24  H.J. Lu  <hjl@gnu.org>
+
+	* cofflink.c (_bfd_coff_generic_relocate_section):
+	Compensate global relocations between .text$* sections within
+	the same file.
+
+2000-06-16  H.J. Lu  <hjl@gnu.org>
+
+	* reloc.c (bfd_adjust_relocation): Undo the change made on
+	2000-06-15.
+	* bfd-in2.h: Likewise.
+
+2000-06-15  H.J. Lu  <hjl@gnu.org>
+
+	* reloc.c (bfd_adjust_relocation): New function to adjust
+	relocation from one format to another.
+	* bfd-in2.h: Regenerated.
+
+Thu Jan 13 13:29:40 2000  H.J. Lu  <hjl@gnu.org>
+
+	* configure.in (AC_OUTPUT): Add ../binutils.spec.
+	* configure: Regenerated.

@@ -1,0 +1,22 @@
+/* XPM */
+static char *properties_xpm[] = {
+"16 15 4 1",
+" 	c None",
+".	c Black",
+"X	c #000080",
+"o	c Gray100",
+"                ",
+"       ...... XX",
+"      .      .XX",
+"     . .      XX",
+"..... . .     XX",
+".oo. . . .   .XX",
+".o. .o. . ... XX",
+".o..ooo. .o.    ",
+".ooooooo.oo.    ",
+".oooooooooo.    ",
+".o..o.....o.    ",
+".oooooooooo.    ",
+".o..o.....o.    ",
+".oooooooooo.    ",
+"............    "};

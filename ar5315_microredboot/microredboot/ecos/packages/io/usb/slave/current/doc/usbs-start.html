@@ -1,0 +1,264 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Starting up a USB Device</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="USB Enumeration Data"
+HREF="usbs-enum.html"><LINK
+REL="NEXT"
+TITLE="Devtab Entries"
+HREF="usbs-devtab.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-enum.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-devtab.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-START"
+>Starting up a USB Device</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN173"
+></A
+><H2
+>Name</H2
+><TT
+CLASS="FUNCTION"
+>usbs_start</TT
+>&nbsp;--&nbsp;Starting up a USB Device</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN177"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN178"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/io/usb/usbs.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>void usbs_start</CODE
+>(usbs_control_endpoint* ep0);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN185"
+></A
+><H2
+>Description</H2
+><P
+>Initializing a USB device requires some support from higher-level
+code, typically the application, in the form of enumeration data.
+Hence it is not possible for the low-level USB driver to activate a
+USB device itself. Instead the higher-level code has to take care of
+this by invoking <TT
+CLASS="FUNCTION"
+>usbs_start</TT
+>. This function takes
+a pointer to a USB control endpoint data structure. USB device drivers
+should provide exactly one such data structure for every USB device,
+so the pointer uniquely identifies the device.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const usbs_enumeration_data usb_enum_data = {
+    &#8230;
+};
+
+int
+main(int argc, char** argv)
+{
+    usbs_sa11x0_ep0.enumeration_data = &amp;usb_enum_data;
+    &#8230;
+    usbs_start(&amp;usbs_sa11x0_ep0);
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>The exact behaviour of <TT
+CLASS="FUNCTION"
+>usbs_start</TT
+> depends on the
+USB hardware and the device driver. A typical implementation would
+change the USB data pins from tristated to active. If the peripheral
+is already plugged into a host then the latter should detect this
+change and start interacting with the peripheral, including requesting
+the enumeration data. Some of this may happen before
+<TT
+CLASS="FUNCTION"
+>usbs_start</TT
+> returns, but given that multiple
+interactions between USB host and peripheral are required it is likely
+that the function will return before the peripheral is fully
+configured. Control endpoints provide a <A
+HREF="usbs-control.html#AEN515"
+>mechanism</A
+> for informing
+higher-level code of USB state changes.
+<TT
+CLASS="FUNCTION"
+>usbs_start</TT
+> will return even if the peripheral is
+not currently connected to a host: it will not block until the
+connection is established.</P
+><P
+><TT
+CLASS="FUNCTION"
+>usbs_start</TT
+> should only be called once for a given
+USB device. There are no defined error conditions. Note that the
+function affects the entire USB device and not just the control
+endpoint: there is no need to start any data endpoints as well.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-enum.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-devtab.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>USB Enumeration Data</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Devtab Entries</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

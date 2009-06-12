@@ -1,0 +1,1264 @@
+<!-- {{{ Banner                 -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     package.sgml                                                -->
+<!--                                                                 -->
+<!--     How to write a package.                                     -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 2000, 2001, 2002 Red Hat, Inc.                    -->
+<!--                                                                 -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- Author(s):   bartv                                              -->
+<!-- Contact(s):  bartv                                              -->
+<!-- Date:        2000/02/06                                         -->
+<!-- Version:     0.01                                               -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<chapter id="package">
+<title>Package Organization</title>
+
+<!-- {{{ Introit                -->
+
+<para>
+For a package to be usable in the &eCos; component framework it must
+conform to certain rules imposed by that framework. Packages must be
+distributed in a form that is understood by the component repository
+administration tool. There must be a top-level &CDL; script which
+describes the package to the component framework. There are certain
+limitations related to how a package gets built, so that the package
+can still be used in a variety of host environments. In addition to
+these rules, the component framework provides a number of guidelines.
+Packages do not have to conform to the guidelines, but sticking to
+them can simplify certain operations.
+</para>
+<para>
+This chapter deals with the general organization of a package, for
+example how to distinguish between private and exported header files.
+<xref linkend="language"> describes the &CDL; language.
+<xref linkend="build"> details the build process.
+</para>
+
+<!-- }}} -->
+<!-- {{{ Repository             -->
+
+<sect1 id="package.hierarchy">
+<title>Packages and the Component Repository</title>
+
+<para>
+All &eCos; installations include a component repository. This is a
+directory structure for all installed packages. The component
+framework comes with an administration tool that allows new packages
+or new versions of a package to be installed, old packages to be
+removed, and so on. The component repository includes a simple
+database, maintained by the administration tool, which contains
+details of the various packages.
+</para>
+
+<informalfigure PgWide=1>
+<mediaobject>
+<imageobject>
+<imagedata fileref="repo.png" Scalefit=1 Align="Center">
+</imageobject>
+</mediaobject>
+</informalfigure>
+
+<para>
+Each package has its own little directory hierarchy within the
+component repository. Keeping several packages in a single directory
+is illegal. The error, infra and kernel packages all live at the
+top-level of the repository. For other types of packages there are
+some pre-defined directories: <filename
+class="directory">compat</filename> is used for compatibility
+packages, which implement other interfaces such as &uITRON; or POSIX
+using native &eCos; calls; <filename class="directory">hal</filename>
+is used for packages that port &eCos; to different architectures or
+platforms, and this directory is further organized on a
+per-architecture basis; <filename class="directory">io</filename> is
+intended for device drivers; <filename
+class="directory">language</filename> is used for language support
+libraries, for example the C library. There are no strict rules
+defining where new packages should get installed. Obviously if an
+existing top-level directory such as <filename
+class="directory">compat</filename> is applicable then the new package
+should go in there. If a new category is desirable then it is possible
+to create a new sub-directory in the component repository. For
+example, an organization planning to release a number of &eCos;
+packages may want them all to appear below a sub-directory
+corresponding to the organization's name&nbsp;&mdash; in the hope that
+the name will not change too often. It is possible to add new packages
+directly to the top-level of the component repository, but this should
+be avoided.
+</para>
+
+<para>
+The <database>ecos.db</database> file holds the component repository
+database and is managed by the administration tool. The various
+configuration tools read in this file when they start-up to obtain
+information about the various packages that have been installed. When
+developing a new package it is necessary to add some information to
+the file, as described in <xref linkend="language.database">. The
+<filename class="directory">templates</filename> directory holds
+various configuration templates.
+</para>
+
+<note>
+<para>
+Earlier releases of &eCos; came with two separate files,
+<filename>targets</filename> and <filename>packages</filename>. The
+<database>ecos.db</database> database replaces both of these.
+</para>
+</note>
+
+<caution>
+<para>
+The current <database>ecos.db</database> database does not yet provide
+all of the information needed by the component framework. Its format
+is subject to change in future releases, and the file may be replaced
+completely if necessary. There are a number of other likely future
+developments related to the component repository and the database. The
+way targets are described is subject to change. Sometimes it is
+desirable for component writers to do their initial development in a
+directory outside the component repository, but there is no specific
+support in the framework for that yet.
+</para>
+</caution>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Versioning             -->
+
+<sect1 id="package.versions">
+<title>Package Versioning</title>
+<para>
+Below each package directory there can be one or more version
+sub-directories, named after the versions. This is a requirement of
+the component framework: it must be possible for users to install
+multiple versions of a package and select which one to use for any
+given application. This has a number of advantages to users: most
+importantly it allows a single component repository to be shared
+between multiple users and multiple projects, as required; also it
+facilitates experiments, for example it is relatively easy to try out
+the latest version of some package and see if it makes any difference.
+There is a potential disadvantage in terms of disk space. However
+since &eCos; packages generally consist of source code intended for
+small embedded systems, and given typical modern disk sizes, keeping a
+number of different versions of a package installed will usually be
+acceptable. The administration tool can be used to remove versions
+that are no longer required.
+</para>
+
+<informalfigure PgWide=1>
+<mediaobject>
+<imageobject>
+<imagedata fileref="version.png" Scalefit=1 Align="Center">
+</imageobject>
+</mediaobject>
+</informalfigure>
+
+<para>
+The version <filename>current</filename> is special. Typically it
+corresponds to the very latest version of the sources, obtained by
+anonymous &CVS;. These sources may change frequently, unlike full
+releases which do not change (or only when patches are produced).
+Component writers may also want to work on the
+<filename>current</filename> version.
+</para>
+<para>
+All other subdirectories of a package correspond to specific releases
+of that package. The component framework allows users to select the
+particular version of a package they want to use, but by default the
+most recent one will be used. This requires some rules for ordering
+version numbers, a difficult task because of the wide variety of ways
+in which versions can be identified.
+</para>
+
+<orderedlist>
+<listitem>
+<para>
+The version <filename>current</filename> is always considered to be
+the most recent version.
+</para
+</listitem>
+
+<listitem>
+<para>
+If the first character of both strings are either <literal>v</literal>
+or <literal>V</literal>, these are skipped because it makes little
+sense to enforce case sensitivity here. Potentially this could result
+in ambiguity if there are two version directories
+<literal>V1.0</literal> and <literal>v1.0</literal>, but this will
+match the confusion experienced by any users of such a package.
+However if two subsequent releases are called <literal>V1.0</literal>
+and <literal>v1.1</literal>, e.g. because of a minor mix-up when
+making the distribution file, then the case difference is ignored.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Next the two version strings are compared one character at a time.
+If both strings are currently at a digit then a string to number
+conversion takes place, and the resulting numbers are compared.
+For example <literal>v10</literal> is a more recent release than
+<literal>v2</literal>. If the two numbers are the same then processing
+continues, so for <literal>v2b</literal> and <literal>v2c</literal>
+the version comparison code would move on to <literal>b</literal> and
+<literal>c</literal>. 
+</para>
+</listitem>
+
+<listitem>
+<para>
+The characters dot <literal>.</literal>, hyphen <literal>-</literal>
+and underscore <literal>_</literal> are treated as equivalent
+separators, so if one release goes out as <literal>v1_1</literal> and
+the next goes out as <literal>v1.2</literal> the separator has no
+effect.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If neither string has yet terminated but the characters are different,
+ASCII comparison is used. For example <literal>V1.1b</literal> is
+more recent than <literal>v1.1alpha</literal>.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If one version string terminates before the other, the current
+character determines which is the more recent. If the other string is
+currently at a separator character, for example
+<literal>v1.3.1</literal> and <literal>v1.3</literal>, then the former
+is assumed to be a minor release and hence more recent than the
+latter. If the other string is not at a separator character, for
+example <literal>v1.3beta</literal>, then it is treated as an
+experimental version of the <literal>v1.3</literal> release and hence
+older. 
+</para>
+</listitem>
+
+<listitem>
+<para>
+There is no special processing of dates, so with two versions
+<literal>ss-20000316</literal> and <literal>ss-20001111</literal>
+the numerical values <literal>20001111</literal> and
+<literal>20000316</literal> determine the result: larger values are
+more recent. It is suggested that the full year be used in such cases
+rather than a shorthand like <literal>00</literal>, to avoid
+Y2100 problems.
+</para>
+</listitem>
+
+<listitem>
+<para>
+There is no limit on how many levels of versioning are used, so
+there could in theory be a <literal>v3.1.4.1.5.9.2.7</literal> release
+of a package. However this is unlikely to be of benefit to typical
+users of a package.
+</para>
+</listitem>
+
+</orderedlist>
+
+<para>
+The version comparison rules of the component framework may not be
+suitable for every version numbering scheme in existence, but they
+should cope with many common cases.
+</para>
+
+<caution>
+<para>
+There are some issues still to be resolved before it is possible to
+combine the <filename>current</filename> sources available via
+anonymous &CVS and full releases of &eCos; and additional packages in
+a single component repository. The first problem relates to the
+<database>ecos.db</database> database: if a new package is added via
+the CVS repository then this requires a database update, but the
+administration tool is bypassed. The second problem arises if an
+organization chooses to place its component repository under source
+code control using &CVS;, in which case different directories will
+belong to different &CVS; servers. These issues will be addressed in a
+future release.
+</para>
+</caution>
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Package contents       -->
+
+<!-- {{{ Introit                -->
+
+<sect1 id="package.contents">
+<title>Package Contents and Layout</title>
+<para>
+A typical package contains the following:
+</para>
+<orderedlist>
+<listitem>
+<para>
+Some number of source files which will end up in a library. The
+application code will be linked with this library to produce an
+executable. Some source files may serve other purposes, for example to
+provide a linker script.
+</para>
+</listitem>
+<listitem>
+<para>
+Exported header files which define the interface provided by the
+package. 
+</para>
+</listitem>
+<listitem>
+<para>
+On-line documentation, for example reference pages for each exported
+function. 
+</para>
+</listitem>
+<listitem>
+<para>
+Some number of test cases, shipped in source format, allowing users to
+check that the package is working as expected on their particular
+hardware and in their specific configuration.
+</para>
+</listitem>
+<listitem>
+<para>
+One or more &CDL; scripts describing the package to the configuration
+system.
+</para>
+</listitem>
+</orderedlist>
+<para>
+It is also conventional to have a per-package
+<filename>ChangeLog</filename> file used to keep track of changes to
+that package. This is especially valuable to end users of the package
+who may not have convenient access to the source code control system
+used to manage the master copy of the package, and hence cannot find
+out easily what has changed. Often it can be very useful to the main
+developers as well.
+</para>
+<para>
+Any given packages need not contain all of these. It is compulsory to
+have at least one &CDL; script describing the package, otherwise the
+component framework would be unable to process it. Some packages may
+not have any source code: it is possible to have a package that merely
+defines a common interface which can then be implemented by several
+other packages, especially in the context of device drivers; however
+it is still common to have some code in such packages to avoid
+replicating shareable code in all of the implementation packages.
+Similarly it is possible to have a package with no exported header
+files, just source code that implements an existing interface: for
+example an ethernet device driver might just implement a standard
+interface and not provide any additional functionality. Packages do
+not need to come with any on-line documentation, although this may
+affect how many people will want to use the package. Much the same
+applies to per-package test cases.
+</para>
+
+<para>
+The component framework has a recommended per-package directory layout
+which splits the package contents on a functional basis:
+</para>
+
+<informalfigure PgWide=1>
+<mediaobject>
+<imageobject>
+<imagedata fileref="package.png" Scalefit=1 Align="Center">
+</imageobject>
+</mediaobject>
+</informalfigure>
+
+<para>
+For example, if a package has an <filename
+class="directory">include</filename> sub-directory then the component
+framework will assume that all header files in and below that
+directory are exported header files and will do the right thing at
+build time. Similarly if there is &doc; property indicating the
+location of on-line documentation then the component framework will
+first look in the <filename class="directory">doc</filename>
+sub-directory.
+</para>
+
+<para>
+This directory layout is just a guideline, it is not enforced by the
+component framework. For simple packages it often makes more sense to
+have all of the files in just one directory. For example a package
+could just contain the files <filename>hello.cxx</filename>,
+<filename>hello.h</filename>, <filename>hello.html</filename> and
+<filename>hello.cdl</filename>. By default
+<filename>hello.h</filename> will be treated as an exported header
+file, although this can be overridden with the <link
+linkend="ref.include-files">&include-files;</link> property. Assuming
+there is a &doc; property referring to <filename>hello.html</filename>
+and there is no <filename class="directory">doc</filename>
+sub-directory then the tools will search for this file relative to the
+package's top-level and everything will just work. Much the same
+applies to <filename>hello.cxx</filename> and
+<filename>hello.cdl</filename>. 
+</para>
+
+<tip>
+<para>
+Older versions of the &eCos; build system only supported packages that
+followed the directory structure exactly. Hence certain core packages
+such as <filename>error</filename> implement the full directory
+structure, even though that is a particularly simple package and the
+full directory structure is inappropriate. Component writers can
+decide for themselves whether or not the directory structure
+guidelines are appropriate for their package.
+</para>
+</tip>
+
+<!-- }}} -->
+<!-- {{{ Build process          -->
+
+<sect2 id="package.build">
+<title>Outline of the Build Process</title>
+<para>
+The full build process is described in <xref linkend="build">, but 
+a summary is appropriate here. A build involves three directory
+structures: 
+</para>
+
+<orderedlist>
+<listitem>
+<para>
+The component repository. This is where all the package source code is
+held, along with &CDL; scripts, documentation, and so on. For build
+purposes a component repository is read-only. Application developers
+will only modify the component repository when installing or removing
+packages, via the administration tool. Component writers will
+typically work on just one package in the component repository.
+</para>
+</listitem>
+<listitem>
+<para>
+The build tree. Each configuration has its own build tree, which can
+be regenerated at any time using the configuration's
+<filename>ecos.ecc</filename> savefile. The build tree contains only
+intermediate files, primarily object files. Once a build is complete
+the build tree contains no information that is useful for application
+development and can be wiped, although this would slow down any
+rebuilds following changes to the configuration.
+</para>
+</listitem>
+<listitem>
+<para>
+The install tree. This is populated during a build, and contains all
+the files relevant to application development. There will be a
+<filename class="directory">lib</filename> sub-directory which
+typically contains <filename>libtarget.a</filename>, a linker script,
+start-up code, and so on. There will also be an <filename
+class="directory">include</filename> sub-directory containing all the
+header files exported by the various packages. There will also be a
+<filename class="directory">include/pkgconf</filename> sub-directory
+containing various configuration header files with
+<literal>#define's</literal> for the options. Typically the install
+tree is created within the build tree, but this is not a requirement.
+</para>
+</listitem>
+</orderedlist>
+
+<para>
+The build process involves the following steps:
+</para>
+<orderedlist>
+<listitem>
+<para>
+Given a configuration, the component framework is responsible for
+creating all the directories in the build and install trees. If these
+trees already exist then the component framework is responsible for
+any clean-ups that may be necessary, for example if a package has been
+removed then all related files should be expunged from the build and
+install trees. The configuration header files will be generated at
+this time. Depending on the host environment, the component framework
+will also generate makefiles or some other way of building the various
+packages. Every time the configuration is modified this step needs to
+be repeated, to ensure that all option consequences take effect. Care
+is taken that this will not result in unnecessary rebuilds.
+</para>
+<note>
+<para>
+At present this step needs to be invoked manually. In a future version
+the generated makefile may if desired perform this step automatically,
+using a dependency on the <filename>ecos.ecc</filename> savefile.
+</para>
+</note>
+</listitem>
+<listitem>
+<para>
+The first step in an actual build is to make sure that the install
+tree contains all exported header files. All compilations will use
+the install tree's <filename class="directory">include</filename>
+directory as one of the places to search for header files.
+</para>
+</listitem>
+<listitem>
+<para>
+All source files relevant to the current configuration get compiled.
+This involves a set of compiler flags initialized on a per-target
+basis, with each package being able to modify these flags, and with
+the ability for the user to override the flags as well. Care has to be
+taken here to avoid inappropriate target-dependencies in packages that
+are intended to be portable. The component framework has built-in
+knowledge of how to handle C, C++ and assembler source files &mdash;
+other languages may be added in future, as and when necessary. The
+<link linkend="ref.compile">&compile;</link> property is used to
+list the files that should get compiled. All object files end up in
+the build tree.
+</para>
+</listitem>
+<listitem>
+<para>
+Once all the object files have been built they are collected into a
+library, typically <filename>libtarget.a</filename>, which can then be
+linked with application code. The library is generated in the install
+tree. 
+</para>
+</listitem>
+<listitem>
+<para>
+The component framework provides support for custom build steps, using
+the <link linkend="ref.make-object">&make-object;</link> and
+<link linkend="ref.make">&make;</link> properties. The results of
+these custom build steps can either be object files that should end up
+in a library, or other files such as a linker script. It is possible
+to control the order in which these custom build steps take place, for
+example it is possible to run a particular build step before any of
+the compilations happen.
+</para>
+</listitem>
+</orderedlist>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Sources                -->
+
+<sect2 id="package.source">
+<title>Configurable Source Code</title>
+<para>
+All packages should be totally portable to all target hardware (with
+the obvious exceptions of HAL and device driver packages). They should
+also be totally bug-free, require the absolute minimum amount of code
+and data space, be so efficient that cpu time usage is negligible, and
+provide lots of configuration options so that application developers
+have full control over the behavior. The configuration options are
+optional only if a package can meet the requirements of every
+potential application without any overheads. It is not the purpose of
+this guide to explain how to achieve all of these requirements.
+</para>
+<para>
+The &eCos; component framework does have some important implications
+for the source code: compiler flag dependencies; package interfaces
+vs. implementations; and how configuration options affect source code.
+</para>
+
+<sect3 id="package.source.flags">
+<title>Compiler Flag Dependencies</title>
+<para>
+Wherever possible component writers should avoid dependencies on
+particular compiler flags. Any such dependencies are likely to impact
+portability. For example, if one package needs to be built in
+big-endian mode and another package needs to be built in little-endian
+mode then usually it will not be possible for application developers
+to use both packages at the same time; in addition the application
+developer is no longer given a choice in the matter. It is far better
+for the package source code to adapt the endianness at compile-time,
+or possibly at run-time although that will involve code-size
+overheads.
+</para>
+<note>
+<para>
+A related issue is that the current support for handling compiler
+flags in the component framework is still limited and incapable of
+handling flags at a very fine-grain. The support is likely to be
+enhanced in future versions of the framework, but there are
+non-trivial problems to be resolved.
+</para>
+</note>
+</sect3>
+
+<sect3 id="package.source.interfaces">
+<title>Package Interfaces and Implementations</title>
+<para>
+The component framework provides encapsulation at the package level. A
+package <literal>A</literal> has no way of accessing the
+implementation details of another package <literal>B</literal> at
+compile-time. In particular, if there is a private header file
+somewhere in a package's <filename class="directory">src</filename>
+sub-directory then this header file is completely invisible to other
+packages. Any attempts to cheat by using relative pathnames beginning
+with <filename class="directory">../..</filename> are generally doomed
+to failure because of the presence of package version directories.
+There are two ways in which one package can affect another: by means
+of the exported header files, which define a public interface; or via
+the &CDL; scripts.
+</para>
+<para>
+This encapsulation is a deliberate aspect of the overall &eCos;
+component framework design. In most cases it does not cause any
+problems for component writers. In some cases enforcing a clean
+separation between interface and implementation details can improve
+the code. Also it reduces problems when a package gets upgraded:
+component writers are free to do pretty much anything on the
+implementation side, including renaming every single source file; care
+has to be taken only with the exported header files and with the &CDL;
+data, because those have the potential of impacting other packages.
+Application code is similarly unable to access package implementation
+details, only the exported interface.
+</para>
+<para>
+Very occasionally the inability of one package to see implementation
+details of another does cause problems. One example occurs in HAL
+packages, where it may be desirable for the architectural, variant and
+platform HAL's to share some information that should not be visible to
+other packages or to application code. This may be addressed in the
+future by introducing the concept of <literal>friend</literal>
+packages, just as a C++ class can have <literal>friend</literal>
+functions and classes which are allowed special access to a class
+internals. It is not yet clear whether such cases are sufficiently
+frequent to warrant introducing such a facility.
+</para>
+</sect3>
+
+<sect3 id="package.source.config">
+<title>Source Code and Configuration Options</title>
+<para>
+Configurability usually involves source code that needs to implement
+different behavior depending on the settings of configuration
+options. It is possible to write packages where the only consequence
+associated with various configuration options is to control what gets
+built, but this approach is limited and does not allow for
+fine-grained configurability. There are three main ways in which
+options could affect source code at build time:
+</para>
+
+<orderedlist>
+<listitem>
+<para>
+The component code can be passed through a suitable preprocessor,
+either an existing one such as <application
+class="software">m4</application> or a new one specially designed with
+configurability in mind. The original sources would reside in the
+component repository and the processed sources would reside in the
+build tree. These processed sources can then be compiled in the usual
+way.
+</para>
+<para>
+This approach has two main advantages. First, it is independent from
+the programming language used to code the components, provided
+reasonable precautions are taken to avoid syntax clashes between
+preprocessor statements and actual code. This would make it easier in
+future to support languages other than C and C++. Second, configurable
+code can make use of advanced preprocessing facilities such as loops
+and recursion. The disadvantage is that component writers would have
+to learn about a new preprocessor and embed appropriate directives in
+the code. This makes it much more difficult to turn existing code into
+components, and it involves extra training costs for the component
+writers.
+</para>
+</listitem>
+<listitem>
+<para>
+Compiler optimizations can be used to elide code that should not be
+present, for example:
+</para>
+<programlisting width=72>
+    &hellip;
+    if (CYGHWR_NUMBER_UARTS &gt; 0) {
+        &hellip;
+     }
+    &hellip;
+</programlisting>
+<para>
+If the compiler knows that <varname>CYGHWR_NUMBER_UARTS</varname> is
+the constant number 0 then it is a trivial operation to get rid of the
+unnecessary code. The component framework still has to define this
+symbol in a way that is acceptable to the compiler, typically by using
+a <literal>const</literal> variable or a preprocessor symbol. In some
+respects this is a clean approach to configurability, but it has
+limitations. It cannot be used in the declarations of data structures
+or classes, nor does it provide control over entire functions. In
+addition it may not be immediately obvious that this code is affected
+by configuration options, which may make it more difficult to
+understand.
+</para>
+</listitem>
+<listitem>
+<para>
+Existing language preprocessors can be used. In the case of C or C++
+this would be the standard C preprocessor, and configurable code would
+contain a number of <literal>#ifdef</literal> and
+<literal>#if</literal> statements.
+</para>
+<programlisting width=72>
+#if (CYGHWR_NUMBER_UARTS &gt; 0)
+     &hellip;
+#endif
+</programlisting>
+<para>
+This approach has the big advantage that the C preprocessor is a
+technology that is both well-understood and widely used. There are
+also disadvantages: it is not directly applicable to components
+written in other languages such as Java (although it is possible to
+use the C preprocessor as a stand-alone program); the preprocessing
+facilities are rather limited, for example there is no looping
+facility; and some people consider the technology to be ugly. Of
+course it may be possible to get around the second objection by
+extending the preprocessor that is used by gcc and g++.
+</para>
+</listitem>
+</orderedlist>
+
+<para>
+The current component framework generates configuration header files
+with C preprocessor <literal>#define's</literal> for each option
+(typically, there various properties which can be used to control
+this). It is up to component writers to decide whether to use
+preprocessor <literal>#ifdef</literal> statements or language
+constructs such as <literal>if</literal>. At present there is no
+support for languages which do not involve the C preprocessor,
+although such support can be added in future when the need arises.
+</para>
+
+</sect3>
+
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Headers                -->
+
+<sect2 id="package.headers">
+<title>Exported Header Files</title>
+
+<para>
+A package's exported header files should specify the interface
+provided by that package, and avoid any implementation details.
+However there may be performance or other reasons why implementation
+details occasionally need to be present in the exported headers.
+</para>
+
+<note>
+<para>
+Not all programming languages have the concept of a header file. In
+some cases the component framework would need extensions to support
+packages written in such languages. 
+</para>
+</note>
+
+<para>
+Configurability has a number of effects on the way exported header
+files should be written. There may be configuration options which
+affect the interface of a package, not just the implementation. It is
+necessary to worry about nested <literal>#include's</literal> and how
+this affects package and application builds. A special case of this
+relates to whether or not exported header files should
+<literal>#include</literal> configuration headers. These configuration
+headers are exported, but should only be <literal>#include'd</literal>
+when necessary.
+</para>
+
+<sect3 id="package.headers.functions">
+<title>Configurable Functionality</title>
+
+<para>
+Many configuration options affect only the implementation of a
+package, not the interface. However some options will affect the
+interface as well, which means that the options have to be tested in
+the exported header files. Some implementation choices, for example
+whether or not a particular function should be inlined, also need to
+be tested in the header file because of language limitations.
+</para>
+<para>
+Consider a configuration option
+<varname>CYGFUN_KERNEL_MUTEX_TIMEDLOCK</varname> which controls
+whether or not a function <function>cyg_mutex_timedlock</function> is
+provided. The exported kernel header file <filename
+class="headerfile">cyg/kernel/kapi.h</filename> could contain the
+following:
+</para>
+
+<programlisting width=72>
+#include &lt;pkgconf/kernel.h&gt;
+&hellip;
+#ifdef CYGFUN_KERNEL_MUTEX_TIMEDLOCK
+extern bool cyg_mutex_timedlock(cyg_mutex_t*);
+#endif
+</programlisting>
+
+<para>
+This is a correct header file, in that it defines the exact interface
+provided by the package at all times. However is has a number of
+implications. First, the header file is now dependent on <filename
+class="headerfile">pkgconf/kernel.h</filename>, so any changes to
+kernel configuration options will cause <filename
+class="headerfile">cyg/kernel/kapi.h</filename> to be out of date, and
+any source files that use the kernel interface will need rebuilding.
+This may affect sources in the kernel package, in other packages, and
+in application source code. Second, if the application makes use of
+this function somewhere but the application developer has
+misconfigured the system and disabled this functionality anyway then
+there will now be a compile-time error when building the application.
+Note that other packages should not be affected, since they should
+impose appropriate constraints on
+<varname>CYGFUN_KERNEL_MUTEX_TIMEDLOCK</varname> if they use that
+functionality (although of course some dependencies like this may get
+missed by component developers).
+</para>
+<para>
+An alternative approach would be:
+</para>
+
+<programlisting width=72>
+extern bool cyg_mutex_timedlock(cyg_mutex_t*);
+</programlisting>
+
+<para>
+Effectively the header file is now lying about the functionality
+provided by the package. The first result is that there is no longer a
+dependency on the kernel configuration header. The second result is
+that an application file using the timed-lock function will now
+compile, but the application will fail to link. At this stage the
+application developer still has to intervene, change the
+configuration, and rebuild the system. However no application
+recompilations are necessary, just a relink.
+</para>
+
+<para>
+Theoretically it would be possible for a tool to analyze linker errors
+and suggest possible configuration changes that would resolve the
+problem, reducing the burden on the application developer. No such
+tool is planned in the short term.
+</para>
+
+<para>
+It is up to component writers to decide which of these two approaches
+should be preferred. Note that it is not always possible to avoid
+<literal>#include'ing</literal> a configuration header file in an
+exported one, for example an option may affect a data structure rather
+than just the presence or absence of a function. Issues like this will
+vary from package to package.
+</para>
+
+</sect3>
+
+<sect3 id="package.headers.includes">
+<title>Nested <literal>#include's</literal></title>
+<para>
+As a general rule, unnecessary <literal>#include's</literal> should be
+avoided. A header file should <literal>#include</literal> only those
+header files which are absolutely needed for it to define its
+interface. Any additional <literal>#include's</literal> make it more
+likely that package or application source files become dependent on
+configuration header files and will get rebuilt unnecessarily when
+there are minor configuration changes.
+</para>
+</sect3>
+
+<sect3 id="package.headers.configincludes">
+<title>Including Configuration Headers</title>
+<para>
+Exported header files should avoid <literal>#include'ing</literal>
+configuration header files unless absolutely necessary, to avoid
+unnecessary rebuilding of both application code and other packages
+when there are minor configuration changes. A
+<literal>#include</literal> is needed only when a configuration option
+affects the exported interface, or when it affects some implementation
+details which is controlled by the header file such as whether or not
+a particular function gets inlined.
+</para>
+<para>
+There are a couple of ways in which the problem of unnecessary
+rebuilding could be addressed. The first would require more
+intelligent handling of header file dependency handling by the tools
+(especially the compiler) and the build system. This would require
+changes to various non-eCos tools. An alternative approach would be to
+support finer-grained configuration header files, for example there
+could be a file <filename
+class="headerfile">pkgconf/libc/inline.h</filename> controlling which
+functions should be inlined. This could be achieved by some fairly
+simple extensions to the component framework, but it makes it more
+difficult to get the package header files and source code correct:
+a C preprocessor <literal>#ifdef</literal> directive does not
+distinguish between a symbol not being defined because the option is
+disabled, or the symbol not being defined because the appropriate
+configuration header file has not been <literal>#include'd</literal>.
+It is likely that a cross-referencing tool would have to be developed
+first to catch problems like this, before the component framework
+could support finer-grained configuration headers.
+</para>
+</sect3>
+
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Documentation          -->
+
+<sect2 id="package.documentation">
+<title>Package Documentation</title>
+<para>
+On-line package documentation should be in HTML format. The component
+framework imposes no special limitations: component writers can decide
+which version of the HTML specification should be followed; they can
+also decide on how best to cope with the limitations of different
+browsers. In general it is a good idea to keep things simple.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Tests                  -->
+
+<sect2 id="package.tests">
+<title>Test Cases</title>
+<para>
+Packages should normally come with one or more test cases. This allows
+application developers to verify that a given package works correctly
+on their particular hardware and in their particular configuration,
+making it slightly more likely that they will attempt to find bugs in
+their own code rather than automatically blaming the component
+writers.
+</para>
+<para>
+At the time of writing the application developer support for building
+and running test cases via the component framework is under review and
+likely to change. Currently each test case should consist of a single
+C or C++ source file that can be compiled with the package's set of
+compiler flags and linked like any application program. Each test case
+should use the testing API defined by the infrastructure. A
+magically-named calculated configuration option of the form
+<varname>CYGPKG_&lt;PACKAGE-NAME&gt;_TESTS</varname> lists the test
+cases.
+</para>
+</sect2>
+
+<!-- }}} -->
+<!-- {{{ Host tools             -->
+
+<sect2 id="package.host">
+<title>Host-side Support</title>
+<para>
+On occasion it would be useful for an &eCos; package to be shipped
+with host-side support. This could take the form of an additional tool
+needed to build that package. It could be an application intended to
+communicate with the target-side package code and display monitoring
+information. It could be a utility needed for running the package test
+cases, especially in the case of device drivers. The component
+framework does not yet provide any such support for host-side
+software, and there are obvious issues related to portability to the
+different machines that can be used for hosts. This issue may get
+addressed in some future release. In some cases custom build steps can
+be subverted to do things on the host side rather than the target
+side, but this is not recommended.
+</para>
+</sect2>
+
+<!-- }}} -->
+
+</sect1>
+
+<!-- }}} -->
+<!-- {{{ Package Distributions  -->
+
+<sect1 id="package.distrib">
+<title>Making a Package Distribution</title>
+
+<para>
+Developers of new &eCos; packages are advised to distribute their
+packages in the form of &eCos; package distribution files. Packages
+distributed in this format may be added to existing &eCos; component
+repositories in a robust manner using the Package Administration Tool.
+This chapter describes the format of package distribution files and
+details how to prepare an eCos package for distribution in this format.
+</para>
+
+<sect2 id="package.distrib.format">
+<title>The &eCos; package distribution file format</title>
+
+<para>
+eCos package distribution files are gzipped GNU tar archives which
+contain both the source code for one or more &eCos; packages and a
+data file containing package information to be added to the component
+repository database. The distribution files are subject to the
+following rules:
+</para>
+<orderedlist numeration="Loweralpha">
+<listitem>
+<para>
+The data file must be named <filename>pkgadd.db</filename> and must be
+located in the root of the tar archive. It must contain data in a
+format suitable for appending to the eCos repository database
+(<database>ecos.db</database>). <xref linkend="language.database">
+describes this data format. Note that a database consistency check is
+performed by the &eCos; Administration Tool when
+<filename>pkgadd.db</filename> has been appended to the database. Any
+new target entries which refer to unknown packages will be removed at
+this stage.
+</para>
+</listitem>
+<listitem>
+<para>
+The package source code must be placed in one or more <filename
+class="directory">&lt;package-path&gt;/&lt;version&gt;</filename>
+directories in the tar archive, where each &lt;package-path&gt;
+directory path is specified as the directory attribute of one of the
+packages entries in <filename>pkgadd.db</filename>.
+</para>
+</listitem>
+<listitem>
+<para>
+An optional license agreement file named
+<filename>pkgadd.txt</filename> may be placed in the root of the tar
+archive. It should contain text with a maximum line length of 79
+characters. If this file exists, the contents will be presented to the
+user during installation of the package. The &eCos; Package
+Administration Tool will then prompt the user with the question
+<prompt>"Do you accept all the terms of the preceding license
+agreement?"</prompt>. The user must respond
+<userinput>"yes"</userinput> to this prompt in order to proceed with
+the installation.
+</para>
+</listitem>
+<listitem>
+<para>
+Optional template files may be placed in one or more <filename
+class="directory">templates/&lt;template_name&gt;</filename>
+directories in the tar archive. Note that such template files would be
+appropriate only where the packages to be distributed have a complex
+dependency relationship with other packages. Typically, a third party
+package can be simply added to an eCos configuration based on an
+existing core template and the provision of new templates would not be
+appropriate. <xref linkend="advanced.templates"> contains more
+information on templates.
+</para>
+</listitem>
+<listitem>
+<para>
+The distribution file must be given a <filename>.epk</filename> (not
+<filename>.tar.gz</filename>) file extension. The
+<filename>.epk</filename> file extension serves to distinguish &eCos;
+package distributions files from generic gzipped GNU tar archives. It
+also discourages users from attempting to extract the package from the
+archive manually. The file browsing dialog of the &eCos; Package
+Administration Tool lists only those files which have a
+<filename>.epk</filename> extension.
+</para>
+</listitem>
+<listitem>
+<para>
+No other files should be present in the archive.
+</para>
+</listitem>
+<listitem>
+<para>
+Files in the tar archive may use <literal>LF</literal> or
+<literal>CRLF</literal> line endings interchangably. The &eCos;
+Administration Tool ensures that the installed files are given the
+appropriate host-specific line endings.
+</para>
+</listitem>
+<listitem>
+<para>
+Binary files may be placed in the archive, but the distribution of
+object code is not recommended. All binary files must be given a
+<literal>.bin</literal> suffix in addition to any file extension they
+may already have. For example, the GIF image file
+<filename>myfile.gif</filename> must be named
+<filename>myfile.gif.bin</filename> in the archive. The
+<filename>.bin</filename> suffix is removed during file extraction and
+is used to inhibit the manipulation of line endings by the &eCos;
+Administration Tool.
+</para>
+</listitem>
+</orderedlist>
+</sect2>
+
+<sect2 id="package.distrib.prepare">
+<title>Preparing eCos packages for distribution</title>
+
+<para>
+Development of new &eCos; packages or new versions of existing &eCos;
+packages will take place in the context of an existing &eCos;
+component repository. This section details the steps involved in
+extracting new packages from a repository and generating a
+corresponding &eCos; package distribution file for distribution of the
+packages to other &eCos; users. The steps required are as follows:
+</para>
+
+<orderedlist numeration="Loweralpha">
+<listitem>
+<para>
+Create a temporary directory <filename
+class="directory">$PKGTMP</filename> for manipulation of the package
+distribution file contents and copy the source files of the new
+packages into this directory, preserving the relative path to the
+package. In the case of a new package at <filename
+class="directory">mypkg/current</filename> in the repository:
+</para>
+<screen width=72>
+    $ mkdir -p $PKGTMP/mypkg
+    $ cp -p -R $ECOS_REPOSITORY/mypkg/current $PKGTMP/mypkg
+</screen>
+<para>
+Where more than one package is to be distributed in a single package
+distribution file, copy each package in the above manner. Note that
+multiple packages distributed in a single package distribution file
+cannot be installed separately. Where such flexibility is required,
+distribution of each new package in separate package distribution files
+is recommended.
+</para>
+</listitem>
+<listitem>
+<para>
+Copy any template files associated with the distributed packages into
+the temporary directory, preserving the relative path to the template.
+For example:
+</para>
+<screen width=72>
+    $ mkdir -p $PKGTMP/templates
+    $ cp -p -R $ECOS_REPOSITORY/templates/mytemplate $PKGTMP/templates
+</screen>
+</listitem>
+<listitem>
+<para>
+Remove any files from the temporary directory hierarchy which you do
+not want to distribute with the packages (eg object files, <filename
+class="directory">CVS</filename> directories).
+</para>
+</listitem>
+<listitem>
+<para>
+Add a <filename>.bin</filename> suffix to the name of any binary
+files. For example, if the packages contains GIF image files (*.gif)
+for documentation purposes, such files must be renamed to *.gif.bin as
+follows:
+</para>
+<screen width=72>
+   $ find $PKGTMP -type f -name '*.gif' -exec mv {} {}.bin ';'
+</screen>
+<para>
+The <filename>.bin</filename> suffix is removed during file extraction
+and is used to inhibit the manipulation of line endings by the eCos
+Package Administration Tool.
+</para>
+</listitem>
+<listitem>
+<para>
+Extract the package records for the new packages from the package
+database file at <database>$ECOS_REPOSITORY/ecos.db</database> and
+create a new file containing these records at
+<filename>$PKGTMP/pkgadd.db</filename> (in the root of the temporary
+directory hierarchy). Any target records which reference the
+distributed packages must also be provided in pkgadd.db.
+</para>
+</listitem>
+<listitem>
+<para>
+Rename the version directories under <filename
+class="directory">$PKGTMP</filename> (typically <filename
+class="directory">current</filename> during development) to reflect
+the versions of the packages you are distributing. For example,
+version 1.0 of a package may use the version directory name <filename
+class="directory">v1_0</filename>:
+</para>
+<screen width=72>
+    $ cd $PKGTMP/mypkg
+    $ mv current v1_0
+</screen>
+<para>
+<xref linkend="package.versions"> describes the version naming
+conventions.
+</para>
+</listitem>
+<listitem>
+<para>
+Rename any template files under <filename
+class="directory">$PKGTMP</filename> (typically
+<filename>current.ect</filename> during development) to reflect the
+version of the template you are distributing. For example, version 1.0
+of a template may use the filename <filename>v1_0.ect</filename>:
+</para>
+<screen width=72>
+    $ cd $PKGTMP/templates/mytemplate
+    $ mv current.ect v1_0.ect
+</screen>
+<para>
+It is also important to edit the contents of the template file, changing
+the version of each referenced package to match that of the packages you
+are distributing. This step will eliminate version warnings during the
+subsequent loading of the template.
+</para>
+</listitem>
+<listitem>
+<para>
+Optionally create a licence agreement file at
+<filename>$PKGTMP/pkgadd.txt</filename> containing the licensing terms
+under which you are distributing the new packages. Limit each line in
+this file to a maximum of 79 characters.
+</para>
+</listitem>
+<listitem>
+<para>
+Create a GNU tar archive of the temporary directory hierarchy. By
+convention, this archive would have a name of the form
+<filename>&lt;package_name&gt;-&lt;version&gt;</filename>:
+</para>
+<screen width=72>
+    $ cd $PKGTMP
+    $ tar cf mypkg-1.0.tar *
+</screen>
+<para>
+Note that non-GNU version of tar may create archive files which exhibit
+subtle incompatibilities with GNU tar. For this reason, always use GNU
+tar to create the archive file.
+</para>
+</listitem>
+<listitem>
+<para>
+Compress the archive using gzip and give the resulting file a
+<filename>.epk</filename> file extension:
+</para>
+<screen width=72>
+    $ gzip mypkg-1.0.tar
+    $ mv mypkg-1.0.tar.gz mypkg-1.0.epk
+</screen>
+<para>
+The resulting eCos package distribution file (*.epk) is in a compressed
+format and may be distributed without further compression.
+</para>
+</listitem>
+</orderedlist>
+
+</sect2>
+
+</sect1>
+
+<!-- }}} -->
+
+</chapter>

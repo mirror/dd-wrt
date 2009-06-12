@@ -1,0 +1,735 @@
+#===============================================================================
+#
+#    hosttest.exp
+#
+#    Support for host-side testing
+#
+#===============================================================================
+######COPYRIGHTBEGIN####
+#                                                                          
+# ----------------------------------------------------------------------------
+# Copyright (C) 1998, 1999, 2000, 2001 Red Hat, Inc.
+#
+# This file is part of the eCos host tools.
+#
+# This program is free software; you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License as published by the Free 
+# Software Foundation; either version 2 of the License, or (at your option) 
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# ----------------------------------------------------------------------------
+#                                                                          
+######COPYRIGHTEND####
+#===============================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):	bartv
+# Contributors:	bartv
+# Date:		1998-11-25
+# Note:         Arguably this should be a loadable package
+#
+#####DESCRIPTIONEND####
+#===============================================================================
+#
+
+# ----------------------------------------------------------------------------
+# This script gets loaded by host-side DejaGnu test harnesses to provide
+# various utilities for testing eCos host applications. It lives in the
+# host-side infrastructure directory and gets installed in
+# $(PREFIX)/share/dejagnu.
+#
+# The script can assume that a number of globals from the site.exp
+# file have been read in. These include:
+#     tool           - name of the tool (i.e. the package)
+#     srcdir         - location of the source directory
+#     objdir         - location of the build tree
+#     host_alias     - config triplet
+#     host_triplet   - ditto
+#
+# The generated Makefile has some additional information that is useful.
+#     CC             - name of the C compiler that is used
+#     CXX            - name of the C++ compiler
+#     prefix         - where everything gets installed
+#     OBJEXT         - either o or obj
+#     EXEEXT         - either nothing or .exe
+#     VERSION        - the version number
+#     CFLAGS         - flags to use when compiling C code
+#     CXXFLAGS       - flags to use when compiling C++ code
+#
+# Some additional variables should be present in any generated
+# makefiles in the eCos tree.
+#     INCLUDES       - header file search path
+#     LIBS           - libraries, search paths, ...
+#
+# hosttest_initialize
+#     Perform any initialization steps that are needed. Currently this
+#     means reading in the Makefile from the top-level of the build tree
+#     and figuring out the values of CC, CXX, and anything else that is
+#     useful. Any errors should be reported via perror and then the
+#     script should exit.
+#
+#     There is an optional argument, a list of additional variables which
+#     should be present in the makefile and whose values are desired.
+
+proc hosttest_initialize { { pkg_vars {} } } {
+
+    # First check that this script is actually running inside DejaGnu
+    if { [info exists ::objdir] == 0 } {
+	puts "Variable ::objdir is not defined, is this script really running inside DejaGnu?"
+	exit 1
+    }
+
+    # The information is stored in an array hosttest_data. Make sure this
+    # array exists.
+    array set ::hosttest_data {}
+
+    # Now clear out any entries in the array
+    foreach entry [array names ::hosttest_data] {
+	unset ::hosttest_data($entry)
+    }
+
+    # Now read in the build tree's Makefile (and not the testsuite's Makefile)
+    set filename [file join $::objdir .. Makefile]
+    if { [file exists $filename] == 0 } {
+	perror "Initialization error: the build tree's Makefile $filename does not exist."
+	exit 1
+    }
+    set status [ catch {
+	set fd [open $filename r]
+	set contents [read $fd]
+	close $fd
+    } message]
+    if { $status != 0 } {
+	perror "Error reading $filename.\n$message"
+	exit 1
+    }
+
+    # The data is available. Search it for each of the variables of
+    # interest. Some variables are optional and are given default
+    # values.
+    set ::hosttest_data(CFLAGS) ""
+    set ::hosttest_data(CXXFLAGS) ""
+    
+    set lines [split $contents "\n"]
+
+    foreach var [concat { CC CXX prefix OBJEXT EXEEXT VERSION CFLAGS CXXFLAGS INCLUDES LIBS } $pkg_vars] {
+
+	set pattern "^$var\[ \t\]*:?=\[ \t\]* (.*)\$"
+	set dummy ""
+	set match ""
+
+	foreach line $lines {
+	    if { [regexp -- $pattern $line dummy match] == 1 } {
+		set ::hosttest_data($var) $match
+		break
+	    }
+	}
+	if { [info exists ::hosttest_data($var)] == 0 } {
+	    perror "Variable $var is not defined in $filename"
+	    exit 1
+	} 
+    }
+
+    # If compiling with VC++ remove any cygwin-isms from the prefix
+    if { [string match "cl*" $::hosttest_data(CC)] } {
+	set status [catch "exec cygpath -w $::hosttest_data(prefix)" message]
+	if { $status == 0 } {
+	    regsub -all -- {\\} $message {/} ::hosttest_data(prefix)
+	} else {
+	    perror "Converting cygwin pathname $::hosttest_data(prefix)\n$message"
+	    exit 1
+	}
+    }
+}
+
+
+# ----------------------------------------------------------------------------
+# hosttest_extract_version
+#     Assuming there has been a call to initialize, the required information
+#     should be available in the hosttest_data array. The initialize
+#     function should have aborted if the data is not available.
+
+proc hosttest_extract_version { } {
+
+    if { [info exists ::hosttest_data(VERSION)] == 0 } {
+	error "No version information - host testing has not been properly initialized."
+    }
+    
+    if { [info exists ::objdir] == 0 } {
+	error "Variable ::objdir is not defined, is this script really running inside DejaGnu?"
+    }
+    return $::hosttest_data(VERSION)
+}
+
+# ----------------------------------------------------------------------------
+# hosttest_compile
+#    compile and link one or more source files. The arguments are:
+#    1) the name of the test case
+#    2) a list of one or more source files that need to be compiled.
+#       Both .c and .cxx files are supported, and the appropriate
+#       compiler will be used. If this list is empty then the
+#       code will look for a .c or a .cxx file which matches the
+#       name of the test executable. Source files are assumed to
+#       be relative to $::srcdir/$::subdir
+#    3) a list (possibly empty) of directories that should be in the
+#       include path. The build tree's directory is automatically in
+#       the path, as is $(PREFIX)/include. Note that the build tree
+#       is actually one level above objdir, on the assumption that
+#       objdir is the testsuite subdirectory of the real objdir.
+#    4) ditto for library search paths.
+#    5) and a list of additional libraries that should be linked.
+#
+# Currently it is not possible to pass compiler flags since those
+# might need translating between gcc and VC++. This may have to be
+# resolved.
+#
+# Currently linking is not done via libtool. This may have to change.
+#
+# The various object files and the executable are placed in a directory
+# testcase in the build tree, to avoid the risk of name clashes. This
+# directory must not exist yet. There is a separate routine hosttest_clean
+# which simply expunges the entire testcase directory.
+#
+# The output of a succesful compile or built is reported using
+# verbose at level 2. Unsuccesful compiles or builts are reported using
+# level 1.
+
+proc hosttest_compile { name sources includes libdirs libs } {
+
+    # Make sure that the testcase directory does not yet exist, then
+    # create it. This guarantees a clean system and reasonable access
+    # permissions. Each testcase invocation should involve a call to
+    # the clean function.
+    set dirname [file join $::objdir "testcase"]
+    if { [file exists $dirname] != 0 } {
+	# An empty directory is ok.
+	if { [llength [glob -nocomplain -- [file join $dirname "*"]]] != 0 } {
+	    error "hosttest_compile: $dirname already exists"
+	}
+    }
+
+    set status [catch { file mkdir $dirname } message]
+    if { $status != 0 } {
+	error "hosttest_compile: unable to create directory $dirname"
+    }
+
+    # The only argument that must be valid is the test name.
+    if { $name == "" } {
+	error "hosttest_compile: invalid test case name"
+    }
+
+    # If the list of sources is empty then look for a suitable
+    # file in the appropriate directory.
+    if { [llength $sources] == 0 } {
+	set filename [file join $::srcdir $::subdir "${name}.c"]
+	if { [file exists $filename] && [file isfile $filename] } {
+	    lappend sources [file tail $filename]
+	} else {
+	    set filename [file join $::srcdir $::subdir "${name}.cxx"]
+	    if { [file exists $filename] && [file isfile $filename] } {
+		lappend sources [file tail $filename]
+	    } else {
+		error "hosttest_compile: no sources listed and unable to find ${name}.c or ${name}.cxx"
+	    }
+	}
+    }
+
+    # For each source file, generate a compile command line and try to execute
+    # it. The command line takes the form:
+    #  (CC|CXX) -c (CFLAGS|CXXFLAGS) (INCDIRS) -o xxx yyy
+    #
+    # It is also useful to produce a list of the object files that need to
+    # linked later on, and to work out which tool should be invoked for
+    # linking.
+    set object_files {}
+    set has_cxx_files 0
+    
+    foreach source $sources {
+	set commandline ""
+	if { [file extension $source] == ".c" } {
+	    append commandline "$::hosttest_data(CC) -c $::hosttest_data(CFLAGS) "
+	} elseif { [file extension $source] == ".cxx" } {
+	    set has_cxx_files 1
+	    append commandline "$::hosttest_data(CXX) -c $::hosttest_data(CXXFLAGS) "
+	} else {
+	    error "hosttest_compile: files of type [file extension $source] ($source) are not yet supported."
+	}
+
+	# Include path: start with the source tree. Then the build tree.
+	# Then the makefile's INCLUDES variable.
+	# Then any additional directories specified explicitly by the
+	# testcase. Finish off with the prefix. Note that header files
+	# in the prefix directory may be out of date, depending on whether
+	# or not there has been an install recently.
+	append commandline "-I[file join [pwd] [file dirname $::srcdir]] "
+	append commandline "-I[file join [pwd] [file dirname $::objdir]] "
+	append commandline "$::hosttest_data(INCLUDES) "
+	foreach dir $includes {
+	    append commandline "-I[file join [pwd] $dir] "
+	}
+	append commandline "-I[file join [pwd] $::hosttest_data(prefix) include] "
+	
+	# The output file must go into the testcase directory and have the right suffix
+	set objfile "[file root [file tail $source]].$::hosttest_data(OBJEXT)"
+	lappend object_files $objfile
+	if { [string match "cl*" $::hosttest_data(CC)] } {
+	    append commandline "-Fo[file join $::objdir testcase $objfile] "
+	} else {
+	    append commandline "-o [file join $::objdir testcase $objfile] "
+	}
+
+	# Finally provide the source file.
+	append commandline "[file join $::srcdir $::subdir $source]"
+	verbose -log -- $commandline
+	
+	# Time to invoke the compiler.
+	set status [catch { set result [eval exec -keepnewline -- $commandline] } message]
+	if { $status == 0 } {
+	    # The compile succeeded and the output is in result. Report the
+	    # output.
+	    verbose -log -- $result
+	} else {
+	    # The compile failed and the output is in message.
+	    verbose -log -- $message
+	    error "hosttest_compile: failed to compile $source"
+	}
+    }
+
+    # At this stage all the source files have been compiled, a list of
+    # object files has been constructed, and it is known whether or
+    # not any of the sources were c++. Time to construct a new command
+    # line.
+    set commandline ""
+    if { $has_cxx_files == 0 } {
+	append commandline "$::hosttest_data(CC) $::hosttest_data(CFLAGS) "
+    } else {
+	append commandline "$::hosttest_data(CXX) $::hosttest_data(CXXFLAGS) "
+    }
+    set exename [file join $::objdir "testcase" "$name$::hosttest_data(EXEEXT)"]
+
+    # List all of the object files
+    foreach obj $object_files {
+	append commandline "[file join $::objdir "testcase" $obj] "
+    }
+
+    # Now take care of libraries and search paths. This requires different
+    # code for gcc and VC++.
+
+    if { [string match "cl*" $::hosttest_data(CC)] } {
+	append commandline "-Fe$exename "
+
+	foreach lib $libs {
+	    append commandline "${lib}.lib "
+	}
+	append commandline "$::hosttest_data(LIBS) "
+	append commandline "-libpath=[file join [pwd] [file dirname $::objdir]] "
+	foreach dir $libdirs {
+	    append commandline "-libpath=[file join [pwd] $dir] "
+	}
+	append commandline "-libpath=[file join [pwd] $::hosttest_data(prefix) lib] "
+    } else {
+	append commandline "-o $exename "
+	append commandline "-L[file join [pwd] [file dirname $::objdir]] "
+	foreach dir $libdirs {
+	    append commandline "-L[file join [pwd] $dir] "
+	}
+	append commandline "-L[file join [pwd] $::hosttest_data(prefix) lib] "
+	foreach lib $libs {
+	    append commandline "-l$lib "
+	}
+	append commandline "$::hosttest_data(LIBS) "
+    }
+
+    # We have a command line, go for it.
+    verbose -log -- $commandline
+    set status [catch { set result [eval exec -keepnewline -- $commandline] } message]
+    if { $status == 0 } {
+	# The link has succeeded, we have an executable.
+	verbose -log -- $result
+    } else {
+	# The link failed and the output is in message.
+	# Report things are per compilation failures
+	verbose -log -- $message
+	error "hosttest_compile: failed to link $exename"
+    }
+    
+    # There should be a test executable.
+}
+
+# ----------------------------------------------------------------------------
+# hosttest_clean
+#    Clean up a testcase directory.
+
+proc hosttest_clean { } {
+
+    set dirname [file join $::objdir "testcase"]
+    if { [file exists $dirname] == 0 } {
+
+        # Something must have gone seriously wrong during the build phase,
+        # there is nothing there.
+        return
+    }
+
+    if { [file isdirectory $dirname] == 0 } {
+	error "hosttest_clean: $dirname should be a directory"
+    }
+
+    foreach entry [glob -nocomplain -- [file join $dirname "*"]] {
+	set filename [file join $dirname $entry]
+	if { [file isfile $filename] == 0 } {
+	    error "hosttest_clean: $filename is not a file"
+	}
+	set status [catch { file delete -force -- $filename } message]
+	if { $status != 0 } {
+	    error "hosttest_clean: unable to delete $filename, $message"
+	}
+    }
+    set status [catch { file delete -force -- $dirname } message]
+    if { $status != 0 } {
+	error "hosttest_clean: unable to delete directory $dirname, $message"
+    }
+}
+
+# ----------------------------------------------------------------------------
+# Run a test executable, returning the status code and the output.
+# The results are returned in variables. It is assumed that some test cases
+# will fail, so raising an exception is appropriate only if something
+# has gone wrong at the test harness level. The argument list
+# should be the name of the test case (from which the executable file name
+# can be derived) and a list of arguments.
+
+proc hosttest_run { result_arg output_arg test args } {
+
+    upvar $result_arg result
+    upvar $output_arg output
+
+    # Figure out the filename corresponding to the test and make
+    # sure it exists.
+    set filename [file join $::objdir "testcase" $test]
+    append filename $::hosttest_data(EXEEXT)
+    if { ([file exists $filename] == 0) || ([file isfile $filename] == 0) } {
+	error "hosttest_run: testcase file $filename does not exist"
+    }
+    
+    # There is no need to worry about interacting with the program,
+    # just exec it. It is a good idea to do this in the testcase directory,
+    # so that any core dumps get cleaned up as well.
+    set current_dir [pwd]
+    set status [ catch { cd [file join $::objdir "testcase"] } message ]
+    if { $status != 0 } {
+	error "unable to change directory to [file join $::objdir testcase]\n$message"
+    }
+    
+    verbose -log -- $filename $args
+    set status [ catch { set result [eval exec -keepnewline -- $filename $args] } output]
+    if { $status == 0 } {
+	# The command has succeeded. The exit code is 0 and the output
+	# was returned by the exec.
+	set output $result
+	set result 0
+    } else {
+	# The command has failed. The exit code is 1 and the output is
+	# already in the right place.
+	verbose -log -- $output
+	set result 1
+    }
+    set status [catch { cd $current_dir } message]
+    if { $status != 0 } {
+	error "unable to change directory back to $current_dir"
+    }
+}
+
+# ----------------------------------------------------------------------------
+# Given some test output, look through it for pass and fail messages.
+# These should result in appropriate DejaGnu pass and fail calls.
+# In addition, if the program exited with a non-zero status code but
+# did not report any failures then a special failure is reported.
+
+proc hosttest_handle_output { name result output } {
+
+    set passes 0
+    set fails  0
+    
+    foreach line [split $output "\n"] {
+
+	# The output should be of one of the following forms:
+	#    PASS:<message>
+	#    FAIL:<message> Line: xx File: xx
+	#    Whatever
+	#
+	# PASS and FAIL messages will be reported via DejaGnu pass and fail
+	# calls. Everything else gets passed to verbose, so the user gets
+	# to choose how much information gets reported.
+
+	set dummy   ""
+	set match1  ""
+	set match2  ""
+
+	if { [regexp -- {^PASS:<(.*)>.*$} $line dummy match1] == 1 } {
+	    pass $match1
+	    incr passes
+	} elseif { [regexp -- {^FAIL:<(.*)>(.*)$} $line dummy match1 match2] == 1 } {
+	    fail "$match1 $match2"
+	    incr fails
+	} else {
+	    verbose $line
+	}
+    }
+
+    if { ($result != 0) && ($fails == 0) } {
+	fail "program terminated with non-zero exit code but did not report any failures"
+    } elseif { ($passes == 0) && ($fails == 0) } {
+	unresolved "test case $name did not report any passes or failures"
+    }
+}
+
+# ----------------------------------------------------------------------------
+# hosttest_run_test_with_filter
+#    This routines combines the compile, run and clean operations,
+#    plus it invokes a supplied callback to filter the output. The
+#    callback is passed three arguments: the test name, the exit code,
+#    and all of the program output.
+
+proc hosttest_run_test_with_filter { name filter sources incdirs libdirs libs args } {
+
+    set result 0
+    set output ""
+
+    set status [ catch { hosttest_compile $name $sources $incdirs $libdirs $libs } message]
+    if { $status != 0 } {
+	fail "unable to compile test case $name, $message"
+	hosttest_clean
+	return
+    } 
+    set status [ catch { hosttest_run result output $name $args } message]
+    if { $status != 0 } {
+	fail "unable to run test case $name, $message"
+	hosttest_clean
+	return
+    }
+    set status [ catch { $filter $name $result $output } message]
+    if { $status != 0 } {
+	fail "unable to parse output from test case $name"
+	hosttest_clean
+	return
+    }
+
+    hosttest_clean
+}
+
+# ----------------------------------------------------------------------------
+# hosttest_run_simple_test
+#    This routine combines the compile, run, output, and clean operations.
+#    The arguments are the same as for compilation, plus an additional
+#    list for run-time parameters to the test case.
+
+proc hosttest_run_simple_test { name sources incdirs libdirs libs args } {
+
+
+    set result 0
+    set output ""
+
+    set status [ catch { hosttest_compile $name $sources $incdirs $libdirs $libs } message]
+    if { $status != 0 } {
+	fail "unable to compile test case $name, $message"
+	hosttest_clean
+	return
+    } 
+    set status [ catch { hosttest_run result output $name $args } message]
+    if { $status != 0 } {
+	fail "unable to run test case $name, $message"
+	hosttest_clean
+	return
+    }
+    set status [ catch { hosttest_handle_output $name $result $output } message]
+    if { $status != 0 } {
+	fail "unable to parse output from test case $name"
+	hosttest_clean
+	return
+    }
+
+    hosttest_clean
+}
+
+# ----------------------------------------------------------------------------
+# Filename translation. A particular file has been created and must now
+# be accessed from Tcl.
+#
+# Under Unix everything just works.
+#
+# Under Windows, well there is cygwin and there is the Windows world.
+# A file may have come from either. cygtclsh80 and hence DejaGnu is not
+# fully integrated with cygwin, for example it does not know about
+# cygwin mount points. There are also complications because of
+# volume-relative filenames.
+#
+# The code here tries a number of different ways of finding a file which
+# matches the name. It is possible that the result is not actually what
+# was intended, but hopefully this case will never arise.
+
+proc hosttest_translate_existing_filename { name } {
+
+    if { $::tcl_platform(platform) == "unix" } {
+	# The file should exist. It is worth checking just in case.
+	if { [file exists $name] == 0 } {
+	    return ""
+	} else {
+	    return $name
+	}
+    }
+
+    if { $::tcl_platform(platform) != "windows" } {
+	perror "The testing framework does not know about platform $::tcl_platform(platform)"
+	return ""
+    }
+
+    # Always get rid of any backslashes, they just cause trouble
+    regsub -all -- {\\} $name {/} name
+
+    # If the name is already valid, great.
+    if { [file exists $name] } {
+	return $name
+    }
+
+    # OK, try to use cygwin's cygpath utility to convert it.
+    set status [catch "exec cygpath -w $name" message]
+    if { $status == 0 } {
+	set cygwin_name ""
+	regsub -all -- {\\} $message {/} cygwin_name
+	if { [file exists $cygwin_name] } {
+	    return $cygwin_name
+	}
+    }
+
+    # Is the name volumerelative? If so work out the current volume
+    # from the current directory and prepend this.
+    if { [file pathtype $name] == "volumerelative" } {
+	append fullname [string range [pwd] 0 1] $name
+	if { [file exists $fullname] } {
+	    return $fullname
+	}
+    }
+
+    # There are other possibilities, e.g. d:xxx indicating a file
+    # relative to the current directory on drive d:. For now such
+    # Lovecraftian abominations are ignored.
+    return ""
+}
+
+# ----------------------------------------------------------------------------
+# Support for assertion dumps. The infrastructure allows other subsystems
+# to add their own callbacks which get invoked during a panic and which
+# can write additional output to the dump file. For example it would be
+# possible to output full details of the current configuration. These
+# routines make it easier to write test cases for such callbacks.
+#
+# hosttest_assert_check(result output)
+#     Make sure that the test case really triggered an assertion.
+#
+# hosttest_assert_read_dump(output)
+#     Identify the temporary file used for the dump, read it in, delete
+#     it (no point in leaving such temporaries lying around when running
+#     testcases) and return the contents of the file.
+#
+# hosttest_assert_extract_callback(dump title)
+#     Given a dump output as returned by read_dump, look for a section
+#     generated by a callback with the given title. Return the contents
+#     of the callback.
+
+proc hosttest_assert_check { result output } {
+
+    if { $result == 0 } {
+	return 0
+    }
+
+    foreach line [split $output "\n"] {
+	if { [string match "Assertion failure*" $line] } {
+	    return 1
+	}
+    }
+    return 0
+}
+
+# This routine assumes that assert_check has already been called.
+proc hosttest_assert_read_dump { output } {
+
+    foreach line [split $output "\n"] {
+	set dummy ""
+	set match ""
+
+	if { [regexp -nocase -- {^writing additional output to (.*)$} $line dummy match] } {
+
+	    # The filename is in match, but it may not be directly accessible.
+	    set filename [hosttest_translate_existing_filename $match]
+	    if { $filename == "" } {
+		return ""
+	    }
+	    set status [ catch {
+		set fd   [open $filename r]
+		set data [read $fd]
+		close $fd
+		file delete $filename
+	    } message]
+            if { $status != 0 } {
+		unresolved "Unable to process assertion dump file $filename"
+		unresolved "File $filename may have to be deleted manually"
+		return ""
+	    }
+	    return $data
+	}
+    }
+    return ""
+}
+
+# Look for the appropriate markers. Also clean up blank lines
+# at the start and end.
+proc hosttest_assert_extract_callback { dump title } {
+
+    set lines [split $dump "\n"]
+    set result ""
+
+    while { [llength $lines] > 0 } {
+	set line  [lindex $lines 0]
+	set lines [lreplace $lines 0 0]
+
+	if { [regexp -nocase -- "^\# \{\{\{.*${title}.*\$" $line] } {
+
+	    # Skip any blank lines at the start
+	    while { [llength $lines] > 0 } {
+		set line  [lindex $lines 0]
+		if { [regexp -- {^ *$} $line] == 0} {
+		    break
+		}
+		set lines [lreplace $lines 0 0]
+	    }
+
+	    # Now add any lines until the close marker.
+	    # Nested folds are not supported yet.
+	    while { [llength $lines] > 0 } {
+		set line  [lindex $lines 0]
+		set lines [lreplace $lines 0 0]
+		if { [regexp -nocase -- {^\# \}\}\}.*$} $line] } {
+		    break
+		}
+		append result $line "\n"
+	    }
+
+	    return $result
+	}
+    }
+
+    return ""
+}
+
+
+
+

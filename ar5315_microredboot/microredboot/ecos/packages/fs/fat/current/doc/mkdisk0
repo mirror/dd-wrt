@@ -1,0 +1,18 @@
+#! /bin/bash
+#
+# Add the following lines to your ~/.mtoolsrc file before running this script
+#
+# drive z: file="/tmp/disk0.img" partition=1
+# drive y: file="/tmp/disk0.img" partition=2
+#
+#
+#
+
+dd if=/dev/zero of=/tmp/disk0.img bs=512 count=20000
+mpartition -I   -t 100 -h 5 -s 40          Z:
+mpartition -cfa -t  49 -h 5 -s 40 -b 200   Z:
+mpartition -cf  -t  50 -h 5 -s 40 -b 10000 Y:
+mformat z:
+mformat y:
+
+# end

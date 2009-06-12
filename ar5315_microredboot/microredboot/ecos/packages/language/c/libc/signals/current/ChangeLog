@@ -1,0 +1,106 @@
+2003-06-26  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/signal.h: Remove unused definitions that had been used
+	for embryonic POSIX signals support.
+
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/signals.cdl: Fix doc link.
+
+2003-02-13  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* include/signal.inl (raise): Use if/else rather than switch to
+	avoid GCC 3.2 bug.
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/signals.cdl: Don't build signal2 test when it'll N/A
+	anyway.
+
+2002-04-30  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/signals.cdl: Added
+	CYGPKG_LIBC_SIGNALS_TESTS_SIGNAL2_TEST3_SKIP.
+	Removed again.
+
+	* tests/signal2.c: Instead check for
+	CYGNUM_HAL_EXCEPTION_FPU_DIV_BY_ZERO to decide if test3 is
+	appropriate.
+
+2001-05-02  Nick Garnett  <nickg@cygnus.co.uk>
+
+	[x86 branch]
+	* tests/signal2.c (cause_memerror): Added code for I386
+	architecture to provoke General Protection Fault.
+
+2001-04-27  Bart Veer  <bartv@redhat.com>
+
+	* tests/signal2.c (main):
+	The FPE test is applicable to the updated synthetic target. 
+
+2001-04-17  Bart Veer  <bartv@redhat.com>
+
+	* cdl/signals.cdl:
+	Synthetic target now supports exceptions
+
+2000-09-14  Jesper Skov  <jskov@redhat.com>
+
+	* tests/signal/signal2.c: Prevent that GCC optimizes away the
+	cause_fpe call.
+
+2000-09-07  Jesper Skov  <jskov@redhat.com>
+
+	* tests/signal2.c: Fix compiler warning. Also reset FPU exception
+	vectors. Check for SH7708, not EDK7708 in test3 skip code.
+	* tests/signal1.c: Fix compiler warning.
+
+2000-05-16  Jesper Skov  <jskov@redhat.com>
+
+        * tests/signal2.c: Also reset DIV_BY_ZERO vector.
+
+2000-05-08  Jesper Skov  <jskov@redhat.com>
+
+	* tests/signal2.c: Skip test3 on SH7709A.
+
+2000-05-02  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* New package
+	Separated original libc out into separate packages on functional
+	boundaries.
+	Header files are now managed by isoinfra package
+	Plenty of cleanups done, but no major functionality changes
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

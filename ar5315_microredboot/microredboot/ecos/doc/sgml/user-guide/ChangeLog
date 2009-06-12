@@ -1,0 +1,165 @@
+2004-06-15  Roland Cassebohn <Roland.Cassebohm@VisionSystems.de>
+
+	* target-setup.sgml: 
+	* real-time-characterization.sgmo:
+	Added documentation for the aim711 module 
+
+2003-10-17  Alex Schuilenburg <alex@schuilenburg.org>
+        * user-guide/installation.sgml:
+        * user-guide/introduction.sgml:
+        * user-guide/makefile:
+        * user-guide/target-setup.sgml:
+        Brought URLs up to date and amended header which was incaccurate
+        (referred to alternative licenses no longer available)
+
+2003-07-09  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* user-guide.sgml: Update trademark info and sort.
+
+	* real-time-characterization.sgml: real-time characterization is
+	discussed in ref manual, not user guide.
+
+2003-05-04  John Dallaway  <jld@ecoscentric.com>
+
+	* installation.sgml: Refer to installation instructions on the
+	eCos website.
+
+2003-05-01  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* jadetex.cfg: Add this to configure PDF output nicely with index
+	and coloured links.
+
+	* pix/*.gif: Delete as they are now unused.
+	* introduction.sgml: Add ID for notation and conventions chap.
+
+2003-03-03  John Dallaway  <jld@ecoscentric.com>
+
+	* programming-concepts-techniques.sgml:
+	PKG_INSTALL_DIR -> INSTALL_DIR
+
+2003-02-12  Nick Garnett  <nickg@calivar.com>
+
+	* user-guide.sgml: 
+	* config-tool.sgml: 
+	* configuration.sgml: 
+	Files extensively modified to bring them up to date. Essentially
+	the old Tutorial document has been merged in with the User Guide
+	to give a single document from which to start with eCos.
+	
+	* introduction.sgml: 
+	* installation.sgml: 
+	* programming.sgml: 	
+	* programming-concepts-techniques.sgml:
+	* target-setup.sgml: 
+	* real-time-characterization.sgml: 
+	New files containing both fresh text and text merged in from the
+	old tutorial, which is now obsolete.
+
+	* pix/templates01.png:
+	* pix/ARMStartup01.png:
+	* pix/build-lib01.png:
+	* pix/build-tests01.png:
+	* pix/twothreads2.png:
+	Graphics copied here from old tutorial.
+
+	
+2002-10-15  Iztok Zupet <iz@vsr.si>
+
+	* user-guide.sgml: pictures (gif==>png)
+	* pix/*.png: generated from gifs with gimp
+	* makefile: defined MAIN_PDF
+
+2002-09-23  Andrew Lunn  <andrew.lunn@ascom.ch>
+
+	* .cvsignore: Ignore the generated html files.
+
+2002-02-26  Julian Smart  <julians@redhat.com>
+
+	* config-tool.sgml: updated further text and graphics
+	for Windows/Unix configtool.
+
+2002-02-15  Julian Smart  <julians@redhat.com>
+
+	* user-guide.sgml: added further GIF files
+	* config-tool.sgml: started to updated text and graphics
+	to encompass Windows and Linux tools.
+
+2002-02-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* user-guide.sgml: Move special topics to kernel doc.
+	* special-topics.sgml: delete.
+
+	* config-tool.sgml: Add ids to all <sect1>s and <chapter>s
+	* configuration.sgml: ditto.
+	* programming-concepts-techniques.sgml: ditto.
+	* special-topics.sgml: ditto.
+
+2001-12-21  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* user-guide.sgml: Move pictures to pix/ subdirectory.
+
+2001-12-17  Mark Galassi  <rosalia@galassi.org>
+
+	* added legal stuff and contact information.
+
+2001-11-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* configuration.sgml: Many cosmetic fixes, to bring the document in
+	line with the version on sources.redhat.com, including adding a little
+	missing content.
+	* config-tool.sgml: Ditto.
+	* programming-concepts-techniques.sgml: Ditto.
+
+	* config-tool.sgml: Fix fig1 title.
+
+2001-11-23  Mark Galassi  <rosalia@galassi.org>
+
+	* configuration.sgml: took care of the <programlisting> tags.
+
+2001-11-21  Mark Galassi  <rosalia@galassi.org>
+
+	* programming-concepts-techniques.sgml: restored the two tables in
+	this part.
+
+	* config-tool.sgml: reinstated the keyboard shortcut table.
+
+	* config-tool.sgml, configuration.sgml,
+	programming-concepts-techniques.sgml, special-topics.sgml: the new
+	files with the individual parts.
+
+	* user-guide.sgml: split each part into its own file to make
+	editing more manageable.
+
+2001-10-31  Mark Galassi  <rosalia@galassi.org>
+
+	* user-guide-not-normalized.sgml: this is the deprecated
+	original hand-edited file.
+
+	* user-guide.sgml: this is now the normalized file and the active
+	one.
+
+	* user-duide-normalized.sgml: removed this file.
+
+	* user-guide.sgml: last change (update the DTD) before I replace
+	this had-edited version with the normalized one.
+
+2001-10-29  Mark Galassi  <rosalia@galassi.org>
+
+	* user-guide-normalized.sgml: put this in because it satisfies all
+	the little nitpicks on other systems.
+
+2001-10-21  Mark Galassi  <rosalia@galassi.org>
+
+	* user-guide.sgml: more fixes; the HTML seems quite correct.
+
+	* *.gif: added all .gif files to CVS.
+
+	* user-guide.sgml: validates!!
+
+	* user-guide.sgml: 85% validates now.
+
+2001-10-20  Mark Galassi  <rosalia@galassi.org>
+
+	* user-guide.sgml: now into part III for the touch-up work.
+
+	* user-guide.sgml: did more fixing up.

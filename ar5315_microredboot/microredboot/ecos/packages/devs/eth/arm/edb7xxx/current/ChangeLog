@@ -1,0 +1,220 @@
+2002-03-28  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/edb7xxx_eth_drivers.cdl: Don't define CYGHWR_NET_DRIVERS since
+	it's done by the generic driver.
+
+2002-02-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/edb7xxx_eth_drivers.cdl
+	(CYGSEM_DEVS_ETH_ARM_EDB7XXX_ETH0_SET_ESA): Can be set by user, so
+	don't use calculated.
+
+2001-11-20  Jesper Skov  <jskov@redhat.com>
+	From hmt:
+	* include/devs_eth_arm_edb7xxx.inl (_edb7xxx_provide_eth0_esa):
+	Use VV calls to get this even from an application; config changed
+	accordingly to include this function even in an application. 
+
+2001-11-14  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/edb7xxx_eth_drivers.cdl: Make use of the new generic Cirrus
+	Logic CS8900A driver.
+	* include/devs_eth_arm_edb7xxx.inl: Added.
+
+2001-10-18  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/if_edb7xxx.c (cs8900_TxEvent): Use cyg_io_eth_net_debug now,
+	conditionally on CYGDBG_IO_ETH_DRIVERS_DEBUG in common eth driver.
+	(cs8900_RxEvent): Ditto.
+
+2001-10-12  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/edb7xxx_eth_drivers.cdl: Clarify package description strings.
+
+2001-09-25  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c (edb7xxx_cs8900_init): Handle case where device
+	doesn't work - instead of just hanging.
+
+	* src/cs8900.h: New register layout on EDB7312 platforms.
+	
+2001-08-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c (cs8900_send): Only start transmitter after
+	a full packet has been staged.  This prevents lost Tx interrupts.
+
+2001-06-19  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/if_edb7xxx.c (edb7xxx_cs8900_init): Don't retrieve ESA if
+	it's been set in the config.
+
+2001-01-30  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c: New RedBoot config data layout.
+
+2001-01-01  David Geng <deli.geng@ncl.ac.uk> 
+
+	* src/if_edb7xxx.c (cs8900_start): Set 'txbusy' false after reset
+	to prevent erroneous 'missed interrupt' error.
+
+2000-09-17  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c (cs8900_can_send): Add simple timeout on Tx.
+	Since this chip has to way to test "can send" and it seems to
+	sometimes loose Tx interrupts, this is necessary.
+
+2000-09-01  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/if_edb7xxx.c (edb7xxx_cs8900_init): Work with new fast net
+	thread to do all the copying work instead of loading up DSR time.
+	In detail:
+	 o New "deliver" function in the interface record.
+	 o The DSR changed to be that new function; its arg is now the sc
+	   pointer already, no cast needed.
+	 o In creating the interrupt, use eth_drv_dsr (from the logical
+	   driver) instead of cs8900_dsr (which is gone).
+
+2000-08-23  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c: Add new function which returns the interrupt
+	vector used by a particular interface.
+
+2000-08-21  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/edb7xxx_eth_drivers.cdl: Add configury to set ESA.
+
+	* src/if_edb7xxx.c: Hardware address can come from various
+	sources, not just hardwired.	
+
+2000-08-16  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c (cs8900_can_send): Can only send if the link
+	is OK.  If the link is bad, the chip just stops...
+
+2000-08-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c: Changes to support stand-alone usage.
+
+2000-08-03  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/edb7xxx_eth_drivers.cdl: Ethernet driver package hierarchy changed.
+
+2000-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c: Update for new eth_drv interfaces.
+
+2000-06-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/<yournamehere>.cdl: Remove the comment on the empty
+	include_files directive; the tools now support this correctly.
+	This keeps internal include files internal.
+
+2000-04-07  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* ecos.db: Re-organize device packages.  This is a massive change
+	involving deleting all the sources for serial and ethernet drivers
+	from where they used to live in
+	    packages/io/serial/current/src/ARCH/PLATFORM.[ch]
+	    packages/net/drivers/eth/PLATFORM/current/src/...
+	and reinstating them in
+	    packages/devs/serial/ARCH/PLATFORM/current/src/...
+	    packages/devs/eth/ARCH/PLATFORM/current/src/...
+
+	All these new packages are properly defined in ecos.db, and are
+	all of type "hardware" so that a "target" can grab them.
+	
+	This directory layout is descriptive of the devices we have right
+	now, arch and platform are separate levels just to make it easier
+	to navigate in the filesystem and similar to the HAL structure in
+	the filesystem.
+
+	It is *not* prescriptive of future work; for example, the mythical
+	common highly-portable 16550 serial driver which works on many
+	targets would be called "devs/serial/s16550/current", or a serial
+	device for a particular board (cogent springs to mind) that can
+	work with different CPUs fitted is "devs/serial/cogent/current".
+
+	Changelogs have been preserved and replicated over all the new
+	packages, so that no history is lost.
+
+	The contents of individual source files are unchanged; they build
+	in just the same emvironment except for a very few cases where the
+	config file name changed in this movement.
+
+	Targets in ecos.db have been redefined to bring in all relevant
+	hardware packages including net and serial drivers (but the newly
+	included packages are only active if their desired parent is
+	available.)
+	
+	The names of CDL options (and their #defines of course) stay the
+	same for the serial drivers, for backward compatibility.
+
+	* templates/*/current.ect: these have had CYGPKG_IO_SERIAL added
+	rather than it being in (almost) all target definitions.
+	
+2000-03-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c (cs8900_recv): Handle case where there were
+	no buffers (and thus the sg_list[] has NULL pointers).
+
+2000-03-06  Gary Thomas  <gthomas@redhat.com>
+
+	* src/if_edb7xxx.c: Use new driver API.
+
+2000-02-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/if_edb7xxx.c: Support new API - hardware support of 'ioctl'
+	and tagged output.
+
+2000-02-14  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/edb7xxx_eth_drivers.cdl: Add CDL magic to indicate availability
+	of 'eth0' interface.
+
+2000-02-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/edb7xxx_eth_drivers.cdl: Rename CDL file.
+
+2000-02-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/eth_drivers.cdl:
+
+	Tidy display strings.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================
+	
+	
+

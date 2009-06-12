@@ -1,0 +1,3 @@
+cdl_option CYGNUM_FLASH_WIDTH {
+    user_value 16
+};

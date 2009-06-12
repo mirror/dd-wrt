@@ -1,0 +1,167 @@
+# ====================================================================
+#
+#      verion.cdl
+#
+#      uITRON version related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  hmt
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGNUM_UITRON_VER_MAKER {
+    display       "OS maker"
+    flavor        data
+    legal_values  0 to 0xFFFF
+    default_value 0
+    description   "
+        This value is returned in the 'maker'
+        field of the T_VER structure in
+        response to a get_ver() system call."
+}
+cdl_option CYGNUM_UITRON_VER_ID     {
+    display       "OS identification"
+    flavor        data
+    legal_values  0 to 0xFFFF
+    default_value 0
+    description   "
+        This value is returned in the 'id'
+        field of the T_VER structure in
+        response to a get_ver() system call."
+}
+cdl_option CYGNUM_UITRON_VER_SPVER  {
+    display       "ITRON specification"
+    flavor        data
+    legal_values  0 to 0xFFFF
+    default_value 0x5302
+    description   "
+        This value is returned in the 'spver'
+        field of the T_VER structure in
+        response to a get_ver() system call.
+        Do NOT change this value."
+}
+cdl_option CYGNUM_UITRON_VER_PRVER  {
+    display       "OS product version"
+    flavor        data
+    legal_values  0 to 0xFFFF
+    default_value 0x0100
+    description   "
+        This value is returned in the 'prver'
+        field of the T_VER structure in
+        response to a get_ver() system call."
+}
+# PRNO fields in own folder
+cdl_component CYGPKG_UITRON_VERSION_PRNO {
+    display       "Product info"
+    flavor        none
+    description   "
+        The get_ver() uITRON system call returns
+        several version related values describing
+        the vendor, product and CPU in question
+        as well as the version of the uITRON
+        standard supported.
+        These values may be specified here."
+
+    cdl_option CYGNUM_UITRON_VER_PRNO_0 {
+        display       "Field 0"
+        flavor        data
+        legal_values  0 to 0xFFFF
+        default_value 0
+        description   "
+            This value is returned in the 'prno\[0\]'
+            field of the T_VER structure in
+            response to a get_ver() system call."
+    }
+    cdl_option CYGNUM_UITRON_VER_PRNO_1 {
+        display       "Field 1"
+        flavor        data
+        legal_values  0 to 0xFFFF
+        default_value 0
+        description   "
+            This value is returned in the 'prno\[1\]'
+            field of the T_VER structure in
+            response to a get_ver() system call."
+    }
+    cdl_option CYGNUM_UITRON_VER_PRNO_2 {
+        display       "Field 2"
+        flavor        data
+        legal_values  0 to 0xFFFF
+        default_value 0
+        description   "
+            This value is returned in the 'prno\[2\]'
+            field of the T_VER structure in
+            response to a get_ver() system call."
+    }
+    cdl_option CYGNUM_UITRON_VER_PRNO_3 {
+        display       "Field 3"
+        flavor        data
+        legal_values  0 to 0xFFFF
+        default_value 0
+        description   "
+            This value is returned in the 'prno\[3\]'
+            field of the T_VER structure in
+            response to a get_ver() system call."
+    }
+}
+
+cdl_option CYGNUM_UITRON_VER_CPU    {
+    display       "CPU information"
+    flavor        data
+    legal_values  0 to 0xFFFF
+    default_value 0
+    description   "
+        This value is returned in the 'cpu'
+        field of the T_VER structure in
+        response to a get_ver() system call."
+}
+cdl_option CYGNUM_UITRON_VER_VAR    {
+    display       "System variant"
+    flavor        data
+    legal_values  0 to 0xFFFF
+    default_value 0x8000
+    description   "
+        This value is returned in the 'var'
+        field of the T_VER structure in
+        response to a get_ver() system call.
+        Do NOT change this value."
+}

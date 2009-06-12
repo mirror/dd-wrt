@@ -1,0 +1,205 @@
+# ====================================================================
+#
+#	upd985xx_eth_drivers.cdl
+#
+#	Ethernet drivers
+#	NEC uPD985xx device specific support
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      hmt
+# Original data:  hmt
+# Contributors:	  gthomas
+# Date:           2001-06-28
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_UPD985XX {
+    display       "NEC uPD985xx ethernet driver"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_IO_ETH_DRIVERS
+    active_if     CYGPKG_HAL_MIPS_UPD985XX
+
+    implements    CYGHWR_NET_DRIVER_ETH0
+
+    implements    CYGHWR_NET_DRIVERS
+    include_dir   cyg/devs/eth
+
+    description   "Ethernet driver for NEC uPD985xx devices."
+    compile       -library=libextras.a if_upd985xx.c
+
+    cdl_option CYGDBG_DEVS_ETH_MIPS_UPD985XX_CHATTER {
+	display "Prints ethernet device status info during startup"
+	default_value 0
+	description   "
+	    The ethernet device initialization code can print lots of info
+	    to confirm that it has booted correctly."
+    }
+
+    cdl_option CYGNUM_DEVS_ETH_MIPS_UPD985XX_DEV_COUNT {
+	display "Number of supported interfaces."
+        #legal_values  1
+	#default_value 1
+	calculated 1
+        flavor        data
+	description   "
+	    This option selects the number of ethernet interfaces to
+            be supported by the driver."
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_UPD985XX_ETH0 {
+        display       "Ethernet port 0 driver"
+        flavor        bool
+        calculated 1
+        description   "
+	    This option includes the ethernet device driver for
+            port 0 - that is the only connector
+	    depending on your particular hardware."
+
+
+        cdl_option CYGDAT_DEVS_ETH_UPD985XX_ETH0_NAME {
+            display       "Device name for the ethernet port 0 driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "
+                This option sets the name of the ethernet device for the
+                ethernet port 0."
+        }
+
+        cdl_component CYGSEM_DEVS_ETH_UPD985XX_ETH0_SET_ESA {
+            display       "Set the ethernet station address"
+            flavor        bool
+	    default_value false
+	    requires      !CYGSEM_DEVS_ETH_UPD985XX_ETH0_GET_EEPROM_ESA
+            description   "Enabling this option will allow the ethernet
+            station address to be forced to the value set by the
+            configuration.  This may be required if the hardware does
+            not include a serial EEPROM for the ESA."
+            
+            cdl_option CYGDAT_DEVS_ETH_UPD985XX_ETH0_ESA {
+                display       "The ethernet station address"
+                flavor        data
+                default_value {"{0x00, 0xBA, 0xCA, 0xDD, 0x1E, 0xDD}"}
+                description   "The ethernet station address"
+            }
+        }
+
+	cdl_option CYGSEM_DEVS_ETH_UPD985XX_ETH0_GET_EEPROM_ESA {
+            display       "Get the ethernet station address from EEPROM"
+            flavor        bool
+	    default_value !CYGSEM_DEVS_ETH_UPD985XX_ETH0_SET_ESA
+	    requires      !CYGSEM_DEVS_ETH_UPD985XX_ETH0_SET_ESA
+            description   "Enabling this option will allow the ethernet
+            station address to be read from a serial EEPROM (such as 93C06,
+            93C46...).  If this is not valid, your application must set the
+            ESA manually via an ioctl() call or similar."
+	}
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_UPD985XX_OPTIONS {
+        display "NEC uPD985xx ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_UPD985XX_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the NEC uPD985xx ethernet driver
+                package. These flags are used in addition to the set of
+                global flags."
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS {
+        display       "Workarounds for Ethernet Hardware bugs "
+        flavor        bool
+        default_value 1
+        description   "
+	This component controls whether code workarounds for the numerous
+	hardware bugs in the uPD98503 Ethernet device are included.
+	These might not all be necessary depending on the speed and mode in
+	which the interface is used.  Please refer to the manufacturer's
+	Behaviour Analysis Report to make your decision about which of
+	these options to enable or disable.
+	The default is to enable all workarounds for best reliability."
+
+	cdl_option CYGOPT_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS_S1 {
+            display       "S1 - CPU to IBUS write restriction"
+            flavor        bool
+            default_value 1
+	    description   "Enable a workaround for hardware bug S1"
+        }
+	cdl_component CYGOPT_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS_E1E2 {
+            display       "E1,E2 - Status queue corruption and MAC filtering"
+            flavor        bool
+            default_value 1
+	    description   "Enable a workaround for hardware bugs E1 and/or E2."
+
+	    cdl_option CYGOPT_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS_E1E2_E2ONLY {
+		display   "Do not set device in promisc mode - solve E2 only"
+		flavor    bool
+		default_value 1
+	        description   "Work around bug E2 only - do not set the device
+		               in promiscuous mode by default.
+		               Setting this option prevents the work around
+		               for bug E1."
+	    }
+        }
+	cdl_option CYGOPT_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS_E3 {
+            display       "E3 - Transmit descriptor error"
+            flavor        bool
+            default_value 1
+	    description   "Enable a workaround for hardware bug E3"
+	    
+        }
+	cdl_option CYGOPT_DEVS_ETH_MIPS_UPD985XX_HARDWARE_BUGS_E8 {
+            display       "E8 - Transmission error under abnormal conditions"
+            flavor        bool
+            default_value 1
+	    description   "Enable a workaround for hardware bug E8"
+        }
+    }
+}
+
+# EOF upd985xx_eth_drivers.cdl

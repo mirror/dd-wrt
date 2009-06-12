@@ -1,0 +1,82 @@
+# ====================================================================
+#
+#      flags.cdl
+#
+#      uITRON flags related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  hmt
+# Contributors:
+# Date:           1999-07-07
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGNUM_UITRON_FLAGS {
+    display       "Number of eventflags"
+    flavor        data
+    legal_values  1 to 65535
+    default_value 5
+    description   "
+        The number of uITRON eventflag objects present in the system.
+        Valid eventflag object IDs will range from 1 to this value."
+}
+cdl_component CYGPKG_UITRON_FLAGS_CREATE_DELETE {
+    display       "Support create and delete"
+    flavor        bool
+    default_value 1
+    description   "
+        Support eventflag create and delete operations (cre_flg, del_flg).
+        Otherwise all eventflags are created, up to the number specified above."
+
+    cdl_option CYGNUM_UITRON_FLAGS_INITIALLY {
+        display       "Number of eventflags created initially"
+        flavor        data
+        legal_values  0 to 65535
+        default_value 5
+        description   "
+            The number of uITRON eventflags initially created.
+            This number should not be more than the number
+            of eventflags in the system, though setting it to a large
+            value to mean 'all' is acceptable.
+            Initially, only eventflags numbered 1 to this number exist;
+            higher numbered ones must be created before use."
+    }
+}

@@ -1,0 +1,2287 @@
+2004-08-22  Gary Thomas  <gary@mlbassoc.com>
+
+	* doc/porting.sgml: Replace [very misleading dated] comments
+	about CygMon and platforms which use/need GDB stubs.
+
+2004-08-12  Jani Monoses <jani@iv.ro>
+
+	* include/hal_if.h: Make monitor locking work with CYGPKG_LWIP.
+
+2004-05-19  John Newlin <jnewlin@stretchinc.com>
+
+	* src/hal_stub.c:
+	(cyg_hal_gdb_interrupt) 
+	(cyg_hal_gdb_remove_break): Changed both to use
+	_read_mem_safe/__write_mem_safe for inserting a breakpoint, and
+	restoring the original instruction.
+	The Xtensa architecture (and others maybe?) can have unaligned
+	instructions, which caused unaligned load/store exception.
+	
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2004-02-23  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/debugging.cdl (CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS): Included
+	stubs should always mean saving full context both on interrupts
+	and context swaps, so make it explicit.
+
+2004-01-05  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/hal_if.h: Minor fixup - new 'fconfig' functions broke 
+	existing uses of CYGACC_CALL_IF_FLASH_CFG_OP.  Added a new macro
+	CYGACC_CALL_IF_FLASH_CFG_OP2 which handles new API and a wrapper
+	to handle the old way (backwards compatability).
+
+2003-12-21  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/hal_if.c (flash_config_op): 
+	* include/hal_if.h: New expanded functions for RedBoot 'fconfig'
+	database.
+
+2003-09-04  Patrick Doyle  <wpd@dtccom.com>
+
+	* include/hal_if.h: 
+	* src/hal_if.c (flash_fis_op): Added support for the rest of the
+	FIS operations.
+
+2003-08-06  Bob Koninckx <bob.koninckx@mech.kuleuven.ac.be>
+
+	* src/drv_api.c: Added definition of cyg_interrupt_post_dsr() for
+	use in those HALs that need it.
+
+	* include/hal_arbiter.h (hal_call_isr): Removed ifdef on
+	CYGFUN_HAL_COMMON_KERNEL_SUPPORT around test and call to
+	cyg_interrupt_post_dsr().
+
+2003-07-21  Nick Garnett  <nickg@balti.calivar.com>
+
+	* doc/hal.sgml: Reorganized description of clock and timer related
+	stuff into their own section and added a piece about how to change
+	the clock frequency.
+
+2003-06-25  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/hal_if.c (delay_us): The first test against
+	CYGNUM_KERNEL_COUNTERS_RTC_PERIOD is now against the period
+	divided by two. By the time we get to this test we know that usecs
+	can never be > usec_per_period/2 so we can double the range of
+	period values that we can handle without overflow and use the more
+	efficient approximation. The second test is not changed since we
+	cannot make the same assumptions about the elapsed count.
+
+2003-06-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* src/generic-stub.c (crc32): Fix crctable option name typo.
+
+	* src/hal_if.c (hal_if_init): Remove kill_by_reset.
+	(kill_by_reset): Remove, unused.
+	(reset): ifdef test on HAL_PLATFORM_RESET and assert on reset failure.
+
+	* cdl/interrupts.cdl (CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE): No
+	reason to forbid people setting this quite small.
+	
+2003-06-19  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/hal_if.c (delay_us): Reorganized to cope with high frequency
+	timers by eliminating a source of arithmetic overflow. 
+
+2003-05-06  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_stub.c (handle_exception_exit): Call sys_profile_reset from
+	here. Setup to return through return_from_stub() when appropriate.
+	(return_from_stub): New function to call CYGACC_CALL_IF_MONITOR_RETURN
+	from thread context.
+
+	* src/generic-stub.c (__handle_exception): Call exit_vec if
+	hal_syscall_handler returns negative number.
+
+2003-04-08  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_misc.c (hal_default_isr): Allow HAL to override default
+	GDB vector matching test.
+
+2003-04-08  Yoshinori Sato  <qzb04471@nifty.ne.jp>
+2003-04-08  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/debugging.cdl: Allow CRC to be allocated in ROM as well as RAM.
+	* src/generic-stub.c: as above.
+
+2003-04-02  Gary Thomas  <gary@mlbassoc.com>
+
+	* src/generic-stub.c: 
+	* include/generic-stub.h: Cleanup when program args are not
+	supported (remove some unused static storage).
+
+2003-03-03  Knud Woehler <knud.woehler@microplex.de>
+
+	* src/hal_if.c:
+	* include/hal_if.h: Add CYGNUM_CALL_IF_FLASH_FIS_OP. FIS read
+	via the virtual vector table.
+	
+2003-02-24  Jonathan Larmour  <jifl@eCosCentric.com>
+
+	* cdl/hal.cdl: Fix doc links.
+
+	* doc/hal.sgml: hal-common-current-doc-porting-sgml entity ->
+	hal-common-porting-sgml in line with other docs.
+
+2003-02-13  Mark Salter  <msalter@redhat.com>
+
+	* src/gdb-fileio.h (FILEIO_O_BINARY): New flag.
+	(FILEIO_O_TEXT): New flag.
+
+2003-01-31  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_if.h: Add CYGNUM_CALL_IF_MONITOR_RETURN.
+
+2002-12-04  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/hal.cdl: RAM applications should not claim (reset) version
+	string by default.
+
+2002-12-03  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* src/hal_if.c (hal_if_init): 
+	* include/hal_if.h: 
+	* cdl/hal.cdl: Allow monitor (RedBoot) version string to be exported
+	via the virtual vector table.
+
+2002-11-13  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* cdl/hal.cdl: Add CDL control over DATA cache startup mode.
+
+2002-09-11  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_if.h: Add __COMMCTL_ENABLE_LINE_FLUSH and
+	__COMMCTL_DISABLE_LINE_FLUSH.
+
+2002-08-29  Mark Salter  <msalter@redhat.com>
+
+	* include/generic-stub.h: Add defines for Z packet types.
+	* src/bplist-dynamic.c: Add support for deferred hardware breakpoint
+	and watchpoint insertion/deletion. This gets around gdb problem where
+	gdb tries accessing watched memory before removing watchpoint.
+	* src/generic-stub.c (__process_packet): Ditto.
+	* include/hal_stub.h: Ditto.
+
+2002-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Don't build tests that are not applicable with the
+	current configuration.
+	Added CYGINT_HAL_TESTS_NO_CACHES which allows cache tests to be
+	suppressed.
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Removed
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED option and its
+	dependencies.
+
+2002-05-02  Nick Garnett  <nickg@redhat.com>
+
+	* doc/hal.sgml: Added description of HAL_DELAY_US().
+
+	* doc/porting.sgml: Expanded section on architecture porting.
+
+2002-04-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/gdb-fileio.c (cyg_hal_gdbfileio_process_F_packet): Reset
+	retcode/errno/ctrlc status every F packet.
+
+2002-04-23  Jesper Skov  <jskov@redhat.com>
+
+	* doc/porting.sgml: Fix some typos.
+
+2002-04-22  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/generic-stub.h: Prototype __getpacket().
+	* src/generic-stub.c: Rename getpacket() -> __getpacket(),
+	remcomInBuffer -> __remcomInBuffer, and
+	remcomOutBuffer -> __remcomOutBuffer throughout file, and export
+	them (i.e. not file local).
+	(__process_packet): Handle $F packets file I/O protocol responses.
+
+	* src/gdb-fileio.c: New file to implement file I/O operations over
+	the GDB remote protocol.
+	* src/gdb-fileio.h: New file. Header for above.
+
+2002-03-15  Nick Garnett  <nickg@redhat.com>
+
+	* doc/porting.sgml: Platform HAL porting guide tidied up and
+	expanded somewhat. Some work also done on variant
+	guide. Architecture guided needs a lot more work.
+
+	* doc/hal.sgml: Changed explicit section tags to recursive section
+	tags to make any future restructuring easier.
+
+2002-03-14  Nick Garnett  <nickg@redhat.com>
+
+	* src/hal_stub.c: Add calls to HAL memory access check macros in
+	memory access functions.
+
+	* include/hal_stub.h: Added default definitions for HAL memory access
+	check macros.
+
+2002-03-06  Nick Garnett  <nickg@redhat.com>
+
+	* tests/cache.c: Changed tests so that zero sized caches and HALs
+	that define HAL_DCACHE_PURGE_ALL() don't cause this test to throw
+	a compilation error.
+
+2002-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/generic-stub.c (__handle_exception): Pay attention to return
+	value from hal_syscall_handler.
+
+2002-02-21  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_if.c (cyg_hal_diag_mangler_gdb_flush): Don't do anything
+	if buffer is empty.
+
+2002-02-20  Nick Garnett  <nickg@redhat.com>
+
+	* doc/hal.sgml: Updated and tidied. Now includes porting guide
+	from a separate file.
+
+	* doc/porting.sgml: Added this file to contain the porting guide
+	section of the HAL document. This is currently largely a
+	conversion of Jesper's porting guide from the website.
+	Unfortunately I have had no time to do much more than include it
+	wholesale, with only minor edits. There are some notes at the end
+	of the file describing what I would like to do.
+
+2002-02-18  Nick Garnett  <nickg@redhat.com>
+
+	* doc/hal.sgml: Restructured most of this document and rewrote
+	large chunks of the basic HAL description stuff. Only the skeleton
+	of the porting guided is currently done. This checkin in mostly
+	for safety and to let others read the current state.
+
+2002-02-06  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_if.c (cyg_hal_diag_mangler_gdb_control): Add flush support.
+	(cyg_hal_diag_mangler_gdb_flush): New function to flush mangler output.
+	(cyg_hal_diag_mangler_gdb_putc): Use new function to flush output.
+
+2002-01-30  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_if.h (CYGNUM_FLASH_CFG_OP_CONFIG_INT): New defines for
+	getting Flash Config options out of RedBoot using VV call
+	CYGACC_CALL_IF_FLASH_CFG_OP().  These need to be kept uptodate
+	with (or must override) those in RedBoot's flash_config.h
+	Previously only used for getting an ESA.
+
+2002-01-25  Hugo Tyson  <hmt@redhat.com>
+
+	* src/generic-stub.c (__process_packet): If detach or kill, call
+	sys_profile_reset() if BSP_SYSCALLS_GPROF are enabled, to clear
+	out any dangerous state there.  Such as a callback function
+	pointer into application code.
+
+2002-01-23  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/drv_api.h: Add cyg_drv_interrupt_mask/unmask_intunsafe
+	* src/drv_api.c: Ditto. And modify 
+	 cyg_drv_interrupt_mask/unmask to be interrupt safe.
+	
+2002-01-21  Mark Salter  <msalter@redhat.com>
+
+	* include/hal_spd.h: New file. Definitions for SDRAM module SPD.
+
+2002-01-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c (__build_t_packet): don't declare extend_val
+	twice.
+
+2001-12-12  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_stub.h: Add goto to the used label.
+	* src/hal_misc.c: Added (dummy) got for label used in
+	CYGARC_HAL_GET_RETURN_ADDRESS_BACKUP.
+
+2001-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/dbg-threads-syscall.c (dbg_thread_syscall): Don't bother to
+	deref a func ptr. The opcode could theoretically be 0x0!
+
+2001-12-04  Richard Sandiford  <rsandifo@redhat.com>
+
+	* src/generic-stub.c (__add_char_to_packet): Reverse check for
+	end of buffer and end of packet to fix potential buffer overrun.
+
+2001-12-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/dbg-threads-syscall.c (dbg_thread_syscall): check for
+	NULL dbg_syscall_ptr.
+
+	* cdl/hal.cdl: require CYGPKG_INFRA since all HALs do!
+
+2001-11-29  Hugo Tyson  <hmt@redhat.com>
+
+	* src/hal_stub.c: Enable HAL_STUB_HW_SEND_STOP_REASON_TEXT for
+	XScale architectures per Mark's request; XScale GDB needs to know
+	what's happening with watchpoints (= work around previous change)
+
+2001-11-29  Hugo Tyson  <hmt@redhat.com>
+
+	* src/hal_stub.c: Condition out sending the reason for hardware
+	watchpoint stop in the stop packet as $T05watch:01234568;... most
+	GDBs do not understand it and in fact object to it.
+
+2001-11-23  Nick Garnett  <nickg@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Fixed bogosity in
+	handling of 'r' packet. It tried to send two replies, messing up
+	the protocol and confusing GDB.
+
+2001-11-02  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_stub.h (CYG_HAL_GDB_LEAVE_CRITICAL_IO_REGION):
+	Permit this too to be defined externally ie. in a platform HAL.
+
+2001-10-25  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: 
+	* cdl/debugging.cdl: Reorg CDL a little so that GDB stub routines
+	are only compiled when needed (instead of being compiled "empty").
+
+2001-10-24  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: Add 'basic' test.
+
+	* tests/basic.c: New test of some minimal HAL functionality.
+
+2001-10-18  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_if.c (cyg_hal_diag_mangler_gdb_putc): 
+	* cdl/debugging.cdl: CYGNUM_HAL_DEBUG_GDB_PROTOCOL_RETRIES is now
+	defined as CDL 'data' flavor (tested via #if vs. #ifdef)
+
+2001-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/generic-stub.c: Prefixed local version of memcpy and memset
+	with _.
+
+2001-10-17  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/debugging.cdl: 
+	* src/hal_if.c (cyg_hal_diag_mangler_gdb_putc): Make retry/abort optional,
+	only attemped if CYGNUM_HAL_DEBUG_GDB_PROTOCOL_RETRIES is configured to
+	be non-zero (default now 0).
+
+2001-10-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_stub.h: Allow ISOINFRA/LIBC to provide string
+	functions.
+
+2001-10-16  Gary Thomas  <gthomas@redhat.com>
+
+	* include/generic-stub.h: Add prototypes for breakpoint_list functions.
+
+2001-10-15  David Howells  <dhowells@redhat.com>
+
+	* include/hal_stub.h: put semicolon between goto-label and close curly.
+
+2001-10-12  Mark Salter  <msalter@redhat.com>
+
+	* src/thread-packets.c: Don't specify array sizes in extern decls.
+
+	* src/hal_stub.c: Use HAL_STUB_REGISTERS_SIZE to set number of elements
+	in register save areas. Default to NUMREGS if not defined by HAL.
+	Allow HALs to provide specialized get_register()/put_register().
+
+	* src/generic-stub.c (stub_format_registers): Support 'p' packet.
+	(__process_packet): Rearrange ifdefs so error is sent for unsupported
+	Z packet types.
+	(process_query): Add hook for HAL specific queries.
+	(process_set): Add hook for HAL specific sets.
+
+	* include/generic-stub.h: Add extern decls to quiet compiler warnings.
+
+2001-10-11  Gary Thomas  <gthomas@redhat.com>
+
+	* include/generic-stub.h: 
+	* src/generic-stub.c: Improve error handling more.  Make sure that
+	packets are consumed, even if they are going to be tossed (overflow).
+	This keeps TCP based connections going, even when the data is bad.
+	(getpacket): Only send NAK in case of overflow.
+
+2001-10-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_if.c (flash_config_op): Protect with
+	CYGARC_HAL_SAVE_GP.
+
+2001-10-04  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_endian.h: Added.
+	Fix typo.
+
+2001-10-03  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_tables.h (CYG_HAL_TABLE_BEGIN): Use plain "object"
+	because	some (only some though) MIPS tools complain with %object.
+	(CYG_HAL_TABLE_END): Ditto.
+
+2001-10-02  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_tables.h (CYG_HAL_TABLE_BEGIN): Use %object syntax
+	rather than @object since @ is a comment character on ARM. gas
+	accepts either syntax.
+	(CYG_HAL_TABLE_END): Ditto.
+
+2001-10-01  Gary Thomas  <gthomas@redhat.com>
+
+	* src/generic-stub.c (getpacket): Send back error response (E01) if
+	packet received which overflows buffers.  GDB doesn't always do much
+	with this error, but at least it keeps the protocol moving.
+
+2001-09-26  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/common.cdl: New interface CYGINT_HAL_SUPPORTS_MMU_TABLES which
+	indicates if the HAL supports MMU tables (few do).
+
+2001-09-25  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/common.cdl (CYGSEM_HAL_INSTALL_MMU_TABLES): Change to be
+	default for ROM startup.
+
+2001-09-20  Jesper Skov  <jskov@redhat.com>
+
+	* tests/vaargs.c (cyg_start): Call CYG_TEST_INIT.
+
+2001-09-10  Nick Garnett  <nickg@redhat.com>
+
+	* include/hal_stub.h (strlen): Changed return type to size_t from
+	int so it matches <string.h>. For some reason the compiler has
+	suddenly started complaining about the type mismatch. Strange.
+
+2001-09-07  Nick Garnett  <nickg@redhat.com>
+
+	* src/hal_stub.c (put_register): Added kludge for VR4300 targets
+	to sign extent the PC when it is being set. This is due to the
+	age of the VR4300 toolchain and the fact that the VR4300 is the
+	only target to do full 64bit register saves/restores.
+
+2001-09-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_if.h: Fix typo in below change.
+
+2001-09-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_if.h (CYGACC_CALL_IF_DBG_SYSCALL): Define and call
+	with correct arguments.
+
+2001-08-24  Mark Salter  <msalter@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Add support for 'D' packet.
+	(__process_packet): Check for impossible mem write length.
+
+2001-08-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal.cdl: Add CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+	interface.
+
+2001-08-16  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: Add CDL options to control GDB protocol retries.
+
+2001-08-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_if.c (cyg_hal_diag_mangler_gdb_putc): Use timeout
+	functions to allow for retries.  This should improve the case
+	where [for whatever reason] the host GDB misses or ignores 
+	a $O packet - it will get resent after a reasonable timeout.
+
+2001-08-03  Gary Thomas  <gthomas@redhat.com>
+2001-08-03  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_if.h: Use inline functions for calls - allowing
+	interrupts to be disabled while services are called
+	[CYGACC_COMM_IF_CONTROL is an exception since it's using variable
+	arguments - so it's still a macro].
+	Pruned unused IF vectors: ICTRL_TABLE, EXC_TABLE, DBG_VECTOR,
+	CPU_DATA, BOARD_DATA, SYSINFO, SET_SERIAL_BAUD.
+	Note: this should fix bug CR 902745-CR.
+
+	* cdl/hal.cdl: Removed CYGSEM_HAL_VIRTUAL_VECTOR_CLAIM_ICTRL.
+	* src/hal_if.c (hal_if_init): Removed initialization of
+	ICTRL_TABLE, EXC_TABLE, CPU_DATA and BOARD_DATA entries.
+
+2001-08-03  Nick Garnett  <nickg@redhat.com>
+
+        Imported from a development branch:
+	
+	2001-07-11  Nick Garnett  <nickg@redhat.com>
+
+		* include/drv_api.h: 
+		* src/drv_api.c:
+		Added API for controlling routing of interrupts to CPUs in SMP
+		configurations.
+
+	2001-06-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+		* include/drv_api.h: 
+		* src/drv_api.c:
+		Added API for using spinlocks.
+
+2001-08-03  Jesper Skov  <jskov@redhat.com>
+
+	* tests/vaargs.c: Added.
+	* cdl/hal.cdl: Added CYGPKG_HAL_BUILD_COMPILER_TESTS to allow cpp1
+	and vaargs tests to be compiled conditionally.
+
+2001-07-27  Jesper Skov  <jskov@redhat.com>
+
+	* tests/intr.c: Set up interrupt ISR using driver API so it works
+	properly in chained mode in the presence of arbiters.
+
+	* src/drv_api.c (chain_isr): Call default ISR when
+	appropriate. Return ISR return value.
+
+	* include/hal_arbiter.h (hal_call_isr): Added version to be used
+	with interrupt chaining.
+
+2001-07-24  Mark Salter  <msalter@redhat.com>
+
+	* cdl/hal.cdl (CYGINT_HAL_PLF_IF_IDE): New interface which
+	indicates platform supports IDE controller I/F macros.
+
+2001-06-29  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal.cdl (CYGPKG_HAL_TESTS): Remove redundant .c extension
+
+2001-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_misc.h: Moved arbiter helper to
+	* include/hal_arbiter.h: this file to avoid header file inclusion
+	order problems.
+
+2001-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_misc.h (hal_call_isr): Added. Used by ISR arbiters.
+
+2001-06-22  Gary Thomas  <gthomas@redhat.com>
+
+	* src/generic-stub.c (BUFMAX): Define as platform specific, thus
+	reducing memory requirements.
+	(__process_packet): Eliminate program arguments support until eCos
+	makes use of them (more memory savings).
+
+2001-06-22  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_stub.c (__do_copy_mem): Add goto statement to prevent
+	compiler from moving instructions across 'err' label.
+
+2001-06-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Don't reset the board
+	straight away with a 'r' packet. Let a 'k' packet do it instead.
+
+	* src/hal_stub.c (__install_traps): Remove redundant comment.
+
+2001-06-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_if.c (delay_us): Revert below change of 2001-05-17
+
+2001-06-05  Hugo Tyson  <hmt@redhat.com>
+
+	* src/hal_if.c (cyg_hal_diag_mangler_gdb_putc): The nesting of
+	CYGARC_HAL_SAVE_GP() and the instant-out if sending a carriage
+	return "\r" was wrong - it scrambled the gp for the caller!  Since
+	the return-test is trivial, I simply re-ordered rather than making
+	the exit clause complex with a restore in it.
+
+2001-05-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/hal_if.c (delay_us): Warn if using default
+
+2001-05-14  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/interrupts.cdl (CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE):
+	Default stack size to 32K for non-kernel configs, and describe
+	why.
+
+2001-05-07  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_if.c (hal_ctrlc_check): Only return 'true' if the ISR/DSR
+	actually processes a ^C.  Otherwise, interrupts/date can be lost on
+	a shared channel (like an ethernet device).
+
+2001-04-30  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: Add configury to control initial cache behaviour.
+
+2001-04-30  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal.cdl: Add tests/cpp1.c to the tests list.
+
+	* tests/cpp1.c: New test, to test for regressions in the tools.
+	This one is for a CPP bug in the XScale tools where '+' binds too
+	strongly following a ')' because it is mistaken for unary plus.
+
+2001-04-25  Bart Veer  <bartv@redhat.com>
+
+	* tests/cache.c:
+	Fix test for cache presence.
+
+	* src/drv_api.c (cyg_drv_interrupt_detach):
+	Added missing indirection.
+
+2001-03-28  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/dbg-threads-api.h: Add dbg_thread_id() function prototype.
+
+2001-03-21  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_if.c (hal_if_init): Add explicit typecast when setting 
+	version. Needed when sizeof(int) < sizeof(CYG_ADDRWORD).
+
+2001-03-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_if.c (hal_if_init): Added warning about debugging.
+
+2001-03-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_if.h: Add argument names to __call_if_flash_cfg_op_fn_t
+
+2001-03-16  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_stub.c (__build_t_packet): Add hook for adding arch-specific
+	registers to T packet.
+	(handle_exception_cleanup): Skip orig_registers past breakpoint so we
+	return to original context rather than hit breakpoint again.
+
+2001-03-16  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_if.h: Define types and slots and macros themed with
+	the phrase CALL_IF_FLASH_CFG_OP following the pattern of what's
+	there for the other slots.  Thus CYGNUM_CALL_IF_FLASH_CFG_OP,
+	CYGACC_CALL_IF_FLASH_CFG_OP(...) and __call_if_flash_cfg_op_fn_t
+	are all newly defined.  Also CYGNUM_CALL_IF_FLASH_CFG_GET which is
+	the only operation supported in this initial version.
+
+	Also changed many typedef'd function pointers to not include the
+	pointerness; that way the type can be used to validate the
+	correctness of arguments in the called function.
+
+	* src/hal_stub.c (__reset): Minor change to reset function
+	handling; pointerness of typedef removed.
+
+	* src/hal_if.c (flash_config_op): New function to call flash ops
+	in RedBoot.  This is so that RedBoot can manage ethernet addresses
+	for you, and the application can get at the data "cleanly".
+	(hal_if_init): Install flash_config_op() in the table if defined.
+
+2001-03-12  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_misc.c (cyg_hal_user_break): Use macro to find PC
+	in saved regs.
+
+	* src/generic-stub.c: Add support for harvard memories.
+	* src/bplist-dynamic.c: Ditto.
+	* include/generic-stub.h: Ditto.
+	* include/hal_stub.h: Add dummy harvard memory macros for
+	princeton memory systems.
+
+2001-03-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/drv_api.c (cyg_drv_interrupt_detach): Fix missing intr->
+	change.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Change sense of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_GUARANTEED to new
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2001-03-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/drv_api.c: Use macro to provide symbol alias.
+
+2001-03-05  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_if.c (hal_if_diag_init): Ensure the function only
+	executes once.
+
+2001-03-02  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: 
+	* include/hal_if.h: 
+	* src/hal_if.c (hal_if_init): 
+	Support platform specific initializations.
+
+2001-02-26  Mark Salter  <msalter@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Change 'k' packet to cause
+	return to original context. Change 'r' packet to respond with empty
+	packet before resetting board.
+
+	* src/hal_stub.c (handle_exception_exit): New function. Restores
+	original context saved when stub was entered for the first time.
+	(handle_exception_cleanup): Save original context.
+	(__install_traps): Set __process_exit_vec to handle_exception_exit.
+
+2001-02-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/debugging.cdl: Make CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT and 
+	CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT options have sensible defaults.
+
+2001-02-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Added CYGSEM_HAL_VIRTUAL_VECTOR_INHERIT_CONSOLE and
+	CHANNEL_CONFIGURABLE options.
+	* cdl/common.cdl: Added CYGDBG_HAL_DIAG_TO_DEBUG_CHAN option.
+	* src/hal_if.c: Changes to respect new options. Always do platform
+	driver init from CLAIM_COMMS code.
+	* src/hal_stub.c: Leave channel setup to CLAIM_COMMS code.
+
+	* src/hal_if.c: Added null mangler that gets called via the
+	virtual vector console comms entry and just forwards IO to the
+	debug comms entries.  This differs from setting the console
+	channel to the same as the debug channel in that console output
+	will go to the debug channel even if the debug channel is changed.
+
+2001-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_if.h: Allow architecture to override COMM and CALL
+	accessor macros.
+
+2001-02-03  Gary Thomas  <gthomas@redhat.com>
+
+	* src/bplist-dynamic.c (__set_breakpoint, __remove_breakpoint): 
+	Fix error introduced below when no breakpoint list defined.
+
+2001-02-02  Mark Salter  <msalter@redhat.com>
+
+	* src/generic-stub.c: __set_breakpoint and __remove_breakpoint now
+	take a length argument.
+
+	* src/bplist-dynamic.c: Support breakpoint length. Use 
+	HAL_BREAKINST_ADDR macro (if defined) to get actual breakpoint based
+	on breakpoint length.
+
+	* include/hal_stub.h: Add len argument to __set_breakpoint and
+	__remove_breakpoint.
+
+2001-02-01  Jesper Skov  <jskov@redhat.com>
+
+	* src/drv_api.c: Make it build with chaining.
+
+	* include/hal_if.h: Introduce macros for legal version range and
+	special hacked version number used by ctrlc magic.
+	* src/hal_if.c (hal_ctrlc_isr_init): Be more careful with how the
+	version number is checked (and trashed) by the ctrlc init code.
+	* src/hal_misc.c (hal_default_isr): Same.
+
+	* src/hal_stub.c: Moved mangling code to hal_if.c
+	* src/hal_if.c: New policies for when and how to initialize the
+	IO channels. Mangler code now set up by diag_init to allow for
+	mangling when no stub is included.
+
+	* include/hal_if.h: Added COMM version in upper 16 bits of version
+	word. Removed CYGPRI_HAL_IMPLEMENTS_IF_SERVICES.
+	* src/hal_misc.c: Use masks when checking vv versions.
+
+	* cdl/hal.cdl: Add new options for selecting which parts of the
+	virtual vector table to initialize.
+	* src/hal_if.c: Matching granularity in initialization code.
+	Extra checking of services before using these.
+	
+	* cdl/debugging.cdl: Require channel initialization when enabling
+	stubs.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/common.cdl: Get rid of CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL
+	options. They are replaced by the CYGSEM_HAL_DIAG_MANGLER option.
+
+2001-01-31  Hugo Tyson  <hmt@redhat.com>
+
+	* include/hal_if.h: Make it possible to build logical ether driver
+	even without virtual vectors present, by defining a dummy
+	HAL_CTRLC_CHECK in that case; other code invokes it if debugging
+	per se is enabled.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c (__reset): Rename HAL_STUB_PLATFORM_RESETx macros
+	to HAL_PLATFORM_RESETx.
+	* src/hal_if.c (reset): Same.
+
+2001-01-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/drv_api.c: Initialized isr_disable_counter to 1 so that it
+	indicates that interrupts are initially disabled.
+
+2000-12-15  Gary Thomas  <gthomas@redhat.com>
+
+	* src/generic-stub.c: Define 'version' string to be a weak
+	symbol that can be easily overridden (e.g. by RedBoot).
+
+2000-12-11  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_if.c: Remove unnecessary (polluting) include file.
+
+	* include/hal_stub.h: Support platform/variant supplied
+	include files.  <cyg/hal/plf_XXX.h> can now be layered
+	as <cyg/hal/var_XXX.h> which includes <cyg/hal/plf_XXX.h>.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_if.c (delay_us): Ensure proper _GP save/restore.
+	Reduce number of loops in fall-back code.
+
+2000-12-05  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/hal_stub.c (__build_t_packet): Handle
+	CYGARC_REGSIZE_DIFFERS_FROM_TARGET_REGISTER_T with Little Endian
+	target.
+
+	* include/hal_misc.h: Added BIT and SZ_ defines.
+
+2000-11-22  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_misc.c (hal_default_isr): Version check only when
+	CYGSEM_HAL_ROM_MONITOR not defined.
+
+2000-11-20  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_stub.c (hal_flush_output): New function to flush debug
+	comm interface.
+
+	* src/generic-stub.c (__process_packet): Use hal_flush_output when
+	killing or continuing.
+
+	* include/hal_stub.h: Add declaration for hal_flush_output().
+
+	* include/hal_if.h (__COMMCTL_FLUSH_OUTPUT): New comm control cmd.
+
+2000-11-17  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_if.c (delay_us): Add dummy loop.
+	Duh! Take usecs argment into account.
+
+2000-11-06  Mark Salter  <msalter@redhat.com>
+
+	* src/generic-stub.c (__handle_exception): Add support for GNUPro bsp
+	syscall handling.
+
+	* src/board.h: Include pkgconf/redboot.h for CYGSEM_REDBOOT_BSP_SYSCALLS.
+
+2000-11-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_if.c (hal_if_diag_write_char): Clear interrupt flag before
+	setting breakpoint.
+
+2000-11-04  Mark Salter  <msalter@redhat.com>
+
+	* src/hal_stub.c (__build_t_packet): Report reason and data
+	address if stopped by hw watchpoint.
+
+	* src/generic-stub.c (__process_packet): Remove experimental
+	support for type 5 Z packet.
+
+	* include/hal_stub.h: Define HAL_STUB_STOP_* reasons returned
+	by HAL_IS_STOPPED_BY_HARDWARE.
+
+2000-10-27  Mark Salter  <msalter@redhat.com>
+
+	* src/generic-stub.c: Fixed preprocessor warning.
+
+2000-10-27  Gary Thomas  <gthomas@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Remove warnings when
+	hardware breakpoint support (Z packet) not enabled.
+
+2000-10-26  Mark Salter  <msalter@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Add Z packet support.
+
+	* src/bplist-dynamic.c: Include <pkgconf/hal.h> to pick up
+	CYGNUM_HAL_BREAKPOINT_LIST_SIZE.
+
+2000-10-24  Jesper Skov  <jskov@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Disable buffer size
+	z-packet.
+
+2000-10-23  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c: Made __mem_fault_handler pointer volatile.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/drv_api.h (cyg_interrupt): Make dsr_count volatile to
+	prevent compilers optimizing accesses in the wrong place.
+
+2000-10-20  Jesper Skov  <jskov@redhat.com>
+
+	* include/drv_api.h: Correct location of volatile keyword.
+	* src/drv_api.c: Same.
+
+2000-10-19  Gary Thomas  <gthomas@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Add RedBoot identifier
+	in maintenance 'd' packet reply.
+
+2000-10-18  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_if.h (CYGPRI_HAL_IMPLEMENTS_IF_SERVICES): Set for
+	all non-RAM startup types.
+
+2000-10-13  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/stubrom/stubrom.c (cyg_start): Remove unnecessary call to
+	initialize_stub()
+
+2000-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_tables.h (CYG_HAL_TABLE_EXTRA): Use new definition of
+	CYGBLD_ATTRIB_SECTION, and fix the string name up better.
+	(CYG_HAL_TABLE_ENTRY): Ditto
+	(CYG_HAL_TABLE_QUALIFIED_ENTRY): Ditto
+
+2000-09-07  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_tables.h: Fix non-standard use of paste operator to
+	remove warnings with recent gcc
+
+2000-09-04  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/hal_tables.h (CYG_HAL_TABLE_END): Use CYGARC_P2ALIGNMENT
+	to align label
+	(CYG_HAL_TABLE_TYPE): Define
+
+2000-09-01  Jonathan Larmour  <jlarmour@redhat.com>
+
+        * src/hal_stub.c (__build_t_packet): Ensure sign extension applies
+        in the higher word, not the lower.
+	(__build_t_packet): Don't need to conditionalize on
+	CYGARC_REGSIZE_DIFFERS_FROM_TARGET_REGISTER_T as there should be no
+	problems with the current code.
+	* src/generic-stub.c (stub_format_registers): Likewise
+
+	* include/hal_if.h (CYGACC_COMM_IF_CONTROL): Remove warning due to
+	unnecessary use of cpp paste operator
+
+2000-08-28  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_if.c: 
+	* include/hal_if.h (hal_ctrlc_check): Define new routine to be
+	called by interrupt handlers (DSRs) which may be using hardware
+	shared with a debug channel.  In particular, network adaptors 
+	need to call this function to see if a ^C has occurred on the
+	network debug connection.
+
+2000-08-24  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_tables.h: Need descriminated tables (for proper sorting).
+
+2000-08-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/hal_if.c: Added an extern declaration for
+	cyg_hal_plf_comms_init.	
+
+	* src/bplist-dynamic.c: Only use breakpoint lists when building
+	stubs.
+
+2000-08-10  Drew Moseley  <dmoseley@redhat.com>
+
+	* include/generic-stub.h: Added support for register validity
+	checking.
+	* src/generic-stub.c: Ditto.
+	* src/hal_stub.c: Ditto.
+
+	* include/drv_api.h: Added cyg_code_t.
+
+2000-08-03  Gary Thomas  <gthomas@redhat.com>
+
+	* include/hal_if.h (CYGNUM_CALL_IF_DBG_DATA): Move to avoid
+	conflict.
+
+2000-07-26  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_stub.c (cyg_hal_gdb_diag_putc): Ignore any characters
+	other than the protocol chars of ACK/NAK/^C.
+
+	* src/hal_if.c (hal_if_diag_init): Only reset console channel
+	if user has configured a non-default choice.
+
+2000-07-24  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/bplist-dynamic.c (__install_breakpoint_list): Call
+	HAL_ICACHE_SYNC() rather than HAL_ICACHE_INVALIDATE_ALL().
+
+2000-07-21  Drew Moseley  <dmoseley@cygnus.com>
+
+	* src/hal_stub.c: Cleanup of #define's.
+
+	* src/generic-stub.c: Rearrange the linkage between Cygmon and HAL so
+	that Cygmon needs HAL but not vice-versa.  ie HAL no longer calls
+	any Cygmon functions.
+	* src/hal_misc.c: Ditto.
+
+	* src/bplist-dynamic.c: Use HAL macros rather than Cygmon
+	functions for flushing the cache.
+	Also handle the case where target_register_t is not defined.
+
+2000-07-21  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_if.c (CYGNUM_HAL_VIRTUAL_VECTOR_NUM_CHANNELS): Define to allow
+	the number of channels to be extended by "AUX" packages.
+
+2000-07-20  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/generic-stub.c (stub_format_registers): Make the previous patch
+	effective only if CYGARC_REGSIZE_DIFFERS_FROM_TARGET_REGISTER_T is
+	defined so as to not affect any other targets.
+	* src/hal_stub.c: Ditto.
+
+2000-07-19  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/generic-stub.c (stub_format_registers): Handle the case
+	where GDB is expecting registers larger than we are storing.  ie
+	MIPS gdb expects 64 bit registers even if we are on a 32 bit
+	architecture.  Also, handle the sign-extension correctly if
+	necessary.
+	* src/hal_stub.c (__build_t_packet): Ditto.
+
+2000-07-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_misc.c (hal_default_isr): 
+	Version gets hacked by hal_if_init - check for the hacked value.
+
+2000-07-18  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c (__mem_fault_handler): Made volatile.
+	
+2000-07-14  Drew Moseley  <dmoseley@redhat.com>
+
+	* src/generic-stub.c: Cleanups for better coexistence with Cygmon.
+	* include/generic-stub.h: Ditto.
+	* include/hal_if.h: Ditto.
+	* include/hal_stub.h: Ditto.
+	* src/hal_stub.c: Ditto.
+
+	* cdl/hal.cdl: Compile bplist-dynamic.c.
+
+	* src/bplist-dynamic.c: New file for supporting breakpoints in the HAL.
+
+2000-07-14  Gary Thomas  <gthomas@redhat.com>
+
+	* src/hal_if.c (delay_us): Use HAL_DELAY_US() if defined.
+
+2000-07-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c (initHardware): Fix #endif location.
+
+	* src/hal_if.c (hal_ctrlc_isr_init): Added hack to work around a
+	silly but critical problem.
+
+	* src/hal_stub.c: Removed some CygMon conditional exclusions.
+
+	* src/hal_if.c (hal_ctrlc_isr_init): Don't enable interrupts when
+	configured as ROM monitor.
+
+2000-07-05  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/debugging.cdl: Only allow CTRLC support if there's stubs or
+	a ROM monitor to handle it. (Haruki Kashiwaya (kashiwaya at redhat
+	dot com)).
+
+2000-06-30  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_if.h: Make CYGACC macros call functions. May have to
+	add some _GET macros at some time if anyone needs to access the
+	function pointers.
+
+	* src/hal_stub.c: 
+	* src/hal_misc.c:
+	* src/hal_if.c:
+	Matching changes of CYGACC clients.
+	
+2000-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c (cyg_hal_gdb_diag_putc): Check console interrupt
+	flag and breakpoint if set.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c (cyg_hal_gdb_diag_putc): Don't try to set
+	breakpoints in ROM startup - just disable interrupts. Also, use
+	procs table function to disable device interrupts.
+
+	* include/hal_if.h: Mark vector/comms arrays volatile to avoid
+	compiler confusion.
+
+	* include/dbg-threads-api.h: Fix C/C++ declaration issues.
+
+	* src/hal_stub.c: Moved stub platform init call below vector table
+	setup.
+
+	* src/hal_misc.c:
+	* src/hal_if.c:
+	* include/hal_if.h: DBG_ISR_VECTOR and SET_TIMEOUT functions added
+	to comms table. Added DELAY_US function to vector table. Made
+	switching of debug channel dis/enable Ctrl-c interrupts as
+	well. Made ctrlc_isr code use new vector entries. All this amounts
+	to a properly switchable debug channel.
+
+2000-06-21  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c: Fixed clients of vector procs tables to pass
+	in the correct arguments. Hook O-packetizer up on procs slot
+	reserved for IO mangler. Install mangler when necessary.
+
+	* src/hal_if.c: Extended set procs functions to allow temporarily
+	switching console procs in a safe manner. Removed debug and
+	console wrappers - all IO happens via drivers hooked up in tables
+	rather than through hardwired macros. Proper initialization of
+	console proc entry. Fixed clients of vector procs tables to pass
+	in the correct arguments. Stub now does its own vector table
+	initialization. Added special procs slot for IO manglers.
+
+	* include/hal_if.h: Define special IDs used by the set procs
+	functions. PROCS_HANDLED removed since the procs table will now
+	always service any port.
+
+2000-06-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/hal_stub.h: Added underscore to breakinst().
+
+	* include/hal_tables.h:
+	Added this file to contain macros for defining datatables in a
+	systematic and extensible way.
+
+2000-06-19  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: Revert change below - GUARANTEED can exist
+	with STUBS defined.
+
+2000-06-18  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: Use of virtual vector functions for diagnostic
+	output must be disabled when building with stubs.  Note: this
+	lets stubs be built for platforms with guaranteed virtual 
+	vector support.
+
+2000-06-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_if.h: All vector-dependant features hidden when
+	config option not enabled.
+
+	* src/hal_if.c (hal_if_init): Fix warning.
+
+2000-06-15  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_if.h: Added console-include decision logic.
+
+2000-06-15  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/drv_api.c: 
+	* include/drv_api.h: Added boolean result to cyg_drv_cond_wait()
+	to match change to the kernel and KAPI functionality.
+
+2000-06-14  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_stub.c: Added O-packetizer used by GDB stubs for virtual
+	vector table configs.
+
+	* src/hal_misc.c (hal_default_isr): Check Ctrlc for both CTRLC
+	or BREAK options.
+
+	* src/hal_if.c:
+	* include/hal_if.h: 
+	Define console wrappers when necessary. Platform HALs can use
+	these by providing raw IO functions and some config data.
+
+2000-06-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_if.c: Implemented most of the remaining services. Some
+	just don't have an eCos equivalent at the moment.
+
+	* cdl/hal.cdl: Allow virtual_vector options to have sensible
+	default values depending on when the platform HAL port was
+	written.
+
+	* src/hal_misc.c (cyg_hal_user_break): Also expect CygMon to
+	provide the breakpoint service.
+
+	* src/stubrom/stubrom.c (cyg_start): Reverted change. Now handled
+	by hal_if_init.
+
+	* cdl/hal.cdl: Added option for controlling use of diag services
+	in the virtual vector table.
+
+2000-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* src/stubrom/stubrom.c: Call hal_diag_init to ensure IF table
+	entries related to diag IO get initialized.
+
+	* src/hal_stub.c (cyg_hal_gdb_interrupt): save/restore GP so it
+	can be used by MIPS platforms.
+	Use reset function in ROM if available.
+
+	* src/hal_misc.c: 
+	* include/hal_misc.h: Functions shared between HALs. More
+	functions are likely to be moved here if appropriate.
+
+	* src/hal_if.c: Interfacing related functions: table init code and
+	function wrappers.
+
+	* include/hal_if.h: ROM/RAM calling interface table
+	definitions. The layout is a combination of libbsp and vectors
+	already in use by some eCos platforms.
+	
+
+	* cdl/hal.cdl: Added CYGxxx_HAL_VIRTUAL_VECTOR_SUPPORT
+	options. These are used to control whether a platform uses the new
+	ROM/RAM calling interface. All platforms will be converted to use
+	this, but piecemeal over a period of time, thus the requirement
+	for selecting behavior.
+
+2000-06-04  Gary Thomas  <gthomas@redhat.com>
+
+	* cdl/hal.cdl: Support variant 'pkgconf' headers.  This will allow
+	[variant] common symbols to be defined, rather than duplicating 
+	them over all platforms using that variant.
+
+2000-05-25  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/debugging.cdl: Allow thread support to included for ROM
+	monitor builds.
+
+2000-05-22  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/debugging.cdl: Allow platform to prevent CTRLC inclusion.
+
+2000-04-12  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/debugging.cdl: Don't let interfaces define anything.
+
+2000-04-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Fix dependencies for stub.
+
+2000-03-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/generic-stub.c (__process_packet): Added 'z' packet reply.
+
+2000-03-28  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal.cdl:
+
+	Adjust documentation URLs.
+
+2000-03-24  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_stub.h: Fixed a bad function name. Made it opssible
+	for archs to define CYG_HAL_GDB_ENTER_CRITICAL_IO_REGION.
+
+2000-03-20  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/debugging.cdl: Preclude USE_MONITOR when including stubs.
+
+2000-03-01  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/common.cdl: 
+	Define CYGINT_HAL_DIAG_DISABLE_GDB_PROTOCOL_SUPPORTED as an
+	'interface' so implementations can be properly specified.
+
+2000-02-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/common.cdl: Option to disable GDB protocol now supported
+	by QUICC based PowerPC systems.
+
+2000-02-29  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* include/generic-stub.h: Make header C++ safe
+
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* include/hal_stub.h: fixed endian definitions.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/hal.h: Added CYGSEM_HAL_ROM_MONITOR
+	* src/hal_stub.c (initHardware): CYG_HAL_STARTUP_STUBS ->
+	CYGSEM_HAL_ROM_MONITOR.
+	Removed HAL_STUB_PLATFORM_STUBS_INIT.
+
+2000-02-09  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Added remaining build dependencies.
+
+2000-02-04  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Fix test list display.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/hal.h: CYG_HAL_POWERPC_x->CYGPKG_...
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/debugging.cdl: Use interfaces for stub capabilities instead
+	of exclude list.
+	* cdl/hal.cdl: Add extra dependencies to common stub build rule.
+	
+2000-02-02  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Added HAL tests.
+
+2000-01-31 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/hal.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-28 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * cdl/hal.cdl:
+
+  Adjust help URLs in line with new doc layout.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal.cdl: Added simple build rules for common stub.
+
+2000-01-26  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* src/hal_stub.c (__reset): Replace CYGDAT_CYGMON_ENABLE
+	dependency with just CYGPKG_CYGMON
+	(initHardware): Likewise
+	(__set_baud_rate): Likewise
+	(putDebugChar): Likewise
+
+2000-01-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/common.cdl,
+	  cdl/debugging.cdl:
+
+	Modify the default_value attribute for
+	CYGFUN_HAL_COMMON_KERNEL_SUPPORT, CYGPKG_HAL_EXCEPTIONS
+	and CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT to do the right
+	thing in the absence of the eCos kernel package.
+
+1999-12-22  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal.cdl:
+
+	Add CFLAGS to the custom rule for extras.o to accommodate
+	arm big-endian targets.
+
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Rename all CYG_HAL_USE_ROM_MONITOR_GDB_STUBS
+	-> CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs
+	Rename all CYG_HAL_USE_ROM_MONITOR_CYGMON -> 
+	CYGSEM_HAL_USE_ROM_MONITOR_CygMon
+	Rename all CYG_HAL_USE_ROM_MONITOR -> CYGSEM_HAL_USE_ROM_MONITOR
+	Don't need to define CYG_HAL_SH_SH7708 any more
+
+	* cdl/hal.cdl: Add CYGPKG_HAL_ROM_MONITOR container package for
+	platforms to put ROM-monitor related options into
+	Move all ROM-monitor related options into individual platform CDL
+
+1999-12-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal.cdl:
+
+	Use '$<' to reference custom rule dependency.
+
+1999-12-01  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal.cdl:
+
+	Use the <PREFIX> token in custom rules.
+
+1999-11-29  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal.cdl:
+
+	Use wildcard in the custom rule for extras.o to
+	accommodate 'make -n'.
+
+1999-11-23  Simon Fitzmaurice <sdf@cygnus.co.uk>
+	* cdl\common.cdl: Correct example of illiteracy
+
+1999-11-20  Gary Thomas  <gthomas@cygnus.co.uk>
+	
+	* cdl/common.cdl: Add MMU tables options.
+
+	* include/pkgconf/hal.h (CYGSEM_HAL_INSTALL_MMU_TABLES): 
+	(CYGSEM_HAL_STATIC_MMU_TABLES): New options to control MMU table
+	flavour and placement.
+
+1999-11-15  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/dbg-threads-api.h, include/generic-stub.h,
+	include/hal_stub.h: Add comments to explain these header files should
+	not be included by user programs
+
+1999-11-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/common.cdl: Add CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL.
+	
+	* include/pkgconf/hal.h (CYGDBG_HAL_DIAG_DISABLE_GDB_PROTOCOL): 
+	New option which [explicitly] controls use of GDB protocol
+	for diagnostic I/O.
+
+1999-11-03  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal.cdl: More crud out + mn10300 fixes.
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal.cdl: Cleaned out some of the CPU config entries.
+
+1999-10-29  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* tests/PKGconf.mak: Add cache tests for Cirrus Logic boards.
+
+1999-10-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/cache.c: Made safe for targets with no cache.
+
+	* tests/PKGconf.mak: Don't build cache test for ARM unless
+	explicitly enabled.
+
+1999-10-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/cache.c: Fix array size.
+
+1999-10-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_stub.c: Fix typo (CYGDAT_CYGMON_ENABLE).  Also need
+	to include <pkgconf/cygmon.h>
+
+1999-10-27  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_stub.c: Add explicit enable for CygMon package.
+
+1999-10-27  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* src/hal_stub.c (cyg_hal_gdb_interrupt): Bugfix to previous: ^Cs
+	were being ignored when received by the diag output code, because
+	there was already a break in place.  Solution is to let
+	cyg_hal_gdb_interrupt() override any previous break, and tidy up
+	state of course.
+
+1999-10-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_stub.h (CYG_HAL_GDB_ENTER_CRITICAL_IO_REGION): Place
+	the break at the address of a label within the calling context
+	[normally hal_diag_write_char()]; this is neater and more
+	portable; it's supported for more targets.  Also use
+	cyg_hal_place_break() to place it, define that, &c.
+
+	* src/hal_stub.c (cyg_hal_gdb_place_break): New routine to
+	specially handle the inline breakpoint.  It basically does the
+	same as cyg_hal_gdb_interrupt(), except on some platforms where
+	you must do different things to set a bp from a non-interrupt
+	context.
+
+1999-10-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_stub.c (putDebugChar, getDebugChar): When building with
+	CygMon, these functions are defined by CygMon.
+
+1999-10-26  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/hal.cdl:
+
+	Modify custom make rule to specify file paths relative
+	to the package version directory.
+
+1999-10-22  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/hal_stub.h (CYG_HAL_GDB_ENTER_CRITICAL_IO_REGION):
+	(CYG_HAL_GDB_LEAVE_CRITICAL_IO_REGION): new macros to be invoked
+	in hal_diag routines to make atomic the code that outputs a
+	complete GDB $O packet.  This is required so that watching
+	variables (which is implemented by stepping) and stepping itself
+	does not try to ss through that $O output code.  CASE 102327.
+
+	* src/hal_stub.c (cyg_hal_gdb_break_is_set): new routine to query
+	whether a break is set: used by step in the stubs to decide to
+	continue instead, because we are in a critical region.
+	(cyg_hal_gdb_running_step): communication between generic stub and
+	here: if set, a step has been converted into a continue, so we do
+	NOT obey cyg_hal_gdb_remove_break until it is cleared, in
+	handle_exception_cleanup().
+
+	* src/generic-stub.c (__process_packet): If there is a break set
+	by the hal_stub.c, convert a step to continue, and set
+	cyg_hal_gdb_running_step to say we did so.
+
+1999-10-22  Jesper Skov  <jskov@cygnus.co.uk>
+        Case 102379
+	* src/generic-stub.c (__handle_exception): Flush and clear caches
+	after cleaning up after single-stepping.
+
+	(memcpy, memset): Added to prevent stub hanging if user puts
+	breakpoints in either function.
+
+1999-10-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Added monitor configury for Brother
+	board.
+	
+1999-10-10  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/thread-packets.c (stub_pkt_currthread): Fix typo in comment.
+
+	* src/generic-stub.c: Reorg to expose register get/set functions.
+
+1999-10-08  Simon Fitzmaurice <sdf@cygnus.co.uk>
+	* cdl\interrupts.cdl: Quoted '[' and ']' (significant in TCL and thus CDL)
+
+1999-10-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/interrupts.cdl: Added
+	CYGIMP_HAL_COMMON_INTERRUPTS_IGNORE_SPURIOUS.
+
+1999-09-22  Simon FitzMaurice <sdf@cygnus.co.uk>
+
+	* cdl\hal.cdl : add priority field to "extras.o" rule
+
+1999-09-21  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/thread-packets.c: Fix some typos in comments.
+
+1999-09-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Override generic GDB interrupt functions for
+	ARM. Need them to be thumb aware. 
+
+1999-09-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Add new config option to allow spurious
+	interrupts to be ignored by the HAL.
+
+	* src/generic-stub.c (__process_packet): Build in version string
+	(date/time) for stubs in ROM to be returned via 'd' packet.
+
+1999-09-09  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal.h (CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS): Rename
+	CYGPKG_HAL_MN10300_SIM to CYGPKG_HAL_MN10300_AM31_SIM
+
+1999-09-07  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/dbg-threads-syscall.c (dbg_currthread_id): Fixed to return
+	zero if dbg_currthread() returns false. Previously it could have
+	returned a random value which would have made GDB think there had
+	been a thread switch when there hadn't. It was particularly prone
+	to do this in configurations where the kernel was absent.
+
+1999-09-01  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Always include target and platform package
+	include (pkgconf) files.
+
+1999-08-26  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/generic-stub.c (__hex2mem_helper):
+	Use target_register_t when casting to address type, rather than long
+	Since the compiler can choose arbitrary alignment of unions, force
+	to use byte array only
+	Restore use of loop termination test for *hexMemSrc, just in case
+	since that's how it used to be
+	Increment destination, not source at end of loop
+	
+	(__mem2hex_helper):
+	Use target_register_t when casting to address type, rather than long.
+	Since the compiler can choose arbitrary alignment of unions, force
+	to use byte array only. Therefore use single __read_mem_safe() call
+	
+	* src/hal_stub.c (__do_copy_mem): Reassign back from dst/src at start
+	of each	"if" clause in case we go round the loop again.
+
+1999-08-24  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_stub.c (__do_copy_mem): Move temp variables to top of
+	function - potentially safer if there is an error.
+
+1999-08-23  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/generic-stub.c (__process_packet): For 'g' and 'G' packets,
+	when the register size differs from sizeof(target_register_t) we must
+	adjust according to the endianness 
+
+	* include/hal_stub.h: Ensure __LITTLE_ENDIAN__ is defined on
+	little-endian targets
+
+	* src/hal_stub.c (__build_t_packet): Use the correct register sizes
+	for PC and SP rather than assuming they are the same as target_register_t
+
+1999-08-23  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/generic-stub.h: Change prototypes for internal functions.
+
+	* src/hal_stub.c (__do_copy_mem): 
+	* src/generic-stub.c (__mem2hex_helper): Rework to perform aligned,
+	multi-byte operations when conditions allow.  This should handle
+	most "hardware register" access cases.  Note: there currently is
+	no good way to force GDB to require/use such accesses.
+
+1999-08-17  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/intr.c (cyg_start): Use CYG_TEST_NA rather than a pass saying
+	it's inapplicable
+
+1999-08-16  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Rename CYG_HAL_MN10300_AM32_STDEVAL1 to
+	CYG_HAL_MN10300_AM31_STDEVAL1
+
+1999-08-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_stub.c: Removed superfluous trace() extern.
+
+1999-08-12  Nick Garnett  <nickg@cygnus.co.uk>	
+
+	Imported following changes from AM33 branch:
+	
+    1999-07-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_stub.c: Added support for 1 byte breakpoints.
+	Removed	invalidates for cache flushes - I am not entirely sure why
+	we have these here, since HAL_DCACHE_SYNC() should do what we
+	need, and these invalidates are causing a problem on the MIPS and
+	MN10300 targets.
+
+	* include/pkgconf/hal.h: Added Monitor selection for AM33.
+
+    1999-06-29  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Modified to match new MN10300 HAL
+	organization.
+
+1999-08-06  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c (__process_packet): FLush and clear caches
+	after call to __single_step.
+
+1999-07-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/intr.c: Don't use kernel's RTC definitions.
+
+1999-07-02  Jesper Skov  <jskov@cygnus.co.uk>
+        PR20157
+	* tests/cache.c: Print stride values, preventing timeout on slow
+	targets.
+
+1999-06-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h (CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT):
+	Fixed parent.
+
+1999-06-24  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Clarify descriptions of
+	CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT and
+	CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT.
+
+1999-06-17  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Added CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+	to enable inclusion of ^C interrupt handler. Added CDL to control
+	it.
+
+1999-06-10  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Add support for the PowerPC target MBX860
+	platform, CYG_HAL_POWERPC_MBX.
+
+1999-06-10  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/hal_stub.c: Need to init register pointer.
+
+1999-06-08  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Added CYG_HAL_ROM_MONITOR for EDK7708.
+
+1999-05-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Respect HAL_BREAKINST_SIZE setting.
+
+1999-05-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Renamed SH platform package to edk7708.
+
+1999-05-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_stub.c (initHardware): Added call to
+	HAL_STUB_PLATFORM_INIT if it is defined.
+
+	* include/pkgconf/hal.h: Added a #undef for CYG_HAL_ROM_MONITOR,
+	largely so that a stubrom permutation can define it.
+
+1999-05-27  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_stub.c: Do not call HAL_ICACHE_INVALIDATE_ALL() and
+	HAL_DCACHE_INVALIDATE_ALL() in __instruction_cache() and
+	__data_cache() for MIPS targets. These macros are simply
+	duplicates.
+
+1999-05-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/cache.c:  Added handling of unified caches.
+
+1999-05-25  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/cache.c: Use HAL_DCACHE_SYNC if available
+
+1999-05-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Added CPU specifier for EDK board.
+
+1999-05-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (__install_traps): Set exit vector to __reset.
+
+1999-05-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Switched VR4300 over to using GDB STUBS
+	monitor from PMON.
+	
+1999-05-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/intr.c: Get RTC values from CYGBLD_HAL_PLATFORM_H.
+	Ensure there are fallback definitions.
+
+	* src/hal_stub.c (handle_exception_cleanup): Added optional call
+	of HAL_STUB_PLATFORM_STUBS_FIXUP macro.
+
+1999-05-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (hal_output_gdb_string): Added missing ;
+
+1999-05-13  Nick Garnett  <nickg@cygnus.co.uk>
+
+	The following changes were all made on a branch and imported into
+	the main trunk later.
+	
+    1999-05-11  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	tidied up all MIPS targets to include CYGBLD_HAL_TARGET_H. This
+	will eventually apply to all configurations.
+
+    1999-05-06  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/PKGconf.mak (COMPILE): Added dbg-threads-syscall.c.
+
+	* include/dbg-thread-syscall.h: 
+	* src/dbg-threads-syscall.c:
+	Files added to enable support for thread-awareness in GDB stub
+	ROMs. The .h file has been moved from kernel/src/debug.
+
+    1999-04-28  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/hal_stub.c (__build_t_packet): Changed sp variable to a
+	non-pointer type to force it to be installed in the T packet with
+	the right size.
+
+	* src/drv_api.c: Added cyg_interrupt_call_pending_DSRs() to keep
+	HAL happy in non-kernel configurations.
+
+    1999-04-21  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Added VR4300 configury for ROM monitor use and inclusion of
+	variant-specific configuration header. This needs some further
+	tidying up.
+	
+1999-04-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Use the new rules for generating libextras.a
+
+1999-04-27  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: GDB_BREAK support now available for ARM
+	targets.
+
+1999-04-16  Bart Veer  <bartv@cygnus.co.uk>
+
+	* src/PKGconf.mak: 
+	* src/dummy.c:
+	New file that can always be added to libextras.a without
+	affecting image sizes.
+
+1999-04-14  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/hal_stub.h: 
+	Make sure all functions have C linkage even in C++
+
+1999-04-14  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19845
+	* src/generic-stub.c (__process_packet): Reset _register pointer
+	to the exception state before attempting to set up single-step
+	magic.
+
+1999-04-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/hal_stub.h: Added declaration for __stub_copy_registers.
+
+1999-04-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: Use HAL_xCACHE_IS_ENABLED if defined.
+
+1999-04-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c:
+	Moved get_register and put_register here. Made them access the
+	currently selected register set.
+
+1999-03-22  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/dbg-threads-api.h: Update copyright
+
+	* src/generic-stub.c: Change Cygnus Support->Cygnus Solutions
+
+	* src/thread-packets.c: Update copyright
+
+	* src/thread-pkts.h: Update copyright
+
+1999-03-19  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* tests/cache.c: Added interrupt disable and enable to cache state
+	change blocks, in line with similar changes to kcache1.
+
+1999-03-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c (hal_output_gdb_string): Use disable/restore
+	macros to make sure it works even when interruptible() is a NOP
+	function.
+
+1999-03-10  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Changed include of hal_tx39_jmr3904.h to hal_tx39.h.
+
+1999-03-05  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/drv_api.h: 
+	* src/drv_api.c:
+	Fixed some typos in non-kernel configuration support.
+
+1999-03-04  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 19367
+	* include/pkgconf/hal.h: Exclude GDB stubs on sparc.
+
+1999-02-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c: 
+	* include/generic-stub.h: 
+	Added binary download patches from libstub.
+	
+1999-02-25  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/drv_api.h:
+	* src/drv_api.c: 
+	Added these files to define driver API.
+
+1999-02-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Added include of <pkgconf/hal_tx39_jmr3904.h> to get TX39 speed
+	configuration options.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* tests/intr.c: 
+	Rename CYGNUM_VECTOR_RTC -> CYGNUM_HAL_INTERRUPT_RTC in line with
+	HAL changes
+
+1999-02-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_stub.c: 
+	* src/generic-stub.c (__handle_exception): 
+	Only include cyg_hal_gdb_break magic when stub is configured to
+	handle GDB BREAK signals.
+
+1999-02-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c (__handle_exception): Moved special signal
+	handling here to avoid duplication for all architectures.
+
+1999-02-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/stubrom/stubrom.c: Changed set_debug_traps to initialize_stub.
+
+	* include/hal_stub.h: [added]
+	* include/generic-stub.h:
+	* src/hal_stub.c:     [added]
+	* src/board.h:        [added]
+	* src/thread-pkts.h: 
+	* src/thread-packets.c: 
+	* src/generic-stub.c: 
+	* src/PKGconf.mak: 
+	Merged in latest libstub changes. Moved most eCos specific changes
+	into hal_stub.[ch], reducing effort required for further
+	merging/integration.
+
+1999-02-05  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Cleaned up the MPC8xx configuration.
+
+1999-01-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Added simple MPC8xx configuration.
+
+1999-01-26  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* tests/cache.c (time0): Waste much less time if running in a
+	simulator.  Do only 40 loops instead of 4000.
+	In consequence the nasty meddling with MAX_STRIDE depending on
+	HAL_xxx_SIM package definitions can go.
+	
+1999-01-22  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Renamed CYG_HAL_POWERPC_FADS to
+	CYGPKG_HAL_POWERPC_FADS.
+
+1999-01-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Tidy up and update description
+	Add new CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG option to allow default
+	priority static constructors to be deferred
+	Remove all traces of non-CYG_KERNEL_USE_INIT_PRIORITY code
+	
+1999-01-21  Jesper Skov  <jskov@cygnus.co.uk>
+        Merge with FADS branch.
+	
+        1998-12-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Don't allow GDB BREAK support on FADS.
+	Define _MPC860, not _MP860.
+
+        1998-12-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Added FADS entry from Kevin Hester <KHester@opticworks.com>.
+
+	1999-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: 
+	Add CYG_KERNEL_USE_INIT_PRIORITY for SPARCLITE.
+
+1999-01-18  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 18823
+	* include/pkgconf/hal.h: Don't allow GDB stubs to be configured
+	for Linux target.
+
+1999-01-18  Jesper Skov  <jskov@cygnus.co.uk>
+	PR 18822
+	* include/pkgconf/hal.h: GDB_BREAK support not available for ARM
+	targets.
+	
+1999-01-14  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/stubrom/PKGconf.mak: Rename 'TESTS' to 'PROGS' due to 
+	changes in 'makrules.prv'.
+
+1999-01-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/stubrom/stubrom.c (cyg_start): Fix compiler warning.
+
+	* include/dbg-threads-api.h: Include cyg_type.h to get externC
+	definition.
+
+1999-01-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/dbg-threads-api.h: Added prototype for dbg_scheduler().
+
+1999-01-13  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/generic-stub.c (__output_hex_value): Change buffer size
+	[2048 was rather large] and make stack based.  Also don't
+	allow for string to exceed buffer.
+
+1999-01-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c (strcpy): Terminate copied string.
+
+1999-01-11  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/intr.c (CYGNUM_KERNEL_COUNTERS_RTC_PERIOD): Added RTC data
+	for Linux.
+
+Wed Dec  9 14:07:30 GMT 1998  Chris Provenzano  <proven@cygnus.com>
+
+	* include/pkgconf/hal.h: Compile the i386 linux target with
+	CYG_KERNEL_USE_INIT_PRIORITY defined.
+
+1999-01-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c (interruptible): Cleaned up a bit.
+
+1999-01-04  Jesper Skov  <jskov@cygnus.co.uk>
+	PR 18572
+
+	* tests/cache.c: Purge data cache before invalidating it.
+
+1998-12-09  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* src/generic-stub.c: Better handling of errors while stubs
+	are accessing memory on behalf of GDB.  Requires support for
+	GCC 'computed goto label' in top-level exception handler.
+
+1998-12-09  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Removed the
+	CYGARC_HAL_COMMON_EXPORT_CPU_MACROS option. Causing failures in
+	permutation tests.
+
+1998-12-07  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c (process_exception): Send an acknowledge char
+	on first entry so GDB doesn't timeout before resending its initial
+	packet.
+
+1998-11-26  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Added
+	CYGARC_HAL_COMMON_EXPORT_CPU_MACROS.
+
+1998-11-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/cache.c: Only run with stride 1 on SIMs.
+
+1998-11-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Define SIM as a 603 CPU.
+
+1998-11-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/intr.c:
+	Make the test do nothing if kernel real-time clock is enabled.
+	Added different timer constants for PPC SIM and HW.
+
+1998-11-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* tests/intr.c: 
+	* include/pkgconf/hal.h:
+	Renamed CYG_HAL_POWERPC_MP860 to CYG_HAL_POWERPC_MPC860.
+	
+1998-11-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Made CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT a
+	sub-option of CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS.
+
+1998-11-16  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Allow GDB stubs to be configured for
+	MN10300 HW. Allow GDB_BREAK for all but tx39.
+
+1998-11-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Made CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT a
+	sub-option of CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS.
+
+1998-11-04  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c (process_packet): Flush D cache before
+	invalidating I cache.
+
+1998-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/generic-stub.c (__handle_exception): Check for breakpoints
+	set by GDB interrupt handler.
+
+1998-10-25  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/thread-packets.c: Fixed closing #endif comment.
+
+	* src/generic-stub.c: Fixed closing #endif comment.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_common.c: Removed. We can't use weak default functions
+	when they may conflict with strong functions in the library.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/generic-stub.h: Added __interruptible_control.
+
+1998-10-23  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17460, PR 17913
+
+	* include/pkgconf/hal.h: Let HAL exception support require Kernel
+	exception support.
+
+1998-10-21  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17842
+
+	* include/pkgconf/hal.h: Let HAL GDB thread support require Kernel
+	GDB thread support.
+
+1998-10-20  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 17460
+
+ 	* src/hal_common.c: Added. Includes a weak handle_exception
+ 	definition.
+
+1998-10-20  Jesper Skov  <jskov@cygnus.co.uk>
+        PR 17885, 17880, 17841
+
+	* include/pkgconf/hal.h: Don't allow GDB stubs to be configured
+	for SIMs or MN10300.
+
+1998-10-19  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* src/thread-packets.c: Sync'd with libstub source.
+
+1998-10-16  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal.h (CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE):
+	Added new configuration option for interrupt stack size.
+
+Thu Oct 15 21:25:55 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: 
+	Make CYGFUN_HAL_COMMON_KERNEL_SUPPORT require the kernel, as it
+	is enabling this is eCos-kernel specific, and relies on 
+	configuration options defined only in the kernel
+	Required for PR 17229
+
+1998-10-15  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h (CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT):
+	Added config option.
+
+1998-10-14  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Move some configury from kernel.h to here. Particularly the
+	support for GDB stubs.
+
+	* tests/cache.c: 
+	* tests/context.c: 
+	* tests/intr.c: 
+	* tests/PKGconf.mak:
+	New directory of HAL-only test programs. Currently contains some
+	very basic test programs.
+
+	* include/generic-stub.h:
+	* include/dbg-threads-api.h:
+	* src/generic-stub.c:
+	* src/thread-packets.c: 
+	* src/thread-pkts.h: 
+	* src/stubrom/PKGconf.mak: 
+	* src/stubrom/stubrom.c: 
+	Moved these files here from kernel.
+
+1998-10-08  Gary Thomas  <gthomas@penang.cygnus.co.uk>
+
+	* include/pkgconf/hal.h: 
+	Add support for new architecture.
+
+1998-09-23  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Switched TX39 over to using CYGMON from GDB stubs.
+
+Tue Sep 15 19:13:04 1998  David Moore  <dsm@keema.cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Cleaned up comments.
+
+Mon Sep 14 11:08:26 1998  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+        PR 17230
+
+	* include/pkgconf/hal.h: Added IMP_HAL_COMMON_INTERRUPTS_CHAIN
+	option.
+
+1998-09-14  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Fixed typo in description.
+
+1998-09-12  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Sort out exception handling options (PR 16953)
+	Added missing descriptions (PR 17184)
+
+Tue Sep  8 17:16:39 1998  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: 
+	Elide some spurious redefines of CYG_HAL_MN10300_STDEVAL1 and
+	CYG_HAL_MN10300_SIM within ifdefs conditioned on same.
+
+1998-09-03  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	CYGPKG_HAL_COMMON is now a component, not a package.
+
+1998-09-02  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Moved target and platform specific configuration data to
+	the appropriate packages.
+	
+	Symbols identifying the target hardware should be just defined,
+	not given a value, as per the coding standards.
+
+Mon Aug 31 09:16:08 1998  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal.h: Added INIT_PRIORITY default setting for
+	powerpc.
+
+1998-08-28  Bart Veer  <bartv@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Added configuration data.
+
+1998-08-20  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Moved definition of CYG_KERNEL_USE_INIT_PRIORITY here from
+	kernel.h.
+
+1998-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* include/pkgconf/hal.h:
+	Created this file to contain HAL config options.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+// Copyright (C) 2003 Jonathan Larmour
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

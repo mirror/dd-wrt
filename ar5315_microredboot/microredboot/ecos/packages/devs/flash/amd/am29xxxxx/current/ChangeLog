@@ -1,0 +1,306 @@
+2004-04-21  Sebastien Couret  <sebastien.couret@elios-informatique.com>
+
+	* include/flash_am29xxxxx.inl: Minor changes to silence warnings.
+
+2004-04-08  Bob Koninckx <bob.koninckx@o-3s.com>
+	* include/flash_am29xxxxx_parts.inl: Added support for AM29PL160 top
+	boot block devices and corrected typo.
+
+2004-04-06  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/flash_am29xxxxx.inl (flash_program_buf): Buffered program
+	writes failed when configured for parallel devices.
+
+2003-10-21  Jay Foster   <jay@systech.com>
+
+	* include/flash_am29xxxxx_parts.inl (CYGHWR_DEVS_FLASH_AMD_AM29LV033C):
+	Fixed device definition to allow erasing of the upper half of the
+	device.  The Sector Protect Verify command would erroneously report
+	the upper half of the device as locked.
+
+2003-10-02  Jay Foster   <jay@systech.com>
+
+	* include/flash_am29xxxxx_parts.inl (CYGHWR_DEVS_FLASH_AMD_AM29LV081B,
+	CYGHWR_DEVS_FLASH_AMD_AM29LV017D, CYGHWR_DEVS_FLASH_AMD_AM29LV033C,
+	CYGHWR_DEVS_FLASH_AMD_AM29LV065D):
+	* cdl/flash_amd_am29xxxxx.cdl: Add support for Am29LV081B, Am29LV017D,
+	Am29LV033C, and Am29LV065D parts.
+
+2003-09-09  Thomas Koeller <thomas.koeller@baslerweb.com>
+
+	* include/flash_am29xxxxx.inl:
+	* include/flash_am29xxxxx_parts.inl: Added support for write
+	buffer programming.
+    
+2003-09-04  Thomas Koeller <thomas.koeller@baslerweb.com>
+
+	* include/flash_am29xxxxx_parts.inl (CYGHWR_DEVS_FLASH_AMD_AM29LV128):
+	* cdl/flash_amd_am29xxxxx.cdl: Add support for Am29LV128 part.
+
+2003-08-17  Bart Veer  <bartv@ecoscentric.com>
+
+	* include/flash_am29xxxxx.inl:
+	Allow platform-specific code to override the default loop counts
+	used for timeouts.
+
+	* include/flash_am29xxxxx_parts.inl, cdl/flash_amd_am29xxxxx.cdl:
+	Add AM29PL160 device
+
+2003-07-23  Chris Garry <cgarry@sweeneydesign.co.uk>
+
+	* include/flash_am29xxxxx_parts.inl (CYGHWR_DEVS_FLASH_AMD_AM29LV400):
+	* cdl/flash_amd_am29xxxxx.cdl: Add support for Am29LV400 part.
+
+2003-04-03  Jani Monoses <jani@iv.ro> 
+
+	* include/flash_am29xxxxx.inl:
+	Removed wrapper functions which enabled/disabled cache around query,
+	erase and program operations since the generic flash driver takes
+	care of the cache already.
+	
+2003-02-11  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/flash_am29xxxxx_parts.inl:
+	Fix identifier code for AM29LV320DT.
+
+2002-12-23  Patrick Doyle  <wpd@delcomsys.com>
+
+	* include/flash_am29xxxxx_parts.inl (CYGHWR_DEVS_FLASH_AMD_AM29DL640D): 
+	* cdl/flash_amd_am29xxxxx.cdl: 
+	Add support for AM29DL323 and for 16 bit operation of the
+	AM29DL322.
+
+2002-12-04  Mark Salter  <msalter@redhat.com>
+
+	* include/flash_am29xxxxx_parts.inl:
+	* cdl/flash_amd_am29xxxxx.cdl: Add support for AM29DL322.
+
+2002-11-25  Gary Thomas  <gthomas@ecoscentric.com>
+
+	* include/flash_am29xxxxx_parts.inl (CYGHWR_DEVS_FLASH_AMD_AM29DL640D):
+	Now tested in 16 bit configurations.
+
+	* include/flash_am29xxxxx.inl: Fix problems with CYGNUM_FLASH_16AS8.
+	The definition was inconsistent/confusing.
+
+2002-11-17  Bob Koninckx <bob.koninckx@mech.kuleuven.ac.be>
+
+	* include/flash_am29xxxxx_parts.inl:
+	* cdl/flash_am29xxxxx.cdl: Definition for AM29F010 part added. Used by cme555.
+
+2002-10-11  Gary Thomas  <gary@mlbassoc.com>
+
+	* include/flash_am29xxxxx_parts.inl: 
+	* include/flash_am29xxxxx.inl: Better support for devices with
+	"bootblock" sections - some newer devices have more than one!
+
+2002-09-26  Ian Campbell  <icampbell@arcomcontrols.com>
+	
+	* include/flash_am29xxxxx_parts.inl:
+	* cdl/flash_amd_am29xxxxx.cdl: Add support for AM29DL640D.
+
+	* include/flash_am29xxxxx.inl: Add support for triple byte part id
+	numbers, such as those used by the AM29DL640D. Allow for parts
+	with up to 5 banks, rather than two -- also to support AM29DL640D
+	parts.
+
+2002-07-29  Gary Thomas  <gary@chez-thomas.org>
+2002-07-29  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>
+
+	* include/flash_am29xxxxx.inl: Force routines which actually use
+	the FLASH to run from RAM.
+
+2002-07-24  Gary Thomas  <gary@chez-thomas.org>
+2002-07-24  Motoya Kurotsu <kurotsu@allied-telesis.co.jp>
+	
+	* include/flash_am29xxxxx.inl (_flash_program_buf): Fix data
+	type for 'state' - needs to be flash_data_t.
+
+2002-06-20  Gary Thomas  <gary@chez-thomas.org>
+
+	* include/flash_am29xxxxx.inl: Add cache disable/enable code
+	since this is required on most platforms.
+
+	* include/flash_am29xxxxx_parts.inl: 
+	* cdl/flash_amd_am29xxxxx.cdl: Add support for AM29LV320D{T|B}
+
+2002-04-24  Bob Koninckx <bob.koninckx@mech.kuleuven.ac.be>
+
+	* cdl/flash_amd_am29xxxxx.cdl: Support AM29LV200 and ST M29W200B.
+	* include/flash_am29xxxxx_parts.inl: Likewise.
+
+2002-01-03  Jonathan Larmour  <jlarmour@redhat.com>
+2001-12-20  Koichi Nagashima  <naga@r-lab.co.jp>
+
+	* cdl/flash_amd_am29xxxxx.cdl: Add support for Toshiba TC58FVB800 part.
+	* include/flash_am29xxxxx_parts.inl: Ditto.
+
+	* include/flash_am29xxxxx.inl: Fix FLASH_Reset definition.
+	Check sector erase timer correctly.
+
+2001-10-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx_parts.inl: Removed fix me comments -
+	description is accurate.
+
+2001-10-30  Jesper Skov  <jskov@redhat.com>
+	From Gary:
+	* include/flash_am29xxxxx_parts.inl: Added preliminary AM29LV640
+	support. Still needs some tweaks.
+	* cdl/flash_amd_am29xxxxx.cdl: Same.
+
+2001-09-26  Gary Thomas  <gthomas@redhat.com>
+
+	* include/flash_am29xxxxx.inl (flash_erase_block): 
+	New platform control - CYGHWR_FLASH_AM29XXXXX_NO_WRITE_PROTECT.
+	Define this if the write-protect feature is non-functional/missing.
+
+2001-08-16  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/flash_am29xxxxx.inl: Double erase timeouts for faster CPUs.
+
+2001-08-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx.inl (flash_hwr_init): Fix block number.
+
+2001-07-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx.inl: Made code deal with multiple
+	banks. Use flag to identify banked devices.
+	* include/flash_am29xxxxx_parts.inl: Updated with banked flag.
+
+2001-07-23  David Howells  <dhowells@redhat.com>
+
+	* include/flash_am29xxxxx.inl: Added support for chips divided
+	into banks, and added correct addresses for 16-bit chips
+	configured in 8-bit mode
+	* include/flash_am29xxxxx_parts.inl: Added data for chips divided
+	into banks
+
+2001-06-11  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx.inl: Traverse by incrementing
+	driver-global pointer variable.
+
+2001-06-11  David Howells  <dhowells@redhat.com>
+
+	* include/flash_am29xxxxx.inl: actually traverse the list of
+	supported devices, rather than checking the first entry several
+	times
+
+2001-06-08  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx_parts.inl: New file with just part
+	data.
+
+	* include/flash_am29xxxxx.inl: Leave more space for bootblock
+	offsets. Moved part table data to separate file.
+
+	* cdl/flash_amd_am29xxxxx.cdl: Added config options to control
+	inclusion of table data for various parts.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx.inl (flash_hwr_init): Call platform init
+	code if defined.
+
+2001-05-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx.inl: Rewritten to handle bootblock
+	parts, autodetect part and configure accordingly.
+	Fixed erase and program code to work with devices in parallel.
+	Fixed buglet in bootblock detect code.
+
+2001-05-23  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/flash_amd_am29xxxxx.cdl: Links function in RAM. IO driver
+	need not copy.
+
+	* include/flash_am29xxxxx.inl: Check for WP before trying to erase
+	block. Use P2V macro.
+
+2001-02-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx.inl (flash_query): Allow device to
+	settle before returning.
+
+2001-02-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/flash_am29xxxxx.inl: Fix typo. Cleaned up, almost
+	working with MBX. Times out when erasing from ROM version of RB.
+
+2001-02-20  Jesper Skov  <jskov@redhat.com>
+
+	* .../amd/am29xxxxx: Cloned from hardwired am29f040b driver.
+
+2000-12-07  Jesper Skov  <jskov@redhat.com>
+
+	* src/flash.h: Addresses and sizes are also affected by
+	interleaving.
+	* src/flash_erase_block.c: Plug in working loop.
+	* src/flash_program_buf.c: Same.
+
+2000-12-06  Jesper Skov  <jskov@redhat.com>
+
+	* src/am29f040b_flash.c (flash_hwr_init): Use new query semantics.
+	* src/flash_query.c (flash_query): Changed accordingly.
+
+	* src/flash.h (FLASH_Sector_Erase_Timer): Added.
+
+	* src/flash_erase_block.c: Do not check error flag after operation
+	completes.
+	* src/flash_program_buf.c: Same.
+
+2000-12-05  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* src/am29f040b_flash.c (flash_code_overlaps): Define stext/etext
+	as array types so no assumptions can be made by the compiler about
+	location.
+
+2000-12-05  Jesper Skov  <jskov@redhat.com>
+
+	* Cloned from MBX driver.
+
+2000-10-20  Gary Thomas  <gthomas@redhat.com>
+
+	* src/mbx_flash.c: 
+	* src/flash_query.c: 
+	* src/flash_program_buf.c: 
+	* src/flash_erase_block.c: 
+	* src/flash.h: 
+	* cdl/flash_mbx.cdl: New package/file(s).
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

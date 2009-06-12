@@ -1,0 +1,6 @@
+cdl_option CYGNUM_CACHE_WRITETHRU {
+	display		"Use writethru cache"
+	flavor		data
+	default_value	0
+	description	"Set to 1 if you want ot use writethru cache"
+}

@@ -1,0 +1,49 @@
+# ====================================================================
+#
+#      ar531x_phy_icplus.cdl
+#
+#      Ethernet drivers - platform dependent enet support for Atheros'
+#                         AR531X-based boards.
+#
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Atheros Communications, Inc.
+# Original data:  
+# Contributors:   Atheros engineering
+# Date:           2005-01-10
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_MIPS32_AR531X_PHY_ICPLUS {
+    display       "Atheros AE531X Ethernet Driver IC+ Phy"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if     {CYGNUM_USE_ENET_PHY == "icplus"}
+    active_if	  CYGPKG_HAL_MIPS_AR5312 || CYGPKG_HAL_MIPS_AR2316
+
+    include_dir   .
+    include_files ;
+    description   "IC+ ethernet phy driver for Atheros AR531X boards."
+    compile       -library=libextras.a ipPhy.c
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AR531X_PHY_ICPLUS_OPTIONS {
+        display "IC+ phy ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AR531X_PHY_ICPLUS_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Atheros AR531X IC+ phy ethernet driver
+	        package. These flags are used in addition to the set of global
+		flags."
+        }
+    }
+}

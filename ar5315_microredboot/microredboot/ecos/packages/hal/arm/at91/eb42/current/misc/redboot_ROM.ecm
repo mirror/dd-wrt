@@ -1,0 +1,56 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    package CYGPKG_IO_FLASH current ;
+};
+
+cdl_option CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE {
+    user_value 6144
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_ROM_MONITOR {
+    inferred_value 1
+};
+
+cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+    inferred_value 0 0
+};
+
+cdl_component CYG_HAL_STARTUP {
+    user_value ROM
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_option CYGOPT_REDBOOT_FIS {
+    user_value 0
+};
+
+cdl_component CYGSEM_REDBOOT_FLASH_CONFIG {
+    user_value 0
+};
+
+cdl_option CYGBLD_BUILD_REDBOOT_WITH_EXEC {
+    user_value 0
+};

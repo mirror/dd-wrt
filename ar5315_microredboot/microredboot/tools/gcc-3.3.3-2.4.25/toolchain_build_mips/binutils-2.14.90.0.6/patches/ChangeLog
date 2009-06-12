@@ -1,0 +1,50 @@
+2003-08-15  H.J. Lu  <hjl@gnu.org>
+
+	* libtool-dso.patch: Updated.
+
+2003-08-12  H.J. Lu  <hjl@gnu.org>
+
+	* demangler.patch: Updated.
+
+2003-07-23  H.J. Lu  <hjl@gnu.org>
+
+	* demangler.patch: Updated.
+
+2003-07-22  H.J. Lu  <hjl@gnu.org>
+
+	* demangler.patch: Support relative source directory.
+
+2003-07-22  H.J. Lu  <hjl@gnu.org>
+
+	* demangler.patch: Support single directory build.
+
+2003-07-21  H.J. Lu <hjl@gnu.org>
+
+	* demangler.patch: New. A new C++ demangler.
+
+	* apply_demangler: New. A script to apply the new demangler.
+
+2003-07-14  H.J. Lu <hjl@gnu.org>
+
+	* libtool-dso.patch: Updated.
+
+2003-06-11  H.J. Lu <hjl@gnu.org>
+
+	* libtool-dso.patch: Updated.
+
+2003-05-30  H.J. Lu <hjl@gnu.org>
+
+	* README: Don't apply ld-test-link.patch.
+
+2003-05-25  H.J. Lu <hjl@gnu.org>
+
+	* libtool-dso.patch: New. Fix brain dead libtool.
+
+	* README: Apply libtool-dso.patch.
+
+2003-05-23  H.J. Lu <hjl@gnu.org>
+
+	* ld-test-link.patch: New file. Fix "make check" in ld for
+	non-system compiler.
+
+	* README: New file. Apply ld-test-link.patch.

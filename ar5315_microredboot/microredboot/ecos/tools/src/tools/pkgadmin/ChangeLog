@@ -1,0 +1,471 @@
+2000-12-15  Julian Smart  <julians@redhat.com>
+
+	* win32/PkgAdminDlg.cpp:
+
+	Provide dummy error and warning handlers for
+    CdlPackagesDatabaseBody::make or it asserts in debug mode.
+
+2000-06-15  John Dallaway  <jld@redhat.com>
+
+	* win32/PkgAdmin.dsp:
+
+	Link debug builds against tcl82d.lib rather than
+	tcl82.lib.
+
+	Look for libCDL in v:\cdl rather than v:\ide.
+
+2000-03-29  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/PkgAdmin.rc:
+
+	Update version string.	
+
+2000-03-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/PkgAdmin.rc:
+
+	Update version number to 1.3.2.
+
+2000-03-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/PkgAdmin.dsw:
+
+	Use relocated cdl project file.
+
+2000-03-02  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32/PkgAdmin.rc,
+	  win32/PkgAdminres.h:
+
+	Add new 'please wait' dialog resource.
+
+	* win32\PkgAdminTclWaitDlg.cpp,
+	  win32\PkgAdminTclWaitDlg.h:
+
+	New CPkgAdminTclWaitDlg class to handle the new
+	'please wait' dialog. Invokes ecosadmin.tcl in a
+	new thread to allow re-painting of the dialog
+	during admin tasks.
+
+	* win32/PkgAdmin.dsp:
+
+	Add source and header for the admin tool
+	'please wait' dialog.
+
+	* win32/PkgAdminDlg.cpp:
+
+	Modify EvalTclFile() to launch the new 'please wait'
+	dialog and wait for it to be closed by another thread.
+
+	Modify OnInitDialog() to fix the logic which decides
+	whether the path to the user tools is available.
+
+2000-02-17  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.rc:
+
+	Update the version and copyright information in the
+	'About...' dialog box.
+
+2000-02-14 Simon FitzMaurice <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp
+    win32\PkgAdmin.h
+    win32\PkgAdminDlg.cpp
+    win32\PkgAdminDlg.h
+    win32\PkgAdminLicenseDlg.cpp
+    win32\PkgAdminLicenseDlg.h
+    win32\PkgAdminres.cpp
+    win32\StdAfx.cpp
+    win32\StdAfx.h
+
+  Update copyright headers
+
+2000-02-04 Simon FitzMaurice <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.rc
+    win32\PkgAdminDlg.cpp
+    win32\PkgAdminDlg.h
+    win32\PkgAdminres.h
+
+  Reintroduce about box (only works via keyboard for now)
+
+2000-02-04 Simon FitzMaurice <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.dsp
+
+  Use cdl from v:\ide 
+  
+2000-02-04 Simon FitzMaurice <sdf@cygnus.co.uk>
+  * win32\PkgAdminres.h
+
+  Cannot have copyright header.
+
+2000-02-01  Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp 
+    win32\PkgAdmin.h 
+    win32\PkgAdmin.rc 
+    win32\PkgAdminDlg.cpp 
+    win32\PkgAdminDlg.h 
+    win32\PkgAdminLicenseDlg.cpp 
+    win32\PkgAdminLicenseDlg.h 
+    win32\PkgAdminres.cpp 
+    win32\PkgAdminres.h 
+    win32\StdAfx.cpp 
+    win32\StdAfx.h 
+
+  Normalize copyright headers.
+
+2000-01-27  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.cpp:
+
+	Modify InitInstance() to persist the eCos repository
+	location only if the path contains a backslash. The
+	current eCos repository location can be unknown on
+	occasion.
+
+2000-01-25  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify OnPkgadminRemove() to fix capitalization of
+	message box caption.
+
+	* win32\PkgAdmin.cpp:
+
+	Modify InitInstance() to persist the path to a release
+	repository correctly.
+
+2000-01-10  Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp
+    win32\PkgAdminDlg.cpp
+
+  Cygnus -> Red Hat (excluding copyrights)
+
+2000-01-10  Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp
+    win32\PkgAdmin.rc
+    win32\PkgAdminres.cpp
+    win32\PkgAdminres.h
+    
+  Remove requirement to map between control ID and string resource ID.
+
+2000-01-10  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify OnPkgadminRemove() to warn the user against
+	deleting core eCos packages.
+
+1999-12-22 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp
+
+  SetDefaultCSHFile is renamed to SetCSHFilePath
+
+1999-12-21 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.rc
+    win32\PkgAdminres.cpp
+    win32\PkgAdminres.h
+
+  Add context-sensitive help for controls.
+
+1999-12-21 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.rc
+
+  Ensure no taskbar icon when invoked as a modal dialog
+
+1999-12-21 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp
+    win32\PkgAdmin.dsp
+    win32\PkgAdminDlg.cpp
+    win32\PkgAdminDlg.h
+    win32\PkgAdminLicenseDlg.cpp
+    win32\PkgAdminLicenseDlg.h
+
+  Base dialogs on eCosDialog for context-sensitive help.
+  Add win32\PkgAdminres.cpp to contain help maps.
+
+1999-12-20 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp
+    win32\PkgAdmin.dsp
+    win32\PkgAdminDlg.cpp
+    win32\PkgAdminDlg.h
+    win32\PkgAdminLicenseDlg.cpp
+    win32\PkgAdminLicenseDlg.h
+
+  Add basis for context-sensitive help.
+
+  * win32\PkgAdminres.h
+
+  Renumber IDs such that app icon is greater than that of config tool's (lowest number is used in combined app)
+
+1999-12-14 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.cpp
+    win32\PkgAdminDlg.cpp
+    win32\PkgAdminDlg.h
+
+  Use correct icon is used in standalone version.
+
+  * win32\PkgAdminres.h
+
+  Ensure IDM_ABOUTBOX has system menu compatible id
+
+1999-12-14 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdminDlg.cpp
+    win32\PkgAdminDlg.h
+
+  Hide Repository button when invoked as a dialog
+
+1999-12-13 Simon FitzMaurice  <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.rc
+    win32\PkgAdminDlg.cpp
+    win32\PkgAdminres.h
+
+  Avoid clash between pkgadmin and configtool icons
+
+1999-12-08 Simon FitzMaurice <sdf@cygnus.co.uk>
+	* win32\PkgAdminres.h
+	Again renumber resource IDs, this time avoiding > 0x8000
+
+1999-12-08 Simon FitzMaurice <sdf@cygnus.co.uk>
+	* win32\PkgAdminDlg.cpp
+
+	Do not use PostQuitMessage to exit dialog
+
+	* win32\PkgAdminres.h
+
+	Renumber resource IDs
+
+1999-12-10  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.dsp:
+
+	Add RegKeyEx source and header files.
+
+	* win32\PkgAdmin.mak:
+
+	Remove redundant file.
+
+1999-12-08 Simon FitzMaurice <sdf@cygnus.co.uk>
+      *	win32\PkgAdmin.cpp
+	win32\PkgAdmin.dsp
+	win32\PkgAdminDlg.cpp
+	win32\PkgAdminDlg.h
+
+  Move persistence of registry to Software\Cygnus Solutions\eCos\Common\Repository\folder.
+
+1999-12-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.dsp:
+
+	bitmap1.bmp -> pkgadmin1.bmp
+
+1999-12-08 Simon FitzMaurice <sdf@cygnus.co.uk>
+  * win32\PkgAdmin.rc
+    win32\PkgAdminDlg.cpp
+    win32\PkgAdminDlg.h
+    win32\PkgAdminLicenseDlg.h
+    win32\PkgAdminres.h
+
+    Changes to allow tool to be run as modal dialog
+
+1999-12-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.dsp:
+
+	resource.h -> PkgAdminres.h	
+
+1999-12-07 Simon FitzMaurice <sdf@cygnus.co.uk>
+
+	* win32\PkgAdminres.h
+	  win32\PkgAdmin.h
+	  win32\resource.h
+	  win32\PkgAdmin.rc
+
+	resource.h -> PkgAdminres.h
+
+1999-12-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.h,
+	  win32\StdAfx.h:
+
+	Supress STL-related compilation warnings.
+
+1999-11-04  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Invoke the ecosadmin.tcl script rather than the
+	pkgadmin.tcl script.
+
+1999-10-08  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.dsp, win32\PkgAdmin.mak:
+
+	Link against Tcl 8.2.1.
+
+1999-09-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.rc:
+
+	Set the MFC application name.
+
+1999-09-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\res\PkgAdmin.ico:
+
+	Distinct application icon incorporating a diskette image.
+
+1999-09-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Remove AppWizard-generated call to SetIcon(m_hIcon,FALSE)
+	which was causing the 32x32 application icon to be resized
+	where the 16x16	icon was appropriate.
+
+1999-09-15  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify OnPkgadminAdd() to continue with the installation
+	of other package distributions if the installation of one
+	package distribution fails or its licensing terms are
+	rejected by the user.
+
+1999-09-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.rc:
+
+	Modify shortcut key for package tree to avoid duplication.
+
+1999-09-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminLicenseDlg.cpp, win32\PkgAdminLicenseDlg.h:
+
+	Add new member function SetCaption() to set the eCos package
+	distribution file path in the license dialog caption bar.
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify OnPkgadminAdd() to install multiple eCos package
+	distribution files specified using a multiple selection
+	file dialog box.
+
+1999-09-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.rc:
+
+	Increase the width of the license dialog to accommodate a
+	monospaced font.
+
+	* win32\PkgAdminLicenseDlg.cpp, win32\PkgAdminLicenseDlg.h:
+
+	Set license text font to Courier New 9pt.
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify PopulatePackageTree() to convert database error
+	messages to Unicode for presentation.
+
+	Modify OnPkgadminAdd() to remove 'All Files (*.*)' file
+	type selection.
+
+1999-09-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify EvalTclFile() to display the wait cursor
+	during package addition and removal.
+
+1999-09-14  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify EvalTclFile() to no longer explicitly open
+	and register the nul: device for standard output.
+	Calling Tcl_SetStdChannel() with a NULL channel ID
+	is sufficient.
+
+1999-09-13  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.dsp, win32\PkgAdmin.mak:
+
+	Remove global "UNICODE" C preprocessor definition from
+	Unicode	build configurations. It was not necessary.
+
+1999-09-13  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp, win32\PkgAdminDlg.h:
+
+	New FindUserToolsPath() function to get the eCos user
+	tools path from the registry.
+
+	Modify OnInitDialog() to append the user tools path to
+	the PATH environment variable.
+
+	Specify the parent window when constructing dialog boxes.
+
+	* win32\PkgAdmin.rc:
+
+	Reduce the height of the license dialog.
+
+	* win32\PkgAdmin.dsp, win32\PkgAdmin.mak:
+
+	Add global "UNICODE" C preprocessor definition to Unicode
+	build configurations.
+
+1999-09-13  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp, win32\PkgAdminDlg.h:
+
+	Modify EvalTclFile() to present error strings returned
+	by pkgadmin.tcl.
+
+	Code tidying.
+
+1999-09-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Clear old package tree just in time when re-populating
+	tree.
+
+	* win32\PkgAdmin.rc:
+
+	Minor tweaks to dialog layouts.
+
+1999-09-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdminDlg.cpp:
+
+	Modify PopulatePackageTree() to sort version nodes in
+	addition to package nodes.
+
+	Add customised caption bars to CFileDialog dialogs.
+
+1999-09-09  John Dallaway  <jld@cygnus.co.uk>
+
+	* win32\PkgAdmin.rc, win32\resource.h:
+
+	New license dialog resource.
+
+	* win32\PkgAdminLicenseDlg.cpp, win32\PkgAdminLicenseDlg.h:
+
+	New license dialog class to display license text and prompt
+	the	user for acceptance of the license terms.
+
+	* win32\PkgAdminDlg.cpp, win32\PkgAdminDlg.h:
+
+	Remove unnecessary OnClose() message handler.
+
+	Modify OnPkgadminAdd() function to display the license
+	text for a package via the new license dialog.
+
+	* win32\PkgAdmin.dsp, win32\PkgAdmin.mak:
+
+	Add new license dialog files.
+
+1999-09-07  John Dallaway  <jld@cygnus.co.uk>
+
+	* all files:
+
+	Initial check-in of the eCos Package Administration Tool GUI.

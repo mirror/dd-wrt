@@ -1,0 +1,436 @@
+2003-01-19  Bart Veer  <bartv@ecoscentric.com>
+
+	* include/platform.inc (BSC_settings_table):
+	Avoid warnings with binutils 2.13.1
+
+2002-05-13  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Removed implemntation of
+	CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+2001-09-13  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_sh_edk7708_romram.mlt: Moved RAM to
+	0x88000000, flash to 0x80000000, leave 0x10000 for RedBoot.
+	* include/pkgconf/mlt_sh_edk7708_romram.ldi: Same.
+	* include/pkgconf/mlt_sh_edk7708_romram.h: Same.
+	* include/pkgconf/mlt_sh_edk7708_rom.mlt: Same.
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi: Same.
+	* include/pkgconf/mlt_sh_edk7708_rom.h: Same.
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt: Same.
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: Same.
+	* include/pkgconf/mlt_sh_edk7708_ram.h: Same.
+
+	* cdl/hal_sh_edk7708.cdl: Moved memory to 88000000. Added RedBoot
+	options. Made LE by default.
+
+2001-09-11  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Default to big endian.
+
+2001-05-29  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_io.h: Added.
+
+2001-03-08  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Does not guarantee virtual vector
+	support.
+
+2001-02-27  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Init correct vector with interrupt VSR.
+
+2001-01-31  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Included private parts of serial driver.
+
+2001-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: Moved reset macro to
+	* include/plf_intr.h: this file.
+	* src/hal_diag.c: Removed CYGSEM_HAL_VIRTUAL_VECTOR_DIAG check.
+
+2001-01-23  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Properly init interrupt VSR.
+
+2000-11-22  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Mangle symbols.
+
+2000-11-01  Jesper Skov  <jskov@redhat.com>
+
+	* Moved HAL to edk7708.
+
+2000-10-31  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_intr.h: Added.
+	* include/plf_cache.h: Added.
+
+2000-10-20  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* include/pkgconf/mlt_sh_edk7708_ram.h:
+	* include/pkgconf/mlt_sh_edk7708_rom.h:
+	* include/pkgconf/mlt_sh_edk7708_romram.h:
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi:
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi:
+	* include/pkgconf/mlt_sh_edk7708_romram.ldi:
+	Regenerated with updated host tools
+
+2000-10-17  Jesper Skov  <jskov@redhat.com>
+
+	* include/pkgconf/mlt_sh_edk7708_ram.h: Adding heap1.
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt: Ditto.
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: Ditto.
+	* include/pkgconf/mlt_sh_edk7708_rom.h: Ditto.
+	* include/pkgconf/mlt_sh_edk7708_rom.mlt: Ditto.
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi: Ditto.
+	* include/pkgconf/mlt_sh_edk7708_romram.h: Ditto.
+	* include/pkgconf/mlt_sh_edk7708_romram.mlt: Ditto.
+	* include/pkgconf/mlt_sh_edk7708_romram.ldi: Ditto.
+
+2000-10-10  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Fix legal OCC ranges.
+
+2000-09-26  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Use calculated FRQCR init value.
+
+	* cdl/hal_sh_edk7708.cdl: Updated clock options.
+
+2000-07-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Require sub-variant package.
+
+2000-06-29  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: serial driver API changes.
+
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Include hal_if file.
+	
+2000-06-28  Jesper Skov  <jskov@redhat.com>
+
+	* src/plf_misc.c: 
+	* src/hal_diag.c:
+	* src/plf_stub.c: [deleted]
+	* include/pkgconf/mlt_sh_edk7708_ram.h: 
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_rom.h: 
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_rom.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_romram.h: 
+	* include/pkgconf/mlt_sh_edk7708_romram.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_romram.mlt: 
+	* include/plf_stub.h: 
+	* include/hal_diag.h: 
+	* cdl/hal_sh_edk7708.cdl: 
+	Changed to use virtual vector table.
+
+1999-06-19  John Dallaway  <jld@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Tidy display strings.
+
+2000-04-12  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Output text raw if configuration requires it.
+
+	* include/platform.inc: 
+	* src/edk.S: [deleted]
+	* cdl/hal_sh_edk7708.cdl: 
+	Hardware init code moved to platform.inc in order to allow ROMRAM
+	startup.
+
+	* include/pkgconf/mlt_sh_edk7708_romram.h:
+	* include/pkgconf/mlt_sh_edk7708_romram.mlt:
+	* include/pkgconf/mlt_sh_edk7708_romram.ldi:
+	* cdl/hal_sh_edk7708.cdl: 
+	Add ROMRAM startup option.
+	
+2000-04-06  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_sh_edk7708.cdl: Use -g now that toolchains work with that
+	(and in fact new toolchains no longer work with -ggdb)
+
+2000-04-06  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Define vsr base location.
+
+2000-04-04  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c (hal_diag_write_char): Add GDB critical IO region
+	handling.
+
+2000-03-20  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Added board speed variable.
+
+2000-03-09  Jesper Skov  <jskov@redhat.com>
+
+	* src/hal_diag.c: Fix compiler warning.
+
+2000-02-28  Jesper Skov  <jskov@redhat.com>
+
+	* include/platform.inc: Use sh_offsets instead of C header.
+
+2000-02-18  Jonathan Larmour  <jlarmour@redhat.co.uk>
+
+	* cdl/hal_sh_edk7708.cdl (CYGBLD_BUILD_GDB_STUBS): When
+	building stubs, define every dependency required here rather than
+	in the template
+
+2000-02-17  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: 
+	Go back to -ggdb. -gstabs don't provide enough info for
+	source-level debugging.
+	
+	* include/pkgconf/mlt_sh_edk7708_rom.h: 
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_rom.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_ram.h: 
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt:
+	Don't use . assignment due to tools problem.
+	
+2000-02-16  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Added LE support.
+
+2000-02-15  Jesper Skov  <jskov@redhat.com>
+
+	* misc/STUBS_config:
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_rom.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_ram.h: 
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt:
+	Updated for new stubs scheme.
+
+	* cdl/hal_sh_edk7708.cdl: Removed stubs startup.
+	Use -gstabs instead of -ggdb to work around problem with GDB.
+
+2000-02-10  Jesper Skov  <jskov@redhat.com>
+
+	* include/plf_stub.h: 
+	HAL_STUB_PLATFORM_STUBS_INIT->HAL_STUB_PLATFORM_INIT
+
+2000-02-07  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: use cpu flags when linking.
+
+2000-02-03  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Implements stubs.
+
+2000-01-27  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Moved part of stubs build rule to
+	common HAL.  Changed description.
+
+2000-01-26  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/hal_sh_edk7708.cdl: Fix display string.
+
+2000-01-24  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_sh_edk7708.cdl: Add stubs build rule.
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_ram.h:
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_stubs.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_stubs.h:
+	* include/pkgconf/mlt_sh_edk7708_stubs.mlt: 
+	Give stub more RAM.
+	
+2000-01-24  John Dallaway  <jld@cygnus.co.uk>
+
+	* cdl/*.cdl:
+
+	Remove obsolete option CYGTST_TESTING_IDENTIFIER.
+
+2000-01-19  Hugo Tyson  <hmt@cygnus.co.uk>
+
+	* cdl/*.cdl: Add descriptions to a number of options &c which were
+	lacking same, also tidied up other typos as noticed en passant.
+
+2000-01-18  Jesper Skov  <jskov@cygnus.co.uk>
+	CR 902066
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_ram.h: 
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: 
+	Correct RAM size.
+	
+1999-12-21  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/plf_misc.c (cyg_hal_user_break): Rename
+	CYG_HAL_USE_ROM_MONITOR_GDB_STUBS -> CYGSEM_HAL_USE_ROM_MONITOR_GDB_stubs
+
+	* cdl/hal_sh_edk7708.cdl: Don't need to define CYG_HAL_SH_SH7708 any
+	more
+	Add new platform-specific CYGSEM_HAL_USE_ROM_MONITOR option to
+	control ROM monitor support
+
+1999-12-20  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* cdl/hal_sh_edk7708.cdl: Add -Wl for linker options.
+
+1999-11-25  Gary Thomas  <gthomas@cygnus.co.uk>
+
+	* include/pkgconf/mlt_sh_edk7708_stubs.h: 
+	* include/pkgconf/mlt_sh_edk7708_rom.h: 
+	* include/pkgconf/mlt_sh_edk7708_ram.h: New file(s).
+
+1999-11-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_sh_edk7708.cdl: Use define_proc for CPU define.
+
+1999-11-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_sh_edk7708.cdl: Use define_proc for const header defs.
+
+1999-10-29  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* cdl/hal_sh_edk7708.cdl: Added.
+
+1999-10-13  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): 
+	* src/plf_misc.c:
+	* src/PKGconf.mak (COMPILE): 
+	Added user breakpoint handling.
+
+1999-09-02  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/STUBS_config: Also disable kernel support in HAL.
+
+1999-08-17  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* misc/STUBS_config: Added.
+
+1999-06-18  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_sh_edk7708.h: Consistent EDK7708 naming.
+
+1999-06-01  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/hal_diag.c (hal_diag_write_char): Don't look for 0x03
+	chars. It doesn't work well. Better the dedicated magic handles
+	C-c.
+
+	* src/edk.S: Cleaned up memory controller setup.
+
+1999-05-31  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_sh_edk7708.h: Removed FIX ME.
+
+	* src/edk.S: Fixed delay-slot problem.
+
+1999-05-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_sh_edk7708.h: Fixed platform name.
+
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_rom.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_stubs.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_stubs.mlt: 
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi: 
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt: 
+	Fixed memory layout and generated MLT files.
+	
+1999-05-28  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_sh_edk.h:            [deleted]
+	* include/pkgconf/mlt_sh_edk_ram.ldi:      [deleted]
+	* include/pkgconf/mlt_sh_edk_ram.mlt:      [deleted]
+	* include/pkgconf/mlt_sh_edk_rom.ldi:      [deleted]
+	* include/pkgconf/mlt_sh_edk_stubs.ldi:    [deleted]
+	* include/pkgconf/hal_sh_edk7708.h:        [added]
+	* include/pkgconf/mlt_sh_edk7708_ram.ldi:  [added]
+	* include/pkgconf/mlt_sh_edk7708_ram.mlt:  [added]
+	* include/pkgconf/mlt_sh_edk7708_rom.ldi:  [added]
+	* include/pkgconf/mlt_sh_edk7708_rom.mlt:  [added]
+	* include/pkgconf/mlt_sh_edk7708_stubs.ldi:[added]
+	* include/pkgconf/mlt_sh_edk7708_stubs.mlt:[added]
+	* src/PKGconf.mak: 
+        Renamed SH platform package to edk7708.
+
+1999-05-21  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* include/pkgconf/hal_sh_edk.h (CYGNUM_HAL_RTC_PERIOD): The timer
+	is running at 1/4 of the peripheral clock.
+
+	* include/plf_stub.h: Added RESET code.
+
+	* include/pkgconf/hal_sh_edk.h: Added RTC data for the edk board.
+
+1999-05-20  John Dallaway  <jld@cygnus.co.uk>
+
+	* include/pkgconf/mlt_sh_edk_ram.mlt: Working MLT-generated
+	version.
+
+1999-05-20  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* Moved files to CVS trunk.
+
+1999-05-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/edk.S (_hal_hardware_init): Fix a few mistakes.
+
+	* include/plf_stub.h: Enable led in stub init.
+
+	* include/pkgconf/mlt_sh_edk_stubs.ldi: 
+	* include/pkgconf/mlt_sh_edk_rom.ldi: 
+	Added.
+	Moved RAM region to the end of the chunk and made it bigger.
+	
+	* src/edk.S (_hal_hardware_init): Added Bus State Controller
+	initialization.
+
+1999-05-19  Jesper Skov  <jskov@cygnus.co.uk>
+
+        * Most things working now. Will start keeping track of changes.
+	
+1999-04-22  Jesper Skov  <jskov@lassi.cygnus.co.uk>
+
+	* Set up directory structure.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) Bart Veer	
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

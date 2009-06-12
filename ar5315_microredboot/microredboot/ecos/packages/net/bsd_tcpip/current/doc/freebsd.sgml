@@ -1,0 +1,198 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     freebsd.sgml                                                -->
+<!--                                                                 -->
+<!--     eCos TCP/IP Stacks                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART id="tcpip-freebsd">
+<TITLE>FreeBSD TCP/IP Stack port for eCos</TITLE>
+<PARTINTRO>
+<PARA>	  <productname>TCP/IP Networking for eCos</productname>
+          now provides a complete
+	  TCP/IP networking stack, 
+based on a recent snapshot of the FreeBSD code, released by the
+KAME project.
+The networking support is
+	  fully featured and well tested within the eCos environment.
+	</PARA>
+</PARTINTRO>
+
+<CHAPTER id="tcpip-freebsd-networking-stack-features">
+<TITLE>Networking Stack Features</TITLE>
+<PARA>Since this networking package is based on BSD code, it is
+very complete and robust.  The eCos implementation includes support
+for the following protocols:   </PARA>
+<itemizedlist>
+<LISTITEM><PARA>IPv4</para></listitem>
+<LISTITEM><PARA>UDP</para></listitem>
+<LISTITEM><PARA>TCP</para></listitem>
+<LISTITEM><PARA>ICMP</para></listitem>
+<LISTITEM><PARA>raw packet interface</para></listitem>
+<LISTITEM><PARA>Multi-cast addressing</para></listitem>
+<LISTITEM><PARA>IPv6 (including UDP, ICP, ICMP)</para></listitem>
+</itemizedlist>
+<PARA>These additional features are also present in the package,
+	but are not supported:</PARA>
+<itemizedlist>
+<LISTITEM><PARA>Berkeley Packet Filter   </PARA></LISTITEM>
+<LISTITEM><PARA>Uni-cast support   </PARA></LISTITEM>
+<LISTITEM><PARA>Multi-cast routing   </PARA></LISTITEM>
+</itemizedlist>
+</CHAPTER>
+<CHAPTER id="tcpip-freebsd-stack-port">
+<TITLE>Freebsd TCP/IP stack port</TITLE>
+<PARA>This document describes how to get started with the Freebsd
+TCP/IP network stack. </PARA>
+<SECT1 id="tcpip-freebsd-tcpip-targets">
+<TITLE>Targets</TITLE>
+<PARA>A number of ethernet devices may be supported. The default configuration
+supports two instances of the interface by default,
+and you will need to write your own driver instantiation code,
+and supplemental startup and initialization code,
+if you should add additional ones.</PARA>
+<PARA>The target for your board will normally be supplied with an
+ethernet driver, in which case including the network stack and
+generic ethernet driver package to your build will automatically
+enable usage of the ethernet device driver.
+If your target is not supplied with an ethernet
+driver, you will need to use loopback (see
+<xref linkend="net-common-loopback-tests">).</PARA>
+</SECT1>
+<SECT1 id="tcpip-freebsd-building-the-network-stack">
+<TITLE><!--<conditionaltext>-->Building the Network Stack</TITLE>
+<PARA>Using the <EMPHASIS>Build-&gt;Packages</EMPHASIS> dialog,
+add the packages &ldquo;Networking&rdquo;,
+&ldquo;Freebsd TCP/IP Stack&rdquo;
+and &ldquo;Common Ethernet Support&rdquo;
+to your configuration.  Their package names
+are CYGPKG_NET, CYGPKG_NET_FREEBSD_STACK and CYGPKG_NET_ETH_DRIVERS
+respectively.</PARA>
+<para>A short-cut way to do this is by
+using the &ldquo;net&rdquo; <emphasis>template</emphasis>
+if it is available for your platform.</para>
+<PARA>The platform-specific ethernet device driver for your platform
+will be added as part of the target selection (in the
+<EMPHASIS>Build-&gt;Templates</EMPHASIS> &ldquo;Hardware&rdquo; item),
+along with the 
+PCI I/O subsystem (if relevent) and the appropriate serial device driver.
+</para><para>
+For example, the PowerPC MBX target selection adds the package
+PKG_NET_QUICC_ETH_DRIVERS,
+and the Cirrus Logic EDB7xxx target selection adds the package
+CYGPKG_NET_EDB7XXX_ETH_DRIVERS.
+After this, eCos and its tests can be built exactly as usual.</PARA>
+<NOTE>
+<PARA>By default, most of the network tests are not built.  This
+is because some of them require manual intervention, i.e. they are
+to be run &ldquo;by hand&rdquo;, and are not suitable for
+automated testing.  To build the full set of network tests, set
+the configuration option CYGPKG_NET_BUILD_TESTS &ldquo;Build
+networking tests (demo programs)&rdquo; within &ldquo;Networking
+support build options&rdquo;.</PARA>
+</NOTE>
+</SECT1>
+</CHAPTER>
+<CHAPTER id="tcpip-freebsd-tcpip-apis">
+<TITLE>APIs</TITLE>
+<SECT1 id="tcpip-freebsd-standard-networking-api">
+<TITLE>Standard networking</TITLE>
+<PARA>The APIs for the standard networking calls such as
+<FUNCTION>socket()</FUNCTION>, <FUNCTION>recv()</FUNCTION> and so on, are
+in header files relative to the top-level
+include directory, within the standard subdirectories as conventionally
+found in <FILENAME>/usr/include</FILENAME>.  For example:
+<PROGRAMLISTING>
+ install/include/arpa/tftp.h
+ install/include/netinet/tcpip.h
+ install/include/sys/socket.h
+ install/include/sys/socketvar.h
+ install/include/sys/sockio.h
+</PROGRAMLISTING>
+</PARA>
+<PARA>
+<filename>network.h</filename> at the top level
+defines various extensions, for example the API
+<function>init_all_network_interfaces(void)</function>
+described
+above.  We advise including <filename>network.h</filename> whether
+you use these features or not.</PARA>
+<PARA>In general, using the networking code may require definition
+of two symbols: _KERNEL and __ECOS.  _KERNEL
+is not normally required; __ECOS is normally required.
+So add this to your compile lines for files which use the network
+stack:</PARA>
+<PROGRAMLISTING>        -D__ECOS</PROGRAMLISTING>
+<PARA>To expand a little, it&rsquo;s like this because this is
+a port of a standard distribution external to eCos.  One goal
+is to perturb the sources as little as possible, so that upgrading
+and maintenance from the external distribution is simplified.  The __ECOS
+symbol marks out the eCos additions in making the port.
+The _KERNEL symbol is traditional UNIX practice: it distinguishes
+a compilation which is to be linked into the kernel from one which
+is part of an application.  eCos applications are fully linked,
+so this distinction does not apply.  _KERNEL can however
+be used to control the visibility of the internals of the stack,
+so depending on what features your application uses, it may or may
+not be necessary.</PARA>
+<PARA>The include file <filename>network.h</filename> undefines _KERNEL
+unconditionally, to provide an application-like compilation environment.
+If you were writing code which, for example,
+enumerates the stack&rsquo;s internal
+structures, that is a kernel-like compilation environment, so you
+would need to define _KERNEL (in addition to __ECOS)
+and avoid including <filename>network.h</filename>.</PARA>
+</SECT1>
+<SECT1 id="tcpip-freebsd-enhanced-select">
+<TITLE>Enhanced Select()</TITLE>
+<PARA>The network stack supports an extension to the standard select
+semantics which allows all threads that are waiting to be restarted
+even if the select conditions are not satisfied.</PARA>
+<PARA>The standard select() API:  </PARA>
+<PROGRAMLISTING>int  
+<function>select</function>(int nfd,
+       fd_set &ast;in, fd_set &ast;out, fd_set &ast;ex,
+       struct timeval &ast;tv); </PROGRAMLISTING>
+<PARA>does not support the restart.</PARA>
+<PARA>The additional API:  </PARA>
+<PROGRAMLISTING>int  
+<function>cyg_select_with_abort</function>(int nfd,
+       fd_set &ast;in, fd_set &ast;out, fd_set &ast;ex,
+       struct timeval &ast;tv)
+</PROGRAMLISTING>
+<PARA>behaves exactly as select() with the additional feature that
+a call to</PARA>
+<PROGRAMLISTING>
+void <function>cyg_select_abort</function>(void)
+</PROGRAMLISTING>
+<PARA>will cause all threads waiting in any
+<function>cyg_select_with_abort()</function> call
+to cease waiting and continue execution.</PARA>
+</SECT1>
+</CHAPTER>
+
+</PART>

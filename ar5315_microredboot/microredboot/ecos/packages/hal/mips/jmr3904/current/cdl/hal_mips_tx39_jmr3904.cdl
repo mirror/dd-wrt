@@ -1,0 +1,273 @@
+# ====================================================================
+#
+#      hal_mips_tx39_jmr3904.cdl
+#
+#      TX39/JMR3904 board HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  bartv
+# Contributors:
+# Date:           1999-11-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_TX39_JMR3904 {
+    display  "JMR3904 evaluation board"
+    parent        CYGPKG_HAL_MIPS
+    requires      CYGPKG_HAL_MIPS_TX39
+    define_header hal_mips_tx39_jmr3904.h
+    include_dir   cyg/hal
+    description   "
+           The JMR3904 HAL package should be used when targetting the
+           actual hardware. The same package can also be used when
+           running on the full simulator, since this provides an
+           accurate simulation of the hardware including I/O devices.
+           To use the simulator in this mode the command
+           `target sim --board=jmr3904' should be used from inside gdb."
+
+    compile       platform.S plf_misc.c plf_stub.c
+
+    implements    CYGINT_HAL_DEBUG_GDB_STUBS
+
+    define_proc {
+        puts $::cdl_system_header "#define CYGBLD_HAL_TARGET_H   <pkgconf/hal_mips_tx39.h>"
+        puts $::cdl_system_header "#define CYGBLD_HAL_PLATFORM_H <pkgconf/hal_mips_tx39_jmr3904.h>"
+    }
+
+    cdl_component CYG_HAL_STARTUP {
+        display       "Startup type"
+        flavor        data
+        legal_values  {"RAM" "ROM"}
+        default_value {"RAM"}
+	no_define
+	define -file system.h CYG_HAL_STARTUP
+        description   "
+           When targetting the JMR3904 board it is possible to build
+           the system for either RAM bootstrap, ROM bootstrap, or STUB
+           bootstrap. RAM bootstrap generally requires that the board
+           is equipped with ROMs containing a suitable ROM monitor or
+           equivalent software that allows GDB to download the eCos
+           application on to the board. The ROM bootstrap typically
+           requires that the eCos application be blown into EPROMs or
+           equivalent technology."
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_TX39_JMR3904_DRAM_CONFIG {
+        display "DRAM configuration"
+        flavor data
+        legal_values {"4MB" "8MB" "16MB"}
+        default_value {"16MB"}
+        description "
+            DRAM configuration. 4MB (1MBit (x4bit) x 8), 8MByte (1MBit
+            (x4bit) x 8 x 2 banks) or 16MByte (4MBit (x4bit) x
+            8). Only change if you are aware of the consequences."
+    }
+
+
+    cdl_option CYGHWR_HAL_MIPS_TX39_JMR3904_DRAM_CONFIG_INIT {
+        display "DRAM config init"
+        flavor data
+        description "This is the value used for the hardware."
+        calculated { CYGHWR_HAL_MIPS_TX39_JMR3904_DRAM_CONFIG == "4MB" ? 0x08013020 : \
+                CYGHWR_HAL_MIPS_TX39_JMR3904_DRAM_CONFIG == "8MB" ? 0x08013020 : 0x08024030 }
+    }
+
+    cdl_option CYGHWR_HAL_MIPS_TX39_JMR3904_ENABLE_TOE {
+        display "Bus timeout detection"
+        default_value 0
+        description "
+            Only change if you are aware of the consequences."
+    }
+
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        # Isn't a nice way to handle freq requirement!
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+            legal_values  { 15360 20736 }
+            default_value  { CYGHWR_HAL_MIPS_CPU_FREQ == 50 ? 15360 : \
+                             CYGHWR_HAL_MIPS_CPU_FREQ == 66 ? 20736 : 0 }
+        }
+    }
+
+    cdl_component CYGBLD_GLOBAL_OPTIONS {
+        display "Global build options"
+        flavor  none
+        parent  CYGPKG_NONE
+        description   "
+	    Global build options including control over
+	    compiler flags, linker flags and choice of toolchain."
+
+
+        cdl_option CYGBLD_GLOBAL_COMMAND_PREFIX {
+            display "Global command prefix"
+            flavor  data
+            no_define
+            default_value { "mips-tx39-elf" }
+            description "
+                This option specifies the command prefix used when
+                invoking the build tools."
+        }
+
+        cdl_option CYGBLD_GLOBAL_CFLAGS {
+            display "Global compiler flags"
+            flavor  data
+            no_define
+            default_value { "-Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority" }
+            description   "
+                This option controls the global compiler flags which
+                are used to compile all packages by
+                default. Individual packages may define
+                options which override these global flags."
+        }
+
+        cdl_option CYGBLD_GLOBAL_LDFLAGS {
+            display "Global linker flags"
+            flavor  data
+            no_define
+            default_value { "-g -nostdlib -Wl,--gc-sections -Wl,-static" }
+            description   "
+                This option controls the global linker flags. Individual
+                packages may define options which override these global flags."
+        }
+
+        cdl_option CYGBLD_BUILD_GDB_STUBS {
+            display "Build GDB stub ROM image"
+            default_value 0
+            requires { CYG_HAL_STARTUP == "ROM" }
+            requires CYGSEM_HAL_ROM_MONITOR
+            requires CYGBLD_BUILD_COMMON_GDB_STUBS
+            requires CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+            requires ! CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+            requires ! CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+            requires ! CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT
+            requires ! CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM
+            no_define
+            description "
+                This option enables the building of the GDB stubs for the
+                board. The common HAL controls takes care of most of the
+                build process, but the final conversion from ELF image to
+                binary data is handled by the platform CDL, allowing
+                relocation of the data if necessary."
+
+            make -priority 320 {
+                <PREFIX>/bin/gdb_module.bin : <PREFIX>/bin/gdb_module.img
+                $(OBJCOPY) -O binary $< $@
+            }
+        }
+    }
+
+    cdl_component CYGHWR_MEMORY_LAYOUT {
+        display "Memory layout"
+        flavor data
+        no_define
+        calculated { CYG_HAL_STARTUP == "RAM" ? "mips_tx39_jmr3904_ram" : \
+                                                "mips_tx39_jmr3904_rom" }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_LDI {
+            display "Memory layout linker script fragment"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_LDI
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_mips_tx39_jmr3904_ram.ldi>" : \
+                                                    "<pkgconf/mlt_mips_tx39_jmr3904_rom.ldi>" }
+        }
+
+        cdl_option CYGHWR_MEMORY_LAYOUT_H {
+            display "Memory layout header file"
+            flavor data
+            no_define
+            define -file system.h CYGHWR_MEMORY_LAYOUT_H
+            calculated { CYG_HAL_STARTUP == "RAM" ? "<pkgconf/mlt_mips_tx39_jmr3904_ram.h>" : \
+                                                    "<pkgconf/mlt_mips_tx39_jmr3904_rom.h>" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_USE_ROM_MONITOR {
+        display       "Work with a ROM monitor"
+        flavor        booldata
+        legal_values  { "Generic" "CygMon" "GDB_stubs" }
+        default_value { CYG_HAL_STARTUP == "RAM" ? "CygMon" : 0 }
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "RAM" }
+        description   "
+            Support can be enabled for three different varieties of ROM monitor.
+            This support changes various eCos semantics such as the encoding
+            of diagnostic output, or the overriding of hardware interrupt
+            vectors.
+            Firstly there is \"Generic\" support which prevents the HAL
+            from overriding the hardware vectors that it does not use, to
+            instead allow an installed ROM monitor to handle them. This is
+            the most basic support which is likely to be common to most
+            implementations of ROM monitor.
+            \"CygMon\" provides support for the Cygnus ROM Monitor.
+            And finally, \"GDB_stubs\" provides support when GDB stubs are
+            included in the ROM monitor or boot ROM."
+    }
+
+    cdl_option CYGSEM_HAL_ROM_MONITOR {
+        display       "Behave as a ROM monitor"
+        flavor        bool
+        default_value 0
+        parent        CYGPKG_HAL_ROM_MONITOR
+        requires      { CYG_HAL_STARTUP == "ROM" }
+        description   "
+            Enable this option if this program is to be used as a ROM monitor,
+            i.e. applications will be loaded into RAM on the board, and this
+            ROM monitor may process exceptions or interrupts generated from the
+            application. This enables features such as utilizing a separate
+            interrupt stack when exceptions are generated."
+    }
+}

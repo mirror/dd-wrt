@@ -1,0 +1,157 @@
+# ====================================================================
+#
+#      fec_eth_drivers.cdl
+#
+#      Ethernet drivers - platform dependent support for PowerPC MPC8xx
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002, 2003 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:
+# Date:           2001-01-21
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_POWERPC_FEC {
+    display       "MPC8xx FEC ethernet driver"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_HAL_POWERPC 
+    active_if	  CYGPKG_HAL_POWERPC_MPC8xx
+
+    implements    CYGHWR_NET_DRIVERS
+    implements    CYGHWR_NET_DRIVER_ETH0
+    implements    CYGINT_IO_ETH_MULTICAST
+    include_dir   .
+    include_files ; # none _exported_ whatsoever
+
+    # Debug I/O during network stack initialization is not reliable
+    requires { !CYGPKG_NET || CYGPKG_NET_FORCE_SERIAL_CONSOLE == 1 }
+
+    description   "Fast ethernet driver for PowerPC MPC8xxT boards."
+    compile       -library=libextras.a if_fec.c
+
+    cdl_option CYGNUM_DEVS_ETH_POWERPC_FEC_BD_OFFSET {
+        display       "Buffer descriptors offset in PRAM"
+        flavor        data
+        default_value 0x2C00
+        description   "
+            This option specifies the address of the buffer descriptors
+            used by the PowerPC FEC/ethernet device."
+    }
+
+    cdl_option CYGNUM_DEVS_ETH_POWERPC_FEC_BUFSIZE {
+        display       "Buffer size"
+        flavor        data
+        default_value 1520
+        description   "
+            This option specifies the size of the internal buffers used
+            for the PowerPC FEC/ethernet device."
+    }
+
+    cdl_option CYGNUM_DEVS_ETH_POWERPC_FEC_TxNUM {
+        display       "Number of output buffers"
+        flavor        data
+        legal_values  2 to 64
+        default_value 16
+        description   "
+            This option specifies the number of output buffer packets
+            to be used for the PowerPC FEC/ethernet device."
+    }
+
+    cdl_option CYGNUM_DEVS_ETH_POWERPC_FEC_RxNUM {
+        display       "Number of input buffers"
+        flavor        data
+        legal_values  2 to 64
+        default_value 16
+        description   "
+            This option specifies the number of input buffer packets
+            to be used for the PowerPC FEC/ethernet device."
+    }
+
+    cdl_component CYGSEM_DEVS_ETH_POWERPC_FEC_RESET_PHY {
+        display "Reset and reconfigure PHY"
+        flavor  bool
+        default_value { CYG_HAL_STARTUP != "RAM" }
+        description "
+            This option allows control over the physical transceiver"
+
+        cdl_option CYGNUM_DEVS_ETH_POWERPC_FEC_LINK_MODE {
+            display       "Initial link mode"
+            flavor        data
+            legal_values  { "10Mb" "100Mb" "Auto" }
+            default_value { "Auto" }
+            description   "
+                This option specifies initial mode for the physical
+                link.  The PHY will be reset and then set to this mode."
+        }
+    }
+
+    cdl_component CYGSEM_DEVS_ETH_POWERPC_FEC_STATUS_LEDS {
+        display "Display I/O status via LEDs"
+        flavor  bool
+        default_value 0
+        description "
+            If this option is set, and the platform defines LED access
+            functions, then I/O status will be displayed using the LEDs.
+            In particular, varying LEDs will be illuminated while the
+            device is busy transmitting a buffer, or handing an input
+            packet."
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_POWERPC_FEC_OPTIONS {
+        display "MPC8xx FEC ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_POWERPC_FEC_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the MPC8xx FEC ethernet driver package. These flags are used in addition
+                to the set of global flags."
+        }
+    }
+}

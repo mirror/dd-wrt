@@ -1,0 +1,140 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration template_uitron {
+    description "
+This configuration provides full level S (standard) compliance with
+version 3.02 of the uITRON standard, plus many level E (extended)
+features." ;
+    package     CYGPKG_HAL current ;
+    package     CYGPKG_IO current ;
+    package     CYGPKG_IO_SERIAL current ;
+    package     CYGPKG_INFRA current ;
+    package     CYGPKG_KERNEL current ;
+    package     CYGPKG_MEMALLOC current ;    
+    package     CYGPKG_UITRON current ;
+    package     CYGPKG_ISOINFRA current ;
+    package     CYGPKG_LIBC current ;
+    package     CYGPKG_LIBC_I18N current ;
+    package     CYGPKG_LIBC_SETJMP current ;
+    package     CYGPKG_LIBC_SIGNALS current ;
+    package     CYGPKG_LIBC_STARTUP current ;
+    package     CYGPKG_LIBC_STDIO current ;
+    package     CYGPKG_LIBC_STDLIB current ;
+    package     CYGPKG_LIBC_STRING current ;
+    package     CYGPKG_LIBC_TIME current ;
+    package     CYGPKG_LIBM current ;
+    package     CYGPKG_IO_WALLCLOCK current ;
+    package     CYGPKG_ERROR current ;
+};
+
+
+cdl_option CYGBLD_ISO_CTYPE_HEADER {
+    inferred_value 1 <cyg/libc/i18n/ctype.inl>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    inferred_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILETYPES_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_STREAMS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILEACCESS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FORMATTED_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_CHAR_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_DIRECT_IO_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_ERROR_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_STRCONV_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/atox.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_ABS_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/abs.inl>
+};
+
+cdl_option CYGBLD_ISO_STDLIB_DIV_HEADER {
+    inferred_value 1 <cyg/libc/stdlib/div.inl>
+};
+
+cdl_option CYGBLD_ISO_STRERROR_HEADER {
+    inferred_value 1 <cyg/error/strerror.h>
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_C_TIME_TYPES_HEADER {
+    inferred_value 1 <cyg/libc/time/time.h>
+};
+
+cdl_option CYGBLD_ISO_C_CLOCK_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/time/time.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_NUMBERS_HEADER {
+    inferred_value 1 <cyg/libc/signals/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SIGNAL_IMPL_HEADER {
+    inferred_value 1 <cyg/libc/signals/signal.h>
+};
+
+cdl_option CYGBLD_ISO_SETJMP_HEADER {
+    inferred_value 1 <cyg/libc/setjmp/setjmp.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_BSD_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/bsdstring.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILEOPS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};
+
+cdl_option CYGBLD_ISO_STDIO_FILEPOS_HEADER {
+    inferred_value 1 <cyg/libc/stdio/stdio.h>
+};

@@ -1,0 +1,98 @@
+<PART ID="services-profile-gprof">
+<TITLE>Application profiling</TITLE>
+<PARTINTRO>
+<PARA>
+The profile_gprof package provides a mechanism to measure the
+runtime performance of an application.  This is done by gathering
+an execution histogram.
+</PARA>
+<para>
+When profiling is started on the target device, a 
+<function>TFTP</function> 
+server will be started
+which exports the single file
+<filename>PROFILE.DAT</filename>
+This analysis data can then be fetched
+by connecting to the target with a <function>TFTP</function> 
+client program
+and then be processed by the 
+<function>gprof</function>
+utility program.
+<note><title>NOTE</title>
+<para>
+Be sure and specify binary mode transfers for this data file,
+which may not be the default with on some <function>TFTP</function>
+client programs.
+</para>
+</note>
+<note><title>NOTE</title>
+<para>
+The port used for this <function>TFTP</function> server is
+configurable.  The default will be the IETF standard port
+of 69/UDP, but it may be changed to any UDP port via the
+<literal>CYGNUM_PROFILE_TFTP_PORT</literal> CDL option.
+</para>
+</note>
+</para>
+</PARTINTRO>
+<CHAPTER id="profile-functions">
+<TITLE>Profiling functions</TITLE>
+<SECT1 id="services-profile-api">
+<title> API </title>
+<para>
+In order for profile data to be gathered for an application, the
+program has to initiate the process.
+Once started, execution histogram data will be collected in a
+dynamic memory buffer.
+This data can be uploaded to a host using <emphasis>TFTP</emphasis>.
+A side effect of the upload of the data is that the histogram
+is reset.
+This is useful, especially for high resolution histograms, since
+the histogram data are collected as 16-bit counters which can be quickly
+saturated.
+For example, if the histogram is being collected at a rate of 10,000
+samples per second, a hot spot in the program could saturate after
+only 6.5 seconds.
+</para>
+<para> The API for the application profiling functions can be
+found in the file <filename>&lt;cyg/profile/profile.h&gt;</filename>.
+</para>
+<sect2 id="services-profile-api-profile-on">
+<title>profile_on</title>
+<para>
+This function is used to initiate the gathering of the
+runtime execution histogram data.
+</para>
+<programlisting>
+void profile_on(void *start, void *end, int bucket_size, int resolution);
+</programlisting>
+<para>
+Calling this function will initiate execution profiling.
+An execution histogram is collected at the rate of
+<parameter>resolution</parameter> times per second.
+The area between <parameter>start</parameter> and <parameter>end</parameter>
+will be divided up into a number of buckets, each representing 
+<parameter>bucket_size</parameter> 
+program bytes in length.  Using statistical sampling (via a high speed timer), when
+the program counter is found to be within the range 
+<parameter>start</parameter>..<parameter>end</parameter>, the appropriate
+bucket (histogram entry) will be incremented.
+</para>
+<para>
+The choice of <parameter>resolution</parameter> and <parameter>bucket_size</parameter>
+control how large the data gathered will be, as well as how much overhead is 
+encumbered for gathering the histogram.
+Smaller values for <parameter>bucket_size</parameter> will garner better
+results (<function>gprof</function> can more closely align the data with
+actual function names) at the expense of a larger data buffer.
+</para>
+<note><title>NOTE</title>
+<para>
+The value of <parameter>bucket_size</parameter> will be rounded up to a power of two.
+</para>
+</note>
+</sect2>
+</SECT1>
+</CHAPTER>
+</PART>
+

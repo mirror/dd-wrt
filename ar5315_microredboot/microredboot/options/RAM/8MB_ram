@@ -1,0 +1,3 @@
+cdl_option CYGNUM_RAM_SIZE {
+    user_value 0x00800000
+};

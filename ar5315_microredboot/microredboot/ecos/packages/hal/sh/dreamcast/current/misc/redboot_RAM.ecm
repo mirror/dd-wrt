@@ -1,0 +1,120 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    dreamcast ;
+    template    redboot ;
+    package -hardware CYGPKG_HAL_SH current ;
+    package -hardware CYGPKG_HAL_SH_SH4 current ;
+    package -hardware CYGPKG_HAL_SH_SH7750_DREAMCAST current ;
+    package -hardware CYGPKG_IO_PCI current ;
+    package -hardware CYGPKG_IO_SERIAL_SH_SCIF current ;
+    package -template CYGPKG_HAL current ;
+    package -template CYGPKG_INFRA current ;
+    package -template CYGPKG_REDBOOT current ;
+    package CYGPKG_IO current ;
+    package CYGPKG_ERROR current ;
+    package CYGPKG_ISOINFRA current ;
+    package CYGPKG_FS_ISO current ;
+    package CYGPKG_IO_FILEIO current ;
+    package CYGPKG_KERNEL current ;
+    package CYGPKG_LIBC_I18N current ;
+    package CYGPKG_MEMALLOC current ;
+    package CYGPKG_LIBC_STRING current ;
+    package CYGPKG_COMPRESS_ZLIB current ;
+};
+
+cdl_component CYGDBG_HAL_DIAG_TO_DEBUG_CHAN {
+    user_value 0
+};
+
+cdl_option CYGNUM_HAL_COMMON_INTERRUPTS_STACK_SIZE {
+    user_value 4096
+};
+
+cdl_option CYGDBG_HAL_COMMON_INTERRUPTS_SAVE_MINIMUM_CONTEXT {
+    user_value 0
+};
+
+cdl_option CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM {
+    inferred_value 0
+};
+
+cdl_option CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS {
+    inferred_value 1
+};
+
+cdl_option CYGHWR_HAL_SH_BIGENDIAN {
+    inferred_value 0
+};
+
+cdl_component CYGPKG_HAL_SH_7750 {
+    inferred_value 1
+};
+
+cdl_option CYGHWR_HAL_SH_CACHE_ENABLE {
+    inferred_value 0
+};
+
+cdl_component CYGBLD_BUILD_REDBOOT {
+    user_value 1
+};
+
+cdl_component CYGPKG_ERROR_ERRNO {
+    user_value 1
+    inferred_value 0
+};
+
+cdl_option CYGPKG_ERROR_STRERROR {
+    inferred_value 0
+};
+
+cdl_option CYGBLD_ISO_CTYPE_HEADER {
+    inferred_value 1 <cyg/libc/i18n/ctype.inl>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_CODES_HEADER {
+    inferred_value 1 <cyg/error/codes.h>
+};
+
+cdl_option CYGBLD_ISO_ERRNO_HEADER {
+    user_value 1 <cyg/error/errno.h>
+};
+
+cdl_option CYGBLD_ISO_STRTOK_R_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_MEMFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_STRING_STRFUNCS_HEADER {
+    inferred_value 1 <cyg/libc/string/string.h>
+};
+
+cdl_option CYGBLD_ISO_DIRENT_HEADER {
+    inferred_value 1 <cyg/fileio/dirent.h>
+};
+
+cdl_option CYGBLD_ISO_OPEN_MAX_HEADER {
+    inferred_value 1 <cyg/fileio/limits.h>
+};
+
+cdl_option CYGFUN_KERNEL_API_C {
+    user_value 1
+    inferred_value 0
+};
+
+

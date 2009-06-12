@@ -1,0 +1,37 @@
+#
+# A configuration for building a GDB stub ROM for the Motorola MBX board,
+# with MPC 860 or 821 CPU.
+#
+# To build the ROMs:
+# 1. Create a build directory and cd into it.
+# 2. Run: permtest.tcl --srcdir=<SOURCEDIR> <SOURCEDIR>/hal/powerpc/mbx/current/misc/stubrom.perm
+#    Where <SOURCEDIR> is the path to your source repository.
+#    (If necessary, make sure the system clock speed is set correctly in
+#     pkgconf/hal_powerpc_mbx.h:  40MHz (MPC821) versus 50MHz (MPC860) by default)
+#    If you do not have permtest, use the config tool or an editor to make
+#    the changes listed below to the relevant configuration files.
+#    If you intend to install the image into the 32-bit flash device instead of
+#    the 8-bit socketed ROM, set the option CYGHWR_HAL_POWERPC_MBX_BOOT_32BIT_FLASH
+#    in hal_powerpc_mbx.h
+# 3. Run: make
+# 4. Run: make -C hal/common/current/src/stubrom
+#
+# The file hal/common/current/src/stubrom/stubrom will be an excutable of the ROM.
+# Use objcopy to convert this to the appropriate format for your PROM burner:
+#     powerpc-eabi-objcopy -O binary hal/common/current/src/stubrom/stubrom stubrom.img
+# Enjoy!
+#
+
+pkgconf --target=powerpc --platform=mbx --startup=rom --disable-kernel --disable-uitron --disable-libc --disable-libm --disable-io --disable-io_serial --disable-wallclock --disable-watchdog
+
+header hal.h {
+	enable   CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+	disable  CYGFUN_HAL_COMMON_KERNEL_SUPPORT
+	disable  CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT
+	disable  CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT
+	disable  CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+	enable   CYG_HAL_ROM_MONITOR
+}
+
+# 	enable  CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT excluded for now
+

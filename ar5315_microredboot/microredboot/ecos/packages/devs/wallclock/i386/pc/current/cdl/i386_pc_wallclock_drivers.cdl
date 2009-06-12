@@ -1,0 +1,86 @@
+# ====================================================================
+#
+#      i386_pc_wallclock_drivers.cdl
+#
+#      Wallclock drivers - support for DS12887 RTC on the PC
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      rajt
+# Contributors:   rajt
+# Date:           2001-07-19
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVICES_WALLCLOCK_I386_PC {
+    display       "PC board RTC Driver"
+    description   "RTC driver for PC."
+
+    parent        CYGPKG_IO_WALLCLOCK
+    active_if   CYGPKG_IO_WALLCLOCK
+    active_if     CYGPKG_HAL_I386_PC
+    requires      CYGPKG_DEVICES_WALLCLOCK_DALLAS_DS12887
+
+    include_dir   cyg/io
+
+    define_proc {
+        puts $::cdl_system_header "/***** PC RTC driver proc output start *****/"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_WALLCLOCK_DALLAS_12887_INL <cyg/io/devices_wallclock_i386_pc.inl>"
+        puts $::cdl_system_header "#define CYGDAT_DEVS_WALLCLOCK_i386_PC_CFG <pkgconf/devices_wallclock_i386_pc.h>"
+        puts $::cdl_system_header "/***** PC RTC driver proc output end  *****/"
+    }
+
+    cdl_option CYGDAT_DEVS_WALLCLOCK_I386_PC_RTC_ADDRESS_PORT {
+    display         "IO port address of the ADDRESS register"
+    flavor          data
+        default_value 0x70
+        description   "
+              This option sets the io address of the address port for
+              accessing the PC RTC"
+    }
+
+    cdl_option CYGDAT_DEVS_WALLCLOCK_I386_PC_RTC_DATA_PORT {
+    display         "IO port address of the DATA register"
+    flavor          data
+        default_value 0x71
+        description   "
+              This option sets the io address of the data port for
+              accessing the PC RTC"
+    }
+}

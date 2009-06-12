@@ -1,0 +1,186 @@
+# ====================================================================
+#
+#      hal_i386_pcmb.cdl
+#
+#      PC Motherboard HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2002 Gary Thomas
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  jskov
+# Contributors:   nickg, gthomas
+# Date:           1999-11-01
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_I386_PCMB {
+    display  "i386 PC Motherboard Support"
+    parent        CYGPKG_HAL_I386
+    define_header hal_i386_pcmb.h
+    include_dir   cyg/hal
+    description   "
+    The i386 PC Motherboard HAL package provides the
+    support needed to run eCos binaries on an i386 PC
+    using a standard motherboard. This package provides
+    support for the standard PC devices: timers, interrupt
+    controller, serial ports, ASCII display, keyboard, PCI
+    bus etc. that are found on all PC compatible platforms.
+    It does not provide support for devices that may also be
+    found on modern motherboards, such as ethernet, sound and
+    video devices. These are supported by drivers elsewhere."
+
+    compile      pcmb_misc.c pcmb_serial.c 
+
+    implements   CYGINT_HAL_I386_MEM_REAL_REGION_TOP
+    implements   CYGINT_HAL_PLF_IF_IDE
+    
+    # Real-time clock/counter specifics
+    cdl_component CYGNUM_HAL_RTC_CONSTANTS {
+        display       "Real-time clock constants."
+        description   "The RTC period is based on the clock input
+	               to the 8254, which is 1193180 Hz.
+	               CYGNUM_HAL_RTC_PERIOD is set for 100 ticks
+	               per second."
+        flavor        none
+    
+        cdl_option CYGNUM_HAL_RTC_NUMERATOR {
+            display       "Real-time clock numerator"
+            flavor        data
+            default_value 1000000000
+        }
+        cdl_option CYGNUM_HAL_RTC_DENOMINATOR {
+            display       "Real-time clock denominator"
+            flavor        data
+            default_value 100
+        }
+        cdl_option CYGNUM_HAL_RTC_PERIOD {
+            display       "Real-time clock period"
+            flavor        data
+           default_value  11932
+        }
+    }
+
+    cdl_component CYGPKG_HAL_I386_PCMB_MEMSIZE {
+        display       "How to discover the size of available RAM."
+        flavor        data
+        legal_values  {"BIOS" "HARDCODE"}
+        default_value {"BIOS"}
+        description   "It is possible for the HAL to discover the 
+                       size of RAM In several ways. Currently this
+                        can be done by querying the BIOS or by 
+                        hardcoding the values into the executable."
+ 
+        cdl_option CYGNUM_HAL_I386_PCMB_MEMSIZE_BASE {
+            display       "Amount of Base RAM available."
+            flavor        data
+            default_value 0x000F0000
+            active_if     { CYGPKG_HAL_I386_PCMB_MEMSIZE == "HARDCODE" }
+        }
+ 
+        cdl_option CYGNUM_HAL_I386_PCMB_MEMSIZE_EXTENDED {
+            display       "Amount of Extended RAM available."
+            flavor        data
+            default_value 0x00100000
+            active_if     { CYGPKG_HAL_I386_PCMB_MEMSIZE == "HARDCODE" }
+        }
+    }
+
+    cdl_option CYGSEM_HAL_I386_PC_LARGE_PCI_SPACE {
+	display           "Search entire PCI space"
+	flavor            bool
+	default_value     0
+        description       "
+          This option enables searching the entire PCI address space, including
+        up to 256 busses, etc.  Probably only useful when there are bridges or
+        other PCI expanding devices (such as a board with it's own PCI bus)
+        in the system.  If disabled, the system will revert to the default
+        PCI space size (typically 8 busses)."
+    }
+
+    cdl_option CYGNUM_HAL_I386_PC_STARTUP_VIDEO_MODE {
+	display           "Switch the display to an alternative video mode"
+	flavor            booldata
+	default_value     0
+	requires          { !CYGSEM_HAL_I386_PC_DIAG_SCREEN }
+	active_if         CYGPKG_REDBOOT
+	description "
+	    This option can be used when building RedBoot to switch
+	    the display to a suitable mode, typically before running
+	    an eCos graphical application. The mode switch involves
+            calling the PC Video BIOS, so needs to happen while the
+	    processor is still running in real mode. Some information
+	    about the video BIOS, the current mode, and the available
+	    modes will be written to video memory so that the eCos
+	    application knows what happened.
+
+	    Different graphics cards use different numbers for the
+	    various modes, so there is no simple way of knowing which
+	    mode should be specified to achieve the desired resolution.
+	    Instead RedBoot can be built with a suitable default, for
+	    example 0x0100, and then a simple eCos application can be
+	    built using an appropriate eCos configuration and
+	    run to find out about all the available mode. RedBoot can
+	    then be reconfigured and rebuilt to use a suitable mode.
+	    The PC motherboard support package comes with a simple
+	    eCos program gfxmode.c which can be used for this."
+    }
+    
+    cdl_component CYGPKG_HAL_I386_PCMB_SMP_SUPPORT {
+	active_if { CYGPKG_HAL_SMP_SUPPORT }
+	calculated { CYGPKG_HAL_SMP_SUPPORT }
+	compile pcmb_smp.c
+
+	define_proc {
+	    puts $::cdl_header "#undef HAL_PLATFORM_EXTRA"
+	    puts $::cdl_header "#define HAL_PLATFORM_EXTRA  \"\[SMP\]\""
+	    puts $::cdl_header ""
+	}
+    }
+    
+    cdl_interface CYGINT_HAL_I386_PCMB_SCREEN_SUPPORT {
+	display       "Enable PC screen support"
+	compile       pcmb_screen.c
+	description   "This option enables support for the PC screen and
+	               keyboard. These are combined into a virtual serial
+	               device that may be used for diagnostic output.
+	               Note that there is little point in trying to use it
+	               as a debug channel."
+    }
+}

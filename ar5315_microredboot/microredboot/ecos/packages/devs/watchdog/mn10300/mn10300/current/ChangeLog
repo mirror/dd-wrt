@@ -1,0 +1,90 @@
+2000-05-31  Jesper Skov  <jskov@redhat.com>
+
+	* cdl/watchdog_mn10300.cdl: 
+	* src/watchdog_mn10300.cxx: 
+	Driver moved to devs/watchdog/mn10300/mn10300. Stripped out
+	unrelated ChangeLog entries.
+
+1999-08-24  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300.cxx: Turn watchdog off in Cyg_Watchdog::trigger() to
+	prevent it repeating.
+
+1999-08-18  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300.cxx: 
+	Added support for AM33 variant. Since the AM33 can only provide a
+	maximum watchdog cycle time of 621ms, this has motiviated the
+	addition of the get_resolution() call described above.
+
+1999-07-14  Jesper Skov  <jskov@cygnus.co.uk>
+
+	* src/mn10300.cxx: 
+	Include pkgconf/kernel.h.
+
+1999-02-20  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300.cxx: 
+	Change CYG_VECTOR_WATCHDOG to CYGNUM_HAL_INTERRUPT_WATCHDOG in line
+	with HAL changes.
+	General QA improvements
+
+Tue Oct 20 15:52:46 1998  Jonathan Larmour  <jlarmour@cygnus.co.uk>
+
+	* src/mn10300.cxx: 
+	Include <pkgconf/watchdog.h> so that we get CYGIMP_WATCHDOG_EMULATE
+	defined appropriately
+
+1998-09-01  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/mn10300.cxx:
+	Added include for <cyg/kernel/sched.inl>, for scheduler lock and
+	unlock functions.
+
+1998-07-31  Nick Garnett  <nickg@cygnus.co.uk>
+
+	* src/PKGconf.mak:
+	Added mn10300.cxx to COMPILE list.
+
+	* src/mn10300.cxx:
+	Completed implementation using MN10300 watchdog timer.
+
+	* include/watchdog.hxx:
+	Renamed 'register' functions to 'install'. Added install() and
+	uninstall() to Cyg_Watchdog_Action class.
+
+	* include/pkgconf/watchdog.h:
+	Added this file to contain watchdog config options.
+
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####

@@ -1,0 +1,99 @@
+<HTML>
+<HEAD>
+<TITLE>Target Selection Help</TITLE>
+</HEAD>
+<BODY>
+<H1>The Target Selection Dialog</H1>
+<H3>Overview</H3>
+<P>The Target Selection Dialog allows users to specify the debug target,
+the interface used to connect to the target, and some useful run
+options.</P>
+
+<P>Target Selection topics:
+<UL>
+    <LI><UL><A HREF="#select">Selecting a Target</A>
+            <LI><A HREF="#select_tar">Specifying a Target</A>
+            <LI><A HREF="#select_int">Choosing a Connection Interface</A>
+        </UL>
+    <LI><UL><A HREF="#options">Options</A>
+            <LI><A HREF="#options_run_until_main">Run until 'main'</A>
+            <LI><A HREF="#options_bp_at_exit">Set breakpoint at 'exit'</A>
+            <LI><A HREF="#options_download_dialog">Display Download Dialog</A>
+        </UL>
+     <LI><UL><A HREF="#more_options">More Options</A>
+             <LI><A HREF="#more_options_attach">Attach to Target</A>
+             <LI><A HREF="#more_options_load">Download Program</A>
+             <LI><A HREF="#more_options_run">Run Program</A>
+             <LI><A HREF="#more_options_cont">Continue from Last Stop</A>
+         </UL>
+</UL></P>
+
+<H3><A NAME="select">Selecting a Target</A></H3>
+Selecting a target involves choosing a target for debugging and setting connection
+interface options for the target. 
+
+<P>Common targets include: "Exec" for native debuggers, "Remote/Serial" for establishing
+a connection to a target board via a serial line, "Remote/TCP" for TCP connections,
+and "Simulator" for connections to the simulator. There may be more depending on the
+configuration of the debugger being used.</P>
+
+<P>In general, "remote" targets are always serial connections which require the user
+to specify the serial port and baud rate to be used for the connection and
+"remote/tcp" targets are always TCP connections which require specifying the hostname
+and port number of the machine to which to connect. Depending upon configuration,
+there may be numerous serial- and TCP-based connections. These always follow the
+naming convention <I>target</I>/Serial and <I>target</I>/TCP.</P>
+
+<P>To <A NAME="select_tar"> select a target</A>, choose one of the available targets
+from the dropdown menu in the Connection Frame. Then <A NAME="#select_int">specify
+the interface options</A> for this target: selecting the baudrate and serial port
+from the dropdown menus (serial targets only) or entering the hostname and port number
+(TCP targets only).</P>
+
+<H3><A NAME="options">Options</A></H3>
+Three run options which may be selected include:
+<DL>
+    <DT><A NAME="options_run_until_main">Run until 'main'
+        <DD>Sets a breakpoint at main()
+    <DT><A NAME="options_bp_at_exit">Set breakpoint at 'exit'
+        <DD>Sets a breakpoint at exit()
+    <DT><A NAME="options_download_dialog">Display Download Dialog
+        <DD>Displays a dialog showing the progress of the download to
+            the target section by section
+</DL>
+<BR>
+<H3><A NAME="more_options">More Options</A></H3>
+Several additional run options may be set for each target from the Target Selection
+Dialog. These options govern the behavior of the debugger's
+<A NAME="source.html#run_button">Run Button</A>. The debugger automatically selects
+default values for these options whenever a target is selected with the dropdown menu
+in the Connection Frame. To modify this default bahavior, click the small triangle
+next to "More Options" at the bottom of the dialog. The Run Options for the current
+target are displayed, allowing modification of the actions for the target. When the
+"OK" button is selected, these settings are saved and will be used as the default
+for the target in future sessions.
+
+<DL>
+    <DT><A NAME="more_options_attach">Attach to Target</A>
+        <DD>Establish a connection to the target board.
+    <DT><A NAME="more_options_load">Download Program</A>
+        <DD>Download the program to the target board.
+    <DT><A NAME="more_options_run">Run Program</A>
+        <DD>Run the program on the target board, creating a new
+            "process". This option may not be specified along with
+            the continue option. See note below.
+    <DT><A NAME="more_options_cont">Continue from Last Stop</A>
+        <DD>Continue the program on the target board from where
+            it last stopped. This option may not be specified
+            along with the "run" option. See note below.
+</DL>
+
+<P>Note that all remote targets typically do not "run" programs. Since target
+boards are usually incapable of creating a new "process", these targets
+seldom "Run". The defaults for all remote targets reflect this distinction: they
+are all set to "Continue".</P>
+
+<P>Only one of the options "Run Program" and "Continue from Last Stop" may be used.
+Typically, the default behavior of this setting should not be altered.</P>
+</BODY>
+</HTML>

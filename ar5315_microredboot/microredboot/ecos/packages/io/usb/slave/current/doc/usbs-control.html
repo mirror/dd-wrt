@@ -1,0 +1,934 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Control Endpoints</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos USB Slave Support"
+HREF="io-usb-slave.html"><LINK
+REL="PREVIOUS"
+TITLE="Halted Endpoints"
+HREF="usbs-halt.html"><LINK
+REL="NEXT"
+TITLE="Data Endpoints"
+HREF="usbs-data.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos USB Slave Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="usbs-halt.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usbs-data.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="USBS-CONTROL"
+>Control Endpoints</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN489"
+></A
+><H2
+>Name</H2
+>Control Endpoints&nbsp;--&nbsp;Control endpoint data structure</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN492"
+></A
+><H2
+>Synopsis</H2
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>#include &lt;cyg/io/usb/usbs.h&gt;
+
+typedef struct usbs_control_endpoint {
+    *hellip;
+} usbs_control_endpoint;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN494"
+></A
+><H2
+><TT
+CLASS="LITERAL"
+>usbs_control_endpoint</TT
+> Data Structure</H2
+><P
+>The device driver for a USB slave device should supply one
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+> data structure per USB
+device. This corresponds to endpoint 0 which will be used for all
+control message interaction between the host and that device. The data
+structure is also used for internal management purposes, for example
+to keep track of the current state. In a typical USB peripheral there
+will only be one such data structure in the entire system, but if
+there are multiple USB slave ports, allowing the peripheral to be
+connected to multiple hosts, then there will be a separate data
+structure for each one. The name or names of the data structures are
+determined by the device drivers. For example, the SA11x0 USB device
+driver package provides <TT
+CLASS="LITERAL"
+>usbs_sa11x0_ep0</TT
+>.</P
+><P
+>The operations on a control endpoint do not fit cleanly into a
+conventional open/read/write I/O model. For example, when the host
+sends a control message to the USB peripheral this may be one of four
+types: standard, class, vendor and reserved. Some or all of the
+standard control messages will be handled automatically by the common
+USB slave package or by the device driver itself. Other standard
+control messages and the other types of control messages may be
+handled by a class-specific package or by application code. Although
+it would be possible to have devtab entries such as
+<TT
+CLASS="LITERAL"
+>/dev/usbs_ep0/standard</TT
+> and
+<TT
+CLASS="LITERAL"
+>/dev/usbs_ep0/class</TT
+>, and then support read and
+write operations on these devtab entries, this would add significant
+overhead and code complexity. Instead, all of the fields in the
+control endpoint data structure are public and can be manipulated
+directly by higher level code if and when required. </P
+><P
+>Control endpoints involve a number of callback functions, with
+higher-level code installing suitable function pointers in the control
+endpoint data structure. For example, if the peripheral involves
+vendor-specific control messages then a suitable handler for these
+messages should be installed. Although the exact details depend on the
+device driver, typically these callback functions will be invoked at
+DSR level rather than thread level. Therefore, only certain eCos
+functions can be invoked; specifically, those functions that are
+guaranteed not to block. If a potentially blocking function such as a
+semaphore wait or a mutex lock operation is invoked from inside the
+callback then the resulting behaviour is undefined, and the system as
+a whole may fail. In addition, if one of the callback functions
+involves significant processing effort then this may adversely affect
+the system's real time characteristics. The eCos kernel documentation
+should be consulted for more details of DSR handling.</P
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN504"
+></A
+><H3
+>Initialization</H3
+><P
+>The <SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+> data structure
+contains the following fields related to initialization.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef struct usbs_control_endpoint {
+    &#8230;
+    const usbs_enumeration_data* enumeration_data;
+    void                         (*start_fn)(usbs_control_endpoint*);
+    &#8230;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>It is the responsibility of higher-level code, usually the
+application, to define the USB enumeration data. This needs to be
+installed in the control endpoint data structure early on during
+system startup, before the USB device is actually started and any
+interaction with the host is possible. Details of the enumeration data
+are supplied in the section <A
+HREF="usbs-enum.html"
+>USB Enumeration
+Data</A
+>. Typically, the enumeration data is constant for a given
+peripheral, although it can be constructed dynamically if necessary.
+However, the enumeration data cannot change while the peripheral is
+connected to a host: the peripheral cannot easily claim to be a
+keyboard one second and a printer the next.</P
+><P
+>The <TT
+CLASS="STRUCTFIELD"
+><I
+>start_fn</I
+></TT
+> member is normally accessed
+via the utility <A
+HREF="usbs-start.html"
+><TT
+CLASS="FUNCTION"
+>usbs_start</TT
+></A
+> rather
+than directly. It is provided by the device driver and should be
+invoked once the system is fully initialized and interaction with the
+host is possible. A typical implementation would change the USB data
+pins from tristated to active. If the peripheral is already plugged
+into a host then the latter should detect this change and start
+interacting with the peripheral, including requesting the enumeration
+data.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN515"
+></A
+><H3
+>State</H3
+><P
+>There are three <SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+> fields
+related to the current state of a USB slave device, plus some state
+constants and an enumeration of the possible state changes:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef struct usbs_control_endpoint {
+    &#8230;
+    int     state;
+    void    (*state_change_fn)(struct usbs_control_endpoint*, void*,
+                               usbs_state_change, int);
+    void*   state_change_data;
+    &#8230;
+};
+
+#define USBS_STATE_DETACHED             0x01
+#define USBS_STATE_ATTACHED             0x02
+#define USBS_STATE_POWERED              0x03
+#define USBS_STATE_DEFAULT              0x04
+#define USBS_STATE_ADDRESSED            0x05
+#define USBS_STATE_CONFIGURED           0x06
+#define USBS_STATE_MASK                 0x7F
+#define USBS_STATE_SUSPENDED            (1 &lt;&lt; 7)
+
+typedef enum {
+    USBS_STATE_CHANGE_DETACHED          = 1,
+    USBS_STATE_CHANGE_ATTACHED          = 2,
+    USBS_STATE_CHANGE_POWERED           = 3,
+    USBS_STATE_CHANGE_RESET             = 4,    
+    USBS_STATE_CHANGE_ADDRESSED         = 5,
+    USBS_STATE_CHANGE_CONFIGURED        = 6,
+    USBS_STATE_CHANGE_DECONFIGURED      = 7,    
+    USBS_STATE_CHANGE_SUSPENDED         = 8,
+    USBS_STATE_CHANGE_RESUMED           = 9
+} usbs_state_change;</PRE
+></TD
+></TR
+></TABLE
+><P
+>The USB standard defines a number of states for a given USB
+peripheral. The initial state is <I
+CLASS="EMPHASIS"
+>detached</I
+>, where
+the peripheral is either not connected to a host at all or, from the
+host's perspective, the peripheral has not started up yet because the
+relevant pins are tristated. The peripheral then moves via
+intermediate <I
+CLASS="EMPHASIS"
+>attached</I
+> and
+<I
+CLASS="EMPHASIS"
+>powered</I
+> states to its default or
+<I
+CLASS="EMPHASIS"
+>reset</I
+> state, at which point the host and
+peripheral can actually start exchanging data. The first message is
+from host to peripheral and provides a unique 7-bit address within the
+local USB network, resulting in a state change to
+<I
+CLASS="EMPHASIS"
+>addressed</I
+>. The host then requests enumeration
+data and performs other initialization. If everything succeeds the
+host sends a standard set-configuration control message, after which
+the peripheral is <I
+CLASS="EMPHASIS"
+>configured</I
+> and expected to be
+up and running. Note that some USB device drivers may be unable to
+distinguish between the <I
+CLASS="EMPHASIS"
+>detached</I
+>,
+<I
+CLASS="EMPHASIS"
+>attached</I
+> and <I
+CLASS="EMPHASIS"
+>powered</I
+> states
+but generally this is not important to higher-level code.</P
+><P
+>A USB host should generate at least one token every millisecond. If a
+peripheral fails to detect any USB traffic for a period of time then
+typically this indicates that the host has entered a power-saving
+mode, and the peripheral should do the same if possible. This
+corresponds to the <I
+CLASS="EMPHASIS"
+>suspended</I
+> bit. The actual
+state is a combination of <I
+CLASS="EMPHASIS"
+>suspended</I
+> and the
+previous state, for example <I
+CLASS="EMPHASIS"
+>configured</I
+> and
+<I
+CLASS="EMPHASIS"
+>suspended</I
+> rather than just
+<I
+CLASS="EMPHASIS"
+>suspended</I
+>. When the peripheral subsequently
+detects USB traffic it would switch back to the
+<I
+CLASS="EMPHASIS"
+>configured</I
+> state.</P
+><P
+>The USB device driver and the common USB slave package will maintain
+the current state in the control endpoint's
+<TT
+CLASS="STRUCTFIELD"
+><I
+>state</I
+></TT
+> field. There should be no need for
+any other code to change this field, but it can be examined whenever
+appropriate. In addition whenever a state change occurs the generic
+code can invoke a state change callback function. By default, no such
+callback function will be installed. Some class-specific packages such
+as the USB-ethernet package will install a suitable function to keep
+track of whether or not the host-peripheral connection is up, that is
+whether or not ethernet packets can be exchanged. Application code can
+also update this field. If multiple parties want to be informed of
+state changes, for example both a class-specific package and
+application code, then typically the application code will install its
+state change handler after the class-specific package and is
+responsible for chaining into the package's handler.</P
+><P
+>The state change callback function is invoked with four arguments. The
+first identifies the control endpoint. The second is an arbitrary
+pointer: higher-level code can fill in the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>state_change_data</I
+></TT
+> field to set this. The
+third argument specifies the state change that has occurred, and the
+last argument supplies the previous state (the new state is readily
+available from the control endpoint structure).</P
+><P
+>eCos does not provide any utility functions for updating or examining
+the <TT
+CLASS="STRUCTFIELD"
+><I
+>state_change_fn</I
+></TT
+> or
+<TT
+CLASS="STRUCTFIELD"
+><I
+>state_change_data</I
+></TT
+> fields. Instead, it is
+expected that the fields in the
+<SPAN
+CLASS="STRUCTNAME"
+>usbs_control_endpoint</SPAN
+> data structure will be
+manipulated directly. Any utility functions would do just this, but
+at the cost of increased code and cpu overheads.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN545"
+></A
+><H3
+>Standard Control Messages</H3
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef struct usbs_control_endpoint {
+    &#8230;
+    unsigned char       control_buffer[8];
+    usbs_control_return (*standard_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               standard_control_data;
+    &#8230;
+} usbs_control_endpoint;
+
+typedef enum {
+    USBS_CONTROL_RETURN_HANDLED = 0,
+    USBS_CONTROL_RETURN_UNKNOWN = 1,
+    USBS_CONTROL_RETURN_STALL   = 2
+} usbs_control_return;
+
+extern usbs_control_return usbs_handle_standard_control(struct usbs_control_endpoint*);</PRE
+></TD
+></TR
+></TABLE
+><P
+>When a USB peripheral is connected to the host it must always respond
+to control messages sent to endpoint 0. Control messages always
+consist of an initial eight-byte header, containing fields such as a
+request type. This may be followed by a further data transfer, either
+from host to peripheral or from peripheral to host. The way this is
+handled is described in the <A
+HREF="usbs-control.html#AEN578"
+>Buffer Management</A
+> section below.</P
+><P
+>The USB device driver will always accept the initial eight-byte
+header, storing it in the <TT
+CLASS="STRUCTFIELD"
+><I
+>control_buffer</I
+></TT
+>
+field. Then it determines the request type: standard, class, vendor,
+or reserved. The way in which the last three of these are processed is
+described in the section <A
+HREF="usbs-control.html#AEN570"
+>Other
+Control Messages</A
+>. Some
+standard control messages will be handled by the device driver itself;
+typically the <I
+CLASS="EMPHASIS"
+>set-address</I
+> request and the
+<I
+CLASS="EMPHASIS"
+>get-status</I
+>, <I
+CLASS="EMPHASIS"
+>set-feature</I
+> and
+<I
+CLASS="EMPHASIS"
+>clear-feature</I
+> requests when applied to endpoints.</P
+><P
+>If a standard control message cannot be handled by the device driver
+itself, the driver checks the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>standard_control_fn</I
+></TT
+> field in the control
+endpoint data structure. If higher-level code has installed a suitable
+callback function then this will be invoked with two argument, the
+control endpoint data structure itself and the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>standard_control_data</I
+></TT
+> field. The latter
+allows the higher level code to associate arbitrary data with the
+control endpoint. The callback function can return one of three
+values: <I
+CLASS="EMPHASIS"
+>HANDLED</I
+> to indicate that the request has
+been processed; <I
+CLASS="EMPHASIS"
+>UNKNOWN</I
+> if the message should be
+handled by the default code; or <I
+CLASS="EMPHASIS"
+>STALL</I
+> to indicate
+an error condition. If higher level code has not installed a callback
+function or if the callback function has returned
+<I
+CLASS="EMPHASIS"
+>UNKNOWN</I
+> then the device driver will invoke a
+default handler, <TT
+CLASS="FUNCTION"
+>usbs_handle_standard_control</TT
+>
+provided by the common USB slave package.</P
+><P
+>The default handler can cope with all of the standard control messages
+for a simple USB peripheral. However, if the peripheral involves
+multiple configurations, multiple interfaces in a configuration, or
+alternate settings for an interface, then this cannot be handled by
+generic code. For example, a multimedia peripheral may support various
+alternate settings for a given data source with different bandwidth
+requirements, and the host can select a setting that takes into
+account the current load. Clearly higher-level code needs to be aware
+when the host changes the current setting, so that it can adjust the
+rate at which data is fed to or retrieved from the host. Therefore the
+higher-level code needs to install its own standard control callback
+and process appropriate messages, rather than leaving these to the
+default handler.</P
+><P
+>The default handler will take care of the
+<I
+CLASS="EMPHASIS"
+>get-descriptor</I
+> request used to obtain the
+enumeration data. It has support for string descriptors but ignores
+language encoding issues. If language encoding is important for the
+peripheral then this will have to be handled by an
+application-specific standard control handler.</P
+><P
+>The header file <TT
+CLASS="FILENAME"
+>&lt;cyg/io/usb/usb.h&gt;</TT
+> defines various
+constants related to control messages, for example the function codes
+corresponding to the standard request types. This header file is
+provided by the common USB package, not by the USB slave package,
+since the information is also relevant to USB hosts.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN570"
+></A
+><H3
+>Other Control Messages</H3
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef struct usbs_control_endpoint {
+    &#8230;
+    usbs_control_return (*class_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               class_control_data;
+    usbs_control_return (*vendor_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               vendor_control_data;
+    usbs_control_return (*reserved_control_fn)(struct usbs_control_endpoint*, void*);
+    void*               reserved_control_data;
+    &#8230;
+} usbs_control_endpoint;</PRE
+></TD
+></TR
+></TABLE
+><P
+>Non-standard control messages always have to be processed by
+higher-level code. This could be class-specific packages. For example,
+the USB-ethernet package will handle requests for getting the MAC
+address and for enabling or disabling promiscuous mode. In all cases
+the device driver will store the initial request in the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>control_buffer</I
+></TT
+> field, check for an
+appropriate handler, and invoke it with details of the control
+endpoint and any handler-specific data that has been installed
+alongside the handler itself. The handler should return either
+<TT
+CLASS="LITERAL"
+>USBS_CONTROL_RETURN_HANDLED</TT
+> to report success or
+<TT
+CLASS="LITERAL"
+>USBS_CONTROL_RETURN_STALL</TT
+> to report failure. The
+device driver will report this to the host.</P
+><P
+>If there are multiple parties interested in a particular type of
+control messages, it is the responsibility of application code to
+install an appropriate handler and process the requests appropriately. </P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN578"
+></A
+><H3
+>Buffer Management</H3
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef struct usbs_control_endpoint {
+    &#8230;
+    unsigned char*      buffer;
+    int                 buffer_size;
+    void                (*fill_buffer_fn)(struct usbs_control_endpoint*);
+    void*               fill_data;
+    int                 fill_index;
+    usbs_control_return (*complete_fn)(struct usbs_control_endpoint*, int);
+    &#8230;
+} usbs_control_endpoint;</PRE
+></TD
+></TR
+></TABLE
+><P
+>Many USB control messages involve transferring more data than just the
+initial eight-byte header. The header indicates the direction of the
+transfer, OUT for host to peripheral or IN for peripheral to host.
+It also specifies a length field, which is exact for an OUT transfer
+or an upper bound for an IN transfer. Control message handlers can
+manipulate six fields within the control endpoint data structure to
+ensure that the transfer happens correctly.</P
+><P
+>For an OUT transfer, the handler should examine the length field in
+the header and provide a single buffer for all the data. A
+class-specific protocol would typically impose an upper bound on the
+amount of data, allowing the buffer to be allocated statically.
+The handler should update the <TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_fn</I
+></TT
+> fields. When all the data has
+been transferred the completion callback will be invoked, and its
+return value determines the response sent back to the host. The USB
+standard allows for a new control message to be sent before the
+current transfer has completed, effectively cancelling the current
+operation. When this happens the completion function will also be
+invoked. The second argument to the completion function specifies what
+has happened, with a value of 0 indicating success and an error code
+such as <TT
+CLASS="LITERAL"
+>-EPIPE</TT
+> or <TT
+CLASS="LITERAL"
+>-EIO</TT
+>
+indicating that the current transfer has been cancelled.</P
+><P
+>IN transfers are a little bit more complicated. The required
+information, for example the enumeration data, may not be in a single
+contiguous buffer. Instead a mechanism is provided by which the buffer
+can be refilled, thus allowing the transfer to move from one record to
+the next. Essentially, the transfer operates as follows:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>When the host requests another chunk of data (typically eight bytes),
+the USB device driver will examine the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+> field. If non-zero then
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+> contains at least one more byte of
+data, and then <TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+> is decremented.</P
+></LI
+><LI
+><P
+>When <TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+> has dropped to 0, the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>fill_buffer_fn</I
+></TT
+> field will be examined. If
+non-null it will be invoked to refill the buffer.</P
+></LI
+><LI
+><P
+>The <TT
+CLASS="STRUCTFIELD"
+><I
+>fill_data</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>fill_index</I
+></TT
+> fields are not used by the
+device driver. Instead these fields are available to the refill
+function to keep track of the current state of the transfer.</P
+></LI
+><LI
+><P
+>When <TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+> is 0 and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>fill_buffer_fn</I
+></TT
+> is NULL, no more data is
+available and the transfer has completed.</P
+></LI
+><LI
+><P
+>Optionally a completion function can be installed. This will be
+invoked with 0 if the transfer completes successfully, or with an
+error code if the transfer is cancelled because of another control
+messsage. </P
+></LI
+></OL
+><P
+>If the requested data is contiguous then the only fields that need
+to be manipulated are <TT
+CLASS="STRUCTFIELD"
+><I
+>buffer</I
+></TT
+> and
+<TT
+CLASS="STRUCTFIELD"
+><I
+>buffer_size</I
+></TT
+>, and optionally
+<TT
+CLASS="STRUCTFIELD"
+><I
+>complete_fn</I
+></TT
+>. If the requested data is not
+contiguous then the initial control message handler should update
+<TT
+CLASS="STRUCTFIELD"
+><I
+>fill_buffer_fn</I
+></TT
+> and some or all of the other
+fields, as required. An example of this is the handling of the
+standard <I
+CLASS="EMPHASIS"
+>get-descriptor</I
+> control message by
+<TT
+CLASS="FUNCTION"
+>usbs_handle_standard_control</TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN615"
+></A
+><H3
+>Polling Support</H3
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef struct usbs_control_endpoint {
+    void                (*poll_fn)(struct usbs_control_endpoint*);
+    int                 interrupt_vector;
+    &#8230;
+} usbs_control_endpoint;</PRE
+></TD
+></TR
+></TABLE
+><P
+>In nearly all circumstances USB I/O should be interrupt-driven.
+However, there are special environments such as RedBoot where polled
+operation may be appropriate. If the device driver can operate in
+polled mode then it will provide a suitable function via the
+<TT
+CLASS="STRUCTFIELD"
+><I
+>poll_fn</I
+></TT
+> field, and higher-level code can
+invoke this regularly. This polling function will take care of all
+endpoints associated with the device, not just the control endpoint.
+If the USB hardware involves a single interrupt vector then this will
+be identified in the data structure as well.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="usbs-halt.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="io-usb-slave.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usbs-data.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Halted Endpoints</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Data Endpoints</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

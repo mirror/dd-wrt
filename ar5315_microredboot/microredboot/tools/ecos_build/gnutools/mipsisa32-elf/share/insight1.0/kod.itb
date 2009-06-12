@@ -1,0 +1,474 @@
+# Kernel Object Display Window for Insight.
+# Copyright (C) 1998, 1999, 2001 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+#   AUTHOR:  Fernando Nasser <fnasser@cygnus.com>
+#
+
+
+# ------------------------------------------------------------------
+#  CONSTRUCTOR - create new process window
+# ------------------------------------------------------------------
+body KodWin::constructor {args} {
+  #
+  #  Create a window with the same name as this object
+  #
+  global gdb_kod_cmd
+
+  # initialize local variables
+  set LevelCmd(0) "info $gdb_kod_cmd "
+  debug "Level 0 kod command is $LevelCmd(0)"
+
+  gdbtk_busy
+  build_win
+  gdbtk_idle
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  build_win - build the main KOD window
+# ------------------------------------------------------------------
+body KodWin::build_win {} {
+  # FIXME: rename this variable.
+  global kodActivePane
+
+  debug "Will build KOD window"
+
+  cyg::PanedWindow $itk_interior.pw -orient horizontal
+  $itk_interior.pw add titlepane
+  # We would like to use a fixed pane for the buttons.  However,
+  # this feature of PanedWindow doesn't work.
+  # $itk_interior.pw add buttonpane -resizable 0
+  $itk_interior.pw add pane1
+  $itk_interior.pw add pane2
+
+  # Now a frame for what is being listed, headers and list
+  set tp [$itk_interior.pw childsite titlepane]
+  Labelledframe $tp.tf -text "No Kernel Objects Known" \
+    -anchor nw
+  set titl $tp.tf
+  set lf [$tp.tf get_frame]
+
+  set p1 [$itk_interior.pw childsite pane1]
+  set p2 [$itk_interior.pw childsite pane2]
+  $p1 configure -height 120 -bd 2
+  $p2 configure -height 120 -bd 2
+  Labelledframe $p1.d1 -text "Details" -anchor nw
+  Labelledframe $p2.d2 -text "Details" -anchor nw
+  set d1 [$p1.d1 get_frame]
+  set d2 [$p2.d2 get_frame]
+  pack $p1.d1 $p2.d2 -side top -expand yes -fill both -padx 5 -pady 5
+  set pl1 $p1.d1
+  set pl2 $p2.d2
+
+  # Setup the button box
+  set bf [frame $tp.bf]
+  set BTop [button $bf.top -height 1 -text Top -command [code $this top]]
+  set BUp  [button $bf.up   -height 1   -text Up -command [code $this up]]
+  set BClear [button $bf.clear  -height 1 -text Clear \
+		-command [code $this clear]]
+  set BDisplay [button $bf.display -height 1 -text Display \
+		  -command [code $this display]]
+  set kodActivePane pane1
+  set BPane1 [radiobutton $bf.pane1 -variable kodActivePane \
+		-height 1 -text "Pane 1" -value pane1]
+  set BPane2 [radiobutton $bf.pane2 -variable kodActivePane \
+		-height 1 -text "Pane 2" -value pane2]
+  balloon register $bf.top "Return to List of Kernel Objects"
+  balloon register $bf.up "Return to previous List of Objects"
+  balloon register $bf.clear "Clear Object Detail Panes\nand Active setting"
+  balloon register $bf.display \
+    "Display Object or\nList of Objects of this type"
+  balloon register $bf.pane1 "Make Pane 1 Active"
+  balloon register $bf.pane2 "Make Pane 2 Active"
+  pack $bf.top $bf.up -side left -padx 5
+  pack $bf.display $bf.clear -side right -padx 5
+  pack $bf.pane2 $bf.pane1 -side bottom -padx 5 -fill both
+
+  # The list of objects
+  table $lf.s -titlerows 1 \
+    -colstretch last -rowstretch last -selectmode single \
+    -selecttype row -variable $this \
+    -yscrollcommand "$lf.sb set" -resizeborders none \
+    -state disabled
+  scrollbar $lf.sb -orient vertical -command "$lf.s yview"
+  bind $lf.s <Double-1> [code $this display]
+  $lf.s tag configure coltag -anchor nw
+
+  grid $lf.s -row 0 -column 0 -sticky nsew
+  grid $lf.sb -row 0 -column 1 -sticky nsw
+  grid columnconfigure $lf 0 -weight 1
+  grid rowconfigure $lf 0 -weight 1
+
+  # Areas to display object details
+  set t1 [table $d1.t1 -titlerows 1 -colstretch last -rowstretch last \
+	    -selectmode single -selecttype row -variable $this-pane1 \
+	    -yscrollcommand "$d1.s1 set" -resizeborders none \
+	    -rows 1 -cols 1 -state disabled]
+  scrollbar $d1.s1 -orient vertical -command "$d1.t1 yview"
+  set t2 [table $d2.t2 -titlerows 1 -colstretch last -rowstretch last \
+	    -selectmode single -selecttype row -variable $this-pane2 \
+	    -yscrollcommand "$d2.s2 set" -resizeborders none \
+	    -rows 1 -cols 1 -state disabled]
+  scrollbar $d2.s2 -orient vertical -command "$d2.t2 yview"
+
+  grid $d1.t1 -row 0 -column 0 -sticky nsew
+  grid $d1.s1 -row 0 -column 1 -sticky nsw
+  grid columnconfigure $d1 0 -weight 1
+  grid rowconfigure $d1 0 -weight 1
+  grid $d2.t2 -row 0 -column 0 -sticky nsew
+  grid $d2.s2 -row 0 -column 1 -sticky nsw
+  grid columnconfigure $d2 0 -weight 1
+  grid rowconfigure $d2 0 -weight 1
+
+  debug "Will pack KOD window"
+  pack $tp.tf -side top -expand yes -fill both -padx 5 -pady 5
+  pack $tp.bf -side top -expand no -fill x -padx 5 -pady 5
+  pack $itk_interior.pw -side bottom -expand yes -fill both
+  wm minsize $_top 450 500
+
+  # Initialize button state variables for idle (called before update)
+  set BState(BDisplay) disabled
+  set BState(BClear) disabled
+  set BState(BTop) disabled
+  set BState(BUp) disabled
+
+  #    window_name "Kernel Objects"
+
+  update dummy
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  update - update widget when something changes
+# ------------------------------------------------------------------
+body KodWin::update {event} {
+
+  debug "updating kod window"
+
+  _disable_buttons
+
+  display_list
+  display_object
+
+  _restore_buttons
+
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  display - update the display based on the selection
+#           it can be a list or an actual object
+#           We get here from a press on the Display button or
+#           from a <Double-1> on a line of the list of objects
+# ------------------------------------------------------------------
+body KodWin::display {} {
+  upvar \#0 $this table_vals
+  if {!$Running && [$lf.s cget -rows] > 1} {
+    gdbtk_busy
+    set linenum [$lf.s index active row]
+    set object $table_vals($linenum,0)
+    debug "display selection on line $linenum $object"
+    incr level
+    set LevelCmd($level) $LevelCmd([expr $level-1])
+    append LevelCmd($level) $object
+    debug "kod command for level $level is now: $LevelCmd($level)"
+    update dummy
+    # Run idle hooks and cause all other widgets to update
+    gdbtk_idle
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  display_list - display list of objects
+# ------------------------------------------------------------------
+body KodWin::display_list {} {
+  upvar \#0 $this table_vals
+
+  debug "displaying list of objects"
+
+  $lf.s configure -state normal
+  set cmd $LevelCmd($level)
+  debug "new kod command is $cmd"
+  if {[catch "gdb_cmd \"$cmd\"" objects]} {
+    # failed.  leave window blank
+    $titl configure -text "Kernel Object Display Failed"
+    $lf.s delete rows 0 [$lf.s index end row]
+    $lf.s configure -state disabled
+    set BState(BDisplay) disabled
+    return
+  }
+
+  debug "KodWin update: \n$objects"
+  if {[llength $objects] == 0} {
+    $titl configure -text "No Kernel Objects Known"
+    # no objects listed.
+    $lf.s delete rows 0 [$lf.s index end row]
+    $lf.s configure -state disabled
+    set BState(BDisplay) disabled
+    return
+  }
+
+  # insert each line one at a time
+  set num_lines -1
+  foreach line [split $objects \n] {
+    if {$num_lines == -1} {
+      if {![string match List* $line]} {
+	if {($level > 0)} {
+	  display_object $cmd objects
+	  incr level -1
+	  $lf.s configure -state disabled
+	  return
+	} else {
+	  # if level 0 first line does not start with List ignore it
+	  $titl configure -text "List of Kernel Objects"
+	}
+      } else {
+	$titl configure -text $line
+      }
+      # Clear listbox and headers to get new stuff.
+      $lf.s delete rows 0 [$lf.s index end row]
+    } elseif {$line == ""} {
+      break
+    } else {
+      set col 0
+      set list [split [string trim $line] \t]
+      if {$num_lines == 0} {
+	$lf.s configure -cols [llength $list] -titlerows 1
+      }
+      foreach item $list {
+	debug "inserting $item at $num_lines,$col"
+	set table_vals($num_lines,$col) $item
+	incr col
+      }
+    }
+    incr num_lines
+  }
+  $lf.s configure -rows [expr {$num_lines + 1}]
+
+  if {$num_lines > 0} {
+    set BState(BDisplay) active
+  }
+
+  if {$level == 0} {
+    set BState(BTop) disabled
+    set BState(BUp) disabled
+  } else {
+    set BState(BTop) active
+    set BState(BUp) active
+  }
+
+  $lf.s configure -state disabled
+  $lf.s see 0,0
+  $lf.s activate 1,0
+
+  _restore_buttons
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  display_object - display information about an object
+#           When called from update we have to reissue the gdb
+#           command to get fresh data
+# ------------------------------------------------------------------
+body KodWin::display_object {{cmd ""} {obj ""}} {
+  debug  "Displaying object details..."
+  upvar $obj objects
+  global kodActivePane
+  debug "Active Pane is $kodActivePane"
+
+  # Determine which frame to use
+  if {$kodActivePane == "pane2"} {
+    set curpan $t2
+    upvar \#0 $this-pane2 pane_values
+    if {$cmd != ""} {
+      # save command for update
+      set pane2command $cmd
+    } else {
+      # reuse saved command
+      set cmd $pane2command
+    }
+  } else {
+    set curpan $t1
+    upvar \#0 $this-pane1 pane_values
+    if {$cmd != ""} {
+      # save command for update
+      set pane1command $cmd
+    } else {
+      # reuse saved command
+      set cmd $pane1command
+    }
+  }
+  debug "curpan $curpan"
+
+  # here we must take care of the case where the user has activated a window
+  # but it does not have been filled yet.  We just return.
+  if {$cmd == ""} {
+    return
+  }
+
+  $curpan configure -state normal
+  $curpan delete rows 0 [$curpan index end row]
+  if {$obj == ""} {
+    debug "pane kod command is $cmd"
+    if {[catch "gdb_cmd \"$cmd\"" objects]
+	|| $objects == ""} {
+      # Failed.  Tell user object no longer there.
+      $curpan configure -state disabled
+      return
+    }
+  }
+
+  set num_lin 0
+  foreach line [split $objects \n] {
+    set col 0
+    set list [split [string trim $line] \t]
+    if {$num_lin == 0} {
+      $curpan configure -cols [llength $list]
+    }
+    foreach item $list {
+      set pane_values($num_lin,$col) $item
+      incr col
+    }
+    incr num_lin
+  }
+  $curpan configure -rows $num_lin -state disabled
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  clear - clear detail panes and reset pane selection
+# ------------------------------------------------------------------
+body KodWin::clear {} {
+  debug "going to clear detail panes and pane selection"
+  $t1 configure -state normal
+  $t2 configure -state normal
+  $t1 delete rows 0 [$t1 index end row]
+  $t2 delete rows 0 [$t2 index end row]
+  $t1 configure -state disabled
+  $t2 configure -state disabled
+  # Default to pane 1 again.
+  global kodActivePane
+  set kodActivePane pane1
+  set pane1command ""
+  set pane2command ""
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  top - go to the list of types of objects (top level)
+# ------------------------------------------------------------------
+body KodWin::top {} {
+  debug "going to top from level $level"
+  if {$level > 0} {
+    set level 0
+    update dummy
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  up - go to the list of objects which led to the current one
+# ------------------------------------------------------------------
+body KodWin::up {} {
+  debug "going up from level $level..."
+  if {$level > 0} {
+    incr level -1
+    debug "...to level $level"
+    update dummy
+  }
+}
+
+# ------------------------------------------------------------------
+#  DESTRUCTOR - destroy window containing widget
+# ------------------------------------------------------------------
+body KodWin::destructor {} {
+  upvar \#0 $this table_vals $this-pane1 pane1_vals $this-pane2 pane2_vals
+  global kodActivePane
+
+  catch {unset table_vals}
+  catch {unset pane1_vals}
+  catch {unset pane2_vals}
+  catch {unset kodActivePane}
+}
+
+# ------------------------------------------------------------------
+#  PUBLIC METHOD:  set_variable - called when user runs `set os'
+#                   command
+# ------------------------------------------------------------------
+body KodWin::set_variable {event} {
+
+  set value [$event get value]
+  if {[$event get variable] == "os" && $value != ""} {
+    set LevelCmd(0) "info $value "
+    set level 0
+    update dummy
+  }
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  reconfig - used when preferences change
+# ------------------------------------------------------------------
+body KodWin::reconfig {} {
+  destroy $itk_interior.bf
+  destroy $titl
+  build_win
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  busy - BusyEvent handler
+#
+#        This method should accomplish blocking
+#        - clicks in the window
+#        - change mouse pointer
+# ------------------------------------------------------------------
+body KodWin::busy {event} {
+  set Running 1
+  _disable_buttons
+  cursor watch
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  idle - idle event handler.  Run when the target is not
+#           running
+# ------------------------------------------------------------------
+body KodWin::idle {event} {
+  set Running 0
+  _restore_buttons
+  cursor {}
+}
+
+# ------------------------------------------------------------------
+#  METHOD:  cursor - set the window cursor
+#        This is a convenience method which simply sets the mouse
+#        pointer to the given glyph.
+# ------------------------------------------------------------------
+body KodWin::cursor {glyph} {
+  $_top configure -cursor $glyph
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _disable_buttons - disable all buttons
+#       Used when we are busy and can't take another event
+# ------------------------------------------------------------------
+body KodWin::_disable_buttons {} {
+  $BTop configure -state disabled
+  $BUp configure -state disabled
+  $BDisplay configure -state disabled
+  $BClear configure -state disabled
+}
+
+# ------------------------------------------------------------------
+#  PRIVATE METHOD:  _restore_buttons - restore all buttons to their
+#       previous states.
+#       Used when we are busy and can't take another event
+# ------------------------------------------------------------------
+body KodWin::_restore_buttons {} {
+  $BTop configure -state $BState(BTop)
+  $BUp configure -state $BState(BUp)
+  $BDisplay configure -state $BState(BDisplay)
+  # CLEAR is always active, except when busy
+  $BClear configure -state active
+}

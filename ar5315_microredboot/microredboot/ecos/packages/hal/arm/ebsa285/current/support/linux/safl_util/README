@@ -1,0 +1,42 @@
+
+This directory contains support for flashing Intel(R) StrongARM(R)
+Evaluation Boards (EBSA-285 and SA-IOP) over the PCI bus of a PC
+running Linux.
+
+There are two parts to this support: a loadable kernel module
+and the flash utility.
+
+The loadable kernel module is safl.o and the utility is
+sa_flash.
+
+To build:
+
+  * cd to this directory.
+  * make
+
+This builds safl.o and sa_flash. The kernel module must be
+installed and a device file created for it. Both of these
+operations require root permissions.
+
+Install the module by:
+
+  % insmod safl.o
+
+Create the device file by:
+
+  % mknod /dev/safl c 10 178
+
+
+Then, to flash an image onto the eval board:
+
+  % sa_flash image_file
+
+
+The eval boards must be configured for blank programming before
+flashing them. The image is placed in the flash boot sector.
+
+
+
+Intel is a Registered Trademark of Intel Corporation.
+StrongARM is a Registered Trademark of Advanced RISC Machines Limited.
+Other Brands and Trademarks are the property of their respective owners.

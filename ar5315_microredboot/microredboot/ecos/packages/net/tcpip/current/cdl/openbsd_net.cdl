@@ -1,0 +1,346 @@
+# ====================================================================
+#
+#      openbsd_net.cdl
+#
+#      Networking configuration data
+#
+# ====================================================================
+#####ECOSPDCOPYRIGHTBEGIN####
+#
+# Copyright (C) 2000, 2001, 2002 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Permission is granted to use, copy, modify and redistribute this
+# file.
+#
+#####ECOSPDCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-11-29
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_NET_OPENBSD_STACK {
+    display       "OpenBSD TCP/IP Stack"
+    parent        CYGPKG_NET
+    doc           ref/tcpip-openbsd.html
+    include_dir   .
+    requires      CYGPKG_IO
+    requires      CYGPKG_ISOINFRA
+    requires      CYGINT_ISO_C_TIME_TYPES
+    requires      CYGINT_ISO_STRERROR
+    requires      CYGINT_ISO_ERRNO
+    requires      CYGINT_ISO_ERRNO_CODES
+    requires      CYGINT_ISO_MALLOC
+    requires      CYGINT_ISO_STRING_BSD_FUNCS
+    description   "Basic networking support, including TCP/IP."
+
+    implements    CYGPKG_NET_STACK
+    implements    CYGPKG_NET_STACK_INET
+    # Note: separating the stack implementation from the common support leads
+    # to some rather incestious config file relationships.
+    define_proc {
+        puts $::cdl_system_header "/***** Networking stack proc output start *****/"
+        puts $::cdl_header "#include <pkgconf/net.h>"
+        puts $::cdl_system_header "#define CYGDAT_NET_STACK_CFG <pkgconf/net_openbsd_stack.h>"
+        puts $::cdl_system_header "/***** Networking stack proc output end *****/"
+    }
+
+
+    # Export our types to <sys/types.h>
+    implements    CYGINT_ISO_BSDTYPES
+    requires      { CYGBLD_ISO_BSDTYPES_HEADER == "<sys/bsdtypes.h>" }
+    
+    compile ecos/support.c \
+        ecos/synch.c \
+        ecos/timeout.c \
+        ecos/init.cxx \
+        sys/kern/uipc_mbuf.c \
+        sys/kern/uipc_domain.c \
+        sys/kern/uipc_socket.c \
+        sys/kern/uipc_socket2.c \
+        sys/kern/kern_subr.c \
+        sys/net/if.c \
+        sys/net/rtsock.c \
+        sys/net/raw_cb.c \
+        sys/net/raw_usrreq.c \
+        sys/net/route.c \
+        sys/net/radix.c \
+        sys/net/if_ethersubr.c \
+        sys/net/if_loop.c \
+        sys/netinet/igmp.c \
+        sys/netinet/raw_ip.c \
+        sys/netinet/in.c  \
+        sys/netinet/in_cksum.c \
+        sys/netinet/in_pcb.c \
+        sys/netinet/in_proto.c \
+        sys/netinet/ip_id.c \
+        sys/netinet/ip_icmp.c \
+        sys/netinet/ip_input.c \
+        sys/netinet/ip_output.c \
+        sys/netinet/if_ether.c \
+        sys/netinet/udp_usrreq.c \
+        sys/netinet/tcp_input.c \
+        sys/netinet/tcp_output.c \
+        sys/netinet/tcp_subr.c \
+        sys/netinet/tcp_debug.c \
+        sys/netinet/tcp_usrreq.c \
+        sys/netinet/tcp_timer.c
+
+    cdl_option CYGPKG_NET_API_LOCAL {
+        display "Implement the socket API locally"
+        flavor bool
+        active_if !CYGPKG_IO_FILEIO
+        default_value 1
+        implements CYGINT_ISO_SELECT
+        
+        compile sys/kern/uipc_syscalls.c \
+        sys/kern/sys_socket.c \
+        sys/kern/sys_generic.c \
+        lib/socket.c \
+        lib/close.c \
+        lib/read.c \
+        lib/write.c \
+        lib/bind.c \
+        lib/connect.c \
+        lib/accept.c \
+        lib/listen.c \
+        lib/shutdown.c \
+        lib/sendto.c \
+        lib/recvfrom.c \
+        lib/recv.c \
+        lib/getsockname.c \
+        lib/getpeername.c \
+        lib/getsockopt.c \
+        lib/setsockopt.c \
+        lib/ioctl.c \
+        lib/select.c
+
+        description "
+            This option controls support for the network-stack supplied
+            API."
+    }
+
+    cdl_option CYGPKG_NET_API_FILEIO {
+        display "Implement the socket API via Fileio package"
+        active_if CYGPKG_IO_FILEIO
+        default_value 1
+
+        compile -library=libextras.a sys/kern/sockio.c
+
+        description "
+            This option controls support for the fileio subsystem supplied API."
+    }
+
+    cdl_component CYGPKG_NET_OPENBSD_INET {
+        display       "INET support"
+        active_if     CYGPKG_NET_INET
+        flavor        bool
+        no_define
+        default_value 1
+        description   "
+            This option enables support for INET (IP) network processing."
+
+# Placeholder only - not implemented yet
+##        cdl_option CYGPKG_NET_OPENBSD_INET6 {
+##            display       "IPv6 support"
+##            active_if     CYGPKG_NET_INET6
+##            flavor        bool
+##            default_value 0
+##            description   "
+##                This option enables support for IPv6 networking."
+##        }
+    }
+
+#    cdl_option CYGPKG_NET_SYSCTL {
+#        display "Support BSD 'sysctl()' function"
+#        flavor  bool
+#        default_value 0
+#        description   "
+#            This option includes support for the 'sysctl()' functions."
+#    }
+
+    cdl_option CYGPKG_NET_NBPF {
+        display "Number of BPF filters"
+        flavor  data
+        default_value 0
+# Placeholder only - not implemented yet
+        legal_values  0
+# Placeholder only - not implemented yet
+        description   "
+            This option controls the number of active BPF filters."
+        define NBPFILTER
+    }
+
+    cdl_component CYGPKG_NET_BRIDGE {
+         display "Built-in ethernet bridge code"
+         default_value 0
+         implements CYGINT_NET_BRIDGE_HANDLER
+     no_define
+         description   "
+             This option controls whether to include the built-in code for
+             the Ethernet bridge."
+     compile sys/net/if_bridge.c \
+             sys/net/bridgestp.c
+
+         cdl_option CYGNUM_NET_BRIDGES {
+             display "Number of Ethernet bridges"
+             flavor  data
+             default_value 1
+             legal_values 1 to 999999
+         }
+
+         cdl_option CYGPKG_NET_BRIDGE_STP_CODE {
+             display "Include code for Spanning Tree Protocol"
+             default_value 0
+             description "
+                 This option controls whether to include the code for
+                 the Spanning Tree Protocol on Ethernet bridge."
+         }
+    }
+
+    cdl_interface CYGINT_NET_BRIDGE_HANDLER {
+        display "Support for ethernet bridges in the IP stack"
+        define NBRIDGE
+            description "
+              This interface controls whether calls to bridge code are made
+              from the IP stack; these are needed if the built-in bridge code
+              is used, but they can also be enabled in order to call different
+              bridge code from an external component."
+    }
+
+    cdl_option CYGPKG_NET_NGIF {
+        display "Number of GIF things"
+        flavor  data
+        default_value 0
+# Placeholder only - not implemented yet
+        legal_values  0
+# Placeholder only - not implemented yet
+        description   "
+            This option controls the number of active GIF things."
+        define NGIF
+    }
+
+    cdl_option CYGPKG_NET_NLOOP {
+        display "Number of loopback interfaces"
+        flavor  data
+        default_value 1
+        requires { (CYGPKG_NET_NLOOP > 1) ? CYGPKG_LIBC_STDIO : 1  }
+        description   "
+            This option controls the number of loopback, i.e. local, interfaces.
+            There is seldom need for this value to be anything other than one.
+            If a different value is required, then the C library STDIO package
+            is required for sprintf()."
+        define NLOOP
+    }
+
+    cdl_option CYGPKG_NET_MEM_USAGE {
+        display "Memory designated for networking buffers."
+        flavor  data
+        default_value 256*1024
+        description   "
+            This option controls the amount of memory pre-allocated
+        for buffers used by the networking code."
+    }
+
+    cdl_option CYGPKG_NET_NUM_WAKEUP_EVENTS {
+        display "Number of supported pending network events"
+        flavor  data
+        default_value 8
+        description   "
+            This option controls the number of pending network events
+        used by the networking code."
+    }
+
+    cdl_option CYGPKG_NET_THREAD_PRIORITY {
+        display "Priority level for backgound network processing."
+        flavor  data
+        default_value 7
+        description   "
+            This option allows the thread priority level used by the
+        networking stack to be adjusted by the user.  It should be set
+        high enough that sufficient CPU resources are available to
+        process network data, but may be adjusted so that application
+        threads can have precedence over network processing."
+    }
+
+    cdl_option CYGPKG_NET_FAST_THREAD_PRIORITY {
+        display "Priority level for fast network processing."
+        flavor  data
+        default_value CYGPKG_NET_THREAD_PRIORITY - 1
+        description   "
+            This option sets the thread priority level used by the fast
+        network thread.  The fast network thread runs often but briefly, to
+        service network device interrupts and network timeout events.  This
+        thread should have higher priority than the background network
+        thread.  It is reasonable to set this thread's priority higher than
+        application threads for best network throughput, or to set it lower
+        than application threads for best latency for those application
+        threads themselves, potentially at a cost to network throughput."
+    }
+
+    cdl_component CYGPKG_NET_FAST_THREAD_TICKLE_DEVS {
+        display "Fast network processing thread 'tickles' drivers"
+        default_value 1
+        description "
+            If this is enabled, the fast network thread will tickle the
+            device(s) periodically, to unblock them when the hardware has
+            become wedged due to a lost interrupt or other hardware
+            race-condition type problem.
+            This is not necessary if a networked app is running which sends
+            packets itself often - or
+            uses TCP, or any similar protocol which exchanges keep-alive
+            packets periodically and often enough.
+            Trying to send a packet passes control into the driver; this is
+            sufficient to detect and unblock jammed hardware."
+
+        cdl_option CYGNUM_NET_FAST_THREAD_TICKLE_DEVS_DELAY {
+            display "Delay in kernel clocks of tickle loop"
+            flavor data
+            default_value 50
+            description "
+                The default is 50, which will usually mean a delay between
+                tests for 'stuck' devices of 500mS, that is half a second.
+	        The overhead only applies if no network activity occurred,
+	        so it may be acceptable to make this value very small,
+                where high CPU load does not matter during network idle
+                periods, or very large if your application tries often to
+                send packets itself."
+        }
+    }
+
+    cdl_component CYGPKG_NET_OPENBSD_STACK_OPTIONS {
+        display "Networking support build options"
+        flavor  none
+        no_define
+
+        cdl_option CYGPKG_NET_OPENBSD_STACK_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS -D__INSIDE_NET" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the networking package.
+                These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_NET_OPENBSD_STACK_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the networking package. These flags are removed from
+                the set of global flags if present."
+        }
+    }
+}

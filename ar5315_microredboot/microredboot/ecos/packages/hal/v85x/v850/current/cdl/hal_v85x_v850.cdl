@@ -1,0 +1,121 @@
+# ====================================================================
+#
+#      hal_v85x_v850.cdl
+#
+#      NEC/V850 variant architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      gthomas
+# Contributors:   jlarmour
+# Date:           2000-03-09
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_V85X_V850 {
+    display       "V850 variant"
+    parent        CYGPKG_HAL_V85X
+    hardware
+    include_dir   cyg/hal
+    define_header hal_v85x_v850.h
+    description   "
+           The V850 variant HAL package provides generic support
+           for this processor architecture. It is also necessary to
+           select a specific target platform HAL package."
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_v85x.h>"
+    }
+
+    compile v850_stub.c v850_misc.c context.S hal_diag.c
+
+    implements    CYGINT_HAL_TESTS_NO_CACHES
+
+    cdl_interface CYGINT_HAL_V850_DIAG_ONCHIP_SERIAL0 {
+        display  "Defined if platform uses standard on-chip serial0"
+    }
+        
+    cdl_option CYGBLD_HAL_V850_DIAG_USE_ONCHIP_SERIAL0 {
+        display    "Build diag driver for on-chip V850 serial 0"
+        active_if  { CYGINT_HAL_V850_DIAG_ONCHIP_SERIAL0 != 0 }
+        compile hal_diag.c
+    }
+
+    cdl_interface CYGINT_HAL_V850_VARIANT_SA1 {
+        display  "Defined if CPU is a V850/SA1"
+    }
+
+    cdl_interface CYGINT_HAL_V850_VARIANT_SB1 {
+        display  "Defined if CPU is a V850/SB1"
+    }
+
+    requires 1 == CYGINT_HAL_V850_VARIANT_SA1 ^ 1 == CYGINT_HAL_V850_VARIANT_SB1
+    # by virtue of the above requires:
+    implements CYGINT_HAL_V85X_VARIANT
+
+    cdl_option CYGDBG_HAL_V850_ICE {
+        display   "Support debugging via ICE"
+        default_value { (0 != CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT) && \
+                        ("RAM" != CYG_HAL_STARTUP) }
+        requires   CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+        implements CYGINT_HAL_V85X_ICE_DEBUG
+        compile    -library=libextras.a v850_ice.cxx
+        description \
+               "This option enables additional support for debugging via
+                ICE, chiefly in the form of an interface to gdbserv which
+                allows it to provide eCos thread data in GDB."
+    }
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/v85x_v850.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -DEXTRAS=1 -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/v85x_v850.ld" }
+    }
+
+}

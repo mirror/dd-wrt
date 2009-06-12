@@ -1,0 +1,306 @@
+# ====================================================================
+#
+#      hal_arm.cdl
+#
+#      ARM architectural HAL package configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      bartv
+# Original data:  gthomas
+# Contributors:
+# Date:           1999-06-13
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+cdl_package CYGPKG_HAL_ARM {
+    display       "ARM architecture"
+    parent        CYGPKG_HAL
+    hardware
+    include_dir   cyg/hal
+    define_header hal_arm.h
+    description   "
+        The ARM architecture HAL package provides generic
+        support for this processor architecture. It is also
+        necessary to select a specific target platform HAL
+        package."
+
+    compile       hal_misc.c context.S arm_stub.c hal_syscall.c
+
+    # The "-o file" is a workaround for CR100958 - without it the
+    # output file would end up in the source directory under CygWin.
+    # n.b. grep does not behave itself under win32
+    make -priority 1 {
+        arm.inc : <PACKAGE>/src/hal_mk_defs.c
+        $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,arm.tmp -o hal_mk_defs.tmp -S $<
+        fgrep .equ hal_mk_defs.tmp | sed s/#// > $@
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 arm.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm arm.tmp hal_mk_defs.tmp
+    }
+
+    make {
+        <PREFIX>/lib/vectors.o : <PACKAGE>/src/vectors.S
+        $(CC) -Wp,-MD,vectors.tmp $(INCLUDE_PATH) $(CFLAGS) -c -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 vectors.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm vectors.tmp
+    }
+
+    make {
+        <PREFIX>/lib/target.ld: <PACKAGE>/src/arm.ld
+        $(CC) -E -P -Wp,-MD,target.tmp -xc $(INCLUDE_PATH) $(CFLAGS) -o $@ $<
+        @echo $@ ": \\" > $(notdir $@).deps
+        @tail -n +2 target.tmp >> $(notdir $@).deps
+        @echo >> $(notdir $@).deps
+        @rm target.tmp
+    }
+
+    cdl_interface CYGINT_HAL_ARM_THUMB_ARCH {
+        display "The CPU architecture supports THUMB mode"
+    }
+
+    cdl_option CYGHWR_THUMB {
+        display          "Enable Thumb instruction set"
+        active_if        { CYGINT_HAL_ARM_THUMB_ARCH != 0 }
+        default_value    0
+        description      "
+            Enable use of the Thumb instruction set."
+    }
+
+    # Note that when building a ROM monitor we include Thumb
+    # interworking in order to support Thumb applications running
+    # under a ARM ROM monitor.
+    cdl_option CYGBLD_ARM_ENABLE_THUMB_INTERWORK {
+        display       "Enable Thumb interworking compiler option"
+        active_if        { CYGINT_HAL_ARM_THUMB_ARCH != 0 }
+        default_value { (CYGHWR_THUMB || CYGSEM_HAL_ROM_MONITOR) }
+        description "
+            This option controls the use of -mthumb-interwork in the
+            compiler flags. It defaults enabled in Thumb or ROM monitor
+            configurations, but can be overridden for reduced memory
+            footprint where interworking is not a requirement."
+    }
+
+    cdl_interface CYGINT_HAL_ARM_BIGENDIAN {
+        display "The platform and architecture supports Big Endian operation"
+    }
+
+    cdl_option CYGHWR_HAL_ARM_BIGENDIAN {
+        display          "Use big-endian mode"
+        active_if        { CYGINT_HAL_ARM_BIGENDIAN != 0 }
+        default_value    0
+        description      "
+            Use the CPU in big-endian mode."
+    }
+
+    cdl_interface CYGINT_HAL_ARM_ARCH_ARM7 {
+        display "The platform uses a processor with an ARM7 core"
+    }
+
+    cdl_interface CYGINT_HAL_ARM_ARCH_ARM9 {
+        display "The platform uses a processor with an ARM9 core"
+    }
+
+    cdl_interface CYGINT_HAL_ARM_ARCH_STRONGARM {
+        display "The platform uses a processor with a StrongARM core"
+    }
+
+    cdl_interface CYGINT_HAL_ARM_ARCH_XSCALE {
+        display "The platform uses a processor with a XScale core"
+    }
+
+    cdl_option CYGHWR_HAL_ARM_CPU_FAMILY {
+        display       "ARM CPU family"
+        flavor        data
+        legal_values  { (CYGINT_HAL_ARM_ARCH_ARM7 != 0) ? "ARM7" : ""
+                        (CYGINT_HAL_ARM_ARCH_ARM9 != 0) ? "ARM9" : ""
+                        (CYGINT_HAL_ARM_ARCH_STRONGARM != 0) ? "StrongARM" : ""
+                        (CYGINT_HAL_ARM_ARCH_XSCALE != 0) ? "XScale" : ""
+                        "" }
+        default_value  { (CYGINT_HAL_ARM_ARCH_ARM7 != 0) ? "ARM7" : 
+                         (CYGINT_HAL_ARM_ARCH_ARM9 != 0) ? "ARM9" : 
+                         (CYGINT_HAL_ARM_ARCH_STRONGARM != 0) ? "StrongARM" : 
+                         (CYGINT_HAL_ARM_ARCH_XSCALE != 0) ? "XScale" :
+                         "unknown" }
+        no_define
+        description   "
+             It is possible to optimize code for different
+             ARM CPU families. This option selects which CPU to
+             optimize for on boards that support multiple CPU types."
+    }
+
+    cdl_option CYGHWR_HAL_ARM_DUMP_EXCEPTIONS {
+        display          "Provide diagnostic dump for exceptions"
+        requires         !CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        default_value    0
+        description      "
+            Print messages about hardware exceptions, including
+            raw exception frame dump and register contents."
+    }
+
+    cdl_option CYGIMP_HAL_PROCESS_ALL_EXCEPTIONS {
+        display          "Process all exceptions with the eCos application"
+        default_value    0
+        description      "
+           Normal RAM-based programs which do not include GDB stubs 
+           defer processing of the illegal instruction exception to GDB.
+           Setting this options allows the program to explicitly handle
+           the illegal instruction exception itself.  Note: this will
+           prevent the use of GDB to debug the application as breakpoints
+           will no longer work."
+    }
+
+    cdl_option CYGHWR_HAL_ARM_ICE_THREAD_SUPPORT {
+        display          "Support GDB thread operations via ICE/Multi-ICE"
+        default_value    0
+        requires         CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS
+        requires         CYGDBG_HAL_DEBUG_GDB_THREAD_SUPPORT
+        requires         CYGDBG_KERNEL_DEBUG_GDB_THREAD_SUPPORT
+        description      "
+           Allow GDB to get thread information via the ICE/Multi-ICE
+           connection."
+    }
+
+    cdl_option CYGOPT_HAL_ARM_SYSCALL_GPROF_SUPPORT {
+	display		"Support for 'gprof' callbacks"
+	calculated	1
+	no_define
+	active_if	CYGSEM_REDBOOT_BSP_SYSCALLS
+	active_if	{ CYGDBG_HAL_DEBUG_GDB_CTRLC_SUPPORT || CYGDBG_HAL_DEBUG_GDB_BREAK_SUPPORT }
+	implements	CYGINT_REDBOOT_BSP_SYSCALLS_GPROF_SUPPORT
+	description	"
+	    The ARM HAL provides the macro for 'gprof' callbacks from RedBoot
+	    to acquire the interrupt-context PC and SP, when this option is
+            active."
+    }
+
+    cdl_option CYGOPT_HAL_ARM_WITH_USER_MODE {
+        display          "Accept exceptions and irq's occurring in user mode"
+        default_value    0
+        description      "
+            For standalone Redboot based programs running in user mode."
+    }
+
+    cdl_option CYGOPT_HAL_ARM_PRESERVE_SVC_SPSR {
+        display          "Preserve svc spsr before returning to svc mode"
+        default_value    0
+        description      "
+            This option secures exception and breakpoint processing
+            triggered during execution of application specific SWI
+            handlers."
+    }
+
+    cdl_component CYGPKG_REDBOOT_ARM_OPTIONS {
+        display       "Redboot for ARM options"
+        flavor        none
+        no_define
+        parent        CYGPKG_REDBOOT
+        active_if     CYGPKG_REDBOOT
+        description   "
+            This option lists the target's requirements for a valid Redboot
+            configuration."
+
+        cdl_component CYGPKG_REDBOOT_ARM_LINUX_EXEC {
+            display        "Provide the exec command in RedBoot"
+            flavor         none
+            parent         CYGPKG_REDBOOT_ARM_OPTIONS
+            active_if      CYGBLD_BUILD_REDBOOT_WITH_EXEC
+            description    "
+                This option contains requirements for booting linux
+                from RedBoot. The component is enabled/disabled from
+                RedBoots CDL."
+            compile -library=libextras.a redboot_linux_exec.c
+
+            cdl_option CYGHWR_REDBOOT_LINUX_EXEC_X_SWITCH {
+                display "Enable -x switch for exec command."
+                flavor bool
+                default_value 0
+                description "
+                    This option allows bi-endian platforms to launch kernels
+                    built for an endianess different than the RedBoot endianess"
+            }
+ 
+            cdl_option CYGHWR_REDBOOT_ARM_LINUX_EXEC_ADDRESS {
+                display       "Physical base address of linux kernel"
+                flavor        data
+                default_value CYGHWR_REDBOOT_ARM_LINUX_EXEC_ADDRESS_DEFAULT
+                description   "
+                    This is the physical address of the base of the 
+                    Linux kernel image."
+            }
+
+            cdl_option CYGHWR_REDBOOT_ARM_LINUX_EXEC_ADDRESS_DEFAULT {
+                display       "Default physical base address of linux kernel"
+                flavor        data
+                default_value 0x00008000
+                no_define
+                description   "
+                    This is the physical address of the base of the 
+                    Linux kernel image. This option gets set by the 
+                    platform CDL."
+            }
+
+            cdl_option CYGHWR_REDBOOT_ARM_LINUX_TAGS_ADDRESS {
+                display       "Base address of linux kernel parameter tags"
+                flavor        data
+                default_value 0x100
+                description   "
+                   This is the base address of the area of memory used to
+                   pass parameters to the Linux kernel. This should be chosen
+                   to avoid overlap with the kernel and any ramdisk image."
+            }
+        }
+
+    }
+
+    cdl_option CYGBLD_LINKER_SCRIPT {
+        display "Linker script"
+        flavor data
+	no_define
+        calculated  { "src/arm.ld" }
+    }
+
+    cdl_interface CYGINT_HAL_ARM_MEM_REAL_REGION_TOP {
+        display  "Implementations of hal_arm_mem_real_region_top()"
+    }
+}
+
+# EOF hal_arm.cdl

@@ -1,0 +1,208 @@
+2003-05-23  H.J. Lu <hjl@gnu.org>
+
+	* README: Deleted.
+	* bfd-mips-got.patch: Likewise.
+	* bfd-mips-visibility.patch: Likewise.
+	* binutils-mips-isa.patch: Likewise.
+	* binutils-mips64.patch: Likewise.
+	* build.patch: Likewise.
+	* gas-mips-gprel.patch: Likewise.
+	* gas-mips-kernel.patch: Likewise.
+	* gas-mips-relax.patch: Likewise.
+	* gas-mips.patch: Likewise.
+
+2003-05-06  H.J. Lu <hjl@gnu.org>
+
+	* README: Don't apply gas-mips-gprel.patch.
+
+2003-02-28  H.J. Lu <hjl@gnu.org>
+
+	* README: Don't apply bfd-mips-got.patch.
+
+2003-01-02  H.J. Lu <hjl@gnu.org>
+
+	* README: Don't apply binutils-mips-isa.patch.
+
+2002-12-06  H.J. Lu <hjl@gnu.org>
+
+	* gas-mips-gprel.patch: New. A hack for GPREL16.
+
+	* README: Apply gas-mips-gprel.patch.
+
+2002-12-04  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: Change boolean to bfd_boolean.
+
+2002-11-20  H.J. Lu <hjl@gnu.org>
+
+	* bfd-mips-got.patch: New. A GOT hack for MIPS.
+
+	* README: Apply bfd-mips-got.patch.
+
+2002-10-23  H.J. Lu <hjl@gnu.org>
+
+	* README: Don't apply gas-mips-relax.patch.
+
+2002-10-13  H.J. Lu <hjl@gnu.org>
+
+	* gas-mips-relax.patch: New.
+
+	* README: Apply gas-mips-relax.patch.
+
+2002-09-30  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: Updated.
+
+2002-08-02  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: Allow -mipsN to override -march if
+	they are compatible.
+
+2002-08-01  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: Updated.
+
+2002-07-26  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: Updated.
+
+2002-06-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: Updated.
+
+2002-04-22  H.J. Lu <hjl@gnu.org>
+
+	* bfd-mips-visibility.patch: New. Fix MIPS visibility.
+
+2002-04-04  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: Updated.
+
+2002-02-07  H.J. Lu <hjl@gnu.org>
+
+	* build.patch: New. Support canadian cross build.
+
+2001-11-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-isa.patch: New. Fix MIPS ISA handling.
+
+	* README: Apply binutils-mips-isa.patch.
+
+2001-10-15  H.J. Lu <hjl@gnu.org>
+
+	* README: No need to apply gas-mips-kernel.patch.
+
+2001-10-05  H.J. Lu <hjl@gnu.org>
+
+	* README: Remove binutils-mips64.patch and gas-mips.patch.
+	Apply gas-mips-kernel.patch.
+
+2001-10-04  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: Updated.
+
+2001-09-25  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: Updated.
+
+	* README: Remove gas-mips-kernel.patch.
+	Apply binutils-mips64.patch and gas-mips.patch.
+
+2001-09-19  H.J. Lu <hjl@gnu.org>
+
+	* gas-mips-kernel.patch: New.
+
+	* README: Remove binutils-mips64.patch and gas-mips.patch.
+	Apply gas-mips-kernel.patch.
+
+2001-09-07  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: Updated.
+
+2001-08-30  H.J. Lu <hjl@gnu.org>
+
+	* README: Remove binutils-mips-reloc.patch.
+
+	* binutils-mips64.patch: Updated.
+
+2001-08-27  H.J. Lu <hjl@gnu.org>
+
+	* gas-mips-dwarf2.patch: Removed.
+
+2001-08-27  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-reloc.patch: Removed.
+
+	* binutils-mips64.patch: Updated.
+
+2001-08-21  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: Updated.
+
+2001-08-10  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: Updated.
+
+2001-08-04  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: Updated.
+
+2001-08-02  H.J. Lu <hjl@gnu.org>
+
+	* README: Don't apply gas-mips-dwarf2.patch.
+
+2001-08-02  H.J. Lu <hjl@gnu.org>
+
+	* gas-mips-dwarf2.patch: Remove the dwarf2_directive_file
+	change. It is incompatible with ECOFF.
+
+2001-07-26  H.J. Lu <hjl@gnu.org>
+
+	* gas-mips-dwarf2.patch: New. A dwarf2 patch.
+
+	* README: Apply gas-mips-dwarf2.patch.
+
+2001-07-06  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: Regenerated.
+	* gas-mips.patch: Likewise.
+
+2001-07-04  H.J. Lu <hjl@gnu.org>
+
+	* README: Don't apply binutils-mips-reloc.patch. The bug seems
+	fixed now.
+
+2001-07-04  H.J. Lu <hjl@gnu.org>
+
+	* binutils-march.patch: Removed. Not needed anymore.
+
+	* README: Remove binutils-march.patch.
+
+2001-06-19  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-rodata.patch: Removed. It is not needed anymore.
+
+	* README: New.
+
+2001-06-16  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-rodata.patch: Updated.
+
+2001-06-16  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips-rodata.patch: Support relocations to read-only
+	sections in DSOs.
+
+2001-06-11  H.J. Lu <hjl@gnu.org>
+
+	* binutils-mips64.patch: New. A patch for 64bit mips taken from
+
+	ftp://ftp.ds2.pg.gda.pl/pub/macro/SRPMS/binutils-2.10.91-1.src.rpm
+
+	* gas-mips.patch: New. A patch for binutils-mips64.patch.
+
+	* binutils-march.patch: New. A patch to support -march/-mcpu.
+
+
+	* binutils-mips-reloc.patch: New. A patch to fix the mips
+	assembler relocation.

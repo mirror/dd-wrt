@@ -1,0 +1,408 @@
+<!-- Copyright (C) 2001 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of substantively modified versions of this         -->
+<!-- document is prohibited without the explicit permission of the   -->
+<!-- copyright holder.                                               -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Support for Policy Modules</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="eCos Power Management Support"
+HREF="services-power.html"><LINK
+REL="PREVIOUS"
+TITLE="Changing Power Modes"
+HREF="power-change.html"><LINK
+REL="NEXT"
+TITLE="Attached and Detached Controllers"
+HREF="power-attached.html"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>eCos Power Management Support</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="power-change.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="power-attached.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><H1
+><A
+NAME="POWER-POLICY"
+>Support for Policy Modules</A
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN255"
+></A
+><H2
+>Name</H2
+>Support for Policy Modules&nbsp;--&nbsp;closer integration with higher-level code</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN258"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN259"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &lt;cyg/power/power.h&gt;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    void power_set_policy_callback
+  </CODE
+>(    void (*)(PowerController*, PowerMode, PowerMode, PowerMode, PowerMode) callback
+  );</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    void (*)(PowerController*, PowerMode, PowerMode, PowerMode, PowerMode) power_get_policy_callback
+  </CODE
+>(void);</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    CYG_ADDRWORD power_get_controller_policy_data
+  </CODE
+>(    PowerController* controller
+  );</CODE
+></P
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>    void power_set_controller_policy_data
+  </CODE
+>(    PowerController* controller
+  ,     CYG_ADDRWORD data
+  );</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-POLICY-CALLBACK"
+></A
+><H2
+>Policy Callbacks</H2
+><P
+>The use of a separate thread to perform power mode changes in typical
+configurations can cause problems for some policy modules.
+Specifically, the policy module can request a mode change for the
+system as a whole or for an individual controller, but it does not
+know when the power management thread actually gets scheduled to run
+again and carry out the request. Although it would be possible for the
+policy module to perform some sort of polling, in general that is
+undesirable.</P
+><P
+>To avoid such problems the policy module can install a callback
+function using <TT
+CLASS="FUNCTION"
+>power_set_policy_callback</TT
+>. The
+current callback function can be retrieved using
+<TT
+CLASS="FUNCTION"
+>power_get_policy_callback</TT
+>. If a callback function
+has been installed then it will be called by the power management
+package whenever a power controller has been invoked to perform a mode
+change. The callback will be called in the context of the power
+management thread, so usually it will have to make use of thread
+synchronisation primitives to interact with the main policy module. It
+is passed five arguments:</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>The power controller that has just been invoked to perform a mode
+change. </P
+></LI
+><LI
+><P
+>The mode this controller was running at before the invocation.</P
+></LI
+><LI
+><P
+>The current mode this controller is now running at.</P
+></LI
+><LI
+><P
+>The desired mode before the power controller was invoked. Usually this
+will be the same as the current mode, unless the controller has
+decided for some reason that this was inappropriate.</P
+></LI
+><LI
+><P
+>The current desired mode. This will differ from the previous argument
+only if there has was another call to
+<TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> or
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> while the power
+controller was being invoked, probably by the power controller itself.</P
+></LI
+></OL
+><P
+>A simple example of a policy callback function would be:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static void
+power_callback(
+    PowerController* controller,
+    PowerMode old_mode,
+    PowerMode new_mode,
+    PowerMode old_desired_mode,
+    powerMode new_desired_mode)
+{
+    printf("Power mode change: %s, %s -&#62; %d\n",
+        power_get_controller_id(controller),
+        mode_to_string(old_mode),
+        mode_to_string(new_mode));
+
+    CYG_UNUSED_PARAM(PowerMode, old_desired_mode);
+    CYG_UNUSED_PARAM(PowerMode, new_desired_mode);
+}
+
+int
+main(int argc, char** argv)
+{
+    &#8230;
+    power_set_policy_callback(&amp;power_callback);
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>If <TT
+CLASS="FUNCTION"
+>power_set_controller_mode_now</TT
+> is used to
+manipulate an individual controller the policy callback will not be
+invoked. This function may get called from any context including DSRs,
+and even if there is already a call to the policy callback happening
+in some other context, so invoking the callback would usually be
+unsafe.</P
+><P
+>If the power management package has not been configured to use a
+separate thread then <TT
+CLASS="FUNCTION"
+>power_set_mode</TT
+> and
+<TT
+CLASS="FUNCTION"
+>power_set_controller_mode</TT
+> will manipulate the
+power controllers immediately and invoke the policy callback
+afterwards. Therefore the policy callback will typically run in the
+same context as the main policy module.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="POWER-POLICY-DATA"
+></A
+><H2
+>Policy-specific Controller Data</H2
+><P
+>Some policy modules may want to associate some additional data with
+each power controller. This could be achieved by for example
+maintaining a hash table or similar data structure, but for
+convenience the power management package allows higher-level code,
+typically the policy module, to store and retrieve one word of data in
+each power controller. The function
+<TT
+CLASS="FUNCTION"
+>power_set_controller_policy_data</TT
+> takes two
+arguments, a pointer to a power controller and a
+<SPAN
+CLASS="TYPE"
+>CYG_ADDRWORD</SPAN
+> of data: by appropriate use of casts this
+word could be an integer or a pointer to some data structure. The
+matching function
+<TT
+CLASS="FUNCTION"
+>power_get_controller_policy_data</TT
+> retrieves the
+word previously installed, and can be cast back to an integer or
+pointer. The default value for the policy data is 0.</P
+><P
+>For example the following code fragment stores a simple index value in
+each power controller. This could then be retrieved by the policy
+callback.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    unsigned int     i = 0;
+    PowerController* controller;
+
+    for (controller = &amp;(__POWER__[0]);
+         controller != &amp;(__POWER_END__);
+         controller++) {
+        power_set_controller_policy_data(controller, (CYG_ADDRWORD) i++);
+    }</PRE
+></TD
+></TR
+></TABLE
+><P
+>Not all policy modules will require per-controller data. The
+configuration option
+<TT
+CLASS="VARNAME"
+>CYGIMP_POWER_PROVIDE_POLICY_DATA</TT
+> can be used to
+control this functionality, thus avoiding wasting a small amount of
+memory inside each power controller structure.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="power-change.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="services-power.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="power-attached.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Changing Power Modes</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Attached and Detached Controllers</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

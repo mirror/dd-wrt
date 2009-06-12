@@ -1,0 +1,375 @@
+2004-04-22  Jani Monoses <jani@iv.ro>
+
+	 * cdl/hal_mips_upd985xx.cdl :
+	 Invoke tail with stricter syntax that works in latest coreutils. 
+
+2003-04-10  Nick Garnett  <nickg@balti.calivar.com>
+
+	* src/hal_mips_upd985xx.ld: 
+	Added libsupc++.a to GROUP() directive for GCC versions later than
+	3.0.
+
+2002-04-02  Hugo Tyson  <hmt@redhat.com>
+2002-04-02  Anssi Pulkkinen <anssi.pulkkinen@ascom.com>
+
+	* src/var_misc.c (cyg_hal_interrupt_acknowledge): Remove the read
+	of the read-clear ISR register - it loses other pending interrupt
+	sources.  Thanks to ASCOM for spotting this.  It should have been
+	removed when the soft-copy and arbitration ISR were added, because
+	those changes mean the hardware register would already be cleared
+	down.
+
+2002-01-22  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl: CYGIMP_HAL_COMMON_INTERRUPTS_CHAIN
+	must not be enabled because the way the arbitration ISR is
+	attached does not work with chained interrupts.
+
+2001-10-30  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl (CYGHWR_HAL_MIPS_UPD985XX_DIAG_BAUD): 
+	This is the same as CYGNUM_HAL_VIRTUAL_VECTOR_CONSOLE_CHANNEL_BAUD
+	which RedBoot uses, so define it.
+	And also reimplement CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT
+	as this is what makes it work.
+
+2001-10-30  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl: Platform does *not* implement VV baud
+	operations, in fact the implements
+	CYGINT_HAL_VIRTUAL_VECTOR_COMM_BAUD_SUPPORT prevents it building.
+
+2001-10-09  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl (..._MIPS_UPD985XX_HARDWARE_BUGS...):
+	New CDL options to control workarounds for System Controller bugs
+	S1 and S2.  Shorthand for S1 requires the fixes elsewhere.  That
+	for S2 selects alternate versions of the interrupt code.
+
+	* include/var_intr.h (HAL_INTERRUPT_ACKNOWLEDGE,...): Alternative
+	versions which call the new routines in src/var_misc.c to deal
+	with System Controller interrupts.
+
+	* src/var_misc.c (cyg_hal_interrupt_unmask,...): New routines to
+	manage the System Controller interrupts by software rather than
+	S_ISR/S_IMR.  We never mask an interrupt once unmasked, but let
+	the interrupt happen, fielding it silently.  When/if it becomes
+	unmasked, then we call the ISR &c.
+
+2001-08-17  Jonathan Larmour  <jlarmour@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl: Platform implements VV baud operations.
+
+2001-08-08  Hugo Tyson  <hmt@redhat.com>
+
+	* include/variant.inc (hal_intc_decode): Do not decode the S_ISR
+	interrupts after all - they must be handled by arbitration.  So
+	any S_ISR interrupt is reported as CYGNUM_HAL_INTERRUPT_SYSCTL -
+	Who are they?  They are *all* number 6.
+
+	* src/var_misc.c (_arbitration_isr): New routine to arbitrate
+	between - and call all of - the interrupt sources that hang off
+	the system controller S_ISR register, because the S_ISR register
+	is read-clear, and the interrupt sources are edge-triggered so
+	they do not re-assert themselves - so we must address multiple
+	sources per actual interrupt.
+	(hal_variant_init): Install _arbitration_isr() on the SYSCTL
+	interrupt at startup.
+
+	* include/var_intr.h: Commented the change in interrupt usage -
+	the SYSCTL is occupied from time zero.
+
+2001-08-01  Hugo Tyson  <hmt@redhat.com>
+
+	* src/hal_mips_upd985xx.ld (hal_interrupt_sr_mask_shadow_base):
+	This must be placed statically so it is shared with RedBoot.  And
+	it must be an array so that we can address it from afar.
+
+	* include/var_intr.h (HAL_DISABLE_INTERRUPTS): Implement this
+	macro and its fellows as well as the individual MASK/UNMASK
+	routines; these work together to keep the SR IM bits "true" to
+	what is intended by means of a shadow variable.  Otherwise a race
+	condition in the vanilla HAL_DISABLE_INTERRUPTS() can discard an
+	interrupt mask change made by an ISR.
+	(hal_interrupt_sr_mask_shadow): declare this and define it to
+	entry zero of hal_interrupt_sr_mask_shadow_base[].
+	
+	* src/var_misc.c (hal_interrupt_sr_mask_shadow): initialize this
+	new variable.
+
+	* cdl/hal_mips_upd985xx.cdl (CYGPKG_HAL_MIPS_UPD985XX): set
+	CYGINT_HAL_MIPS_INTERRUPT_RETURN_KEEP_SR_IM because we use bits
+	within the SR for interrupt control.
+
+2001-07-25  Hugo Tyson  <hmt@redhat.com>
+
+	* include/var_intr.h (CYGNUM_HAL_INTERRUPT_SOFT_ZERO)
+	(CYGNUM_HAL_INTERRUPT_SOFT_ONE): New interrupt numbers for
+	software interrupts 0 and 1.  Also mask, unmask, and ack them
+	correctly; ack clears the R/W bit in the cause regsiter.
+
+	* include/variant.inc (hal_intc_decode) : Decode Software
+	interrupts into numbers 0 and 1 - all else are moved up a bit.
+
+2001-07-20  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl: Demand that CYGPKG_LIBM includes
+	-fno-strict-aliasing in its CFLAGS_ADD to workaround a tools issue
+	with access to double via pointer-to-union casts.
+
+2001-07-18  Hugo Tyson  <hmt@redhat.com>
+
+	* include/var_arch.h (UARTLCR_8N1): Add more divers definitions of
+	UART control bits for implementing all the controls in the serial
+	device that nobody ever uses.
+
+2001-07-17  Hugo Tyson  <hmt@redhat.com>
+
+	* include/variant.inc: If RAM startup, don't blow away the
+	contents of cache - it might contain things that matter such as
+	debug connection state.
+
+2001-07-09  Hugo Tyson  <hmt@redhat.com>
+
+	* include/var_arch.h (SDMDR_INIT): Change one of the numbers to
+	match what's in the hardware when set up by customer code.
+
+	* include/variant.inc: Remove dependency on temporary development
+	config point CYGBLD_HAL_STARTUP_ROM_POST_OMIT_INITIALIZATION - the
+	initialization now works OK.  So hal_memc_setup_table gets called.
+
+	* src/variant.S (hal_memc_setup_table): ROM startup now works, so
+	this code now gets called.
+
+2001-07-06  Hugo Tyson  <hmt@redhat.com>
+
+	* src/hal_diag.c (hal_uart_init): Ensure that we use the internal
+	baud clock because there is no external one.
+
+	* include/var_arch.h (UARTCLOCK): Clock is now 50MHz for "new"
+	boards, not 18.xMHz any more.
+
+2001-07-03  Hugo Tyson  <hmt@redhat.com>
+
+	* include/var_intr.h (HAL_INTERRUPT_[UN]MASK): Better manipulate
+	these with interrupts disabled for atomicity.
+
+2001-07-02  Bart Veer  <bartv@redhat.com>
+
+	* src/var_misc.c (hal_variant_init):
+	Move the GPIO0 manipulating (flash programming voltagE)
+	to the platform-init.
+
+2001-06-27  Hugo Tyson  <hmt@redhat.com>
+
+	This all fixes the serial interrupt problem of 2001-06-26.
+	
+	* src/var_misc.c (hal_variant_init): Initialize the system
+	controller's ISR/IMR registers to mask and ack all external
+	interrupts and then enable the underlying interrupt source that
+	controls them all.
+	Also provide hal_interrupt_handlers[CYGNUM_HAL_ISR_COUNT]; &c for
+	use by system in vectors.S, and initialize them.
+
+	* src/hal_diag.c (cyg_hal_plf_serial_isr): Do not paranoically
+	acknowledge spurious interrupts.  No need.
+
+	* include/variant.inc: Add complete redefinitions of interrupt
+	decoding to handle extended interrupt sources from the system
+	controller's ISR/IMR registers.
+
+	* include/var_intr.h: Add complete redefinitions of interrupt
+	management to handle extended interrupt sources from the system
+	controller's ISR/IMR registers.
+
+	* include/var_arch.h (S_ISR_ADR): Add ISR and IMR register
+	addresses for use by assembly files.
+
+	* include/plf_stub.h: Provide proto for cyg_hal_plf_comms_init()
+	to reduce warning.
+
+2001-06-26  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl: Remove src/var_stub.c - functionality
+	is duplicated in the common HAL.
+
+	* include/plf_stub.h: Remove a load of unneccessary cruft which is
+	duplicated in the common HAL.
+
+	* src/var_stub.c: Removed.
+
+2001-06-26  Hugo Tyson  <hmt@redhat.com>
+
+	* src/var_misc.c (hal_variant_init): Unmask the UART interrupt in
+	the system controller - this is before the interrupt system in the
+	MIPS core which is used for dynamic control.
+
+	Also removed a load of duplicate hal_ctrlc_isr/HAL_CTRLC_ISR stuff
+	that fought with the common HAL,
+
+	Asynchronous CTRL-C still does not work.  The interrupt asserts
+	forever.  This is similar to System Controller known bug S2
+	"Interrupt Mask Restriction" from the NEC docs.  Hence this code
+	in this file:	
+	// *******************FIXME
+	// This causes an interrupt loop from the UART as soon as you do IO.
+	//    *S_IMR |= S_ISR_UARTIS; // unmask UART
+	// *******************NB we mask it here so that the status is in control
+	// *******************   of the application code whatever RedBoot does.
+	    *S_IMR &=~S_ISR_UARTIS;
+	// *******************FIXME
+
+	* src/hal_diag.c (cyg_hal_plf_serial_isr): This now contains all
+	it should need to.
+	(cyg_hal_plf_serial_control): Ditto, all cases now supported.
+
+	CYGHWR_HAL_GDB_PORT_VECTOR use now unconditional, other tidyups.
+	Bugfix to interrupt ack in nonblocking read, it was after the
+	return.
+	
+	* cdl/hal_mips_upd985xx.cdl: We want to support ^Cm, so do not
+	implement CYGINT_HAL_DEBUG_GDB_CTRLC_UNSUPPORTED.
+
+	* include/var_intr.h (HAL_READ_INTR_REGS): New macro, handy for
+	debugging MIPS.  Also remove duplicate hal_ctrlc_isr/HAL_CTRLC_ISR
+	stuff that fought with the common HAL, just leaving
+	CYGHWR_HAL_GDB_PORT_VECTOR defined.
+
+	* src/var_stub.c (hal_var_stub_init): Use symbols for entries in
+	vector tables and the like.
+
+2001-06-22  Hugo Tyson  <hmt@redhat.com>
+
+	* include/variant.inc: Use the proper target-agnostic config
+	include CYGBLD_HAL_PLATFORM_H, and do not initialize the memory
+	controller if you're told not to by the platform configuration
+	CYGBLD_HAL_STARTUP_ROM_POST_OMIT_INITIALIZATION.
+
+2001-06-22  Hugo Tyson  <hmt@redhat.com>
+
+	* src/var_misc.c (hal_variant_init): Enable write-access to the
+	flash area, and power-up the programming voltage via GPIO0, so
+	that flash drivers can work.  Also enable the IBUS Arbiter so that
+	internal peripherals can work.
+
+	* src/variant.S (hal_memc_setup): Remove hal_memc_setup for RAM
+	start; the work is done elsewhere.
+
+	* include/variant.inc (hal_memc_init): Don't call hal_memc_setup
+	for RAM start.
+	
+2001-06-07  Hugo Tyson  <hmt@redhat.com>
+
+	* include/variant.inc (hal_memc_init): Always do the memc call
+	even in RAM start, to enable...
+
+	* src/variant.S (hal_memc_setup): Enable write-access to the flash
+	area so that flash drivers can work.
+
+2001-06-06  Hugo Tyson  <hmt@redhat.com>
+
+	* include/var_cache.h (HAL_DCACHE_ENABLE_DEFINED): Add enough NOPs
+	after diddling the cache-enability that it works.  Also give
+	correct (apparantly!) figures for cache size despite the
+	documentation arguing with itself.
+
+	* src/var_misc.c (hal_variant_init): Enable the caches during
+	startup.
+
+	* include/var_arch.h: Add a very few definitions for use by
+	assembler code here, and tidy up a little so that it can be used
+	from .S files.  Specifically this is to let us init the RAM and
+	ROM access controllers from assembly.
+
+	* src/variant.S: 
+	* include/variant.inc: Cut out some stuff we don't need that I had
+	blindly copied from another platform.  Specifically we don't need
+	to set up the TLB *at all* because all its space are belong, um,
+	all memory, IO and devices are accessible through kseg1 and kseg0.
+	Added initial (untested) cut at setup of RAM/ROM controllers.
+
+2001-06-06  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl: Add implements statement for
+	CYGINT_HAL_DEBUG_GDB_STUBS_BREAK, moved from the platform HAL.
+
+2001-06-05  Hugo Tyson  <hmt@redhat.com>
+
+	* include/variant.inc: It all works rather better now...  fiddling
+	with vector setup and cache initialization.
+
+2001-06-05  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl: to make GDB stubs work, implements
+	CYGINT_HAL_MIPS_STUB_REPRESENT_32BIT_AS_64BIT.  Commented out
+	implements CYGINT_HAL_VIRTUAL_VECTOR_SUPPORT_NOT_GUARANTEED.
+
+	* include/hal_diag.h: Now it works, properly be dependent on
+	CYGSEM_HAL_VIRTUAL_VECTOR_DIAG.
+
+	* include/plf_stub.h: Choose the right init routine dependent on
+	CYGSEM_HAL_VIRTUAL_VECTOR_DIAG.
+
+	* src/hal_diag.c (hal_uart_init): Remove diagnostics and delays
+	from initialization.
+
+	* src/var_stub.c (hal_var_stub_init): Remove bogus definition of
+	vsr_table and leave breakpoint VSR alone, the springboard will
+	handle it AOK.
+
+2001-06-04  Hugo Tyson  <hmt@redhat.com>
+
+	* cdl/hal_mips_upd985xx.cdl
+	* include/hal_diag.h
+	* include/plf_stub.h
+	* include/var_arch.h
+	* include/var_cache.h
+	* include/var_intr.h
+	* include/variant.inc
+	* src/hal_diag.c
+	* src/hal_mips_upd985xx.ld
+	* src/var_misc.c
+	* src/var_stub.c
+	* src/variant.S
+	New files; initial checkin.
+
+	RAM startup works; kernel tests run, loaded via SRecords,
+	including tm_basic, clockcnv, mutex3 and the exception tests.
+	Virtual vector calling works, but all apps do not work with a ROM
+	monitor, so they are all standalone.  Diag printf et all all work.
+	Floating point emulation works.
+
+//===========================================================================
+//####ECOSGPLCOPYRIGHTBEGIN####
+// -------------------------------------------
+// This file is part of eCos, the Embedded Configurable Operating System.
+// Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+//
+// eCos is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 or (at your option) any later version.
+//
+// eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with eCos; if not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+// As a special exception, if other files instantiate templates or use macros
+// or inline functions from this file, or you compile this file and link it
+// with other works to produce a work based on this file, this file does not
+// by itself cause the resulting work to be covered by the GNU General Public
+// License. However the source code for this file must still be made available
+// in accordance with section (3) of the GNU General Public License.
+//
+// This exception does not invalidate any other reasons why a work based on
+// this file might be covered by the GNU General Public License.
+//
+// Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+// at http://sources.redhat.com/ecos/ecos-license/
+// -------------------------------------------
+//####ECOSGPLCOPYRIGHTEND####
+//===========================================================================

@@ -1,0 +1,928 @@
+<!-- Copyright (C) 2002 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<HTML
+><HEAD
+><TITLE
+>Synthetic Target Ethernet Driver</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="DEVS-ETH-SYNTH-ECOSYNTH">Synthetic Target Ethernet Driver</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN4"
+></A
+><H2
+>Name</H2
+>Synthetic Target Ethernet Support&nbsp;--&nbsp;Allow synthetic target applications to perform ethernet I/O</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN7"
+></A
+><H2
+>Overview</H2
+><P
+>The synthetic target ethernet package can provide up to four network
+devices, <TT
+CLASS="VARNAME"
+>eth0</TT
+> to <TT
+CLASS="VARNAME"
+>eth3</TT
+>. These can
+be used directly by the eCos application or, more commonly, by a
+TCP/IP stack that is linked with the eCos application. Each eCos
+device can be mapped on to a real Linux network device. For example,
+if the Linux PC has two ethernet cards and <TT
+CLASS="VARNAME"
+>eth1</TT
+> is
+not currently being used by Linux itself, then one of the eCos devices
+can be mapped on to this Linux device. Alternatively, it is possible
+to map some or all of the eCos devices on to the ethertap support
+provided by the Linux kernel.
+    </P
+><P
+>The ethernet package depends on the I/O auxiliary provided by the
+synthetic target architectural HAL package. During initialization the
+eCos application will attempt to instantiate the desired devices, by
+sending a request to the auxiliary. This will load a Tcl script
+<TT
+CLASS="FILENAME"
+>ethernet.tcl</TT
+> that is responsible for handling the
+instantiation request and subsequent I/O operations, for example
+transmitting an ethernet packet. However, some of the low-level I/O
+operations cannot conveniently be done by a Tcl script so
+<TT
+CLASS="FILENAME"
+>ethernet.tcl</TT
+> will actually run a separate program
+<B
+CLASS="COMMAND"
+>rawether</B
+> to interact with the Linux network device. 
+    </P
+><DIV
+CLASS="INFORMALFIGURE"
+><A
+NAME="AEN17"><P
+></P
+><DIV
+CLASS="MEDIAOBJECT"
+><P
+><IMG
+SRC="overview.gif"
+ALIGN="CENTER"></P
+></DIV
+><P
+></P
+></DIV
+><P
+>On the target-side there are configuration options to control which
+network devices should be present. For many applications a single
+device will be sufficient, but if the final eCos application is
+something like a network bridge then the package can support multiple
+devices. On the host-side each eCos network device needs to be mapped
+on to a Linux one, either a real ethernet device or an ethertap
+device. This is handled by an entry in the target definition file:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    eth0 real eth1
+    eth1 ethertap tap3 00:01:02:03:FE:05
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>The ethernet package also comes with support for packet logging,
+and provides various facilities for use by user Tcl scripts.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-INSTALL"
+></A
+><H2
+>Installation</H2
+><P
+>Before a synthetic target eCos application can access ethernet devices
+it is necessary to build and install host-side support. The relevant
+code resides in the <TT
+CLASS="FILENAME"
+>host</TT
+>
+subdirectory of the synthetic target ethernet package, and building it
+involves the standard <B
+CLASS="COMMAND"
+>configure</B
+>,
+<B
+CLASS="COMMAND"
+>make</B
+> and <B
+CLASS="COMMAND"
+>make install</B
+> steps.
+The build involves a new executable <B
+CLASS="COMMAND"
+>rawether</B
+> which
+must be able to access a raw Linux network device. This is achieved by
+installing it suid root, so the <B
+CLASS="COMMAND"
+>make install</B
+> step
+has to be run with superuser privileges.
+    </P
+><DIV
+CLASS="CAUTION"
+><P
+></P
+><TABLE
+CLASS="CAUTION"
+BORDER="1"
+WIDTH="100%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Caution</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>Installing <B
+CLASS="COMMAND"
+>rawether</B
+> suid root introduces a
+potential security problem. Although normally
+<B
+CLASS="COMMAND"
+>rawether</B
+> is executed only by the I/O auxiliary,
+theoretically it can be run by any program. Effectively it gives any
+user the ability to monitor all ethernet traffic and to inject
+arbitrary packets into the network. Also, as with any suid root
+programs there may be as yet undiscovered exploits. Users and system
+administrators should consider the risks before running <B
+CLASS="COMMAND"
+>make
+install</B
+>. 
+    </P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>There are two main ways of building the host-side software. It is
+possible to build both the generic host-side software and all
+package-specific host-side software, including the ethernet support,
+in a single build tree. This involves using the
+<B
+CLASS="COMMAND"
+>configure</B
+> script at the toplevel of the eCos
+repository. For more information on this, see the
+<TT
+CLASS="FILENAME"
+>README.host</TT
+> file at the top of the repository.
+Note that if you have an existing build tree which does not include
+the synthetic target ethernet support then it will be necessary to
+rerun the toplevel configure script: the search for appropriate
+packages happens at configure time.
+    </P
+><P
+>The alternative is to build just the host-side for this package.
+This requires a separate build directory, building directly in the
+source tree is disallowed. The <B
+CLASS="COMMAND"
+>configure</B
+> options
+are much the same as for a build from the toplevel, and the
+<TT
+CLASS="FILENAME"
+>README.host</TT
+> file can be consulted for more
+details. It is essential that the ethernet support be configured with
+the same <TT
+CLASS="OPTION"
+>--prefix</TT
+> option as other eCos host-side
+software, especially the I/O auxiliary provided by the architectural
+synthetic target HAL package, otherwise the I/O auxiliary will be
+unable to locate the ethernet support.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-OPTIONS"
+></A
+><H2
+>Target-side Configuration Options</H2
+><P
+>The target-side code can be configured to support up to four ethernet
+devices, <TT
+CLASS="VARNAME"
+>eth0</TT
+> to <TT
+CLASS="VARNAME"
+>eth3</TT
+>. By
+default <TT
+CLASS="VARNAME"
+>eth0</TT
+> is enabled if the configuration
+includes a TCP/IP stack, otherwise it is disabled. The other three
+devices are always disabled by default. If any of the devices are
+enabled then there will also be the usual configuration options
+related to building this package. Other options related to network
+devices, for example whether or not to use DHCP, are provided by
+the generic network device package.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-REAL"
+></A
+><H2
+>Real Ethernet</H2
+><P
+>One obvious way of providing a synthetic target eCos application with
+ethernet I/O is to use a real ethernet device in the PC: transmitted
+packets go out on a real network, and packets on the network addressed
+to the right MAC address are passed on to eCos. This way synthetic
+target networking behaves just like networking on a real target with
+ethernet hardware. For example, if there is a DHCP server anywhere on
+the network then eCos will be able to contact it during networking
+startup and get hold of IP address information.
+    </P
+><P
+>Configuring the ethernet support to use a real ethernet device
+requires a simple entry in the target definition file:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    &lt;eCos device&gt; real &lt;linux device&gt;
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>For example, to map the eCos network device <TT
+CLASS="VARNAME"
+>eth0</TT
+> to
+the Linux device <TT
+CLASS="VARNAME"
+>eth1</TT
+>:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    eth0 real eth1
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>It is not possible for an ethernet device to be shared by both the
+eCos TCP/IP stack and the Linux one: there would be no simple way to
+work out which stack incoming packets are intended for. In theory
+it might be possible to do some demultiplexing using distinct IP
+addresses, but it would be impossible to support some functionality
+such as DHCP. Therefore the <B
+CLASS="COMMAND"
+>rawether</B
+> program will
+refuse to access any ethernet device already in use. On a typical
+Linux system <TT
+CLASS="VARNAME"
+>eth0</TT
+> will be used for Linux
+networking, and the PC will have to be equipped with additional
+ethernet devices for use by eCos.
+    </P
+><P
+>The <B
+CLASS="COMMAND"
+>rawether</B
+> program will access the hardware via
+the appropriate Linux device driver, so it is important that the
+system is set up such that the relevant module will be automatically
+loaded or is already loaded. The details of this will depend on the
+installed distribution and version, but typically it will involve an
+entry in <TT
+CLASS="FILENAME"
+>/etc/modules.conf</TT
+>.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-ETHERTAP"
+></A
+><H2
+>Ethertap</H2
+><P
+>The Linux kernel's ethertap facility provides a virtual network
+interface. A Linux application, for example the
+<B
+CLASS="COMMAND"
+>rawether</B
+> program, can open a special character
+device <TT
+CLASS="FILENAME"
+>/dev/net/tun</TT
+>, perform various
+<TT
+CLASS="FUNCTION"
+>ioctl</TT
+> calls, and then <TT
+CLASS="FILENAME"
+>write</TT
+>
+and <TT
+CLASS="FILENAME"
+>read</TT
+> ethernet packets. When the device is
+opened the Linux kernel automatically creates a new network interface,
+for example <TT
+CLASS="VARNAME"
+>tap0</TT
+>. The Linux TCP/IP stack can be
+made to use this network interface like any other interface, receiving
+and transmitting ethernet packets. The net effect is a virtual network
+connecting just the Linux and eCos TCP/IP stacks, with no other nodes
+attached. By default all traffic remains inside this virtual network
+and is never forwarded to a real network.
+    </P
+><P
+>Support for the ethertap facility may or may not be provided
+automatically, depending on your Linux distribution and version. If
+your system does not have a device <TT
+CLASS="FILENAME"
+>/dev/net/tun</TT
+>
+or a module <TT
+CLASS="FILENAME"
+>tun.o</TT
+> then the appropriate kernel
+documentation should be consulted, for example
+<TT
+CLASS="FILENAME"
+>/usr/src/linux-2.4/Documentation/networking/tuntap.txt</TT
+>.
+If you are using an old Linux kernel then the ethertap functionality
+may be missing completely. When the <B
+CLASS="COMMAND"
+>rawether</B
+>
+program is configured and built, the <B
+CLASS="COMMAND"
+>configure</B
+>
+script will check for a file <TT
+CLASS="FILENAME"
+>/usr/include/linux/if_tun.h</TT
+>. If that
+file is missing then <B
+CLASS="COMMAND"
+>rawether</B
+> will be built without
+ethertap functionality, and only real ethernet interfaces will be
+supported.
+    </P
+><P
+>The target definition file is used to map eCos network devices on to
+ethertap devices. The simplest usage is:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    eth0 ethertap
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>The Linux kernel will automatically allocate the next available tap
+network interface. Usually this will be <TT
+CLASS="VARNAME"
+>tap0</TT
+> but if
+other software is using the ethertap facility, for example to
+implement a VPN, then a different number may be allocated. Usually it
+will be better to specify the particular tap device that should be
+used for each eCos device, for example:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    eth0 ethertap tap3
+    eth1 ethertap tap4
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>The user now knows exactly which eCos device is mapped onto which
+Linux device, avoiding much potential confusion. Because the virtual
+devices are emulated ethernet devices, they require MAC addresses.
+There is no physical hardware to provide these addresses, so normally
+MAC addresses will be invented. That means that each time the eCos
+application is run it will have different MAC addresses, which makes
+it more difficult to compare the results of different runs. To get
+more deterministic behaviour it is possible to specify the MAC
+addresses in the target definition file:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    eth0 ethertap tap3 00:01:02:03:FE:05
+    eth1 ethertap tap4 00:01:02:03:FE:06
+    &#8230;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>During the initialization phase the eCos application will instantiate
+the various network devices. This will cause the I/O auxiliary to load
+the <TT
+CLASS="FILENAME"
+>ethernet.tcl</TT
+> script and spawn
+<B
+CLASS="COMMAND"
+>rawether</B
+> processes, which in turn will
+<TT
+CLASS="FUNCTION"
+>open</TT
+> <TT
+CLASS="FILENAME"
+>/dev/net/tun</TT
+> and
+perform the appropriate <TT
+CLASS="FILENAME"
+>ioctl</TT
+> calls. On the Linux
+side there will now be new network interfaces such as
+<TT
+CLASS="VARNAME"
+>tap3</TT
+>, and these can be configured like any other
+network interface using commands such as <B
+CLASS="COMMAND"
+>ifconfig</B
+>.
+In addition, if the Linux system is set up with hotplug support then
+it may be possible to arrange for the network interface to become
+active automatically. On a Red Hat Linux system this would require
+files such as
+<TT
+CLASS="FILENAME"
+>/etc/sysconfig/network-scripts/ifcfg-tap3</TT
+>,
+containing data like:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>DEVICE="tap3"
+BOOTPROTO="none"
+BROADCAST=10.2.2.255
+IPADDR="10.2.2.1"
+NETMASK="255.255.255.0"
+NETWORK=10.2.2.0
+ONBOOT="no"</PRE
+></TD
+></TR
+></TABLE
+><P
+>This gives the Linux interface the address <TT
+CLASS="LITERAL"
+>10.2.2.1</TT
+>
+on the network <TT
+CLASS="LITERAL"
+>10.2.2.0</TT
+>. The eCos network device
+should be configured with a compatible address. One way of doing this
+would be to enable <TT
+CLASS="VARNAME"
+>CYGHWR_NET_DRIVER_ETH0_ADDRS</TT
+>,
+set <TT
+CLASS="VARNAME"
+>CYGHWR_NET_DRIVER_ETH0_ADDRS_IP</TT
+> to
+<TT
+CLASS="LITERAL"
+>10.2.2.2</TT
+>, and similarly update the
+<TT
+CLASS="VARNAME"
+>NETMASK</TT
+>, <TT
+CLASS="VARNAME"
+>BROADCAST</TT
+>,
+<TT
+CLASS="VARNAME"
+>GATEWAY</TT
+> and <TT
+CLASS="VARNAME"
+>SERVER</TT
+> configuration
+options. 
+    </P
+><P
+>It should be noted that the ethertap facility provides a virtual
+network, and any packets transmitted by the eCos application will
+not appear on a real network. Therefore usually there will no
+accessible DHCP server, and eCos cannot use DHCP or BOOTP to obtain IP
+address information. Instead the eCos configuration should use manual
+or static addresses.
+    </P
+><P
+>An alternative approach would be to set up the Linux box as a network
+bridge, using commands like <B
+CLASS="COMMAND"
+>brctl</B
+> to connect the
+virtual network interface <TT
+CLASS="VARNAME"
+>tap3</TT
+> to a physical
+network interface such as <TT
+CLASS="VARNAME"
+>eth0</TT
+>. Any packets sent by
+the eCos application will get forwarded automatically to the real
+network, and some packets on the real network will get forwarded over
+the virtual network to the eCos application. Note that the eCos
+application might also get some packets that were not intended for it,
+but usually those will just be discarded by the eCos TCP/IP stack. The
+exact details of setting up a network bridge are left as an exercise
+to the reader.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-LOGGING"
+></A
+><H2
+>Packet Logging</H2
+><P
+>The ethernet support comes with support for logging the various
+packets that are transferred, including a simple protocol analyser.
+This generates simple text output using the filter mechanisms provided
+by the I/O auxiliary, so it is possible to control the appearance and
+visibility of different types of output. For example the user might
+want to see IPv4 headers and all ICMPv4 and ARP operations, but not
+TCP headers or any of the packet data.
+    </P
+><P
+>The protocol analyser is not intended to be a fully functional
+analyser with knowledge of many different TCP/IP protocols, advanced
+search facilities, graphical traffic displays, and so on.
+Functionality like that is already provided by other tools such as
+<SPAN
+CLASS="APPLICATION"
+>ethereal</SPAN
+> and
+<SPAN
+CLASS="APPLICATION"
+>tcpdump</SPAN
+>. Achieving similar levels of
+functionality would require a lot of work, for very little gain. It is
+still useful to have some protocol analysis functionality available
+because the output will be interleaved with other output, for example
+<TT
+CLASS="FILENAME"
+>printf</TT
+> calls from the application. That may make
+it easier to understand the sequence of events.
+    </P
+><P
+>One problem with logging ethernet traffic is that it can involve very
+large amounts of data. If the application is expected to run for a
+long time or is very I/O intensive then it is easy to end up with many
+megabytes. When running in graphical mode all the logging data will be
+held in memory, even data that is not currently visible. At some point
+the system will begin to run low on memory and performance will
+suffer. To avoid problems, the ethernet script maintains a flag that
+controls whether or not packet logging is active. The default is to
+run with logging disabled, but this can be changed in the target
+definition file:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    &#8230;
+    logging 1
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>The ethernet script will add a toolbar button that allows this flag to
+be changed at run-time, allowing the user to capture traffic for
+certain periods of time while the application continues running.
+    </P
+><P
+>The target definition file can contain the following entries for the
+various packet logging filters:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    &#8230;
+    filter ether  -hide 0 -background LightBlue -foreground "#000080"
+    filter arp    -hide 0 -background LightBlue -foreground "#000050"
+    filter ipv4   -hide 0 -background LightBlue -foreground "#000040"
+    filter ipv6   -hide 1 -background LightBlue -foreground "#000040"
+    filter icmpv4 -hide 0 -background LightBlue -foreground "#000070"
+    filter icmpv6 -hide 1 -background LightBlue -foreground "#000070"
+    filter udp    -hide 0 -background LightBlue -foreground "#000030"
+    filter tcp    -hide 0 -background LightBlue -foreground "#000020"
+    filter hexdata   -hide 1 -background LightBlue -foreground "#000080"
+    filter asciidata -hide 1 -background LightBlue -foreground "#000080"
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>All output will show the eCos network device, for example
+<TT
+CLASS="LITERAL"
+>eth0</TT
+>, and the direction relative to the eCos
+application. Some of the filters will show packet headers, for example
+<TT
+CLASS="LITERAL"
+>ether</TT
+> gives details of the ethernet packet header
+and <TT
+CLASS="LITERAL"
+>tcp</TT
+> gives information about TCP headers such as
+whether or not the SYN flag is set. The TCP and UDP filters will also
+show source and destination addresses, using numerical addresses and
+if possible host names. However, host names will only be shown if the
+host appears in <TT
+CLASS="FILENAME"
+>/etc/hosts</TT
+>: doing full DNS
+lookups while the data is being captured would add significantly to
+complexity and overhead. The <TT
+CLASS="LITERAL"
+>hexdata</TT
+> and
+<TT
+CLASS="LITERAL"
+>asciidata</TT
+> filters show the remainder of the packets
+after the ethernet, IP and TCP or UDP headers have been stripped.
+    </P
+><P
+>Some of the filters will provide raw dumps of some of the packet data.
+Showing up to 1500 bytes of data for each packet would be expensive,
+and often the most interesting information is near the start of the
+packet. Therefore it is possible to set a limit on the number of bytes
+that will be shown using the target definition file. The default limit
+is 64 bytes.
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>synth_device ethernet {
+    &#8230;
+    max_show 128
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-GUI"
+></A
+><H2
+>User Interface Additions</H2
+><P
+>When running in graphical mode the ethernet script extends the user
+interface in two ways: a button is added to the toolbar so that users
+can enable or disable packet logging; and an entry is added to the
+<SPAN
+CLASS="GUIMENU"
+>Help</SPAN
+> menu for the ethernet-specific documentation.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-ARGS"
+></A
+><H2
+>Command Line Arguments</H2
+><P
+>The synthetic target ethernet support does not use any command line
+arguments. All configuration is handled through the target definition
+file. 
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-HOOKS"
+></A
+><H2
+>Hooks</H2
+><P
+>The ethernet support defines two hooks that can be used by other
+scripts, especially user scripts: <TT
+CLASS="LITERAL"
+>ethernet_tx</TT
+> and
+<TT
+CLASS="LITERAL"
+>ethernet_rx</TT
+>. The tx hook is called whenever eCos
+tries to transmit a packet. The rx hook is called whenever an incoming
+packet is passed to the eCos application. Note that this may be a
+little bit after the packet was actually received by the I/O auxiliary
+since it can buffer some packets. Both hooks are called with two
+arguments, the name of the network device and the packet being
+transferred. Typical usage might look like:
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  proc my_tx_hook { arg_list } {
+    set dev [lindex $arg_list 0]
+    incr ::my_ethernet_tx_packets($dev)
+    incr ::my_ethernet_tx_bytes($dev) [string length [lindex $arg_list 1]]
+  }
+  proc my_rx_hook { arg_list } {
+    set dev [lindex $arg_list 0]
+    incr ::my_ethernet_rx_packets($dev)
+    incr ::my_ethernet_rx_bytes($dev) [string length [lindex $arg_list 1]]
+  }
+  synth::hook_add "ethernet_tx" my_tx_hook
+  synth::hook_add "ethernet_rx" my_rx_hook</PRE
+></TD
+></TR
+></TABLE
+><P
+>The global arrays <TT
+CLASS="VARNAME"
+>my_ethernet_tx_packets</TT
+> etc. will
+now be updated whenever there is ethernet traffic. Other code,
+probably running at regular intervals by use of the Tcl
+<B
+CLASS="COMMAND"
+>after</B
+> procedure, can then use this information to
+update a graphical monitor of some sort.
+    </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DEVS-ETH-ECOSYNTH-TCL"
+></A
+><H2
+>Additional Tcl Procedures</H2
+><P
+>The ethernet support provides one additional Tcl procedure that can be
+used by other scripts;
+    </P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>ethernet::devices_get_list    </PRE
+></TD
+></TR
+></TABLE
+><P
+>This procedure returns a list of the ethernet devices that have been
+instantiated, for example <TT
+CLASS="LITERAL"
+>{eth0 eth1}</TT
+>.
+    </P
+></DIV
+></BODY
+></HTML
+>

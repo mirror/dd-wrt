@@ -1,0 +1,27 @@
+NO_DRIVER=1
+
+HOST_CC=gcc
+HOST_CFLAGS= -g -I /usr/src/linux-2.4/include -I../include -D__MIPSEL__ -DPTRSIZE=4 
+
+all: 	ejtag_client
+
+ifdef NO_DRIVER
+ejtag_client: ejtag_client.c ../lib/ejtag_primitives.c ../lib/ejtag.c
+	$(HOST_CC) $(HOST_CFLAGS) -o $@ $^
+else
+ejtag_client: ejtag_client.c ../lib/ejtag_primitives.c
+	$(HOST_CC) $(HOST_CFLAGS) -o $@ $^
+endif
+
+clean:
+	rm -f ejtag_client *.o
+
+
+
+
+
+
+
+
+
+

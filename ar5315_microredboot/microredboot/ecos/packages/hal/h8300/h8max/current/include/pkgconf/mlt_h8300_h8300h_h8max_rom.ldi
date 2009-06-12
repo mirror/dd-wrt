@@ -1,0 +1,47 @@
+// eCos memory layout - Fri Oct 20 08:25:16 2000
+
+// This is a generated file - do not edit
+
+#include <cyg/infra/cyg_type.inc>
+
+OUTPUT_FORMAT("elf32-h8300")
+OUTPUT_ARCH(h8300h)
+
+MEMORY
+{
+#define IRAM_TOP 0xffbf20
+    rom : ORIGIN = 0x000000, LENGTH = 0x60000
+#if !defined(CYGPKG_IO_ETH_DRIVERS)
+#define WORK IRAM_TOP+0x100
+    ram : ORIGIN = WORK, LENGTH = 0x4000-0x100
+#else
+#define WORK 0x5f4000
+    ram : ORIGIN = WORK, LENGTH = 0xC000
+    iram : ORIGIN = IRAM_TOP, LENGTH = 0x4000
+#endif
+}
+
+SECTIONS
+{
+    SECTIONS_BEGIN
+    SECTION_rom_vectors (rom, 0x000000, LMA_EQ_VMA)
+    SECTION_text (rom, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_fini (rom, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_rodata (rom, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_rodata1 (rom, ALIGN (0x1), LMA_EQ_VMA)
+#if !defined(CYGSEM_HAL_H8300_VECTOR_HOOK)
+    SECTION_int_hook_table (rom, ALIGN (0x2), LMA_EQ_VMA)
+#endif
+    SECTION_fixup (rom, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_gcc_except_table (rom, ALIGN (0x1), LMA_EQ_VMA)
+    SECTION_data (ram, WORK,FOLLOWING (.gcc_except_table))
+    SECTION_bss (ram, ALIGN (0x4),LMA_EQ_VMA)
+#if defined(CYGSEM_HAL_H8300_VECTOR_HOOK)
+#if !defined(CYGPKG_IO_ETH_DRIVERS)
+    SECTION_int_hook_table (ram, CYGHWR_HAL_H8300_VECTOR_ADDRESS, LMA_EQ_VMA)
+#else
+    SECTION_int_hook_table (iram, CYGHWR_HAL_H8300_VECTOR_ADDRESS, LMA_EQ_VMA)
+#endif
+#endif
+    SECTIONS_END
+}

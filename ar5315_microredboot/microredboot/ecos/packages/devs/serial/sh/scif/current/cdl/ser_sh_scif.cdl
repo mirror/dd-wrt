@@ -1,0 +1,177 @@
+# ====================================================================
+#
+#      ser_sh_scif.cdl
+#
+#      eCos serial SH/SCIF configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Contributors:
+# Date:           2000-04-04
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+
+cdl_package CYGPKG_IO_SERIAL_SH_SCIF {
+    display       "SH SCIF serial device drivers"
+
+    parent        CYGPKG_IO_SERIAL_DEVICES
+    active_if     CYGPKG_IO_SERIAL
+    active_if     CYGPKG_HAL_SH
+
+    active_if     CYGINT_IO_SERIAL_SH_SCIF_REQUIRED
+
+    requires      CYGPKG_ERROR
+    include_dir   cyg/io
+    include_files ; # none _exported_ whatsoever
+    description   "
+           This option enables the serial device drivers for the
+           SCIF module in Hitachi SH CPUs."
+
+    compile       -library=libextras.a sh_scif_serial.c
+
+    define_proc {
+        puts $::cdl_system_header "/***** serial driver proc output start *****/"
+        puts $::cdl_system_header "#ifndef CYGDAT_IO_SERIAL_DEVICE_HEADER"
+        puts $::cdl_system_header "#define CYGDAT_IO_SERIAL_DEVICE_HEADER <pkgconf/io_serial_sh_scif.h>"
+        puts $::cdl_system_header "#endif"
+        puts $::cdl_system_header "/*****  serial driver proc output end  *****/"
+
+        puts $::cdl_header "#include <pkgconf/system.h>";
+        puts $::cdl_header "#include CYGDAT_IO_SERIAL_SH_SCIF_CFG";
+    }
+
+    # The driver tries to be effective with FIFO transfers
+    implements    CYGINT_IO_SERIAL_BLOCK_TRANSFER
+
+    cdl_interface CYGINT_IO_SERIAL_SH_SCIF_DMA {
+        display       "SCIF serial driver DMA support"
+        flavor        booldata
+        description   "
+            The serial driver can use DMA to move data from the
+            transmit buffer to the serial controller if the CPU
+            supports it."
+    }
+
+    cdl_interface CYGINT_IO_SERIAL_SH_SCIF_ASYNC_RXTX {
+        display        "SCIF async RX/TX support"
+        flavor         booldata
+        description    "
+            By enabling this option, the SCIF driver will
+            be able to support controllers with transceivers
+            that are asynchronous (RS4xx). This will cause
+            RX to be disabled before TX is enabled, and vice
+            versa."
+    }
+
+    cdl_interface CYGINT_IO_SERIAL_SH_SCIF_IRDA {
+        display        "SCIF IrDA support"
+        flavor         booldata
+        description    "
+            By enabling this option, the SCIF driver will
+            be able to support controllers in IrDA mode."
+    }
+
+    cdl_option CYGHWR_IO_SERIAL_SH_SH2_SCIF_IRDA_TXRX_COMPENSATION {
+        display          "SCIF IrDA TX/RX switch compensation"
+        default_value    1
+        active_if        CYGINT_IO_SERIAL_SH_SCIF_IRDA
+        description      "
+            When switching from TX mode to RX mode, the controller causes
+            a spurious 0xff character to be received at speeds up to
+            57600 baud. At higher baud rates, more spurious characters
+            may be received. Enabling this option tries to remove the
+            spurious characters, but since there are no errors reported
+            from the controller, it is impossible to do so with any kind
+            of precision.
+            Having this option enabled allows some eCos serial tests to
+            run. There is a matching option in the SH2 HAL controlling a
+            similar kludge for the polled driver, making RedBoot usable.
+            It is an incomplete kludge however, and for any real use of
+            the IrDA mode for data transmission, the option should be
+            disabled, and a protocol capable of handling the spurious
+            receive characters must be used on top of the driver.
+            Note that the problem is exaggerated when the baud rate is
+            changed."
+    }
+
+    cdl_interface CYGINT_IO_SERIAL_SH_SCIF_BR_INTERRUPT {
+        display       "Controller uses BR interrupts"
+        flavor        booldata
+        description   "
+            Some controllers route BREAK interrupts to the
+            error interrupt vector. Others have a separate
+            vector. When this interface is implemented, the
+            driver will handle the separate BR vector."
+    }
+
+    cdl_component CYGPKG_IO_SERIAL_SH_SCIF_OPTIONS {
+        display "SCIF serial device driver build options"
+        flavor  none
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_IO_SERIAL_SH_SCIF_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building these serial device drivers. These flags are
+                used in addition to the set of global flags."
+        }
+
+        cdl_option CYGPKG_IO_SERIAL_SH_SCIF_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building these serial device drivers. These flags are
+                removed from the set of global flags if present."
+        }
+    }
+}
+# EOF ser_sh_scif.cdl

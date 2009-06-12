@@ -1,0 +1,227 @@
+# Block and frame class implementations for GDBtk.
+# Copyright 1997, 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# ------------------------------------------------------------------
+#                            Block
+# ------------------------------------------------------------------
+body Block::constructor {start end args} {
+
+  # Record runtime info about this block
+  set _start $start
+  set _end $end
+  set _variables [_findVariables]
+  eval configure $args
+}
+
+# Destroy ourself. 
+body Block::destructor {} {
+
+  # Each block is responsible for destroying its
+  # variables and removing them from the list of
+  # of all variables for this frame
+  foreach var $_variables {
+    $var delete
+  }
+}
+
+# Return a list of variables defined in this block
+# This list is determined when we are created.
+body Block::variables {} {
+  return $_variables
+}
+
+# Find the new variables for this block.
+body Block::_findVariables {} {
+
+  # Find the new variables for this block.
+  set variables [gdb_block_variables $_start $_end]
+
+  # Create variables.
+  set vars {}
+  foreach variable $variables {
+    # Be paranoid: catch errors constructing variable.
+    set err [catch {gdb_variable create -expr $variable} obj]
+    if {!$err} {
+      lappend vars $obj
+    }
+  }
+
+  return $vars
+}
+
+body Block::update {} {
+
+  set changed {}
+  foreach var $_variables {
+    set changed [concat $changed [$var update]]
+  }
+
+  return $changed
+}
+
+body Block::info {} {
+
+  return [list $_start $_end]
+}
+
+# ------------------------------------------------------------------
+#                             Frame
+# ------------------------------------------------------------------
+body Frame::constructor {addr} {
+
+  set _addr $addr
+
+  # Create all blocks in the selected frame
+  set _blocks {}
+  _createBlocks [gdb_get_blocks]
+
+}
+
+body Frame::destructor {} {
+  # destroy our own blocks
+  foreach block $_blocks {
+    _removeBlock $block
+  }
+}
+
+body Frame::_removeBlock {blockObj} {
+
+  set i [lsearch $_blocks $blockObj]
+  if {$i != -1} {
+    set _blocks [lreplace $_blocks $i $i]
+    delete object $blockObj
+  }
+}
+
+body Frame::_addBlock {block} {
+
+  set start [lindex $block 0]
+  set end [lindex $block 1]
+  set b [Block \#auto $start $end]
+  lappend _blocks $b
+
+  return $b
+}
+
+body Frame::_createBlocks {blocks} {
+
+  foreach block $blocks {
+    set b [_addBlock $block]
+  }
+}
+
+body Frame::update {} {
+
+  set vars {}
+  foreach block $_blocks {
+    set vars [concat $vars [$block update]]
+  }
+
+  return $vars
+}
+
+body Frame::variables {} {
+
+  set vars {}
+  foreach block $_blocks {
+    set vars [concat $vars [$block variables]]
+  }
+
+  return $vars
+}
+
+body Frame::new {} {
+  # find any new variables. So get a list of all blocks,
+  # eliminate duplicates, and get those variables.
+
+  set blocks [gdb_get_blocks]
+  set new {}
+
+  foreach block $blocks {
+    set b [_findBlock $block]
+    if {$b == ""} {
+      # Found a new block. Create it get its variables
+      set b [_addBlock $block]
+      set new [concat $new [$b variables]]
+    }
+  }
+
+  return $new
+}
+
+body Frame::deleteOld {} {
+
+  foreach block [_oldBlocks] {
+    _removeBlock $block
+  }
+}
+
+body Frame::_oldBlocks {} {
+
+  set blocks [gdb_get_blocks]
+  set oldObjs $_blocks
+
+  foreach block $blocks {
+    set obj [_findBlock $block]
+    if {$obj != ""} {
+      # Found it.. Remove it from old
+      set i [lsearch $oldObjs $obj]
+      set oldObjs [lreplace $oldObjs $i $i]
+    }
+  }
+
+  return $oldObjs
+}
+  
+body Frame::old {} {
+
+  # All the variables in the blocks in old are now gone...
+  # We don't remove blocks here, since the frontend viewer
+  # might want to keep these variables around for a little while
+  # longer.
+  set vars {}
+  set old [_oldBlocks]
+  foreach block $old {
+    set vars [concat $vars [$block variables]]
+  }
+
+  return $vars
+}
+
+body Frame::_findBlock {block} {
+
+  foreach b $_blocks {
+    set info [$b info]
+    if {$info == $block} {
+      return $b
+    }
+  }
+
+  return ""
+}
+
+body Frame::_findBlockIndex {block} {
+
+  set i 0
+  foreach b $_blocks {
+    set info [$b info]
+    if {$info == $block} {
+      return $i
+    }
+    incr i
+  }
+
+  return -1
+}
+
+

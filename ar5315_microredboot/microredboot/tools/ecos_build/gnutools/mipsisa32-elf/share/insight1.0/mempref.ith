@@ -1,0 +1,69 @@
+# Memory display preferences window class definition for GDBtk.
+# Copyright 1998, 1999 Cygnus Solutions
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (GPL) as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+
+class MemPref {
+  inherit ModalDialog ManagedWin
+
+  public {
+    variable win
+    variable size
+    variable format
+    variable numbytes
+    variable bpr
+    variable ascii
+    variable ascii_char
+    variable color
+
+    method constructor {args}
+    method destructor {}
+    method busy {}
+    method idle {}
+    method cancel {}
+    method set_bytes_per_row {w value}
+    method check_numbytes {var index mode}
+    method toggle_size_control {}
+    method apply {}
+    method enable_format {}
+    method disable_format {}
+    method pick {lab}
+    method reconfig {}
+  }
+  
+  private {
+    # The next seven variables are all used in the radio-buttons
+    # and checkbuttons of the display.
+    variable gsize   
+    variable gformat 
+    variable gnumbytes 
+    variable gbpr 
+    variable gascii  
+    variable gascii_char 
+    variable gvar
+
+    variable Widgets
+    variable WidgetState
+    variable format_disabled 0
+    variable old_numbytes
+    variable normal_background
+    method build_win {}
+    method ok {}
+  }
+
+  protected {
+    common float_size ""
+    common double_size ""
+    common default_numbytes 128
+  }
+
+}
