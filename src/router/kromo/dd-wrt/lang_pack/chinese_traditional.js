@@ -472,7 +472,7 @@ hconfig.right4="按 <em>瀏覽...</em> 按鈕瀏覽到您目前存放在個人�
 
 // ** DDNS.asp **//
 //
-ddns.titl="動態 DNS"
+ddns.titl="動態 DNS";
 ddns.h2="動態名稱伺服器 (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS 伺服器";
