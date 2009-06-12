@@ -454,7 +454,7 @@ hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas où 
 hconfig.right4="Cliquez sur le bouton <em>\"Parcourir...\"</em> pour sélectionner le fichier de configuration à restaurer.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.restore + "\"</em> pour écraser la configuration courante par celle du fichier de configuration.";
 
 // ** DDNS.asp **//
-ddns.titl="DNS Dynamique"
+ddns.titl="DNS Dynamique";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DNS Dynamique";
 ddns.srv="Service DDNS";

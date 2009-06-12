@@ -462,7 +462,7 @@ hconfig.right4="Clicca sul pulsante <em>Sfoglia...</em> per scegliere tra i file
 
 
 // ** DDNS.asp **//
-ddns.titl="DNS Dinamico"
+ddns.titl="DNS Dinamico";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="Servizio DDNS";
