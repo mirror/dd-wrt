@@ -395,7 +395,7 @@ hconfig.right4="Kattintson a  <em>Tallózás...</em> gombra számítógépén lévõ konf
 
 // **************************************************************** DDNS.asp **********************************************************************//
 
-ddns.titl="Dinamikus DNS"
+ddns.titl="Dinamikus DNS";
 ddns.h2="Dinamikus Domain Név Rendszer (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS szolgáltatás";

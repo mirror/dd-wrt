@@ -412,7 +412,7 @@ config.mess4="只能上传使用此固件并且相同型号路由器的备份文
 hconfig.right2="您应该备份您当前的配置以备您将来需要将路由器复位到出厂设置。<br /><br />点击 <em>备份</em> 按钮备份您的当前设置。";
 hconfig.right4="点击 <em>浏览...</em> 按钮浏览到一个当前存储在您电脑上的配置文件。<br /><br />点击 <em>" + sbutton.restore + "</em> 按钮使用配置文件覆盖当前所有配置。";
 
-ddns.titl="动态DNS"
+ddns.titl="动态DNS";
 ddns.h2="动态域名系统(DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS 服务";

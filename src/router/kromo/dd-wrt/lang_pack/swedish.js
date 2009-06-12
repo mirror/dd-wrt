@@ -462,7 +462,7 @@ hconfig.right4="Klicka på <em>Bläddra...</em> knappen för att ange din konfigura
 
 
 // ** DDNS.asp **//
-ddns.titl="Dynamisk DNS"
+ddns.titl="Dynamisk DNS";
 ddns.h2="Dynamisk DNS Tjänst (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS Tjänst";

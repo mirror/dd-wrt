@@ -481,7 +481,7 @@ hconfig.right4="Kliknite gumb <em>Browse... (Prebrskaj...)</em> za iskanje varno
 
 // ** DDNS.asp **/
 
-ddns.titl="Dinamièni DNS"
+ddns.titl="Dinamièni DNS";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS servis";
