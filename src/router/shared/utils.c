@@ -40,7 +40,6 @@
 
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
-void show_hw_type(int type);
 
 struct mii_ioctl_data {
 	unsigned short phy_id;
@@ -669,40 +668,6 @@ int check_now_boot(void)
 		cprintf("The boot is UNKNOWN\n");
 		return UNKNOWN_BOOT;
 	}
-}
-
-void show_hw_type(int type)
-{
-	cprintf("The chipset is ");
-	if (type == BCM4702_CHIP)
-		cprintf("BCM4702\n");
-	else if (type == BCM5325E_CHIP)
-		cprintf("BCM4712L + BCM5325E\n");
-	else if (type == BCM5365_CHIP)
-		cprintf("BCM5365\n");
-	else if (type == BCM5350_CHIP)
-		cprintf("BCM5350\n");
-	else if (type == BCM4704_BCM5325F_CHIP)
-		cprintf("BCM4704 + BCM5325F\n");
-	else if (type == BCM5352E_CHIP)
-		cprintf("BCM5352E\n");
-	else if (type == BCM5354G_CHIP)
-		cprintf("BCM5354G\n");
-	else if (type == BCM4712_CHIP)
-		cprintf("BCM4712 + ADMtek\n");
-	else if (type == BCM4704_BCM5325F_EWC_CHIP)
-		cprintf("BCM4704 + BCM5325F for EWC\n");
-	else if (type == BCM4705L_BCM5325E_EWC_CHIP)
-		cprintf("BCM4705L + BCM5325E for EWC\n");
-	else if (type == BCM4705_BCM5397_EWC_CHIP)
-		cprintf("BCM4705 + BCM5397 for EWC\n");
-	else if (type == BCM4705G_BCM5395S_EWC_CHIP)
-		cprintf("BCM4705G + BCM5395S for EWC\n");
-	else if (type == BCM4704_BCM5325F_CHIP)
-		cprintf("BCM4704 + BCM5325F\n");
-	else
-		cprintf("not defined\n");
-
 }
 
 int check_hw_type(void)
