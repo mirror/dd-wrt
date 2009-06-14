@@ -1010,6 +1010,7 @@ event_vars_shutdown(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 				else
 					prev->next = evalue->next;
 			}
+			free(evalue); //not sure if this is correct
 		}
 	}
 
