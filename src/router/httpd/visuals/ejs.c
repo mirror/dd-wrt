@@ -23,6 +23,7 @@
 #include <netdb.h>
 #include <utils.h>
 #include <bcmnvram.h>
+#include <revision.h>
 
 void (*do_ej_buffer) (char *buffer, webs_t stream) = NULL;
 int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
