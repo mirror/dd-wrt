@@ -1845,7 +1845,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp,
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
-	websWrite(wp, "\t\t<title>%s", nvram_get("router_name"));
+	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"),SVN_REVISION);
 	if (strlen(argv[0]) != 0) {
 		websWrite(wp, " - %s", live_translate(argv[0]));
 	}
@@ -1884,7 +1884,7 @@ void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp,
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-	websWrite(wp, "\t\t<title>%s", live_translate("share.help"));
+	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"),SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(htitle));
 	websWrite(wp, "\t</head>\n");
 
