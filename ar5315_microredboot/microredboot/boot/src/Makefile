@@ -46,7 +46,7 @@ endif
 
 HEAD		 = head.o
 OBJS		 = misc_lzma.o
-MEMCPY 		 = memcpy.o memset.o
+MEMCPY 		 = memset.o
 # CFLAGS	 = $(CPPFLAGS) -O2 -DSTDC_HEADERS $(CFLAGS_BOOT)
 ZLDFLAGS	 = -G 0 -static -X -T ld.script
 

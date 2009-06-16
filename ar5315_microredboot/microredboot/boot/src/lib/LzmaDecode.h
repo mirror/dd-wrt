@@ -65,14 +65,14 @@ but if specify _LZMA_PROB_32, CProb will be UInt32(unsigned int)
 */
 
 #ifdef _LZMA_OUT_READ
-int LzmaDecoderInit(
+static int LzmaDecoderInit(
     unsigned char *buffer, UInt32 bufferSize,
     int lc, int lp, int pb,
     unsigned char *dictionary, UInt32 dictionarySize,
 );
 #endif
 
-int LzmaDecode(
+static int LzmaDecode(
     unsigned char *buffer, 
   #ifndef _LZMA_OUT_READ
     UInt32 bufferSize,
