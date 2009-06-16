@@ -188,7 +188,7 @@ static unsigned int linuxaddr = 0xbfc10000;
 /*
  * searches for a directory entry named linux* vmlinux* or kernel and returns its flash address (it also initializes entrypoint and load address)
  */
-unsigned int getLinux(void)
+static unsigned int getLinux(void)
 {
 	int count;
 	unsigned char *p = (unsigned char *)(0xa8800000 - (sectorsize * 2));
@@ -214,7 +214,7 @@ unsigned int getLinux(void)
 	}
 	puts("no bootable image found, try default location 0xbfc10000\r\n");
 	bootoffset = 0x80041000;
-	output_data = (uch *)0x80041000;
+	output_data = (uch *) 0x80041000;
 	return 0xbfc10000;
 }
 
@@ -224,12 +224,12 @@ unsigned int getLinux(void)
  */
 static int resettrigger = 0;
 
-int fill_inbuf(void)
+static int fill_inbuf(void)
 {
 	if (insize != 0)
 		error("ran out of input data");
 	if (resettrigger) {
-		inbuf = (uch *)linuxaddr;
+		inbuf = (uch *) linuxaddr;
 		insize = 0x400000;
 		inptr = 1;
 	} else {
@@ -490,38 +490,50 @@ struct flashconfig {
 	__u32 sector_cnt;
 	__u32 sector_size;
 	__u32 cs_addrmask;
-} flashconfig_tbl[MAX_FLASH] = {
+} static flashconfig_tbl[MAX_FLASH] = {
 	{
-	0, 0, 0, 0}, {
-	STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT, STM_1MB_SECTOR_SIZE, 0x0},
+	 0, 0, 0, 0}, {
+		       STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT,
+		       STM_1MB_SECTOR_SIZE, 0x0},
 	{
-	STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE, 0x0},
+	 STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE, 0x0},
 	{
-	STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE, 0x0},
+	 STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE, 0x0},
 	{
-	STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0},
+	 STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0},
 	{
-	STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT,
-		    STM_16MB_SECTOR_SIZE, 0x0}
+	 STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT,
+	 STM_16MB_SECTOR_SIZE, 0x0}
 };
 
 struct opcodes {
 	__u16 code;
 	__s8 tx_cnt;
 	__s8 rx_cnt;
-} stm_opcodes[] = {
+} static stm_opcodes[] = {
 	{
-	STM_OP_WR_ENABLE, 1, 0}, {
-	STM_OP_WR_DISABLE, 1, 0}, {
-	STM_OP_RD_STATUS, 1, 1}, {
-	STM_OP_WR_STATUS, 1, 0}, {
-	STM_OP_RD_DATA, 4, 4}, {
-	STM_OP_FAST_RD_DATA, 5, 0}, {
-	STM_OP_PAGE_PGRM, 8, 0}, {
-	STM_OP_SECTOR_ERASE, 4, 0}, {
-	STM_OP_BULK_ERASE, 1, 0}, {
-	STM_OP_DEEP_PWRDOWN, 1, 0}, {
-STM_OP_RD_SIG, 4, 1},};
+	 STM_OP_WR_ENABLE, 1, 0}, {
+				   STM_OP_WR_DISABLE, 1, 0}, {
+							      STM_OP_RD_STATUS,
+							      1, 1}, {
+								      STM_OP_WR_STATUS,
+								      1, 0}, {
+									      STM_OP_RD_DATA,
+									      4,
+									      4},
+	{
+	 STM_OP_FAST_RD_DATA, 5, 0}, {
+				      STM_OP_PAGE_PGRM, 8, 0}, {
+								STM_OP_SECTOR_ERASE,
+								4, 0}, {
+									STM_OP_BULK_ERASE,
+									1, 0}, {
+										STM_OP_DEEP_PWRDOWN,
+										1,
+										0},
+	{
+	 STM_OP_RD_SIG, 4, 1},
+};
 
 static __u32 spiflash_regread32(int reg)
 {
@@ -537,7 +549,6 @@ static void spiflash_regwrite32(int reg, __u32 data)
 	*addr = data;
 	return;
 }
-
 
 #define busy_wait(condition, wait) \
 	do { \
@@ -633,20 +644,20 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 	print_hex(offset);
 	puts("\r\n");
 
-
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
 
 	temp = ((__u32)offset << 8) | (__u32)(ptr_opcode->code);
-	spiflash_sendcmd(SPI_WRITE_ENABLE,0);
+	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
 	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
 
 	spiflash_regwrite32(SPI_FLASH_OPCODE, temp);
 
-	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt | SPI_CTL_START;
+	reg =
+	    (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt |
+	    SPI_CTL_START;
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 
 	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
-
 
 	puts("done\r\n");
 	return 0;
@@ -655,7 +666,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 ulg
 decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 {
-	output_data = (uch *) output_start;	/* Points to kernel start */
+	output_data = (uch *) output_start;
 	free_mem_ptr = free_mem_ptr_p;
 	free_mem_ptr_end = free_mem_ptr_end_p;
 
@@ -668,7 +679,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		puts("Reset Button triggered\r\nBooting Recovery RedBoot\r\n");
 		int count = 5;
 		while (count--) {
-			if (!resetTouched()) // check if reset button is unpressed again
+			if (!resetTouched())	// check if reset button is unpressed again
 				break;
 			udelay(1000000);
 		}
@@ -684,10 +695,10 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 				print_hex(flashconfig_tbl[index].sector_size);
 				sectorsize = flashconfig_tbl[index].sector_size;
 				puts("\r\n");
-				flash_erase_nvram(flashconfig_tbl[index].
-						  byte_cnt,
-						  flashconfig_tbl[index].
-						  sector_size);
+				flash_erase_nvram(flashconfig_tbl
+						  [index].byte_cnt,
+						  flashconfig_tbl
+						  [index].sector_size);
 			}
 
 		}
@@ -701,7 +712,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		HAL_CLOCK_INITIALIZE(RTC_PERIOD);
 		unsigned int mask = RESET_ENET0 | RESET_EPHY0;
 		unsigned int regtmp;
-		
+
 		/* important, enable ethernet bus, if the following lines are not initialized linux will not be able to use the ethernet mac, taken from redboot source */
 		regtmp = sysRegRead(AR2316_AHB_ARB_CTL);
 		regtmp |= ARB_ETHERNET;
