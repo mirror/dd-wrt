@@ -168,6 +168,7 @@ void start_wanup(void)
 void start_run_rc_startup(void)
 {
 	create_rc_file(RC_STARTUP);
+	if (f_exists("/tmp/.rc_startup"))
 	system("/tmp/.rc_startup");
 	return;
 }
@@ -175,6 +176,7 @@ void start_run_rc_startup(void)
 void start_run_rc_shutdown(void)
 {
 	create_rc_file(RC_SHUTDOWN);
+	if (f_exists("/tmp/.rc_shutdown"))
 	system("/tmp/.rc_shutdown");
 	return;
 }
