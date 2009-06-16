@@ -1486,7 +1486,7 @@ int internal_getRouterBrand()
 	    && nvram_match("boardrev", "0x10")) {
 		if (nvram_match("boardflags", "0x20750")) {
 		cprintf("router is wrt54g2v1/v1.3/gs2v1\n");
-		setRouter("Linksys WRT54G2v1 / G2v1.3 / GS2v1");
+		setRouter("Linksys WRT54G2 / GS2");
 		}
 		else {
 		cprintf("router is wrt54gv8/gsv7\n");
