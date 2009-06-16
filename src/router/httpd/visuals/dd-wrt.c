@@ -3725,6 +3725,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// char maxpower[16];
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
+#ifndef HAVE_DDLINK
 	if (isEMP(prefix)) {
 		char wl_cardtype[32];
 		sprintf(wl_cardtype, "%s_cardtype", prefix);
@@ -3776,6 +3777,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			  : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
+#endif
 #endif				// ! HAVE MAKSAT
 	char wl_regdomain[16];
 
