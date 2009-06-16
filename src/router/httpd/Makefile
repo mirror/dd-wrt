@@ -151,6 +151,9 @@ endif
 CFLAGS += -DHAVE_LOUD
 endif
 endif
+ifeq ($(CONFIG_DDLINK),y)
+  CFLAGS += -DHAVE_DDLINK
+endif
 ifeq ($(CONFIG_THOM),y)
   CFLAGS += -DHAVE_THOM
 endif
