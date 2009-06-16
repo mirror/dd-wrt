@@ -185,13 +185,16 @@ struct fis_image_desc {
 
 static unsigned int sectorsize = 0x10000;
 static unsigned int linuxaddr = 0xbfc10000;
+static unsigned int flashbase = 0xbfc00000;
+static unsigned int flashsize = 0x400000;
 /*
  * searches for a directory entry named linux* vmlinux* or kernel and returns its flash address (it also initializes entrypoint and load address)
  */
 static unsigned int getLinux(void)
 {
-	int count;
-	unsigned char *p = (unsigned char *)(0xa8800000 - (sectorsize * 2));
+	int count = 0;
+	unsigned char *p =
+	    (unsigned char *)(flashbase + flashsize - (sectorsize * 2));
 	struct fis_image_desc *fis = (struct fis_image_desc *)p;
 	while (fis->name[0] != 0xff && count < 10) {
 		if (!strncmp(fis->name, "linux", 5)
@@ -405,7 +408,7 @@ static void udelay(int us)
 #define ARB_ETHERNET                0x00000020	/* Ethernet */
 #define ARB_RETRY                   0x00000100	/* retry policy, debug only */
 
-#define AR531XPLUS_SPI              0x11300000	/* SPI FLASH MMR */
+#define AR531XPLUS_SPI              0xB1300000	/* SPI FLASH MMR */
 
 #define FLASH_1MB  1
 #define FLASH_2MB  2
@@ -641,7 +644,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 	struct opcodes *ptr_opcode;
 	__u32 temp, reg;
 	puts("erasing nvram at ");
-	print_hex(offset);
+	print_hex(flashbase + offset);
 	puts("\r\n");
 
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
@@ -661,6 +664,33 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 
 	puts("done\r\n");
 	return 0;
+}
+
+static int flashdetect(void)
+{
+	flashsize = 8 * 1024 * 1024;
+	flashbase = 0xa8000000;
+	int index = 0;
+	if (!(index = spiflash_probe_chip())) {
+		puts("Found no serial flash device, cannot reset to factory defaults\r\n");
+		return -1;
+	} else {
+		flashsize = flashconfig_tbl[index].byte_cnt;
+		sectorsize = flashconfig_tbl[index].sector_size;
+		puts("Found Flash device SIZE=");
+		print_hex(flashsize);
+		puts(" SECTORSIZE=");
+		print_hex(sectorsize);
+		puts(" FLASHBASE=");
+		if (flashsize == 8 * 1024 * 1024)
+			flashbase = 0xa8000000;
+		else
+			flashbase = 0xbfc00000;
+		print_hex(flashbase);
+		puts("\r\n");
+	}
+	return 0;
+
 }
 
 ulg
@@ -683,28 +713,16 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 				break;
 			udelay(1000000);
 		}
-		if (!count) {
+		if (count <= 0) {
 			puts("reset button 5 seconds pushed, erasing nvram\r\n");
-			int index = 0;
-			if (!(index = spiflash_probe_chip())) {
-				puts("Found no serial flash device, cannot reset to factory defaults\r\n");
-			} else {
-				puts("Found Flash device SIZE=");
-				print_hex(flashconfig_tbl[index].byte_cnt);
-				puts(" SECTORSIZE=");
-				print_hex(flashconfig_tbl[index].sector_size);
-				sectorsize = flashconfig_tbl[index].sector_size;
-				puts("\r\n");
-				flash_erase_nvram(flashconfig_tbl
-						  [index].byte_cnt,
-						  flashconfig_tbl
-						  [index].sector_size);
-			}
-
+			if (!flashdetect())
+				flash_erase_nvram(flashsize, sectorsize);
 		}
+
 		bootoffset = 0x800004bc;
 		resettrigger = 0;
 	} else {
+		flashdetect();
 		linuxaddr = getLinux();
 		puts("Booting Linux\r\n");
 		resettrigger = 1;
@@ -734,18 +752,6 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		regtmp &= ~CONFIG_ETHERNET;
 		sysRegWrite(AR2316_ENDIAN_CTL, regtmp);
 
-		int index = 0;
-		if (!(index = spiflash_probe_chip())) {
-			puts("Found no serial flash device\r\n");
-		} else {
-			puts("Found Flash device SIZE=");
-			print_hex(flashconfig_tbl[index].byte_cnt);
-			puts(" SECTORSIZE=");
-			print_hex(flashconfig_tbl[index].sector_size);
-			sectorsize = flashconfig_tbl[index].sector_size;
-			puts("\r\n");
-
-		}
 	}
 	puts("loading");
 	lzma_unzip();
