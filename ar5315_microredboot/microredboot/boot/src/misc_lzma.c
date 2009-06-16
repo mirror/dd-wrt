@@ -209,7 +209,10 @@ static unsigned int getLinux(void)
 			puts("\r\n");
 			bootoffset = fis->entry_point;
 			output_data = (uch *) fis->mem_base;
-			return fis->flash_base;
+			memcpy((unsigned char *)ZCACHEADDR,
+			       (unsigned char *)fis->flash_base,
+			       1 * 1024 * 1024);
+			return ZCACHEADDR;
 		}
 		p += 256;
 		fis = (struct fis_image_desc *)p;
