@@ -145,10 +145,17 @@ statevar_DNSServers
 	char *dns, *p, *next;
 
 	/* Get DNS list */
-	if (ifid == 0)
-		strcpy(name, "lan_dns");
-	else
-		sprintf(name, "lan%d_dns", ifid);
+	if (nvram_match ("dns_dnsmasq", "1")) {
+		strcpy(name, "lan_ipaddr");
+	}
+	else {
+		if (!nvram_match ("wan_get_dns", "")) {
+			strcpy(name, "wan_get_dns");
+		}
+		else {
+			strcpy(name, "wan_dns");
+		}
+	}
 
 	dnslist = nvram_safe_get(name);
 
