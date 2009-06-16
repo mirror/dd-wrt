@@ -44,7 +44,7 @@ typedef struct _CRangeDecoder
   int ExtraBytes;
 } CRangeDecoder;
 
-Byte RangeDecoderReadByte(CRangeDecoder *rd)
+static Byte RangeDecoderReadByte(CRangeDecoder *rd)
 {
   if (rd->Buffer == rd->BufferLim)
   {
@@ -65,7 +65,7 @@ Byte RangeDecoderReadByte(CRangeDecoder *rd)
 /* #define ReadByte (*rd->Buffer++) */
 #define ReadByte (RangeDecoderReadByte(rd))
 
-void RangeDecoderInit(CRangeDecoder *rd)
+static void RangeDecoderInit(CRangeDecoder *rd)
 {
   int i;
   #ifdef _LZMA_IN_CB
@@ -85,7 +85,7 @@ void RangeDecoderInit(CRangeDecoder *rd)
 #define RC_FLUSH_VAR rd->Range = range; rd->Code = code;
 #define RC_NORMALIZE if (range < kTopValue) { range <<= 8; code = (code << 8) | ReadByte; }
 
-UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder *rd, int numTotalBits)
+static UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder *rd, int numTotalBits)
 {
   RC_INIT_VAR
   UInt32 result = 0;
@@ -113,7 +113,7 @@ UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder *rd, int numTotalBits)
   return result;
 }
 
-int RangeDecoderBitDecode(CProb *prob, CRangeDecoder *rd)
+static int RangeDecoderBitDecode(CProb *prob, CRangeDecoder *rd)
 {
   UInt32 bound = (rd->Range >> kNumBitModelTotalBits) * *prob;
   if (rd->Code < bound)
@@ -151,7 +151,7 @@ int RangeDecoderBitDecode(CProb *prob, CRangeDecoder *rd)
 
 #define RC_GET_BIT(prob, mi) RC_GET_BIT2(prob, mi, ; , ;)               
 
-int RangeDecoderBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder *rd)
+static int RangeDecoderBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder *rd)
 {
   int mi = 1;
   int i;
@@ -173,7 +173,7 @@ int RangeDecoderBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder *rd)
   return mi - (1 << numLevels);
 }
 
-int RangeDecoderReverseBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder *rd)
+static int RangeDecoderReverseBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder *rd)
 {
   int mi = 1;
   int i;
@@ -198,7 +198,7 @@ int RangeDecoderReverseBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder 
   return symbol;
 }
 
-Byte LzmaLiteralDecode(CProb *probs, CRangeDecoder *rd)
+static Byte LzmaLiteralDecode(CProb *probs, CRangeDecoder *rd)
 { 
   int symbol = 1;
   #ifdef _LZMA_LOC_OPT
@@ -220,7 +220,7 @@ Byte LzmaLiteralDecode(CProb *probs, CRangeDecoder *rd)
   return symbol;
 }
 
-Byte LzmaLiteralDecodeMatch(CProb *probs, CRangeDecoder *rd, Byte matchByte)
+static Byte LzmaLiteralDecodeMatch(CProb *probs, CRangeDecoder *rd, Byte matchByte)
 { 
   int symbol = 1;
   #ifdef _LZMA_LOC_OPT
@@ -278,7 +278,7 @@ Byte LzmaLiteralDecodeMatch(CProb *probs, CRangeDecoder *rd, Byte matchByte)
 #define LenHigh (LenMid + (kNumPosStatesMax << kLenNumMidBits))
 #define kNumLenProbs (LenHigh + kLenNumHighSymbols) 
 
-int LzmaLenDecode(CProb *p, CRangeDecoder *rd, int posState)
+static int LzmaLenDecode(CProb *p, CRangeDecoder *rd, int posState)
 {
   if(RangeDecoderBitDecode(p + LenChoice, rd) == 0)
     return RangeDecoderBitTreeDecode(p + LenLow +
@@ -339,7 +339,7 @@ typedef struct _LzmaVarState
   int RemainLen;
 } LzmaVarState;
 
-int LzmaDecoderInit(
+static int LzmaDecoderInit(
     unsigned char *buffer, UInt32 bufferSize,
     int lc, int lp, int pb,
     unsigned char *dictionary, UInt32 dictionarySize,
@@ -370,7 +370,7 @@ int LzmaDecoderInit(
   return LZMA_RESULT_OK;
 }
 
-int LzmaDecode(unsigned char *buffer, 
+static int LzmaDecode(unsigned char *buffer, 
     unsigned char *outStream, UInt32 outSize,
     UInt32 *outSizeProcessed)
 {
@@ -414,7 +414,7 @@ int LzmaDecode(unsigned char *buffer,
     previousByte = dictionary[dictionaryPos - 1];
 #else
 
-int LzmaDecode(
+static int LzmaDecode(
     Byte *buffer, UInt32 bufferSize,
     int lc, int lp, int pb,
     unsigned char *outStream, UInt32 outSize,
