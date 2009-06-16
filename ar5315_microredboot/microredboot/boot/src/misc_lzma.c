@@ -214,7 +214,7 @@ unsigned int getLinux(void)
 	}
 	puts("no bootable image found, try default location 0xbfc10000\r\n");
 	bootoffset = 0x80041000;
-	output_data = 0x80041000;
+	output_data = (uch *)0x80041000;
 	return 0xbfc10000;
 }
 
@@ -229,7 +229,7 @@ int fill_inbuf(void)
 	if (insize != 0)
 		error("ran out of input data");
 	if (resettrigger) {
-		inbuf = linuxaddr;
+		inbuf = (uch *)linuxaddr;
 		insize = 0x400000;
 		inptr = 1;
 	} else {
@@ -331,7 +331,7 @@ MACRO_END
 /*
  * 
  */
-static void delay_us(int us)
+static void udelay(int us)
 {
 	unsigned int val1, val2;
 	int diff;
@@ -405,7 +405,7 @@ static void delay_us(int us)
 #define ARB_ETHERNET                0x00000020	/* Ethernet */
 #define ARB_RETRY                   0x00000100	/* retry policy, debug only */
 
-#define AR531XPLUS_SPI              0xB1300000	/* SPI FLASH MMR */
+#define AR531XPLUS_SPI              0x11300000	/* SPI FLASH MMR */
 
 #define FLASH_1MB  1
 #define FLASH_2MB  2
@@ -538,6 +538,17 @@ static void spiflash_regwrite32(int reg, __u32 data)
 	return;
 }
 
+
+#define busy_wait(condition, wait) \
+	do { \
+		while (condition) { \
+			if (!wait) \
+			    udelay(1); \
+			else \
+			    udelay(wait*1000); \
+		} \
+	} while (0)
+
 static __u32 spiflash_sendcmd(int op, u32 addr)
 {
 	u32 reg;
@@ -545,9 +556,7 @@ static __u32 spiflash_sendcmd(int op, u32 addr)
 	struct opcodes *ptr_opcode;
 
 	ptr_opcode = &stm_opcodes[op];
-	do {
-		reg = spiflash_regread32(SPI_FLASH_CTL);
-	} while (reg & SPI_CTL_BUSY);
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
 
 	spiflash_regwrite32(SPI_FLASH_OPCODE,
 			    ((u32)ptr_opcode->code) | (addr << 8));
@@ -557,9 +566,7 @@ static __u32 spiflash_sendcmd(int op, u32 addr)
 
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 
-	do {
-		reg = spiflash_regread32(SPI_FLASH_CTL);
-	} while (reg & SPI_CTL_BUSY);
+	busy_wait(spiflash_regread32(SPI_FLASH_CTL) & SPI_CTL_BUSY, 0);
 
 	if (!ptr_opcode->rx_cnt)
 		return 0;
@@ -620,23 +627,27 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 {
 	unsigned int res;
 	unsigned int offset = flashsize - (blocksize * 3);
-	puts("erasing nvram....\r\n");
-	spiflash_sendcmd(STM_OP_WR_ENABLE, 0);
-	do {
-		res = spiflash_sendcmd(STM_OP_RD_STATUS, 0);
-		if ((res & 0x3) == 0x2) {
-			break;
-		}
-		delay_us(20);
-		spiflash_sendcmd(STM_OP_WR_ENABLE, 0);
-	} while (1);
-	spiflash_sendcmd(STM_OP_SECTOR_ERASE, offset);
-	while (true) {
-		res = spiflash_sendcmd(STM_OP_RD_STATUS, 0);
-		if ((res & STM_STATUS_WIP) == 0) {
-			break;
-		}
-	}
+	struct opcodes *ptr_opcode;
+	__u32 temp, reg;
+	puts("erasing nvram at ");
+	print_hex(offset);
+	puts("\r\n");
+
+
+	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
+
+	temp = ((__u32)offset << 8) | (__u32)(ptr_opcode->code);
+	spiflash_sendcmd(SPI_WRITE_ENABLE,0);
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+
+	spiflash_regwrite32(SPI_FLASH_OPCODE, temp);
+
+	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt | SPI_CTL_START;
+	spiflash_regwrite32(SPI_FLASH_CTL, reg);
+
+	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+
+
 	puts("done\r\n");
 	return 0;
 }
@@ -650,7 +661,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 
 	arch_decomp_setup();
 
-	puts("MicroRedBoot v1.1, (c) 2009 DD-WRT.COM (");
+	puts("MicroRedBoot v1.2, (c) 2009 DD-WRT.COM (");
 	puts(__DATE__);
 	puts(")\r\n");
 	if (resetTouched()) {
@@ -659,7 +670,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		while (count--) {
 			if (!resetTouched()) // check if reset button is unpressed again
 				break;
-			delay_us(1000000);
+			udelay(1000000);
 		}
 		if (!count) {
 			puts("reset button 5 seconds pushed, erasing nvram\r\n");
@@ -698,11 +709,11 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 
 		regtmp = sysRegRead(AR2316_RESET);
 		sysRegWrite(AR2316_RESET, regtmp | mask);
-		delay_us(10000);
+		udelay(10000);
 
 		regtmp = sysRegRead(AR2316_RESET);
 		sysRegWrite(AR2316_RESET, regtmp & ~mask);
-		delay_us(10000);
+		udelay(10000);
 
 		regtmp = sysRegRead(AR2316_IF_CTL);
 		regtmp |= IF_TS_LOCAL;
