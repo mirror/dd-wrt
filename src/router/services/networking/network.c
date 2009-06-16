@@ -3561,6 +3561,7 @@ void start_set_routes(void)
 			route_add(ifname, atoi(metric) + 1, ipaddr, gateway,
 				  netmask);
 	}
+	if (f_exists("/tmp/tvrouting"))
 	system("sh /tmp/tvrouting");
 }
 
