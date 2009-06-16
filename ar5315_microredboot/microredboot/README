@@ -7,7 +7,7 @@ for senao devices that means 0x15 (inverted gpio 5)
 this reset button is used to trigger the recovery redboot.
 so the stub will boot up linux directly if this button is not pressed. this will decrease the bootup time alot.
 if the button is pushed, the redboot will be started and can be used like known from the past.
-if the reset button is pushed longer than 5 seconds, the dd-wrt nvram config will be resetted (this feature is not yet tested and under development)
+if the reset button is pushed longer than 5 seconds, the dd-wrt nvram config will be resetted
 
 
 the build_targets.sh script will build all available memory, flash, ethernet phy and reset button configurations
