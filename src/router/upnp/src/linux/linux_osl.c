@@ -611,12 +611,14 @@ upnp_osl_wan_uptime()
     if( !feof( fp ) && fscanf( fp, "%f", &uptime ) == 1 )
     {
 	float sys_uptime;
+	fclose( fp );
 	FILE *fp2 = fopen( "/proc/uptime", "r" );
 	fscanf( fp2, "%f", &sys_uptime );
 	fclose( fp2 );
 	uptime = sys_uptime - uptime;
 	return (int)uptime;
     }
+    fclose( fp );
     return -1;
 }
 
