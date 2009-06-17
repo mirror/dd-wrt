@@ -1,0 +1,5 @@
+17.6.09
+    * add nvram_get to boot_stub (for checking system variables)
+    * boots always redboot and leaves booting procedure to redboot if nvram var resetbutton=1
+    * add more AR5312 specific code (unused right now), for later AP48 support
+    * printf implementation for easier and more compfortable debug output code writing
