@@ -1,5 +1,5 @@
 /*
- * lzma_misc.c
+ * head-ar5315.S
  * originally written for xscale based linux kernel decompression
  * now adapted for AR531X based redboot stub and kernel loader
  * copyright 2009 Sebastian Gottschall / NewMedia-NET GmbH / DD-WRT.COM
