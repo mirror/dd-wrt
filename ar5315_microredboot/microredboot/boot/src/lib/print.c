@@ -16,27 +16,21 @@
 #define		Ctod(x)		( (x) - '0')
 
 /* forward declaration */
-extern int PrintChar(char *, char, int, int);
-extern int PrintString(char *, char *, int, int);
-extern int PrintNum(char *, unsigned long, int, int, int, int, char, int);
+static int PrintChar(char *, char, int, int);
+static int PrintString(char *, char *, int, int);
+static int PrintNum(char *, unsigned long, int, int, int, int, char, int);
 
-/* private variable */
-static const char theFatalMsg[] = "fatal error in lp_Print!";
 
 /* -*-
  * A low level printf() function.
  */
+ 
 void
 lp_Print(void (*output) (void *, char *, int), void *arg, char *fmt, va_list ap)
 {
 
-#define 	OUTPUT(arg, s, l)  \
-  { if (((l) < 0) || ((l) > LP_MAX_BUF)) { \
-       (*output)(arg, (char*)theFatalMsg, sizeof(theFatalMsg)-1); for(;;); \
-    } else { \
-      (*output)(arg, s, l); \
-    } \
-  }
+#define 	OUTPUT(arg, s, l)  (*output)(arg, s, l);
+  
 
 	char buf[LP_MAX_BUF];
 
@@ -218,7 +212,7 @@ lp_Print(void (*output) (void *, char *, int), void *arg, char *fmt, va_list ap)
 }
 
 /* --------------- local help functions --------------------- */
-int PrintChar(char *buf, char c, int length, int ladjust)
+static int PrintChar(char *buf, char c, int length, int ladjust)
 {
 	int i;
 
@@ -236,7 +230,7 @@ int PrintChar(char *buf, char c, int length, int ladjust)
 	return length;
 }
 
-int PrintString(char *buf, char *s, int length, int ladjust)
+static int PrintString(char *buf, char *s, int length, int ladjust)
 {
 	int i;
 	int len = 0;
@@ -260,7 +254,7 @@ int PrintString(char *buf, char *s, int length, int ladjust)
 	return length;
 }
 
-int
+static int
 PrintNum(char *buf, unsigned long u, int base, int negFlag,
 	 int length, int ladjust, char padc, int upcase)
 {

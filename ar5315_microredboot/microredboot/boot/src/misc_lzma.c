@@ -66,18 +66,6 @@ int bootoffset = 0x800004bc;
  * Do the lzma decompression
  */
 
-static void print_hex(int val)
-{
-	static char *xlate = "0123456789abcdef";
-	int i;
-
-	puts("0x");
-
-	for (i = 28; i >= 0; i -= 4) {
-		putc(xlate[(val >> i) & 0xf]);
-	}
-}
-
 static int disaster = 0;
 static int lzma_unzip(void)
 {
@@ -105,10 +93,10 @@ static int lzma_unzip(void)
 	if (uncompressedSize > 0x400000 || lc > 3 || pb > 3 || lp > 3) {
 		if (disaster) {
 			error
-			    ("\r\ndata corrupted in recovery RedBoot too, this is a disaster condition. please re-jtag\r\n");
+			    ("\ndata corrupted in recovery RedBoot too, this is a disaster condition. please re-jtag\n");
 		}
 		disaster = 1;
-		puts("\r\ndata corrupted!\r\nswitching to recovery RedBoot\r\nloading");
+		puts("\ndata corrupted!\nswitching to recovery RedBoot\nloading");
 		inbuf = input_data;
 		insize = &input_data_end[0] - &input_data[0];
 		inptr = 0;
@@ -128,10 +116,10 @@ static int lzma_unzip(void)
 		if (i != uncompressedSize) {
 			if (disaster) {
 				error
-				    ("data corrupted in recovery RedBoot too, this is a disaster condition. please re-jtag\r\n");
+				    ("data corrupted in recovery RedBoot too, this is a disaster condition. please re-jtag\n");
 			}
 			disaster = 1;
-			puts("\r\ndata corrupted!\r\nswitching to recovery RedBoot\r\nloading");
+			puts("\ndata corrupted!\nswitching to recovery RedBoot\nloading");
 			inbuf = input_data;
 			insize = &input_data_end[0] - &input_data[0];
 			inptr = 0;
@@ -167,7 +155,7 @@ static int read_byte(unsigned char **buffer, UInt32 * bufferSize)
 	val = get_byte();
 	*buffer = &val;
 	if (icnt++ % (1024 * 10) == 0)
-		puts(".");
+		putc('.');
 	return LZMA_RESULT_OK;
 }
 
@@ -200,13 +188,9 @@ static unsigned int getLinux(void)
 		if (!strncmp(fis->name, "linux", 5)
 		    || !strncmp(fis->name, "vmlinux", 7)
 		    || !strcmp(fis->name, "kernel")) {
-			puts("found bootable image: ");
-			puts(fis->name);
-			puts(" at ");
-			print_hex(fis->flash_base);
-			puts(" entrypoint ");
-			print_hex(fis->entry_point);
-			puts("\r\n");
+			printf
+			    ("found bootable image: [%s] at [0x%08X] EP [0x%08X]\n",
+			     fis->name, fis->flash_base, fis->entry_point);
 			bootoffset = fis->entry_point;
 			output_data = (uch *) fis->mem_base;
 			memcpy((unsigned char *)ZCACHEADDR,
@@ -218,7 +202,7 @@ static unsigned int getLinux(void)
 		fis = (struct fis_image_desc *)p;
 		count++;
 	}
-	puts("no bootable image found, try default location 0xbfc10000\r\n");
+	puts("no bootable image found, try default location 0xbfc10000\n");
 	bootoffset = 0x80041000;
 	output_data = (uch *) 0x80041000;
 	return 0xbfc10000;
@@ -259,9 +243,7 @@ static void error(char *x)
 {
 	arch_error(x);
 
-	puts("\r\n\r\n");
-	puts(x);
-	puts("\r\n\r\n -- System halted");
+	printf("\n\n%s\n\n -- System halted", x);
 
 	while (1) ;		/* Halt */
 }
@@ -335,7 +317,7 @@ MACRO_START                                 \
 MACRO_END
 
 /*
- * 
+ * udelay implementation based on cpu cycle counter
  */
 static void udelay(int us)
 {
@@ -497,19 +479,12 @@ struct flashconfig {
 	__u32 sector_size;
 	__u32 cs_addrmask;
 } static flashconfig_tbl[MAX_FLASH] = {
-	{
-	 0, 0, 0, 0}, {
-		       STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT,
-		       STM_1MB_SECTOR_SIZE, 0x0},
-	{
-	 STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE, 0x0},
-	{
-	 STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE, 0x0},
-	{
-	 STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0},
-	{
-	 STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT,
-	 STM_16MB_SECTOR_SIZE, 0x0}
+	{0, 0, 0, 0}, //
+	{STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT,STM_1MB_SECTOR_SIZE, 0x0},//
+	{STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE, 0x0},//
+	{STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE, 0x0},//
+	{STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0},//
+	{STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT,STM_16MB_SECTOR_SIZE, 0x0}//
 };
 
 struct opcodes {
@@ -517,28 +492,17 @@ struct opcodes {
 	__s8 tx_cnt;
 	__s8 rx_cnt;
 } static stm_opcodes[] = {
-	{
-	 STM_OP_WR_ENABLE, 1, 0}, {
-				   STM_OP_WR_DISABLE, 1, 0}, {
-							      STM_OP_RD_STATUS,
-							      1, 1}, {
-								      STM_OP_WR_STATUS,
-								      1, 0}, {
-									      STM_OP_RD_DATA,
-									      4,
-									      4},
-	{
-	 STM_OP_FAST_RD_DATA, 5, 0}, {
-				      STM_OP_PAGE_PGRM, 8, 0}, {
-								STM_OP_SECTOR_ERASE,
-								4, 0}, {
-									STM_OP_BULK_ERASE,
-									1, 0}, {
-										STM_OP_DEEP_PWRDOWN,
-										1,
-										0},
-	{
-	 STM_OP_RD_SIG, 4, 1},
+	{STM_OP_WR_ENABLE, 1, 0},	//
+	{STM_OP_WR_DISABLE, 1, 0},	//
+	{STM_OP_RD_STATUS, 1, 1},	//
+	{STM_OP_WR_STATUS, 1, 0},	//
+	{STM_OP_RD_DATA, 4, 4},	//
+	{STM_OP_FAST_RD_DATA, 5, 0},	//
+	{STM_OP_PAGE_PGRM, 8, 0},	//
+	{STM_OP_SECTOR_ERASE, 4, 0},	//
+	{STM_OP_BULK_ERASE, 1, 0},	//
+	{STM_OP_DEEP_PWRDOWN, 1, 0},	//
+	{STM_OP_RD_SIG, 4, 1},	//
 };
 
 static __u32 spiflash_regread32(int reg)
@@ -633,7 +597,7 @@ static int spiflash_probe_chip(void)
 		flash_size = FLASH_16MB;
 		break;
 	default:
-		puts("Read of flash device signature failed!\r\n");
+		puts("Read of flash device signature failed!\n");
 		return (0);
 	}
 
@@ -646,9 +610,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 	unsigned int offset = flashsize - (blocksize * 3);
 	struct opcodes *ptr_opcode;
 	__u32 temp, reg;
-	puts("erasing nvram at ");
-	print_hex(flashbase + offset);
-	puts("\r\n");
+	printf("erasing nvram at [0x%08X]\n", flashbase + offset);
 
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
 
@@ -665,35 +627,99 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 
 	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
 
-	puts("done\r\n");
+	puts("done\n");
 	return 0;
 }
 
+static int flashdetected = 0;
 static int flashdetect(void)
 {
+	if (flashdetected)
+		return 0;
 	flashsize = 8 * 1024 * 1024;
 	flashbase = 0xa8000000;
 	int index = 0;
 	if (!(index = spiflash_probe_chip())) {
-		puts("Found no serial flash device, cannot reset to factory defaults\r\n");
+		puts("Found no serial flash device, cannot reset to factory defaults\n");
 		return -1;
 	} else {
 		flashsize = flashconfig_tbl[index].byte_cnt;
 		sectorsize = flashconfig_tbl[index].sector_size;
-		puts("Found Flash device SIZE=");
-		print_hex(flashsize);
-		puts(" SECTORSIZE=");
-		print_hex(sectorsize);
-		puts(" FLASHBASE=");
 		if (flashsize == 8 * 1024 * 1024)
 			flashbase = 0xa8000000;
 		else
 			flashbase = 0xbfc00000;
-		print_hex(flashbase);
-		puts("\r\n");
+		printf
+		    ("Found Flash device SIZE=0x%08X SECTORSIZE=0x%08X FLASHBASE=0x%08X\n",
+		     flashsize, sectorsize, flashbase);
 	}
+	flashdetected = 1;
 	return 0;
 
+}
+
+struct nvram_header {
+	__u32 magic;
+	__u32 len;
+	__u32 crc_ver_init;	/* 0:7 crc, 8:15 ver, 16:27 init, mem. test 28, 29-31 reserved */
+	__u32 config_refresh;	/* 0:15 config, 16:31 refresh */
+	__u32 config_ncdl;	/* ncdl values for memc */
+};
+
+struct nvram_tuple {
+	char *name;
+	char *value;
+	struct nvram_tuple *next;
+};
+
+#define NVRAM_SPACE 0x10000
+#define NVRAM_MAGIC			0x48534C46	/* 'NVFL' */
+
+static char nvram_buf[65536] __attribute__((aligned(4096))) = {0};//
+
+/*
+ * simple dd-wrt nvram implementation (read only)
+ */
+static void nvram_init(void)
+{
+	struct nvram_header *header;
+	__u32 off, lim;
+	int i;
+	flashdetect();
+
+	header =
+	    (struct nvram_header *)(flashbase + flashsize - (sectorsize * 3));
+	if (header->magic == NVRAM_MAGIC && header->len > 0
+	    && header->len <= NVRAM_SPACE) {
+		printf("DD-WRT nvram with size = %d found\n", header->len);
+		memcpy(nvram_buf, header, NVRAM_SPACE);
+	}
+}
+
+static char *nvram_get(const char *name)
+{
+	char *var, *value, *end, *eq;
+
+	if (!name)
+		return NULL;
+
+	if (!nvram_buf[0])
+		nvram_init();
+
+	/* Look for name=value and return value */
+	var = &nvram_buf[sizeof(struct nvram_header)];
+	end = nvram_buf + sizeof(nvram_buf) - 2;
+	end[0] = end[1] = '\0';
+	for (; *var; var = value + strlen(value) + 1) {
+		if (!(eq = strchr(var, '=')))
+			break;
+		value = eq + 1;
+		if ((eq - var) == strlen(name)
+		    && strncmp(var, name, (eq - var)) == 0)
+			return value;
+	}
+
+	return NULL;
 }
 
 ulg
@@ -704,12 +730,11 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	free_mem_ptr_end = free_mem_ptr_end_p;
 
 	arch_decomp_setup();
-
-	puts("MicroRedBoot v1.2, (c) 2009 DD-WRT.COM (");
-	puts(__DATE__);
-	puts(")\r\n");
-	if (resetTouched()) {
-		puts("Reset Button triggered\r\nBooting Recovery RedBoot\r\n");
+	printf("MicroRedBoot v1.2, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
+	nvram_init();
+	char *resetbutton = nvram_get("resetbutton_enable");
+	if (resetTouched() || (resetbutton && !strcmp(resetbutton, "1"))) {
+		puts("Reset Button triggered\nBooting Recovery RedBoot\n");
 		int count = 5;
 		while (count--) {
 			if (!resetTouched())	// check if reset button is unpressed again
@@ -717,7 +742,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 			udelay(1000000);
 		}
 		if (count <= 0) {
-			puts("reset button 5 seconds pushed, erasing nvram\r\n");
+			puts("reset button 5 seconds pushed, erasing nvram\n");
 			if (!flashdetect())
 				flash_erase_nvram(flashsize, sectorsize);
 		}
@@ -727,7 +752,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	} else {
 		flashdetect();
 		linuxaddr = getLinux();
-		puts("Booting Linux\r\n");
+		puts("Booting Linux\n");
 		resettrigger = 1;
 		/* initialize clock */
 		HAL_CLOCK_INITIALIZE(RTC_PERIOD);
@@ -758,7 +783,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	}
 	puts("loading");
 	lzma_unzip();
-	puts("\r\n\r\n\r\n");
+	puts("\n\n\n");
 
 	return output_ptr;
 }

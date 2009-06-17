@@ -1,10 +1,18 @@
 /*
- *  linux/arch/mips/boot/compressed/head-ar531x.S
+ *  head-ar531x.S
  *
+ *  Copyright (C) 2009 NewMedia-NET GmbH (derived from linux boot code)
  *  Copyright (C) 2003 Instant802 Networks, Inc.
  *  Copyright (C) 2001 Atheros Communications, Inc.,  All Rights Reserved.
  *
- *  License: 
+ *  originally written for xscale based linux kernel decompression
+ *  now adapted for AR531X based redboot stub and kernel loader
+ *  copyright 2009 Sebastian Gottschall / NewMedia-NET GmbH / DD-WRT.COM
+ *  licensed under GPL conditions
+ *  based on Vxworks sources from Atheros Communications, Inc.
+ *
+ *
+ *  License: GPL
  */
 
 
@@ -23,6 +31,7 @@
 
 #include "mips4Kx.h"
 #include "ar531xreg.h"
+#include "ar531xSio.h"
 
 /*
  * WARNING:
@@ -216,7 +225,7 @@ __AR531X_start:
 	.set reorder
 
 	/* Want this fairly early in output file */
-	.asciz "Copyright 2009 DD-WRT.COM"
+	.asciz "MicroRedBoot Copyright 2009 NewMedia-NET GmbH / DD-WRT.COM"
 	.align 4
 
 /*
@@ -626,6 +635,52 @@ __AR531X_reboot:
 	mtc0	t0, CP0_COUNT
 	mtc0	zero, CP0_COMPARE
 
+	li	a0, KSEG1|AR531X_RESET
+	lw	t0, 0(a0)
+	and	t0, ~RESET_APB
+	or	t0, RESET_UART0
+	sw	t0, 0(a0)
+	lw	zero, 0(a0)		# flush
+
+	and	t0, ~RESET_UART0
+	sw	t0, 0(a0)
+	lw	zero, 0(a0)		# flush
+
+1:	/* Use internal clocking */
+	li	a0, KSEG1|AR531X_CLOCKCTL
+	lw	t0, 0(a0)
+	and	t0, ~CLOCKCTL_UART0
+	sw	t0, 0(a0)
+
+	/* put UART CLOCK RATE into a0 */
+	li	a0, KSEG1|AR5312_SCRATCH
+	lw	a0, 0(a0)
+	bnez	a0, 3f			# CPU Clock freq specified?
+	li	a0, 180000000		# No: assume 180MHz
+3:	srl	a0, 2			# derive UART freq
+	div	a0, 115200
+	div	a0, 16
+	srl	t2, a0, 8
+	andi	t1, a0, 0xff		# AR531X_NS16550_DLL_VALUE
+	andi	t2, 0xff		# AR531X_NS16550_DLM_VALUE
+	
+2:
+
+	/* Init UART @ 115200 baud */
+	li	a0, KSEG1|AR531X_UART0
+	li	t0, LCR_DLAB		# access divisor latch
+	sw	t0, LCR<<2(a0)
+	sw	t1, DLL<<2(a0)		# divisor low
+	sw	t2, DLM<<2(a0)		# divisor high
+	li	t0, CHAR_LEN_8		# 8b mode
+	sw	t0, LCR<<2(a0)
+	sw	zero, IER<<2(a0)	# disable interrupts
+	li	t0, FCR_EN|FCR_RXCLR|FCR_TXCLR
+
+	sw	t0, FCR<<2(a0)		# reset and enable fifos
+
+
+
 	/* Set watchpoint for low memory to debug null pointers */
 	li	t0, 0x40000ff8		# G + Ignore 11:3 in check
 	mtc0	t0, CP0_WATCHHI
@@ -659,6 +714,25 @@ __AR531X_reboot:
 	nop
 	nop
 	bal	romCacheInit		# init/invalidate cache tags
+
+	nop
+        la      t0,_text               # dest addr
+#       la      t1,_text          # source addr
+#	lar	t1,__AR531X_start
+        la      t1,_text-0x80400000+BOOTBASE          # source addr
+        la      t3,_text+0x10000       # end dest addr
+3:      
+        lw      v0,0(t1)                # get word
+        sw      v0,0(t0)                # write word
+        addiu   t1,t1,4
+        addiu   t0,t0,4
+        bne     t0,t3,3b
+        nop
+        la      v0,4f                   # RAM address to go to
+        jr      v0
+        nop
+4:       
+	nop
 
 	/* Want to switch to cached segment now... */
 
@@ -720,6 +794,24 @@ __AR531X_reboot:
 	nop
 	nop
 	bal	ramCacheInit		# init/invalidate cache tags
+	nop
+
+        la      t0,_text               # dest addr
+#       la      t1,_text          # source addr
+#	lar	t1,__AR531X_start
+        la      t1,_text-0x80400000+BOOTBASE          # source addr
+        la      t3,_text+0x10000       # end dest addr
+3:      
+        lw      v0,0(t1)                # get word
+        sw      v0,0(t0)                # write word
+        addiu   t1,t1,4
+        addiu   t0,t0,4
+        bne     t0,t3,3b
+        nop
+        la      v0,4f                   # RAM address to go to
+        jr      v0
+        nop
+4:       
 	nop
 
 	/* Want to switch to cached segment now... */
