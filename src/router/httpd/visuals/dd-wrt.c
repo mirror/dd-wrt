@@ -2892,6 +2892,8 @@ static char *bg_rates[] =
 static char *half_rates[] = { "3", "4.5", "6", "9", "12", "18", "24", "27" };
 static char *quarter_rates[] =
     { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
+static char *subquarter_rates[] =
+    { "0.75", "1", "1.5", "2.25", "3", "4.5", "6", "6.75" };
 
 void show_rates(webs_t wp, char *prefix, int maxrate)
 {
@@ -2945,6 +2947,10 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 			rate = quarter_rates;
 			len = sizeof(quarter_rates) / sizeof(char *);
 		}
+		if (nvram_match(bw, "2")) {
+			rate = subquarter_rates;
+			len = sizeof(subquarter_rates) / sizeof(char *);
+		}
 	}
 	if (nvram_match(mode, "a-only")) {
 		rate = ag_rates;
@@ -2960,6 +2966,10 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 			rate = quarter_rates;
 			len = sizeof(quarter_rates) / sizeof(char *);
 		}
+		if (nvram_match(bw, "2")) {
+			rate = subquarter_rates;
+			len = sizeof(subquarter_rates) / sizeof(char *);
+		}
 	}
 	if (nvram_match(mode, "bg-mixed")) {
 		rate = bg_rates;
@@ -2971,6 +2981,10 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 		if (nvram_match(bw, "5")) {
 			rate = quarter_rates;
 			len = sizeof(quarter_rates) / sizeof(char *);
+		}
+		if (nvram_match(bw, "2")) {
+			rate = subquarter_rates;
+			len = sizeof(subquarter_rates) / sizeof(char *);
 		}
 	}
 	if (nvram_match(mode, "mixed")) {
@@ -2988,6 +3002,10 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 		if (nvram_match(bw, "5")) {
 			rate = quarter_rates;
 			len = sizeof(quarter_rates) / sizeof(char *);
+		}
+		if (nvram_match(bw, "2")) {
+			rate = subquarter_rates;
+			len = sizeof(subquarter_rates) / sizeof(char *);
 		}
 	}
 	int i;
@@ -3425,15 +3443,12 @@ static void show_chanshift(webs_t wp, char *prefix)
 
 	sprintf(wl_channelbw, "%s_channelbw", prefix);
 	sprintf(wl_chanshift, "%s_chanshift", prefix);
-	if (atoi(nvram_safe_get(wl_channelbw)) > 5
-	    && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10)
-		nvram_set(wl_chanshift, "10");
-	if (atoi(nvram_safe_get(wl_channelbw)) > 10
-	    && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 0)
-		nvram_set(wl_chanshift, "0");
+	if (atoi(nvram_safe_get(wl_channelbw)) > 2 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10) nvram_set(wl_chanshift, "10");
+	if (atoi(nvram_safe_get(wl_channelbw)) > 5 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10) nvram_set(wl_chanshift, "10");
+	if (atoi(nvram_safe_get(wl_channelbw)) > 10 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 0) vram_set(wl_chanshift, "0");
 
 	if (nvram_match(wl_channelbw, "5")
-	    || nvram_match(wl_channelbw, "10")) {
+	    || nvram_match(wl_channelbw, "10") || nvram_match(wl_channelbw, "2")) {
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
@@ -3441,21 +3456,21 @@ static void show_chanshift(webs_t wp, char *prefix)
 			  wl_chanshift);
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		if (nvram_match(wl_channelbw, "5"))
+		if (nvram_match(wl_channelbw, "5") || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"-15\\\" %s >-15 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-15",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10"))
+		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"-10\\\" %s >-10 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-10",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10"))
+		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"-5\\\" %s >-5 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-5",
@@ -3467,20 +3482,20 @@ static void show_chanshift(webs_t wp, char *prefix)
 					      "0") ? "selected=\\\"selected\\\""
 			  : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10"))
+		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"5\\\" %s >+5 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "5",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10"))
+		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"10\\\" %s >+10 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "10",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
-		if (nvram_match(wl_channelbw, "5"))
+		if (nvram_match(wl_channelbw, "5")|| nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"15\\\" %s >+15 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "15",
@@ -4058,6 +4073,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
 		  nvram_match(wl_width,
 			      "5") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
+		  nvram_match(wl_width,
+			      "2") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");

@@ -742,6 +742,11 @@ static void set_rate(char *dev, char *priv)
 			nvram_set(rate, "0");
 			r = "0";
 		}
+	if (nvram_match(bw, "2"))
+		if (atof(r) > 6.75) {
+			nvram_set(rate, "0");
+			r = "0";
+		}
 	if (!strcmp(netmode, "b-only"))
 		sysprintf("iwconfig %s rate 11M auto", priv);
 	else {
