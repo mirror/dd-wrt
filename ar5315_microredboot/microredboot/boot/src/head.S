@@ -67,7 +67,7 @@ LEAF(main)
 	and	a2,a2,t0			/* DELAY SLOT */
 
 	/* Jump to the kernel's entry point */
-	la	t1, bootoffset
+	la	t1, bootoffset  
 	nop
 	lw	t0, 0(t1)
 	nop

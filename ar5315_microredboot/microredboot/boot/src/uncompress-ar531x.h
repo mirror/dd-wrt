@@ -75,6 +75,8 @@ puts(const char *s)
         int c;
 
         while ((c = *s++)) {
+    		if (c=='\n')
+    		    putc('\r');
     		putc(c);
         }
 }
