@@ -91,6 +91,12 @@ int getcpurev(void)
 
 int cpu_plltype(void)
 {
+	if (nvram_match("DD_BOARD","Buffalo WHR-G54S") || //
+	    nvram_match("DD_BOARD","Buffalo WHR-HP-G54") || //
+	    nvram_match("DD_BOARD","Buffalo AS-A100") || //
+	    nvram_match("DD_BOARD","Buffalo WHR-HP-G54DD")) //
+	return 0;
+	
 	int cpurev = getcpurev();
 	int cputype = check_hw_type();
 
