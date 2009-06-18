@@ -155,6 +155,7 @@ share.turbo="Turbo (40 Mhz)";
 share.full="Polni (20 Mhz)";
 share.half="Polovièni (10 Mhz)";
 share.quarter="Èetrtinski (5 Mhz)";
+share.subquarter="Osminski (2.5 Mhz)";
 share.seealso="Glej tudi";
 share.never="nikoli";
 share.unknown="Neznano";
@@ -194,6 +195,7 @@ share.preempt="Predkup";
 share.acktiming="ACK uèasenje";
 share.broadcast="Broadcast podpora";
 share.secondcharacter="s";
+share.change="Sprememba uporabnikovega gesla";
 
 
 sbutton.save="Shrani nastavitve";
@@ -1401,7 +1403,7 @@ status_band.up="gor";
 
 //help container
 
-hstatus_band.svg="Adobe SVG plugin je potreben za prikaz grafov pasovne ¹irine.";
+hstatus_band.svg="Za prikaz grafov pasovne ¹irine je potreben dodatek Adobe SVG.";
 hstatus_band.right1="Klikni na oznako za preklop enote (bytes/s ali bits/s).";
 hstatus_band.right2="Klikni na oznako za izbiro merila.";
 
@@ -1572,7 +1574,7 @@ upnp.serv="UPnP storitev";
 upnp.clear="Ob zagonu izbri¹i posredovanja";
 upnp.url="Po¹lji predstavitveni URL";
 upnp.msg1="Kliknite za izbris vnosa";
-upnp.msg2="Izbri¹i vse vnose?";
+upnp.msg2="Izbri¹em vse vnose?";
 
 //help container
 
@@ -1835,7 +1837,7 @@ wl_basic.repeater="Prenosnik";
 wl_basic.repeaterbridge="Prenosnik-most";
 wl_basic.clientBridge="Odjemalec-most";
 wl_basic.adhoc="Adhoc";
-wl_basic.wdssta="WDS Postaja";
+wl_basic.wdssta="WDS postaja";
 wl_basic.wdsap="WDS toèka";
 wl_basic.mixed="Me¹ano";
 wl_basic.greenfield="Greenfield";
@@ -1858,7 +1860,7 @@ wl_basic.h2_v24="Brez¾ièni fizièni vmesnik";
 wl_basic.h2_vi="Navidezni vmesniki";
 wl_basic.regdom="Regulatorska domena";
 wl_basic.TXpower="Oddajna (TX) moè";
-wl_basic.AntGain="Jaèanje antene";
+wl_basic.AntGain="Ojaèanje antene";
 wl_basic.diversity="Diverziteta";
 wl_basic.primary="Prva";
 wl_basic.secondary="Druga";
