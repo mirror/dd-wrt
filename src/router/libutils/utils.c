@@ -2527,6 +2527,7 @@ int led_control(int type, int act)
 	case ROUTER_DLINK_DIR330:
 		diag_gpio = 0x106;
 		connected_gpio = 0x100;
+		usb_gpio = 0x104;
 		break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
