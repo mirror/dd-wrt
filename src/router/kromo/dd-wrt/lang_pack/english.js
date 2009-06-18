@@ -195,6 +195,7 @@ share.preempt="Preemption";
 share.acktiming="ACK Timing";
 share.broadcast="Broadcast support";
 share.secondcharacter="s";
+share.change="User Password Change";
 
 var sbutton = new Object();
 sbutton.save="Save";

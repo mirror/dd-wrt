@@ -1,5 +1,4 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - User Password Change</title>
+<% do_pagehead("share.change"); %>
 		<script type="text/javascript">//
 		//<![CDATA[
 

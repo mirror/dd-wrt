@@ -155,7 +155,8 @@ share.days_genetive = share.days;
 share.standard="Standard";
 share.user="Nutzer";
 share.preempt="Bevorzugung";
-share.broadcast="Broadcast Unterstützung"
+share.broadcast="Broadcast Unterstützung";
+share.change="Nutzer Password ändern";
 
 
 sbutton.save="Speichern";
