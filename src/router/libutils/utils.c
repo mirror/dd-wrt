@@ -689,6 +689,9 @@ int internal_getRouterBrand()
 #elif HAVE_EAP3660
 	setRouter("Senao EAP-3660");
 	return ROUTER_BOARD_FONERA;
+#elif HAVE_MR3201A
+	setRouter("Accton MR3201A");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_FONERA
 	struct mii_ioctl_data *data;
 	struct ifreq iwr;
@@ -1889,7 +1892,6 @@ int C_led_4712(int i)
 
 int C_led(int i)
 {
-	// show_hw_type(check_hw_type());
 	int brand = getRouterBrand();
 
 	if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
@@ -2524,7 +2526,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_DLINK_DIR330:
 		diag_gpio = 0x106;
-		connected_gpio = 0x104;
+		connected_gpio = 0x100;
 		break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
