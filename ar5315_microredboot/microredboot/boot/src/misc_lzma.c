@@ -650,7 +650,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
 		return;
 	}
-	printf("erasing nvram at [0x%08X]\n", flashbase + nvramdetect);
+	printf("erasing nvram at [0x%08X]\n", nvramdetect);
 
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
 
@@ -697,6 +697,63 @@ static int flashdetect(void)
 	return 0;
 
 }
+#else
+
+static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
+{
+	int i, ticks;
+	unsigned short val;
+	if (!nvramdetect) {
+		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
+		return;
+	}
+	printf("erasing nvram at [0x%08X]\n", nvramdetect);
+	volatile unsigned short *block = (unsigned short *)nvramdetect;
+	volatile unsigned short *p555 =
+	    (unsigned short *)((unsigned long)flashbase + 0x0aaa);
+	volatile unsigned short *p2aa =
+	    (unsigned short *)((unsigned long)flashbase + 0x0554);
+
+	*block = 0xf0;		/* Make sure in read state */
+	*p555 = 0xaa;
+	*p2aa = 0x55;
+	*p555 = 0x80;
+	*p555 = 0xaa;
+	*p2aa = 0x55;
+	*block = 0x30;
+	for (ticks = 0, i = 0;; i++) {
+		val = *block;
+
+		/* When Erase operation is completed, DQ7 will produce 1 "1".
+		   and  DQ6 stops toggling. */
+		if ((val & 0x80) == 0x80) {
+
+			// Check DQ6 toggle
+			unsigned short s_val;
+
+			// Read the second time.
+			s_val = *block;
+			if ((s_val & 0x80) && (s_val & 0x40) == (val & 0x40)) {
+				*block = 0xf0;	/* Do reset */
+				puts("erase successfull!\n");
+				return 0;
+			}
+		}
+
+		else {
+			if (i >= 1024) {
+				i = 0;
+				if (++ticks > 7 * 100 * 10) {
+					break;
+				}
+			}
+		}
+	}
+	*block = 0xf0;		/* Do reset */
+	puts("erase failed!\n");
+	return -1;
+}
+
 #endif
 struct nvram_header {
 	__u32 magic;
@@ -794,7 +851,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		puts("reset button manual override detected! (nvram var resetbutton_enable=1)\n");
 	if (resetTouched() || (resetbutton && !strcmp(resetbutton, "1"))) {
 		puts("Reset Button triggered\nBooting Recovery RedBoot\n");
-#ifndef AR5312
+
 		int count = 5;
 		while (count--) {
 			if (!resetTouched())	// check if reset button is unpressed again
@@ -803,10 +860,12 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		}
 		if (count <= 0) {
 			puts("reset button 5 seconds pushed, erasing nvram\n");
+
+#ifndef AR5312
 			if (!flashdetect())
+#endif
 				flash_erase_nvram(flashsize, sectorsize);
 		}
-#endif
 
 		bootoffset = 0x800004bc;
 		resettrigger = 0;
