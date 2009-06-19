@@ -7,7 +7,8 @@
  * based on Vxworks sources from Atheros Communications, Inc.
  *
  */
-
+#include "ramconfig.h"
+#ifndef AR5312
 
 #include <linux/autoconf.h>
 #include <linux/init.h>
@@ -892,3 +893,4 @@ __AR531X_reboot:
 
 
 #endif	/* ! CONFIG_BOOTLOADER */
+#endif

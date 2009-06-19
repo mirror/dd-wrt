@@ -11,7 +11,7 @@ ATH_INSTALL=.
 endif
 
 ifndef RESETBUTTON
-export RESETBUTTON=0x06
+export RESETBUTTON=0x16
 endif
 
 ifndef TFTPPATH
@@ -128,16 +128,18 @@ ap30:
 	$(PLATFORM_RAM_BUILD)
 
 ap48:
-# ROM version
-	$(PLATFORM_ROM_START) \
-	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_ROM.ecm; \
-	$(PLATFORM_BLD_CUST)
-	$(PLATFORM_ROM_BUILD)
 # RAM version
+	echo "#define RAM_SIZE 0x2000000" > boot/src/ramconfig.h
+	echo "#define AR5312 1" >> boot/src/ramconfig.h
 	$(PLATFORM_RAM_START) \
+	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
+	ecosconfig import $(REDBOOT_DIR)/options/RAM/32MB_ram; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/8MB_rom_ap48; \
 	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
 	$(PLATFORM_BLD_CUST)
 	$(PLATFORM_RAM_BUILD)
+	cp redboot/ap48/ram/install/bin/redboot.rom images/redboot_ap48_32M_8M_kendin.rom
+	cp redboot/ap48/ram/install/bin/redboot.img images/redboot_ap48_32M_8M_kendin.elf
 
 ap43:
 # ROM version

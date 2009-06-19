@@ -14,3 +14,13 @@ rm -f images/*
 make ap65 RESETBUTTON=0x17
 mkdir images_wrt54g2
 cp images/*.rom images_wrt54g2
+
+rm -f images/*
+make ap48 RESETBUTTON=0x16
+mkdir images_senao
+cp images/*.rom images_senao
+
+rm -f images/*
+make ap48 RESETBUTTON=0x06
+mkdir images_default
+cp images/*.rom images_default
