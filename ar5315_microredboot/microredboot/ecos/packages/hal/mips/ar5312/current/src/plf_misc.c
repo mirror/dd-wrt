@@ -227,13 +227,11 @@ hal_ar5312_flash_setup(void)
 {
     cyg_uint32 flash_ctl;
     int ar531x_flash_data_found;
-#ifdef CYGNUM_USE_CONSOLIDATED_BOARD_DATA
-    char* board_data_scan_start = 0xbfff0000; 
-    int radio_config_offset   = 0xf8;
-#else 
-    char *board_data_scan_start = 0xbffff000;
+    int consolidated=0;
+    char* board_data_scan_start_con = 0xbe7f0000; 
+    int radio_config_offset_con   = 0xf8;
+    char *board_data_scan_start = 0xbe7ff000;
     int radio_config_offset   = 0x1000;
-#endif
     
     HAL_READ_UINT32(AR531X_FLASHCTL0, flash_ctl);
 
@@ -275,7 +273,7 @@ hal_ar5312_flash_setup(void)
     ar531x_flash_data_found = 0;
     
     for (ar531x_board_configuration = (char *)board_data_scan_start;
-         ar531x_board_configuration > (char *)0xbff80000;
+         ar531x_board_configuration > (char *)0xbe780000;
          ar531x_board_configuration -= 0x1000)
     {
         if ( *(int *)ar531x_board_configuration == AR531X_BD_MAGIC) {
@@ -284,8 +282,20 @@ hal_ar5312_flash_setup(void)
         }
     }
 
+    if (!ar531x_flash_data_found) // scan for consolidated board data if not found
+    for (ar531x_board_configuration = (char *)board_data_scan_start_con;
+         ar531x_board_configuration > (char *)0xbe780000;
+         ar531x_board_configuration -= 0x1000)
+    {
+        if ( *(int *)ar531x_board_configuration == AR531X_BD_MAGIC) {
+            ar531x_flash_data_found = 1;
+            consolidated = 1;
+            break;
+        }
+    }
+
     if (!ar531x_flash_data_found) {
-       //diag_printf("hal_ar5312_flash_setup:Flash data not found.\n");
+       diag_printf("hal_ar5312_flash_setup:Flash data not found.\n");
         return;
     }
 
@@ -295,8 +305,12 @@ hal_ar5312_flash_setup(void)
      * at a time until we find non-0xffffffff.
      */
     ar531x_flash_data_found = 0;
-    for (ar531x_radio_configuration = ar531x_board_configuration + radio_config_offset;
-         ar531x_radio_configuration < (char *)0xbffff000;
+    int config_offset = radio_config_offset;
+    if (consolidated)
+	config_offset = radio_config_offset_con;
+	
+    for (ar531x_radio_configuration = ar531x_board_configuration + config_offset;
+         ar531x_radio_configuration < (char *)0xbe7ff000;
          ar531x_radio_configuration += 0x1000)
     {
         if (*(int *)ar531x_radio_configuration != 0xffffffff) {
@@ -306,6 +320,7 @@ hal_ar5312_flash_setup(void)
     }
 
     if (!ar531x_flash_data_found) {
+        diag_printf("hal_ar5312_flash_setup:Radio data not found.\n");
         return;
     }
 }
