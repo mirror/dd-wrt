@@ -1,6 +1,6 @@
 version 0
-region ram CYGNUM_RAM_ENTRY CYGNUM_EFFECTIVE_RAM_SIZE 0 !
-section rom_vectors 0 1 0 1 1 1 1 1 CYGNUM_RAM_ENTRY CYGNUM_RAM_ENTRY ROMISC ROMISC !
+region ram 80000000 CYGNUM_RAM_SIZE 0 !
+section rom_vectors 0 1 0 1 1 1 1 1 80000000 CYGNUM_RAM_SIZE ROMISC ROMISC !
 section ROMISC 0 4 0 1 0 1 0 1 RELOCS RELOCS !
 section RELOCS 0 4 0 1 0 1 0 1 init init !
 section init 0 4 0 1 0 1 0 1 text text !

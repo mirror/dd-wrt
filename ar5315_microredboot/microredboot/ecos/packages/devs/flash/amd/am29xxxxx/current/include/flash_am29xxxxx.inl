@@ -253,7 +253,7 @@ flash_hwr_init(void)
     CYGHWR_FLASH_AM29XXXXX_PLF_INIT();
 
     flash_dev_query(id);
-
+    diag_printf("MANID:%X DEVID1:%X DEVID2:%X DEVID3:%X\n",id[0],id[1],id[2],id[3]);
     // Look through table for device data
     flash_dev_info = supported_devices;
     for (i = 0; i < NUM_DEVICES; i++) {

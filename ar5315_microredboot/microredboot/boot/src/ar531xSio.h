@@ -128,13 +128,3 @@
 #define FCR_TX_2_CHARS  0x10    /* transmit fifo trigger at 2 characters */
 #define FCR_TX_EMPTY    0x00    /* transmit fifo trigger on empty fifo */
 
-#if 0
-#if AR5311
-#define FIFO_DEPTH      1
-#elif AR5312
-#define FIFO_DEPTH      16
-#elif AR5315
-#define FIFO_DEPTH      16
-#endif
-#endif
-
