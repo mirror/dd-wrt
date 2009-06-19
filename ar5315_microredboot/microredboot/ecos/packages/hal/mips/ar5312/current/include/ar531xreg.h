@@ -424,7 +424,7 @@
  *   baud = clock / (16 * divisor)
  * where divisor is specified as a High Byte (DLM) and a Low Byte (DLL).
  */
-#define DESIRED_BAUD_RATE                        9600
+#define DESIRED_BAUD_RATE                        115200
 
 #define AR531X_NS16550_DLM_VALUE \
         ((((AR531X_UART_CLOCK_RATE/DESIRED_BAUD_RATE)/16) >> 8) & 0xff)
