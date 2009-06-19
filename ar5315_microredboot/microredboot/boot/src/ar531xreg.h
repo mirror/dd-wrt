@@ -25,11 +25,11 @@
 #define AR531X_ENET1    0x18200000
 #define AR531X_SDRAMCTL 0x18300000
 #define AR531X_FLASHCTL 0x18400000
-#define AR531X_WLAN1    0x18500000              /* (ar5212) */
+#define AR531X_WLAN1    0x18500000	/* (ar5212) */
 #define AR531X_APBBASE  0x1c000000
 #define AR531X_FLASH0   0x1e000000
-#define AR531X_FLASHBT  0x1fc00000              /* ro boot alias to FLASH0 */
-#define AR531X_FLASH1   AR531X_SDRAM1           /* board stuff option */
+#define AR531X_FLASHBT  0x1fc00000	/* ro boot alias to FLASH0 */
+#define AR531X_FLASH1   AR531X_SDRAM1	/* board stuff option */
 #define AR531X_FLASH2   0x10000000
 
 /*
@@ -38,46 +38,46 @@
  */
 #define AR531X_MEM_CFG0 (AR531X_SDRAMCTL + 0x00)
 #define AR531X_MEM_CFG1 (AR531X_SDRAMCTL + 0x04)
-#define AR531X_MEM_REF  (AR531X_SDRAMCTL + 0x08)        /* 16 bit value */
+#define AR531X_MEM_REF  (AR531X_SDRAMCTL + 0x08)	/* 16 bit value */
 
-#define MEM_CFG0_F0     0x00000002      /* bank 0: 256Mb support */
-#define MEM_CFG0_T0     0x00000004      /* bank 0: chip width */
-#define MEM_CFG0_B0     0x00000008      /* bank 0: 2 vs 4 bank */
-#define MEM_CFG0_F1     0x00000020      /* bank 1: 256Mb support */
-#define MEM_CFG0_T1     0x00000040      /* bank 1: chip width */
-#define MEM_CFG0_B1     0x00000080      /* bank 1: 2 vs 4 bank */
-                                        /* bank 2 and 3 are not supported */
-#define MEM_CFG0_E      0x00020000      /* SDRAM clock control */
-#define MEM_CFG0_C      0x00040000      /* SDRAM clock enable */
-#define MEM_CFG0_X      0x00080000      /* bus width (0 == 32b) */
-#define MEM_CFG0_CAS    0x00300000      /* CAS latency (1-3) */
+#define MEM_CFG0_F0     0x00000002	/* bank 0: 256Mb support */
+#define MEM_CFG0_T0     0x00000004	/* bank 0: chip width */
+#define MEM_CFG0_B0     0x00000008	/* bank 0: 2 vs 4 bank */
+#define MEM_CFG0_F1     0x00000020	/* bank 1: 256Mb support */
+#define MEM_CFG0_T1     0x00000040	/* bank 1: chip width */
+#define MEM_CFG0_B1     0x00000080	/* bank 1: 2 vs 4 bank */
+					/* bank 2 and 3 are not supported */
+#define MEM_CFG0_E      0x00020000	/* SDRAM clock control */
+#define MEM_CFG0_C      0x00040000	/* SDRAM clock enable */
+#define MEM_CFG0_X      0x00080000	/* bus width (0 == 32b) */
+#define MEM_CFG0_CAS    0x00300000	/* CAS latency (1-3) */
 #define MEM_CFG0_C1     0x00100000
 #define MEM_CFG0_C2     0x00200000
 #define MEM_CFG0_C3     0x00300000
-#define MEM_CFG0_R      0x00c00000      /* RAS to CAS latency (1-3) */
+#define MEM_CFG0_R      0x00c00000	/* RAS to CAS latency (1-3) */
 #define MEM_CFG0_R1     0x00400000
 #define MEM_CFG0_R2     0x00800000
 #define MEM_CFG0_R3     0x00c00000
-#define MEM_CFG0_A      0x01000000      /* AHB auto pre-charge */
+#define MEM_CFG0_A      0x01000000	/* AHB auto pre-charge */
 
-#define MEM_CFG1_I      0x00000001      /* memory init control */
-#define MEM_CFG1_M      0x00000002      /* memory init control */
-#define MEM_CFG1_R      0x00000004      /* read buffer enable (unused) */
-#define MEM_CFG1_W      0x00000008      /* write buffer enable (unused) */
-#define MEM_CFG1_B      0x00000010      /* SDRAM engine busy */
-#define MEM_CFG1_AC0    0x00000700      /* bank 0: SDRAM addr check (added) */
-#define MEM_CFG1_AC_2   0               /* AC of 2MB */
-#define MEM_CFG1_AC_4   1               /* AC of 4MB */
-#define MEM_CFG1_AC_8   2               /* AC of 8MB */
-#define MEM_CFG1_AC_16  3               /* AC of 16MB */
-#define MEM_CFG1_AC_32  4               /* AC of 32MB */
-#define MEM_CFG1_AC_64  5               /* AC of 64MB */
-#define MEM_CFG1_AC_128 6               /* AC of 128MB */
+#define MEM_CFG1_I      0x00000001	/* memory init control */
+#define MEM_CFG1_M      0x00000002	/* memory init control */
+#define MEM_CFG1_R      0x00000004	/* read buffer enable (unused) */
+#define MEM_CFG1_W      0x00000008	/* write buffer enable (unused) */
+#define MEM_CFG1_B      0x00000010	/* SDRAM engine busy */
+#define MEM_CFG1_AC0    0x00000700	/* bank 0: SDRAM addr check (added) */
+#define MEM_CFG1_AC_2   0	/* AC of 2MB */
+#define MEM_CFG1_AC_4   1	/* AC of 4MB */
+#define MEM_CFG1_AC_8   2	/* AC of 8MB */
+#define MEM_CFG1_AC_16  3	/* AC of 16MB */
+#define MEM_CFG1_AC_32  4	/* AC of 32MB */
+#define MEM_CFG1_AC_64  5	/* AC of 64MB */
+#define MEM_CFG1_AC_128 6	/* AC of 128MB */
 #define MEM_CFG1_AC0_S  8
-#define MEM_CFG1_E0     0x00000800      /* bank 0: enable */
-#define MEM_CFG1_AC1    0x00007000      /* bank 1: SDRAM addr check (added) */
+#define MEM_CFG1_E0     0x00000800	/* bank 0: enable */
+#define MEM_CFG1_AC1    0x00007000	/* bank 1: SDRAM addr check (added) */
 #define MEM_CFG1_AC1_S  12
-#define MEM_CFG1_E1     0x00008000      /* bank 1: enable */
+#define MEM_CFG1_E1     0x00008000	/* bank 1: enable */
 
 /*
  * ARM Flash Controller
@@ -87,14 +87,14 @@
 #define AR531X_FLASHCTL1        (AR531X_FLASHCTL + 0x04)
 #define AR531X_FLASHCTL2        (AR531X_FLASHCTL + 0x08)
 
-#define FLASHCTL_IDCY   0x0000000f      /* Idle cycle turn around time */
+#define FLASHCTL_IDCY   0x0000000f	/* Idle cycle turn around time */
 #define FLASHCTL_IDCY_S 0
-#define FLASHCTL_WST1   0x000003e0      /* Wait state 1 */
+#define FLASHCTL_WST1   0x000003e0	/* Wait state 1 */
 #define FLASHCTL_WST1_S 5
-#define FLASHCTL_RBLE   0x00000400      /* Read byte lane enable */
-#define FLASHCTL_WST2   0x0000f800      /* Wait state 2 */
+#define FLASHCTL_RBLE   0x00000400	/* Read byte lane enable */
+#define FLASHCTL_WST2   0x0000f800	/* Wait state 2 */
 #define FLASHCTL_WST2_S 11
-#define FLASHCTL_AC     0x00070000      /* Flash address check (added) */
+#define FLASHCTL_AC     0x00070000	/* Flash address check (added) */
 #define FLASHCTL_AC_S   16
 #define FLASHCTL_AC_128K 0x00000000
 #define FLASHCTL_AC_256K 0x00010000
@@ -103,80 +103,80 @@
 #define FLASHCTL_AC_2M   0x00040000
 #define FLASHCTL_AC_4M   0x00050000
 #define FLASHCTL_AC_8M   0x00060000
-#define FLASHCTL_AC_RES  0x00070000     /* 16MB is not supported */
-#define FLASHCTL_E      0x00080000      /* Flash bank enable (added) */
-#define FLASHCTL_BUSERR 0x01000000      /* Bus transfer error status flag */
-#define FLASHCTL_WPERR  0x02000000      /* Write protect error status flag */
-#define FLASHCTL_WP     0x04000000      /* Write protect */
-#define FLASHCTL_BM     0x08000000      /* Burst mode */
-#define FLASHCTL_MW     0x30000000      /* Memory width */
-#define FLASHCTL_MWx8   0x00000000      /* Memory width x8 */
-#define FLASHCTL_MWx16  0x10000000      /* Memory width x16 */
-#define FLASHCTL_MWx32  0x20000000      /* Memory width x32 (not supported) */
-#define FLASHCTL_ATNR   0x00000000      /* Access type == no retry */
-#define FLASHCTL_ATR    0x80000000      /* Access type == retry every */
-#define FLASHCTL_ATR4   0xc0000000      /* Access type == retry every 4 */
+#define FLASHCTL_AC_RES  0x00070000	/* 16MB is not supported */
+#define FLASHCTL_E      0x00080000	/* Flash bank enable (added) */
+#define FLASHCTL_BUSERR 0x01000000	/* Bus transfer error status flag */
+#define FLASHCTL_WPERR  0x02000000	/* Write protect error status flag */
+#define FLASHCTL_WP     0x04000000	/* Write protect */
+#define FLASHCTL_BM     0x08000000	/* Burst mode */
+#define FLASHCTL_MW     0x30000000	/* Memory width */
+#define FLASHCTL_MWx8   0x00000000	/* Memory width x8 */
+#define FLASHCTL_MWx16  0x10000000	/* Memory width x16 */
+#define FLASHCTL_MWx32  0x20000000	/* Memory width x32 (not supported) */
+#define FLASHCTL_ATNR   0x00000000	/* Access type == no retry */
+#define FLASHCTL_ATR    0x80000000	/* Access type == retry every */
+#define FLASHCTL_ATR4   0xc0000000	/* Access type == retry every 4 */
 
 /*
  * APB Address Map
  */
-#define AR531X_UART0    (AR531X_APBBASE + 0x0000)       /* high speed uart */
-#define AR531X_UART1    (AR531X_APBBASE + 0x1000)       /* ar531x only */
+#define AR531X_UART0    (AR531X_APBBASE + 0x0000)	/* high speed uart */
+#define AR531X_UART1    (AR531X_APBBASE + 0x1000)	/* ar531x only */
 #define AR531X_GPIO     (AR531X_APBBASE + 0x2000)
 #define AR531X_RESETTMR (AR531X_APBBASE + 0x3000)
 #define AR531X_APB2AHB  (AR531X_APBBASE + 0x4000)
 
-#define AR531X_GPIO_DO      (AR531X_GPIO + 0x00)        /* backwards */
+#define AR531X_GPIO_DO      (AR531X_GPIO + 0x00)	/* backwards */
 #define AR531X_GPIO_DI      (AR531X_GPIO + 0x04)
 #define AR531X_GPIO_CR      (AR531X_GPIO + 0x08)
 
 #define AR531X_NUM_GPIO 8
-#define GPIO_CR_M(x)    (1 << (x))                      /* mask for i/o */
-#define GPIO_CR_O(x)    (0 << (x))                      /* output */
-#define GPIO_CR_I(x)    (1 << (x))                      /* input */
-#define GPIO_CR_INT(x)  (1 << ((x)+8))                  /* interrupt enable */
-#define GPIO_CR_UART(x) (1 << ((x)+16))                 /* uart multiplex */
+#define GPIO_CR_M(x)    (1 << (x))	/* mask for i/o */
+#define GPIO_CR_O(x)    (0 << (x))	/* output */
+#define GPIO_CR_I(x)    (1 << (x))	/* input */
+#define GPIO_CR_INT(x)  (1 << ((x)+8))	/* interrupt enable */
+#define GPIO_CR_UART(x) (1 << ((x)+16))	/* uart multiplex */
 
 /*
  * Timers
  */
-#define AR531X_TIMER    (AR531X_RESETTMR + 0x0000)      /* count down timer */
-#define AR531X_RELOAD   (AR531X_RESETTMR + 0x0004)      /* count reload value */
+#define AR531X_TIMER    (AR531X_RESETTMR + 0x0000)	/* count down timer */
+#define AR531X_RELOAD   (AR531X_RESETTMR + 0x0004)	/* count reload value */
 #define AR531X_WDC      (AR531X_RESETTMR + 0x0008)
 #define AR531X_WD       (AR531X_RESETTMR + 0x000c)
 
-#define WDC_RESET       0x00000002                      /* reset on watchdog */
-#define WDC_NMI         0x00000001                      /* NMI on watchdog */
+#define WDC_RESET       0x00000002	/* reset on watchdog */
+#define WDC_NMI         0x00000001	/* NMI on watchdog */
 
 /*
  * APB Interrupt control
  */
 #define AR531X_ISR      (AR531X_RESETTMR + 0x0010)
 #define AR531X_IMR      (AR531X_RESETTMR + 0x0014)
-#define AR531X_GISR     (AR531X_RESETTMR + 0x0018)      /* global intr status */
+#define AR531X_GISR     (AR531X_RESETTMR + 0x0018)	/* global intr status */
 
 #define ISR_TIMER       0x0001
-#define ISR_AHBPROC     0x0002                  /* AHB proc error */
-#define ISR_AHBDMA      0x0004                  /* AHB DMA error */
+#define ISR_AHBPROC     0x0002	/* AHB proc error */
+#define ISR_AHBDMA      0x0004	/* AHB DMA error */
 #define ISR_GPIO        0x0008
-#define ISR_UART0       0x0010                  /* high speed UART */
-#define ISR_UART0DMA    0x0020                  /* UART DMA (ar5312) */
-#define ISR_WD          0x0040                  /* watchdog */
-#define ISR_LOCAL       0x0080                  /* local interrupt */
+#define ISR_UART0       0x0010	/* high speed UART */
+#define ISR_UART0DMA    0x0020	/* UART DMA (ar5312) */
+#define ISR_WD          0x0040	/* watchdog */
+#define ISR_LOCAL       0x0080	/* local interrupt */
 
 #define IMR_TIMER       ISR_TIMER
 #define IMR_AHBPROC     ISR_AHBPROC
 #define IMR_AHBDMA      ISR_AHBDMA
 #define IMR_GPIO        ISR_GPIO
 #define IMR_UART0       ISR_UART0
-#define IMR_UART0DMA    ISR_UART0DMA            /* (ar5312) */
+#define IMR_UART0DMA    ISR_UART0DMA	/* (ar5312) */
 #define IMR_WD          ISR_WD
 #define IMR_LOCAL       0x0080
 
 #define GISR_WLAN0      0x0001
 #define GISR_ENET0      0x0002
 #define GISR_ENET1      0x0004
-#define GISR_WLAN1      0x0008                  /* (ar5212) */
+#define GISR_WLAN1      0x0008	/* (ar5212) */
 #define GISR_MISC       0x0010
 #define GISR_TIMER      0x0020
 
@@ -238,33 +238,33 @@
  * Reset Register
  */
 #define AR531X_RESET    (AR531X_RESETTMR + 0x0020)
-#define RESET_SYSTEM         0x00000001      /* cold reset full system */
-#define RESET_PROC           0x00000002      /* cold reset MIPS core */
-#define RESET_WLAN0          0x00000004      /* cold reset WLAN MAC and BB */
-#define RESET_EPHY0          0x00000008      /* cold reset ENET0 phy */
-#define RESET_EPHY1          0x00000010      /* cold reset ENET1 phy */
-#define RESET_ENET0          0x00000020      /* cold reset ENET0 mac */
-#define RESET_ENET1          0x00000040      /* cold reset ENET1 mac */
-#define RESET_UART0          0x00000100      /* cold reset UART0 (high speed) */
-#define RESET_WLAN1          0x00000200      /* cold reset WLAN MAC/BB */
-#define RESET_APB            0x00000400      /* cold reset APB (ar5312) */
-#define RESET_WARM_PROC      0x00001000      /* warm reset MIPS core */
-#define RESET_WARM_WLAN0_MAC 0x00002000      /* warm reset WLAN0 MAC */
-#define RESET_WARM_WLAN0_BB  0x00004000      /* warm reset WLAN0 BaseBand */
-#define RESET_NMI            0x00010000      /* send an NMI to the processor */
-#define RESET_WARM_WLAN1_MAC 0x00020000      /* warm reset WLAN1 mac */
-#define RESET_WARM_WLAN1_BB  0x00040000      /* warm reset WLAN1 baseband */
-#define RESET_LOCAL_BUS      0x00080000      /* reset local bus */
-#define RESET_WDOG           0x00100000      /* last reset was a watchdog */
+#define RESET_SYSTEM         0x00000001	/* cold reset full system */
+#define RESET_PROC           0x00000002	/* cold reset MIPS core */
+#define RESET_WLAN0          0x00000004	/* cold reset WLAN MAC and BB */
+#define RESET_EPHY0          0x00000008	/* cold reset ENET0 phy */
+#define RESET_EPHY1          0x00000010	/* cold reset ENET1 phy */
+#define RESET_ENET0          0x00000020	/* cold reset ENET0 mac */
+#define RESET_ENET1          0x00000040	/* cold reset ENET1 mac */
+#define RESET_UART0          0x00000100	/* cold reset UART0 (high speed) */
+#define RESET_WLAN1          0x00000200	/* cold reset WLAN MAC/BB */
+#define RESET_APB            0x00000400	/* cold reset APB (ar5312) */
+#define RESET_WARM_PROC      0x00001000	/* warm reset MIPS core */
+#define RESET_WARM_WLAN0_MAC 0x00002000	/* warm reset WLAN0 MAC */
+#define RESET_WARM_WLAN0_BB  0x00004000	/* warm reset WLAN0 BaseBand */
+#define RESET_NMI            0x00010000	/* send an NMI to the processor */
+#define RESET_WARM_WLAN1_MAC 0x00020000	/* warm reset WLAN1 mac */
+#define RESET_WARM_WLAN1_BB  0x00040000	/* warm reset WLAN1 baseband */
+#define RESET_LOCAL_BUS      0x00080000	/* reset local bus */
+#define RESET_WDOG           0x00100000	/* last reset was a watchdog */
 
 /*
  * Config Register
  */
 #define AR531X_CONFIG   (AR531X_RESETTMR + 0x0030)
-#define CONFIG_DEBUG    0x0008          /* Enable debug performance counters */
-#define CONFIG_MERGE    0x0004          /* Enable SysAD merge */
-#define CONFIG_WLANSWAP 0x0002          /* DMA data is swapped to WLAN(s) */
-#define CONFIG_BIG      0x0001          /* big endian (default) */
+#define CONFIG_DEBUG    0x0008	/* Enable debug performance counters */
+#define CONFIG_MERGE    0x0004	/* Enable SysAD merge */
+#define CONFIG_WLANSWAP 0x0002	/* DMA data is swapped to WLAN(s) */
+#define CONFIG_BIG      0x0001	/* big endian (default) */
 
 /*
  * Interface Debug
@@ -280,21 +280,21 @@
 #define AR531X_PERFCNT0 (AR531X_RESETTMR + 0x0058)
 #define AR531X_PERFCNT1 (AR531X_RESETTMR + 0x005c)
 
-#define PERF_DATAHIT    0x0001  /* Count Data Cache Hits */
-#define PERF_DATAMISS   0x0002  /* Count Data Cache Misses */
-#define PERF_INSTHIT    0x0004  /* Count Instruction Cache Hits */
-#define PERF_INSTMISS   0x0008  /* Count Instruction Cache Misses */
-#define PERF_ACTIVE     0x0010  /* Count Active Processor Cycles */
-#define PERF_WBHIT      0x0020  /* Count CPU Write Buffer Hits */
-#define PERF_WBMISS     0x0040  /* Count CPU Write Buffer Misses */
+#define PERF_DATAHIT    0x0001	/* Count Data Cache Hits */
+#define PERF_DATAMISS   0x0002	/* Count Data Cache Misses */
+#define PERF_INSTHIT    0x0004	/* Count Instruction Cache Hits */
+#define PERF_INSTMISS   0x0008	/* Count Instruction Cache Misses */
+#define PERF_ACTIVE     0x0010	/* Count Active Processor Cycles */
+#define PERF_WBHIT      0x0020	/* Count CPU Write Buffer Hits */
+#define PERF_WBMISS     0x0040	/* Count CPU Write Buffer Misses */
 
-#define PERF_EB_ARDY    0x0001  /* Count EB_ARdy signal */
-#define PERF_EB_AVALID  0x0002  /* Count EB_AValid signal */
-#define PERF_EB_WDRDY   0x0004  /* Count EB_WDRdy signal */
-#define PERF_EB_RDVAL   0x0008  /* Count EB_RdVal signal */
-#define PERF_VRADDR     0x0010  /* Count valid read address cycles */
-#define PERF_VWADDR     0x0020  /* Count valid write address cycles */
-#define PERF_VWDATA     0x0040  /* Count valid write data cycles */
+#define PERF_EB_ARDY    0x0001	/* Count EB_ARdy signal */
+#define PERF_EB_AVALID  0x0002	/* Count EB_AValid signal */
+#define PERF_EB_WDRDY   0x0004	/* Count EB_WDRdy signal */
+#define PERF_EB_RDVAL   0x0008	/* Count EB_RdVal signal */
+#define PERF_VRADDR     0x0010	/* Count valid read address cycles */
+#define PERF_VWADDR     0x0020	/* Count valid write address cycles */
+#define PERF_VWDATA     0x0040	/* Count valid write data cycles */
 
 /*
  * Clock Control
@@ -322,7 +322,6 @@
 #define AR5312_CLOCKCTL1_IN40_OUT200MHZ 0x1935 # 40MHz in, 200Mhz out
 #define AR5312_CLOCKCTL1_IN40_OUT220MHZ 0x0b15 # 40MHz in, 220Mhz out
 #define AR5312_CLOCKCTL1_IN40_OUT240MHZ 0x0605 # 40MHz in, 240Mhz out
-
 
 //#if defined(CONFIG_ATHEROS_AR5312)
 //#define AR5312_CLOCKCTL1_SELECTION AR5312_CLOCKCTL1_IN40_OUT220MHZ
@@ -354,7 +353,6 @@
 /* Used by rom_reboot to set the watchdog timer */
 #define AR531X_WATCHDOG_CLOCK_RATE         (AR5312_CPU_CLOCK_RATE / 4)
 
-
 /* Bit fields for AR5312_CLOCKCTL1
  *
  * Formula to calculate CPU frequency:
@@ -367,13 +365,13 @@
 #define AR5312_CLOCKCTL1_DOUBLER_MASK      0x00010000
 
 /* Bit fields for AR5312_CLOCKCTL2 */
-#define AR5312_CLOCKCTL2_WANT_RESET        0x00000001 /* reset with new vals */
-#define AR5312_CLOCKCTL2_WANT_DIV2         0x00000010 /* request /2 clock */
-#define AR5312_CLOCKCTL2_WANT_DIV4         0x00000020 /* request /4 clock */
-#define AR5312_CLOCKCTL2_WANT_PLL_BYPASS   0x00000080 /* request PLL bypass */
-#define AR5312_CLOCKCTL2_STATUS_DIV2       0x10000000 /* have /2 clock */
-#define AR5312_CLOCKCTL2_STATUS_DIV4       0x20000000 /* have /4 clock */
-#define AR5312_CLOCKCTL2_STATUS_PLL_BYPASS 0x80000000 /* PLL is bypassed */
+#define AR5312_CLOCKCTL2_WANT_RESET        0x00000001	/* reset with new vals */
+#define AR5312_CLOCKCTL2_WANT_DIV2         0x00000010	/* request /2 clock */
+#define AR5312_CLOCKCTL2_WANT_DIV4         0x00000020	/* request /4 clock */
+#define AR5312_CLOCKCTL2_WANT_PLL_BYPASS   0x00000080	/* request PLL bypass */
+#define AR5312_CLOCKCTL2_STATUS_DIV2       0x10000000	/* have /2 clock */
+#define AR5312_CLOCKCTL2_STATUS_DIV4       0x20000000	/* have /4 clock */
+#define AR5312_CLOCKCTL2_STATUS_PLL_BYPASS 0x80000000	/* PLL is bypassed */
 
 #define AR531X_NS16550_DLM_VALUE \
         ((((AR531X_UART_CLOCK_RATE/DESIRED_BAUD_RATE)/16) >> 8) & 0xff)
@@ -385,15 +383,15 @@
  * SDRAM Memory Refresh (MEM_REF) value is computed as:
  *    15.625us * SDRAM_CLOCK_RATE (in MHZ)
  */
-//#define DESIRED_MEMORY_REFRESH_NSECS 15625
-#define DESIRED_MEMORY_REFRESH_NSECS 3467
+#define DESIRED_MEMORY_REFRESH_NSECS 15625
+//#define DESIRED_MEMORY_REFRESH_NSECS 3467  /* testvalue for Alfa AP48 */
 #define AR531X_SDRAM_MEMORY_REFRESH_VALUE \
         ((DESIRED_MEMORY_REFRESH_NSECS * AR531X_SDRAM_CLOCK_RATE/1000000) / 1000 )
 
 /* Values for AR531X_CLOCKCTL */
-#define CLOCKCTL_ETH0   0x0004  /* enable eth0 clock */
-#define CLOCKCTL_ETH1   0x0008  /* enable eth1 clock */
-#define CLOCKCTL_UART0  0x0010  /* enable UART0 external clock */
+#define CLOCKCTL_ETH0   0x0004	/* enable eth0 clock */
+#define CLOCKCTL_ETH1   0x0008	/* enable eth1 clock */
+#define CLOCKCTL_UART0  0x0010	/* enable UART0 external clock */
 
 /*
  * AHB Error Reporting.
@@ -414,7 +412,7 @@
 #define PROCERR_HSIZE           0x00000700
 #define PROCERR_HSIZE_S         8
 #define PROCERR_HPROT           0x00000800
-#define PROCERR_VALID           0x80000000      /* error values are latched */
+#define PROCERR_VALID           0x80000000	/* error values are latched */
 
 #define DMAERR_HTRANS           0x00000003
 #define DMAERR_HTRANS_S         0
@@ -427,7 +425,7 @@
 #define DMAERR_HSIZE_S          8
 #define DMAERR_HMASTER          0x00007800
 #define DMAERR_HMASTER_S        11
-#define DMAERR_VALID            0x80000000      /* error values are latched */
+#define DMAERR_VALID            0x80000000	/* error values are latched */
 
 /*
  * Interface Enable
@@ -436,8 +434,8 @@
 #define ENABLE_WLAN0              0x0001
 #define ENABLE_ENET0              0x0002
 #define ENABLE_ENET1              0x0004
-#define ENABLE_UART_AND_WLAN1_PIO 0x0008        /* UART, and WLAN1 PIOs */
-#define ENABLE_WLAN1_DMA          0x0010        /* WLAN1 DMAs */
+#define ENABLE_UART_AND_WLAN1_PIO 0x0008	/* UART, and WLAN1 PIOs */
+#define ENABLE_WLAN1_DMA          0x0010	/* WLAN1 DMAs */
 #define ENABLE_WLAN1 (ENABLE_UART_AND_WLAN1_PIO | ENABLE_WLAN1_DMA)
 
 /*
@@ -458,8 +456,8 @@
 #define REV_MAJ_AR5312          0x04
 
 /* Minor revision numbers, bits 3..0 of Revision ID register */
-#define REV_MIN_AR5312_DUAL     0x0     /* Dual WLAN version */
-#define REV_MIN_AR5312_SINGLE   0x1     /* Single WLAN version */
+#define REV_MIN_AR5312_DUAL     0x0	/* Dual WLAN version */
+#define REV_MIN_AR5312_SINGLE   0x1	/* Single WLAN version */
 
 /*
  * Local Bus Config Register
@@ -486,7 +484,7 @@
 #define AR531X_INTR_WLAN0       SR_IBIT3
 #define AR531X_INTR_ENET0       SR_IBIT4
 #define AR531X_INTR_ENET1       SR_IBIT5
-#define AR531X_INTR_WLAN1       SR_IBIT6                /* (ar5312) */
+#define AR531X_INTR_WLAN1       SR_IBIT6	/* (ar5312) */
 #define AR531X_INTR_MISCIO      SR_IBIT7
 #define AR531X_INTR_COMPARE     SR_IBIT8
 

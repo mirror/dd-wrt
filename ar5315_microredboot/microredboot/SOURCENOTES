@@ -1,0 +1,7 @@
+nothing much to say here. take care about the assembly headers. do not use procedurable functions in it, use macros instead
+reason is the way we link the binary. its linked to run from the ram address 0x80400000 but start from flash address 0xbfc00000
+the code will be relocated to the ram address right after the dram and cpu was initialized.
+
+so we can not use direct jumps or calls, only relative references within these assembly stubs are possible. 
+
+19.06.09 - Sebastian Gottschall / DD-WRT.COM

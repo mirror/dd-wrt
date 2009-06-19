@@ -53,7 +53,6 @@
 #define LZMA_RESULT_DATA_ERROR 1
 #define LZMA_RESULT_NOT_ENOUGH_MEM 2
 
-
 #define LZMA_BASE_SIZE 1846
 #define LZMA_LIT_SIZE 768
 
@@ -65,20 +64,16 @@ but if specify _LZMA_PROB_32, CProb will be UInt32(unsigned int)
 */
 
 #ifdef _LZMA_OUT_READ
-static int LzmaDecoderInit(
-    unsigned char *buffer, UInt32 bufferSize,
-    int lc, int lp, int pb,
-    unsigned char *dictionary, UInt32 dictionarySize,
-);
+static int LzmaDecoderInit(unsigned char *buffer, UInt32 bufferSize,
+			   int lc, int lp, int pb,
+			   unsigned char *dictionary, UInt32 dictionarySize,);
 #endif
 
-static int LzmaDecode(
-    unsigned char *buffer, 
-  #ifndef _LZMA_OUT_READ
-    UInt32 bufferSize,
-    int lc, int lp, int pb,
-  #endif
-    unsigned char *outStream, UInt32 outSize,
-    UInt32 *outSizeProcessed);
+static int LzmaDecode(unsigned char *buffer,
+#ifndef _LZMA_OUT_READ
+		      UInt32 bufferSize, int lc, int lp, int pb,
+#endif
+		      unsigned char *outStream, UInt32 outSize,
+		      UInt32 * outSizeProcessed);
 
 #endif

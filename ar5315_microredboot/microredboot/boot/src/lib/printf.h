@@ -15,4 +15,4 @@
 #include <stdarg.h>
 void printf(char *fmt, ...);
 
-#endif /* _printf_h_ */
+#endif				/* _printf_h_ */
