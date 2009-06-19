@@ -5,8 +5,8 @@
 #include <stddef.h>
 
 #endif
-#define CYGMEM_REGION_ram (CYGNUM_RAM_ENTRY)
-#define CYGMEM_REGION_ram_SIZE (CYGNUM_EFFECTIVE_RAM_SIZE)
+#define CYGMEM_REGION_ram (0x80000000)
+#define CYGMEM_REGION_ram_SIZE (CYGNUM_RAM_SIZE)
 #define CYGMEM_REGION_ram_ATTR (CYGMEM_REGION_ATTR_R | CYGMEM_REGION_ATTR_W)
 #ifndef __ASSEMBLER__
 extern char CYG_LABEL_NAME (__heap1) [];

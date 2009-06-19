@@ -12,10 +12,15 @@
 #include <linux/kernel.h>
 
 #include <asm/uaccess.h>
+#include <ramconfig.h>
+#ifdef AR5312
+#include "uncompress-ar5312.h"
+#else
+#include "uncompress-ar5315.h"
+#endif
 
 #include "printf.h"
 #include "print.h"
-#include "uncompress.h"
 
 static void myoutput(void *arg, char *s, int l)
 {

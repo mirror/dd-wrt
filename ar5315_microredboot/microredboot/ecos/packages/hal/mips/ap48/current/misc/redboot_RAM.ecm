@@ -20,10 +20,8 @@ cdl_configuration eCos {
     package -template CYGPKG_ISOINFRA current ;
     package -template CYGPKG_LIBC_STRING current ;
     package CYGPKG_MEMALLOC current ;
-    package CYGPKG_COMPRESS_ZLIB current ;
     package CYGPKG_COMPRESS_7ZIP current ;
     package CYGPKG_IO_ETH_DRIVERS current ;
-    package CYGPKG_IO_FILEIO current ;
     package CYGPKG_IO_FLASH current ;
     package CYGPKG_IO current ;
     package CYGPKG_ERROR current ;
@@ -64,7 +62,7 @@ cdl_component CYGBLD_BUILD_REDBOOT {
 };
 
 cdl_option CYGBLD_REDBOOT_MIN_IMAGE_SIZE {
-    inferred_value 0x30000
+    inferred_value 0x10000
 };
 
 cdl_component CYGSEM_REDBOOT_BSP_SYSCALLS {
@@ -107,18 +105,15 @@ cdl_option CYGBLD_ISO_DIRENT_HEADER {
     inferred_value 1 <cyg/fileio/dirent.h>
 };
 
-cdl_option CYGBLD_ISO_OPEN_MAX_HEADER {
-    inferred_value 1 <cyg/fileio/limits.h>
-};
-
-cdl_option CYGBLD_ISO_NAME_MAX_HEADER {
-    inferred_value 1 <cyg/fileio/limits.h>
-};
-
-cdl_option CYGPKG_IO_FILEIO_INODE {
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV160 {
     inferred_value 1
 };
-
-cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV160 {
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV320D {
+    inferred_value 1
+};
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29LV640 {
+    inferred_value 1
+};
+cdl_option CYGHWR_DEVS_FLASH_AMD_AM29DL640D {
     inferred_value 1
 };

@@ -14,8 +14,9 @@
  *
  *  License: GPL
  */
+#include "ramconfig.h"
 
-
+#ifdef AR5312
 #include <linux/autoconf.h>
 #include <linux/init.h>
 #include <linux/threads.h>
@@ -40,9 +41,11 @@
  * in memory.  Only call routines in romLib.s and romInit.s with
  * bal.
  */
-#ifdef CONFIG_BOOTLOADER
-
 	.section	".start"
+
+
+
+
 
 #define RVECENT(f,n) \
 	b f; nop
@@ -243,12 +246,14 @@ romExcHandle:
 romReserved:
 	b	__AR531X_init		# just start over
 
+
+
 /*
  * romTlbInit - set all TLB entries to invalid on the 4Kc.  This
  * is not strictly needed on cold reset as the tlb shutdown condition
  * is avoided, but it does not discuss warm reset.  Better to be safe.
  */
-romTlbInit:
+.macro romTlbInit
 	MFC0_T0_CONFIG1
 	and	t0, CFG1_MMUSIZE
 	srl	t0, CFG1_MMUSIZE_S
@@ -270,7 +275,8 @@ romTlbInit:
 	bgez	t0, 1b			# loop
 	nop				# BDSLOT
 	.set	pop
-2:	j	ra
+2:
+.endm
 
 /*
  * romCacheInit - Low level init of the (primary) caches via index
@@ -278,7 +284,7 @@ romTlbInit:
  *                about parity like the R4000.
  */
 
-romCacheInit:
+.macro romCacheInit
 	.set 	mips3
 	/* Inval data cache tags: t1=ways, t2=linesize, t3=depth */
 	MFC0_T0_CONFIG1
@@ -327,13 +333,12 @@ romCacheInit:
 	add	a1, -1			# number of lines - 1
 	bgtz	a1, 1b			# any left?
 2:
-
-	j	ra
+.endm
 
 /*
  * romInitFlash - init flash address space in ar531x flash controller
  */
-romInitFlash:
+.macro romInitFlash
 
 	/* Configure base flash part initially to the max size */
 	li	a0, KSEG1 | AR531X_FLASHCTL0
@@ -356,7 +361,7 @@ romInitFlash:
 	lw	t0, 0(a0)
 	and	t0, ~(FLASHCTL_E | FLASHCTL_AC)
 	sw	t0, 0(a0)
-	j	ra
+.endm
 
 /*
  * romSizeMemory - initialize SDRAM configuration.
@@ -371,11 +376,20 @@ romInitFlash:
 9:	addi	reg, -1;	\
 	bgtz	reg, 9b
 
-romSizeMemory:
+.macro romSizeMemory
 	/* If we're executing from flash, try to set up SDRAM */
-
 	li	t5, 0       # 0-->x32, MEM_CFG0_X-->x16
 	li	t6, 0x22000 # 0x22000-->4 word burst, 0x23000-->8 word burst
+	li	a0, KSEG1|AR531X_REV
+	lw	a0, 0(a0)
+	andi	a0,0xff
+	bne	a0,0x50,99f
+	nop
+	
+98:
+	/* Configure for a x16 SDRAM with 8-word burst */
+	li	t5, MEM_CFG0_X           # try x16
+	li	t6, 0x23000              # use 8-word burst
 99:
 	li	a0, KSEG1 | AR531X_MEM_CFG0
 	li	a1, KSEG1 | AR531X_MEM_CFG1
@@ -442,45 +456,17 @@ romSizeMemory:
 	sync
 
         /* 11) Determine whether the SDRAM is x16 or x32 */
-
-	li	t0, KSEG1 | AR531X_REV
-	lw	t0, 0(t0)
-	andi	t0, 0xff
-	beq	t0, 0x50, ar2313_ram
+	li	a3, KSEG1|AR531X_SDRAM0 # Pick a memory address
+	li	t0, 0x12345678           # Pick a data pattern to write
+	lw	t1, 4(a3)                # Read the 2nd word
+	sw	t0, 0(a3)                # Write the 1st word
+	lw	t0, 4(a3)                # See of the second word changed
+	beq	t0, t1, 1f               # If so, must be a x16 part
 	nop
 
-	li	a3, KSEG1|AR531X_SDRAM0 # Pick a memory address
-	li	t0, 0x12345678          # Pick a data pattern to write
-	lw	t1, 4(a3)               # Read the 2nd word
-	sw	t0, 0(a3)               # Write the 1st word
-	lw	t0, 4(a3)               # See if the second word changed
-	beq	t0, t1, 1f              # If not, must be a x32 part
-
-	/* Configure for a x16 SDRAM with 8-word burst */
-	li	t5, MEM_CFG0_X          # try x16
-	li	t6, 0x23000             # use 8-word burst
-	b	99b
-
-ar2313_ram:
-
-	/* AR2313 seems to have a different behaviour when 16 bit memory
-	 * is accessed using 32 bit mode... the second word is not changed
-	 * and only half of the test word is changed
-	 */
-	
-	li	a3, KSEG1|AR531X_SDRAM0 # Pick a memory address
-	li	t0, 0x12345678          # Pick a data pattern to write
-	sw	t0, 0(a3)               # Write the 1st word
-	lw	t1, 0(a3)               # See if the second word changed
-	beq	t0, t1, 1f              # If not, must be a x32 part
-
-	/* Configure for a x16 SDRAM with 8-word burst */
-	li	t5, MEM_CFG0_X          # try x16
-	li	t6, 0x23000             # use 8-word burst
-	b	99b
+	b	98b
 
 1:
-
 	/* 12) The SDRAM is ready for normal operation */
 
 	/* Size bank 0 - assumed to be present */
@@ -493,10 +479,30 @@ ar2313_ram:
 	sw	t1, 0(a2)		# write it
 	lw	t2, 0(a3)		# read back @ base
 	bnez	t2, 2f			# alias detected?
+	nop
 	sll	t3, 1			# next address
 	add	t1, 1			# next alias
 	ble	t1, MEM_CFG1_AC_64, 1b	# 128MB not supported!
-2:	sll	t0, t1, MEM_CFG1_AC0_S	# align for bank0
+	nop
+
+#alfa patch
+2:
+	lw	t5, 0(a0)
+	lui 	t2, 0x80
+	bge 	t2, t3, 3f
+	ori     t0, t5, 2
+	sw	t0, 0(a0)
+	sync
+	lw	t2, 0(a2)
+	beq	t1, t2, 1f
+	sll	t3, 1
+	add	t1, 1
+	ori	t5, 2
+#alfa end
+3:	
+	sw	t5, 0(a0)
+	
+	sll	t0, t1, MEM_CFG1_AC0_S	# align for bank0
 	or	t0, MEM_CFG1_E0 | \
 		    MEM_CFG1_E1 | (MEM_CFG1_AC_128 << MEM_CFG1_AC1_S)
 	sw	t0, 0(a1)		# MEM_CFG1
@@ -513,7 +519,9 @@ ar2313_ram:
 	lw	t3, 0(a3)
 	lw	t4, 4(a3)
 	bne	t1, t3, nobank1
+	nop
 	bne	t2, t4, nobank1
+	nop
 
 	/* Size bank 1 */
 	li	a3, KSEG1|AR531X_SDRAM1
@@ -525,9 +533,11 @@ ar2313_ram:
 	sw	t1, 0(a2)		# write it
 	lw	t2, 0(a3)		# read back @ base
 	bnez	t2, 2f			# alias detectd?
+	nop
 	sll	t3, 1			# next address
 	add	t1, 1			# next alias
 	ble	t1, MEM_CFG1_AC_64, 1b	# 128MB not supported!
+	nop
 2:	sll	t1, MEM_CFG1_AC1_S	# align for bank1
 	or	t0, t1			# combine with current value
 	or	t0, MEM_CFG1_E1		# enable bank1
@@ -535,7 +545,8 @@ ar2313_ram:
 nobank1:
 	sw	t0, 0(a1)		# MEM_CFG1
 	sync
-	j	ra
+
+.endm
 
 __AR531X_init:
 
@@ -635,6 +646,46 @@ __AR531X_reboot:
 	mtc0	t0, CP0_COUNT
 	mtc0	zero, CP0_COMPARE
 
+
+
+
+	/* Set watchpoint for low memory to debug null pointers */
+	li	t0, 0x40000ff8		# G + Ignore 11:3 in check
+	mtc0	t0, CP0_WATCHHI
+	li	t0, 7			# watch rwx
+	mtc0	t0, CP0_WATCHLO
+
+	romInitFlash		# init flash configuration
+	nop
+	romSizeMemory		# init memory configuration
+	nop
+	romTlbInit		# for 4Kc
+	nop
+        /* Disable NMI callback after memory is ready */
+        li      a0, 0xa0000410
+        sw      zero, 0(a0)
+
+	/*
+	 * Must have cache enabled before cache init.  At this point
+	 * we are running in bfc00000 so the text is uncached.
+	 */
+	mfc0	t0, CP0_CONFIG
+	and	t1, t0, CFG_MT		# check for TLB or FM
+	sub	t1, CFG_MT_TLB
+	beqz	t1, 1f
+	/* 4Kp init all fixed mapping modes -- leave U and 23 uncached */
+	and	t0, ~(CFG_KU | CFG_K23)
+	or	t0, (CONF_CM_UNCACHED << CFG_KU_S) | \
+		    (CONF_CM_UNCACHED << CFG_K23_S)
+1:
+	and	t0, ~CFG_K0MASK
+	li	t0, CONF_CM_CACHABLE_NONCOHERENT
+	mtc0	t0, CP0_CONFIG
+	nop
+	nop
+	romCacheInit		# init/invalidate cache tags
+
+	nop
 	li	a0, KSEG1|AR531X_RESET
 	lw	t0, 0(a0)
 	and	t0, ~RESET_APB
@@ -678,124 +729,10 @@ __AR531X_reboot:
 	li	t0, FCR_EN|FCR_RXCLR|FCR_TXCLR
 
 	sw	t0, FCR<<2(a0)		# reset and enable fifos
-
-
-
-	/* Set watchpoint for low memory to debug null pointers */
-	li	t0, 0x40000ff8		# G + Ignore 11:3 in check
-	mtc0	t0, CP0_WATCHHI
-	li	t0, 7			# watch rwx
-	mtc0	t0, CP0_WATCHLO
-
-	bal	romInitFlash		# init flash configuration
-	bal	romSizeMemory		# init memory configuration
-	bal	romTlbInit		# for 4Kc
-
-        /* Disable NMI callback after memory is ready */
-        li      a0, 0xa0000410
-        sw      zero, 0(a0)
-
-	/*
-	 * Must have cache enabled before cache init.  At this point
-	 * we are running in bfc00000 so the text is uncached.
-	 */
-	mfc0	t0, CP0_CONFIG
-	and	t1, t0, CFG_MT		# check for TLB or FM
-	sub	t1, CFG_MT_TLB
-	beqz	t1, 1f
-	/* 4Kp init all fixed mapping modes -- leave U and 23 uncached */
-	and	t0, ~(CFG_KU | CFG_K23)
-	or	t0, (CONF_CM_UNCACHED << CFG_KU_S) | \
-		    (CONF_CM_UNCACHED << CFG_K23_S)
-1:
-	and	t0, ~CFG_K0MASK
-	li	t0, CONF_CM_CACHABLE_NONCOHERENT
-	mtc0	t0, CP0_CONFIG
+	
+	
+	
 	nop
-	nop
-	bal	romCacheInit		# init/invalidate cache tags
-
-	nop
-        la      t0,_text               # dest addr
-#       la      t1,_text          # source addr
-#	lar	t1,__AR531X_start
-        la      t1,_text-0x80400000+BOOTBASE          # source addr
-        la      t3,_text+0x10000       # end dest addr
-3:      
-        lw      v0,0(t1)                # get word
-        sw      v0,0(t0)                # write word
-        addiu   t1,t1,4
-        addiu   t0,t0,4
-        bne     t0,t3,3b
-        nop
-        la      v0,4f                   # RAM address to go to
-        jr      v0
-        nop
-4:       
-	nop
-
-	/* Want to switch to cached segment now... */
-
-	la	t0, main
-	j	t0
-
-#else
-	.set reorder
-
-	/* Disable all interrupts, select RAM exception handlers */
-	li	t1, CAUSE_IV
-	mtc0	t1, CP0_CAUSE
-	nop
-	li	t0, ST0_CU0
-	mtc0	t0, CP0_STATUS
-
-	/* Clear software interrupts or lurking watchpoints */
-	mtc0	zero, CP0_WATCHLO
-	mtc0	zero, CP0_WATCHHI
-
-	/* Clear any prior AHB errors by reading both addr registers */
-	li	t0, KSEG1|AR531X_PROCADDR
-	li	t1, KSEG1|AR531X_DMAADDR
-	lw	zero, 0(t0)
-	lw	zero, 0(t1)
-	.set	move
-
-	/* Give us as long as possible before a clock interrupt */
-	li	t0, 1
-	mtc0	t0, CP0_COUNT
-	mtc0	zero, CP0_COMPARE
-
-	/* Set watchpoint for low memory to debug null pointers */
-	li	t0, 0x40000ff8		# G + Ignore 11:3 in check
-	mtc0	t0, CP0_WATCHHI
-	li	t0, 7			# watch rwx
-	mtc0	t0, CP0_WATCHLO
-
-        /* Disable NMI callback */
-        li      a0, 0xa0000410
-        sw      zero, 0(a0)
-
-	/*
-	 * Must have cache enabled before cache init.  At this point
-	 * we are running in bfc00000 so the text is uncached.
-	 */
-	mfc0	t0, CP0_CONFIG
-	and	t1, t0, CFG_MT		# check for TLB or FM
-	sub	t1, CFG_MT_TLB
-	beqz	t1, 1f
-	/* 4Kp init all fixed mapping modes -- leave U and 23 uncached */
-	and	t0, ~(CFG_KU | CFG_K23)
-	or	t0, (CONF_CM_UNCACHED << CFG_KU_S) | \
-		    (CONF_CM_UNCACHED << CFG_K23_S)
-1:
-	and	t0, ~CFG_K0MASK
-	li	t0, CONF_CM_CACHABLE_NONCOHERENT
-	mtc0	t0, CP0_CONFIG
-	nop
-	nop
-	bal	ramCacheInit		# init/invalidate cache tags
-	nop
-
         la      t0,_text               # dest addr
 #       la      t1,_text          # source addr
 #	lar	t1,__AR531X_start
@@ -818,56 +755,4 @@ __AR531X_reboot:
 
 	j	main
 
-ramCacheInit:
-	.set 	mips3
-	/* Inval data cache tags: t1=ways, t2=linesize, t3=depth */
-	MFC0_T0_CONFIG1
-	and	t1, t0, CFG1_DA
-	srl	t1, CFG1_DA_S
-	add	t1, 1
-	and	t2, t0, CFG1_DL
-	srl	t2, CFG1_DL_S
-	addi	t2, 1
-	and	t3, t0, CFG1_DS
-	srl	t3, CFG1_DS_S
-	li	t0, 64
-	sll	t3, t0, t3
-	li	t0, 1
-	sll	t2, t0, t2
-	beqz	t3, 2f			# any d$?
-	mul	a1, t1, t3		# number of lines (ways * depth)
-	li	a0, KSEG0
-1:
-	cache	1, 0(a0)		# invalidate data line
-	add	a0, t2			# p += linesize
-	add	a1, -1			# number of lines - 1
-	bgtz	a1, 1b			# any left?
-2:
-
-	/* Inval instruction cache tags: t1=ways, t2=linesize, t3=depth */
-	MFC0_T0_CONFIG1
-	and	t1, t0, CFG1_IA
-	srl	t1, CFG1_IA_S
-	add	t1, 1
-	and	t2, t0, CFG1_IL
-	srl	t2, CFG1_IL_S
-	and	t3, t0, CFG1_IS
-	srl	t3, CFG1_IS_S
-	addi	t2, 1
-	li	t0, 64
-	sll	t3, t0, t3
-	li	t0, 1
-	sll	t2, t0, t2
-	beqz	t3, 2f			# any i$?
-	mul	a1, t1, t3		# number of lines
-	li	a0, KSEG0
-1:
-	cache	0, 0(a0)		# invalidate instr line
-	add	a0, t2			# p += linesize
-	add	a1, -1			# number of lines - 1
-	bgtz	a1, 1b			# any left?
-2:
-
-	j	ra
-
-#endif	/* ! CONFIG_BOOTLOADER */
+#endif

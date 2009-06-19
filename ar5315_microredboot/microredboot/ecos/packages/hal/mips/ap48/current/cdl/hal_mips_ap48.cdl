@@ -169,7 +169,7 @@ cdl_package CYGPKG_HAL_MIPS_AP48 {
     cdl_option CYGNUM_RAM_ENTRY {
 	display		"Linked entry address"
 	flavor		data
-	default_value	0x80010000
+	default_value	0x80000000
 	description	"Text segment load address."
     }
 
@@ -204,7 +204,7 @@ cdl_package CYGPKG_HAL_MIPS_AP48 {
     cdl_option CYGNUM_FLASH_BASE {
 	display		"Flash base address"
 	flavor		data
-	default_value	0xbfc00000;
+	default_value	0xbe000000;
 	description	"Flash BaseAddress for access"
     }
 
@@ -348,7 +348,7 @@ cdl_package CYGPKG_HAL_MIPS_AP48 {
         display       "Work with a ROM monitor"
         flavor        booldata
         legal_values  { "Generic" "GDB_stubs" }
-        default_value { CYG_HAL_STARTUP == "RAM" ? "GDB_stubs" : 0 }
+        default_value { CYG_HAL_STARTUP == "RAM" ? 0 : 0 }
         parent        CYGPKG_HAL_ROM_MONITOR
         requires      { CYG_HAL_STARTUP == "RAM" }
         description   "
