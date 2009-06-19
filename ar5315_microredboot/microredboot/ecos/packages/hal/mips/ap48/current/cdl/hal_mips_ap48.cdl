@@ -218,7 +218,7 @@ cdl_package CYGPKG_HAL_MIPS_AP48 {
     cdl_option CYGNUM_USE_CONSOLIDATED_BOARD_DATA {
         display       "Use consolidated board data"
         flavor        bool
-        default_value 1
+        default_value 0
         description   "
             Enable this option if the board uses consolidated board data."
     }

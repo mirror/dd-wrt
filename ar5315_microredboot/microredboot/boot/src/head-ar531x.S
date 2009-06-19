@@ -485,20 +485,20 @@ romReserved:
 	ble	t1, MEM_CFG1_AC_64, 1b	# 128MB not supported!
 	nop
 
-#alfa patch
+/* reverse engineered part from Alfa AP48 bootloader binary */
 2:
 	lw	t5, 0(a0)
 	lui 	t2, 0x80
 	bge 	t2, t3, 3f
-	ori     t0, t5, 2
+	ori     t0, t5, MEM_CFG0_F0
 	sw	t0, 0(a0)
 	sync
 	lw	t2, 0(a2)
 	beq	t1, t2, 1f
 	sll	t3, 1
 	add	t1, 1
-	ori	t5, 2
-#alfa end
+	ori	t5, MEM_CFG0_F0
+
 3:	
 	sw	t5, 0(a0)
 	
@@ -549,6 +549,12 @@ nobank1:
 .endm
 
 __AR531X_init:
+
+	mfc0	k0,$12
+	lui	k1,0x0008 /* NMI */
+	and	k1,k1,k0
+	bnez	k1,pllskip
+	nop
 
 	/* Clear any prior AHB errors by reading both addr registers */
 	li	t0, KSEG1 | AR531X_PROCADDR

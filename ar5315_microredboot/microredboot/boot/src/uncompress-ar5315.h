@@ -24,7 +24,6 @@
 
 #define UART			0xB1100003
 
-
 #define REG_OFFSET		4
 #define OFS_RCV_BUFFER          (0*REG_OFFSET)
 #define OFS_TRANS_HOLD          (0*REG_OFFSET)
@@ -61,26 +60,22 @@
 #define UART16550_READ(p)	(*((volatile u8*)(UART + (p))))
 #define UART16550_WRITE(p,v)	((*((volatile u8*)(UART + (p)))) = (v))
 
-
 static void putc(int c)
 {
-    while ((UART16550_READ(OFS_LINE_STATUS) &0x20) == 0)
-    ;
-    UART16550_WRITE(OFS_SEND_BUFFER, c);
+	while ((UART16550_READ(OFS_LINE_STATUS) & 0x20) == 0) ;
+	UART16550_WRITE(OFS_SEND_BUFFER, c);
 }
 
-static void
-puts(const char *s)
+static void puts(const char *s)
 {
-        int c;
+	int c;
 
-        while ((c = *s++)) {
-    		if (c=='\n')
-    		    putc('\r');
-    		putc(c);
-        }
+	while ((c = *s++)) {
+		if (c == '\n')
+			putc('\r');
+		putc(c);
+	}
 }
-
 
 #if defined(COBRA_EMUL)
 #define AR2316_AMBA_CLOCK_RATE  20000000
@@ -92,20 +87,19 @@ puts(const char *s)
 #else
 #define AR2316_AMBA_CLOCK_RATE  92000000
 #define AR2316_CPU_CLOCK_RATE   184000000
-#endif /* ! DEFAULT_PLL */
-#endif /* ! COBRA_EMUL */
+#endif				/* ! DEFAULT_PLL */
+#endif				/* ! COBRA_EMUL */
 
-static inline void
-arch_decomp_setup(void)
+static inline void arch_decomp_setup(void)
 {
 	/* Initialise the serial port here */
 
-        /* disable interrupts */
-        UART16550_WRITE(OFS_LINE_CONTROL, 0x0);
-        UART16550_WRITE(OFS_INTR_ENABLE, 0);
+	/* disable interrupts */
+	UART16550_WRITE(OFS_LINE_CONTROL, 0x0);
+	UART16550_WRITE(OFS_INTR_ENABLE, 0);
 
-        /* set data format */
-        UART16550_WRITE(OFS_DATA_FORMAT, DEFAULT_DATA_FORMAT);
+	/* set data format */
+	UART16550_WRITE(OFS_DATA_FORMAT, DEFAULT_DATA_FORMAT);
 }
 
 #define arch_decomp_wdog()

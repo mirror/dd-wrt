@@ -70,24 +70,24 @@
  * ST Microelectronics Opcodes for Serial Flash
  */
 
-#define STM_OP_WR_ENABLE       0x06     /* Write Enable */
-#define STM_OP_WR_DISABLE      0x04     /* Write Disable */
-#define STM_OP_RD_STATUS       0x05     /* Read Status */
-#define STM_OP_WR_STATUS       0x01     /* Write Status */
-#define STM_OP_RD_DATA         0x03     /* Read Data */
-#define STM_OP_FAST_RD_DATA    0x0b     /* Fast Read Data */
-#define STM_OP_PAGE_PGRM       0x02     /* Page Program */
-#define STM_OP_SECTOR_ERASE    0xd8     /* Sector Erase */
-#define STM_OP_BULK_ERASE      0xc7     /* Bulk Erase */
-#define STM_OP_DEEP_PWRDOWN    0xb9     /* Deep Power-Down Mode */
-#define STM_OP_RD_SIG          0xab     /* Read Electronic Signature */
+#define STM_OP_WR_ENABLE       0x06	/* Write Enable */
+#define STM_OP_WR_DISABLE      0x04	/* Write Disable */
+#define STM_OP_RD_STATUS       0x05	/* Read Status */
+#define STM_OP_WR_STATUS       0x01	/* Write Status */
+#define STM_OP_RD_DATA         0x03	/* Read Data */
+#define STM_OP_FAST_RD_DATA    0x0b	/* Fast Read Data */
+#define STM_OP_PAGE_PGRM       0x02	/* Page Program */
+#define STM_OP_SECTOR_ERASE    0xd8	/* Sector Erase */
+#define STM_OP_BULK_ERASE      0xc7	/* Bulk Erase */
+#define STM_OP_DEEP_PWRDOWN    0xb9	/* Deep Power-Down Mode */
+#define STM_OP_RD_SIG          0xab	/* Read Electronic Signature */
 
-#define STM_STATUS_WIP       0x01       /* Write-In-Progress */
-#define STM_STATUS_WEL       0x02       /* Write Enable Latch */
-#define STM_STATUS_BP0       0x04       /* Block Protect 0 */
-#define STM_STATUS_BP1       0x08       /* Block Protect 1 */
-#define STM_STATUS_BP2       0x10       /* Block Protect 2 */
-#define STM_STATUS_SRWD      0x80       /* Status Register Write Disable */
+#define STM_STATUS_WIP       0x01	/* Write-In-Progress */
+#define STM_STATUS_WEL       0x02	/* Write Enable Latch */
+#define STM_STATUS_BP0       0x04	/* Block Protect 0 */
+#define STM_STATUS_BP1       0x08	/* Block Protect 1 */
+#define STM_STATUS_BP2       0x10	/* Block Protect 2 */
+#define STM_STATUS_SRWD      0x80	/* Status Register Write Disable */
 
 /*
  * SPI Flash Interface Registers
