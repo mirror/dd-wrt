@@ -1,5 +1,21 @@
+19.6.09
+    * AR5312/AR2313: add support for 32MB ram chips (auto detection)
+    * most nor flash chips should be supported, but no guarantee. redboot will display the required ID's for implementation
+    * nvram partition will now be automaticly detected if present
+    * 8 MB flash chip support for 5312/2313 (redboot modification)
+    * support consolidated board data or not, doesnt matter. will be found
+    * shows board type if present (taken from nvram)
+    * erase nvram only if nvram was detected (to prevent breaking of filesystem if DD-WRT isnt installed, but another OS)
+    note:
+    - before using from source consider to adjust the dram refresh timing, since i had to decrease it for testing on my AP48
+    - it will not have any negative influence if you dont do it, but dram access might be slower than expected
+
+18.6.09
+    * add more ap48/ar5312/ar2313 related support code and modify redboot to compile for this target
+    * AP48 is still in progress and untested, do not use it if you dont know how to handle a jtag 
+    
 17.6.09
     * add nvram_get to boot_stub (for checking system variables)
-    * boots always redboot and leaves booting procedure to redboot if nvram var resetbutton=1
+    * boots always redboot and leaves booting procedure to redboot if nvram var resetbutton_enable=1
     * add more AR5312 specific code (unused right now), for later AP48 support
     * printf implementation for easier and more compfortable debug output code writing

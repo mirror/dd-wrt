@@ -8,7 +8,6 @@
 
 #include <asm/uaccess.h>
 
-
 char *strchr(const char *s, int c)
 {
 	for (; *s != (char)c; ++s)
@@ -22,7 +21,6 @@ size_t strlen(const char *s)
 	const char *sc;
 
 	for (sc = s; *sc != '\0'; ++sc)
-		/* nothing */;
+		/* nothing */ ;
 	return sc - s;
 }
-
