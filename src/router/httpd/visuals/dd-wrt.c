@@ -3695,7 +3695,9 @@ void ej_showad(webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
-#ifdef HAVE_MR3202A
+#if defined(HAVE_MAKSAT) && defined(HAVE_MR3202A)
+	return 0;
+#elif defined(HAVE_MAKSAT) && defined(HAVE_ALPHA)
 	return 0;
 #elif HAVE_MAKSAT
 	return 1;
