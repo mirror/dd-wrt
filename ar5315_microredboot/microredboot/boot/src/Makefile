@@ -28,7 +28,7 @@ LD = /xfs/toolchains/staging_dir_mips/bin/mips-linux-ld
 #CC = /home/seg/DEV/broadcom/ar5315_microredboot/microredboot/tools/ecos_build/gnutools/mipsisa32-elf/bin/mipsisa32-elf-gcc
 #LD = /home/seg/DEV/broadcom/ar5315_microredboot/microredboot/tools/ecos_build/gnutools/mipsisa32-elf/bin/mipsisa32-elf-ld
 OBJCOPY = /xfs/toolchains/staging_dir_mips/bin/mips-linux-objcopy 
-CFLAGS = -Os -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -march=mips32 -Iinclude -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32 -D__KERNEL__
+CFLAGS = -Os -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -march=mips32 -Iinclude -Ilib -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32 -D__KERNEL__
 CFLAGS+= -DCONFIG_MIPS_L1_CACHE_SHIFT=5 -DCONFIG_PAGE_SIZE_4KB -DCONFIG_32BIT -DCONFIG_BOOTLOADER
 AFLAGS = -D__ASSEMBLY__ -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -march=mips32 -Iinclude -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32
 AFLAGS+= -DCONFIG_MIPS_L1_CACHE_SHIFT=5 -DCONFIG_PAGE_SIZE_4KB -DCONFIG_32BIT -DCONFIG_BOOTLOADER 
@@ -107,7 +107,7 @@ payload.o:	$(SYSTEM) __payload.o
 ld.script:	ld.script.in Makefile
 		sed "$(SEDFLAGS)" < ld.script.in > $@
 
-clean:;		rm -f payload* ld.script *.o *.c~ *.h~ lib/*.o
+clean:;		rm -f payload* ld.script *.o *.c~ *.h~ lib/*.o lib/*.c~ arch/*.c~
 
 .PHONY:	clean
 
