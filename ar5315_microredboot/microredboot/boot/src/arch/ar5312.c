@@ -1,3 +1,11 @@
+/*
+ * ar5312.c - AR5312/AR2313 specific system functions 
+ *
+ * copyright 2009 Sebastian Gottschall / NewMedia-NET GmbH / DD-WRT.COM
+ * licensed under GPL conditions
+ */
+
+
 #include "mips32.c"
 
 static unsigned int sectorsize = 0x10000;
