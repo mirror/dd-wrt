@@ -28,12 +28,12 @@
 /* #define _LZMA_OUT_READ */
 /* Use read function for output data */
 
-/* #define _LZMA_PROB32 */
+#define _LZMA_PROB32
 /* It can increase speed on some 32-bit CPUs, 
    but memory usage will be doubled in that case */
 
-/* #define _LZMA_LOC_OPT */
-/* Enable local speed optimizations inside code */
+#define _LZMA_LOC_OPT
+//Enable local speed optimizations inside code
 
 #ifndef UInt32
 #ifdef _LZMA_UINT32_IS_ULONG
