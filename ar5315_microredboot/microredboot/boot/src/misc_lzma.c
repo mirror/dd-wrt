@@ -21,7 +21,9 @@
 #include "ramconfig.h"
 #include "uncompress.h"
 #include "spiflash.h"
-#include "printf.h"
+#include "lib/lib.c"
+#include "lib/print.c"
+#include "lib/printf.c"
 
 #endif
 
@@ -161,65 +163,13 @@ static int lzma_unzip(void)
 	return 1;
 }
 
-/*if (((unsigned int)offset % 4) == 0) {
-	vall = *(unsigned int *)buffer;
-	buffer += 4;
-}
-    if (buffer>=BufferLim)
-	{
-	ExtraBytes=1;
-	return 0xff;
-	}
-  return *(((unsigned char *)&vall) + (offset++ & 3));
-*/
-
-struct fis_image_desc {
-	unsigned char name[16];	// Null terminated name
-	unsigned long flash_base;	// Address within FLASH of image
-	unsigned long mem_base;	// Address in memory where it executes
-	unsigned long size;	// Length of image
-	unsigned long entry_point;	// Execution entry point
-	unsigned long data_length;	// Length of actual data
-	unsigned char _pad[256 - (16 + 7 * sizeof(unsigned long))];
-	unsigned long desc_cksum;	// Checksum over image descriptor
-	unsigned long file_cksum;	// Checksum over image data
-};
-
 #ifdef AR5312
 #include "arch/ar5312.c"
 #else
 #include "arch/ar2315.c"
 #endif
-/*
- * searches for a directory entry named linux* vmlinux* or kernel and returns its flash address (it also initializes entrypoint and load address)
- */
-static unsigned int getLinux(void)
-{
-	int count = 0;
-	unsigned char *p =
-	    (unsigned char *)(flashbase + flashsize - (sectorsize * 2));
-	struct fis_image_desc *fis = (struct fis_image_desc *)p;
-	while (fis->name[0] != 0xff && count < 10) {
-		if (!strncmp(fis->name, "linux", 5)
-		    || !strncmp(fis->name, "vmlinux", 7)
-		    || !strcmp(fis->name, "kernel")) {
-			printf
-			    ("found bootable image: [%s] at [0x%08X] EP [0x%08X]\n",
-			     fis->name, fis->flash_base, fis->entry_point);
-			bootoffset = fis->entry_point;
-			output_data = (uch *) fis->mem_base;
-			return fis->flash_base;
-		}
-		p += 256;
-		fis = (struct fis_image_desc *)p;
-		count++;
-	}
-	puts("no bootable image found, try default location 0xbfc10000\n");
-	bootoffset = 0x80041000;
-	output_data = (uch *) 0x80041000;
-	return 0xbfc10000;
-}
 
+#include "lib/fis.c"
 /* ===========================================================================
  * Fill the input buffer. This is called only when the buffer is empty
  * and at least one byte is really needed.
@@ -271,79 +221,7 @@ static int resetTouched(void)
 	return trigger;
 }
 
-struct nvram_header {
-	__u32 magic;
-	__u32 len;
-	__u32 crc_ver_init;	/* 0:7 crc, 8:15 ver, 16:27 init, mem. test 28, 29-31 reserved */
-	__u32 config_refresh;	/* 0:15 config, 16:31 refresh */
-	__u32 config_ncdl;	/* ncdl values for memc */
-};
-
-struct nvram_tuple {
-	char *name;
-	char *value;
-	struct nvram_tuple *next;
-};
-
-#define NVRAM_SPACE 0x10000
-#define NVRAM_MAGIC			0x48534C46	/* 'NVFL' */
-
-static char nvram_buf[65536] __attribute__((aligned(4096))) = {
-0};				//
-
-/*
- * simple dd-wrt nvram implementation (read only)
- */
-static void nvram_init(void)
-{
-	struct nvram_header *header;
-	__u32 off, lim;
-	int i;
-	flashdetect();
-	for (i = 0; i < 4; i++) {
-		header =
-		    (struct nvram_header *)(flashbase + flashsize -
-					    (sectorsize * (3 + i)));
-		if (header->magic == NVRAM_MAGIC && header->len > 0
-		    && header->len <= NVRAM_SPACE) {
-			printf
-			    ("DD-WRT NVRAM with size = %d found on [0x%08X]\n",
-			     header->len, header);
-			nvramdetect = (unsigned int)header;
-			unsigned int *src = header;
-			unsigned int *dst = nvram_buf;
-			for (i = 0; i < NVRAM_SPACE / 4; i++)
-				dst[i] = src[i];
-			return;
-		}
-	}
-}
-
-static char *nvram_get(const char *name)
-{
-	char *var, *value, *end, *eq;
-
-	if (!name)
-		return NULL;
-
-	if (!nvram_buf[0])
-		nvram_init();
-
-	/* Look for name=value and return value */
-	var = &nvram_buf[sizeof(struct nvram_header)];
-	end = nvram_buf + sizeof(nvram_buf) - 2;
-	end[0] = end[1] = '\0';
-	for (; *var; var = value + strlen(value) + 1) {
-		if (!(eq = strchr(var, '=')))
-			break;
-		value = eq + 1;
-		if ((eq - var) == strlen(name)
-		    && strncmp(var, name, (eq - var)) == 0)
-			return value;
-	}
-
-	return NULL;
-}
+#include <lib/nvram.c>
 
 ulg
 decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)

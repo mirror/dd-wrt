@@ -33,7 +33,7 @@ static void myoutput(void *arg, char *s, int l)
 	}
 }
 
-void printf(char *fmt, ...)
+static void printf(char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
