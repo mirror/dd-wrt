@@ -22,6 +22,7 @@
 				UART16550_PARITY_NONE | \
 				UART16550_STOP_1BIT
 
+
 #define UART			0xB1100003
 
 #define REG_OFFSET		4
@@ -55,10 +56,34 @@
 #define UART16550_STOP_1BIT     0x0
 #define UART16550_STOP_2BIT     0x4
 
-#define SYS_REG_READ(p)		(*((volatile unsigned long *) (p)))
-#define SYS_REG_WRITE(p,v)	(*((volatile unsigned long *) (p)) = (v))
 #define UART16550_READ(p)	(*((volatile u8*)(UART + (p))))
 #define UART16550_WRITE(p,v)	((*((volatile u8*)(UART + (p)))) = (v))
+
+
+#define AR5315_DSLBASE          0xB1000000      /* RESET CONTROL MMR */
+#define AR5315_PLLC_CTL         (AR5315_DSLBASE + 0x0064)
+#define AR5315_CPUCLK           (AR5315_DSLBASE + 0x006c)
+#define AR5315_RESET            (AR5315_DSLBASE + 0x0004)
+#define AR5315_RESET_UART0                 0x00000100      /* warm reset UART0 */
+
+/* PLLc Control fields */
+#define PLLC_REF_DIV_M              0x00000003
+#define PLLC_REF_DIV_S              0
+#define PLLC_FDBACK_DIV_M           0x0000007C
+#define PLLC_FDBACK_DIV_S           2
+#define PLLC_ADD_FDBACK_DIV_M       0x00000080
+#define PLLC_ADD_FDBACK_DIV_S       7
+#define PLLC_CLKC_DIV_M             0x0001c000
+#define PLLC_CLKC_DIV_S             14
+#define PLLC_CLKM_DIV_M             0x00700000
+#define PLLC_CLKM_DIV_S             20
+
+/* CPU CLK Control fields */
+#define CPUCLK_CLK_SEL_M            0x00000003
+#define CPUCLK_CLK_SEL_S            0
+#define CPUCLK_CLK_DIV_M            0x0000000c
+#define CPUCLK_CLK_DIV_S            2
+
 
 static void putc(int c)
 {
@@ -77,26 +102,96 @@ static void puts(const char *s)
 	}
 }
 
-#if defined(COBRA_EMUL)
-#define AR2316_AMBA_CLOCK_RATE  20000000
-#define AR2316_CPU_CLOCK_RATE   40000000
-#else
-#if defined(DEFAULT_PLL)
-#define AR2316_AMBA_CLOCK_RATE  40000000
-#define AR2316_CPU_CLOCK_RATE   40000000
-#else
-#define AR2316_AMBA_CLOCK_RATE  92000000
-#define AR2316_CPU_CLOCK_RATE   184000000
-#endif				/* ! DEFAULT_PLL */
-#endif				/* ! COBRA_EMUL */
+
+
+static const int CLOCKCTL1_PREDIVIDE_TABLE[4] = {
+    1,
+    2,
+    4,
+    5
+};
+
+static const int PLLC_DIVIDE_TABLE[5] = {
+    2,
+    3,
+    4,
+    6,
+    3
+};
+#define sysRegRead(phys)	\
+	(*(volatile unsigned int *)(KSEG1|phys))
+
+#define sysRegWrite(phys, val)	\
+	((*(volatile unsigned int *)(KSEG1|phys)) = (val))
+
+static unsigned int 
+ar5315_sys_clk(unsigned int clockCtl)
+{
+    unsigned int pllcCtrl,cpuDiv;
+    unsigned int pllcOut,refdiv,fdiv,divby2;
+	unsigned int clkDiv;
+
+    pllcCtrl = sysRegRead(AR5315_PLLC_CTL);
+    refdiv = (pllcCtrl & PLLC_REF_DIV_M) >> PLLC_REF_DIV_S;
+    refdiv = CLOCKCTL1_PREDIVIDE_TABLE[refdiv];
+    fdiv = (pllcCtrl & PLLC_FDBACK_DIV_M) >> PLLC_FDBACK_DIV_S;
+    divby2 = (pllcCtrl & PLLC_ADD_FDBACK_DIV_M) >> PLLC_ADD_FDBACK_DIV_S;
+    divby2 += 1;
+    pllcOut = (40000000/refdiv)*(2*divby2)*fdiv;
+
+
+    /* clkm input selected */
+	switch(clockCtl & CPUCLK_CLK_SEL_M) {
+		case 0:
+		case 1:
+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKM_DIV_M) >> PLLC_CLKM_DIV_S];
+			break;
+		case 2:
+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKC_DIV_M) >> PLLC_CLKC_DIV_S];
+			break;
+		default:
+			pllcOut = 40000000;
+			clkDiv = 1;
+			break;
+	}
+	cpuDiv = (clockCtl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;  
+	cpuDiv = cpuDiv * 2 ?: 1;
+	return (pllcOut/(clkDiv * cpuDiv));
+}
+		
+static unsigned int cpu_frequency(void)
+{
+    return ar5315_sys_clk(sysRegRead(AR5315_CPUCLK));
+}
+
 
 static inline void arch_decomp_setup(void)
 {
 	/* Initialise the serial port here */
 
+	sysRegWrite(AR5315_RESET,sysRegRead(AR5315_RESET) & ~(AR5315_RESET_UART0));
+
 	/* disable interrupts */
 	UART16550_WRITE(OFS_LINE_CONTROL, 0x0);
 	UART16550_WRITE(OFS_INTR_ENABLE, 0);
+
+	/* set up buad rate */
+	{
+		u32 divisor;
+		u32 uart_clock_rate = cpu_frequency() / 4;
+		u32 base_baud = uart_clock_rate / 16;
+
+		/* set DIAB bit */
+		UART16550_WRITE(OFS_LINE_CONTROL, 0x80);
+
+		/* set divisor */
+		divisor = base_baud / CONFIG_DEFAULT_BAUDRATE;
+		UART16550_WRITE(OFS_DIVISOR_LSB, divisor & 0xff);
+		UART16550_WRITE(OFS_DIVISOR_MSB, (divisor & 0xff00) >> 8);
+
+		/* clear DIAB bit */
+		UART16550_WRITE(OFS_LINE_CONTROL, 0x0);
+	}
 
 	/* set data format */
 	UART16550_WRITE(OFS_DATA_FORMAT, DEFAULT_DATA_FORMAT);
