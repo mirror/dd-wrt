@@ -5,6 +5,7 @@
  * licensed under GPL conditions
  */
 #include "mips32.c"
+#include "spiflash.h"
 
 /* definition of basic flash mappings */
 static unsigned int sectorsize = 0x10000;
@@ -18,7 +19,7 @@ static unsigned int flashsize = 0x800000;
 #define AR2316_RESET            (AR2316_DSLBASE + 0x0004)
 #define AR2316_IF_CTL           (AR2316_DSLBASE + 0x0018)
 #define AR2316_ENDIAN_CTL       (AR2316_DSLBASE + 0x000c)
-#define AR5315_WDC              (AR5315_DSLBASE + 0x003c)
+#define AR2316_WDC              (AR2316_DSLBASE + 0x003c)
 #define AR2316_AHB_ARB_CTL      (AR2316_DSLBASE + 0x0008)
 #define RESET_WARM_WLAN0_MAC        0x00000001	/* warm reset WLAN0 MAC */
 #define RESET_WARM_WLAN0_BB         0x00000002	/* warm reset WLAN0 BaseBand */
@@ -47,7 +48,6 @@ static unsigned int flashsize = 0x800000;
 
 #define disable_watchdog() \
 { 					\
-	sysRegWrite(AR5315_WDC, 0); 	\
 }					\
 
 static int getGPIO(int nr)

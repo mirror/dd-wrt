@@ -230,7 +230,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	free_mem_ptr_end = free_mem_ptr_end_p;
 	disable_watchdog();
 	arch_decomp_setup();
-	printf("MicroRedBoot v1.2, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
+	printf("MicroRedBoot v1.3, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
 	nvram_init();
 	char *ddboard = nvram_get("DD_BOARD");
 	if (ddboard)
