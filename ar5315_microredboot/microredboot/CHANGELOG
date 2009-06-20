@@ -1,4 +1,7 @@
 20.6.09
+    * source restructured for well readability (divide ap48 specific and ap51/ap61 specific changes)
+    * decrease the size a little bit by compiler friendly source changes
+    * added NOR flash chip detection (if detection fails it will have no consequences. not all flash chips are implemented but easy to maintain)
     * AR5312/AR2313: fix nvram erase for nor flash devices (tested)
     * make LzmaDecoder 2-3 times faster. this increases size, but we are still in 64 kb limit
     note:
