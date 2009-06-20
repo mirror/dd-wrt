@@ -23,7 +23,7 @@ static int PrintNum(char *, unsigned long, int, int, int, int, char, int);
 /* -*-
  * A low level printf() function.
  */
-void
+static void
 lp_Print(void (*output) (void *, char *, int), void *arg, char *fmt, va_list ap)
 {
 
