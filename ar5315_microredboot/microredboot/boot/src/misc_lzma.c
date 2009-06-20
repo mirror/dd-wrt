@@ -20,7 +20,6 @@
 #include <asm/uaccess.h>
 #include "ramconfig.h"
 #include "uncompress.h"
-#include "spiflash.h"
 #include "lib/lib.c"
 #include "lib/print.c"
 #include "lib/printf.c"
