@@ -1,3 +1,9 @@
+/*
+ * mips32.c - mips32 specific system functions 
+ *
+ * copyright 2009 Sebastian Gottschall / NewMedia-NET GmbH / DD-WRT.COM
+ * licensed under GPL conditions
+ */
 
 #define sysRegRead(phys)	\
 	(*(volatile unsigned int *)(KSEG1|phys))
