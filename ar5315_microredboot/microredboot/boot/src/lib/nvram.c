@@ -41,8 +41,8 @@ static void nvram_init(void)
 			    ("DD-WRT NVRAM with size = %d found on [0x%08X]\n",
 			     header->len, header);
 			nvramdetect = (unsigned int)header;
-			unsigned int *src = header;
-			unsigned int *dst = nvram_buf;
+			unsigned int *src = (unsigned int*)header;
+			unsigned int *dst = (unsigned int*)nvram_buf;
 			for (i = 0; i < NVRAM_SPACE / 4; i++)
 				dst[i] = src[i];
 			return;
