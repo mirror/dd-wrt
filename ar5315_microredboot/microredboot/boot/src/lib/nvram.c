@@ -46,6 +46,10 @@ static void nvram_init(void)
 			for (i = 0; i < NVRAM_SPACE / 4; i++)
 				dst[i] = src[i];
 			return;
+		}else{
+			unsigned int *dst = (unsigned int*)nvram_buf;
+			for (i = 0; i < NVRAM_SPACE / 4; i++)
+				dst[i] = 0;		
 		}
 	}
 }
@@ -58,7 +62,7 @@ static char *nvram_get(const char *name)
 		return NULL;
 
 	if (!nvram_buf[0])
-		nvram_init();
+	    return;
 
 	/* Look for name=value and return value */
 	var = &nvram_buf[sizeof(struct nvram_header)];

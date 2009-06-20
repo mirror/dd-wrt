@@ -97,7 +97,7 @@ static void puts(const char *s)
 	}
 }
 
-static int ar531x_cpu_frequency(void)
+static unsigned int cpu_frequency(void)
 {
 	static const int CLOCKCTL1_PREDIVIDE_TABLE[4] = {
 		1,
@@ -106,10 +106,10 @@ static int ar531x_cpu_frequency(void)
 		5
 	};
 
-	int preDivideSelect;
-	int preDivisor;
-	int multiplier;
-	int doublerMask;
+	unsigned int preDivideSelect;
+	unsigned int preDivisor;
+	unsigned int multiplier;
+	unsigned int doublerMask;
 
 	unsigned int clockCtl1 = SYS_REG_READ(AR5312_CLOCKCTL1);
 
@@ -158,7 +158,7 @@ static inline void arch_decomp_setup(void)
 	/* set up buad rate */
 	{
 		u32 divisor;
-		u32 uart_clock_rate = ar531x_cpu_frequency() / 4;
+		u32 uart_clock_rate = cpu_frequency() / 4;
 		u32 base_baud = uart_clock_rate / 16;
 
 		/* set DIAB bit */
