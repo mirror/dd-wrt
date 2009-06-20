@@ -127,6 +127,9 @@ void start_overclock(void)	// hidden feature. must be called with
 	fseek(in, 0xe64b, SEEK_SET);
 	int zmul = getc(in);
 
+	fseek(in, 0x61b, SEEK_SET);
+	int microvipermul = getc(in);
+
 	fseek(in, 0xcb, SEEK_SET);
 	int vipermul = getc(in);
 
@@ -465,6 +468,47 @@ void start_overclock(void)	// hidden feature. must be called with
 			fseek(in, 0xe2, SEEK_SET);
 			putc((realclock >> 8) & 0xff, in);
 			putc(realclock & 0xff, in);
+		}
+		fclose(in);
+		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
+	} else if (microvipermul == 0x9 || microvipermul == 0xa || microvipermul == 0xb
+		   || microvipermul == 0xc || microvipermul == 0x17) {
+
+		fprintf(stderr, "viper (ar2313) found\n");
+		if (clk == 180 && microvipermul == 0x9) {
+			fprintf(stderr, "board already clocked to 180mhz\n");
+			fclose(in);
+			return;
+		}
+		if (clk == 200 && microvipermul == 0xa) {
+			fprintf(stderr, "board already clocked to 200mhz\n");
+			fclose(in);
+			return;
+		}
+		if (clk == 220 && microvipermul == 0xb) {
+			fprintf(stderr, "board already clocked to 220mhz\n");
+			fclose(in);
+			return;
+		}
+		if (clk == 240 && microvipermul == 0xc) {
+			fprintf(stderr, "board already clocked to 240mhz\n");
+			fclose(in);
+			return;
+		}
+		fseek(in, 0x61b, SEEK_SET);
+		if (clk == 180)
+			putc(0x9, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+		else if (clk == 200)
+			putc(0xa, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+		else if (clk == 220)
+			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+		else if (clk == 240)
+			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+		else {
+			nvram_set("cpuclk", "220");
+			clk = atoi(nvram_default_get("cpuclk", "180"));
+			nvram_commit();
+			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 		fclose(in);
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
