@@ -42,9 +42,21 @@ static unsigned insize = 0;	/* valid bytes in inbuf */
 static unsigned inptr = 0;	/* index of next byte to be processed in inbuf */
 static unsigned outcnt;		/* bytes in output buffer */
 
-#define get_byte()  (inptr < insize ? inbuf[inptr++] : fill_inbuf())
+static void fill_inbuf(void);
 
-static int fill_inbuf(void);
+static inline unsigned char get_byte(void)
+{
+	static unsigned int vall;
+
+	if (((unsigned int)inptr % 4) == 0) {
+		vall = *(unsigned int *)inbuf;
+		inbuf += 4;
+	}
+	return *(((unsigned char *)&vall) + (inptr++ & 3));
+}
+
+//#define get_byte()  (inptr < insize ? inbuf[inptr++] : fill_inbuf())
+
 static void flush_window(void);
 static void error(char *m);
 
@@ -62,7 +74,18 @@ static ulg free_mem_ptr_end;
 #define _LZMA_IN_CB
 
 #include "lib/LzmaDecode.h"
-static int read_byte(unsigned char **buffer, UInt32 * bufferSize);
+static unsigned int icnt = 0;
+static inline int read_byte(unsigned char **buffer, UInt32 * bufferSize)
+{
+	static unsigned char val;
+	*bufferSize = 1;
+	val = get_byte();
+	*buffer = &val;
+	if (icnt++ % (1024 * 10) == 0)
+		putc('.');
+	return LZMA_RESULT_OK;
+}
+
 #include "lib/LzmaDecode.c"
 
 int bootoffset = 0x800004bc;
@@ -79,6 +102,8 @@ static int lzma_unzip(void)
 	unsigned int uncompressedSize = 0;
 	unsigned char *workspace;
 	unsigned int lc, lp, pb;
+	if (inptr >= insize)
+		fill_inbuf();
 
 	// lzma args
 	i = get_byte();
@@ -152,18 +177,6 @@ static int lzma_unzip(void)
   return *(((unsigned char *)&vall) + (offset++ & 3));
 */
 
-static unsigned int icnt = 0;
-static int read_byte(unsigned char **buffer, UInt32 * bufferSize)
-{
-	static unsigned char val;
-	*bufferSize = 1;
-	val = get_byte();
-	*buffer = &val;
-	if (icnt++ % (1024 * 10) == 0)
-		putc('.');
-	return LZMA_RESULT_OK;
-}
-
 struct fis_image_desc {
 	unsigned char name[16];	// Null terminated name
 	unsigned long flash_base;	// Address within FLASH of image
@@ -205,14 +218,14 @@ static unsigned int getLinux(void)
 			     fis->name, fis->flash_base, fis->entry_point);
 			bootoffset = fis->entry_point;
 			output_data = (uch *) fis->mem_base;
-#ifdef AR5312
+//#ifdef AR5312
 			return fis->flash_base;
-#else
-			memcpy((unsigned char *)ZCACHEADDR,
-			       (unsigned char *)fis->flash_base,
-			       1 * 1024 * 1024);
-			return ZCACHEADDR;
-#endif
+//#else
+//                      memcpy((unsigned char *)ZCACHEADDR,
+//                             (unsigned char *)fis->flash_base,
+//                             1 * 1024 * 1024);
+//                      return ZCACHEADDR;
+//#endif
 		}
 		p += 256;
 		fis = (struct fis_image_desc *)p;
@@ -230,20 +243,20 @@ static unsigned int getLinux(void)
  */
 static int resettrigger = 0;
 
-static int fill_inbuf(void)
+static void fill_inbuf(void)
 {
 	if (insize != 0)
 		error("ran out of input data");
 	if (resettrigger) {
 		inbuf = (uch *) linuxaddr;
 		insize = 0x400000;
-		inptr = 1;
+		inptr = 0;
 	} else {
 		inbuf = input_data;
 		insize = &input_data_end[0] - &input_data[0];
-		inptr = 1;
+		inptr = 0;
 	}
-	return inbuf[0];
+	return;
 }
 
 /* ===========================================================================
@@ -942,7 +955,10 @@ static void nvram_init(void)
 			    ("DD-WRT NVRAM with size = %d found on [0x%08X]\n",
 			     header->len, header);
 			nvramdetect = (unsigned int)header;
-			memcpy(nvram_buf, header, NVRAM_SPACE);
+			unsigned int *src = header;
+			unsigned int *dst = nvram_buf;
+			for (i = 0; i < NVRAM_SPACE / 4; i++)
+				dst[i] = src[i];
 			return;
 		}
 	}
