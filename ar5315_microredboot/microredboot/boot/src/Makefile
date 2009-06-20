@@ -30,7 +30,7 @@ LD = /xfs/toolchains/staging_dir_mips/bin/mips-linux-ld
 OBJCOPY = /xfs/toolchains/staging_dir_mips/bin/mips-linux-objcopy 
 CFLAGS = -Os -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -march=mips32 -Iinclude -Ilib -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32 -D__KERNEL__
 CFLAGS+= -DCONFIG_MIPS_L1_CACHE_SHIFT=5 -DCONFIG_PAGE_SIZE_4KB -DCONFIG_32BIT -DCONFIG_BOOTLOADER
-AFLAGS = -D__ASSEMBLY__ -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -march=mips32 -Iinclude -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32
+AFLAGS = -D__ASSEMBLY__ -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -march=mips32 -Iinclude -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32
 AFLAGS+= -DCONFIG_MIPS_L1_CACHE_SHIFT=5 -DCONFIG_PAGE_SIZE_4KB -DCONFIG_32BIT -DCONFIG_BOOTLOADER 
 ifeq ($(PLATFORM),ap51)
 CFLAGS+= -DHAVE_ap51
@@ -47,8 +47,8 @@ endif
 
 
 HEAD		 = head.o
-OBJS		 = misc_lzma.o lib/lib.o lib/print.o lib/printf.o
-MEMCPY 		 = memset.o
+OBJS		 = misc_lzma.o 
+MEMCPY 		 = lib/memset.o
 # CFLAGS	 = $(CPPFLAGS) -O2 -DSTDC_HEADERS $(CFLAGS_BOOT)
 ZLDFLAGS	 = -G 0 -static -X -T ld.script
 
@@ -57,7 +57,7 @@ SYSTEM		 = redboot.elf
 #
 # Architecture dependencies
 #
-OBJS		+= head-ar5315.o head-ar531x.o
+OBJS		+= arch/head-ar5315.o arch/head-ar531x.o
 
 #ifneq ($(CONFIG_BOOTLOADER),y)
 #ZTEXTADDR	= 0x80400000
@@ -92,11 +92,11 @@ vmlinuz:	$(OBJS) $(HEAD) $(MEMCPY) payload.o ld.script
 $(HEAD): 	$(HEAD:.o=.S) include/linux/autoconf.h
 		$(CC) $(AFLAGS) -Iinclude -c $(HEAD:.o=.S) -o $(HEAD) 
 
-head-ar531x.o: head-ar531x.S include/linux/autoconf.h
-		$(CC) $(AFLAGS) -Iinclude -c head-ar531x.S -o head-ar531x.o
+arch/head-ar531x.o: arch/head-ar531x.S include/linux/autoconf.h
+		$(CC) $(AFLAGS) -Iinclude -c arch/head-ar531x.S -o arch/head-ar531x.o
 
-head-ar5315.o: head-ar5315.S include/linux/autoconf.h
-		$(CC) $(AFLAGS) -Iinclude -c head-ar5315.S -o head-ar5315.o
+arch/head-ar5315.o: arch/head-ar5315.S include/linux/autoconf.h
+		$(CC) $(AFLAGS) -Iinclude -c arch/head-ar5315.S -o arch/head-ar5315.o
 
 payload.o:	$(SYSTEM) __payload.o
 		$(OBJCOPY) -O binary -R .note -R .comment -S $(SYSTEM) payload
