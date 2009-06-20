@@ -188,7 +188,7 @@ struct fis_image_desc {
 #ifdef AR5312
 #include "arch/ar5312.c"
 #else
-#include "arch/ar5315.c"
+#include "arch/ar2315.c"
 #endif
 /*
  * searches for a directory entry named linux* vmlinux* or kernel and returns its flash address (it also initializes entrypoint and load address)
