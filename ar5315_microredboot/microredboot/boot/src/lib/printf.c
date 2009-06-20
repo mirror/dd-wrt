@@ -13,11 +13,7 @@
 
 #include <asm/uaccess.h>
 #include <ramconfig.h>
-#ifdef AR5312
-#include "uncompress-ar5312.h"
-#else
-#include "uncompress-ar5315.h"
-#endif
+#include <uncompress.h>
 
 #include "printf.h"
 #include "print.h"
