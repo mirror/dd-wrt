@@ -335,6 +335,7 @@ romReserved:
 2:
 .endm
 
+
 /*
  * romInitFlash - init flash address space in ar531x flash controller
  */
@@ -346,7 +347,6 @@ romReserved:
 	and	t0, FLASHCTL_MW			/* keep bus width from HW */
 	/* 0x7 == 12.5ns * 8 == 100ns which is typical for flash roms */
 	or	t0, FLASHCTL_E | FLASHCTL_AC_8M | FLASHCTL_RBLE | \
-		    FLASHCTL_WP | \
 		    (0x01 << FLASHCTL_IDCY_S) | \
 		    (0x07 << FLASHCTL_WST1_S) | \
 		    (0x07 << FLASHCTL_WST2_S)
