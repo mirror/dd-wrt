@@ -175,6 +175,7 @@ typedef struct flash_dev_info {
     cyg_uint32   bufsiz;                 // write buffer size in units of flash_data_t
 } flash_dev_info_t;
 
+
 static const flash_dev_info_t* flash_dev_info;
 static const flash_dev_info_t supported_devices[] = {
 #include <cyg/io/flash_am29xxxxx_parts.inl>

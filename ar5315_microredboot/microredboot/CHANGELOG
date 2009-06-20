@@ -1,3 +1,8 @@
+20.6.09
+    * AR5312/AR2313: fix nvram erase for nor flash devices (tested)
+    note:
+    - finally the bootloader works now for ap51,ap65 and ap48 with all current planned features
+    
 19.6.09
     * AR5312/AR2313: nor flash support for erasing nvram on reset button long push (untested)
     * AR5312/AR2313: add support for 32MB ram chips (auto detection)
