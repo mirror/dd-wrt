@@ -104,6 +104,7 @@ static int flashdetect(void)
 {
 	if (flashdetected)
 		return 0;
+	flashdetected=1;
 	volatile FLASH_DATA_T *ROM;
 	volatile FLASH_DATA_T *f_s1, *f_s2;
 	FLASH_DATA_T id[4];

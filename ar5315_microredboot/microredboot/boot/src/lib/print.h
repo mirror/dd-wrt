@@ -28,7 +28,7 @@
  * output function cannot assume the buffer is null-terminated after
  * l number of chars.
  */
-void lp_Print(void (*output) (void *, char *, int),
+static void lp_Print(void (*output) (void *, char *, int),
 	      void *arg, char *fmt, va_list ap);
 
 #endif
