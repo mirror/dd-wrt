@@ -40,22 +40,16 @@ typedef struct _CRangeDecoder {
 #ifdef _LZMA_IN_CB
 	int Result;
 #endif
-	int ExtraBytes;
 } CRangeDecoder;
 
-static Byte RangeDecoderReadByte(CRangeDecoder * rd)
+static inline Byte RangeDecoderReadByte(CRangeDecoder * rd)
 {
 	if (rd->Buffer == rd->BufferLim) {
 #ifdef _LZMA_IN_CB
 		UInt32 size;
 		rd->Result = read_byte(&rd->Buffer, &size);
 		rd->BufferLim = rd->Buffer + size;
-		if (size == 0)
 #endif
-		{
-			rd->ExtraBytes = 1;
-			return 0xFF;
-		}
 	}
 	return (*rd->Buffer++);
 }
@@ -72,7 +66,6 @@ static void RangeDecoderInit(CRangeDecoder * rd)
 	rd->Buffer = stream;
 	rd->BufferLim = stream + bufferSize;
 #endif
-	rd->ExtraBytes = 0;
 	rd->Code = 0;
 	rd->Range = (0xFFFFFFFF);
 	for (i = 0; i < 5; i++)
@@ -83,7 +76,8 @@ static void RangeDecoderInit(CRangeDecoder * rd)
 #define RC_FLUSH_VAR rd->Range = range; rd->Code = code;
 #define RC_NORMALIZE if (range < kTopValue) { range <<= 8; code = (code << 8) | ReadByte; }
 
-static UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder * rd, int numTotalBits)
+static inline UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder * rd,
+						  int numTotalBits)
 {
 	RC_INIT_VAR UInt32 result = 0;
 	int i;
@@ -106,7 +100,7 @@ static UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder * rd, int numTotalBits)
 	RC_FLUSH_VAR return result;
 }
 
-static int RangeDecoderBitDecode(CProb * prob, CRangeDecoder * rd)
+static inline int RangeDecoderBitDecode(CProb * prob, CRangeDecoder * rd)
 {
 	UInt32 bound = (rd->Range >> kNumBitModelTotalBits) * *prob;
 	if (rd->Code < bound) {
@@ -139,8 +133,8 @@ static int RangeDecoderBitDecode(CProb * prob, CRangeDecoder * rd)
 
 #define RC_GET_BIT(prob, mi) RC_GET_BIT2(prob, mi, ; , ;)
 
-static int RangeDecoderBitTreeDecode(CProb * probs, int numLevels,
-				     CRangeDecoder * rd)
+static int inline RangeDecoderBitTreeDecode(CProb * probs, int numLevels,
+					    CRangeDecoder * rd)
 {
 	int mi = 1;
 	int i;
@@ -161,8 +155,8 @@ static int RangeDecoderBitTreeDecode(CProb * probs, int numLevels,
 	    return mi - (1 << numLevels);
 }
 
-static int RangeDecoderReverseBitTreeDecode(CProb * probs, int numLevels,
-					    CRangeDecoder * rd)
+static int inline RangeDecoderReverseBitTreeDecode(CProb * probs, int numLevels,
+						   CRangeDecoder * rd)
 {
 	int mi = 1;
 	int i;
@@ -186,7 +180,7 @@ static int RangeDecoderReverseBitTreeDecode(CProb * probs, int numLevels,
 	    return symbol;
 }
 
-static Byte LzmaLiteralDecode(CProb * probs, CRangeDecoder * rd)
+static Byte inline LzmaLiteralDecode(CProb * probs, CRangeDecoder * rd)
 {
 	int symbol = 1;
 #ifdef _LZMA_LOC_OPT
@@ -209,8 +203,8 @@ static Byte LzmaLiteralDecode(CProb * probs, CRangeDecoder * rd)
 	    return symbol;
 }
 
-static Byte LzmaLiteralDecodeMatch(CProb * probs, CRangeDecoder * rd,
-				   Byte matchByte)
+static inline Byte LzmaLiteralDecodeMatch(CProb * probs, CRangeDecoder * rd,
+					  Byte matchByte)
 {
 	int symbol = 1;
 #ifdef _LZMA_LOC_OPT
@@ -271,7 +265,7 @@ static Byte LzmaLiteralDecodeMatch(CProb * probs, CRangeDecoder * rd,
 #define LenHigh (LenMid + (kNumPosStatesMax << kLenNumMidBits))
 #define kNumLenProbs (LenHigh + kLenNumHighSymbols)
 
-static int LzmaLenDecode(CProb * p, CRangeDecoder * rd, int posState)
+static inline int LzmaLenDecode(CProb * p, CRangeDecoder * rd, int posState)
 {
 	if (RangeDecoderBitDecode(p + LenChoice, rd) == 0)
 		return RangeDecoderBitTreeDecode(p + LenLow +
@@ -363,9 +357,9 @@ static int LzmaDecoderInit(unsigned char *buffer, UInt32 bufferSize,
 	return LZMA_RESULT_OK;
 }
 
-static int LzmaDecode(unsigned char *buffer,
-		      unsigned char *outStream, UInt32 outSize,
-		      UInt32 * outSizeProcessed)
+int LzmaDecode(unsigned char *buffer,
+	       unsigned char *outStream, UInt32 outSize,
+	       UInt32 * outSizeProcessed)
 {
 	LzmaVarState *vs = (LzmaVarState *) buffer;
 	CProb *p = (CProb *) (buffer + sizeof(LzmaVarState));
@@ -442,8 +436,6 @@ static int LzmaDecode(Byte * buffer, UInt32 bufferSize,
 		if (rd.Result != LZMA_RESULT_OK)
 			return rd.Result;
 #endif
-		if (rd.ExtraBytes != 0)
-			return LZMA_RESULT_DATA_ERROR;
 		if (RangeDecoderBitDecode
 		    (p + IsMatch + (state << kNumPosBitsMax) + posState,
 		     &rd) == 0) {

@@ -1,5 +1,6 @@
 20.6.09
     * AR5312/AR2313: fix nvram erase for nor flash devices (tested)
+    * make LzmaDecoder 2-3 times faster. this increases size, but we are still in 64 kb limit
     note:
     - finally the bootloader works now for ap51,ap65 and ap48 with all current planned features
     
