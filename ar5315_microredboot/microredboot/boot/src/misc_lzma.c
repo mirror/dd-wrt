@@ -19,11 +19,7 @@
 
 #include <asm/uaccess.h>
 #include "ramconfig.h"
-#ifdef AR5312
-#include "uncompress-ar5312.h"
-#else
-#include "uncompress-ar5315.h"
-#endif
+#include "uncompress.h"
 #include "spiflash.h"
 #include "printf.h"
 
@@ -190,15 +186,9 @@ struct fis_image_desc {
 };
 
 #ifdef AR5312
-static unsigned int sectorsize = 0x10000;
-static unsigned int linuxaddr = 0xbe010000;
-static unsigned int flashbase = 0xbe000000;
-static unsigned int flashsize = 0x800000;
+#include "arch/ar5312.c"
 #else
-static unsigned int sectorsize = 0x10000;
-static unsigned int linuxaddr = 0xbfc10000;
-static unsigned int flashbase = 0xa8000000;
-static unsigned int flashsize = 0x800000;
+#include "arch/ar5315.c"
 #endif
 /*
  * searches for a directory entry named linux* vmlinux* or kernel and returns its flash address (it also initializes entrypoint and load address)
@@ -218,14 +208,7 @@ static unsigned int getLinux(void)
 			     fis->name, fis->flash_base, fis->entry_point);
 			bootoffset = fis->entry_point;
 			output_data = (uch *) fis->mem_base;
-//#ifdef AR5312
 			return fis->flash_base;
-//#else
-//                      memcpy((unsigned char *)ZCACHEADDR,
-//                             (unsigned char *)fis->flash_base,
-//                             1 * 1024 * 1024);
-//                      return ZCACHEADDR;
-//#endif
 		}
 		p += 256;
 		fis = (struct fis_image_desc *)p;
@@ -277,38 +260,6 @@ static void error(char *x)
 	while (1) ;		/* Halt */
 }
 
-/*void __div0(void)
-{
-	error("division by zero");
-}*/
-
-#ifdef AR5312
-
-#define AR531X_APBBASE  0xbc000000
-#define AR531X_GPIO     (AR531X_APBBASE + 0x2000)
-#define AR531X_GPIO_DI      (AR531X_GPIO + 0x04)
-
-static int getGPIO(int nr)
-{
-	volatile unsigned int *gpio = (unsigned int *)AR531X_GPIO_DI;
-	if ((*gpio & 1 << nr) == (1 << nr))
-		return 1;
-	return 0;
-}
-
-#else
-
-#define AR2316_DSLBASE          0xB1000000	/* RESET CONTROL MMR */
-#define AR2316_GPIO_DI          (AR2316_DSLBASE + 0x0088)
-
-static int getGPIO(int nr)
-{
-	volatile unsigned int *gpio = (unsigned int *)AR2316_GPIO_DI;
-	if ((*gpio & 1 << nr) == (1 << nr))
-		return 1;
-	return 0;
-}
-#endif
 /*
  * checks if the reset button is pressed, return 1 if the button is pressed and 0 if not
  */
@@ -320,600 +271,6 @@ static int resetTouched(void)
 	return trigger;
 }
 
-#define RTC_DENOMINATOR 100
-#define RTC_PERIOD 110000000 / RTC_DENOMINATOR
-
-#define MACRO_START do {
-#define MACRO_END   } while (0)
-static unsigned int cyg_hal_clock_period;
-
-#define HAL_CLOCK_INITIALIZE( _period_ )        \
-MACRO_START                                 \
-    asm volatile (                              \
-        "mtc0 $0,$9\n"                          \
-        "nop; nop; nop\n"                       \
-        "mtc0 %0,$11\n"                         \
-        "nop; nop; nop\n"                       \
-        :                                       \
-        : "r"(_period_)                         \
-        );                                      \
-    cyg_hal_clock_period = _period_;            \
-MACRO_END
-
-#define HAL_CLOCK_RESET( _vector_, _period_ )   \
-MACRO_START                                 \
-    asm volatile (                              \
-        "mtc0 $0,$9\n"                          \
-        "nop; nop; nop\n"                       \
-        "mtc0 %0,$11\n"                         \
-        "nop; nop; nop\n"                       \
-        :                                       \
-        : "r"(_period_)                         \
-        );                                      \
-MACRO_END
-
-#define HAL_CLOCK_READ( _pvalue_ )              \
-MACRO_START                                 \
-    register unsigned int result;                 \
-    asm volatile (                              \
-        "mfc0   %0,$9\n"                        \
-        : "=r"(result)                          \
-        );                                      \
-    *(_pvalue_) = result;                       \
-MACRO_END
-
-/*
- * udelay implementation based on cpu cycle counter
- */
-static void udelay(int us)
-{
-	unsigned int val1, val2;
-	int diff;
-	long usticks;
-	long ticks;
-
-	// Calculate the number of counter register ticks per microsecond.
-
-	usticks = (RTC_PERIOD * RTC_DENOMINATOR) / 1000000;
-
-	// Make sure that the value is not zero. This will only happen if the
-	// CPU is running at < 2MHz.
-	if (usticks == 0)
-		usticks = 1;
-
-	while (us > 0) {
-		int us1 = us;
-
-		// Wait in bursts of less than 10000us to avoid any overflow
-		// problems in the multiply.
-		if (us1 > 10000)
-			us1 = 10000;
-
-		us -= us1;
-
-		ticks = us1 * usticks;
-
-		HAL_CLOCK_READ(&val1);
-		while (ticks > 0) {
-			do {
-				HAL_CLOCK_READ(&val2);
-			}
-			while (val1 == val2);
-			diff = val2 - val1;
-			if (diff < 0)
-				diff += RTC_PERIOD;
-			ticks -= diff;
-			val1 = val2;
-		}
-	}
-}
-
-#ifndef STANDALONE_DEBUG
-
-typedef unsigned int AR531X_REG;
-
-#undef sysRegRead
-#undef sysRegWrite
-#define sysRegRead(phys)	\
-	(*(volatile AR531X_REG *)(KSEG1|phys))
-
-#define sysRegWrite(phys, val)	\
-	((*(volatile AR531X_REG *)(KSEG1|phys)) = (val))
-
-#ifndef AR5312
-
-#define RESET_WARM_WLAN0_MAC        0x00000001	/* warm reset WLAN0 MAC */
-#define RESET_WARM_WLAN0_BB         0x00000002	/* warm reset WLAN0 BaseBand */
-#define RESET_MPEGTS_RSVD           0x00000004	/* warm reset MPEG-TS */
-#define RESET_PCIDMA                0x00000008	/* warm reset PCI ahb/dma */
-#define RESET_MEMCTL                0x00000010	/* warm reset memory controller */
-#define RESET_LOCAL                 0x00000020	/* warm reset local bus */
-#define RESET_I2C_RSVD              0x00000040	/* warm reset I2C bus */
-#define RESET_SPI                   0x00000080	/* warm reset SPI interface */
-#define RESET_UART0                 0x00000100	/* warm reset UART0 */
-#define RESET_IR_RSVD               0x00000200	/* warm reset IR interface */
-#define RESET_EPHY0                 0x00000400	/* cold reset ENET0 phy */
-#define RESET_ENET0                 0x00000800	/* cold reset ENET0 mac */
-
-#define IF_TS_LOCAL                 2
-#define AR2316_DSLBASE          0xB1000000	/* RESET CONTROL MMR */
-#define AR2316_RESET            (AR2316_DSLBASE + 0x0004)
-#define AR2316_IF_CTL           (AR2316_DSLBASE + 0x0018)
-#define AR2316_ENDIAN_CTL       (AR2316_DSLBASE + 0x000c)
-
-#define CONFIG_ETHERNET             0x00000040	/* Ethernet byteswap */
-
-#define AR2316_AHB_ARB_CTL      (AR2316_DSLBASE + 0x0008)
-#define ARB_CPU                     0x00000001	/* CPU, default */
-#define ARB_WLAN                    0x00000002	/* WLAN */
-#define ARB_MPEGTS_RSVD             0x00000004	/* MPEG-TS */
-#define ARB_LOCAL                   0x00000008	/* LOCAL */
-#define ARB_PCI                     0x00000010	/* PCI */
-#define ARB_ETHERNET                0x00000020	/* Ethernet */
-#define ARB_RETRY                   0x00000100	/* retry policy, debug only */
-
-#define AR531XPLUS_SPI              0xB1300000	/* SPI FLASH MMR */
-
-#define FLASH_1MB  1
-#define FLASH_2MB  2
-#define FLASH_4MB  3
-#define FLASH_8MB  4
-#define FLASH_16MB 5
-#define MAX_FLASH  6
-
-#define STM_PAGE_SIZE           256
-
-#define SFI_WRITE_BUFFER_SIZE   4
-#define SFI_FLASH_ADDR_MASK     0x00ffffff
-
-#define STM_8MBIT_SIGNATURE     0x13
-#define STM_M25P80_BYTE_COUNT   1048576
-#define STM_M25P80_SECTOR_COUNT 16
-#define STM_M25P80_SECTOR_SIZE  0x10000
-
-#define STM_16MBIT_SIGNATURE    0x14
-#define STM_M25P16_BYTE_COUNT   2097152
-#define STM_M25P16_SECTOR_COUNT 32
-#define STM_M25P16_SECTOR_SIZE  0x10000
-
-#define STM_32MBIT_SIGNATURE    0x15
-#define STM_M25P32_BYTE_COUNT   4194304
-#define STM_M25P32_SECTOR_COUNT 64
-#define STM_M25P32_SECTOR_SIZE  0x10000
-
-#define STM_64MBIT_SIGNATURE    0x16
-#define STM_M25P64_BYTE_COUNT   8388608
-#define STM_M25P64_SECTOR_COUNT 128
-#define STM_M25P64_SECTOR_SIZE  0x10000
-
-#define STM_128MBIT_SIGNATURE   0x17
-#define STM_M25P128_BYTE_COUNT   16777216
-#define STM_M25P128_SECTOR_COUNT 256
-#define STM_M25P128_SECTOR_SIZE  0x10000
-
-#define STM_1MB_BYTE_COUNT   STM_M25P80_BYTE_COUNT
-#define STM_1MB_SECTOR_COUNT STM_M25P80_SECTOR_COUNT
-#define STM_1MB_SECTOR_SIZE  STM_M25P80_SECTOR_SIZE
-#define STM_2MB_BYTE_COUNT   STM_M25P16_BYTE_COUNT
-#define STM_2MB_SECTOR_COUNT STM_M25P16_SECTOR_COUNT
-#define STM_2MB_SECTOR_SIZE  STM_M25P16_SECTOR_SIZE
-#define STM_4MB_BYTE_COUNT   STM_M25P32_BYTE_COUNT
-#define STM_4MB_SECTOR_COUNT STM_M25P32_SECTOR_COUNT
-#define STM_4MB_SECTOR_SIZE  STM_M25P32_SECTOR_SIZE
-#define STM_8MB_BYTE_COUNT   STM_M25P64_BYTE_COUNT
-#define STM_8MB_SECTOR_COUNT STM_M25P64_SECTOR_COUNT
-#define STM_8MB_SECTOR_SIZE  STM_M25P64_SECTOR_SIZE
-#define STM_16MB_BYTE_COUNT   STM_M25P128_BYTE_COUNT
-#define STM_16MB_SECTOR_COUNT STM_M25P128_SECTOR_COUNT
-#define STM_16MB_SECTOR_SIZE  STM_M25P128_SECTOR_SIZE
-
-#define SPI_FLASH_MMR           AR531XPLUS_SPI_MMR
-
-#define SPI_WRITE_ENABLE    0
-#define SPI_WRITE_DISABLE   1
-#define SPI_RD_STATUS       2
-#define SPI_WR_STATUS       3
-#define SPI_RD_DATA         4
-#define SPI_FAST_RD_DATA    5
-#define SPI_PAGE_PROGRAM    6
-#define SPI_SECTOR_ERASE    7
-#define SPI_BULK_ERASE      8
-#define SPI_DEEP_PWRDOWN    9
-#define SPI_RD_SIG          10
-#define SPI_MAX_OPCODES     11
-
-struct flashconfig {
-	__u32 byte_cnt;
-	__u32 sector_cnt;
-	__u32 sector_size;
-	__u32 cs_addrmask;
-} static flashconfig_tbl[MAX_FLASH] = {
-	{0, 0, 0, 0},		//
-	{STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT, STM_1MB_SECTOR_SIZE, 0x0},	//
-	{STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE, 0x0},	//
-	{STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE, 0x0},	//
-	{STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0},	//
-	{STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT, STM_16MB_SECTOR_SIZE, 0x0}	//
-};
-
-struct opcodes {
-	__u16 code;
-	__s8 tx_cnt;
-	__s8 rx_cnt;
-} static stm_opcodes[] = {
-	{STM_OP_WR_ENABLE, 1, 0},	//
-	{STM_OP_WR_DISABLE, 1, 0},	//
-	{STM_OP_RD_STATUS, 1, 1},	//
-	{STM_OP_WR_STATUS, 1, 0},	//
-	{STM_OP_RD_DATA, 4, 4},	//
-	{STM_OP_FAST_RD_DATA, 5, 0},	//
-	{STM_OP_PAGE_PGRM, 8, 0},	//
-	{STM_OP_SECTOR_ERASE, 4, 0},	//
-	{STM_OP_BULK_ERASE, 1, 0},	//
-	{STM_OP_DEEP_PWRDOWN, 1, 0},	//
-	{STM_OP_RD_SIG, 4, 1},	//
-};
-
-static __u32 spiflash_regread32(int reg)
-{
-	volatile __u32 *data = (__u32 *)(AR531XPLUS_SPI + reg);
-
-	return (*data);
-}
-
-static void spiflash_regwrite32(int reg, __u32 data)
-{
-	volatile __u32 *addr = (__u32 *)(AR531XPLUS_SPI + reg);
-
-	*addr = data;
-	return;
-}
-
-#define busy_wait(condition, wait) \
-	do { \
-		while (condition) { \
-			if (!wait) \
-			    udelay(1); \
-			else \
-			    udelay(wait*1000); \
-		} \
-	} while (0)
-
-static __u32 spiflash_sendcmd(int op, u32 addr)
-{
-	u32 reg;
-	u32 mask;
-	struct opcodes *ptr_opcode;
-
-	ptr_opcode = &stm_opcodes[op];
-	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
-
-	spiflash_regwrite32(SPI_FLASH_OPCODE,
-			    ((u32)ptr_opcode->code) | (addr << 8));
-
-	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt |
-	    (ptr_opcode->rx_cnt << 4) | SPI_CTL_START;
-
-	spiflash_regwrite32(SPI_FLASH_CTL, reg);
-
-	busy_wait(spiflash_regread32(SPI_FLASH_CTL) & SPI_CTL_BUSY, 0);
-
-	if (!ptr_opcode->rx_cnt)
-		return 0;
-
-	reg = (__u32)spiflash_regread32(SPI_FLASH_DATA);
-
-	switch (ptr_opcode->rx_cnt) {
-	case 1:
-		mask = 0x000000ff;
-		break;
-	case 2:
-		mask = 0x0000ffff;
-		break;
-	case 3:
-		mask = 0x00ffffff;
-		break;
-	default:
-		mask = 0xffffffff;
-		break;
-	}
-	reg &= mask;
-
-	return reg;
-}
-
-static int spiflash_probe_chip(void)
-{
-	unsigned int sig;
-	int flash_size;
-
-	sig = spiflash_sendcmd(SPI_RD_SIG, 0);
-
-	switch (sig) {
-	case STM_8MBIT_SIGNATURE:
-		flash_size = FLASH_1MB;
-		break;
-	case STM_16MBIT_SIGNATURE:
-		flash_size = FLASH_2MB;
-		break;
-	case STM_32MBIT_SIGNATURE:
-		flash_size = FLASH_4MB;
-		break;
-	case STM_64MBIT_SIGNATURE:
-		flash_size = FLASH_8MB;
-		break;
-	case STM_128MBIT_SIGNATURE:
-		flash_size = FLASH_16MB;
-		break;
-	default:
-		puts("Read of flash device signature failed!\n");
-		return (0);
-	}
-
-	return (flash_size);
-}
-
-static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
-{
-	unsigned int res;
-	unsigned int offset = nvramdetect;
-	struct opcodes *ptr_opcode;
-	__u32 temp, reg;
-	if (!nvramdetect) {
-		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
-		return;
-	}
-	printf("erasing nvram at [0x%08X]\n", nvramdetect);
-
-	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
-
-	temp = ((__u32)offset << 8) | (__u32)(ptr_opcode->code);
-	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
-	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
-
-	spiflash_regwrite32(SPI_FLASH_OPCODE, temp);
-
-	reg =
-	    (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt |
-	    SPI_CTL_START;
-	spiflash_regwrite32(SPI_FLASH_CTL, reg);
-
-	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
-
-	puts("done\n");
-	return 0;
-}
-
-static int flashdetected = 0;
-static int flashdetect(void)
-{
-	if (flashdetected)
-		return 0;
-	flashsize = 8 * 1024 * 1024;
-	flashbase = 0xa8000000;
-	int index = 0;
-	if (!(index = spiflash_probe_chip())) {
-		puts("Found no serial flash device, cannot reset to factory defaults\n");
-		return -1;
-	} else {
-		flashsize = flashconfig_tbl[index].byte_cnt;
-		sectorsize = flashconfig_tbl[index].sector_size;
-		if (flashsize == 8 * 1024 * 1024)
-			flashbase = 0xa8000000;
-		else
-			flashbase = 0xbfc00000;
-		printf
-		    ("Found Flash device SIZE=0x%08X SECTORSIZE=0x%08X FLASHBASE=0x%08X\n",
-		     flashsize, sectorsize, flashbase);
-	}
-	flashdetected = 1;
-	return 0;
-
-}
-#else
-
-typedef unsigned char FLASH_DATA_T;
-#define FLASH_P2V( _a_ ) ((volatile FLASH_DATA_T *)((unsigned int)((_a_))))
-#define FLASH_BLANKVALUE		(FLASH_DATA_T)(0xff)
-#define FLASHWORD(x)			((FLASH_DATA_T)(x))
-#define FLASH_POLLING_TIMEOUT	(3000000)
-#define FLASH_READ_ID                   FLASHWORD( 0x90 )
-#define FLASH_WP_STATE                  FLASHWORD( 0x90 )
-#define FLASH_RESET                     FLASHWORD( 0xF0 )
-#define FLASH_PROGRAM                   FLASHWORD( 0xA0 )
-#define FLASH_BLOCK_ERASE               FLASHWORD( 0x30 )
-#define FLASH_Query						FLASHWORD( 0x98 )	// Add by Jason for CFI support
-
-#define FLASH_DATA                      FLASHWORD( 0x80 )	// Data complement
-#define FLASH_BUSY                      FLASHWORD( 0x40 )	// "Toggle" bit
-#define FLASH_ERR                       FLASHWORD( 0x20 )
-#define FLASH_SECTOR_ERASE_TIMER        FLASHWORD( 0x08 )
-
-#define FLASH_UNLOCKED                  FLASHWORD( 0x00 )
-#define FLASH_WP_ADDR                  	(4)
-
-#define FLASH_SETUP_ADDR1              	(0xAAA)
-#define FLASH_SETUP_ADDR2              	(0x555)
-#define FLASH_VENDORID_ADDR            	(0x0)
-#define FLASH_DEVICEID_ADDR            	(0x2)
-#define FLASH_DEVICEID_ADDR2            (0x1c)
-#define FLASH_DEVICEID_ADDR3           	(0x1e)
-//#define FLASH_WP_ADDR                         (0x12)
-#define FLASH_SETUP_CODE1               FLASHWORD( 0xAA )
-#define FLASH_SETUP_CODE2               FLASHWORD( 0x55 )
-#define FLASH_SETUP_ERASE               FLASHWORD( 0x80 )
-#define FLASH_ERR_OK			0x0
-#define FLASH_ERR_DRV_TIMEOUT		-1
-
-/*static void
-flash_query(void* data)
-{
-    volatile FLASH_DATA_T *ROM;
-    volatile FLASH_DATA_T *f_s1, *f_s2;
-    FLASH_DATA_T* id = (FLASH_DATA_T*) data;
-    FLASH_DATA_T w;
-    long timeout = 50000;
-
-    ROM = (volatile FLASH_DATA_T*) ((unsigned int)nvramdetect & ~(0x800000-1));
-    *(FLASH_P2V(ROM)) = FLASH_RESET;
-
-    f_s1 = FLASH_P2V(ROM+FLASH_SETUP_ADDR1);
-    f_s2 = FLASH_P2V(ROM+FLASH_SETUP_ADDR2);
-
-    *f_s1 = FLASH_RESET;
-    w = *(FLASH_P2V(ROM));
-
-    *f_s1 = FLASH_SETUP_CODE1;
-    *f_s2 = FLASH_SETUP_CODE2;
-    *f_s1 = FLASH_READ_ID;
-
-    id[0] = -1;
-    id[1] = -1;
-
-    // Manufacturers' code
-    id[0] = *(FLASH_P2V(ROM+FLASH_VENDORID_ADDR));
-    // Part number
-    id[1] = *(FLASH_P2V(ROM+FLASH_DEVICEID_ADDR));
-    id[2] = *(FLASH_P2V(ROM+FLASH_DEVICEID_ADDR2));
-    id[3] = *(FLASH_P2V(ROM+FLASH_DEVICEID_ADDR3));
-
-    *(FLASH_P2V(ROM)) = FLASH_RESET;
-
-    // Stall, waiting for flash to return to read mode.
-    while ((--timeout != 0) && (w != *(FLASH_P2V(ROM)))) ;
-}
-*/
-
-#define AR531X_FLASHCTL 0xb8400000
-#define AR531X_FLASHCTL0        (AR531X_FLASHCTL + 0x00)
-#define AR531X_FLASHCTL1        (AR531X_FLASHCTL + 0x04)
-#define AR531X_FLASHCTL2        (AR531X_FLASHCTL + 0x08)
-#define FLASHCTL_IDCY   0x0000000f	/* Idle cycle turn around time */
-#define FLASHCTL_IDCY_S 0
-#define FLASHCTL_WST1   0x000003e0	/* Wait state 1 */
-#define FLASHCTL_WST1_S 5
-#define FLASHCTL_RBLE   0x00000400	/* Read byte lane enable */
-#define FLASHCTL_WST2   0x0000f800	/* Wait state 2 */
-#define FLASHCTL_WST2_S 11
-#define FLASHCTL_AC     0x00070000	/* Flash address check (added) */
-#define FLASHCTL_AC_S   16
-#define FLASHCTL_AC_128K 0x00000000
-#define FLASHCTL_AC_256K 0x00010000
-#define FLASHCTL_AC_512K 0x00020000
-#define FLASHCTL_AC_1M   0x00030000
-#define FLASHCTL_AC_2M   0x00040000
-#define FLASHCTL_AC_4M   0x00050000
-#define FLASHCTL_AC_8M   0x00060000
-#define FLASHCTL_AC_RES  0x00070000	/* 16MB is not supported */
-#define FLASHCTL_E      0x00080000	/* Flash bank enable (added) */
-#define FLASHCTL_BUSERR 0x01000000	/* Bus transfer error status flag */
-#define FLASHCTL_WPERR  0x02000000	/* Write protect error status flag */
-#define FLASHCTL_WP     0x04000000	/* Write protect */
-#define FLASHCTL_BM     0x08000000	/* Burst mode */
-#define FLASHCTL_MW     0x30000000	/* Memory width */
-#define FLASHCTL_MWx8   0x00000000	/* Memory width x8 */
-#define FLASHCTL_MWx16  0x10000000	/* Memory width x16 */
-#define FLASHCTL_MWx32  0x20000000	/* Memory width x32 (not supported) */
-#define FLASHCTL_ATNR   0x00000000	/* Access type == no retry */
-#define FLASHCTL_ATR    0x80000000	/* Access type == retry every */
-#define FLASHCTL_ATR4   0xc0000000	/* Access type == retry every 4 */
-
-static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
-{
-	int i, ticks;
-	unsigned short val;
-	if (!nvramdetect) {
-		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
-		return;
-	}
-	unsigned int flash_ctl = sysRegRead(AR531X_FLASHCTL0);
-
-	FLASH_DATA_T id[4];
-//    puts("read id\n");
-//    flash_query(id);
-//    printf("FLASH MANID: %X DEVID: %X DEVID2: %X DEVID3: %X\n",id[0],id[1],id[2],id[3]);
-
-	printf("erasing nvram at [0x%08X]\n", nvramdetect);
-
-	volatile FLASH_DATA_T *ROM, *BANK;
-	volatile FLASH_DATA_T *b_p = (FLASH_DATA_T *) (nvramdetect);
-	volatile FLASH_DATA_T *b_v;
-	volatile FLASH_DATA_T *f_s0, *f_s1, *f_s2;
-	int timeout = 50000;
-	FLASH_DATA_T state;
-	int len;
-	BANK = ROM =
-	    (volatile FLASH_DATA_T *)((unsigned long)nvramdetect &
-				      ~(0x800000 - 1));
-	f_s0 = FLASH_P2V(BANK);
-	f_s1 = FLASH_P2V(BANK + FLASH_SETUP_ADDR1);
-	f_s2 = FLASH_P2V(BANK + FLASH_SETUP_ADDR2);
-	len = blocksize;
-	int res = FLASH_ERR_OK;
-
-	*f_s1 = FLASH_SETUP_CODE1;
-	*f_s2 = FLASH_SETUP_CODE2;
-	*f_s1 = FLASH_WP_STATE;
-	state = *FLASH_P2V(b_p + FLASH_WP_ADDR);
-	*f_s0 = FLASH_RESET;
-
-	if (FLASH_UNLOCKED != state) {
-		*FLASH_P2V(ROM) = FLASH_RESET;
-	}
-
-	b_v = FLASH_P2V(b_p);
-
-	*f_s1 = FLASH_SETUP_CODE1;
-	*f_s2 = FLASH_SETUP_CODE2;
-	*f_s1 = FLASH_SETUP_ERASE;
-	*f_s1 = FLASH_SETUP_CODE1;
-	*f_s2 = FLASH_SETUP_CODE2;
-	*b_v = FLASH_BLOCK_ERASE;
-	timeout = FLASH_POLLING_TIMEOUT;
-	while (1) {
-		state = *b_v;
-		if ((state & FLASH_SECTOR_ERASE_TIMER)
-		    == FLASH_SECTOR_ERASE_TIMER)
-			break;
-		udelay(1);
-		if (--timeout == 0) {
-			puts("flash erase timeout\n");
-			res = FLASH_ERR_DRV_TIMEOUT;
-			break;
-		}
-	}
-	if (FLASH_ERR_OK == res) {
-		timeout = FLASH_POLLING_TIMEOUT;
-		while (1) {
-			state = *b_v;
-			if (FLASH_BLANKVALUE == state) {
-				break;
-			}
-			udelay(1);
-			if (--timeout == 0) {
-				puts("flash erase timeout while waiting for erase complete\n");
-				res = FLASH_ERR_DRV_TIMEOUT;
-				break;
-			}
-		}
-	}
-
-	if (FLASH_ERR_OK != res)
-		*FLASH_P2V(ROM) = FLASH_RESET;
-
-	b_v = FLASH_P2V(b_p++);
-	if (*b_v != FLASH_BLANKVALUE) {
-		if (FLASH_ERR_OK == res) {
-			puts("erase verify failed\n");
-		} else {
-			puts("nvram erase done\n");
-		}
-		return 0;
-	}
-
-}
-
-#endif
 struct nvram_header {
 	__u32 magic;
 	__u32 len;
@@ -942,9 +299,7 @@ static void nvram_init(void)
 	struct nvram_header *header;
 	__u32 off, lim;
 	int i;
-#ifndef AR5312
 	flashdetect();
-#endif
 	for (i = 0; i < 4; i++) {
 		header =
 		    (struct nvram_header *)(flashbase + flashsize -
@@ -996,12 +351,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	output_data = (uch *) output_start;
 	free_mem_ptr = free_mem_ptr_p;
 	free_mem_ptr_end = free_mem_ptr_end_p;
-#ifdef AR5312
-#define AR531X_APBBASE  0xbc000000
-#define AR531X_RESETTMR (AR531X_APBBASE + 0x3000)
-#define AR531X_WDC      (AR531X_RESETTMR + 0x0008)
-	sysRegWrite(AR531X_WDC, 0);
-#endif
+	disable_watchdog();
 	arch_decomp_setup();
 	printf("MicroRedBoot v1.2, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
 	nvram_init();
@@ -1023,18 +373,14 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		if (count <= 0) {
 			puts("reset button 5 seconds pushed, erasing nvram\n");
 
-#ifndef AR5312
 			if (!flashdetect())
-#endif
 				flash_erase_nvram(flashsize, sectorsize);
 		}
 
 		bootoffset = 0x800004bc;
 		resettrigger = 0;
 	} else {
-#ifndef AR5312
 		flashdetect();
-#endif
 		linuxaddr = getLinux();
 		puts("Booting Linux\n");
 		resettrigger = 1;
@@ -1042,53 +388,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		HAL_CLOCK_INITIALIZE(RTC_PERIOD);
 
 		/* important, enable ethernet bus, if the following lines are not initialized linux will not be able to use the ethernet mac, taken from redboot source */
-#ifdef AR5312
-#define RESET_ENET0          0x00000020	/* cold reset ENET0 mac */
-#define RESET_EPHY0          0x00000008	/* cold reset ENET0 phy */
-		unsigned int mask = RESET_ENET0 | RESET_EPHY0;
-		unsigned int regtmp;
-#define AR531X_APBBASE  0xbc000000
-#define AR531X_RESETTMR (AR531X_APBBASE + 0x3000)
-#define AR531X_RESET    (AR531X_RESETTMR + 0x0020)
-#define AR531X_ENABLE   (AR531X_RESETTMR + 0x0080)
-#define ENABLE_ENET0              0x0002
-
-		regtmp = sysRegRead(AR531X_RESET);
-		sysRegWrite(AR531X_RESET, regtmp | mask);
-		udelay(15000);
-
-		/* Pull out of reset */
-		regtmp = sysRegRead(AR531X_RESET);
-		sysRegWrite(AR531X_RESET, regtmp & ~mask);
-		udelay(25);
-		mask = ENABLE_ENET0;
-		regtmp = sysRegRead(AR531X_ENABLE);
-		sysRegWrite(AR531X_ENABLE, regtmp | mask);
-
-#else
-		unsigned int mask = RESET_ENET0 | RESET_EPHY0;
-		unsigned int regtmp;
-		regtmp = sysRegRead(AR2316_AHB_ARB_CTL);
-		regtmp |= ARB_ETHERNET;
-		sysRegWrite(AR2316_AHB_ARB_CTL, regtmp);
-
-		regtmp = sysRegRead(AR2316_RESET);
-		sysRegWrite(AR2316_RESET, regtmp | mask);
-		udelay(10000);
-
-		regtmp = sysRegRead(AR2316_RESET);
-		sysRegWrite(AR2316_RESET, regtmp & ~mask);
-		udelay(10000);
-
-		regtmp = sysRegRead(AR2316_IF_CTL);
-		regtmp |= IF_TS_LOCAL;
-		sysRegWrite(AR2316_IF_CTL, regtmp);
-
-		regtmp = sysRegRead(AR2316_ENDIAN_CTL);
-		regtmp &= ~CONFIG_ETHERNET;
-		sysRegWrite(AR2316_ENDIAN_CTL, regtmp);
-#endif
-
+		enable_ethernet();
 	}
 	puts("loading");
 	lzma_unzip();
@@ -1096,16 +396,3 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 
 	return output_ptr;
 }
-#else
-
-char output_buffer[1500 * 1024];
-
-int main()
-{
-	output_data = output_buffer;
-	puts("Uncompressing Linux...");
-	lzma_unzip();
-	puts("done.\r\n");
-	return 0;
-}
-#endif
