@@ -107,7 +107,7 @@ payload.o:	$(SYSTEM) __payload.o
 ld.script:	ld.script.in Makefile
 		sed "$(SEDFLAGS)" < ld.script.in > $@
 
-clean:;		rm -f payload* ld.script *.o *.c~ *.h~ lib/*.o lib/*.c~ arch/*.c~
+clean:;		rm -f payload* ld.script *.o *.c~ *.h~ lib/*.o lib/*.c~ arch/*.c~ lib/*.h~ arch/*.h~  arch/*.o
 
 .PHONY:	clean
 
