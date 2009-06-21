@@ -2561,9 +2561,17 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-		diag_gpio = 0x107;
+		diag_gpio = 0x107;	
+		if (nvram_match("DD_BOARD", "Buffalo WHR-G125"))
+		{
+		connected_gpio = 0x101;
+		sec0_gpio = 0x106;			
+		}
+		else
+		{
 		bridge_gpio = 0x101;
 		ses_gpio = 0x106;
+		}
 		break;
 	case ROUTER_BUFFALO_WZRRSG54:
 		diag_gpio = 0x107;
