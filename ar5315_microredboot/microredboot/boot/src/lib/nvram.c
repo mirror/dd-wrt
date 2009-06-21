@@ -30,6 +30,7 @@ static void nvram_init(void)
 	struct nvram_header *header;
 	__u32 off, lim;
 	int i;
+	int a;
 	flashdetect();
 	for (i = 0; i < 4; i++) {
 		header =
@@ -43,13 +44,13 @@ static void nvram_init(void)
 			nvramdetect = (unsigned int)header;
 			unsigned int *src = (unsigned int*)header;
 			unsigned int *dst = (unsigned int*)nvram_buf;
-			for (i = 0; i < NVRAM_SPACE / 4; i++)
-				dst[i] = src[i];
+			for (a = 0; a < NVRAM_SPACE / 4; a++)
+				dst[a] = src[a];
 			return;
 		}else{
 			unsigned int *dst = (unsigned int*)nvram_buf;
-			for (i = 0; i < NVRAM_SPACE / 4; i++)
-				dst[i] = 0;		
+			for (a = 0; a < NVRAM_SPACE / 4; a++)
+				dst[a] = 0;		
 		}
 	}
 }
