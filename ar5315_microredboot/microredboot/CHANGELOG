@@ -1,4 +1,6 @@
 21.6.09
+    * implement dynamic uart clock for ap51/ap61 redboot (required for clean uart output with overclocked cpu's)
+    * fix uart clock for ap51/ap61 (uncritical,console output was distorted on microredboot itself)
     * fix small bug in nvram detection code (uncritical)
 20.6.09
     * source restructured for well readability (divide ap48 specific and ap51/ap61 specific changes)
