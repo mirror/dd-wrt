@@ -231,7 +231,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	disable_watchdog();
 	arch_decomp_setup();
 	printf("MicroRedBoot v1.3, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
-	printf("CPU Clock: %dMhz\n",cpu_frequency()/1000000);
+	printf("CPU Clock: %dMhz\n", cpu_frequency() / 1000000);
 	nvram_init();
 	char *ddboard = nvram_get("DD_BOARD");
 	if (ddboard)
@@ -252,7 +252,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 			puts("reset button 5 seconds pushed, erasing nvram\n");
 
 			if (!flashdetect())
-				flash_erase_nvram(flashsize, sectorsize);
+				flash_erase_nvram(flashsize, NVRAM_SPACE);
 		}
 
 		bootoffset = 0x800004bc;
