@@ -38,19 +38,21 @@ static void nvram_init(void)
 					    (sectorsize * (3 + i)));
 		if (header->magic == NVRAM_MAGIC && header->len > 0
 		    && header->len <= NVRAM_SPACE) {
+			/* copy nvram area to ram */
 			printf
 			    ("DD-WRT NVRAM with size = %d found on [0x%08X]\n",
 			     header->len, header);
 			nvramdetect = (unsigned int)header;
-			unsigned int *src = (unsigned int*)header;
-			unsigned int *dst = (unsigned int*)nvram_buf;
+			unsigned int *src = (unsigned int *)header;
+			unsigned int *dst = (unsigned int *)nvram_buf;
 			for (a = 0; a < NVRAM_SPACE / 4; a++)
 				dst[a] = src[a];
 			return;
-		}else{
-			unsigned int *dst = (unsigned int*)nvram_buf;
+		} else {
+			/* set mem array to zero */
+			unsigned int *dst = (unsigned int *)nvram_buf;
 			for (a = 0; a < NVRAM_SPACE / 4; a++)
-				dst[a] = 0;		
+				dst[a] = 0;
 		}
 	}
 }
@@ -63,7 +65,7 @@ static char *nvram_get(const char *name)
 		return NULL;
 
 	if (!nvram_buf[0])
-	    return;
+		return NULL;
 
 	/* Look for name=value and return value */
 	var = &nvram_buf[sizeof(struct nvram_header)];
