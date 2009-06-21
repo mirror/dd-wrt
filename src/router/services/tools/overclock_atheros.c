@@ -115,7 +115,6 @@ void start_overclock(void)	// hidden feature. must be called with
 
 	fseek(in, 0, SEEK_END);
 	len = ftell(in);
-	fprintf(stderr, "size = %ld\n", len);
 	fseek(in, 0, SEEK_SET);
 	for (i = 0; i < len; i++)
 		putc(getc(in), out);
@@ -474,7 +473,7 @@ void start_overclock(void)	// hidden feature. must be called with
 	} else if (microvipermul == 0x9 || microvipermul == 0xa || microvipermul == 0xb
 		   || microvipermul == 0xc || microvipermul == 0x17) {
 
-		fprintf(stderr, "viper (ar2313) found\n");
+		fprintf(stderr, "viper microredboot(ar2313) found\n");
 		if (clk == 180 && microvipermul == 0x9) {
 			fprintf(stderr, "board already clocked to 180mhz\n");
 			fclose(in);
