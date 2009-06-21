@@ -29,6 +29,6 @@
  * l number of chars.
  */
 static void lp_Print(void (*output) (void *, char *, int),
-	      void *arg, char *fmt, va_list ap);
+		     void *arg, char *fmt, va_list ap);
 
 #endif
