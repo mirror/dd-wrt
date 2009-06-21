@@ -170,17 +170,97 @@ hal_platform_init(void)
     HAL_DCACHE_ENABLE();
 }
 
-unsigned int
-hal_ar2316_cpu_frequency(void)
+#define AR5315_DSLBASE          0xB1000000      /* RESET CONTROL MMR */
+#define AR5315_PLLC_CTL         (AR5315_DSLBASE + 0x0064)
+#define AR5315_CPUCLK           (AR5315_DSLBASE + 0x006c)
+#define AR5315_AMBACLK          (AR5315_DSLBASE + 0x0070)
+#define AR5315_RESET            (AR5315_DSLBASE + 0x0004)
+#define AR5315_RESET_UART0                 0x00000100      /* warm reset UART0 */
+
+/* PLLc Control fields */
+#define PLLC_REF_DIV_M              0x00000003
+#define PLLC_REF_DIV_S              0
+#define PLLC_FDBACK_DIV_M           0x0000007C
+#define PLLC_FDBACK_DIV_S           2
+#define PLLC_ADD_FDBACK_DIV_M       0x00000080
+#define PLLC_ADD_FDBACK_DIV_S       7
+#define PLLC_CLKC_DIV_M             0x0001c000
+#define PLLC_CLKC_DIV_S             14
+#define PLLC_CLKM_DIV_M             0x00700000
+#define PLLC_CLKM_DIV_S             20
+
+/* CPU CLK Control fields */
+#define CPUCLK_CLK_SEL_M            0x00000003
+#define CPUCLK_CLK_SEL_S            0
+#define CPUCLK_CLK_DIV_M            0x0000000c
+#define CPUCLK_CLK_DIV_S            2
+
+
+
+
+static const int CLOCKCTL1_PREDIVIDE_TABLE[4] = {
+    1,
+    2,
+    4,
+    5
+};
+
+static const int PLLC_DIVIDE_TABLE[5] = {
+    2,
+    3,
+    4,
+    6,
+    3
+};
+
+static unsigned int 
+ar5315_sys_clk(unsigned int clockCtl)
 {
-    return AR2316_CPU_CLOCK_RATE;
+    unsigned int pllcCtrl,cpuDiv;
+    unsigned int pllcOut,refdiv,fdiv,divby2;
+	unsigned int clkDiv;
+    HAL_READ_UINT32(AR5315_PLLC_CTL,pllcCtrl);
+    refdiv = (pllcCtrl & PLLC_REF_DIV_M) >> PLLC_REF_DIV_S;
+    refdiv = CLOCKCTL1_PREDIVIDE_TABLE[refdiv];
+    fdiv = (pllcCtrl & PLLC_FDBACK_DIV_M) >> PLLC_FDBACK_DIV_S;
+    divby2 = (pllcCtrl & PLLC_ADD_FDBACK_DIV_M) >> PLLC_ADD_FDBACK_DIV_S;
+    divby2 += 1;
+    pllcOut = (40000000/refdiv)*(2*divby2)*fdiv;
+
+
+    /* clkm input selected */
+	switch(clockCtl & CPUCLK_CLK_SEL_M) {
+		case 0:
+		case 1:
+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKM_DIV_M) >> PLLC_CLKM_DIV_S];
+			break;
+		case 2:
+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKC_DIV_M) >> PLLC_CLKC_DIV_S];
+			break;
+		default:
+			pllcOut = 40000000;
+			clkDiv = 1;
+			break;
+	}
+	cpuDiv = (clockCtl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;  
+	cpuDiv = cpuDiv * 2 ?: 1;
+	return pllcOut/(clkDiv * cpuDiv);
+}
+		
+unsigned int hal_ar2316_cpu_frequency(void)
+{
+    unsigned int param;
+    HAL_READ_UINT32(AR5315_CPUCLK,param);
+    return ar5315_sys_clk(sysRegRead(param));
 }
 
-unsigned int
-hal_ar2316_sys_frequency(void)
+unsigned int hal_ar2316_sys_frequency(void)
 {
-    return AR2316_AMBA_CLOCK_RATE;
+    unsigned int param;	
+    HAL_READ_UINT32(AR5315_AMBACLK,param);
+    return ar5315_sys_clk(param);
 }
+
 
 static void
 hal_ar2316_flash_setup(void)
