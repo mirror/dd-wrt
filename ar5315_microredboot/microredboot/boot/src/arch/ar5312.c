@@ -5,7 +5,6 @@
  * licensed under GPL conditions
  */
 
-
 #include "mips32.c"
 
 static unsigned int sectorsize = 0x10000;
@@ -93,18 +92,34 @@ typedef struct {
 	unsigned char devid;
 	unsigned char *name;
 	unsigned char size;	//in megabyte
+	unsigned char blocksize;	//in kb
 } FLASHDEV;
 static const FLASHDEV flashdevs[] = {
-	{.devid = 0xc9,.name = "MX29LV640", .size=8},
-	{.devid = 0xa8,.name = "MX29LV320", .size=4},
+	{.devid = 0xc9,.name = "MX29LV640",.size = 8,.blocksize = 64},
+	{.devid = 0xa7,.name = "MX29LV320C",.size = 4,.blocksize = 64},
+	{.devid = 0xa8,.name = "MX29LV320B",.size = 4,.blocksize = 64},
+	{.devid = 0xc4,.name = "MX29LV160CT",.size = 2,.blocksize = 64},
+	{.devid = 0x49,.name = "MX29LV160CB",.size = 2,.blocksize = 64},
+	{.devid = 0xed,.name = "STM29W640",.size = 8,.blocksize = 64},
+	{.devid = 0xf6,.name = "EN29LV320",.size = 4,.blocksize = 64},
+	{.devid = 0xc4,.name = "EN29LV160",.size = 2,.blocksize = 64},
+	{.devid = 0xa0,.name = "K8D3216UT",.size = 4,.blocksize = 64},
+	{.devid = 0xa1,.name = "K8D3316UT",.size = 4,.blocksize = 64},
+	{.devid = 0xa2,.name = "K8D3216UB",.size = 4,.blocksize = 64},
+	{.devid = 0xa3,.name = "K8D3316UB",.size = 4,.blocksize = 64},
+	{.devid = 0x5b,.name = "SST39VF3201",.size = 4,.blocksize = 64},
+	{.devid = 0x5a,.name = "SST39VF3202",.size = 4,.blocksize = 4},
+	{.devid = 0xf9,.name = "S29AL032D",.size = 4,.blocksize = 64},
 };
+
 static int flashdetected = 0;
 
+/* detects nor flash and size by ID, if no known flash was detected, the default mapping and size will be used */
 static int flashdetect(void)
 {
 	if (flashdetected)
 		return 0;
-	flashdetected=1;
+	flashdetected = 1;
 	volatile FLASH_DATA_T *ROM;
 	volatile FLASH_DATA_T *f_s1, *f_s2;
 	FLASH_DATA_T id[4];
@@ -138,19 +153,21 @@ static int flashdetect(void)
 
 	// Stall, waiting for flash to return to read mode.
 	int i;
-	int found=0;
-	for (i=0;i<sizeof(flashdevs)/sizeof(FLASHDEV);i++)
-	    {
-	    if (flashdevs[i].devid == id[1])
-		{
-		printf("FLASH: %s with %dM detected\n",flashdevs[i].name,flashdevs[i].size);
-		flashsize = flashdevs[i].size*1024*1024;
-		found=1;
-		break;
+	int found = 0;
+	for (i = 0; i < sizeof(flashdevs) / sizeof(FLASHDEV); i++) {
+		if (flashdevs[i].devid == id[1]) {
+			printf("FLASH: %s with %dM detected\n",
+			       flashdevs[i].name, flashdevs[i].size);
+			flashsize = flashdevs[i].size * 1024 * 1024;
+			sectorsize = flashdevs[i].blocksize * 1024;
+			found = 1;
+			break;
 		}
-	    }
+	}
 	if (!found)
-	printf("Device not known: FLASH MANID: %X DEVID: %X DEVID2: %X DEVID3: %X\n", id[0],id[1], id[2], id[3]);
+		printf
+		    ("Device not known: FLASH MANID: %X DEVID: %X DEVID2: %X DEVID3: %X\n",
+		     id[0], id[1], id[2], id[3]);
 	while ((--timeout != 0) && (w != *(FLASH_P2V(ROM)))) ;
 	return 0;
 }
@@ -189,6 +206,8 @@ static int flashdetect(void)
 #define FLASHCTL_ATR    0x80000000	/* Access type == retry every */
 #define FLASHCTL_ATR4   0xc0000000	/* Access type == retry every 4 */
 
+/* erases nvram partition on the detected location or simply returns if no nvram was detected */
+
 static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 {
 	int i, ticks;
@@ -197,13 +216,6 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
 		return;
 	}
-	unsigned int flash_ctl = sysRegRead(AR531X_FLASHCTL0);
-
-	FLASH_DATA_T id[4];
-//    puts("read id\n");
-//    flash_query(id);
-//    printf("FLASH MANID: %X DEVID: %X DEVID2: %X DEVID3: %X\n",id[0],id[1],id[2],id[3]);
-
 	printf("erasing nvram at [0x%08X]\n", nvramdetect);
 
 	volatile FLASH_DATA_T *ROM, *BANK;
@@ -212,74 +224,77 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 	volatile FLASH_DATA_T *f_s0, *f_s1, *f_s2;
 	int timeout = 50000;
 	FLASH_DATA_T state;
-	int len;
 	BANK = ROM =
 	    (volatile FLASH_DATA_T *)((unsigned long)nvramdetect &
 				      ~(0x800000 - 1));
 	f_s0 = FLASH_P2V(BANK);
 	f_s1 = FLASH_P2V(BANK + FLASH_SETUP_ADDR1);
 	f_s2 = FLASH_P2V(BANK + FLASH_SETUP_ADDR2);
-	len = blocksize;
-	int res = FLASH_ERR_OK;
 
-	*f_s1 = FLASH_SETUP_CODE1;
-	*f_s2 = FLASH_SETUP_CODE2;
-	*f_s1 = FLASH_WP_STATE;
-	state = *FLASH_P2V(b_p + FLASH_WP_ADDR);
-	*f_s0 = FLASH_RESET;
+	for (i = 0; i < blocksize / sectorsize; i++) {
+		int res = FLASH_ERR_OK;
 
-	if (FLASH_UNLOCKED != state) {
-		*FLASH_P2V(ROM) = FLASH_RESET;
-	}
+		*f_s1 = FLASH_SETUP_CODE1;
+		*f_s2 = FLASH_SETUP_CODE2;
+		*f_s1 = FLASH_WP_STATE;
+		state = *FLASH_P2V(b_p + FLASH_WP_ADDR);
+		*f_s0 = FLASH_RESET;
 
-	b_v = FLASH_P2V(b_p);
-
-	*f_s1 = FLASH_SETUP_CODE1;
-	*f_s2 = FLASH_SETUP_CODE2;
-	*f_s1 = FLASH_SETUP_ERASE;
-	*f_s1 = FLASH_SETUP_CODE1;
-	*f_s2 = FLASH_SETUP_CODE2;
-	*b_v = FLASH_BLOCK_ERASE;
-	timeout = FLASH_POLLING_TIMEOUT;
-	while (1) {
-		state = *b_v;
-		if ((state & FLASH_SECTOR_ERASE_TIMER)
-		    == FLASH_SECTOR_ERASE_TIMER)
-			break;
-		udelay(1);
-		if (--timeout == 0) {
-			puts("flash erase timeout\n");
-			res = FLASH_ERR_DRV_TIMEOUT;
-			break;
+		if (FLASH_UNLOCKED != state) {
+			*FLASH_P2V(ROM) = FLASH_RESET;
 		}
-	}
-	if (FLASH_ERR_OK == res) {
+
+		b_v = FLASH_P2V(b_p);
+
+		*f_s1 = FLASH_SETUP_CODE1;
+		*f_s2 = FLASH_SETUP_CODE2;
+		*f_s1 = FLASH_SETUP_ERASE;
+		*f_s1 = FLASH_SETUP_CODE1;
+		*f_s2 = FLASH_SETUP_CODE2;
+		*b_v = FLASH_BLOCK_ERASE;
 		timeout = FLASH_POLLING_TIMEOUT;
 		while (1) {
 			state = *b_v;
-			if (FLASH_BLANKVALUE == state) {
+			if ((state & FLASH_SECTOR_ERASE_TIMER)
+			    == FLASH_SECTOR_ERASE_TIMER)
 				break;
-			}
 			udelay(1);
 			if (--timeout == 0) {
-				puts("flash erase timeout while waiting for erase complete\n");
+				puts("flash erase timeout\n");
 				res = FLASH_ERR_DRV_TIMEOUT;
 				break;
 			}
 		}
-	}
-
-	if (FLASH_ERR_OK != res)
-		*FLASH_P2V(ROM) = FLASH_RESET;
-
-	b_v = FLASH_P2V(b_p++);
-	if (*b_v != FLASH_BLANKVALUE) {
 		if (FLASH_ERR_OK == res) {
-			puts("erase verify failed\n");
-		} else {
-			puts("nvram erase done\n");
+			timeout = FLASH_POLLING_TIMEOUT;
+			while (1) {
+				state = *b_v;
+				if (FLASH_BLANKVALUE == state) {
+					break;
+				}
+				udelay(1);
+				if (--timeout == 0) {
+					puts("flash erase timeout while waiting for erase complete\n");
+					res = FLASH_ERR_DRV_TIMEOUT;
+					break;
+				}
+			}
 		}
-		return 0;
+
+		if (FLASH_ERR_OK != res)
+			*FLASH_P2V(ROM) = FLASH_RESET;
+
+		b_v = FLASH_P2V(b_p++);
+		if (*b_v != FLASH_BLANKVALUE) {
+			if (FLASH_ERR_OK == res) {
+				puts("erase verify failed\n");
+				return 0;
+			} else {
+				printf("[0x%08X] erased\n", b_p);
+			}
+		}
+		b_p += sectorsize;
 	}
+	return 0;
 
 }

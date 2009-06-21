@@ -26,6 +26,7 @@ static unsigned int getLinux(void)
 	unsigned char *p =
 	    (unsigned char *)(flashbase + flashsize - (sectorsize * 2));
 	struct fis_image_desc *fis = (struct fis_image_desc *)p;
+	/* search for fis partiton linux*,vmlinux* or kernel */
 	while (fis->name[0] != 0xff && count < 10) {
 		if (!strncmp(fis->name, "linux", 5)
 		    || !strncmp(fis->name, "vmlinux", 7)
@@ -44,5 +45,5 @@ static unsigned int getLinux(void)
 	puts("no bootable image found, try default location 0xbfc10000\n");
 	bootoffset = 0x80041000;
 	output_data = (uch *) 0x80041000;
-	return 0xbfc10000;
+	return 0xbfc10000;	//first available address after bootloader
 }

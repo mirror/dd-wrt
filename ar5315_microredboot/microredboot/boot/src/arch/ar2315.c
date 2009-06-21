@@ -282,6 +282,8 @@ static int spiflash_probe_chip(void)
 	return (flash_size);
 }
 
+/* erases nvram partition on the detected location or simply returns if no nvram was detected */
+
 static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 {
 	unsigned int res;
@@ -290,7 +292,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 	__u32 temp, reg;
 	if (!nvramdetect) {
 		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
-		return;
+		return -1;
 	}
 	printf("erasing nvram at [0x%08X]\n", nvramdetect);
 
@@ -314,6 +316,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 }
 
 static int flashdetected = 0;
+/* detects spi flash and its size */
 static int flashdetect(void)
 {
 	if (flashdetected)
