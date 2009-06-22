@@ -302,12 +302,17 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 							
-							<% ifdef("WET", "<!--"); %>	
-							<h2><script type="text/javascript">Capture(idx.h2);</script></h2>			
+							<% ifdef("WET", "<!--"); %>
+							<% ifdef("STA", "<!--"); %>
+							<h2><script type="text/javascript">Capture(idx.h2);</script></h2>
+							<% ifdef("STA", "-->"); %>			
 							<% ifdef("WET", "-->"); %>
 							<% ifndef("WET", "<!--"); %>
 							<h2><script type="text/javascript">Capture(idx.h22);</script></h2>
 							<% ifndef("WET", "-->"); %>
+							<% ifndef("STA", "<!--"); %>
+							<h2><script type="text/javascript">Capture(idx.h22);</script></h2>
+							<% ifndef("STA", "-->"); %>
 							
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
