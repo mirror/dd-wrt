@@ -249,12 +249,11 @@ void start_pptpd(void)
 
 void stop_pptpd(void)
 {
-	int ret = 0;
 
 	if (pidof("pptpd") > 0) {
 		dd_syslog(LOG_INFO,
 			  "pptpd : pptp daemon successfully stopped\n");
-		ret = killall("pptpd", SIGKILL);
+		killall("pptpd", SIGKILL);
 		killall("bcrelay", SIGKILL);
 	}
 	return;

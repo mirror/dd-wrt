@@ -414,12 +414,11 @@ void start_dnsmasq(void)
 
 void stop_dnsmasq(void)
 {
-	int ret = 0;
 
 	if (pidof("dnsmasq") > 0) {
 		syslog(LOG_INFO,
 		       "dnsmasq : dnsmasq daemon successfully stopped\n");
-		ret = softkill("dnsmasq");
+		softkill("dnsmasq");
 		unlink("/tmp/resolv.dnsmasq");
 
 		cprintf("done\n");

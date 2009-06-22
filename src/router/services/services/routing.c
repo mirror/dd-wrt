@@ -592,19 +592,17 @@ void start_zebra(void)
  */
 void stop_zebra(void)
 {
-	int ret1 = 0;
 
 #ifdef HAVE_QUAGGA
-	int ret2 = 0, ret3 = 0, ret4 = 0;
 
 	if (pidof("zebra") > 0 || pidof("ripd") > 0 || pidof("ospfd") > 0
 	    || pidof("bgpd") > 0) {
 		dd_syslog(LOG_INFO,
 			  "zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
-		ret1 = killall("zebra", SIGTERM);
-		ret2 = killall("ripd", SIGTERM);
-		ret3 = killall("ospfd", SIGTERM);
-		ret4 = killall("bgpd", SIGTERM);
+		killall("zebra", SIGTERM);
+		killall("ripd", SIGTERM);
+		killall("ospfd", SIGTERM);
+		killall("bgpd", SIGTERM);
 
 		while (!(killall("zebra", SIGTERM) && killall("ripd", SIGTERM)
 			 && killall("ospfd", SIGTERM)
@@ -619,7 +617,7 @@ void stop_zebra(void)
 	if (pidof("bird") > 0) {
 		dd_syslog(LOG_INFO,
 			  "bird : bird daemon successfully stopped\n");
-		ret1 = killall("bird", SIGTERM);
+		killall("bird", SIGTERM);
 
 		cprintf("done\n");
 	}

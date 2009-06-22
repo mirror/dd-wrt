@@ -80,13 +80,12 @@ void start_snmp(void)
 
 void stop_snmp(void)
 {
-	int ret = 0;
 
 	cprintf("done\n");
 	if (pidof("snmpd") > 0) {
 		dd_syslog(LOG_INFO,
 			  "snmpd : SNMP daemon successfully stopped\n");
-		ret = killall("snmpd", SIGKILL);
+		killall("snmpd", SIGKILL);
 	}
 	return;
 }

@@ -164,12 +164,11 @@ void start_chilli(void)
 
 void stop_chilli(void)
 {
-	int ret = 0;
 
 	if (pidof("chilli") > 0) {
 		syslog(LOG_INFO,
 		       "chilli : chilli daemon successfully stopped\n");
-		ret = killall("chilli", SIGKILL);
+		killall("chilli", SIGKILL);
 	}
 	cprintf("done\n");
 	return;
