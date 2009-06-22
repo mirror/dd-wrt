@@ -705,6 +705,10 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 		if (getWET())
 			return;
 	}
+	if (!strcmp(name, "STA")) {
+		if (getSTA())
+			return;
+	}
 	
 	websWrite(wp, output);
 
