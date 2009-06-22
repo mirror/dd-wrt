@@ -80,8 +80,7 @@ char *getmdhcp(int count, int index)
 
 int landhcp(void)
 {
-	if (!nvram_match("wl0_mode", "wet")
-	    && !nvram_match("wl0_mode", "apstawet"))
+	if (!getWET())
 		if (nvram_match("dhcp_dnsmasq", "1")
 		    && nvram_match("lan_proto", "dhcp")
 		    && nvram_match("dhcpfwd_enable", "0"))
