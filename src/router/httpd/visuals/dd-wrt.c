@@ -7140,7 +7140,7 @@ void ej_gethostnamebyip(webs_t wp, int argc, char_t ** argv)
 void ej_show_wan_to_switch(webs_t wp, int argc, char_t ** argv)
 {
 
-	if (nvram_match("wan_proto", "disabled") || !nvram_match("wl_mode", "ap"))	// WAN 
+	if (nvram_match("wan_proto", "disabled") || getSTA() || getWET())	// WAN 
 		// disabled 
 		// OR 
 		// Wirelles 
