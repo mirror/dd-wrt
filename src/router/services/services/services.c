@@ -794,53 +794,16 @@ void start_pptp(int status)
 		stop_dhcpc();	/* we don't need dhcp client anymore */
 		create_pptp_config(nvram_safe_get("pptp_server_ip"), username);
 
-		/*
-		 * //this stuff has already been configured in dhcpc->bound
-		 * wan_ipaddr = nvram_safe_get ("wan_ipaddr"); wan_netmask =
-		 * nvram_safe_get ("wan_netmask"); wan_gateway = nvram_safe_get
-		 * ("wan_gateway"); pptp_server_ip = nvram_safe_get
-		 * ("pptp_server_ip");
-		 * 
-		 * while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0);
-		 * 
-		 * 
-		 * for (timeout = 10; ifconfig (wan_ifname, IFUP, wan_ipaddr,
-		 * wan_netmask) && timeout > 0; --timeout) { sleep (1); } for
-		 * (timeout = 10; route_add (wan_ifname, 0, pptp_server_ip,
-		 * wan_gateway, "255.255.255.255") && timeout > 0; --timeout) { sleep 
-		 * (1); }
-		 */
 	} else {
-		ifconfig(wan_ifname, IFUP,
-			 nvram_safe_get("wan_ipaddr"),
-			 nvram_safe_get("wan_netmask"));
+		ifconfig(wan_ifname, IFUP,nvram_safe_get("wan_ipaddr"),nvram_safe_get("wan_netmask"));
+		if (!nvram_match("wan_gateway", "0.0.0.0"))
+			route_add(wan_ifname, 0,
+				  nvram_safe_get("pptp_server_ip"),
+				  nvram_safe_get("wan_gateway"),
+				  "255.255.255.255");
 	}
 	ret = _evalpid(pptp_argv, NULL, 0, NULL);
 
-	/*
-	 * if(nvram_match("pptp_usedhcp", "1")){ char *wan_hostname =
-	 * nvram_get("wan_hostname"); char *dhcp_argv[] = { "udhcpc", "-i",
-	 * nvram_safe_get("wan_ifname"), "-p", "/var/run/udhcpc.pid", "-s",
-	 * "/tmp/udhcpc", wan_hostname && *wan_hostname ? "-H" : NULL,
-	 * wan_hostname && *wan_hostname ? wan_hostname : NULL, NULL };
-	 * 
-	 * ifconfig(nvram_safe_get("wan_ifname"), IFUP, NULL, NULL);
-	 * 
-	 * symlink("/sbin/rc", "/tmp/udhcpc"); nvram_set("wan_get_dns","");
-	 * //killps("udhcpc",NULL);
-	 * 
-	 * eval("killall","udhcpc");
-	 * 
-	 * _eval(dhcp_argv, NULL, 0, &pid);
-	 * 
-	 * // Give enough time for DHCP to get IP address. sleep(2);
-	 * 
-	 * } else ifconfig(nvram_safe_get("wan_ifname"), IFUP,
-	 * nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
-	 * 
-	 * // Start pptp client on wan interface ret = _eval(pptp_argv, NULL, 0,
-	 * NULL); 
-	 */
 	if (nvram_match("ppp_demand", "1")) {
 		/*
 		 * Trigger Connect On Demand if user press Connect button in Status

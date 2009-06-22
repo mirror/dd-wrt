@@ -303,12 +303,6 @@ static int bound(void)
 		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
 		nvram_set("pptp_server_ip", pptpip);
 
-		/*
-		 * Delete all default routes 
-		 */
-//      while( route_del( wan_ifname, 0, NULL, NULL, NULL ) == 0
-//             || i++ < 10 );
-
 		// Add the route to the PPTP server on the wan interface for pptp
 		// client to reach it
 		if (nvram_match("wan_gateway", "0.0.0.0")
