@@ -910,10 +910,10 @@ void start_sysinit(void)
 		
 	case ROUTER_WRT610N:
 		nvram_set("wan_ifname", "vlan2");
-		nvram set("pci/1/1/ledbh0", "11");
-		nvram set("pci/1/1/ledbh1", "135");
-		nvram set("pci/1/2/ledbh0", "11");
-		nvram set("pci/1/2/ledbh2", "135");
+		nvram_set("pci/1/1/ledbh0", "11");
+		nvram_set("pci/1/1/ledbh1", "135");
+		nvram_set("pci/1/2/ledbh0", "11");
+		nvram_set("pci/1/2/ledbh2", "135");
 		break;
 
 	case ROUTER_WRT300NV11:
