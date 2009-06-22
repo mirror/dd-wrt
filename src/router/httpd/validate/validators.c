@@ -1750,7 +1750,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
 	} else if (!strcmp(value, "mixed")) {
-		nvram_nset(value, "wl_net_mode", prefix);
+		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
 		nvram_nset("-1", "%s_nmode", prefix);
 		nvram_nset("auto", "%s_afterburner", prefix);
@@ -1772,12 +1772,12 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
 	} else if (!strcmp(value, "g-only")) {
-		nvram_nset(value, "wl_net_mode", prefix);
-		nvram_nset("0", "wl_nmode", prefix);
-		nvram_nset("2", "wl_gmode", prefix);
+		nvram_nset(value, "%s_net_mode", prefix);
+		nvram_nset("0", "%s_nmode", prefix);
+		nvram_nset("2", "%s_gmode", prefix);
 		if (!has_mimo(prefix))
-			nvram_nset("g", "wl_phytype", prefix);
-		nvram_nset("0", "wl_nreqd", prefix);
+			nvram_nset("g", "%s_phytype", prefix);
+		nvram_nset("0", "%s_nreqd", prefix);
 
 		nvram_nset("2", "%s_nband", prefix);
 	} else if (!strcmp(value, "b-only")) {
