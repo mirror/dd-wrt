@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2009 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -88,14 +88,13 @@
 #define D_BACKTRACK          LOGLEV(3, 36, 0)        /* show replay backtracks */
 #define D_AUTH               LOGLEV(3, 37, 0)        /* show user/pass auth info */
 #define D_MULTI_LOW          LOGLEV(3, 38, 0)        /* show point-to-multipoint low-freq debug info */
-#define D_MULTI_DROPPED      LOGLEV(3, 39, 0)        /* show point-to-multipoint packet drops */
-#define D_PLUGIN             LOGLEV(3, 40, 0)        /* show plugin calls */
-#define D_MANAGEMENT         LOGLEV(3, 41, 0)        /* show --management info */
-#define D_SCHED_EXIT         LOGLEV(3, 42, 0)        /* show arming of scheduled exit */
-#define D_ROUTE_QUOTA        LOGLEV(3, 43, 0)        /* show route quota exceeded messages */
-#define D_OSBUF              LOGLEV(3, 44, 0)        /* show socket/tun/tap buffer sizes */
-#define D_PS_PROXY           LOGLEV(3, 45, 0)        /* messages related to --port-share option */
-#define D_PF_INFO            LOGLEV(3, 46, 0)        /* packet filter informational messages */
+#define D_PLUGIN             LOGLEV(3, 39, 0)        /* show plugin calls */
+#define D_MANAGEMENT         LOGLEV(3, 40, 0)        /* show --management info */
+#define D_SCHED_EXIT         LOGLEV(3, 41, 0)        /* show arming of scheduled exit */
+#define D_ROUTE_QUOTA        LOGLEV(3, 42, 0)        /* show route quota exceeded messages */
+#define D_OSBUF              LOGLEV(3, 43, 0)        /* show socket/tun/tap buffer sizes */
+#define D_PS_PROXY           LOGLEV(3, 44, 0)        /* messages related to --port-share option */
+#define D_PF_INFO            LOGLEV(3, 45, 0)        /* packet filter informational messages */
 
 #define D_SHOW_PARMS         LOGLEV(4, 50, 0)        /* show all parameters on program initiation */
 #define D_SHOW_OCC           LOGLEV(4, 51, 0)        /* show options compatibility string */
@@ -104,6 +103,7 @@
 #define D_MBUF               LOGLEV(4, 54, 0)        /* mbuf.[ch] routines */
 #define D_PACKET_TRUNC_ERR   LOGLEV(4, 55, 0)        /* PACKET_TRUNCATION_CHECK */
 #define D_PF_DROPPED         LOGLEV(4, 56, 0)        /* packet filter dropped a packet */
+#define D_MULTI_DROPPED      LOGLEV(4, 57, 0)        /* show point-to-multipoint packet drops */
 
 #define D_LOG_RW             LOGLEV(5, 0,  0)        /* Print 'R' or 'W' to stdout for read/write */
 
@@ -129,7 +129,7 @@
 #define D_SEMAPHORE_LOW      LOGLEV(7, 70, M_DEBUG)  /* show Win32 semaphore waits (low freq) */
 #define D_SEMAPHORE          LOGLEV(7, 70, M_DEBUG)  /* show Win32 semaphore waits */
 #define D_TEST_FILE          LOGLEV(7, 70, M_DEBUG)  /* show test_file() calls */
-#define D_MANAGEMENT_DEBUG   LOGLEV(7, 70, M_DEBUG)  /* show --management debug info */
+#define D_MANAGEMENT_DEBUG   LOGLEV(3, 70, M_DEBUG)  /* show --management debug info */
 #define D_PLUGIN_DEBUG       LOGLEV(7, 70, M_DEBUG)  /* show verbose plugin calls */
 #define D_SOCKET_DEBUG       LOGLEV(7, 70, M_DEBUG)  /* show socket.[ch] debugging info */
 #define D_SHOW_PKCS11        LOGLEV(7, 70, M_DEBUG)  /* show PKCS#11 actions */
