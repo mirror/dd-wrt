@@ -301,31 +301,25 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
-							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript">Capture(idx.h2);</script>", "<script type="text/javascript">Capture(idx.h22);</script>"); %></h2>
-
+							
+							<% ifdef("WET", "<!--"); %>	
+							<h2><script type="text/javascript">Capture(idx.h2);</script></h2>			
+							<% ifdef("WET", "-->"); %>
+							<% ifndef("WET", "<!--"); %>
+							<h2><script type="text/javascript">Capture(idx.h22);</script></h2>
+							<% ifndef("WET", "-->"); %>
+							
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
 
-				<% nvram_match("wl0_mode", "ap", "<!--"); %>
-				<% nvram_match("wl0_mode", "sta", "<!--"); %>
-				<% nvram_match("wl0_mode", "infra", "<!--"); %>
-				<% nvram_match("wl0_mode", "apsta", "<!--"); %>
-				<% nvram_match("wl0_mode", "wdssta", "<!--"); %>
-				<% nvram_match("wl0_mode", "wdsap", "<!--"); %>
+				<% ifndef("WET", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<% tran("share.disabled"); %>
 								</div>
-				<% nvram_match("wl0_mode", "ap", "-->"); %>
-				<% nvram_match("wl0_mode", "sta", "-->"); %>
-				<% nvram_match("wl0_mode", "infra", "-->"); %>
-				<% nvram_match("wl0_mode", "apsta", "-->"); %>
-				<% nvram_match("wl0_mode", "wdssta", "-->"); %>	
-				<% nvram_match("wl0_mode", "wdsap", "-->"); %>
-
+				<% ifndef("WET", "-->"); %>
 				
-				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
-				<% nvram_match("wl0_mode", "wet", "<!--"); %>
+				<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
@@ -333,8 +327,7 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 								<% show_index_setting(); %>
-				<% nvram_match("wl0_mode", "wet", "-->"); %>
-				<% nvram_match("wl0_mode", "apstawet", "-->"); %>
+				<% ifdef("WET", "-->"); %>
 				
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
@@ -351,8 +344,7 @@ addEvent(window, "unload", function() {
 									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvram_get("router_name"); %>"/>
 								</div>
 			
-				<% nvram_match("wl0_mode", "wet", "<!--"); %>
-				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
+				<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvram_get("wan_hostname"); %>"/>
@@ -373,8 +365,7 @@ addEvent(window, "unload", function() {
 									</select>&nbsp;
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
 								</div>
-				<% nvram_match("wl0_mode", "wet", "-->"); %>
-				<% nvram_match("wl0_mode", "apstawet", "-->"); %>
+				<% ifdef("WET", "-->"); %>
 							</fieldset><br />
 							
 							<h2><% tran("idx.h23"); %></h2>
