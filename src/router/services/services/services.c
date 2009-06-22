@@ -199,12 +199,11 @@ void stop_dns_clear_resolv(void)
 {
 	FILE *fp_w;
 
-	if (pidof("dnsmasq") > 0)
+	if (pidof("dnsmasq") > 0) {
 		dd_syslog(LOG_INFO,
 			  "dnsmasq : dnsmasq daemon successfully stopped\n");
-	// int ret = killps("dnsmasq",NULL);
-	int ret = killall("dnsmasq", SIGTERM);
-
+		killall("dnsmasq", SIGTERM);
+	}
 	/*
 	 * Save DNS to resolv.conf 
 	 */
@@ -246,11 +245,11 @@ void start_ntpc(void)
 #endif
 void stop_ntpc(void)
 {
-	if (pidof("ntpclient") > 0)
+	if (pidof("ntpclient") > 0) {
 		dd_syslog(LOG_INFO,
 			  "ntpclient : ntp client successfully stopped\n");
-	int ret = killall("ntpclient", SIGTERM);
-
+		killall("ntpclient", SIGTERM);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -270,13 +269,12 @@ void start_resetbutton(void)
 
 void stop_resetbutton(void)
 {
-	int ret = 0;
 
-	if (pidof("resetbutton") > 0)
+	if (pidof("resetbutton") > 0) {
 		dd_syslog(LOG_INFO,
 			  "reset button : resetbutton daemon successfully stopped\n");
-	ret = killall("resetbutton", SIGKILL);
-
+		killall("resetbutton", SIGKILL);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -297,13 +295,12 @@ void start_iptqueue(void)
 
 void stop_iptqueue(void)
 {
-	int ret = 0;
 
-	if (pidof("iptqueue") > 0)
+	if (pidof("iptqueue") > 0) {
 		dd_syslog(LOG_INFO,
 			  "iptqueue : iptqueue daemon successfully stopped\n");
-	ret = killall("iptqueue", SIGKILL);
-
+		killall("iptqueue", SIGKILL);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -315,6 +312,9 @@ void start_cron(void)
 	FILE *fp;
 
 	if (nvram_match("cron_enable", "0"))
+		return;
+
+	if (pidof("cron") > 0)	//cron already running
 		return;
 
 	/*
@@ -331,7 +331,7 @@ void start_cron(void)
 	/*
 	 * pppoe reconnect 
 	 */
-	unlink("/tmp/cron.d/pppoe_reconnect");	 
+	unlink("/tmp/cron.d/pppoe_reconnect");
 	if (nvram_match("reconnect_enable", "1")) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
@@ -376,6 +376,8 @@ void start_cron(void)
 	eval("cp", "-af", "/mmc/mycron.d/*", "/tmp/cron.d/");
 
 	cprintf("starting cron\n");
+	if (pidof("cron") > 0)	//cron already running
+		return;
 	ret = eval("cron");
 	dd_syslog(LOG_INFO, "cron : cron daemon successfully started\n");
 
@@ -385,14 +387,13 @@ void start_cron(void)
 
 void stop_cron(void)
 {
-	int ret = 0;
 
-	if (pidof("cron") > 0)
+	if (pidof("cron") > 0) {
 		dd_syslog(LOG_INFO,
 			  "cron : cron daemon successfully stopped\n");
-	// ret = killps("cron","-9");
-	ret = killall("cron", SIGKILL);
-	eval("rm", "-rf", "/tmp/cron.d");
+		killall("cron", SIGKILL);
+		eval("rm", "-rf", "/tmp/cron.d");
+	}
 	cprintf("done\n");
 	return;
 }
@@ -419,17 +420,17 @@ void start_syslog(void)
 
 void stop_syslog(void)
 {
-	int ret;
 
-	if (pidof("klogd") > 0)
+	if (pidof("klogd") > 0) {
 		dd_syslog(LOG_INFO,
 			  "klogd : klog daemon successfully stopped\n");
-	ret = killall("klogd", SIGKILL);
-	if (pidof("syslogd") > 0)
+		killall("klogd", SIGKILL);
+	}
+	if (pidof("syslogd") > 0) {
 		dd_syslog(LOG_INFO,
 			  "syslogd : syslog daemon successfully stopped\n");
-	ret += killall("syslogd", SIGKILL);
-
+		killall("syslogd", SIGKILL);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -437,14 +438,13 @@ void stop_syslog(void)
 
 void stop_redial(void)
 {
-	int ret;
 
-	if (pidof("redial") > 0)
+	if (pidof("redial") > 0) {
 		dd_syslog(LOG_INFO,
 			  "ppp_redial : redial daemon successfully stopped\n");
-	// ret = killps("redial","-9");
-	ret = killall("redial", SIGKILL);
-
+		// ret = killps("redial","-9");
+		killall("redial", SIGKILL);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -516,14 +516,12 @@ void start_radvd(void)
 
 void stop_radvd(void)
 {
-	int ret = 0;
 
-	if (pidof("radvd") > 0)
+	if (pidof("radvd") > 0) {
 		dd_syslog(LOG_INFO,
 			  "radvd : RADV daemon successfully stopped\n");
-	// ret = killps("radvd",NULL);
-	ret = killall("radvd", SIGKILL);
-
+		killall("radvd", SIGKILL);
+	}
 	unlink("/var/run/radvd.pid");
 
 	cprintf("done\n");
@@ -549,13 +547,11 @@ void start_ipv6(void)
 #ifdef HAVE_3G
 void stop_3g(void)
 {
-	int ret;
-
 	unlink("/tmp/ppp/link");
-	if (pidof("pppd") > 0)
+	if (pidof("pppd") > 0) {
 		dd_syslog(LOG_INFO, "3g/umts process successfully stopped\n");
-	ret = killall("pppd", SIGTERM);
-
+		killall("pppd", SIGTERM);
+	}
 	cprintf("done\n");
 }
 
@@ -564,12 +560,12 @@ void stop_3g(void)
 #ifdef HAVE_PPPOE
 void stop_pppoe(void)
 {
-	int ret;
 
 	unlink("/tmp/ppp/link");
-	if (pidof("pppd") > 0)
+	if (pidof("pppd") > 0) {
 		dd_syslog(LOG_INFO, "pppoe process successfully stopped\n");
-	ret = killall("pppd", SIGTERM);
+		killall("pppd", SIGTERM);
+	}
 	if (nvram_match("wan_vdsl", "1")) {
 		eval("ifconfig", nvram_safe_get("wan_iface"), "down");
 		eval("vconfig", "rem", nvram_safe_get("wan_iface"));
@@ -606,13 +602,12 @@ void stop_single_pppoe(int pppoe_num)
 #endif
 void stop_dhcpc(void)
 {
-	int ret = 0;
 
-	if (pidof("udhcpc") > 0)
+	if (pidof("udhcpc") > 0) {
 		dd_syslog(LOG_INFO,
 			  "udhcpc : udhcp client process successfully stopped\n");
-	ret = killall("udhcpc", SIGTERM);
-
+		killall("udhcpc", SIGTERM);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -873,18 +868,16 @@ void start_pptp(int status)
 
 void stop_pptp(void)
 {
-	int ret;
 
 	route_del(nvram_safe_get("wan_ifname"), 0,
 		  nvram_safe_get("pptp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
-	// ret = killps("pppd","-9");
-	// ret += killps("pptp","-9");
-	// ret += killps("listen","-9");
-	ret = killall("pppd", SIGTERM);
-	ret += killall("pptp", SIGKILL);
-	ret += killall("listen", SIGKILL);
+	if (pidof("pppd") > 0) {
+		killall("pppd", SIGTERM);
+		killall("pptp", SIGKILL);
+		killall("listen", SIGKILL);
+	}
 
 	cprintf("done\n");
 	return;
@@ -1290,17 +1283,17 @@ void start_l2tp_boot(void)
 
 void stop_l2tp(void)
 {
-	int ret = 0;
 
 	unlink("/tmp/ppp/link");
 	// ret = killps("pppd","-9");
 	// ret += killps("l2tpd","-9");
 	// ret += killps("listen","-9");
 
-	ret = killall("pppd", SIGTERM);
-	ret += killall("l2tpd", SIGKILL);
-	ret += killall("listen", SIGKILL);
-
+	if (pidof("pppd") > 0) {
+		killall("pppd", SIGTERM);
+		killall("l2tpd", SIGKILL);
+		killall("listen", SIGKILL);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -1308,11 +1301,11 @@ void stop_l2tp(void)
 
 void stop_wland(void)
 {
-	if (pidof("wland") > 0)
+	if (pidof("wland") > 0) {
 		dd_syslog(LOG_INFO,
 			  "wland : WLAN daemon successfully stopped\n");
-	int ret = killall("wland", SIGKILL);
-
+		killall("wland", SIGKILL);
+	}
 	cprintf("done\n");
 	return;
 }
@@ -1355,12 +1348,11 @@ void start_process_monitor(void)
 
 void stop_process_monitor(void)
 {
-	int ret;
 
-	if (pidof("process_monitor") > 0)
+	if (pidof("process_monitor") > 0) {
 		dd_syslog(LOG_INFO, "process_monitor successfully stopped\n");
-	ret = killall("process_monitor", SIGKILL);
-
+		killall("process_monitor", SIGKILL);
+	}
 	cprintf("done\n");
 
 	return;
@@ -1394,13 +1386,12 @@ void start_radio_timer(void)
 
 void stop_radio_timer(void)
 {
-	int ret;
 
-	if (pidof("radio_timer") > 0)
+	if (pidof("radio_timer") > 0) {
 		dd_syslog(LOG_INFO,
 			  "radio_timer : radio timer daemon successfully stopped\n");
-	ret = killall("radio_timer", SIGKILL);
-
+		killall("radio_timer", SIGKILL);
+	}
 	cprintf("done\n");
 
 	return;
@@ -1432,13 +1423,12 @@ void start_ttraff(void)
 
 void stop_ttraff(void)
 {
-	int ret;
 
-	if (pidof("ttraff") > 0)
+	if (pidof("ttraff") > 0) {
 		dd_syslog(LOG_INFO,
 			  "ttraff : traffic counter daemon successfully stopped\n");
-	ret = killall("ttraff", SIGKILL);
-
+		killall("ttraff", SIGKILL);
+	}
 	cprintf("done\n");
 
 	return;

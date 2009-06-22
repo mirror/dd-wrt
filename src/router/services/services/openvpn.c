@@ -181,7 +181,8 @@ void start_openvpn(void)
 
 void stop_openvpn(void)
 {
-	killall("openvpn", SIGKILL);
+	if (pidof("openvpn") > 0)
+		killall("openvpn", SIGKILL);
 }
 
 #endif
