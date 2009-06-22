@@ -67,11 +67,10 @@ void start_httpd(void)
 
 void stop_httpd(void)
 {
-	int ret = 0;
 
 	if (pidof("httpd") > 0) {
 		syslog(LOG_INFO, "httpd : http daemon successfully stopped\n");
-		ret = killall("httpd", SIGTERM);
+		killall("httpd", SIGTERM);
 
 		cprintf("done\n");
 	}
