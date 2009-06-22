@@ -117,7 +117,7 @@ void start_udhcpd(void)
 	}
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
-	if (nvram_match("wl0_mode", "wet") || nvram_match("wl0_mode", "apstawet"))	// dont 
+	if (getWET())	// dont 
 		// start 
 		// any 
 		// dhcp 

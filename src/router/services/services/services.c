@@ -1404,8 +1404,7 @@ void start_ttraff(void)
 
 	if ((nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
 	    && (nvram_match("wan_proto", "disabled")
-		|| nvram_match("wl0_mode", "wet")
-		|| nvram_match("wl0_mode", "apstawet")))
+		|| getWET()) )
 		return;
 
 	pid_t pid;
