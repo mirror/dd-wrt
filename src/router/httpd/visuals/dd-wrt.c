@@ -1469,14 +1469,9 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 
-	if (nvram_match("wl0_mode", "wet") || nvram_match("wl0_mode", "apstawet"))	// dhcpd settings disabled in 
-		// client bridge mode, so we
-		// wont display it
+	if (getWET()) 	// dhcpd settings disabled in client bridge mode, so we wont display it
 		return;
-	if (nvram_match("wl1_mode", "wet") || nvram_match("wl1_mode", "apstawet"))	// dhcpd settings disabled in 
-		// client bridge mode, so we
-		// wont display it
-		return;
+
 	websWrite(wp,
 		  "<fieldset><legend><script type=\"text/javascript\">Capture(idx.dhcp_legend)</script></legend>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
