@@ -36,7 +36,7 @@
 
 void start_dhcpfwd(void)
 {
-	if (nvram_match("wl0_mode", "wet") || nvram_match("wl0_mode", "apstawet"))	// dont 
+	if (getWET())	// dont 
 		// start 
 		// any 
 		// dhcp 
