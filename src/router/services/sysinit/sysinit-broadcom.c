@@ -179,7 +179,6 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT160N:
 	case ROUTER_WRT300N:
 	case ROUTER_WRT600N:
-	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:
 	case ROUTER_WRT310N:
 	case ROUTER_WRT300NV11:
@@ -906,8 +905,15 @@ void start_sysinit(void)
 	case ROUTER_WRT350N:
 	case ROUTER_WRT310N:
 	case ROUTER_WRT600N:
+		nvram_set("wan_ifname", "vlan2");
+		break;
+		
 	case ROUTER_WRT610N:
 		nvram_set("wan_ifname", "vlan2");
+		nvram set("pci/1/1/ledbh0", "11");
+		nvram set("pci/1/1/ledbh1", "135");
+		nvram set("pci/1/2/ledbh0", "11");
+		nvram set("pci/1/2/ledbh2", "135");
 		break;
 
 	case ROUTER_WRT300NV11:
