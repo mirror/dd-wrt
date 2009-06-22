@@ -579,6 +579,16 @@ void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 #endif
+	if (!strcmp(name, "WET")) {
+		if (getWET())
+			websWrite(wp, output);
+		return;
+	}
+	if (!strcmp(name, "STA")) {
+		if (getSTA())
+			websWrite(wp, output);
+		return;
+	}
 
 	return;
 }
@@ -691,7 +701,11 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 			return;
 	}
 	// end HAVE_HASWIFI
-
+	if (!strcmp(name, "WET")) {
+		if (getWET())
+			return;
+	}
+	
 	websWrite(wp, output);
 
 	return;
@@ -1940,11 +1954,7 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	char *wan_ipaddr;
 	int wan_link;
 
-	if (nvram_match("wl0_mode", "wet")
-	    || nvram_match("wl0_mode", "apstawet")
-	    || nvram_match("wl1_mode", "wet")
-	    || nvram_match("wl1_mode", "apstawet")
-	    || nvram_match("wan_proto", "disabled")) {
+	if (getWET() || nvram_match("wan_proto", "disabled")) {
 		websWrite(wp, ": %s", live_translate("share.disabled"));
 		return;
 	}
