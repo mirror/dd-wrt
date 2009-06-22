@@ -37,9 +37,9 @@
 
 void stop_wol(void)
 {
-	int ret;
 
-	ret = killall("wol", SIGKILL);
+	if (pidof("wol") > 0)
+		killall("wol", SIGKILL);
 
 	cprintf("done\n");
 
