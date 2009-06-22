@@ -351,13 +351,20 @@ void start_nas(void)
 
 	int cnt = get_wl_instances();
 	int c;
+	int deadcount;
 	int radiostate = -1;
 
 	for (c = 0; c < cnt; c++) {
 		if (nvram_nmatch("disabled", "wl%d_net_mode", c))
 			continue;
-		wl_ioctl(get_wl_instance_name(c), WLC_GET_RADIO, &radiostate,
-			 sizeof(int));
+
+		for (deadcount = 0; deadcount < 5; deadcount++) {
+			wl_ioctl(get_wl_instance_name(c), WLC_GET_RADIO, &radiostate, sizeof(int));
+			if (radiostate == 0)
+				break;
+			sleep (1);
+		}
+		
 		if (radiostate != 0)
 			continue;
 		char wlname[32];
