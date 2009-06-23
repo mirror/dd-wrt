@@ -37,6 +37,7 @@ extern char *get_wl_instance_name(int instance);
 float wifi_getrate(char *ifname);
 int wifi_gettxpower(char *ifname);
 int wifi_gettxpoweroffset(char *ifname);
+int bcm_gettxpower(char *wlname);
 
 /*
  * Pass a wlioctl request to the specified interface.
