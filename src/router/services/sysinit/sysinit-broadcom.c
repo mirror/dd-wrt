@@ -679,9 +679,9 @@ void start_sysinit(void)
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
-			nvram_set("pci/1/3/macaddr", mac);
-			MAC_ADD(mac);
 			nvram_set("pci/1/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/3/macaddr", mac);
 			need_reboot = 1;
 		}
 		//params taken from firmware ver. 1.0.29 multi-region
