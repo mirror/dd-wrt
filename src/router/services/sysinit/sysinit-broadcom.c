@@ -916,6 +916,8 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/ledbh1", "135");
 		nvram_set("pci/1/2/ledbh0", "11");
 		nvram_set("pci/1/2/ledbh2", "135");
+		nvram_set("pci/1/1/boardflags2", "0x0400");
+		nvram_set("pci/1/2/boardflags2", "0x0602");
 		
 		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") 
 			|| startswith(nvram_safe_get("pci/1/2/macaddr"), "00:90:4C"))
