@@ -1695,7 +1695,7 @@ int bcm_gettxpower(char *wlname)
       
 #endif
     /*
-     * return wireless interface 
+     * return 1st wireless interface 
      */
 char *get_wdev(void)
 {
@@ -1708,15 +1708,7 @@ char *get_wdev(void)
 #elif HAVE_RT2880
 	return "ra0";
 #else
-	if (!wl_probe("eth1"))
-		return "eth1";
-	if (!wl_probe("eth2"))
-		return "eth2";
-	if (!wl_probe("eth3"))
-		return "eth3";
-	if (!wl_probe("eth0"))
-		return "eth0";
-	return nvram_safe_get("wl0_ifname");
+	return get_wl_instance_name(0);
 #endif
 }
 
