@@ -1511,7 +1511,7 @@ void start_lan(void)
 						nvram_commit();
 						ifr.ifr_hwaddr.sa_family =
 						    ARPHRD_ETHER;
-						strncpy(ifr.ifr_name, wl_face,
+						strncpy(ifr.ifr_name, name,
 							IFNAMSIZ);
 
 						eval("wl", "-i", name, "down");

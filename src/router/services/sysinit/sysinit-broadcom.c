@@ -677,8 +677,10 @@ void start_sysinit(void)
 			unsigned char mac[20];
 
 			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
 			nvram_set("pci/1/3/macaddr", mac);
-			MAC_SUB(mac);
+			MAC_ADD(mac);
 			nvram_set("pci/1/1/macaddr", mac);
 			need_reboot = 1;
 		}
@@ -914,6 +916,19 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/ledbh1", "135");
 		nvram_set("pci/1/2/ledbh0", "11");
 		nvram_set("pci/1/2/ledbh2", "135");
+		
+		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") 
+			|| startswith(nvram_safe_get("pci/1/2/macaddr"), "00:90:4C"))
+		{
+		unsigned char mac[20];
+		strcpy(mac, nvram_safe_get("et0macaddr"));
+		MAC_ADD(mac);
+		MAC_ADD(mac);
+		nvram_set("pci/1/1/macaddr", mac);
+		MAC_ADD(mac);
+		nvram_set("pci/1/2/macaddr", mac);
+		need_reboot = 1;	
+		}
 		break;
 
 	case ROUTER_WRT300NV11:
