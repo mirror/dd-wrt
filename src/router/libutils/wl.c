@@ -1660,6 +1660,39 @@ int get_wl_instance(char *name)
 		return unit;
 	return ret;
 }
+
+int bcm_gettxpower(char *wlname)
+{
+	int pwr = 0;
+	int realpwr;
+	int c;
+	char cmd[32];
+	char wl[16];
+	
+	sprintf (wl, "%s_txpwr", wlname);
+	pwr = atoi (nvram_safe_get(wl));
+
+	if (!strcmp(wlname, "wl0"))    
+		c = 0;		
+	else if (!strcmp(wlname, "wl1"))
+		c = 1;
+	else
+		return pwr;
+	
+	sprintf (cmd, "wl -i %s txpwr1", get_wl_instance_name (c));
+
+	FILE *in = popen (cmd, "rb");
+	if (in == NULL) 
+		return pwr;
+		// TxPower is 74 qdbm,  18.50 dbm, 71 mW  Override is Off		
+	if (fscanf (in, "%*s %*s %*s %*s %*s %*s %d", &realpwr) == 1) 
+		pwr = realpwr;
+
+	pclose (in);
+	
+	return pwr;
+}	
+      
 #endif
     /*
      * return wireless interface 
