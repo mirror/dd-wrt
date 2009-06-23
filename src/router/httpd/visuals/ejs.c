@@ -2296,8 +2296,10 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	sprintf(txpwr, "%s_txpwr", m);
 #ifdef HAVE_MADWIFI
 	websWrite(wp, "%d dBm", wifi_gettxpower(m));
-#else
+#elif HAVE_RT2880
 	websWrite(wp, "%s mW", nvram_safe_get(txpwr));
+#else //broadcom
+	websWrite(wp, "%d mW", bcm_gettxpower(m));
 #endif
 }
 
