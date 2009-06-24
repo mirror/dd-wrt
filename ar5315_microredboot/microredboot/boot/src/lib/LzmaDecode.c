@@ -167,7 +167,8 @@ static int inline RangeDecoderReverseBitTreeDecode(CProb * probs, int numLevels,
 	    for (i = 0; i < numLevels; i++) {
 #ifdef _LZMA_LOC_OPT
 		CProb *prob = probs + mi;
-		RC_GET_BIT2(prob, mi,;, symbol |= (1 << i))
+		RC_GET_BIT2(prob, mi,;
+			    , symbol |= (1 << i))
 #else
 		int bit = RangeDecoderBitDecode(probs + mi, rd);
 		mi = mi + mi + bit;
