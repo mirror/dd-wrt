@@ -282,6 +282,8 @@ static int spiflash_probe_chip(void)
 	return (flash_size);
 }
 
+static unsigned int getPartition(char *name);
+
 /* erases nvram partition on the detected location or simply returns if no nvram was detected */
 
 static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
@@ -290,6 +292,9 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 	unsigned int offset = nvramdetect;
 	struct opcodes *ptr_opcode;
 	__u32 temp, reg;
+	if (!nvramdetect) {
+		nvramdetect = getPartition("cfg");
+	}
 	if (!nvramdetect) {
 		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
 		return -1;

@@ -339,7 +339,7 @@ cdl_package CYGPKG_REDBOOT {
                 display          "Support TFTP server with WILIBOX fwupdate support"
                 flavor           bool
                 default_value    1
-                compile          -library=libextras.a net/tftp_server.c net/fwupgrade.c net/fwupgrade_ubnt.c net/fwupgrade_wili.c
+                compile          -library=libextras.a net/tftp_server.c net/fwupgrade.c net/fwupgrade_ubnt.c net/fwupgrade_wili.c net/fwupgrade_senao.c
                 description      "
                     This option enables the use of the TFTP server"
             }

@@ -17,6 +17,19 @@ struct fis_image_desc {
 	unsigned long file_cksum;	// Checksum over image data
 };
 
+static unsigned int getPartition(char *name)
+{
+	int count = 0;
+	unsigned char *p =
+	    (unsigned char *)(flashbase + flashsize - (sectorsize * 2));
+	struct fis_image_desc *fis = (struct fis_image_desc *)p;
+	while (fis->name[0] != 0xff && count < 10) {
+		if (!strncmp(fis->name, name, strlen(name)))
+			return fis->flash_base;
+	}
+	return 0;
+}
+
 /*
  * searches for a directory entry named linux* vmlinux* or kernel and returns its flash address (it also initializes entrypoint and load address)
  */

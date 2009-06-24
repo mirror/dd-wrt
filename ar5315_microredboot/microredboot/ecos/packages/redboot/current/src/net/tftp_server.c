@@ -160,6 +160,17 @@ void do_flash_update_wili(unsigned long base_addr, unsigned long len)
 	flashresult(rc);
 }
 
+void do_flash_update_senao(unsigned long base_addr, unsigned long len)
+{
+	int rc;
+	pagesetup();
+	/* do_flash = 1, write to flash */
+	rc = fw_check_image_senao((char *)base_addr, len, 1);
+
+	memset((unsigned char *)base_addr, 0, len);
+	flashresult(rc);
+}
+
 void
 tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 {
@@ -256,6 +267,7 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 			int isddwrt = 0;
 			int isubnt = 0;
 			int iswili = 0;
+			int issenao = 0;
 			isddwrt = fw_check_image_ddwrt((char *)BASE_ADDR,
 						       ptr - BASE_ADDR, 0) == 0;
 			if (!isddwrt)
@@ -270,7 +282,13 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 							ptr - BASE_ADDR,
 							0) == 0;
 
-			if (isddwrt || isubnt || iswili)	/* third parameter 0 - do not write to flash */
+			if (!isubnt && !isddwrt && !iswili)
+				issenao =
+				    fw_check_image_senao((char *)BASE_ADDR,
+							ptr - BASE_ADDR,
+							0) == 0;
+
+			if (isddwrt || isubnt || iswili || issenao)	/* third parameter 0 - do not write to flash */
 				tftpd_send(ACK, block, src_route, src_port);	// crc ok
 			else {
 				tftpd_error(EACCESS, "CRC error", src_route,
@@ -295,6 +313,12 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 				diag_printf
 				    ("WILIGEAR firmware format detected\n");
 				do_flash_update_wili(BASE_ADDR,
+						     ptr - BASE_ADDR);
+			}
+			if (issenao) {
+				diag_printf
+				    ("SENAO firmware format detected\n");
+				do_flash_update_senao(BASE_ADDR,
 						     ptr - BASE_ADDR);
 			}
 #else
