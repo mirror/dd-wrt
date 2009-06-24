@@ -55,201 +55,211 @@
 
 // HTTP client support
 
-#include <redboot.h>     // have_net
+#include <redboot.h>		// have_net
 #include <net/net.h>
 #include <net/http.h>
 
 // So we remember which ports have been used
 static int get_port = 7800;
 
-static struct _stream{
-    bool open;
-    int  avail, actual_len, pos, filelen;
-    char data[4096];
-    char *bufp;
-    tcp_socket_t sock;
+static struct _stream {
+	bool open;
+	int avail, actual_len, pos, filelen;
+	char data[4096];
+	char *bufp;
+	tcp_socket_t sock;
 } http_stream;
 
-static __inline__ int
-min(int a, int b)
+static __inline__ int min(int a, int b)
 {
-    if (a < b) 
-        return a;
-    else
-        return b;
+	if (a < b)
+		return a;
+	else
+		return b;
 }
 
-int
-http_stream_open(connection_info_t *info, int *err)
+int http_stream_open(connection_info_t * info, int *err)
 {
-    int res;
-    struct _stream *s = &http_stream;
+	int res;
+	struct _stream *s = &http_stream;
 
-    if (!info->server->sin_port)
-        info->server->sin_port = 80;  // HTTP port
-    if ((res = __tcp_open(&s->sock, info->server, get_port++, 5000, err)) < 0) {
-        *err = HTTP_OPEN;
-        return -1;
-    }
-    diag_sprintf(s->data, "GET %s HTTP/1.0\r\n\r\n", info->filename);
-    __tcp_write_block(&s->sock, s->data, strlen(s->data));    
-    s->avail = 0;
-    s->open = true;
-    s->pos = 0;
-    return 0;
+	if (!info->server->sin_port)
+		info->server->sin_port = 80;	// HTTP port
+	if ((res =
+	     __tcp_open(&s->sock, info->server, get_port++, 5000, err)) < 0) {
+		*err = HTTP_OPEN;
+		return -1;
+	}
+	diag_sprintf(s->data, "GET %s HTTP/1.0\r\n\r\n", info->filename);
+	__tcp_write_block(&s->sock, s->data, strlen(s->data));
+	s->avail = 0;
+	s->open = true;
+	s->pos = 0;
+	return 0;
 }
 
-void
-http_stream_close(int *err)
-{    
-    struct _stream *s = &http_stream;
+void http_stream_close(int *err)
+{
+	struct _stream *s = &http_stream;
 
-    if (s->open) {
-        __tcp_abort(&s->sock,1);
-        s->open = false;    
-    }
+	if (s->open) {
+		__tcp_abort(&s->sock, 1);
+		s->open = false;
+	}
 }
 
-int
-http_stream_read(char *buf,
-                 int len,
-                 int *err)
-{    
-    struct _stream *s = &http_stream;
-    int total = 0;
-    int cnt, code;
+int http_stream_read(char *buf, int len, int *err)
+{
+	struct _stream *s = &http_stream;
+	int total = 0;
+	int cnt, code;
 
-    if (!s->open) {
-        return -1;  // Shouldn't happen, but...
-    }
-    while (len) {
-        while (s->avail == 0) {
-            // Need to wait for some data to arrive
-            __tcp_poll();
-            if (s->sock.state != _ESTABLISHED) {
-                if (s->sock.state == _CLOSE_WAIT) {
-                    // This connection is breaking
-                    if (s->sock.data_bytes == 0 && s->sock.rxcnt == 0) {
-                        __tcp_close(&s->sock);
-                        return total;
-                    }  
-                } else if (s->sock.state == _CLOSED) {
-                    	// The connection is gone
-                    	s->open = false;
-                    	return -1;
-                } else {	
-                    *err = HTTP_IO;
-                    return -1;
-		}
-            }
-            s->actual_len = __tcp_read(&s->sock, s->data, sizeof(s->data));
-            if (s->actual_len > 0) {
-                s->bufp = s->data;
-                s->avail = s->actual_len;
-                if (s->pos == 0) {
-                    // First data - need to scan HTTP response header
-                    if (strncmp(s->bufp, "HTTP/", 5) == 0) {
-                        // Should look like "HTTP/1.1 200 OK"
-                        s->bufp += 5;
-                        s->avail -= 5;
-                        // Find first space
-                        while ((s->avail > 0) && (*s->bufp != ' ')) {
-                            s->bufp++;  
-                            s->avail--;
-                        }
-                        // Now the integer response
-                        code = 0;
-                        while ((s->avail > 0) && (*s->bufp == ' ')) {
-                            s->bufp++;  
-                            s->avail--;
-                        }
-                        while ((s->avail > 0) && isdigit(*s->bufp)) {
-                            code = (code * 10) + (*s->bufp - '0');
-                            s->bufp++;  
-                            s->avail--;
-                        }
-                        // Make sure it says OK
-                        while ((s->avail > 0) && (*s->bufp == ' ')) {
-                            s->bufp++;  
-                            s->avail--;
-                        }
-                        if (strncmp(s->bufp, "OK", 2)) {
-                            switch (code) {
-                            case 400:
-                                *err = HTTP_BADREQ;
-                                break;
-                            case 404:
-                                *err = HTTP_NOFILE;
-                                break;
-                            default:
-                                *err = HTTP_BADHDR;
-                                break;
-                            }
-                            return -1;
-                        }
-                        // Find \r\n\r\n - end of HTTP preamble
-                        while (s->avail >= 4) {
-                            // This could be done faster, but not simpler
-                            if (strncmp(s->bufp, "\r\n\r\n", 4) == 0) {
-                                s->bufp += 4;
-                                s->avail -= 4;
-#if 0 // DEBUG - show header
-                                *(s->bufp-2) = '\0';
-                                diag_printf(s->data);
+	if (!s->open) {
+		return -1;	// Shouldn't happen, but...
+	}
+	while (len) {
+		while (s->avail == 0) {
+			// Need to wait for some data to arrive
+			__tcp_poll();
+			if (s->sock.state != _ESTABLISHED) {
+				if (s->sock.state == _CLOSE_WAIT) {
+					// This connection is breaking
+					if (s->sock.data_bytes == 0
+					    && s->sock.rxcnt == 0) {
+						__tcp_close(&s->sock);
+						return total;
+					}
+				} else if (s->sock.state == _CLOSED) {
+					// The connection is gone
+					s->open = false;
+					return -1;
+				} else {
+					*err = HTTP_IO;
+					return -1;
+				}
+			}
+			s->actual_len =
+			    __tcp_read(&s->sock, s->data, sizeof(s->data));
+			if (s->actual_len > 0) {
+				s->bufp = s->data;
+				s->avail = s->actual_len;
+				if (s->pos == 0) {
+					// First data - need to scan HTTP response header
+					if (strncmp(s->bufp, "HTTP/", 5) == 0) {
+						// Should look like "HTTP/1.1 200 OK"
+						s->bufp += 5;
+						s->avail -= 5;
+						// Find first space
+						while ((s->avail > 0)
+						       && (*s->bufp != ' ')) {
+							s->bufp++;
+							s->avail--;
+						}
+						// Now the integer response
+						code = 0;
+						while ((s->avail > 0)
+						       && (*s->bufp == ' ')) {
+							s->bufp++;
+							s->avail--;
+						}
+						while ((s->avail > 0)
+						       && isdigit(*s->bufp)) {
+							code =
+							    (code * 10) +
+							    (*s->bufp - '0');
+							s->bufp++;
+							s->avail--;
+						}
+						// Make sure it says OK
+						while ((s->avail > 0)
+						       && (*s->bufp == ' ')) {
+							s->bufp++;
+							s->avail--;
+						}
+						if (strncmp(s->bufp, "OK", 2)) {
+							switch (code) {
+							case 400:
+								*err =
+								    HTTP_BADREQ;
+								break;
+							case 404:
+								*err =
+								    HTTP_NOFILE;
+								break;
+							default:
+								*err =
+								    HTTP_BADHDR;
+								break;
+							}
+							return -1;
+						}
+						// Find \r\n\r\n - end of HTTP preamble
+						while (s->avail >= 4) {
+							// This could be done faster, but not simpler
+							if (strncmp
+							    (s->bufp,
+							     "\r\n\r\n",
+							     4) == 0) {
+								s->bufp += 4;
+								s->avail -= 4;
+#if 0				// DEBUG - show header
+								*(s->bufp - 2) =
+								    '\0';
+								diag_printf
+								    (s->data);
 #endif
-                                break;
-                            }
-                            s->avail--;
-                            s->bufp++;
-                        }
-                        s->pos++;
-                    } else {
-                        // Unrecognized response
-                        *err = HTTP_BADHDR;
-                        return -1;
-                    }
-                }
-            } else if (s->actual_len < 0) {
-                *err = HTTP_IO;
-                return -1;
-            }
-        }
-        cnt = min(len, s->avail);
-        memcpy(buf, s->bufp, cnt);
-        s->avail -= cnt;
-        s->bufp += cnt;
-        buf += cnt;
-        total += cnt;
-        len -= cnt;
-    }
-    return total;
+								break;
+							}
+							s->avail--;
+							s->bufp++;
+						}
+						s->pos++;
+					} else {
+						// Unrecognized response
+						*err = HTTP_BADHDR;
+						return -1;
+					}
+				}
+			} else if (s->actual_len < 0) {
+				*err = HTTP_IO;
+				return -1;
+			}
+		}
+		cnt = min(len, s->avail);
+		memcpy(buf, s->bufp, cnt);
+		s->avail -= cnt;
+		s->bufp += cnt;
+		buf += cnt;
+		total += cnt;
+		len -= cnt;
+	}
+	return total;
 }
 
-char *
-http_error(int err)
+char *http_error(int err)
 {
-    char *errmsg = "Unknown error";
+	char *errmsg = "Unknown error";
 
-    switch (err) {
-    case HTTP_NOERR:
-        return "";
-    case HTTP_BADHDR:
-        return "Unrecognized HTTP response";
-    case HTTP_BADREQ:
-        return "Bad HTTP request (check file name)";
-    case HTTP_NOFILE:
-        return "No such file";
-    case HTTP_OPEN:
-        return "Can't connect to host";
-    case HTTP_IO:
-        return "I/O error";
-    }
-    return errmsg;
+	switch (err) {
+	case HTTP_NOERR:
+		return "";
+	case HTTP_BADHDR:
+		return "Unrecognized HTTP response";
+	case HTTP_BADREQ:
+		return "Bad HTTP request (check file name)";
+	case HTTP_NOFILE:
+		return "No such file";
+	case HTTP_OPEN:
+		return "Can't connect to host";
+	case HTTP_IO:
+		return "I/O error";
+	}
+	return errmsg;
 }
 
 //
 // RedBoot interface
 //
 GETC_IO_FUNCS(http_io, http_stream_open, http_stream_close,
-              0, http_stream_read, http_error);
+	      0, http_stream_read, http_error);
 RedBoot_load(http, http_io, true, true, 0);

@@ -334,6 +334,24 @@ cdl_package CYGPKG_REDBOOT {
                 description      "
                     This option enables the use of the TFTP protocol for download"
             }
+
+            cdl_option CYGSEM_REDBOOT_NET_TFTP_SERVER {
+                display          "Support TFTP server with WILIBOX fwupdate support"
+                flavor           bool
+                default_value    1
+                compile          -library=libextras.a net/tftp_server.c net/fwupgrade.c net/fwupgrade_ubnt.c net/fwupgrade_wili.c
+                description      "
+                    This option enables the use of the TFTP server"
+            }
+
+            cdl_option CYGSEM_REDBOOT_RESCUE_MODE {
+                display          "Support rescue mode"
+                flavor           bool
+                default_value    1
+                requires         CYGSEM_REDBOOT_NET_TFTP_SERVER
+                description      "
+                    This option enables the rescue mode (start tftp server)"
+            }
     
             cdl_option CYGSEM_REDBOOT_NET_HTTP_DOWNLOAD {
                 display          "Support HTTP for download"

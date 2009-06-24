@@ -14,6 +14,10 @@ ifndef RESETBUTTON
 export RESETBUTTON=0x16
 endif
 
+ifndef FIS
+export FIS=0
+endif
+
 ifndef TFTPPATH
 TFTPPATH=/tftpboot
 endif
@@ -83,7 +87,9 @@ PLATFORM_ROM_BUILD = make -C $(ROMBUILD_DIR); \
 	mipsisa32-elf-objcopy -O binary redboot.elf redboot.rom ;\
 	if [ -n "${TARGET_NAME}" ]; then sudo cp redboot.rom $(TFTPPATH)/${TARGET_NAME}.rom; else sudo cp redboot.rom $(TFTPPATH)/$@.rom; fi
 
-PLATFORM_RAM_BUILD = make -C $(RAMBUILD_DIR); \
+PLATFORM_RAM_BUILD = echo "\#define RESETBUTTON ${RESETBUTTON}" > ecos/packages/redboot/current/src/ramconfig.h; \
+	echo "\#define FISTYPE ${FIS}" >> ecos/packages/redboot/current/src/ramconfig.h; \
+	make -C $(RAMBUILD_DIR); \
 	cd $(RAMBUILD_DIR)/install/bin; \
 	mipsisa32-elf-objcopy -O binary redboot.elf redboot.bin; \
 	if [ -n "${TARGET_NAME}" ]; then sudo cp redboot.elf $(TFTPPATH)/${TARGET_NAME}.ram; else sudo cp redboot.elf $(TFTPPATH)/$@.ram; fi; \
