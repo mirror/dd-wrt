@@ -207,11 +207,15 @@ static int flashdetect(void)
 #define FLASHCTL_ATR4   0xc0000000	/* Access type == retry every 4 */
 
 /* erases nvram partition on the detected location or simply returns if no nvram was detected */
+static unsigned int getPartition(char *name);
 
 static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 {
 	int i, ticks;
 	unsigned short val;
+	if (!nvramdetect) {
+		nvramdetect = getPartition("cfg");
+	}
 	if (!nvramdetect) {
 		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
 		return;
