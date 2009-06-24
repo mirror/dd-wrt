@@ -59,66 +59,63 @@
  * The data being checksum'd is in network byte order.
  * The returned checksum is in network byte order.
  */
-unsigned short
-__sum(word *w, int len, int init_sum)
+unsigned short __sum(word * w, int len, int init_sum)
 {
-    int sum = init_sum;
+	int sum = init_sum;
 
-    union {
-	volatile unsigned char c[2];
-	volatile unsigned short s;
-    } su;
+	union {
+		volatile unsigned char c[2];
+		volatile unsigned short s;
+	} su;
 
-    union {
-	volatile unsigned short s[2];
-	volatile int i;
-    } iu;
+	union {
+		volatile unsigned short s[2];
+		volatile int i;
+	} iu;
 
-    while ((len -= 2) >= 0)
-	sum += *w++;
+	while ((len -= 2) >= 0)
+		sum += *w++;
 
-    if (len == -1) {
-	su.c[0] = *(char *)w;
-	su.c[1] = 0;
-	sum += su.s;
-    }
+	if (len == -1) {
+		su.c[0] = *(char *)w;
+		su.c[1] = 0;
+		sum += su.s;
+	}
 
-    iu.i = sum;
-    sum = iu.s[0] + iu.s[1];
-    if (sum > 65535)
-	sum -= 65535;
+	iu.i = sum;
+	sum = iu.s[0] + iu.s[1];
+	if (sum > 65535)
+		sum -= 65535;
 
-    su.s = ~sum;
+	su.s = ~sum;
 
-    return (su.c[0] << 8) | su.c[1];
+	return (su.c[0] << 8) | su.c[1];
 }
-
 
 /*
  * Compute a partial checksum for the UDP/TCP pseudo header.
  */
-int
-__pseudo_sum(ip_header_t *ip)
+int __pseudo_sum(ip_header_t * ip)
 {
-    int    sum;
-    word   *p;
+	int sum;
+	word *p;
 
-    union {
-	volatile unsigned char c[2];
-	volatile unsigned short s;
-    } su;
-    
-    p = (word *)ip->source;
-    sum  = *p++;
-    sum += *p++;
-    sum += *p++;
-    sum += *p++;
-    
-    su.c[0] = 0;
-    su.c[1] = ip->protocol;
-    sum += su.s;
+	union {
+		volatile unsigned char c[2];
+		volatile unsigned short s;
+	} su;
 
-    sum += ip->length;
-    
-    return sum;
+	p = (word *) ip->source;
+	sum = *p++;
+	sum += *p++;
+	sum += *p++;
+	sum += *p++;
+
+	su.c[0] = 0;
+	su.c[1] = ip->protocol;
+	sum += su.s;
+
+	sum += ip->length;
+
+	return sum;
 }

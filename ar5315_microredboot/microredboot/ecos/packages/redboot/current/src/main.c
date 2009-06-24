@@ -155,9 +155,37 @@ extern void HAL_ARCH_PROGRAM_NEW_STACK(void *fun);
 //
 void bist(void) CYGBLD_ATTRIB_WEAK;
 
+#define RESCUE_SCRIPT "tftpd\n"
+
+int in_rescue_mode = 0;
+
+
+#include <ramconfig.h>
+static int rescue_mode(void)
+{
+	int b;
+	int inverse = (RESETBUTTON&0xf0);
+	int resetgpio = RESETBUTTON&0x0F;
+#if defined(CYGPKG_HAL_MIPS_AR2316)
+	b = ((*(volatile unsigned int *)(AR2316_GPIO_DI)) >> 
+					resetgpio) & 1;
+#else
+	b = ((*(volatile unsigned int *)(AR531X_GPIO_DI)) >> 
+					resetgpio) & 1;
+#endif
+	if (inverse)
+	    b=(1-b);
+	return b;
+}
+
 void
 bist(void) 
 {
+	if (rescue_mode()) {
+		diag_printf("Reset button pressed - switching to rescue mode.\n");
+		in_rescue_mode = 1;
+	}
+
 }
 
 //
@@ -329,6 +357,11 @@ cyg_start(void)
     cyg_plf_redboot_startup();
 #endif
     do_version(0,0);
+
+    if (in_rescue_mode) {
+	    diag_printf("Starting RESCUE script...\n");
+            script = RESCUE_SCRIPT;  
+    }
 
 #ifdef CYGFUN_REDBOOT_BOOT_SCRIPT
 # ifdef CYGDAT_REDBOOT_DEFAULT_BOOT_SCRIPT

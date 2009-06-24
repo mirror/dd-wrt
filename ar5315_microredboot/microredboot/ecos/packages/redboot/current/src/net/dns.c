@@ -57,7 +57,7 @@
 
 #include <cyg/hal/drv_api.h>
 #include <cyg/infra/cyg_type.h>
-#include <cyg/infra/cyg_trac.h>         /* Tracing support */
+#include <cyg/infra/cyg_trac.h>	/* Tracing support */
 
 #include <net/net.h>
 #include <redboot.h>
@@ -68,11 +68,7 @@
 #include <flash_config.h>
 
 RedBoot_config_option("DNS server IP address",
-                      dns_ip,
-                      ALWAYS_ENABLED, true,
-                      CONFIG_IP,
-                      0
-    );
+		      dns_ip, ALWAYS_ENABLED, true, CONFIG_IP, 0);
 #endif
 
 /* So we remember which ports have been used */
@@ -91,7 +87,7 @@ struct sockaddr_in server;
 
 /* static buffers so we can make do without malloc */
 static struct hostent _hent;
-static char* _h_addr_list[2];
+static char *_h_addr_list[2];
 static struct in_addr _h_addr_list0;
 static int _hent_alloc = 0;
 
@@ -101,186 +97,180 @@ static char _strings[_STRING_COUNT][_STRING_LENGTH];
 static int _strings_alloc = 0;
 
 /* as in dns.c proper */
-static short id = 0;              /* ID of the last query */
-static int s = -1;                /* Socket to the DNS server */
-static cyg_drv_mutex_t dns_mutex; /* Mutex to stop multiple queries as once */
-static char * domainname=NULL;    /* Domain name used for queries */
-
+static short id = 0;		/* ID of the last query */
+static int s = -1;		/* Socket to the DNS server */
+static cyg_drv_mutex_t dns_mutex;	/* Mutex to stop multiple queries as once */
+static char *domainname = NULL;	/* Domain name used for queries */
 
 /* Allocate space for string of length (len). Return NULL on
    failure. */
-static char*
-alloc_string(int len)
+static char *alloc_string(int len)
 {
-    int i;
+	int i;
 
-    if (len > _STRING_LENGTH)
-        return NULL;
+	if (len > _STRING_LENGTH)
+		return NULL;
 
-    for (i = 0; i < _STRING_COUNT; i++) {
-        if (_strings_alloc & (1 << i)) continue;
-        _strings_alloc |= (1<<i);
-        return _strings[i];
-    }
-    return NULL;
+	for (i = 0; i < _STRING_COUNT; i++) {
+		if (_strings_alloc & (1 << i))
+			continue;
+		_strings_alloc |= (1 << i);
+		return _strings[i];
+	}
+	return NULL;
 }
 
-static void
-free_string(char* s)
+static void free_string(char *s)
 {
-    int i;
-    for (i = 0; i < _STRING_COUNT; i++) {
-        if (_strings[i] == s) {
-            _strings_alloc &= ~(1<<i);
-            break;
-        }
-    }
+	int i;
+	for (i = 0; i < _STRING_COUNT; i++) {
+		if (_strings[i] == s) {
+			_strings_alloc &= ~(1 << i);
+			break;
+		}
+	}
 }
 
 /* Deallocate the memory taken to hold a hent structure */
-static void
-free_hent(struct hostent * hent)
+static void free_hent(struct hostent *hent)
 {
-    if (hent->h_name) {
-        free_string(hent->h_name);
-    }
-    _hent_alloc = 0;
+	if (hent->h_name) {
+		free_string(hent->h_name);
+	}
+	_hent_alloc = 0;
 }
 
 /* Allocate hent structure with room for one in_addr. Returns NULL on
    failure. */
-static struct hostent*
-alloc_hent(void)
+static struct hostent *alloc_hent(void)
 {
-    struct hostent *hent;
+	struct hostent *hent;
 
-    if (_hent_alloc) return NULL;
+	if (_hent_alloc)
+		return NULL;
 
-    hent = &_hent;
-    memset(hent, 0, sizeof(struct hostent));
-    hent->h_addr_list = _h_addr_list;
-    hent->h_addr_list[0] = (char*)&_h_addr_list0;
-    hent->h_addr_list[1] = NULL;
-    _hent_alloc = 1;
+	hent = &_hent;
+	memset(hent, 0, sizeof(struct hostent));
+	hent->h_addr_list = _h_addr_list;
+	hent->h_addr_list[0] = (char *)&_h_addr_list0;
+	hent->h_addr_list[1] = NULL;
+	_hent_alloc = 1;
 
-    return hent;
+	return hent;
 }
 
-static __inline__ void
-free_stored_hent(void)
+static __inline__ void free_stored_hent(void)
 {
-    free_hent( &_hent );
+	free_hent(&_hent);
 }
 
-static __inline__ void
-store_hent(struct hostent *hent)
+static __inline__ void store_hent(struct hostent *hent)
 {
-    hent=hent; // avoid warning
+	hent = hent;		// avoid warning
 }
 
 /* Send the query to the server and read the response back. Return -1
    if it fails, otherwise put the response back in msg and return the
    length of the response. */
-static int 
-send_recv(char * msg, int len, int msglen)
+static int send_recv(char *msg, int len, int msglen)
 {
-    struct dns_header *dns_hdr;
-    int finished = false;
-    int read = 0;
+	struct dns_header *dns_hdr;
+	int finished = false;
+	int read = 0;
 
-    dns_hdr = (struct dns_header *) msg;
+	dns_hdr = (struct dns_header *)msg;
 
-    do { 
-        int len_togo = len;
-        struct timeval timeout;
-        struct sockaddr_in local_addr, from_addr;
+	do {
+		int len_togo = len;
+		struct timeval timeout;
+		struct sockaddr_in local_addr, from_addr;
 
-        memset((char *)&local_addr, 0, sizeof(local_addr));
-        local_addr.sin_family = AF_INET;
-        local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        local_addr.sin_port = htons(get_port++);
+		memset((char *)&local_addr, 0, sizeof(local_addr));
+		local_addr.sin_family = AF_INET;
+		local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+		local_addr.sin_port = htons(get_port++);
 
-        if (__udp_sendto(msg, len_togo, &server, &local_addr) < 0)
-            return -1;
+		if (__udp_sendto(msg, len_togo, &server, &local_addr) < 0)
+			return -1;
 
-        memset((char *)&from_addr, 0, sizeof(from_addr));
+		memset((char *)&from_addr, 0, sizeof(from_addr));
 
-        timeout.tv_sec = CYGNUM_REDBOOT_NETWORKING_DNS_TIMEOUT;
-        timeout.tv_usec = 0;
+		timeout.tv_sec = CYGNUM_REDBOOT_NETWORKING_DNS_TIMEOUT;
+		timeout.tv_usec = 0;
 
-        read = __udp_recvfrom(msg, len, &from_addr, &local_addr, &timeout);
-        if (read < 0)
-            return -1;
+		read =
+		    __udp_recvfrom(msg, len, &from_addr, &local_addr, &timeout);
+		if (read < 0)
+			return -1;
 
-        /* Reply to an old query. Ignore it */
-        if (ntohs(dns_hdr->id) != (id-1)) {
-            continue;
-        }
-        finished = true;
-    } while (!finished);
+		/* Reply to an old query. Ignore it */
+		if (ntohs(dns_hdr->id) != (id - 1)) {
+			continue;
+		}
+		finished = true;
+	} while (!finished);
 
-    return read;
-}
-    
-void
-set_dns(char* new_ip)
-{
-    in_addr_t dns_ip;
-
-    memset(&server.sin_addr, 0, sizeof(server.sin_addr));
-    if (!inet_aton(new_ip, &dns_ip)) {
-        diag_printf("Bad DNS server address: %s\n", new_ip);
-    } else {
-        memcpy(&server.sin_addr, &dns_ip, sizeof(dns_ip));
-        /* server config is valid */
-        s = 0;
-    }
+	return read;
 }
 
-void
-show_dns(void)
+void set_dns(char *new_ip)
 {
-    diag_printf(", DNS server IP: %s", inet_ntoa((in_addr_t *)&server.sin_addr));
-    if (0 == server.sin_addr.s_addr) {
-        s = -1;
-    }
+	in_addr_t dns_ip;
+
+	memset(&server.sin_addr, 0, sizeof(server.sin_addr));
+	if (!inet_aton(new_ip, &dns_ip)) {
+		diag_printf("Bad DNS server address: %s\n", new_ip);
+	} else {
+		memcpy(&server.sin_addr, &dns_ip, sizeof(dns_ip));
+		/* server config is valid */
+		s = 0;
+	}
+}
+
+void show_dns(void)
+{
+	diag_printf(", DNS server IP: %s",
+		    inet_ntoa((in_addr_t *) & server.sin_addr));
+	if (0 == server.sin_addr.s_addr) {
+		s = -1;
+	}
 }
 
 /* Initialise the resolver. Open a socket and bind it to the address
    of the server.  return -1 if something goes wrong, otherwise 0 */
-int  
-redboot_dns_res_init(void)
+int redboot_dns_res_init(void)
 {
-    memset((char *)&server, 0, sizeof(server));
-    server.sin_len = sizeof(server);
-    server.sin_family = AF_INET;
-    server.sin_port = htons(DOMAIN_PORT);
-    cyg_drv_mutex_init(&dns_mutex);
+	memset((char *)&server, 0, sizeof(server));
+	server.sin_len = sizeof(server);
+	server.sin_family = AF_INET;
+	server.sin_port = htons(DOMAIN_PORT);
+	cyg_drv_mutex_init(&dns_mutex);
 
-    /* If we got a DNS server address from the DHCP/BOOTP, then use that address */
-    if ( __bootp_dns_set ) {
-	memcpy(&server.sin_addr, &__bootp_dns_addr, sizeof(__bootp_dns_addr) );
-	s = 0;
-    }
-    else {
+	/* If we got a DNS server address from the DHCP/BOOTP, then use that address */
+	if (__bootp_dns_set) {
+		memcpy(&server.sin_addr, &__bootp_dns_addr,
+		       sizeof(__bootp_dns_addr));
+		s = 0;
+	} else {
 #ifdef CYGSEM_REDBOOT_FLASH_CONFIG
-    {
-        ip_addr_t dns_ip;
+		{
+			ip_addr_t dns_ip;
 
-        flash_get_config("dns_ip", &dns_ip, CONFIG_IP);
-        if (dns_ip[0] == 0 && dns_ip[1] == 0 && dns_ip[2] == 0 && dns_ip[3] == 0)
-            return -1;
-        memcpy(&server.sin_addr, &dns_ip, sizeof(dns_ip));
-        /* server config is valid */
-        s = 0;
-    }
+			flash_get_config("dns_ip", &dns_ip, CONFIG_IP);
+			if (dns_ip[0] == 0 && dns_ip[1] == 0 && dns_ip[2] == 0
+			    && dns_ip[3] == 0)
+				return -1;
+			memcpy(&server.sin_addr, &dns_ip, sizeof(dns_ip));
+			/* server config is valid */
+			s = 0;
+		}
 #else
-      // Use static configuration
-	set_dns(__Xstr(CYGPKG_REDBOOT_NETWORKING_DNS_IP));
+		// Use static configuration
+		set_dns(__Xstr(CYGPKG_REDBOOT_NETWORKING_DNS_IP));
 #endif
-    }
+	}
 
-    return 0;
+	return 0;
 }
 
 /* Include the DNS client implementation code */
