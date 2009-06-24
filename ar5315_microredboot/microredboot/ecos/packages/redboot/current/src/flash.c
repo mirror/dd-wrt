@@ -90,7 +90,7 @@ RedBoot_cmd("bdrestore",
 local_cmd_entry("init",
                 "Initialize FLASH Image System [FIS]",
                 "[-f]",
-                fis_init,
+                fis_init_comp,
                 FIS_cmds
     );
 #ifdef CYGSEM_REDBOOT_FIS_CRC_CHECK
@@ -142,6 +142,7 @@ local_cmd_entry("create",
                 fis_create,
                 FIS_cmds
     );
+#if defined(CYGPKG_HAL_MIPS_AR2316)
 local_cmd_entry("create256",
                 "Create an image",
                 "-b <mem_base> -l <image_length> [-s <data_length>]\n"
@@ -156,6 +157,7 @@ local_cmd_entry("createaccton",
                 fis_create_accton,
                 FIS_cmds
     );
+#endif
 #endif
 
 // Raw flash access functions
@@ -333,9 +335,13 @@ fis_update_directory(void)
 #endif
     fis_endian_fixup(fis_work_block);
 }
+void fis_init(int argc, char *argv[],int force);
 
-static void
-fis_init(int argc, char *argv[])
+static void fis_init_comp(int argc, char *argv[])
+{
+fis_init(argc, argv,0);
+}
+void fis_init(int argc, char *argv[],int force)
 {
     int stat;
     struct fis_image_desc *img;
@@ -352,7 +358,7 @@ fis_init(int argc, char *argv[])
         return;
     }
 
-    if (!verify_action("About to initialize [format] FLASH image system")) {
+    if (!force && !verify_action("About to initialize [format] FLASH image system")) {
         diag_printf("** Aborted\n");
         return;
     }
@@ -961,6 +967,7 @@ fis_create_old(int argc, char *argv[])
     }
 }
 
+#if defined(CYGPKG_HAL_MIPS_AR2316)
 
 static void
 fis_create_accton(int argc, char *argv[])
@@ -982,6 +989,7 @@ page_gpio = 3;
 fis_create_old(argc,argv);
 
 }
+#endif
 static void
 fis_create(int argc, char *argv[])
 {

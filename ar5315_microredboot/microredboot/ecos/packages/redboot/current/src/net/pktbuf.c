@@ -62,106 +62,99 @@
 #if BUFF_STATS
 int max_alloc = 0;
 int num_alloc = 0;
-int num_free  = 0;
+int num_free = 0;
 #endif
 
-static pktbuf_t  pktbuf_list[MAX_PKTBUF];
-static word      bufdata[MAX_PKTBUF][ETH_MAX_PKTLEN/2 + 1];
+static pktbuf_t pktbuf_list[MAX_PKTBUF];
+static word bufdata[MAX_PKTBUF][ETH_MAX_PKTLEN / 2 + 1];
 static pktbuf_t *free_list;
-
 
 /*
  * Initialize the free list.
  */
-void
-__pktbuf_init(void)
+void __pktbuf_init(void)
 {
-    int  i;
-    word *p;
-    static int init = 0;
+	int i;
+	word *p;
+	static int init = 0;
 
-    if (init) return;
-    init = 1;
+	if (init)
+		return;
+	init = 1;
 
-    for (i = 0; i < MAX_PKTBUF; i++) {
-	p = bufdata[i];
-	if ((((unsigned long)p) & 2) != 0)
-	    ++p;
-	pktbuf_list[i].buf = p;
-	pktbuf_list[i].bufsize = ETH_MAX_PKTLEN;
-	pktbuf_list[i].next = free_list;
-	free_list = &pktbuf_list[i];
-    }
+	for (i = 0; i < MAX_PKTBUF; i++) {
+		p = bufdata[i];
+		if ((((unsigned long)p) & 2) != 0)
+			++p;
+		pktbuf_list[i].buf = p;
+		pktbuf_list[i].bufsize = ETH_MAX_PKTLEN;
+		pktbuf_list[i].next = free_list;
+		free_list = &pktbuf_list[i];
+	}
 }
 
-void
-__pktbuf_dump(void)
+void __pktbuf_dump(void)
 {
-    int i;
-    for (i = 0; i < MAX_PKTBUF; i++) {
-        diag_printf("Buf[%d]/%p: buf: %p, len: %d/%d, next: %p\n", 
-                    i,
-                    (void*)&pktbuf_list[i],
-                    (void*)pktbuf_list[i].buf,
-                    pktbuf_list[i].bufsize,
-                    pktbuf_list[i].pkt_bytes,
-                    (void*)pktbuf_list[i].next);
-    }
-    diag_printf("Free list = %p\n", (void*)free_list);
+	int i;
+	for (i = 0; i < MAX_PKTBUF; i++) {
+		diag_printf("Buf[%d]/%p: buf: %p, len: %d/%d, next: %p\n",
+			    i,
+			    (void *)&pktbuf_list[i],
+			    (void *)pktbuf_list[i].buf,
+			    pktbuf_list[i].bufsize,
+			    pktbuf_list[i].pkt_bytes,
+			    (void *)pktbuf_list[i].next);
+	}
+	diag_printf("Free list = %p\n", (void *)free_list);
 }
 
 /*
  * simple pktbuf allocation
  */
-pktbuf_t *
-__pktbuf_alloc(int nbytes)
+pktbuf_t *__pktbuf_alloc(int nbytes)
 {
-    pktbuf_t *p = free_list;
+	pktbuf_t *p = free_list;
 
-    if (p) {
-	free_list = p->next;
-	p->ip_hdr  = (ip_header_t *)p->buf;
-	p->tcp_hdr = (tcp_header_t *)(p->ip_hdr + 1);
-	p->pkt_bytes = 0;
+	if (p) {
+		free_list = p->next;
+		p->ip_hdr = (ip_header_t *) p->buf;
+		p->tcp_hdr = (tcp_header_t *) (p->ip_hdr + 1);
+		p->pkt_bytes = 0;
 #if BUFF_STATS
-	++num_alloc;
-	if ((num_alloc - num_free) > max_alloc)
-	    max_alloc = num_alloc - num_free;
+		++num_alloc;
+		if ((num_alloc - num_free) > max_alloc)
+			max_alloc = num_alloc - num_free;
 #endif
-    }
-    return p;
+	}
+	return p;
 }
-
 
 /*
  * free a pktbuf.
  */
-void
-__pktbuf_free(pktbuf_t *pkt)
+void __pktbuf_free(pktbuf_t * pkt)
 {
 #if BUFF_STATS
-    --num_alloc;
+	--num_alloc;
 #endif
 #ifdef BSP_LOG
-    {
-	int i;
-	word *p;
+	{
+		int i;
+		word *p;
 
-	for (i = 0; i < MAX_PKTBUF; i++) {
-	    p = bufdata[i];
-	    if ((((unsigned long)p) & 2) == 0)
-		++p;
-	    if (p == (word *)pkt)
-		break;
+		for (i = 0; i < MAX_PKTBUF; i++) {
+			p = bufdata[i];
+			if ((((unsigned long)p) & 2) == 0)
+				++p;
+			if (p == (word *) pkt)
+				break;
+		}
+		if (i < MAX_PKTBUF) {
+			BSPLOG(bsp_log("__pktbuf_free: bad pkt[%x].\n", pkt));
+			BSPLOG(while (1)) ;
+		}
 	}
-	if (i < MAX_PKTBUF) {
-	    BSPLOG(bsp_log("__pktbuf_free: bad pkt[%x].\n", pkt));
-	    BSPLOG(while(1));
-	}
-    }
 #endif
-    pkt->next = free_list;
-    free_list = pkt;
+	pkt->next = free_list;
+	free_list = pkt;
 }
-
-

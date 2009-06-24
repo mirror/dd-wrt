@@ -1,3 +1,13 @@
+24.6.09
+    * added wiligear firmware format for tftp recovery (the whole code is rewritten to be readable and small)
+23.6.09
+    * added ubnt firmware format for tftp recovery (format taken from fwsplit)
+    * added tftp recovery code (code was provided by wiligear)
+    - if reset button is keep pushed the tftp server will start, redboot will then accept tftp transfers in the common dd-wrt webflash format
+    - i will add wiligear GEOS format and ubnt format in future versions ,the provided code need to be rewritten first
+22.6.09 
+    * we invert the usage for resetbutton_enable here, so it will only boot redboot per default if the resetbutton feature is disabled from dd-wrt
+      otherwise, use trigger reset button to enter it
 21.6.09
     * implement dynamic uart clock for ap51/ap61 redboot (required for clean uart output with overclocked cpu's)
     * fix uart clock for ap51/ap61 (uncritical,console output was distorted on microredboot itself)

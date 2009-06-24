@@ -237,9 +237,9 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	if (ddboard)
 		printf("Board: %s\n", ddboard);
 	char *resetbutton = nvram_get("resetbutton_enable");
-	if (resetbutton && !strcmp(resetbutton, "1"))
-		puts("reset button manual override detected! (nvram var resetbutton_enable=1)\n");
-	if (resetTouched() || (resetbutton && !strcmp(resetbutton, "1"))) {
+	if (resetbutton && !strcmp(resetbutton, "0"))
+		puts("reset button manual override detected! (nvram var resetbutton_enable=0)\n");
+	if (resetTouched() || (resetbutton && !strcmp(resetbutton, "0"))) {
 		puts("Reset Button triggered\nBooting Recovery RedBoot\n");
 
 		int count = 5;

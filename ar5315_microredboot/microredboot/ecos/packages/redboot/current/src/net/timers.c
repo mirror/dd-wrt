@@ -56,80 +56,75 @@
 
 static timer_t *tmr_list;
 
-
 /*
  * Set a timer. Caller is responsible for providing the timer_t struct.
  */
 void
-__timer_set(timer_t *t, unsigned long delay,
+__timer_set(timer_t * t, unsigned long delay,
 	    tmr_handler_t handler, void *user_data)
 {
-    timer_t *p;
+	timer_t *p;
 
-    t->delay = delay;
-    t->start = MS_TICKS();
-    t->handler = handler;
-    t->user_data = user_data;
+	t->delay = delay;
+	t->start = MS_TICKS();
+	t->handler = handler;
+	t->user_data = user_data;
 
-    for (p = tmr_list; p; p = p->next)
-	if (p == t) {
-	    return;
-	}
+	for (p = tmr_list; p; p = p->next)
+		if (p == t) {
+			return;
+		}
 
-    t->next = tmr_list;
-    tmr_list = t;
+	t->next = tmr_list;
+	tmr_list = t;
 }
-
 
 /*
  * Remove a given timer from timer list.
  */
-void
-__timer_cancel(timer_t *t)
+void __timer_cancel(timer_t * t)
 {
-    timer_t *prev, *p;
+	timer_t *prev, *p;
 
-    for (prev = NULL, p = tmr_list; p; prev = p, p = p->next)
-	if (p == t) {
-	    if (prev)
-		prev->next = p->next;
-	    else
-		tmr_list = p->next;
-	    return;
-	}
+	for (prev = NULL, p = tmr_list; p; prev = p, p = p->next)
+		if (p == t) {
+			if (prev)
+				prev->next = p->next;
+			else
+				tmr_list = p->next;
+			return;
+		}
 }
-
 
 /*
  * Poll timer list for timer expirations.
  */
-void
-__timer_poll(void)
+void __timer_poll(void)
 {
-    timer_t *prev, *t;
+	timer_t *prev, *t;
 
-    prev = NULL;
-    t = tmr_list;
-    while (t) {
-	if ((MS_TICKS_DELAY() - t->start) >= t->delay) {
+	prev = NULL;
+	t = tmr_list;
+	while (t) {
+		if ((MS_TICKS_DELAY() - t->start) >= t->delay) {
 
-	    /* remove it before calling handler */
-	    if (prev)
-		prev->next = t->next;
-	    else
-		tmr_list = t->next;
-	    /* now, call the handler */
-	    t->handler(t->user_data);
-	    
-	    /*
-	     * handler may be time consuming, so start
-	     * from beginning of list.
-	     */
-	    prev = NULL;
-	    t = tmr_list;
-	} else {
-	    prev = t;
-	    t = t->next;
+			/* remove it before calling handler */
+			if (prev)
+				prev->next = t->next;
+			else
+				tmr_list = t->next;
+			/* now, call the handler */
+			t->handler(t->user_data);
+
+			/*
+			 * handler may be time consuming, so start
+			 * from beginning of list.
+			 */
+			prev = NULL;
+			t = tmr_list;
+		} else {
+			prev = t;
+			t = t->next;
+		}
 	}
-    }
 }
