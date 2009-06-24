@@ -36,6 +36,7 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 	}
 
 	if (do_flash) {
+		maxlen-=10;
 		char *arg[] = { "fis", "init" };
 		fis_init(2, arg, 1);
 		void *err_addr;
@@ -76,9 +77,11 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 		unsigned int filesyssize = 0x3f0000;
 		unsigned int linuxsize = 0xa0000;
 		unsigned int cfgsize = 0x20000;
+		unsigned int exec = 0x80041798;
 		if (maxlen==3670026) // detect 4M images (EAP3660 etc.)
 		    {
 		    filesyssize = 0x2f0000;
+		    exec = 0x80170040; //weired entrypoint
 		    }
 		strcpy(img->name, "rootfs");
 		img->flash_base = flash_addr;
@@ -90,7 +93,7 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 		strcpy(img->name, "vmlinux.bin.l7");
 		img->flash_base = flash_addr+filesyssize;
 		img->mem_base = 0x80041000;
-		img->entry_point = 0x80041798;
+		img->entry_point = exec;
 		img->size = linuxsize;
 		img->data_length = linuxsize;
 		img++;
