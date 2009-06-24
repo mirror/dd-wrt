@@ -78,7 +78,7 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 		unsigned int linuxsize = 0xa0000;
 		unsigned int cfgsize = 0x20000;
 		unsigned int exec = 0x80041798;
-		if (maxlen==3670026) // detect 4M images (EAP3660 etc.)
+		if (maxlen==(3670026-10)) // detect 4M images (EAP3660 etc.)
 		    {
 		    filesyssize = 0x2f0000;
 		    exec = 0x80170040; //weired entrypoint
