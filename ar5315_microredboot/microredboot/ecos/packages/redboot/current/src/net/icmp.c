@@ -57,7 +57,7 @@
 /*
  * Handle ICMP packets.
  */
-static void default_icmp_handler(pktbuf_t *pkt, ip_route_t *dest);
+static void default_icmp_handler(pktbuf_t * pkt, ip_route_t * dest);
 
 static icmp_handler_t icmp_handler = default_icmp_handler;
 
@@ -65,62 +65,55 @@ static icmp_handler_t icmp_handler = default_icmp_handler;
  * Install a user defined user_handler for incoming icmp packets.
  * Returns zero if successful, -1 if the user_handler is already used.
  */
-int
-__icmp_install_listener(icmp_handler_t user_handler)
+int __icmp_install_listener(icmp_handler_t user_handler)
 {
-    if (icmp_handler == user_handler) {
-        return -1;
-    }
-    icmp_handler = user_handler;
-    return 0;
+	if (icmp_handler == user_handler) {
+		return -1;
+	}
+	icmp_handler = user_handler;
+	return 0;
 }
-
 
 /*
  * Replace a user defined handler by the default handler.
  */
-void
-__icmp_remove_listener(void)
+void __icmp_remove_listener(void)
 {
-  if (icmp_handler != default_icmp_handler) {
-      icmp_handler = default_icmp_handler;
-  }
+	if (icmp_handler != default_icmp_handler) {
+		icmp_handler = default_icmp_handler;
+	}
 }
 
 /*
  * ICMP entry point with an IP packet pkt and the destination dest a reply
  * should be sent to.
  */
-void
-__icmp_handler(pktbuf_t *pkt, ip_route_t *dest)
+void __icmp_handler(pktbuf_t * pkt, ip_route_t * dest)
 {
-    (*icmp_handler)(pkt, dest);
+	(*icmp_handler) (pkt, dest);
 
-    BSPLOG(bsp_log("icmp: dest[%s] type[%d] seq[%d]\n",
-		   inet_ntoa(pkt->ip_hdr->destination),
-		   pkt->icmp_hdr->type,
-		   pkt->icmp_hdr->seqnum));
-    __pktbuf_free(pkt);
+	BSPLOG(bsp_log("icmp: dest[%s] type[%d] seq[%d]\n",
+		       inet_ntoa(pkt->ip_hdr->destination),
+		       pkt->icmp_hdr->type, pkt->icmp_hdr->seqnum));
+	__pktbuf_free(pkt);
 }
-
 
 /*
  * The default ICMP handler only handles ICMP incoming echo request and
  * outgoing echo reply.
  */
-static void
-default_icmp_handler(pktbuf_t *pkt, ip_route_t *dest)
+static void default_icmp_handler(pktbuf_t * pkt, ip_route_t * dest)
 {
-    word cksum;
+	word cksum;
 
-    if (pkt->icmp_hdr->type == ICMP_TYPE_ECHOREQUEST
-	&& pkt->icmp_hdr->code == 0
-	&& __sum((word *)pkt->icmp_hdr, pkt->pkt_bytes, 0) == 0) {
+	if (pkt->icmp_hdr->type == ICMP_TYPE_ECHOREQUEST
+	    && pkt->icmp_hdr->code == 0
+	    && __sum((word *) pkt->icmp_hdr, pkt->pkt_bytes, 0) == 0) {
 
-	pkt->icmp_hdr->type = ICMP_TYPE_ECHOREPLY;
-	pkt->icmp_hdr->checksum = 0;
-        cksum = __sum((word *)pkt->icmp_hdr, pkt->pkt_bytes, 0);
-	pkt->icmp_hdr->checksum = htons(cksum);
-        __ip_send(pkt, IP_PROTO_ICMP, dest);
-    }
+		pkt->icmp_hdr->type = ICMP_TYPE_ECHOREPLY;
+		pkt->icmp_hdr->checksum = 0;
+		cksum = __sum((word *) pkt->icmp_hdr, pkt->pkt_bytes, 0);
+		pkt->icmp_hdr->checksum = htons(cksum);
+		__ip_send(pkt, IP_PROTO_ICMP, dest);
+	}
 }

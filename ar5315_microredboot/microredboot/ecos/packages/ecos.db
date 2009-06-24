@@ -2103,6 +2103,15 @@ package CYGPKG_POWER {
 This package provides some generic support for power management."
 }
 
+package CYGPKG_CRC {
+        alias           { "CRC support" crc }
+        directory       services/crc
+        script          crc.cdl
+        description "
+This package provides support for CRC functions, including the 
+POSIX 1003 defined CRC algorithm."
+}  
+
 
 package CYGPKG_CPULOAD {
         alias           { "cpuload support" cpuload }

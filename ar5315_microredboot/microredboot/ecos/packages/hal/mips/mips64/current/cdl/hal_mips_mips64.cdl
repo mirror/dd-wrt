@@ -142,7 +142,7 @@ cdl_package CYGPKG_HAL_MIPS_MIPS64 {
             display "Global compiler flags"
             flavor  data
             no_define
-            default_value { "-mips64 -EL -msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -O2 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -G0" }
+            default_value { "-mips64 -EL -msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -g -Os -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -G0" }
             description   "
                 This option controls the global compiler flags which
                 are used to compile all packages by
