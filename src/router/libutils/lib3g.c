@@ -142,28 +142,85 @@ char *get3GControlDevice(void)
 	if (scanFor(0x12d1, 0x1003)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option E172 detected\n");
+	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x0af0, 0x7011)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option E301 HSUPA detected\n");
+	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1001)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option E600 detected\n");
+	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1003)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option EC270 detected\n");
+	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1412)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
+	insmod("option");
 		return "/dev/usb/tts/0";
 	}
+	if (scanFor(0x12d1, 0x1412)) {
+		//huawei
+		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
+	insmod("option");
+		return "/dev/usb/tts/0";
+	}
+
+	if (scanFor(0x1e0e, 0x9000)) {
+		//huawei
+		fprintf(stderr, "QUALCOMM ICON 210 detected\n");
+		nvram_set("3gdata", "/dev/usb/tts/2");
+	insmod("option");
+		return "/dev/usb/tts/2";
+	}
+
+	if (scanFor(0x1e0e, 0xf000)) {
+		//huawei
+	fprintf(stderr, "QUALCOMM ICON 210 detected\n");
+	FILE *out = fopen("/tmp/usb_modeswitch.conf","wb");
+	fprintf(out,"DefaultVendor=0x1e0e\n");
+	fprintf(out,"DefaultProduct=0xf000\n");
+	fprintf(out,"TargetVendor=0x1e0e\n");
+	fprintf(out,"TargetProduct=0x9000\n");
+	fprintf(out,"MessageContent=\"555342431234567800000000000006bd000000020000000000000000000000\"\n");
+	fprintf(out,"ResponseEndpoint=0x01\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	sleep(2);
+	insmod("option");
+	nvram_set("3gdata", "/dev/usb/tts/2");
+	    return "/dev/usb/tts/2";
+	}
+
+	if (scanFor(0x0af0, 0x6971)) {
+		//huawei
+	fprintf(stderr, "QUALCOMM ICON 225 detected\n");
+/*	FILE *out = fopen("/tmp/usb_modeswitch.conf","wb");
+	fprintf(out,"DefaultVendor=0x0af0\n");
+	fprintf(out,"DefaultProduct=0x6971\n");
+	fprintf(out,"TargetClass=0xff\n");
+	fprintf(out,"MessageContent=\"55534243785634120100000080000601000000000000000000000000000000\"\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");*/
+	system("ozerocdoff -wi 0x6971");
+	sleep(5);
+	system("insmod hso");
+	nvram_set("3gdata", "/dev/usb/tts/2");
+	    return "/dev/usb/tts/2";
+	}
+
+
+
 	if (scanFor(0x1199, 0x6832)) {
 		//sierra wireless mc 8780
 		fprintf(stderr,
@@ -171,5 +228,6 @@ char *get3GControlDevice(void)
 		checkreset("/dev/usb/tts/2");
 		return "/dev/usb/tts/2";
 	}
+	insmod("option");
 	return ttsdevice;
 }
