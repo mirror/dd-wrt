@@ -60,6 +60,25 @@ struct trx_header {
 
 extern void fis_init(int argc, char *argv[], int force);
 
+void addPartition(char *name, unsigned int flashbase, unsigned int memaddr,
+		  unsigned int entryaddr, unsigned int partsize,
+		  unsigned int datasize)
+{
+	int index;
+	struct fis_image_desc *img = (struct fis_image_desc *)fis_work_block;
+	for (index = 0; index < fisdir_size / sizeof(*img); index++, img++) {
+		if (img->name[0] == (unsigned char)0xFF) {
+			break;
+		}
+	}
+	strcpy(img->name, name);
+	img->flash_base = flashbase;
+	img->mem_base = memaddr;
+	img->entry_point = entryaddr;	// Hope it's been set
+	img->size = partsize;
+	img->data_length = datasize;
+}
+
 int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 			 int do_flash)
 {
@@ -124,22 +143,8 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 			     err_addr, flash_errmsg(stat));
 			return -1;
 		}
-		img = fis_lookup("linux", &i);
-		if (!img) {
-			img = (struct fis_image_desc *)fis_work_block;
-			for (i = 0; i < fisdir_size / sizeof(*img); i++, img++) {
-				if (img->name[0] == (unsigned char)0xFF) {
-					break;
-				}
-			}
-			memset(img, 0, sizeof(*img));
-			strcpy(img->name, "linux");
-		}
-		img->flash_base = flash_addr;
-		img->mem_base = 0x80041000;
-		img->entry_point = 0x80041000;	// Hope it's been set
-		img->size = trx.len;
-		img->data_length = trx.len;
+		addPartition("linux", flash_addr, 0x80041000, 0x80041000,
+			     trx.len, trx.len);
 		fis_update_directory();
 		diag_printf("DD-WRT_FW: flashing done\n");
 	}
