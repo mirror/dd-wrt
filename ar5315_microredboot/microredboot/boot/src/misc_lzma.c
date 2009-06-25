@@ -222,6 +222,59 @@ static int resetTouched(void)
 
 #include <lib/nvram.c>
 
+typedef struct {
+	char *name;
+	char *val;
+} t_env_var;
+
+struct parmblock {
+	t_env_var memsize;
+	t_env_var modetty0;
+	t_env_var ethaddr;
+	t_env_var env_end;
+	char *argv[2];
+	char text[0];
+};
+
+static void set_cmdline(void)
+{
+	char *pcmd;
+	struct parmblock *pb;
+	pb = (struct parmblock *)0x80030000;
+	pcmd = pb->text;
+
+	pb->memsize.name = pcmd;
+	strcpy(pcmd, "memsize");
+	pcmd += 7;
+	pb->memsize.val = ++pcmd;
+	strcpy(pcmd, "0x");
+	pcmd += 2;
+	static char *xlate = "0123456789abcdef";
+	int i;
+	int c = 0;
+	unsigned int val = RAM_SIZE;
+	for (i = 28; i >= 0; i -= 4) {
+		pcmd[c++] = xlate[(val >> i) & 0xf];
+	}
+	pcmd += c;
+	pb->modetty0.name = ++pcmd;
+	strcpy(pcmd, "modetty0");
+	pcmd += 8;
+	pb->modetty0.val = ++pcmd;
+	strcpy(pcmd, "115200,n,8,1,hw");
+	pcmd += 15;
+	pb->ethaddr.name = NULL;
+	pb->ethaddr.val = NULL;
+	pb->argv[0] = pcmd;
+	pb->argv[1] = ++pcmd;
+	pcmd[0] = 0;		//terminate, no commandline
+
+	void (*tt) (int a, char **b, void *c);
+	tt = bootoffset;
+	tt(2, pb->argv, pb);
+
+}
+
 ulg
 decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 {
@@ -257,6 +310,10 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 
 		bootoffset = 0x800004bc;
 		resettrigger = 0;
+		puts("loading");
+		lzma_unzip();
+		puts("\n\n\n");
+		return output_ptr;
 	} else {
 		flashdetect();
 		linuxaddr = getLinux();
@@ -267,10 +324,8 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 
 		/* important, enable ethernet bus, if the following lines are not initialized linux will not be able to use the ethernet mac, taken from redboot source */
 		enable_ethernet();
+		puts("loading");
+		lzma_unzip();
+		set_cmdline();
 	}
-	puts("loading");
-	lzma_unzip();
-	puts("\n\n\n");
-
-	return output_ptr;
 }
