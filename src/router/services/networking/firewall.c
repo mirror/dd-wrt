@@ -769,12 +769,12 @@ static void nat_postrouting(void)
 		// MASQUERADE "
 		// "--to-ports 5056-5071\n", wanface);
 		if (nvram_match("dtag_vlan8", "1")) {
-			save2file("-A POSTROUTING -o %s -j SNAT -j --to-source %s\n",nvram_safe_get("tvnicfrom"),nvram_safe_get("tvnicaddr"));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n",nvram_safe_get("tvnicfrom"),nvram_safe_get("tvnicaddr"));
 		}
 		if (strlen(wanface) > 0)
-			save2file("-A POSTROUTING -o %s -j SNAT -j --to-source %s\n",wanface,nvram_safe_get("wan_ipaddr"));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n",wanface,nvram_safe_get("wan_ipaddr"));
 		if (nvram_match("wan_proto", "pptp")) {
-			save2file("-A POSTROUTING -o %s -j SNAT -j --to-source %s\n",nvram_safe_get("pptp_ifname"),nvram_safe_get("wan_ipaddr"));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n",nvram_safe_get("pptp_ifname"),nvram_safe_get("wan_ipaddr"));
 		}
 		char *method = "MASQUERADE";
 
@@ -880,7 +880,7 @@ static void nat_postrouting(void)
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		if (strlen(wanface) > 0)
 			if (nvram_match("wl_br1_enable", "1"))
-				save2file("-A POSTROUTING -o %s -j SNAT -j --to-source %s\n",wanface,nvram_safe_get("wan_ipaddr"));
+				save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n",wanface,nvram_safe_get("wan_ipaddr"));
 	}
 }
 
