@@ -222,7 +222,9 @@ int tftp_stream_read(char *buf, int len, int *err)
 				tftp_stream.packets_received++;
 				if (ntohs(hdr->th_opcode) == DATA) {
 					if (ntohs(hdr->th_block) ==
-					    (cyg_uint16) ((tftp_stream.last_good_block + 1) & 0xFFFF)) {
+					    (cyg_uint16) ((tftp_stream.
+							   last_good_block +
+							   1) & 0xFFFF)) {
 						// Consume this data
 						data_len -= 4;	/* Sizeof TFTP header */
 						tftp_stream.avail =
