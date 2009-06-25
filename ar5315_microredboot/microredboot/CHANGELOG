@@ -1,4 +1,5 @@
 25.6.09
+    * fix bootcode for LSDK based devices
     * add cfg partition for ubnt devices
 24.6.09
     * correct size and entrypoint for EAP3660
