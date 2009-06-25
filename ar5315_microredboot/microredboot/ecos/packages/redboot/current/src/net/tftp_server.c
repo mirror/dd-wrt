@@ -285,8 +285,8 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 			if (!isubnt && !isddwrt && !iswili)
 				issenao =
 				    fw_check_image_senao((char *)BASE_ADDR,
-							ptr - BASE_ADDR,
-							0) == 0;
+							 ptr - BASE_ADDR,
+							 0) == 0;
 
 			if (isddwrt || isubnt || iswili || issenao)	/* third parameter 0 - do not write to flash */
 				tftpd_send(ACK, block, src_route, src_port);	// crc ok
@@ -316,10 +316,9 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 						     ptr - BASE_ADDR);
 			}
 			if (issenao) {
-				diag_printf
-				    ("SENAO firmware format detected\n");
+				diag_printf("SENAO firmware format detected\n");
 				do_flash_update_senao(BASE_ADDR,
-						     ptr - BASE_ADDR);
+						      ptr - BASE_ADDR);
 			}
 #else
 			diag_printf("Not writing to flash.\n");

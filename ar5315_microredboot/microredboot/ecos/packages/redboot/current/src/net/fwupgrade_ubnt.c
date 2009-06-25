@@ -42,6 +42,10 @@ typedef struct fw {
 	int part_count;
 } fw_t;
 
+extern void addPartition(char *name, unsigned int flashbase,
+			 unsigned int memaddr, unsigned int entryaddr,
+			 unsigned int partsize, unsigned int datasize);
+
 #define crc32 cyg_ether_crc32_accumulate
 
 extern void fis_init(int argc, char *argv[], int force);
@@ -174,23 +178,15 @@ int fw_check_image_ubnt(unsigned char *addr, unsigned long maxlen, int do_flash)
 				     err_addr, flash_errmsg(stat));
 				return -1;
 			}
-			int index;
-			img = (struct fis_image_desc *)fis_work_block;
-			for (index = 0;
-			     index < fisdir_size / sizeof(*img);
-			     index++, img++) {
-				if (img->name[0] == (unsigned char)0xFF) {
-					break;
-				}
-			}
-			strcpy(img->name, fwp->header->name);
-			img->flash_base = base;
-			img->mem_base = ntohl(fwp->header->memaddr);
-			img->entry_point = ntohl(fwp->header->entryaddr);	// Hope it's been set
-			img->size = ntohl(fwp->header->part_size);
-			img->data_length = ntohl(fwp->header->data_size);
-
+			addPartition(fwp->header->name, base,
+				     ntohl(fwp->header->memaddr),
+				     ntohl(fwp->header->entryaddr),
+				     ntohl(fwp->header->part_size),
+				     ntohl(fwp->header->data_size));
 		}
+		addPartition("cfg", (flash_end + 1) - (flash_block_size * 3), 0,
+			     0, 0x10000, 0x10000);
+
 		fis_update_directory();
 		diag_printf("UBNT_FW: flashing done\n");
 	}
