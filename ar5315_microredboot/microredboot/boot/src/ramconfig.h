@@ -1,2 +1,1 @@
-#define RAM_SIZE 0x1000000
-#define RESETBUTTON 0x17
+#define RAM_SIZE 0x2000000

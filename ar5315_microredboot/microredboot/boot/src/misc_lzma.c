@@ -236,6 +236,7 @@ struct parmblock {
 	char text[0];
 };
 
+/* initialized commandline and starts linux. we need todo this for Atheros LSDK based firmwares since they have no ramsize detection */
 static void set_cmdline(void)
 {
 	char *pcmd;
