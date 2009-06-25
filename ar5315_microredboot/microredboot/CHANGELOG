@@ -1,4 +1,5 @@
 24.6.09
+    * correct size and entrypoint for EAP3660
     * added config erase method for senao,ubiquiti and wiligear configs
     * added Senao firmware format (EOC2610,EAP3660,ECB3500,EOC5610,EOC1650)
     * added wiligear firmware format for tftp recovery (the whole code is rewritten to be readable and small)
