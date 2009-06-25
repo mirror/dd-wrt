@@ -721,7 +721,8 @@ ipcp_cilen(f)
 #define LENCIADDRS(neg)		(neg ? CILEN_ADDRS : 0)
 #define LENCIVJ(neg, old)	(neg ? (old? CILEN_COMPRESS : CILEN_VJ) : 0)
 #define LENCIADDR(neg)		(neg ? CILEN_ADDR : 0)
-#define LENCIDNS(neg)		(neg ? (CILEN_ADDR) : 0)
+#define LENCIDNS(neg)		LENCIADDR(neg)
+#define LENCIWINS(neg)		LENCIADDR(neg)
 
     /*
      * First see if we want to change our options to the old
@@ -743,7 +744,9 @@ ipcp_cilen(f)
 	    LENCIVJ(go->neg_vj, go->old_vj) +
 	    LENCIADDR(go->neg_addr) +
 	    LENCIDNS(go->req_dns1) +
-	    LENCIDNS(go->req_dns2)) ;
+	    LENCIDNS(go->req_dns2) +
+            LENCIWINS(go->winsaddr[0]) +
+            LENCIWINS(go->winsaddr[1])) ;
 }
 
 
@@ -817,6 +820,19 @@ ipcp_addci(f, ucp, lenp)
 	    neg = 0; \
     }
 
+#define ADDCIWINS(opt, addr)                  \
+    if (addr) { \
+	if (len >= CILEN_ADDR) { \
+	    u_int32_t l; \
+	    PUTCHAR(opt, ucp); \
+	    PUTCHAR(CILEN_ADDR, ucp); \
+	    l = ntohl(addr); \
+	    PUTLONG(l, ucp); \
+	    len -= CILEN_ADDR; \
+	} else \
+	    addr = 0; \
+    }
+
     ADDCIADDRS(CI_ADDRS, !go->neg_addr && go->old_addrs, go->ouraddr,
 	       go->hisaddr);
 
@@ -829,6 +845,10 @@ ipcp_addci(f, ucp, lenp)
 
     ADDCIDNS(CI_MS_DNS2, go->req_dns2, go->dnsaddr[1]);
 
+    ADDCIWINS(CI_MS_WINS1, go->winsaddr[0]);
+
+    ADDCIWINS(CI_MS_WINS2, go->winsaddr[1]);
+    
     *lenp -= len;
 }
 
@@ -1165,6 +1185,15 @@ ipcp_nakci(f, p, len, treat_as_reject)
 		try.neg_addr = 1;
 	    no.neg_addr = 1;
 	    break;
+	case CI_MS_WINS1:
+	case CI_MS_WINS2:
+	    if (cilen != CILEN_ADDR)
+		goto bad;
+	    GETLONG(l, p);
+	    ciaddr1 = htonl(l);
+	    if (ciaddr1)
+		try.winsaddr[citype == CI_MS_WINS2] = ciaddr1;
+	    break;
 	}
 	p = next;
     }
@@ -1281,6 +1310,21 @@ ipcp_rejci(f, p, len)
 	try.neg = 0; \
     }
 
+#define REJCIWINS(opt, addr) \
+    if (addr && \
+	((cilen = p[1]) == CILEN_ADDR) && \
+	len >= cilen && \
+	p[0] == opt) { \
+	u_int32_t l; \
+	len -= cilen; \
+	INCPTR(2, p); \
+	GETLONG(l, p); \
+	cilong = htonl(l); \
+	/* Check rejected value. */ \
+	if (cilong != addr) \
+	    goto bad; \
+	try.winsaddr[opt == CI_MS_WINS2] = 0; \
+    }
 
     REJCIADDRS(CI_ADDRS, !go->neg_addr && go->old_addrs,
 	       go->ouraddr, go->hisaddr);
@@ -1293,6 +1337,10 @@ ipcp_rejci(f, p, len)
     REJCIDNS(CI_MS_DNS1, req_dns1, go->dnsaddr[0]);
 
     REJCIDNS(CI_MS_DNS2, req_dns2, go->dnsaddr[1]);
+
+    REJCIWINS(CI_MS_WINS1, go->winsaddr[0]);
+
+    REJCIWINS(CI_MS_WINS2, go->winsaddr[1]);
 
     /*
      * If there are any remaining CIs, then this packet is bad.
