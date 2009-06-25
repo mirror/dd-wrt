@@ -23,20 +23,23 @@ extern void fis_update_directory(void);
 
 #define TRACE
 
+extern void addPartition(char *name, unsigned int flashbase,
+			 unsigned int memaddr, unsigned int entryaddr,
+			 unsigned int partsize, unsigned int datasize);
 
 extern void fis_init(int argc, char *argv[], int force);
 
 int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 			 int do_flash)
 {
-	unsigned char *base = (unsigned char *)addr+10;
-	if (strncmp(addr,"AP51-3660",9)) {
+	unsigned char *base = (unsigned char *)addr + 10;
+	if (strncmp(addr, "AP51-3660", 9)) {
 		diag_printf("SENAO_FW: bad header\n");
 		return -1;
 	}
 
 	if (do_flash) {
-		maxlen-=10;
+		maxlen -= 10;
 		char *arg[] = { "fis", "init" };
 		fis_init(2, arg, 1);
 		void *err_addr;
@@ -68,42 +71,27 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 			return -1;
 		}
 		img = (struct fis_image_desc *)fis_work_block;
-			for (i = 0; i < fisdir_size / sizeof(*img); i++, img++) {
-				if (img->name[0] == (unsigned char)0xFF) {
-					break;
-				}
+		for (i = 0; i < fisdir_size / sizeof(*img); i++, img++) {
+			if (img->name[0] == (unsigned char)0xFF) {
+				break;
 			}
-			
+		}
+
 		unsigned int filesyssize = 0x3f0000;
 		unsigned int linuxsize = 0xa0000;
 		unsigned int cfgsize = 0x20000;
 		unsigned int exec = 0x80041798;
-		if (maxlen==(3670026-10)) // detect 4M images (EAP3660 etc.)
-		    {
-		    filesyssize = 0x2f0000;
-		    exec = 0x80170040; //weired entrypoint
-		    }
-		strcpy(img->name, "rootfs");
-		img->flash_base = flash_addr;
-		img->mem_base = 0x80041000;
-		img->entry_point = 0;
-		img->size = filesyssize;
-		img->data_length = filesyssize;
-		img++;
-		strcpy(img->name, "vmlinux.bin.l7");
-		img->flash_base = flash_addr+filesyssize;
-		img->mem_base = 0x80041000;
-		img->entry_point = exec;
-		img->size = linuxsize;
-		img->data_length = linuxsize;
-		img++;
-		strcpy(img->name, "cfg");
-		img->flash_base = flash_addr+filesyssize+linuxsize;
-		img->mem_base = 0x80041000;
-		img->entry_point = 0;
-		img->size = cfgsize;
-		img->data_length = cfgsize;
-		
+		if (maxlen == (3670026 - 10))	// detect 4M images (EAP3660 etc.)
+		{
+			filesyssize = 0x2f0000;
+			exec = 0x80170040;	//weired entrypoint
+		}
+		addPartition("rootfs", flash_addr, 0x80041000, 0, filesyssize,
+			     filesyssize);
+		addPartition("vmlinux.bin.l7", flash_addr + filesyssize,
+			     0x80041000, exec, linuxsize, linuxsize);
+		addPartition("cfg", flash_addr + filesyssize + linuxsize,
+			     0x80041000, 0, cfgsize, cfgsize);
 		fis_update_directory();
 		diag_printf("SENAO_FW: flashing done\n");
 	}
