@@ -773,10 +773,6 @@ static void nat_postrouting(void)
 		}
 		if (strlen(wanface) > 0)
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n",wanface,nvram_safe_get("wan_ipaddr"));
-		if (nvram_match("wan_proto", "pptp") && nvram_match("pptp_use_dhcp", "1"))
-		{
-		    save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n",nvram_safe_get("pptp_ifname"),nvram_safe_get("pptp_wan_ipaddr"));
-		}else
 		if (nvram_match("wan_proto", "pptp")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(nvram_safe_get("pptp_ifname"),&ifaddr);
