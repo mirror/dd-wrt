@@ -222,12 +222,6 @@ int fw_check_image_wili(unsigned char *addr, unsigned long maxlen, int do_flash)
 		void *err_addr;
 		flash_read(fis_addr, fis_work_block, fisdir_size,
 			   (void **)&err_addr);
-		struct fis_image_desc *img = fis_lookup("RedBoot", &i);
-		if (i != 0) {
-			diag_printf
-			    ("WILI_FW: RedBoot partition is not the first partition\n");
-			return -1;
-		}
 		for (i = 0; i < fw.part_count; ++i) {
 			fw_part_t *fwp = &fw.parts[i];
 			if (!strncmp(fwp->header->name, "RedBoot", 7)
@@ -239,7 +233,8 @@ int fw_check_image_wili(unsigned char *addr, unsigned long maxlen, int do_flash)
 				    fwp->header->name);
 			int stat;
 			int index;
-			img = fis_lookup(fwp->header->name, &index);
+			struct fis_image_desc *img =
+			    fis_lookup(fwp->header->name, &index);
 			if (!img) {
 				diag_printf
 				    ("WILI_FW: cannot find partition %s, not flashable. break\n");

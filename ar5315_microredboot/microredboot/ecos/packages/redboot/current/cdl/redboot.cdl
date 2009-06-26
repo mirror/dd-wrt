@@ -356,7 +356,7 @@ cdl_package CYGPKG_REDBOOT {
             cdl_option CYGSEM_REDBOOT_NET_HTTP_DOWNLOAD {
                 display          "Support HTTP for download"
                 flavor           bool
-                default_value    1
+                default_value    0
                 compile          -library=libextras.a net/http_client.c
                 description      "
                     This option enables the use of the HTTP protocol for download"

@@ -92,8 +92,22 @@ static void set_status_led(int status)
 extern int page_programming_supported;
 extern int page_gpio;
 
-static void pagesetup(void)
+struct firmware_formats {
+	char *name;
+	int (*fw_check_image) (unsigned char *, unsigned long, int);
+};
+
+static const struct firmware_formats fw_formats[] = {
+	{.name = "DD-WRT",.fw_check_image = fw_check_image_ddwrt},
+	{.name = "UBIQUITI",.fw_check_image = fw_check_image_ubnt},
+	{.name = "WILIGEAR",.fw_check_image = fw_check_image_wili},
+	{.name = "SENAO",.fw_check_image = fw_check_image_senao},
+};
+
+static void do_flash_update(unsigned long base_addr, unsigned long len,
+			    int index)
 {
+	int rc;
 #if defined(CYGPKG_HAL_MIPS_AR2316)
 #if FISTYPE == 1
 	*(volatile unsigned *)0xB1000090 |= 1;	/*set GPIO0 to 1 to spi flash CS normal state */
@@ -114,61 +128,15 @@ static void pagesetup(void)
 	page_gpio = 0;
 #endif
 #endif
-
-}
-
-static void flashresult(int rc)
-{
+	/* do_flash = 1, write to flash */
+	rc = fw_formats[index].fw_check_image((char *)base_addr, len, 1);
 	if (rc)
 		diag_printf("Flash update failed!\n");
 	else
 		diag_printf("Flash update complete.\n");
 	/* clean da memory */
+	memset((unsigned char *)base_addr, 0, len);
 	do_reset(0, NULL);
-
-}
-
-void do_flash_update_ddwrt(unsigned long base_addr, unsigned long len)
-{
-	int rc;
-	pagesetup();
-	/* do_flash = 1, write to flash */
-	rc = fw_check_image_ddwrt((char *)base_addr, len, 1);
-	memset((unsigned char *)base_addr, 0, len);
-	flashresult(rc);
-}
-
-void do_flash_update_ubnt(unsigned long base_addr, unsigned long len)
-{
-	int rc;
-	pagesetup();
-	/* do_flash = 1, write to flash */
-	rc = fw_check_image_ubnt((char *)base_addr, len, 1);
-
-	memset((unsigned char *)base_addr, 0, len);
-	flashresult(rc);
-}
-
-void do_flash_update_wili(unsigned long base_addr, unsigned long len)
-{
-	int rc;
-	pagesetup();
-	/* do_flash = 1, write to flash */
-	rc = fw_check_image_wili((char *)base_addr, len, 1);
-
-	memset((unsigned char *)base_addr, 0, len);
-	flashresult(rc);
-}
-
-void do_flash_update_senao(unsigned long base_addr, unsigned long len)
-{
-	int rc;
-	pagesetup();
-	/* do_flash = 1, write to flash */
-	rc = fw_check_image_senao((char *)base_addr, len, 1);
-
-	memset((unsigned char *)base_addr, 0, len);
-	flashresult(rc);
 }
 
 void
@@ -264,31 +232,23 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 			// CRC CHECK
 			diag_printf("Checking uploaded file...\n");
 
-			int isddwrt = 0;
-			int isubnt = 0;
-			int iswili = 0;
-			int issenao = 0;
-			isddwrt = fw_check_image_ddwrt((char *)BASE_ADDR,
-						       ptr - BASE_ADDR, 0) == 0;
-			if (!isddwrt)
-				isubnt =
-				    fw_check_image_ubnt((char *)BASE_ADDR,
-							ptr - BASE_ADDR,
-							0) == 0;
+			int detect = 0;
+			int i;
+			for (i = 0;
+			     i <
+			     sizeof(fw_formats) /
+			     sizeof(struct firmware_formats); i++) {
+				int v =
+				    fw_formats[i].
+				    fw_check_image((char *)BASE_ADDR,
+						   ptr - BASE_ADDR, 0) == 0;
+				if (v) {
+					detect = i;
+					break;
+				}
+			}
 
-			if (!isubnt && !isddwrt)
-				iswili =
-				    fw_check_image_wili((char *)BASE_ADDR,
-							ptr - BASE_ADDR,
-							0) == 0;
-
-			if (!isubnt && !isddwrt && !iswili)
-				issenao =
-				    fw_check_image_senao((char *)BASE_ADDR,
-							 ptr - BASE_ADDR,
-							 0) == 0;
-
-			if (isddwrt || isubnt || iswili || issenao)	/* third parameter 0 - do not write to flash */
+			if (detect)	/* third parameter 0 - do not write to flash */
 				tftpd_send(ACK, block, src_route, src_port);	// crc ok
 			else {
 				tftpd_error(EACCESS, "CRC error", src_route,
@@ -298,28 +258,9 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 
 			// write to flash       
 #if 1
-			if (isddwrt) {
-				diag_printf
-				    ("DD-WRT firmware format detected\n");
-				do_flash_update_ddwrt(BASE_ADDR,
-						      ptr - BASE_ADDR);
-			}
-			if (isubnt) {
-				diag_printf("UBNT firmware format detected\n");
-				do_flash_update_ubnt(BASE_ADDR,
-						     ptr - BASE_ADDR);
-			}
-			if (iswili) {
-				diag_printf
-				    ("WILIGEAR firmware format detected\n");
-				do_flash_update_wili(BASE_ADDR,
-						     ptr - BASE_ADDR);
-			}
-			if (issenao) {
-				diag_printf("SENAO firmware format detected\n");
-				do_flash_update_senao(BASE_ADDR,
-						      ptr - BASE_ADDR);
-			}
+			diag_printf("%s: firmware format detected\n",
+				    fw_formats[detect].name);
+			do_flash_update(BASE_ADDR, ptr - BASE_ADDR, detect);
 #else
 			diag_printf("Not writing to flash.\n");
 #endif
