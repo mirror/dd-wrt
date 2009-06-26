@@ -131,12 +131,6 @@ int fw_check_image_ubnt(unsigned char *addr, unsigned long maxlen, int do_flash)
 		void *err_addr;
 		flash_read(fis_addr, fis_work_block, fisdir_size,
 			   (void **)&err_addr);
-		struct fis_image_desc *img = fis_lookup("RedBoot", &i);
-		if (i != 0) {
-			diag_printf
-			    ("UBNT_FW: RedBoot partition is not the first partition\n");
-			return -1;
-		}
 		for (i = 0; i < fw.part_count; ++i) {
 			fw_part_t *fwp = &fw.parts[i];
 			/* do not flash bootloaders bigger than 64kb, since it makes no sense to step back */
@@ -184,8 +178,9 @@ int fw_check_image_ubnt(unsigned char *addr, unsigned long maxlen, int do_flash)
 				     ntohl(fwp->header->part_size),
 				     ntohl(fwp->header->data_size));
 		}
-		addPartition("cfg", (flash_end + 1) - (flash_block_size * 3), 0,
-			     0, 0x10000, 0x10000);
+		addPartition("cfg",
+			     ((unsigned int)flash_end + 1) -
+			     (flash_block_size * 3), 0, 0, 0x10000, 0x10000);
 
 		fis_update_directory();
 		diag_printf("UBNT_FW: flashing done\n");

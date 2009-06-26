@@ -1,3 +1,7 @@
+26.6.09
+    * move clock initialization to ensure udelay function
+    * removed http protocol to save space. i believe the embedded tftp client is enough and the tftp server for recovery makes recovery and flashing pretty easy
+    * simplified the firmware format handling code, for easy integration of new formats. reduces codesize too
 25.6.09
     * fix bootcode for LSDK based devices
     * add cfg partition for ubnt devices

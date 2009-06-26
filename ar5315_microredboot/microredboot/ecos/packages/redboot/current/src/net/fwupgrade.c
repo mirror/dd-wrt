@@ -120,11 +120,6 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 		struct fis_image_desc *img = NULL;
 		int i, stat;
 		img = fis_lookup("RedBoot", &i);
-		if (i != 0) {
-			diag_printf
-			    ("DD-WRT_FW: RedBoot partition is not the first partition\n");
-			return -1;
-		}
 		unsigned int flash_addr = img->flash_base + img->size;
 		diag_printf("DD-WRT_FW: flash base is 0x%08X\n", flash_addr);
 		if ((stat =
