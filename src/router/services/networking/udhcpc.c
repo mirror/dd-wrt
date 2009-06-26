@@ -233,10 +233,7 @@ static int bound(void)
 
 	if (nvram_match("wan_proto", "pptp")
 	    && nvram_match("pptp_use_dhcp", "1"))
-		{
 		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",temp_wan_netmask, "up");
-		nvram_set("pptp_wan_ipaddr",temp_wan_ipaddr);
-		}
 	else
 		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"),
 		     "netmask", nvram_safe_get("wan_netmask"), "up");
