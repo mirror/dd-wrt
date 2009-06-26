@@ -253,6 +253,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
 	{"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif defined(HAVE_GGEW)
+	{"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_X86
 #ifdef HAVE_GW700
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
