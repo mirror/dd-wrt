@@ -48,11 +48,6 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 		struct fis_image_desc *img = NULL;
 		int i, stat;
 		img = fis_lookup("RedBoot", &i);
-		if (i != 0) {
-			diag_printf
-			    ("SENAO_FW: RedBoot partition is not the first partition\n");
-			return -1;
-		}
 		unsigned int flash_addr = img->flash_base + img->size;
 		if ((stat =
 		     flash_erase((void *)flash_addr, maxlen,

@@ -8,6 +8,9 @@ this reset button is used to trigger the recovery redboot.
 so the stub will boot up linux directly if this button is not pressed. this will decrease the bootup time alot.
 if the button is pushed, the redboot will be started and can be used like known from the past.
 if the reset button is pushed longer than 5 seconds, the dd-wrt nvram config will be resetted
+if you keep it pushed a little bit longer, redboot will start a recovery tftp which accepts external firmware uploads.
+supported are DD-WRT webflash,Ubiquiti,Wiligear and Senao images
+simply send it with tftp -i 192.168.1.1 put newfirmware.bin to the device (ip might be different, depending from the device)
 
 
 the build_targets.sh script will build all available memory, flash, ethernet phy and reset button configurations

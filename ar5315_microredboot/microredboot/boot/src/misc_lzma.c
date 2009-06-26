@@ -268,7 +268,7 @@ static void set_cmdline(void)
 	pb->ethaddr.val = NULL;
 	pb->argv[0] = pcmd;
 	pb->argv[1] = ++pcmd;
-	pcmd[0] = 0;		//terminate, no commandline
+	pcmd[0] = 0;		//terminate, no user commandline
 
 	void (*tt) (int a, char **b, void *c);
 	tt = bootoffset;
@@ -284,6 +284,8 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	free_mem_ptr_end = free_mem_ptr_end_p;
 	disable_watchdog();
 	arch_decomp_setup();
+	/* initialize clock */
+	HAL_CLOCK_INITIALIZE(RTC_PERIOD);
 	printf("MicroRedBoot v1.3, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
 	printf("CPU Clock: %dMhz\n", cpu_frequency() / 1000000);
 	nvram_init();
@@ -320,8 +322,6 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 		linuxaddr = getLinux();
 		puts("Booting Linux\n");
 		resettrigger = 1;
-		/* initialize clock */
-		HAL_CLOCK_INITIALIZE(RTC_PERIOD);
 
 		/* important, enable ethernet bus, if the following lines are not initialized linux will not be able to use the ethernet mac, taken from redboot source */
 		enable_ethernet();
