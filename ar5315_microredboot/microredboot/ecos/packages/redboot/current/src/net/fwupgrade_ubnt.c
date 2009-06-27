@@ -58,6 +58,24 @@ int fw_check_image_ubnt(unsigned char *addr, unsigned long maxlen, int do_flash)
 	unsigned int crc = crc32(0L, (unsigned char *)header, len);
 	signature_t *sig;
 	fw.size = maxlen;
+	if (!strncmp(header->magic, "OPEN", 4)
+	    && !strncmp(header->magic, "UBNT", 4)) {
+		return -1;	//not ubnt firmware
+	}
+#if defined(CYGPKG_HAL_MIPS_AR2316)
+	if (strncmp((unsigned char *)&header->version[4], "ar2316", 6)) {
+		diag_printf
+		    ("UBNT_FW: cannot upgrade, wrong target platform. only ar2316 is valid");
+		return -1;
+	}
+#endif
+#if defined(CYGPKG_HAL_MIPS_AR5312)
+	if (strncmp((unsigned char *)&header->version[4], "ar2313", 6)) {
+		diag_printf
+		    ("UBNT_FW: cannot upgrade, wrong target platform. only ar2313 is valid");
+		return -1;
+	}
+#endif
 	if (htonl(crc) != header->crc) {
 		diag_printf("UBNT_FW: header crc failed\n");
 		return -1;

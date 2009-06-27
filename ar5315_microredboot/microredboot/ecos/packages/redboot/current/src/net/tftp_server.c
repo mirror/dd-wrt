@@ -239,9 +239,11 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 			     sizeof(fw_formats) /
 			     sizeof(struct firmware_formats); i++) {
 				int v =
-				    fw_formats[i].
-				    fw_check_image((char *)BASE_ADDR,
-						   ptr - BASE_ADDR, 0) == 0;
+				    fw_formats[i].fw_check_image((char *)
+								 BASE_ADDR,
+								 ptr -
+								 BASE_ADDR,
+								 0) == 0;
 				if (v) {
 					detect = i;
 					break;
