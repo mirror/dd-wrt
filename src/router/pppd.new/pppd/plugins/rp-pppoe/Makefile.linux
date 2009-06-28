@@ -25,15 +25,15 @@ INSTALL	= install
 VERSION=3.3
 
 #COPTS=-O2 -g
-CFLAGS=$(COPTS) -I../../../include/linux
+CFLAGS=$(COPTS) -I../../../include/linux 
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
 
 include $(TOP)/.config
 
-ifeq ($(CONFIG_AQOS),y)
-CFLAGS += -DHAVE_AQOS 
-LDFLAGS = -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
-endif
+
+#ifeq ($(CONFIG_AQOS),y)
+#CFLAGS += -DHAVE_AQOS 
+#endif
 
 all: rp-pppoe.so pppoe-discovery
 
