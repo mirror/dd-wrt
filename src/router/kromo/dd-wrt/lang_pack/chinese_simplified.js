@@ -1537,7 +1537,7 @@ wl_basic.noise_immunity="抗干扰等级";
 wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="雷达探测";
 wl_basic.mtikie="MT 兼容性";
-wl_basic.csma="波波侦听";
+wl_basic.csma="波波ik侦听";
 
 hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。<br/><b>注意：</b> 当修改无线模式时，一些高级参数会相应被修改（\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\"）。";
 hwl_basic.right3="灵敏度范围：";
