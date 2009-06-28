@@ -33,6 +33,7 @@ endif
 # CC = gcc
 #
 #COPTS = -O2 -pipe -Wall -g
+#COPTS 
 LIBS =
 
 # Uncomment the next 2 lines to include support for Microsoft's
@@ -60,9 +61,10 @@ HAVE_MULTILINK=y
 endif
 endif
 
-ifeq ($(CONFIG_AQOS),y)
-CFLAGS += -DHAVE_AQOS 
-endif
+#ifeq ($(CONFIG_AQOS),y)
+#CFLAGS += -DHAVE_AQOS 
+#LDFLAGS = -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
+#endif
 
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.

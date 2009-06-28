@@ -18,9 +18,9 @@ CFLAGS=-I. -I../.. -I../../../include $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMO
 
 include $(TOP)/.config
 
-ifeq ($(CONFIG_AQOS),y)
-CFLAGS += -DHAVE_AQOS 
-endif
+#ifeq ($(CONFIG_AQOS),y)
+#CFLAGS += -DHAVE_AQOS 
+#endif
 
 # Uncomment the next line to include support for Microsoft's
 # MS-CHAP authentication protocol.
