@@ -1893,7 +1893,7 @@ wl_basic.intmit="Odpornost na 퉢m";
 wl_basic.noise_immunity="Nivo odpornosti na 퉢m";
 wl_basic.ofdm_weak_det="쯫bko zaznavanje OFDM";
 wl_basic.radar="Zaznavanje radarja";
-wl_basic.mtikie="Zdru푡jivojst z MT";
+wl_basic.mtikie="Zdru푡jivojst z MTik";
 wl_basic.csma="Carrier Sense";
 //help container
 

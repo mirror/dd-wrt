@@ -1893,7 +1893,7 @@ wl_basic.intmit="Noise Immunity";
 wl_basic.noise_immunity="Noise Immunity Level";
 wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="Radar Detection";
-wl_basic.mtikie="MT Compatibility";
+wl_basic.mtikie="MTik Compatibility";
 wl_basic.csma="Carrier Sense";
 //help container
 var hwl_basic = new Object();
