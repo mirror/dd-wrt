@@ -235,6 +235,7 @@ static void ar5315_restart(char *command)
 
 	/* reset the system */
 	sysRegWrite(AR5315_COLD_RESET,AR5317_RESET_SYSTEM);
+	mdelay(100);
 	/*
 	 * Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
 	 */

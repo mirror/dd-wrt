@@ -255,6 +255,7 @@ spiflash_sendcmd (int op, u32 addr)
         	(ptr_opcode->rx_cnt << 4) | SPI_CTL_START;
 
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
+
 	busy_wait(spiflash_regread32(SPI_FLASH_CTL) & SPI_CTL_BUSY, 0);
  
 	if (!ptr_opcode->rx_cnt)
