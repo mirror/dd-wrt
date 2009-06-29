@@ -1,3 +1,14 @@
+2009 05 28
+Improved sip. Removed incorrect comment from unset.  Made standard 
+number of iterations in test suite 100000 instead of 10000. Reran 
+benchmarks on my new hardware, adjusted boundaries and recategorized 
+patterns accordingly: 23 patterns were bumped one category slower for 
+the kernel version and 3 (non-overlapping) patterns were bumped one 
+category faster for the userspace version.
+
+2009 05 10
+Added runesofmagic, gtalk (in extra), dazhihui, tonghuashun.
+
 2008 12 18
 Improved/fixed rtp.
 
