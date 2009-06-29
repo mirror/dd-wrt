@@ -195,7 +195,7 @@ void start_overclocking(void)
 {
 }
 
-void enable_dtag_vlan(int enable)
+char *enable_dtag_vlan(int enable)
 {
     if (enable) {
 	system("swconfig dev eth0 set reset 1");
@@ -212,5 +212,5 @@ void enable_dtag_vlan(int enable)
 	system("swconfig dev eth0 set apply");
     
     }
-
+    return "eth0";
 }
