@@ -9,6 +9,9 @@ struct mod_arch_specific {
 	struct list_head dbe_list;
 	const struct exception_table_entry *dbe_start;
 	const struct exception_table_entry *dbe_end;
+
+	unsigned int core_plt_offset;
+	unsigned int init_plt_offset;
 };
 
 typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
@@ -65,6 +68,8 @@ typedef struct {
 #ifdef CONFIG_MODULES
 /* Given an address, look for it in the exception tables. */
 const struct exception_table_entry*search_module_dbetables(unsigned long addr);
+int module_relayout(Elf32_Ehdr *hdr, Elf32_Shdr *sechdrs,
+		    char *secstrings, unsigned symindex, struct module *me);
 #else
 /* Given an address, look for it in the exception tables. */
 static inline const struct exception_table_entry *
