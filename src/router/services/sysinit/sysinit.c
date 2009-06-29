@@ -79,7 +79,9 @@ extern int check_pmon_nv(void);
 static void unset_nvram(void);
 void start_nvram(void);
 
-extern struct nvram_tuple srouter_defaults[];
+extern struct nvram_tuple *srouter_defaults;
+extern void load_defaults(void);
+extern void free_defaults(void);
 
 int endswith(char *str, char *cmp)
 {
@@ -169,7 +171,7 @@ void start_run_rc_startup(void)
 {
 	create_rc_file(RC_STARTUP);
 	if (f_exists("/tmp/.rc_startup"))
-	system("/tmp/.rc_startup");
+		system("/tmp/.rc_startup");
 	return;
 }
 
@@ -177,7 +179,7 @@ void start_run_rc_shutdown(void)
 {
 	create_rc_file(RC_SHUTDOWN);
 	if (f_exists("/tmp/.rc_shutdown"))
-	system("/tmp/.rc_shutdown");
+		system("/tmp/.rc_shutdown");
 	return;
 }
 
@@ -627,7 +629,7 @@ void start_restore_defaults(void)
 	// nvram_set ("il0macaddr", mac);
 	// }
 	// }
-
+	load_defaults();
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -1027,6 +1029,7 @@ void start_restore_defaults(void)
 			}
 		}
 	}
+	free_defaults();
 	if (strlen(nvram_safe_get("http_username")) == 0) {
 		nvram_set("http_username", zencrypt("root"));
 		nvram_set("http_passwd", zencrypt("admin"));

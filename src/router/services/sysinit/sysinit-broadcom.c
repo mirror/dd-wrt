@@ -909,7 +909,7 @@ void start_sysinit(void)
 	case ROUTER_WRT600N:
 		nvram_set("wan_ifname", "vlan2");
 		break;
-		
+
 	case ROUTER_WRT610N:
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("pci/1/1/ledbh0", "11");
@@ -918,18 +918,18 @@ void start_sysinit(void)
 		nvram_set("pci/1/2/ledbh2", "135");
 		nvram_set("pci/1/1/boardflags2", "0x0400");
 		nvram_set("pci/1/2/boardflags2", "0x0602");
-		
-		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") 
-			|| startswith(nvram_safe_get("pci/1/2/macaddr"), "00:90:4C"))
-		{
-		unsigned char mac[20];
-		strcpy(mac, nvram_safe_get("et0macaddr"));
-		MAC_ADD(mac);
-		MAC_ADD(mac);
-		nvram_set("pci/1/1/macaddr", mac);
-		MAC_ADD(mac);
-		nvram_set("pci/1/2/macaddr", mac);
-		need_reboot = 1;	
+
+		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+		    || startswith(nvram_safe_get("pci/1/2/macaddr"),
+				  "00:90:4C")) {
+			unsigned char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/2/macaddr", mac);
+			need_reboot = 1;
 		}
 		break;
 
@@ -1135,15 +1135,15 @@ void start_sysinit(void)
 		    || nvram_match("boardflags", "0x0388")) {
 			nvram_set("boardflags", "0x0f58");
 			need_reboot = 1;
-			}
+		}
 		break;
-		
+
 	case ROUTER_ASKEY_RT220XD:
 		if (nvram_match("boardflags", "0x388")
 		    || nvram_match("boardflags", "0x0388")) {
 			nvram_set("boardflags", "0x0208");
 			need_reboot = 1;
-			}
+		}
 		break;
 
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
