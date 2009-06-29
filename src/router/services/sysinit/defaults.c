@@ -2618,13 +2618,17 @@ struct nvram_tuple srouter_defaults[] = {
 };
 #else
 struct nvram_tuple *srouter_defaults = NULL;
-static int defaultnum;
+static unsigned int defaultnum;
 void load_defaults(void)
 {
 	FILE *in = fopen("/etc/defaults.bin", "rb");
 	if (in == NULL)
 		return;
-	fread(&defaultnum, 4, 1, in);
+	defaultnum = (unsigned int)getc(in);
+	defaultnum |= (unsigned int)getc(in) << 8;
+	defaultnum |= (unsigned int)getc(in) << 16;
+	defaultnum |= (unsigned int)getc(in) << 24;
+	//fread(&defaultnum, 4, 1, in);
 	int i;
 	srouter_defaults =
 	    (struct nvram_tuple *)malloc(sizeof(struct nvram_tuple) *
