@@ -2,7 +2,7 @@
  * L7-filter Supported Protocols 
  */
     /*
-     * 2007-11-22 
+     * 2009-05-28 
      */
 
 typedef struct _l7filters	// l7 and p2p filters
@@ -77,7 +77,7 @@ l7filters filters_list[] = {
 	// (Half-Life 2 mod) -
 	// http://www.valvesoftware.com
 	{
-	 "dazhihui", "l7"},
+	 "dazhihui", "l7"}, // Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 	{
 	 "dhcp", "l7"},		// DHCP - Dynamic Host Configuration Protocol 
 	// - RFC 1541
@@ -120,7 +120,7 @@ l7filters filters_list[] = {
 	{
 	 "gopher", "l7"},	// Gopher - A precursor to HTTP - RFC 1436
 	{
-	 "gtalk", "l7"},
+	 "gtalk", "l7"},    // GTalk, a Jabber (XMPP) client
 	{
 	 "guildwars", "l7"},	// Guild Wars - online game - http://guildwars.com
 	{
@@ -291,7 +291,7 @@ l7filters filters_list[] = {
 	 "rtsp", "l7"},		// RTSP - Real Time Streaming Protocol -
 	// http://www.rtsp.org - RFC 2326
 	{
-	 "runesofmagic", "l7"},
+	 "runesofmagic", "l7"},  // Runes of Magic - game - http://www.runesofmagic.com
 	{
 	 "shoutcast", "l7"},	// Shoutcast and Icecast - streaming audio
 	{
@@ -364,7 +364,7 @@ l7filters filters_list[] = {
 	{
 	 "thecircle", "l7"},	// The Circle - P2P application -
 	// http://thecircle.org.au
-	{"tonghuashun", "l7"},
+	{"tonghuashun", "l7"},  // Tonghuashun - stock analysis and trading; Chinese - http://www.10jqka.com.cn
 
 	{
 	 "tor", "l7"},		// Tor - The Onion Router - used for
