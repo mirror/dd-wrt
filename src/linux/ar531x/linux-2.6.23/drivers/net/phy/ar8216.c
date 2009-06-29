@@ -73,7 +73,7 @@ ar8216_mii_read(struct ar8216_priv *priv, int reg)
 
 	split_addr((u32) reg, &r1, &r2, &page);
 	phy->bus->write(phy->bus, 0x18, 0, page);
-	msleep(1); /* wait for the page switch to propagate */
+	mdelay(1); /* wait for the page switch to propagate */
 	lo = phy->bus->read(phy->bus, 0x10 | r2, r1);
 	hi = phy->bus->read(phy->bus, 0x10 | r2, r1 + 1);
 
@@ -89,7 +89,7 @@ ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 
 	split_addr((u32) reg, &r1, &r2, &r3);
 	phy->bus->write(phy->bus, 0x18, 0, r3);
-	msleep(1); /* wait for the page switch to propagate */
+	mdelay(1); /* wait for the page switch to propagate */
 
 	lo = val & 0xffff;
 	hi = (u16) (val >> 16);
