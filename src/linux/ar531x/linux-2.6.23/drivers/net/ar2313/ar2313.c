@@ -958,7 +958,7 @@ static int ar2313_rx_int(struct net_device *dev)
 				int offset;
 
 				skb = sp->rx_skb[idx];
-#if 0//CONFIG_AR8216_PHY
+#if 0 //CONFIG_AR8216_PHY
 #define HEADER_LEN 2
                     /* check and remove the header for s26*/
                     if ((skb->data[0] & 0xf) == 5) { /* wan port */
@@ -968,14 +968,15 @@ static int ar2313_rx_int(struct net_device *dev)
 #endif				
 				/* set skb */
 		    skb_put(skb,((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
-#if 0//CONFIG_AR8216_PHY
+#if 0// CONFIG_AR8216_PHY
                     skb_pull(skb, HEADER_LEN); /* remove the header */
 #endif
 
-				dev->stats.rx_bytes += skb->len;
 
 				/* pass the packet to upper layers */
 				sp->rx(skb);
+
+				dev->stats.rx_bytes += skb->len;  // in case that upper layer modify skb len
 
 				skb_new->dev = dev;
 				/* 16 bit align */
@@ -1257,7 +1258,7 @@ static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return 0;
 	}
 
-#if 0///CONFIG_AR8216_PHY
+#if 0// CONFIG_AR8216_PHY
     /* add a header for s26*/
     skb_push(skb, HEADER_LEN);
     skb->data[0] = 0x10; /* broadcast = 0; from_cpu = 0; reserved = 1; port_num = 0 */
