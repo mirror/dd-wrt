@@ -197,5 +197,20 @@ void start_overclocking(void)
 
 void enable_dtag_vlan(int enable)
 {
+    if (enable) {
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set vlan 1");
+	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
+	system("swconfig dev eth0 vlan 7 set ports \"0t 1t\"");
+	system("swconfig dev eth0 vlan 8 set ports \"0t 1t\"");
+	system("swconfig dev eth0 set apply");
+    }else{
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set vlan 1");
+	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
+	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+	system("swconfig dev eth0 set apply");
+    
+    }
 
 }
