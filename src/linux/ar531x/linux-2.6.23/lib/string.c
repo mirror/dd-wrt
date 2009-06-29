@@ -528,14 +528,41 @@ void *memcpy(void *dest, const void *src, size_t count)
 	char *tmp = dest;
 	const char *s = src;
 
-	while (count--)
-		*tmp++ = *s++;
+	unsigned int val,offset=0;
+	while(count--) //aligned copy
+	{
+	if (((unsigned int)offset % 4) == 0) {
+		val = *(unsigned int *)s;
+		s += 4;
+	}
+	*tmp++ = ((unsigned char *)&val) + (offset++ & 3);
+	}
 	return dest;
 }
+
 EXPORT_SYMBOL(memcpy);
 #endif
 
 #ifndef __HAVE_ARCH_MEMMOVE
+
+void *memcpy_rev(void *dest, const void *src, size_t count)
+{
+	char *tmp = dest;
+	const char *s = src;
+	s+=count;
+	tmp+=count;
+	unsigned int val,offset=0;
+	while(count--) //aligned copy
+	{
+	if (((unsigned int)offset % 4) == 0) {
+		val = *(unsigned int *)s;
+		s -= 4;
+	}
+	*tmp-- = ((unsigned char *)&val) + (offset++ & 3);
+	}
+	return dest;
+}
+
 /**
  * memmove - Copy one area of memory to another
  * @dest: Where to copy to
@@ -552,15 +579,14 @@ void *memmove(void *dest, const void *src, size_t count)
 	if (dest <= src) {
 		tmp = dest;
 		s = src;
-		while (count--)
-			*tmp++ = *s++;
+		memcpy(tmp,s,count);
 	} else {
 		tmp = dest;
 		tmp += count;
 		s = src;
 		s += count;
 		while (count--)
-			*--tmp = *--s;
+		    memcpy_rev(tmp,s,count);
 	}
 	return dest;
 }

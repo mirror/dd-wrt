@@ -134,7 +134,8 @@ SECTIONS
   .bss : {
     *(.bss)
     *(COMMON)
-  }
+    . = (ALIGN(_PAGE_SIZE) - .) < 8 ? ALIGN(_PAGE_SIZE) + 4 : .	;
+ }
   __bss_stop = .;
 
   _end = . ;

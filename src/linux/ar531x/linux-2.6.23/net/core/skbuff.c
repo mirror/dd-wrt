@@ -220,9 +220,9 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 	int node = dev->dev.parent ? dev_to_node(dev->dev.parent) : -1;
 	struct sk_buff *skb;
 
-	skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask, 0, node);
+	skb = __alloc_skb(length + 64, gfp_mask, 0, node);
 	if (likely(skb)) {
-		skb_reserve(skb, NET_SKB_PAD);
+		skb_reserve(skb, 64);
 		skb->dev = dev;
 	}
 	return skb;
