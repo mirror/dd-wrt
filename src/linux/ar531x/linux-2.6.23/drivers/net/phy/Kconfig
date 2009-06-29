@@ -65,6 +65,11 @@ config ADM6996_PHY
 	---help---
 	  Currently supports the ADM6996F switch
 
+config AR8216_PHY
+	tristate "Driver for AR8216 switches"
+	---help---
+	  Currently supports the AR8216 switch
+
 config MVSWITCH_PHY
 	tristate "Driver for Marvell switches"
 	select VLAN_8021Q

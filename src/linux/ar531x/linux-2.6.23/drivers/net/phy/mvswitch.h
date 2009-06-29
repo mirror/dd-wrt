@@ -22,6 +22,9 @@
 #define MV_TRAILER_FLAGS_S	24
 #define MV_TRAILER_OVERRIDE	0x80
 
+#define MV_STATUS_REAL_TIME_LINK_UP               0x0400
+#define MV_STATUS_RESOLVED                        0x0800
+
 
 #define MV_PORTS	5
 #ifdef CONFIG_MTD_AR531X
