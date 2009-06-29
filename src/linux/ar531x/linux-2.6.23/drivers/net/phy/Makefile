@@ -15,3 +15,4 @@ obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
 obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
 obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
 obj-$(CONFIG_FIXED_PHY)		+= fixed.o
+obj-$(CONFIG_AR8216_PHY)	+= swconfig.o ar8216.o

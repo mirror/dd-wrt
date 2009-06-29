@@ -51,7 +51,7 @@
 #include <asm/uaccess.h>
 #include <asm/bootinfo.h>
 
-#define AR2313_MTU                     1518
+#define AR2313_MTU                     1692
 #define AR2313_PRIOS                   1
 #define AR2313_QUEUES                  (2*AR2313_PRIOS)
 #define AR2313_DESCR_ENTRIES           64
@@ -958,9 +958,19 @@ static int ar2313_rx_int(struct net_device *dev)
 				int offset;
 
 				skb = sp->rx_skb[idx];
+#if 0//CONFIG_AR8216_PHY
+#define HEADER_LEN 2
+                    /* check and remove the header for s26*/
+                    if ((skb->data[0] & 0xf) == 5) { /* wan port */
+                        skb->data[14 + HEADER_LEN] &= 0xf0; /* change VLAN ID for the wan port */
+                        skb->data[15 + HEADER_LEN] = 2;     /* to VLAN ID 2 */
+                    }
+#endif				
 				/* set skb */
-				skb_put(skb,
-						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
+		    skb_put(skb,((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
+#if 0//CONFIG_AR8216_PHY
+                    skb_pull(skb, HEADER_LEN); /* remove the header */
+#endif
 
 				dev->stats.rx_bytes += skb->len;
 
@@ -1246,6 +1256,13 @@ static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		sp->dma_regs->xmt_poll = 0;
 		return 0;
 	}
+
+#if 0///CONFIG_AR8216_PHY
+    /* add a header for s26*/
+    skb_push(skb, HEADER_LEN);
+    skb->data[0] = 0x10; /* broadcast = 0; from_cpu = 0; reserved = 1; port_num = 0 */
+    skb->data[1] = 0x80; /* reserved = 0b10; priority = 0; type = 0 (normal) */ 
+#endif
 
 	/* Setup the transmit descriptor. */
 	td->devcs = ((skb->len << DMA_TX1_BSIZE_SHIFT) |
