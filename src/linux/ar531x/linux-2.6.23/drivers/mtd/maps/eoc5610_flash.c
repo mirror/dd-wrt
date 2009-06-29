@@ -177,7 +177,7 @@ int __init init_ar531x(void)
 #ifdef CONFIG_MTD_PARTITIONS
 		 {
 			int offset = 0x0;
-			unsigned char *buf = (unsigned char *)0xa8000000;
+			unsigned char *buf = (unsigned char *)0xbe000000;
 			while ((offset + mymtd->erasesize) < mymtd->size) {
 				if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
 					printk(KERN_EMERG
@@ -206,7 +206,7 @@ int __init init_ar531x(void)
 					    (mymtd->erasesize * 3);
 					rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
 
-					p = (unsigned char *)(0xa8000000 +
+					p = (unsigned char *)(0xbe000000 +
 							      dir_parts[5].
 							      offset);
 					fis = (struct fis_image_desc *)p;
