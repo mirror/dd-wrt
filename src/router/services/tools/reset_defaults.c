@@ -78,7 +78,7 @@ static char *filter[] = { "lan_ifnames",
 	NULL
 };
 
-extern struct nvram_tuple srouter_defaults[];
+extern struct nvram_tuple *srouter_defaults;
 
 static int isCritical(char *name)
 {
@@ -91,6 +91,8 @@ static int isCritical(char *name)
 	}
 	return 0;
 }
+extern void load_defaults(void);
+extern void free_defaults(void);
 
 void start_defaults(void)
 {
@@ -115,9 +117,11 @@ void start_defaults(void)
 			nvram_unset(name);
 		p += len + 1;
 	}
+	load_defaults();
 	for (t = srouter_defaults; t->name; t++) {
 		nvram_set(t->name, t->value);
 	}
+	free_defaults();
 	free(buf);
 	nvram_commit();
 }
