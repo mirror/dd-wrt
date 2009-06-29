@@ -170,8 +170,8 @@ ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	struct ar8216_priv *priv = dev->phy_ptr;
 	unsigned char *buf;
 
-    if (unlikely(!priv))
-        goto error;
+	if (unlikely(!priv))
+    		goto error;
 
 	if (!priv->vlan)
 		goto send;
@@ -181,9 +181,10 @@ ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 			goto error;
 	}
 
-	buf = skb_push(skb, 2);
-	buf[0] = 0x10;
-	buf[1] = 0x80;
+
+	skb_push(skb, 2);
+	skb->data[0] = 0x10;
+	skb->data[1] = 0x80;
 
 send:
 	return priv->hardstart(skb, dev);
@@ -218,7 +219,7 @@ ar8216_mangle_rx(struct sk_buff *skb, int napi)
 	skb_pull(skb, 2);
 
 	/* check for vlan header presence */
-	if ((buf[12 + 2] != 0x81) || (buf[13 + 2] != 0x00))
+	if ((buf[12 + 2] != 0x81) || (buf[13 + 2] != 0x00)) // always present
 		goto recv;
 
 	port = buf[0] & 0xf;
@@ -231,7 +232,7 @@ ar8216_mangle_rx(struct sk_buff *skb, int napi)
 	vlan = priv->pvid[port];
 
 	buf[14 + 2] &= 0xf0;
-	buf[14 + 2] |= vlan >> 8;
+	buf[14 + 2] |= vlan >> 8;  //quatsch
 	buf[15 + 2] = vlan & 0xff;
 
 recv:
@@ -488,6 +489,16 @@ ar8216_reset_switch(struct switch_dev *dev)
 	}
 	/* XXX: undocumented magic from atheros, required! */
 	priv->write(priv, 0x38, 0xc000050e);
+	priv->write(priv,0x60, 0xffffffff);
+	priv->write(priv,0x64, 0xaaaaaaaa);
+	priv->write(priv,0x68, 0x55555555);    
+	priv->write(priv,0x6c, 0x0);    
+	priv->write(priv,0x70, 0x41af);
+
+ 	/* set mtu */
+ 	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,AR8216_GCTRL_MTU,1716 ); //     1500 + 4 /* vlan */ + 2 /* header */);
+
+
 	return ar8216_hw_apply(dev);
 }
 
