@@ -10,7 +10,7 @@ LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -
 CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 LDFLAGS += -lm
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
-CFLAGS  += $(COPTS) -fpic -I$(TOP)/services/include
+CFLAGS  += -fpic -I$(TOP)/services/include
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
        bridgetools.o igmp.o wpa.o vlantagging.o httpd.o setuserpw.o anchorfree.o gpio.o mask.o reset_defaults.o
 
@@ -778,6 +778,8 @@ all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
 endif
+	gcc -o bin/defaults $(CFLAGS) bin/defaults.c
+	cd bin && ./defaults
     
 clean:
 	rm -f *.o *.a *.so
@@ -786,7 +788,9 @@ clean:
 
 install: all
 	install -d $(INSTALLDIR)/services/usr/lib	
+	install -d $(INSTALLDIR)/services/etc
 	install services.so $(INSTALLDIR)/services/usr/lib
+	install bin/defaults.bin $(INSTALLDIR)/services/etc
 ifeq ($(CONFIG_RT2880),y)
 	install -d $(INSTALLDIR)/services/sbin	
 	install switch $(INSTALLDIR)/services/sbin
@@ -794,7 +798,7 @@ endif
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
-	$(CC) --shared $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) --shared $(COPTS) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)

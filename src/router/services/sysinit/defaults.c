@@ -39,6 +39,8 @@
 #define HAVE_POWERNOC 1
 #endif
 
+#ifdef STORE_DEFAULTS
+
 struct nvram_tuple srouter_defaults[] = {
 	// {"default_init","1",0},
 	{"nvram_ver", "3", 0},
@@ -2614,6 +2616,49 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{0, 0, 0}
 };
+#else
+struct nvram_tuple *srouter_defaults = NULL;
+static int defaultnum;
+void load_defaults(void)
+{
+	FILE *in = fopen("/etc/defaults.bin", "rb");
+	if (in == NULL)
+		return;
+	fread(&defaultnum, 4, 1, in);
+	int i;
+	srouter_defaults =
+	    (struct nvram_tuple *)malloc(sizeof(struct nvram_tuple) *
+					 defaultnum);
+	for (i = 0; i < defaultnum; i++) {
+		int vl = getc(in);
+		if (vl) {
+			srouter_defaults[i].name = malloc(vl + 1);
+			fread(srouter_defaults[i].name, vl, 1, in);
+			srouter_defaults[i].name[vl] = 0;
+			vl = getc(in);
+			srouter_defaults[i].value = malloc(vl + 1);
+			fread(srouter_defaults[i].value, vl, 1, in);
+			srouter_defaults[i].value[vl] = 0;
+		} else {
+			srouter_defaults[i].name = NULL;
+			srouter_defaults[i].value = NULL;
+		}
+	}
+}
+
+void free_defaults(void)
+{
+	int i;
+	for (i = defaultnum - 1; i > -1; i--) {
+		if (srouter_defaults[i].name) {
+			free(srouter_defaults[i].value);
+			free(srouter_defaults[i].name);
+		}
+	}
+	free(srouter_defaults);
+
+}
+#endif
 
 #ifdef HAVE_SKYTEL
 #undef HAVE_POWERNOC_WORT54G
