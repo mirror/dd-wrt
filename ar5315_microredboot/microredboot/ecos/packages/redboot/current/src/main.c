@@ -357,7 +357,6 @@ cyg_start(void)
     cyg_plf_redboot_startup();
 #endif
     do_version(0,0);
-
     if (in_rescue_mode) {
 	    diag_printf("Starting RESCUE script...\n");
             script = RESCUE_SCRIPT;  
