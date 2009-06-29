@@ -232,25 +232,21 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 			// CRC CHECK
 			diag_printf("Checking uploaded file...\n");
 
-			int detect = 0;
+			int detect = -1;
 			int i;
 			for (i = 0;
 			     i <
 			     sizeof(fw_formats) /
 			     sizeof(struct firmware_formats); i++) {
-				int v =
-				    fw_formats[i].fw_check_image((char *)
-								 BASE_ADDR,
-								 ptr -
-								 BASE_ADDR,
-								 0) == 0;
-				if (v) {
+				int v = fw_formats[i].fw_check_image((char *)BASE_ADDR,ptr - BASE_ADDR,0);
+//				diag_printf("%s returns %d\n",fw_formats[i].name,v);
+				if (!v) {
 					detect = i;
 					break;
 				}
 			}
 
-			if (detect)	/* third parameter 0 - do not write to flash */
+			if (detect!=-1)	/* third parameter 0 - do not write to flash */
 				tftpd_send(ACK, block, src_route, src_port);	// crc ok
 			else {
 				tftpd_error(EACCESS, "CRC error", src_route,
