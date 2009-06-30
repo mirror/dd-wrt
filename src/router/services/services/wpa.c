@@ -360,12 +360,12 @@ void start_nas(void)
 
 		for (deadcount = 0; deadcount < 5; deadcount++) {
 			wl_ioctl(get_wl_instance_name(c), WLC_GET_RADIO, &radiostate, sizeof(int));
-			if (radiostate == 0)
+			if (radiostate & WL_RADIO_SW_DISABLE == 0)  //radio turned on - ready
 				break;
 			sleep (1);
 		}
 		
-		if (radiostate != 0)
+		if (radiostate & WL_RADIO_SW_DISABLE != 0)  // radio turned off
 			continue;
 		char wlname[32];
 
