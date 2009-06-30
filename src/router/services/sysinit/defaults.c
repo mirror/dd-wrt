@@ -2634,12 +2634,17 @@ void load_defaults(void)
 	    (struct nvram_tuple *)malloc(sizeof(struct nvram_tuple) *
 					 defaultnum);
 	for (i = 0; i < defaultnum; i++) {
-		int vl = getc(in);
+		unsigned int vl = (unsigned int)getc(in);
 		if (vl) {
 			srouter_defaults[i].name = malloc(vl + 1);
 			fread(srouter_defaults[i].name, vl, 1, in);
 			srouter_defaults[i].name[vl] = 0;
-			vl = getc(in);
+			vl = (unsigned int)getc(in);
+			if (vl&128)
+			    {
+			    vl&=127;
+			    vl|= (unsigned int)getc(in)<<7;
+			    }
 			srouter_defaults[i].value = malloc(vl + 1);
 			fread(srouter_defaults[i].value, vl, 1, in);
 			srouter_defaults[i].value[vl] = 0;
