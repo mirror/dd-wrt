@@ -86,9 +86,6 @@ ip_packet_match(const struct iphdr *ip,
 
 #define FWINV(bool,invflg) ((bool) ^ !!(ipinfo->invflags & invflg))
 
-	if (ipinfo->flags & IPT_F_NO_DEF_MATCH)
-		return true;
-
 	if (FWINV((ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
 		  IPT_INV_SRCIP)
 	    || FWINV((ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
@@ -151,36 +148,14 @@ ip_packet_match(const struct iphdr *ip,
 			ipinfo->invflags & IPT_INV_FRAG ? " (INV)" : "");
 		return 0;
 	}
-#undef FWINV
 
 	return 1;
 }
 
 static inline bool
-ip_checkentry(struct ipt_ip *ip)
+ip_checkentry(const struct ipt_ip *ip)
 {
-#define FWINV(bool, invflg) ((bool) || (ip->invflags & (invflg)))
-
-	if (FWINV(ip->smsk.s_addr, IPT_INV_SRCIP) ||
-		FWINV(ip->dmsk.s_addr, IPT_INV_DSTIP))
-		goto has_match_rules;
-
-	if (FWINV(!!((const unsigned long *)ip->iniface_mask)[0],
-		IPT_INV_VIA_IN) ||
-	    FWINV(!!((const unsigned long *)ip->outiface_mask)[0],
-		IPT_INV_VIA_OUT))
-		goto has_match_rules;
-
-	if (FWINV(ip->proto, IPT_INV_PROTO))
-		goto has_match_rules;
-
-	if (FWINV(ip->flags&IPT_F_FRAG, IPT_INV_FRAG))
-		goto has_match_rules;
-
-	ip->flags |= IPT_F_NO_DEF_MATCH;
-
-has_match_rules:
-	if (ip->flags & ~(IPT_F_MASK|IPT_F_NO_DEF_MATCH)) {
+	if (ip->flags & ~IPT_F_MASK) {
 		duprintf("Unknown flag bits set: %08X\n",
 			 ip->flags & ~IPT_F_MASK);
 		return false;
@@ -190,7 +165,6 @@ has_match_rules:
 			 ip->invflags & ~IPT_INV_MASK);
 		return false;
 	}
-#undef FWINV
 	return true;
 }
 
@@ -356,27 +330,8 @@ ipt_do_table(struct sk_buff **pskb,
 	struct ipt_entry *e, *back;
 	struct xt_table_info *private;
 
-	ip = ip_hdr(*pskb);
-
-	read_lock_bh(&table->lock);
-	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
-	private = table->private;
-	table_base = (void *)private->entries[smp_processor_id()];
-	e = get_entry(table_base, private->hook_entry[hook]);
-	if (e->target_offset <= sizeof(struct ipt_entry) &&
-		(e->ip.flags & IPT_F_NO_DEF_MATCH)) {
-			struct ipt_entry_target *t = ipt_get_target(e);
-			if (!t->u.kernel.target->target) {
-				int v = ((struct ipt_standard_target *)t)->verdict;
-				if ((v < 0) && (v != IPT_RETURN)) {
-					ADD_COUNTER(e->counters, ntohs(ip->tot_len), 1);
-					read_unlock_bh(&table->lock);
-					return (unsigned)(-v) - 1;
-				}
-			}
-	}
-
 	/* Initialization */
+	ip = ip_hdr(*pskb);
 	datalen = (*pskb)->len - ip->ihl * 4;
 	indev = in ? in->name : nulldevname;
 	outdev = out ? out->name : nulldevname;
@@ -388,12 +343,12 @@ ipt_do_table(struct sk_buff **pskb,
 	 * match it. */
 	offset = ntohs(ip->frag_off) & IP_OFFSET;
 
-/*	read_lock_bh(&table->lock);
+	read_lock_bh(&table->lock);
 	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
 	private = table->private;
 	table_base = (void *)private->entries[smp_processor_id()];
 	e = get_entry(table_base, private->hook_entry[hook]);
-*/
+
 	/* For return from builtin chain */
 	back = get_entry(table_base, private->underflow[hook]);
 
