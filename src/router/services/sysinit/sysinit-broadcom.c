@@ -837,7 +837,7 @@ void start_sysinit(void)
 			{"wl0gpio0", "11", 0},
 			{"wl0gpio1", "11", 0},
 			{"wl0gpio2", "11", 0},
-			{"wl0gpio3", "7", 0},	//7 seems OK, if problems, set to 3 (no blink - just radio on/off)
+			{"wl0gpio3", "130", 0},	//7 is right value, but causes Oops. Set to 130 (act only, no on/off) or 3 (no act - just radio on/off)
 			{"sromrev", "2", 0},
 			{0, 0, 0}
 		};
