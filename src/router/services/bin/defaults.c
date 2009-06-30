@@ -16,7 +16,16 @@ for (i=0;i<sizeof(srouter_defaults)/sizeof(struct nvram_tuple);i++)
 	{
     putc(strlen(srouter_defaults[i].name),out);
     fwrite(srouter_defaults[i].name,strlen(srouter_defaults[i].name),1,out);
-    putc(strlen(srouter_defaults[i].value),out);
+    len =  strlen(srouter_defaults[i].value);
+    if (len>127)
+	{
+	len|=128;
+	putc(len,out);
+	putc(strlen(srouter_defaults[i].value)>>7,out);
+	}else
+	{
+	putc(len,out);	
+	}
     fwrite(srouter_defaults[i].value,strlen(srouter_defaults[i].value),1,out);
 	}else{
 	putc(0,out);
