@@ -1264,6 +1264,14 @@ restart:
 		goto got_pg;
 
 	/*
+	 * Code in arch/mips/kernel/module.c wants physically
+	 * contiguous memory only if there is plenty of free of them.
+	 */
+	if ((gfp_mask & (__GFP_THISNODE | __GFP_NORETRY | __GFP_NOWARN))
+	    == (__GFP_THISNODE | __GFP_NORETRY | __GFP_NOWARN))
+		goto nopage;
+
+	/*
 	 * GFP_THISNODE (meaning __GFP_THISNODE, __GFP_NORETRY and
 	 * __GFP_NOWARN set) should not cause reclaim since the subsystem
 	 * (f.e. slab) using GFP_THISNODE may choose to trigger reclaim
@@ -1276,6 +1284,9 @@ restart:
 
 	for (z = zonelist->zones; *z; z++)
 		wakeup_kswapd(*z, order);
+
+	if (gfp_mask & 0x80000000)
+	    goto nopage;
 
 	/*
 	 * OK, we're below the kswapd watermark and have kicked background
