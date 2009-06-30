@@ -797,8 +797,10 @@ static inline void adm5120_if_napi_disable(struct net_device *dev)
 static inline void adm5120_if_napi_enable(struct net_device *dev) {}
 static inline void adm5120_if_napi_disable(struct net_device *dev) {}
 #endif /* CONFIG_ADM5120_SWITCH_NAPI */
+static void adm5120_if_set_multicast_list(struct net_device *dev);
 
 /* ------------------------------------------------------------------------ */
+#define SW_DIS_SA_LEARN_MASK					0x0000003F
 
 static int adm5120_if_open(struct net_device *dev)
 {
@@ -819,6 +821,7 @@ static int adm5120_if_open(struct net_device *dev)
 		/* enable interrupts on first open */
 		sw_int_unmask(SWITCH_INTS_USED);
 
+
 	/* enable (additional) port */
 	t = sw_read_reg(SWITCH_REG_PORT_CONF0);
 	for (i = 0; i < SWITCH_NUM_PORTS; i++) {
@@ -827,6 +830,33 @@ static int adm5120_if_open(struct net_device *dev)
 	}
 	sw_write_reg(SWITCH_REG_PORT_CONF0, t);
 
+
+//wp54g patch
+	sw_write_reg(SWITCH_REG_PORT_CONF1, sw_read_reg(SWITCH_REG_PORT_CONF1) | SW_DIS_SA_LEARN_MASK);
+	adm5120_if_set_multicast_list(dev);
+	adm5120_write_mac(dev);
+/*
+//important: promisc mode
+#define SW_DIS_UN_SHIFT							9
+#define SW_DIS_UN_MASK							(0x3F << SW_DIS_UN_SHIFT)
+#define SW_DIS_MC_SHIFT							16
+#define SW_DIS_MC_MASK							(0x3F << SW_DIS_MC_SHIFT)
+#define SW_DIS_BC_SHIFT							24
+#define SW_DIS_BC_MASK							(0x3F << SW_DIS_BC_SHIFT)
+
+	if (dev->flags & IFF_PROMISC) {
+		printk(KERN_NOTICE "%s: Promiscuous mode enabled.\n",
+			dev->name);
+		sw_write_reg(SWITCH_REG_CPUP_CONF, sw_read_reg(SWITCH_REG_CPUP_CONF) & ~(SW_DIS_BC_MASK | SW_DIS_MC_MASK | SW_DIS_UN_MASK));
+	} else if (dev->mc_count || (dev->flags & IFF_ALLMULTI)) {
+		sw_write_reg(SWITCH_REG_CPUP_CONF, sw_read_reg(SWITCH_REG_CPUP_CONF) & ~(SW_DIS_BC_MASK | SW_DIS_MC_MASK | SW_DIS_UN_MASK));
+	} else {
+		sw_write_reg(SWITCH_REG_CPUP_CONF, (sw_read_reg(SWITCH_REG_CPUP_CONF) & ~(SW_DIS_BC_MASK | SW_DIS_UN_MASK)) | SW_DIS_MC_MASK);
+	}
+
+	// Sets the switch bridge mode
+	sw_write_reg(SWITCH_REG_CPUP_CONF, sw_read_reg(SWITCH_REG_CPUP_CONF) | CPUP_CONF_BTM);
+*/
 	netif_start_queue(dev);
 
 	return 0;
@@ -1074,16 +1104,19 @@ static int __init adm5120_switch_probe(struct platform_device *pdev)
 	int i, err;
 
 	adm5120_nrdevs = adm5120_eth_num_ports;
-	sw_write_reg(SWITCH_REG_PORT0_LED, 0x9);
-	sw_write_reg(SWITCH_REG_PORT1_LED, 0x9);
-	sw_write_reg(SWITCH_REG_PORT2_LED, 0x9);
-	sw_write_reg(SWITCH_REG_PORT3_LED, 0x9);
-	sw_write_reg(SWITCH_REG_PORT4_LED, 0x9);
+	sw_write_reg(SWITCH_REG_PORT0_LED,(LED_MODE_LINK_ACT << LED0_MODE_SHIFT) | (LED_MODE_SPEED << LED1_MODE_SHIFT) | (LED_MODE_LINK << LED2_MODE_SHIFT));
+	sw_write_reg(SWITCH_REG_PORT1_LED,(LED_MODE_LINK_ACT << LED0_MODE_SHIFT) | (LED_MODE_SPEED << LED1_MODE_SHIFT) | (LED_MODE_LINK << LED2_MODE_SHIFT));
+	sw_write_reg(SWITCH_REG_PORT2_LED,(LED_MODE_LINK_ACT << LED0_MODE_SHIFT) | (LED_MODE_SPEED << LED1_MODE_SHIFT) | (LED_MODE_LINK << LED2_MODE_SHIFT));
+	sw_write_reg(SWITCH_REG_PORT3_LED,(LED_MODE_LINK_ACT << LED0_MODE_SHIFT) | (LED_MODE_SPEED << LED1_MODE_SHIFT) | (LED_MODE_LINK << LED2_MODE_SHIFT));
+	sw_write_reg(SWITCH_REG_PORT4_LED,(LED_MODE_LINK_ACT << LED0_MODE_SHIFT) | (LED_MODE_SPEED << LED1_MODE_SHIFT) | (LED_MODE_LINK << LED2_MODE_SHIFT));
 
 	t = CPUP_CONF_DCPUP | CPUP_CONF_CRCP |
 		SWITCH_PORTS_NOCPU << CPUP_CONF_DUNP_SHIFT |
 		SWITCH_PORTS_NOCPU << CPUP_CONF_DMCP_SHIFT ;
 	sw_write_reg(SWITCH_REG_CPUP_CONF, t);
+
+
+
 
 	t = (SWITCH_PORTS_NOCPU << PORT_CONF0_EMCP_SHIFT) |
 		(SWITCH_PORTS_NOCPU << PORT_CONF0_BP_SHIFT) |

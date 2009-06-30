@@ -153,7 +153,7 @@ static __init int register_proc( void )
     char proc_name[16];
     int gpiocount;
 
-    gpiocount = 8;
+    gpiocount = 22;
 
     /* create directory gpio */
     gpio_dir = proc_mkdir( "gpio", NULL );
