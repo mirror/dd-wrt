@@ -80,7 +80,7 @@ unsigned char np28g_vlans[6] __initdata = {
 };
 
 unsigned char wp54_vlans[6] __initdata = {
-	0x41, 0x42, 0x00, 0x00, 0x00, 0x00
+	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
 };
 
 /*--------------------------------------------------------------------------*/
@@ -170,7 +170,7 @@ ADM5120_BOARD_END
 ADM5120_BOARD_START(WP54AG, "Compex WP54AG")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.eth_num_ports	= 2,
+	.eth_num_ports	= 5,
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
@@ -181,7 +181,7 @@ ADM5120_BOARD_END
 ADM5120_BOARD_START(WP54G, "Compex WP54G")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.eth_num_ports	= 2,
+	.eth_num_ports	= 5,
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
@@ -192,7 +192,7 @@ ADM5120_BOARD_END
 ADM5120_BOARD_START(WP54G_WRT, "Compex WP54G-WRT")
 	.board_setup	= wp54_wrt_setup,
 	.board_reset	= wp54_reset,
-	.eth_num_ports	= 2,
+	.eth_num_ports	= 5,
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
@@ -203,7 +203,7 @@ ADM5120_BOARD_END
 ADM5120_BOARD_START(WPP54AG, "Compex WPP54AG")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.eth_num_ports	= 2,
+	.eth_num_ports	= 5,
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
@@ -214,7 +214,7 @@ ADM5120_BOARD_END
 ADM5120_BOARD_START(WPP54G, "Compex WPP54G")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.eth_num_ports	= 2,
+	.eth_num_ports	= 5,
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
