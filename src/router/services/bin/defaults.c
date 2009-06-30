@@ -20,7 +20,7 @@ for (i=0;i<sizeof(srouter_defaults)/sizeof(struct nvram_tuple);i++)
     if (len>127)
 	{
 	len|=128;
-	putc(len,out);
+	putc(len&0xff,out);
 	putc(strlen(srouter_defaults[i].value)>>7,out);
 	}else
 	{
