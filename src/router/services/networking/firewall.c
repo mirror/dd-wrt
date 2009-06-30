@@ -2760,6 +2760,7 @@ void start_firewall(void)
 	char name[NAME_MAX];
 	struct stat statbuff;
 	int log_level = 0;
+	system("cat /proc/net/ip_conntrack_flush");
 
 	/*
 	 * Block obviously spoofed IP addresses 
