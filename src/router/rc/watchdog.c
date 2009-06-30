@@ -46,7 +46,7 @@ static void watchdog(void)
 #ifdef HAVE_MADWIFI
 			if (radiostate == 1)
 #else
-			if (radiostate == 0)
+			if (radiostate & WL_RADIO_SW_DISABLE == 0)
 #endif
 				led_control(LED_WLAN, LED_ON);
 			else {
