@@ -769,7 +769,11 @@ static void handle_request(void)
 //      free(line);
 		return;
 	}
-	if (referer && host) {
+	int nodetect=0;
+	if (nvram_invmatch("status_auth", "0") && endswith(file,"Info.htm"))
+		nodetect=1;
+
+	if (referer && host && nodetect==0) {
 		int i;
 		int hlen = strlen(host);
 		int rlen = strlen(referer);
@@ -958,10 +962,10 @@ static void handle_request(void)
 		} else
 #endif
 		{
-			if ((nvram_match("http_username", DEFAULT_USER)
+			if (((nvram_match("http_username", DEFAULT_USER)
 			     && nvram_match("http_passwd", DEFAULT_PASS))
 			    || nvram_match("http_username", "")
-			    || nvram_match("http_passwd", "admin")) {
+			    || nvram_match("http_passwd", "admin")) && !endswith(file, "About.htm")){
 				changepassword = 1;
 				if (endswith(file, ".asp"))
 					file = "changepass.asp";
