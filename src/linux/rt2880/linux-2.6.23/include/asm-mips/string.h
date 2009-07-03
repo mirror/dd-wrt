@@ -108,8 +108,9 @@ strncmp(__const__ char *__cs, __const__ char *__ct, size_t __count)
 	__asm__ __volatile__(
 	".set\tnoreorder\n\t"
 	".set\tnoat\n"
-	"1:\tlbu\t%3,(%0)\n\t"
-	"beqz\t%2,2f\n\t"
+	"1:\tbeqz\t%2,2f\n\t"
+	"nop\n\t"
+	"lbu\t%3,(%0)\n\t"
 	"lbu\t$1,(%1)\n\t"
 	"subu\t%2,1\n\t"
 	"bne\t$1,%3,3f\n\t"

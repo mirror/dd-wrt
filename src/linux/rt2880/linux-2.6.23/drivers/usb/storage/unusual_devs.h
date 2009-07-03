@@ -1467,6 +1467,7 @@ UNUSUAL_DEV(  0x1199, 0x0fff, 0x0000, 0x9999,
 		US_SC_DEVICE, US_PR_DEVICE, NULL,
 		US_FL_IGNORE_DEVICE),
 
+
 /* Reported by Jaco Kroon <jaco@kroon.co.za>
  * The usb-storage module found on the Digitech GNX4 (and supposedly other
  * devices) misbehaves and causes a bunch of invalid I/O errors.
@@ -1807,6 +1808,43 @@ UNUSUAL_DEV(  0x12d1, 0x143F, 0x0000, 0x0000,
 		"Mass Storage",
 		US_SC_DEVICE, US_PR_DEVICE, usb_stor_huawei_e220_init,
 		0),
+
+/* Globetrotter HSDPA; mass storage shows up as Qualcomm for vendor */
+UNUSUAL_DEV(  0x05c6, 0x1000, 0x0000, 0x9999,
+		"Option N.V.",
+		"Mass Storage",
+		US_SC_DEVICE, US_PR_DEVICE, option_ms_init,
+		0),
+
+
+//UNUSUAL_DEV(  0x0af0, 0x6971, 0x0000, 0x9999,
+//		"Option N.V.",
+//		"Mass Storage",
+//		US_SC_DEVICE, US_PR_DEVICE, NULL,
+//		0),
+		
+
+UNUSUAL_DEV( 0x0af0, 0x7401, 0x0000, 0x0000,
+		"Option",
+		"GI 0401 SD-Card",
+		US_SC_DEVICE, US_PR_DEVICE, NULL,
+		0 ),
+
+UNUSUAL_DEV(  0x1186, 0x3e04, 0x0000, 0x0000,
+           "D-Link",
+           "USB Mass Storage",
+           US_SC_DEVICE, US_PR_DEVICE, option_ms_init, 0),
+
+/* Reported by Jan Dumon <j.dumon@option.com>
+ * This device (wrongly) has a vendor-specific device descriptor.
+ * The entry is needed so usb-storage can bind to it's mass-storage
+ * interface as an interface driver */
+UNUSUAL_DEV( 0x0af0, 0x7501, 0x0000, 0x0000,
+		"Option",
+		"GI 0431 SD-Card",
+		US_SC_DEVICE, US_PR_DEVICE, NULL,
+		0 ),
+
 
 
 /* Reported by Vilius Bilinkevicius <vilisas AT xxx DOT lt) */

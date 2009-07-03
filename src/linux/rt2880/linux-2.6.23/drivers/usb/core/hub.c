@@ -31,6 +31,16 @@
 #include "hcd.h"
 #include "hub.h"
 
+#ifdef ENABLE_HOT_PLUG_RESET
+extern void ralink_reset(int reset_pin);
+extern int usb_hotplug_flag;
+enum
+{
+    USB_PLUG_RESET   = 1<<0,
+    USB_UNPLUG_RESET = 1<<1,
+};
+#endif
+
 #ifdef	CONFIG_USB_PERSIST
 #define	USB_PERSIST	1
 #else
