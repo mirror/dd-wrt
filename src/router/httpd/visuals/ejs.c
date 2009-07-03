@@ -1431,7 +1431,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_REGISTER
 	if (!isregistered_real())
 		registered = 0;
+	int cpeonly = iscpe();
+#else
+	int cpeonly = 0;
 #endif
+
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_NOWIFI
 	int wifi = 0;
@@ -1656,8 +1660,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strncmp
 				    (menu[i][j], "Wireless_Advanced", 17))
 					j++;
-				if (!wifi
-				    && !strncmp(menu[i][j], "Wireless_WDS", 12))
+				if (!wifi && !iscpeonly && !strncmp(menu[i][j], "Wireless_WDS", 12))
 					j++;
 				if (!wifi
 				    && !strcmp(menu[i][j],
