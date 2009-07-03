@@ -770,7 +770,7 @@ static void handle_request(void)
 		return;
 	}
 	int nodetect=0;
-	if (nvram_invmatch("status_auth", "0") && endswith(file,"Info.htm"))
+	if (nvram_match("status_auth", "0") && endswith(file,"Info.htm"))
 		nodetect=1;
 
 	if (referer && host && nodetect==0) {
