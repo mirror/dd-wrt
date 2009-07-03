@@ -406,7 +406,7 @@ int usb_stor_bulk_transfer_buf(struct us_data *us, unsigned int pipe,
 	return interpret_urb_result(us, pipe, length, result, 
 			us->current_urb->actual_length);
 }
-
+EXPORT_SYMBOL(usb_stor_bulk_transfer_buf);
 /*
  * Transfer a scatter-gather list via bulk transfer
  *

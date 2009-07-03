@@ -1,8 +1,8 @@
 /* ==========================================================================
- * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_pcd.h $
- * $Revision: 1.1 $
- * $Date: 2007-11-19 05:39:07 $
- * $Change: 791271 $
+ * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_pcd.h $
+ * $Revision: 1.2 $
+ * $Date: 2008-11-21 05:39:15 $
+ * $Change: 1103515 $
  *
  * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
  * "Software") is an Unsupported proprietary work of Synopsys, Inc. unless
@@ -38,7 +38,13 @@
 #include <linux/list.h>
 #include <linux/errno.h>
 #include <linux/device.h>
-#include <linux/usb_ch9.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
+# include <linux/usb/ch9.h>
+#else
+# include <linux/usb_ch9.h>
+#endif
+
 #include <linux/usb_gadget.h>
 #include <linux/interrupt.h>
 #include <linux/dma-mapping.h>
@@ -70,6 +76,12 @@ struct dwc_otg_device;
 /** Maxpacket size for any EP */
 #define MAX_PACKET_SIZE 1024
 
+/** Max Transfer size for any EP */
+#define MAX_TRANSFER_SIZE 65535
+
+/** Max DMA Descriptor count for any EP */
+#define MAX_DMA_DESC_CNT 64
+
 /**
  * Get the pointer to the core_if from the pcd pointer.
  */
@@ -84,12 +96,18 @@ typedef enum ep0_state
 	EP0_IDLE,
 	EP0_IN_DATA_PHASE,
 	EP0_OUT_DATA_PHASE,
-	EP0_STATUS,
+	EP0_IN_STATUS_PHASE,
+	EP0_OUT_STATUS_PHASE,
 	EP0_STALL,
 } ep0state_e;
 
 /** Fordward declaration.*/
 struct dwc_otg_pcd;
+
+/** DWC_otg iso request structure.
+ * 
+ */
+typedef struct usb_iso_request  dwc_otg_pcd_iso_request_t;
 
 /**	  PCD EP structure.
  * This structure describes an EP, there is an array of EPs in the PCD
@@ -108,6 +126,11 @@ typedef struct dwc_otg_pcd_ep
 	unsigned disabling : 1;
 	unsigned dma : 1;
 	unsigned queue_sof : 1;
+
+#ifdef DWC_EN_ISOC
+	/** DWC_otg Isochronous Transfer */
+	struct usb_iso_request* iso_req;
+#endif //DWC_EN_ISOC
 
 	/** DWC_otg ep data. */
 	dwc_ep_t dwc_ep;
@@ -163,8 +186,9 @@ typedef struct dwc_otg_pcd
 	uint16_t *status_buf;
 	dma_addr_t status_buf_dma_handle;
 
-	/** Array of EPs. */
+	/** EP0 */
 	dwc_otg_pcd_ep_t ep0; 
+
 	/** Array of IN EPs. */
 	dwc_otg_pcd_ep_t in_ep[ MAX_EPS_CHANNELS - 1]; 
 	/** Array of OUT EPs. */
@@ -193,22 +217,29 @@ typedef struct dwc_otg_pcd
 /** DWC_otg request structure.
  * This structure is a list of requests.
  */
-typedef struct dwc_otg_pcd_request 
+typedef struct 
 {
 	struct usb_request	req; /**< USB Request. */
 	struct list_head	queue;	/**< queue of these requests. */
 } dwc_otg_pcd_request_t;
 
 
-extern int __init dwc_otg_pcd_init(struct lm_device *_lmdev);
+extern int dwc_otg_pcd_init(struct lm_device *lmdev);
 
 //extern void dwc_otg_pcd_remove( struct dwc_otg_device *_otg_dev );
-extern void dwc_otg_pcd_remove( struct lm_device *_lmdev );
-extern int32_t dwc_otg_pcd_handle_intr( dwc_otg_pcd_t *_pcd );
-extern void dwc_otg_pcd_start_srp_timer(dwc_otg_pcd_t *_pcd );
+extern void dwc_otg_pcd_remove( struct lm_device *lmdev );
+extern int32_t dwc_otg_pcd_handle_intr( dwc_otg_pcd_t *pcd );
+extern void dwc_otg_pcd_start_srp_timer(dwc_otg_pcd_t *pcd );
 
-extern void dwc_otg_pcd_initiate_srp(dwc_otg_pcd_t *_pcd);
-extern void dwc_otg_pcd_remote_wakeup(dwc_otg_pcd_t *_pcd, int set);
+extern void dwc_otg_pcd_initiate_srp(dwc_otg_pcd_t *pcd);
+extern void dwc_otg_pcd_remote_wakeup(dwc_otg_pcd_t *pcd, int set);
+
+extern void dwc_otg_iso_buffer_done(dwc_otg_pcd_ep_t *ep, dwc_otg_pcd_iso_request_t *req);
+extern void dwc_otg_request_done(dwc_otg_pcd_ep_t *_ep, dwc_otg_pcd_request_t *req, 
+				int status);
+extern void dwc_otg_request_nuke(dwc_otg_pcd_ep_t *_ep); 
+extern void dwc_otg_pcd_update_otg(dwc_otg_pcd_t *_pcd, 
+					const unsigned reset);
 
 #endif
 #endif /* DWC_HOST_ONLY */

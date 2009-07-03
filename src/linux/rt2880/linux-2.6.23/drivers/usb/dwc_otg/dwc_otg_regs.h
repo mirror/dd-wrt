@@ -1,8 +1,8 @@
 /* ==========================================================================
- * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_regs.h $
- * $Revision: 1.1 $
- * $Date: 2007-11-19 05:39:07 $
- * $Change: 791271 $
+ * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_regs.h $
+ * $Revision: 1.2 $
+ * $Date: 2008-11-21 05:39:15 $
+ * $Change: 1099526 $
  *
  * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
  * "Software") is an Unsupported proprietary work of Synopsys, Inc. unless
@@ -60,6 +60,14 @@
  * registers in the new mode of operation must be reprogrammed as they
  * would be after a power-on reset.
  */
+
+/** Maximum number of Periodic FIFOs */
+#define MAX_PERIO_FIFOS 15
+/** Maximum number of Transmit FIFOs */
+#define MAX_TX_FIFOS 15
+
+/** Maximum number of Endpoints/HostChannels */
+#define MAX_EPS_CHANNELS 16
 
 /****************************************************************************/
 /** DWC_otg Core registers .  
@@ -132,7 +140,7 @@ typedef struct dwc_otg_core_global_regs
 	/**User HW Config4 Register (Read Only).  <i>Offset: 050h</i>*/
 	volatile uint32_t ghwcfg4;
 	/** Reserved  <i>Offset: 054h-0FFh</i> */
-	uint32_t reserved[43];
+	volatile uint32_t reserved[43];
 	/** Host Periodic Transmit FIFO Size Register. <i>Offset: 100h</i> */
 	volatile uint32_t hptxfsiz;
 	/** Device Periodic Transmit FIFO#n Register if dedicated fifos are disabled, 
@@ -273,7 +281,9 @@ typedef union gusbcfg_data
 		unsigned ulpi_ext_vbus_drv : 1;
 		unsigned ulpi_int_vbus_indicator : 1;
 		unsigned term_sel_dl_pulse : 1;
-		unsigned reserved : 9;
+		unsigned reserved23_27 : 5;
+		unsigned tx_end_delay : 1;
+		unsigned reserved29_31 : 3;
 	} b;
 } gusbcfg_data_t;
 
@@ -710,7 +720,8 @@ typedef union hwcfg2_data
 		unsigned num_host_chan : 4;
 		unsigned perio_ep_supported : 1;
 		unsigned dynamic_fifo : 1;
-		unsigned rx_status_q_depth : 2;
+		unsigned multi_proc_int : 1;
+		unsigned reserved21 : 1;
 		unsigned nonperio_tx_q_depth : 2;
 		unsigned host_perio_tx_q_depth : 2;
 		unsigned dev_token_q_depth : 5;
@@ -768,7 +779,8 @@ typedef union hwcfg4_data
 		unsigned session_end_filt_en : 1;				 
 		unsigned ded_fifo_en : 1;
 		unsigned num_in_eps : 4;
-		unsigned reserved31_30 : 2;
+		unsigned desc_dma : 1;
+		unsigned desc_dma_dyn : 1;
 	} b;
 } hwcfg4_data_t;
 
@@ -822,6 +834,18 @@ typedef struct dwc_otg_dev_global_regs
 	 *	Device IN EPs empty Inr. Mask Register (Read/Write)
 	 * <i>Offset: 834h</i> */ 
 	volatile uint32_t dtknqr4_fifoemptymsk;		
+	/** Device Each Endpoint Interrupt Register (Read Only). /
+	 * <i>Offset: 838h</i> */ 
+	volatile uint32_t deachint;		
+	/** Device Each Endpoint Interrupt mask Register (Read/Write). /
+	 * <i>Offset: 83Ch</i> */ 
+	volatile uint32_t deachintmsk;		
+	/** Device Each In Endpoint Interrupt mask Register (Read/Write). /
+	 * <i>Offset: 840h</i> */ 
+	volatile uint32_t diepeachintmsk[MAX_EPS_CHANNELS];		
+	/** Device Each Out Endpoint Interrupt mask Register (Read/Write). /
+	 * <i>Offset: 880h</i> */ 
+	volatile uint32_t doepeachintmsk[MAX_EPS_CHANNELS];		
 } dwc_otg_device_global_regs_t; 
 
 /**
@@ -855,7 +879,9 @@ typedef union dcfg_data
 
 		unsigned reserved13_17 : 5;
 		/** In Endpoint Mis-match count */
-		unsigned epmscnt : 4;
+		unsigned epmscnt : 5;
+		/** Enable Descriptor DMA in Device mode */
+		unsigned descdma : 1;
 	} b;
 } dcfg_data_t;
 
@@ -890,7 +916,18 @@ typedef union dctl_data
 		/** Clear Global OUT NAK */
 		unsigned cgoutnak : 1;
 
-		unsigned reserved : 21;
+		/** Power-On Programming Done */
+		unsigned pwronprgdone : 1;
+		/** Global Continue on BNA */
+		unsigned gcontbna : 1;
+		/** Global Multi Count */
+		unsigned gmc : 2;
+		/** Ignore Frame Number for ISOC EPs */
+		unsigned ifrmnum : 1;
+		/** NAK on Babble */
+		unsigned nakonbble : 1;
+
+		unsigned reserved16_31 : 16;
 	} b;
 } dctl_data_t;
 
@@ -957,12 +994,20 @@ typedef union diepint_data
 		
 		unsigned txfifoundrn : 1;
 
-		unsigned reserved08_31 : 23;
+		/** BNA Interrupt mask */
+		unsigned bna : 1;
+		
+		unsigned reserved10_12 : 3;
+		/** BNA Interrupt mask */
+		unsigned nak : 1;
+		
+		unsigned reserved14_31 : 18;
 		} b;
 } diepint_data_t;
+
 /**
- * This union represents the bit fields in the Device IN EP Common
- * Interrupt Mask Register.
+ * This union represents the bit fields in the Device IN EP 
+ * Common/Dedicated Interrupt Mask Register.
  */
 typedef union diepint_data diepmsk_data_t;
 
@@ -988,15 +1033,38 @@ typedef union doepint_data
 		unsigned ahberr : 1;
 		/** Setup Phase Done (contorl EPs) */
 		unsigned setup : 1;
-		unsigned reserved04_31 : 28;
+		/** OUT Token Received when Endpoint Disabled */
+		unsigned outtknepdis : 1;
+		
+		unsigned stsphsercvd : 1;
+		/** Back-to-Back SETUP Packets Received */ 
+		unsigned back2backsetup : 1;
+		
+		unsigned reserved7 : 1;
+		/** OUT packet Error */
+		unsigned outpkterr : 1;
+		/** BNA Interrupt */
+		unsigned bna : 1;
+	
+		unsigned reserved10 : 1;
+		/** Packet Drop Status */
+		unsigned pktdrpsts : 1;
+		/** Babble Interrupt */
+		unsigned babble : 1;
+		/** NAK Interrupt */
+		unsigned nak : 1;
+		/** NYET Interrupt */
+		unsigned nyet : 1;
+
+		unsigned reserved15_31 : 17;
 	} b;
 } doepint_data_t;
+
 /**
- * This union represents the bit fields in the Device OUT EP Common
- * Interrupt Mask Register.
+ * This union represents the bit fields in the Device OUT EP 
+ * Common/Dedicated Interrupt Mask Register.
  */
 typedef union doepint_data doepmsk_data_t;
-
 
 /**
  * This union represents the bit fields in the Device All EP Interrupt
@@ -1140,9 +1208,9 @@ typedef struct dwc_otg_dev_in_ep_regs
 	/** Device IN Endpoint Transmit FIFO Status Register. <i>Offset:900h +
 	 * (ep_num * 20h) + 18h</i> */
 	volatile uint32_t dtxfsts;
-	/** Reserved. <i>Offset:900h + (ep_num * 20h) + 1Ch - 900h +
-	 * (ep_num * 20h) + 1Ch</i>*/
-	uint32_t reserved18; 
+	/** Device IN Endpoint DMA Buffer Register. <i>Offset:900h +
+	 * (ep_num * 20h) + 1Ch</i> */
+	volatile uint32_t diepdmab;
 } dwc_otg_dev_in_ep_regs_t;
 
 /**
@@ -1174,9 +1242,11 @@ typedef struct dwc_otg_dev_out_ep_regs
 	/** Device OUT Endpoint DMA Address Register. <i>Offset:B00h
 	 * + (ep_num * 20h) + 14h</i> */
 	volatile uint32_t doepdma; 
-	/** Reserved. <i>Offset:B00h + (ep_num * 20h) + 18h - B00h +
-	 * (ep_num * 20h) + 1Ch</i> */
-	uint32_t unused[2];		
+	/** Reserved. <i>Offset:B00h + 	 * (ep_num * 20h) + 1Ch</i> */
+	uint32_t unused;		
+	/** Device OUT Endpoint DMA Buffer Register. <i>Offset:B00h
+	 * + (ep_num * 20h) + 1Ch</i> */
+	uint32_t doepdmab;		
 } dwc_otg_dev_out_ep_regs_t;
 
 /**
@@ -1327,13 +1397,115 @@ typedef union deptsiz0_data
 } deptsiz0_data_t;
 
 
-/** Maximum number of Periodic FIFOs */
-#define MAX_PERIO_FIFOS 15
-/** Maximum number of Periodic FIFOs */
-#define MAX_TX_FIFOS 15
+/////////////////////////////////////////////////
+// DMA Descriptor Specific Structures
+//
 
-/** Maximum number of Endpoints/HostChannels */
-#define MAX_EPS_CHANNELS 16
+/** Buffer status definitions */
+
+#define BS_HOST_READY	0x0
+#define BS_DMA_BUSY		0x1
+#define BS_DMA_DONE		0x2
+#define BS_HOST_BUSY	0x3
+
+/** Receive/Transmit status definitions */
+
+#define RTS_SUCCESS		0x0
+#define RTS_BUFFLUSH	0x1
+#define RTS_RESERVED	0x2
+#define RTS_BUFERR		0x3
+
+
+/**
+ * This union represents the bit fields in the DMA Descriptor
+ * status quadlet. Read the quadlet into the <i>d32</i> member then
+ * set/clear the bits using the <i>b</i>it, <i>b_iso_out</i> and 
+ * <i>b_iso_in</i> elements.
+ */
+typedef union desc_sts_data
+{
+		/** raw register data */
+		uint32_t d32;
+		/** quadlet bits */
+		struct {
+		/** Received number of bytes */
+		unsigned bytes : 16;
+
+		unsigned reserved16_22 : 7;
+		/** Multiple Transfer - only for OUT EPs */
+		unsigned mtrf : 1;
+		/** Setup Packet received - only for OUT EPs */
+		unsigned sr : 1;
+		/** Interrupt On Complete */
+		unsigned ioc : 1;
+		/** Short Packet */
+		unsigned sp : 1;
+		/** Last */
+		unsigned l : 1;
+		/** Receive Status */
+		unsigned sts : 2;
+		/** Buffer Status */
+		unsigned bs : 2;
+		} b;
+
+#ifdef DWC_EN_ISOC
+		/** iso out quadlet bits */
+		struct {
+		/** Received number of bytes */
+		unsigned rxbytes : 11;
+
+		unsigned reserved11 : 1;
+		/** Frame Number */
+		unsigned framenum : 11;
+		/** Received ISO Data PID */
+		unsigned pid : 2;
+		/** Interrupt On Complete */
+		unsigned ioc : 1;
+		/** Short Packet */
+		unsigned sp : 1;
+		/** Last */
+		unsigned l : 1;
+		/** Receive Status */
+		unsigned rxsts : 2;
+		/** Buffer Status */
+		unsigned bs : 2;
+		} b_iso_out;
+		
+		/** iso in quadlet bits */
+		struct {
+		/** Transmited number of bytes */
+		unsigned txbytes : 12;
+		/** Frame Number */
+		unsigned framenum : 11;
+		/** Transmited ISO Data PID */
+		unsigned pid : 2;
+		/** Interrupt On Complete */
+		unsigned ioc : 1;
+		/** Short Packet */
+		unsigned sp : 1;
+		/** Last */
+		unsigned l : 1;
+		/** Transmit Status */
+		unsigned txsts : 2;
+		/** Buffer Status */
+		unsigned bs : 2;
+		} b_iso_in;
+#endif //DWC_EN_ISOC
+} desc_sts_data_t;
+
+/** 
+ * DMA Descriptor structure 
+ *
+ * DMA Descriptor structure contains two quadlets:
+ * Status quadlet and Data buffer pointer.
+ */
+typedef struct dwc_otg_dma_desc
+{
+	/** DMA Descriptor status quadlet */
+	desc_sts_data_t	status;
+	/** DMA Descriptor data buffer pointer */
+ 	dma_addr_t	buf;
+} dwc_otg_dma_desc_t;
 
 /**
  * The dwc_otg_dev_if structure contains information needed to manage
@@ -1377,6 +1549,29 @@ typedef struct dwc_otg_dev_if
 
 	uint16_t rx_thr_length;
 	uint16_t tx_thr_length;
+
+	/**
+	 * Pointers to the DMA Descriptors for EP0 Control
+	 * transfers (virtual and physical)
+	 */
+		
+	/** 2 descriptors for SETUP packets */
+	uint32_t dma_setup_desc_addr[2];
+	dwc_otg_dma_desc_t* setup_desc_addr[2];
+
+	/** Pointer to Descriptor with latest SETUP packet */
+	dwc_otg_dma_desc_t* psetup;
+
+	/** Index of current SETUP handler descriptor */
+	uint32_t setup_desc_index;
+
+	/** Descriptor for Data In or Status In phases */
+	uint32_t dma_in_desc_addr;
+	dwc_otg_dma_desc_t* in_desc_addr;;
+	
+	/** Descriptor for Data Out or Status Out phases */
+	uint32_t dma_out_desc_addr;
+	dwc_otg_dma_desc_t* out_desc_addr;
 		
 } dwc_otg_dev_if_t;
 

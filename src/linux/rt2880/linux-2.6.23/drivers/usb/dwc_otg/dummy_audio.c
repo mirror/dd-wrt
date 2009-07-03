@@ -84,7 +84,12 @@
 #include <asm/system.h>
 #include <asm/unaligned.h>
 
-#include <linux/usb_ch9.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
+# include <linux/usb/ch9.h>
+#else
+# include <linux/usb_ch9.h>
+#endif
+
 #include <linux/usb_gadget.h>
 
 

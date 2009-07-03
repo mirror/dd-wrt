@@ -777,10 +777,7 @@ static int sierra_open(struct usb_serial_port *port, struct file *filp)
 	portdata->rts_state = 1;
 	portdata->dtr_state = 1;
 	
-	if (port->tty) {
-		port->tty->low_latency = 1;
-	}
-
+	
 	spin_lock_init(&portdata->lock);
 	
 	endpoint = port->bulk_in_endpointAddress;
