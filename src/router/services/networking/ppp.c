@@ -46,6 +46,20 @@
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
+
+char *getenvs(char *env)
+{
+static unsigned char r[64];
+char *e=getenv(env);
+int c=0;
+int i;
+for (i=0;i<strlen(e);i++)
+    {
+    if (e[i]!=' ')
+	r[c++]=e[i];
+    }
+return r;
+}
 /*
  * Called when link comes up
  */
@@ -88,7 +102,7 @@ int ipup_main(int argc, char **argv)
 	if (nvram_match("wan_proto", "pppoe"))
 		nvram_set("pppoe_ifname", wan_ifname);
 
-	if ((value = getenv("IPLOCAL"))) {
+	if ((value = getenvs("IPLOCAL"))) {
 		ifconfig(wan_ifname, IFUP, value, "255.255.255.255");
 		if (nvram_match("wan_proto", "pppoe")) {
 			nvram_set("wan_ipaddr_buf", nvram_safe_get("wan_ipaddr"));	// Store 
@@ -118,7 +132,7 @@ int ipup_main(int argc, char **argv)
 #endif
 	}
 
-	if ((value = getenv("IPREMOTE"))) {
+	if ((value = getenvs("IPREMOTE"))) {
 		nvram_set("wan_gateway", value);
 		if (nvram_match("wan_proto", "pptp")) {
 			eval("route", "del", "default");
@@ -126,11 +140,11 @@ int ipup_main(int argc, char **argv)
 		}
 	}
 	strcpy(buf, "");
-	if (getenv("DNS1"))
-		sprintf(buf, "%s", getenv("DNS1"));
-	if (getenv("DNS2"))
+	if (getenvs("DNS1"))
+		sprintf(buf, "%s", getenvs("DNS1"));
+	if (getenvs("DNS2"))
 		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "",
-			getenv("DNS2"));
+			getenvs("DNS2"));
 	nvram_set("wan_get_dns", buf);
 
 	if ((value = getenv("AC_NAME")))

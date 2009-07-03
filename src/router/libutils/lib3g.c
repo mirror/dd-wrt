@@ -81,11 +81,7 @@ char *get3GControlDevice(void)
 #ifdef ARCH_broadcom
 	mkdir("/tmp/usb");
 	eval("mount", "-t", "usbfs", "usb", "/tmp/usb");
-	insmod("usbserial");
 //insmod("sierra");  //further investigation required (compass problem)
-	insmod("option");
-	insmod("ipw");
-	insmod("pl2303");
 #endif
 
 	char *ttsdevice = "/dev/usb/tts/0";
@@ -109,12 +105,16 @@ char *get3GControlDevice(void)
 	if (scanFor(0x1199, 0x6880)) {
 		//sierra wireless 
 		fprintf(stderr, "Sierra Wireless Compass 885 deteted\n");
+		insmod("usbserial");
+		insmod("sierra");
 		nvram_set("3gdata", "/dev/usb/tts/4");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x1199, 0x6890)) {
 		//sierra wireless 
 		fprintf(stderr, "Sierra Wireless Compass 888 deteted\n");
+		insmod("usbserial");
+		insmod("sierra");
 		nvram_set("3gdata", "/dev/usb/tts/4");
 		return "/dev/usb/tts/3";
 	}
@@ -122,6 +122,8 @@ char *get3GControlDevice(void)
 		//sierra wireless 
 		fprintf(stderr, "Sierra Wireless MC8790\n");
 		nvram_set("3gdata", "/dev/usb/tts/4");
+		insmod("usbserial");
+		insmod("sierra");
 		checkreset("/dev/usb/tts/3");
 		return "/dev/usb/tts/3";
 	}
@@ -129,6 +131,8 @@ char *get3GControlDevice(void)
 		//sierra wireless 
 		fprintf(stderr, "Sierra Wireless MC8790\n");
 		nvram_set("3gdata", "/dev/usb/tts/4");
+		insmod("usbserial");
+		insmod("sierra");
 		checkreset("/dev/usb/tts/3");
 		return "/dev/usb/tts/3";
 	}
@@ -136,42 +140,50 @@ char *get3GControlDevice(void)
 		//sierra wireless 
 		fprintf(stderr, "Sierra Wireless MC8790\n");
 		nvram_set("3gdata", "/dev/usb/tts/4");
+		insmod("usbserial");
+		insmod("sierra");
 		checkreset("/dev/usb/tts/3");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x12d1, 0x1003)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option E172 detected\n");
+	insmod("usbserial");
 	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x0af0, 0x7011)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option E301 HSUPA detected\n");
+	insmod("usbserial");
 	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1001)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option E600 detected\n");
+	insmod("usbserial");
 	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1003)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option EC270 detected\n");
+	insmod("usbserial");
 	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1412)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
+	insmod("usbserial");
 	insmod("option");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1412)) {
 		//huawei
 		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
+	insmod("usbserial");
 	insmod("option");
 		return "/dev/usb/tts/0";
 	}
@@ -180,6 +192,7 @@ char *get3GControlDevice(void)
 		//huawei
 		fprintf(stderr, "QUALCOMM ICON 210 detected\n");
 		nvram_set("3gdata", "/dev/usb/tts/2");
+	insmod("usbserial");
 	insmod("option");
 		return "/dev/usb/tts/2";
 	}
@@ -197,6 +210,7 @@ char *get3GControlDevice(void)
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 	sleep(2);
+	insmod("usbserial");
 	insmod("option");
 	nvram_set("3gdata", "/dev/usb/tts/2");
 	    return "/dev/usb/tts/2";
@@ -205,21 +219,19 @@ char *get3GControlDevice(void)
 	if (scanFor(0x0af0, 0x6971)) {
 		//huawei
 	fprintf(stderr, "QUALCOMM ICON 225 detected\n");
-/*	FILE *out = fopen("/tmp/usb_modeswitch.conf","wb");
-	fprintf(out,"DefaultVendor=0x0af0\n");
-	fprintf(out,"DefaultProduct=0x6971\n");
-	fprintf(out,"TargetClass=0xff\n");
-	fprintf(out,"MessageContent=\"55534243785634120100000080000601000000000000000000000000000000\"\n");
-	fclose(out);
-	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");*/
 	system("ozerocdoff -wi 0x6971");
-	sleep(5);
+	sleep(10);
 	system("insmod hso");
-	nvram_set("3gdata", "/dev/usb/tts/2");
-	    return "/dev/usb/tts/2";
+	FILE *out=fopen("/tmp/conninfo.ini","wb");
+	fprintf(out,"APN=%s\n",nvram_safe_get("wan_apn"));
+	fprintf(out,"USER=%s\n",nvram_safe_get("ppp_username"));
+	fprintf(out,"PASS=%s\n",nvram_safe_get("ppp_passwd"));
+	fprintf(out,"PIN=%s\n",nvram_safe_get("wan_pin"));
+	fclose(out);
+	nvram_set("3gdata", "hso");
+	system("/etc/hso/hso_connect.sh restart");
+	return "hso";
 	}
-
-
 
 	if (scanFor(0x1199, 0x6832)) {
 		//sierra wireless mc 8780
@@ -228,6 +240,8 @@ char *get3GControlDevice(void)
 		checkreset("/dev/usb/tts/2");
 		return "/dev/usb/tts/2";
 	}
+	insmod("usbserial");
+	insmod("sierra");
 	insmod("option");
 	return ttsdevice;
 }

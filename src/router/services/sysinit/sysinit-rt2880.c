@@ -68,6 +68,7 @@ void start_sysinit(void)
 	 */
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
+	mount("usbfs", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	cprintf("sysinit() tmp\n");
 
 	/*

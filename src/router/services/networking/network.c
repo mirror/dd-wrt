@@ -2524,15 +2524,32 @@ void start_wan(int status)
 	// Remove the current value of pppd_pppifname
 	nvram_set("pppd_pppifname", "");
 
+#ifdef HAVE_3G
+	nvram_set("3gdata", "");
+#endif
 	/*
 	 * Configure WAN interface 
 	 */
 #ifdef HAVE_3G
 	if ((strcmp(wan_proto, "3g") == 0)) {
-		char *controldevice = get3GControlDevice();
-
+		stop_dhcpc();
+#ifdef HAVE_PPTP
+		stop_pptp();
+#endif
 		mkdir("/tmp/ppp", 0777);
+		symlink("/sbin/rc", "/tmp/ppp/ip-up");
+		symlink("/sbin/rc", "/tmp/ppp/ip-down");
+		unlink("/tmp/ppp/log");
+		unlink("/tmp/ppp/connect-log");
+		unlink("/tmp/ppp/set-pppoepid");
+		char *controldevice = get3GControlDevice();
 		int timeout = 5;
+		if (controldevice && !strcmp(controldevice,"hso"))
+		    {
+		    
+		    
+		    }else{
+
 
 		/* init PIN */
 		if (strlen(nvram_safe_get("wan_pin")))
@@ -2584,18 +2601,8 @@ void start_wan(int status)
 
 		fclose(fp);
 
-		symlink("/sbin/rc", "/tmp/ppp/ip-up");
-		symlink("/sbin/rc", "/tmp/ppp/ip-down");
-		unlink("/tmp/ppp/log");
 
-		// Clean pppoe linksys client files - Added by ice-man (Wed Jun 1)
-		unlink("/tmp/ppp/connect-log");
-		unlink("/tmp/ppp/set-pppoepid");
 
-		stop_dhcpc();
-#ifdef HAVE_PPTP
-		stop_pptp();
-#endif
 		eval("pppd", "file", "/tmp/ppp/options.pppoe");
 
 		/*
@@ -2653,6 +2660,7 @@ void start_wan(int status)
 			if (status != REDIAL) {
 				start_redial();
 			}
+		}
 		}
 
 	} else
