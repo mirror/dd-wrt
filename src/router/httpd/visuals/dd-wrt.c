@@ -3868,16 +3868,24 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			// || nvram_match ("ath0_mode", "wdssta"))
 			// showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
+#ifdef HAVE_REGISTER
+	int cpeonly = iscpe();
+#else
+	int cpeonly = 0;
+#endif
 			websWrite(wp,
 				  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 				  wl_mode);
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			if (!cpeonly)
+			{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
 				  nvram_match(wl_mode,
 					      "ap") ?
 				  "selected=\\\"selected\\\"" : "");
+			}
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
 				  nvram_match(wl_mode,
@@ -3890,12 +3898,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 					      "wet") ?
 				  "selected=\\\"selected\\\"" : "");
 #endif
+			if (!cpeonly)
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n",
 				  nvram_match(wl_mode,
 					      "infra") ?
 				  "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
+			if (!cpeonly)
+			{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
 				  nvram_match(wl_mode,
@@ -3907,6 +3918,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  nvram_match(wl_mode,
 					      "apstawet") ?
 				  "selected=\\\"selected\\\"" : "");
+			}
 //#endif
 #else
 			websWrite(wp,
@@ -3914,11 +3926,14 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  nvram_match(wl_mode,
 					      "wdssta") ?
 				  "selected=\\\"selected\\\"" : "");
+			if (!cpeonly)
+			{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 				  nvram_match(wl_mode,
 					      "wdsap") ?
 				  "selected=\\\"selected\\\"" : "");
+			}
 #endif
 			websWrite(wp, "//]]>\n</script>\n");
 			websWrite(wp, "</select>\n");
@@ -4407,7 +4422,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
-	show_virtualssid(wp, prefix);
+	if (!iscpe())
+	    show_virtualssid(wp, prefix);
 }
 
 void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
