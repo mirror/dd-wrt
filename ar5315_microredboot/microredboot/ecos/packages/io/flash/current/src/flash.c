@@ -158,6 +158,7 @@ flash_get_block_info(int *block_size, int *blocks)
     return FLASH_ERR_OK;
 }
 
+void diag_blink(void);
 int
 flash_erase(void *addr, int len, void **err_addr)
 {
@@ -231,6 +232,7 @@ flash_erase(void *addr, int len, void **err_addr)
         }
 #ifdef CYGSEM_IO_FLASH_CHATTER
         (*flash_info.pf)(".");
+        diag_blink();
 #endif
     }
     FLASH_Disable(block, end_addr);
@@ -291,6 +293,7 @@ flash_program(void *_addr, void *_data, int len, void **err_addr)
                 stat = 0x0BAD;
 #ifdef CYGSEM_IO_FLASH_CHATTER
                 (*flash_info.pf)("V");
+        diag_blink();
 #endif
             }
 #endif
@@ -300,6 +303,7 @@ flash_program(void *_addr, void *_data, int len, void **err_addr)
         }
 #ifdef CYGSEM_IO_FLASH_CHATTER
         (*flash_info.pf)(".");
+        diag_blink();
 #endif
         len -= size;
         addr += size/sizeof(*addr);

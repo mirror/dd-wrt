@@ -159,6 +159,24 @@ void bist(void) CYGBLD_ATTRIB_WEAK;
 
 int in_rescue_mode = 0;
 
+void set_gpio(int gpio,int state)
+{
+#if defined(CYGPKG_HAL_MIPS_AR2316)
+	*(volatile unsigned *)AR2316_GPIO_CR |= 1<<gpio;	/*set GPIO0 to be output */
+if (state)
+	*(volatile unsigned *)AR2316_GPIO_DO |= 1<<gpio;	/*set GPIO0 to 1 to spi flash CS normal state */
+else
+	*(volatile unsigned *)AR2316_GPIO_DO &= ~(1<<gpio);	/*set GPIO0 to 1 to spi flash CS normal state */
+#else
+	*(volatile unsigned *)AR531X_GPIO_CR &= ~(1<<gpio);	/*set GPIO0 to be output */
+if (state)
+	*(volatile unsigned *)AR531X_GPIO_DO |= 1<<gpio;	/*set GPIO0 to 1 to spi flash CS normal state */
+else
+	*(volatile unsigned *)AR531X_GPIO_DO &= ~(1<<gpio);	/*set GPIO0 to 1 to spi flash CS normal state */
+#endif
+
+}
+
 
 #include <ramconfig.h>
 static int rescue_mode(void)
