@@ -24,3 +24,30 @@ size_t strlen(const char *s)
 		/* nothing */ ;
 	return sc - s;
 }
+
+void *memmove( void *s1, const void *s2, size_t n )
+{
+    char *dst = (char *)s1;
+    const char *src = (const char *)s2;
+    if ((src < dst) && (dst < (src + n)))
+    {
+        // Have to copy backwards
+        src += n;
+        dst += n;
+        while (n--)
+        {
+            *--dst = *--src;
+        }
+    }
+    else
+    {
+        while (n--)
+        {
+            *dst++ = *src++;
+        }
+    }
+
+    
+    return s1;
+} // __memmove()
+
