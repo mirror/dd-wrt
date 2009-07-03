@@ -698,7 +698,7 @@ int internal_getRouterBrand()
 	char mac[32];
 	getBoardMAC(mac);
 	if (!strncmp(mac, "00:19:3B", 8) || !strncmp(mac, "00:02:6F", 8)
-	    || !strncmp(mac, "00:15:6D", 8)) {
+	    || !strncmp(mac, "00:15:6D", 8) || !strncmp(mac, "00:C0:CA", 8)) {
 		fprintf(stderr, "unsupported board\n");
 		sys_reboot();
 	}

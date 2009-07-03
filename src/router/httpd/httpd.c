@@ -965,7 +965,7 @@ static void handle_request(void)
 			if (((nvram_match("http_username", DEFAULT_USER)
 			     && nvram_match("http_passwd", DEFAULT_PASS))
 			    || nvram_match("http_username", "")
-			    || nvram_match("http_passwd", "admin")) && !endswith(file, "About.htm")){
+			    || nvram_match("http_passwd", "admin")) && !endswith(file, "register.asp")){
 				changepassword = 1;
 				if (endswith(file, ".asp"))
 					file = "changepass.asp";

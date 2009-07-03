@@ -965,6 +965,15 @@ static void configure_single(int count)
 	sprintf(dev, "ath%d", count);
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(wl, "ath%d_mode", count);
+#ifdef HAVE_REGISTER
+int cpeonly = iscpe();
+#else
+int cpeonly=0;
+#endif
+	if (cpeonly && nvram_match(wl,"ap"))
+	    {
+	    nvram_set(wl,"sta");
+	    }
 	sprintf(channel, "ath%d_channel", count);
 	sprintf(power, "ath%d_txpwrdbm", count);
 	sprintf(sens, "ath%d_distance", count);
