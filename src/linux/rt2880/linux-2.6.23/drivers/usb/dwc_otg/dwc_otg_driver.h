@@ -1,8 +1,8 @@
 /* ==========================================================================
- * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_driver.h $
- * $Revision: 1.1 $
- * $Date: 2007-11-19 05:39:07 $
- * $Change: 791271 $
+ * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_driver.h $
+ * $Revision: 1.2 $
+ * $Date: 2008-11-21 05:39:15 $
+ * $Change: 1064918 $
  *
  * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
  * "Software") is an Unsupported proprietary work of Synopsys, Inc. unless
@@ -31,7 +31,7 @@
  * DAMAGE.
  * ========================================================================== */
 
-#if !defined(__DWC_OTG_DRIVER_H__)
+#ifndef __DWC_OTG_DRIVER_H__
 #define __DWC_OTG_DRIVER_H__
 
 /** @file
@@ -47,24 +47,23 @@ struct dwc_otg_hcd;
  * This structure is a wrapper that encapsulates the driver components used to
  * manage a single DWC_otg controller.
  */
-typedef struct dwc_otg_device
-{
-		/** Base address returned from ioremap() */
-		void *base;
+typedef struct dwc_otg_device {
+	/** Base address returned from ioremap() */
+	void *base;
 
 	struct lm_device *lmdev;
 
-		/** Pointer to the core interface structure. */
-		dwc_otg_core_if_t *core_if;
+	/** Pointer to the core interface structure. */
+	dwc_otg_core_if_t *core_if;
 
-		/** Register offset for Diagnostic API.*/
-		uint32_t reg_offset;
-		
-		/** Pointer to the PCD structure. */
-		struct dwc_otg_pcd *pcd;
+	/** Register offset for Diagnostic API. */
+	uint32_t reg_offset;
 
-		/** Pointer to the HCD structure. */
-		struct dwc_otg_hcd *hcd;
+	/** Pointer to the PCD structure. */
+	struct dwc_otg_pcd *pcd;
+
+	/** Pointer to the HCD structure. */
+	struct dwc_otg_hcd *hcd;
 
 	/** Flag to indicate whether the common IRQ handler is installed. */
 	uint8_t common_irq_installed;

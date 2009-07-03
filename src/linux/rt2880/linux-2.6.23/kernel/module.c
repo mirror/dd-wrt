@@ -1737,6 +1737,10 @@ static struct module *load_module(void __user *umod,
 	   special cases for the architectures. */
 	layout_sections(mod, hdr, sechdrs, secstrings);
 
+#ifdef __mips
+	module_relayout(hdr, sechdrs, secstrings, symindex, mod);
+#endif
+
 	/* Do the allocs. */
 	ptr = module_alloc(mod->core_size);
 	if (!ptr) {

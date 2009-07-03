@@ -1,8 +1,8 @@
 /* ==========================================================================
- * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_attr.h $
- * $Revision: 1.1 $
- * $Date: 2007-11-19 05:39:07 $
- * $Change: 510275 $
+ * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_attr.h $
+ * $Revision: 1.2 $
+ * $Date: 2008-11-21 05:39:15 $
+ * $Change: 477051 $
  *
  * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
  * "Software") is an Unsupported proprietary work of Synopsys, Inc. unless

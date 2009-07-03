@@ -1,13 +1,13 @@
 /* ==========================================================================
  * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_driver.c $
- * $Revision: 1.2 $
- * $Date: 2007-11-30 08:32:28 $
+ * $Revision: 1.7 $
+ * $Date: 2008-11-21 05:39:15 $
  * $Change: 791271 $
  *
  * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
  * "Software") is an Unsupported proprietary work of Synopsys, Inc. unless
  * otherwise expressly agreed to in writing between Synopsys and you.
- * 
+ *
  * The Software IS NOT an item of Licensed Software or Licensed Product under
  * any End User Software License Agreement or Agreement for Licensed Product
  * with Synopsys or any supplement thereto. You are permitted to use and
@@ -17,7 +17,7 @@
  * any information contained herein except pursuant to this license grant from
  * Synopsys. If you do not agree with this notice, including the disclaimer
  * below, then you are not authorized to use the Software.
- * 
+ *
  * THIS SOFTWARE IS BEING DISTRIBUTED BY SYNOPSYS SOLELY ON AN "AS IS" BASIS
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,7 +37,7 @@
  * after Linux is booted using the insmod command. When the module is
  * installed, the dwc_otg_driver_init function is called. When the module is
  * removed (using rmmod), the dwc_otg_driver_cleanup function is called.
- * 
+ *
  * This module also defines a data structure for the dwc_otg_driver, which is
  * used in conjunction with the standard ARM lm_device structure. These
  * structures allow the OTG driver to comply with the standard Linux driver
@@ -56,8 +56,18 @@
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/stat.h>	 /* permission constants */
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+# include <linux/irq.h>
+#endif
 
 #include <asm/io.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+# include <asm/irq.h>
+#endif
+
 //#include <asm/arch/lm.h>
 #include <asm/rt2880/lm.h>
 #include <asm/rt2880/sizes.h>
@@ -71,11 +81,10 @@
 #include "dwc_otg_pcd.h"
 #include "dwc_otg_hcd.h"
 
-#define DWC_DRIVER_VERSION	"2.60a 22-NOV-2006"
+#define DWC_DRIVER_VERSION	"2.72a 24-JUN-2008"
 #define DWC_DRIVER_DESC		"HS OTG USB Controller driver"
 
 static const char dwc_driver_name[] = "dwc_otg";
-
 
 /*-------------------------------------------------------------------------*/
 /* Encapsulate the module parameter settings */
@@ -84,6 +93,7 @@ static dwc_otg_core_params_t dwc_otg_module_params = {
 	.opt = -1,
 	.otg_cap = -1,
 	.dma_enable = -1,
+	.dma_desc_enable = -1,
 	.dma_burst_size = -1,
 	.speed = -1,
 	.host_support_fs_ls_low_power = -1,
@@ -92,24 +102,25 @@ static dwc_otg_core_params_t dwc_otg_module_params = {
 	.data_fifo_size = -1,
 	.dev_rx_fifo_size = -1,
 	.dev_nperio_tx_fifo_size = -1,
-	.dev_perio_tx_fifo_size = 
-	{	/* dev_perio_tx_fifo_size_1 */
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1
-	},	/* 15 */
+	.dev_perio_tx_fifo_size = {
+		/* dev_perio_tx_fifo_size_1 */
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1
+		/* 15 */
+	},
 	.host_rx_fifo_size = -1,
 	.host_nperio_tx_fifo_size = -1,
 	.host_perio_tx_fifo_size = -1,
@@ -125,27 +136,30 @@ static dwc_otg_core_params_t dwc_otg_module_params = {
 	.ulpi_fs_ls = -1,
 	.ts_dline = -1,
 	.en_multiple_tx_fifo = -1,
-	.dev_tx_fifo_size = 
-	{	/* dev_tx_fifo_size */
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1,
-			-1
-	},	/* 15 */
+	.dev_tx_fifo_size = {
+		/* dev_tx_fifo_size */
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1
+		/* 15 */
+	},
 	.thr_ctl = -1,
 	.tx_thr_length = -1,
 	.rx_thr_length = -1,
+	.pti_enable = -1,
+	.mpi_enable = -1,
 };
 
 /**
@@ -153,8 +167,8 @@ static dwc_otg_core_params_t dwc_otg_module_params = {
  */
 static ssize_t version_show(struct device_driver *dev, char *buf)
 {
-	return snprintf(buf, sizeof(DWC_DRIVER_VERSION)+2,"%s\n", 
-		DWC_DRIVER_VERSION);
+	return snprintf(buf, sizeof(DWC_DRIVER_VERSION)+2, "%s\n",
+			DWC_DRIVER_VERSION);
 }
 static DRIVER_ATTR(version, S_IRUGO, version_show, NULL);
 
@@ -166,21 +180,21 @@ uint32_t g_dbg_lvl = 0; /* OFF */
 /**
  * This function shows the driver Debug Level.
  */
-static ssize_t dbg_level_show(struct device_driver *_drv, char *_buf)
+static ssize_t dbg_level_show(struct device_driver *drv, char *buf)
 {
-	return sprintf(_buf, "0x%0x\n", g_dbg_lvl);
+	return sprintf(buf, "0x%0x\n", g_dbg_lvl);
 }
+
 /**
  * This function stores the driver Debug Level.
  */
-static ssize_t dbg_level_store(struct device_driver *_drv, const char *_buf, 
-							   size_t _count)
+static ssize_t dbg_level_store(struct device_driver *drv, const char *buf,
+			       size_t count)
 {
-	g_dbg_lvl = simple_strtoul(_buf, NULL, 16);
-		return _count;
+	g_dbg_lvl = simple_strtoul(buf, NULL, 16);
+		return count;
 }
 static DRIVER_ATTR(debuglevel, S_IRUGO|S_IWUSR, dbg_level_show, dbg_level_store);
-
 
 /**
  * This function is called during module intialization to verify that
@@ -190,22 +204,22 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 {
 	int i;
 	int retval = 0;
-
+	
 /* Checks if the parameter is outside of its valid range of values */
-#define DWC_OTG_PARAM_TEST(_param_,_low_,_high_) \
+#define DWC_OTG_PARAM_TEST(_param_, _low_, _high_) \
 		((dwc_otg_module_params._param_ < (_low_)) || \
 		(dwc_otg_module_params._param_ > (_high_)))
 
 /* If the parameter has been set by the user, check that the parameter value is
  * within the value range of values.  If not, report a module error. */
-#define DWC_OTG_PARAM_ERR(_param_,_low_,_high_,_string_) \
+#define DWC_OTG_PARAM_ERR(_param_, _low_, _high_, _string_) \
 		do { \
 			if (dwc_otg_module_params._param_ != -1) { \
-				if (DWC_OTG_PARAM_TEST(_param_,(_low_),(_high_))) { \
+				if (DWC_OTG_PARAM_TEST(_param_, (_low_), (_high_))) { \
 					DWC_ERROR("`%d' invalid for parameter `%s'\n", \
-						dwc_otg_module_params._param_, _string_); \
+						  dwc_otg_module_params._param_, _string_); \
 					dwc_otg_module_params._param_ = dwc_param_##_param_##_default; \
-					retval ++; \
+					retval++; \
 				} \
 			} \
 		} while (0)
@@ -213,6 +227,7 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 	DWC_OTG_PARAM_ERR(opt,0,1,"opt");
 	DWC_OTG_PARAM_ERR(otg_cap,0,2,"otg_cap");
 	DWC_OTG_PARAM_ERR(dma_enable,0,1,"dma_enable");
+	DWC_OTG_PARAM_ERR(dma_desc_enable,0,1,"dma_desc_enable");
 	DWC_OTG_PARAM_ERR(speed,0,1,"speed");
 	DWC_OTG_PARAM_ERR(host_support_fs_ls_low_power,0,1,"host_support_fs_ls_low_power");
 	DWC_OTG_PARAM_ERR(host_ls_low_power_phy_clk,0,1,"host_ls_low_power_phy_clk");
@@ -234,66 +249,65 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 	DWC_OTG_PARAM_ERR(ulpi_fs_ls,0,1,"ulpi_fs_ls");
 	DWC_OTG_PARAM_ERR(ts_dline,0,1,"ts_dline");
 
-	if (dwc_otg_module_params.dma_burst_size != -1) 
-	{
+	if (dwc_otg_module_params.dma_burst_size != -1) {
 		if (DWC_OTG_PARAM_TEST(dma_burst_size,1,1) &&
-			DWC_OTG_PARAM_TEST(dma_burst_size,4,4) &&
-			DWC_OTG_PARAM_TEST(dma_burst_size,8,8) &&
-			DWC_OTG_PARAM_TEST(dma_burst_size,16,16) &&
-			DWC_OTG_PARAM_TEST(dma_burst_size,32,32) &&
-			DWC_OTG_PARAM_TEST(dma_burst_size,64,64) &&
-			DWC_OTG_PARAM_TEST(dma_burst_size,128,128) &&
-			DWC_OTG_PARAM_TEST(dma_burst_size,256,256))
-		{
-			DWC_ERROR("`%d' invalid for parameter `dma_burst_size'\n", 
+		    DWC_OTG_PARAM_TEST(dma_burst_size,4,4) &&
+		    DWC_OTG_PARAM_TEST(dma_burst_size,8,8) &&
+		    DWC_OTG_PARAM_TEST(dma_burst_size,16,16) &&
+		    DWC_OTG_PARAM_TEST(dma_burst_size,32,32) &&
+		    DWC_OTG_PARAM_TEST(dma_burst_size,64,64) &&
+		    DWC_OTG_PARAM_TEST(dma_burst_size,128,128) &&
+		    DWC_OTG_PARAM_TEST(dma_burst_size,256,256)) {
+			DWC_ERROR("`%d' invalid for parameter `dma_burst_size'\n",
 				  dwc_otg_module_params.dma_burst_size);
 			dwc_otg_module_params.dma_burst_size = 32;
-			retval ++;
+			retval++;
+		}
+
+		{
+			uint8_t brst_sz = 0;
+			while(dwc_otg_module_params.dma_burst_size > 1) {
+				brst_sz ++;
+				dwc_otg_module_params.dma_burst_size >>= 1;
+			}
+			dwc_otg_module_params.dma_burst_size = brst_sz;
 		}
 	}
 
-	if (dwc_otg_module_params.phy_utmi_width != -1) 
-	{
-		if (DWC_OTG_PARAM_TEST(phy_utmi_width,8,8) &&
-			DWC_OTG_PARAM_TEST(phy_utmi_width,16,16)) 
-		{
-			DWC_ERROR("`%d' invalid for parameter `phy_utmi_width'\n", 
+	if (dwc_otg_module_params.phy_utmi_width != -1) {
+		if (DWC_OTG_PARAM_TEST(phy_utmi_width, 8, 8) &&
+		    DWC_OTG_PARAM_TEST(phy_utmi_width, 16, 16)) {
+			DWC_ERROR("`%d' invalid for parameter `phy_utmi_width'\n",
 				  dwc_otg_module_params.phy_utmi_width);
 			dwc_otg_module_params.phy_utmi_width = 16;
-			retval ++;
+			retval++;
 		}
 	}
 
-	for (i=0; i<15; i++) 
-	{
+	for (i = 0; i < 15; i++) {
 		/** @todo should be like above */
-		//DWC_OTG_PARAM_ERR(dev_perio_tx_fifo_size[i],4,768,"dev_perio_tx_fifo_size");
-		if (dwc_otg_module_params.dev_perio_tx_fifo_size[i] != -1) 
-		{
-			if (DWC_OTG_PARAM_TEST(dev_perio_tx_fifo_size[i],4,768)) 
-			{
+		//DWC_OTG_PARAM_ERR(dev_perio_tx_fifo_size[i], 4, 768, "dev_perio_tx_fifo_size");
+		if (dwc_otg_module_params.dev_perio_tx_fifo_size[i] != -1) {
+			if (DWC_OTG_PARAM_TEST(dev_perio_tx_fifo_size[i], 4, 768)) {
 				DWC_ERROR("`%d' invalid for parameter `%s_%d'\n",
 					  dwc_otg_module_params.dev_perio_tx_fifo_size[i], "dev_perio_tx_fifo_size", i);
 				dwc_otg_module_params.dev_perio_tx_fifo_size[i] = dwc_param_dev_perio_tx_fifo_size_default;
-				retval ++;
+				retval++;
 			}
 		}
 	}
 
-	DWC_OTG_PARAM_ERR(en_multiple_tx_fifo,0,1,"en_multiple_tx_fifo");
+	DWC_OTG_PARAM_ERR(en_multiple_tx_fifo, 0, 1, "en_multiple_tx_fifo");
 
-	for (i=0; i<15; i++) 
-	{
+	for (i = 0; i < 15; i++) {
 		/** @todo should be like above */
-		//DWC_OTG_PARAM_ERR(dev_tx_fifo_size[i],4,768,"dev_tx_fifo_size");
-		if (dwc_otg_module_params.dev_tx_fifo_size[i] != -1) 
-		{
-			if (DWC_OTG_PARAM_TEST(dev_tx_fifo_size[i],4,768)) 
-			{
+		//DWC_OTG_PARAM_ERR(dev_tx_fifo_size[i], 4, 768, "dev_tx_fifo_size");
+		if (dwc_otg_module_params.dev_tx_fifo_size[i] != -1) {
+			if (DWC_OTG_PARAM_TEST(dev_tx_fifo_size[i], 4, 768)) {
 				DWC_ERROR("`%d' invalid for parameter `%s_%d'\n",
 					  dwc_otg_module_params.dev_tx_fifo_size[i], "dev_tx_fifo_size", i);
 				dwc_otg_module_params.dev_tx_fifo_size[i] = dwc_param_dev_tx_fifo_size_default;
-				retval ++;
+				retval++;
 			}
 		}
 	}
@@ -301,14 +315,14 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 	DWC_OTG_PARAM_ERR(thr_ctl, 0, 7, "thr_ctl");
 	DWC_OTG_PARAM_ERR(tx_thr_length, 8, 128, "tx_thr_length");
 	DWC_OTG_PARAM_ERR(rx_thr_length, 8, 128, "rx_thr_length");
-	
-	
+
+	DWC_OTG_PARAM_ERR(pti_enable,0,1,"pti_enable");
+	DWC_OTG_PARAM_ERR(mpi_enable,0,1,"mpi_enable");
+
 	/* At this point, all module parameters that have been set by the user
 	 * are valid, and those that have not are left unset.  Now set their
 	 * default values and/or check the parameters against the hardware
 	 * configurations of the OTG core. */
-
-
 
 /* This sets the parameter to the default value if it has not been set by the
  * user */
@@ -323,16 +337,16 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 	})
 
 /* This checks the macro agains the hardware configuration to see if it is
- * valid.  It is possible that the default value could be invalid.	In this
+ * valid.  It is possible that the default value could be invalid. In this
  * case, it will report a module error if the user touched the parameter.
  * Otherwise it will adjust the value without any error. */
-#define DWC_OTG_PARAM_CHECK_VALID(_param_,_str_,_is_valid_,_set_valid_) \
+#define DWC_OTG_PARAM_CHECK_VALID(_param_, _str_, _is_valid_, _set_valid_) \
 	({ \
-			int changed = DWC_OTG_PARAM_SET_DEFAULT(_param_); \
+		int changed = DWC_OTG_PARAM_SET_DEFAULT(_param_); \
 		int error = 0; \
 		if (!(_is_valid_)) { \
 			if (changed) { \
-				DWC_ERROR("`%d' invalid for parameter `%s'.	 Check HW configuration.\n", dwc_otg_module_params._param_,_str_); \
+				DWC_ERROR("`%d' invalid for parameter `%s'. Check HW configuration.\n", dwc_otg_module_params._param_, _str_); \
 				error = 1; \
 			} \
 			dwc_otg_module_params._param_ = (_set_valid_); \
@@ -341,43 +355,46 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 	})
 
 	/* OTG Cap */
-	retval += DWC_OTG_PARAM_CHECK_VALID(otg_cap,"otg_cap",
-				  ({
-					  int valid;
-					  valid = 1;
-					  switch (dwc_otg_module_params.otg_cap) {
-					  case DWC_OTG_CAP_PARAM_HNP_SRP_CAPABLE:
-						  if (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_HNP_SRP_CAPABLE_OTG) valid = 0;
-						  break;
-					  case DWC_OTG_CAP_PARAM_SRP_ONLY_CAPABLE:
-						  if ((core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_HNP_SRP_CAPABLE_OTG) &&
-							  (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_SRP_ONLY_CAPABLE_OTG) &&
-							  (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_SRP_CAPABLE_DEVICE) &&
-							  (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_SRP_CAPABLE_HOST))
-						  {
-							  valid = 0;
-						  }
-						  break;
-					  case DWC_OTG_CAP_PARAM_NO_HNP_SRP_CAPABLE:
-						  /* always valid */
-						  break;
-					  } 
-					  valid;
-			  }),
-					(((core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_HNP_SRP_CAPABLE_OTG) ||
-					(core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_SRP_ONLY_CAPABLE_OTG) ||
-					(core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_SRP_CAPABLE_DEVICE) ||
-					(core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_SRP_CAPABLE_HOST)) ?
-					DWC_OTG_CAP_PARAM_SRP_ONLY_CAPABLE :
-					DWC_OTG_CAP_PARAM_NO_HNP_SRP_CAPABLE));
-	
-	retval += DWC_OTG_PARAM_CHECK_VALID(dma_enable,"dma_enable",
-				((dwc_otg_module_params.dma_enable == 1) && (core_if->hwcfg2.b.architecture == 0)) ? 0 : 1, 
+	retval += DWC_OTG_PARAM_CHECK_VALID(otg_cap, "otg_cap",
+				({
+					int valid;
+					valid = 1;
+					switch (dwc_otg_module_params.otg_cap) {
+					case DWC_OTG_CAP_PARAM_HNP_SRP_CAPABLE:
+						if (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_HNP_SRP_CAPABLE_OTG)
+							valid = 0;
+						break;
+					case DWC_OTG_CAP_PARAM_SRP_ONLY_CAPABLE:
+						if ((core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_HNP_SRP_CAPABLE_OTG) &&
+						    (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_SRP_ONLY_CAPABLE_OTG) &&
+						    (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_SRP_CAPABLE_DEVICE) &&
+						    (core_if->hwcfg2.b.op_mode != DWC_HWCFG2_OP_MODE_SRP_CAPABLE_HOST)) {
+							valid = 0;
+						}
+						break;
+					case DWC_OTG_CAP_PARAM_NO_HNP_SRP_CAPABLE:
+						/* always valid */
+						break;
+					}
+					valid;
+				}),
+				(((core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_HNP_SRP_CAPABLE_OTG) ||
+				  (core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_SRP_ONLY_CAPABLE_OTG) ||
+				  (core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_SRP_CAPABLE_DEVICE) ||
+				  (core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_SRP_CAPABLE_HOST)) ?
+				 DWC_OTG_CAP_PARAM_SRP_ONLY_CAPABLE :
+				 DWC_OTG_CAP_PARAM_NO_HNP_SRP_CAPABLE));
+
+	retval += DWC_OTG_PARAM_CHECK_VALID(dma_enable, "dma_enable",
+				((dwc_otg_module_params.dma_enable == 1) && (core_if->hwcfg2.b.architecture == 0)) ? 0 : 1,
 				0);
 
-	retval += DWC_OTG_PARAM_CHECK_VALID(opt,"opt",
-				1,
+	retval += DWC_OTG_PARAM_CHECK_VALID(dma_desc_enable, "dma_desc_enable",
+				((dwc_otg_module_params.dma_desc_enable == 1) &&
+				 ((dwc_otg_module_params.dma_enable == 0) || (core_if->hwcfg4.b.desc_dma == 0))) ? 0 : 1,
 				0);
+
+	retval += DWC_OTG_PARAM_CHECK_VALID(opt, "opt", 1, 0);
 
 	DWC_OTG_PARAM_SET_DEFAULT(dma_burst_size);
 
@@ -389,7 +406,6 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 					"enable_dynamic_fifo",
 					((dwc_otg_module_params.enable_dynamic_fifo == 0) ||
 					(core_if->hwcfg2.b.dynamic_fifo == 1)), 0);
-	
 
 	retval += DWC_OTG_PARAM_CHECK_VALID(data_fifo_size,
 					"data_fifo_size",
@@ -410,7 +426,6 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 					"host_rx_fifo_size",
 					(dwc_otg_module_params.host_rx_fifo_size <= dwc_read_reg32(&core_if->core_global_regs->grxfsiz)),
 					dwc_read_reg32(&core_if->core_global_regs->grxfsiz));
-
 
 	retval += DWC_OTG_PARAM_CHECK_VALID(host_nperio_tx_fifo_size,
 					"host_nperio_tx_fifo_size",
@@ -446,7 +461,7 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
  * Define the following to disable the FS PHY Hardware checking.  This is for
  * internal testing only.
  *
- * #define NO_FS_PHY_HW_CHECKS 
+ * #define NO_FS_PHY_HW_CHECKS
  */
 
 #ifdef NO_FS_PHY_HW_CHECKS
@@ -458,28 +473,25 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 				({
 					int valid = 0;
 					if ((dwc_otg_module_params.phy_type == DWC_PHY_TYPE_PARAM_UTMI) &&
-					((core_if->hwcfg2.b.hs_phy_type == 1) || 
-					 (core_if->hwcfg2.b.hs_phy_type == 3)))
-					{
+					((core_if->hwcfg2.b.hs_phy_type == 1) ||
+					 (core_if->hwcfg2.b.hs_phy_type == 3))) {
 						valid = 1;
 					}
 					else if ((dwc_otg_module_params.phy_type == DWC_PHY_TYPE_PARAM_ULPI) &&
-						 ((core_if->hwcfg2.b.hs_phy_type == 2) || 
-						  (core_if->hwcfg2.b.hs_phy_type == 3)))
-					{
+						 ((core_if->hwcfg2.b.hs_phy_type == 2) ||
+						  (core_if->hwcfg2.b.hs_phy_type == 3))) {
 						valid = 1;
 					}
 					else if ((dwc_otg_module_params.phy_type == DWC_PHY_TYPE_PARAM_FS) &&
-						 (core_if->hwcfg2.b.fs_phy_type == 1))
-					{
+						 (core_if->hwcfg2.b.fs_phy_type == 1)) {
 						valid = 1;
 					}
 					valid;
 				}),
 				({
 					int set = DWC_PHY_TYPE_PARAM_FS;
-					if (core_if->hwcfg2.b.hs_phy_type) { 
-						if ((core_if->hwcfg2.b.hs_phy_type == 3) || 
+					if (core_if->hwcfg2.b.hs_phy_type) {
+						if ((core_if->hwcfg2.b.hs_phy_type == 3) ||
 						(core_if->hwcfg2.b.hs_phy_type == 1)) {
 							set = DWC_PHY_TYPE_PARAM_UTMI;
 						}
@@ -491,7 +503,7 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 				}));
 #endif
 
-	retval += DWC_OTG_PARAM_CHECK_VALID(speed,"speed",
+	retval += DWC_OTG_PARAM_CHECK_VALID(speed, "speed",
 				(dwc_otg_module_params.speed == 0) && (dwc_otg_module_params.phy_type == DWC_PHY_TYPE_PARAM_FS) ? 0 : 1,
 				dwc_otg_module_params.phy_type == DWC_PHY_TYPE_PARAM_FS ? 1 : 0);
 
@@ -507,8 +519,7 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 	DWC_OTG_PARAM_SET_DEFAULT(ts_dline);
 
 #ifdef NO_FS_PHY_HW_CHECKS
-	retval += DWC_OTG_PARAM_CHECK_VALID(i2c_enable,
-				"i2c_enable", 1, 0);
+	retval += DWC_OTG_PARAM_CHECK_VALID(i2c_enable, "i2c_enable", 1, 0);
 #else
 	retval += DWC_OTG_PARAM_CHECK_VALID(i2c_enable,
 				"i2c_enable",
@@ -516,21 +527,17 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 				0);
 #endif
 
-	for (i=0; i<15; i++) 
-	{
+	for (i = 0; i < 15; i++) {
 		int changed = 1;
 		int error = 0;
 
-		if (dwc_otg_module_params.dev_perio_tx_fifo_size[i] == -1) 
-		{
+		if (dwc_otg_module_params.dev_perio_tx_fifo_size[i] == -1) {
 			changed = 0;
 			dwc_otg_module_params.dev_perio_tx_fifo_size[i] = dwc_param_dev_perio_tx_fifo_size_default;
 		}
-		if (!(dwc_otg_module_params.dev_perio_tx_fifo_size[i] <= (dwc_read_reg32(&core_if->core_global_regs->dptxfsiz_dieptxf[i])))) 
-		{
-			if (changed) 
-			{
-				DWC_ERROR("`%d' invalid for parameter `dev_perio_fifo_size_%d'.	 Check HW configuration.\n", dwc_otg_module_params.dev_perio_tx_fifo_size[i],i);
+		if (!(dwc_otg_module_params.dev_perio_tx_fifo_size[i] <= (dwc_read_reg32(&core_if->core_global_regs->dptxfsiz_dieptxf[i])))) {
+			if (changed) {
+				DWC_ERROR("`%d' invalid for parameter `dev_perio_fifo_size_%d'. Check HW configuration.\n", dwc_otg_module_params.dev_perio_tx_fifo_size[i], i);
 				error = 1;
 			}
 			dwc_otg_module_params.dev_perio_tx_fifo_size[i] = dwc_read_reg32(&core_if->core_global_regs->dptxfsiz_dieptxf[i]);
@@ -538,54 +545,59 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
 		retval += error;
 	}
 
-
-	retval += DWC_OTG_PARAM_CHECK_VALID(en_multiple_tx_fifo,"en_multiple_tx_fifo",
-						((dwc_otg_module_params.en_multiple_tx_fifo == 1) && (core_if->hwcfg4.b.ded_fifo_en == 0)) ? 0 : 1, 
+	retval += DWC_OTG_PARAM_CHECK_VALID(en_multiple_tx_fifo, "en_multiple_tx_fifo",
+						((dwc_otg_module_params.en_multiple_tx_fifo == 1) && (core_if->hwcfg4.b.ded_fifo_en == 0)) ? 0 : 1,
 						0);
 
-	
-	for (i=0; i<15; i++) 
-	{
-
+	for (i = 0; i < 15; i++) {
 		int changed = 1;
 		int error = 0;
 
-		if (dwc_otg_module_params.dev_tx_fifo_size[i] == -1) 
-		{
+		if (dwc_otg_module_params.dev_tx_fifo_size[i] == -1) {
 			changed = 0;
 			dwc_otg_module_params.dev_tx_fifo_size[i] = dwc_param_dev_tx_fifo_size_default;
 		}
-		if (!(dwc_otg_module_params.dev_tx_fifo_size[i] <= (dwc_read_reg32(&core_if->core_global_regs->dptxfsiz_dieptxf[i])))) 
-		{
-			if (changed) 
-			{
-				DWC_ERROR("%d' invalid for parameter `dev_perio_fifo_size_%d'.	Check HW configuration.\n", dwc_otg_module_params.dev_tx_fifo_size[i],i);
+		if (!(dwc_otg_module_params.dev_tx_fifo_size[i] <= (dwc_read_reg32(&core_if->core_global_regs->dptxfsiz_dieptxf[i])))) {
+			if (changed) {
+				DWC_ERROR("%d' invalid for parameter `dev_perio_fifo_size_%d'. Check HW configuration.\n", dwc_otg_module_params.dev_tx_fifo_size[i], i);
 				error = 1;
 			}
 			dwc_otg_module_params.dev_tx_fifo_size[i] = dwc_read_reg32(&core_if->core_global_regs->dptxfsiz_dieptxf[i]);
 		}
 		retval += error;
-		
-		
 	}
-	
-	DWC_OTG_PARAM_SET_DEFAULT(thr_ctl);
+
+	retval += DWC_OTG_PARAM_CHECK_VALID(thr_ctl, "thr_ctl",
+				((dwc_otg_module_params.thr_ctl != 0) && ((dwc_otg_module_params.dma_enable == 0) || (core_if->hwcfg4.b.ded_fifo_en == 0))) ? 0 : 1,
+				0);
+
 	DWC_OTG_PARAM_SET_DEFAULT(tx_thr_length);
 	DWC_OTG_PARAM_SET_DEFAULT(rx_thr_length);
-	
+
+	retval += DWC_OTG_PARAM_CHECK_VALID(pti_enable, "pti_enable",
+		((dwc_otg_module_params.pti_enable == 0) || ((dwc_otg_module_params.pti_enable == 1) && (core_if->snpsid >= 0x4F54272A))) ? 1 : 0,
+			0);
+
+	retval += DWC_OTG_PARAM_CHECK_VALID(mpi_enable, "mpi_enable",
+			((dwc_otg_module_params.mpi_enable == 0) || ((dwc_otg_module_params.mpi_enable == 1) && (core_if->hwcfg2.b.multi_proc_int == 1))) ? 1 : 0,
+			0);
 	return retval;
 }
 
-/** 
+/**
  * This function is the top level interrupt handler for the Common
  * (Device and host modes) interrupts.
  */
-static irqreturn_t dwc_otg_common_irq(int _irq, void *_dev)
+static irqreturn_t dwc_otg_common_irq(int irq, void *dev
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+				      , struct pt_regs *r
+#endif
+				     )
 {
-	dwc_otg_device_t *otg_dev = _dev;
+	dwc_otg_device_t *otg_dev = dev;
 	int32_t retval = IRQ_NONE;
 
-	retval = dwc_otg_handle_common_intr( otg_dev->core_if );
+	retval = dwc_otg_handle_common_intr(otg_dev->core_if);
 	return IRQ_RETVAL(retval);
 }
 
@@ -596,63 +608,61 @@ static irqreturn_t dwc_otg_common_irq(int _irq, void *_dev)
  * present, the driver stops device processing. Any resources used on behalf
  * of this device are freed.
  *
- * @param[in] _lmdev
+ * @param[in] lmdev
  */
-static void dwc_otg_driver_remove(struct lm_device *_lmdev)
+static void dwc_otg_driver_remove(struct lm_device *lmdev)
 {
-	dwc_otg_device_t *otg_dev = lm_get_drvdata(_lmdev);
-	DWC_DEBUGPL(DBG_ANY, "%s(%p)\n", __func__, _lmdev);
-	
-	if (otg_dev == NULL) 
-	{
+	dwc_otg_device_t *otg_dev = lm_get_drvdata(lmdev);
+	DWC_DEBUGPL(DBG_ANY, "%s(%p)\n", __func__, lmdev);
+
+	if (!otg_dev) {
 		/* Memory allocation for the dwc_otg_device failed. */
+		DWC_DEBUGPL(DBG_ANY, "%s: otg_dev NULL!\n", __func__);
 		return;
 	}
 
 	/*
-	 * Free the IRQ 
+	 * Free the IRQ
 	 */
-	if (otg_dev->common_irq_installed) 
-	{
-		free_irq( _lmdev->irq, otg_dev );
+	if (otg_dev->common_irq_installed) {
+		free_irq(lmdev->irq, otg_dev);
 	}
 
 #ifndef DWC_DEVICE_ONLY
-	if (otg_dev->hcd != NULL) 
-	{
-		dwc_otg_hcd_remove( _lmdev );
+	if (otg_dev->hcd) {
+		dwc_otg_hcd_remove(lmdev);
+	} else {
+		DWC_DEBUGPL(DBG_ANY, "%s: otg_dev->hcd NULL!\n", __func__);
+		return;
 	}
 #endif
 
 #ifndef DWC_HOST_ONLY
-	if (otg_dev->pcd != NULL) 
-	{
-		dwc_otg_pcd_remove( _lmdev );
+	if (otg_dev->pcd) {
+		dwc_otg_pcd_remove(lmdev);
 	}
 #endif
-	if (otg_dev->core_if != NULL) 
-	{
-		dwc_otg_cil_remove( otg_dev->core_if );
+	if (otg_dev->core_if) {
+		dwc_otg_cil_remove(otg_dev->core_if);
 	}
 
 	/*
 	 * Remove the device attributes
 	 */
-	dwc_otg_attr_remove(_lmdev);
+	dwc_otg_attr_remove(lmdev);
 
 	/*
 	 * Return the memory.
 	 */
-	if (otg_dev->base != NULL) 
-	{
+	if (otg_dev->base) {
 		iounmap(otg_dev->base);
 	}
 	kfree(otg_dev);
-		
+
 	/*
 	 * Clear the drvdata pointer.
 	 */
-	lm_set_drvdata( _lmdev, 0 );
+	lm_set_drvdata(lmdev, 0);
 }
 
 /**
@@ -664,41 +674,39 @@ static void dwc_otg_driver_remove(struct lm_device *_lmdev)
  * lm_device. This allows the driver to access the dwc_otg_device
  * structure on subsequent calls to driver methods for this device.
  *
- * @param[in] _lmdev  lm_device definition
+ * @param[in] lmdev  lm_device definition
  */
-static int dwc_otg_driver_probe(struct lm_device *_lmdev)
+static int dwc_otg_driver_probe(struct lm_device *lmdev)
 {
 	int retval = 0;
+	uint32_t snpsid;
 	dwc_otg_device_t *dwc_otg_device;
-	int32_t snpsid;
 
-	dev_dbg(&_lmdev->dev, "dwc_otg_driver_probe(%p)\n", _lmdev);
-	dev_dbg(&_lmdev->dev, "start=0x%08x\n", (unsigned)_lmdev->resource.start);
+	dev_dbg(&lmdev->dev, "dwc_otg_driver_probe(%p)\n", lmdev);
+	dev_dbg(&lmdev->dev, "start=0x%08x\n", (unsigned)lmdev->resource.start);
 
 	dwc_otg_device = kmalloc(sizeof(dwc_otg_device_t), GFP_KERNEL);
-	
-	if (dwc_otg_device == 0) 
-	{
-		dev_err(&_lmdev->dev, "kmalloc of dwc_otg_device failed\n");
+
+	if (!dwc_otg_device) {
+		dev_err(&lmdev->dev, "kmalloc of dwc_otg_device failed\n");
 		retval = -ENOMEM;
 		goto fail;
 	}
-	
+
 	memset(dwc_otg_device, 0, sizeof(*dwc_otg_device));
 	dwc_otg_device->reg_offset = 0xFFFFFFFF;
 
 	/*
 	 * Map the DWC_otg Core memory into virtual address space.
 	 */
-	dwc_otg_device->base = ioremap(_lmdev->resource.start, SZ_256K);
-	
-	if (dwc_otg_device->base == NULL)
-	{
-		dev_err(&_lmdev->dev, "ioremap() failed\n");
+	dwc_otg_device->base = ioremap(lmdev->resource.start, SZ_256K);
+
+	if (!dwc_otg_device->base) {
+		dev_err(&lmdev->dev, "ioremap() failed\n");
 		retval = -ENOMEM;
 		goto fail;
 	}
-	dev_dbg(&_lmdev->dev, "base=0x%08x\n", (unsigned)dwc_otg_device->base);
+	dev_dbg(&lmdev->dev, "base=0x%08x\n", (unsigned)dwc_otg_device->base);
 
 	/*
 	 * Attempt to ensure this device is really a DWC_otg Controller.
@@ -706,83 +714,83 @@ static int dwc_otg_driver_probe(struct lm_device *_lmdev)
 	 * 0x45F42XXX, which corresponds to "OT2", as in "OTG version 2.XX".
 	 */
 	snpsid = dwc_read_reg32((uint32_t *)((uint8_t *)dwc_otg_device->base + 0x40));
-	
-	if ((snpsid & 0xFFFFF000) != 0x4F542000) 
-	{
-		dev_err(&_lmdev->dev, "Bad value for SNPSID: 0x%08x\n", snpsid);
+
+	if ((snpsid & 0xFFFFF000) != OTG_CORE_REV_2_00) {
+		dev_err(&lmdev->dev, "Bad value for SNPSID: 0x%08x\n", snpsid);
 		retval = -EINVAL;
 		goto fail;
 	}
+
+	DWC_PRINT("Core Release: %x.%x%x%x\n", 
+			(snpsid >> 12 & 0xF), 
+			(snpsid >> 8 & 0xF),
+			(snpsid >> 4 & 0xF),
+			(snpsid & 0xF));
 
 	/*
 	 * Initialize driver data to point to the global DWC_otg
 	 * Device structure.
 	 */
-	lm_set_drvdata( _lmdev, dwc_otg_device );
-	dev_dbg(&_lmdev->dev, "dwc_otg_device=0x%p\n", dwc_otg_device);
+	lm_set_drvdata(lmdev, dwc_otg_device);
+	dev_dbg(&lmdev->dev, "dwc_otg_device=0x%p\n", dwc_otg_device);
+
+	dwc_otg_device->core_if = dwc_otg_cil_init(dwc_otg_device->base,
+						   &dwc_otg_module_params);
 	
-	dwc_otg_device->core_if = dwc_otg_cil_init( dwc_otg_device->base, 
-							&dwc_otg_module_params);
-	if (dwc_otg_device->core_if == 0) 
-	{
-		dev_err(&_lmdev->dev, "CIL initialization failed!\n");
+	dwc_otg_device->core_if->snpsid = snpsid;
+	
+	if (!dwc_otg_device->core_if) {
+		dev_err(&lmdev->dev, "CIL initialization failed!\n");
 		retval = -ENOMEM;
 		goto fail;
 	}
-	
+
 	/*
 	 * Validate parameter values.
 	 */
-	if (check_parameters(dwc_otg_device->core_if) != 0) 
-	{
+	if (check_parameters(dwc_otg_device->core_if)) {
 		retval = -EINVAL;
 		goto fail;
 	}
 
 	/*
 	 * Create Device Attributes in sysfs
-	 */	 
-	dwc_otg_attr_create (_lmdev);
+	 */
+	dwc_otg_attr_create(lmdev);
 
 	/*
 	 * Disable the global interrupt until all the interrupt
 	 * handlers are installed.
 	 */
-	dwc_otg_disable_global_interrupts( dwc_otg_device->core_if );
+	dwc_otg_disable_global_interrupts(dwc_otg_device->core_if);
+
 	/*
 	 * Install the interrupt handler for the common interrupts before
 	 * enabling common interrupts in core_init below.
 	 */
-	DWC_DEBUGPL( DBG_CIL, "registering (common) handler for irq%d\n", 
-			 _lmdev->irq);
-	retval = request_irq(_lmdev->irq, dwc_otg_common_irq,SA_SHIRQ, "dwc_otg", dwc_otg_device );
-	if (retval != 0) 
-	{
-		DWC_ERROR("request of irq%d failed\n", _lmdev->irq);
+	DWC_DEBUGPL(DBG_CIL, "registering (common) handler for irq%d\n",
+		    lmdev->irq);
+	retval = request_irq(lmdev->irq, dwc_otg_common_irq,
+			     SA_SHIRQ, "dwc_otg", dwc_otg_device);
+	if (retval) {
+		DWC_ERROR("request of irq%d failed\n", lmdev->irq);
 		retval = -EBUSY;
 		goto fail;
-	} 
-	else 
-	{
+	} else {
 		dwc_otg_device->common_irq_installed = 1;
 	}
-
-#ifdef CONFIG_MACH_IPMATE
-	set_irq_type(_lmdev->irq, IRQT_LOW);
-#endif
 
 	/*
 	 * Initialize the DWC_otg core.
 	 */
-	dwc_otg_core_init( dwc_otg_device->core_if );
+	dwc_otg_core_init(dwc_otg_device->core_if);
 
 #ifndef DWC_HOST_ONLY
 	/*
 	 * Initialize the PCD
 	 */
-	retval = dwc_otg_pcd_init( _lmdev );
-	if (retval != 0) 
-	{
+	retval = dwc_otg_pcd_init(lmdev);
+	if (retval != 0) {
 		DWC_ERROR("dwc_otg_pcd_init failed\n");
 		dwc_otg_device->pcd = NULL;
 		goto fail;
@@ -792,9 +800,8 @@ static int dwc_otg_driver_probe(struct lm_device *_lmdev)
 	/*
 	 * Initialize the HCD
 	 */
-	retval = dwc_otg_hcd_init(_lmdev);
-	if (retval != 0) 
-	{
+	retval = dwc_otg_hcd_init(lmdev);
+	if (retval != 0) {
 		DWC_ERROR("dwc_otg_hcd_init failed\n");
 		dwc_otg_device->hcd = NULL;
 		goto fail;
@@ -805,16 +812,16 @@ static int dwc_otg_driver_probe(struct lm_device *_lmdev)
 	 * Enable the global interrupt after all the interrupt
 	 * handlers are installed.
 	 */
-	dwc_otg_enable_global_interrupts( dwc_otg_device->core_if );
+	dwc_otg_enable_global_interrupts(dwc_otg_device->core_if);
 
 	return 0;
 
  fail:
-	dwc_otg_driver_remove(_lmdev);
+	dwc_otg_driver_remove(lmdev);
 	return retval;
 }
 
-/** 
+/**
  * This structure defines the methods to be called by a bus driver
  * during the lifecycle of a device on that bus. Both drivers and
  * devices are registered with a bus driver. The bus driver matches
@@ -825,16 +832,42 @@ static int dwc_otg_driver_probe(struct lm_device *_lmdev)
  * to this driver. The remove function is called when a device is
  * unregistered with the bus driver.
  */
-static struct lm_driver dwc_otg_driver = 
-{
-	.drv =	
-			{
-		.		name	= (char*)dwc_driver_name,
-			},
+static struct lm_driver dwc_otg_driver = {
+	.drv = {
+		.name	= (char *)dwc_driver_name,
+	},
 	.probe		= dwc_otg_driver_probe,
 	.remove		= dwc_otg_driver_remove,
 };
+#define RALINK_PIO_BASE			0xA0300600
 
+#define RALINK_PRGIO_ADDR		RALINK_PIO_BASE // Programmable I/O
+
+#define RALINK_REG_PIOINT		(RALINK_PRGIO_ADDR + 0)
+#define RALINK_REG_PIOEDGE		(RALINK_PRGIO_ADDR + 0x04)
+#define RALINK_REG_PIORENA		(RALINK_PRGIO_ADDR + 0x08)
+#define RALINK_REG_PIOFENA		(RALINK_PRGIO_ADDR + 0x0C)
+#define RALINK_REG_PIODATA		(RALINK_PRGIO_ADDR + 0x20)
+#define RALINK_REG_PIODIR		(RALINK_PRGIO_ADDR + 0x24)
+#define RALINK_REG_PIOSET		(RALINK_PRGIO_ADDR + 0x2C)
+#define RALINK_REG_PIORESET		(RALINK_PRGIO_ADDR + 0x30)
+
+void ralink_gpio_control(int gpio,int level)
+{
+   unsigned long piodir,piodata;
+
+       piodir = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODIR));
+       piodir |= (1L << gpio);
+       *(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(piodir);
+       piodata = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
+
+       if(level)
+          piodata |= (1L << gpio);
+       else
+          piodata &= ~(1L << gpio);
+
+       *(volatile u32 *)(RALINK_REG_PIODATA) = cpu_to_le32(piodata); 
+}
 
 /**
  * This function is called when the dwc_otg_driver is installed with the
@@ -846,15 +879,15 @@ static struct lm_driver dwc_otg_driver =
  *
  * @return
  */
-static int __init dwc_otg_driver_init(void) 
+static int __init dwc_otg_driver_init(void)
 {
 	int retval = 0;
 	struct lm_device *lmdev;
-
+	int error;
+	
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0x0; //Enable USB Port
-
+	ralink_gpio_control(6,1); // turn on 5V
 	lmdev = kzalloc(sizeof(struct lm_device), GFP_KERNEL);
-
 	if (!lmdev)
 	{
 		printk("\n %s ,kzalloc(lm_device),fail   \n", __func__);
@@ -870,19 +903,18 @@ static int __init dwc_otg_driver_init(void)
 	lm_device_register(lmdev);
 	printk(KERN_INFO "%s: version %s\n", dwc_driver_name, DWC_DRIVER_VERSION);
 	retval = lm_driver_register(&dwc_otg_driver);
-	if (retval < 0) 
-	{
+	if (retval < 0) {
 		printk(KERN_ERR "%s retval=%d\n", __func__, retval);
 		return retval;
 	}
-	driver_create_file(&dwc_otg_driver.drv, &driver_attr_version);
-	driver_create_file(&dwc_otg_driver.drv, &driver_attr_debuglevel);
+	error = driver_create_file(&dwc_otg_driver.drv, &driver_attr_version);
+	error = driver_create_file(&dwc_otg_driver.drv, &driver_attr_debuglevel);
 
 	return retval;
 }
 module_init(dwc_otg_driver_init);
 
-/** 
+/**
  * This function is called when the driver is removed from the kernel
  * with the rmmod command. The driver unregisters itself with its bus
  * driver.
@@ -896,7 +928,7 @@ static void __exit dwc_otg_driver_cleanup(void)
 	driver_remove_file(&dwc_otg_driver.drv, &driver_attr_version);
 
 	lm_driver_unregister(&dwc_otg_driver);
-
+	ralink_gpio_control(6,0); // turn off 5V
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0xF; //Disable USB Port
 	printk(KERN_INFO "%s module removed\n", dwc_driver_name);
 }
@@ -912,6 +944,10 @@ module_param_named(opt, dwc_otg_module_params.opt, int, 0444);
 MODULE_PARM_DESC(opt, "OPT Mode");
 module_param_named(dma_enable, dwc_otg_module_params.dma_enable, int, 0444);
 MODULE_PARM_DESC(dma_enable, "DMA Mode 0=Slave 1=DMA enabled");
+
+module_param_named(dma_desc_enable, dwc_otg_module_params.dma_desc_enable, int, 0444);
+MODULE_PARM_DESC(dma_desc_enable, "DMA Desc Mode 0=Address DMA 1=DMA Descriptor enabled");
+
 module_param_named(dma_burst_size, dwc_otg_module_params.dma_burst_size, int, 0444);
 MODULE_PARM_DESC(dma_burst_size, "DMA Burst Size 1, 4, 8, 16, 32, 64, 128, 256");
 module_param_named(speed, dwc_otg_module_params.speed, int, 0444);
@@ -1029,19 +1065,26 @@ module_param_named(tx_thr_length, dwc_otg_module_params.tx_thr_length, int, 0444
 MODULE_PARM_DESC(tx_thr_length, "Tx Threshold length in 32 bit DWORDs");
 module_param_named(rx_thr_length, dwc_otg_module_params.rx_thr_length, int, 0444);
 MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
+
+module_param_named(pti_enable, dwc_otg_module_params.pti_enable, int, 0444);
+MODULE_PARM_DESC(pti_enable, "Per Transfer Interrupt mode 0=disabled 1=enabled");
+
+module_param_named(mpi_enable, dwc_otg_module_params.mpi_enable, int, 0444);
+MODULE_PARM_DESC(mpi_enable, "Multiprocessor Interrupt mode 0=disabled 1=enabled");
+
 /** @page "Module Parameters"
  *
  * The following parameters may be specified when starting the module.
  * These parameters define how the DWC_otg controller should be
- * configured.	Parameter values are passed to the CIL initialization
+ * configured. Parameter values are passed to the CIL initialization
  * function dwc_otg_cil_init
  *
  * Example: <code>modprobe dwc_otg speed=1 otg_cap=1</code>
  *
- 
+
  <table>
- <tr><td>Parameter Name</td><td>Meaning</td></tr> 
- 
+ <tr><td>Parameter Name</td><td>Meaning</td></tr>
+
  <tr>
  <td>otg_cap</td>
  <td>Specifies the OTG capabilities. The driver will automatically detect the
@@ -1050,7 +1093,7 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  - 1: SRP Only capable
  - 2: No HNP/SRP capable
  </td></tr>
- 
+
  <tr>
  <td>dma_enable</td>
  <td>Specifies whether to use slave or DMA mode for accessing the data FIFOs.
@@ -1059,13 +1102,13 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  - 0: Slave
  - 1: DMA (default, if available)
  </td></tr>
- 
+
  <tr>
  <td>dma_burst_size</td>
  <td>The DMA Burst size (applicable only for External DMA Mode).
  - Values: 1, 4, 8 16, 32, 64, 128, 256 (default 32)
  </td></tr>
- 
+
  <tr>
  <td>speed</td>
  <td>Specifies the maximum speed of operation in host and device mode. The
@@ -1074,7 +1117,7 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  - 0: High Speed (default)
  - 1: Full Speed
  </td></tr>
- 
+
  <tr>
  <td>host_support_fs_ls_low_power</td>
  <td>Specifies whether low power mode is supported when attached to a Full
@@ -1082,7 +1125,7 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  - 0: Don't support low power mode (default)
  - 1: Support low power mode
  </td></tr>
- 
+
  <tr>
  <td>host_ls_low_power_phy_clk</td>
  <td>Specifies the PHY clock rate in low power mode when connected to a Low
@@ -1091,14 +1134,14 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  - 0: 48 MHz (default)
  - 1: 6 MHz
  </td></tr>
- 
+
  <tr>
  <td>enable_dynamic_fifo</td>
  <td> Specifies whether FIFOs may be resized by the driver software.
  - 0: Use cC FIFO size parameters
  - 1: Allow dynamic FIFO sizing (default)
  </td></tr>
- 
+
  <tr>
  <td>data_fifo_size</td>
  <td>Total number of 4-byte words in the data FIFO memory. This memory
@@ -1107,61 +1150,61 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
 
  Note: The total FIFO memory depth in the FPGA configuration is 8192.
  </td></tr>
- 
+
  <tr>
  <td>dev_rx_fifo_size</td>
  <td>Number of 4-byte words in the Rx FIFO in device mode when dynamic
  FIFO sizing is enabled.
  - Values: 16 to 32768 (default 1064)
  </td></tr>
- 
+
  <tr>
  <td>dev_nperio_tx_fifo_size</td>
  <td>Number of 4-byte words in the non-periodic Tx FIFO in device mode when
  dynamic FIFO sizing is enabled.
  - Values: 16 to 32768 (default 1024)
  </td></tr>
- 
+
  <tr>
  <td>dev_perio_tx_fifo_size_n (n = 1 to 15)</td>
  <td>Number of 4-byte words in each of the periodic Tx FIFOs in device mode
  when dynamic FIFO sizing is enabled.
  - Values: 4 to 768 (default 256)
  </td></tr>
- 
+
  <tr>
  <td>host_rx_fifo_size</td>
  <td>Number of 4-byte words in the Rx FIFO in host mode when dynamic FIFO
  sizing is enabled.
  - Values: 16 to 32768 (default 1024)
  </td></tr>
- 
+
  <tr>
  <td>host_nperio_tx_fifo_size</td>
  <td>Number of 4-byte words in the non-periodic Tx FIFO in host mode when
  dynamic FIFO sizing is enabled in the core.
  - Values: 16 to 32768 (default 1024)
  </td></tr>
- 
+
  <tr>
  <td>host_perio_tx_fifo_size</td>
  <td>Number of 4-byte words in the host periodic Tx FIFO when dynamic FIFO
  sizing is enabled.
  - Values: 16 to 32768 (default 1024)
  </td></tr>
- 
+
  <tr>
  <td>max_transfer_size</td>
  <td>The maximum transfer size supported in bytes.
  - Values: 2047 to 65,535 (default 65,535)
  </td></tr>
- 
+
  <tr>
  <td>max_packet_count</td>
  <td>The maximum number of packets in a transfer.
  - Values: 15 to 511 (default 511)
  </td></tr>
- 
+
  <tr>
  <td>host_channels</td>
  <td>The number of host channel registers to use.
@@ -1169,7 +1212,7 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
 
  Note: The FPGA configuration supports a maximum of 12 host channels.
  </td></tr>
- 
+
  <tr>
  <td>dev_endpoints</td>
  <td>The number of endpoints in addition to EP0 available for device mode
@@ -1179,7 +1222,7 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  Note: The FPGA configuration supports a maximum of 6 IN and OUT endpoints in
  addition to EP0.
  </td></tr>
- 
+
  <tr>
  <td>phy_type</td>
  <td>Specifies the type of PHY interface to use. By default, the driver will
@@ -1188,7 +1231,7 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  - 1: UTMI+ (default, if available)
  - 2: ULPI
  </td></tr>
- 
+
  <tr>
  <td>phy_utmi_width</td>
  <td>Specifies the UTMI+ Data Width. This parameter is applicable for a
@@ -1197,7 +1240,7 @@ MODULE_PARM_DESC(rx_thr_length, "Rx Threshold length in 32 bit DWORDs");
  core has been configured to work at either data path width.
  - Values: 8 or 16 bits (default 16)
  </td></tr>
- 
+
  <tr>
  <td>phy_ulpi_ddr</td>
  <td>Specifies whether the ULPI operates at double or single data rate. This

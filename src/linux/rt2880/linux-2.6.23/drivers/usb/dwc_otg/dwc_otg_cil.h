@@ -1,8 +1,8 @@
 /* ==========================================================================
- * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_cil.h $
- * $Revision: 1.1 $
- * $Date: 2007-11-19 05:39:07 $
- * $Change: 792294 $
+ * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_cil.h $
+ * $Revision: 1.3 $
+ * $Date: 2009-03-16 06:27:15 $
+ * $Change: 1099526 $
  *
  * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
  * "Software") is an Unsupported proprietary work of Synopsys, Inc. unless
@@ -34,6 +34,10 @@
 #if !defined(__DWC_CIL_H__)
 #define __DWC_CIL_H__
 
+#include <linux/workqueue.h>
+#include <linux/version.h>
+#include <asm/param.h>
+		
 #include "linux/dwc_otg_plat.h"
 #include "dwc_otg_regs.h"
 #ifdef DEBUG
@@ -45,6 +49,21 @@
  * This file contains the interface to the Core Interface Layer.
  */
 
+
+/** Macros defined for DWC OTG HW Release verison */
+#define OTG_CORE_REV_2_00	0x4F542000	
+#define OTG_CORE_REV_2_60a	0x4F54260A	
+#define OTG_CORE_REV_2_71a	0x4F54271A	
+#define OTG_CORE_REV_2_72a	0x4F54272A	
+	
+/**
+*/
+typedef struct iso_pkt_info 
+{
+	uint32_t	offset;
+	uint32_t 	length;
+	int32_t 	status;
+} iso_pkt_info_t;
 /**
  * The <code>dwc_ep</code> structure represents the state of a single
  * endpoint when acting in device mode. It contains the data items
@@ -76,6 +95,9 @@ typedef struct dwc_ep
 	/** Max Packet bytes */
 	unsigned maxpacket : 11;
 
+	/** Max Transfer size */
+	unsigned maxxfer : 16;
+
 	/** @name Transfer state */
 	/** @{ */
 
@@ -86,6 +108,10 @@ typedef struct dwc_ep
 	
 	uint32_t dma_addr;
 
+	uint32_t dma_desc_addr;
+	dwc_otg_dma_desc_t* desc_addr;
+
+	
 	uint8_t *start_xfer_buff;
 	/** pointer to the transfer buffer */
 	uint8_t *xfer_buff;			 
@@ -100,7 +126,57 @@ typedef struct dwc_ep
 
 	/** stall clear flag */
 	unsigned stall_clear_flag : 1;
-	/** @} */
+
+	/** Allocated DMA Desc count */
+	uint32_t 	desc_cnt;	
+
+#ifdef DWC_EN_ISOC 	
+	/**
+	 * Variables specific for ISOC EPs
+	 *
+	 */
+	/** DMA addresses of ISOC buffers */
+	uint32_t 	dma_addr0;
+	uint32_t	dma_addr1;
+
+	uint32_t 	iso_dma_desc_addr;
+	dwc_otg_dma_desc_t* iso_desc_addr;
+
+	/** pointer to the transfer buffers */
+	uint8_t		*xfer_buff0;			 
+	uint8_t		*xfer_buff1;			 
+	
+	/** number of ISOC Buffer is processing */
+	uint32_t 	proc_buf_num;
+	/** Interval of ISOC Buffer processing */
+	uint32_t 	buf_proc_intrvl;
+	/** Data size for regular frame */
+	uint32_t 	data_per_frame;
+
+	/* todo - pattern data support is to be implemented in the future */
+	/** Data size for pattern frame */
+	uint32_t 	data_pattern_frame;
+	/** Frame number of pattern data */
+	uint32_t 	sync_frame;
+	
+	/** bInterval */
+	uint32_t 	bInterval;
+	/** ISO Packet number per frame */
+	uint32_t 	pkt_per_frm;	
+	/** Next frame num for which will be setup DMA Desc */
+	uint32_t 	next_frame;
+	/** Number of packets per buffer processing */
+	uint32_t	pkt_cnt;
+	/** Info for all isoc packets */
+	iso_pkt_info_t	*pkt_info;
+	/** current pkt number */
+	uint32_t	cur_pkt;
+	/** current pkt number */
+	uint8_t 	*cur_pkt_addr;
+	/** current pkt number */
+	uint32_t	cur_pkt_dma_addr;
+#endif //DWC_EN_ISOC 
+/** @} */
 } dwc_ep_t;
 
 /*
@@ -305,6 +381,15 @@ typedef struct dwc_otg_core_params
 	int32_t dma_enable;
 #define dwc_param_dma_enable_default 1
 
+	/**
+	 * When DMA mode is enabled specifies whether to use address DMA or DMA Descritor mode for accessing the data
+	 * FIFOs in device mode. The driver will automatically detect the value for this
+	 * parameter if none is specified.
+	 * 0 - address DMA
+	 * 1 - DMA Descriptor(default, if available)
+	 */
+	int32_t dma_desc_enable;
+#define dwc_param_dma_desc_enable_default 0
 	/** The DMA Burst size (applicable only for External DMA
 	 * Mode). 1, 4, 8 16, 32, 64, 128, 256 (default 32)
 	 */
@@ -366,7 +451,7 @@ typedef struct dwc_otg_core_params
 	 * 16 to 32768 (default 1064)
 	 */
 	int32_t dev_rx_fifo_size;
-#define dwc_param_dev_rx_fifo_size_default 1064
+#define dwc_param_dev_rx_fifo_size_default  1064
 
 	/** Number of 4-byte words in the non-periodic Tx FIFO in device mode 
 	 * when dynamic FIFO sizing is enabled.
@@ -389,7 +474,7 @@ typedef struct dwc_otg_core_params
 	int32_t host_rx_fifo_size;
 #define dwc_param_host_rx_fifo_size_default 1024
 
-		/** Number of 4-byte words in the non-periodic Tx FIFO in host mode 
+	/** Number of 4-byte words in the non-periodic Tx FIFO in host mode 
 	 * when Dynamic FIFO sizing is enabled in the core. 
 	 * 16 to 32768 (default 1024)
 	 */
@@ -420,7 +505,7 @@ typedef struct dwc_otg_core_params
 	 * Note: The FPGA configuration supports a maximum of 12 host channels.
 	 */
 	int32_t host_channels;
-#define dwc_param_host_channels_default 12
+#define dwc_param_host_channels_default 16
 
 	/** The number of endpoints in addition to EP0 available for device 
 	 * mode operations. 
@@ -532,6 +617,22 @@ typedef struct dwc_otg_core_params
 	uint32_t rx_thr_length;	 
 #define dwc_param_rx_thr_length_default 64
 
+	/** Per Transfer Interrupt 
+	 *	mode enable flag
+	 * 1 - Enabled
+	 * 0 - Disabled
+	 */
+	uint32_t pti_enable;	 
+#define dwc_param_pti_enable_default 0
+
+	/** Molti Processor Interrupt 
+	 *	mode enable flag
+	 * 1 - Enabled
+	 * 0 - Disabled
+	 */
+	uint32_t mpi_enable;	 
+#define dwc_param_mpi_enable_default 0
+
 } dwc_otg_core_params_t;
 
 #ifdef DEBUG
@@ -561,6 +662,9 @@ typedef struct dwc_otg_core_if
 	/** Host-specific information */
 	dwc_otg_host_if_t		   *host_if;
 
+	/** Value from SNPSID register */
+	uint32_t snpsid;
+	
 	/*
 	 * Set to 1 if the core PHY interface bits in USBCFG have been
 	 * initialized.
@@ -594,6 +698,15 @@ typedef struct dwc_otg_core_if
 	/** 1 if DMA is enabled, 0 otherwise. */
 	uint8_t dma_enable;
 
+	/** 1 if Descriptor DMA mode is enabled, 0 otherwise. */
+	uint8_t dma_desc_enable;
+
+	/** 1 if PTI Enhancement mode is enabled, 0 otherwise. */
+	uint8_t pti_enh_enable;
+
+	/** 1 if MPI Enhancement mode is enabled, 0 otherwise. */
+	uint8_t multiproc_int_enable;
+
 	/** 1 if dedicated Tx FIFOs are enabled, 0 otherwise. */
 	uint8_t en_multiple_tx_fifo;
 
@@ -607,6 +720,10 @@ typedef struct dwc_otg_core_if
 	hwcfg3_data_t hwcfg3;
 	hwcfg4_data_t hwcfg4;
 
+	/** Host and Device Configuration -- stored here for convenience.*/
+	hcfg_data_t hcfg;
+	dcfg_data_t dcfg;
+	
 	/** The operational State, during transations
 	 * (a_host>>a_peripherial and b_device=>b_host) this may not
 	 * match the core but allows the software to determine
@@ -643,6 +760,19 @@ typedef struct dwc_otg_core_if
 	/** Device mode Periodic Tx FIFO Mask */
 	uint32_t tx_msk;
 	
+	/** Workqueue object used for handling several interrupts */
+	struct workqueue_struct *wq_otg;	
+	
+	/** Work object used for handling "Connector ID Status Change" Interrupt */
+	struct work_struct 	w_conn_id;	
+
+	/** Work object used for handling "Wakeup Detected" Interrupt */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+	struct work_struct	w_wkp;
+#else
+	struct delayed_work	w_wkp;
+#endif		
+
 #ifdef DEBUG
 	uint32_t		start_hcchar_val[MAX_EPS_CHANNELS];
 
@@ -660,12 +790,47 @@ typedef struct dwc_otg_core_if
 
 } dwc_otg_core_if_t;
 
+/*We must clear S3C24XX_EINTPEND external interrupt register 
+ * because after clearing in this register trigerred IRQ from 
+ * H/W core in kernel interrupt can be occured again before OTG
+ * handlers clear all IRQ sources of Core registers because of
+ * timing latencies and Low Level IRQ Type.
+ */
+
+#ifdef CONFIG_MACH_IPMATE
+#define  S3C2410X_CLEAR_EINTPEND()   \
+do { \
+	if (!dwc_otg_read_core_intr(core_if)) { \
+	__raw_writel(1UL << 11,S3C24XX_EINTPEND); \
+	} \
+} while (0)
+#else
+#define  S3C2410X_CLEAR_EINTPEND()   do { } while (0)
+#endif
+
+/*
+ * The following functions are functions for works 
+ * using during handling some interrupts
+ */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+
+extern void w_conn_id_status_change(void *p);
+extern void w_wakeup_detected(void *p);
+
+#else
+
+extern void w_conn_id_status_change(struct work_struct *p);
+extern void w_wakeup_detected(struct work_struct *p);
+
+#endif		
+
+
 /*
  * The following functions support initialization of the CIL driver component
  * and the DWC_otg controller.
  */
 extern dwc_otg_core_if_t *dwc_otg_cil_init(const uint32_t *_reg_base_addr,
-										   dwc_otg_core_params_t *_core_params);
+					   dwc_otg_core_params_t *_core_params);
 extern void dwc_otg_cil_remove(dwc_otg_core_if_t *_core_if);
 extern void dwc_otg_core_init(dwc_otg_core_if_t *_core_if);
 extern void dwc_otg_core_host_init(dwc_otg_core_if_t *_core_if);
@@ -685,6 +850,7 @@ extern void dwc_otg_ep0_activate(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_ep_activate(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_ep_deactivate(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_ep_start_transfer(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
+extern void dwc_otg_ep_start_zl_transfer(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_ep0_start_transfer(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_ep0_continue_transfer(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_ep_write_packet(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep, int _dma);
@@ -692,6 +858,11 @@ extern void dwc_otg_ep_set_stall(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_ep_clear_stall(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep);
 extern void dwc_otg_enable_device_interrupts(dwc_otg_core_if_t *_core_if);
 extern void dwc_otg_dump_dev_registers(dwc_otg_core_if_t *_core_if);
+extern void dwc_otg_dump_spram(dwc_otg_core_if_t *_core_if);
+#ifdef DWC_EN_ISOC
+extern void dwc_otg_iso_ep_start_frm_transfer(dwc_otg_core_if_t *core_if, dwc_ep_t *ep);
+extern void dwc_otg_iso_ep_start_buf_transfer(dwc_otg_core_if_t *core_if, dwc_ep_t *ep);
+#endif //DWC_EN_ISOC		
 /**@}*/
 
 /** @name Host CIL Functions
@@ -747,6 +918,9 @@ extern void dwc_otg_flush_tx_fifo( dwc_otg_core_if_t *_core_if,
 extern void dwc_otg_flush_rx_fifo( dwc_otg_core_if_t *_core_if );
 extern void dwc_otg_core_reset( dwc_otg_core_if_t *_core_if );
 
+extern dwc_otg_dma_desc_t* dwc_otg_ep_alloc_desc_chain(uint32_t * dma_desc_addr, uint32_t count);
+extern void dwc_otg_ep_free_desc_chain(dwc_otg_dma_desc_t* desc_addr, uint32_t dma_desc_addr, uint32_t count);
+
 /**
  * This function returns the Core Interrupt register.
  */
@@ -768,11 +942,17 @@ static inline uint32_t dwc_otg_read_otg_intr (dwc_otg_core_if_t *_core_if)
  * This function reads the Device All Endpoints Interrupt register and
  * returns the IN endpoint interrupt bits.
  */
-static inline uint32_t dwc_otg_read_dev_all_in_ep_intr(dwc_otg_core_if_t *_core_if) 
+static inline uint32_t dwc_otg_read_dev_all_in_ep_intr(dwc_otg_core_if_t *core_if) 
 {
 	uint32_t v;
-	v = dwc_read_reg32(&_core_if->dev_if->dev_global_regs->daint) &
-			dwc_read_reg32(&_core_if->dev_if->dev_global_regs->daintmsk);
+	
+	if(core_if->multiproc_int_enable) {
+		v = dwc_read_reg32(&core_if->dev_if->dev_global_regs->deachint) &
+				dwc_read_reg32(&core_if->dev_if->dev_global_regs->deachintmsk);
+	} else {
+		v = dwc_read_reg32(&core_if->dev_if->dev_global_regs->daint) &
+				dwc_read_reg32(&core_if->dev_if->dev_global_regs->daintmsk);
+	}
 	return (v & 0xffff);
 		
 }
@@ -781,44 +961,68 @@ static inline uint32_t dwc_otg_read_dev_all_in_ep_intr(dwc_otg_core_if_t *_core_
  * This function reads the Device All Endpoints Interrupt register and
  * returns the OUT endpoint interrupt bits.
  */
-static inline uint32_t dwc_otg_read_dev_all_out_ep_intr(dwc_otg_core_if_t *_core_if) 
+static inline uint32_t dwc_otg_read_dev_all_out_ep_intr(dwc_otg_core_if_t *core_if) 
 {
 	uint32_t v;
-	v = dwc_read_reg32(&_core_if->dev_if->dev_global_regs->daint) &
-			dwc_read_reg32(&_core_if->dev_if->dev_global_regs->daintmsk);
+	
+	if(core_if->multiproc_int_enable) {
+		v = dwc_read_reg32(&core_if->dev_if->dev_global_regs->deachint) &
+				dwc_read_reg32(&core_if->dev_if->dev_global_regs->deachintmsk);
+	} else {
+		v = dwc_read_reg32(&core_if->dev_if->dev_global_regs->daint) &
+				dwc_read_reg32(&core_if->dev_if->dev_global_regs->daintmsk);
+	}
+
 	return ((v & 0xffff0000) >> 16);
 }
 
 /**
  * This function returns the Device IN EP Interrupt register
  */
-static inline uint32_t dwc_otg_read_dev_in_ep_intr(dwc_otg_core_if_t *_core_if,
-												   dwc_ep_t *_ep)
+static inline uint32_t dwc_otg_read_dev_in_ep_intr(dwc_otg_core_if_t *core_if,
+							dwc_ep_t *ep)
 {
-	dwc_otg_dev_if_t *dev_if = _core_if->dev_if;
+	dwc_otg_dev_if_t *dev_if = core_if->dev_if;
 	uint32_t v, msk, emp;
-	msk = dwc_read_reg32(&dev_if->dev_global_regs->diepmsk);
-	emp = dwc_read_reg32(&dev_if->dev_global_regs->dtknqr4_fifoemptymsk);
-	msk |= ((emp >> _ep->num) & 0x1) << 7;
-	v = dwc_read_reg32(&dev_if->in_ep_regs[_ep->num]->diepint) & msk;
-/*
-	dwc_otg_dev_if_t *dev_if = _core_if->dev_if;
-	uint32_t v;
-	v = dwc_read_reg32(&dev_if->in_ep_regs[_ep->num]->diepint) &
-			dwc_read_reg32(&dev_if->dev_global_regs->diepmsk);
-*/
+	
+	if(core_if->multiproc_int_enable) {
+		msk = dwc_read_reg32(&dev_if->dev_global_regs->diepeachintmsk[ep->num]);
+		emp = dwc_read_reg32(&dev_if->dev_global_regs->dtknqr4_fifoemptymsk);
+		msk |= ((emp >> ep->num) & 0x1) << 7;
+		v = dwc_read_reg32(&dev_if->in_ep_regs[ep->num]->diepint) & msk;
+	} else {
+		msk = dwc_read_reg32(&dev_if->dev_global_regs->diepmsk);
+		emp = dwc_read_reg32(&dev_if->dev_global_regs->dtknqr4_fifoemptymsk);
+		msk |= ((emp >> ep->num) & 0x1) << 7;
+		v = dwc_read_reg32(&dev_if->in_ep_regs[ep->num]->diepint) & msk;
+	}
+
+
 	return v;		 
 }
 /**
  * This function returns the Device OUT EP Interrupt register
  */
 static inline uint32_t dwc_otg_read_dev_out_ep_intr(dwc_otg_core_if_t *_core_if, 
-													dwc_ep_t *_ep)
+							dwc_ep_t *_ep)
 {
 	dwc_otg_dev_if_t *dev_if = _core_if->dev_if;
 	uint32_t v;
-	v = dwc_read_reg32( &dev_if->out_ep_regs[_ep->num]->doepint) &
-			dwc_read_reg32(&dev_if->dev_global_regs->doepmsk);		
+	doepmsk_data_t msk = { .d32 = 0 };
+	
+	if(_core_if->multiproc_int_enable) {
+		msk.d32 = dwc_read_reg32(&dev_if->dev_global_regs->doepeachintmsk[_ep->num]);
+		if(_core_if->pti_enh_enable) {
+			msk.b.pktdrpsts = 1;
+		}
+		v = dwc_read_reg32( &dev_if->out_ep_regs[_ep->num]->doepint) & msk.d32;
+	} else {
+		msk.d32 = dwc_read_reg32(&dev_if->dev_global_regs->doepmsk);
+		if(_core_if->pti_enh_enable) {
+			msk.b.pktdrpsts = 1;
+		}
+		v = dwc_read_reg32( &dev_if->out_ep_regs[_ep->num]->doepint) & msk.d32;		
+	}
 	return v;		 
 }
 
@@ -884,9 +1088,11 @@ typedef struct dwc_otg_cil_callbacks
 } dwc_otg_cil_callbacks_t;
 
 extern void dwc_otg_cil_register_pcd_callbacks( dwc_otg_core_if_t *_core_if,
-												dwc_otg_cil_callbacks_t *_cb,
-												void *_p);
+						dwc_otg_cil_callbacks_t *_cb,
+						void *_p);
 extern void dwc_otg_cil_register_hcd_callbacks( dwc_otg_core_if_t *_core_if,
-												dwc_otg_cil_callbacks_t *_cb,
-												void *_p);
+						dwc_otg_cil_callbacks_t *_cb,
+						void *_p);
+
 #endif
+

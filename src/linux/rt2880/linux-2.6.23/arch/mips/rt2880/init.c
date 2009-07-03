@@ -350,6 +350,7 @@ __init void prom_init(void)
 	prom_init_serial_port();  /* Needed for Serial Console */
 	prom_meminit();
 	prom_setup_printf(prom_get_ttysnum());
+//	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0x0; //Enable USB Port
 	prom_printf("\nLINUX started...\n");
 #if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT3052_FPGA) || defined(CONFIG_RT2883_FPGA)
 	prom_printf("\n THIS IS FPGA\n");
