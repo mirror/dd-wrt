@@ -1640,11 +1640,11 @@ int check_wan_link(int num)
 {
 	int wan_link = 0;
 
-	if (nvram_match("wan_proto", "pptp")
+	if ((nvram_match("wan_proto", "pptp")
 	    || nvram_match("wan_proto", "l2tp")
 	    || nvram_match("wan_proto", "pppoe")
 	    || nvram_match("wan_proto", "3g")
-	    || nvram_match("wan_proto", "heartbeat")) {
+	    || nvram_match("wan_proto", "heartbeat")) && !nvram_match("3gdata","hso")) {
 		FILE *fp;
 		char filename[80];
 		char *name;
