@@ -1,3 +1,9 @@
+03.7.09
+    * LZMA compressed elf image support (required to boot ubnt images)
+    
+02.7.09
+    * signal bar is used to show flash activity (only on senao and ubnt products right now)
+    
 26.6.09
     * move clock initialization to ensure udelay function
     * removed http protocol to save space. i believe the embedded tftp client is enough and the tftp server for recovery makes recovery and flashing pretty easy
