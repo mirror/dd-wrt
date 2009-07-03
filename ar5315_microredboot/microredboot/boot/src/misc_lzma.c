@@ -86,6 +86,7 @@ static inline int read_byte(unsigned char **buffer, UInt32 * bufferSize)
 #include "lib/LzmaDecode.c"
 
 int bootoffset = 0x800004bc;
+static unsigned int uncompressedSize = 0;
 
 /*
  * Do the lzma decompression
@@ -96,7 +97,6 @@ static int lzma_unzip(void)
 {
 
 	unsigned int i;
-	unsigned int uncompressedSize = 0;
 	unsigned char *workspace;
 	unsigned int lc, lp, pb;
 	if (inptr >= insize)
@@ -221,6 +221,7 @@ static int resetTouched(void)
 }
 
 #include <lib/nvram.c>
+#include <lib/elf.c>
 
 typedef struct {
 	char *name;
@@ -236,9 +237,27 @@ struct parmblock {
 	char text[0];
 };
 
+static int s_memcmp(unsigned char *p1,unsigned char *p2,unsigned int len)
+{
+unsigned int i;
+for (i=0;i<len;i++)
+    if (p1[i]!=p2[i])
+	return 1;
+return 0;
+}
+
 /* initialized commandline and starts linux. we need todo this for Atheros LSDK based firmwares since they have no ramsize detection */
 static void set_cmdline(void)
 {
+/* check elf */
+	if (!s_memcmp(output_data,ELFMAG,SELFMAG))
+	    {
+	    unsigned int loadaddr;
+	    unsigned int loadaddr_end;
+	    fis_load_elf_image(output_data,0,uncompressedSize,&bootoffset,&loadaddr,&loadaddr_end);
+	    }	
+
+
 	char *pcmd;
 	struct parmblock *pb;
 	pb = (struct parmblock *)0x80030000;

@@ -313,6 +313,7 @@ flash_program_buf(volatile flash_t *addr, flash_t *buf, int len,
 			
 			opcode = (PAGE_PROGRAM_OPCODE) | ((cyg_uint32)offset << 8);
 			HAL_WRITE_UINT32(AR2316_SPI_OPCODE, opcode);
+			if (page_programming_supported)
 			*(volatile unsigned*)0xB1000090 &= ~(1<<page_gpio);//0xfffffffe;/*set GPIO0 to 0 to dominate spi flash CS to low active*/
     		reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | (first_spi_write_data_length + 4) | SPI_CTL_START;
     		HAL_WRITE_UINT32(AR2316_SPI_CTL,reg);
@@ -326,6 +327,7 @@ flash_program_buf(volatile flash_t *addr, flash_t *buf, int len,
     	        HAL_READ_UINT32(AR2316_SPI_CTL, reg);
         	} while (reg & SPI_CTL_BUSY);
 
+			if (page_programming_supported)
 			*(volatile unsigned*)0xB1000090 |= 1<<page_gpio;/*set GPIO0 to 1 to spi flash CS normal state, this will start programming*/
 
 			//As soon as Chip Select (S) is driven High, the self-timed Page Program cycle (whose

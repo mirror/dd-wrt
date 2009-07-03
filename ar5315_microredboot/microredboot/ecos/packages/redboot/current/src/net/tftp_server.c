@@ -110,15 +110,13 @@ static void do_flash_update(unsigned long base_addr, unsigned long len,
 	int rc;
 #if defined(CYGPKG_HAL_MIPS_AR2316)
 #if FISTYPE == 1
-	*(volatile unsigned *)0xB1000090 |= 1;	/*set GPIO0 to 1 to spi flash CS normal state */
-	*(volatile unsigned *)0xB1000098 |= 1;	/*set GPIO0 to be output */
+	set_gpio(0,1);
 	page_programming_supported = 1;
 	page_gpio = 0;
 #endif
 
 #if FISTYPE == 2
-	*(volatile unsigned *)0xB1000090 |= 1 << 3;	/*set GPIO0 to 1 to spi flash CS normal state */
-	*(volatile unsigned *)0xB1000098 |= 1 << 3;	/*set GPIO0 to be output */
+	set_gpio(3,1);
 	page_programming_supported = 1;
 	page_gpio = 3;
 #endif
