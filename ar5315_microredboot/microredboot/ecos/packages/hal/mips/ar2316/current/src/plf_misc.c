@@ -360,13 +360,15 @@ enet_mac_address_get(int unit)
 void
 hal_ar2316_reset(void)
 {
+	void (*mips_reset_vec)(void) = (void *) 0xbfc00000;
     for(;;) {
 	HAL_WRITE_UINT32(AR2316_COLD_RESET,AR2317_RESET_SYSTEM);
-        udelay(100);
+        udelay(100*1000);
 	sysGpioSet(AR2316_RESET_GPIO, 0);
-        udelay(100);
+        udelay(100*1000);
 	sysGpioSet(0, 0);
-        udelay(100);
+        udelay(100*1000);
+	mips_reset_vec();
     }
 }
 
