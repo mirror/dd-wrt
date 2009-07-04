@@ -1733,7 +1733,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// Sys-Info
 					j++;
 
-				if ((registered) && !strcmp(menu[i][j], "register.asp"))	// jump 
+				if ((registered) && !cpeonly && !strcmp(menu[i][j], "register.asp"))	// jump 
 					// over 
 					// Sys-Info
 					j++;
