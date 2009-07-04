@@ -1660,7 +1660,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strncmp
 				    (menu[i][j], "Wireless_Advanced", 17))
 					j++;
-				if (!wifi && !iscpeonly && !strncmp(menu[i][j], "Wireless_WDS", 12))
+				if (!wifi && !cpeonly && !strncmp(menu[i][j], "Wireless_WDS", 12))
 					j++;
 				if (!wifi
 				    && !strcmp(menu[i][j],
