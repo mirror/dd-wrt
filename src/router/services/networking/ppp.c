@@ -58,6 +58,7 @@ for (i=0;i<strlen(e);i++)
     if (e[i]!=' ')
 	r[c++]=e[i];
     }
+r[c++]=0; //terminate string
 return r;
 }
 /*
