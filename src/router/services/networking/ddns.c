@@ -234,7 +234,7 @@ void start_ddns(void)
 		// every 15
 		// mins
 		else
-			fprintf(fp, " --update_period_sec %s", "360");	// check ip
+			fprintf(fp, " --update_period_sec %s", "600");	// check ip
 		// every 6
 		// mins
 		// fprintf (fp, " --forced_update_period %s", "2419200"); //force
