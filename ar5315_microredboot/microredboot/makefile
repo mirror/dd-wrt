@@ -17,6 +17,20 @@ endif
 ifndef FIS
 export FIS=0
 endif
+export LEDCODE=1
+ifndef LED1_PIN
+export LED1_PIN=0xff
+export LEDCODE=0
+endif
+ifndef LED2_PIN
+export LED2_PIN=0xff
+endif
+ifndef LED3_PIN
+export LED3_PIN=0xff
+endif
+ifndef LED4_PIN
+export LED4_PIN=0xff
+endif
 
 ifndef TFTPPATH
 TFTPPATH=/tftpboot
@@ -24,6 +38,7 @@ endif
 
 export ECOS_REPOSITORY=$(PWD)/ecos/packages
 PATH:=${PATH}:${ATH_ROOT}/tools/ecos_build/gnutools/mipsisa32-elf/bin:$(PWD)/ecos/tools/bin
+#PATH:=${PATH}:${ATH_ROOT}/gnutools/mipsisa32-elf/bin:$(PWD)/ecos/tools/bin
 REDBOOT_DIR=$(PWD)
 
 # target name will match apXX name used to build path
@@ -89,6 +104,11 @@ PLATFORM_ROM_BUILD = make -C $(ROMBUILD_DIR); \
 
 PLATFORM_RAM_BUILD = echo "\#define RESETBUTTON ${RESETBUTTON}" > ecos/packages/redboot/current/src/ramconfig.h; \
 	echo "\#define FISTYPE ${FIS}" >> ecos/packages/redboot/current/src/ramconfig.h; \
+	echo "\#define LEDCODE ${LEDCODE}" >> ecos/packages/redboot/current/src/ramconfig.h; \
+	echo "\#define LED1_PIN ${LED1_PIN}" >> ecos/packages/redboot/current/src/ramconfig.h; \
+	echo "\#define LED2_PIN ${LED2_PIN}" >> ecos/packages/redboot/current/src/ramconfig.h; \
+	echo "\#define LED3_PIN ${LED3_PIN}" >> ecos/packages/redboot/current/src/ramconfig.h; \
+	echo "\#define LED4_PIN ${LED4_PIN}" >> ecos/packages/redboot/current/src/ramconfig.h; \
 	make -C $(RAMBUILD_DIR); \
 	cd $(RAMBUILD_DIR)/install/bin; \
 	mipsisa32-elf-objcopy -O binary redboot.elf redboot.bin; \
@@ -146,6 +166,21 @@ ap48:
 	$(PLATFORM_RAM_BUILD)
 	cp redboot/ap48/ram/install/bin/redboot.rom images/redboot_ap48_32M_8M_kendin.rom
 	cp redboot/ap48/ram/install/bin/redboot.img images/redboot_ap48_32M_8M_kendin.elf
+
+
+# RAM version
+	echo "#define RAM_SIZE 0x1000000" > boot/src/ramconfig.h
+	echo "#define AR5312 1" >> boot/src/ramconfig.h
+	$(PLATFORM_RAM_START) \
+	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
+	ecosconfig import $(REDBOOT_DIR)/options/RAM/16MB_ram; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom_ap48; \
+	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
+	$(PLATFORM_BLD_CUST)
+	$(PLATFORM_RAM_BUILD)
+	cp redboot/ap48/ram/install/bin/redboot.rom images/redboot_ap48_16M_4M_kendin.rom
+	cp redboot/ap48/ram/install/bin/redboot.img images/redboot_ap48_16M_4M_kendin.elf
+
 
 ap43:
 # ROM version
