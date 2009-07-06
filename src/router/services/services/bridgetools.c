@@ -174,6 +174,7 @@ int br_add_interface(const char *br, const char *dev)
 
 	sprintf(netmask, "%s_netmask", dev);
 
+	eval("ifconfig", dev, "0.0.0.0");
 	eval("ifconfig", dev, "mtu", getBridgeMTU(br));
 	eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
 	eval("ifconfig", dev, "up");
