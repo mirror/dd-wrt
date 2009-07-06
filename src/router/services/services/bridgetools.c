@@ -174,13 +174,7 @@ int br_add_interface(const char *br, const char *dev)
 
 	sprintf(netmask, "%s_netmask", dev);
 
-	if (nvram_get(ipaddr) && nvram_get(netmask)
-	    && !nvram_match(ipaddr, "0.0.0.0")
-	    && !nvram_match(netmask, "0.0.0.0")) {
-		eval("ifconfig", dev, nvram_safe_get(ipaddr), "netmask",
-		     nvram_safe_get(netmask), "mtu", getBridgeMTU(br));
-	} else
-		eval("ifconfig", dev, "mtu", getBridgeMTU(br));
+	eval("ifconfig", dev, "mtu", getBridgeMTU(br));
 	eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
 	eval("ifconfig", dev, "up");
 
