@@ -1,2 +1,3 @@
-#define RAM_SIZE 0x2000000
+#define RAM_SIZE 0x1000000
+#define AR5312 1
 #define RESETBUTTON 0x06

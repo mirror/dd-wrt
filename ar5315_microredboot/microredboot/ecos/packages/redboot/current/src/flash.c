@@ -1013,7 +1013,7 @@ static void fis_create_old(int argc, char *argv[])
 
 static void fis_create_accton(int argc, char *argv[])
 {
-	set_gpio(0,1);
+	set_gpio(0, 1);
 	page_programming_supported = 1;
 	page_gpio = 0;
 	fis_create_old(argc, argv);
@@ -1022,7 +1022,7 @@ static void fis_create_accton(int argc, char *argv[])
 
 static void fis_create_256(int argc, char *argv[])
 {
-	set_gpio(3,1);
+	set_gpio(3, 1);
 	page_programming_supported = 1;
 	page_gpio = 3;
 	fis_create_old(argc, argv);
@@ -1200,6 +1200,7 @@ void diag_blink(void)
 {
 #ifdef LEDCODE
 	static int counter = 0;
+	static int reverse = 0;
 	unsigned char leds[] = {
 		LED1_PIN,
 #if LED2_PIN != 0xff
@@ -1220,9 +1221,19 @@ void diag_blink(void)
 		for (i = 0; i < len; i++) {
 			set_gpio(leds[i], 0);
 		}
-		set_gpio(leds[counter++], 1);
-		if (counter == len)
-			counter = 0;
+		if (!reverse)
+			set_gpio(leds[counter++], 1);
+		else
+			set_gpio(leds[counter--], 1);
+
+		if (counter == len && !reverse) {
+			reverse = 1;
+			counter--;
+		}
+		if (counter == -1 && reverse) {
+			reverse = 0;
+			counter++;
+		}
 	}
 #endif
 }
