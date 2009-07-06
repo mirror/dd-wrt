@@ -1228,11 +1228,11 @@ void diag_blink(void)
 
 		if (counter == len && !reverse) {
 			reverse = 1;
-			counter--;
+			counter-=2;
 		}
 		if (counter == -1 && reverse) {
 			reverse = 0;
-			counter++;
+			counter+=2;
 		}
 	}
 #endif
