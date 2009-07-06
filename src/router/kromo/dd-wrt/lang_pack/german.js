@@ -1073,7 +1073,7 @@ service.dnsmasq_opt="Zusätzliche DNSMasq-Optionen";
 //pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP-Server";
-service_pptp_forcemppe="Erzwinge MPPE Verschlüsselung";
+service.pptp_forcemppe="Erzwinge MPPE Verschlüsselung";
 service.pptp_client="Client-IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
