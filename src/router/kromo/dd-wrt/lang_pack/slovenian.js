@@ -1183,6 +1183,7 @@ service.dnsmasq_opt="Dodatne DNSMasq mo¾nosti";
 //pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP stre¾nik";
+service.pptp_forcemppe="Prisili MPPE ¹ifriranje";
 service.pptp_client="IPji odjemalcev";
 service.pptp_chap="CHAP-skrivnosti";
 
@@ -1894,7 +1895,7 @@ wl_basic.noise_immunity="Nivo odpornosti na ¹um";
 wl_basic.ofdm_weak_det="©ibko zaznavanje OFDM";
 wl_basic.radar="Zaznavanje radarja";
 wl_basic.mtikie="Zdru¾ljivojst z MTik";
-wl_basic.csma="Carrier Sense";
+wl_basic.csma="Zaznavanje nosilca";
 //help container
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
