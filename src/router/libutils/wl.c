@@ -1637,7 +1637,7 @@ char *get_wl_instance_name(int instance)
 		return "eth3";
 	fprintf(stderr, "get_wl_instance doesnt return the right value %d\n",
 		instance);
-	return "eth1";		// dirty for debugging
+	return nvram_safe_get ("wl0_ifname");		// dirty for debugging
 }
 
 int get_wl_instances(void)
