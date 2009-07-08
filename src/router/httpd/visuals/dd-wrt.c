@@ -4112,7 +4112,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");*/
-#elif defined(HAVE_EOC2610) || defined(HAVE_PICO2) || defined(HAVE_PICO2HP) || defined(HAVE_PICO5)
+#elif ( ! defined(HAVE_TRIMAX) && defined(HAVE_EOC2610)) || defined(HAVE_PICO2) || defined(HAVE_PICO2HP) || defined(HAVE_PICO5)
 
 /*    websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label25)</script></div><select name=\"%s\" >\n",
