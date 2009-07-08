@@ -1331,16 +1331,23 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
+	char name[32];
+	
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
+
 	if (!nvram_match("wan_proto", "disabled")) {
-		if (strlen(nvram_safe_get("wan_iface")) > 0) {
-			show_bwif(wp, nvram_safe_get("wan_iface"), "WAN");
-		} else {
-			if (strlen(nvram_safe_get("wan_ifname")) > 0) {
-				show_bwif(wp, nvram_safe_get("wan_ifname"),
-					  "WAN");
-			}
+#ifdef HAVE_MADWIFI
+		if (getSTA()) {
+			sprintf(name, "%s WAN", live_translate("share.wireless"));
+			show_bwif(wp, get_wan_face(), name);
 		}
+		else
+			show_bwif(wp, get_wan_face(), "WAN");
+#else
+		if (!getSTA())
+			show_bwif(wp, get_wan_face(), "WAN");
+#endif
+			
 		if (nvram_match("dtag_vlan8", "1"))
 			show_bwif(wp, "eth0.0008", "IPTV");
 
@@ -1355,7 +1362,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 		char dev[32];
 
 		sprintf(dev, "ath%d", i);
-		char name[32];
 
 		sprintf(name, "%s (%s)", live_translate("share.wireless"), dev);
 		show_bwif(wp, dev, name);
@@ -1386,7 +1392,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	}
 
 #else
-	char name[32];
 	int cnt = get_wl_instances();
 	int c;
 
@@ -1396,7 +1401,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 #ifdef HAVE_WAVESAT
-	char name[32];
 
 	sprintf(name, "%s", live_translate("wl_wimax.titl"));
 	show_bwif(wp, "ofdm", name);
