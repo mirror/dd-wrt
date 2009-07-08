@@ -170,8 +170,8 @@ static void convert_wds(int instance)
 	 * For WPA-PSK mode, we want to convert wl_wds_mac to wl0_wds0 ...
 	 * wl0_wds255 
 	 */
-	if (nvram_match("security_mode", "psk")
-	    || nvram_match("security_mode", "psk2")) {
+	if (nvram_nmatch("psk", "wl%d_security_mode", instance)
+	    || nvram_nmatch("psk2", "wl%d_security_mode", instance)) {
 		int i = 0;
 		int j;
 		char mac[254];
@@ -180,10 +180,10 @@ static void convert_wds(int instance)
 		foreach(mac, wds_mac, next) {
 			snprintf(buf, sizeof(buf), "%s,auto,%s,%s,%s,%s",
 				 mac,
-				 nvram_safe_get("wl_crypto"),
-				 nvram_safe_get("security_mode"),
+				 nvram_nget("wl%d_crypto", instance),
+				 nvram_nget("wl%d_security_mode", instance),
 				 nvram_nget("wl%d_ssid", instance),
-				 nvram_safe_get("wl_wpa_psk"));
+				 nvram_nget("wl%d_wpa_psk"));
 			nvram_nset(buf, "wl%d_wds%d", instance, i);
 			i++;
 		}
@@ -425,17 +425,16 @@ void start_nas_single(char *type, char *prefix)
 	0};
 
 	if (!strcmp(prefix, "wl0"))
-		led_control(LED_SEC0, LED_OFF);
-	if (!strcmp(prefix, "wl1"))
-		led_control(LED_SEC1, LED_OFF);
-
-	if (nvram_nmatch("disabled", "%s_net_mode", prefix))
-		return;
-	if (!strcmp(prefix, "wl0"))
-		convert_wds(0);
-	else
-		convert_wds(1);
 	{
+		led_control(LED_SEC0, LED_OFF);
+		convert_wds(0);		
+	}
+	if (!strcmp(prefix, "wl1"))
+	{
+		led_control(LED_SEC1, LED_OFF);
+		convert_wds(1);		
+	}
+
 
 		snprintf(pidfile, sizeof(pidfile), "/tmp/nas.%s%s.pid", prefix,
 			 type);
@@ -770,7 +769,7 @@ void start_nas_single(char *type, char *prefix)
 			cprintf("done\n");
 		}
 		return;
-	}
+
 }
 
 void stop_nas(void)
