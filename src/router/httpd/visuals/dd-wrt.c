@@ -4422,7 +4422,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
+#ifdef HAVE_REGISTER
 	if (!iscpe())
+#endif
 	    show_virtualssid(wp, prefix);
 }
 
