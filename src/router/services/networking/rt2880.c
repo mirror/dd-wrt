@@ -441,6 +441,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 /* need to check if these values are okay for RT3052 too */
 		fprintf(fp, "Ht_TxStream=2\n");
 		fprintf(fp, "Ht_RxStream=3\n");
+		fprintf(fp, "MaxStaNum=%s\n",nvram_safe_get("wl0_maxassoc"));
 	}
 /* suggestion by Jimmy */
 //      fprintf( fp, "HtBw=1\n" );
