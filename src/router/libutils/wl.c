@@ -1359,7 +1359,9 @@ int getRssi(char *ifname, unsigned char *mac)
 	int len;
 	struct iwreq iwr;
 	int s;
-
+	char nb[32];
+	sprintf(nb,"%s_bias",ifname);
+	
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		fprintf(stderr, "socket(SOCK_DRAGM)\n");
@@ -1393,7 +1395,8 @@ int getRssi(char *ifname, unsigned char *mac)
 			int rssi = si->isi_noise + si->isi_rssi;
 
 			free(buf);
-			return rssi;
+			
+			return rssi+atoi(nvram_default_get(nb,"0"));
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
@@ -1470,6 +1473,8 @@ int getNoise(char *ifname, unsigned char *mac)
 	int len;
 	struct iwreq iwr;
 	int s;
+	char nb[32];
+	sprintf(nb,"%s_bias",ifname);
 
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
@@ -1503,7 +1508,7 @@ int getNoise(char *ifname, unsigned char *mac)
 			int noise = si->isi_noise;
 
 			free(buf);
-			return noise;
+			return noise+atoi(nvram_default_get(nb,"0"));
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
