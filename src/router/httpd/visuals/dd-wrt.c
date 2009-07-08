@@ -5755,14 +5755,14 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 				    IEEE80211_RATE_VAL) / 2) * turbo,
 				  ((si->isi_rates[si->isi_rxrate] &
 				    IEEE80211_RATE_VAL) / 2) * turbo,
-				  si->isi_noise + si->isi_rssi, si->isi_noise + bias,
-				  si->isi_rssi + bias, qual);
+				  si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias,
+				  si->isi_rssi, qual);
 		} else {
 			websWrite(wp,
 				  "'%s','%s','%s','N/A','N/A','%d','%d','%d','%d'",
 				  mac, ifname, UPTIME(si->isi_uptime),
-				  si->isi_noise + si->isi_rssi, si->isi_noise + bias,
-				  si->isi_rssi + bias, qual);
+				  si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias,
+				  si->isi_rssi, qual);
 		}
 		cp += si->isi_len;
 		len -= si->isi_len;
