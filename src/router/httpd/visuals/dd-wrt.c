@@ -5676,7 +5676,9 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 	unsigned char *cp;
 	int s, len;
 	struct iwreq iwr;
-
+	char nb[32];
+	sprintf(nb,"%s_bias",ifname);
+	int bias = atoi(nvram_default_get(nb,"0"));
 	if (!ifexists(ifname)) {
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
@@ -5753,14 +5755,14 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 				    IEEE80211_RATE_VAL) / 2) * turbo,
 				  ((si->isi_rates[si->isi_rxrate] &
 				    IEEE80211_RATE_VAL) / 2) * turbo,
-				  si->isi_noise + si->isi_rssi, si->isi_noise,
-				  si->isi_rssi, qual);
+				  si->isi_noise + si->isi_rssi, si->isi_noise + bias,
+				  si->isi_rssi + bias, qual);
 		} else {
 			websWrite(wp,
 				  "'%s','%s','%s','N/A','N/A','%d','%d','%d','%d'",
 				  mac, ifname, UPTIME(si->isi_uptime),
-				  si->isi_noise + si->isi_rssi, si->isi_noise,
-				  si->isi_rssi, qual);
+				  si->isi_noise + si->isi_rssi, si->isi_noise + bias,
+				  si->isi_rssi + bias, qual);
 		}
 		cp += si->isi_len;
 		len -= si->isi_len;
@@ -5875,6 +5877,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	return (i < 17 ? NULL : a);
 }
 
+
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
 		unsigned short MCS:7;	// MCS
@@ -5898,6 +5901,7 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned int ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
 } RT_802_11_MAC_ENTRY;
+
 
 typedef struct _RT_802_11_MAC_TABLE {
 	unsigned long Num;
