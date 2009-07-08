@@ -183,7 +183,7 @@ static void convert_wds(int instance)
 				 nvram_nget("wl%d_crypto", instance),
 				 nvram_nget("wl%d_security_mode", instance),
 				 nvram_nget("wl%d_ssid", instance),
-				 nvram_nget("wl%d_wpa_psk"));
+				 nvram_nget("wl%d_wpa_psk", instance));
 			nvram_nset(buf, "wl%d_wds%d", instance, i);
 			i++;
 		}
