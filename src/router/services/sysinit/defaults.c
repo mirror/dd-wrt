@@ -612,6 +612,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_NEWMEDIA  && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610)
 	{"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
+#if defined(HAVE_DEFREGDOMAIN)
+	{"ath0_regdomain", HAVE_DEFREGDOMAIN, 0},
+#endif
 #ifdef HAVE_MAKSAT_BLANK
 	{"wl_ssid", "default", 0},	/* Service set ID (network name) */
 #else

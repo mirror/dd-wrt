@@ -3791,6 +3791,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif				// ! HAVE MAKSAT
+#ifndef HAVE_NOCOUNTRYSEL
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "%s_regdomain", prefix);
@@ -3803,6 +3804,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			    nvram_safe_get(wl_regdomain));
 		websWrite(wp, "</div>\n");
 	}
+#endif				// ! HAVE MAKSAT
 	/*
 	 * while (regdomains[domcount].name != NULL) { char domcode[16]; sprintf
 	 * (domcode, "%d", regdomains[domcount].code); websWrite (wp, "<option
