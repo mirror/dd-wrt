@@ -670,6 +670,24 @@ int internal_getRouterBrand()
 #elif HAVE_CNC
 	setRouter("WiFi4You Outdoor AP");
 	return ROUTER_BOARD_FONERA;
+#elif defined(HAVE_CORENET) && defined(HAVE_NS2)
+	setRouter("CORENET XNS2");
+	return ROUTER_BOARD_LS2;
+#elif defined(HAVE_CORENET) && defined(HAVE_LC2)
+	setRouter("CORENET XLO2");
+	return ROUTER_BOARD_LS2;
+#elif defined(HAVE_CORENET) && defined(HAVE_EOC2610)
+	setRouter("CORENET XC61");
+	return ROUTER_BOARD_FONERA;
+#elif defined(HAVE_CORENET) && defined(HAVE_EOC1650)
+	setRouter("CORENET XC65");
+	return ROUTER_BOARD_FONERA;
+#elif defined(HAVE_CORENET) && defined(HAVE_BS2)
+	setRouter("CORENET XBU2");
+	return ROUTER_BOARD_LS2;
+#elif defined(HAVE_CORENET) && defined(HAVE_BS2HP)
+	setRouter("CORENET MBU2i");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_WBD500
 	setRouter("Wiligear WBD-500");
 	return ROUTER_BOARD_FONERA;
@@ -737,9 +755,6 @@ int internal_getRouterBrand()
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
-#elif defined(HAVE_CORENET) && defined(HAVE_NS2)
-	setRouter("CORENET UNS2");
-	return ROUTER_BOARD_LS2;
 #elif HAVE_BWRG1000
 	setRouter("Bountiful BWRG-1000");
 	return ROUTER_BOARD_LS2;
