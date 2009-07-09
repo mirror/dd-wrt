@@ -2656,6 +2656,7 @@ void load_defaults(void)
 			srouter_defaults[i].value = NULL;
 		}
 	}
+	fclose (in);
 }
 
 void free_defaults(void)
