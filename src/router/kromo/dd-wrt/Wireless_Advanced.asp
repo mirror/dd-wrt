@@ -451,7 +451,7 @@ addEvent(window, "unload", function() {
 									<input class="num" name="%s_txpwr" size="6" maxlength="3" onblur="valid_range(this,1,251,wl_basic.TXpower)" value="<%% nvram_selget("%s_txpwr"); %%>" />
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": 70, " + share.range + ": 1 - 251mW)");
+									document.write("(" + share.deflt + ": 71, " + share.range + ": 1 - 251mW)");
 									//]]>
 									</script></span>
 								</div>
