@@ -233,7 +233,8 @@ static int bound(void)
 
 	if (nvram_match("wan_proto", "pptp")
 	    && nvram_match("pptp_use_dhcp", "1"))
-		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",temp_wan_netmask, "up");
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
+		     temp_wan_netmask, "up");
 	else
 		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"),
 		     "netmask", nvram_safe_get("wan_netmask"), "up");
@@ -402,8 +403,9 @@ static int bound_tv(void)
 		char bcast[32];
 		strcpy(bcast, ip);
 		get_broadcast(bcast, net);
-		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast,"multi");
-		nvram_set("tvnicaddr",ip);
+		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast,
+		     "multi");
+		nvram_set("tvnicaddr", ip);
 	}
 	if (cidr && ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
