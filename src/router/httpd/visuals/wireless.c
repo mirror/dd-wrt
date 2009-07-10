@@ -268,12 +268,12 @@ void get_hostname_ip(char *type, char *filename)
 				if (!strcmp
 				    (leases[0], wl_client_macs[i].hwaddr)) {
 					snprintf(wl_client_macs[i].ipaddr,
-						 sizeof(wl_client_macs[i].
-							ipaddr), "%s",
+						 sizeof(wl_client_macs
+							[i].ipaddr), "%s",
 						 leases[1]);
 					snprintf(wl_client_macs[i].hostname,
-						 sizeof(wl_client_macs[i].
-							hostname), "%s",
+						 sizeof(wl_client_macs
+							[i].hostname), "%s",
 						 leases[2]);
 					break;
 				}
@@ -446,8 +446,8 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 					}
 				}
 				if (match == 0) {
-					snprintf(wl_client_macs[nv_count].
-						 hwaddr,
+					snprintf(wl_client_macs
+						 [nv_count].hwaddr,
 						 sizeof(wl_client_macs
 							[nv_count].hwaddr),
 						 "%s", list[1]);

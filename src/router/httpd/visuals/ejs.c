@@ -709,7 +709,7 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 		if (getSTA())
 			return;
 	}
-	
+
 	websWrite(wp, output);
 
 	return;
@@ -1332,22 +1332,22 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
 	char name[32];
-	
+
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
 
 	if (!nvram_match("wan_proto", "disabled")) {
 #ifdef HAVE_MADWIFI
 		if (getSTA()) {
-			sprintf(name, "%s WAN", live_translate("share.wireless"));
+			sprintf(name, "%s WAN",
+				live_translate("share.wireless"));
 			show_bwif(wp, get_wan_face(), name);
-		}
-		else
+		} else
 			show_bwif(wp, get_wan_face(), "WAN");
 #else
 		if (!getSTA())
 			show_bwif(wp, get_wan_face(), "WAN");
 #endif
-			
+
 		if (nvram_match("dtag_vlan8", "1"))
 			show_bwif(wp, "eth0.0008", "IPTV");
 
@@ -1664,7 +1664,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strncmp
 				    (menu[i][j], "Wireless_Advanced", 17))
 					j++;
-				if ((!wifi||cpeonly) && !strncmp(menu[i][j], "Wireless_WDS", 12))
+				if ((!wifi || cpeonly)
+				    && !strncmp(menu[i][j], "Wireless_WDS", 12))
 					j++;
 				if (!wifi
 				    && !strcmp(menu[i][j],
@@ -1871,7 +1872,8 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp,
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
-	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"),SVN_REVISION);
+	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"),
+		  SVN_REVISION);
 	if (strlen(argv[0]) != 0) {
 		websWrite(wp, " - %s", live_translate(argv[0]));
 	}
@@ -1910,7 +1912,8 @@ void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp,
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"),SVN_REVISION);
+	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"),
+		  SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(htitle));
 	websWrite(wp, "\t</head>\n");
 
@@ -1927,7 +1930,7 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 		"+05.75",
 		"+06",
 		"+06.5", "+07", "+08", "+09", "+09.5", "+10", "+10.5", "+11",
-		    "+11.5",
+		"+11.5",
 		"+12", "+12.75", "+13", "+14"
 	};
 
@@ -1935,15 +1938,15 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 	    { "-12:00", "-11:00", "-10:00", "-09:30", "-09:00", "-08:00",
 		"-07:00",
 		"-06:00", "-05:00", "-04:30", "-04:00", "-03:30", "-03:00",
-		    "-02:00",
+		"-02:00",
 		"-01:00", "",
 		"+01:00", "+02:00", "+03:00", "+03:30", "+04:00", "+04:30",
-		    "+05:00",
+		"+05:00",
 		"+05:30",
 		"+05:45", "+06:00", "+06:30", "+07:00", "+08:00", "+09:00",
-		    "+09:30",
+		"+09:30",
 		"+10:00", "+10:30", "+11:00", "+11:30", "+12:00", "+12:45",
-		    "+13:00",
+		"+13:00",
 		"+14:00"
 	};
 
@@ -2305,7 +2308,7 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%d dBm", wifi_gettxpower(m));
 #elif HAVE_RT2880
 	websWrite(wp, "%s mW", nvram_safe_get(txpwr));
-#else //broadcom
+#else				//broadcom
 	websWrite(wp, "%d mW", bcm_gettxpower(m));
 #endif
 }
