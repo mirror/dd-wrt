@@ -2646,11 +2646,10 @@ void load_defaults(void)
 			fread(srouter_defaults[i].name, vl, 1, in);
 			srouter_defaults[i].name[vl] = 0;
 			vl = (unsigned int)getc(in);
-			if (vl&128)
-			    {
-			    vl&=127;
-			    vl|= (unsigned int)getc(in)<<7;
-			    }
+			if (vl & 128) {
+				vl &= 127;
+				vl |= (unsigned int)getc(in) << 7;
+			}
 			srouter_defaults[i].value = malloc(vl + 1);
 			fread(srouter_defaults[i].value, vl, 1, in);
 			srouter_defaults[i].value[vl] = 0;
@@ -2659,7 +2658,7 @@ void load_defaults(void)
 			srouter_defaults[i].value = NULL;
 		}
 	}
-	fclose (in);
+	fclose(in);
 }
 
 void free_defaults(void)

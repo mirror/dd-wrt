@@ -795,7 +795,8 @@ void start_pptp(int status)
 		create_pptp_config(nvram_safe_get("pptp_server_ip"), username);
 
 	} else {
-		ifconfig(wan_ifname, IFUP,nvram_safe_get("wan_ipaddr"),nvram_safe_get("wan_netmask"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
+			 nvram_safe_get("wan_netmask"));
 		if (!nvram_match("wan_gateway", "0.0.0.0"))
 			route_add(wan_ifname, 0,
 				  nvram_safe_get("pptp_server_ip"),
@@ -1367,7 +1368,7 @@ void start_ttraff(void)
 
 	if ((nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
 	    && (nvram_match("wan_proto", "disabled")
-		|| getWET()) )
+		|| getWET()))
 		return;
 
 	pid_t pid;

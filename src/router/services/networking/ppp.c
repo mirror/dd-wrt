@@ -46,21 +46,20 @@
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-
 char *getenvs(char *env)
 {
-static unsigned char r[64];
-char *e=getenv(env);
-int c=0;
-int i;
-for (i=0;i<strlen(e);i++)
-    {
-    if (e[i]!=' ')
-	r[c++]=e[i];
-    }
-r[c++]=0; //terminate string
-return r;
+	static unsigned char r[64];
+	char *e = getenv(env);
+	int c = 0;
+	int i;
+	for (i = 0; i < strlen(e); i++) {
+		if (e[i] != ' ')
+			r[c++] = e[i];
+	}
+	r[c++] = 0;		//terminate string
+	return r;
 }
+
 /*
  * Called when link comes up
  */

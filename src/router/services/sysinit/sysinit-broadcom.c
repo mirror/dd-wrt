@@ -919,19 +919,20 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/boardflags2", "0x0400");
 		nvram_set("pci/1/2/boardflags2", "0x0602");
 
-		if (!nvram_match ("bootnv_ver", "6")) {
-		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
-		    || startswith(nvram_safe_get("pci/1/2/macaddr"),
-				  "00:90:4C")) {
-			unsigned char mac[20];
-			strcpy(mac, nvram_safe_get("et0macaddr"));
-			MAC_ADD(mac);
-			MAC_ADD(mac);
-			nvram_set("pci/1/1/macaddr", mac);
-			MAC_ADD(mac);
-			nvram_set("pci/1/2/macaddr", mac);
-			need_reboot = 1;
-		}
+		if (!nvram_match("bootnv_ver", "6")) {
+			if (startswith
+			    (nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+			    || startswith(nvram_safe_get("pci/1/2/macaddr"),
+					  "00:90:4C")) {
+				unsigned char mac[20];
+				strcpy(mac, nvram_safe_get("et0macaddr"));
+				MAC_ADD(mac);
+				MAC_ADD(mac);
+				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
+				nvram_set("pci/1/2/macaddr", mac);
+				need_reboot = 1;
+			}
 		}
 		break;
 
