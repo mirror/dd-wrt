@@ -129,10 +129,12 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</tr>\n");
 			}
 		} else if (!strcmp(type, "outgoing")) {
-			if (!strncmp(in, lan_if, 3) &&
-			    ((!strncmp(out, "ppp", 3)
-			      && !strncmp(out, wan_if, 3))
-			     || (!strcmp(out, wan_if)))) {
+			if (!strncmp(in, lan_if, 3) && ((!strncmp(out, "ppp", 3)
+							 && !strncmp(out,
+								     wan_if, 3))
+							||
+							(!strcmp(out, wan_if))))
+			{
 				if (_dport == 53) {
 					continue;	// skip DNS
 				}
