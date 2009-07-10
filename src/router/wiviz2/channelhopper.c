@@ -143,7 +143,7 @@ void channelHopper(wiviz_cfg * cfg) {
 #else
     char tmp[32];
     sprintf( tmp, "%s_ifname", nvram_safe_get( "wifi_display" ) );
-    wl_dev = nvram_safe_get( tmp );
+    char *wl_dev = nvram_safe_get( tmp );
     if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &nc, 4)<0)
 	continue;
 #endif
