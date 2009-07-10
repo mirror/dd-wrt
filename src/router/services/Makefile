@@ -7,10 +7,18 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
 endif
 
 LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -L../libnet/lib -lnet -L../libutils -lutils
-CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 LDFLAGS += -lm
+
+CFLAGS	= $(COPTS) -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += -fpic -I$(TOP)/services/include
+
+
+HCFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
+HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
+HCFLAGS  += -fpic -I$(TOP)/services/include
+
+
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
        bridgetools.o igmp.o wpa.o vlantagging.o httpd.o setuserpw.o anchorfree.o gpio.o mask.o reset_defaults.o
 
@@ -778,7 +786,7 @@ all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
 endif
-	gcc -o bin/defaults $(CFLAGS) bin/defaults.c
+	gcc -o bin/defaults $(HCFLAGS) bin/defaults.c
 	cd bin && ./defaults
     
 clean:
@@ -798,7 +806,7 @@ endif
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
-	$(CC) --shared $(COPTS) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) --shared $(CFLAGS) -o $@ $^ $(LDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
