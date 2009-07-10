@@ -141,7 +141,10 @@ void channelHopper(wiviz_cfg * cfg) {
 #elif HAVE_RT2880
     sysprintf("iwpriv ra0 set Channel=%d",nc);
 #else
-    if (wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4)<0)
+    char tmp[32];
+    sprintf( tmp, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+    wl_dev = nvram_safe_get( tmp );
+    if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &nc, 4)<0)
 	continue;
 #endif
     //Sleep
