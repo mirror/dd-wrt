@@ -36,7 +36,7 @@
 
 void start_dhcpfwd(void)
 {
-	if (getWET())	// dont 
+	if (getWET())		// dont 
 		// start 
 		// any 
 		// dhcp 

@@ -1567,8 +1567,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2544,123 +2544,126 @@ void start_wan(int status)
 		unlink("/tmp/ppp/set-pppoepid");
 		char *controldevice = get3GControlDevice();
 		int timeout = 5;
-		if (controldevice && !strcmp(controldevice,"hso"))
-		    {
-		    
-		    
-		    }else{
+		if (controldevice && !strcmp(controldevice, "hso")) {
 
-
-		/* init PIN */
-		if (strlen(nvram_safe_get("wan_pin")))
-			sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",
-				  nvram_safe_get("wan_pin"), controldevice);
-		if (strlen(nvram_safe_get("wan_apn")))
-			if (!nvram_match("wan_dial", "2"))
-				sysprintf
-				    ("export COMGTAPN=\"%s\";comgt APN -d %s\n",
-				     nvram_safe_get("wan_apn"), controldevice);
-		// Lets open option file and enter all the parameters.
-		fp = fopen("/tmp/ppp/options.pppoe", "w");
-		fprintf(fp, "defaultroute\n");
-		fprintf(fp, "usepeerdns\n");
-		fprintf(fp, "noipdefault\n");
-		fprintf(fp, "noauth\n");
-		fprintf(fp, "ipcp-max-failure 30\n");
-		fprintf(fp, "lcp-echo-interval 10\n");
-		fprintf(fp, "lcp-echo-failure 3\n");
-		if (nvram_match("mtu_enable", "1")) {
-			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-				fprintf(fp, "mtu %s\n",
-					nvram_safe_get("wan_mtu"));
-				fprintf(fp, "mru %s\n",
-					nvram_safe_get("wan_mtu"));
-			}
-
-		}
-		fprintf(fp, "crtscts\n");
-		fprintf(fp, "460800\n");
-//      fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
-		char *dial = "*99***1#";
-		if (nvram_match("wan_dial", "0"))
-			dial = "ATD*99***1#";
-		if (nvram_match("wan_dial", "1"))
-			dial = "ATD*99#";
-		if (nvram_match("wan_dial", "2"))
-			dial = "ATDT#777";
-		fprintf(fp,
-			"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",
-			dial, nvram_safe_get("3gdata"));
-		if (strlen(nvram_safe_get("ppp_username")))
-			fprintf(fp, "user %s\n",
-				nvram_safe_get("ppp_username"));
-		if (strlen(nvram_safe_get("ppp_passwd")))
-			fprintf(fp, "password %s\n",
-				nvram_safe_get("ppp_passwd"));
-		fprintf(fp, "%s\n", nvram_get("3gdata"));
-
-		fclose(fp);
-
-
-
-		eval("pppd", "file", "/tmp/ppp/options.pppoe");
-
-		/*
-		 * Pretend that the WAN interface is up 
-		 */
-		if (nvram_match("ppp_demand", "1")) {
-			/*
-			 * Wait for ppp0 to be created 
-			 */
-			while (ifconfig("ppp0", IFUP, NULL, NULL) && timeout--)
-				sleep(1);
-			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
-
-			/*
-			 * Set temporary IP address 
-			 */
-			timeout = 3;
-			while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
-				perror("ppp0");
-				printf("Wait ppp inteface to init (1) ...\n");
-				sleep(1);
-			};
-			char client[32];
-
-			nvram_set("wan_ipaddr",
-				  inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr),
-					    client, 16));
-			nvram_set("wan_netmask", "255.255.255.255");
-
-			/*
-			 * Set temporary P-t-P address 
-			 */
-			timeout = 3;
-			while (ioctl(s, SIOCGIFDSTADDR, &ifr) && timeout--) {
-				perror("ppp0");
-				printf("Wait ppp inteface to init (2) ...\n");
-				sleep(1);
-			}
-			char *peer =
-			    inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
-				      client,
-				      16);
-
-			nvram_set("wan_gateway", peer);
-
-			start_wan_done("ppp0");
-
-			// if user press Connect" button from web, we must force to dial
-			if (nvram_match("action_service", "start_3g")) {
-				sleep(3);
-				start_force_to_dial();
-				nvram_unset("action_service");
-			}
 		} else {
-			if (status != REDIAL) {
-				start_redial();
+
+			/* init PIN */
+			if (strlen(nvram_safe_get("wan_pin")))
+				sysprintf
+				    ("export COMGTPIN=%s;comgt PIN -d %s\n",
+				     nvram_safe_get("wan_pin"), controldevice);
+			if (strlen(nvram_safe_get("wan_apn")))
+				if (!nvram_match("wan_dial", "2"))
+					sysprintf
+					    ("export COMGTAPN=\"%s\";comgt APN -d %s\n",
+					     nvram_safe_get("wan_apn"),
+					     controldevice);
+			// Lets open option file and enter all the parameters.
+			fp = fopen("/tmp/ppp/options.pppoe", "w");
+			fprintf(fp, "defaultroute\n");
+			fprintf(fp, "usepeerdns\n");
+			fprintf(fp, "noipdefault\n");
+			fprintf(fp, "noauth\n");
+			fprintf(fp, "ipcp-max-failure 30\n");
+			fprintf(fp, "lcp-echo-interval 10\n");
+			fprintf(fp, "lcp-echo-failure 3\n");
+			if (nvram_match("mtu_enable", "1")) {
+				if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+					fprintf(fp, "mtu %s\n",
+						nvram_safe_get("wan_mtu"));
+					fprintf(fp, "mru %s\n",
+						nvram_safe_get("wan_mtu"));
+				}
+
 			}
-		}
+			fprintf(fp, "crtscts\n");
+			fprintf(fp, "460800\n");
+//      fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
+			char *dial = "*99***1#";
+			if (nvram_match("wan_dial", "0"))
+				dial = "ATD*99***1#";
+			if (nvram_match("wan_dial", "1"))
+				dial = "ATD*99#";
+			if (nvram_match("wan_dial", "2"))
+				dial = "ATDT#777";
+			fprintf(fp,
+				"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",
+				dial, nvram_safe_get("3gdata"));
+			if (strlen(nvram_safe_get("ppp_username")))
+				fprintf(fp, "user %s\n",
+					nvram_safe_get("ppp_username"));
+			if (strlen(nvram_safe_get("ppp_passwd")))
+				fprintf(fp, "password %s\n",
+					nvram_safe_get("ppp_passwd"));
+			fprintf(fp, "%s\n", nvram_get("3gdata"));
+
+			fclose(fp);
+
+			eval("pppd", "file", "/tmp/ppp/options.pppoe");
+
+			/*
+			 * Pretend that the WAN interface is up 
+			 */
+			if (nvram_match("ppp_demand", "1")) {
+				/*
+				 * Wait for ppp0 to be created 
+				 */
+				while (ifconfig("ppp0", IFUP, NULL, NULL)
+				       && timeout--)
+					sleep(1);
+				strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
+
+				/*
+				 * Set temporary IP address 
+				 */
+				timeout = 3;
+				while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
+					perror("ppp0");
+					printf
+					    ("Wait ppp inteface to init (1) ...\n");
+					sleep(1);
+				};
+				char client[32];
+
+				nvram_set("wan_ipaddr",
+					  inet_ntop(AF_INET,
+						    &sin_addr(&ifr.ifr_addr),
+						    client, 16));
+				nvram_set("wan_netmask", "255.255.255.255");
+
+				/*
+				 * Set temporary P-t-P address 
+				 */
+				timeout = 3;
+				while (ioctl(s, SIOCGIFDSTADDR, &ifr)
+				       && timeout--) {
+					perror("ppp0");
+					printf
+					    ("Wait ppp inteface to init (2) ...\n");
+					sleep(1);
+				}
+				char *peer =
+				    inet_ntop(AF_INET,
+					      &sin_addr(&ifr.ifr_dstaddr),
+					      client,
+					      16);
+
+				nvram_set("wan_gateway", peer);
+
+				start_wan_done("ppp0");
+
+				// if user press Connect" button from web, we must force to dial
+				if (nvram_match("action_service", "start_3g")) {
+					sleep(3);
+					start_force_to_dial();
+					nvram_unset("action_service");
+				}
+			} else {
+				if (status != REDIAL) {
+					start_redial();
+				}
+			}
 		}
 
 	} else
@@ -3571,7 +3574,7 @@ void start_set_routes(void)
 				  netmask);
 	}
 	if (f_exists("/tmp/tvrouting"))
-	system("sh /tmp/tvrouting");
+		system("sh /tmp/tvrouting");
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
