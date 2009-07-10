@@ -300,15 +300,15 @@ int svqos_iptables(void)
 		sysprintf
 		    ("iptables -t mangle -I FORWARD -i %s -j IMQ --todev 0",
 		     dev);
-//		if (nvram_match("dtag_vlan8","1"))
-//		    {
-//		sysprintf
-//		    ("iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
-//		     nvram_safe_get("tvnicfrom"));
-//		sysprintf
-//		    ("iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
-//		     nvram_safe_get("tvnicfrom"));
-//		    }
+//              if (nvram_match("dtag_vlan8","1"))
+//                  {
+//              sysprintf
+//                  ("iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
+//                   nvram_safe_get("tvnicfrom"));
+//              sysprintf
+//                  ("iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
+//                   nvram_safe_get("tvnicfrom"));
+//                  }
 		char iflist[256];
 
 		getIfList(iflist, NULL);
