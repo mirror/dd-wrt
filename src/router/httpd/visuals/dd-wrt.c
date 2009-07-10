@@ -3448,7 +3448,7 @@ static void show_chanshift(webs_t wp, char *prefix)
 		nvram_set(wl_chanshift, "10");
 	if (atoi(nvram_safe_get(wl_channelbw)) > 10
 	    && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 0)
-		vram_set(wl_chanshift, "0");
+		nvram_set(wl_chanshift, "0");
 
 	if (nvram_match(wl_channelbw, "5")
 	    || nvram_match(wl_channelbw, "10")
