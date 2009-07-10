@@ -1469,7 +1469,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 
-	if (getWET()) 	// dhcpd settings disabled in client bridge mode, so we wont display it
+	if (getWET())		// dhcpd settings disabled in client bridge mode, so we wont display it
 		return;
 
 	websWrite(wp,
@@ -2758,10 +2758,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			// supported 5GHz channels for IEEE 802.11n 40Mhz
 			int na_upper[16] =
 			    { 40, 48, 56, 64, 104, 112, 120, 128, 136, 153, 161,
-		     0, 0, 0, 0, 0 };
+				0, 0, 0, 0, 0
+			};
 			int na_lower[16] =
 			    { 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157,
-		     0, 0, 0, 0, 0 };
+				0, 0, 0, 0, 0
+			};
 
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
@@ -3438,12 +3440,19 @@ static void show_chanshift(webs_t wp, char *prefix)
 
 	sprintf(wl_channelbw, "%s_channelbw", prefix);
 	sprintf(wl_chanshift, "%s_chanshift", prefix);
-	if (atoi(nvram_safe_get(wl_channelbw)) > 2 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10) nvram_set(wl_chanshift, "10");
-	if (atoi(nvram_safe_get(wl_channelbw)) > 5 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10) nvram_set(wl_chanshift, "10");
-	if (atoi(nvram_safe_get(wl_channelbw)) > 10 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 0) vram_set(wl_chanshift, "0");
+	if (atoi(nvram_safe_get(wl_channelbw)) > 2
+	    && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10)
+		nvram_set(wl_chanshift, "10");
+	if (atoi(nvram_safe_get(wl_channelbw)) > 5
+	    && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10)
+		nvram_set(wl_chanshift, "10");
+	if (atoi(nvram_safe_get(wl_channelbw)) > 10
+	    && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 0)
+		vram_set(wl_chanshift, "0");
 
 	if (nvram_match(wl_channelbw, "5")
-	    || nvram_match(wl_channelbw, "10") || nvram_match(wl_channelbw, "2")) {
+	    || nvram_match(wl_channelbw, "10")
+	    || nvram_match(wl_channelbw, "2")) {
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
@@ -3451,21 +3460,24 @@ static void show_chanshift(webs_t wp, char *prefix)
 			  wl_chanshift);
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		if (nvram_match(wl_channelbw, "5") || nvram_match(wl_channelbw, "2"))
+		if (nvram_match(wl_channelbw, "5")
+		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"-15\\\" %s >-15 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-15",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
+		    || nvram_match(wl_channelbw, "10")
+		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"-10\\\" %s >-10 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-10",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
+		    || nvram_match(wl_channelbw, "10")
+		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"-5\\\" %s >-5 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-5",
@@ -3477,20 +3489,23 @@ static void show_chanshift(webs_t wp, char *prefix)
 					      "0") ? "selected=\\\"selected\\\""
 			  : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
+		    || nvram_match(wl_channelbw, "10")
+		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"5\\\" %s >+5 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "5",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		if (nvram_match(wl_channelbw, "5")
-		    || nvram_match(wl_channelbw, "10")|| nvram_match(wl_channelbw, "2"))
+		    || nvram_match(wl_channelbw, "10")
+		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"10\\\" %s >+10 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "10",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
-		if (nvram_match(wl_channelbw, "5")|| nvram_match(wl_channelbw, "2"))
+		if (nvram_match(wl_channelbw, "5")
+		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"15\\\" %s >+15 Mhz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "15",
@@ -3871,22 +3886,21 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			// showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
 #ifdef HAVE_REGISTER
-	int cpeonly = iscpe();
+			int cpeonly = iscpe();
 #else
-	int cpeonly = 0;
+			int cpeonly = 0;
 #endif
 			websWrite(wp,
 				  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 				  wl_mode);
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			if (!cpeonly)
-			{
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
-				  nvram_match(wl_mode,
-					      "ap") ?
-				  "selected=\\\"selected\\\"" : "");
+			if (!cpeonly) {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
+					  nvram_match(wl_mode,
+						      "ap") ?
+					  "selected=\\\"selected\\\"" : "");
 			}
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
@@ -3901,25 +3915,24 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  "selected=\\\"selected\\\"" : "");
 #endif
 			if (!cpeonly)
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n",
-				  nvram_match(wl_mode,
-					      "infra") ?
-				  "selected=\\\"selected\\\"" : "");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n",
+					  nvram_match(wl_mode,
+						      "infra") ?
+					  "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
-			if (!cpeonly)
-			{
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
-				  nvram_match(wl_mode,
-					      "apsta") ?
-				  "selected=\\\"selected\\\"" : "");
+			if (!cpeonly) {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
+					  nvram_match(wl_mode,
+						      "apsta") ?
+					  "selected=\\\"selected\\\"" : "");
 //#ifndef HAVE_RT2880
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n",
-				  nvram_match(wl_mode,
-					      "apstawet") ?
-				  "selected=\\\"selected\\\"" : "");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n",
+					  nvram_match(wl_mode,
+						      "apstawet") ?
+					  "selected=\\\"selected\\\"" : "");
 			}
 //#endif
 #else
@@ -3928,13 +3941,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  nvram_match(wl_mode,
 					      "wdssta") ?
 				  "selected=\\\"selected\\\"" : "");
-			if (!cpeonly)
-			{
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
-				  nvram_match(wl_mode,
-					      "wdsap") ?
-				  "selected=\\\"selected\\\"" : "");
+			if (!cpeonly) {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
+					  nvram_match(wl_mode,
+						      "wdsap") ?
+					  "selected=\\\"selected\\\"" : "");
 			}
 #endif
 			websWrite(wp, "//]]>\n</script>\n");
@@ -4427,7 +4439,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifdef HAVE_REGISTER
 	if (!iscpe())
 #endif
-	    show_virtualssid(wp, prefix);
+		show_virtualssid(wp, prefix);
 }
 
 void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
@@ -5681,8 +5693,8 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 	int s, len;
 	struct iwreq iwr;
 	char nb[32];
-	sprintf(nb,"%s_bias",ifname);
-	int bias = atoi(nvram_default_get(nb,"0"));
+	sprintf(nb, "%s_bias", ifname);
+	int bias = atoi(nvram_default_get(nb, "0"));
 	if (!ifexists(ifname)) {
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
@@ -5759,14 +5771,14 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 				    IEEE80211_RATE_VAL) / 2) * turbo,
 				  ((si->isi_rates[si->isi_rxrate] &
 				    IEEE80211_RATE_VAL) / 2) * turbo,
-				  si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias,
-				  si->isi_rssi, qual);
+				  si->isi_noise + si->isi_rssi + bias,
+				  si->isi_noise + bias, si->isi_rssi, qual);
 		} else {
 			websWrite(wp,
 				  "'%s','%s','%s','N/A','N/A','%d','%d','%d','%d'",
 				  mac, ifname, UPTIME(si->isi_uptime),
-				  si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias,
-				  si->isi_rssi, qual);
+				  si->isi_noise + si->isi_rssi + bias,
+				  si->isi_noise + bias, si->isi_rssi, qual);
 		}
 		cp += si->isi_len;
 		len -= si->isi_len;
@@ -5881,7 +5893,6 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	return (i < 17 ? NULL : a);
 }
 
-
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
 		unsigned short MCS:7;	// MCS
@@ -5905,7 +5916,6 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned int ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
 } RT_802_11_MAC_ENTRY;
-
 
 typedef struct _RT_802_11_MAC_TABLE {
 	unsigned long Num;
@@ -5975,19 +5985,21 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 #if 0
 			if (si->isi_rates
 			    &&
-			    ((si->
-			      isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) !=
-			     0)
+			    ((si->isi_rates[si->isi_txrate] &
+			      IEEE80211_RATE_VAL) != 0)
 			    &&
-			    ((si->
-			      isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) !=
-			     0)) {
+			    ((si->isi_rates[si->isi_rxrate] &
+			      IEEE80211_RATE_VAL) != 0)) {
 				websWrite(wp,
 					  "'%s','%s','%3dM','%3dM','%d','%d','%d'",
 					  mac, ifname,
-					  ((si->isi_rates[si->isi_txrate] &
+					  ((si->
+					    isi_rates[si->
+						      isi_txrate] &
 					    IEEE80211_RATE_VAL) / 2) * turbo,
-					  ((si->isi_rates[si->isi_rxrate] &
+					  ((si->
+					    isi_rates[si->
+						      isi_rxrate] &
 					    IEEE80211_RATE_VAL) / 2) * turbo,
 					  -95 + table.Entry[i].AvgRssi0, -95,
 					  table.Entry[i].AvgRssi0);
@@ -7078,7 +7090,9 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(srcip, lanip))
 			websWrite(wp, "<td align=\"right\">%s</td>", srcip);
 		else
-			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", srcip, srcip);
+			websWrite(wp,
+				  "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>",
+				  srcip, srcip);
 
 		// dst
 		search_hit("dst=", line, dstip);
@@ -7090,8 +7104,9 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(dstip, lanip))
 			websWrite(wp, "<td align=\"right\">%s</td>", dstip);
 		else
-			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", dstip, dstip);
-
+			websWrite(wp,
+				  "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>",
+				  dstip, dstip);
 
 		// service
 		search_hit("dport=", line, dstport);
