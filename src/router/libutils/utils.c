@@ -816,11 +816,11 @@ int internal_getRouterBrand()
 	setRouter("Atheros PB42");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_RS
-	#ifdef HAVE_DDLINK
+#ifdef HAVE_DDLINK
 	setRouter("ddlink2x2");
-	#else
+#else
 	setRouter("Ubiquiti RouterStation");
-	#endif
+#endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
 	setRouter("Ubiquiti LSX");
@@ -1507,12 +1507,11 @@ int internal_getRouterBrand()
 	if (boardnum == 42 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x10")) {
 		if (nvram_match("boardflags", "0x20750")) {
-		cprintf("router is wrt54g2v1/v1.3/gs2v1\n");
-		setRouter("Linksys WRT54G2 / GS2");
-		}
-		else {
-		cprintf("router is wrt54gv8/gsv7\n");
-		setRouter("Linksys WRT54Gv8 / GSv7");			
+			cprintf("router is wrt54g2v1/v1.3/gs2v1\n");
+			setRouter("Linksys WRT54G2 / GS2");
+		} else {
+			cprintf("router is wrt54gv8/gsv7\n");
+			setRouter("Linksys WRT54Gv8 / GSv7");
 		}
 		return ROUTER_WRT54G_V8;
 	}
@@ -1656,10 +1655,11 @@ int check_wan_link(int num)
 	int wan_link = 0;
 
 	if ((nvram_match("wan_proto", "pptp")
-	    || nvram_match("wan_proto", "l2tp")
-	    || nvram_match("wan_proto", "pppoe")
-	    || nvram_match("wan_proto", "3g")
-	    || nvram_match("wan_proto", "heartbeat")) && !nvram_match("3gdata","hso")) {
+	     || nvram_match("wan_proto", "l2tp")
+	     || nvram_match("wan_proto", "pppoe")
+	     || nvram_match("wan_proto", "3g")
+	     || nvram_match("wan_proto", "heartbeat"))
+	    && !nvram_match("3gdata", "hso")) {
 		FILE *fp;
 		char filename[80];
 		char *name;
@@ -2576,16 +2576,13 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-		diag_gpio = 0x107;	
-		if (nvram_match("DD_BOARD", "Buffalo WHR-G125"))
-		{
-		connected_gpio = 0x101;
-		sec0_gpio = 0x106;			
-		}
-		else
-		{
-		bridge_gpio = 0x101;
-		ses_gpio = 0x106;
+		diag_gpio = 0x107;
+		if (nvram_match("DD_BOARD", "Buffalo WHR-G125")) {
+			connected_gpio = 0x101;
+			sec0_gpio = 0x106;
+		} else {
+			bridge_gpio = 0x101;
+			ses_gpio = 0x106;
 		}
 		break;
 	case ROUTER_BUFFALO_WZRRSG54:

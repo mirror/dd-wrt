@@ -1360,8 +1360,8 @@ int getRssi(char *ifname, unsigned char *mac)
 	struct iwreq iwr;
 	int s;
 	char nb[32];
-	sprintf(nb,"%s_bias",ifname);
-	
+	sprintf(nb, "%s_bias", ifname);
+
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		fprintf(stderr, "socket(SOCK_DRAGM)\n");
@@ -1395,8 +1395,8 @@ int getRssi(char *ifname, unsigned char *mac)
 			int rssi = si->isi_noise + si->isi_rssi;
 
 			free(buf);
-			
-			return rssi+atoi(nvram_default_get(nb,"0"));
+
+			return rssi + atoi(nvram_default_get(nb, "0"));
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
@@ -1474,7 +1474,7 @@ int getNoise(char *ifname, unsigned char *mac)
 	struct iwreq iwr;
 	int s;
 	char nb[32];
-	sprintf(nb,"%s_bias",ifname);
+	sprintf(nb, "%s_bias", ifname);
 
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
@@ -1508,7 +1508,7 @@ int getNoise(char *ifname, unsigned char *mac)
 			int noise = si->isi_noise;
 
 			free(buf);
-			return noise+atoi(nvram_default_get(nb,"0"));
+			return noise + atoi(nvram_default_get(nb, "0"));
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
@@ -1637,7 +1637,7 @@ char *get_wl_instance_name(int instance)
 		return "eth3";
 	fprintf(stderr, "get_wl_instance doesnt return the right value %d\n",
 		instance);
-	return nvram_safe_get ("wl0_ifname");		// dirty for debugging
+	return nvram_safe_get("wl0_ifname");	// dirty for debugging
 }
 
 int get_wl_instances(void)
@@ -1673,31 +1673,31 @@ int bcm_gettxpower(char *wlname)
 	int c;
 	char cmd[32];
 	char wl[16];
-	
-	sprintf (wl, "%s_txpwr", wlname);
-	pwr = atoi (nvram_safe_get(wl));
 
-	if (!strcmp(wlname, "wl0"))    
-		c = 0;		
+	sprintf(wl, "%s_txpwr", wlname);
+	pwr = atoi(nvram_safe_get(wl));
+
+	if (!strcmp(wlname, "wl0"))
+		c = 0;
 	else if (!strcmp(wlname, "wl1"))
 		c = 1;
 	else
 		return pwr;
-	
-	sprintf (cmd, "wl -i %s txpwr1", get_wl_instance_name (c));
 
-	FILE *in = popen (cmd, "rb");
-	if (in == NULL) 
+	sprintf(cmd, "wl -i %s txpwr1", get_wl_instance_name(c));
+
+	FILE *in = popen(cmd, "rb");
+	if (in == NULL)
 		return pwr;
-		// TxPower is 74 qdbm,  18.50 dbm, 71 mW  Override is Off		
-	if (fscanf (in, "%*s %*s %*s %*s %*s %*s %d", &realpwr) == 1) 
+	// TxPower is 74 qdbm,  18.50 dbm, 71 mW  Override is Off               
+	if (fscanf(in, "%*s %*s %*s %*s %*s %*s %d", &realpwr) == 1)
 		pwr = realpwr;
 
-	pclose (in);
-	
+	pclose(in);
+
 	return pwr;
-}	
-      
+}
+
 #endif
     /*
      * return 1st wireless interface 
