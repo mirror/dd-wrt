@@ -1633,10 +1633,8 @@ void start_nvram(void)
 #ifdef HAVE_WIVIZ
 	if (!strlen(nvram_safe_get("hopseq"))
 	    || !strlen(nvram_safe_get("hopdwell"))) {
-		char *channel = nvram_safe_get("wl0_channel");
-
 		nvram_set("hopdwell", "1000");
-		nvram_set("hopseq", channel);
+		nvram_set("hopseq", "0");
 	}
 #endif
 	nvram_unset("lasthour");
