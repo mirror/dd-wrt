@@ -405,6 +405,9 @@ extern int getcpurev(void);
 extern int cpu_plltype(void);
 extern int check_vlan_support(void);
 
+extern int remove_from_list(const char *name, char *list, int listsize);
+extern int add_to_list(const char *name, char *list, int listsize);
+extern char *find_in_list(const char *haystack, const char *needle);
 extern int startswith(char *source, char *cmp);
 extern int count_occurences(char *source, int cmp);
 extern int pos_nthoccurence(char *source, int cmp, int which);
