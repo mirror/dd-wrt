@@ -1306,8 +1306,8 @@ void qos_save(webs_t wp)
 	/*
 	 * reused wshaper fields - see src/router/rc/wshaper.c 
 	 */
-	snprintf(field, 31, "wshaper_enable");
-	data = websGetVar(wp, field, NULL);
+
+	data = websGetVar(wp, "wshaper_enable", NULL);
 	nvram_set("wshaper_enable", data);
 
 	if (strcmp(data, "0") == 0) {
@@ -1316,33 +1316,13 @@ void qos_save(webs_t wp)
 		return;
 	}
 
-	snprintf(field, 31, "enable_game");
-	data = websGetVar(wp, field, NULL);
-	nvram_set("enable_game", data);
-
-	snprintf(field, 31, "default_uplevel");
-	data = websGetVar(wp, field, NULL);
-	nvram_set("default_uplevel", data);
-
-	snprintf(field, 31, "default_downlevel");
-	data = websGetVar(wp, field, NULL);
-	nvram_set("default_downlevel", data);
-
-	snprintf(field, 31, "wshaper_downlink");
-	data = websGetVar(wp, field, NULL);
-	nvram_set("wshaper_downlink", data);
-
-	snprintf(field, 31, "wshaper_uplink");
-	data = websGetVar(wp, field, NULL);
-	nvram_set("wshaper_uplink", data);
-
-	snprintf(field, 31, "wshaper_dev");
-	data = websGetVar(wp, field, NULL);
-	nvram_set("wshaper_dev", data);
-
-	snprintf(field, 31, "qos_type");
-	data = websGetVar(wp, field, NULL);
-	nvram_set("qos_type", data);
+	nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
+	nvram_set("default_uplevel", websGetVar(wp, "default_uplevel", NULL));
+	nvram_set("default_downlevel", websGetVar(wp, "default_downlevel", NULL));
+	nvram_set("wshaper_downlink", websGetVar(wp, "wshaper_downlink", NULL));
+	nvram_set("wshaper_uplink", websGetVar(wp, "wshaper_uplink", NULL));
+	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", NULL));
+	nvram_set("qos_type", websGetVar(wp, "qos_type", NULL));
 
 	// nvram_commit ();
 
