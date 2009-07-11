@@ -430,42 +430,19 @@ void save_services_port(webs_t wp)
 
 void delete_policy(webs_t wp, int which)
 {
-	char filter_rule[] = "filter_ruleXXX";
-	char filter_tod[] = "filter_todXXX";
-	char filter_tod_buf[] = "filter_tod_bufXXX";
-	char filter_host[] = "filter_web_hostXXX";
-	char filter_url[] = "filter_web_urlXXX";
-	char filter_ip_grp[] = "filter_ip_grpXXX";
-	char filter_mac_grp[] = "filter_mac_grpXXX";
-	char filter_port_grp[] = "filter_port_grpXXX";
-	char filter_dport_grp[] = "filter_dport_grpXXX";
-
 	D("delete policy");
 
-	snprintf(filter_rule, sizeof(filter_rule), "filter_rule%d", which);
-	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", which);
-	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d",
-		 which);
-	snprintf(filter_host, sizeof(filter_host), "filter_web_host%d", which);
-	snprintf(filter_url, sizeof(filter_url), "filter_web_url%d", which);
-	snprintf(filter_ip_grp, sizeof(filter_ip_grp), "filter_ip_grp%d",
-		 which);
-	snprintf(filter_mac_grp, sizeof(filter_mac_grp), "filter_mac_grp%d",
-		 which);
-	snprintf(filter_port_grp, sizeof(filter_port_grp), "filter_port_grp%d",
-		 which);
-	snprintf(filter_dport_grp, sizeof(filter_dport_grp),
-		 "filter_dport_grp%d", which);
 
-	nvram_set(filter_rule, "");
-	nvram_set(filter_tod, "");
-	nvram_set(filter_tod_buf, "");
-	nvram_set(filter_host, "");
-	nvram_set(filter_url, "");
-	nvram_set(filter_ip_grp, "");
-	nvram_set(filter_mac_grp, "");
-	nvram_set(filter_port_grp, "");
-	nvram_set(filter_dport_grp, "");
+	nvram_nset("", "filter_rule%d", which);
+	nvram_nset("", "filter_tod%d", which);
+	nvram_nset("", "filter_tod_buf%d", which);
+	nvram_nset("", "filter_web_host%d", which);
+	nvram_nset("", "filter_web_url%d", which);
+	nvram_nset("", "filter_ip_grp%d", which);
+	nvram_nset("", "filter_mac_grp%d", which);
+	nvram_nset("", "filter_port_grp%d", which);
+	nvram_nset("", "filter_dport_grp%d", which);
+
 	D("okay");
 }
 
