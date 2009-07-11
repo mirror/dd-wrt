@@ -122,6 +122,128 @@ int cpu_plltype(void)
 	return 0;
 }
 
+/* In the space-separated/null-terminated list(haystack), try to
+ * locate the string "needle"
+ */
+char *
+find_in_list(const char *haystack, const char *needle)
+{
+	const char *ptr = haystack;
+	int needle_len = 0;
+	int haystack_len = 0;
+	int len = 0;
+
+	if (!haystack || !needle || !*haystack || !*needle)
+		return NULL;
+
+	needle_len = strlen(needle);
+	haystack_len = strlen(haystack);
+
+	while (*ptr != 0 && ptr < &haystack[haystack_len])
+	{
+		/* consume leading spaces */
+		ptr += strspn(ptr, " ");
+
+		/* what's the length of the next word */
+		len = strcspn(ptr, " ");
+
+		if ((needle_len == len) && (!strncmp(needle, ptr, len)))
+			return (char*) ptr;
+
+		ptr += len;
+	}
+	return NULL;
+}
+
+
+/**
+ *	remove_from_list
+ *	Remove the specified word from the list.
+
+ *	@param name word to be removed from the list
+ *	@param list Space separated list to modify
+ *	@param listsize Max size the list can occupy
+
+ *	@return	error code
+ */
+int
+remove_from_list(const char *name, char *list, int listsize)
+{
+	int listlen = 0;
+	int namelen = 0;
+	char *occurrence = list;
+
+	if (!list || !name || (listsize <= 0))
+		return EINVAL;
+
+	listlen = strlen(list);
+	namelen = strlen(name);
+
+	occurrence = find_in_list(occurrence, name);
+
+	if (!occurrence)
+		return EINVAL;
+
+	/* last item in list? */
+	if (occurrence[namelen] == 0)
+	{
+		/* only item in list? */
+		if (occurrence != list)
+			occurrence--;
+		occurrence[0] = 0;
+	}
+	else if (occurrence[namelen] == ' ')
+	{
+		strncpy(occurrence, &occurrence[namelen+1 /* space */],
+		        strlen(&occurrence[namelen+1 /* space */]) +1 /* terminate */);
+	}
+
+	return 0;
+}
+
+/**
+ *		add_to_list
+ *	Add the specified interface(string) to the list as long as
+ *	it will fit in the space left in the list.
+
+ *	NOTE: If item is already in list, it won't be added again.
+
+ *	@param name Name of interface to be added to the list
+ *	@param list List to modify
+ *	@param listsize Max size the list can occupy
+
+ *	@return	error code
+ */
+int
+add_to_list(const char *name, char *list, int listsize)
+{
+	int listlen = 0;
+	int namelen = 0;
+
+	if (!list || !name || (listsize <= 0))
+		return EINVAL;
+
+	listlen = strlen(list);
+	namelen = strlen(name);
+
+	/* is the item already in the list? */
+	if (find_in_list(list, name))
+		return 0;
+
+	if (listsize <= listlen + namelen + 1 /* space */ + 1 /* NULL */)
+		return EMSGSIZE;
+
+	/* add a space if the list isn't empty and it doesn't already have space */
+	if (list[0] != 0 && list[listlen-1] != ' ')
+	{
+		list[listlen++] = 0x20;
+	}
+
+	strncpy(&list[listlen], name, namelen + 1 /* terminate */);
+
+	return 0;
+}
+
 int count_occurences(char *source, int cmp)
 {
 	int i, cnt = 0;
