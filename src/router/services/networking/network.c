@@ -2812,8 +2812,9 @@ void start_wan(int status)
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
 			fprintf(fp, "nomppe\n");
-		fprintf(fp, "usepeerdns\n"
-			"user '%s'\n" "password '%s'\n", username, passwd);
+		fprintf(fp, "usepeerdns\n");
+		if (strlen(username)>0)
+			fprintf(fp, "user '%s'\n" "password '%s'\n", username, passwd);
 
 		// This is a tricky one. When used it could improve speed of PPPoE
 		// but not all ISP's can support it.
