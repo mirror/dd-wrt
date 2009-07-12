@@ -71,7 +71,7 @@ function valid_value(F) {
 		}
 	}
 	
-	if(F.now_proto.value == "pppoe" || F.now_proto.value == "pptp" || F.now_proto.value == "l2tp") {
+	if(F.now_proto.value == "pptp" || F.now_proto.value == "l2tp") {
 		if(F.ppp_username.value == "") {
 			alert(errmsg.err0);
 			F.ppp_username.focus();
