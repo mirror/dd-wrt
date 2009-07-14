@@ -389,6 +389,13 @@
 
 #define ROUTER_BOARD_ESR6650 0x730f
 
+// Netgear WNR3500L (BCM4718A cpu, 8MB serial flash, USB, Gigabit switch, fccid: Netgear PY308400093)
+// Netgear WNR3500v2 - same - half flash
+#define ROUTER_NETGEAR_WNR3500L 0x7418
+
+// Linksys WRT320N (BCM4717 cpu, fccid: Linksys Q87-WRT320N)
+#define ROUTER_WRT320N 0x750f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
