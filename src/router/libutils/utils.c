@@ -1615,7 +1615,21 @@ int internal_getRouterBrand()
 		setRouter("Linksys WAP54G v3.x");
 		return ROUTER_WAP54G_V3;
 	}
-
+	
+	if (boardnum == 1 && nvram_match("boardtype", "0x04CF")
+	    && nvram_match("boardrev", "0x1213")) {
+		cprintf("router is wnr3500v2/L\n");
+		setRouter("Netgear WNR3500v2/L");
+		return ROUTER_NETGEAR_WNR3500L;
+	}
+	
+/*	if (boardnum == X && nvram_match("boardtype", "0xXXXX")
+	    && nvram_match("boardrev", "0xXXXX")) {
+		cprintf("router is wrt320n\n");
+		setRouter("Linksys WRT320N");
+		return ROUTER_WRT320N;
+	}
+*/
 	setRouter("Linksys WRT54G/GL/GS");
 	cprintf("router is wrt54g\n");
 	return ROUTER_WRT54G;
