@@ -1687,6 +1687,8 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, n);
 	sprintf(v2, "%s_bridged", v);
 	nvram_set(v2, "1");
+	sprintf(v2, "%s_nat", v);
+	nvram_set(v2, "1");
 	sprintf(v2, "%s_ipaddr", v);
 	nvram_set(v2, "0.0.0.0");
 	sprintf(v2, "%s_netmask", v);
@@ -2525,6 +2527,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 	copytonv(wp, "%s_multicast", ifname);
 	copytonv(wp, "%s_bridged", ifname);
+	copytonv(wp, "%s_nat", prefix);
 
 	char addr[32];
 
@@ -2539,6 +2542,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copytonv(wp, "%s_multicast", prefix);
 	copytonv(wp, "%s_bridged", prefix);
+	copytonv(wp, "%s_nat", prefix);
 	char addr[32];
 
 	sprintf(n, "%s_ipaddr", prefix);
@@ -2548,6 +2552,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	sprintf(n, "%s_netmask", prefix);
 	if (get_merge_ipaddr(wp, n, addr))
 		nvram_set(n, addr);
+
 
 	copytonv(wp, "%s_duallink", prefix);
 	sprintf(n, "%s_duallink_parent", prefix);
