@@ -245,6 +245,9 @@ endif
 ifeq ($(CONFIG_ALLNETWRT),y)
 	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
+ifeq ($(CONFIG_ALLNET),y)
+	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
+endif
 
 ifeq ($(CONFIG_SPUTNIK),y)
 	cp -f sputnik/logo.png $(INSTALLDIR)/www/style
@@ -551,6 +554,9 @@ ifneq ($(CONFIG_MILKFISH),y)
 endif
 ifneq ($(CONFIG_EOP_TUNNEL),y)
 	rm -f $(INSTALLDIR)/www/help/HEoIP.asp
+endif
+ifneq ($(CONFIG_3G),y)
+	rm -f $(INSTALLDIR)/www/index_3g.asp
 endif
 ifneq ($(CONFIG_SPUTNIK_APD),y)
 	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.asp
