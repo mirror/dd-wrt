@@ -216,8 +216,7 @@ void Initnvramtab()
 					if (!stricmp(tmpstr, "RANGE")) {
 						tmp->validatename =
 						    "validate_range";
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) * 3);
 						tmp->argv[0] =
 						    getFileString(in);
@@ -231,8 +230,7 @@ void Initnvramtab()
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -248,8 +246,7 @@ void Initnvramtab()
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -264,8 +261,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_noack";
 						len = 2;
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -277,8 +273,7 @@ void Initnvramtab()
 					if (!stricmp(tmpstr, "NAME")) {
 						tmp->validatename =
 						    "validate_name";
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
@@ -297,8 +292,7 @@ void Initnvramtab()
 					if (!stricmp(tmpstr, "PASSWORD")) {
 						tmp->validatename =
 						    "validate_password";
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
@@ -307,8 +301,7 @@ void Initnvramtab()
 					if (!stricmp(tmpstr, "PASSWORD2")) {
 						tmp->validatename =
 						    "validate_password2";
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
@@ -317,8 +310,7 @@ void Initnvramtab()
 					if (!stricmp(tmpstr, "LANIPADDR")) {
 						tmp->validatename =
 						    "validate_lan_ipaddr";
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
@@ -350,8 +342,7 @@ void Initnvramtab()
 					if (!stricmp(tmpstr, "WPAPSK")) {
 						tmp->validatename =
 						    "validate_wpa_psk";
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
@@ -485,8 +476,7 @@ void Initnvramtab()
 					if (!stricmp(tmpstr, "WLAUTH")) {
 						tmp->validatename =
 						    "validate_wl_auth";
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) * 3);
 						tmp->argv[0] =
 						    getFileString(in);
@@ -500,8 +490,7 @@ void Initnvramtab()
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -517,8 +506,7 @@ void Initnvramtab()
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -533,8 +521,7 @@ void Initnvramtab()
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -549,8 +536,7 @@ void Initnvramtab()
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -565,8 +551,7 @@ void Initnvramtab()
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv =
-						    (char **)
+						tmp->argv = (char **)
 						    malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
@@ -605,8 +590,7 @@ void Initnvramtab()
 					// tmpstr = getFileString (in);
 					// tmp->ezc_flags = atoi (tmpstr);
 					// free (tmpstr);
-					variables =
-					    (struct variable **)
+					variables = (struct variable **)
 					    realloc(variables,
 						    sizeof(struct variable **) *
 						    (varcount + 2));
@@ -830,9 +814,9 @@ static void validate_cgi(webs_t wp)
 				cprintf("call validator_nofree %s\n",
 					variables[i]->validatename);
 				handle =
-				    start_validator_nofree(variables[i]->
-							   validatename, handle,
-							   wp, value,
+				    start_validator_nofree(variables
+							   [i]->validatename,
+							   handle, wp, value,
 							   variables[i]);
 			} else if (variables[i]->validate2name) {
 				cprintf("call gozila %s\n",
@@ -1582,7 +1566,7 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 		0x35d,
 		0x35c, 0x78f,
 		0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f, 0xccf, 0xfff,
-		    0x69f,
+		0x69f,
 		0xfff, 0xfff,
 		0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff
 	};
@@ -1592,7 +1576,7 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 		0x1aa,
 		0x1aa, 0x4cc,
 		0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099, 0xcff, 0xfff,
-		    0x3bb,
+		0x3bb,
 		0xfff, 0xfff,
 		0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff
 	};
@@ -1601,7 +1585,7 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 	    { 0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
 		0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
 		0x6384cf, 0xfff, 0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9,
-		    0x30519c,
+		0x30519c,
 		0xfff,
 		0xfff, 0x496fc7, 0xfff, 0xfff,
 		0x999, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0xfff
@@ -1612,7 +1596,7 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 		0x1a1,
 		0x1a1, 0x4c4,
 		0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090, 0xcfc, 0xfff,
-		    0x3b3,
+		0x3b3,
 		0xfff, 0xfff,
 		0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff
 	};
@@ -1621,7 +1605,7 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 	    { 0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
 		0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
 		0xff9000, 0xfff, 0xffa200, 0xffa200, 0xffa200, 0xffa200,
-		    0xf26522,
+		0xf26522,
 		0xfff,
 		0xfff, 0xff8400, 0xfff, 0xfff,
 		0x999, 0xff8400, 0xff8400, 0xfff, 0xff9000, 0xfff
@@ -1632,18 +1616,18 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 		0xc44,
 		0xc44, 0xe77,
 		0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00, 0xfcc, 0xfff,
-		    0xd55,
+		0xd55,
 		0xfff, 0xfff,
 		0x999, 0xd55, 0xd55, 0xfcc, 0xe77, 0xfff
 	};
 
 	long yellow[30] =
 	    { 0xeec900, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xffd700, 0x660,
-      0xee7,
+		0xee7,
 		0xbb4,
 		0xbb4, 0xee7,
 		0xeec900, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0xeec900, 0x660,
-		    0x000,
+		0x000,
 		0xffd700,
 		0x000, 0xfff,
 		0x999, 0xffd700, 0xeec900, 0x660, 0xffd700, 0x000
@@ -1743,7 +1727,11 @@ static void do_trial_logo(struct mime_handler *handler, char *url,
 	if (!isregistered_real()) {
 		do_file(handler, "style/logo-trial.png", stream, query);
 	} else {
-		do_file(handler, url, stream, query);
+		if (iscpe()) {
+			do_file(handler, "style/logo-cpe.png", stream, query);
+		} else {
+			do_file(handler, url, stream, query);
+		}
 	}
 }
 
@@ -1893,13 +1881,13 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 	};
 	unsigned long rcvd[31] =
 	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0,
+		0,
 		0,
 		0, 0, 0, 0, 0, 0, 0
 	};
 	unsigned long sent[31] =
 	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0,
+		0,
 		0,
 		0, 0, 0, 0, 0, 0, 0
 	};
@@ -2224,13 +2212,13 @@ struct mime_handler mime_handlers[] = {
 	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,
 	 0},
 	{"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0},
-	{"**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0},	
-	{"**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0},	
-	{"**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, 0},	
-	{"**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, 0},	
-	{"**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0},	
+	{"**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0},
+	{"**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0},
+	{"**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, 0},
+	{"**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, 0},
+	{"**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0},
 	{"**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, 0},
-	{"**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0},	
+	{"**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0},
 #ifdef HAVE_SKYTRON
 	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
 	 do_auth2, 1},
