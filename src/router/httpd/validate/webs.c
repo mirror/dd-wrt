@@ -1934,7 +1934,7 @@ void save_networking(webs_t wp)
 
 	memset(buffer, 0, 1024);
 	for (i = 0; i < vlancount; i++) {
-		char *ifname, *tag;
+		char *ifname, *tag,*prio;
 		char var[32];
 
 		sprintf(var, "vlanifname%d", i);
@@ -1945,9 +1945,15 @@ void save_networking(webs_t wp)
 		tag = websGetVar(wp, var, NULL);
 		if (!tag)
 			return;
+		sprintf(var, "vlanprio%d", i);
+		prio = websGetVar(wp, var, NULL);
+		if (!prio)
+			return;
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
 		strcat(buffer, tag);
+		strcat(buffer, ">");
+		strcat(buffer, prio);
 		if (i < vlancount - 1)
 			strcat(buffer, " ");
 	}
