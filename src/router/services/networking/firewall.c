@@ -774,7 +774,7 @@ static void nat_postrouting(void)
 			     nvram_safe_get("tvnicfrom"),
 			     nvram_safe_get("tvnicaddr"));
 		}
-		if (strlen(wanface) > 0)
+		if (strlen(wanface) > 0 && !nvram_match("wan_proto","disabled"))
 			save2file
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     wanface, nvram_safe_get("wan_ipaddr"));
