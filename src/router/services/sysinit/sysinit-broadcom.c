@@ -178,10 +178,10 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT150N:
 	case ROUTER_WRT160N:
 	case ROUTER_WRT300N:
-	case ROUTER_WRT600N:
-	case ROUTER_WRT350N:
-	case ROUTER_WRT310N:
 	case ROUTER_WRT300NV11:
+	case ROUTER_WRT310N:
+	case ROUTER_WRT350N:
+	case ROUTER_WRT600N:
 	case ROUTER_USR_5461:
 		nvram_set("wl0gpio0", "8");
 		break;
@@ -223,16 +223,19 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT150N:
 	case ROUTER_WRT150NV11:
 	case ROUTER_WRT160N:
-	case ROUTER_WRT310N:
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
+	case ROUTER_WRT310N:
+	case ROUTER_WRT320N:
 	case ROUTER_WRT350N:
 	case ROUTER_BUFFALO_WZRG144NH:
 	case ROUTER_BUFFALO_WZRG300N:
 	case ROUTER_NETGEAR_WNR834B:
 	case ROUTER_NETGEAR_WNR834BV2:
 	case ROUTER_NETGEAR_WNDR3300:
+	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_ASUS_WL500W:
+
 		break;
 	case ROUTER_WRT600N:
 		fprintf(stderr, "fixing wrt600n\n");
