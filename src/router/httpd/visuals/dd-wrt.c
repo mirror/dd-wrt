@@ -2120,11 +2120,16 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next) {
+
 		char *port = word;
 		char *tag = strsep(&port, ">");
+		char *prio = port;
+		strsep(&prio, ">");
 
 		if (!tag || !port)
 			break;
+		if (!prio)
+		    prio="0";
 		char vlan_name[32];
 
 		// sprintf (vlan_name, "%s.%s", tag, port);
@@ -2133,11 +2138,15 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 			  count);
 		sprintf(vlan_name, "vlanifname%d", count);
 		showOptions(wp, vlan_name, buffer, tag);
+		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
 		websWrite(wp, "&nbsp;Tag Number&nbsp;");
-		websWrite(wp,
-			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  vlan_name, port);
+		websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name, port);
+		//priority
+		sprintf(vlan_name, "vlanprio%d", count);
+		websWrite(wp, "&nbsp;Prio&nbsp;");
+		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", prio);
+
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
@@ -2156,10 +2165,15 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		sprintf(vlan_name, "vlanifname%d", i);
 		showOptions(wp, vlan_name, buffer, "");
 		sprintf(vlan_name, "vlantag%d", i);
+		//tag number
 		websWrite(wp, "&nbsp;Tag Number&nbsp;");
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n",
 			  vlan_name);
+		//priority
+		sprintf(vlan_name, "vlanprio%d", count);
+		websWrite(wp, "&nbsp;Prio&nbsp;");
+		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
