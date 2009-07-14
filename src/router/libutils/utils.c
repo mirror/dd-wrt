@@ -817,7 +817,7 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_PB42;
 #elif HAVE_RS
 #ifdef HAVE_DDLINK
-	setRouter("ddlink2x2");
+	setRouter("ddlink1x1");
 #else
 	setRouter("Ubiquiti RouterStation");
 #endif
