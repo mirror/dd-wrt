@@ -7,6 +7,6 @@
 	</div>
 	<div class="setting" id="idsyslog">
 		<div class="label"><% tran("service.syslog_ip"); %></div>
-		<input class="num" maxlength="24" size="24" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" />
+		<input class="num" maxlength="64" size="64" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" />
 	</div>
 </fieldset><br/>
