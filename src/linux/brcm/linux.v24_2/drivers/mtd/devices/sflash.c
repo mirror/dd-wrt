@@ -222,13 +222,13 @@ sflash_mtd_init(void)
   int do_support = 0;
   uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 
-  if (boardnum == 1 && nvram_match ("boardtype", "0x048e")
-    && nvram_match ("boardrev", "0x35") && nvram_match ("parefldovoltage", "0x28"))
+  if (boardnum == 1 && nvram_match( "boardtype", "0x048e" )
+    && nvram_match( "boardrev", "0x35" ) && nvram_match( "parefldovoltage", "0x28" ))
 	{
 	do_support = 1;  //Netcore NW618
 	}
-  if (boardnum == 8 && nvram_match ("boardtype", "0x048e")
-    && nvram_match ("boardrev", "0x11") && nvram_match ("parefldovoltage", "0x28"))
+  if (boardnum == 8 && nvram_match("boardtype", "0x048e")
+    && nvram_match( "boardrev", "0x11" ) && nvram_match( "parefldovoltage", "0x28" ))
 	{
 	do_support = 1;  //ALLNET 01
 	}
@@ -236,9 +236,15 @@ sflash_mtd_init(void)
   if ( (boardnum == 83258 || boardnum == 1 || boardnum == 0123)
     && (nvram_match( "boardtype", "0x48E" ) || nvram_match( "boardtype", "0x048e" ))
 	&& (nvram_match( "boardrev", "0x10" ) || nvram_match( "boardrev", "0x11" ))
-	&& (nvram_match ( "boardflags", "0x750" ) || nvram_match ( "boardflags", "0x0750" )) )
+	&& (nvram_match( "boardflags", "0x750" ) || nvram_match( "boardflags", "0x0750" )) )
 	{
 	do_support = 1;  //Netgear WGR614L, WGR614v8, WGR614v9, WGR614v8WW
+	}
+	
+  if (boardnum == 1 && nvram_match( "boardtype", "0x04CF" )
+	&& nvram_match( "boardrev", "0x1213" ))
+	{
+	do_support = 1;  //Netgear WNR3500v2/L
 	}
 	
   if (!do_support)
