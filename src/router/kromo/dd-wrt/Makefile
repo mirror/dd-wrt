@@ -152,6 +152,7 @@ endif
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp elegant/logo.png $(INSTALLDIR)/www/style
 	cp elegant/logo-trial.png $(INSTALLDIR)/www/style
+	cp elegant/logo-cpe.png $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_CYAN),y)
@@ -383,6 +384,7 @@ ifeq ($(CONFIG_THOM),y)
 endif
 ifneq ($(CONFIG_REGISTER),y)
 	rm -f $(INSTALLDIR)/www/style/logo-trial.png
+	rm -f $(INSTALLDIR)/www/style/logo-cpe.png
 endif
 
 #ifneq ($(CONFIG_MADWIFI),y)
