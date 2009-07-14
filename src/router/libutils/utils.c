@@ -1623,13 +1623,13 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNR3500L;
 	}
 	
-/*	if (boardnum == X && nvram_match("boardtype", "0xXXXX")
-	    && nvram_match("boardrev", "0xXXXX")) {
+	if (boardnum == 66 && nvram_match("boardtype", "0x04EF")
+	    && nvram_match("boardrev", "0x1305")) {
 		cprintf("router is wrt320n\n");
 		setRouter("Linksys WRT320N");
 		return ROUTER_WRT320N;
 	}
-*/
+
 	setRouter("Linksys WRT54G/GL/GS");
 	cprintf("router is wrt54g\n");
 	return ROUTER_WRT54G;
