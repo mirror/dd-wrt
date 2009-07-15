@@ -823,7 +823,7 @@ int internal_getRouterBrand()
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
-	setRouter("Ubiquiti LSX");
+	setRouter("Ubiquiti Litestation-SR71");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DANUBE
 	setRouter("Infineon Danube");
