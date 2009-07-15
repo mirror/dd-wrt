@@ -16,11 +16,11 @@
   Portions based on the option driver by Matthias Urlichs <smurf@smurf.noris.de>
   Whom based his on the Keyspan driver by Hugh Blemings <hugh@blemings.org>
 
-  Back ported to kernel 2.6.23
+  Back ported to kernel 2.6.22
 */
 /* Uncomment to log function calls */
-/*#define DEBUG*/
-#define DRIVER_VERSION "v.1.7.0"
+/* #define DEBUG  */
+#define DRIVER_VERSION "v.1.6.2"
 #define DRIVER_AUTHOR "Kevin Lloyd, Elina Pasheva, Matthew Safar, Rory Filer"
 #define DRIVER_DESC "USB Driver for Sierra Wireless USB modems"
 
@@ -38,6 +38,7 @@
 #define SWIMS_USB_REQUEST_SetMode	0x0B
 #define SWIMS_SET_MODE_Modem		0x0001
 
+/* per port private data */
 #define N_IN_URB	8
 #define N_OUT_URB	64
 #define IN_BUFLEN	4096
@@ -50,7 +51,6 @@
 static int debug;
 static int nmea;
 static int truinstall = 1;
-static int suspend_support;
 
 enum devicetype {
 	DEVICE_MODEM =		0,
@@ -134,7 +134,7 @@ static int sierra_calc_num_ports(struct usb_serial *serial)
 	return num_ports;
 }
 
-static int is_blacklisted(const u8 ifnum, const struct list *blacklist)
+static int is_blacklisted( const u8 ifnum, const struct list *blacklist )
 {
 	const u8  *list;
 	int i;
@@ -244,9 +244,9 @@ static struct usb_device_id id_table [] = {
 	{ USB_DEVICE(0x1199, 0x0021) },	/* Sierra Wireless AirCard 597E */
 	{ USB_DEVICE(0x1199, 0x0120) },	/* Sierra Wireless USB Dongle 595U */
 	 /* Sierra Wireless C597 */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x1199, 0x0023, 0xFF, 0xFF, 0xFF) },
+	{ USB_DEVICE(0x1199, 0x0023) },
 	 /* Sierra Wireless Device */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x1199, 0x0025, 0xFF, 0xFF, 0xFF) },
+	{ USB_DEVICE(0x1199, 0x0025) },
 	{ USB_DEVICE(0x1199, 0x0026) }, /* Sierra Wireless Device */
 	{ USB_DEVICE(0x1199, 0x0027) }, /* Sierra Wireless Device */
 	{ USB_DEVICE(0x1199, 0x0028) }, /* Sierra Wireless Device */
@@ -278,13 +278,13 @@ static struct usb_device_id id_table [] = {
 	{ USB_DEVICE(0x1199, 0x6859) },	/* Sierra Wireless AirCard 885 E */
 	{ USB_DEVICE(0x1199, 0x685A) },	/* Sierra Wireless AirCard 885 E */
 	/* Sierra Wireless C885 */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x1199, 0x6880, 0xFF, 0xFF, 0xFF)},
+	{ USB_DEVICE(0x1199, 0x6880)},
 	/* Sierra Wireless Device */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x1199, 0x6890, 0xFF, 0xFF, 0xFF)},
+	{ USB_DEVICE(0x1199, 0x6890)},
 	/* Sierra Wireless Device */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x1199, 0x6891, 0xFF, 0xFF, 0xFF)},
+	{ USB_DEVICE(0x1199, 0x6891)},
 	/* Sierra Wireless Device */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x1199, 0x6892, 0xFF, 0xFF, 0xFF)},
+	{ USB_DEVICE(0x1199, 0x6892)},
 
 	{ USB_DEVICE(0x1199, 0x0112) }, /* Sierra Wireless AirCard 580 */
 	{ USB_DEVICE(0x0F3D, 0x0112) }, /* Airprime/Sierra PC 5220 */
@@ -301,7 +301,13 @@ static struct usb_device_id id_table [] = {
 };
 MODULE_DEVICE_TABLE(usb, id_table);
 
-/* per port private data */
+static struct usb_driver sierra_driver = {
+	.name       = "sierra",
+	.probe      = usb_serial_probe,
+	.disconnect = usb_serial_disconnect,
+	.id_table   = id_table,
+};
+
 struct sierra_port_private {
 	spinlock_t lock;	/* lock the structure */
 	int outstanding_urbs;	/* number of out urbs in flight */
@@ -346,8 +352,8 @@ static int sierra_send_setup(struct usb_serial_port *port)
 				/* send control message */
 				return usb_control_msg(serial->dev,
 					usb_rcvctrlpipe(serial->dev, 0),
-					0x22, 0x21, val, interface,
-					NULL, 0, USB_CTRL_SET_TIMEOUT);
+					0x22,0x21,val,interface,NULL,0,
+					USB_CTRL_SET_TIMEOUT);
 			}
 		}
 
@@ -362,9 +368,8 @@ static int sierra_send_setup(struct usb_serial_port *port)
 
 			return usb_control_msg(serial->dev,
 				usb_rcvctrlpipe(serial->dev, 0),
-				0x22, 0x21, val, interface,
-				NULL, 0, USB_CTRL_SET_TIMEOUT);
-
+				0x22,0x21,val,interface,NULL,0,
+				USB_CTRL_SET_TIMEOUT);
 		}
 	}
 
@@ -383,7 +388,6 @@ static int sierra_tiocmget(struct usb_serial_port *port, struct file *file)
 	unsigned int value;
 	struct sierra_port_private *portdata;
 
-	dev_dbg(&port->dev, "%s\n", __func__);
 	portdata = usb_get_serial_port_data(port);
 
 	value = ((portdata->rts_state) ? TIOCM_RTS : 0) |
@@ -560,7 +564,7 @@ static void sierra_indat_callback(struct urb *urb)
 	}
 
 	/* Resubmit urb so we continue receiving */
-	if (port->open_count && status != -ESHUTDOWN && status != -ENOENT) {
+	if (port->open_count && status != -ESHUTDOWN) {
 		err = usb_submit_urb(urb, GFP_ATOMIC);
 		if (err)
 			dev_err(&port->dev, "resubmit read urb failed."
@@ -618,7 +622,7 @@ static void sierra_instat_callback(struct urb *urb)
 		dev_dbg(&port->dev, "%s: error %d\n", __func__, status);
 
 	/* Resubmit urb so we continue receiving IRQ data */
-	if (port->open_count && status != -ESHUTDOWN && status != -ENOENT) {
+	if (port->open_count && status != -ESHUTDOWN) {
 		urb->dev = serial->dev;
 		err = usb_submit_urb(urb, GFP_ATOMIC);
 		if (err)
@@ -647,52 +651,6 @@ static int sierra_write_room(struct usb_serial_port *port)
 	return 2048;
 }
 
-static void sierra_stop_rx_urbs(struct usb_serial_port *port)
-{
-	int i;
-	struct sierra_port_private *portdata = usb_get_serial_port_data(port);
-	
-	for (i = 0; i < ARRAY_SIZE(portdata->in_urbs); i++) {
-		usb_kill_urb(portdata->in_urbs[i]);
-	}
-	usb_kill_urb(port->interrupt_in_urb);
-}
-
-static int sierra_submit_rx_urbs(struct usb_serial_port *port)
-{
-	int ok_cnt;
-	int err = -EINVAL;
-	int i;
-	struct urb * urb;
-	struct sierra_port_private *portdata = usb_get_serial_port_data(port);
-
-	ok_cnt = 0;
-	for (i = 0; i < ARRAY_SIZE(portdata->in_urbs); i++) {
-		urb = portdata->in_urbs[i];
-		if (!urb)
-			continue;
-		err = usb_submit_urb(urb, GFP_KERNEL);
-		if (err) {
-			dev_err(&port->dev, "%s: submit urb failed: %d\n",
-				__func__, err );
-		} else {
-			ok_cnt ++;
-		}
-	}
-
-	if (ok_cnt && port->interrupt_in_urb) {
-		err = usb_submit_urb(port->interrupt_in_urb, GFP_KERNEL);
-		if (err) {
-			dev_err(&port->dev, "%s: submit intr urb failed: %d\n",
-				__func__, err );
-		}
-	}
-
-	if (ok_cnt > 0) /* at least one rx urb submitted */
-		return 0;
-	else
-		return err;
-}
 
 static struct urb *sierra_setup_urb(struct usb_serial *serial, int endpoint,
 					int dir, void *ctx, int len,
@@ -732,41 +690,11 @@ static struct urb *sierra_setup_urb(struct usb_serial *serial, int endpoint,
 	
 	return urb;
 }
-
-static void sierra_close(struct usb_serial_port *port, struct file *filp)
-{
-	int i;
-	struct usb_serial *serial = port->serial;
-	struct sierra_port_private *portdata;
-
-	dev_dbg(&port->dev, "%s\n", __func__);
-	portdata = usb_get_serial_port_data(port);
-
-	portdata->rts_state = 0;
-	portdata->dtr_state = 0;
-
-	if (serial->dev) {
-		sierra_send_setup(port);
-
-		/* Stop reading urbs */
-		sierra_stop_rx_urbs(port);
-		/* .. and release them */
-		for (i = 0; i < N_IN_URB; i++) {
-			sierra_release_urb(portdata->in_urbs[i]);
-			portdata->in_urbs[i] = NULL;
-		}
-	}
-
-	port->tty = NULL;
-}
-
 static int sierra_open(struct usb_serial_port *port, struct file *filp)
 {
 	struct sierra_port_private *portdata;
 	struct usb_serial *serial = port->serial;
-	int i;
-	int err;
-	int endpoint;
+	int i, err;
 	struct urb *urb;
 
 	portdata = usb_get_serial_port_data(port);
@@ -783,26 +711,72 @@ static int sierra_open(struct usb_serial_port *port, struct file *filp)
 
 	spin_lock_init(&portdata->lock);
 	
-	endpoint = port->bulk_in_endpointAddress;
-	
-	for (i = 0; i < ARRAY_SIZE(portdata->in_urbs); i++) {
-		urb = sierra_setup_urb(serial, endpoint, USB_DIR_IN, port,
-					IN_BUFLEN, sierra_indat_callback);
+	/* Reset low level data toggle and start reading from endpoints */
+	for (i = 0; i < N_IN_URB; i++) {
+		urb = sierra_setup_urb(serial,
+					port->bulk_in_endpointAddress,
+					USB_DIR_IN,
+					port,
+					IN_BUFLEN,
+					sierra_indat_callback);
 		portdata->in_urbs[i] = urb;
-	}
-	/* clear halt condition */
-	usb_clear_halt(serial->dev, 
-			usb_sndbulkpipe(serial->dev, endpoint) | USB_DIR_IN);
+		if (!urb)
+			continue;
 		
-	err = sierra_submit_rx_urbs(port);
-	if (err) {
-		/* get rid of everything as in close */
-		sierra_close(port, filp);
-		return err;
+		/*
+		 * make sure endpoint data toggle is synchronized with the
+		 * device
+		 */
+		usb_clear_halt(urb->dev, urb->pipe);
+		
+		err = usb_submit_urb(urb, GFP_ATOMIC);
+		if (err) {
+			dev_err(&port->dev, "%s: submit urb %d failed (%d) %d\n",
+				__func__, i, err,
+				urb->transfer_buffer_length);
+			portdata->in_urbs[i] = NULL;
+			sierra_release_urb(urb);
+		}
 	}
+
+	/* Start up the interrupt endpoint if we have one */
+	if(port->interrupt_in_urb) {
+		port->interrupt_in_urb->dev = port->serial->dev;
+		err = usb_submit_urb(port->interrupt_in_urb, GFP_ATOMIC);
+		if (err)
+			dev_err(&port->dev, "%s: submit irq_in urb failed %d\n",
+				__func__, err);
+	}
+	
 	sierra_send_setup(port);
 
 	return 0;
+}
+
+static void sierra_close(struct usb_serial_port *port, struct file *filp)
+{
+	int i;
+	struct usb_serial *serial = port->serial;
+	struct sierra_port_private *portdata;
+
+	dev_dbg(&port->dev, "%s\n", __func__);
+	portdata = usb_get_serial_port_data(port);
+
+	portdata->rts_state = 0;
+	portdata->dtr_state = 0;
+
+	if (serial->dev) {
+		sierra_send_setup(port);
+
+		/* Stop reading/writing urbs */
+		for (i = 0; i < N_IN_URB; i++) {
+			usb_kill_urb(portdata->in_urbs[i]);
+			sierra_release_urb(portdata->in_urbs[i]);
+			portdata->in_urbs[i] = NULL;
+		}
+	}
+	usb_kill_urb(port->interrupt_in_urb);
+	port->tty = NULL;
 }
 
 static int sierra_startup(struct usb_serial *serial)
@@ -857,50 +831,6 @@ static void sierra_shutdown(struct usb_serial *serial)
 	}
 }
 
-int sierra_suspend(struct usb_serial *serial, pm_message_t message)
-{
-	int i;
-
-	dev_dbg(&serial->dev->dev, "%s\n", __func__);
-
-	/* The dummy interface doesn't prevent suspended state */
-	if (serial->num_ports == 0)
-		return 0;
-
-	if (!suspend_support)
-		return -EOPNOTSUPP;
-
-	for (i=0; i < serial->num_ports ; i++) {
-		sierra_stop_rx_urbs(serial->port[i]);
-	}
-	return 0;
-}
-
-int sierra_resume(struct usb_serial *serial)
-{
-	int i;
-
-	dev_dbg(&serial->dev->dev, "%s\n", __func__);
-
-	for (i=0; i < serial->num_ports ; i++) {
-		sierra_submit_rx_urbs(serial->port[i]);
-	}
-
-	return 0;
-}
-
-static struct usb_driver sierra_driver = {
-	.name       = "sierra",
-	.probe      = usb_serial_probe,
-	.disconnect = usb_serial_disconnect,
-	.suspend    = usb_serial_suspend,
-	.resume     = usb_serial_resume,
-	.id_table   = id_table,
-
-	.no_dynamic_id        =	1,
-	.supports_autosuspend = 1,
-};
-
 static struct usb_serial_driver sierra_device = {
 	.driver = {
 		.owner =	THIS_MODULE,
@@ -924,8 +854,6 @@ static struct usb_serial_driver sierra_device = {
 	.attach            = sierra_startup,
 	.shutdown          = sierra_shutdown,
 	.read_int_callback = sierra_instat_callback,
-	.suspend           = sierra_suspend,
-	.resume            = sierra_resume,
 };
 
 /* Functions used by new usb-serial code. */
@@ -973,6 +901,3 @@ MODULE_PARM_DESC(nmea, "NMEA streaming");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug messages");
-
-module_param(suspend_support, bool, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(suspend_support, "Selective Suspend support");

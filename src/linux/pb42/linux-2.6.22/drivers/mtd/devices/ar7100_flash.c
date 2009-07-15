@@ -72,7 +72,7 @@ ar7100_flash_geom_t flash_geom_tbl[AR7100_FLASH_MAX_BANKS] =
 #ifdef CONFIG_MTD_FLASH_16MB
                 .size           =   AR7100_FLASH_SIZE_16MB,
 #elif CONFIG_MTD_FLASH_8MB
-                .size           =   AR7100_FLASH_SIZE_16MB,
+                .size           =   AR7100_FLASH_SIZE_8MB,
 #else
                 .size           =   AR7100_FLASH_SIZE_4MB,
 #endif
@@ -384,7 +384,7 @@ ar7100_spi_sector_erase(uint32_t addr)
     ar7100_spi_bit_banger(AR7100_SPI_CMD_SECTOR_ERASE);
     ar7100_spi_send_addr(addr);
     ar7100_spi_go();
-    display(0x7d);
+//    display(0x7d);
     ar7100_spi_poll();
 }
 
