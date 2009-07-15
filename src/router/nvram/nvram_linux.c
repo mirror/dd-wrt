@@ -34,314 +34,277 @@
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
 
-int
-nvram_init (void *unused)
+int nvram_init(void *unused)
 {
 
+	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0)
+		goto err;
 
-  if ((nvram_fd = open (PATH_DEV_NVRAM, O_RDWR)) < 0)
-    goto err;
+	/* Map kernel string buffer into user space */
+	if ((nvram_buf =
+	     mmap(NULL, NVRAM_SPACE, PROT_READ, MAP_SHARED, nvram_fd,
+		  0)) == MAP_FAILED) {
+		close(nvram_fd);
+		fprintf(stderr, "nvram_init(): failed\n");
+		nvram_fd = -1;
+		goto err;
+	}
 
-  /* Map kernel string buffer into user space */
-  if ((nvram_buf =
-       mmap (NULL, NVRAM_SPACE, PROT_READ, MAP_SHARED, nvram_fd,
-	     0)) == MAP_FAILED)
-    {
-      close (nvram_fd);
-      fprintf (stderr, "nvram_init(): failed\n");
-      nvram_fd = -1;
-      goto err;
-    }
-
-  return 0;
+	return 0;
 
 err:
-  return errno;
+	return errno;
 }
 
-void
-lock (void)
+void lock(void)
 {
-  FILE *in;
-  int lockwait=0;
-  while ((in = fopen ("/tmp/.nvlock", "rb")) != NULL)
-    {
-      fclose (in);
-      //cprintf ("nvram lock, waiting....\n");
-      lockwait++;
-      if (lockwait==3)
-        unlink("/tmp/.nvlock"); //something crashed, we fix it
-      sleep (1);
-    }
-  in = fopen ("/tmp/.nvlock", "wb");
-  fprintf (in, "lock");
-  fclose (in);
+	FILE *in;
+	int lockwait = 0;
+	while ((in = fopen("/tmp/.nvlock", "rb")) != NULL) {
+		fclose(in);
+		//cprintf ("nvram lock, waiting....\n");
+		lockwait++;
+		if (lockwait == 3)
+			unlink("/tmp/.nvlock");	//something crashed, we fix it
+		sleep(1);
+	}
+	in = fopen("/tmp/.nvlock", "wb");
+	fprintf(in, "lock");
+	fclose(in);
 }
 
-
-void
-unlock (void)
+void unlock(void)
 {
-  unlink ("/tmp/.nvlock");
+	unlink("/tmp/.nvlock");
 }
 
-char *
-nvram_get (const char *name)
+char *nvram_get(const char *name)
 {
 //lock();
-  size_t count = strlen (name) + 1;
-  char tmp[100], *value;
-  unsigned long *off = (unsigned long *) tmp;
+	size_t count = strlen(name) + 1;
+	char tmp[100], *value;
+	unsigned long *off = (unsigned long *)tmp;
 
-  if (nvram_fd < 0)
-    if (nvram_init (NULL))
-      {
-	//unlock();
-	return NULL;
-      }
-  if (count > sizeof (tmp))
-    {
-      if (!(off = malloc (count)))
-	{
-	  //unlock();
-	  return NULL;
+	if (nvram_fd < 0)
+		if (nvram_init(NULL)) {
+			//unlock();
+			return NULL;
+		}
+	if (count > sizeof(tmp)) {
+		if (!(off = malloc(count))) {
+			//unlock();
+			return NULL;
+		}
 	}
-    }
 
-  /* Get offset into mmap() space */
-  strcpy ((char *) off, name);
+	/* Get offset into mmap() space */
+	strcpy((char *)off, name);
 
-  count = read (nvram_fd, off, count);
+	count = read(nvram_fd, off, count);
 
-  if (count == sizeof (unsigned long))
-    value = &nvram_buf[*off];
-  else
-    value = NULL;
+	if (count == sizeof(unsigned long))
+		value = &nvram_buf[*off];
+	else
+		value = NULL;
 
-  if (count < 0)
-    perror (PATH_DEV_NVRAM);
+	if (count < 0)
+		perror(PATH_DEV_NVRAM);
 
-  if (off != (unsigned long *) tmp)
-    free (off);
-  //unlock();
+	if (off != (unsigned long *)tmp)
+		free(off);
+	//unlock();
 
 //fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
 //fprintf(stderr,"NVRAM_GET(%s)=%s\n",name,value);
-  return value;
+	return value;
 }
 
-int
-nvram_getall (char *buf, int count)
+int nvram_getall(char *buf, int count)
 {
 //fprintf(stderr,"getall\n");
 //lock();
-  int ret;
+	int ret;
 
-  if (nvram_fd < 0)
-    if ((ret = nvram_init (NULL)))
-      {
-	//unlock();
-	return ret;
-      }
-  if (count == 0)
-    {
-      //unlock();
-      return 0;
-    }
-  /* Get all variables */
-  *buf = '\0';
-
-  ret = read (nvram_fd, buf, count);
-
-  if (ret < 0)
-    perror (PATH_DEV_NVRAM);
-  //unlock();
-  return (ret == count) ? 0 : ret;
-}
-
-void nvram_open(void) // dummy
-{
-}
-void nvram_close(void) //dummy
-{
-}
-
-static int
-_nvram_set (const char *name, const char *value)
-{
-  size_t count = strlen (name) + 1;
-  char tmp[100], *buf = tmp;
-  int ret;
-
-  if (nvram_fd < 0)
-    if ((ret = nvram_init (NULL)))
-      return ret;
-
-  /* Wolf add - keep nvram varname to sane len - may prevent corruption */
-  if (strlen (name) > 64)
-    return -ENOMEM;
-
-  /* Unset if value is NULL */
-  if (value)
-    count += strlen (value) + 2; 
-
-  if (count > sizeof (tmp))
-    {
-      if (!(buf = malloc (count)))
-	return -ENOMEM;
-    }
-
-  if (value)
-    sprintf (buf, "%s=%s", name, value);
-  else
-    strcpy (buf, name);
-
-  ret = write (nvram_fd, buf, count);
-
-  if (ret < 0)
-    perror (PATH_DEV_NVRAM);
-
-  if (buf != tmp)
-    free (buf);
-
-  return (ret == count) ? 0 : ret;
-}
-
-int
-nvram_set (const char *name, const char *value)
-{
-  extern struct nvram_convert nvram_converts[];
-  struct nvram_convert *v;
-  int ret;
-  ret = _nvram_set (name, value);
-
-  for (v = nvram_converts; v->name; v++)
-    {
-      if (!strcmp (v->name, name))
-	{
-	  if (strcmp (v->wl0_name, ""))
-	    _nvram_set (v->wl0_name, value);
+	if (nvram_fd < 0)
+		if ((ret = nvram_init(NULL))) {
+			//unlock();
+			return ret;
+		}
+	if (count == 0) {
+		//unlock();
+		return 0;
 	}
-    }
-  return ret;
+	/* Get all variables */
+	*buf = '\0';
+
+	ret = read(nvram_fd, buf, count);
+
+	if (ret < 0)
+		perror(PATH_DEV_NVRAM);
+	//unlock();
+	return (ret == count) ? 0 : ret;
 }
-int nvram_immed_set (const char *name, const char *value)
+
+void nvram_open(void)		// dummy
 {
-return nvram_set(name,value);
 }
 
+void nvram_close(void)		//dummy
+{
+}
 
-int
-nvram_unset (const char *name)
+static int _nvram_set(const char *name, const char *value)
+{
+	size_t count = strlen(name) + 1;
+	char tmp[100], *buf = tmp;
+	int ret;
+
+	if (nvram_fd < 0)
+		if ((ret = nvram_init(NULL)))
+			return ret;
+
+	/* Wolf add - keep nvram varname to sane len - may prevent corruption */
+	if (strlen(name) > 64)
+		return -ENOMEM;
+
+	/* Unset if value is NULL */
+	if (value)
+		count += strlen(value) + 2;
+
+	if (count > sizeof(tmp)) {
+		if (!(buf = malloc(count)))
+			return -ENOMEM;
+	}
+
+	if (value)
+		sprintf(buf, "%s=%s", name, value);
+	else
+		strcpy(buf, name);
+
+	ret = write(nvram_fd, buf, count);
+
+	if (ret < 0)
+		perror(PATH_DEV_NVRAM);
+
+	if (buf != tmp)
+		free(buf);
+
+	return (ret == count) ? 0 : ret;
+}
+
+int nvram_set(const char *name, const char *value)
+{
+	extern struct nvram_convert nvram_converts[];
+	struct nvram_convert *v;
+	int ret;
+	ret = _nvram_set(name, value);
+
+	for (v = nvram_converts; v->name; v++) {
+		if (!strcmp(v->name, name)) {
+			if (strcmp(v->wl0_name, ""))
+				_nvram_set(v->wl0_name, value);
+		}
+	}
+	return ret;
+}
+
+int nvram_immed_set(const char *name, const char *value)
+{
+	return nvram_set(name, value);
+}
+
+int nvram_unset(const char *name)
 {
 //lock();
 //fprintf(stderr,"nvram_unset %s\n",name);
-  int v = _nvram_set (name, NULL);
+	int v = _nvram_set(name, NULL);
 //unlock();
-  return v;
+	return v;
 }
 
-int
-nvram_commit (void)
+int nvram_commit(void)
 {
-if (nvram_match("flash_active","1"))
-    {
-    fprintf(stderr,"not allowed, flash process in progress");
-    exit(1);
-    }
-system("/sbin/ledtool 1");
+	if (nvram_match("flash_active", "1")) {
+		fprintf(stderr, "not allowed, flash process in progress");
+		exit(1);
+	}
+	system("/sbin/ledtool 1");
 //fprintf(stderr,"nvram_commit \n");
-  lock ();
-  int ret;
-  //fprintf (stderr, "nvram_commit(): start\n");
-  if (nvram_fd < 0)
-    {
-      if ((ret = nvram_init (NULL)))
-	{
-	  fprintf (stderr, "nvram_commit(): failed\n");
-	  unlock ();
-	  return ret;
+	lock();
+	int ret;
+	//fprintf (stderr, "nvram_commit(): start\n");
+	if (nvram_fd < 0) {
+		if ((ret = nvram_init(NULL))) {
+			fprintf(stderr, "nvram_commit(): failed\n");
+			unlock();
+			return ret;
+		}
 	}
-    }
-  ret = ioctl (nvram_fd, NVRAM_MAGIC, NULL);
+	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
 
-  if (ret < 0)
-    {
-      fprintf (stderr, "nvram_commit(): failed\n");
-      perror (PATH_DEV_NVRAM);
-    }
+	if (ret < 0) {
+		fprintf(stderr, "nvram_commit(): failed\n");
+		perror(PATH_DEV_NVRAM);
+	}
 
-  fprintf (stderr, "nvram_commit(): end\n");
-  unlock ();
-  sync();
-  return ret;
+	fprintf(stderr, "nvram_commit(): end\n");
+	unlock();
+	sync();
+	return ret;
 }
 
-int
-file2nvram (char *filename, char *varname)
+int file2nvram(char *filename, char *varname)
 {
-  FILE *fp;
-  int c, count;
-  int i = 0, j = 0;
-  char mem[10000], buf[30000];
+	FILE *fp;
+	int c, count;
+	int i = 0, j = 0;
+	char mem[10000], buf[30000];
 
-  if (!(fp = fopen (filename, "rb")))
-    return 0;
+	if (!(fp = fopen(filename, "rb")))
+		return 0;
 
-  count = fread (mem, 1, sizeof (mem), fp);
-  fclose (fp);
-  for (j = 0; j < count; j++)
-    {
-      if (i > sizeof (buf) - 3)
-	break;
-      c = mem[j];
-      if (c >= 32 && c <= 126 && c != '~')
-	{
-	  buf[i++] = (unsigned char) c;
+	count = fread(mem, 1, sizeof(mem), fp);
+	fclose(fp);
+	for (j = 0; j < count; j++) {
+		if (i > sizeof(buf) - 3)
+			break;
+		c = mem[j];
+		if (c >= 32 && c <= 126 && c != '~') {
+			buf[i++] = (unsigned char)c;
+		} else if (c == 13) {
+			buf[i++] = (unsigned char)c;
+		} else if (c == 0) {
+			buf[i++] = '~';
+		} else if (c == 10) {
+			buf[i++] = (unsigned char)c;
+		} else {
+			buf[i++] = '\\';
+			sprintf(buf + i, "%02X", c);
+			i += 2;
+		}
 	}
-      else if (c == 13)
-	{
-	  buf[i++] = (unsigned char) c;
-	}
-      else if (c == 0)
-	{
-	  buf[i++] = '~';
-	}
-      else if (c == 10)
-	{
-	  buf[i++] = (unsigned char) c;
-	}
-      else
-	{
-	  buf[i++] = '\\';
-	  sprintf (buf + i, "%02X", c);
-	  i += 2;
-	}
-    }
-  if (i == 0)
-    return 0;
-  buf[i] = 0;
-  //fprintf(stderr,"================ > file2nvram %s = [%s] \n",varname,buf); 
-  nvram_set (varname, buf);
+	if (i == 0)
+		return 0;
+	buf[i] = 0;
+	//fprintf(stderr,"================ > file2nvram %s = [%s] \n",varname,buf); 
+	nvram_set(varname, buf);
 
 }
 
-int
-nvram2file (char *varname, char *filename)
+int nvram2file(char *varname, char *filename)
 {
-  FILE *fp;
-  int c, tmp;
-  int i = 0, j = 0;
-  char *buf;
-  char mem[10000];
+	FILE *fp;
+	int c, tmp;
+	int i = 0, j = 0;
+	char *buf;
+	char mem[10000];
 
-  if (!(fp = fopen (filename, "wb")))
-    return 0;
+	if (!(fp = fopen(filename, "wb")))
+		return 0;
 
-  buf = strdup (nvram_safe_get (varname));
-  //fprintf(stderr,"=================> nvram2file %s = [%s] \n",varname,buf);
-  while (buf[i] && j < sizeof (mem) - 3)
-    {
+	buf = strdup(nvram_safe_get(varname));
+	//fprintf(stderr,"=================> nvram2file %s = [%s] \n",varname,buf);
+	while (buf[i] && j < sizeof(mem) - 3) {
 /*        if (buf[i] == '\\')  {
                 i++;
                 tmp=buf[i+2];
@@ -351,25 +314,22 @@ nvram2file (char *varname, char *filename)
                 i+=2;
                 mem[j]=c;j++;
         } else */
-      if (buf[i] == '~')
-	{
-	  mem[j] = 0;
-	  j++;
-	  i++;
+		if (buf[i] == '~') {
+			mem[j] = 0;
+			j++;
+			i++;
+		} else {
+			mem[j] = buf[i];
+			j++;
+			i++;
+		}
 	}
-      else
-	{
-	  mem[j] = buf[i];
-	  j++;
-	  i++;
-	}
-    }
-  if (j <= 0)
-    return j;
-  j = fwrite (mem, 1, j, fp);
-  fclose (fp);
-  free (buf);
-  return j;
+	if (j <= 0)
+		return j;
+	j = fwrite(mem, 1, j, fp);
+	fclose(fp);
+	free(buf);
+	return j;
 }
 
 #include "nvram_generics.h"
