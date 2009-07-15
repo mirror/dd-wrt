@@ -19,5 +19,7 @@ comgt-install:
 	install -D comgt/scripts/wakeup.comgt $(INSTALLDIR)/comgt/etc/comgt/wakeup.comgt
 	install -D usb_modeswitch/usb_modeswitch $(INSTALLDIR)/comgt/usr/sbin/usb_modeswitch
 	install -D usb_modeswitch/ozerocdoff $(INSTALLDIR)/comgt/usr/sbin/ozerocdoff
+	mkdir -p $(INSTALLDIR)/comgt/etc/hso
+	cp comgt/hso/* $(INSTALLDIR)/comgt/etc/hso
 #	install -D comgt/usb_modeswitch $(INSTALLDIR)/comgt/usr/sbin/usb_modeswitch
 
