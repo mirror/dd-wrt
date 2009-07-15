@@ -108,11 +108,14 @@ void start_sysinit(void)
 	 */
 	insmod("ag7100_mod");
 	// sleep(1);
-//#ifdef HAVE_RS
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	unsigned char buf2[256];
 
+#ifdef HAVE_RS
 	fseek(fp, 0xfff000, SEEK_SET);
+#else
+	fseek(fp, 0x7ff000, SEEK_SET);
+#endif
 	fread(buf2, 256, 1, fp);
 	fclose(fp);
 	int i;
