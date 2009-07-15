@@ -1017,7 +1017,7 @@ static void configure_single(int count)
 				     var, wif);
 			else
 				sysprintf
-				    ("wlanconfig %s create wlandev %s wlanmode adhoc",
+				    ("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
 				     var, wif);
 			vif = 1;
 			if (strlen(primary) == 0)
@@ -1052,7 +1052,7 @@ static void configure_single(int count)
 		sysprintf("wlanconfig %s create wlandev %s wlanmode ap", dev,
 			  wif);
 	else
-		sysprintf("wlanconfig %s create wlandev %s wlanmode adhoc", dev,
+		sysprintf("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon", dev,
 			  wif);
 
 	if (strlen(primary) == 0)
