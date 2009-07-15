@@ -298,6 +298,7 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
 			copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure IXP0 to %s\n", mac);
+		nvram_set("et0macaddr_safe",mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
 		fseek(file, 0x43b, SEEK_SET);
 		fread(&buf[6], 6, 1, file);
@@ -329,6 +330,7 @@ void start_sysinit(void)
 			copy[i] = buf[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
 			copy[2], copy[3], copy[4], copy[5]);
+		nvram_set("et0macaddr_safe",mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7],
 			copy[8], copy[9], copy[10], copy[11]);
@@ -383,6 +385,7 @@ void start_sysinit(void)
 			sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0],
 				copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure IXP0 to %s\n", mac);
+			nvram_set("et0macaddr_safe",mac);
 			eval("ifconfig", "ixp0", "hw", "ether", mac);
 			fseek(file, 0x1f818, SEEK_SET);
 			fread(&buf[6], 6, 1, file);
