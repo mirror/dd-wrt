@@ -756,7 +756,9 @@ static void nat_postrouting(void)
 		}
 	}
 #ifdef HAVE_PPPOESERVER
-	if (nvram_match("pppoeserver_enabled", "1") && !nvram_match("wan_proto","disabled") && !nvram_match("wan_ipaddr","0.0.0.0"))
+	if (nvram_match("pppoeserver_enabled", "1")
+	    && !nvram_match("wan_proto", "disabled")
+	    && !nvram_match("wan_ipaddr", "0.0.0.0"))
 		save2file("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",
 			  nvram_safe_get("pppoeserver_remotenet"),
 			  nvram_safe_get("pppoeserver_remotemask"),
@@ -774,7 +776,8 @@ static void nat_postrouting(void)
 			     nvram_safe_get("tvnicfrom"),
 			     nvram_safe_get("tvnicaddr"));
 		}
-		if (strlen(wanface) > 0 && !nvram_match("wan_proto","disabled"))
+		if (strlen(wanface) > 0 && !nvram_match("wan_proto", "disabled")
+		    && !nvram_match("wan_ipaddr", "0.0.0.0"))
 			save2file
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     wanface, nvram_safe_get("wan_ipaddr"));
@@ -887,7 +890,8 @@ static void nat_postrouting(void)
 		}
 	} else {
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
-		if (strlen(wanface) > 0  && !nvram_match("wan_proto","disabled") && !nvram_match("wan_ipaddr","0.0.0.0"))
+		if (strlen(wanface) > 0 && !nvram_match("wan_proto", "disabled")
+		    && !nvram_match("wan_ipaddr", "0.0.0.0"))
 			if (nvram_match("wl_br1_enable", "1"))
 				save2file
 				    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",

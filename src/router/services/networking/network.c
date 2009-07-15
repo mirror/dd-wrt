@@ -1567,8 +1567,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2643,11 +2643,11 @@ void start_wan(int status)
 					    ("Wait ppp inteface to init (2) ...\n");
 					sleep(1);
 				}
-				char *peer =
-				    inet_ntop(AF_INET,
-					      &sin_addr(&ifr.ifr_dstaddr),
-					      client,
-					      16);
+				char *peer = inet_ntop(AF_INET,
+						       &sin_addr(&ifr.
+								 ifr_dstaddr),
+						       client,
+						       16);
 
 				nvram_set("wan_gateway", peer);
 
@@ -2812,7 +2812,8 @@ void start_wan(int status)
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
 			fprintf(fp, "nomppe\n");
-		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n", username, passwd);
+		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n",
+			username, passwd);
 
 		// This is a tricky one. When used it could improve speed of PPPoE
 		// but not all ISP's can support it.
