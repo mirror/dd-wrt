@@ -115,6 +115,9 @@ endif
 ifeq ($(CONFIG_WG302),y)
   CFLAGS += -DHAVE_WG302
 endif
+ifeq ($(CONFIG_DLM101),y)
+  CFLAGS += -DHAVE_DLM101
+endif
 ifeq ($(CONFIG_WG302V1),y)
   CFLAGS += -DHAVE_WG302V1
 endif
