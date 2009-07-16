@@ -655,6 +655,9 @@ int internal_getRouterBrand()
 #elif HAVE_MR3202A
 	setRouter("MR3202A");
 	return ROUTER_BOARD_FONERA;
+#elif HAVE_DLM101
+	setRouter("Doodle Labs DLM-101");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_AR430W
 	setRouter("Airlink-101 AR430W");
 	return ROUTER_BOARD_FONERA;
