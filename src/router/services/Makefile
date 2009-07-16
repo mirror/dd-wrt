@@ -136,6 +136,9 @@ endif
 ifeq ($(CONFIG_SPUTNIK),y)
 CFLAGS_EXTRA += -DHAVE_SPUTNIK
 endif
+ifeq ($(CONFIG_DLM101),y)
+  CFLAGS += -DHAVE_DLM101
+endif
 ifeq ($(CONFIG_MMC),y)
 CFLAGS_EXTRA += -DHAVE_MMC
 OBJS += mmc.o
