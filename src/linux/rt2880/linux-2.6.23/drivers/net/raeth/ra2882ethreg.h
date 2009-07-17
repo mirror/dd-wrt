@@ -29,7 +29,10 @@
      FE_INT_STATUS
 */
 #define RT2880_CNT_PPE_AF       RT2880_BIT(31)     
-#define RT2880_CNT_GDM1_AF      RT2880_BIT(29)
+#define RT2880_CNT_GDM_AF       RT2880_BIT(29)
+#define RT2880_PSE_P2_FC	RT2880_BIT(26)
+#define RT2880_PSE_BUF_DROP     RT2880_BIT(24)
+#define RT2880_GDM_OTHER_DROP	RT2880_BIT(23)
 #define RT2880_PSE_P1_FC        RT2880_BIT(22)
 #define RT2880_PSE_P0_FC        RT2880_BIT(21)
 #define RT2880_PSE_FQ_EMPTY     RT2880_BIT(20)
@@ -168,8 +171,14 @@ typedef struct _PSEUDO_ADAPTER {
 
 #define DELAY_INT_INIT_NAPI	0x840f8514
 #define DELAY_INT_INIT		0x84048404
-#define FE_INT_DLY_INIT		0x00000003
-#define FE_INT_ALL		0xffffffff
+#define FE_INT_DLY_INIT		(RT2880_TX_DLY_INT | RT2880_RX_DLY_INT)
+#define FE_INT_ALL		(RT2880_PSE_P2_FC | RT2880_PSE_BUF_DROP | \
+                                 RT2880_GDM_OTHER_DROP | RT2880_PSE_P1_FC | \
+                                 RT2880_PSE_P0_FC | RT2880_PSE_FQ_EMPTY |   \
+                                 RT2880_TX_COHERENT | RT2880_RX_COHERENT |  \
+				 RT2880_TX_DONE_INT3 | RT2880_TX_DONE_INT2 | \
+				 RT2880_TX_DONE_INT1 | RT2880_TX_DONE_INT0 | \
+                                 RT2880_RX_DONE_INT0 | RT2880_GE1_STA_CHG )
 
 
 /* 6. PPE, 168 bytes */
@@ -242,6 +251,7 @@ typedef struct _PSEUDO_ADAPTER {
 #define GDMA_RX_SERCNT0		(RA2882ETH_BASE+RACMTABLE_OFFSET+0x330)
 #define GDMA_RX_LERCNT0		(RA2882ETH_BASE+RACMTABLE_OFFSET+0x334)
 #define GDMA_RX_CERCNT0		(RA2882ETH_BASE+RACMTABLE_OFFSET+0x338)
+#define GDMA_RX_FCCNT1		(RA2882ETH_BASE+RACMTABLE_OFFSET+0x33C)
 
 /* 8. PPE Policy Table */
 #define PT_Rule0_L		(RA2882ETH_BASE+RAPOLICYTABLE_OFFSET+0x000) /* Policy table rule bit 31:0 for rule xxx */
@@ -297,6 +307,10 @@ typedef unsigned int RA2880_REG;
 #define RT2880_GDM1_OFRC_P_GDMA1   (1 << 0)
 #define RT2880_GDM1_OFRC_P_PPE     (6 << 0)
 
+#define RT2880_ICS_GEN_EN          (1 << 2)
+#define RT2880_UCS_GEN_EN          (1 << 1)
+#define RT2880_TCS_GEN_EN          (1 << 0)
+
 // MDIO_CFG	bit
 #define RT2880_MDIO_CFG_GP1_FC_TX	(1 << 11)
 #define RT2880_MDIO_CFG_GP1_FC_RX	(1 << 10)
@@ -310,6 +324,8 @@ typedef unsigned int RA2880_REG;
 #define RT2880_PSE_RESET       RT2880_BIT(0)
 /* ====================================== */
 #define RT2880_PST_DRX_IDX0       RT2880_BIT(16)
+#define RT2880_PST_DTX_IDX3       RT2880_BIT(3)
+#define RT2880_PST_DTX_IDX2       RT2880_BIT(2)
 #define RT2880_PST_DTX_IDX1       RT2880_BIT(1)
 #define RT2880_PST_DTX_IDX0       RT2880_BIT(0)
 
@@ -595,6 +611,6 @@ typedef struct end_device
 #endif
 } END_DEVICE, *pEND_DEVICE;
 
-#define RAETH_VERSION	"v1.60"
+#define RAETH_VERSION	"v2.00"
 
 #endif
