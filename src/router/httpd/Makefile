@@ -406,6 +406,9 @@ endif
 ifeq ($(CONFIG_CHILLISPOT),y)
 CFLAGS += -DHAVE_CHILLI
 endif
+ifeq ($(CONFIG_DLM101),y)
+  CFLAGS += -DHAVE_DLM101
+endif
 
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_NAS_SERVER
