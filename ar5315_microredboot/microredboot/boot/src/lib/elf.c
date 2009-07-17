@@ -1,3 +1,12 @@
+/*
+ * elf.c - ELF file memory remapping support
+ * taken and derived from RedBoot source
+ *
+ * copyright 2009 Sebastian Gottschall / NewMedia-NET GmbH / DD-WRT.COM
+ * licensed under GPL conditions
+ */
+
+
 #include "elf.h"
 
 static unsigned long fis_load_elf_image(unsigned long flash, unsigned long base,
