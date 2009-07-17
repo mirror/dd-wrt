@@ -858,6 +858,7 @@ CONFIG_WLAN_PRE80211=y
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_USBNET_MII is not set
 # CONFIG_USB_USBNET is not set
+# CONFIG_USB_HSO is not set
 # CONFIG_WAN is not set
 # CONFIG_FDDI is not set
 # CONFIG_HIPPI is not set

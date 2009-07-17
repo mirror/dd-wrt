@@ -75,7 +75,7 @@ static struct platform_device cambria_optional_uart = {
 static int __init gw2358_init(void)
 {
 
-	*IXP4XX_EXP_CS3 = 0xbfff0003;
+	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
 	set_irq_type(IRQ_IXP4XX_GPIO3, IRQT_RISING);
 	cambria_optional_uart_data[0].mapbase	= 0x53FC0000;
 	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x53FC0000, 0x0fff);
