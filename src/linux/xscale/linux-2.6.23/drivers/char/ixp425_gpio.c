@@ -240,11 +240,11 @@ pld_write_gpio2(int byte)
 
 
 
-unsigned char *iobase;
+static unsigned char *iobase;
 
 void setLED(int led, int status)
 {
-static unsigned int staticb=0xff;
+static unsigned char staticb=0xff;
 
 #ifdef CONFIG_MACH_CAMBRIA
 if (!status)
@@ -512,6 +512,8 @@ static int __init gpio_init_module(void)
                 return retval;
 #ifdef CONFIG_MACH_CAMBRIA
 	iobase = ioremap_nocache(0x53F40000, 0x1000);
+	writeb(0xff, iobase);
+	printk(KERN_INFO "gpio virtual base %p\n",iobase);
 #endif
 #ifdef CONFIG_PROC_FS
 	struct proc_dir_entry *res;

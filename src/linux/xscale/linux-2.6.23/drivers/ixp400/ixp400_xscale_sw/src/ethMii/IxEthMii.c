@@ -447,6 +447,10 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
 	}
 	else if (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_RTL8021_PHY_ID)
 	    {
+	    *linkUp=TRUE;
+	    *speed100=TRUE;
+	    *fullDuplex=TRUE;
+	    /*
 	    if (ixEthAccMiiReadRtn(phyAddr,  
 				   IX_ETH_MII_CTRL_REG, 
 				   &ctrlRegval) != IX_ETH_ACC_SUCCESS)
@@ -490,7 +494,7 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
 		    }
 		}
 		}    
-	    
+	    */
 	    }    
  /* end of if(ixEthMiiPhyId) */
 	else
