@@ -52,8 +52,8 @@ static struct platform_device gw2356_device = {
 static int __init gw2356_init(void)
 {
 
-	*IXP4XX_EXP_CS2 |= 0xbfff0003;
-	*IXP4XX_EXP_CS3 |= 0xbfff0003;
+	*IXP4XX_EXP_CS2 = 0xBFFF3C43;
+	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
 
 
 	set_irq_type(IRQ_IXP4XX_GPIO2, IRQT_BOTHEDGE);

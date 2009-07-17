@@ -73,21 +73,19 @@ static struct platform_device cambria_optional_uart = {
 static int __init gw2350_init(void)
 {
 
-	*IXP4XX_EXP_CS2 = 0xbfff0003;
+	*IXP4XX_EXP_CS2 = 0xBFFF3C43;
 	set_irq_type(IRQ_IXP4XX_GPIO3, IRQT_RISING);
 	cambria_optional_uart_data[0].mapbase	= 0x52FF0000;
 	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x52FF0000, 0x0fff);
 	cambria_optional_uart_data[0].irq		= IRQ_IXP4XX_GPIO3;
 
-	*IXP4XX_EXP_CS3 = 0xbfff0003;
+	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
 	set_irq_type(IRQ_IXP4XX_GPIO4, IRQT_RISING);
 	cambria_optional_uart_data[1].mapbase	= 0x53FF0000;
 	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53FF0000, 0x0fff);
 	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
 
 	platform_device_register(&cambria_optional_uart);
-	*IXP4XX_EXP_CS2 = 0xBFFF3C43;
-	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
 
 return 0;
 }

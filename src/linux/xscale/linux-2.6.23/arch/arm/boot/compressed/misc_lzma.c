@@ -160,8 +160,6 @@ static int lzma_unzip(void)
         for (i = 0; i < 4; i++) 
         	get_byte();
 	// decompress kernel
-//	if (LzmaDecode(workspace, ~0, lc, lp, pb,
-//		(unsigned char*)LOADADDR, osize, &i) == LZMA_RESULT_OK)
 	printf("\nuncompressed Size %d\n",uncompressedSize);
 	if (LzmaDecode(workspace, ~0, lc,lp,pb,(unsigned char*)output_data, uncompressedSize, &i) == LZMA_RESULT_OK)
 	{
