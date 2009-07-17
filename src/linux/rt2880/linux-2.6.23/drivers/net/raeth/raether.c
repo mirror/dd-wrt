@@ -242,32 +242,39 @@ void set_fe_pdma_glo_cfg(void)
 
 int forward_config(struct net_device *dev)
 {
-	unsigned int	regVal;
+	unsigned int	regVal, regCsg;
 	regVal = sysRegRead(GDMA1_FWD_CFG);
+	regCsg = sysRegRead(CDMA_CSG_CFG);
 
 	//set unicast/multicast/broadcast frame to cpu
 	regVal &= ~0xFFFF; 
 
-#if 0 //def CONFIG_RAETH_CHECKSUM_OFFLOAD
-	//disable ipv4 header checksum check
+#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
+	//enable ipv4 header checksum check
 	regVal |= RT2880_GDM1_ICS_EN;
+	regCsg |= RT2880_ICS_GEN_EN;
 	
-	//disable tcp checksum check
+	//enable tcp checksum check
 	regVal |= RT2880_GDM1_TCS_EN;
+	regCsg |= RT2880_TCS_GEN_EN;
 	
-	//disable udp checksum check
+	//enable udp checksum check
 	regVal |= RT2880_GDM1_UCS_EN;
-
+	regCsg |= RT2880_UCS_GEN_EN;
+ 
 	dev->features |= NETIF_F_IP_CSUM;
 #else
-	//disable ipv4 header checksum check
-	regVal &= ~RT2880_GDM1_ICS_EN;
-	
-	//disable tcp checksum check
-	regVal &= ~RT2880_GDM1_TCS_EN;
-	
-	//disable udp checksum check
-	regVal &= ~RT2880_GDM1_UCS_EN;
+ 	//disable ipv4 header checksum check
+ 	regVal &= ~RT2880_GDM1_ICS_EN;
+	regCsg &= ~RT2880_ICS_GEN_EN;
+ 	
+ 	//disable tcp checksum check
+ 	regVal &= ~RT2880_GDM1_TCS_EN;
+	regCsg &= ~RT2880_TCS_GEN_EN;
+ 	
+ 	//disable udp checksum check
+ 	regVal &= ~RT2880_GDM1_UCS_EN;
+	regCsg &= ~RT2880_UCS_GEN_EN;
 #endif
 
 #ifdef CONFIG_RAETH_JUMBOFRAME
@@ -279,6 +286,7 @@ int forward_config(struct net_device *dev)
 	// regVal &= ~RT2880_GDM1_STRPCRC;
 
 	sysRegWrite(GDMA1_FWD_CFG, regVal);
+	sysRegWrite(CDMA_CSG_CFG, regCsg);
 
 /*
  * 	PSE_FQ_CFG register definition -
@@ -494,7 +502,7 @@ static inline int rt2880_eth_send(struct net_device* dev, struct sk_buff *skb, i
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.QN = 3; 
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info2.DDONE_bit = 0;
 
-#if 0 //def CONFIG_RAETH_CHECKSUM_OFFLOAD
+#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.TCO = 1; 
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.UCO = 1; 
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.ICO = 1; 
@@ -660,22 +668,12 @@ static int rt2880_eth_recv(struct net_device* dev)
 			break;
 			//return;
 		}
-#ifdef HEADER_ALIGNED		
 		skb_reserve(skb, 2);
-#endif	
 		rx_ring[rx_dma_owner_idx0].rxd_info2.DDONE_bit = 0;	
 		netrx_skbuf[rx_dma_owner_idx0] = skb;
-#ifdef HEADER_ALIGNED		
 		rx_ring[rx_dma_owner_idx0].rxd_info1.PDP0 = dma_map_single(NULL, skb->data, MAX_RX_LENGTH+2, PCI_DMA_FROMDEVICE);
-#else
-		rx_ring[rx_dma_owner_idx0].rxd_info1.PDP0 = dma_map_single(NULL, skb->data, MAX_RX_LENGTH, PCI_DMA_FROMDEVICE);
-#endif
 
-#ifndef DSP_EN
-#ifndef DSP_VIA_NONCACHEABLE
 		dma_cache_wback_inv((unsigned long)&rx_ring[rx_dma_owner_idx0], sizeof(struct PDMA_rxdesc));	
-#endif
-#endif
 
 		/*  Move point to next RXD which wants to alloc*/
 		sysRegWrite(RX_CALC_IDX0, rx_dma_owner_idx0);	
@@ -1608,7 +1606,6 @@ int ei_close(struct net_device *dev)
         }       // dev_kfree_skb
 
 
-#ifndef DSP_EN 
 #if defined (CONFIG_RAETH_QOS)
        if (ei_local->tx_ring0 != NULL) {
 	   pci_free_consistent(NULL, NUM_TX_DESC*sizeof(struct PDMA_txdesc), ei_local->tx_ring0, ei_local->phy_tx_ring0);
@@ -1626,9 +1623,6 @@ int ei_close(struct net_device *dev)
        if (ei_local->tx_ring3 != NULL) {
 	   pci_free_consistent(NULL, NUM_TX_DESC*sizeof(struct PDMA_txdesc), ei_local->tx_ring3, ei_local->phy_tx_ring3);
        }
-#endif
-#else
-	pci_free_consistent(NULL, NUM_TX_DESC*sizeof(struct PDMA_txdesc), ei_local->tx_ring0, ei_local->phy_tx_ring0);
 #endif
         pci_free_consistent(NULL, NUM_RX_DESC*sizeof(struct PDMA_rxdesc), rx_ring, phy_rx_ring);
 	printk("Free TX/RX Ring Memory!\n");
@@ -1655,6 +1649,7 @@ void rt305x_esw_init(void)
 {
 	int i=0;
 
+        *(unsigned long *)(0xb0110008) = 0xC8A07850;
         *(unsigned long *)(0xb01100E4) = 0x00000000;
         *(unsigned long *)(0xb0110014) = 0x00405555;
         *(unsigned long *)(0xb0110050) = 0x00002001;
@@ -1693,12 +1688,16 @@ void rt305x_esw_init(void)
         mii_mgr_write(0, 31, 0x8000);   //select local register
 
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
+	*(unsigned long *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
         *(unsigned long *)(0xb01100C8) &= ~(1<<29); //disable port 5 auto-polling
         *(unsigned long *)(0xb01100C8) |= 0x3fff; //force 1000M full duplex
+        *(unsigned long *)(0xb01100C8) &= ~(0xf<<20); //rxclk_skew, txclk_skew = 0
 #elif defined (CONFIG_P5_MII_TO_MAC_MODE)
+	*(unsigned long *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
         *(unsigned long *)(0xb01100C8) &= ~(1<<29); //disable port 5 auto-polling
         *(unsigned long *)(0xb01100C8) |= 0x3ffd; //force 100M full duplex
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	*(unsigned long *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
 	enable_auto_negotiate();
         if (isMarvellGigaPHY()) {
                 printk("\n MARVELL Phy\n");
@@ -1707,6 +1706,7 @@ void rt305x_esw_init(void)
         }
 
 #elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
+	*(unsigned long *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
 	/* reserved */
 #else // Port 5 Disabled //
         *(unsigned long *)(0xb0000060) |= (1 << 9); //set RGMII to GPIO mode (GPIO41-GPIO50)
@@ -1879,6 +1879,6 @@ void ra2882eth_cleanup_module(void)
 #endif
 }
 
-module_init(ra2882eth_init);
+late_initcall(ra2882eth_init);
 module_exit(ra2882eth_cleanup_module);
 MODULE_LICENSE("GPL");

@@ -39,7 +39,7 @@
 #define NUM_RX_DESC     256
 #define NUM_TX_DESC     256
 #endif
-#define NUM_RX_MAX_PROCESS 64
+#define NUM_RX_MAX_PROCESS 16
 #endif
 
 #define DEV_NAME        "eth2"
