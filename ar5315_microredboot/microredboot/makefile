@@ -161,6 +161,7 @@ ap48:
 	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
 	ecosconfig import $(REDBOOT_DIR)/options/RAM/32MB_ram; \
 	ecosconfig import $(REDBOOT_DIR)/options/flash/8MB_rom_ap48; \
+	ecosconfig import $(REDBOOT_DIR)/options/eth/kendin_phy; \
 	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
 	$(PLATFORM_BLD_CUST)
 	$(PLATFORM_RAM_BUILD)
@@ -175,11 +176,38 @@ ap48:
 	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
 	ecosconfig import $(REDBOOT_DIR)/options/RAM/16MB_ram; \
 	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom_ap48; \
+	ecosconfig import $(REDBOOT_DIR)/options/eth/kendin_phy; \
 	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
 	$(PLATFORM_BLD_CUST)
 	$(PLATFORM_RAM_BUILD)
 	cp redboot/ap48/ram/install/bin/redboot.rom images/redboot_ap48_16M_4M_kendin.rom
 	cp redboot/ap48/ram/install/bin/redboot.img images/redboot_ap48_16M_4M_kendin.elf
+
+	echo "#define RAM_SIZE 0x1000000" > boot/src/ramconfig.h
+	echo "#define AR5312 1" >> boot/src/ramconfig.h
+	$(PLATFORM_RAM_START) \
+	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
+	ecosconfig import $(REDBOOT_DIR)/options/RAM/16MB_ram; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom_ap48; \
+	ecosconfig import $(REDBOOT_DIR)/options/eth/marvell_phy; \
+	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
+	$(PLATFORM_BLD_CUST)
+	$(PLATFORM_RAM_BUILD)
+	cp redboot/ap48/ram/install/bin/redboot.rom images/redboot_ap48_16M_4M_marvell.rom
+	cp redboot/ap48/ram/install/bin/redboot.img images/redboot_ap48_16M_4M_marvell.elf
+
+	echo "#define RAM_SIZE 0x2000000" > boot/src/ramconfig.h
+	echo "#define AR5312 1" >> boot/src/ramconfig.h
+	$(PLATFORM_RAM_START) \
+	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
+	ecosconfig import $(REDBOOT_DIR)/options/RAM/32MB_ram; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom_ap48; \
+	ecosconfig import $(REDBOOT_DIR)/options/eth/marvell_phy; \
+	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
+	$(PLATFORM_BLD_CUST)
+	$(PLATFORM_RAM_BUILD)
+	cp redboot/ap48/ram/install/bin/redboot.rom images/redboot_ap48_32M_4M_marvell.rom
+	cp redboot/ap48/ram/install/bin/redboot.img images/redboot_ap48_32M_4M_marvell.elf
 
 
 ap43:
