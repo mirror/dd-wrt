@@ -815,6 +815,26 @@ void start_restore_defaults(void)
 
 	if (restore_defaults) {
 		cprintf("Restoring defaults...\n");
+#ifdef HAVE_MICRO
+		/*
+		 * adjust ip_conntrack_max based on available memory size
+		 * some routers that can run micro only have 16MB memory
+		 */
+	FILE *fcpu = fopen("/proc/meminfo", "r");
+	char line[128];
+	unsigned long msize = 0;
+	
+	if (fcpu != NULL) {
+	fgets(line, sizeof(line), fcpu);  //eat first line
+	fgets(line, sizeof(line), fcpu);
+	if (sscanf(line, "%*s %lu %*s", msize) == 1) {
+		if (msize > (8 * 1024 * 1024) ) {
+			nvram_set ("ip_conntrack_max", "4096");
+			}
+		}
+	fclose (fcpu);
+	}
+#endif
 		/*
 		 * these unsets are important for routers where we can't erase nvram
 		 * and only software restore defaults 
