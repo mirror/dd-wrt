@@ -1347,6 +1347,9 @@ static void configure_single(int count)
 #elif defined(HAVE_TMK)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "KMT_vap"));
+#elif defined(HAVE_CORENET)
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "corenet.ap"));
 #else
 #ifdef HAVE_REGISTER
 		if (!isregistered())
@@ -1421,6 +1424,9 @@ static void configure_single(int count)
 #elif defined(HAVE_TMK)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "KMT"));
+#elif defined(HAVE_CORENET)
+	sysprintf("iwconfig %s essid -- \"%s\"", dev,
+		  nvram_default_get(ssid, "corenet.ap"));
 #else
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1461,6 +1467,9 @@ static void configure_single(int count)
 #elif defined(HAVE_TMK)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "KMT"));
+#elif defined(HAVE_CORENET)
+		sysprintf("iwconfig %s essid -- \"%s\"", dev,
+			  nvram_default_get(ssid, "corenet.ap"));
 #else
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "dd-wrt"));
