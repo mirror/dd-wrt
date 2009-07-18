@@ -165,14 +165,28 @@ void __init prom_meminit(void)
 #ifdef DEBUG
 	struct prom_pmemblock *psave;
 #endif
+	unsigned long mem, before, offset;
 
+	before = ((unsigned long) &prom_meminit) & (127 << 20);
+	offset = ((unsigned long) &prom_meminit) - before;
+	for (mem = before + (1 << 20); mem < (128 << 20); mem += (1 << 20))
+		if (*(unsigned long *)(offset + mem) ==
+		    *(unsigned long *)(prom_meminit)) {
+			/*
+			 * We may already be well past the end of memory at
+			 * this point, so we'll have to compensate for it.
+			 */
+			mem -= before;
+			break;
+		}
+	printk(KERN_INFO "%ldM RAM Detected!\n",(mem/1024)/1024);
 	//printk("ram start= %x, ram end= %x\n",rt2880_res_ram.start, rt2880_res_ram.end); 
 	//printk("size = %x\n",rt2880_res_ram.end - rt2880_res_ram.start); 
  	//add_memory_region(0x0a000000, rt2880_res_ram.end - rt2880_res_ram.start, BOOT_MEM_RAM);
 #if defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT2880_FPGA)
- 	add_memory_region(0x08000000, RAM_SIZE, BOOT_MEM_RAM);
+ 	add_memory_region(0x08000000, mem, BOOT_MEM_RAM);
 #else
-        add_memory_region(0x00000000, RAM_SIZE, BOOT_MEM_RAM);
+        add_memory_region(0x00000000, mem, BOOT_MEM_RAM);
 #endif
 	
 	//p = prom_getmdesc();
