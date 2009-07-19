@@ -387,7 +387,7 @@
 // Belkin F5D7231-4 v2000 (BCM5352E cpu, fccid: Belkin K7SF5D7231B)
 #define ROUTER_BELKIN_F5D7231_V2000 0x7213
 
-#define ROUTER_BOARD_ESR6650 0x730f
+#define ROUTER_BOARD_ESR6650 0x731a
 
 // Netgear WNR3500L (BCM4718A cpu, 8MB serial flash, USB, Gigabit switch, fccid: Netgear PY308400093)
 // Netgear WNR3500v2 - same - half flash
@@ -396,7 +396,7 @@
 // Linksys WRT320N (BCM4717 cpu, fccid: Linksys Q87-WRT320N)
 #define ROUTER_WRT320N 0x750f
 
-#define ROUTER_BOARD_ESR9752 0x760f
+#define ROUTER_BOARD_ESR9752 0x7610
 
 #define NVROUTER "DD_BOARD"
 
