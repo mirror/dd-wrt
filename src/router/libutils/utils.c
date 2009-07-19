@@ -617,6 +617,9 @@ int internal_getRouterBrand()
 #elif HAVE_ESR6650
 	setRouter("Senao ESR6650");
 	return ROUTER_BOARD_ESR6650;
+#elif HAVE_ESR9752
+	setRouter("Senao ESR9752");
+	return ROUTER_BOARD_ESR9752;
 #elif HAVE_WHRG300N
 	setRouter("Buffalo WHR-G300N");
 	return ROUTER_BOARD_WHRG300N;
