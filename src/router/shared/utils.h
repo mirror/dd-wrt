@@ -396,6 +396,8 @@
 // Linksys WRT320N (BCM4717 cpu, fccid: Linksys Q87-WRT320N)
 #define ROUTER_WRT320N 0x750f
 
+#define ROUTER_BOARD_ESR9752 0x760f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

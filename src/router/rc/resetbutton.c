@@ -365,6 +365,8 @@ void period_check(int sig)
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_ECB9750) {
 		val = get_gpio(11) << 11;
+	} else if (brand == ROUTER_BOARD_ESR6650) {
+		val = 1-(get_gpio(10) << 10);
 	} else {
 
 		if ((fp = fopen(GPIO_FILE, "r"))) {
