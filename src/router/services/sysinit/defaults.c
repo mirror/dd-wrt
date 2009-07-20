@@ -2011,7 +2011,11 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"ip_conntrack_max", "4096", 0},
 #endif
+#ifdef HAVE_MICRO
+	{"ip_conntrack_tcp_timeouts", "300", 0},
+#else
 	{"ip_conntrack_tcp_timeouts", "3600", 0},
+#endif
 	{"ip_conntrack_udp_timeouts", "120", 0},
 	{"rflow_ip", "0.0.0.0", 0},
 	{"rflow_port", "2055", 0},

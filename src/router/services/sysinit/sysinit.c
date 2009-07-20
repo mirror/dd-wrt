@@ -830,6 +830,7 @@ void start_restore_defaults(void)
 	if (sscanf(line, "%*s %lu %*s", msize) == 1) {
 		if (msize > (8 * 1024 * 1024) ) {
 			nvram_set ("ip_conntrack_max", "4096");
+			nvram_set ("ip_conntrack_tcp_timeouts", "3600");
 			}
 		}
 	fclose (fcpu);
