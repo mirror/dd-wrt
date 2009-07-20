@@ -2007,7 +2007,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_CA8
 	{"ip_conntrack_max", "16384", 0},
 #elif HAVE_MICRO
-	{"ip_conntrack_max", "512", 0},
+	{"ip_conntrack_max", "1024", 0},
 #else
 	{"ip_conntrack_max", "4096", 0},
 #endif
