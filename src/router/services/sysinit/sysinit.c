@@ -820,20 +820,20 @@ void start_restore_defaults(void)
 		 * adjust ip_conntrack_max based on available memory size
 		 * some routers that can run micro only have 16MB memory
 		 */
-	FILE *fcpu = fopen("/proc/meminfo", "r");
+	FILE *fmem = fopen("/proc/meminfo", "r");
 	char line[128];
 	unsigned long msize = 0;
 	
-	if (fcpu != NULL) {
-	fgets(line, sizeof(line), fcpu);  //eat first line
-	fgets(line, sizeof(line), fcpu);
-	if (sscanf(line, "%*s %lu %*s", msize) == 1) {
+	if (fmem != NULL) {
+	fgets(line, sizeof(line), fmem);  //eat first line
+	fgets(line, sizeof(line), fmem);
+	if (sscanf(line, "%*s %lu", &msize) == 1) {
 		if (msize > (8 * 1024 * 1024) ) {
 			nvram_set ("ip_conntrack_max", "4096");
 			nvram_set ("ip_conntrack_tcp_timeouts", "3600");
 			}
 		}
-	fclose (fcpu);
+	fclose (fmem);
 	}
 #endif
 		/*
