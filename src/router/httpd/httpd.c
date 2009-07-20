@@ -869,6 +869,16 @@ static void handle_request(void)
 		     authorization, auth_check))
 			auth_fail = 1;
 		query = NULL;
+		if (check_connect_type() < 0) {
+			send_error(401, "Bad Request", (char *)0,
+				   "Can't use wireless interface to access GUI.");
+			return;
+		}
+		if (auth_fail == 1) {
+			send_authenticate(auth_realm);
+			auth_fail = 0;
+			return;
+		}
 		if (strcasecmp(method, "post") == 0) {
 			query = malloc(10000);
 			if ((count = wfread(query, 1, cl, conn_fp))) {
@@ -902,16 +912,6 @@ static void handle_request(void)
 #endif
 #endif
 
-		}
-		if (check_connect_type() < 0) {
-			send_error(401, "Bad Request", (char *)0,
-				   "Can't use wireless interface to access GUI.");
-			return;
-		}
-		if (auth_fail == 1) {
-			send_authenticate(auth_realm);
-			auth_fail = 0;
-			return;
 		}
 		exec = fopen("/tmp/exec.tmp", "wb");
 		fprintf(exec, "export REQUEST_METHOD=\"%s\"\n", method);
