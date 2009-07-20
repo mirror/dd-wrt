@@ -860,6 +860,7 @@ static void handle_request(void)
 	}
 #endif
 
+#if 0
 	if (containsstring(file, "cgi-bin")) {
 
 		auth_fail = 0;
@@ -902,6 +903,16 @@ static void handle_request(void)
 #endif
 
 		}
+		if (check_connect_type() < 0) {
+			send_error(401, "Bad Request", (char *)0,
+				   "Can't use wireless interface to access GUI.");
+			return;
+		}
+		if (auth_fail == 1) {
+			send_authenticate(auth_realm);
+			auth_fail = 0;
+			return;
+		}
 		exec = fopen("/tmp/exec.tmp", "wb");
 		fprintf(exec, "export REQUEST_METHOD=\"%s\"\n", method);
 		if (query)
@@ -921,25 +932,15 @@ static void handle_request(void)
 
 		system2("chmod 700 /tmp/exec.tmp");
 		system2("/tmp/exec.tmp>/tmp/shellout.asp");
-		if (check_connect_type() < 0) {
-			send_error(401, "Bad Request", (char *)0,
-				   "Can't use wireless interface to access GUI.");
-//          free(line);
-			return;
-		}
-		if (auth_fail == 1) {
-			send_authenticate(auth_realm);
-			auth_fail = 0;
-//          free(line);
-			return;
-		}
 
 		do_ej(NULL, "/tmp/shellout.asp", conn_fp, "");
 		unlink("/tmp/shellout.asp");
 		unlink("/tmp/exec.tmp");
 		unlink("/tmp/exec.query");
 
-	} else {
+	} else
+#endif
+ {
 		/* extract url args if present */
 		query = strchr(file, '?');
 		if (query) {
