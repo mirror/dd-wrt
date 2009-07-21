@@ -1599,6 +1599,9 @@ void start_overclocking(void)
 	case 150:
 		clk2 = 75;
 		// nvram_set ("clkfreq", "150,75");
+//		clk2_1 = 75;
+//		clk2_2 = 33;
+//		// nvram_set ("clkfreq", "150,75,33");
 		break;
 	case 183:
 		clk2 = 92;
@@ -1619,6 +1622,9 @@ void start_overclocking(void)
 	case 200:
 		clk2 = 100;
 		// nvram_set ("clkfreq", "200,100");
+		clk2_1 = 100;
+		clk2_2 = 33;
+		// nvram_set ("clkfreq", "200,100,33");
 		break;
 	case 216:
 		clk2 = 108;
@@ -1643,6 +1649,9 @@ void start_overclocking(void)
 	case 240:
 		clk2 = 120;
 		// nvram_set ("clkfreq", "240,120");
+		clk2_1 = 120;
+		clk2_2 = 33;
+		// nvram_set ("clkfreq", "240,120,33");
 		break;
 	case 250:
 		clk2 = 125;
@@ -1666,11 +1675,11 @@ void start_overclocking(void)
 		clk2 = 120;
 		// nvram_set ("clkfreq", "280,120");
 		break;
-	case 288:
-		clk2_1 = 144;
-		clk2_2 = 32;
-		// nvram_set ("clkfreq", "288,144,32");
-		break;
+//	case 288:
+//		clk2_1 = 144;
+//		clk2_2 = 32;
+//		// nvram_set ("clkfreq", "288,144,32");
+//		break;
 	case 300:
 		clk2 = 120;
 		// nvram_set ("clkfreq", "300,120");
