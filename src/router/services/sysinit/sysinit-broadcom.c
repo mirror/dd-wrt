@@ -937,6 +937,10 @@ void start_sysinit(void)
 				need_reboot = 1;
 			}
 		}
+		if (nvram_match("clkfreq", "300,150,37")) {
+			nvram_set("clkfreq", "300,133,33");
+			need_reboot = 1;
+		}
 		break;
 
 	case ROUTER_WRT300NV11:
@@ -1574,7 +1578,7 @@ void start_overclocking(void)
 			dup[i] = 0;
 	int cclk = atoi(dup);
 
-	if ((cclk < 150 && rev == 3) || (cclk < 192 && rev == 4)
+	if ((cclk < 264 && rev == 2) || (cclk < 150 && rev == 3) || (cclk < 192 && rev == 4)
 	    || (cclk < 183 && rev == 7)) {
 		cprintf("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
 		return;		// unsupported
@@ -1587,6 +1591,8 @@ void start_overclocking(void)
 
 	int set = 1;
 	int clk2 = 0;
+	int clk2_1 = 0;
+	int clk2_2 = 0;
 	char clkfr[16];
 
 	switch (clk) {
@@ -1645,18 +1651,37 @@ void start_overclocking(void)
 	case 252:
 		clk2 = 126;
 		// nvram_set ("clkfreq", "252,126");
+		clk2_1 = 126;
+		clk2_2 = 33;
+		// nvram_set ("clkfreq", "252,126,33");
 		break;
 	case 264:
 		clk2 = 132;
 		// nvram_set ("clkfreq", "264,132");
+		clk2_1 = 132;
+		clk2_2 = 33;
+		// nvram_set ("clkfreq", "264,132,33");
 		break;
 	case 280:
 		clk2 = 120;
 		// nvram_set ("clkfreq", "280,120");
 		break;
+	case 288:
+		clk2_1 = 144;
+		clk2_2 = 32;
+		// nvram_set ("clkfreq", "288,144,32");
+		break;
 	case 300:
 		clk2 = 120;
 		// nvram_set ("clkfreq", "300,120");
+		clk2_1 = 133;
+		clk2_2 = 33;
+		// nvram_set ("clkfreq", "300,133,33");
+		break;
+	case 330:
+		clk2_1 = 132;
+		clk2_2 = 33;
+		// nvram_set ("clkfreq", "330,132,33");
 		break;
 	default:
 		set = 0;
@@ -1667,7 +1692,10 @@ void start_overclocking(void)
 		cprintf
 		    ("clock frequency adjusted from %d to %d, reboot needed\n",
 		     cclk, clk);
-		sprintf(clkfr, "%d,%d", clk, clk2);
+		if (rev == 2)
+			sprintf(clkfr, "%d,%d,%d", clk, clk2_1, clk2_2);
+		else
+			sprintf(clkfr, "%d,%d", clk, clk2);
 		nvram_set("clkfreq", clkfr);
 		nvram_commit();
 		cprintf("Overclocking done, rebooting...\n");
