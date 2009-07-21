@@ -48,8 +48,8 @@
 #include <l7protocols.h>
 
 #ifdef HAVE_OVERCLOCKING
-static unsigned int type2_clocks[6] =
-    { 252, 264, 288, 300, 330, 0 };
+static unsigned int type2_clocks[7] =
+    { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
 static unsigned int type4_clocks[10] =
     { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
