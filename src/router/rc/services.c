@@ -696,11 +696,15 @@ static void handle_forward(void)
 
 static void handle_qos(void)
 {
+	void *handle = NULL;	
+
 	startstop_f("wshaper");
 	startstop_f("wland");
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
+//    if( handle )
+//      dlclose( handle );
 }
 
 static void handle_forwardupnp(void)
