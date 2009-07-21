@@ -1674,9 +1674,16 @@ void start_overclocking(void)
 	case 300:
 		clk2 = 120;
 		// nvram_set ("clkfreq", "300,120");
+		if (getRouterBrand() == ROUTER_WRT610N) {
 		clk2_1 = 133;
 		clk2_2 = 33;
 		// nvram_set ("clkfreq", "300,133,33");
+		}
+		else {
+		clk2_1 = 150;
+		clk2_2 = 37;	
+		// nvram_set ("clkfreq", "300,150,37");
+		}
 		break;
 	case 330:
 		clk2_1 = 132;
