@@ -48,6 +48,8 @@
 #include <l7protocols.h>
 
 #ifdef HAVE_OVERCLOCKING
+static unsigned int type2_clocks[6] =
+    { 252, 264, 288, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
 static unsigned int type4_clocks[10] =
     { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
@@ -110,7 +112,9 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	int tab = cpu_plltype();
 	unsigned int *c;
 
-	if (tab == 3)
+	if (tab == 2)
+		c = type2_clocks;
+	else if (tab == 3)
 		c = type3_clocks;
 	else if (tab == 4)
 		c = type4_clocks;
