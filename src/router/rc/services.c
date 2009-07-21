@@ -353,6 +353,7 @@ static void handle_index(void)
 	// ip changes changes
 	handle = start_service_nofree_f("anchorfreednat", handle);
 	handle = start_service_nofree("wan_boot", handle);
+	handle = startstop_nofree_f("splashd", handle);
 //    if( handle )
 //      dlclose( handle );
 }
@@ -473,6 +474,9 @@ static void handle_services(void)
 #ifdef HAVE_OPENVPN
 	handle = startstop_nofree_f("openvpnserver", handle);
 #endif
+#ifdef HAVE_NOCAT
+	handle = startstop_nofree_f("splashd", handle);
+#endif
 	handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
@@ -525,7 +529,9 @@ static void handle_management(void)
 	handle = startstop_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
 	handle = startstop_nofree_f("httpd", handle);
-
+#ifdef HAVE_NOCAT
+	handle = startstop_nofree_f("splashd", handle);
+#endif
 #ifdef HAVE_WOL
 	handle = startstop_nofree_f("wol", handle);
 #endif
@@ -610,6 +616,9 @@ static void handle_filters(void)
 	handle = startstop_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
 	handle = start_service_nofree_f("cron", handle);
+#ifdef HAVE_NOCAT
+	handle = startstop_nofree_f("splashd", handle);
+#endif
 #ifdef HAVE_MULTICAST
 	handle = startstop_nofree_f("igmp_proxy", handle);
 #endif
@@ -632,6 +641,9 @@ static void handle_routing(void)
 #endif
 #ifdef HAVE_OLSRD
 	handle = startstop_nofree_f("olsrd", handle);
+#endif
+#ifdef HAVE_NOCAT
+	handle = startstop_nofree_f("splashd", handle);
 #endif
 	handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
@@ -674,6 +686,9 @@ static void handle_forward(void)
 	handle = start_service_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
 	handle = start_service_nofree_f("anchorfreednat", handle);
+#ifdef HAVE_NOCAT
+	handle = startstop_nofree_f("splashd", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 
@@ -683,6 +698,9 @@ static void handle_qos(void)
 {
 	startstop_f("wshaper");
 	startstop_f("wland");
+#ifdef HAVE_NOCAT
+	handle = startstop_nofree_f("splashd", handle);
+#endif
 }
 
 static void handle_forwardupnp(void)
@@ -701,6 +719,9 @@ static void handle_forwardupnp(void)
 	handle = startstop_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
 	handle = start_service_nofree_f("anchorfreednat", handle);
+#ifdef HAVE_NOCAT
+	handle = startstop_nofree_f("splashd", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 
