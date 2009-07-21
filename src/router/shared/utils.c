@@ -64,24 +64,26 @@ int getcpurev(void)
 			cnt++;
 		if (cnt == 3) {
 			getc(fp);
-			char cpurev[13];
+			char cpurev[16];
 			int i = 0;
 
-			for (i = 0; i < 12; i++)
+			for (i = 0; i < 13; i++)
 				cpurev[i] = getc(fp);
 			cpurev[i] = 0;
 			fclose(fp);
-			if (!strcmp(cpurev, "BCM4710 V0.0"))	// BCM4702, BCM4710
+			if (!strncmp(cpurev, "BCM4710 V0.0", 12))	// BCM4702, BCM4710
 				// (old 125 MHz)
 				return 0;
-			if (!strcmp(cpurev, "BCM3302 V0.6"))	// BCM4704
+			if (!strncmp(cpurev, "BCM3302 V0.6", 12))	// BCM4704
 				return 6;
-			if (!strcmp(cpurev, "BCM3302 V0.7"))	// BCM4712, BCM5365
+			if (!strncmp(cpurev, "BCM3302 V0.7", 12))	// BCM4712, BCM5365
 				return 7;
-			if (!strcmp(cpurev, "BCM3302 V0.8"))	// BCM5350, BCM5352
+			if (!strncmp(cpurev, "BCM3302 V0.8", 12))	// BCM5350, BCM5352
 				return 8;
-			if (!strcmp(cpurev, "BCM3302 V2.9"))	// BCM5354
+			if (!strncmp(cpurev, "BCM3302 V2.9", 12))	// BCM5354
 				return 29;
+			if (!strncmp(cpurev, "BCM3302 V1.10", 13))	// BCM4785 (BCM3302 V1.10)
+				return 110;
 			return -1;
 		}
 	}
@@ -116,8 +118,8 @@ int cpu_plltype(void)
 		return 7;
 	if (cpurev == 29)	// BCM5354, only supports fixed 240 MHz
 		return 0;
-	if (cputype == BCM4705_BCM5397_EWC_CHIP)	// BCM4705
-		return 0;	// could use table 2
+	if (cpurev == 110)	// BCM4705
+		return 2;
 
 	return 0;
 }
