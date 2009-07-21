@@ -1321,8 +1321,12 @@ void start_restore_defaults(void)
 #endif
 	nvram_unset("probe_blacklist");
 
-	if (nvram_get("overclocking") == NULL)
-		nvram_set("overclocking", nvram_safe_get("clkfreq"));
+	if (nvram_get("overclocking") == NULL) {
+		char *ck = nvram_safe_get("clkfreq");
+		char ock[16];
+		sprintf (ock, "%d%", atoi(ck));
+		nvram_set("overclocking", ock);
+	}
 	cprintf("start overclocking\n");
 	start_overclocking();
 	cprintf("done()");
