@@ -130,14 +130,21 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
 	websWrite(wp, "<select name=\"overclocking\">\n");
 
+	char *oclk = nvram_safe_get("overclocking");
+	char dup[64];
+
+	strcpy(dup, oclk);
+	int j;
+	for (j = 0; j < strlen(dup); j++)
+		if (dup[j] == ',')
+			dup[j] = 0;
+	int cclk = atoi(dup);
+	
 	int i = 0;
-	char clock[16];
 
 	while (c[i] != 0) {
-		sprintf(clock, "%d", c[i]);
 		websWrite(wp, "<option value=\"%d\" %s >%d MHz</option>\n",
-			  c[i], nvram_match("overclocking",
-					    clock) ? "selected=\"selected\"" :
+			  c[i], c[i] == cclk ? "selected=\"selected\"" :
 			  "", c[i]);
 		i++;
 	}
