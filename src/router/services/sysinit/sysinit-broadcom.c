@@ -1578,7 +1578,7 @@ void start_overclocking(void)
 			dup[i] = 0;
 	int cclk = atoi(dup);
 
-	if ((cclk < 264 && rev == 2) || (cclk < 150 && rev == 3) || (cclk < 192 && rev == 4)
+	if ((cclk < 252 && rev == 2) || (cclk < 150 && rev == 3) || (cclk < 192 && rev == 4)
 	    || (cclk < 183 && rev == 7)) {
 		cprintf("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
 		return;		// unsupported
