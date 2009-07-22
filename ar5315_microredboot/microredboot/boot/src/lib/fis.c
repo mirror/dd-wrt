@@ -17,6 +17,21 @@ struct fis_image_desc {
 	unsigned long file_cksum;	// Checksum over image data
 };
 
+#define SCANCOUNT 5
+static unsigned int redboot_offset(unsigned int highoffset,
+				   unsigned int erasesize)
+{
+	unsigned int copy = highoffset;
+	int c = SCANCOUNT;
+	while ((c--)>0) {
+		highoffset -= erasesize;
+		unsigned char *p = (unsigned char *)highoffset;
+		if (!strncmp(p, "RedBoot", 7))
+			return highoffset;
+	}
+	return copy - erasesize;
+}
+
 static unsigned int getPartition(char *name)
 {
 	int count = 0;
@@ -36,8 +51,9 @@ static unsigned int getPartition(char *name)
 static unsigned int getLinux(void)
 {
 	int count = 0;
-	unsigned char *p =
-	    (unsigned char *)(flashbase + flashsize - (sectorsize * 2));
+	unsigned int redboot_fis =
+	    redboot_offset(flashbase + flashsize, sectorsize);
+	unsigned char *p = (unsigned char *)redboot_fis;
 	struct fis_image_desc *fis = (struct fis_image_desc *)p;
 	/* search for fis partiton linux*,vmlinux* or kernel */
 	while (fis->name[0] != 0xff && count < 10) {
