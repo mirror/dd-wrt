@@ -109,16 +109,16 @@ void show_ipnetmask(webs_t wp, char *var)
 #ifdef HAVE_OVERCLOCKING
 void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 {
-	int tab = cpu_plltype();
+	int rev = cpu_plltype();
 	unsigned int *c;
 
-	if (tab == 2)
+	if (rev == 2)
 		c = type2_clocks;
-	else if (tab == 3)
+	else if (rev == 3)
 		c = type3_clocks;
-	else if (tab == 4)
+	else if (rev == 4)
 		c = type4_clocks;
-	else if (tab == 7)
+	else if (rev == 7)
 		c = type7_clocks;
 	else {
 		websWrite(wp,
@@ -131,14 +131,8 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<select name=\"overclocking\">\n");
 
 	char *oclk = nvram_safe_get("overclocking");
-	char dup[64];
 
-	strcpy(dup, oclk);
-	int j;
-	for (j = 0; j < strlen(dup); j++)
-		if (dup[j] == ',')
-			dup[j] = 0;
-	int cclk = atoi(dup);
+	int cclk = atoi(oclk);
 	
 	int i = 0;
 
