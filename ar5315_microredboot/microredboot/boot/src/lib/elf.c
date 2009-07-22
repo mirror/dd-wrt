@@ -6,7 +6,6 @@
  * licensed under GPL conditions
  */
 
-
 #include "elf.h"
 
 static unsigned long fis_load_elf_image(unsigned long flash, unsigned long base,
@@ -106,7 +105,7 @@ static unsigned long fis_load_elf_image(unsigned long flash, unsigned long base,
 	if (addr_offset)
 		printf("\nAddress offset = 0x%08X\n", (void *)addr_offset);
 	printf("Entry point: 0x%08X, address range: 0x%08X-0x%08X\n",
-		    (void *)*entry_address, (void *)*load_address,
-		    (void *)*load_address_end);
+	       (void *)*entry_address, (void *)*load_address,
+	       (void *)*load_address_end);
 	return 1;
 }
