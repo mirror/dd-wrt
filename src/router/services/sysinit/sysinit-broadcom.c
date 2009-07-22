@@ -938,7 +938,7 @@ void start_sysinit(void)
 			}
 		}
 		if (nvram_match("clkfreq", "300,150,37")) {
-			nvram_set("clkfreq", "300,133,33");
+			nvram_set("clkfreq", "300,150,33");
 			need_reboot = 1;
 		}
 		break;
@@ -1578,14 +1578,8 @@ void start_overclocking(void)
 			dup[i] = 0;
 	int cclk = atoi(dup);
 
-	if ((cclk < 252 && rev == 2) || (cclk < 150 && rev == 3) || (cclk < 192 && rev == 4)
-	    || (cclk < 183 && rev == 7)) {
-		cprintf("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
-		return;		// unsupported
-	}
-
 	if (clk == cclk) {
-		cprintf("clkfreq identical with new setting\n");
+		cprintf("clkfreq %d MHz identical with new setting\n", clk);
 		return;		// clock already set
 	}
 
@@ -1689,7 +1683,7 @@ void start_overclocking(void)
 		// nvram_set ("clkfreq", "300,150,37");
 		}
 		else {
-		clk2_1 = 133;
+		clk2_1 = 150;
 		clk2_2 = 33;	
 		// nvram_set ("clkfreq", "300,133,33");
 		}
