@@ -32,7 +32,7 @@
 
 #ifdef HAVE_OPENVPN
 
-static void start_openvpnserver(void)
+void start_openvpnserver(void)
 {
 
 	if (nvram_invmatch("openvpn_enable", "1"))
@@ -72,7 +72,7 @@ static void start_openvpnserver(void)
 	return;
 }
 
-static void stop_openvpnserver(void)
+void stop_openvpnserver(void)
 {
 	killall("openvpn", SIGKILL);
 	return;
