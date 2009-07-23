@@ -8,8 +8,8 @@ function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
-	if (F._openvpn_certtype) {
-		F.openvpn_certtype.value = F._openvpn_certtype.checked ? 1 : 0;
+	if (F._openvpncl_certtype) {
+		F.openvpncl_certtype.value = F._openvpncl_certtype.checked ? 1 : 0;
 	}
 	apply(F);
 }
@@ -17,8 +17,8 @@ function to_apply(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
-	if (F._openvpn_certtype) {
-		F.openvpn_certtype.value = F._openvpn_certtype.checked ? 1 : 0;
+	if (F._openvpncl_certtype) {
+		F.openvpncl_certtype.value = F._openvpncl_certtype.checked ? 1 : 0;
 	}
 	applytake(F);
 }
@@ -63,7 +63,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
-							<input type="hidden" name="openvpn_certtype" />
+							<input type="hidden" name="openvpncl_certtype" />
 							
 							
 <h2><% tran("service.pptp_srv"); %></h2>
