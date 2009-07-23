@@ -29,7 +29,7 @@ static unsigned int redboot_offset(unsigned int highoffset,
 		if (!strncmp(p, "RedBoot", 7))
 			return highoffset;
 	}
-	return copy - erasesize;
+	return copy - erasesize; // default offset, if not found
 }
 
 static unsigned int getPartition(char *name)
