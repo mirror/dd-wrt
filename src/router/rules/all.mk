@@ -67,6 +67,10 @@ oldconfig: oldconf
 
 configure: $(obj-configure)
 
+checkout: $(obj-checkout)
+
+update: $(obj-update)
+
 # Default configurations
 .config:
 	cp config/defconfig $@
@@ -185,6 +189,7 @@ include rules/zlib.mk
 include rules/pound.mk
 include rules/radvd.mk
 include rules/nprobe.mk
+include rules/mtr.mk
 # Generic rules
 #
 
