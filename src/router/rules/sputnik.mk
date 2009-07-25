@@ -1,3 +1,11 @@
+sputnik-checkout:
+	rm -rf $(TOP)/sputnik/src
+	svn co svn://svn.dd-wrt.com/private/sputnik/src $(TOP)/sputnik/src
+
+sputnik-update:
+	svn update $(TOP)/sputnik/src
+
+
 sputnik: shared nvram wireless-tools
 	if test -e "sputnik/Makefile"; then make -C sputnik; fi
 	@true
