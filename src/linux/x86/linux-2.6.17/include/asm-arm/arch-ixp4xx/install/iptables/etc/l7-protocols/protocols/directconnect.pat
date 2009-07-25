@@ -1,2 +1,0 @@
-directconnect
-^(\$mynick |\$lock |\$key )
