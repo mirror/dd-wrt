@@ -920,12 +920,12 @@ void start_sysinit(void)
 		if (!nvram_match("no_wled", "1")) {
 		nvram_set("pci/1/1/ledbh1", "135");
 		nvram_set("pci/1/2/ledbh2", "135");
-		nvram_set("wl0_gpio0", "8")
+		nvram_set("wl0_gpio0", "8");
 		}
 		else {
 		nvram_set("pci/1/1/ledbh1", "11");
 		nvram_set("pci/1/2/ledbh2", "11");
-		nvram_set("wl0_gpio0", "0")	
+		nvram_set("wl0_gpio0", "0");
 		}
 		nvram_set("pci/1/1/boardflags2", "0x0400");
 		nvram_set("pci/1/2/boardflags2", "0x0602");
