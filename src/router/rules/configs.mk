@@ -171,11 +171,14 @@ obj-$(CONFIG_WAVESAT) += wavesat
 obj-$(CONFIG_POUND) += pound
 obj-$(CONFIG_SWCONFIG) += swconfig
 obj-$(CONFIG_NPROBE) += nprobe
+obj-$(CONFIG_MTR) += mtr
 
 obj-y+=anchorfree
 obj-y+=ttraff
-#obj-y+=speedtest
+obj-y+=speedtest
 
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
+obj-checkout := $(foreach obj,$(obj-y) $(obj-n),$(obj)-checkout)
+obj-update := $(foreach obj,$(obj-y) $(obj-n),$(obj)-update)
 
