@@ -1,5 +1,13 @@
 include $(TOP)/.config
 
+madwifi-checkout:
+	rm -rf $(TOP)/madwifi.dev/madwifi.dev
+	svn co svn://svn.dd-wrt.com/private/madwifi $(TOP)/madwifi.dev/madwifi.dev
+
+madwifi-update:
+	svn update $(TOP)/madwifi.dev/madwifi.dev
+
+
 ifeq ($(ARCH),mipsel)
 madwifi:
 ifeq ($(CONFIG_DIST),"micro")
@@ -151,6 +159,44 @@ else
 madwifi-install:
 	@true
 endif
+
+
+else 
+ifeq ($(ARCHITECTURE),bwrg1000)
+madwifi:
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=bwrg1000 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=bwrg1000 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)
+else
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ap51 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)
+endif
+
+madwifi-clean:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=bwrg1000 BUS=AHB TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=AHB TOOLPATH=$(LINUXDIR)
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=AHB TOOLPATH=$(LINUXDIR)
+endif
+
+madwifi-install:
+ifneq ($(CONFIG_DEMO),y)
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=bwrg1000 install
+else
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install
+endif
+else
+madwifi-install:
+	@true
+endif
+
+
 else
 ifeq ($(ARCHITECTURE),ls2)
 madwifi:
@@ -185,6 +231,43 @@ else
 madwifi-install:
 	@true
 endif
+
+
+else
+ifeq ($(ARCHITECTURE),bs2)
+madwifi:
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=bs2 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=bs2 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)
+else
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ap51 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)
+endif
+
+madwifi-clean:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=bs2 BUS=AHB TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=AHB TOOLPATH=$(LINUXDIR)
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=AHB TOOLPATH=$(LINUXDIR)
+endif
+
+madwifi-install:
+ifneq ($(CONFIG_DEMO),y)
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=bs2 install
+else
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install
+endif
+else
+madwifi-install:
+	@true
+endif
+
 
 
 else
@@ -343,34 +426,38 @@ endif
 else
 ifeq ($(ARCHITECTURE),ls5)
 madwifi:
-#	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
-ifeq ($(CONFIG_BOESE),y)
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ls5  BUS=AHB   TOOLPATH=$(LINUXDIR)
 	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=ls5 BUS=AHB  BINDIR=$(INSTALLDIR)/madwifi/usr/sbin  TOOLPATH=$(LINUXDIR)
-else
-	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap43-$(MADFLAG)  BUS=AHB   TOOLPATH=$(LINUXDIR)
-	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="$(CONFIG_MADWIFIFLAGS) $(COPTS) -DNEED_PRINTF" TARGET=ap43-$(MADFLAG)elf  TOOLPATH=$(LINUXDIR) BUS=AHB BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
-endif
 
 madwifi-clean:
-#	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
-ifeq ($(CONFIG_BOESE),y)
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ls5  BUS=AHB  TOOLPATH=$(LINUXDIR)
-else
-	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap43-$(MADFLAG) BUS=AHB  TOOLPATH=$(LINUXDIR)
-endif
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean 
 
 madwifi-install:
 ifneq ($(CONFIG_DEMO),y)
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
-#	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
-ifeq ($(CONFIG_BOESE),y)
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ls5 install
 else
-	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap43-$(MADFLAG) install
+madwifi-install:
+	@true
 endif
+
+else
+ifeq ($(ARCHITECTURE),eoc5610)
+madwifi:
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=eoc5610  BUS=AHB   TOOLPATH=$(LINUXDIR)
+	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=eoc5610 BUS=AHB  BINDIR=$(INSTALLDIR)/madwifi/usr/sbin  TOOLPATH=$(LINUXDIR)
+
+madwifi-clean:
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=eoc5610  BUS=AHB  TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean 
+
+madwifi-install:
+ifneq ($(CONFIG_DEMO),y)
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=eoc5610 install
 else
 madwifi-install:
 	@true
@@ -421,6 +508,39 @@ else
 endif
 
 else
+
+ifeq ($(ARCHITECTURE),wrt54g2v11)
+madwifi:
+#	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap61-boese-be-elf  BUS=AHB   TOOLPATH=$(LINUXDIR)
+	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=ap61-boese-be-elf BUS=AHB  BINDIR=$(INSTALLDIR)/madwifi/usr/sbin  TOOLPATH=$(LINUXDIR)
+else
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap61  BUS=AHB   TOOLPATH=$(LINUXDIR)
+	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="$(CONFIG_MADWIFIFLAGS) $(COPTS) -DNEED_PRINTF" TARGET=ap61  TOOLPATH=$(LINUXDIR) BUS=AHB BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
+endif
+
+madwifi-clean:
+#	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap61-boese-be-elf  BUS=AHB  TOOLPATH=$(LINUXDIR)
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap61 BUS=AHB  TOOLPATH=$(LINUXDIR)
+endif
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean 
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+#	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap61-boese-be-elf install
+else
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap61 install
+endif
+
+else
+
 ifeq ($(ARCHITECTURE),dir300)
 madwifi:
 #	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
@@ -464,6 +584,10 @@ madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
 	make -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-be-elf install
+endif
+endif
+endif
+endif
 endif
 endif
 endif
