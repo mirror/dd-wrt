@@ -275,9 +275,9 @@ mvswitch_config_init(struct phy_device *pdev)
 	}
 	msleep(10); /* wait for the status change to settle in */
 
-//		MV_ATUCTL_NO_LEARN |
 	/* set the ATU flags */
 	w16(pdev, MV_SWITCHREG(ATU_CTRL),
+		MV_ATUCTL_NO_LEARN |
 		MV_ATUCTL_ATU_1K |
 		MV_ATUCTL_AGETIME(MV_ATUCTL_AGETIME_MIN) /* minimum without disabling ageing */
 	);
