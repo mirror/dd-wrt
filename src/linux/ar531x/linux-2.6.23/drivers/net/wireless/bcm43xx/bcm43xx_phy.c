@@ -1250,6 +1250,7 @@ static void bcm43xx_phy_initg(struct bcm43xx_private *bcm)
 			bcm43xx_phy_write(bcm, 0x002E, 0x8075);
 		else
 			bcm43xx_phy_write(bcm, 0x002E, 0x807F);
+
 		if (phy->rev < 2)
 			bcm43xx_phy_write(bcm, 0x002F, 0x0101);
 		else
