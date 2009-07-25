@@ -1,3 +1,0 @@
-ifeq (yaffs_fs.o yaffs_guts.o yaffs_mtdif.o yaffs_tagscompat.o yaffs_packedtags2.o yaffs_mtdif2.o yaffs_tagsvalidity.o yaffs_ecc.o,$(strip $(subst $(comma),:,$(LDFLAGS) $(EXTRA_LDFLAGS) $(obj-y))))
-FILES_FLAGS_UP_TO_DATE += yaffs.o
-endif
