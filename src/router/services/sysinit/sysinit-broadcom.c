@@ -916,9 +916,17 @@ void start_sysinit(void)
 	case ROUTER_WRT610N:
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("pci/1/1/ledbh0", "11");
+		nvram_set("pci/1/2/ledbh0", "11");				
+		if (!nvram_match("no_wled", "1")) {
 		nvram_set("pci/1/1/ledbh1", "135");
-		nvram_set("pci/1/2/ledbh0", "11");
 		nvram_set("pci/1/2/ledbh2", "135");
+		nvram_set("wl0_gpio0", "8")
+		}
+		else {
+		nvram_set("pci/1/1/ledbh1", "11");
+		nvram_set("pci/1/2/ledbh2", "11");
+		nvram_set("wl0_gpio0", "0")	
+		}
 		nvram_set("pci/1/1/boardflags2", "0x0400");
 		nvram_set("pci/1/2/boardflags2", "0x0602");
 
@@ -936,10 +944,6 @@ void start_sysinit(void)
 				nvram_set("pci/1/2/macaddr", mac);
 				need_reboot = 1;
 			}
-		}
-		if (nvram_match("clkfreq", "300,150,37")) {
-			nvram_set("clkfreq", "300,150,33");
-			need_reboot = 1;
 		}
 		break;
 
@@ -1676,17 +1680,9 @@ void start_overclocking(void)
 //		break;
 	case 300:
 		clk2 = 120;
-		// nvram_set ("clkfreq", "300,120");
-		if (getRouterBrand() == ROUTER_WRT310N) {
 		clk2_1 = 150;
 		clk2_2 = 37;
 		// nvram_set ("clkfreq", "300,150,37");
-		}
-		else {
-		clk2_1 = 150;
-		clk2_2 = 33;	
-		// nvram_set ("clkfreq", "300,133,33");
-		}
 		break;
 	case 330:
 		clk2_1 = 132;
