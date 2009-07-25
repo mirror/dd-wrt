@@ -430,17 +430,17 @@ endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER -DNOMAIN
 #OBJS += crc.o register.c
-REGOBJS = register.c crc.o
+REGOBJS = $(TOP)/register/register.c $(TOP)/register/crc.o
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-REGOBJS2 = ../shared/register.c
+REGOBJS2 = $(TOP)/register/register_check.c
 endif
 endif
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 #OBJS += crc.o register.c
-REGOBJS = register.c crc.o
+REGOBJS = $(TOP)/register/register.c $(TOP)/register/crc.o
 endif
 #ifeq ($(HSIAB_SUPPORT),1)
 #CFLAGS += -I$(TOP)/hsiab
