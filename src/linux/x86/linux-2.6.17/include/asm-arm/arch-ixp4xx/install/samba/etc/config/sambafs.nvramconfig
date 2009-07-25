@@ -1,5 +1,0 @@
- "samba_mount"  "SambaFS Mount"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
- "samba_share"  "SambaFS Share" "NULL" "FALSE" "0"
- "samba_user"   "SambaFS User" "NULL" "FALSE" "0"
- "samba_password"  "SambaFS Password"  "NULL"  "FALSE" "0" 
- "samba_script"  "SambaFS StartScript"  "NULL"  "FALSE" "0"

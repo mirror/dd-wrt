@@ -1,4 +1,0 @@
- "rflow_enable"   "RFLOW Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
- "rflow_ip"  "RFLOW IP" "MERGEIPADDRS" "FALSE" "0"
- "rflow_port"  "RFLOW PORT"  "NULL"  "FALSE" "0"
- "rflow_if" "RFLOW IF" "NULL" "FALSE" "0" 

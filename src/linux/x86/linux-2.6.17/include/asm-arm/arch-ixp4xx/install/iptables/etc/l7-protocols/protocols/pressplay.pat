@@ -1,2 +1,0 @@
-pressplay
-user-agent: nsplayer
