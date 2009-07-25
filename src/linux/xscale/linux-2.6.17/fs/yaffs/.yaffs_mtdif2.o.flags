@@ -1,3 +1,0 @@
-ifeq (-D__KERNEL__ -I/home/dd-wrt/mikrotik/linux/linux-2.4.32/include -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -fomit-frame-pointer -I /home/dd-wrt/mikrotik/linux/linux-2.4.32/include/asm/gcc -G 0 -mno-abicalls -fno-pic -pipe -fno-unit-at-a-time -finline-limit=100000 -mabi=32 -march=mips32 -Wa:-32 -Wa:-march=mips32 -Wa:-mips32 -Wa:--trap -DMODULE -mlong-calls -DCONFIG_YAFFS_YAFFS1 -DCONFIG_YAFFS_YAFFS2 -nostdinc -iwithprefix include,$(strip $(subst $(comma),:,$(CFLAGS) $(EXTRA_CFLAGS_nostdinc) $(CFLAGS_yaffs_mtdif2.o))))
-FILES_FLAGS_UP_TO_DATE += yaffs_mtdif2.o
-endif
