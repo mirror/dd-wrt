@@ -160,8 +160,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 		goto tx_error;
 	}
 
-	max_headroom = (LL_RESERVED_SPACE(tdev)+sizeof(struct iphdr)
-			+ ETHERIP_HLEN);
+	max_headroom = (LL_RESERVED_SPACE(tdev)+sizeof(struct iphdr) + ETHERIP_HLEN);
 
 	if (skb_headroom(skb) < max_headroom || skb_cloned(skb)
 			|| skb_shared(skb)) {
