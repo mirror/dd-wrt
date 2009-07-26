@@ -158,7 +158,7 @@ static struct mtd_partition dir_parts[] = {
         { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "nvram", offset: 0x3d0000, size: 0x10000, },
-        { name: "FIS Directory", offset: 0x3e0000, size: 0x10000, },
+        { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
         { name: "board_config", offset: 0x3f0000, size: 0x10000, },
         { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
         { name: NULL, },
@@ -670,6 +670,22 @@ struct fis_image_desc {
     unsigned long file_cksum;    // Checksum over image data
 };
 
+#define SCANCOUNT 5
+static unsigned int redboot_offset(unsigned int highoffset,unsigned int erasesize)
+{
+unsigned int copy=highoffset;
+int c=SCANCOUNT;
+while((c--)>0)
+{
+highoffset-=erasesize;
+unsigned char *p=(unsigned char *)highoffset;
+if (!strncmp(p,"RedBoot",7))
+    {
+    return highoffset;
+    }
+}
+return copy-erasesize;
+}
 
 static int spiflash_probe(struct platform_device *pdev)
 {
@@ -750,7 +766,7 @@ static int spiflash_probe(struct platform_device *pdev)
 		
 		dir_parts[6].offset = mtd->size-mtd->erasesize; // board config
 		dir_parts[6].size = mtd->erasesize;
-		dir_parts[5].offset = dir_parts[6].offset-mtd->erasesize; //fis config
+		dir_parts[5].offset = redboot_offset(0xa8000000+mtd->size,mtd->erasesize)-0xa8000000; //dir_parts[6].offset-mtd->erasesize; //fis config
 		dir_parts[5].size = mtd->erasesize;
 		dir_parts[4].offset = dir_parts[5].offset-mtd->erasesize; //nvram
 		dir_parts[4].size = mtd->erasesize;

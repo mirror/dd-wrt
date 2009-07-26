@@ -841,7 +841,7 @@ config MIPS_L1_CACHE_SHIFT
 	default "4" if MACH_DECSTATION
 	default "7" if SGI_IP27 || SNI_RM
 	default "4" if PMC_MSP4200_EVAL
-	default "5"
+	default "4"
 
 config HAVE_STD_PC_SERIAL_PORT
 	bool
