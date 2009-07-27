@@ -176,9 +176,16 @@ obj-$(CONFIG_MTR) += mtr
 obj-y+=anchorfree
 obj-y+=ttraff
 obj-y+=speedtest
-
+obj-y+=configs
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
 obj-checkout := $(foreach obj,$(obj-y) $(obj-n),$(obj)-checkout)
 obj-update := $(foreach obj,$(obj-y) $(obj-n),$(obj)-update)
+
+configs-checkout:
+	rm -rf $(TOP)/configs
+	svn co svn://svn.dd-wrt.com/private/configs $(TOP)/configs
+
+configs-update:
+	svn update $(TOP)/configs
 
