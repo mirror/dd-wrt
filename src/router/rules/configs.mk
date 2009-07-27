@@ -266,5 +266,8 @@ configs-update:
 configs-clean:
 	@true
 
+configs-install:
+	@true
+
 configs:
 	@true
