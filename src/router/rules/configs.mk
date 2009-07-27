@@ -266,5 +266,5 @@ configs-update:
 configs-clean:
 	@true
 
-configs-all:
+configs:
 	@true
