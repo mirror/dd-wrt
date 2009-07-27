@@ -263,3 +263,8 @@ configs-update:
 	svn update $(TOP)/kromo/dd-wrt/trimax
 	svn update $(TOP)/kromo/dd-wrt/wts
 
+configs-clean:
+	@true
+
+configs-all:
+	@true
