@@ -105,9 +105,10 @@ ifeq ($(CONFIG_CORENET),y)
 	cp -a corenet/help $(INSTALLDIR)/www
 	cp corenet/style.css $(INSTALLDIR)/www/style/corenet
 	cp corenet/images/* $(INSTALLDIR)/www/images
+	cp corenet/*.asp $(INSTALLDIR)/www/
 	cp corenet/common.js $(INSTALLDIR)/www
 	cp ../bisi/*.asp $(INSTALLDIR)/www
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	cp -f corenet/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
 endif
 ifeq ($(CONFIG_XIOCOM),y)
 	mkdir $(INSTALLDIR)/www/style/xiocom
