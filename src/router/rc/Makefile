@@ -141,6 +141,9 @@ endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif
+ifeq ($(CONFIG_MAKSAT_BLANK),y)
+CFLAGS += -DHAVE_MAKSAT_BLANK
+endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
 endif
