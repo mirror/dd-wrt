@@ -1449,7 +1449,14 @@ void start_lan(void)
 				continue;
 
 			// set proper mtu
+
+			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
+				eval("ifconfig", realname, "down");	//fixup for some ethernet drivers
+			}
 			eval("ifconfig", realname, "mtu", getMTU(realname));
+			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
+				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
+			}
 
 			/*
 			 * Set the logical bridge address to that of the first interface 
@@ -1567,8 +1574,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2644,8 +2651,8 @@ void start_wan(int status)
 					sleep(1);
 				}
 				char *peer = inet_ntop(AF_INET,
-						       &sin_addr(&ifr.
-								 ifr_dstaddr),
+						       &sin_addr
+						       (&ifr.ifr_dstaddr),
 						       client,
 						       16);
 
