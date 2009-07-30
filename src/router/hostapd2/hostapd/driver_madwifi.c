@@ -294,6 +294,7 @@ madwifi_configure_wpa(struct madwifi_driver_data *drv)
 	return 0;
 }
 
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
 
 /**
  * Add an interface.
@@ -426,7 +427,7 @@ static int madwifi_set_sta_vlan(void *priv, const u8 *addr, const char *ifname, 
 	return ret;
 }
 
-
+#endif
 static int
 madwifi_set_iface_flags(void *priv, int dev_up)
 {
@@ -1499,7 +1500,9 @@ const struct wpa_driver_ops wpa_driver_madwifi_ops = {
 	.set_countermeasures	= madwifi_set_countermeasures,
 	.sta_clear_stats        = madwifi_sta_clear_stats,
 	.commit			= madwifi_commit,
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
 	.if_add			= madwifi_if_add,
 	.if_remove		= madwifi_if_remove,
 	.set_sta_vlan		= madwifi_set_sta_vlan
+#endif
 };
