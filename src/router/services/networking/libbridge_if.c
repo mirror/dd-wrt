@@ -193,6 +193,9 @@ int br_add_interface(const char *bridge, const char *dev)
 
 	sprintf(netmask, "%s_netmask", dev);
 
+	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
+		eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
+	}
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
@@ -201,8 +204,7 @@ int br_add_interface(const char *bridge, const char *dev)
 	} else
 		eval("ifconfig", dev, "mtu", getBridgeMTU(bridge));
 
-	if (strncmp(dev, "ath", 3) != 0) { // this is not an ethernet driver
-		eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
+	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "up");
 	}
 
