@@ -5369,10 +5369,38 @@ void ej_get_br1_netmask(webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_MADWIFI
 
+int get_distance(void)
+{
+	char path[64];
+	int ifcount, distance = 0;
+
+	strcpy(path, nvram_safe_get("wifi_display"));
+	sscanf(path, "ath%d", &ifcount);
+	sprintf(path, "/proc/sys/dev/wifi%d/distance", ifcount);
+	FILE *in = fopen(path, "rb");
+
+	if (in != NULL) {
+		fscanf(in, "%d", &distance);
+		fclose(in);
+	}
+
+/*	sprintf(path, "/proc/sys/dev/wifi%d/timingoffset", ifcount);
+	in = fopen(path, "rb");
+
+	if (in != NULL) {
+		fscanf(in, "%d", &tim);
+		fclose(in);
+	}
+	ack -= tim * 2;
+*/
+	return distance;
+}
+
+
 int get_acktiming(void)
 {
 	char path[64];
-	int ifcount, ack = 0, tim = 0;
+	int ifcount, ack = 0;
 
 	strcpy(path, nvram_safe_get("wifi_display"));
 	sscanf(path, "ath%d", &ifcount);
@@ -5384,7 +5412,7 @@ int get_acktiming(void)
 		fclose(in);
 	}
 
-	sprintf(path, "/proc/sys/dev/wifi%d/timingoffset", ifcount);
+/*	sprintf(path, "/proc/sys/dev/wifi%d/timingoffset", ifcount);
 	in = fopen(path, "rb");
 
 	if (in != NULL) {
@@ -5392,7 +5420,7 @@ int get_acktiming(void)
 		fclose(in);
 	}
 	ack -= tim * 2;
-
+*/
 	return ack;
 }
 
@@ -5402,7 +5430,7 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"label\">%s</div>\n",
 		  live_translate("share.acktiming"));
 	int ack = get_acktiming();
-	int distance = ((ack - 3) / 2) * 300;
+	int distance = get_distance();
 
 	websWrite(wp, "<span id=\"wl_ack\">%d&#181;s (%dm)</span> &nbsp;\n",
 		  ack, distance);
