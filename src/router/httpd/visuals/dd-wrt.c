@@ -3152,7 +3152,7 @@ static void show_netmode(webs_t wp, char *prefix)
 #ifdef HAVE_TW6600
 		if (!strcmp(prefix, "ath1"))
 #endif
-#ifndef HAVE_LS5
+#if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
 				  nvram_match(wl_net_mode,
@@ -3163,7 +3163,7 @@ static void show_netmode(webs_t wp, char *prefix)
 #ifdef HAVE_WHRAG108
 	if (!strcmp(prefix, "ath1"))
 #endif
-#ifndef HAVE_LS5
+#if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 #ifndef HAVE_MADWIFI
 		if (!nvram_nmatch("a", "%s_bandlist", prefix))
 #endif
