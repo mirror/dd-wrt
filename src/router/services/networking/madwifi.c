@@ -66,18 +66,8 @@ static int setsysctrl(const char *dev, const char *control, u_long value)
 
 static void setdistance(char *device, int distance, int chanbw)
 {
-
-	if (distance >= 0) {
-		int slottime = (distance / 300) + ((distance % 300) ? 1 : 0);
-		int acktimeout = slottime * 2 + 3;
-		int ctstimeout = slottime * 2 + 3;
-
-		// printf("Setting distance on interface %s to %i meters\n", device,
-		// distance);
-		setsysctrl(device, "slottime", slottime);
-		setsysctrl(device, "acktimeout", acktimeout);
-		setsysctrl(device, "ctstimeout", ctstimeout);
-	}
+	if (distance >= 0)
+		setsysctrl(device, "distance", distance);
 }
 
 // returns the number of installed atheros devices/cards
@@ -174,6 +164,35 @@ static int getMaxPower(char *ifname)
 	return max;
 }
 
+static void
+setupKey(char *prefix)
+{
+	char akm[16];
+
+	sprintf(akm, "%s_akm", prefix);
+	if (nvram_match(akm, "wep")) {
+		char key[16];
+		int cnt = 1;
+		int i;
+		char bul[8];
+		char *authmode = nvram_nget("%s_authmode", prefix);
+		for (i = 1; i < 5; i++) {
+			char *athkey = nvram_nget("%s_key%d", prefix, i);
+
+			if (athkey != NULL && strlen(athkey) > 0) {
+				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey);	// setup wep
+			}
+		}
+		sysprintf("iwconfig %s key [%s]", prefix,
+			  nvram_nget("%s_key", prefix));
+		if (!strcmp(authmode, "shared"))
+			sysprintf("iwpriv %s authmode 2", prefix);
+		else
+			sysprintf("iwpriv %s authmode 1", prefix);
+	}
+
+}
+
 /*
  * MADWIFI Encryption Setup 
  */
@@ -202,24 +221,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	sprintf(wmode, "%s_mode", prefix);
 	sprintf(bridged, "%s_bridged", prefix);
 	if (nvram_match(akm, "wep")) {
-		char key[16];
-		int cnt = 1;
-		int i;
-		char bul[8];
-		char *authmode = nvram_nget("%s_authmode", prefix);
-		for (i = 1; i < 5; i++) {
-			char *athkey = nvram_nget("%s_key%d", prefix, i);
-
-			if (athkey != NULL && strlen(athkey) > 0) {
-				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey);	// setup wep
-			}
-		}
-		sysprintf("iwconfig %s key [%s]", prefix,
-			  nvram_nget("%s_key", prefix));
-		if (!strcmp(authmode, "shared"))
-			sysprintf("iwpriv %s authmode 2", prefix);
-		else
-			sysprintf("iwpriv %s authmode 1", prefix);
+		/* ignore */
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
 		char fstr[32];
@@ -510,27 +512,7 @@ void setupHostAP(char *prefix, int iswan)
 	}
 	// wep key support
 	if (nvram_match(akm, "wep")) {
-		int cnt = 1;
-		int i;
-		char bul[8];
-		char *authmode = nvram_nget("%s_authmode", prefix);
-
-		for (i = 1; i < 5; i++) {
-			char *athkey = nvram_nget("%s_key%d", prefix, i);
-
-			if (athkey != NULL && strlen(athkey) > 0) {
-				sprintf(bul, "[%d]", cnt++);
-				sysprintf("iwconfig %s key %s %s", prefix, bul,
-					  athkey);
-			}
-		}
-		sprintf(bul, "[%s]", nvram_nget("%s_key", prefix));
-		sysprintf("iwconfig %s key %s", prefix, bul);
-
-		if (!strcmp(authmode, "shared"))
-			sysprintf("iwpriv %s authmode 2", prefix);
-		else
-			sysprintf("iwpriv %s authmode 1", prefix);
+		/* ignore */
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
 		   nvram_match(akm, "psk psk2") ||
@@ -798,7 +780,6 @@ static void set_netmode(char *wif, char *dev, char *use)
 		} else
 #endif
 		{
-			sysprintf("iwpriv %s turbo 0", use);
 			sysprintf("iwpriv %s xr 0", use);
 			if (!strcmp(netmode, "mixed"))
 				sysprintf("iwpriv %s mode 0", use);
@@ -830,7 +811,6 @@ static void set_netmode(char *wif, char *dev, char *use)
 			if (!strcmp(netmode, "a-only")) {
 				sysprintf("iwpriv %s mode 5", use);
 			}
-			sysprintf("iwpriv %s turbo 1", use);
 		}
 	} else {
 		char *ext = nvram_get(xr);
@@ -900,7 +880,6 @@ void setMacFilter(char *iface)
 	char *next;
 	char var[32];
 
-	sysprintf("ifconfig %s down", iface);
 	sysprintf("iwpriv %s maccmd 3", iface);
 
 	char nvvar[32];
@@ -1488,9 +1467,33 @@ static void configure_single(int count)
 	// @todo ifup
 	// netconfig
 
+	/*
+	 * set_rate (dev);
+	 */
 	set_rate(dev, dev);
 
 	set_netmode(wif, dev, dev);
+
+	setupKey(dev);
+	if (vifs != NULL && strlen(vifs) > 0) {
+		foreach(var, vifs, next) {
+			setMacFilter(var);
+			setupKey(var);
+		}
+	}
+
+
+	apm = nvram_default_get(wl, "ap");
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
+		cprintf("set channel\n");
+		char *ch = nvram_default_get(channel, "0");
+
+		if (strcmp(ch, "0") == 0) {
+			sysprintf("iwconfig %s channel 0", dev);
+		} else {
+			sysprintf("iwconfig %s freq %sM", dev, ch);
+		}
+	}
 
 	if (strcmp(apm, "sta")) {
 		char bridged[32];
@@ -1518,34 +1521,11 @@ static void configure_single(int count)
 		}
 
 	}
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
-		setupHostAP(dev, 0);
-	else
-		setupSupplicant(dev, NULL);
-
-	// setup encryption
-
-	vifs = nvram_safe_get(wifivifs);
-	if (vifs != NULL)
-		foreach(var, vifs, next) {
-		sprintf(mode, "%s_mode", var);
-		char *vapm = nvram_default_get(mode, "ap");
-		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta")
-		    && strcmp(vapm, "wet"))
-			setupHostAP(var, 0);
-		else
-			setupSupplicant(var, NULL);
-		}
-	/*
-	 * set_rate (dev);
-	 */
 
 	// vif netconfig
 	vifs = nvram_safe_get(wifivifs);
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
-			setMacFilter(var);
-
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_default_get(mode, "ap");
 
@@ -1557,21 +1537,6 @@ static void configure_single(int count)
 					sysprintf("ifconfig %s 0.0.0.0 up",
 						  var);
 					br_add_interface(getBridge(var), var);
-					if (!strcmp(apm, "sta")
-					    || !strcmp(apm, "wdssta")
-					    || !strcmp(apm, "wet"))
-						sysprintf
-						    ("ifconfig %s 0.0.0.0 down",
-						     var);
-					else {
-						sysprintf
-						    ("ifconfig %s 0.0.0.0 down",
-						     var);
-						sleep(1);
-						sysprintf
-						    ("ifconfig %s 0.0.0.0 up",
-						     var);
-					}
 				} else {
 					char ip[32];
 					char mask[32];
@@ -1584,41 +1549,30 @@ static void configure_single(int count)
 					    ("ifconfig %s %s netmask %s up",
 					     var, nvram_safe_get(ip),
 					     nvram_safe_get(mask));
-					if (!strcmp(apm, "sta")
-					    || !strcmp(apm, "wdssta")
-					    || !strcmp(apm, "wet"))
-						sysprintf("ifconfig %s down",
-							  var);
-					else {
-						sysprintf("ifconfig %s down",
-							  var);
-						sleep(1);
-						sysprintf
-						    ("ifconfig %s %s netmask %s up",
-						     var, nvram_safe_get(ip),
-						     nvram_safe_get(mask));
-					}
 				}
 			}
 		}
 	}
 
-	apm = nvram_default_get(wl, "ap");
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
-		cprintf("set channel\n");
-		char *ch = nvram_default_get(channel, "0");
+	// setup encryption
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
+		setupHostAP(dev, 0);
+	else
+		setupSupplicant(dev, NULL);
 
-		if (strcmp(ch, "0") == 0) {
-			sysprintf("iwconfig %s channel 0", dev);
-		} else {
-			char freq[64];
-
-			sysprintf("iwconfig %s freq %sM", dev, ch);
-			sysprintf("ifconfig %s down", dev);
-			sleep(1);
-			sysprintf("ifconfig %s up", dev);
+	vifs = nvram_safe_get(wifivifs);
+	if (vifs != NULL)
+		foreach(var, vifs, next) {
+		sprintf(mode, "%s_mode", var);
+		char *vapm = nvram_default_get(mode, "ap");
+		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta")
+		    && strcmp(vapm, "wet"))
+			setupHostAP(var, 0);
+		else
+			setupSupplicant(var, NULL);
 		}
-	}
+
+
 	for (s = 1; s <= 10; s++) {
 		char wdsvarname[32] = { 0 };
 		char wdsdevname[32] = { 0 };
@@ -1662,8 +1616,6 @@ static void configure_single(int count)
 		}
 	}
 
-	sysprintf("iwconfig %s txpower %ddBm", dev, newpower);
-
 	setMacFilter(dev);
 }
 
@@ -1698,8 +1650,6 @@ void start_vifs(void)
 						     "up");
 						br_add_interface(getBridge(var),
 								 var);
-						eval("ifconfig", var, "0.0.0.0",
-						     "up");
 					} else {
 						char ip[32];
 						char mask[32];
