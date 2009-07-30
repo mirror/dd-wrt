@@ -652,23 +652,57 @@ else
 	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin -m 100000000 $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.lzma 
 endif
 	cp -f tools/nvram $(ARCH)-uclibc 
+ifeq ($(CONFIG_LS2),y)
 	-tools/ubnt/src/mkfwimage -v LS2.ar2316.DD-WRT -o mips-uclibc/LS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+endif
+ifeq ($(CONFIG_BS2),y)
 	-tools/ubnt/src/mkfwimage -v BS2.ar2316.DD-WRT -o mips-uclibc/BS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+endif
+ifeq ($(CONFIG_PICO2),y)
 	-tools/ubnt/src/mkfwimage -v pS2.ar2316.DD-WRT -o mips-uclibc/pS2.dd-wrt.bin -i tools/ubnt/ps2-ddwrt.txt
+endif
+ifeq ($(CONFIG_MS2),y)
 	-tools/ubnt/src/mkfwimage -v MS2.ar2316.DD-WRT -o mips-uclibc/MS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+endif
+ifeq ($(CONFIG_LC2),y)
 	-tools/ubnt/src/mkfwimage -v LC2.ar2316.DD-WRT -o mips-uclibc/LC2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+endif
+ifeq ($(CONFIG_BH2),y)
 	-tools/ubnt/src/mkfwimage -v BH2.ar2316.DD-WRT -o mips-uclibc/BH2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+endif
+ifeq ($(CONFIG_NS2),y)
 	-tools/ubnt/src/mkfwimage -v NS2.ar2316.DD-WRT -o mips-uclibc/NS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+endif
+ifeq ($(CONFIG_PS2),y)
 	-tools/ubnt/src/mkfwimage -v PS2.ar2316.DD-WRT -o mips-uclibc/PS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+endif
+ifeq ($(CONFIG_LS5),y)
 	-tools/ubnt/src/mkfwimage -v LS5.ar2313.DD-WRT -o mips-uclibc/LS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_MS5),y)
 	-tools/ubnt/src/mkfwimage -v MS5.ar2313.DD-WRT -o mips-uclibc/MS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_WS5),y)
 	-tools/ubnt/src/mkfwimage -v WS5.ar2313.DD-WRT -o mips-uclibc/WS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_PS5),y)
 	-tools/ubnt/src/mkfwimage -v PS5.ar2313.DD-WRT -o mips-uclibc/PS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_NS5),y)
 	-tools/ubnt/src/mkfwimage -v NS5.ar2313.DD-WRT -o mips-uclibc/NS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_NS3),y)
 	-tools/ubnt/src/mkfwimage -v NS3.ar2313.DD-WRT -o mips-uclibc/NS3.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_BS5),y)
 	-tools/ubnt/src/mkfwimage -v BS5.ar2313.DD-WRT -o mips-uclibc/BS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_PICO5),y)
 	-tools/ubnt/src/mkfwimage -v pS5.ar2313.DD-WRT -o mips-uclibc/pS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_LC5),y)
 	-tools/ubnt/src/mkfwimage -v LC5.ar2313.DD-WRT -o mips-uclibc/LC5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
 include rules/all.mk
 
 .PHONY: all clean distclean mrproper install package
