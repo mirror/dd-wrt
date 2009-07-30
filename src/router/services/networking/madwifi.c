@@ -437,8 +437,6 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		else
 			eval("wpa_supplicant", background, "-Dmadwifi", psk,
 			     "-c", fstr);
-	} else {
-		sysprintf("iwconfig %s key off", prefix);
 	}
 
 }
@@ -1126,7 +1124,7 @@ static void configure_single(int count)
 	setsysctrl(wif, "csma", atoi(nvram_default_get(wl_csma, "1")));
 	setsysctrl(wif, "intmit", atoi(nvram_default_get(wl_intmit, "-1")));
 	setsysctrl(wif, "noise_immunity",
-		   atoi(nvram_default_get(wl_noise_immunity, "-1")));
+		   atoi(nvram_default_get(wl_noise_immunity, "0")));
 	setsysctrl(wif, "ofdm_weak_det",
 		   atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
 
@@ -1368,7 +1366,8 @@ static void configure_single(int count)
 		else
 			sysprintf("iwpriv %s wdssep 0", var);
 
-		sysprintf("iwpriv %s hostroaming 0", var);
+		// removed hostroaming 0 due to excessive tests and driver research
+		// sysprintf("iwpriv %s hostroaming 0", var);
 		cnt++;
 		}
 
@@ -1381,7 +1380,8 @@ static void configure_single(int count)
 	sprintf(isolate, "%s_ap_isolate", dev);
 	if (nvram_default_match(isolate, "1", "0"))
 		sysprintf("iwpriv %s ap_bridge 0", dev);
-	sysprintf("iwpriv %s hostroaming 0", dev);
+	// removed hostroaming 0 due to excessive tests and driver research
+	// sysprintf("iwpriv %s hostroaming 0", dev);
 
 	sprintf(ssid, "ath%d_ssid", count);
 	sprintf(broadcast, "ath%d_closed", count);
@@ -1474,6 +1474,7 @@ static void configure_single(int count)
 
 	set_netmode(wif, dev, dev);
 
+	setMacFilter(dev);
 	setupKey(dev);
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
@@ -1615,8 +1616,6 @@ static void configure_single(int count)
 			sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
 		}
 	}
-
-	setMacFilter(dev);
 }
 
 void start_vifs(void)
