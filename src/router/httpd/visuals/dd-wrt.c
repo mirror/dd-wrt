@@ -3634,10 +3634,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		showRadio(wp, "wl_adv.label11", ssid);
 #ifdef HAVE_MADWIFI
 
-		if (nvram_nmatch("ap", "%s_mode", prefix)
-		    || nvram_nmatch("wdsap", "%s_mode", prefix)
-		    || nvram_nmatch("infra", "%s_mode", prefix)) {
-			sprintf(power, "%s_maxassoc", prefix);
+		if (nvram_nmatch("ap", "%s_mode", var)
+		    || nvram_nmatch("wdsap", "%s_mode", var)
+		    || nvram_nmatch("infra", "%s_mode", var)) {
+			sprintf(power, "%s_maxassoc", var);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp,
 				  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n");
@@ -3650,7 +3650,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "</div>\n");
 		}
 
-		sprintf(power, "%s_mtikie", prefix);
+		sprintf(power, "%s_mtikie", var);
 		nvram_default_get(power, "0");
 		showRadio(wp, "wl_basic.mtikie", power);
 #endif
