@@ -1107,7 +1107,7 @@ static void configure_single(int count)
 			setdistance(wif, distance, atoi(chanbw));	// sets the receiver
 			// sensitivity
 		} else {
-			setsysctrl(wif, "acktimeout", 350);
+			setsysctrl(wif, "distance", 100000);
 			setsysctrl(wif, "dynack_count", 20);
 		}
 	}
