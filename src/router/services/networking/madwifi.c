@@ -164,8 +164,7 @@ static int getMaxPower(char *ifname)
 	return max;
 }
 
-static void
-setupKey(char *prefix)
+static void setupKey(char *prefix)
 {
 	char akm[16];
 
@@ -1029,8 +1028,9 @@ static void configure_single(int count)
 		sysprintf("wlanconfig %s create wlandev %s wlanmode ap", dev,
 			  wif);
 	else
-		sysprintf("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon", dev,
-			  wif);
+		sysprintf
+		    ("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
+		     dev, wif);
 
 	if (strlen(primary) == 0)
 		strcpy(primary, dev);
@@ -1483,7 +1483,6 @@ static void configure_single(int count)
 		}
 	}
 
-
 	apm = nvram_default_get(wl, "ap");
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
 		cprintf("set channel\n");
@@ -1554,7 +1553,6 @@ static void configure_single(int count)
 			}
 		}
 	}
-
 	// setup encryption
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
 		setupHostAP(dev, 0);
@@ -1572,7 +1570,6 @@ static void configure_single(int count)
 		else
 			setupSupplicant(var, NULL);
 		}
-
 
 	for (s = 1; s <= 10; s++) {
 		char wdsvarname[32] = { 0 };
