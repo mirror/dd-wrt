@@ -5440,7 +5440,7 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	int ack = get_acktiming();
-	int distance = ((ack - 3) / 2) * 300;
+	int distance = get_distance();
 
 	websWrite(wp, "%d&#181;s (%dm)", ack, distance);
 }
