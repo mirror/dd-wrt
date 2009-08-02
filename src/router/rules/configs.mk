@@ -207,7 +207,6 @@ configs-checkout:
 	rm -rf $(TOP)/kromo/dd-wrt/maksat_coral
 	rm -rf $(TOP)/kromo/dd-wrt/nmn
 	rm -rf $(TOP)/kromo/dd-wrt/powernoc
-	rm -rf $(TOP)/kromo/dd-wrt/sputnik
 	rm -rf $(TOP)/kromo/dd-wrt/telcom
 	rm -rf $(TOP)/kromo/dd-wrt/thom
 	rm -rf $(TOP)/kromo/dd-wrt/trimax
@@ -230,7 +229,6 @@ configs-checkout:
 	svn co svn://svn.dd-wrt.com/private/designs/maksat_coral $(TOP)/kromo/dd-wrt/maksat_coral
 	svn co svn://svn.dd-wrt.com/private/designs/nmn $(TOP)/kromo/dd-wrt/nmn
 	svn co svn://svn.dd-wrt.com/private/designs/powernoc $(TOP)/kromo/dd-wrt/powernoc
-	svn co svn://svn.dd-wrt.com/private/designs/sputnik $(TOP)/kromo/dd-wrt/sputnik
 	svn co svn://svn.dd-wrt.com/private/designs/telcom $(TOP)/kromo/dd-wrt/telcom
 	svn co svn://svn.dd-wrt.com/private/designs/thom $(TOP)/kromo/dd-wrt/thom
 	svn co svn://svn.dd-wrt.com/private/designs/trimax $(TOP)/kromo/dd-wrt/trimax
@@ -257,7 +255,6 @@ configs-update:
 	svn update $(TOP)/kromo/dd-wrt/maksat_coral
 	svn update $(TOP)/kromo/dd-wrt/nmn
 	svn update $(TOP)/kromo/dd-wrt/powernoc
-	svn update $(TOP)/kromo/dd-wrt/sputnik
 	svn update $(TOP)/kromo/dd-wrt/telcom
 	svn update $(TOP)/kromo/dd-wrt/thom
 	svn update $(TOP)/kromo/dd-wrt/trimax
