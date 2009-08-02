@@ -430,17 +430,18 @@ endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER -DNOMAIN
 #OBJS += crc.o register.c
-REGOBJS = $(TOP)/register/register.c $(TOP)/register/crc.o
+REGOBJS = $(TOP)/register/register.o
+REGOBJS2 = $(TOP)/register/register_vis.o
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-REGOBJS2 = $(TOP)/register/register_check.c
+#REGOBJS2 = $(TOP)/register/register_check.c
 endif
 endif
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 #OBJS += crc.o register.c
-REGOBJS = $(TOP)/register/register.c $(TOP)/register/crc.o
+REGOBJS = $(TOP)/register/register.o
 endif
 #ifeq ($(HSIAB_SUPPORT),1)
 #CFLAGS += -I$(TOP)/hsiab
@@ -695,7 +696,7 @@ endif
 cert:
 	./gencert.sh
 	
-httpd: $(REGOBJS2) cgi.o ej.o httpd.o broadcom.o \
+httpd: cgi.o ej.o httpd.o broadcom.o \
        $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
 	gcc -o write_web write_web.c
 ifeq ($(CONFIG_XYSSL),y)
@@ -709,7 +710,7 @@ endif
 validate.so: validators.o webs.o wepkey.o $(REGOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
 
-visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o $(REGOBJS) $(VISOBJS)
+visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o $(VISOBJS) $(REGOBJS2)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 	
 	
