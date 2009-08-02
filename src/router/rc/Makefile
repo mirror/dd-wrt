@@ -21,7 +21,7 @@ LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L
 CFLAGS += -I$(LINUXDIR)
 else
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils  -ldl
-CFLAGS += -I$(LINUXDIR)
+CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils 
 
 ifneq ($(ARCHITECTURE),lsx)
 CFLAGS += -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
@@ -30,7 +30,7 @@ endif
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o servicemanager.o crc.o event.o
+OBJS := rc.o servicemanager.o event.o
 #http.o stats.o
 OBJS += watchdog.o services.o mtd_main.o
 
