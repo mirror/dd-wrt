@@ -13,6 +13,6 @@ httpd: nvram shared hsiab matrixssl www wireless-tools
 
 httpd-clean:
 	$(MAKE) -C httpd clean
-	rm -f $(TOP)/register/*.o
+	-rm -f $(TOP)/register/*.o
 
 
