@@ -591,6 +591,10 @@ void start_wlconf(void)
 	int c;
 
 	for (c = 0; c < cnt; c++) {
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+		if (cnt > 1)
+			eval("wl", "-i", get_wl_instance_name(c), "interference", "0");
+#endif
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", c))
 			wlconf_up(get_wl_instance_name(c));
 	}
