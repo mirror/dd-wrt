@@ -840,7 +840,7 @@ void start_sysinit(void)
 			{"wl0gpio0", "11", 0},
 			{"wl0gpio1", "11", 0},
 			{"wl0gpio2", "11", 0},
-			{"wl0gpio3", "130", 0},	//7 is right value, but causes Oops. Set to 130 (act only, no on/off) or 3 (no act - just radio on/off)
+			{"wl0gpio3", "7", 0},
 			{"sromrev", "2", 0},
 			{0, 0, 0}
 		};
@@ -916,17 +916,9 @@ void start_sysinit(void)
 	case ROUTER_WRT610N:
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("pci/1/1/ledbh0", "11");
-		nvram_set("pci/1/2/ledbh0", "11");				
-		if (!nvram_match("no_wled", "1")) {
 		nvram_set("pci/1/1/ledbh1", "135");
-		nvram_set("pci/1/2/ledbh2", "135");
-		nvram_set("wl0_gpio0", "8");
-		}
-		else {
-		nvram_set("pci/1/1/ledbh1", "11");
-		nvram_set("pci/1/2/ledbh2", "11");
-		nvram_set("wl0_gpio0", "0");
-		}
+		nvram_set("pci/1/2/ledbh0", "11");
+		nvram_set("pci/1/2/ledbh2", "135");				
 		nvram_set("pci/1/1/boardflags2", "0x0400");
 		nvram_set("pci/1/2/boardflags2", "0x0602");
 
