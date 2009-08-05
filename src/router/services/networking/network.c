@@ -343,6 +343,10 @@ void start_dhcpc(char *wan_ifname)
 	symlink("/sbin/rc", "/tmp/udhcpc");
 
 	nvram_set("wan_get_dns", "");
+	nvram_set("wan_gateway", "");
+	nvram_set("wan_ipaddr", "");
+	nvram_set("wan_netmask", "");
+	nvram_set("wan_get_domain", "");
 	killall("udhcpc", SIGTERM);
 
 	char *dhcp_argv[] = { "udhcpc",
