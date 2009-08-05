@@ -166,7 +166,7 @@
 				       /*
 				        * PORT: 5 4 3 x 2 x 1 x 0 
 				        */
-#ifdef HAVE_WGT624
+#if defined(HAVE_WGT624) || defined(HAVE_NP25G)
 #define ADM_SW_LAN_MAP_TAB      0x0155	/* 1 1 1 0 1 0 1 0 0 */
 #define ADM_SW_WAN_MAP_TAB      0x0180	/* 1 0 0 0 0 0 0 0 1 */
 #define ADM_SW_ALLPORT_MAP_TAB  0x01D5	/* 1 1 1 0 1 0 1 0 1 */
@@ -213,7 +213,7 @@
  * 
  * The phy switch settings in the mvPhyInfo table are set accordingly.
  */
-#ifdef HAVE_WGT624
+#if defined(HAVE_WGT624)  || defined(HAVE_NP25G)
 #define ADM_WAN_PORT          4
 #define ADM_IS_LAN_PORT(port) ((port) >= 0 && (port) < 4)
 #define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
@@ -247,7 +247,7 @@ typedef struct {
 /*
  * Per-PHY information, indexed by PHY unit number.
  */
-#ifdef HAVE_WGT624
+#if defined(HAVE_WGT624) || defined(HAVE_NP25G)
 admPhyInfo_t admPhyInfo[] = {
 	{TRUE,			/* phy port 0 -- LAN port */
 	 FALSE,
