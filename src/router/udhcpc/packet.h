@@ -4,6 +4,8 @@
 #include <netinet/udp.h>
 #include <netinet/ip.h>
 
+#define DHCP_OPTIONS_BUFSIZE  308
+#define CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS 924
 struct dhcpMessage {
 	uint8_t op;
 	uint8_t htype;
@@ -20,7 +22,8 @@ struct dhcpMessage {
 	uint8_t sname[64];
 	uint8_t file[128];
 	uint32_t cookie;
-	uint8_t options[308]; /* 312 - cookie */
+	uint8_t options[DHCP_OPTIONS_BUFSIZE + CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS];
+//	uint8_t options[308]; /* 312 - cookie */
 } __attribute__((packed));
 
 struct udp_dhcp_packet {
