@@ -130,7 +130,7 @@ int raw_packet(struct dhcpMessage *payload, uint32_t source_ip, int source_port,
 	memset(&dest, 0, sizeof(dest));
 	memset(&packet, 0, sizeof(packet));
 	
-	int messagelen = sizeof(struct dhcpMessage) - 308 + end_option(payload->options);
+	int messagelen = sizeof(struct dhcpMessage) - (308 + CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS) + end_option(payload->options);
 	int sub = sizeof(struct dhcpMessage) - messagelen;
 	dest.sll_family = AF_PACKET;
 	dest.sll_protocol = htons(ETH_P_IP);
@@ -197,7 +197,7 @@ int kernel_packet(struct dhcpMessage *payload, uint32_t source_ip, int source_po
 
 	if (connect(fd, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
 		return -1;
-	int messagelen = sizeof(struct dhcpMessage) - 308 + end_option(payload->options) + 1;
+	int messagelen = sizeof(struct dhcpMessage) - (308+CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS) + end_option(payload->options) + 1;
 
 	result = write(fd, payload, messagelen);
 	close(fd);
