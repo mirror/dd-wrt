@@ -518,6 +518,11 @@ ifeq ($(CONFIG_MERAKI),y)
 	dd if=$(ARCH)-uclibc/lzma_vmlinus.m of=$(ARCH)-uclibc/lzma_vmlinus.meraki bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/lzma_vmlinus.meraki
 endif
+ifeq ($(CONFIG_NP25G),y)
+	gzip -9 $(ARCH)-uclibc/lzma_vmlinus.m
+	dd if=$(ARCH)-uclibc/lzma_vmlinus.m.gz of=$(ARCH)-uclibc/lzma_vmlinus.np25g.gz bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/lzma_vmlinus.np25g.gz
+endif
 ifeq ($(CONFIG_DIR300),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.dir300 bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.dir300
@@ -634,6 +639,9 @@ endif
 ifeq ($(CONFIG_MR3202A),y)
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/mr3202a-firmware.bin $(ARCH)-uclibc/vmlinux.mr3202a
 endif
+ifeq ($(CONFIG_NP25G),y)
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/np25g-firmware.bin $(ARCH)-uclibc/lzma_vmlinus.np25g.gz
+endif
 ifeq ($(CONFIG_MR3201A),y)
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/mr3201a-firmware.bin $(ARCH)-uclibc/vmlinux.mr3201a
 endif
@@ -702,6 +710,12 @@ ifeq ($(CONFIG_PICO5),y)
 endif
 ifeq ($(CONFIG_LC5),y)
 	-tools/ubnt/src/mkfwimage -v LC5.ar2313.DD-WRT -o mips-uclibc/LC5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+endif
+ifeq ($(CONFIG_NP25G),y)
+	-tools/compex/mkmylofw -B NP25G \
+		-p0x20000:0x3d0000:alp:0x80041000 \
+		-b0x20000:0x3d0000::$(ARCH)-uclibc/vmlinux.mr3202a \
+		$(ARCH)-uclibc/compex-firmware-np25g.bin
 endif
 include rules/all.mk
 
