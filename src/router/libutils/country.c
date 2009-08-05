@@ -601,7 +601,7 @@ enum {
  * an 8 bit regdomain value to the individual unitary reg domains
  */
 typedef unsigned int u_int32_t;
-typedef unsigned long int u_int64_t;
+typedef unsigned long long u_int64_t;
 typedef unsigned short u_int16_t;
 typedef unsigned char u_int8_t;
 typedef u_int16_t HAL_REG_DOMAIN;	/* regulatory domain code */
