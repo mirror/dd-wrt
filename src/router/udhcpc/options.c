@@ -32,7 +32,7 @@ struct dhcp_option dhcp_options[] = {
 	{"ipttl",	OPTION_U8,				0x17},
 	{"mtu",		OPTION_U16,				0x1a},
 	{"broadcast",	OPTION_IP | OPTION_REQ,			0x1c},
-	{"static_routes",OPTION_IP | OPTION_LIST,		0x21},
+//	{"static_routes",OPTION_IP_PAIR | OPTION_LIST,		0x21},
 	{"nisdomain",	OPTION_STRING | OPTION_REQ,		0x28},
 	{"nissrv",	OPTION_IP | OPTION_LIST | OPTION_REQ,	0x29},
 	{"ntpsrv",	OPTION_IP | OPTION_LIST | OPTION_REQ,	0x2a},
