@@ -2289,6 +2289,7 @@ struct mime_handler mime_handlers[] = {
 	 do_auth, 0},
 	{"tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
 	 NULL, 1},
+	{"*", "application/octet-stream", no_cache, NULL, do_file, do_auth, 1},
 	// for ddm
 	{NULL, NULL, NULL, NULL, NULL, NULL, 0}
 };
