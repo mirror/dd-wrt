@@ -1,4 +1,4 @@
-quagga-configure:
+quagga-configure: ncurses
 ifeq ($(CONFIG_QUAGGA_STABLE),y)
 	cd quagga-stable/readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr CFLAGS="$(COPTS)"
 	$(MAKE) -C quagga-stable/readline
