@@ -1,9 +1,6 @@
-	<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - EoIP Tunnel</title>
+<% do_pagehead("eoip.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + eoip.titl;
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
