@@ -733,7 +733,7 @@ static void set_rate(char *dev, char *priv)
 	}
 	if (atol(mr) > 0)
 		sysprintf("iwpriv %s maxrate %s", priv, mr);
-	if (atoi(mr) > 0)
+	if (atoi(r) > 0)
 		sysprintf("iwpriv %s minrate %s", priv, r);
 }
 
