@@ -123,6 +123,19 @@ addEvent(window, "unload", function() {
 							<% show_olsrd(); %>
 							<% nvram_else_selmatch("wk_mode","ospf","","<!--"); %>
 							<fieldset>
+								<legend><% tran("route.zebra_legend"); %></legend>
+								<div class="setting">
+								    <div class="label"><% tran("route.zebra_legend"); %></div>
+								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
+								    <script type="text/javascript">
+								    //<![CDATA[
+								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
+								    document.getElementById("zebra_conf").value = zebra_conf;
+								    //]]>
+								    </script>
+								</div>
+							</fieldset><br />
+							<fieldset>
 								<legend><% tran("route.ospf_legend"); %></legend>
 								<div class="setting">
 								    <div class="label"><% tran("route.ospf_conf"); %></div>
@@ -136,7 +149,20 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset>
 							<% nvram_else_selmatch("wk_mode","ospf","","-->"); %>
-							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>							
+							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
+							<fieldset>
+								<legend><% tran("route.zebra_legend"); %></legend>
+								<div class="setting">
+								    <div class="label"><% tran("route.zebra_legend"); %></div>
+								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
+								    <script type="text/javascript">
+								    //<![CDATA[
+								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
+								    document.getElementById("zebra_conf").value = zebra_conf;
+								    //]]>
+								    </script>
+								</div>
+							</fieldset><br />						
 							<fieldset>
 								<legend><% tran("route.bgp_legend"); %></legend>
 								<div class="setting">
@@ -153,7 +179,21 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br/>							
 							<% nvram_else_selmatch("wk_mode","bgp","","-->"); %>
-							
+							<% nvram_else_selmatch("wk_mode", "router", "<!--"); %>
+							<fieldset>
+								<legend><% tran("route.zebra_legend"); %></legend>
+								<div class="setting">
+								    <div class="label"><% tran("route.zebra_legend"); %></div>
+								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
+								    <script type="text/javascript">
+								    //<![CDATA[
+								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
+								    document.getElementById("zebra_conf").value = zebra_conf;
+								    //]]>
+								    </script>
+								</div>
+							</fieldset><br />						
+							<% nvram_else_selmatch("wk_mode", "router", "-->"); %>							
 							<% nvram_selmatch("wk_mode", "gateway", "<!--"); %>
 							<fieldset>
 								<legend><% tran("route.gateway_legend"); %></legend>
