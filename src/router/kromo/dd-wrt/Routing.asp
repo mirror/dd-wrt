@@ -134,6 +134,12 @@ addEvent(window, "unload", function() {
 								    //]]>
 								    </script>
 								</div>
+							<legend><% tran("route.zebra_log"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("route.zebra_log"); %></div>
+									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="tebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
+								</div>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("route.ospf_legend"); %></legend>
@@ -161,6 +167,12 @@ addEvent(window, "unload", function() {
 								    document.getElementById("zebra_conf").value = zebra_conf;
 								    //]]>
 								    </script>
+								</div>
+								<legend><% tran("route.zebra_log"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("route.zebra_log"); %></div>
+									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="tebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />						
 							<fieldset>
@@ -191,6 +203,12 @@ addEvent(window, "unload", function() {
 								    document.getElementById("zebra_conf").value = zebra_conf;
 								    //]]>
 								    </script>
+								</div>
+								<legend><% tran("route.zebra_log"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("route.zebra_log"); %></div>
+									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="tebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />						
 							<% nvram_else_selmatch("wk_mode", "router", "-->"); %>							
