@@ -123,24 +123,6 @@ addEvent(window, "unload", function() {
 							<% show_olsrd(); %>
 							<% nvram_else_selmatch("wk_mode","ospf","","<!--"); %>
 							<fieldset>
-								<legend><% tran("route.zebra_legend"); %></legend>
-								<div class="setting">
-								    <div class="label"><% tran("route.zebra_legend"); %></div>
-								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
-								    <script type="text/javascript">
-								    //<![CDATA[
-								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
-								    document.getElementById("zebra_conf").value = zebra_conf;
-								    //]]>
-								    </script>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("route.zebra_log"); %></div>
-									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="tebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
-								</div>
-							</fieldset><br />
-							<fieldset>
 								<legend><% tran("route.ospf_legend"); %></legend>
 								<div class="setting">
 								    <div class="label"><% tran("route.ospf_conf"); %></div>
@@ -152,11 +134,6 @@ addEvent(window, "unload", function() {
 								    //]]>
 								    </script>
 								</div>
-							</fieldset>
-							<% nvram_else_selmatch("wk_mode","ospf","","-->"); %>
-							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
-							<fieldset>
-								<legend><% tran("route.zebra_legend"); %></legend>
 								<div class="setting">
 								    <div class="label"><% tran("route.zebra_legend"); %></div>
 								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
@@ -170,9 +147,11 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_log"); %></div>
 									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="tebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
-							</fieldset><br />						
+							</fieldset><br />
+							<% nvram_else_selmatch("wk_mode","ospf","","-->"); %>
+							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>					
 							<fieldset>
 								<legend><% tran("route.bgp_legend"); %></legend>
 								<div class="setting">
@@ -186,6 +165,21 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("route.bgp_as"); %></div>
 									<input size="10" name="routing_bgp_neighbor_as" value="<% nvram_get("routing_bgp_neighbor_as"); %>" />
+								</div>
+								<div class="setting">
+								    <div class="label"><% tran("route.zebra_legend"); %></div>
+								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
+								    <script type="text/javascript">
+								    //<![CDATA[
+								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
+								    document.getElementById("zebra_conf").value = zebra_conf;
+								    //]]>
+								    </script>
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("route.zebra_log"); %></div>
+									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br/>							
 							<% nvram_else_selmatch("wk_mode","bgp","","-->"); %>
@@ -205,7 +199,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_log"); %></div>
 									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="tebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />						
 							<% nvram_else_selmatch("wk_mode", "router","","-->"); %>							
