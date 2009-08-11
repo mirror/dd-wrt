@@ -1127,6 +1127,7 @@ route.olsrd_lqlvl="Link Quality Level";
 route.olsrd_hysteresis="Hysteresis";
 route.olsrd_newiface="New Interface";
 route.zebra_legend="Zebra Configuration";
+route.zebra_log="Zebra Log";
 route.ospf_mod="OSPF Router";
 route.ospf_legend="OSPF Routing";
 route.ospf_conf="OSPF Configuration";
