@@ -156,6 +156,7 @@
 #define ROUTER_WAP54G_V1 0x2210
 
 // Linksys WAP54G v2 (BCM4712 cpu, no switch, fccid: Linksys Q87-WAP54GV2)
+// Linksys WRE54G v1 (BCM4712 cpu, no ethernet port, fccid: Linksys Q87-WRE54G)
 #define ROUTER_WAP54G_V2 0x2310
 
 // ViewSonic WAPBR-100 (BCM4712 cpu, no switch, fccid: Viewsonic GSS-VS10407)
