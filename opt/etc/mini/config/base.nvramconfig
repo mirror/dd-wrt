@@ -121,6 +121,8 @@
  "wl1_wds1_enable" "WDS separate bridge Enabled"  "SAVEWDS"  "FALSE" "0"
  "wl1_wds1_hwaddr" "WDS MAC"  "WDS"   "FALSE" "0"
  "bird_ospf" "Routing"  "NULL"  "TRUE" "0"
+ "zebra_copt"  "Zebra options"  "NULL"  "TRUE" "0"
+ "zebra_log"  "Zebra log"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "snmpd_enable"  "Snmpd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "snmpd_syslocation"  "Snmpd"  "NULL"  "TRUE" "0"
  "snmpd_syscontact"  "Snmpd"  "NULL"  "TRUE" "0"
