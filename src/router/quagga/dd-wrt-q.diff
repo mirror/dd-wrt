@@ -1,0 +1,100 @@
+diff -urN quagga-0.99.10/vtysh/vtysh.c quagga/vtysh/vtysh.c
+--- quagga-0.99.10/vtysh/vtysh.c	2007-10-15 00:32:22.000000000 +0200
++++ quagga/vtysh/vtysh.c	2009-02-24 20:22:02.000000000 +0100
+@@ -1814,7 +1814,8 @@
+ 	  
+   for (i = 0; i < VTYSH_INDEX_MAX; i++)
+     ret = vtysh_client_execute (&vtysh_client[i], line, stdout);
+-  
++
++  system("startservice quagga_writememory");  
+   fprintf (stdout,"[OK]\n");
+ 
+   return ret;
+@@ -2036,7 +2037,7 @@
+   execute_command ("telnet", 2, argv[0], argv[1]);
+   return CMD_SUCCESS;
+ }
+-
++/*
+ DEFUN (vtysh_ssh,
+        vtysh_ssh_cmd,
+        "ssh WORD",
+@@ -2046,8 +2047,8 @@
+   execute_command ("ssh", 1, argv[0], NULL);
+   return CMD_SUCCESS;
+ }
+-
+-DEFUN (vtysh_start_shell,
++*/
++/*DEFUN (vtysh_start_shell,
+        vtysh_start_shell_cmd,
+        "start-shell",
+        "Start UNIX shell\n")
+@@ -2055,8 +2056,8 @@
+   execute_command ("sh", 0, NULL, NULL);
+   return CMD_SUCCESS;
+ }
+-
+-DEFUN (vtysh_start_bash,
++*/
++/*DEFUN (vtysh_start_bash,
+        vtysh_start_bash_cmd,
+        "start-shell bash",
+        "Start UNIX shell\n"
+@@ -2064,8 +2065,8 @@
+ {
+   execute_command ("bash", 0, NULL, NULL);
+   return CMD_SUCCESS;
+-}
+-
++}*/
++/*
+ DEFUN (vtysh_start_zsh,
+        vtysh_start_zsh_cmd,
+        "start-shell zsh",
+@@ -2075,7 +2076,7 @@
+   execute_command ("zsh", 0, NULL, NULL);
+   return CMD_SUCCESS;
+ }
+-
++*/
+ static void
+ vtysh_install_default (enum node_type node)
+ {
+@@ -2393,7 +2394,6 @@
+ #endif
+   install_element (VIEW_NODE, &vtysh_telnet_cmd);
+   install_element (VIEW_NODE, &vtysh_telnet_port_cmd);
+-  install_element (VIEW_NODE, &vtysh_ssh_cmd);
+   install_element (ENABLE_NODE, &vtysh_ping_cmd);
+   install_element (ENABLE_NODE, &vtysh_ping_ip_cmd);
+   install_element (ENABLE_NODE, &vtysh_traceroute_cmd);
+@@ -2404,10 +2404,6 @@
+ #endif
+   install_element (ENABLE_NODE, &vtysh_telnet_cmd);
+   install_element (ENABLE_NODE, &vtysh_telnet_port_cmd);
+-  install_element (ENABLE_NODE, &vtysh_ssh_cmd);
+-  install_element (ENABLE_NODE, &vtysh_start_shell_cmd);
+-  install_element (ENABLE_NODE, &vtysh_start_bash_cmd);
+-  install_element (ENABLE_NODE, &vtysh_start_zsh_cmd);
+   
+   install_element (VIEW_NODE, &vtysh_show_memory_cmd);
+   install_element (ENABLE_NODE, &vtysh_show_memory_cmd);
+diff -urN quagga-0.99.10/vtysh/vtysh_main.c quagga/vtysh/vtysh_main.c
+--- quagga-0.99.10/vtysh/vtysh_main.c	2006-10-16 01:35:58.000000000 +0200
++++ quagga/vtysh/vtysh_main.c	2009-02-24 20:22:02.000000000 +0100
+@@ -207,6 +207,13 @@
+   struct cmd_rec *tail = NULL;
+   int echo_command = 0;
+ 
++   system("nvram set wk_mode=\"ospf bgp rip router\"");
++   system("nvram set zebra_copt=1");
++   system("nvram set ospfd_copt=1");
++   system("nvram set ripd_copt=1");
++   system("nvram set bgpd_copt=1");
++   system("stopservice zebra");
++   system("startservice zebra");
+   /* Preserve name of myself. */
+   progname = ((p = strrchr (argv[0], '/')) ? ++p : argv[0]);
+ 
