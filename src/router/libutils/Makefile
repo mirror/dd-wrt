@@ -318,6 +318,9 @@ endif
 ifeq ($(CONFIG_RS),y)
   CFLAGS += -DHAVE_RS
 endif
+ifeq ($(CONFIG_AP83),y)
+  CFLAGS += -DHAVE_AP83
+endif
 ifeq ($(CONFIG_LSX),y)
   CFLAGS += -DHAVE_LSX
 endif

@@ -831,6 +831,9 @@ int internal_getRouterBrand()
 	setRouter("Ubiquiti RouterStation");
 #endif
 	return ROUTER_BOARD_PB42;
+#elif HAVE_AP83
+	setRouter("Atheros AP83");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
 	setRouter("Ubiquiti Litestation-SR71");
 	return ROUTER_BOARD_PB42;
