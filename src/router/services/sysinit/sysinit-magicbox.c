@@ -75,6 +75,7 @@ void start_sysinit(void)
 	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
 	// fix for linux kernel 2.6
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mkdir", "/tmp/www");
