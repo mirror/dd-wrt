@@ -490,8 +490,12 @@ CFLAGS += -DWILLIAM=1
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
+else
 CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h
+endif
+
 OBJS += ../wireless-tools/libiw.so.29
 endif
 
