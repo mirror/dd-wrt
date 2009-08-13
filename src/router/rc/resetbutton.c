@@ -704,13 +704,15 @@ int main(int argc, char *argv[])
 {
 
 	brand = getRouterBrand();
-#if !defined(HAVE_NOP8670) && !defined(HAVE_MI424WR)
+#ifndef HAVE_MI424WR
+#if !defined(HAVE_NOP8670)
 	if ((brand & 0x000f) == 0x000f)
 #endif
 	{
 		puts("sorry, your unit does not support resetbutton feature\n");
 		return 0;
 	}
+#endif
 #ifndef HAVE_NOP8670
 #ifdef HAVE_MAGICBOX
 	init_gpio();
