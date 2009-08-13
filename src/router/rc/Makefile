@@ -150,6 +150,9 @@ endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
 endif
+ifeq ($(CONFIG_CORENET),y)
+CFLAGS += -DHAVE_CORENET
+endif
 
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
