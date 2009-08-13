@@ -133,8 +133,8 @@ void ixEthDBPortInit(IxEthDBPortId portID)
     portInfo->agingEnabled       = FALSE;
     portInfo->enabled            = FALSE;
     portInfo->macAddressUploaded = FALSE;
-    portInfo->maxRxFrameSize     = IX_ETHDB_DEFAULT_FRAME_SIZE;
-    portInfo->maxTxFrameSize     = IX_ETHDB_DEFAULT_FRAME_SIZE;
+    portInfo->maxRxFrameSize     = IX_ETHDB_MAX_NPE_FRAME_SIZE;
+    portInfo->maxTxFrameSize     = IX_ETHDB_MAX_NPE_FRAME_SIZE;
     portInfo->wifiRecordsCount   = 1;
     portInfo->fwRecordsCount     = 1;
 
@@ -485,7 +485,7 @@ IxEthDBStatus ixEthDBPortFrameLengthsUpdate(IxEthDBPortId portID)
 IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBFilteringPortMaximumRxFrameSizeSet(IxEthDBPortId portID, UINT32 maximumRxFrameSize)
 {
-    IX_ETH_DB_CHECK_PORT_EXISTS(portID);
+/*    IX_ETH_DB_CHECK_PORT_EXISTS(portID);
 
     IX_ETH_DB_CHECK_SINGLE_NPE(portID);
 
@@ -505,7 +505,7 @@ IxEthDBStatus ixEthDBFilteringPortMaximumRxFrameSizeSet(IxEthDBPortId portID, UI
     else
     {
         return IX_ETH_DB_NO_PERMISSION;
-    }
+    }*/
 
     /* update internal structure */
     ixEthDBPortInfo[portID].maxRxFrameSize = maximumRxFrameSize;
