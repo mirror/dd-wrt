@@ -81,6 +81,9 @@ endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
 endif
+ifeq ($(CONFIG_MI424WR),y)
+CFLAGS += -DHAVE_MI424WR
+endif
 ifeq ($(CONFIG_XIOCOM),y)
   CFLAGS += -DHAVE_XIOCOM
 endif
