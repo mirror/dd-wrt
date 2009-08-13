@@ -482,6 +482,9 @@ int internal_getRouterBrand()
 #elif HAVE_GEMTEK
 	setRouter("SuperGerry");
 	return ROUTER_SUPERGERRY;
+#elif HAVE_MI424WR
+	setRouter("Actiontec MI424WR");
+	return ROUTER_BOARD_GATEWORX_GW2345;
 #elif HAVE_TONZE
 	setRouter("Tonze AP-425");
 	return ROUTER_BOARD_GATEWORX;

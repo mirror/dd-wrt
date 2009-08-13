@@ -234,6 +234,8 @@ int getbuttonstate()
 	ret = read_bit(13);
 #elif HAVE_WG302
 	ret = read_bit(3);
+#elif HAVE_MI424WR
+	ret = read_bit(10);
 #elif HAVE_CAMBRIA
 	ret = read_bit(20);
 #else
@@ -702,7 +704,7 @@ int main(int argc, char *argv[])
 {
 
 	brand = getRouterBrand();
-#ifndef HAVE_NOP8670
+#if !defined(HAVE_NOP8670) && !defined(HAVE_MI424WR)
 	if ((brand & 0x000f) == 0x000f)
 #endif
 	{
