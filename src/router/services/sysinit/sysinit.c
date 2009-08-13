@@ -277,7 +277,7 @@ void start_restore_defaults(void)
 		{0, 0, 0}
 	};
 #elif HAVE_GATEWORX
-#if defined(HAVE_XIOCOM) || defined(HAVE_MI242WR)
+#if defined(HAVE_XIOCOM) || defined(HAVE_MI424WR)
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "ixp1 ath0 ath1 ath2 ath3",
