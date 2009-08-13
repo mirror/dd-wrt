@@ -628,8 +628,13 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_RT2880;
 #endif
 #elif HAVE_X86
+#ifdef HAVE_CORENET
+	setRouter("CORENET X86i");
+	return ROUTER_BOARD_X86;
+#else
 	setRouter("Generic X86");
 	return ROUTER_BOARD_X86;
+#endif
 #elif HAVE_XSCALE
 	setRouter("NewMedia Dual A/B/G");
 	return ROUTER_BOARD_XSCALE;
