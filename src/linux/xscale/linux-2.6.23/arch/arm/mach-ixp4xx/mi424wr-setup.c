@@ -50,6 +50,23 @@
 #define MI424WR_KSSPI_CLOCK		2
 #define MI424WR_KSSPI_RXD		3
 
+
+static struct ixp4xx_spi_pins ixdp425_spi_gpio_pins = {
+	.spis_pin       = MI424WR_KSSPI_SELECT,
+	.spic_pin       = MI424WR_KSSPI_CLOCK,
+	.spid_pin       = MI424WR_KSSPI_TXD,
+	.spiq_pin       = MI424WR_KSSPI_RXD
+};
+
+static struct platform_device ixdp425_spi_controller = {
+    .name               = "IXP4XX-SPI",
+	.id                 = 0,
+	.dev                = {
+		.platform_data  = &ixdp425_spi_gpio_pins,
+	},
+	.num_resources      = 0
+};
+
 /*
  * The "reset" button is wired to GPIO 10.
  * The GPIO is brought "low" when the button is pushed.
@@ -188,6 +205,7 @@ static void mi424wr_latch_set_led(u8 bit, enum led_brightness value)
 static struct platform_device *mi424wr_devices[] __initdata = {
 	&mi424wr_uart_device,
 	&mi424wr_flash,
+	&ixdp425_spi_controller,
 };
 
 static void __init mi424wr_init(void)

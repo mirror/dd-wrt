@@ -160,6 +160,9 @@ static int hss_coexist = 1;	  /* default : HSS coexist disabled */
 #elif  defined(CONFIG_TONZE)
 static int no_phy_scan = 0;       /* default : do phy discovery */
 static int hss_coexist = 0;	  /* default : HSS coexist disabled */
+#elif  defined(CONFIG_MI424WR)
+static int no_phy_scan = 0;       /* default : do phy discovery */
+static int hss_coexist = 0;	  /* default : HSS coexist disabled */
 #elif  defined(CONFIG_ARCH_ADI_COYOTE_WRT300N)
 static int no_phy_scan = 0;       /* default : do phy discovery */
 static int hss_coexist = 0;	  /* default : HSS coexist disabled */
@@ -181,7 +184,7 @@ static int dev_max_count = 1; /* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
       || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_CAMBRIA) || defined (CONFIG_TONZE) || defined (CONFIG_MACH_KIXRP435) \
       || defined (CONFIG_MACH_PRONGHORNMETRO) \
-      || defined (CONFIG_MACH_PRONGHORN)
+      || defined (CONFIG_MACH_PRONGHORN) || defined (CONFIG_MACH_MI424WR)
 
 static int dev_max_count = 2; /* only NPEB and NPEC */
 #elif defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
@@ -719,7 +722,7 @@ static long portIdPhyIndexMap[] =
  *
  * See also function phy_init() in this file
  */
-static phy_cfg_t default_phy_cfg[] =
+static phy_cfg_t default_phy_cfg[32] =
 {
 //#if defined(CONFIG_ARCH_ADI_COYOTE)
 //    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: NO link */
@@ -3154,11 +3157,15 @@ static int phy_init(void)
     }
 
     /* Module parameter */
-    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1()) 
+    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1())  
     { 
 	/* Use hardcoded phy addresses */
 	num_phys_to_set = (sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
+    }else if (machine_is_mi424wr())
+    {
+	num_phys_to_set = 5;    
     }
+    
     else
     {
 	/* Update the hardcoded values with discovered parameters 
@@ -4428,6 +4435,19 @@ static int __init ixp400_eth_init(void)
 	phyAddresses[1]=0x3;
 	default_phy_cfg[0].linkMonitor=FALSE;
 	default_phy_cfg[1].linkMonitor=TRUE;
+	}
+    if (machine_is_mi424wr())
+	{
+	phyAddresses[0]=17;
+	phyAddresses[1]=1;
+	phyAddresses[2]=2;
+	phyAddresses[3]=3;
+	phyAddresses[4]=4;
+	default_phy_cfg[0].linkMonitor=FALSE;
+	default_phy_cfg[1].linkMonitor=TRUE;
+	default_phy_cfg[2].linkMonitor=FALSE;
+	default_phy_cfg[3].linkMonitor=FALSE;
+	default_phy_cfg[4].linkMonitor=FALSE;
 	}
     if (machine_is_wg302v1())
 	{
