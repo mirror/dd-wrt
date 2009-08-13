@@ -186,8 +186,11 @@
 #define ROUTER_NETGEAR_WNR834B 0x2a17
 
 // swapped phy definition and Kendin switch
+#ifdef HAVE_MI424WR
+#define ROUTER_BOARD_GATEWORX_GW2345 0x2b0a
+#else
 #define ROUTER_BOARD_GATEWORX_GW2345 0x2b0f
-
+#endif
 // Linksys WRT54G3G (BCM4712 cpu, 5325E switch, PCMCIA slot, fccid: Linksys
 // Q87-WRT54G3G)
 #define ROUTER_WRT54G3G 0x2c16
