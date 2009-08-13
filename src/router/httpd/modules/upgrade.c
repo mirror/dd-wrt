@@ -226,6 +226,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	if (nvram_match("DD_BOARD", "Cambria GW2350")
 	    || nvram_match("DD_BOARD2", "Cambria GW2350"))
 		eval("fischecksum");
+	if (nvram_match("DD_BOARD", "Actiontec MI424WR"))
+		eval("fischecksum");
 
 	if (url)
 		return eval("write", url, "linux");
