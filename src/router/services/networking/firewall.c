@@ -1208,6 +1208,16 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 		if (contains(var1,'-')) {
 		char *end = var1;
 		char *start = strsep(&end, "-");
+		if (!contains(start,'.') || !contains(end,'.'))
+		    {
+		    //convert old style 
+		    char newstart[32];
+		    sprintf(newstart,"%s%s",lan_cclass,start);
+		    start = newstart;
+		    char newend[32];
+		    sprintf(newend,"%s%s",lan_cclass,end);
+		    end = newend;
+		    }
 			if (!strcmp(start,"0.0.0.0") && !strcmp(end,"0.0.0.0"))
 			    continue;
 			// if(a1 == 0) /* from 1 */
