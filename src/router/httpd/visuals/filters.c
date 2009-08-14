@@ -77,28 +77,48 @@ char *filter_ip_get(char *type, int which)
 			if (temp == 6) {
 				end = word;
 				start = strsep(&end, "-");
-				static char sip1[4],sip2[4],sip3[4],sip4[4];
-				int isip1,isip2,isip3,isip4;
-				if (sscanf(start,"%d.%d.%d.%d",&isip1,&isip2,&isip3,&isip4)!=4)
-				    {
-				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&isip1,&isip2,&isip3);
-				    sscanf(start,"%d",&isip4);
-				    }
-				sprintf(sip1,"%d",isip1);
-				sprintf(sip2,"%d",isip2);
-				sprintf(sip3,"%d",isip3);
-				sprintf(sip4,"%d",isip4);
-				static char eip1[4],eip2[4],eip3[4],eip4[4];
-				int ieip1,ieip2,ieip3,ieip4;
-				if (sscanf(end,"%d.%d.%d.%d",&ieip1,&ieip2,&ieip3,&ieip4)!=4)
-				    {
-				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&ieip1,&ieip2,&ieip3);
-				    sscanf(start,"%d",&ieip4);
-				    }
-				sprintf(eip1,"%d",ieip1);
-				sprintf(eip2,"%d",ieip2);
-				sprintf(eip3,"%d",ieip3);
-				sprintf(eip4,"%d",ieip4);
+				static char sip1[4], sip2[4], sip3[4], sip4[4];
+				int isip1, isip2, isip3, isip4;
+				if (sscanf
+				    (start, "%d.%d.%d.%d", &isip1, &isip2,
+				     &isip3, &isip4) != 4) {
+					sscanf(start, "%d", &isip4);
+					if (isip4 != 0)
+						sscanf(nvram_safe_get
+						       ("lan_ipaddr"),
+						       "%d.%d.%d", &isip1,
+						       &isip2, &isip3);
+					else {
+						isip1 = 0;
+						isip2 = 0;
+						isip3 = 0;
+					}
+				}
+				sprintf(sip1, "%d", isip1);
+				sprintf(sip2, "%d", isip2);
+				sprintf(sip3, "%d", isip3);
+				sprintf(sip4, "%d", isip4);
+				static char eip1[4], eip2[4], eip3[4], eip4[4];
+				int ieip1, ieip2, ieip3, ieip4;
+				if (sscanf
+				    (end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3,
+				     &ieip4) != 4) {
+					sscanf(start, "%d", &ieip4);
+					if (ieip4 != 0)
+						sscanf(nvram_safe_get
+						       ("lan_ipaddr"),
+						       "%d.%d.%d", &ieip1,
+						       &ieip2, &ieip3);
+					else {
+						ieip1 = 0;
+						ieip2 = 0;
+						ieip3 = 0;
+					}
+				}
+				sprintf(eip1, "%d", ieip1);
+				sprintf(eip2, "%d", ieip2);
+				sprintf(eip3, "%d", ieip3);
+				sprintf(eip4, "%d", ieip4);
 				if (!strcmp(type, "ip_range0_0"))
 					return sip1;
 				if (!strcmp(type, "ip_range0_1"))
@@ -121,28 +141,48 @@ char *filter_ip_get(char *type, int which)
 				end = word;
 				start = strsep(&end, "-");
 
-				static char sip1[4],sip2[4],sip3[4],sip4[4];
-				int isip1,isip2,isip3,isip4;
-				if (sscanf(start,"%d.%d.%d.%d",&isip1,&isip2,&isip3,&isip4)!=4)
-				    {
-				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&isip1,&isip2,&isip3);
-				    sscanf(start,"%d",&isip4);
-				    }
-				sprintf(sip1,"%d",isip1);
-				sprintf(sip2,"%d",isip2);
-				sprintf(sip3,"%d",isip3);
-				sprintf(sip4,"%d",isip4);
-				static char eip1[4],eip2[4],eip3[4],eip4[4];
-				int ieip1,ieip2,ieip3,ieip4;
-				if (sscanf(end,"%d.%d.%d.%d",&ieip1,&ieip2,&ieip3,&ieip4)!=4)
-				    {
-				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&ieip1,&ieip2,&ieip3);
-				    sscanf(start,"%d",&ieip4);
-				    }
-				sprintf(eip1,"%d",ieip1);
-				sprintf(eip2,"%d",ieip2);
-				sprintf(eip3,"%d",ieip3);
-				sprintf(eip4,"%d",ieip4);
+				static char sip1[4], sip2[4], sip3[4], sip4[4];
+				int isip1, isip2, isip3, isip4;
+				if (sscanf
+				    (start, "%d.%d.%d.%d", &isip1, &isip2,
+				     &isip3, &isip4) != 4) {
+					sscanf(start, "%d", &isip4);
+					if (isip4 != 0)
+						sscanf(nvram_safe_get
+						       ("lan_ipaddr"),
+						       "%d.%d.%d", &isip1,
+						       &isip2, &isip3);
+					else {
+						isip1 = 0;
+						isip2 = 0;
+						isip3 = 0;
+					}
+				}
+				sprintf(sip1, "%d", isip1);
+				sprintf(sip2, "%d", isip2);
+				sprintf(sip3, "%d", isip3);
+				sprintf(sip4, "%d", isip4);
+				static char eip1[4], eip2[4], eip3[4], eip4[4];
+				int ieip1, ieip2, ieip3, ieip4;
+				if (sscanf
+				    (end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3,
+				     &ieip4) != 4) {
+					sscanf(start, "%d", &ieip4);
+					if (ieip4 != 0)
+						sscanf(nvram_safe_get
+						       ("lan_ipaddr"),
+						       "%d.%d.%d", &ieip1,
+						       &ieip2, &ieip3);
+					else {
+						ieip1 = 0;
+						ieip2 = 0;
+						ieip3 = 0;
+					}
+				}
+				sprintf(eip1, "%d", ieip1);
+				sprintf(eip2, "%d", ieip2);
+				sprintf(eip3, "%d", ieip3);
+				sprintf(eip4, "%d", ieip4);
 				if (!strcmp(type, "ip_range1_0"))
 					return sip1;
 				if (!strcmp(type, "ip_range1_1"))
@@ -160,7 +200,6 @@ char *filter_ip_get(char *type, int which)
 					return eip3;
 				if (!strcmp(type, "ip_range1_7"))
 					return eip4;
-
 
 			}
 			D("return word");

@@ -432,7 +432,6 @@ void delete_policy(webs_t wp, int which)
 {
 	D("delete policy");
 
-
 	nvram_nset("", "filter_rule%d", which);
 	nvram_nset("", "filter_tod%d", which);
 	nvram_nset("", "filter_tod_buf%d", which);
@@ -1318,7 +1317,8 @@ void qos_save(webs_t wp)
 
 	nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
 	nvram_set("default_uplevel", websGetVar(wp, "default_uplevel", NULL));
-	nvram_set("default_downlevel", websGetVar(wp, "default_downlevel", NULL));
+	nvram_set("default_downlevel",
+		  websGetVar(wp, "default_downlevel", NULL));
 	nvram_set("wshaper_downlink", websGetVar(wp, "wshaper_downlink", NULL));
 	nvram_set("wshaper_uplink", websGetVar(wp, "wshaper_uplink", NULL));
 	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", NULL));
@@ -1938,7 +1938,7 @@ void save_networking(webs_t wp)
 
 	memset(buffer, 0, 1024);
 	for (i = 0; i < vlancount; i++) {
-		char *ifname, *tag,*prio;
+		char *ifname, *tag, *prio;
 		char var[32];
 
 		sprintf(var, "vlanifname%d", i);
@@ -2555,7 +2555,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (get_merge_ipaddr(wp, n, addr))
 		nvram_set(n, addr);
 
-
 	copytonv(wp, "%s_duallink", prefix);
 	sprintf(n, "%s_duallink_parent", prefix);
 	if (get_merge_ipaddr(wp, n, addr))
@@ -3139,9 +3138,8 @@ void ddns_save_value(webs_t wp)
 		return;
 	}
 	int gethash = 0;
-	
-	switch (atoi(enable))
-	{
+
+	switch (atoi(enable)) {
 	case 0:
 		// Disable
 		nvram_set("ddns_enable", enable);
@@ -3165,9 +3163,9 @@ void ddns_save_value(webs_t wp)
 			 enable);
 		gethash = 1;
 		break;
-	case 3: // zoneedit
-	case 4: // no-ip
-	case 8: // tzo
+	case 3:		// zoneedit
+	case 4:		// no-ip
+	case 8:		// tzo
 		snprintf(_username, sizeof(_username), "ddns_username_%s",
 			 enable);
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
@@ -3218,11 +3216,11 @@ void ddns_save_value(webs_t wp)
 	conf = websGetVar(wp, _conf, NULL);
 	url = websGetVar(wp, _url, NULL);
 	force = websGetVar(wp, _force, NULL);
-	
+
 	if (!username || !passwd || !hostname || !force) {
 		return;
 	}
-	
+
 	if (atoi(force) < 1 || atoi(force) > 60) {
 		force = "10";
 	}

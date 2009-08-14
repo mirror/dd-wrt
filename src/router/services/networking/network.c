@@ -597,7 +597,8 @@ void start_wlconf(void)
 	for (c = 0; c < cnt; c++) {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		if (cnt > 1)
-			eval("wl", "-i", get_wl_instance_name(c), "interference", "0");
+			eval("wl", "-i", get_wl_instance_name(c),
+			     "interference", "0");
 #endif
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", c))
 			wlconf_up(get_wl_instance_name(c));
@@ -1593,8 +1594,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */

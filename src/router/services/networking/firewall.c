@@ -1198,28 +1198,30 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 	char var2[256], *wordlist2, *next2;
 	char from[100], to[100];
 	int a1 = 0, a2 = 0;
-	static char s1[32],s2[32];
+	static char s1[32], s2[32];
 
 	wordlist1 = nvram_nget("filter_ip_grp%d", seq);
 	if (strcmp(wordlist1, "") == 0)
 		return;
 
 	foreach(var1, wordlist1, next1) {
-		if (contains(var1,'-')) {
-		char *end = var1;
-		char *start = strsep(&end, "-");
-		if (!contains(start,'.') || !contains(end,'.'))
-		    {
-		    //convert old style 
-		    char newstart[32];
-		    sprintf(newstart,"%s%s",lan_cclass,start);
-		    start = newstart;
-		    char newend[32];
-		    sprintf(newend,"%s%s",lan_cclass,end);
-		    end = newend;
-		    }
-			if (!strcmp(start,"0.0.0.0") && !strcmp(end,"0.0.0.0"))
-			    continue;
+		if (contains(var1, '-')) {
+			char *end = var1;
+			char *start = strsep(&end, "-");
+			if (!contains(start, '.') || !contains(end, '.')) {
+				if (atoi(start) == 0 && atoi(end) == 0)
+					continue;
+				//convert old style 
+				char newstart[32];
+				sprintf(newstart, "%s%s", lan_cclass, start);
+				start = newstart;
+				char newend[32];
+				sprintf(newend, "%s%s", lan_cclass, end);
+				end = newend;
+			}
+			if (!strcmp(start, "0.0.0.0")
+			    && !strcmp(end, "0.0.0.0"))
+				continue;
 			// if(a1 == 0) /* from 1 */
 			// a1 = 1;
 
