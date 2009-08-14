@@ -2481,8 +2481,23 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	D("validate_filter_ip_grp");
 	int i = 0;
 	char buf[256] = "";
-	char *ip0, *ip1, *ip2, *ip3, *ip4, *ip5, *ip_range0_0, *ip_range0_1,
-	    *ip_range1_0, *ip_range1_1;
+	char *ip0, *ip1, *ip2, *ip3, *ip4, *ip5;
+	char *ip_range0_0, 
+	    *ip_range0_1,
+	    *ip_range0_2, 
+	    *ip_range0_3,
+	    *ip_range0_4, 
+	    *ip_range0_5,
+	    *ip_range0_6, 
+	    *ip_range0_7,
+	    *ip_range1_0, 
+	    *ip_range1_1,
+	    *ip_range1_2, 
+	    *ip_range1_3,
+	    *ip_range1_4, 
+	    *ip_range1_5,
+	    *ip_range1_6, 
+	    *ip_range1_7;
 	unsigned char ip[10] = { 0, 0, 0, 0, 0, 0, 0 };
 	struct variable filter_ip_variables[] = {
 	      {argv:ARGV("0", "255")},
@@ -2502,8 +2517,20 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	ip5 = websGetVar(wp, "ip5", "0");
 	ip_range0_0 = websGetVar(wp, "ip_range0_0", "0");
 	ip_range0_1 = websGetVar(wp, "ip_range0_1", "0");
+	ip_range0_2 = websGetVar(wp, "ip_range0_2", "0");
+	ip_range0_3 = websGetVar(wp, "ip_range0_3", "0");
+	ip_range0_4 = websGetVar(wp, "ip_range0_4", "0");
+	ip_range0_5 = websGetVar(wp, "ip_range0_5", "0");
+	ip_range0_6 = websGetVar(wp, "ip_range0_6", "0");
+	ip_range0_7 = websGetVar(wp, "ip_range0_7", "0");
 	ip_range1_0 = websGetVar(wp, "ip_range1_0", "0");
 	ip_range1_1 = websGetVar(wp, "ip_range1_1", "0");
+	ip_range1_2 = websGetVar(wp, "ip_range1_2", "0");
+	ip_range1_3 = websGetVar(wp, "ip_range1_3", "0");
+	ip_range1_4 = websGetVar(wp, "ip_range1_4", "0");
+	ip_range1_5 = websGetVar(wp, "ip_range1_5", "0");
+	ip_range1_6 = websGetVar(wp, "ip_range1_6", "0");
+	ip_range1_7 = websGetVar(wp, "ip_range1_7", "0");
 
 	if (!valid_range(wp, ip0, &which[0]) ||
 	    !valid_range(wp, ip1, &which[0]) ||
@@ -2513,8 +2540,22 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	    !valid_range(wp, ip5, &which[0]) ||
 	    !valid_range(wp, ip_range0_0, &which[0]) ||
 	    !valid_range(wp, ip_range0_1, &which[0]) ||
+	    !valid_range(wp, ip_range0_2, &which[0]) ||
+	    !valid_range(wp, ip_range0_3, &which[0]) ||
+	    !valid_range(wp, ip_range0_4, &which[0]) ||
+	    !valid_range(wp, ip_range0_5, &which[0]) ||
+	    !valid_range(wp, ip_range0_6, &which[0]) ||
+	    !valid_range(wp, ip_range0_7, &which[0]) ||
 	    !valid_range(wp, ip_range1_0, &which[0]) ||
-	    !valid_range(wp, ip_range1_0, &which[0])) {
+	    !valid_range(wp, ip_range1_1, &which[0]) ||
+	    !valid_range(wp, ip_range1_2, &which[0]) ||
+	    !valid_range(wp, ip_range1_3, &which[0]) ||
+	    !valid_range(wp, ip_range1_4, &which[0]) ||
+	    !valid_range(wp, ip_range1_5, &which[0]) ||
+	    !valid_range(wp, ip_range1_6, &which[0]) ||
+	    !valid_range(wp, ip_range1_7, &which[0]) 
+	    ) 
+	{
 		D("invalid range, return");
 		return;
 	}
@@ -2532,15 +2573,31 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	if (atoi(ip5))
 		ip[i++] = atoi(ip5);
 
-	if (atoi(ip_range0_0) > atoi(ip_range0_1))
-		SWAP(ip_range0_0, ip_range0_1);
+//	if (atoi(ip_range0_0) > atoi(ip_range0_1))
+//		SWAP(ip_range0_0, ip_range0_1);
 
-	if (atoi(ip_range1_0) > atoi(ip_range1_1))
-		SWAP(ip_range1_0, ip_range1_1);
+//	if (atoi(ip_range1_0) > atoi(ip_range1_1))
+//		SWAP(ip_range1_0, ip_range1_1);
 
-	sprintf(buf, "%d %d %d %d %d %d %s-%s %s-%s", ip[0], ip[1], ip[2],
-		ip[3], ip[4], ip[5], ip_range0_0, ip_range0_1, ip_range1_0,
-		ip_range1_1);
+	sprintf(buf, "%d %d %d %d %d %d %s.%s.%s.%s-%s.%s.%s.%s %s.%s.%s.%s-%s.%s.%s.%s", ip[0], ip[1], ip[2],
+		ip[3], ip[4], ip[5], 
+		ip_range0_0, 
+		ip_range0_1, 
+		ip_range0_2, 
+		ip_range0_3, 
+		ip_range0_4, 
+		ip_range0_5, 
+		ip_range0_6, 
+		ip_range0_7, 
+		ip_range1_0,
+		ip_range1_1,
+		ip_range1_2,
+		ip_range1_3,
+		ip_range1_4,
+		ip_range1_5,
+		ip_range1_6,
+		ip_range1_7
+		);
 
 	snprintf(_filter_ip, sizeof(_filter_ip), "filter_ip_grp%s",
 		 nvram_safe_get("filter_id"));

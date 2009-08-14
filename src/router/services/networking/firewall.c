@@ -1198,20 +1198,23 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 	char var2[256], *wordlist2, *next2;
 	char from[100], to[100];
 	int a1 = 0, a2 = 0;
+	static char s1[32],s2[32];
 
 	wordlist1 = nvram_nget("filter_ip_grp%d", seq);
 	if (strcmp(wordlist1, "") == 0)
 		return;
 
 	foreach(var1, wordlist1, next1) {
-		if (sscanf(var1, "%d-%d", &a1, &a2) == 2) {
-			if (a1 == 0 && a2 == 0)	/* unset */
-				continue;
+		if (contains(var1,'-')) {
+		char *end = var1;
+		char *start = strsep(&end, "-");
+			if (!strcmp(start,"0.0.0.0") && !strcmp(end,"0.0.0.0"))
+			    continue;
 			// if(a1 == 0) /* from 1 */
 			// a1 = 1;
 
-			snprintf(from, sizeof(from), "%s%d", lan_cclass, a1);
-			snprintf(to, sizeof(to), "%s%d", lan_cclass, a2);
+			snprintf(from, sizeof(from), "%s", start);
+			snprintf(to, sizeof(to), "%s", end);
 			/*
 			 * The return value of range() is global string array 
 			 */
