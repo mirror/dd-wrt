@@ -273,9 +273,8 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp,
 					  "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"",
 					  count ? ',' : ' ',
-					  !*lease.
-					  hostname ? "&nbsp;" : lease.hostname,
-					  ipaddr, mac, expires_time,
+					  !*lease.hostname ? "&nbsp;" : lease.
+					  hostname, ipaddr, mac, expires_time,
 					  get_single_ip(ipaddr, 3));
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				count++;

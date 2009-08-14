@@ -48,8 +48,7 @@
 #include <l7protocols.h>
 
 #ifdef HAVE_OVERCLOCKING
-static unsigned int type2_clocks[7] =
-    { 200, 240, 252, 264, 300, 330, 0 };
+static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
 static unsigned int type4_clocks[10] =
     { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
@@ -133,7 +132,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	char *oclk = nvram_safe_get("overclocking");
 
 	int cclk = atoi(oclk);
-	
+
 	int i = 0;
 
 	while (c[i] != 0) {
@@ -2134,7 +2133,7 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		if (!tag || !port)
 			break;
 		if (!prio)
-		    prio="0";
+			prio = "0";
 		char vlan_name[32];
 
 		// sprintf (vlan_name, "%s.%s", tag, port);
@@ -2146,7 +2145,9 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
 		websWrite(wp, "&nbsp;Tag Number&nbsp;");
-		websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name, port);
+		websWrite(wp,
+			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+			  vlan_name, port);
 		//priority
 		sprintf(vlan_name, "vlanprio%d", count);
 		websWrite(wp, "&nbsp;Prio&nbsp;");
@@ -5396,7 +5397,6 @@ int get_distance(void)
 	return distance;
 }
 
-
 int get_acktiming(void)
 {
 	char path[64];
@@ -6040,13 +6040,9 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 				websWrite(wp,
 					  "'%s','%s','%3dM','%3dM','%d','%d','%d'",
 					  mac, ifname,
-					  ((si->
-					    isi_rates[si->
-						      isi_txrate] &
+					  ((si->isi_rates[si->isi_txrate] &
 					    IEEE80211_RATE_VAL) / 2) * turbo,
-					  ((si->
-					    isi_rates[si->
-						      isi_rxrate] &
+					  ((si->isi_rates[si->isi_rxrate] &
 					    IEEE80211_RATE_VAL) / 2) * turbo,
 					  -95 + table.Entry[i].AvgRssi0, -95,
 					  table.Entry[i].AvgRssi0);
