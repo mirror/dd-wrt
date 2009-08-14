@@ -77,17 +77,75 @@ char *filter_ip_get(char *type, int which)
 			if (temp == 6) {
 				end = word;
 				start = strsep(&end, "-");
+				static char sip1[4],sip2[4],sip3[4],sip4[4];
+				int isip1,isip2,isip3,isip4;
+				sscanf(start,"%d.%d.%d.%d",&isip1,&isip2,&isip3,&isip4);
+				sprintf(sip1,"%d",isip1);
+				sprintf(sip2,"%d",isip2);
+				sprintf(sip3,"%d",isip3);
+				sprintf(sip4,"%d",isip4);
+				static char eip1[4],eip2[4],eip3[4],eip4[4];
+				int ieip1,ieip2,ieip3,ieip4;
+				sscanf(end,"%d.%d.%d.%d",&ieip1,&ieip2,&ieip3,&ieip4);
+				sprintf(eip1,"%d",ieip1);
+				sprintf(eip2,"%d",ieip2);
+				sprintf(eip3,"%d",ieip3);
+				sprintf(eip4,"%d",ieip4);
 				if (!strcmp(type, "ip_range0_0"))
-					return start;
-				else
-					return end;
+					return sip1;
+				if (!strcmp(type, "ip_range0_1"))
+					return sip2;
+				if (!strcmp(type, "ip_range0_2"))
+					return sip3;
+				if (!strcmp(type, "ip_range0_3"))
+					return sip4;
+
+				if (!strcmp(type, "ip_range0_4"))
+					return eip1;
+				if (!strcmp(type, "ip_range0_5"))
+					return eip2;
+				if (!strcmp(type, "ip_range0_6"))
+					return eip3;
+				if (!strcmp(type, "ip_range0_7"))
+					return eip4;
+
 			} else if (temp == 7) {
 				end = word;
 				start = strsep(&end, "-");
+
+				static char sip1[4],sip2[4],sip3[4],sip4[4];
+				int isip1,isip2,isip3,isip4;
+				sscanf(start,"%d.%d.%d.%d",&isip1,&isip2,&isip3,&isip4);
+				sprintf(sip1,"%d",isip1);
+				sprintf(sip2,"%d",isip2);
+				sprintf(sip3,"%d",isip3);
+				sprintf(sip4,"%d",isip4);
+				static char eip1[4],eip2[4],eip3[4],eip4[4];
+				int ieip1,ieip2,ieip3,ieip4;
+				sscanf(end,"%d.%d.%d.%d",&ieip1,&ieip2,&ieip3,&ieip4);
+				sprintf(eip1,"%d",ieip1);
+				sprintf(eip2,"%d",ieip2);
+				sprintf(eip3,"%d",ieip3);
+				sprintf(eip4,"%d",ieip4);
 				if (!strcmp(type, "ip_range1_0"))
-					return start;
-				else
-					return end;
+					return sip1;
+				if (!strcmp(type, "ip_range1_1"))
+					return sip2;
+				if (!strcmp(type, "ip_range1_2"))
+					return sip3;
+				if (!strcmp(type, "ip_range1_3"))
+					return sip4;
+
+				if (!strcmp(type, "ip_range1_4"))
+					return eip1;
+				if (!strcmp(type, "ip_range1_5"))
+					return eip2;
+				if (!strcmp(type, "ip_range1_6"))
+					return eip3;
+				if (!strcmp(type, "ip_range1_7"))
+					return eip4;
+
+
 			}
 			D("return word");
 			return word;

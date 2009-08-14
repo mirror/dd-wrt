@@ -32,7 +32,7 @@
 #include <rc.h>
 #include <iptables.h>
 
-static char range_buf[500] = "";
+static char range_buf[1024] = "";
 
 // iptc_handle_t handle = NULL;
 /*
