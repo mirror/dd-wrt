@@ -81,7 +81,7 @@ char *filter_ip_get(char *type, int which)
 				int isip1,isip2,isip3,isip4;
 				if (sscanf(start,"%d.%d.%d.%d",&isip1,&isip2,&isip3,&isip4)!=4)
 				    {
-				    sccanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&isip1,&isip2,&isip3);
+				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&isip1,&isip2,&isip3);
 				    sscanf(start,"%d",&isip4);
 				    }
 				sprintf(sip1,"%d",isip1);
@@ -92,7 +92,7 @@ char *filter_ip_get(char *type, int which)
 				int ieip1,ieip2,ieip3,ieip4;
 				if (sscanf(end,"%d.%d.%d.%d",&ieip1,&ieip2,&ieip3,&ieip4)!=4)
 				    {
-				    sccanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&ieip1,&ieip2,&ieip3);
+				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&ieip1,&ieip2,&ieip3);
 				    sscanf(start,"%d",&ieip4);
 				    }
 				sprintf(eip1,"%d",ieip1);
@@ -125,7 +125,7 @@ char *filter_ip_get(char *type, int which)
 				int isip1,isip2,isip3,isip4;
 				if (sscanf(start,"%d.%d.%d.%d",&isip1,&isip2,&isip3,&isip4)!=4)
 				    {
-				    sccanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&isip1,&isip2,&isip3);
+				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&isip1,&isip2,&isip3);
 				    sscanf(start,"%d",&isip4);
 				    }
 				sprintf(sip1,"%d",isip1);
@@ -136,7 +136,7 @@ char *filter_ip_get(char *type, int which)
 				int ieip1,ieip2,ieip3,ieip4;
 				if (sscanf(end,"%d.%d.%d.%d",&ieip1,&ieip2,&ieip3,&ieip4)!=4)
 				    {
-				    sccanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&ieip1,&ieip2,&ieip3);
+				    sscanf(nvram_safe_get("lan_ipaddr"),"%d.%d.%d",&ieip1,&ieip2,&ieip3);
 				    sscanf(start,"%d",&ieip4);
 				    }
 				sprintf(eip1,"%d",ieip1);
