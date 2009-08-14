@@ -7251,7 +7251,9 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 #else
 	char name[32];
 	sprintf(name, "%s_ifname", nvram_safe_get("wifi_display"));
-	char *ifname = nvram_safe_get(name);
+	char ifname[32];
+	strcpy(ifname,nvram_safe_get(name));
+	strcat(ifname,":");
 #endif
 	struct dev_info {
 		// unsigned long rx_bytes;
