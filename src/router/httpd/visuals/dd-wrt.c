@@ -7245,17 +7245,13 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 	FILE *fp;
 
 #ifdef HAVE_MADWIFI
-	char ifname[32];
-	strcpy(ifname,nvram_safe_get("wifi_display"));
-	strcat(ifname,":");
+	char *ifname=nvram_safe_get("wifi_display");
 #elif HAVE_RT2880
-	char *ifname = "ra0";
+	char *ifname="ra0";
 #else
 	char name[32];
 	sprintf(name, "%s_ifname", nvram_safe_get("wifi_display"));
-	char ifname[32];
-	strcpy(ifname,nvram_safe_get(name));
-	strcat(ifname,":");
+	char *ifname=nvram_safe_get(name);
 #endif
 	struct dev_info {
 		// unsigned long rx_bytes;
@@ -7300,8 +7296,18 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 			while (line[ifl] != ':')
 				ifl++;
 			line[ifl] = 0;	/* interface */
-
-			if (strstr(line, ifname)) {
+			char ifnamecopy[32];
+			int l=0;
+			int i;
+			int len = strlen(line);
+			for (i=0;i<len;i++)
+			    {
+			    if (line[i]==' ')
+				continue;
+			    ifnamecopy[l++]=line[i];
+			    }
+			ifnamecopy[l]=0;
+			if (!strcmp(ifnamecopy,ifname)) {
 				/*
 				 * sscanf (line + ifl + 1, "%ld %ld %ld %ld %ld %ld %ld %ld
 				 * %ld %ld %ld %ld %ld %ld %ld %ld", &info.rx_bytes,
