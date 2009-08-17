@@ -186,6 +186,12 @@ struct ip_conntrack_expect
 	union ip_conntrack_expect_help help;
 };
 
+struct ip_conntrack_counter
+{
+       u_int64_t packets;
+       u_int64_t bytes;
+};
+
 struct ip_conntrack_helper;
 
 struct ip_conntrack
@@ -202,6 +208,12 @@ struct ip_conntrack
 
 	/* Timer function; drops refcnt when it goes off. */
 	struct timer_list timeout;
+
+#if defined(CONFIG_IP_NF_CT_ACCT) || \
+	defined(CONFIG_IP_NF_CT_ACCT_MODULE)
+       /* Accounting Information (same cache line as other written members) */
+       struct ip_conntrack_counter counters[IP_CT_DIR_MAX];
+#endif
 
 	/* If we're expecting another related connection, this will be
            in expected linked list */
@@ -291,8 +303,10 @@ extern int invert_tuplepr(struct ip_conntrack_tuple *inverse,
 			  const struct ip_conntrack_tuple *orig);
 
 /* Refresh conntrack for this many jiffies */
-extern void ip_ct_refresh(struct ip_conntrack *ct,
-			  unsigned long extra_jiffies);
+extern void ip_ct_refresh_acct(struct ip_conntrack *ct,
+                              enum ip_conntrack_info ctinfo,
+                              const struct iphdr *iph,
+                              unsigned long extra_jiffies);
 
 /* These are for NAT.  Icky. */
 /* Call me when a conntrack is destroyed. */
