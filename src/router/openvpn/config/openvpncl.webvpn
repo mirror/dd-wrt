@@ -42,8 +42,8 @@
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_tuntap"); %></div>
 			<select name="openvpncl_tuntap">
-			    <option value="tun" <% nvram_selected("openvpncl_proto","tun"); %>>TUN</option>
-			    <option value="tap" <% nvram_selected("openvpncl_proto","tap"); %>>TAP</option>
+			    <option value="tun" <% nvram_selected("openvpncl_tuntap","tun"); %>>TUN</option>
+			    <option value="tap" <% nvram_selected("openvpncl_tuntap","tap"); %>>TAP</option>
 			</select>
 		</div>
 		<div class="setting">
