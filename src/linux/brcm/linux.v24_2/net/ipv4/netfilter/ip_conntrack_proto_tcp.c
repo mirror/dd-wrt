@@ -211,7 +211,7 @@ static int tcp_packet(struct ip_conntrack *conntrack,
 			set_bit(IPS_ASSURED_BIT, &conntrack->status);
 
 		WRITE_UNLOCK(&tcp_lock);
-		ip_ct_refresh(conntrack, *tcp_timeouts[newconntrack]);
+		ip_ct_refresh_acct(conntrack,ctinfo,iph, *tcp_timeouts[newconntrack]);
 	}
 
 	return NF_ACCEPT;

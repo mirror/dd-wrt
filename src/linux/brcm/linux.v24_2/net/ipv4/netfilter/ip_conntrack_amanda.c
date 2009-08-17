@@ -75,7 +75,7 @@ static int help(const struct iphdr *iph, size_t len,
 
 	/* increase the UDP timeout of the master connection as replies from
 	 * Amanda clients to the server can be quite delayed */
-	ip_ct_refresh(ct, master_timeout * HZ);
+	ip_ct_refresh_acct(ct,ctinfo,NULL, master_timeout * HZ);
 	
 	/* Search for "CONNECT " string */
 	do {

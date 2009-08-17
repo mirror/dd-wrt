@@ -467,7 +467,7 @@ static int __init init(void)
 		return -EIO;
 	}
 
-//	printk("ip_nat_pptp version %s loaded\n", IP_NAT_PPTP_VERSION);
+	printk("ip_nat_pptp version %s loaded\n", IP_NAT_PPTP_VERSION);
 	return 0;
 }
 
@@ -475,7 +475,7 @@ static void __exit fini(void)
 {
 	DEBUGP("cleanup_module\n" );
 	ip_nat_helper_unregister(&pptp_tcp_helper);
-//	printk("ip_nat_pptp version %s unloaded\n", IP_NAT_PPTP_VERSION);
+	printk("ip_nat_pptp version %s unloaded\n", IP_NAT_PPTP_VERSION);
 }
 
 module_init(init);

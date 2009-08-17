@@ -78,6 +78,17 @@ print_expect(char *buffer, const struct ip_conntrack_expect *expect)
 	len += sprintf(buffer + len, "\n");
 	return len;
 }
+#if defined(CONFIG_IP_NF_CT_ACCT) || \
+	defined(CONFIG_IP_NF_CT_ACCT_MODULE)
+static unsigned int
+print_counters(char *buffer, struct ip_conntrack_counter *counter)
+{
+       return sprintf(buffer, "packets=%llu bytes=%llu ", 
+                       counter->packets, counter->bytes);
+}
+#else
+#define print_counters(x, y)   0
+#endif
 
 static unsigned int
 print_conntrack(char *buffer, struct ip_conntrack *conntrack)
@@ -98,11 +109,15 @@ print_conntrack(char *buffer, struct ip_conntrack *conntrack)
 	len += print_tuple(buffer + len,
 			   &conntrack->tuplehash[IP_CT_DIR_ORIGINAL].tuple,
 			   proto);
+        len += print_counters(buffer + len, 
+                           &conntrack->counters[IP_CT_DIR_ORIGINAL]);
 	if (!(test_bit(IPS_SEEN_REPLY_BIT, &conntrack->status)))
 		len += sprintf(buffer + len, "[UNREPLIED] ");
 	len += print_tuple(buffer + len,
 			   &conntrack->tuplehash[IP_CT_DIR_REPLY].tuple,
 			   proto);
+        len += print_counters(buffer + len, 
+                           &conntrack->counters[IP_CT_DIR_REPLY]);
 	if (test_bit(IPS_ASSURED_BIT, &conntrack->status))
 		len += sprintf(buffer + len, "[ASSURED] ");
 	len += sprintf(buffer + len, "use=%u ",
@@ -355,6 +370,14 @@ static ctl_table ip_ct_net_table[] = {
 	{0}
 };
 #endif
+
+static int
+conntrack_flush(char *buffer, char **start, off_t offset, int length)
+{
+ip_conntrack_flush();
+return 0;
+}
+
 static int init_or_cleanup(int init)
 {
 	struct proc_dir_entry *proc;
@@ -369,6 +392,12 @@ static int init_or_cleanup(int init)
 	proc = proc_net_create("ip_conntrack", 0440, list_conntracks);
 	if (!proc) goto cleanup_init;
 	proc->owner = THIS_MODULE;
+
+	proc = proc_net_create("ip_conntrack_flush", 0440, conntrack_flush);
+	if (!proc) goto cleanup_init;
+	proc->owner = THIS_MODULE;
+
+
 
 	ret = nf_register_hook(&ip_conntrack_in_ops);
 	if (ret < 0) {
@@ -412,6 +441,7 @@ static int init_or_cleanup(int init)
  cleanup_inops:
 	nf_unregister_hook(&ip_conntrack_in_ops);
  cleanup_proc:
+	proc_net_remove("ip_conntrack_flush");
 	proc_net_remove("ip_conntrack");
  cleanup_init:
 	ip_conntrack_cleanup();
@@ -485,7 +515,7 @@ EXPORT_SYMBOL(ip_conntrack_get);
 EXPORT_SYMBOL(ip_conntrack_helper_register);
 EXPORT_SYMBOL(ip_conntrack_helper_unregister);
 EXPORT_SYMBOL(ip_ct_iterate_cleanup);
-EXPORT_SYMBOL(ip_ct_refresh);
+EXPORT_SYMBOL(ip_ct_refresh_acct);
 EXPORT_SYMBOL(ip_ct_find_proto);
 EXPORT_SYMBOL(__ip_ct_find_proto);
 EXPORT_SYMBOL(ip_ct_find_helper);
