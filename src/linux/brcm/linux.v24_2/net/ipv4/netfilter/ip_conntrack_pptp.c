@@ -134,10 +134,11 @@ static int pptp_expectfn(struct ip_conntrack *ct)
 }
 
 /* timeout GRE data connections */
-static int pptp_timeout_related(struct ip_conntrack *ct)
+static int pptp_timeout_related(struct ip_conntrack *ct, const struct iphdr *iph)
 {
 	struct list_head *cur_item, *next;
 	struct ip_conntrack_expect *exp;
+	enum ip_conntrack_info ctinfo;
 
 	/* FIXME: do we have to lock something ? */
 	for (cur_item = ct->sibling_list.next;
@@ -156,7 +157,7 @@ static int pptp_timeout_related(struct ip_conntrack *ct)
 			exp->sibling);
 		exp->sibling->proto.gre.timeout = 0;
 		exp->sibling->proto.gre.stream_timeout = 0;
-		ip_ct_refresh(exp->sibling, 0);
+		ip_ct_refresh_acct(exp->sibling, ctinfo, iph, 0);
 	}
 
 	return 0;
@@ -243,7 +244,8 @@ pptp_inbound_pkt(struct tcphdr *tcph,
 		 struct pptp_pkt_hdr *pptph, 
 		 size_t datalen,
 		 struct ip_conntrack *ct,
-		 enum ip_conntrack_info ctinfo)
+		 enum ip_conntrack_info ctinfo,
+		 const struct iphdr *iph)
 {
 	struct PptpControlHeader *ctlh;
         union pptp_ctrl_union pptpReq;
@@ -375,7 +377,7 @@ pptp_inbound_pkt(struct tcphdr *tcph,
 		info->cstate = PPTP_CALL_NONE;
 
 		/* untrack this call id, unexpect GRE packets */
-		pptp_timeout_related(ct);
+		pptp_timeout_related(ct, iph);
 		break;
 
 	case PPTP_WAN_ERROR_NOTIFY:
@@ -537,7 +539,7 @@ conntrack_pptp_help(const struct iphdr *iph, size_t len,
 		info->cstate = PPTP_CALL_NONE;
 
 		/* untrack this call id, unexpect GRE packets */
-		pptp_timeout_related(ct);
+		pptp_timeout_related(ct, iph);
 	}
 
 
@@ -569,7 +571,7 @@ conntrack_pptp_help(const struct iphdr *iph, size_t len,
 		ret = pptp_outbound_pkt(tcph, pptph, datalen, ct, ctinfo);
 	else
 		/* server -> client (PAC -> PNS) */
-		ret = pptp_inbound_pkt(tcph, pptph, datalen, ct, ctinfo);
+		ret = pptp_inbound_pkt(tcph, pptph, datalen, ct, ctinfo, iph);
 	DEBUGP("sstate: %d->%d, cstate: %d->%d\n",
 		oldsstate, info->sstate, oldcstate, info->cstate);
 	UNLOCK_BH(&ip_pptp_lock);
@@ -617,14 +619,14 @@ static int __init init(void)
 		return -EIO;
 	}
 
-//	printk("ip_conntrack_pptp version %s loaded\n", IP_CT_PPTP_VERSION);
+	printk("ip_conntrack_pptp version %s loaded\n", IP_CT_PPTP_VERSION);
 	return 0;
 }
 
 static void __exit fini(void)
 {
 	ip_conntrack_helper_unregister(&pptp);
-//	printk("ip_conntrack_pptp version %s unloaded\n", IP_CT_PPTP_VERSION);
+	printk("ip_conntrack_pptp version %s unloaded\n", IP_CT_PPTP_VERSION);
 }
 
 module_init(init);

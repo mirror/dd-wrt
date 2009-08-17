@@ -237,16 +237,16 @@ static unsigned int gre_print_conntrack(char *buffer,
 /* Returns verdict for packet, and may modify conntrack */
 static int gre_packet(struct ip_conntrack *ct,
 		      struct iphdr *iph, size_t len,
-		      enum ip_conntrack_info conntrackinfo)
+		      enum ip_conntrack_info ctinfo)
 {
 	/* If we've seen traffic both ways, this is a GRE connection.
 	 * Extend timeout. */
 	if (ct->status & IPS_SEEN_REPLY) {
-		ip_ct_refresh(ct, ct->proto.gre.stream_timeout);
+		ip_ct_refresh_acct(ct, ctinfo, iph, ct->proto.gre.stream_timeout);
 		/* Also, more likely to be important, and not a probe. */
 		set_bit(IPS_ASSURED_BIT, &ct->status);
 	} else
-		ip_ct_refresh(ct, ct->proto.gre.timeout);
+		ip_ct_refresh_acct(ct, ctinfo, iph, ct->proto.gre.timeout);
 	
 	return NF_ACCEPT;
 }

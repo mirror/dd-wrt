@@ -1227,21 +1227,40 @@ void ip_conntrack_helper_unregister(struct ip_conntrack_helper *me)
 	MOD_DEC_USE_COUNT;
 }
 
+static inline void ct_add_counters(struct ip_conntrack *ct,
+                                enum ip_conntrack_info ctinfo,
+                                 const struct iphdr *iph)
+{
+#if defined(CONFIG_IP_NF_CT_ACCT) || \
+	defined(CONFIG_IP_NF_CT_ACCT_MODULE)
+     if (iph) {
+            ct->counters[CTINFO2DIR(ctinfo)].packets++;
+            ct->counters[CTINFO2DIR(ctinfo)].bytes += 
+                                ntohs(iph->tot_len);
+   }
+#endif
+}
+
 /* Refresh conntrack for this many jiffies. */
-void ip_ct_refresh(struct ip_conntrack *ct, unsigned long extra_jiffies)
+void ip_ct_refresh_acct(struct ip_conntrack *ct, 
+                       enum ip_conntrack_info ctinfo,
+                       const struct iphdr *iph,
+                       unsigned long extra_jiffies)
 {
 	IP_NF_ASSERT(ct->timeout.data == (unsigned long)ct);
 
 	WRITE_LOCK(&ip_conntrack_lock);
 	/* If not in hash table, timer will not be active yet */
-	if (!is_confirmed(ct))
+	if (!is_confirmed(ct)) {
 		ct->timeout.expires = extra_jiffies;
-	else {
+		ct_add_counters(ct, ctinfo,iph);
+	} else {
 		/* Need del_timer for race avoidance (may already be dying). */
 		if (del_timer(&ct->timeout)) {
 			ct->timeout.expires = jiffies + extra_jiffies;
 			add_timer(&ct->timeout);
 		}
+		ct_add_counters(ct, ctinfo, iph);
 	}
 	WRITE_UNLOCK(&ip_conntrack_lock);
 }
@@ -1454,6 +1473,15 @@ static int kill_all(struct ip_conntrack *i, void *data)
 
 /* Mishearing the voices in his head, our hero wonders how he's
    supposed to kill the mall. */
+
+void ip_conntrack_flush(void)
+{
+ 
+	br_write_lock_bh(BR_NETPROTO_LOCK);
+	br_write_unlock_bh(BR_NETPROTO_LOCK);
+	ip_ct_iterate_cleanup(kill_all, NULL);
+}
+
 void ip_conntrack_cleanup(void)
 {
 #ifdef CONFIG_SYSCTL
@@ -1466,7 +1494,6 @@ void ip_conntrack_cleanup(void)
            delete... */
 	br_write_lock_bh(BR_NETPROTO_LOCK);
 	br_write_unlock_bh(BR_NETPROTO_LOCK);
- 
  i_see_dead_people:
 	ip_ct_iterate_cleanup(kill_all, NULL);
 	if (atomic_read(&ip_conntrack_count) != 0) {
