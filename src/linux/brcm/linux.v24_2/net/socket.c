@@ -606,8 +606,10 @@ ssize_t sock_sendpage(struct file *file, struct page *page,
 	flags = !(file->f_flags & O_NONBLOCK) ? 0 : MSG_DONTWAIT;
 	if (more)
 		flags |= MSG_MORE;
-
-	return sock->ops->sendpage(sock, page, offset, size, flags);
+	if (sock->ops->sendpage)
+	    return sock->ops->sendpage(sock, page, offset, size, flags);
+	return sock_no_sendpage(sock, page, offset, size, flags);
+	
 }
 
 int sock_readv_writev(int type, struct inode * inode, struct file * file,

@@ -47,16 +47,16 @@ static unsigned int udp_print_conntrack(char *buffer,
 /* Returns verdict for packet, and may modify conntracktype */
 static int udp_packet(struct ip_conntrack *conntrack,
 		      struct iphdr *iph, size_t len,
-		      enum ip_conntrack_info conntrackinfo)
+		      enum ip_conntrack_info ctinfo)
 {
 	/* If we've seen traffic both ways, this is some kind of UDP
 	   stream.  Extend timeout. */
 	if (test_bit(IPS_SEEN_REPLY_BIT, &conntrack->status)) {
-		ip_ct_refresh(conntrack, ip_ct_udp_timeout_stream);
+		ip_ct_refresh_acct(conntrack,ctinfo,iph,ip_ct_udp_timeout_stream);
 		/* Also, more likely to be important, and not a probe */
 		set_bit(IPS_ASSURED_BIT, &conntrack->status);
 	} else
-		ip_ct_refresh(conntrack, ip_ct_udp_timeout);
+		ip_ct_refresh_acct(conntrack,ctinfo,iph, ip_ct_udp_timeout);
 
 	return NF_ACCEPT;
 }
