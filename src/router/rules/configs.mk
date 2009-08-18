@@ -176,6 +176,7 @@ obj-$(CONFIG_VNCREPEATER) += vncrepeater
 obj-$(CONFIG_SWCONFIG) += swconfig
 obj-$(CONFIG_NPROBE) += nprobe
 obj-$(CONFIG_MTR) += mtr
+obj-$(CONFIG_SNOOP) += snoop
 
 obj-y+=anchorfree
 obj-y+=ttraff

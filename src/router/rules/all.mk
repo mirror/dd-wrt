@@ -165,6 +165,7 @@ include rules/proftpd.mk
 include rules/ippd.mk
 include rules/pcmcia.mk
 include rules/gcom.mk
+include rules/comgt.mk
 include rules/setserial.mk
 include rules/microcom.mk
 include rules/nvtlstatus.mk
@@ -190,6 +191,7 @@ include rules/pound.mk
 include rules/radvd.mk
 include rules/nprobe.mk
 include rules/mtr.mk
+include rules/snoop.mk
 # Generic rules
 #
 
