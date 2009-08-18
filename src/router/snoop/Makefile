@@ -1,0 +1,2 @@
+obj-m	:= snoop.o
+
