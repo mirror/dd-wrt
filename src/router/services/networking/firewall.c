@@ -807,8 +807,8 @@ static void nat_postrouting(void)
 				    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
 				     lanface);
 			save2file
-			    ("-A POSTROUTING -o %s -i %s -s %s0/%d -d %s0/%d -j %s\n",
-			     lanface,lanface, lan_cclass, loopmask, lan_cclass,
+			    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
+			     lanface, lan_cclass, loopmask, lan_cclass,
 			     loopmask, method);
 			char *next;
 			char dev[16];
@@ -835,8 +835,7 @@ static void nat_postrouting(void)
 						nvram_default_get(nat, "1");
 						if (nvram_match(nat, "1"))
 							save2file
-							    ("-A POSTROUTING -o %s -i %s -s %s/%d -d %s/%d -j %s\n",
-							     var,
+							    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
 							     var,
 							     nvram_nget
 							     ("%s_ipaddr", var),
