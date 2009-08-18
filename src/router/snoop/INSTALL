@@ -1,0 +1,52 @@
+VERY SHORT INSTALL PROCEDURE (VSIP)
+
+1. COMPILE AND INSTALL
+
+shell> tar xzvf snoop.tgz
+shell> cd snoop
+
+shell> make
+make -C /lib/modules/2.6.21-1.3194.fc7/build M=/home/ivan/projects/snoop modules
+make[1]: Entering directory `/usr/src/kernels/2.6.21-1.3194.fc7-i686'
+  CC [M]  /home/ivan/projects/snoop/snoop.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /home/ivan/projects/snoop/snoop.mod.o
+  LD [M]  /home/ivan/projects/snoop/snoop.ko
+  make[1]: Leaving directory `/usr/src/kernels/2.6.21-1.3194.fc7-i686'
+
+shell> su -c 'make install'
+Password:
+install snoop.ko /lib/modules/2.6.21-1.3194.fc7/extra
+
+shell> su -c '/sbin/depmod -a'
+Password:
+
+shell> su -c '/sbin/modinfo snoop' 
+Password:
+filename:       /lib/modules/2.6.21-1.3194.fc7/extra/snoop.ko
+license:        GPL
+author:         Ivan Keberlein <ikeberlein@users.sourceforge.net>
+description:    Partial implementation of Berkley snoop protocol for GNU/Linux
+srcversion:     635F99A998435FB02A7D6CF
+depends:
+vermagic:       2.6.21-1.3194.fc7 SMP mod_unload 686 4KSTACKS
+parm:           wh_dev:Device name wich FIXED hosts are connected to (charp)
+parm:           fh_dev:Device name wich WIRELESS hosts are connected to (charp)
+parm:           retransmit_mark:Netfilter mark for retransmitted packets (uint)
+
+2. LOAD MODULE
+
+shell> su -c '/sbin/modprobe snoop wh_dev=eth0 fh_dev=eth1 retransmit_mark=254'
+or
+shell> su -c '/sbin/modprobe snoop wh_dev=eth0 fh_dev=eth1'
+
+shell> su -c '/sbin/lsmod' | grep snoop
+Password:
+snoop                  17000  0
+
+shell> dmesg | grep snoop
+Berkley snoop version 0.3-rc5: Ivan Keberlein <ikeberlein@users.sourceforge.net>
+shell>
+
+

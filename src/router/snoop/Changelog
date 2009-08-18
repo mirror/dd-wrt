@@ -1,0 +1,29 @@
+* Release 0.3-rc7 (31-JUL-2009)
+   * compiles now on kernels up to version 2.6.26
+   * fixed install issue when no destination directory exist
+* Release 0.3-rc6 (02-FEB-2008)
+   * compiles now under new kernels (ver > 2.6.21)
+* Release 0.3-rc5 (01-FEB-2008)
+   * compiles now under new kernels (ver > 2.6.18)
+   * fixed typo in modules parameters description
+   * add INSTALL file
+* Release 0.3-rc4
+   * fixed issues with improper use of locks & memory allocation
+     the memory allocates now with GFP_ATOMIC priority
+* Release 0.3-rc3
+   * Added AUTHORS file
+   * Added legal information
+   * Code cleanup
+* Release 0.3-rc2
+   * Fixes
+   * Code refinement
+   * Minor changes
+* Release 0.3-rc1
+   * Added retransmittion timeout
+   * SACK support added
+   * Packet retransmition now based on RTT
+   * Fixed bug in connection_timeout - endless loop while trying to delete the time
+   * Hash tables are used now for connection tracking.
+   * Corrected typo in parameter description
+   * Corrected typo in module description.
+   * Retrasmitted packets are now marked with nfmark. The mark value provided as module parameter.
