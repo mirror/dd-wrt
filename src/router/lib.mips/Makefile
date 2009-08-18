@@ -21,6 +21,7 @@ lib-$(CONFIG_LIBCRYPT) += libcrypt
 lib-$(CONFIG_LIBDL) += libdl
 lib-$(CONFIG_LIBM) += libm
 lib-$(CONFIG_LIBCPP) += libstdc++
+lib-$(CONFIG_LIBRT) += librt
 lib-$(CONFIG_LIBNSL) += libnsl
 #ifeq ($(PARENTAL_CONTROL_SUPPORT),1)
 lib-$(CONFIG_LIBPTHREAD) += libpthread
