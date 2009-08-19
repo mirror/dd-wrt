@@ -1822,19 +1822,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wds1.15", "", 0},
 	{"wds1.16", "", 0},
 #endif
-	{"bird_ospf",
-	 "Please read the BIRD setup instructions at http://bird.network.cz/bird.html",
-	 0},
-
-	{"sh_interfaces", "loc br0\nloc eth0\nloc eth2\nnet wds0.2", 0},
-	{"sh_masq", "br0 wds0.2", 0},
-	{"sh_policy", "loc net ACCEPT\nnet all DROP info\nall all REJECT info",
-	 0},
-	{"sh_routestopped", "br0 -\neth0 -\neth2 -\nwds0.2 -", 0},
-	{"sh_rules", "", 0},
-	{"sh_zones",
-	 "net Net Internet\nloc Local Local Networks\ndmz DMZ Dmz Zone",
-	 0},
 
 #ifdef HAVE_SKYTRON
 	{"wshaper_enable", "1", 0},
