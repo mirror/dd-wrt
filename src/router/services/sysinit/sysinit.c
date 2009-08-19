@@ -1226,7 +1226,8 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
-			break;			
+				nvram_unset("vlan0hwname");
+				break;			
 			case ROUTER_LINKSYS_WTR54GS:
 				nvram_set("vlan0ports", "0 5*");
 				break;
