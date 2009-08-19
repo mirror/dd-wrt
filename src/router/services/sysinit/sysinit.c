@@ -1212,6 +1212,8 @@ void start_restore_defaults(void)
 
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
+			case ROUTER_NETGEAR_WNR3500L:
+			break;			
 			case ROUTER_LINKSYS_WTR54GS:
 				nvram_set("vlan0ports", "0 5*");
 				break;
@@ -1253,6 +1255,8 @@ void start_restore_defaults(void)
 
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			switch (brand) {
+			case ROUTER_NETGEAR_WNR3500L:
+			break;			
 			case ROUTER_LINKSYS_WTR54GS:
 				nvram_set("vlan1ports", "1 5");
 				break;
@@ -1404,6 +1408,7 @@ void start_drivers(void)
 		if (nvram_match("usb_ohci", "1")) {
 			cprintf("loading usb-ohci\n");
 			insmod("usb-ohci");
+			insmod("ohci-hcd");
 		}
 
 		if (nvram_match("usb_usb2", "1")) {
@@ -1456,6 +1461,7 @@ void start_drivers(void)
 			cprintf("loading printer\n");
 			insmod("printer");
 		}
+		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else {
 		led_control(LED_USB, LED_OFF);
 	}
