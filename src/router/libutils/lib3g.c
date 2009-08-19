@@ -5,7 +5,7 @@
 
 static int scanFor(int Vendor, int Product)
 {
-#ifdef ARCH_broadcom
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	char grepstr[128];
 	sprintf(grepstr, "grep Vendor=%x ProdID=%x /tmp/usb/devices|wc -l",
 		Vendor, Product);
@@ -78,7 +78,7 @@ void checkreset(char *tty)
 
 char *get3GControlDevice(void)
 {
-#ifdef ARCH_broadcom
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	mkdir("/tmp/usb");
 	eval("mount", "-t", "usbfs", "usb", "/tmp/usb");
 //insmod("sierra");  //further investigation required (compass problem)

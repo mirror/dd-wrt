@@ -487,6 +487,9 @@ endif
 ifeq ($(CONFIG_NS3),y)
 CFLAGS_EXTRA += -DHAVE_NS3
 endif
+ifeq ($(CONFIG_BCMMODERN),y)
+CFLAGS_EXTRA += -DHAVE_BCMMODERN
+endif
 ifeq ($(CONFIG_LC5),y)
 CFLAGS_EXTRA += -DHAVE_LC5
 endif
