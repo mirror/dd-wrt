@@ -687,6 +687,7 @@ void start_sysinit(void)
 		nvram_set("wan_default", "vlan2");
 		nvram_set("wan_ifnames", "vlan2");
 		nvram_set("wl0_ifname", "eth1");	
+		nvram_set("boot_wait", "off");	// otherwise cfe will load kernel via tftp
 	break;
 	case ROUTER_NETGEAR_WNDR3300:
 		nvram_set("lan_ifnames", "eth0 eth2 eth3");	// dual radio
