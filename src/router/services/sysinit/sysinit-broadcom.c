@@ -401,6 +401,19 @@ void start_sysinit(void)
 #ifdef HAVE_MICRO
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 #endif
+#ifdef HAVE_BCMMODERN
+	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
+	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+	eval("mknod", "/dev/nvram", "c", "229", "0");
+	eval("mkdir", "/dev/gpio");
+	eval("mknod", "/dev/gpio/in", "c", "127", "0");
+	eval("mknod", "/dev/gpio/out", "c", "127", "1");
+	eval("mknod", "/dev/gpio/outen", "c", "127", "2");
+	eval("mknod", "/dev/gpio/control", "c", "127", "3");
+	eval("mknod", "/dev/ppp", "c", "108", "0");
+	eval("mknod", "/dev/rtc", "c", "254", "0");
+	eval("mknod", "/dev/crypto", "c", "10", "70");
+#endif
 
 	cprintf("sysinit() var\n");
 
@@ -667,7 +680,14 @@ void start_sysinit(void)
 			extra_params++;
 		}
 		break;
-
+	case ROUTER_NETGEAR_WNR3500L:
+		nvram_set("lan_ifnames", "vlan1 eth1");	
+		nvram_set("wan_ifname", "vlan2");
+		nvram_set("wan_ifname2", "vlan2");
+		nvram_set("wan_default", "vlan2");
+		nvram_set("wan_ifnames", "vlan2");
+		nvram_set("wl0_ifname", "eth1");	
+	break;
 	case ROUTER_NETGEAR_WNDR3300:
 		nvram_set("lan_ifnames", "eth0 eth2 eth3");	// dual radio
 		nvram_set("wan_ifname", "eth1");
