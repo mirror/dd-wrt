@@ -466,6 +466,7 @@ void start_sysinit(void)
 		{"wl0_ifname", "eth2", 0},
 		{0, 0, 0}
 	};
+	nvram_set("boot_wait", "on");
 
 	switch (brand) {
 	case ROUTER_BUFFALO_WZRRSG54:
