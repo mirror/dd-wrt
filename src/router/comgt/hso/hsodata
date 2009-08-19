@@ -1,0 +1,27 @@
+opengt
+set com 115200n81
+set senddelay 0.02
+waitquiet 1 0.2
+flash 0.1
+
+let c=1
+:start
+send "AT_OWANDATA=1^m"
+waitfor 2 "ERROR"
+if % = 0 goto repeat
+send "AT_OWANDATA=1^m"
+get 2 "^m" $s
+get 2 "^m" $s
+print $s
+print "\n"
+exit 0
+
+:repeat
+sleep 1
+inc c
+if c > 15 goto error
+goto start
+
+:error
+exit 1
+

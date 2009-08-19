@@ -1,0 +1,13 @@
+opengt
+set com 115200n81
+set senddelay 0.02
+waitquiet 1 0.2
+flash 0.1
+
+:start
+send "AT_OWANCALL?^m"
+get 2 "^m" $s
+get 2 "^m" $s
+print $s
+print "\n"
+exit 

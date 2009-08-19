@@ -1,0 +1,34 @@
+opengt 
+set com 115200n81 
+set senddelay 0.02 
+waitquiet 1 0.2 
+  
+:start 
+flash 0.1 
+  
+:getuser 
+  let $u=$env("USER") 
+  let a=len($u) 
+  if a=0 goto continue 
+  
+:getpass 
+  let $p=$env("PASS") 
+  
+:auth 
+  print "User: ",$u,"\n" 
+  print "Pass: ",$p,"\n" 
+  send "AT$QCPDPP=1,1,\"" 
+  send $u 
+  send "\",\"" 
+  send $p 
+  send "\"^m" 
+  waitfor 2 "OK" 
+  if % = -1 goto error 
+  if % = 0 goto continue 
+  
+:error 
+  print "ERROR"
+  exit 1   
+:continue
+  print "OK" 
+  exit 0 

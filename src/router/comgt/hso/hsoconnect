@@ -1,0 +1,18 @@
+opengt
+set com 115200n81
+set senddelay 0.02
+waitquiet 1 0.2
+flash 0.1
+
+:start
+send "AT_OWANCALL=1,1,0^m"
+waitfor 2 "OK"
+if % = -1 goto error
+if % = 0 goto continue
+
+
+:error
+exit 1
+
+:continue
+exit 0
