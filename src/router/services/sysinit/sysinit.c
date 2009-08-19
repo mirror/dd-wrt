@@ -542,6 +542,16 @@ void start_restore_defaults(void)
 		{0, 0, 0}
 	};
 
+	struct nvram_tuple wnr3500vlan[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan1 eth1", 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
+
 	struct nvram_tuple wrt30011vlan[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "vlan0 eth0", 0},
@@ -878,6 +888,9 @@ void start_restore_defaults(void)
 	case ROUTER_ASUS_WL550GE:
 	case ROUTER_BELKIN_F5D7230_V3000:
 		linux_overrides = vlan;
+		break;
+	case ROUTER_NETGEAR_WNR3500L:
+		linux_overrides = wnr3500vlan;
 		break;
 	case ROUTER_WRT350N:
 		linux_overrides = wrt350vlan;
