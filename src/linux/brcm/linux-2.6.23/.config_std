@@ -689,7 +689,7 @@ CONFIG_BLK_DEV_SD=m
 # CONFIG_CHR_DEV_ST is not set
 # CONFIG_CHR_DEV_OSST is not set
 # CONFIG_BLK_DEV_SR is not set
-CONFIG_CHR_DEV_SG=m
+# CONFIG_CHR_DEV_SG is not set
 # CONFIG_CHR_DEV_SCH is not set
 
 #
