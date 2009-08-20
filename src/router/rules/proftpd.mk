@@ -1,5 +1,5 @@
 proftpd-configure:
-	cd proftpd && ./configure --host=$(ARCH)-linux --prefix=/tmp/proftpd 
+	cd proftpd && ./configure --host=$(ARCH)-linux --prefix=/tmp/proftpd ac_cv_func_setpgrp_void=y ac_cv_func_setgrent_void=y
 	
 proftpd:
 	$(MAKE) -C proftpd
