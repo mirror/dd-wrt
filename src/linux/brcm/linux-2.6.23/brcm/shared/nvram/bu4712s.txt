@@ -1,0 +1,66 @@
+# BU4712 board, small package
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: bu4712s.txt,v 1.9 2004/06/04 21:45:14 Exp $
+boardtype=0x0444
+boardnum=${serno}
+# Board revision 1.0
+boardrev=0x10
+boardflags=0x0408
+sromrev=2
+
+# MIPS clock frequency in MHz
+clkfreq=200
+
+# 32 MB DDR SDRAM (4 Meg x 16)
+sdram_init=0x000b
+sdram_config=0x0062
+sdram_refresh=0x0000
+sdram_ncdl=0
+
+# Ethernet w/ac100 single phy
+et0macaddr=00:90:4c:60:${maclo}
+et0phyaddr=6
+et0mdcport=0
+
+# No eth1
+et1phyaddr=0x1f
+
+# 4712 802.11g parameters
+il0macaddr=00:90:4c:5f:${maclo}
+aa0=3
+ag0=2
+pa0maxpwr=60
+pa0itssit=62
+pa0b0=0x119a
+pa0b1=0xfb93
+pa0b2=0xfea5
+
+# Commons wireless parameters
+wl0gpio0=255
+wl0gpio1=255
+wl0gpio2=255
+wl0gpio3=255
+cctl=0
+ccode=0
+
+# It's an AP only
+router_disable=1
+lan_ifnames="eth0 eth1"
+
+# Bootlaoder variables
+dl_ram_addr=a0001000
+os_ram_addr=80001000
+os_flash_addr=bfc40000
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+scratch=a0180000
+boot_wait=on
+
+# Watchdog timer in ms
+watchdog=0

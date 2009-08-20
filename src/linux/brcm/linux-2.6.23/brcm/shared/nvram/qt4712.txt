@@ -1,0 +1,64 @@
+# 4712 QT with 64MB DDR
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: qt4712.txt,v 1.2 2004/12/15 21:09:53 Exp $
+boardtype=0x0451
+boardnum=${serno}
+# Board revision 1.0
+boardrev=0x10
+boardflags=0x0208
+sromrev=2
+
+# MIPS clock frequency in MHz
+clkfreq=200
+
+# 64 MB DDR SDRAM (16 Meg x 16 x 2)
+sdram_init=0x0009
+sdram_config=0x0062
+sdram_refresh=0x0000
+sdram_ncdl=0
+
+# Ethernet
+et0macaddr=00:90:4c:76:${maclo}
+et0phyaddr=30
+et0mdcport=0
+
+# Make the d11 i/f single band
+wl0id=0x4320
+
+# 4712 802.11g parameters
+il0macaddr=00:90:4c:75:${maclo}
+aa0=3
+ag0=2
+pa0maxpwr=60
+pa0itssit=62
+pa0b0=0x1486
+pa0b1=0xfaa8
+pa0b2=0xfe47
+
+# Wireless LED GPIO mapping/behavior
+wl0gpio0=0
+wl0gpio1=0
+wl0gpio2=0
+
+# Commons wireless parameters
+cctl=0
+ccode=0
+
+# Bootlaoder variables
+dl_ram_addr=a0001000
+os_ram_addr=80001000
+os_flash_addr=bfc40000
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+scratch=a0180000
+boot_wait=on
+reset_gpio=7
+
+# Watchdog timer in ms
+watchdog=3000

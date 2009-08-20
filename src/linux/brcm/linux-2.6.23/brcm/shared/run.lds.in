@@ -1,0 +1,66 @@
+OUTPUT_ARCH(TARGET_ARCH)
+ENTRY(startup)
+SECTIONS {
+	. = TEXT_START;
+
+	.text : {
+		_ftext = .;
+		text_start = .;
+		*(.text.startup)
+		*(.init)
+		*(.text)
+		*(.text.*)
+		*(.fini)
+		*(.glue_7)
+		*(.glue_7t)
+		*(.rdata)
+		*(.rdata.*)
+		*(.rodata)
+		*(.rodata.*)
+		_etext = .;
+		text_end = .;
+	}
+
+	.data : {
+		_fdata = .;
+		data_start = .;
+		*(.data)
+		*(.data.*)
+		*(.sdata)
+		_edata = .;
+		data_end = .;
+	}
+
+	.bss : {
+		_fbss = .;
+		bss_start = .;
+		*(.bss)
+		*(.bss.*)
+		*(.sbss)
+		*(.scommon)
+		*(COMMON)
+		bss_end = .;
+	}
+
+	.textrc1 : {
+		_rstart1 = .;
+		*(.textini1.*)
+	}
+
+	.datarc1 : {
+		*(.dataini1.*)
+		_rend1 = .;
+	}
+
+	.textrc2 : {
+		_rstart2 = .;
+		*(.textini2.*)
+	}
+
+	.datarc2 : {
+		*(.dataini2.*)
+		_rend2 = .;
+	}
+
+	_end = .;
+}

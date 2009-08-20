@@ -1,0 +1,62 @@
+# bu4712l board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+# $Id: bu4712l.txt,v 1.6 2004/07/02 02:18:47 Exp $
+boardtype=0x045f
+boardnum=${serno}
+# Board revision 1.2
+boardrev=0x12
+boardflags=0x608
+sromrev=2
+
+# MIPS clock frequency in MHz
+clkfreq=200
+
+# 8 MB SDR SDRAM (4 Meg x 16)
+sdram_init=0x0002
+sdram_config=0x0022
+sdram_refresh=0x0000
+sdram_ncdl=0
+
+# Ethernet w/ac100 single phy
+et0macaddr=00:90:4c:88:${maclo}
+et0phyaddr=6
+et0mdcport=0
+
+# Make the d11 i/f single band
+wl0id=0x4320
+
+# 4712 802.11g parameters
+il0macaddr=00:90:4c:89:${maclo}
+aa0=3
+ag0=2
+pa0maxpwr=60
+pa0itssit=62
+pa0b0=0x119a
+pa0b1=0xfb8b
+pa0b2=0xfece
+
+# Commons wireless parameters
+cctl=0
+ccode=0
+
+# Bootlaoder variables
+dl_ram_addr=a0001000
+os_ram_addr=80001000
+os_flash_addr=bfc40000
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+scratch=a0180000
+boot_wait=on
+
+# Watchdog timer in ms
+watchdog=0
+
+# LAN only
+landevs=et0 wl0
+wandevs=

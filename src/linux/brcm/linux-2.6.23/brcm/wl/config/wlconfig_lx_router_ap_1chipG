@@ -1,0 +1,23 @@
+# Broadcom 802.11abg Networking Device Driver Configuration file
+#
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: wlconfig_lx_router_ap_1chipG,v 1.10 2006/10/25 01:26:59 Exp $
+#
+# Linux Kernel wl driver config file
+
+# get basic configuration
+include $(WLCFGDIR)/wlconfig_lx_router_ap
+include $(WLCFGDIR)/wlconfig_nomimo
+
+# restrict to single-chip (4712, 535x), single-band (G-only)
+DBAND=0
+
+# tunables
+WLTUNEFILE=wltunable_lx_router_1chipG.h

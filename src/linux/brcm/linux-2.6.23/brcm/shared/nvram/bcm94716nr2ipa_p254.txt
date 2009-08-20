@@ -1,0 +1,110 @@
+# NVRAM board text file for the bcm94716nr2ipa with a 5325e 10/100 switch.
+#
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# All Rights Reserved.
+# $Id: bcm94716nr2ipa_p254.txt,v 1.1 2009/02/02 18:14:44 Exp $
+#
+
+boardtype=0x04fb
+boardnum=${serno}
+
+# P200 to P249 are reserved for boards with bcm4716 chips
+boardrev=0x1254
+boardflags=0x710
+boardflags2=0x400
+sromrev=8
+
+# CPU clock (Mhz)
+clkfreq=300,150,75
+
+# Oscillator clock (Khz)
+xtalfreq=20000
+
+# 32MB of DDR1 (DDRM16X16)
+sdram_config=0x283
+
+# Ethernet and 5325 switch
+et0macaddr=00:90:4c:34:${maclo}
+et0phyaddr=30
+
+# Mimophy parameters
+# Don't use a 4322 id so we won't trigger the PR51591 war.
+wl0id=0x4329
+macaddr=00:90:4c:35:${maclo}
+ccode=0
+regrev=0
+ledbh0=255
+ledbh1=255
+ledbh2=0
+ledbh3=0
+leddc=0xffff
+aa2g=7
+ag0=2
+ag1=2
+ag2=2
+txchain=3
+rxchain=3
+antswitch=3
+itt2ga0=0x20
+maxp2ga0=0x44
+pa2gw0a0=0xfe78
+pa2gw1a0=0x17fc
+pa2gw2a0=0xfa19
+itt2ga1=0x20
+maxp2ga1=0x44
+pa2gw0a1=0xfe78
+pa2gw1a1=0x17fc
+pa2gw2a1=0xfa19
+tssipos2g=1
+extpagain2g=2
+pdetrange2g=0
+triso2g=3
+antswctl2g=0
+tssipos5g=1
+extpagain5g=2
+pdetrange5g=0
+triso5g=3
+antswctl5g=0
+cck2gpo=0
+ofdm2gpo=0
+mcs2gpo0=0
+mcs2gpo1=0
+mcs2gpo2=0
+mcs2gpo3=0
+mcs2gpo4=0
+mcs2gpo5=0
+mcs2gpo6=0
+mcs2gpo7=0
+cddpo=0
+stbcpo=0
+bw40po=0
+bwduppo=0
+
+# Robo switch config (vlan0:LAN, vlan1:WAN)
+gpio3=robo_reset
+vlan0hwname=et0
+vlan0ports=1 2 3 4 5*
+vlan1hwname=et0
+vlan1ports=0 5u
+
+# Bootloader and OS glue
+landevs=vlan0 wl0
+wandevs=et0
+
+# Bootlaoder variables
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+boot_wait=on
+wait_time=3
+reset_gpio=6
+gpio5=ses_button
+gpio4=ses_led
+
+# Watchdog timer in ms
+watchdog=0

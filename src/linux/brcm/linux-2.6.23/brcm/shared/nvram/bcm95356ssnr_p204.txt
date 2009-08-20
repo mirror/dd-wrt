@@ -1,0 +1,89 @@
+# NVRAM board text file for the 5356 bu boards
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# All Rights Reserved.
+# $Id $
+#
+
+boardtype=0x04ec
+boardnum=${serno}
+boardrev=0x1204
+boardflags=0x710
+sromrev=8
+
+# CPU clock (Mhz)
+clkfreq=300,200,100
+
+# Oscillator clock (Khz)
+xtalfreq=25000
+
+# 64MB of DDR1 (DDRM32X16)
+# 0x002 for 133 MHz, 0x003 for 200MHz
+sdram_config=0x003
+
+# 64MB of SDR (SDRM32X16)
+#sdram_config=0x002
+
+# Ethernet w/ internal roboswitch
+et0macaddr=00:90:4c:23:${maclo}
+et0phyaddr=30
+et0mdcport=0
+
+# Its a sslpn board
+wl0id=0x4338
+
+# 5356 sslpn parameters
+il0macaddr=00:90:4c:24:${maclo}
+# more ....
+
+# Robo switch config (vlan0:LAN, vlan1:WAN)
+vlan0hwname=et0
+vlan0ports=1 2 3 4 5*
+vlan1hwname=et0
+vlan1ports=0 5u
+
+# Bootloader and OS glue
+landevs=vlan0 wl0
+wandevs=et0
+
+# Bootlaoder variables
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+boot_wait=on
+wait_time=3
+
+# Watchdog timer in ms
+watchdog=0
+
+opo=0
+pa0b0=6523
+pa0b1=64010
+pa0b2=65200
+pa0b3=5826
+pa0b4=64114
+pa0b5=65197
+pa0b6=5757
+pa0b7=64131
+pa0b8=65193
+rssismf2g=0xa
+rssismc2g=0xc
+rssisav2g=0x2
+rssismf2g_low0=0xa
+rssismc2g_low1=0xd
+rssisav2g_low2=0x3
+rssismf2g_hi0=0xa
+rssismc2g_hi1=0xa
+rssisav2g_hi2=0x3
+pa0itssit=62
+pa0maxpwr=68
+ag0=255
+aa2g=2
+ccode=ALL
+cctl=0x0
+
+wl_msglevel=0x1
