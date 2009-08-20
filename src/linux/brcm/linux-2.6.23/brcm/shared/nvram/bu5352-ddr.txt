@@ -1,0 +1,72 @@
+# BU5352 board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: bu5352-ddr.txt,v 1.2 2005/01/07 02:47:13 Exp $
+boardtype=0x0462
+boardnum=${serno}
+# Board revision 1.0
+boardrev=0x12
+boardflags=0x758
+sromrev=2
+
+# MIPS clock frequency in MHz
+clkfreq=200
+
+# 64 MB DDR SDRAM (16 Meg x 16 x 2)
+sdram_init=0x0009
+sdram_config=0x0062
+sdram_refresh=0x0000
+sdram_ncdl=0
+
+# Ethernet w/ internal roboswitch
+et0macaddr=00:90:4c:8b:${maclo}
+et0phyaddr=30
+et0mdcport=0
+
+# No eth1
+et1phyaddr=0x1f
+
+# Make the d11 i/f single band
+wl0id=0x4318
+
+# 5352 802.11g parameters
+il0macaddr=00:90:4c:8c:${maclo}
+aa0=3
+ag0=2
+pa0maxpwr=60
+pa0itssit=62
+pa0b0=0x142a
+pa0b1=0xfb0b
+pa0b2=0xfeaa
+opo=16
+
+# Commons wireless parameters
+wl0gpio0=255
+wl0gpio1=255
+wl0gpio2=255
+wl0gpio3=255
+cctl=0
+ccode=0
+
+# Robo switch config (vlan0:LAN, vlan1:WAN)
+vlan0hwname=et0
+vlan0ports=1 2 3 4 5*
+vlan1hwname=et0
+vlan1ports=0 5u
+
+# Bootloader and OS glue
+landevs=vlan0 wl0
+wandevs=et0
+
+# Bootlaoder variables
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+boot_wait=on
+
+# Watchdog timer in ms
+watchdog=0

@@ -1,0 +1,178 @@
+# bu4703 board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: bu4703.txt,v 1.2 2007/10/19 17:51:57 Exp $
+boardtype=0x04c1
+boardnum=${serno}
+# Board revision P 1.2
+boardrev=0x1102
+# Flags?
+boardflags=0
+
+# MIPS clock frequency in MHz
+clkfreq=264
+
+# 64 MB DDR SDRAM (4 Meg x 16 x 2)
+sdram_init=0x0149
+sdram_config=0x0062
+sdram_refresh=0x0000
+sdram_ncdl=0
+
+# BCM5222 dual phy
+et0macaddr=00:90:4c:f3:${maclo}
+et0phyaddr=0
+et0mdcport=0
+et1macaddr=00:90:4c:f4:${maclo}
+et1phyaddr=1
+et1mdcport=0
+
+# Bootloader variables
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+boot_wait=on
+
+# Watchdog timer in ms
+watchdog=0
+
+# Reset 
+reset_gpio=7
+
+# Variables for the 4322L
+pci/1/1/vendid=0x14e4
+pci/1/1/devid=0x432b
+pci/1/1/sromrev=8
+pci/1/1/boardrev=0x1101
+pci/1/1/boardflags=0x200
+pci/1/1/boardflags2=0x0
+pci/1/1/macaddr=00:90:4c:f5:${maclo}
+pci/1/1/ccode=0x0
+pci/1/1/regrev=0x0
+pci/1/1/ledbh0=0xff
+pci/1/1/ledbh1=0xff
+pci/1/1/ledbh2=0xff
+pci/1/1/ledbh3=0xff
+pci/1/1/leddc=0xffff
+pci/1/1/pa0b0=0x0
+pci/1/1/pa0b1=0x0
+pci/1/1/pa0b2=0x0
+pci/1/1/pa0itssit=0x3e
+pci/1/1/pa0maxpwr=0x4c
+pci/1/1/opo=0x0
+pci/1/1/aa2g=0x3
+pci/1/1/aa5g=0x3
+pci/1/1/ag0=0x2
+pci/1/1/ag1=0x2
+pci/1/1/ag2=0xff
+pci/1/1/ag3=0xff
+pci/1/1/pa1b0=0xffff
+pci/1/1/pa1b1=0xffff
+pci/1/1/pa1b2=0xffff
+pci/1/1/pa1lob0=0xffff
+pci/1/1/pa1lob1=0xffff
+pci/1/1/pa1lob2=0xffff
+pci/1/1/pa1hib0=0xffff
+pci/1/1/pa1hib1=0xffff
+pci/1/1/pa1hib2=0xffff
+pci/1/1/pa1itssit=0x0
+pci/1/1/pa1maxpwr=0x0
+pci/1/1/pa1lomaxpwr=0xff
+pci/1/1/pa1himaxpwr=0xff
+pci/1/1/bxa2g=0x3
+pci/1/1/rssisav2g=0x7
+pci/1/1/rssismc2g=0xf
+pci/1/1/rssismf2g=0xf
+pci/1/1/bxa5g=0x3
+pci/1/1/rssisav5g=0x7
+pci/1/1/rssismc5g=0xf
+pci/1/1/rssismf5g=0xf
+pci/1/1/tri2g=0xff
+pci/1/1/tri5g=0xff
+pci/1/1/tri5gl=0xff
+pci/1/1/tri5gh=0xff
+pci/1/1/rxpo2g=0xff
+pci/1/1/rxpo5g=0xff
+pci/1/1/txchain=0x3
+pci/1/1/rxchain=0x3
+pci/1/1/antswitch=0x0
+pci/1/1/cck2gpo=0x0
+pci/1/1/ofdm2gpo=0x0
+pci/1/1/ofdm5gpo=0x0
+pci/1/1/ofdm5glpo=0x0
+pci/1/1/ofdm5ghpo=0x0
+pci/1/1/mcs2gpo0=0x0
+pci/1/1/mcs2gpo1=0x0
+pci/1/1/mcs2gpo2=0x0
+pci/1/1/mcs2gpo3=0x0
+pci/1/1/mcs2gpo4=0x0
+pci/1/1/mcs2gpo5=0x0
+pci/1/1/mcs2gpo6=0x0
+pci/1/1/mcs2gpo7=0x0
+pci/1/1/mcs5gpo0=0x0
+pci/1/1/mcs5gpo1=0x0
+pci/1/1/mcs5gpo2=0x0
+pci/1/1/mcs5gpo3=0x0
+pci/1/1/mcs5gpo4=0x0
+pci/1/1/mcs5gpo5=0x0
+pci/1/1/mcs5gpo6=0x0
+pci/1/1/mcs5gpo7=0x0
+pci/1/1/mcs5glpo0=0x0
+pci/1/1/mcs5glpo1=0x0
+pci/1/1/mcs5glpo2=0x0
+pci/1/1/mcs5glpo3=0x0
+pci/1/1/mcs5glpo4=0x0
+pci/1/1/mcs5glpo5=0x0
+pci/1/1/mcs5glpo6=0x0
+pci/1/1/mcs5glpo7=0x0
+pci/1/1/mcs5ghpo0=0x0
+pci/1/1/mcs5ghpo1=0x0
+pci/1/1/mcs5ghpo2=0x0
+pci/1/1/mcs5ghpo3=0x0
+pci/1/1/mcs5ghpo4=0x0
+pci/1/1/mcs5ghpo5=0x0
+pci/1/1/mcs5ghpo6=0x0
+pci/1/1/mcs5ghpo7=0x0
+pci/1/1/cddpo=0x0
+pci/1/1/stbcpo=0x0
+pci/1/1/bw40po=0x4
+pci/1/1/bwduppo=0x2
+pci/1/1/maxp2ga0=0x4c
+pci/1/1/itt2ga0=0x3e
+pci/1/1/itt5ga0=0x0
+pci/1/1/pa2gw0a0=0x0
+pci/1/1/pa2gw1a0=0x0
+pci/1/1/pa2gw2a0=0x0
+pci/1/1/maxp5ga0=0x0
+pci/1/1/maxp5gha0=0xff
+pci/1/1/maxp5gla0=0xff
+pci/1/1/pa5gw0a0=0xffff
+pci/1/1/pa5gw1a0=0xffff
+pci/1/1/pa5gw2a0=0xffff
+pci/1/1/pa5glw0a0=0xffff
+pci/1/1/pa5glw1a0=0xffff
+pci/1/1/pa5glw2a0=0xffff
+pci/1/1/pa5ghw0a0=0xffff
+pci/1/1/pa5ghw1a0=0xffff
+pci/1/1/pa5ghw2a0=0xffff
+pci/1/1/maxp2ga1=0x4c
+pci/1/1/itt2ga1=0x3e
+pci/1/1/itt5ga1=0x0
+pci/1/1/pa2gw0a1=0x0
+pci/1/1/pa2gw1a1=0x0
+pci/1/1/pa2gw2a1=0x0
+pci/1/1/maxp5ga1=0x0
+pci/1/1/maxp5gha1=0xff
+pci/1/1/maxp5gla1=0xff
+pci/1/1/pa5gw0a1=0xffff
+pci/1/1/pa5gw1a1=0xffff
+pci/1/1/pa5gw2a1=0xffff
+pci/1/1/pa5glw0a1=0xffff
+pci/1/1/pa5glw1a1=0xffff
+pci/1/1/pa5glw2a1=0xffff
+pci/1/1/pa5ghw0a1=0xffff
+pci/1/1/pa5ghw1a1=0xffff
+pci/1/1/pa5ghw2a1=0xffff

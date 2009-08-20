@@ -1,0 +1,29 @@
+# Broadcom 802.11abg Networking Device Driver Configuration file
+#
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: wlconfig_lx_router_apsta,v 1.15.12.1 2008/09/05 02:34:26 Exp $
+#
+# Linux Kernel wl driver config file
+
+# get common 
+include $(WLCFGDIR)/wl_default
+
+# tunables
+WLTUNEFILE=wltunable_lx_router.h
+
+# features
+include $(WLCFGDIR)/wlconfig_apdef
+STA=1
+BCMSUP_PSK=1
+WET=1
+#MAC_SPOOF=1
+#ROUTER_SECURE_IBSS=1
+#WMF=1
+WLLXIW=1

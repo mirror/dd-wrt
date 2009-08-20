@@ -1,0 +1,49 @@
+# 4312 side of a BCM94312SDG sdio board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+# $Id: fake4312.txt,v 1.2 2008/02/26 21:50:44 Exp $
+
+boardtype=0xf011
+boardnum=9999
+boardflags=0x0e00
+
+# Board revision 1.0
+boardrev=0x10
+
+#
+# --- off-chip d11 device parameters ---
+#
+sromrev=3
+
+# PCI config fix
+
+# 0x4318 g-band olny
+# 0x4319 dual band d11 device
+# 0x431a a-band only
+wl0id=0x4318
+
+# 802.11 parameters
+il0macaddr=00:90:4c:9e:27:0f
+aa0=1
+ag0=255
+pa0maxpwr=80
+pa0itssit=62
+pa0b0=0x153b
+pa0b1=0xfa80
+pa0b2=0xfe77
+
+# opo: output power offset (max cck - max ofdm) 0.25dB steps
+opo=16
+
+# Commons wireless parameters
+ccode=0
+
+# Wireless LED GPIO mapping/behavior
+
+# ???
+cctl=0

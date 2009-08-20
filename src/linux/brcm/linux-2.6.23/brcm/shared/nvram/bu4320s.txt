@@ -1,0 +1,55 @@
+# bu4320s board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: bu4320s.txt,v 1.5 2005/04/01 00:13:07 Exp $
+boardtype=0x0459
+boardnum=${serno}
+# Board revision 1.0
+boardrev=0x10
+boardflags=0x0648
+sromrev=2
+
+# MIPS clock frequency in MHz
+clkfreq=240
+
+# 4320 802.11g parameters
+il0macaddr=00:90:4c:85:${maclo}
+aa0=3
+ag0=2
+pa0maxpwr=74
+pa0itssit=62
+pa0b0=0x119a
+pa0b1=0xfb93
+pa0b2=0xfea5
+opo=8
+
+# 4320 802.11a parameters
+et1macaddr=00:90:4c:86:${maclo}
+aa1=3
+ag1=2
+pa1itssit=120
+pa1maxpwr=56
+pa1b0=0
+pa1b1=0
+pa1b2=0
+pa1lomaxpwr=56
+pa1lob0=0
+pa1lob1=0
+pa1lob2=0
+pa1himaxpwr=56
+pa1hib0=0
+pa1hib1=0
+pa1hib2=0
+
+# Commons wireless parameters
+wl0gpio0=255
+wl0gpio1=255
+wl0gpio2=255
+wl0gpio3=255
+cctl=0
+ccode=0
