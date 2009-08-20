@@ -1,0 +1,8 @@
+#
+# Generated files
+#
+gen_init_cpio
+initramfs_data.cpio
+initramfs_data.cpio.gz
+initramfs_list
+include
