@@ -15,7 +15,7 @@
 EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include 
 
 BCM947XX_OBJS = hndmips.o hndchipc.o sflash.o
-BCM947XX_OBJS += nvram.o gpio.o
+BCM947XX_OBJS += nvram.o gpio.o cfe_env.o
 
 EXTRA_CFLAGS += -DLINUX_HYBRID_POSTPROCESSING_REMOVAL
 ifeq ($(CONFIG_PCI),y)
