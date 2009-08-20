@@ -414,7 +414,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	/* nvram */
 	if (cfe_size != 384 * 1024) {
-		bcm947xx_parts[3].offset = (size - ROUNDUP(NVRAM_SPACE, mtd->erasesize)) - board_data_size;
+		bcm947xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 		bcm947xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	} else {
 		/* nvram (old 128kb config partition on netgear wgt634u) */
@@ -425,7 +425,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
 		bcm947xx_parts[1].offset = bcm947xx_parts[0].size;
-		bcm947xx_parts[1].size   = (bcm947xx_parts[3].offset - bcm947xx_parts[1].offset);
+		bcm947xx_parts[1].size   = (bcm947xx_parts[3].offset - bcm947xx_parts[1].offset) - board_data_size;
 	} else {
 		/* do not count the elf loader, which is on one block */
 		bcm947xx_parts[1].offset = bcm947xx_parts[0].size + 
