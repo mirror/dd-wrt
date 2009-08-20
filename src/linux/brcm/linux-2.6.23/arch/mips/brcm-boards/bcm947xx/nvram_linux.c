@@ -53,6 +53,9 @@ static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 extern void *bcm947xx_sih;
 extern spinlock_t bcm947xx_sih_lock;
 
+static int cfe_env;
+extern char *cfe_env_get(char *nv_buf, const char *name);
+
 /* Convenience */
 #define sih bcm947xx_sih
 #define sih_lock bcm947xx_sih_lock
@@ -92,6 +95,20 @@ early_nvram_init(void)
 		/* extif assumed, Stop at 4 MB */
 		base = KSEG1ADDR(SI_FLASH1);
 		lim = SI_FLASH1_SZ;
+	}
+
+	src = (u32 *) KSEG1ADDR(base + 8 * 1024 * 1024 - 0x2000);
+	dst = (u32 *) nvram_buf;
+	if ((lim == 0x02000000) && ((*src & 0xff00ff) == 0x000001)) {
+		printk("early_nvram_init: WGT634U NVRAM found.\n");
+
+		for (i = 0; i < 0x1ff0; i++) {
+			if (*src == 0xFFFFFFFF)
+				break;
+			*dst++ = *src++;
+		}
+		cfe_env = 1;
+		return;
 	}
 
 	off = FLASH_MIN;
@@ -149,6 +166,9 @@ early_nvram_get(const char *name)
 			printk("early_nvram_get: Failed reading nvram var %s\n", name);
 			return NULL;
 		}
+
+	if (cfe_env)
+		return cfe_env_get(nvram_buf, name);
 
 	/* Look for name=value and return value */
 	var = &nvram_buf[sizeof(struct nvram_header)];
