@@ -1,0 +1,635 @@
+<!-- $Id: mod_ldap.html,v 1.1 2008/08/15 22:16:54 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_ldap.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_ldap</title>
+</head>
+
+<body bgcolor=white>
+
+<hr><br>
+<center>
+<h2><b>ProFTPD module <code>mod_ldap</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+This module is contained in the <code>mod_ldap.c</code> file for ProFTPD 1.2.<i>x</i>/1.3.<i>x</i>, and is not compiled by default.  Installation instructions
+are discussed <a href="#Installation">here</a>.
+
+<p>
+The most current version of <code>mod_ldap</code> is distributed with the
+ProFTPD source code.
+
+<h2>Author</h2>
+<p>
+Please contact John Morrissey &lt;jwm <i>at</i> horde.net&gt; with any
+questions, concerns, or suggestions regarding this module.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#LDAPAliasDereference">LDAPAliasDereference</a>
+  <li><a href="#LDAPAttr">LDAPAttr</a>
+  <li><a href="#LDAPAuthBinds">LDAPAuthBinds</a>
+  <li><a href="#LDAPDNInfo">LDAPDNInfo</a>
+  <li><a href="#LDAPDefaultAuthScheme">LDAPDefaultAuthScheme</a>
+  <li><a href="#LDAPDefaultGID">LDAPDefaultGID</a>
+  <li><a href="#LDAPDefaultUID">LDAPDefaultUID</a>
+  <li><a href="#LDAPDoAuth">LDAPDoAuth</a>
+  <li><a href="#LDAPDoGIDLookups">LDAPDoGIDLookups</a>
+  <li><a href="#LDAPDoQuotaLookups">LDAPDoQuotaLookups</a>
+  <li><a href="#LDAPDoUIDLookups">LDAPDoUIDLookups</a>
+  <li><a href="#LDAPForceDefaultGID">LDAPForceDefaultGID</a>
+  <li><a href="#LDAPForceDefaultUID">LDAPForceDefaultUID</a>
+  <li><a href="#LDAPForceGeneratedHomedir">LDAPForceGeneratedHomedir</a>
+  <li><a href="#LDAPGenerateHomedir">LDAPGenerateHomedir</a>
+  <li><a href="#LDAPGenerateHomedirPrefix">LDAPGenerateHomedirPrefix</a>
+  <li><a href="#LDAPGenerateHomedirPrefixNoUsername">LDAPGenerateHomedirPrefixNoUsername</a>
+  <li><a href="#LDAPNegativeCache">LDAPNegativeCache</a>
+  <li><a href="#LDAPProtocolVersion">LDAPProtocolVersion</a>
+  <li><a href="#LDAPQueryTimeout">LDAPQueryTimeout</a>
+  <li><a href="#LDAPSearchScope">LDAPSearchScope</a>
+  <li><a href="#LDAPServer">LDAPServer</a>
+  <li><a href="#LDAPUseSSL">LDAPUseSSL</a>
+  <li><a href="#LDAPUseTLS">LDAPUseTLS</a>
+</ul>
+
+<hr>
+<h2><a name="LDAPAliasDereference">LDAPAliasDereference</a></h2>
+<strong>Syntax:</strong> LDAPAliasDereference <em>never|always|search|find</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPAliasDereference</code> directive configures how aliases are
+handled.  The possible values have the following behaviors:
+<ul>
+  <li><em>never</em>
+    <p>
+    Never dereference aliases
+  </li>
+
+  <p>
+  <li><em>always</em>
+    <p>
+    Always dereference aliases
+  </li>
+
+  <p>
+  <li><em>search</em>
+    <p>
+    Dereference aliases only when searching
+  </li>
+
+  <p>
+  <li><em>find</em>
+    <p>
+    Dereference aliases only when locating the base object for the search
+  </li>
+</ul>
+
+<p>
+The default is "never", <i>e.g.</i>:
+<pre>
+  &lt;IfModule mod_ldap.c&gt;
+    LDAPAliasDeference never
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr>
+<h2><a name="LDAPAttr">LDAPAttr</a></h2>
+<strong>Syntax:</strong> LDAPAttr <em>old-attr-name new-attr-name</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPAttr</code> directive is used to map, or to associate, a standard
+attribute name to a non-standard attribute name.  If, for example, your
+LDAP directory schema used different names for some of the attributes used
+by <code>mod_ldap</code>, you would use this directive to tell
+<code>mod_ldap</code> what new attribute names to use.
+
+<p>
+The following LDAP attributes can be renamed in this manner:
+<ul>
+  <li><code>uid</code>
+  <li><code>uidNumber</code>
+  <li><code>gidNumber</code>
+  <li><code>homeDirectory</code>
+  <li><code>userPassword</code>
+  <li><code>loginShell</code>
+  <li><code>cn</code>
+  <li><code>memberUid</code>
+  <li><code>ftpQuota</code>
+</ul>
+
+<p>
+<hr>
+<h2><a name="LDAPAuthBinds">LDAPAuthBinds</a></h2>
+<strong>Syntax:</strong> LDAPAuthBinds <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+By default, the DN specified by the <a href="#LDAPDNInfo"><code>LDAPDNInfo</code></a> will be used to bind to the LDAP server to obtain user information,
+including the <code>userPassword</code> attribute.  If <code>LDAPAuthBinds</code> is set to <em>on</em>, the DN specified by <code>LDAPDNInfo</code> will be
+used to fetch all user information <i>except</i> the <code>userPassword</code>
+attribute.  Then, the <code>mod_ldap</code> module will bind to the LDAP server
+as the user who is logging in via FTP with the user-supplied password.  If this
+bind succeeds, the user is considered authenticated and is allowed to log in.
+This method of LDAP authentication has the added benefit of supporting any
+password encryption scheme that your LDAP server supports.
+
+<p>
+In versions of <code>mod_ldap</code> up to 2.7.6, the default for
+<code>LDAPAuthBinds</code> was <em>off</em>.  After <code>mod_ldap</code> 2.8,
+the default value for <code>LDAPAuthBinds</code> is <em>on</em>.
+
+<p>
+<hr>
+<h2><a name="LDAPDNInfo">LDAPDNInfo</a></h2>
+<strong>Syntax:</strong> LDAPDNInfo <em>dn password</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDNInfo</code> directive configures the DN and the password that
+<code>mod_ldap</code> will use when binding to the LDAP directory.  If this
+configuration directive is missing, then anonymous binds are used.
+
+<p>
+The default is:
+<pre>
+  &lt;IfModule mod_ldap.c&gt;
+    # Use anonymous binds
+    LDAPDNInfo "" ""
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+See also: <a href="#LDAPServer"><code>LDAPServer</code></a>
+
+<p>
+<hr>
+<h2><a name="LDAPDefaultAuthScheme">LDAPDefaultAuthScheme</a></h2>
+<strong>Syntax:</strong> LDAPDefaultAuthScheme <em>crypt|clear</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDefaultAuthScheme</code> directive specifies the authentication
+scheme used for passwords which have no "{hashname}" prefix in the LDAP
+directory.  For example, if you are:
+<pre>
+  userPassword <em>mypass</em>
+</pre>
+in your directory, you would want to set <code>LDAPDefaultAuthScheme</code>
+to <em>clear</em>.
+
+<p>
+The default value is <em>crypt</em>.
+
+<p>
+<hr>
+<h2><a name="LDAPDefaultGID">LDAPDefaultGID</a></h2>
+<strong>Syntax:</strong> LDAPDefaultGID <em>gid</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDefaultGID</code> directive sets the default GID to be used
+for users when no <code>gidNumber</code> attribute is found for that user.
+
+<p>
+This directive is useful primarily in virtual user environments common in
+large-scale ISPs and hosting organizations.  If a user does not have an LDAP
+<code>gidNumber</code> attribute, the <code>LDAPDefaultGID</code> is used.
+This allows one to have a large number of users in an LDAP directory without
+<code>gidNumber</code> attributes; setting this configuration directive will
+automatically assign those users a single GID.
+
+<p>
+See also: <a href="#LDAPDefaultUID"><code>LDAPDefaultUID</code></a>
+
+<p>
+<hr>
+<h2><a name="LDAPDefaultUID">LDAPDefaultUID</a></h2>
+<strong>Syntax:</strong> LDAPDefaultUID <em>uid</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDefaultUID</code> directive sets the default UID to be used
+for users when no <code>uidNumber</code> attribute is found for that user.
+
+<p>
+This directive is useful primarily in virtual user environments common in
+large-scale ISPs and hosting organizations.  If a user does not have an LDAP
+<code>uidNumber</code> attribute, the <code>LDAPDefaultGID</code> is used.
+This allows one to have a large number of users in an LDAP directory without
+<code>uidNumber</code> attributes; setting this configuration directive will
+automatically assign those users a single UID.
+
+<p>
+See also: <a href="#LDAPDefaultGID"><code>LDAPDefaultGID</code></a>
+
+<p>
+<hr>
+<h2><a name="LDAPDoAuth">LDAPDoAuth</a></h2>
+<strong>Syntax:</strong> LDAPDoAuth <em>off|on base-dn search-filter-template</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDoAuth</code> configuration directive activates LDAP
+authentication.  The second parameter to this directive is the LDAP base DN to
+use for authentication.  The third parameter is a template to be used for the
+search filter; <code>%v</code> will be replaced with the username that is being
+authenticated.
+
+<p>
+By default, the search filter template used is:
+<pre>
+  (&amp;(uid=%v)(objectclass=posixAccount))
+</pre>
+The <em>uid</em> for the the search filter is taken from the
+<code>LDAPAttr</code> directive.  Search filter templates are only supported
+in versions of <code>mod_ldap</code> 2.7 and later.</para>
+
+<p>
+See also: <a href="#LDAPAttr"><code>LDAPAttr</code></a>
+
+<p>
+<hr>
+<h2><a name="LDAPDoGIDLookups">LDAPDoGIDLookups</a></h2>
+<strong>Syntax:</strong> LDAPDoGIDLookups <em>off|on base-dn cn-filter-template gid-number-filter-template member-uid-filter-template</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDoGIDLookups</code> directive activates LDAP GID-to-name lookups
+for directory listings.  The second parameter to this directive is the LDAP
+base DN to use for GID-to-name lookups.  The third through fifth parameters are
+templates to be used for the search filter; <code>%v</code> will be replaced
+with the GID that is being looked up.
+
+<p>
+By default, the CN filter template look like this:
+<pre>
+  (&amp;(LDAPAttr_cn=%v)(objectclass=posixGroup))
+</pre>
+The <code>gidNumber</code> filter template is:
+<pre>
+  (&amp;(LDAPAttr_gidNumber=%v)(objectclass=posixGroup))
+</pre>
+and the <code>memberUid</code> filter template used is:
+  (&amp;(LDAPAttr_memberUid=%v)(objectclass=posixGroup))
+</pre>
+Note that filter templates are only supported in <code>mod_ldap</code>
+version 2.8.3 and later.
+
+<p>
+The attribute names used in the default search filters are taken from the
+<a href="#LDAPAttr"><code>LDAPAttr</code></a> directive.
+
+<p>
+<hr>
+<h2><a name="LDAPDoQuotaLookups">LDAPDoQuotaLookups</a></h2>
+<strong>Syntax:</strong> LDAPDoQuotaLookups <em>off|on base-dn quota-filter-template default-quota</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDoQuotaLookups</code> directive enables LDAP quota lookups.  The
+second parameter of this directive is the LDAP base DN to use for quota limit
+search.  The third parameter is a template to be used for the search filter;
+<code>%v</code> will be replaced with the username that is being authenticated.
+
+<p>
+By default, the search filter template is:
+<pre>
+  (&amp;(LDAPAttr_uid=%v)(objectclass=posixAccount))
+</pre>
+The <em>uid</em> for the the search filter is taken from the
+<a href="#LDAPAttr"><code>LDAPAttr</code></a> directive.  Note that search
+filter templates are only supported in <code>mod_ldap</code> version 2.7 and
+later.
+
+<p>
+If specified, the <em>default-quota</em> parameter indicates the quota limits
+to use if a user does not have an <code>ftpQuota</code> attribute.  This
+parameter is formatted the same way as the <code>ftpQuota</code> LDAP
+attribute.
+
+<p>
+<hr>
+<h2><a name="LDAPDoUIDLookups">LDAPDoUIDLookups</a></h2>
+<strong>Syntax:</strong> LDAPDoUIDLookups <em>off|on base-dn uid-filter-template</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPDoUIDLookups</code> directive activates LDAP UID-to-name lookups
+for directory listings.  The second parameter to this directive is the LDAP
+base DN to use for UID-to-name lookups.  The third parameter is a
+template to be used for the search filter; <code>%v</code> will be replaced
+with the UID that is being looked up.
+
+<p>
+By default, the search filter template looks like this:
+<pre>
+  (&amp;(LDAPAttr_uidNumber=%v)(objectclass=posixGroup))
+</pre>
+The <em>uidNumber</em> attribute name used in the search filter comes from
+the <a href="#LDAPAttr"><code>LDAPAttr</code></a> directive.
+Note that filter templates are only supported in <code>mod_ldap</code>
+version 2.7 and later.
+
+<p>
+<hr>
+<h2><a name="LDAPForceDefaultGID">LDAPForceDefaultGID</a></h2>
+<strong>Syntax:</strong> LDAPForceDefaultGID <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+Even when a <a href="#LDAPDefaultGID"><code>LDAPDefaultGID</code></a> is
+configured, the <code>mod_ldap</code> module will allow individual users to
+have <code>gidNumber</code> attributes that will override this default GID.
+With <code>LDAPForceDefaultGID</code> directive configured to be <em>on</em>,
+all LDAP-authenticated users are given the default GID; GIDs may not be
+overridden by <code>gidNumber</code> attributes.
+
+<p>
+<hr>
+<h2><a name="LDAPForceDefaultUID">LDAPForceDefaultUID</a></h2>
+<strong>Syntax:</strong> LDAPForceDefaultUID <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+Even when a <a href="#LDAPDefaultUID"><code>LDAPDefaultUID</code></a> is
+configured, the <code>mod_ldap</code> module will allow individual users to
+have <code>uidNumber</code> attributes that will override this default UID.
+With <code>LDAPForceDefaultUID</code> directive configured to be <em>on</em>,
+all LDAP-authenticated users are given the default UID; UIDs may not be
+overridden by <code>uidNumber</code> attributes.
+
+<p>
+<hr>
+<h2><a name="LDAPForceGeneratedHomedir">LDAPForceGeneratedHomedir</a></h2>
+<strong>Syntax:</strong> LDAPForceGeneratedHomedir <em>off|on directory-mode</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code
+>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+See also: <a href="#LDAPGenerateHomedir"><code>LDAPGenerateHomedir</code></a>, <a href="#LDAPGenerateHomedirPrefix"><code>LDAPGenerateHomedirPrefix</code></a>, <a href="#LDAPGenerateHomedirPrefixNoUsername"><code>LDAPGenerateHomedirPrefixNoUsername</code></a>
+
+<p>
+<hr>
+<h2><a name="LDAPGenerateHomedir">LDAPGenerateHomedir</a></h2>
+<strong>Syntax:</strong> LDAPGenerateHomedir <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+<hr>
+<h2><a name="LDAPGenerateHomedirPrefix">LDAPGenerateHomedirPrefix</a></h2>
+<strong>Syntax:</strong> LDAPGenerateHomedirPrefix <em>prefix</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+<hr>
+<h2><a name="LDAPGenerateHomedirPrefixNoUsername">LDAPGenerateHomedirPrefixNoUsername</a></h2>
+<strong>Syntax:</strong> LDAPGenerateHomedirPrefixNoUsername <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+<hr>
+<h2><a name="LDAPNegativeCache">LDAPNegativeCache</a></h2>
+<strong>Syntax:</strong> LDAPNegativeCache <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPNegativeCache</code> directive specifies whether or not to cache
+negative responses from the LDAP server when using LDAP for UID/GID lookups.
+This option is useful if you also use/are in transition from another
+authentication system; if there are many users in your old authentication
+system that aren't in the LDAP database, there can be a significant delay when
+a directory listing is performed as the UIDs not in the LDAP database are
+repeatedly looked up in an attempt to present usernames instead of UIDs in
+directory listings. With <code>LDAPNegativeCache</code> set to <em>on</em>,
+negative ("not found") responses from the LDAP server will be cached and speed
+will improve on directory listings that contain many users not present in the
+LDAP database.
+
+<p>
+<hr>
+<h2><a name="LDAPProtocolVersion">LDAPProtocolVersion</a></h2>
+<strong>Syntax:</strong> LDAPProtocolVersion <em>2|3</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPProtocolVersion</code> directive configures the version of
+the LDAP protocol that <code>mod_ldap</code> will use when talking to the
+LDAP servers.  The default protocol version used is <em>3</em>.
+
+<p>
+<hr>
+<h2><a name="LDAPQueryTimeout">LDAPQueryTimeout</a></h2>
+<strong>Syntax:</strong> LDAPQueryTimeout <em>secs</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPQueryTimeout</code> directive configures the timeout value,
+in seconds, that will be used for LDAP directory queries.  The default timeout
+value is determined by your LDAP API.
+
+<p>
+<hr>
+<h2><a name="LDAPSearchScope">LDAPSearchScope</a></h2>
+<strong>Syntax:</strong> LDAPSearchScope <em>onelevel|subtree</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPSearchScope</code> directive is used to set the scope used for
+LDAP searches.  The default setting, <em>subtree</em>, searches for all entries
+in the tree from the current level down.  Setting this directive to
+<em>onelevel</em> searches only one level deep in the LDAP tree.
+
+<p>
+<hr>
+<h2><a name="LDAPServer">LDAPServer</a></h2>
+<strong>Syntax:</strong> LDAPServer <em>&quot;host1:port1 host2:port2&quot;</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPServer</code> directive allows you to to specify the hostname(s)
+and port(s) of the LDAP server(s) to use for LDAP authentication. If no
+<code>LDAPServer</code> configuration directive is present, the default LDAP
+servers specified by your LDAP library will be used.
+
+<p>
+To specify multiple LDAP servers, enclose the entire list of servers in
+quotation marks.  For example:
+<pre>
+  LDAPServer &quot;host1:port1 host2:port2&quot;
+</pre>
+
+<p>
+<hr>
+<h2><a name="LDAPUseSSL">LDAPUseSSL</a></h2>
+<strong>Syntax:</strong> LDAPUseSSL <em>on|off</em><br>
+<strong>Default:</strong> off<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.3.1rc1 and later
+
+<p>
+<hr>
+<h2><a name="LDAPUseTLS">LDAPUseTLS</a></h2>
+<strong>Syntax:</strong> LDAPUseTLS <em>on|off</em><br>
+<strong>Default:</strong> off<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>LDAPUseTLS</code> directive configures whether <code>mod_ldap</code>
+will use SSL/TLS to protect the connections made to the configured LDAP
+servers.
+
+<p>
+By default, the <code>mod_ldap</code> module connects to the LDAP server via 
+non-encrypted connections.  Enabling this option causes <code>mod_ldap</code>
+to use an encrypted (TLS/SSL) connection to the LDAP server. If a secure
+connection to the LDAP server fails, <code>mod_ldap</code> will not
+authenticate users; <code>mod_ldap</code> will <b>not</b> fall back to an
+unsecure connection.
+
+<p>
+<hr><br>
+<h2><a name="Usage">Usage</a></h2>
+
+<p>
+<hr><br>
+<h2><a name="Installation">Installation</a></h2>
+Follow the normal steps for using third-party modules in proftpd: 
+<pre>
+  ./configure --with-modules=mod_ldap
+  make
+  make install
+</pre>
+You may need to specify the location of the OpenLDAP header and library files
+in your <code>configure</i> command, <i>e.g.</i>:
+<pre>
+ ./configure --with-modules=mod_ldap \
+    --with-includes=/usr/local/openldap/include \
+    --with-libraries=/usr/local/openldap/lib
+</pre>
+
+<p>
+<hr><br>
+<h2><a name="Usage">Usage</a></h2>
+
+<p>
+One <code>mod_ldap</code> user submitted the following configuration for
+allowing <code>mod_ldap</code> to communicate to a Windows Active Directory
+server.  Note that this configuration has not been tested; if it works for
+you (or not), please let us know:
+<pre>
+  &lt;IfModule mod_ldap.c&gt;
+    LDAPServer dc.example.org:3268
+    LDAPUseTLS on
+    LDAPAuthBinds on
+    LDAPDNInfo "cn=SRV_ACC_SVN_AUTH,ou=special accounts,ou=Sales,dc=example,dc=org" ******************
+
+    LDAPDoAuth on ou=Users,ou=Sales,dc=example,dc=org "(&(sAMAccountName=%u)(objectclass=user)(memberOf=cn=Linux Admins,ou=Groups,ou=Sales,dc=example,DC=org))"
+    LDAPSearchScope subtree
+
+    # Assign default IDs
+    LDAPDefaultUID 106
+    LDAPDefaultGID 65534
+
+    # Create the home directory
+    LDAPGenerateHomedir on
+    LDAPGenerateHomedirPrefix /home
+
+    # Use different attribute names where necessary
+    LDAPAttr uid sAMAccountName
+    LDAPAttr gidNumber primaryGroupID
+
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr><br>
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2008/08/15 22:16:54 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2008 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+

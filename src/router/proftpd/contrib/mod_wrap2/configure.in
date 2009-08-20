@@ -1,0 +1,59 @@
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; either version 2 of the License, or
+dnl (at your option) any later version.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program; if not, write to the Free Software
+dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+dnl
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(./mod_wrap2.c)
+
+ac_wrap2_libs=""
+
+dnl Auto-detection of shadow passwords.
+AC_ARG_ENABLE(nis,
+  [  --enable-nis            enable use of NIS/netgroups (default=no)
+  ],
+  [
+    if test "$enableval" != "no" ; then
+      AC_DEFINE(WRAP2_USE_NIS)
+
+      dnl Hack to make sure that the correct libraries are linked on the right
+      dnl platforms: FreeBSD's libc itself defines the NIS/YP functions, rather
+      dnl than defining those functions in a separate libnsl library.
+
+      ac_os=`uname`
+      if test "$ac_os" != "FreeBSD"; then
+        ac_wrap2_libs="$ac_wrap2_libs -lnsl"
+      fi
+    fi ])
+
+AC_ARG_ENABLE(wrapper-options,
+  [  --enable-wrapper-options
+                          enable use of tcpwrapper options (default=no)
+                          see hosts_options(5) man page for details
+  ],
+  [
+    if test "$enableval" != "no" ; then
+      AC_DEFINE(WRAP2_USE_OPTIONS)
+    fi
+  ])
+
+AC_CONFIG_HEADER(mod_wrap2.h)
+AC_OUTPUT(Makefile)
+
+dnl It looks like configure does not substitute AC_SUBST values for an
+dnl AC_CONFIG_HEADER file, only for AC_OUTPUT files.  And since we
+dnl specifically need this $Libraries$ line in the header, that does not
+dnl help.  So, do the substitution by hand.
+
+sed -e "s/@WRAP2_LIBS@/$ac_wrap2_libs/" mod_wrap2.h > .mod_wrap2.h.tmp
+mv .mod_wrap2.h.tmp mod_wrap2.h

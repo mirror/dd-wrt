@@ -1,0 +1,196 @@
+<!-- $Id: Testing.html,v 1.5 2008/11/07 19:35:59 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Testing.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - Testing</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>ProFTPD Testsuite</b></h2></center>
+<hr>
+
+<p>
+The proftpd source code is accompanied by a testsuite, for testing various
+features and functionality.  At present, the testsuite is divided into two
+main parts: the API-level tests, and the integration tests.  The API tests
+are written in C, and exercise the various APIs that proftpd provides to
+module developers.  The integration tests are currently written in Perl, and
+seek to check a compiled <code>proftpd</code>'s run-time behavior.
+
+<p>
+In order to run the testsuite, you must configure your proftpd build so that
+the testsuite is prepared.  You do this by using the <code>--enable-tests</code>
+configure option, along with your other build options, <i>e.g.</i>:
+<pre>
+  # ./configure --enable-tests ...
+</pre>
+
+<p>
+<b>API Tests</b><br>
+The API tests use the <code>libcheck</code> library; see:
+<pre>
+  <a href="http://check.sourceforge.net/">http://check.sourceforge.net/</a>
+</pre>
+This library must be installed on your machine in order to run the API tests.
+When the <code>--enable-tests</code> configure option is used, proftpd's
+configure script will check for libcheck, and will fail unless the library
+is present.  If no <code>libcheck</code> is found and you've used
+<code>--enable-tests</code>, you will see:
+<pre>
+    checking for tcase_create in -lcheck... no
+    configure: error: libcheck support, required for tests, not present -- aborting
+</pre>
+Note that, if necessary, the <code>--with-includes</code> and
+<code>--with-libraries</code> configure options can be used to specify the
+locations of the <code>libcheck</code> headers and libraries.
+
+<p>
+To run the testsuite, use the <code>make check</code> target:
+<pre>
+  # ./configure --enable-tests ...
+  # make
+    ...
+  # make check
+    ...
+  ./api-tests
+  Running suite(s): pool
+   array
+   str
+   sets
+   timers
+   table
+   var
+   event
+   env
+   version
+   feat
+   netaddr
+   netacl
+   class
+   regexp
+   expr
+   scoreboard
+   modules
+  100%: Checks: 140, Failures: 0, Errors: 0
+</pre>
+The <code>make check</code> will also go on to run the integration tests,
+if the API tests all pass.
+</pre>
+
+<p>
+If one of the API tests fails, you will see an error message like:
+<pre>
+  99%: Checks: 140, Failures: 1, Errors: 0
+  api/env.c:53:F:base:env_get_test:0: Failed to handle null arguments
+  -------------------------------------------------
+   FAILED 1 test
+
+   Please send email to:
+
+     proftp-devel@lists.sourceforge.net
+
+   containing the `api-tests.log' file (in the tests/ directory)
+   and the output from running `proftpd -V'
+  -------------------------------------------------
+</pre>
+Please do follow those instructions; you will be helping in proftpd
+development!
+
+<p>
+<b>Integration Tests</b><br>
+The current integration tests are written in Perl, and rely on the
+<code>Test-Unit</code> Perl package.  Specifically, you <b>must</b> use
+<code>Test-Unit-0.14</code>, <b>not</b> <code>Test-Unit-0.25</code>.  Not sure
+which version of <code>Test-Unit</code> you have, if at all?  Run the following
+command:
+<pre>
+  # perl -MTest::Unit -e 'print $Test::Unit::VERSION, "\n";'
+  0.14
+</pre>
+
+<p>
+To run the integration tests manually, use the <code>tests.pl</code> script:
+<pre>
+  # cd tests/
+  # perl tests.pl
+  t/logins.....................ok                                              
+  t/commands/user..............ok                                              
+  t/commands/pass..............ok                                              
+  t/commands/pwd...............ok                                              
+  t/commands/cwd...............ok                                              
+  t/commands/cdup..............ok                                              
+  t/commands/syst..............ok                                              
+  t/commands/type..............ok                                              
+  t/commands/mkd...............ok                                              
+  t/commands/rmd...............ok                                              
+  t/commands/dele..............ok                                              
+  t/commands/mdtm..............ok                                              
+  t/commands/size..............ok                                              
+  t/commands/mode..............ok                                              
+  t/commands/stru..............ok                                              
+  t/commands/allo..............ok                                              
+  t/commands/noop..............ok                                              
+  t/commands/feat..............ok                                              
+  t/commands/help..............ok                                              
+  t/commands/quit..............ok                                              
+  t/commands/rnfr..............ok                                              
+  t/commands/rnto..............ok                                              
+  t/commands/rest..............ok                                              
+  t/commands/pasv..............ok                                              
+  t/commands/epsv..............ok                                              
+  t/commands/port..............ok                                              
+  t/commands/eprt..............ok                                              
+  t/commands/nlst..............ok                                              
+  t/commands/list..............ok                                              
+  t/commands/retr..............ok                                              
+  t/commands/stor..............ok                                              
+  t/commands/appe..............ok                                              
+  t/config/displayconnect......ok                                              
+  t/config/displaylogin........ok                                              
+  t/config/maxloginattempts....ok                                              
+  t/config/serverident.........ok                                              
+  All tests successful.
+  Files=37, Tests=141, 160 wallclock secs ( 4.33 cusr +  4.74 csys =  9.07 CPU)
+</pre>
+
+<p>
+Some of the integration require root privileges in order to perform the
+test properly, <i>e.g.</i> for
+<code>&lt;Anonymous&gt;</code>/<code>DefaultRoot</code> logins, <i>etc</i>.
+If you do <i>not</i> run `make check' as root, those tests which require
+root privileges are automatically skipped.  Thus for doing a full regression,
+run the integration tests as the root user.
+
+<p>
+<b>Adding New Tests</b><br>
+The following information is for those who are interested in adding new
+tests, updating existing tests, or otherwise helping with the testsuite
+development.
+
+<p>
+The API tests driver, <code>api-tests</code>, honors the
+<code>PR_TEST_SUITE</code> environment variable.  This is useful for running
+just the test cases associated with a particular suite, such as <i>env</i> or
+<i>pool</i>.  Only <b>one</b> suite can be specified using the
+<code>PR_TEST_SUITE</code> environment variable:
+<pre>
+  # make check
+  # cd tests/
+  # PR_TEST_SUITE=pool ./api-tests
+  Running suite(s): pool
+  100%: Checks: 5, Failures: 0, Errors: 0
+</pre>
+This way, when you are adding to an existing test case or adding a new test
+case to an existing suite, you need not run the entire API testsuite in order
+to run your changes.
+
+<p>
+<hr>
+Last updated: <i>$Date: 2008/11/07 19:35:59 $</i><br>
+<hr>
+
+</body>
+</html>
