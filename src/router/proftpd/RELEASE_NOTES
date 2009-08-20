@@ -1,0 +1,328 @@
+                    1.3.2 Release Notes
+                  ------------------------
+
+This file contains a description of the major changes to ProFTPD for the
+1.3.2 release cycle, from the 1.3.2rc1 release to the 1.3.2 maintenance
+releases.  More information on these changes can be found in the NEWS and
+ChangeLog files.
+
+1.3.2a (maint)
+---------------------
+
+  + Added French, Bulgarian, Korean translations.
+
+  + Various bug and regression fixes.
+
+
+1.3.2 (stable)
+---------------
+
+  + Security fixes
+
+    Fixed encoding-dependent SQL injection vulnerability in mod_sql_mysql
+    and mod_sql_postgres modules.
+
+
+1.3.2rc4
+---------
+
+  + Fixed %f logging, HiddenStore and UserOwner not working (Bug#3137).
+
+  + Added Russian translation.
+
+  + New documentation:
+
+      doc/howto/Compiling.html
+      doc/howto/Rewrite.html
+      doc/howto/Sendfile.html
+
+
+1.3.2rc3
+---------
+
+  + Fixed character set/encoding support on FreeBSD.
+
+  + Fixed mod_sql authentication regression (Bug#2922)
+
+  + Start of a regression testsuite.  Currently have basic unit tests for
+    most FTP commands, and a few of the configuration directives.  See
+    the Testing howto for more information.
+
+  + Fixed variable substitution in user/group names in SQL queries.
+
+  + Lowered the default TimeoutLinger value from 180 secs to 30 secs,
+    for better interoperability.  Many FTP clients have a timeout of
+    60 secs, waiting for a response from the server, before the client
+    closes the control connection.  ProFTPD's lingering closes should
+    thus not be longer than 60 secs, to avoid hitting those clients'
+    timeout limit.
+
+  + Fixed several issues related to aborting of downloads.
+
+  + New documentation:
+
+      doc/howto/Testing.html
+      doc/howto/Translations.html
+
+
+1.3.2rc2
+---------
+
+  + Added Chinese translation.
+
+  + Fixed handling of SSL/TLS session shutdowns on data connections.  This
+    issue was causing problems for users of recent FileZilla versions which
+    insisted on proper SSL/TLS session shutdowns.
+
+  + Fixed file descriptor leak when using syslog logging.
+
+  + Fixed syslog logging on Mac OSX platforms.
+
+  + Attempted to address the following message in system log files:
+
+      warning: `proftpd' uses 32-bit capabilities (legacy support in use)
+
+    by having mod_cap use the libcap version numbers provided by newer
+    Linux kernels.  See doc/modules/mod_cap.html for more details.
+
+  + Added new `prxs' tool, for compiling and installing third-party
+    modules without needing the proftpd source code.  See
+    doc/howto/DSO.html for more information.
+
+  + Added sendfile support for Mac OSX 10.5.
+
+
+1.3.2rc1
+---------
+
+  + Added pkgconfig file
+
+    As part of the process of installing proftpd from source, a proftpd.pc
+    file, suitable for use by the common `pkg-config' tool, is provided.
+    This proftpd.pc file is installed into the <install-dir>/lib/pkgconfig/
+    directory.
+
+    See http://pkgconfig.freedesktop.org/ for more details.
+
+  + IPv6 support is enabled by default.  To disable at build time, use:
+
+      ./configure --disable-ipv6 ...
+
+    And to disable IPv6 support at runtime, use:
+
+      UseIPv6 off
+
+    in your proftpd.conf
+
+  + Changed command-line behavior:
+
+      The -vv command-line option currently shows only the static modules,
+      e.g.:
+
+        - ProFTPD Version: 1.3.0 (stable)
+        -   Scoreboard Version: 01040002
+        -   Built: mar gen 2 10:57:47 CET 2007
+        -     Module: mod_core.c
+        -     Module: mod_xfer.c
+        -     Module: mod_auth_unix.c
+        -     Module: mod_auth_file.c
+        ...
+
+      Now, the -vv command-line option will show all modules, static *and*
+      shared:
+
+        ProFTPD Version: 1.3.0 (stable)
+        Scoreboard Version: 01040002
+        Built: Thu Jun 14 14:13:37 UTC 2007
+
+        Loaded modules:
+          mod_ifsession.c
+          mod_tls/2.1.1
+          mod_cap/1.0
+          ...
+
+       Note that the output format has changed slightly (no leading " - ").
+       The -l command-line option can be used to list just the static
+       modules.
+
+       Also note that order of the module listed via -vv shows the order
+       in which the core proftpd engine calls each module, i.e. the modules
+       are listed in module order.
+
+  + New configuration directives:
+
+      AuthPAMOptions
+
+        Some PAM modules need the PAM_TTY item to be set; the mod_auth_pam
+        module now sets the PAM_TTY item, unless the following configuration
+        is used:
+
+          AuthPAMOptions NoTTY
+
+        This configuration should not be necessary, and is only supported
+        as a safeguard.
+
+      MaxTransferPerHost
+
+        This directive configures a limit on the maximum number of
+        simultaneous data transfers (uploads/downloads) for a given
+        host.
+
+      MaxTransfersPerUser
+
+        This directive configures a limit on the maximum number of
+        simultaneous data transfers (uploads/downloads) for a given
+        user name, regardless of the number of clients using that user name.
+
+      TLSVerifyOrder
+
+        This directive is part of the support for the Online Certificate
+        Status Protocol (OCSP) in the mod_tls module.  See
+        doc/contrib/mod_tls.html#TLSVerifyOrder for details.
+
+      TransferPriority
+
+        This directive can be used to change the process priority while
+        the session process is handling a data transfer.  Using this
+        directive, data transfers can be given lower/higher priorities
+        than other processes on the system, depending on the site needs.
+
+      UseEncoding
+
+        The mod_lang module can how support encodings other than just
+        UTF8 for the control connection FTP commands and responses.  See
+        doc/modules/mod_lang.html#UseEncoding for additional information.
+
+  + New contrib scripts:
+
+      Added contrib/ftpmail, a Perl script which reads a TransferLog FIFO and
+      sends automatic email notifications whenever uploads occur.  See
+      doc/contrib/ftpmail.html for more details.
+
+  + Enhanced configuration directives:
+
+      BanOnEvent ClientConnectRate
+
+        Clients can now be banned if they connect too frequently; see
+        doc/contrib/mod_ban.html#BanOnEvent
+
+      LogFormat %f
+
+        The %f LogFormat variable is now properly substituted for the
+        RNFR, RNTO, SITE CHGRP, and SITE CHMOD commands.
+
+      TimeoutIdle, TimeoutNoTransfer, TimeoutStalled
+
+        These directives can now be used within <Anonymous> sections to
+        specify different timeouts for anonymous sessions.
+
+      TLSOptions EnableDiags
+
+        The EnableDiags option configures mod_tls to be *much* more verbose,
+        and to print diagnostics about the SSL/TLS protocol to the TLSLog.
+        See doc/contrib/mod_tls.html#TLSOptions
+
+      TLSRequired !data, ctrl+!data, auth+!data
+
+        The various combinations for requiring SSL/TLS protection on
+        control and data connections have increased.  More details can be
+        found here: doc/contrib/mod_tls.html#TLSRequired
+
+  + Deprecated configuration directives
+
+      AnonymousGroup
+
+        This directive is NOT recommended, and relies on a "special
+        dynamic configuration" which is very confusing to users.  It will
+        be removed in the 1.3.3 ProFTPD release cycle.
+
+      UseUTF8
+
+        This directive has been replaced by the UseEncoding directive.
+
+  + New translations
+
+      The FTP response messages used by proftpd have been translated into
+      Italian.  To use translations, compile proftpd using:
+
+        ./configure --enable-nls ...
+
+      This builds the mod_lang module, in addition to installing the
+      translated message catalogs for proftpd's use.  See
+      doc/modules/mod_lang.html for more information.
+
+  + New modules:
+
+      mod_dynmasq
+
+        Useful for sites using dynamic DNS and other similar services.
+        This module automatically refreshes the IP address of the daemon,
+        so that the correct address is communicated to clients i.e. via
+        the MasqueradeAddress directive.  See the module documentation at:
+
+          doc/contrib/mod_dynmasq.html
+
+      mod_facts
+
+        Implements the MLSD and MLST commands, as per RFC3659.  Also provides
+        the MFF and MFMT commands from:
+
+          http://www.ietf.org/internet-drafts/draft-somers-ftp-mfxx-03.txt
+ 
+        Module documentation is available for mod_facts at:
+
+          doc/modules/mod_facts.html
+
+        This module is compiled in by default.
+
+      mod_ident
+
+        The RFC1413 "identification protocol" lookup was separated out of
+        the main proftpd code and into this mod_ident module.  With this
+        change, you can now choose to build proftpd without this support
+        using:
+
+          ./configure --disable-ident ..
+
+        You can also choose to build mod_ident as a shared module, loadable
+        as needed:
+
+          ./configure --enable-dso --with-shared=mod_ident ...
+
+        Module documentation is available for mod_ident at:
+
+          doc/modules/mod_ident.html
+
+        This module is compiled in by default.
+
+      mod_sql_odbc
+
+        This module is a mod_sql backend module which supports ODBC
+        drivers.  See doc/contrib/mod_sql_odbc.html for more information.
+
+      mod_sql_sqlite
+
+        This module is a mod_sql backend module which uses SQLite as its
+        backend database.  See doc/contrib/mod_sql_sqlite.html for details.
+
+      mod_unique_id
+
+        Generates a unique ID for every FTP session.  This ID can be
+        written to log files and stored in databases, for tracking all of
+        the activity associated with a particular FTP session.  See:
+
+          doc/contrib/mod_unique_id.html
+
+  + New documentation:
+
+      doc/howto/ConfigurationTricks.html
+
+  + Updated documentation:
+
+      doc/howto/TLS.html
+
+        Added instructions on how to use OpenSSL in FIPS mode; see
+        doc/howto/TLS.html#TLSFIPS
+
+
+Last Updated: $Date: 2009/06/30 22:46:23 $

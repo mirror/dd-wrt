@@ -1,0 +1,89 @@
+<!-- $Id: Umask.html,v 1.3 2004/04/10 18:01:18 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Umask.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - Umask</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b><i>Umask</i></b></h2></center>
+<hr>
+
+<p>
+ProFTPD's <a href="http://www.proftpd.org/docs/directives/linked/config_ref_Umask.html"><code>Umask</code></a> configuration directive is used to set the
+file permission bits on newly created files and directories.  However, the way
+in which <code>Umask</code> is to be used is not entirely straightforward.
+
+<p>
+<code>Umask</code> is used to set the value that <code>proftpd</code> will
+use when calling <code>umask(2)</code>.  The <code>umask(2)</code> function
+works something like this: <code><i>mode - umask</i></code>.
+(Technically, the operation is <code><i>mode & ~umask</i></code>). Thus, with
+a <i>mode</i> of <code>0666</code>, and a <i>umask</i> of <code>0022</code>,
+the permissions on the newly created file will be <code>0644</code>
+(<i>e.g.</i> <code>rw-r--r--</code>).
+
+<p>
+A quick review of permission bits:
+<pre>
+  4 <i>is</i> read permission (<i>r</i>)
+  2 <i>is</i> write permission (<i>w</i>)
+  1 <i>is</i> execute permission (<i>x</i>)
+</pre>
+The first digit of a <i>mode</i> (<code>0750</code>, for example) is used to
+specify some special bits (<i>e.g.</i> set-user-ID, set-group-ID, and the
+&quot;sticky bit&quot;).  The second digit, the <code>7</code> in this
+example, specifies the user owner permissions, and is a sum of the above
+permission bits: <code>7 = 4 + 2 + 1</code> (<i>e.g.</i> <code>rwx</code>).
+Group owner permissions are specified by the third bit, <code>5</code>:
+<code>5 = 4 + 1</code> (<i>e.g.</i> <code>r-x</code>).  And finally, other
+or world permissions are specified using the last bit, which in the
+example is <code>0</code> (no permissions, <i>e.g.</i> <code>---</code>).
+The full represenation of a <i>mode</i> of <code>0750</code>, as one would
+see it in a directory listing, would thus be: <code>rwxr-x---</code>.
+
+<p>
+The <code>proftpd</code> daemon always starts with a base <i>mode</i> of
+<code>0666</code> when creating files.  Note that <code>Umask</code> can only
+be used to &quot;take away&quot; permissions granted by the base
+<i>mode</i>; it cannot be used to add permissions that are not there. This
+means that files uploaded to a <code>proftpd</code> server will never have the
+execute permission enabled by default (the base <i>mode</i> is does not have
+any execute bits enabled).  This is a conscious security design decision.  For
+directories, the base <i>mode</i> is <code>0777</code>.  The <i>umask</i> used
+for directories can be configured using the optional second parameter to the
+<code>Umask</code> directive; if this second parameter is not used, the
+<i>umask</i> used for created directories will default to the same
+<i>umask</i> as used for files.
+
+<p>
+If it is necessary to make uploaded files executable, the
+<code>SITE CHMOD</code> FTP command can be used:
+<pre>
+  SITE CHMOD <i>mode</i> <i>file</i>
+</pre>
+Use of this command can be restricted using a &quot;command&quot; of
+<code>SITE_CHMOD</code> in a <code>&lt;Limit&gt;</code> section.  For
+example, this section of a <code>proftpd.conf</code> file:
+<pre>
+  &lt;Limit SITE_CHMOD&gt;
+    AllowUser ftpadmin
+    DenyAll
+  &lt;/Limit&gt;
+</pre>
+will deny everyone except user <code>ftpadmin</code> from being able to
+use the <code>SITE CHMOD</code> command to change the permissions on files
+via FTP.  Note that this construction is recommended instead of using the
+deprecated (as of <code>proftpd-1.2.2rc2</code>) <code>AllowChmod</code>
+configuration directive.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2004/04/10 18:01:18 $</i><br>
+<hr>
+
+</body>
+</html>

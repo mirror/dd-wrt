@@ -1,0 +1,92 @@
+<!-- $Id: mod_facts.html,v 1.3 2008/12/03 08:06:07 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_facts.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_facts</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_facts</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+<b>File "Facts" Support</b><br>
+
+<p>
+The <code>mod_facts</code> module is ProFTPD's module for handling the
+<code>MLSD</code> and <code>MLST</code> commands, in support of
+<a href="http://www.faqs.org/rfcs/rfc3659.html">RFC 3659</a>.  In addition,
+the <code>mod_facts</code> module implements the <code>MFF</code> and
+<code>MFMT</code> commands defined in:
+<pre>
+  <a href="http://www.ietf.org/internet-drafts/draft-somers-ftp-mfxx-04.txt">http://www.ietf.org/internet-drafts/draft-somers-ftp-mfxx-04.txt</a>
+</pre>
+
+<p>
+This module is contained in the <code>mod_facts.c</code> file for
+ProFTPD 1.3.<i>x</i>, and is compiled by default.
+
+<p>
+The most current version of <code>mod_facts</code> can be found in the
+ProFTPD source distribution:
+<pre>
+  <a href="http://www.proftpd.org/">http://www.proftpd.org/</a>
+</pre>
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#FactsAdvertise">FactsAdvertise</a>
+</ul>
+
+<hr>
+<h2><a name="FactsAdvertise">FactsAdvertise</a></h2>
+<strong>Syntax:</strong> FactsAdvertise <em>on|off</em><br>
+<strong>Default:</strong> FactsAdvertise on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_facts<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>FactsAdvertise</code> directive is used to control whether
+the <code>mod_facts</code> module advertises its <code>MLST</code> support
+via the <code>FEAT</code> command.
+
+<p>
+By default, the <code>mod_facts</code> module will list <code>MLST</code>
+in the <code>FEAT</code> response.  FTP clients use this to determine whether
+to use the newer <code>MLSD</code>/<code>MLST</code> commands, or the older
+<code>LIST</code>/<code>NLST</code> commands.  Some FTP clients, though,
+will attempt to use the newer commands just as if they were equivalent to
+the older commands, including supporting glob/wildcard characters.
+Section 2.2.2 of RFC3659 explicitly states that wildcard characters are
+<b>not</b> supported in the <code>MLSD</code> and <code>MLST</code> commands.
+Thus, to prevent problems when using such FTP clients with proftpd,
+you can disable the advertising of support for those commands using
+<i>e.g.</i> the following in your <code>proftpd.conf</code>:
+<pre>
+  &lt;IfModule mod_facts.c&gt;
+    FactsAdvertise off
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr><br>
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2008/12/03 08:06:07 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2007-2008 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+</body>
+</html>
+

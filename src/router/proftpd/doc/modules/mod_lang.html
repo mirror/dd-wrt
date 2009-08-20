@@ -1,0 +1,236 @@
+<!-- $Id: mod_lang.html,v 1.6 2008/10/07 22:48:36 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_lang.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_lang</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_lang</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+<b>Internalization and Localization</b><br>
+The <code>mod_lang</code> module is ProFTPD's module for handling the LANG
+and OPTS UTF8 commands, in support of <a href="http://www.faqs.org/rfcs/rfc2640.html">RFC 2640</a>.  The <code>mod_lang</code> module also supports character
+sets other than UTF8, for those sites which do not require RFC2640 support, but
+<i>do</i> use character sets other than ASCII.  This module is contained in the
+<code>mod_lang.c</code> file for ProFTPD 1.3.<i>x</i>, and is compiled in
+whenever the <code>--enable-nls</code> configure option is used.  Installation
+instructions are discussed <a href="#Installation">here</a>.  Examples
+of using <code>mod_lang</code> for various encodings and character sets can
+be seen <a href="#Usage">here</a>.
+
+<p>
+The most current version of <code>mod_lang</code> can be found in the
+ProFTPD source distribution:
+<pre>
+  <a href="http://www.proftpd.org/">http://www.proftpd.org/</a>
+</pre>
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#LangDefault">LangDefault</a>
+  <li><a href="#LangEngine">LangEngine</a>
+  <li><a href="#LangPath">LangPath</a>
+  <li><a href="#UseEncoding">UseEncoding</a>
+</ul>
+
+<p>
+<hr>
+<h2><a name="LangDefault">LangDefault</a></h2>
+<strong>Syntax:</strong> LangDefault <em>language</em><br>
+<strong>Default:</strong> LangDefault en_US<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.1rc1
+
+<p>
+The <code>LangDefault</code> directive is used to specify the default
+language of specific server configuration.  Note that the specified language
+must be listed in the output from:
+<pre>
+  $ locale -a
+</pre>
+
+<p>
+Example:
+<pre>
+  &lt;IfModule mod_lang.c&gt;
+    # Set the default to be Italian
+    LangDefault it_IT
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr>
+<h2><a name="LangEngine">LangEngine</a></h2>
+<strong>Syntax:</strong> LangEngine <em>on|off</em><br>
+<strong>Default:</strong> LangEngine on<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.1rc1
+
+<p>
+The <code>LangEngine</code> directive enables or disables the module's
+handling of the LANG command.  If it is set to <em>off</em> this module does no
+localization of responses.
+
+<p>
+<b>Note</b> that setting <code>LangEngine</code> to <em>off</em> also keeps
+<code>proftpd</code> from advertisting "UTF8" in its <code>FEAT</code> response.
+As required by RFC 2640, <code>proftpd</code> can <i>only</i> show "UTF8"
+in response to a <code>FEAT</code> command if the <code>LANG</code> command
+is also supported.  Hence why it is the <code>LangEngine</code> directive,
+and not <code>UseUTF8</code>, which controls the appearance of "UTF8".
+
+<p>
+<hr>
+<h2><a name="LangPath">LangPath</a></h2>
+<strong>Syntax:</strong> LangPath <em>path</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.1rc1
+
+<p>
+The <code>LangPath</code> directive is used to configure an alternative
+directory from which <code>mod_lang</code> will load locale files.  By
+default, <code>mod_lang</code> uses <em>$prefix</em>/<code>locale/</code>,
+where <em>$prefix</em> is where you installed <code>proftpd</code>,
+<i>e.g.</i> <code>/usr/local/</code>.
+
+<p>
+The <em>path</em> parameter must be an absolute path.
+
+<p>
+Example:
+<pre>
+  LangPath /etc/proftpd/locale
+</pre>
+
+<p>
+Example:
+<pre>
+  LangPath /path/to/ftpd/locale
+</pre>
+
+<p>
+<hr>
+<h2><a name="UseEncoding">UseEncoding</a></h2>
+<strong>Syntax:</strong> UseEncoding <em>on|off|local-charset client-charset</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.2rc1
+
+<p>
+The <code>UseEncoding</code> directive is used to explicit configure which
+character sets should be used for encoding.  By default, the
+<code>mod_lang</code> will automatically discover the local character set,
+and will use UTF8 for the client character set.  The module will also allow
+the use of UTF8 encoding to be changed by clients using the OPTS UTF8 command
+(as per RFC2640).  However, if the <code>UseEncoding</code> directive is
+explicitly used to indicate the character sets to use (or not use), then any
+OPTS UTF8 commands used by clients will be refused.
+
+<p>
+For example, to disable all use of encoding, use the following in your
+<code>proftpd.conf</code>:
+<pre>
+  UseEncoding off
+</pre>
+Similarly, to enable use of UTF8 encoding and to <i>not</i> allow clients
+to change the use of UTF8, you would use:
+<pre>
+  UseEncoding on
+</pre>
+
+<p>
+In addition to the <em>on|off</em> parameters, the <code>UseEncoding</code>
+directive allows administrators to specify exactly which character sets
+to use locally (<i>i.e.</i> for paths on local disks) and for dealing with
+clients.  One such usage this way might look like:
+<pre>
+  UseEncoding koi8-r cp1251
+</pre>
+For a full list of the character sets which are supported, use:
+<pre>
+  $ iconv --list
+</pre>
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_lang</code> module is distributed with ProFTPD.  To enable use
+of NLS (Natural Language Support) in your <code>proftpd</code> daemon, use the
+<code>--enable-nls</code> configure option:
+<pre>
+  ./configure --enable-nls
+  make
+  make install
+</pre>
+This option causes <code>mod_lang</code> to be compiled into
+<code>proftpd</code>.
+
+<p>
+<hr>
+<h2><a name="Usage">Usage</a></h2>
+
+<p>
+One common request of <code>proftpd</code> is to properly handle Cyrillic
+characters in file and directory names.  The usual character sets which
+contain Cyrillic characters use the same codes as used for Telnet
+control codes, unfortunately.  RFC959 (which defines FTP) mandates that the
+Telnet control codes be supported in FTP implementations.
+
+<p>
+The <code>mod_lang</code> module, however, can be used to deal with this
+situation.  <b><i>If</i></b> the <a href="#UseEncoding">UseEncoding</code></a>
+directive is used to translate between local and client character sets,
+<i>and</i> the client character set is one of the known Cyrillic character
+sets, then <code>proftpd</code> will disable support of the Telnet control
+codes.
+
+<p>
+To make a long explanation short, if you want to use Cyrillic characters
+in paths with <code>proftpd</code>, compile your <code>proftpd</code>
+using the <code>--enable-nls</code> configure option (to enable the use
+of <code>mod_lang</code>), then use something like the following in your
+<code>proftpd.conf</code>:
+<pre>
+  &lt;IfModule mod_lang.c&gt;
+    UseEncoding utf8 cp1251
+  &lt;/IfModule&gt;
+</pre>
+The current list of character sets for which Telnet code support is disabled
+is listed below; the names are <b>not</b> case-sensitive:
+<ul>
+  <li>cp866
+  <li>cp1251
+  <li>iso-8859-1
+  <li>koi8-r
+  <li>windows-1251
+</ul>
+
+<p>
+<hr><br>
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2008/10/07 22:48:36 $</i><br>
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2006-2008 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+

@@ -1,0 +1,58 @@
+CC=@CC@
+@SET_MAKE@
+
+top_srcdir=@top_srcdir@
+srcdir=@srcdir@
+VPATH=@srcdir@
+
+include ../Make.rules
+
+
+all:
+	@echo "Running make from top level directory."
+	cd ../; $(MAKE) all
+
+Makefile: Makefile.in ../config.status
+	cd ../ && ./config.status
+
+
+.c.o:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+utils: $(FTPCOUNT_OBJS) $(FTPSHUT_OBJS) $(FTPTOP_OBJS) $(FTPWHO_OBJS)
+
+clean:
+	rm -f *.o
+
+depend:
+	makedepend $(CPPFLAGS) -Y *.c 2>/dev/null
+	makedepend $(CPPFLAGS) -Y -fMakefile.in *.c 2>/dev/null
+# DO NOT DELETE
+
+ftpcount.o: utils.h ../config.h ../include/version.h ../include/options.h
+ftpcount.o: ../include/default_paths.h
+ftpshut.o: ../include/conf.h ../include/version.h ../config.h
+ftpshut.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+ftpshut.o: ../include/str.h ../include/regexp.h ../include/table.h
+ftpshut.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+ftpshut.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+ftpshut.o: ../include/expr.h ../include/netio.h ../include/modules.h
+ftpshut.o: ../include/auth.h ../include/response.h ../include/timers.h
+ftpshut.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+ftpshut.o: ../include/bindings.h ../include/help.h ../include/feat.h
+ftpshut.o: ../include/ftp.h ../include/log.h ../include/parser.h
+ftpshut.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+ftpshut.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+ftpshut.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+ftpshut.o: ../include/event.h ../include/var.h ../include/throttle.h
+ftpshut.o: ../include/trace.h ../include/encode.h ../include/compat.h
+ftpshut.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+ftpshut.o: ../include/pr-syslog.h
+ftptop.o: utils.h ../config.h ../include/version.h ../include/options.h
+ftptop.o: ../include/default_paths.h
+ftpwho.o: utils.h ../config.h ../include/version.h ../include/options.h
+ftpwho.o: ../include/default_paths.h
+misc.o: utils.h ../config.h ../include/version.h ../include/options.h
+misc.o: ../include/default_paths.h
+scoreboard.o: utils.h ../config.h ../include/version.h ../include/options.h
+scoreboard.o: ../include/default_paths.h

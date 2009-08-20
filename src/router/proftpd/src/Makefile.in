@@ -1,0 +1,746 @@
+CC=@CC@
+@SET_MAKE@
+
+top_srcdir=@top_srcdir@
+srcdir=@srcdir@
+VPATH=@srcdir@
+
+include ../Make.rules
+
+
+all:
+	@echo "Running make from top level directory."
+	cd ../; $(MAKE) all
+
+Makefile: Makefile.in ../config.status
+	cd ../ && ./config.status
+
+.c.o:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+
+src: $(OBJS) $(FTPDCTL_OBJS)
+
+clean:
+	rm -f *.o
+
+depend:
+	makedepend $(CPPFLAGS) -Y *.c 2>/dev/null
+	makedepend $(CPPFLAGS) -Y -fMakefile.in *.c 2>/dev/null
+# DO NOT DELETE
+
+auth.o: ../include/conf.h ../include/version.h ../config.h
+auth.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+auth.o: ../include/str.h ../include/regexp.h ../include/table.h
+auth.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+auth.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+auth.o: ../include/expr.h ../include/netio.h ../include/modules.h
+auth.o: ../include/auth.h ../include/response.h ../include/timers.h
+auth.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+auth.o: ../include/bindings.h ../include/help.h ../include/feat.h
+auth.o: ../include/ftp.h ../include/log.h ../include/parser.h
+auth.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+auth.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+auth.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+auth.o: ../include/event.h ../include/var.h ../include/throttle.h
+auth.o: ../include/trace.h ../include/encode.h ../include/compat.h
+auth.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+auth.o: ../include/pr-syslog.h ../include/privs.h
+bindings.o: ../include/conf.h ../include/version.h ../config.h
+bindings.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+bindings.o: ../include/str.h ../include/regexp.h ../include/table.h
+bindings.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+bindings.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+bindings.o: ../include/expr.h ../include/netio.h ../include/modules.h
+bindings.o: ../include/auth.h ../include/response.h ../include/timers.h
+bindings.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+bindings.o: ../include/bindings.h ../include/help.h ../include/feat.h
+bindings.o: ../include/ftp.h ../include/log.h ../include/parser.h
+bindings.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+bindings.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+bindings.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+bindings.o: ../include/event.h ../include/var.h ../include/throttle.h
+bindings.o: ../include/trace.h ../include/encode.h ../include/compat.h
+bindings.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+bindings.o: ../include/pr-syslog.h
+child.o: ../include/conf.h ../include/version.h ../config.h
+child.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+child.o: ../include/str.h ../include/regexp.h ../include/table.h
+child.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+child.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+child.o: ../include/expr.h ../include/netio.h ../include/modules.h
+child.o: ../include/auth.h ../include/response.h ../include/timers.h
+child.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+child.o: ../include/bindings.h ../include/help.h ../include/feat.h
+child.o: ../include/ftp.h ../include/log.h ../include/parser.h
+child.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+child.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+child.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+child.o: ../include/event.h ../include/var.h ../include/throttle.h
+child.o: ../include/trace.h ../include/encode.h ../include/compat.h
+child.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+child.o: ../include/pr-syslog.h
+class.o: ../include/conf.h ../include/version.h ../config.h
+class.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+class.o: ../include/str.h ../include/regexp.h ../include/table.h
+class.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+class.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+class.o: ../include/expr.h ../include/netio.h ../include/modules.h
+class.o: ../include/auth.h ../include/response.h ../include/timers.h
+class.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+class.o: ../include/bindings.h ../include/help.h ../include/feat.h
+class.o: ../include/ftp.h ../include/log.h ../include/parser.h
+class.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+class.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+class.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+class.o: ../include/event.h ../include/var.h ../include/throttle.h
+class.o: ../include/trace.h ../include/encode.h ../include/compat.h
+class.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+class.o: ../include/pr-syslog.h
+ctrls.o: ../include/conf.h ../include/version.h ../config.h
+ctrls.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+ctrls.o: ../include/str.h ../include/regexp.h ../include/table.h
+ctrls.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+ctrls.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+ctrls.o: ../include/expr.h ../include/netio.h ../include/modules.h
+ctrls.o: ../include/auth.h ../include/response.h ../include/timers.h
+ctrls.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+ctrls.o: ../include/bindings.h ../include/help.h ../include/feat.h
+ctrls.o: ../include/ftp.h ../include/log.h ../include/parser.h
+ctrls.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+ctrls.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+ctrls.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+ctrls.o: ../include/event.h ../include/var.h ../include/throttle.h
+ctrls.o: ../include/trace.h ../include/encode.h ../include/compat.h
+ctrls.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+ctrls.o: ../include/pr-syslog.h ../include/privs.h
+data.o: ../include/conf.h ../include/version.h ../config.h
+data.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+data.o: ../include/str.h ../include/regexp.h ../include/table.h
+data.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+data.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+data.o: ../include/expr.h ../include/netio.h ../include/modules.h
+data.o: ../include/auth.h ../include/response.h ../include/timers.h
+data.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+data.o: ../include/bindings.h ../include/help.h ../include/feat.h
+data.o: ../include/ftp.h ../include/log.h ../include/parser.h
+data.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+data.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+data.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+data.o: ../include/event.h ../include/var.h ../include/throttle.h
+data.o: ../include/trace.h ../include/encode.h ../include/compat.h
+data.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+data.o: ../include/pr-syslog.h
+dirtree.o: ../include/conf.h ../include/version.h ../config.h
+dirtree.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+dirtree.o: ../include/str.h ../include/regexp.h ../include/table.h
+dirtree.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+dirtree.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+dirtree.o: ../include/expr.h ../include/netio.h ../include/modules.h
+dirtree.o: ../include/auth.h ../include/response.h ../include/timers.h
+dirtree.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+dirtree.o: ../include/bindings.h ../include/help.h ../include/feat.h
+dirtree.o: ../include/ftp.h ../include/log.h ../include/parser.h
+dirtree.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+dirtree.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+dirtree.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+dirtree.o: ../include/event.h ../include/var.h ../include/throttle.h
+dirtree.o: ../include/trace.h ../include/encode.h ../include/compat.h
+dirtree.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+dirtree.o: ../include/pr-syslog.h
+display.o: ../include/conf.h ../include/version.h ../config.h
+display.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+display.o: ../include/str.h ../include/regexp.h ../include/table.h
+display.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+display.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+display.o: ../include/expr.h ../include/netio.h ../include/modules.h
+display.o: ../include/auth.h ../include/response.h ../include/timers.h
+display.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+display.o: ../include/bindings.h ../include/help.h ../include/feat.h
+display.o: ../include/ftp.h ../include/log.h ../include/parser.h
+display.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+display.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+display.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+display.o: ../include/event.h ../include/var.h ../include/throttle.h
+display.o: ../include/trace.h ../include/encode.h ../include/compat.h
+display.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+display.o: ../include/pr-syslog.h
+encode.o: ../include/conf.h ../include/version.h ../config.h
+encode.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+encode.o: ../include/str.h ../include/regexp.h ../include/table.h
+encode.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+encode.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+encode.o: ../include/expr.h ../include/netio.h ../include/modules.h
+encode.o: ../include/auth.h ../include/response.h ../include/timers.h
+encode.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+encode.o: ../include/bindings.h ../include/help.h ../include/feat.h
+encode.o: ../include/ftp.h ../include/log.h ../include/parser.h
+encode.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+encode.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+encode.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+encode.o: ../include/event.h ../include/var.h ../include/throttle.h
+encode.o: ../include/trace.h ../include/encode.h ../include/compat.h
+encode.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+encode.o: ../include/pr-syslog.h
+env.o: ../include/conf.h ../include/version.h ../config.h
+env.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+env.o: ../include/str.h ../include/regexp.h ../include/table.h
+env.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+env.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+env.o: ../include/expr.h ../include/netio.h ../include/modules.h
+env.o: ../include/auth.h ../include/response.h ../include/timers.h
+env.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+env.o: ../include/bindings.h ../include/help.h ../include/feat.h
+env.o: ../include/ftp.h ../include/log.h ../include/parser.h
+env.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+env.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+env.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+env.o: ../include/event.h ../include/var.h ../include/throttle.h
+env.o: ../include/trace.h ../include/encode.h ../include/compat.h
+env.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+env.o: ../include/pr-syslog.h
+event.o: ../include/conf.h ../include/version.h ../config.h
+event.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+event.o: ../include/str.h ../include/regexp.h ../include/table.h
+event.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+event.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+event.o: ../include/expr.h ../include/netio.h ../include/modules.h
+event.o: ../include/auth.h ../include/response.h ../include/timers.h
+event.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+event.o: ../include/bindings.h ../include/help.h ../include/feat.h
+event.o: ../include/ftp.h ../include/log.h ../include/parser.h
+event.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+event.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+event.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+event.o: ../include/event.h ../include/var.h ../include/throttle.h
+event.o: ../include/trace.h ../include/encode.h ../include/compat.h
+event.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+event.o: ../include/pr-syslog.h
+expr.o: ../include/conf.h ../include/version.h ../config.h
+expr.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+expr.o: ../include/str.h ../include/regexp.h ../include/table.h
+expr.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+expr.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+expr.o: ../include/expr.h ../include/netio.h ../include/modules.h
+expr.o: ../include/auth.h ../include/response.h ../include/timers.h
+expr.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+expr.o: ../include/bindings.h ../include/help.h ../include/feat.h
+expr.o: ../include/ftp.h ../include/log.h ../include/parser.h
+expr.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+expr.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+expr.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+expr.o: ../include/event.h ../include/var.h ../include/throttle.h
+expr.o: ../include/trace.h ../include/encode.h ../include/compat.h
+expr.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+expr.o: ../include/pr-syslog.h
+feat.o: ../include/conf.h ../include/version.h ../config.h
+feat.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+feat.o: ../include/str.h ../include/regexp.h ../include/table.h
+feat.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+feat.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+feat.o: ../include/expr.h ../include/netio.h ../include/modules.h
+feat.o: ../include/auth.h ../include/response.h ../include/timers.h
+feat.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+feat.o: ../include/bindings.h ../include/help.h ../include/feat.h
+feat.o: ../include/ftp.h ../include/log.h ../include/parser.h
+feat.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+feat.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+feat.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+feat.o: ../include/event.h ../include/var.h ../include/throttle.h
+feat.o: ../include/trace.h ../include/encode.h ../include/compat.h
+feat.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+feat.o: ../include/pr-syslog.h
+fsio.o: ../include/conf.h ../include/version.h ../config.h
+fsio.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+fsio.o: ../include/str.h ../include/regexp.h ../include/table.h
+fsio.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+fsio.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+fsio.o: ../include/expr.h ../include/netio.h ../include/modules.h
+fsio.o: ../include/auth.h ../include/response.h ../include/timers.h
+fsio.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+fsio.o: ../include/bindings.h ../include/help.h ../include/feat.h
+fsio.o: ../include/ftp.h ../include/log.h ../include/parser.h
+fsio.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+fsio.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+fsio.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+fsio.o: ../include/event.h ../include/var.h ../include/throttle.h
+fsio.o: ../include/trace.h ../include/encode.h ../include/compat.h
+fsio.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+fsio.o: ../include/pr-syslog.h
+ftpdctl.o: ../include/conf.h ../include/version.h ../config.h
+ftpdctl.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+ftpdctl.o: ../include/str.h ../include/regexp.h ../include/table.h
+ftpdctl.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+ftpdctl.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+ftpdctl.o: ../include/expr.h ../include/netio.h ../include/modules.h
+ftpdctl.o: ../include/auth.h ../include/response.h ../include/timers.h
+ftpdctl.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+ftpdctl.o: ../include/bindings.h ../include/help.h ../include/feat.h
+ftpdctl.o: ../include/ftp.h ../include/log.h ../include/parser.h
+ftpdctl.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+ftpdctl.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+ftpdctl.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+ftpdctl.o: ../include/event.h ../include/var.h ../include/throttle.h
+ftpdctl.o: ../include/trace.h ../include/encode.h ../include/compat.h
+ftpdctl.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+ftpdctl.o: ../include/pr-syslog.h
+help.o: ../include/conf.h ../include/version.h ../config.h
+help.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+help.o: ../include/str.h ../include/regexp.h ../include/table.h
+help.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+help.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+help.o: ../include/expr.h ../include/netio.h ../include/modules.h
+help.o: ../include/auth.h ../include/response.h ../include/timers.h
+help.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+help.o: ../include/bindings.h ../include/help.h ../include/feat.h
+help.o: ../include/ftp.h ../include/log.h ../include/parser.h
+help.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+help.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+help.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+help.o: ../include/event.h ../include/var.h ../include/throttle.h
+help.o: ../include/trace.h ../include/encode.h ../include/compat.h
+help.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+help.o: ../include/pr-syslog.h
+inet.o: ../include/conf.h ../include/version.h ../config.h
+inet.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+inet.o: ../include/str.h ../include/regexp.h ../include/table.h
+inet.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+inet.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+inet.o: ../include/expr.h ../include/netio.h ../include/modules.h
+inet.o: ../include/auth.h ../include/response.h ../include/timers.h
+inet.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+inet.o: ../include/bindings.h ../include/help.h ../include/feat.h
+inet.o: ../include/ftp.h ../include/log.h ../include/parser.h
+inet.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+inet.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+inet.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+inet.o: ../include/event.h ../include/var.h ../include/throttle.h
+inet.o: ../include/trace.h ../include/encode.h ../include/compat.h
+inet.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+inet.o: ../include/pr-syslog.h ../include/privs.h
+lastlog.o: ../include/conf.h ../include/version.h ../config.h
+lastlog.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+lastlog.o: ../include/str.h ../include/regexp.h ../include/table.h
+lastlog.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+lastlog.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+lastlog.o: ../include/expr.h ../include/netio.h ../include/modules.h
+lastlog.o: ../include/auth.h ../include/response.h ../include/timers.h
+lastlog.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+lastlog.o: ../include/bindings.h ../include/help.h ../include/feat.h
+lastlog.o: ../include/ftp.h ../include/log.h ../include/parser.h
+lastlog.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+lastlog.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+lastlog.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+lastlog.o: ../include/event.h ../include/var.h ../include/throttle.h
+lastlog.o: ../include/trace.h ../include/encode.h ../include/compat.h
+lastlog.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+lastlog.o: ../include/pr-syslog.h
+log.o: ../include/conf.h ../include/version.h ../config.h
+log.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+log.o: ../include/str.h ../include/regexp.h ../include/table.h
+log.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+log.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+log.o: ../include/expr.h ../include/netio.h ../include/modules.h
+log.o: ../include/auth.h ../include/response.h ../include/timers.h
+log.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+log.o: ../include/bindings.h ../include/help.h ../include/feat.h
+log.o: ../include/ftp.h ../include/log.h ../include/parser.h
+log.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+log.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+log.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+log.o: ../include/event.h ../include/var.h ../include/throttle.h
+log.o: ../include/trace.h ../include/encode.h ../include/compat.h
+log.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+log.o: ../include/pr-syslog.h
+main.o: ../include/conf.h ../include/version.h ../config.h
+main.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+main.o: ../include/str.h ../include/regexp.h ../include/table.h
+main.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+main.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+main.o: ../include/expr.h ../include/netio.h ../include/modules.h
+main.o: ../include/auth.h ../include/response.h ../include/timers.h
+main.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+main.o: ../include/bindings.h ../include/help.h ../include/feat.h
+main.o: ../include/ftp.h ../include/log.h ../include/parser.h
+main.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+main.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+main.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+main.o: ../include/event.h ../include/var.h ../include/throttle.h
+main.o: ../include/trace.h ../include/encode.h ../include/compat.h
+main.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+main.o: ../include/pr-syslog.h ../include/privs.h
+mkhome.o: ../include/conf.h ../include/version.h ../config.h
+mkhome.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+mkhome.o: ../include/str.h ../include/regexp.h ../include/table.h
+mkhome.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+mkhome.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+mkhome.o: ../include/expr.h ../include/netio.h ../include/modules.h
+mkhome.o: ../include/auth.h ../include/response.h ../include/timers.h
+mkhome.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+mkhome.o: ../include/bindings.h ../include/help.h ../include/feat.h
+mkhome.o: ../include/ftp.h ../include/log.h ../include/parser.h
+mkhome.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+mkhome.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+mkhome.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+mkhome.o: ../include/event.h ../include/var.h ../include/throttle.h
+mkhome.o: ../include/trace.h ../include/encode.h ../include/compat.h
+mkhome.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+mkhome.o: ../include/pr-syslog.h ../include/privs.h
+modules.o: ../include/conf.h ../include/version.h ../config.h
+modules.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+modules.o: ../include/str.h ../include/regexp.h ../include/table.h
+modules.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+modules.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+modules.o: ../include/expr.h ../include/netio.h ../include/modules.h
+modules.o: ../include/auth.h ../include/response.h ../include/timers.h
+modules.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+modules.o: ../include/bindings.h ../include/help.h ../include/feat.h
+modules.o: ../include/ftp.h ../include/log.h ../include/parser.h
+modules.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+modules.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+modules.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+modules.o: ../include/event.h ../include/var.h ../include/throttle.h
+modules.o: ../include/trace.h ../include/encode.h ../include/compat.h
+modules.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+modules.o: ../include/pr-syslog.h
+netacl.o: ../include/conf.h ../include/version.h ../config.h
+netacl.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+netacl.o: ../include/str.h ../include/regexp.h ../include/table.h
+netacl.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+netacl.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+netacl.o: ../include/expr.h ../include/netio.h ../include/modules.h
+netacl.o: ../include/auth.h ../include/response.h ../include/timers.h
+netacl.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+netacl.o: ../include/bindings.h ../include/help.h ../include/feat.h
+netacl.o: ../include/ftp.h ../include/log.h ../include/parser.h
+netacl.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+netacl.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+netacl.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+netacl.o: ../include/event.h ../include/var.h ../include/throttle.h
+netacl.o: ../include/trace.h ../include/encode.h ../include/compat.h
+netacl.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+netacl.o: ../include/pr-syslog.h
+netaddr.o: ../include/conf.h ../include/version.h ../config.h
+netaddr.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+netaddr.o: ../include/str.h ../include/regexp.h ../include/table.h
+netaddr.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+netaddr.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+netaddr.o: ../include/expr.h ../include/netio.h ../include/modules.h
+netaddr.o: ../include/auth.h ../include/response.h ../include/timers.h
+netaddr.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+netaddr.o: ../include/bindings.h ../include/help.h ../include/feat.h
+netaddr.o: ../include/ftp.h ../include/log.h ../include/parser.h
+netaddr.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+netaddr.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+netaddr.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+netaddr.o: ../include/event.h ../include/var.h ../include/throttle.h
+netaddr.o: ../include/trace.h ../include/encode.h ../include/compat.h
+netaddr.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+netaddr.o: ../include/pr-syslog.h
+netio.o: ../include/conf.h ../include/version.h ../config.h
+netio.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+netio.o: ../include/str.h ../include/regexp.h ../include/table.h
+netio.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+netio.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+netio.o: ../include/expr.h ../include/netio.h ../include/modules.h
+netio.o: ../include/auth.h ../include/response.h ../include/timers.h
+netio.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+netio.o: ../include/bindings.h ../include/help.h ../include/feat.h
+netio.o: ../include/ftp.h ../include/log.h ../include/parser.h
+netio.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+netio.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+netio.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+netio.o: ../include/event.h ../include/var.h ../include/throttle.h
+netio.o: ../include/trace.h ../include/encode.h ../include/compat.h
+netio.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+netio.o: ../include/pr-syslog.h
+parser.o: ../include/conf.h ../include/version.h ../config.h
+parser.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+parser.o: ../include/str.h ../include/regexp.h ../include/table.h
+parser.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+parser.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+parser.o: ../include/expr.h ../include/netio.h ../include/modules.h
+parser.o: ../include/auth.h ../include/response.h ../include/timers.h
+parser.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+parser.o: ../include/bindings.h ../include/help.h ../include/feat.h
+parser.o: ../include/ftp.h ../include/log.h ../include/parser.h
+parser.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+parser.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+parser.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+parser.o: ../include/event.h ../include/var.h ../include/throttle.h
+parser.o: ../include/trace.h ../include/encode.h ../include/compat.h
+parser.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+parser.o: ../include/pr-syslog.h
+pidfile.o: ../include/conf.h ../include/version.h ../config.h
+pidfile.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+pidfile.o: ../include/str.h ../include/regexp.h ../include/table.h
+pidfile.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+pidfile.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+pidfile.o: ../include/expr.h ../include/netio.h ../include/modules.h
+pidfile.o: ../include/auth.h ../include/response.h ../include/timers.h
+pidfile.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+pidfile.o: ../include/bindings.h ../include/help.h ../include/feat.h
+pidfile.o: ../include/ftp.h ../include/log.h ../include/parser.h
+pidfile.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+pidfile.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+pidfile.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+pidfile.o: ../include/event.h ../include/var.h ../include/throttle.h
+pidfile.o: ../include/trace.h ../include/encode.h ../include/compat.h
+pidfile.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+pidfile.o: ../include/pr-syslog.h ../include/privs.h
+pool.o: ../include/conf.h ../include/version.h ../config.h
+pool.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+pool.o: ../include/str.h ../include/regexp.h ../include/table.h
+pool.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+pool.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+pool.o: ../include/expr.h ../include/netio.h ../include/modules.h
+pool.o: ../include/auth.h ../include/response.h ../include/timers.h
+pool.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+pool.o: ../include/bindings.h ../include/help.h ../include/feat.h
+pool.o: ../include/ftp.h ../include/log.h ../include/parser.h
+pool.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+pool.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+pool.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+pool.o: ../include/event.h ../include/var.h ../include/throttle.h
+pool.o: ../include/trace.h ../include/encode.h ../include/compat.h
+pool.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+pool.o: ../include/pr-syslog.h
+proctitle.o: ../include/conf.h ../include/version.h ../config.h
+proctitle.o: ../include/default_paths.h ../include/options.h
+proctitle.o: ../include/pool.h ../include/str.h ../include/regexp.h
+proctitle.o: ../include/table.h ../include/proftpd.h ../include/class.h
+proctitle.o: ../include/netacl.h ../include/support.h ../include/sets.h
+proctitle.o: ../include/dirtree.h ../include/expr.h ../include/netio.h
+proctitle.o: ../include/modules.h ../include/auth.h ../include/response.h
+proctitle.o: ../include/timers.h ../include/inet.h ../include/child.h
+proctitle.o: ../include/netaddr.h ../include/bindings.h ../include/help.h
+proctitle.o: ../include/feat.h ../include/ftp.h ../include/log.h
+proctitle.o: ../include/parser.h ../include/xferlog.h ../include/scoreboard.h
+proctitle.o: ../include/data.h ../include/display.h ../include/libsupp.h
+proctitle.o: ../include/glibc-glob.h ../include/fsio.h ../include/mkhome.h
+proctitle.o: ../include/ctrls.h ../include/event.h ../include/var.h
+proctitle.o: ../include/throttle.h ../include/trace.h ../include/encode.h
+proctitle.o: ../include/compat.h ../include/proctitle.h ../include/pidfile.h
+proctitle.o: ../include/env.h ../include/pr-syslog.h
+regexp.o: ../include/conf.h ../include/version.h ../config.h
+regexp.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+regexp.o: ../include/str.h ../include/regexp.h ../include/table.h
+regexp.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+regexp.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+regexp.o: ../include/expr.h ../include/netio.h ../include/modules.h
+regexp.o: ../include/auth.h ../include/response.h ../include/timers.h
+regexp.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+regexp.o: ../include/bindings.h ../include/help.h ../include/feat.h
+regexp.o: ../include/ftp.h ../include/log.h ../include/parser.h
+regexp.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+regexp.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+regexp.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+regexp.o: ../include/event.h ../include/var.h ../include/throttle.h
+regexp.o: ../include/trace.h ../include/encode.h ../include/compat.h
+regexp.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+regexp.o: ../include/pr-syslog.h
+response.o: ../include/conf.h ../include/version.h ../config.h
+response.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+response.o: ../include/str.h ../include/regexp.h ../include/table.h
+response.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+response.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+response.o: ../include/expr.h ../include/netio.h ../include/modules.h
+response.o: ../include/auth.h ../include/response.h ../include/timers.h
+response.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+response.o: ../include/bindings.h ../include/help.h ../include/feat.h
+response.o: ../include/ftp.h ../include/log.h ../include/parser.h
+response.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+response.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+response.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+response.o: ../include/event.h ../include/var.h ../include/throttle.h
+response.o: ../include/trace.h ../include/encode.h ../include/compat.h
+response.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+response.o: ../include/pr-syslog.h
+scoreboard.o: ../include/conf.h ../include/version.h ../config.h
+scoreboard.o: ../include/default_paths.h ../include/options.h
+scoreboard.o: ../include/pool.h ../include/str.h ../include/regexp.h
+scoreboard.o: ../include/table.h ../include/proftpd.h ../include/class.h
+scoreboard.o: ../include/netacl.h ../include/support.h ../include/sets.h
+scoreboard.o: ../include/dirtree.h ../include/expr.h ../include/netio.h
+scoreboard.o: ../include/modules.h ../include/auth.h ../include/response.h
+scoreboard.o: ../include/timers.h ../include/inet.h ../include/child.h
+scoreboard.o: ../include/netaddr.h ../include/bindings.h ../include/help.h
+scoreboard.o: ../include/feat.h ../include/ftp.h ../include/log.h
+scoreboard.o: ../include/parser.h ../include/xferlog.h
+scoreboard.o: ../include/scoreboard.h ../include/data.h ../include/display.h
+scoreboard.o: ../include/libsupp.h ../include/glibc-glob.h ../include/fsio.h
+scoreboard.o: ../include/mkhome.h ../include/ctrls.h ../include/event.h
+scoreboard.o: ../include/var.h ../include/throttle.h ../include/trace.h
+scoreboard.o: ../include/encode.h ../include/compat.h ../include/proctitle.h
+scoreboard.o: ../include/pidfile.h ../include/env.h ../include/pr-syslog.h
+scoreboard.o: ../include/privs.h
+sets.o: ../include/conf.h ../include/version.h ../config.h
+sets.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+sets.o: ../include/str.h ../include/regexp.h ../include/table.h
+sets.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+sets.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+sets.o: ../include/expr.h ../include/netio.h ../include/modules.h
+sets.o: ../include/auth.h ../include/response.h ../include/timers.h
+sets.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+sets.o: ../include/bindings.h ../include/help.h ../include/feat.h
+sets.o: ../include/ftp.h ../include/log.h ../include/parser.h
+sets.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+sets.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+sets.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+sets.o: ../include/event.h ../include/var.h ../include/throttle.h
+sets.o: ../include/trace.h ../include/encode.h ../include/compat.h
+sets.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+sets.o: ../include/pr-syslog.h
+str.o: ../include/conf.h ../include/version.h ../config.h
+str.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+str.o: ../include/str.h ../include/regexp.h ../include/table.h
+str.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+str.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+str.o: ../include/expr.h ../include/netio.h ../include/modules.h
+str.o: ../include/auth.h ../include/response.h ../include/timers.h
+str.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+str.o: ../include/bindings.h ../include/help.h ../include/feat.h
+str.o: ../include/ftp.h ../include/log.h ../include/parser.h
+str.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+str.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+str.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+str.o: ../include/event.h ../include/var.h ../include/throttle.h
+str.o: ../include/trace.h ../include/encode.h ../include/compat.h
+str.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+str.o: ../include/pr-syslog.h
+support.o: ../include/conf.h ../include/version.h ../config.h
+support.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+support.o: ../include/str.h ../include/regexp.h ../include/table.h
+support.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+support.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+support.o: ../include/expr.h ../include/netio.h ../include/modules.h
+support.o: ../include/auth.h ../include/response.h ../include/timers.h
+support.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+support.o: ../include/bindings.h ../include/help.h ../include/feat.h
+support.o: ../include/ftp.h ../include/log.h ../include/parser.h
+support.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+support.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+support.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+support.o: ../include/event.h ../include/var.h ../include/throttle.h
+support.o: ../include/trace.h ../include/encode.h ../include/compat.h
+support.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+support.o: ../include/pr-syslog.h
+table.o: ../include/conf.h ../include/version.h ../config.h
+table.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+table.o: ../include/str.h ../include/regexp.h ../include/table.h
+table.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+table.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+table.o: ../include/expr.h ../include/netio.h ../include/modules.h
+table.o: ../include/auth.h ../include/response.h ../include/timers.h
+table.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+table.o: ../include/bindings.h ../include/help.h ../include/feat.h
+table.o: ../include/ftp.h ../include/log.h ../include/parser.h
+table.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+table.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+table.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+table.o: ../include/event.h ../include/var.h ../include/throttle.h
+table.o: ../include/trace.h ../include/encode.h ../include/compat.h
+table.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+table.o: ../include/pr-syslog.h
+throttle.o: ../include/conf.h ../include/version.h ../config.h
+throttle.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+throttle.o: ../include/str.h ../include/regexp.h ../include/table.h
+throttle.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+throttle.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+throttle.o: ../include/expr.h ../include/netio.h ../include/modules.h
+throttle.o: ../include/auth.h ../include/response.h ../include/timers.h
+throttle.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+throttle.o: ../include/bindings.h ../include/help.h ../include/feat.h
+throttle.o: ../include/ftp.h ../include/log.h ../include/parser.h
+throttle.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+throttle.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+throttle.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+throttle.o: ../include/event.h ../include/var.h ../include/throttle.h
+throttle.o: ../include/trace.h ../include/encode.h ../include/compat.h
+throttle.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+throttle.o: ../include/pr-syslog.h
+timers.o: ../include/conf.h ../include/version.h ../config.h
+timers.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+timers.o: ../include/str.h ../include/regexp.h ../include/table.h
+timers.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+timers.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+timers.o: ../include/expr.h ../include/netio.h ../include/modules.h
+timers.o: ../include/auth.h ../include/response.h ../include/timers.h
+timers.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+timers.o: ../include/bindings.h ../include/help.h ../include/feat.h
+timers.o: ../include/ftp.h ../include/log.h ../include/parser.h
+timers.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+timers.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+timers.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+timers.o: ../include/event.h ../include/var.h ../include/throttle.h
+timers.o: ../include/trace.h ../include/encode.h ../include/compat.h
+timers.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+timers.o: ../include/pr-syslog.h
+trace.o: ../include/conf.h ../include/version.h ../config.h
+trace.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+trace.o: ../include/str.h ../include/regexp.h ../include/table.h
+trace.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+trace.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+trace.o: ../include/expr.h ../include/netio.h ../include/modules.h
+trace.o: ../include/auth.h ../include/response.h ../include/timers.h
+trace.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+trace.o: ../include/bindings.h ../include/help.h ../include/feat.h
+trace.o: ../include/ftp.h ../include/log.h ../include/parser.h
+trace.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+trace.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+trace.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+trace.o: ../include/event.h ../include/var.h ../include/throttle.h
+trace.o: ../include/trace.h ../include/encode.h ../include/compat.h
+trace.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+trace.o: ../include/pr-syslog.h ../include/privs.h
+var.o: ../include/conf.h ../include/version.h ../config.h
+var.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+var.o: ../include/str.h ../include/regexp.h ../include/table.h
+var.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+var.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+var.o: ../include/expr.h ../include/netio.h ../include/modules.h
+var.o: ../include/auth.h ../include/response.h ../include/timers.h
+var.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+var.o: ../include/bindings.h ../include/help.h ../include/feat.h
+var.o: ../include/ftp.h ../include/log.h ../include/parser.h
+var.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+var.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+var.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+var.o: ../include/event.h ../include/var.h ../include/throttle.h
+var.o: ../include/trace.h ../include/encode.h ../include/compat.h
+var.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+var.o: ../include/pr-syslog.h
+version.o: ../include/conf.h ../include/version.h ../config.h
+version.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+version.o: ../include/str.h ../include/regexp.h ../include/table.h
+version.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+version.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+version.o: ../include/expr.h ../include/netio.h ../include/modules.h
+version.o: ../include/auth.h ../include/response.h ../include/timers.h
+version.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+version.o: ../include/bindings.h ../include/help.h ../include/feat.h
+version.o: ../include/ftp.h ../include/log.h ../include/parser.h
+version.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+version.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+version.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+version.o: ../include/event.h ../include/var.h ../include/throttle.h
+version.o: ../include/trace.h ../include/encode.h ../include/compat.h
+version.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+version.o: ../include/pr-syslog.h
+xferlog.o: ../include/conf.h ../include/version.h ../config.h
+xferlog.o: ../include/default_paths.h ../include/options.h ../include/pool.h
+xferlog.o: ../include/str.h ../include/regexp.h ../include/table.h
+xferlog.o: ../include/proftpd.h ../include/class.h ../include/netacl.h
+xferlog.o: ../include/support.h ../include/sets.h ../include/dirtree.h
+xferlog.o: ../include/expr.h ../include/netio.h ../include/modules.h
+xferlog.o: ../include/auth.h ../include/response.h ../include/timers.h
+xferlog.o: ../include/inet.h ../include/child.h ../include/netaddr.h
+xferlog.o: ../include/bindings.h ../include/help.h ../include/feat.h
+xferlog.o: ../include/ftp.h ../include/log.h ../include/parser.h
+xferlog.o: ../include/xferlog.h ../include/scoreboard.h ../include/data.h
+xferlog.o: ../include/display.h ../include/libsupp.h ../include/glibc-glob.h
+xferlog.o: ../include/fsio.h ../include/mkhome.h ../include/ctrls.h
+xferlog.o: ../include/event.h ../include/var.h ../include/throttle.h
+xferlog.o: ../include/trace.h ../include/encode.h ../include/compat.h
+xferlog.o: ../include/proctitle.h ../include/pidfile.h ../include/env.h
+xferlog.o: ../include/pr-syslog.h
