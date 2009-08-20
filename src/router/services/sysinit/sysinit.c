@@ -1432,8 +1432,8 @@ void start_drivers(void)
 
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
-			insmod("scsi_wait_scan");
 			insmod("scsi_mod");
+			insmod("scsi_wait_scan");
 			cprintf("loading sd_mod\n");
 			insmod("sd_mod");
 			cprintf("loading usb-storage\n");
