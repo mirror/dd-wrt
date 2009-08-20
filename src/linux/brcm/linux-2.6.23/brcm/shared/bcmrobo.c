@@ -543,6 +543,8 @@ static dev_ops_t mdcmdio = {
 	"MII (MDC/MDIO)"
 };
 
+static int iswrt610n=0;
+
 /* High level switch configuration functions. */
 
 /* Get access to the RoboSwitch */
@@ -551,6 +553,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 {
 	robo_info_t *robo;
 	uint32 reset, idx;
+	int rreset=8;
 
 	/* Allocate and init private state */
 	if (!(robo = MALLOC(si_osh(sih), sizeof(robo_info_t)))) {
@@ -565,9 +568,11 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	robo->miird = miird;
 	robo->miiwr = miiwr;
 	robo->page = -1;
+	char *boothwmodel = nvram_get("boot_hw_model");
+	if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))rreset = GPIO_PIN_NOTDEFINED;
 
 	/* Trigger external reset by nvram variable existance */
-	if ((reset = getgpiopin(robo->vars, "robo_reset", GPIO_PIN_NOTDEFINED)) !=
+	if ((reset = getgpiopin(robo->vars, "robo_reset", rreset)) !=
 	    GPIO_PIN_NOTDEFINED) {
 		/*
 		 * Reset sequence: RESET low(50ms)->high(20ms)
@@ -617,9 +622,12 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		 * a write to bit 0 of pseudo phy register 16 is done we are
 		 * unable to talk to the switch on a customer ref design.
 		 */
+		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N"))
+		{
 		if (tmp == 0xffff) {
 			miiwr(h, PSEUDO_PHYAD, 16, 1);
 			tmp = miird(h, PSEUDO_PHYAD, 2);
+		}
 		}
 
 		if (tmp != 0xffff) {
@@ -642,10 +650,24 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		}
 		ET_MSG(("%s: devid: 0x%x\n", __FUNCTION__, robo->devid));
 	}
+		if (robo->devid == DEVID5395)
+			nvram_set("switch_type", "BCM5395");
+		else if(robo->devid == DEVID5397)
+			nvram_set("switch_type", "BCM5397");
+		else if(robo->devid == DEVID5325)
+			nvram_set("switch_type", "BCM5325");
+		else if(robo->devid == DEVID53115)
+			nvram_set("switch_type", "BCM53115S");
+		else
+			nvram_set("switch_type", "unknown");						
+	if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
+		iswrt610n=1;
 
+	if (!iswrt610n)
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
-	    (robo->devid == DEVID5398)) {
+	    (robo->devid == DEVID5398) ||
+	    (robo->devid == DEVID53115)) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
 		uint8 srst_ctrl;
 
 		/* If it is a 539x switch, use the soft reset register */
@@ -654,6 +676,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		/* Reset the 539x switch core and register file */
 		srst_ctrl = 0x83;
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
+		bcm_mdelay(500);
 		srst_ctrl = 0x00;
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
 	}
@@ -825,9 +848,13 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 	        (3 << 5));		/* individual VLAN learning mode */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
 
-	/* VLAN Control 1 Register (Page 0x34, Address 1) */
+if (iswrt610n)
+	val8 |= ((1 << 2) |		/* enable RSV multicast V Fwdmap */
+		(1 << 3));		/* enable RSV multicast V Untagmap */		
+else
 	val8 = ((1 << 2) |		/* enable RSV multicast V Fwdmap */
-		(1 << 3));		/* enable RSV multicast V Untagmap */
+		(1 << 3));		/* enable RSV multicast V Untagmap */		
+
 	if (robo->devid == DEVID5325)
 		val8 |= (1 << 1);	/* enable RSV multicast V Tagging */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));
@@ -891,12 +918,29 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 		sprintf(vlanports, "vlan%dports", vid);
 		ports = getvar(robo->vars, vlanports);
 
-		/* In 539x vid == 0 us invalid?? */
-		if ((robo->devid != DEVID5325) && (vid == 0)) {
+
+		if ((robo->devid != DEVID5325) && (robo->devid != DEVID5397) && (vid == 0)) {
 			if (ports)
-				ET_ERROR(("VID 0 is set in nvram, Ignoring\n"));
+				printk(KERN_EMERG "VID 0 is set in nvram, Ignoring\n");
+			
 			continue;
+//		    vid = 1;
 		}
+
+		if ((DEVID5395 == robo->devid) && (1 == vid)) {
+			/* get vlan member ports from nvram */
+			sprintf(vlanports, "vlan0ports");
+			ports = getvar(robo->vars, vlanports);
+			if (!ports || !strcmp(ports," "))
+			    {
+			    printk(KERN_EMERG "dd-wrt already booted, use internal fixup\n");
+			    sprintf(vlanports, "vlan1ports");
+			    ports = getvar(robo->vars, vlanports);
+			    }
+			
+			printk(KERN_EMERG "configure vlan1 (%s) instead of vlan0 for BCM5395\n",ports);
+		} 		
+
 
 		/* disable this vlan if not defined */
 		if (!ports)
@@ -1067,6 +1111,7 @@ vlan_setup:
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_PMAP, &val32, sizeof(val32));
 	}
 
+
 	/* Disable management interface access */
 	if (robo->ops->disable_mgmtif)
 		robo->ops->disable_mgmtif(robo);
@@ -1080,6 +1125,8 @@ bcm_robo_enable_switch(robo_info_t *robo)
 {
 	int i, max_port_ind, ret = 0;
 	uint8 val8;
+	uint16 mode16;
+	char *boot=nvram_get("boot_hw_model");
 
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
@@ -1114,6 +1161,19 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		/* No spanning tree on IMP port too */
 		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_IMP, &val8, sizeof(val8));
 	}
+
+char *boardnum=nvram_get("boardnum");
+char *boardtype=nvram_get("boardtype");
+char *cardbus=nvram_get("cardbus");
+
+if (boardnum!=NULL && boardtype!=NULL && cardbus!=NULL)
+if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1") && (!boot || (strcmp(boot, "WRT300N") && strcmp(boot, "WRT610N"))))
+    {
+        printk(KERN_EMERG "Enable WRT350 LED fix\n");
+	/* WAN port LED */
+	mode16 = 0x1f;
+	robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &mode16, 2);    
+    }
 
 	/* Disable management interface access */
 	if (robo->ops->disable_mgmtif)
