@@ -1,0 +1,104 @@
+mod_ldap v2.8.15
+================
+
+mod_ldap is a module that allows proftpd to do user authentication and
+name/UID lookups against an LDAP database.
+
+**Please note:** Read the CHANGES section below for mod_ldap v2.8 changes;
+some significant changes have been made. Do *NOT* upgrade to mod_ldap v2.8
+or later before reading the CHANGES section.
+
+Sections:
+1. Author
+2. How do I set up mod_ldap?
+3. Changes
+4. To Do
+5. Thanks
+
+
+=========
+1. Author
+=========
+
+John Morrissey, <jwm@horde.net>, http://horde.net/~jwm/software/mod_ldap/.
+Feedback is much appreciated. If you're using mod_ldap successfully, are
+having problems getting mod_ldap up and running at your site, or have some
+code improvements or ideas for development, please let me know!
+
+============================
+2. How do I set up mod_ldap?
+============================
+
+If you are using a version of mod_ldap included with a ProFTPD release,
+you can simply:
+
+* tar xvzf proftpd-version.tar.gz
+* If you wish to use a newer version of mod_ldap that is not yet included
+  with a release version of ProFTPD, download the file mod_ldap.c and say:
+
+    cp -f mod_ldap.c proftpd-version/contrib
+
+* cd proftpd-version
+* ./configure --with-modules=mod_ldap
+* make
+* make install
+* If your LDAP server runs OpenLDAP 1.x, you need to add schema definitions. 
+  Add the contents of posixAccount-objectclass to your slapd.oc.conf and
+  restart your LDAP server. If you plan on using mod_ldap for group lookups,
+  also add the contents of posixGroup-objectclass. OpenLDAP 2.x (and most
+  other LDAP servers) ship with these schema predefined.
+* The 'user-ldif' file contains a sample user ldif. Modify it to your liking
+  and say ldapadd -D your-root-dn -w your-root-dn-password < ldif
+* You are *strongly* encouraged to read up on the LDAP config-file
+  directives in proftpd-version/doc/Configuration.html. At bare minimum,
+  you'll need to have LDAPServer, LDAPDNInfo, and LDAPDoAuth configuration
+  directives in your proftpd.conf.
+
+  A set of basic mod_ldap configuration directives would look like:
+
+    LDAPServer            localhost
+    LDAPDNInfo            cn=your-dn,dc=example,dc=com dnpass
+    LDAPDoAuth            on "dc=users,dc=example,dc=com"
+
+  Of course, you will need to update these configuration directives with
+  the proper values for your environment.
+
+==========
+3. Changes
+==========
+
+Please see the CHANGES file.
+
+========
+4. To Do
+========
+
+* Debugging information needs to be significantly improved. Currently, error
+  messages (with the complete LDAP error message) are logged for any
+  failures, but it would be nice to have extended debugging information.
+* shadowAccount objectclass stuff - inactive, expiration, etc - Is there
+  any demand for this? It's been months since I've heard anyone express
+  interest.
+
+=========
+5. Thanks
+=========
+
+* Everyone listed in mod_ldap.c for contributing code.
+
+* James (james at wwnet dot net) for a copy of his LDAP module that he never
+  released
+* Krzysztof Dabrowski (brush at pol dot pl) for some big virtual-user ideas
+* Peter Deacon (peterd at iea-software dot com) for ideas 
+* Peter Fabian (fabian at staff dot matavnet dot hu) for ideas and a tested
+  platform
+* Justin Hahn (jeh at profitlogic dot com) for good ideas and debate
+* Ralf Kruedewagen (Ralf dot Kruedewagen at meocom dot de) for a tested
+  platform
+* Steve Luzynski (steve at uniteone dot net) for extra help/testing/feedback
+* Scott Murphy (smurphy at berbee dot com) for a trouble report 
+* Marcin Obara for lots of testing
+* Miguel Barreiro Paz (mbpaz at edu dot aytolacoruna dot es) for a supported
+  platform and new supported LDAP server
+* Everyone else who has sent feedback, bug reports, feature requests,
+  and ideas.

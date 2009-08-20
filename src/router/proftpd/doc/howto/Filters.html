@@ -1,0 +1,98 @@
+<!-- $Id: Filters.html,v 1.6 2005/10/08 20:51:55 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Filters.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - Filters</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>Using Filters</b></h2></center>
+<hr>
+
+<p>
+ProFTPD supports the ability to &quot;filter&quot; the FTP commands it receives
+from the client.  These filters are written as
+<a href="Regex.html">regular expressions</a>.  This means that while the
+filters can be very powerful, they can also be complex and harder to construct.
+
+<p>
+First, there are the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_AllowFilter.html"><code>AllowFilter</code></a> and <a href="http://www.proftpd.org/docs/directives/linked/config_ref_DenyFilter.html"><code>DenyFilter</code></a> configuration directives.  These configuration directives are used
+to set filters on <b>every</b> FTP command.  If an <code>AllowFilter</code> is
+used, the command parameters <b>must</b> match the given filter, otherwise the
+command will be denied.  If a <code>DenyFilter</code> is used, the command
+parameters <b>must not</b> match the given filter, otherwise the command will
+be denied.  If both <code>AllowFilter</code> and <code>DenyFilter</code> are
+used, then the <code>AllowFilter</code> will be checked first.
+
+<p>
+Second, there are some special filter configuration directives aimed at those
+FTP commands that cause changes to files and directories on the server system: <a href="http://www.proftpd.org/docs/directives/linked/config_ref_PathAllowFilter.html"><code>PathAllowFilter</code></a> and <a href="http://www.proftpd.org/docs/directives/linked/config_ref_PathDenyFilter.html"><code>PathDenyFilter</code></a>.  Like <code>AllowFilter</code> and <code>DenyFilter</code>, the
+<code>Allow</code> filter, if present, is checked first, then a
+<code>DenyFilter</code>, if present.  <code>PathAllowFilter</code> and
+<code>PathDenyFilter</code> are checked <i>after</i> the
+<code>AllowFilter</code> and <code>DenyFilter</code> directives.  These
+<code>Path</code> filters are only applied to the following FTP commands:
+<code>DELE</code>, <code>MKD/XMKD</code>, <code>RMD/XRMD</code>,
+<code>RNFR</code>, <code>RNTO</code>, <code>STOR</code>, <code>STOU</code>,
+and to the <code>SITE</code> commands <code>CHGRP</code> and <code>CHMOD</code>.
+Note that using both <code>PathAllowFilter</code> and
+<code>PathDenyFilter</code> at the same time is not a good idea; only one
+filter is generally needed.
+
+<p>
+One property that often catches the unwary administrator is the fact that
+<code>proftpd</code> only operates on the first <code>Filter</code> directive
+defined in the configuration file; it does not cycle through multiple
+<code>Filter</code> directives.  This is because multiple regular expressions
+can be combined into a single (albeit more complex) regular expression.  The
+alternation metacharacter is helpful in creating such combined regular
+expressions.  For example, if you had the following in your
+<code>proftpd.conf</code>:
+<pre>
+  PathAllowFilter \.jpg$
+  PathAllowFilter \.jpeg$
+  PathAllowFilter \.mpeg$
+  PathAllowFilter \.mpg$
+  PathAllowFilter \.mp3$
+</pre>
+only the first <code>PathAllowFilter</code> would be enforced.  To enforce
+all Filter simultaneously, use:
+<pre>
+  PathAllowFilter \.(jpg|jpgeg|mpeg|mpg|mp3)$
+</pre>
+Matches are case-sensitive! Also note that if you surround your regular
+expression in quotation (&quot;) marks, any backslash will itself need
+to be escaped; ProFTPD's configuration parser interprets backslashes inside
+of quoted strings a little differently.  Thus, the example above would look
+like this:
+<pre>
+  PathAllowFilter &quot;\\.(jpg|jpgeg|mpeg|mpg|mp3)$&quot;
+</pre>
+if using quotation marks.
+
+<p>
+Another characteristic to keep in mind is that Filters are only applied to
+FTP command <i>parameters</i>, not to the FTP command itself.  Most of the
+time, this is not a problem.  It would be useful sometimes, though, to
+be able to filter parameters of commands other than those filtered by the
+<code>Path</code> filter directives.  It would be an easy change to the
+source code; however, there is no feature request for the ability to do this
+on <a href="http://bugs.proftpd.org">bugs.proftpd.org</a> with a good
+justification for such a feature.  If you can think of one, please open
+such a request.
+
+<p>
+When developing your Filter directives, it often helps to keep an eye on the
+server <a href="Debugging.html">debugging</a> output, to see how well your
+filters are being applied.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2005/10/08 20:51:55 $</i><br>
+<hr>
+
+</body>
+</html>

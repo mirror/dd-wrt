@@ -1,0 +1,69 @@
+<!-- $Id: ASCII.html,v 1.1 2004/11/14 23:45:52 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ASCII.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - ASCII Transfers</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>ProFTPD and ASCII Transfers</b></h2></center>
+<hr>
+
+<p>
+Like most FTP servers (and clients), <code>proftpd</code> contains code
+specifically for handling files that are transferred in ASCII mode.
+<a href="http://www.faqs.org/rfcs/rfc959.html">RFC959</a> requires that when
+sending a file transferred in ASCII mode, the server (or client) <b>must</b>
+ensure that every carriage return (CR) character is followed by a line feed
+(LF) character.  The receiving program then checks the file for these CRLF
+sequences and re-translates them into the native line-ending format for the
+host machine.  This allows clients on platforms whose ASCII line ending is
+CRLF (<i>e.g.</i> Windows) to send those files to platforms whose ASCII line
+ending is LF (<i>e.g.</i> Unix), at the cost of complex handling of ASCII
+data in FTP.
+
+<p>
+The FTP <code>TYPE</code> command is used by the client to tell the server
+which transfer type is to be used: <code>A</code> for ASCII, <code>I</code>
+for binary.  For the <code>LIST</code> and <code>NLST</code> FTP commands,
+the data transfer is <i>always</i> done in ASCII mode.  The other FTP
+commands are unaffected by the transfer mode, with two notable exceptions:
+<code>REST</code> and <code>SIZE</code>.
+
+<p>
+Why should <code>REST</code> (for resuming a transfer) and <code>SIZE</code>
+(for determining the size of a file on the server) be affected?  The
+<code>REST</code> command tells the server at which byte to begin transferring
+a file.  Recall that since the server may have altered the bytes received
+from the client in ASCII mode, the offset used by the client may be in
+a different position of the file on the server.  Similarly, in ASCII mode,
+the size of the file that the client will receive may be different than
+the actual size of the file on the server.  For example, a Unix FTP server
+transferring a file in ASCII mode to a Windows FTP client will need to add
+CR characters, increasing the size of the file (from the server's point of
+view).
+
+<p>
+Properly handling the <code>SIZE</code> command would require the server to
+scan the file in question and perform the translation logic, which is
+resource-intensive.  It is an easy way for a malicious client to try a
+&quot;denial of service&quot; attack on the server, forcing the server to
+perform many time-consuming calculations needlessly.  The <code>REST</code>
+command can be abused in the same fashion.  ProFTPD thus <b>does not</b>
+perform ASCII translation when handling the <code>REST</code> and
+<code>SIZE</code> commands.
+
+<p>
+An FTP client will usually use <code>SIZE</code> when it wants to resume
+downloading file.  However, clients in general should not be resuming downloads
+in ASCII mode.  Resuming downloads in binary mode is the recommended way.
+
+<p>
+<hr>
+<i>$Date: 2004/11/14 23:45:52 $</i><br>
+
+</body>
+</html>

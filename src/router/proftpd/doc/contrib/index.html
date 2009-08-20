@@ -1,0 +1,182 @@
+<!-- $Id: index.html,v 1.7 2008/08/15 22:16:54 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/index.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD Contrib Documentation Index</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>ProFTPD Contrib Documentation Index</b></h2></center>
+<hr>
+
+<p>
+The following is a collection of HTML documentation for modules and
+tools in the <code>contrib/</code> directory of the ProFTPD source
+distribution.
+
+<p>
+<ul>
+  <dt>The <a href="ftpasswd.html"><code>ftpasswd</code></a> script
+  <dd>Used to easily create and manage <code>AuthUserFile</code>s and
+      <code>AuthGroupFile</code>s
+
+  <p> 
+  <dt>The <a href="ftpquota.html"><code>ftpquota</code></a> script
+  <dd>Used for creating and managing file-based tables for the
+      <code>mod_quotatab</code> module
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_ban.html"><code>mod_ban</code> module
+  <dd>Used for "greylisting" clients based on configurable bad behavior
+      policies
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_ctrls_admin.html"><code>mod_ctrls_admin</code> module
+  <dd>Adds administrative controls actions for the <code>ftpdctl</code>
+      program.  Controls are covered in more detail in the
+      <a href="../howto/Controls.html">Controls</a> mini-HOWTO
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_dynmasq.html"><code>mod_dynmasq</code> module
+  <dd>For automatically refreshing the IP address of the FTP daemon, for
+      those sites which use dynamic DNS services
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_ifsession.html"><code>mod_ifsession</code></a> module
+  <dd>For adding per-user/group/Class sections to your
+      <code>proftpd.conf</code> file
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_ldap.html"><code>mod_ldap</code></a> module
+  <dd>Provides support for authenticating users using LDAP directories
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_load.html"><code>mod_load</code></a> module
+  <dd>For configuring server availability based on system load
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_quotatab.html"><code>mod_quotatab</code></a> module
+  <dd>Adds quota support for <code>proftpd</code>
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_quotatab_file.html"><code>mod_quotatab_file</code></a>
+      module
+  <dd>This is one of the supporting modules for <code>mod_quotatab</code>
+      which handles quota tables that are stored in specially formatted files
+      on disk
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_quotatab_ldap.html"><code>mod_quotatab_ldap</code></a>
+      module
+  <dd>This one of the supporting modules for <code>mod_quotatab</code>
+      which handles reading quota limits from LDAP directories
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_quotatab_sql.html"><code>mod_quotatab_sql</code></a>
+      module
+  <dd>This is one of the supporting modules for <code>mod_quotatab</code>
+      which handles quota tables that are stored in SQL databases
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_radius.html"><code>mod_radius</code></a> module
+  <dd>Provides support for authenticating users using the RADIUS protocol
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_rewrite.html"><code>mod_rewrite</code></a> module
+  <dd>Adds the ability to rewrite FTP commands sent by clients on-the-fly,
+      using regular expression matching and substitution
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_site_misc.html"><code>mod_site_misc</code></a> module
+  <dd>Adds support for miscellaneous <code>SITE</code> commands such as
+      <code>SITE MKDIR</code>, <code>SITE SYMLINK</code>, and
+      <code>SITE UTIME</code>
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_sql.html"><code>mod_sql</code></a> module
+  <dd>Provides support for authenticating users using user information
+      stored in SQL databases.  Logging of various data into SQL tables
+      is also supported.
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_tls.html"><code>mod_tls</code></a> module
+  <dd>Adds the ability to encrypt the control and data connections using
+      SSL/TLS
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_unique_id.html"><code>mod_unique_id</code> module
+  <dd>Creates a unique ID for every FTP session, which can be used in log
+      files and database tables for tracking all activity associated with
+      a given FTP session
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_wrap.html"><code>mod_wrap</code></a> module
+  <dd>Supports using the <code>/etc/hosts.allow</code> and
+      <code>/etc/hosts.deny</code> files, or other allow/deny files,
+      for IP-based access control.
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_wrap2.html"><code>mod_wrap2</code></a> module
+  <dd>Supports using the <code>/etc/hosts.allow</code> and
+      <code>/etc/hosts.deny</code> files, or other allow/deny files,
+      as well as SQL-based access rules, for IP-based access control.
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_wrap2_file.html"><code>mod_wrap2_file</code></a>
+      module
+  <dd>This is one of the supporting modules for <code>mod_wrap2</code>
+      which handles access rules that are stored in specially formatted files
+      on disk
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_wrap2_sql.html"><code>mod_wrap2_sql</code></a>
+      module
+  <dd>This is one of the supporting modules for <code>mod_wrap2</code>
+      which handles access rules that are stored in SQL database tables
+  </dd>
+</ul>
+
+If your question or issue is not covered by any of these pages, please
+send a request to the ProFTPD documentation list.  Directions for subscribing
+to the docs list, as well as the other ProFTPD mailing lists, are at:
+<pre>
+  <a href="http://www.proftpd.org/lists.html">http://www.proftpd.org/lists.html</a>
+</pre>
+If you are looking to see if ProFTPD supports a particular feature, the
+first place to look as the complete list of configuration directives:
+<pre>
+  <a href="http://www.proftpd.org/docs/directives/linked/by-name.html">http://www.proftpd.org/docs/directives/linked/by-name.html</a>
+</pre>
+The list may be intimidatingly long, but it is well worth scanning through
+all of the directives to see everything that ProFTPD is capable of supporting.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2008/08/15 22:16:54 $</i><br>
+<hr>
+
+</body>
+</html>
