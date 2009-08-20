@@ -1476,6 +1476,7 @@ void start_drivers(void)
 		if (nvram_match("usb_printer", "1")) {
 			cprintf("loading printer\n");
 			insmod("printer");
+			insmod("usblp");
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else {
