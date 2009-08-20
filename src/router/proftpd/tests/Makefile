@@ -1,0 +1,76 @@
+CC=gcc
+
+
+top_builddir=..
+top_srcdir=..
+srcdir=.
+
+
+include $(top_srcdir)/Make.rules
+
+EXEEXT=
+
+TEST_API_DEPS=\
+  $(top_srcdir)/src/pool.o \
+  $(top_srcdir)/src/str.o \
+  $(top_srcdir)/src/sets.o \
+  $(top_srcdir)/src/timers.o \
+  $(top_srcdir)/src/table.o \
+  $(top_srcdir)/src/var.o \
+  $(top_srcdir)/src/event.o \
+  $(top_srcdir)/src/env.o \
+  $(top_srcdir)/src/version.o \
+  $(top_srcdir)/src/feat.o \
+  $(top_srcdir)/src/netaddr.o \
+  $(top_srcdir)/src/netacl.o \
+  $(top_srcdir)/src/class.o \
+  $(top_srcdir)/src/regexp.o \
+  $(top_srcdir)/src/expr.o \
+  $(top_srcdir)/src/scoreboard.o \
+  $(top_srcdir)/src/modules.o
+
+TEST_API_LIBS=-lcheck
+
+TEST_API_OBJS=\
+  api/pool.o \
+  api/array.o \
+  api/str.o \
+  api/sets.o \
+  api/timers.o \
+  api/table.o \
+  api/var.o \
+  api/event.o \
+  api/env.o \
+  api/version.o \
+  api/feat.o \
+  api/netaddr.o \
+  api/netacl.o \
+  api/class.o \
+  api/regexp.o \
+  api/expr.o \
+  api/scoreboard.o \
+  api/modules.o \
+  api/stubs.o \
+  api/tests.o
+
+
+all:
+	@echo "Running make from top level directory."
+	cd ../; $(MAKE) all
+
+dummy:
+
+Makefile: Makefile.in ../config.status
+	cd ../ && ./config.status
+
+api/.c.o:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+api-tests$(EXEEXT): $(TEST_API_OBJS) $(TEST_API_DEPS)
+	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LDFLAGS) -o $@ $(TEST_API_DEPS) $(TEST_API_OBJS) $(LIBS) $(TEST_API_LIBS)
+
+check: api-tests$(EXEEXT) dummy
+	./api-tests$(EXEEXT) && perl tests.pl
+
+clean:
+	$(LIBTOOL) --mode=clean $(RM) *.o api/*.o test$(EXEEXT)

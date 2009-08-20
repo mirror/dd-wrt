@@ -1,0 +1,204 @@
+<!-- $Id: Logging.html,v 1.2 2008/01/15 18:27:41 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Logging.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - Logging</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b><i>Logging</i></b></h2></center>
+<hr>
+
+<p>
+<b>Logging</b><br>
+Logging the activity of the server is an integral part of effective server
+administration.  ProFTPD provides several different and flexing logging
+mechanisms.  When examining the different logging mechanisms, have in
+mind the intended use of the logged data, the volume, any post-processing
+that may need to be done, etc.  Log files are more useful when they contain a
+complete record of server activity. It is often easier to simply post-process
+the log files to remove requests that you do not want to consider.  
+
+<p>
+<b>Security Warning</b><br>
+Anyone who can write to the directory where ProFTPD is writing a log file can
+almost certainly gain access to the UID that the server is started under, which
+is normally <code>root</code>. <b>Do not</b> give people write access to the
+directory where the logs are stored without being aware of the consequences:
+if the logs directory is writable (by a non-<code>root</code> user), someone
+could replace a log file with a symlink to some other system file, and then
+<code>root</code> might overwrite that file with arbitrary data. If the log
+files themselves are writable (by a non-<code>root</code> user), then someone
+may be able to overwrite the log itself with bogus data.
+
+<p>
+When opening log files, <code>proftpd</code> will by default log a warning if
+the file being opened for logging is in a directory that does not exist, or
+is world-writable.  The log file will <b>not</b> be written in world-writable
+directories; there are no exceptions.  (If you have configured log files in
+your <code>proftpd.conf</code> that are not appearing, check for the warnings
+about world-writable directories.)  The <code>proftpd</code> process will also,
+by default, log a warning if the file given is a symlink; this symlink check
+can be configured via the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_AllowLogSymlinks.html"><code>AllowLogSymlinks</code></a> directive.
+
+<p>
+In addition, log files may contain information supplied directly by the client,
+without escaping. Therefore, it is possible for malicious clients to insert
+control-characters in the log files, so care must be taken in dealing with
+raw logs.
+
+<p><a name="Syslog"></a>
+<b><code>syslog</code></b><br>
+By default, <code>proftpd</code> will log via <code>syslog(3)</code>, using
+the <code>daemon</code> facility (<code>auth</code> for some logging),
+at various levels: <code>err</code>, <code>notice</code>, <code>warn</code>,
+<code>info</code>, and <code>debug</code> (debugging is done at this syslog
+level).  The location of the server's log files in this case is determined by
+your <code>/etc/syslog.conf</code> configuration.
+
+<p><a name="LogFiles"></a>
+<b><code>Log Files</code></b><br>
+There are three main types of logs that a <code>proftpd</code> daemon can
+generate: <code>TransferLog</code>s, a <code>SystemLog</code>, and
+<code>ExtendedLog</code>s.
+
+<p><a name="TransferLog"></a>
+A <a href="http://www.proftpd.org/docs/directives/linked/config_ref_TransferLog.html"><code>TransferLog</code></a> is the most common log kept, recording file
+transfers.  Its format is described in the <code>xferlog(5)</code> man page,
+also available <a href="http://www.castaglia.org/proftpd/doc/xferlog.html">here</a>
+
+<p><a name="SystemLog"</a>
+If the site administrator wants to have <code>proftpd</code> log its
+messages to a file rather than going through <code>syslogd</code>, the
+<a href="http://www.proftpd.org/docs/directives/linked/config_ref_SystemLog.html"><code>SystemLog</code></a> configuration directive is the one to use.  There
+is only one such file kept for the entire daemon.  See the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_ServerLog.html"><code>ServerLog</code></a> directive for keeping a similar log on a per-vhost basis.
+
+<p><a name="ExtendedLog"></a>
+The <a href="http://www.proftpd.org/docs/directives/linked/config_ref_ExtendedLog.html">ExtendedLog</a> directive is used to create log files of a very
+flexible and configurable format, and to have granular control over what is
+logged, and when.  The format of an <code>ExtendedLog</code> is described
+using the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_LogFormat.html">LogFormat</a> directive.  Multiple <code>ExtendedLogs</code> can
+be configured, each with a different format.
+
+<!-- Add note/chunk about FTP response codes, from RFC959, for ExtendedLog? -->
+
+<p><a name="LogAnalysis"></a>
+<b>Log Analysis</b><br>
+There are a variety of log analyzers available; these are just a few:
+<ul>
+  <li>Webalizer: <a href="http://www.webalizer.org/">http://www.webalizer.org/</a>
+  <li>HTTP-analyze: <a href="http://www.netstore.de/Supply/http-analyze/">http://www.netstore.de/Supply/http-analyze/</a>
+  <li>Analog: <a href="http://www.analog.cx/">http://www.analog.cx/</a>
+  <li>Report Magic: <a href="http://www.reportmagic.org/">http://www.reportmagic.org/</a>
+  <li>FTPWeblog: <a href="http://www.nihongo.org/snowhare/utilities/ftpweblog/">http://www.nihongo.org/snowhare/utilities/ftpweblog/</a>
+</ul>
+
+<p><a name="LogRotation"></a>
+<b>Log Rotation</b><br>
+On even a moderately busy server, the quantity of information stored in the log
+files is very large.  It will consequently be necessary to periodically rotate
+the log files by moving or deleting the existing logs. This cannot be done
+while the server is running, because the daemon will continue writing to the
+old log file as long as it holds the file open.  Instead, the server must be
+<a href="Stopping.html">restarted</a> after the log files are moved or deleted
+so that it will open new log files.
+
+<p>
+Another way to perform log rotation is using <a href="#FIFOs">FIFOs</a> as
+discussed in the next section.
+
+<p><a name="FIFOs"></a>
+<b>FIFOs (<i>a.k.a.</i> named pipes)</b><br>
+ProFTPD is capable of writing log files to FIFOs, from which another
+process can read.  Use of this capability dramatically increases the
+flexibility of logging, without adding code to the main server.  In order to
+write logs to a pipe, simply create the FIFO at the desired path
+(<code>man mkfifo(1)</code>), and use that path in the logging configuration
+directive.
+
+<p>
+One important use of piped logs is to allow log rotation without having to
+restart the server.  One such popular flexible log rotation program is
+<a href="http://www.ford-mason.co.uk/resources/cronolog/">cronolog</a>;
+however, at present cronolog requires a small patch to enable it to read
+from a FIFO (by default, cronolog reads data from stdin).  Please contact
+the author of this article for details concerning the patch.
+
+<p>
+Here's an example of FIFO-based logging script, based on one posted by Michael
+Renner:
+<pre>
+  #!/usr/bin/perl
+
+  use strict;
+
+  use File::Basename qw(basename);
+  use Sys::Syslog qw(:DEFAULT setlogsock);
+
+  my $program = basename($0);
+
+  my $fifo = '/var/log/proftpd-log.fifo';
+  my $syslog_facility = 'daemon';
+  my $syslog_level = 'info';
+
+  open(FIFO, "< $fifo") or die "$program: unable to open $fifo: $!\n";
+
+  setlogsock 'unix';
+
+  openlog($program, 'pid', $syslog_facility);
+  syslog($syslog_level, $_) while (<FIFO>);
+  closelog();
+
+  close(FIFO);
+  exit 0;
+</pre>
+More complex filtering can be added to such scripts.  
+
+<p>
+If using FIFOs, there are some caveats to keep in mind.  If you use in
+<code>init.d</code> script to start <code>standalone</code> daemons, you can
+add commands to start the FIFO logging programs first, before the daemon.
+For <code>inetd</code>-run servers, consider wrapping up the necessary
+commands for starting a FIFO reader and the server into a simple shell
+script, or simply run the FIFO-reading program from an <code>init.d</code>
+script, and save the overhead of starting that process, in addition to the
+<code>proftpd</code> process, for each FTP session.
+
+<p>
+FIFO-based log readers are a very powerful tool, but they should not be
+used where a simpler solution like off-line post-processing is available.
+
+<p><a name="SQLLogging"></a>
+<b>SQL Logging</b><br>
+The <code>mod_sql</code> module also enables some powerful and complex
+logging capabilities...
+
+<p><a name="PidFile"></a>
+<b>Pid File</b><br>
+On startup, <code>proftpd</code> saves the process ID of the parent daemon
+process to the file <code>var/proftpd/proftpd.pid</code>. This filename can be
+changed with the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_PidFile.html">PidFile</a> directive. The process ID (<i>aka</i> PID) is for
+use by the administrator in restarting and terminating the daemon by sending
+signals to the parent process.  For more information see the
+<a href="Stopping.html">stopping and starting</a> page.
+
+<p>
+<b>Scoreboard File</b><br>
+The last type of &quot;logging&quot; is done via the scoreboard file.  The
+scoreboard is binary-formatted file the server uses to store information
+about each session; it is this file that is read by <code>ftptop</code>,
+<code>ftpwho</code> and <code>ftpcount</code>.  The location for the
+scoreboard file is determined by the
+<a href="http://www.proftpd.org/docs/directives/linked/config_ref_ScoreboardFile.html"><code>ScoreboardFile</code></a> directive.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2008/01/15 18:27:41 $</i><br>
+<hr>
+
+</body>
+</html>
+

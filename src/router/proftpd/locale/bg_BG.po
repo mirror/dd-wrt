@@ -1,0 +1,976 @@
+# translation of bg_BG.po to Bulgarian
+# Template for ProFTPD Response String translations
+# Copyright (C) 2008 The ProFTPD Project
+# This file is distributed under the same license as the ProFTPD package.
+#
+# The ProFTPD Project <core@proftpd.org>, 2008.
+# Georgi Dimitrov Sotirov <gdsotirov@dir.bg>, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: bg_BG\n"
+"Report-Msgid-Bugs-To: core@proftpd.org\n"
+"POT-Creation-Date: 2008-04-04 18:00-0800\n"
+"PO-Revision-Date: 2009-02-07 19:26+0200\n"
+"Last-Translator: Georgi Dimitrov Sotirov <gdsotirov@dir.bg>\n"
+"Language-Team: Bulgarian\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../contrib/mod_quotatab.c:163 ../contrib/mod_quotatab.c:227
+msgid "upload"
+msgstr "качване"
+
+#: ../contrib/mod_quotatab.c:167 ../contrib/mod_quotatab.c:231
+msgid "download"
+msgstr "сваляне"
+
+#: ../contrib/mod_quotatab.c:171 ../contrib/mod_quotatab.c:235
+msgid "transfer"
+msgstr "пренос"
+
+#: ../contrib/mod_quotatab.c:182
+#, c-format
+msgid "%.2f of %.2f %s %s"
+msgstr "%.2f от %.2f %s %s"
+
+#: ../contrib/mod_quotatab.c:183
+msgid "byte"
+msgstr "байт"
+
+#: ../contrib/mod_quotatab.c:183
+msgid "bytes"
+msgstr "байта"
+
+#: ../contrib/mod_quotatab.c:190
+#, c-format
+msgid "%.2f of %.2f %s Kb"
+msgstr "%.2f от %.2f %s Кб"
+
+#: ../contrib/mod_quotatab.c:198
+#, c-format
+msgid "%.2f of %.2f %s Mb"
+msgstr "%.2f от %.2f %s Мб"
+
+#: ../contrib/mod_quotatab.c:206
+#, c-format
+msgid "%.2f of %.2f %s Gb"
+msgstr "%.2f от %.2f %s Гб"
+
+#: ../contrib/mod_quotatab.c:242
+#, c-format
+msgid "%u of %u %s %s"
+msgstr "%u от %u %s %s"
+
+#: ../contrib/mod_quotatab.c:243
+msgid "file"
+msgstr "файл"
+
+#: ../contrib/mod_quotatab.c:243
+msgid "files"
+msgstr "файла"
+
+#: ../contrib/mod_quotatab.c:258
+#, c-format
+msgid "bytes:\t%.2f/%.2f"
+msgstr "байта:\t%.2f/%.2f"
+
+#: ../contrib/mod_quotatab.c:260
+#, c-format
+msgid "bytes:\tunlimited"
+msgstr "байта:\tнеограничен"
+
+#: ../contrib/mod_quotatab.c:269
+#, c-format
+msgid "Kb:\t%s%.2f/%.2f"
+msgstr "Кб:\t%s%.2f/%.2f"
+
+#: ../contrib/mod_quotatab.c:272
+#, c-format
+msgid "Kb:\tunlimited"
+msgstr "Кб:\tнеограничен"
+
+#: ../contrib/mod_quotatab.c:281
+#, c-format
+msgid "Mb:\t%s%.2f/%.2f"
+msgstr "Мб:\t%s%.2f/%.2f"
+
+#: ../contrib/mod_quotatab.c:284
+#, c-format
+msgid "Mb:\tunlimited"
+msgstr "Мб:\tнеограничен"
+
+#: ../contrib/mod_quotatab.c:293
+#, c-format
+msgid "Gb:\t%s%.2f/%.2f"
+msgstr "Гб:\t%s%.2f/%.2f"
+
+#: ../contrib/mod_quotatab.c:296
+#, c-format
+msgid "Gb:\tunlimited"
+msgstr "Гб:\tнеограничен"
+
+#: ../contrib/mod_quotatab.c:312
+#, c-format
+msgid "files:\t%u/%u"
+msgstr "файлове:\t%u/%u"
+
+#: ../contrib/mod_quotatab.c:314
+#, c-format
+msgid "files:\tunlimited"
+msgstr "файлове:\tнеограничен"
+
+#: ../contrib/mod_quotatab.c:1440 ../contrib/mod_quotatab.c:1447
+#: ../contrib/mod_quotatab.c:1495 ../contrib/mod_quotatab.c:1502
+#: ../contrib/mod_quotatab.c:2086 ../contrib/mod_quotatab.c:2095
+#: ../contrib/mod_quotatab.c:2108 ../contrib/mod_quotatab.c:2117
+#: ../contrib/mod_quotatab.c:2151 ../contrib/mod_quotatab.c:2163
+#: ../contrib/mod_quotatab.c:2179 ../contrib/mod_quotatab.c:2191
+#: ../contrib/mod_quotatab.c:2413 ../contrib/mod_quotatab.c:2439
+#: ../contrib/mod_quotatab.c:2469 ../contrib/mod_quotatab.c:2478
+#: ../contrib/mod_quotatab.c:2531 ../contrib/mod_quotatab.c:2563
+#: ../contrib/mod_quotatab.c:2597 ../contrib/mod_quotatab.c:2606
+#, c-format
+msgid "%s: notice: quota reached: used %s"
+msgstr "%s: предупреждение: достигната квота: използвани %s"
+
+#: ../contrib/mod_quotatab.c:2015 ../contrib/mod_quotatab.c:2026
+#: ../contrib/mod_quotatab.c:2041 ../contrib/mod_quotatab.c:2052
+#: ../contrib/mod_quotatab.c:2307 ../contrib/mod_quotatab.c:2318
+#: ../contrib/mod_quotatab.c:2333 ../contrib/mod_quotatab.c:2344
+#, c-format
+msgid "%s denied: quota exceeded: used %s"
+msgstr "%s забранена: надвишена квота: използвани %s"
+
+#: ../contrib/mod_quotatab.c:2428 ../contrib/mod_quotatab.c:2454
+#: ../contrib/mod_quotatab.c:2547 ../contrib/mod_quotatab.c:2579
+#, c-format
+msgid "%s: notice: quota reached: '%s' removed"
+msgstr "%s: предупреждение: достигната квота: '%s' премахнат"
+
+#: ../contrib/mod_quotatab.c:2625 ../contrib/mod_site_misc.c:252
+#: ../contrib/mod_site_misc.c:301 ../contrib/mod_site_misc.c:344
+#: ../contrib/mod_site_misc.c:401 ../modules/mod_auth.c:101
+#: ../modules/mod_site.c:450
+msgid "Please login with USER and PASS"
+msgstr "Моля влезте с USER и PASS"
+
+#: ../contrib/mod_quotatab.c:2631
+msgid "'SITE QUOTA' not understood."
+msgstr "'SITE QUOTA' неразбрана."
+
+#: ../contrib/mod_quotatab.c:2646
+msgid "No quotas in effect"
+msgstr "Няма квоти в действие"
+
+#: ../contrib/mod_quotatab.c:2654
+msgid "The current quota for this session are [current/limit]:"
+msgstr "Текущата квота за тази сесия е [текущо/ограничение]:"
+
+#: ../contrib/mod_quotatab.c:2656
+#, c-format
+msgid "Name: %s"
+msgstr "Име: %s"
+
+#: ../contrib/mod_quotatab.c:2657
+#, c-format
+msgid "Quota Type: %s"
+msgstr "Тип квота: %s"
+
+#: ../contrib/mod_quotatab.c:2658
+msgid "User"
+msgstr "Потребител"
+
+#: ../contrib/mod_quotatab.c:2659
+msgid "Group"
+msgstr "Група"
+
+#: ../contrib/mod_quotatab.c:2660
+msgid "Class"
+msgstr "Клас"
+
+#: ../contrib/mod_quotatab.c:2661 ../contrib/mod_quotatab.c:2669
+msgid "(unknown)"
+msgstr "(неизвестен)"
+
+#: ../contrib/mod_quotatab.c:2661
+msgid "All"
+msgstr "Всички"
+
+#: ../contrib/mod_quotatab.c:2663
+#, c-format
+msgid "Per Session: %s"
+msgstr "За сесията: %s"
+
+#: ../contrib/mod_quotatab.c:2664
+msgid "False"
+msgstr "Лъжа"
+
+#: ../contrib/mod_quotatab.c:2664
+msgid "True"
+msgstr "Истина"
+
+#: ../contrib/mod_quotatab.c:2666
+#, c-format
+msgid "Limit Type: %s"
+msgstr "Тип ограничение: %s"
+
+#: ../contrib/mod_quotatab.c:2667
+msgid "Hard"
+msgstr "Твърда"
+
+#: ../contrib/mod_quotatab.c:2668
+msgid "Soft"
+msgstr "Гъвкава"
+
+#: ../contrib/mod_quotatab.c:2671 ../contrib/mod_quotatab.c:2681
+#, c-format
+msgid "  Uploaded %s"
+msgstr "  Качени %s"
+
+#: ../contrib/mod_quotatab.c:2674 ../contrib/mod_quotatab.c:2684
+#, c-format
+msgid "  Downloaded %s"
+msgstr "  Свалени %s"
+
+#: ../contrib/mod_quotatab.c:2677 ../contrib/mod_quotatab.c:2687
+#, c-format
+msgid "  Transferred %s"
+msgstr "  Пренесени %s"
+
+#: ../contrib/mod_quotatab.c:2693
+#, c-format
+msgid "Please contact %s if these entries are inaccurate"
+msgstr "Моля, свържете се с %s ако тези записи са неточни"
+
+#: ../contrib/mod_quotatab.c:2694
+msgid "ftp-admin"
+msgstr "ftp-admin"
+
+#: ../contrib/mod_radius.c:2656 ../modules/mod_auth.c:1992
+msgid "Login with USER first"
+msgstr "Първо влезте с USER"
+
+#: ../contrib/mod_readme.c:74
+#, c-format
+msgid "Please read the file %s"
+msgstr "Моля, прочетете файла %s"
+
+#: ../contrib/mod_readme.c:75
+#, c-format
+msgid "   it was last modified on %.26s - %i %s ago"
+msgstr "   беше последно променен на %.26s - преди %i %s"
+
+#: ../contrib/mod_readme.c:76
+msgid "day"
+msgstr "дни"
+
+#: ../contrib/mod_readme.c:76
+msgid "days"
+msgstr "дена"
+
+#: ../contrib/mod_readme.c:92 ../modules/mod_ls.c:1562
+#, c-format
+msgid "Out of memory during globbing of %s"
+msgstr "Без памет при разширение на името %s"
+
+#: ../contrib/mod_readme.c:95 ../modules/mod_ls.c:1566
+#, c-format
+msgid "Read error during globbing of %s"
+msgstr "Грешка при четене при разширение на името %s"
+
+#: ../contrib/mod_readme.c:98 ../modules/mod_ls.c:1570
+#, c-format
+msgid "Unknown error during globbing of %s"
+msgstr "Неизвестна грешка при разширение на името %s"
+
+#: ../contrib/mod_site_misc.c:276 ../contrib/mod_site_misc.c:320
+#: ../contrib/mod_site_misc.c:372 ../contrib/mod_site_misc.c:517
+#: ../modules/mod_site.c:141 ../modules/mod_site.c:380
+#, c-format
+msgid "SITE %s command successful"
+msgstr "SITE %s командата е успешна"
+
+#: ../contrib/mod_tls.c:4228 ../contrib/mod_tls.c:4240
+#: ../contrib/mod_tls.c:4250
+msgid "SSL/TLS required on the control channel"
+msgstr "Изисква се SSL/TLS за контролния канал"
+
+#: ../contrib/mod_tls.c:4266
+msgid "SSL/TLS required on the data channel"
+msgstr "Изисква се SSL/TLS за канала за данни"
+
+#: ../contrib/mod_tls.c:4285
+msgid "AUTH requires at least one argument"
+msgstr "AUTH изисква поне един аргумент"
+
+#: ../contrib/mod_tls.c:4291 ../contrib/mod_tls.c:4381
+#: ../contrib/mod_tls.c:4390 ../contrib/mod_tls.c:4510
+#: ../contrib/mod_tls.c:4528 ../contrib/mod_tls.c:4548
+msgid "Unwilling to accept security parameters"
+msgstr "Неохота за приемана на параметри свързани със сигурността"
+
+#: ../contrib/mod_tls.c:4301 ../contrib/mod_tls.c:4329
+#, c-format
+msgid "AUTH %s successful"
+msgstr "AUTH %s успешна"
+
+#: ../contrib/mod_tls.c:4314 ../contrib/mod_tls.c:4342
+msgid "TLS handshake failed"
+msgstr "TLS ръкостискането пропадна"
+
+#: ../contrib/mod_tls.c:4376
+msgid "CCC not allowed on insecure control connection"
+msgstr "CCC не е разрешена по несигурна контролна връзка"
+
+#: ../contrib/mod_tls.c:4400
+msgid "Clearing control channel protection"
+msgstr "Премахване на защитата на контролния канал"
+
+#: ../contrib/mod_tls.c:4429
+msgid "PBSZ not allowed on insecure control connection"
+msgstr "PBSZ не е разрешена по несигурна контролна връзка"
+
+#: ../contrib/mod_tls.c:4435
+msgid "PBSZ 0 successful"
+msgstr "PBSZ 0 успешна"
+
+#: ../contrib/mod_tls.c:4437
+msgid "PBSZ=0 successful"
+msgstr "PBSZ=0 успешна"
+
+#: ../contrib/mod_tls.c:4477 ../modules/mod_auth.c:1251
+#: ../modules/mod_auth.c:1275 ../modules/mod_auth.c:1309
+#: ../modules/mod_auth.c:1320 ../modules/mod_auth.c:1356
+#: ../modules/mod_auth.c:1371 ../modules/mod_auth.c:1382
+#: ../modules/mod_auth.c:1866 ../modules/mod_auth.c:1888
+#: ../modules/mod_auth.c:1900 ../modules/mod_auth.c:2042
+msgid "Login incorrect."
+msgstr "Погрешен вход."
+
+#: ../contrib/mod_tls.c:4498
+msgid "PROT not allowed on insecure control connection"
+msgstr "PROT не е разрешена по несигурна контролна връзка"
+
+#: ../contrib/mod_tls.c:4504
+msgid "You must issue the PBSZ command prior to PROT"
+msgstr "Трябва да изпълните PBSZ командата преди PROT"
+
+#: ../contrib/mod_tls.c:4558 ../contrib/mod_tls.c:4571
+#, c-format
+msgid "PROT %s unsupported"
+msgstr "PROT %s не се поддържа"
+
+#: ../contrib/mod_wrap.c:911 ../contrib/mod_wrap2/mod_wrap2.c:1554
+msgid "Access denied"
+msgstr "Отказан достъп"
+
+#: ../include/dirtree.h:202 ../include/dirtree.h:208
+#: ../modules/mod_facts.c:601 ../modules/mod_facts.c:728
+#: ../modules/mod_facts.c:787 ../modules/mod_facts.c:882
+#: ../modules/mod_lang.c:297
+msgid "Invalid number of arguments"
+msgstr "Неправилен брой аргументи"
+
+#: ../modules/mod_auth.c:115
+#, c-format
+msgid "Login Timeout (%d seconds): closing control connection"
+msgstr "Просрочено време за вход (%d секунди): затваряне на контролната връзка"
+
+#: ../modules/mod_auth.c:126
+#, c-format
+msgid "Session Timeout (%u seconds): closing control connection"
+msgstr "Просрочено време на сесия (%u секунди): затваряне на контролната връзка"
+
+#: ../modules/mod_auth.c:420
+msgid "Anonymous access granted, restrictions apply"
+msgstr "Анонимен достъп разрешен, в сила са ограничения"
+
+#: ../modules/mod_auth.c:422
+#, c-format
+msgid "User %s logged in"
+msgstr "Потребителя %s влезе"
+
+#: ../modules/mod_auth.c:1834 ../modules/mod_auth.c:1984
+msgid "You are already logged in"
+msgstr "Вече сте влезли в"
+
+#: ../modules/mod_auth.c:1837
+msgid "USER: command requires a parameter"
+msgstr "USER: командата изисква параметър"
+
+#: ../modules/mod_auth.c:1919
+msgid "Anonymous login ok, send your complete email address as your password"
+msgstr "Анонимния достъп разрешен, изпратете пълния си е-пощенски адрес като парола"
+
+#: ../modules/mod_auth.c:1948
+#, c-format
+msgid "Password required for %s"
+msgstr "Изисква се парола за %s"
+
+#: ../modules/mod_auth.c:2060
+msgid "ACCT command not implemented"
+msgstr "Командата ACCT не е направена"
+
+#: ../modules/mod_auth.c:2065
+msgid "REIN command not implemented"
+msgstr "Командата REIN не е направена"
+
+#: ../modules/mod_core.c:2840 ../modules/mod_core.c:2851
+#, c-format
+msgid "%s: Forbidden command argument"
+msgstr "%s: Забранен команден аргумент"
+
+#: ../modules/mod_core.c:2891
+msgid "Goodbye."
+msgstr "Довиждане."
+
+#: ../modules/mod_core.c:2931
+#, c-format
+msgid "\"%s\" is the current directory"
+msgstr "\"%s\" е текущата директория"
+
+#: ../modules/mod_core.c:2943
+msgid "Illegal PASV command, EPSV ALL in effect"
+msgstr "Непозволена PASV команда, EPSV ALL в сила"
+
+#: ../modules/mod_core.c:2988 ../modules/mod_core.c:3511
+msgid "Unable to build data connection: Internal error"
+msgstr "Невъзможност за изграждане на връзка за данни: Вътрешна грешка"
+
+#: ../modules/mod_core.c:3045 ../modules/mod_core.c:3185
+msgid "Illegal PORT command, EPSV ALL in effect"
+msgstr "Непозволена PORT команда, EPSV ALL в сила"
+
+#: ../modules/mod_core.c:3070
+msgid "Unable to service PORT commands"
+msgstr "Невъзможност за обслужване на PORT команди"
+
+#: ../modules/mod_core.c:3078 ../modules/mod_core.c:3085
+#: ../modules/mod_core.c:3108 ../modules/mod_core.c:3134
+#: ../modules/mod_core.c:3143 ../modules/mod_core.c:3156
+msgid "Illegal PORT command"
+msgstr "Непозволена PORT команда"
+
+#: ../modules/mod_core.c:3171
+msgid "PORT command successful"
+msgstr "Успешна PORT команда"
+
+#: ../modules/mod_core.c:3213
+msgid "Unable to service EPRT commands"
+msgstr "Невъзможност за обслужване на EPRT команди"
+
+#: ../modules/mod_core.c:3240 ../modules/mod_core.c:3463
+msgid "Network protocol not supported, use (1,2)"
+msgstr "Мрежовия протокол не се поддържа, използвайте (1,2)"
+
+#: ../modules/mod_core.c:3242 ../modules/mod_core.c:3244
+#: ../modules/mod_core.c:3465 ../modules/mod_core.c:3467
+msgid "Network protocol not supported, use (1)"
+msgstr "Мрежовия протокол не се поддържа, използвайте (1)"
+
+#: ../modules/mod_core.c:3260 ../modules/mod_core.c:3266
+#: ../modules/mod_core.c:3291 ../modules/mod_core.c:3307
+#: ../modules/mod_core.c:3327 ../modules/mod_core.c:3342
+#: ../modules/mod_core.c:3355
+msgid "Illegal EPRT command"
+msgstr "Непозволена EPRT команда"
+
+#: ../modules/mod_core.c:3384
+msgid "EPRT command successful"
+msgstr "Успешна EPRT команда"
+
+#: ../modules/mod_core.c:3412
+msgid "EPSV ALL command successful"
+msgstr "Успешна EPSV ALL команда"
+
+#: ../modules/mod_core.c:3424
+#, c-format
+msgid "%s: unknown network protocol"
+msgstr "%s: непознат мрежов протокол"
+
+#: ../modules/mod_core.c:3567
+#, c-format
+msgid "Unknown command '%s'"
+msgstr "Непозната команда '%s'"
+
+#: ../modules/mod_core.c:3734 ../modules/mod_core.c:3782
+#: ../modules/mod_core.c:4047
+#, c-format
+msgid "%s command successful"
+msgstr "Успешна %s команда"
+
+#: ../modules/mod_core.c:3755 ../modules/mod_core.c:3765
+#: ../modules/mod_core.c:3810 ../modules/mod_core.c:3820
+#: ../modules/mod_core.c:3991 ../modules/mod_core.c:4001
+#: ../modules/mod_core.c:4081 ../modules/mod_core.c:4091
+#: ../modules/mod_core.c:4166 ../modules/mod_core.c:4176
+#: ../modules/mod_site.c:99 ../modules/mod_site.c:109
+#: ../modules/mod_site.c:174 ../modules/mod_site.c:184
+#: ../modules/mod_xfer.c:1641 ../modules/mod_xfer.c:1658
+#, c-format
+msgid "%s: Forbidden filename"
+msgstr "%s: Забранено име на файл"
+
+#: ../modules/mod_core.c:3797
+#, c-format
+msgid "%s: Invalid directory name"
+msgstr "%s: Неправилно име на директория"
+
+#: ../modules/mod_core.c:3873
+#, c-format
+msgid "\"%s\" - Directory successfully created"
+msgstr "\"%s\" - Директорията е създадена успешно"
+
+#: ../modules/mod_core.c:3912
+#, c-format
+msgid "%s: not a plain file"
+msgstr "%s: не е текстов файл"
+
+#: ../modules/mod_core.c:3947
+#, c-format
+msgid "%s not allowed in ASCII mode"
+msgstr "%s не е разрешен в ASCII режим"
+
+#: ../modules/mod_core.c:3962
+#, c-format
+msgid "%s: not a regular file"
+msgstr "%s: не е обикновен файл"
+
+#: ../modules/mod_core.c:4068
+msgid "Bad sequence of commands"
+msgstr "Лоша поредица от команди"
+
+#: ../modules/mod_core.c:4107
+#, c-format
+msgid "%s: Rename permission denied"
+msgstr "%s: Отказано преименуване"
+
+#: ../modules/mod_core.c:4116 ../modules/mod_core.c:4124
+#, c-format
+msgid "Rename %s: %s"
+msgstr "Преименуване %s: %s"
+
+#: ../modules/mod_core.c:4137
+msgid "Rename successful"
+msgstr "Преименуването успешно"
+
+#: ../modules/mod_core.c:4201
+msgid "File or directory exists, ready for destination name"
+msgstr "Файла или папката съществуват, готовност за определено име"
+
+#: ../modules/mod_core.c:4208
+msgid "NOOP command successful"
+msgstr "Командата NOOP успешна"
+
+#: ../modules/mod_core.c:4225
+msgid ""
+"Features:\n"
+" "
+msgstr ""
+"Характеристики:\n"
+" "
+
+#: ../modules/mod_core.c:4240
+msgid "End"
+msgstr "Край"
+
+#: ../modules/mod_core.c:4243
+msgid "No features supported"
+msgstr "Не се поддържат характеристики"
+
+#: ../modules/mod_facts.c:614 ../modules/mod_facts.c:741
+#: ../modules/mod_facts.c:803 ../modules/mod_facts.c:811
+#: ../modules/mod_facts.c:898 ../modules/mod_lang.c:277
+#: ../modules/mod_lang.c:292
+msgid "Unable to handle command"
+msgstr "Невъзможност за обработка на командата"
+
+#: ../modules/mod_facts.c:706
+#, c-format
+msgid "Cannot modify fact '%s'"
+msgstr "Невъзможност за промяна на факт '%s'"
+
+#: ../modules/mod_facts.c:816
+#, c-format
+msgid "'%s' is not a directory"
+msgstr "'%s' не е папка"
+
+#: ../modules/mod_facts.c:822 ../modules/mod_facts.c:906
+#, c-format
+msgid "'%s' cannot be listed"
+msgstr "'%s' не влиза в списъка"
+
+#: ../modules/mod_facts.c:915
+#, c-format
+msgid "%s- Start of list for %s"
+msgstr "%s- Начало на списъка за %s"
+
+#: ../modules/mod_facts.c:917
+#, c-format
+msgid "%s End of list"
+msgstr "%s Край на списъка"
+
+#: ../modules/mod_facts.c:935 ../modules/mod_lang.c:377
+#: ../modules/mod_lang.c:383 ../modules/mod_xfer.c:1348
+#: ../modules/mod_xfer.c:1442 ../modules/mod_xfer.c:1916
+#: ../modules/mod_xfer.c:1985 ../modules/mod_xfer.c:2211
+#: ../modules/mod_xfer.c:2232 ../modules/mod_xfer.c:2253
+#: ../modules/mod_xfer.c:2263 ../modules/mod_xfer.c:2306
+#, c-format
+msgid "'%s' not understood"
+msgstr "'%s' не е разбрана"
+
+#: ../modules/mod_lang.c:318
+#, c-format
+msgid "Using default language %s"
+msgstr "Използване на езика по подразбиране %s"
+
+#: ../modules/mod_lang.c:323
+#, c-format
+msgid "Language %s not supported"
+msgstr "Езика %s не се поддържа"
+
+#: ../modules/mod_lang.c:356
+#, c-format
+msgid "Using language %s"
+msgstr "Използване на езика %s"
+
+#: ../modules/mod_lang.c:394
+msgid "UTF8 set to on"
+msgstr "UTF8 е зададен"
+
+#: ../modules/mod_lang.c:412 ../modules/mod_lang.c:443
+#: ../modules/mod_lang.c:454
+#, c-format
+msgid "Unable to accept %s"
+msgstr "Невъзможност за приемане на %s"
+
+#: ../modules/mod_lang.c:423 ../modules/mod_lang.c:459
+#: ../modules/mod_lang.c:467
+msgid "UTF8 set to off"
+msgstr "UTF8 не е зададен"
+
+#: ../modules/mod_ls.c:1158
+#, c-format
+msgid "ERROR: %s"
+msgstr "ГРЕШКА: %s"
+
+#: ../modules/mod_ls.c:1921
+#, c-format
+msgid "Status of '%s'"
+msgstr "Състояние на '%s'"
+
+#: ../modules/mod_ls.c:1922
+#, c-format
+msgid "Connected from %s (%s)"
+msgstr "Свързан от %s (%s)"
+
+#: ../modules/mod_ls.c:1924
+#, c-format
+msgid "Logged in as %s"
+msgstr "Влязъл като %s"
+
+#: ../modules/mod_ls.c:1925
+#, c-format
+msgid "TYPE: %s, STRUcture: File, Mode: Stream"
+msgstr "TYPE: %s, STRUcture: Файл, Режим: Поточен"
+
+#: ../modules/mod_ls.c:1929
+msgid "Total bytes transferred for session: %"
+msgstr "Общо байта прехвърлени за сесията: %"
+
+#: ../modules/mod_ls.c:1936
+#, c-format
+msgid "%s from %s port %u"
+msgstr "%s от %s порт %u"
+
+#: ../modules/mod_ls.c:1938
+msgid "Active data transfer to"
+msgstr "Активен трансфер на данни към"
+
+#: ../modules/mod_ls.c:1938
+msgid "Passive data transfer from"
+msgstr "Пасивен трансфер на данни от"
+
+#: ../modules/mod_ls.c:1953
+msgid "No data connection"
+msgstr "Няма връзка за данни"
+
+#: ../modules/mod_ls.c:1955 ../modules/mod_ls.c:2031
+msgid "End of status"
+msgstr "Край на състоянието"
+
+#: ../modules/mod_ls.c:2027
+#, c-format
+msgid "Status of %s:"
+msgstr "Състояние на %s:"
+
+#: ../modules/mod_ls.c:2189
+msgid "No files found"
+msgstr "Не са открити файлове"
+
+#: ../modules/mod_ls.c:2287 ../modules/mod_xfer.c:1386
+#: ../modules/mod_xfer.c:1526 ../modules/mod_xfer.c:2009
+#, c-format
+msgid "%s: Not a regular file"
+msgstr "%s: Не е обикновен файл"
+
+#: ../modules/mod_site.c:80 ../modules/mod_site.c:155
+#: ../modules/mod_site.c:457
+#, c-format
+msgid "'SITE %s' not understood"
+msgstr "'SITE %s' не е разбрана"
+
+#: ../modules/mod_site.c:370
+#, c-format
+msgid "'%s': invalid mode"
+msgstr "'%s': неправилен режим"
+
+#: ../modules/mod_site.c:415
+#, c-format
+msgid "Syntax: SITE %s %s"
+msgstr "Синтаксис: SITE %s %s"
+
+#: ../modules/mod_site.c:420
+#, c-format
+msgid "Unknown command 'SITE %s'"
+msgstr "Непозната команда 'SITE %s'"
+
+#: ../modules/mod_site.c:442
+msgid "'SITE' requires parameters"
+msgstr "'SITE' изисква параметри"
+
+#: ../modules/mod_site.c:467
+msgid "The following SITE commands are recognized (* =>'s unimplemented)"
+msgstr "Следните SITE команди се разпознават (* не са направени)"
+
+#: ../modules/mod_site.c:496 ../src/help.c:124
+#, c-format
+msgid "Direct comments to %s"
+msgstr "Насочете коментарите си към %s"
+
+#: ../modules/mod_xfer.c:1250
+#, c-format
+msgid "%s: Bad file name"
+msgstr "%s: Лошо име на файл"
+
+#: ../modules/mod_xfer.c:1264
+#, c-format
+msgid "%s: File name too long"
+msgstr "%s: Твърде дълго име на файл"
+
+#: ../modules/mod_xfer.c:1298
+#, c-format
+msgid "%s: Temporary hidden file %s already exists"
+msgstr "%s: Временния, скрит файл %s вече съществува"
+
+#: ../modules/mod_xfer.c:1362 ../modules/mod_xfer.c:1447
+#: ../modules/mod_xfer.c:1603 ../modules/mod_xfer.c:1999
+#, c-format
+msgid "%s: Too many transfers"
+msgstr "%s: Твърде много преноси"
+
+#: ../modules/mod_xfer.c:1373 ../modules/mod_xfer.c:1518
+#, c-format
+msgid "%s: Overwrite permission denied"
+msgstr "%s: Отказан презапис"
+
+#: ../modules/mod_xfer.c:1400
+#, c-format
+msgid "%s: Append/Restart not permitted, try again"
+msgstr "%s: Append/Restart не е разрешено, опитайте отново"
+
+#: ../modules/mod_xfer.c:1456
+msgid "STOU incompatible with REST"
+msgstr "STOU несъвместима с REST"
+
+#: ../modules/mod_xfer.c:1478
+#, c-format
+msgid "%s: unable to generate unique filename"
+msgstr "%s: невъзможност за създаване на уникално име на файл"
+
+#: ../modules/mod_xfer.c:1723 ../modules/mod_xfer.c:2075
+#: ../modules/mod_xfer.c:2092
+#, c-format
+msgid "%s: invalid REST argument"
+msgstr "%s: неправилен аргумент на REST"
+
+#: ../modules/mod_xfer.c:1896
+#, c-format
+msgid "%s: Rename of hidden file %s failed: %s"
+msgstr "%s: Преименуването на скрития файл %s се провали: %s"
+
+#: ../modules/mod_xfer.c:1925
+msgid "REST not compatible with server configuration"
+msgstr "REST не е съвместима с конфигурацията на сървъра"
+
+#: ../modules/mod_xfer.c:1934 ../modules/mod_xfer.c:1947
+msgid "REST requires a value greater than or equal to 0"
+msgstr "REST изисква стойност по-голяма или равна на 0"
+
+#: ../modules/mod_xfer.c:1964
+#, c-format
+msgid "%s: Resuming transfers not allowed in ASCII mode"
+msgstr "%s: Подновяването на преноса не е разрешено в ASCII режим"
+
+#: ../modules/mod_xfer.c:1970
+msgid "Restarting at %"
+msgstr "Рестартиране в %"
+
+#: ../modules/mod_xfer.c:1971
+msgid ". Send STORE or RETRIEVE to initiate transfer"
+msgstr ". Изпратете STORE или RETRIEVE, за започване на пренос"
+
+#: ../modules/mod_xfer.c:2020
+#, c-format
+msgid "%s: Restart not permitted, try again"
+msgstr "%s: Рестарта не е разрешен, опитайте отново"
+
+#: ../modules/mod_xfer.c:2226
+msgid "Abort successful"
+msgstr "Прекъсването успешно"
+
+#: ../modules/mod_xfer.c:2257
+#, c-format
+msgid "Type set to %s"
+msgstr "Типа е зададен като %s"
+
+#: ../modules/mod_xfer.c:2272
+msgid "Structure set to F"
+msgstr "Зададена е структура F"
+
+#: ../modules/mod_xfer.c:2291
+#, c-format
+msgid "'%s' unsupported structure type"
+msgstr "'%s' неподдържан тип структура"
+
+#: ../modules/mod_xfer.c:2297
+#, c-format
+msgid "'%s' unrecognized structure type"
+msgstr "'%s' непознат тип структура"
+
+#: ../modules/mod_xfer.c:2315
+msgid "Mode set to S"
+msgstr "Зададен е режим S"
+
+#: ../modules/mod_xfer.c:2323
+#, c-format
+msgid "'%s' unsupported transfer mode"
+msgstr "'%s' неподдържан режим за пренос"
+
+#: ../modules/mod_xfer.c:2329
+#, c-format
+msgid "'%s' unrecognized transfer mode"
+msgstr "'%s' непознат режим за пренос"
+
+#: ../modules/mod_xfer.c:2337
+msgid "No storage allocation necessary"
+msgstr "Не е необходимо заделяне на място за съхранение"
+
+#: ../modules/mod_xfer.c:2342
+msgid "SMNT command not implemented"
+msgstr "Командата SMNT не е направена"
+
+#: ../modules/mod_xfer.c:2406
+#, c-format
+msgid "No transfer timeout (%d seconds): closing control connection"
+msgstr "Изтекло време без пренос (%d секунди): затваряне на контролната връзка"
+
+#: ../src/data.c:291 ../src/data.c:392
+msgid "Opening %s mode data connection for %s (%"
+msgstr "Отваряне на връзка за данни в режим %s за %s (%"
+
+#: ../src/data.c:292 ../src/data.c:393
+msgid " bytes)"
+msgstr " байта)"
+
+#: ../src/data.c:294 ../src/data.c:395
+#, c-format
+msgid "Opening %s mode data connection for %s"
+msgstr "Отваряне на връзка за данни в режим %s за %s"
+
+#: ../src/data.c:329 ../src/data.c:372 ../src/data.c:428 ../src/data.c:528
+#: ../src/data.c:536
+#, c-format
+msgid "Unable to build data connection: %s"
+msgstr "Неспособност за изграждане на връзка за данни: %s"
+
+#: ../src/data.c:617
+msgid "Transfer complete"
+msgstr "Преноса завършен"
+
+#: ../src/data.c:685
+msgid "Data connection closed"
+msgstr "Връзката за данни затворена"
+
+#: ../src/data.c:691
+msgid "Unexpected streams hangup"
+msgstr "Неочаквано прекъсване на потоците"
+
+#: ../src/data.c:704
+msgid "Insufficient memory or file locked"
+msgstr "Недостатъчно памет или файла е заключен"
+
+#: ../src/data.c:810
+msgid "Link to file server lost"
+msgstr "Връзката към файловия сървър изгубена"
+
+#: ../src/data.c:819
+#, c-format
+msgid "Unknown or out of range errno [%d]"
+msgstr "Непозната или извън обхват грешка [%d]"
+
+#: ../src/data.c:830
+#, c-format
+msgid "Transfer aborted. %s"
+msgstr "Отхвърлен пренос. %s"
+
+#: ../src/data.c:898
+#, c-format
+msgid "%s: data tranfer in progress"
+msgstr "%s: пренос на данни в действие"
+
+#: ../src/data.c:941 ../src/main.c:821
+msgid "Invalid command: try being more creative"
+msgstr "Неправилна команда: опитайте по-творчески"
+
+#: ../src/help.c:88
+msgid "The following commands are recognized (* =>'s unimplemented):"
+msgstr "Следните команди се разпознават (* не са направени):"
+
+#: ../src/main.c:323
+#, c-format
+msgid "FTP server shutting down - %s"
+msgstr "FTP сървъра се изключва - %s"
+
+#: ../src/main.c:491
+#, c-format
+msgid "%s not understood"
+msgstr "%s не бе разбрана"
+
+#: ../src/main.c:726
+#, c-format
+msgid "Idle timeout (%d seconds): closing control connection"
+msgstr "Изтекло време в бездействие (%d секунди): затваряне на контролната връзка"
+
+#: ../src/main.c:776
+#, c-format
+msgid "%s FTP server ready"
+msgstr "%s FTP сървъра е готов"
+
+#: ../src/main.c:1243
+#, c-format
+msgid "FTP server shut down (%s) -- please try again later"
+msgstr "FTP сървъра е изключен (%s) -- моля, опитайте по-късно"
+
+#: ../src/main.c:1258
+#, c-format
+msgid "Sorry, no server available to handle request on %s"
+msgstr "Съжалявам, няма достъпен сървър за обработка на заявката на %s"
+
+#: ../src/netio.c:337
+msgid "Transfer aborted. Data connection closed."
+msgstr "Преноса отхвърлен. Връзката за данни закрита."
+

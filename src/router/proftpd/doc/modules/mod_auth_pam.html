@@ -1,0 +1,139 @@
+<!-- $Id: mod_auth_pam.html,v 1.2 2007/12/31 21:45:07 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_auth_pam.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_auth_pam</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_auth_pam</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+PAM stands for <b>P</b>luggable <b>A</b>uthentication <b>M</b>odules,
+and is used to configure ways for authenticating users.  Now
+&quot;authenticating&quot; a user usually means comparing a password they
+give with some other information, and returning a &quotyes/no&quot;-style
+answer.  PAM does <b>not</b> provide all of the other information for a user,
+such as UID, GID, home, and shell.  This means that <code>mod_auth_pam</code>
+cannot be used, by itself, as an auth module for <code>proftpd</code>;
+<code>mod_auth_pam</code> is used to supplement other auth modules by
+providing access to PAM's additional authentication checks.
+
+<p>
+Installation instructions for <code>mod_auth_pam</code> can be found
+<a href="#Installation">here</a>.
+
+<p>
+The most current version of <code>mod_auth_pam</code> can be found in the
+ProFTPD source distribution:
+<pre>
+  <a href="http://www.proftpd.org/">http://www.proftpd.org/</a>
+</pre>
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#AuthPAM">AuthPAM</a>
+  <li><a href="#AuthPAMConfig">AuthPAMConfig</a>
+  <li><a href="#AuthPAMOptions">AuthPAMOptions</a>
+</ul>
+
+<hr>
+<h2><a name="AuthPAM">AuthPAM</a></h2>
+<strong>Syntax:</strong> AuthPAM <em>on|off</em><br>
+<strong>Default:</strong> AuthPAM on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_pam<br>
+<strong>Compatibility:</strong> 1.2.8rc2 and later
+
+<p>
+The <code>AuthPAM</code> directive enables or disables the module's runtime
+PAM check.  If it is set to <em>off</em> this module does not consult PAM
+when authenticating a user.
+
+<p>
+<hr>
+<h2><a name="AuthPAMConfig">AuthPAMConfig</a></h2>
+<strong>Syntax:</strong> AuthPAMConfig <em>service</em><br>
+<strong>Default:</strong> AuthPAMConfig ftp<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_pam<br>
+<strong>Compatibility:</strong> 1.2.8rc2 and later
+
+<p>
+The <code>AuthPAMConfig</code> directive is used to specify the name of
+the service used when performing the PAM check; PAM configurations can
+vary depending on the service.  By default, the &quot;ftp&quot; service
+is used.  Note that on some platforms, <i>e.g.</i> FreeBSD, this may
+need to be set to &quot;ftpd&quot;, depending on the PAM configuration
+involved.
+
+<p>
+Here's an example of changing the <em>service</em> used:
+<pre>
+  &lt;IfModule mod_auth_pam.c&gt;
+    AuthPAMConfig ftpd
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr>
+<h2><a name="AuthPAMOptions">AuthPAMOptions</a></h2>
+<strong>Syntax:</strong> AuthPAMOptions <em>opt1 opt2 ... optN</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_pam<br>
+<strong>Compatibility:</strong> 1.3.2rc1 and later
+
+<p>
+The <code>AuthPAMOptions</code> directive is used to configure various optional
+behavior of <code>mod_auth_pam</code>.
+
+<p>
+Example:
+<pre>
+  &lt;IfModule mod_auth_pam.c&gt;
+    # Do not set the PAM_TTY token when authenticating via PAM
+    AuthPAMOptions NoTTY
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>NoTTY</code><br>
+    <p>
+    By default, <code>mod_auth_pam</code> will use the <code>PAM_TTY</code>
+    PAM API item, and will use a value of "/dev/ftpd<i>PID</i>".  The item
+    can be used by PAM modules for filtering access, for example.  This
+    "NoTTY" option tells <code>mod_auth_pam</code> to <b>not</b> set the
+    <code>PAM_TTY</code> item.
+
+    <p>
+    <b>Note</b>: On Solaris platforms, the use of this <code>PAM_TTY</code>
+    token is <i>mandatory</i>, and cannot be disabled.  This is due to 
+    Solaris Bug ID 4250887.
+  </li>
+</ul>
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_auth_pam</code> module is automatically included when
+<code>proftpd</code> is built on a system that supports PAM. To disable
+this automatic inclusion, use the <code>--disable-auth-pam</code> configure
+option.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2007/12/31 21:45:07 $</i><br>
+<hr>
+
+</body>
+</html>
+

@@ -1,0 +1,96 @@
+<!-- $Id: mod_sql_sqlite.html,v 1.2 2008/01/08 02:38:15 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sql_sqlite.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_sql_sqlite</title>
+</head>
+
+<body bgcolor=white>
+
+<hr><br>
+<center>
+<h2><b>ProFTPD module <code>mod_sql_sqlite</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+SQLite is a lightweight embeddable database system that is gaining in
+popularity.  More details can be found here:
+<pre>
+  <a href="http://www.sqlite.org/">http://www.sqlite.org</a>
+</pre>
+
+<p>
+The <code>mod_sql_sqlite</code> module is designed to let ProFTPD's
+<code>mod_sql</code> module connect to and use a SQLite database.  This module
+is contained in the <code>mod_sql_sqlite.c</code> file for ProFTPD 1.3.<i>x</i>,
+and is not compiled by default.  Installation instructions are discussed
+<a href="#Installation">here</a>.
+
+<p>
+The most current version of <code>mod_sql_sqlite</code> is distributed with
+ProFTPD.
+
+<h2>Author</h2>
+<p>
+Please contact TJ Saunders &lt;tj <i>at</i> castaglia.org&gt; with any
+questions, concerns, or suggestions regarding this module.
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_sql_sqlite</code> modules requires that SQLite be installed.
+
+<p>
+After installing SQLite, follow the usual steps for using contrib modules in
+proftpd, making sure to list <code>mod_sql</code>:
+<pre>
+  ./configure --with-modules=mod_sql:mod_sql_sqlite
+  make
+  make install
+</pre>
+You may need to specify the location of the SQLite header and library files in
+your <code>configure</code> command, <i>e.g.</i>:
+<pre>
+  ./configure --with-modules=mod_sql:mod_sql_sqlite \
+    --with-includes=/usr/local/sqlite/include \
+    --with-libraries=/usr/local/sqlite/lib
+</pre>
+
+<p>
+<hr>
+<h2><a name="Usage">Usage</a></h2>
+For the most part, <code>mod_sql_sqlite</code> requires little configuration.
+In the <code>SQLConnectInfo</code> directive, simply use the full path
+to the SQLite database file; no username or password are required.  The
+<code>SQLBackend</code> provided by <code>mod_sql_sqlite</code> is "sqlite3".
+
+<p>
+For example:
+<pre>
+  &lt;IfModule mod_sql_sqlite.c&gt;
+    SQLBackend sqlite3
+    SQLConnectInfo /path/to/ftpd.db
+  &lt;/IfModule&gt;
+</pre>
+Please contact the author directly with any questions or comments.
+
+<p>
+<hr><br>
+
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2008/01/08 02:38:15 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2004-2008 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+
