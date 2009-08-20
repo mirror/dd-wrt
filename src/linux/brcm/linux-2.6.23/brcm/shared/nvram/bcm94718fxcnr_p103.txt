@@ -1,0 +1,115 @@
+# NVRAM board text file for the 4718nr with a 53115 gigabit switch.
+#
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# All Rights Reserved.
+# $Id: bcm94718fxcnr_p103.txt,v 1.2 2009/02/16 06:36:49 Exp $
+#
+
+boardtype=0xf4cf
+boardnum=${serno}
+# Current board rev P223
+boardrev=0x1102
+
+# CPU clock (Mhz)
+clkfreq=480,240,120
+
+# Oscillator clock (Khz)
+xtalfreq=20000
+
+# 128MB of DDR2 (DDRM32X16X2)
+sdram_config=0x284
+
+# Ethernet and 53115 gigabit switch
+et0macaddr=00:90:4c:08:${maclo}
+et0phyaddr=30
+
+# boardflags* and sb/1/boardflags* MUST be assigned the same values.
+boardflags=0x1710
+boardflags2=0x402
+
+# boardflags* and sb/1/boardflags* MUST be assigned the same values.
+sb/1/boardflags=0x1710
+sb/1/boardflags2=0x402
+
+#country code
+
+ccode=US
+# regrev is only available in sromrev>=3. It sets a sub-revision of the regulatory locale table for each country code
+regrev=14 
+
+
+# Internal d11 core mimophy parameters
+# Single band 2.4Ghz.
+sb/1/sromrev=8
+sb/1/devid=0x4329
+sb/1/macaddr=00:90:4c:09:${maclo}
+# This board does NOT have any LEDs on gpios.
+sb/1/ledbh0=0x82
+sb/1/ledbh1=11
+sb/1/ledbh2=11
+sb/1/ledbh3=11
+sb/1/leddc=0xffff
+sb/1/txchain=3
+sb/1/rxchain=3
+sb/1/antswitch=3
+
+sb/1/aa2g=7
+sb/1/ag0=0
+sb/1/ag1=0
+sb/1/itt2ga0=0x20
+sb/1/maxp2ga0=0x5C
+sb/1/pa2gw0a0=0xfe86
+sb/1/pa2gw1a0=0x1819
+sb/1/pa2gw2a0=0xfa3e
+sb/1/itt2ga1=0x20
+sb/1/maxp2ga1=0x5C
+sb/1/pa2gw0a1=0xfeb2
+sb/1/pa2gw1a1=0x1782
+sb/1/pa2gw2a1=0xfa95
+sb/1/tssipos2g=1
+sb/1/extpagain2g=0
+sb/1/pdetrange2g=0
+sb/1/triso2g=3
+sb/1/antswctl2g=0
+sb/1/cck2gpo=0
+sb/1/ofdm2gpo=0x42200000
+sb/1/mcs2gpo0=0x4220
+sb/1/mcs2gpo1=0xcca6
+sb/1/mcs2gpo2=0x4220
+sb/1/mcs2gpo3=0xcca6
+sb/1/mcs2gpo4=0x6442
+sb/1/mcs2gpo5=0xcca8
+sb/1/mcs2gpo6=0x6442
+sb/1/mcs2gpo7=0xcca8
+sb/1/cddpo=0
+sb/1/stbcpo=0
+sb/1/bw40po=0
+sb/1/bwduppo=0
+
+
+# Robo switch config (vlan0:LAN, vlan1:WAN)
+gpio5=robo_reset
+vlan1hwname=et0
+vlan1ports=0 1 2 3 8*
+vlan2ports=4 8u
+
+# Bootloader and OS glue
+landevs=vlan1 wl0 wl1
+wandevs=et0
+
+# Bootlaoder variables
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+boot_wait=on
+wait_time=3
+reset_gpio=4
+gpio6=ses_button
+gpio1=ses_led
+# Watchdog timer in ms
+watchdog=3000

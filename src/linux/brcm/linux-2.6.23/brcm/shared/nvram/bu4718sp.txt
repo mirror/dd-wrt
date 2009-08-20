@@ -1,0 +1,97 @@
+# NVRAM board text file for the bu4718 with a single 54810 Gigabit phy
+#
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# All Rights Reserved.
+# $Id: bu4718sp.txt,v 1.1 2008/04/20 20:02:48 Exp $
+#
+
+boardtype=0x04c3
+boardnum=${serno}
+# Current board rev 1.1
+boardrev=0x1101
+boardflags=0x200
+sromrev=8
+
+# CPU clock (Mhz)
+clkfreq=133
+
+# Oscillator clock (Khz)
+xtalfreq=20000
+
+# 512MB of DDR2 (DDR2M128X16X2)
+
+# Ethernet and 53115 gigabit switch
+et0macaddr=00:90:4c:f7:00:01
+et0phyaddr=0
+
+# Mimophy parameters
+wl0id=0x432c
+macaddr=00:90:4c:f8:51:54
+ccode=0
+regrev=0
+ledbh0=255
+ledbh1=255
+ledbh2=255
+ledbh3=255
+leddc=0xffff
+aa2g=3
+ag0=2
+ag1=2
+txchain=3
+rxchain=3
+antswitch=0
+itt2ga0=0x20
+maxp2ga0=0x48
+pa2gw0a0=0xfe9e
+pa2gw1a0=0x15d5
+pa2gw2a0=0xfae9
+itt2ga1=0x20
+maxp2ga1=0x48
+pa2gw0a1=0xfeb3
+pa2gw1a1=0x15c9
+pa2gw2a1=0xfaf7
+tssipos2g=1
+extpagain2g=0
+pdetrange2g=0
+triso2g=3
+antswctl2g=0
+tssipos5g=1
+extpagain5g=0
+pdetrange5g=0
+triso5g=3
+antswctl5g=0
+cck2gpo=0
+ofdm2gpo=0
+mcs2gpo0=0
+mcs2gpo1=0
+mcs2gpo2=0
+mcs2gpo3=0
+mcs2gpo4=0
+mcs2gpo5=0
+mcs2gpo6=0
+mcs2gpo7=0
+cddpo=0
+stbcpo=0
+bw40po=4
+bwduppo=0
+
+# Bootloader and OS glue
+landevs=wl0
+wandevs=et0
+
+# Bootlaoder variables
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+boot_wait=on
+wait_time=3
+reset_gpio=6
+gpio5=ses_button
+
+# Watchdog timer in ms
+watchdog=0

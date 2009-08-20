@@ -1,0 +1,53 @@
+# Generic fake nvram file for the bcm94321bu bringup board 
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+# $Id: bcm94321bu_fake.txt,v 1.2 2006/10/24 16:02:25 Exp $
+
+boardtype=0x046B
+boardrev=0x25
+boardnum=113
+boardflags=0x0200
+sromrev=2
+
+wl0id=0x4321
+il0macaddr=00:90:4c:b0:02:9a
+aa0=3
+ag0=2
+pa0maxpwr=80
+pa0itssit=62
+pa0b0=0x14fa
+pa0b1=0xfa83
+pa0b2=0xfe15
+opo=16
+cctl=0
+ccode=0
+
+pa2gw0a0=0xfe15
+pa2gw1a0=0x14fa
+pa2gw2a0=0xfa83
+pa2gw0a1=0xfe15
+pa2gw1a1=0x14fa
+pa2gw2a1=0xfa83
+pa5glw0a0=0x0
+pa5glw1a0=0x0
+pa5glw2a0=0x0
+pa5glw0a1=0x0
+pa5glw1a1=0x0
+pa5glw2a1=0x0
+pa5gw0a0=0x0
+pa5gw1a0=0x0
+pa5gw2a0=0x0
+pa5gw0a1=0x0
+pa5gw1a1=0x0
+pa5gw2a1=0x0
+pa5ghw0a0=0x0
+pa5ghw1a0=0x0
+pa5ghw2a0=0x0
+pa5ghw0a1=0x0
+pa5ghw1a1=0x0
+pa5ghw2a1=0x0

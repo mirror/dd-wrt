@@ -1,0 +1,44 @@
+# Cybertan 4705 board
+boardtype=0x478
+boardnum=${serno}
+# Board revision 1.0
+boardrev=0x10
+# Includes Roboswitch (5397)
+boardflags=0x10
+
+# MIPS clock frequency in MHz
+clkfreq=300,150,37
+
+# 64 MB DDR SDRAM (16 Meg x 16 x 2)
+sdram_init=0x0009
+sdram_config=0x0062
+sdram_refresh=0x0000
+sdram_ncdl=0
+
+# Ethernet 
+et0macaddr=00:90:4c:a6:${maclo}
+et0phyaddr=30
+et0mdcport=0
+
+# Watchdog timer in ms
+watchdog=3000
+
+# Reset 
+reset_gpio=7
+
+# CFE variables
+boot_wait=on
+wait_time=5
+
+# Variables used by CFE and run-time OS image
+# which may be modified by the run-time OS image
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+
+# PCI specific
+cardbus=1
+
+# bootloader/OS glue
+landevs=et0 wl0
+# no vlan support currently, so no wandev
+wandevs=

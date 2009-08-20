@@ -1,0 +1,30 @@
+# BCM94328 Bringup board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+# $Id: 
+# -----------------------------------------------------------------------
+# 4328 g-mode fake nvram file
+# -----------------------------------------------------------------------
+
+boardtype=0x481
+boardrev=0x10
+boardnum=666
+boardflags=0
+sromrev=2
+wl0id=0x4318
+il0macaddr=00:90:4c:b0:02:9a:dead
+aa0=3
+ag0=2
+pa0maxpwr=80
+pa0itssit=62
+pa0b0=0x14fa
+pa0b1=0xfa83
+pa0b2=0xfe15
+opo=16
+cctl=0
+ccode=0

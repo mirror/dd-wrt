@@ -1,0 +1,75 @@
+# 200bga 4712sd boards
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: sdr4712-200.txt,v 1.6 2004/12/15 21:09:55 Exp $
+boardtype=0x0102
+boardnum=${serno}
+# Board revision 1.0
+boardrev=0x10
+boardflags=0x0188
+sromrev=2
+
+# MIPS clock frequency in MHz
+clkfreq=200
+
+# 8 MB SDR SDRAM (4 Meg x 16)
+sdram_init=0x2002
+sdram_config=0x0022
+sdram_refresh=0x0000
+sdram_ncdl=0
+
+# Ethernet w/Admtek switch
+et0macaddr=00:90:4c:60:${maclo}
+et0phyaddr=30
+et0mdcport=0
+
+# ADMTek switch mgmt i/f GPIO mapping
+adm_eecs_gpio=0
+adm_rc_gpio=1
+adm_eesk_gpio=2
+adm_eedi_gpio=3
+
+# VLAN parameters
+vlan0ports=1 2 3 4 5*
+vlan0hwname=et0
+vlan1ports=0 5
+vlan1hwname=et0
+
+# 4712 802.11g parameters
+il0macaddr=00:90:4c:5f:${maclo}
+aa0=3
+ag0=2
+pa0maxpwr=60
+pa0itssit=62
+pa0b0=0x119a
+pa0b1=0xfb93
+pa0b2=0xfea5
+
+# Wireless LED GPIO mapping/behavior
+wl0gpio0=0
+wl0gpio1=0
+wl0gpio2=0
+wl0gpio3=0
+wl0gpio4=4
+wl0gpio5=5
+
+# Common wireless parameters
+cctl=0
+ccode=0
+
+# Bootlaoder variables
+dl_ram_addr=a0001000
+os_ram_addr=80001000
+os_flash_addr=bfc40000
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+scratch=a0180000
+boot_wait=on
+
+# Watchdog timer in ms
+watchdog=3000

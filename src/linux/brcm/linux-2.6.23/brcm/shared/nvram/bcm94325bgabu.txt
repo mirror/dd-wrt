@@ -1,0 +1,62 @@
+# 196 pin 4325 bu board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: bcm94325bgabu.txt,v 1.1 2008/03/24 21:41:37 Exp $
+boardtype=0x0491
+boardnum=${serno}
+# Board revision 2.4
+boardrev=0x24
+boardflags=0x200a00
+sromrev=3
+xtalfreq=26000
+
+# 802.11g parameters
+aa0=1
+ag0=2
+pa0maxpwr=60
+pa0itssit=62
+pa0b0=4888
+pa0b1=-1155
+pa0b2=-314
+rssismf2g=0
+rssismc2g=1
+rssisav2g=5
+tri2g=94
+rxpo2g=-10
+bxa2g=0
+
+# 802.11a parameters
+aa1=1
+ag1=2
+pa1lomaxpwr=56
+pa1maxpwr=56
+pa1himaxpwr=56
+pa1itssit=120
+pa1lob0=5092
+pa1lob1=-1237
+pa1lob2=-353
+pa1b0=5092
+pa1b1=-1237
+pa1b2=-353
+pa1hib0=5092
+pa1hib1=-1237
+pa1hib2=-353
+tri5gl=44
+tri5g=56
+tri5gh=56
+rxpo2g=-10
+rssismf5g=2
+rssismc5g=0
+rssisav5g=4
+bxa5g=0
+
+# Commons 802.11 parameters
+macaddr=00:90:4c:c4:${maclo}
+wl0id=0x431b
+cctl=0
+ccode=0

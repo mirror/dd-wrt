@@ -1,0 +1,48 @@
+# bcm94315bgabu board
+# Copyright (C) 2008, Broadcom Corporation
+# All Rights Reserved.
+# 
+# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+# the contents of this file may not be disclosed to third parties, copied
+# or duplicated in any form, in whole or in part, without the prior
+# written permission of Broadcom Corporation.
+# $Id: bcm94315bgabu.txt,v 1.1 2008/03/26 22:13:06 Exp $
+boardtype=0x04ca
+boardnum=${serno}
+# Board revision 1.0
+boardrev=0x10
+boardflags=0x02000a00
+sromrev=3
+
+# On board crystal frequency in KHz
+xtalfreq=30000
+
+
+# Its a 2.4Ghz only board
+wl0id=0x4314
+
+# 4315 802.11g parameters
+il0macaddr=00:90:4c:f6:${maclo}
+aa0=3
+ag0=2
+pa0maxpwr=60
+pa0itssit=62
+pa0b0=0x15cb
+pa0b1=0xfa9e
+pa0b2=0xfebc
+opo=0
+bxa2g=1
+rssismf2g=0
+rssismc2g=11
+rssisav2g=3
+tri2g=78
+rxpo2g=0xfff8
+parefldovoltage=0x28
+
+# Commons wireless parameters
+wl0gpio0=255
+wl0gpio1=255
+wl0gpio2=255
+wl0gpio3=255
+cctl=0
+ccode=0
