@@ -7,7 +7,8 @@
 # $Id: wl_generic.mk,v 1.3 2008/08/22 22:13:41 Exp $
 #
 
-REBUILD_WL_MODULE=$(shell if [ -d "$(src)/$(SRCBASE)/wl/sys" -a "$(REUSE_PREBUILT_WL)" != "1" ]; then echo 1; else echo 0; fi)
+REBUILD_WL_MODULE=0
+#$(shell if [ -d "$(src)/$(SRCBASE)/wl/sys" -a "$(REUSE_PREBUILT_WL)" != "1" ]; then echo 1; else echo 0; fi)
 
 # If source directory (src/wl/sys) exists and REUSE_PREBUILT_WL is undefined, 
 # then build inside $(SRCBASE)/wl/sys, otherwise use pre-builts
