@@ -108,7 +108,7 @@ early_nvram_init(void)
 			*dst++ = *src++;
 		}
 		cfe_env = 1;
-		return;
+		return 0;
 	}
 
 	off = FLASH_MIN;
