@@ -104,6 +104,7 @@
 #define	BCM4402_ENET_ID		0x4402		/* 4402 enet */
 #define	BCM4402_V90_ID		0x4403		/* 4402 v90 codec */
 #define	BCM4410_DEVICE_ID	0x4410		/* bcm44xx family pci iline */
+#define	BCM47XX_ILINE_ID	0x4711		/* 47xx iline20 */
 #define	BCM4412_DEVICE_ID	0x4412		/* bcm44xx family pci enet */
 #define	BCM4430_DEVICE_ID	0x4430		/* bcm44xx family cardbus iline */
 #define	BCM4432_DEVICE_ID	0x4432		/* bcm44xx family cardbus enet */
