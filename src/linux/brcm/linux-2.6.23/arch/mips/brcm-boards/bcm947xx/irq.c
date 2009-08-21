@@ -299,8 +299,9 @@ arch_init_irq(void)
 	else if (MIPS74K(current_cpu_data.processor_id))
 		mips_core_id = MIPS74K_CORE_ID;
 	else {
+		mips_core_id = MIPS33_CORE_ID;
 		printk(KERN_ERR "MIPS CPU type %x unknown", current_cpu_data.processor_id);
-		return;
+//		return;
 	}
 
 	/* Cache chipc and mips33 config registers */
@@ -317,11 +318,7 @@ arch_init_irq(void)
 	}
 	si_setcoreidx(bcm947xx_sih, coreidx);
 
-	if (BCM330X(current_cpu_data.processor_id)) {
-		/* Cache mips33 sbintvec register */
-		if (mipssbr)
-			shints = R_REG(NULL, &mipssbr->sbintvec);
-	} else {
+	if (MIPS74K(current_cpu_data.processor_id)) {
 		uint32 *intmask;
 
 		/* Use intmask5 register to route the timer interrupt */
@@ -333,6 +330,10 @@ arch_init_irq(void)
 
 		/* Save the pointer to mips core registers */
 		mips_corereg = regs;
+	} else {
+		/* Cache mips33 sbintvec register */
+		if (mipssbr)
+			shints = R_REG(NULL, &mipssbr->sbintvec);
 	}
 
 	/* Install interrupt controllers */
