@@ -411,6 +411,11 @@ symbol:		.frame	sp, 0, ra
 		((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
 		 (PRID_COMP_BROADCOM | PRID_IMP_BCM3303)))
 
+
+#define BCM4710(id) \
+		(((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
+		 (PRID_COMP_BROADCOM | PRID_IMP_BCM4710)))
+
 #define MIPS74K(id) \
 		(((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
 		 (PRID_COMP_MIPS | PRID_IMP_74K)))

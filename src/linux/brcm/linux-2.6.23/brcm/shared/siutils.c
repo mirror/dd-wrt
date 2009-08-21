@@ -100,7 +100,21 @@ BCMATTACHFN(si_kattach)(osl_t *osh)
 	static bool ksii_attached = FALSE;
 
 	if (!ksii_attached) {
+		uint32 cid;
 		void *regs = REG_MAP(SI_ENUM_BASE, SI_CORE_SIZE);
+
+		cid = R_REG(osh, (uint32 *)regs);
+		if (((cid & CID_ID_MASK) == BCM4712_CHIP_ID) &&
+		    ((cid & CID_PKG_MASK) != BCM4712LARGE_PKG_ID) &&
+		    ((cid & CID_REV_MASK) <= (3 << CID_REV_SHIFT))) {
+			uint32 *scc, val;
+
+			scc = (uint32 *)((uchar*)regs + OFFSETOF(chipcregs_t, slow_clk_ctl));
+			val = R_REG(osh, scc);
+			SI_ERROR(("    initial scc = 0x%x\n", val));
+			val |= SCC_SS_XTAL;
+			W_REG(osh, scc, val);
+		}
 
 		if (si_doattach(&ksii, BCM4710_DEVICE_ID, osh, regs,
 		                SI_BUS, NULL,
@@ -254,6 +268,8 @@ BCMATTACHFN(si_buscore_setup)(si_info_t *sii, chipcregs_t *cc, uint bustype, uin
 	cc = si_setcoreidx(&sii->pub, SI_CC_IDX);
 	ASSERT((uintptr)cc);
 
+	sii->gpioidx = BADIDX;
+
 	/* get chipcommon rev */
 	sii->pub.ccrev = (int)si_corerev(&sii->pub);
 
@@ -354,6 +370,25 @@ BCMATTACHFN(si_buscore_setup)(si_info_t *sii, chipcregs_t *cc, uint bustype, uin
 		}
 	}
 
+	/*
+	 * Find the gpio "controlling core" type and index.
+	 * Precedence:
+	 * - if there's a chip common core - use that
+	 * - else if there's a pci core (rev >= 2) - use that
+	 * - else there had better be an extif core (4710 only)
+	 */
+	if (GOODIDX(si_findcoreidx(&sii->pub, CC_CORE_ID, 0))) {
+		sii->gpioidx = si_findcoreidx(&sii->pub, CC_CORE_ID, 0);
+		sii->gpioid = CC_CORE_ID;
+	} else if (PCI(sii) && (sii->pub.buscorerev >= 2)) {
+		sii->gpioidx = sii->pub.buscoreidx;
+		sii->gpioid = PCI_CORE_ID;
+	} else if (si_findcoreidx(&sii->pub, EXTIF_CORE_ID, 0)) {
+		sii->gpioidx = si_findcoreidx(&sii->pub, EXTIF_CORE_ID, 0);
+		sii->gpioid = EXTIF_CORE_ID;
+	} else
+		ASSERT(si->gpioidx != BADIDX);
+
 
 	/* return to the original core */
 	si_setcoreidx(&sii->pub, *origidx);
@@ -368,6 +403,12 @@ BCMATTACHFN(si_nvram_process)(si_info_t *sii, char *pvars)
 	if (BUSTYPE(sii->pub.bustype) == PCMCIA_BUS) {
 		w = getintvar(pvars, "regwindowsz");
 		sii->memseg = (w <= CFTABLE_REGWIN_2K) ? TRUE : FALSE;
+	}
+
+	/* gpio control core is required */
+	if (!GOODIDX(sii->gpioidx)) {
+		SI_ERROR(("sb_doattach: gpio control core not found\n"));
+		return;
 	}
 
 	/* get boardtype and boardrev */
@@ -428,8 +469,7 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 	bzero((uchar*)sii, sizeof(si_info_t));
 
 	savewin = 0;
-
-	sih->buscoreidx = BADIDX;
+        sih->buscoreidx = sii->gpioidx = BADIDX;
 
 	sii->curmap = regs;
 	sii->sdh = sdh;
@@ -1138,6 +1178,7 @@ uint32
 BCMINITFN(si_clock)(si_t *sih)
 {
 	si_info_t *sii;
+	extifregs_t *eir;
 	chipcregs_t *cc;
 	uint32 n, m;
 	uint idx;
@@ -1145,6 +1186,9 @@ BCMINITFN(si_clock)(si_t *sih)
 	uint intr_val = 0;
 
 	sii = SI_INFO(sih);
+
+	pll_type = PLL_TYPE1;
+
 	INTR_OFF(sii, intr_val);
 	if (PMUCTL_ENAB(sih)) {
 		rate = si_pmu_si_clock(sih, sii->osh);
@@ -1152,7 +1196,10 @@ BCMINITFN(si_clock)(si_t *sih)
 	}
 
 	idx = sii->curidx;
-	cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0);
+	if ((eir = (extifregs_t *) si_setcore(sih, EXTIF_CORE_ID, 0))) {
+	    n = R_REG(si->osh, &eir->clockcontrol_n);
+	    m = R_REG(si->osh, &eir->clockcontrol_sb);
+	} else if ((cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0))) {
 	ASSERT(cc != NULL);
 
 	n = R_REG(sii->osh, &cc->clockcontrol_n);
@@ -1165,13 +1212,19 @@ BCMINITFN(si_clock)(si_t *sih)
 		m = R_REG(sii->osh, &cc->clockcontrol_sb);
 
 	/* calculate rate */
-	rate = si_clock_rate(pll_type, n, m);
+	if (sih->chip == 0x5365)
+		rate = 100000000;
+	else {
+		rate = si_clock_rate(pll_type, n, m);
+		//rate = sb_clock_rate(pll_type, n, m);
 
-	if (pll_type == PLL_TYPE3)
-		rate = rate / 2;
+		if (pll_type == PLL_TYPE3)
+			rate = rate / 2;
+	}
 
+	}
 	/* switch back to previous core */
-	si_setcoreidx(sih, idx);
+	si_setcoreidx(sih, idx);	
 exit:
 	INTR_RESTORE(sii, intr_val);
 
@@ -1200,16 +1253,27 @@ BCMINITFN(si_ilp_clock)(si_t *sih)
 void
 si_watchdog(si_t *sih, uint ticks)
 {
-	if (PMUCTL_ENAB(sih)) {
-		if (ticks == 1)
-			ticks = 2;
-		si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, pmuwatchdog), ~0, ticks);
-	} else {
-		/* make sure we come up in fast clock mode; or if clearing, clear clock */
-		si_clkctl_cc(sih, ticks ? CLK_FAST : CLK_DYNAMIC);
-		/* instant NMI */
-		si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, watchdog), ~0, ticks);
+	si_info_t *si = SI_INFO(sih);
+
+
+	switch (si->gpioid) {
+	case CC_CORE_ID:
+		if (PMUCTL_ENAB(sih)) {
+			if (ticks == 1)
+				ticks = 2;
+			si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, pmuwatchdog), ~0, ticks);
+		} else {
+			/* make sure we come up in fast clock mode; or if clearing, clear clock */
+			si_clkctl_cc(sih, ticks ? CLK_FAST : CLK_DYNAMIC);
+			/* instant NMI */
+			si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, watchdog), ~0, ticks);
+		}
+		break;
+	case EXTIF_CORE_ID:
+		si_corereg(sih, si->gpioidx, OFFSETOF(extifregs_t, watchdog), ~0, ticks);
+		break;
 	}
+
 }
 
 #if !defined(BCMBUSTYPE) || (BCMBUSTYPE == SI_BUS)
@@ -1357,6 +1421,7 @@ BCMINITFN(si_corepciid)(si_t *sih, uint func, uint16 *pcivendor, uint16 *pcidevi
 		subclass = PCI_COMM_OTHER;
 		device = BCM47XX_ROBO_ID;
 		break;
+	case EXTIF_CORE_ID:
 	case CC_CORE_ID:
 		class = PCI_CLASS_MEMORY;
 		subclass = PCI_MEMORY_FLASH;
@@ -1977,6 +2042,9 @@ BCMINITFN(si_pci_up)(si_t *sih)
 	si_info_t *sii;
 
 	sii = SI_INFO(sih);
+	
+	if (sii->gpioid == EXTIF_CORE_ID)
+	    return;
 
 	/* if not pci bus, we're done */
 	if (BUSTYPE(sih->bustype) != PCI_BUS)
@@ -2002,6 +2070,9 @@ BCMUNINITFN(si_pci_sleep)(si_t *sih)
 
 	sii = SI_INFO(sih);
 
+	if (sii->gpioid == EXTIF_CORE_ID)
+	    return;
+
 	pcicore_sleep(sii->pch);
 }
 
@@ -2012,6 +2083,9 @@ BCMINITFN(si_pci_down)(si_t *sih)
 	si_info_t *sii;
 
 	sii = SI_INFO(sih);
+
+	if (sii->gpioid == EXTIF_CORE_ID)
+	    return;
 
 	/* if not pci bus, we're done */
 	if (BUSTYPE(sih->bustype) != PCI_BUS)
@@ -2168,7 +2242,11 @@ si_pci_fixcfg(si_t *sih)
 void *
 si_gpiosetcore(si_t *sih)
 {
-	return (si_setcoreidx(sih, SI_CC_IDX));
+	si_info_t *si;
+
+	si = SI_INFO (sih);
+
+        return (si_setcoreidx(sih, si->gpioidx));
 }
 
 /* mask&set gpiocontrol bits */
@@ -2176,6 +2254,8 @@ uint32
 si_gpiocontrol(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 {
 	uint regoff;
+	si_info_t *si;
+	si = SI_INFO (sih);
 
 	regoff = 0;
 
@@ -2189,8 +2269,20 @@ si_gpiocontrol(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		val &= mask;
 	}
 
-	regoff = OFFSETOF(chipcregs_t, gpiocontrol);
-	return (si_corereg(sih, SI_CC_IDX, regoff, mask, val));
+	switch (si->gpioid) {
+	case CC_CORE_ID:
+		regoff = OFFSETOF(chipcregs_t, gpiocontrol);
+		break;
+
+	case PCI_CORE_ID:
+		regoff = OFFSETOF(sbpciregs_t, gpiocontrol);
+		break;
+
+	case EXTIF_CORE_ID:
+		return (0);
+	}
+
+	return (si_corereg(sih, si->gpioidx, regoff, mask, val));
 }
 
 /* mask&set gpio output enable bits */
@@ -2198,6 +2290,8 @@ uint32
 si_gpioouten(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 {
 	uint regoff;
+	si_info_t *si;
+	si = SI_INFO (sih);
 
 	regoff = 0;
 
@@ -2211,8 +2305,20 @@ si_gpioouten(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		val &= mask;
 	}
 
-	regoff = OFFSETOF(chipcregs_t, gpioouten);
-	return (si_corereg(sih, SI_CC_IDX, regoff, mask, val));
+	switch (si->gpioid) {
+	case CC_CORE_ID:
+		regoff = OFFSETOF(chipcregs_t, gpioouten);
+		break;
+
+	case PCI_CORE_ID:
+		regoff = OFFSETOF(sbpciregs_t, gpioouten);
+		break;
+
+	case EXTIF_CORE_ID:
+		return (0);
+	}
+
+	return (si_corereg(sih, si->gpioidx, regoff, mask, val));
 }
 
 static int32
@@ -2262,6 +2368,8 @@ uint32
 si_gpioout(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 {
 	uint regoff;
+	si_info_t *si;
+	si = SI_INFO (sih);
 
 	regoff = 0;
 
@@ -2275,7 +2383,6 @@ si_gpioout(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		val &= mask;
 	}
 
-	regoff = OFFSETOF(chipcregs_t, gpioout);
 
 	if (mask & (1 << 12)) {
 		uint32 _mask, _val;
@@ -2285,7 +2392,21 @@ si_gpioout(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		d11_gpio12_control(sih, _mask, _val);
 	}
 
-	return (si_corereg(sih, SI_CC_IDX, regoff, mask, val));
+	switch (si->gpioid) {
+	case CC_CORE_ID:
+		regoff = OFFSETOF(chipcregs_t, gpioout);
+		break;
+
+	case PCI_CORE_ID:
+		regoff = OFFSETOF(sbpciregs_t, gpioout);
+		break;
+
+	case EXTIF_CORE_ID:
+		return (0);
+	}
+
+	return (si_corereg(sih, si->gpioidx, regoff, mask, val));
+
 }
 
 /* reserve one gpio */
@@ -2364,8 +2485,21 @@ si_gpioin(si_t *sih)
 	sii = SI_INFO(sih);
 	regoff = 0;
 
-	regoff = OFFSETOF(chipcregs_t, gpioin);
-	return (si_corereg(sih, SI_CC_IDX, regoff, 0, 0));
+	switch (sii->gpioid) {
+	case CC_CORE_ID:
+		regoff = OFFSETOF(chipcregs_t, gpioin);
+		break;
+
+	case PCI_CORE_ID:
+		regoff = OFFSETOF(sbpciregs_t, gpioin);
+		break;
+
+	case EXTIF_CORE_ID:
+		return (0);
+	}
+
+	return (si_corereg(sih, sii->gpioidx, regoff, 0, 0));
+
 }
 
 /* mask&set gpio interrupt polarity bits */
@@ -2385,8 +2519,20 @@ si_gpiointpolarity(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		val &= mask;
 	}
 
-	regoff = OFFSETOF(chipcregs_t, gpiointpolarity);
-	return (si_corereg(sih, SI_CC_IDX, regoff, mask, val));
+	switch (sii->gpioid) {
+	case CC_CORE_ID:
+		regoff = OFFSETOF(chipcregs_t, gpiointpolarity);
+		break;
+
+	case PCI_CORE_ID:
+		ASSERT(0);
+		break;
+
+	case EXTIF_CORE_ID:
+		return (0);
+	}
+
+	return (si_corereg(sih, sii->gpioidx, regoff, mask, val));
 }
 
 /* mask&set gpio interrupt mask bits */
@@ -2406,7 +2552,19 @@ si_gpiointmask(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		val &= mask;
 	}
 
-	regoff = OFFSETOF(chipcregs_t, gpiointmask);
+	switch (sii->gpioid) {
+	case CC_CORE_ID:
+		regoff = OFFSETOF(chipcregs_t, gpiointmask);
+		break;
+
+	case PCI_CORE_ID:
+		ASSERT(0);
+		break;
+
+	case EXTIF_CORE_ID:
+		return (0);
+	}
+
 	return (si_corereg(sih, SI_CC_IDX, regoff, mask, val));
 }
 

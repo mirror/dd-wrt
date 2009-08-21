@@ -28,6 +28,8 @@
 #define	PAD		_XSTR(__LINE__)
 #endif	/* PAD */
 
+#define	EXTIF_CFGIF_BASE(x)	((x) + 0x800000)
+
 typedef volatile struct {
 	uint32	chipid;			/* 0x0 */
 	uint32	capabilities;
@@ -207,12 +209,77 @@ typedef volatile struct {
 	uint16	sromotp[768];
 } chipcregs_t;
 
+struct gpiouser {
+	uint32	out;
+	uint32	outen;
+};
+
+#define	NGPIOUSER	5
+
+typedef volatile struct {
+	uint32	corecontrol;
+	uint32	extstatus;
+	uint32	PAD[2];
+
+	/* pcmcia control registers */
+	uint32	pcmcia_config;
+	uint32	pcmcia_memwait;
+	uint32	pcmcia_attrwait;
+	uint32	pcmcia_iowait;
+
+	/* programmable interface control registers */
+	uint32	prog_config;
+	uint32	prog_waitcount;
+
+	/* flash control registers */
+	uint32	flash_config;
+	uint32	flash_waitcount;
+	uint32	PAD[4];
+
+	uint32	watchdog;
+
+	/* clock control */
+	uint32	clockcontrol_n;
+	uint32	clockcontrol_sb;
+	uint32	clockcontrol_pci;
+	uint32	clockcontrol_mii;
+	uint32	PAD[3];
+
+	/* gpio */
+	uint32	gpioin;
+	struct gpiouser	gpio[NGPIOUSER];
+	uint32	PAD;
+	uint32	ejtagouten;
+	uint32	gpiointpolarity;
+	uint32	gpiointmask;
+	uint32	PAD[153];
+
+	uint8	uartdata;
+	uint8	PAD[3];
+	uint8	uartimer;
+	uint8	PAD[3];
+	uint8	uartfcr;
+	uint8	PAD[3];
+	uint8	uartlcr;
+	uint8	PAD[3];
+	uint8	uartmcr;
+	uint8	PAD[3];
+	uint8	uartlsr;
+	uint8	PAD[3];
+	uint8	uartmsr;
+	uint8	PAD[3];
+	uint8	uartscratch;
+	uint8	PAD[3];
+} extifregs_t;
+
 #endif /* _LANGUAGE_ASSEMBLY */
 
 #if	defined(IL_BIGENDIAN) && defined(BCMHND74K)
 /* Selective swapped defines for those registers we need in
  * big-endian code.
  */
+/* corecontrol */
+#define	CC_UE		(1 << 0)		/* uart enable */
 #define	CC_CHIPID		4
 #define	CC_CAPABILITIES		0
 #define	CC_CHIPST		0x28
@@ -220,6 +287,7 @@ typedef volatile struct {
 
 #else	/* !IL_BIGENDIAN || !BCMHND74K */
 
+#define	CC_UE		(1 << 0)		/* uart enable */
 #define	CC_CHIPID		0
 #define	CC_CAPABILITIES		4
 #define	CC_CHIPST		0x2c
