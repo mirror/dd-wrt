@@ -211,7 +211,9 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 	osl_t *osh;
 	uint32 c0reg;
 	ulong hz, ns, tmp;
+	extifregs_t *eir;
 	chipcregs_t *cc;
+	char *value;
 	uint irq;
 
 	osh = si_osh(sih);
@@ -227,26 +229,67 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 	ns = 1000000000 / hz;
 
 	/* Setup external interface timing */
-	cc = si_setcoreidx(sih, SI_CC_IDX);
+	if ((eir = si_setcore(sih, EXTIF_CORE_ID, 0))) {
+		/* Initialize extif so we can get to the LEDs and external UART */
+		W_REG(osh, &eir->prog_config, CF_EN);
+
+		/* Set timing for the flash */
+		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
+		tmp = tmp | (CEIL(40, ns) << FW_W1_SHIFT); /* W1 = 40nS */
+		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
+		W_REG(osh, &eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
+
+		/* Set programmable interface timing for external uart */
+		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
+		tmp = tmp | (CEIL(20, ns) << FW_W2_SHIFT); /* W2 = 20nS */
+		tmp = tmp | (CEIL(100, ns) << FW_W1_SHIFT); /* W1 = 100nS */
+		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
+		W_REG(osh, &eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
+	} else if ((cc = si_setcoreidx(sih, SI_CC_IDX))) {
 	ASSERT(cc);
 
 	/* Set timing for the flash */
 	tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
 	tmp |= CEIL(10, ns) << FW_W1_SHIFT;	/* W1 = 10nS */
 	tmp |= CEIL(120, ns);			/* W0 = 120nS */
-	if (sih->ccrev < 9)
+	if (sih->ccrev < 9 || sih->chip==0x5365)
 		W_REG(osh, &cc->flash_waitcount, tmp);
 
 	if ((sih->ccrev < 9) ||
-	    ((sih->chip == BCM5350_CHIP_ID) && sih->chiprev == 0)) {
+	    ((sih->chip == BCM5350_CHIP_ID) && sih->chiprev == 0) || (sih->chip==0x5365)) {
 		W_REG(osh, &cc->pcmcia_memwait, tmp);
 	}
 
 	/* Save shared IRQ mapping base */
 	shirq_map_base = shirqmap;
-
+	}
+	
 	/* Chip specific initialization */
 	switch (sih->chip) {
+	case BCM4710_CHIP_ID:
+		/* Clear interrupt map */
+		for (irq = 0; irq <= 4; irq++)
+			si_clearirq(sih, irq);
+		si_setirq(sih, 0, CODEC_CORE_ID, 0);
+		si_setirq(sih, 0, EXTIF_CORE_ID, 0);
+		si_setirq(sih, 2, ENET_CORE_ID, 1);
+		si_setirq(sih, 3, ILINE20_CORE_ID, 0);
+		si_setirq(sih, 4, PCI_CORE_ID, 0);
+		ASSERT(eir);
+		value = nvram_get("et0phyaddr");
+		if (value && !strcmp(value, "31")) {
+			/* Enable internal UART */
+			W_REG(osh, &eir->corecontrol, CC_UE);
+			/* Give USB its own interrupt */
+			si_setirq(sih, 1, USB_CORE_ID, 0);
+		} else {
+			/* Disable internal UART */
+			W_REG(osh, &eir->corecontrol, 0);
+			/* Give Ethernet its own interrupt */
+			si_setirq(sih, 1, ENET_CORE_ID, 0);
+			si_setirq(sih, 0, USB_CORE_ID, 0);
+		}
+		break;
 	case BCM5350_CHIP_ID:
 		/* Clear interrupt map */
 		for (irq = 0; irq <= 4; irq++)
@@ -305,6 +348,7 @@ uint32
 BCMINITFN(si_cpu_clock)(si_t *sih)
 {
 	osl_t *osh;
+	extifregs_t *eir;
 	chipcregs_t *cc;
 	uint32 n, m;
 	uint idx;
@@ -320,7 +364,19 @@ BCMINITFN(si_cpu_clock)(si_t *sih)
 	idx = si_coreidx(sih);
 
 	/* switch to chipc core */
-	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+	pll_type = PLL_TYPE1;
+
+	/* switch to extif or chipc core */
+	if ((eir = (extifregs_t *) si_setcore(sih, EXTIF_CORE_ID, 0))) {
+		n = R_REG(osh, &eir->clockcontrol_n);
+		m = R_REG(osh, &eir->clockcontrol_sb);
+	} else if ((	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) {
+	/* 5354 chip uses a non programmable PLL of frequency 240MHz */
+		if (sih->chip == BCM5354_CHIP_ID) {
+			rate = 240000000;
+			goto out;
+		}
+
 	ASSERT(cc);
 
 	pll_type = sih->cccaps & CC_CAP_PLL_MASK;
@@ -343,9 +399,14 @@ BCMINITFN(si_cpu_clock)(si_t *sih)
 			m = R_REG(osh, &cc->clockcontrol_m2);
 	} else
 		m = R_REG(osh, &cc->clockcontrol_sb);
-
+	} else {
+	    goto out;
+	}
 	/* calculate rate */
-	rate = si_clock_rate(pll_type, n, m);
+	if (sih->chip == 0x5365)
+		rate = 100000000;
+	else
+		rate = si_clock_rate(pll_type, n, m);
 
 	if (pll_type == PLL_TYPE6)
 		rate = SB2MIPS_T6(rate);
@@ -624,6 +685,7 @@ BCMINITFN(afterhandler)(void)
 bool
 BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 pciclock)
 {
+	extifregs_t *eir = NULL;
 	osl_t *osh;
 	chipcregs_t *cc = NULL;
 	mips33regs_t *mipsr = NULL;
@@ -632,6 +694,77 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 	uint32 pll_type, sync_mode;
 	uint ic_size, ic_lsize;
 	uint idx, i;
+  /* PLL configuration: type 1 */
+  typedef struct
+  {
+    uint32 mipsclock;
+    uint16 n;
+    uint32 sb;
+    uint32 pci33;
+    uint32 pci25;
+  } n3m_table_t;
+  static n3m_table_t BCMINITDATA (type1_table)[] =
+  {
+    /* 96.000 32.000 24.000 */
+    {
+    96000000, 0x0303, 0x04020011, 0x11030011, 0x11050011},
+      /* 100.000 33.333 25.000 */
+    {
+    100000000, 0x0009, 0x04020011, 0x11030011, 0x11050011},
+      /* 104.000 31.200 24.960 */
+    {
+    104000000, 0x0802, 0x04020011, 0x11050009, 0x11090009},
+      /* 108.000 32.400 24.923 */
+    {
+    108000000, 0x0403, 0x04020011, 0x11050009, 0x02000802},
+      /* 112.000 32.000 24.889 */
+    {
+    112000000, 0x0205, 0x04020011, 0x11030021, 0x02000403},
+      /* 115.200 32.000 24.000 */
+    {
+    115200000, 0x0303, 0x04020009, 0x11030011, 0x11050011},
+      /* 120.000 30.000 24.000 */
+    {
+    120000000, 0x0011, 0x04020011, 0x11050011, 0x11090011},
+      /* 124.800 31.200 24.960 */
+    {
+    124800000, 0x0802, 0x04020009, 0x11050009, 0x11090009},
+      /* 128.000 32.000 24.000 */
+    {
+    128000000, 0x0305, 0x04020011, 0x11050011, 0x02000305},
+      /* 132.000 33.000 24.750 */
+    {
+    132000000, 0x0603, 0x04020011, 0x11050011, 0x02000305},
+      /* 136.000 32.640 24.727 */
+    {
+    136000000, 0x0c02, 0x04020011, 0x11090009, 0x02000603},
+      /* 140.000 30.000 24.706 */
+    {
+    140000000, 0x0021, 0x04020011, 0x11050021, 0x02000c02},
+      /* 144.000 30.857 24.686 */
+    {
+    144000000, 0x0405, 0x04020011, 0x01020202, 0x11090021},
+      /* 150.857 33.000 24.000 */
+    {
+    150857142, 0x0605, 0x04020021, 0x02000305, 0x02000605},
+      /* 152.000 32.571 24.000 */
+    {
+    152000000, 0x0e02, 0x04020011, 0x11050021, 0x02000e02},
+      /* 156.000 31.200 24.960 */
+    {
+    156000000, 0x0802, 0x04020005, 0x11050009, 0x11090009},
+      /* 160.000 32.000 24.000 */
+    {
+    160000000, 0x0309, 0x04020011, 0x11090011, 0x02000309},
+      /* 163.200 32.640 24.727 */
+    {
+    163200000, 0x0c02, 0x04020009, 0x11090009, 0x02000603},
+      /* 168.000 32.000 24.889 */
+    {
+    168000000, 0x0205, 0x04020005, 0x11030021, 0x02000403},
+      /* 176.000 33.000 24.000 */
+    {
+  176000000, 0x0602, 0x04020003, 0x11050005, 0x02000602},};
 
 	/* PLL configuration: type 3 */
 	typedef struct {
@@ -847,7 +980,13 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 	clockcontrol_m2 = NULL;
 
 	/* switch to chipc core */
-	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+	if ((eir = (extifregs_t *) si_setcore(sih, EXTIF_CORE_ID, 0))) {
+		pll_type = PLL_TYPE1;
+		clockcontrol_n = &eir->clockcontrol_n;
+		clockcontrol_sb = &eir->clockcontrol_sb;
+		clockcontrol_pci = &eir->clockcontrol_pci;
+		clockcontrol_m2 = &cc->clockcontrol_m2;
+	} else if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) { 
 	ASSERT(cc);
 
 	pll_type = sih->cccaps & CC_CAP_PLL_MASK;
@@ -861,6 +1000,8 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 		clockcontrol_pci = &cc->clockcontrol_pci;
 		clockcontrol_m2 = &cc->clockcontrol_m2;
 	}
+	} else
+		goto done;
 
 	if (pll_type == PLL_TYPE6) {
 		/* Silence compilers */
@@ -872,7 +1013,56 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 		orig_pci = R_REG(osh, clockcontrol_pci);
 	}
 
-	if (pll_type == PLL_TYPE3) {
+  if (pll_type == PLL_TYPE1)
+    {
+      /* Keep the current PCI clock if not specified */
+      if (pciclock == 0)
+	{
+	  pciclock = si_clock_rate (pll_type, R_REG (osh, clockcontrol_n),
+				    R_REG (osh, clockcontrol_pci));
+	  pciclock = (pciclock <= 25000000) ? 25000000 : 33000000;
+	}
+
+      /* Search for the closest MIPS clock less than or equal to a preferred value */
+      for (i = 0; i < ARRAYSIZE (type1_table); i++)
+	{
+	  ASSERT (type1_table[i].mipsclock ==
+		  si_clock_rate (pll_type, type1_table[i].n,
+				 type1_table[i].sb));
+	  if (type1_table[i].mipsclock > mipsclock)
+	    break;
+	}
+      if (i == 0)
+	{
+	  ret = FALSE;
+	  goto done;
+	}
+      else
+	{
+	  ret = TRUE;
+	  i--;
+	}
+      ASSERT (type1_table[i].mipsclock <= mipsclock);
+
+      /* No PLL change */
+      if ((orig_n == type1_table[i].n) &&
+	  (orig_sb == type1_table[i].sb) &&
+	  (orig_pci == type1_table[i].pci33))
+	goto done;
+
+      /* Set the PLL controls */
+      W_REG (osh, clockcontrol_n, type1_table[i].n);
+      W_REG (osh, clockcontrol_sb, type1_table[i].sb);
+      if (pciclock == 25000000)
+	W_REG (osh, clockcontrol_pci, type1_table[i].pci25);
+      else
+	W_REG (osh, clockcontrol_pci, type1_table[i].pci33);
+
+      /* Reset */
+      si_watchdog (sih, 1);
+      while (1);
+    }
+  else if (pll_type == PLL_TYPE3) {
 		/* 5350 */
 		if (sih->chip != BCM5365_CHIP_ID) {
 			/*
