@@ -1350,6 +1350,11 @@ BCMINITFN(si_corepciid)(si_t *sih, uint func, uint16 *pcivendor, uint16 *pcidevi
 
 	/* Determine class based on known core codes */
 	switch (core) {
+	case ILINE20_CORE_ID:
+    		class = PCI_CLASS_NET;
+    		subclass = PCI_NET_ETHER;
+    		device = BCM47XX_ILINE_ID;
+    		 break;
 	case ENET_CORE_ID:
 		class = PCI_CLASS_NET;
 		subclass = PCI_NET_ETHER;
