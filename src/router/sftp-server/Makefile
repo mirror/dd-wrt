@@ -47,4 +47,4 @@ clean:
 
 
 install:
-	install -D sftp-server $(INSTALLDIR)/usr/libexec
+	install -D sftp-server $(INSTALLDIR)/usr/libexec/sftp-server
