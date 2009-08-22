@@ -6,6 +6,7 @@ obj-$(CONFIG_LIBNET) += libnet
 obj-$(CONFIG_OPENSSL) += openssl openssl-shared openssl-apps
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_CTORRENT) += ctorrent
+obj-$(CONFIG_SFTPSERVER) += sftp-server
 obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_RC) += rc services 
 obj-$(CONFIG_LIBBCM) += libbcm
