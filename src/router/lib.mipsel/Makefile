@@ -28,7 +28,7 @@ lib-$(CONFIG_LIBPTHREAD) += libpthread
 #endif
 lib-$(CONFIG_LIBRESOLV) += libresolv
 lib-$(CONFIG_LIBUTIL) += libutil
-
+lib-y += libgcc_s
 ifeq ($(CONFIG_UCLIBC),y)
 
 # uClibc names
@@ -126,6 +126,7 @@ endif
 install: $(wildcard $(foreach lib,$(LINKER) $(lib-y),$(LIBDIR)/$(lib) $(LIBDIR)/$(lib).so.?))
 	install -d $(TARGETDIR)/lib
 	install $^ $(TARGETDIR)/lib/
+#	install libgcc_s.so.1 $(TARGETDIR)/lib/
 	#$(STRIP) $(TARGETDIR)/lib/*.so.*
 
 clean:
