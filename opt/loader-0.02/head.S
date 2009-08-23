@@ -32,13 +32,6 @@
 #define CONF1_IS_MASK	0x01c00000
 #define CONF1_IS_BASE	64
 
-#define CONF_AR		(7 << 10)
-
-#define BRCM_DC_ENABLE		0x40000000	/* Enable Data $ */
-#define BRCM_IC_ENABLE		0x80000000	/* Enable Instruction $ */
-
-#define C0_DIAGNOSTIC	$22
-
 #define Index_Invalidate_I	0x00
 #define Index_Writeback_Inv_D   0x01
 
@@ -62,26 +55,7 @@ $L1:
 	/* At this point we need to invalidate dcache and */
 	/* icache before jumping to new code */
 
-
-	/* Figure if it is a mips32r2 CPU which we take as an indication that
-	 * there is no BRCM CP0 register and the D$ tags are in select 2
-	 */
-	mfc0	s6,C0_CONFIG
-	andi	s6,CONF_AR			# s6 != 0 if mips32r2
-
-	beqz	s6,1f
-	nop
-	b	2f
-	nop
-
-	/* Turn on the caches in the CP0 register */
-1:	
-	mfc0	t0,C0_DIAGNOSTIC
-	or	t0,(BRCM_IC_ENABLE | BRCM_DC_ENABLE) # Enable both I$ and D$
-	mtc0	t0,C0_DIAGNOSTIC
-	nop
-
-2:	/* Get cache sizes */
+1:	/* Get cache sizes */
 	.set	mips32
 	mfc0	s0,C0_CONFIG,1
 	.set	mips0
@@ -113,20 +87,11 @@ $L1:
 	mflo	s2			/* s2 is now D$ size in bytes */
 
 	/* Initilize the D$: */
-	beqz	s6,1f
-	nop
-	.set	mips32
-	mtc0	zero,C0_TAGLO,2			# For mips32r2 the D$ Tags are in select 2
-	mtc0	zero,C0_TAGHI,2
-	.set	mips0
-	b	2f
-	nop
-
-1:	mtc0	zero,C0_TAGLO
+	mtc0	zero,C0_TAGLO
 	mtc0	zero,C0_TAGHI
 
-2:	li	t0,KSEG0			# Just an address for the first $ line
-	addu	t1,t0,a2			#  + size of cache == end
+	li	t0,KSEG0		/* Just an address for the first $ line */
+	addu	t1,t0,s2		/*  + size of cache == end */
 
 	.set	mips3
 1:	cache	Index_Writeback_Inv_D,0(t0)
