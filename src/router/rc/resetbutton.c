@@ -482,6 +482,7 @@ void period_check(int sig)
 	case ROUTER_WRT54G_V81:
 	case ROUTER_DLINK_DIR320:
 	case ROUTER_WRT600N:
+	case ROUTER_NETGEAR_WNR3500L: 
 		sesgpio = 0x16;	// gpio 6, inversed
 		break;
 
