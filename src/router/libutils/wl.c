@@ -789,6 +789,37 @@ int isEMP(char *ifname)		//checks if its usually a emp card (no concrete detecti
 
 }
 
+int isXR36(char *ifname)		//checks if its usually a emp card (no concrete detection possible)
+{
+	int vendor;
+	int product;
+	int devcount;
+	char readid[64];
+
+	strcpy(readid, ifname);
+	sscanf(readid, "ath%d", &devcount);
+	sprintf(readid, "/proc/sys/dev/wifi%d/idvendor", devcount);
+	FILE *in = fopen(readid, "rb");
+	vendor = 0;
+	if (in) {
+		fscanf(in, "%d", &vendor);
+		fclose(in);
+	}
+	sprintf(readid, "/proc/sys/dev/wifi%d/idproduct", devcount);
+	in = fopen(readid, "rb");
+	product = 0;
+	if (in) {
+		fscanf(in, "%d", &product);
+		fclose(in);
+	}
+	if (vendor == 0x0777 && product == 0x3c03) //XR3.3/XR3.6/XR3.7 share the same pci id's
+		return 1;
+ 	return 0;
+
+}
+
+
+
 int wifi_gettxpower(char *ifname)
 {
 	int poweroffset = 0;
@@ -1029,7 +1060,10 @@ int get_wifioffset(char *ifname)
 	case 1328:
 		return -(5540 - 2840);	// xr3 special 2.8 ghz
 	case 1336:
-		return -(5540 - 3340);	// xr3 special 3.3 ghz
+		if (nvram_nmatch("2", "%s_cardtype", ifname))
+			return -(5765 - 3658); // xr3 3.7 ghz
+		else
+			return -(5540 - 3340); // xr3 special 3.3/3.6 ghz
 	case 7:
 		return -(2427 - 763);	// xr7 
 	case 14:

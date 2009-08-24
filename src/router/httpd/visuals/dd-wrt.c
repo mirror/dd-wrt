@@ -3773,6 +3773,36 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_DDLINK
+
+
+	if (isXR36(prefix)) {
+		char wl_cardtype[32];
+		sprintf(wl_cardtype, "%s_cardtype", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n",
+			  wl_cardtype);
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n",
+			  nvram_default_match(wl_cardtype, "0",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n",
+			  nvram_default_match(wl_cardtype, "1",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n",
+			  nvram_default_match(wl_cardtype, "2",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
+	}
+
+
 	if (isEMP(prefix)) {
 		char wl_cardtype[32];
 		sprintf(wl_cardtype, "%s_cardtype", prefix);
