@@ -625,7 +625,7 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_ESR9752;
 #elif HAVE_DIR600
 	setRouter("Dlink-DIR600 rev b");
-	return ROUTER_BOARD_WHRG300N;
+	return ROUTER_BOARD_DIR600B;
 #elif HAVE_WHRG300N
 	setRouter("Buffalo WHR-G300N");
 	return ROUTER_BOARD_WHRG300N;
@@ -2584,6 +2584,10 @@ int led_control(int type, int act)
 		diag_gpio = 0x106;
 		connected_gpio = 0x100;
 		usb_gpio = 0x104;
+		break;
+	case ROUTER_BOARD_DIR600B:
+		diag_gpio = 0x10d;
+		connected_gpio = 0x108;
 		break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
