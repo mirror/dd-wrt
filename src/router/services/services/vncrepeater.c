@@ -42,6 +42,10 @@ void start_vncrepeater(void)
 	     nvram_safe_get("wan_iface"), "--dport", "5900", "-j", "ACCEPT");
 	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i",
 	     nvram_safe_get("wan_iface"), "--dport", "5900", "-j", "ACCEPT");
+	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i",
+	     nvram_safe_get("wan_iface"), "--dport", "5500", "-j", "ACCEPT");
+	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i",
+	     nvram_safe_get("wan_iface"), "--dport", "5500", "-j", "ACCEPT");
 
 	FILE *fp = fopen("/tmp/vncrepeater.ini", "wb");
 	fprintf(fp, "[general]\n");
