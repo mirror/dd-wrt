@@ -1270,6 +1270,7 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
+				nvram_set("vlan2ports", "0 8");
 			break;			
 			case ROUTER_LINKSYS_WTR54GS:
 				nvram_set("vlan1ports", "1 5");
