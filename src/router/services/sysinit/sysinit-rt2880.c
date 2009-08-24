@@ -166,10 +166,10 @@ void start_sysinit(void)
 #endif
 	}
 #ifdef HAVE_DIR600
-sysprintf("echo "write 0 0 0x3300" > /proc/rt3052/mii/ctrl");
-sysprintf("echo "write 1 0 0x3300" > /proc/rt3052/mii/ctrl");
-sysprintf("echo "write 2 0 0x3300" > /proc/rt3052/mii/ctrl");
-sysprintf("echo "write 3 0 0x3300" > /proc/rt3052/mii/ctrl");
+sysprintf("echo \"write 0 0 0x3300\" > /proc/rt3052/mii/ctrl");
+sysprintf("echo \"write 1 0 0x3300\" > /proc/rt3052/mii/ctrl");
+sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
+sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
 
 #endif
 
