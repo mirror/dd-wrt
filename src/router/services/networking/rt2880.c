@@ -370,6 +370,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 	startradius = 0;
 	deconfigure_wifi();
+#ifdef HAVE_DIR600
+	char mac[32];
+	strcpy(mac,nvram_safe_get("et0macaddr_safe"));
+//	MAC_ADD(mac);
+//	MAC_ADD(mac);
+#endif
 	killall("rt2860apd", SIGTERM);
 	eval("ifconfig", "ra0", "down");
 	eval("ifconfig", "ra1", "down");

@@ -86,18 +86,7 @@ void start_sysinit(void)
 	eval("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
 	eval("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
 
-/*    eval( "mkdir", "/dev/mtd" );
-    eval( "mknod", "/dev/mtd/0", "c", "90", "0" );
-    eval( "mknod", "/dev/mtd/0ro", "c", "90", "1" );
-    eval( "mknod", "/dev/mtd/1", "c", "90", "2" );
-    eval( "mknod", "/dev/mtd/1ro", "c", "90", "3" );
-    eval( "mknod", "/dev/mtd/2", "c", "90", "4" );
-    eval( "mknod", "/dev/mtd/2ro", "c", "90", "5" );
-    eval( "mknod", "/dev/mtd/3", "c", "90", "6" );
-    eval( "mknod", "/dev/mtd/3ro", "c", "90", "7" );
-    eval( "mknod", "/dev/mtd/4", "c", "90", "8" );
-    eval( "mknod", "/dev/mtd/4ro", "c", "90", "9" );
-*/
+
 	eval("mknod", "/dev/gpio", "c", "252", "0");
 
 	cprintf("sysinit() var\n");
@@ -170,7 +159,26 @@ sysprintf("echo \"write 0 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 1 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
-
+FILE *in=fopen("/dev/mtdblock/1","rb");
+if (in!=NULL)
+    {
+    unsigned char *config=malloc(65536);
+    fread(config,65536,1,in);
+    int len = sizeof("ethaddr=");
+    int i;
+    for (i=0;i<65535-len;i++)
+	{
+	if (!strncmp(&config[i],"ethaddr=",8))
+	    {
+	    char *mac = &config[i+8];
+	    eval("ifconfig","eth2","hw","ether",mac);
+	    nvram_set("et0macaddr_safe",mac);
+	    break;
+	    }
+	}
+    free(config);
+    fclose(in);
+    }
 #endif
 
 /*
