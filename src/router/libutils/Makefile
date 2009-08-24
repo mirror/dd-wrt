@@ -137,6 +137,9 @@ endif
 ifeq ($(CONFIG_NOP8670),y)
   CFLAGS += -DHAVE_NOP8670
 endif
+ifeq ($(CONFIG_DIR600),y)
+  CFLAGS += -DHAVE_DIR600
+endif
 ifeq ($(CONFIG_CORENET),y)
   CFLAGS += -DHAVE_CORENET
 endif
