@@ -1957,8 +1957,12 @@ static void filter_input(void)
 #endif
 #ifdef HAVE_VNCREPEATER
 	if (nvram_match("vncr_enable", "1") && strlen(wanface))
+		{
 		save2file("-A INPUT -p tcp -i %s --dport 5900 -j ACCEPT\n",
 			  wanface);
+		save2file("-A INPUT -p tcp -i %s --dport 5500 -j ACCEPT\n",
+			  wanface);
+		}
 #endif
 
 	/*
