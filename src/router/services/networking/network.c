@@ -1719,6 +1719,11 @@ void start_lan(void)
 		sysprintf("ead %s -B", eadline);
 #endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+
+#ifdef HAVE_RT2880
+#define getWifi(a) a
+#define getWDSSTA() NULL
+#endif
 #ifndef HAVE_NOWIFI
 	if (nvram_match("mac_clone_enable", "1") &&
 	    nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
