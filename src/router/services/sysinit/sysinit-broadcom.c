@@ -689,6 +689,9 @@ void start_sysinit(void)
 		nvram_set("wl0_ifname", "eth1");	
 		if (nvram_get("boot_wait") == NULL)
 		    nvram_set("boot_wait", "off");
+		if (nvram_match("vlan2ports", "0 8u"))
+			nvram_set("vlan2ports", "0 8");
+		nvram_set("ledbh0", "7");
 	break;
 	case ROUTER_NETGEAR_WNDR3300:
 		nvram_set("lan_ifnames", "eth0 eth2 eth3");	// dual radio
