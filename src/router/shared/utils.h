@@ -402,6 +402,8 @@
 
 #define ROUTER_BOARD_ESR9752 0x7610
 
+#define ROUTER_BOARD_DIR600B 0x771a
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

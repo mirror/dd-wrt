@@ -165,6 +165,13 @@ void start_sysinit(void)
 		sysprintf("switch reg w 70 ffff506f");
 #endif
 	}
+#ifdef HAVE_DIR600
+sysprintf("echo "write 0 0 0x3300" > /proc/rt3052/mii/ctrl");
+sysprintf("echo "write 1 0 0x3300" > /proc/rt3052/mii/ctrl");
+sysprintf("echo "write 2 0 0x3300" > /proc/rt3052/mii/ctrl");
+sysprintf("echo "write 3 0 0x3300" > /proc/rt3052/mii/ctrl");
+
+#endif
 
 /*
 
