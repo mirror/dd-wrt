@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <bcmnvram.h>
 #include <bcmutils.h>
+#include <cymac.h>
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
@@ -373,8 +374,8 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #ifdef HAVE_DIR600
 	char mac[32];
 	strcpy(mac,nvram_safe_get("et0macaddr_safe"));
-//	MAC_ADD(mac);
-//	MAC_ADD(mac);
+	MAC_ADD(mac);
+	MAC_ADD(mac);
 #endif
 	killall("rt2860apd", SIGTERM);
 	eval("ifconfig", "ra0", "down");
@@ -991,7 +992,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 //station
 
-	if (getSTA() || getWET() && !isSTA()) {
+	if ((getSTA() || getWET()) && !isSTA()) {
 		fprintf(fp, "ApCliEnable=1\n");
 		fprintf(fp, "ApCliSsid=%s\n", nvram_safe_get("wl0_ssid"));
 		if (nvram_match("wl0_akm", "psk")
@@ -1073,7 +1074,23 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	fclose(fp);
 
 	if (isSTA()) {
+#ifdef HAVE_DIR600
+	if (nvram_match("mac_clone_enable", "1") &&
+	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+	    nvram_invmatch("def_whwaddr", "")) {
+		sysprintf("insmod rt2860v2_sta mac=%s",nvram_safe_get("def_whwaddr"));	    
+	}else {
+		sysprintf("insmod rt2860v2_sta mac=%s",mac);
+		}
+#else
+	if (nvram_match("mac_clone_enable", "1") &&
+	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+	    nvram_invmatch("def_whwaddr", "")) {
+		sysprintf("insmod rt2860v2_sta mac=%s",nvram_safe_get("def_whwaddr"));	    
+	}else {
 		insmod("rt2860v2_sta");
+		}
+#endif
 		char *dev = "wl0";
 		char bridged[32];
 
@@ -1098,7 +1115,23 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		nvram_set(vathmac, vmacaddr);
 		setupSupplicant("wl0");
 	} else {
+#ifdef HAVE_DIR600
+	if (nvram_match("mac_clone_enable", "1") &&
+	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+	    nvram_invmatch("def_whwaddr", "")) {
+		sysprintf("insmod rt2860v2_ap mac=%s",nvram_safe_get("def_whwaddr"));	    
+	}else {
+		sysprintf("insmod rt2860v2_ap mac=%s",mac);
+		}
+#else
+	if (nvram_match("mac_clone_enable", "1") &&
+	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+	    nvram_invmatch("def_whwaddr", "")) {
+		sysprintf("insmod rt2860v2_ap mac=%s",nvram_safe_get("def_whwaddr"));	    
+	}else {
 		insmod("rt2860v2_ap");
+		}
+#endif
 
 		char *dev = "wl0";
 		char bridged[32];
