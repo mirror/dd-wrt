@@ -732,6 +732,9 @@ void reset_hwaddr(char *ifname)
 #ifdef HAVE_LS5
 		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
 #endif
+#ifdef HAVE_SOLO51
+		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+#endif
 #ifdef HAVE_WHRAG108
 		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
 #endif
@@ -1024,7 +1027,10 @@ void start_lan(void)
 	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
-#ifdef HAVE_LS2
+
+
+
+#if defined(HAVE_LS2) || defined(HAVE_SOLO51)
 	if (getSTA() || getWET() || CANBRIDGE()) {
 #if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2) || defined(HAVE_BS2HP) || defined(HAVE_MS2) || defined(HAVE_PICO2) || defined(HAVE_PICO2HP)
 		nvram_set("lan_ifname", "br0");
@@ -1452,7 +1458,7 @@ void start_lan(void)
 #endif
 			if (nvram_match("wan_ifname", name))
 				continue;
-#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51)
 			if (!strcmp(name, "eth2")) {
 				strcpy(realname, "ath0");
 			} else
@@ -2022,6 +2028,9 @@ void start_lan(void)
 #ifdef HAVE_LS2
 #define HAVE_RB500
 #endif
+#ifdef HAVE_SOLO51
+#define HAVE_RB500
+#endif
 #ifdef HAVE_LS5
 #define HAVE_RB500
 #endif
@@ -2323,6 +2332,10 @@ void start_wan(int status)
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LS2
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ?
+	    nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+#elif HAVE_SOLO51
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
