@@ -33,6 +33,8 @@ ifeq ($(CONFIG_BBOX),"mini")
 endif
 ifeq ($(CONFIG_BCMMODERN),y)
 	echo CONFIG_MKNOD=y >> busybox/.config
+else
+	echo "# CONFIG_MKNOD is not set" >> busybox/.config
 endif
 	cd busybox && make oldconfig
 endif
