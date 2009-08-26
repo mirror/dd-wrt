@@ -1123,8 +1123,10 @@ static void configure_single(int count)
 
 	setsysctrl(wif, "csma", atoi(nvram_default_get(wl_csma, "1")));
 	setsysctrl(wif, "intmit", atoi(nvram_default_get(wl_intmit, "-1")));
-	setsysctrl(wif, "noise_immunity",
-		   atoi(nvram_default_get(wl_noise_immunity, "0")));
+	int level = atoi(nvram_default_get(wl_noise_immunity, "4"));
+	if (level<0)
+	    level = 4;
+	setsysctrl(wif, "noise_immunity",level);
 	setsysctrl(wif, "ofdm_weak_det",
 		   atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
 
@@ -1986,6 +1988,15 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	}
 #endif
 #ifdef HAVE_LS2
+	strncpy(ifr.ifr_name, "ath0", IFNAMSIZ);
+	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
+		char eabuf[32];
+
+		nvram_set("wl0_hwaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	}
+#endif
+#ifdef HAVE_SOLO51
 	strncpy(ifr.ifr_name, "ath0", IFNAMSIZ);
 	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
 		char eabuf[32];

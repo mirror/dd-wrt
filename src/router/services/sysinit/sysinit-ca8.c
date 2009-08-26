@@ -57,7 +57,7 @@
 #include <utils.h>
 #include <cymac.h>
 
-// highly experimental
+extern void vlan_init(int num);
 
 void start_sysinit(void)
 {
@@ -151,6 +151,10 @@ void start_sysinit(void)
 			close(s);
 		}
 	}
+#ifdef HAVE_SOLO51
+	eval("ifconfig", "eth0", "up");	// wan
+	vlan_init(0xff);	// 4 lan + 1 wan
+#endif
 
 	insmod("ath_hal");
 	if (nvram_get("rate_control") != NULL) {
