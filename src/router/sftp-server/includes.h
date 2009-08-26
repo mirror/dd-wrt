@@ -57,7 +57,7 @@
  *-*-nto-qnx needs these headers for strcasecmp and LASTLOG_FILE respectively
  */
 #ifdef HAVE_STRINGS_H
-# include <strings.h>
+//# include <strings.h>
 #endif
 #ifdef HAVE_LOGIN_H
 # include <login.h>
