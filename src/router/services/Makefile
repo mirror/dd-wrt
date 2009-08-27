@@ -519,6 +519,9 @@ endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS_EXTRA += -DHAVE_LSX
 endif
+ifeq ($(CONFIG_AP83),y)
+CFLAGS_EXTRA += -DHAVE_AP83
+endif
 ifeq ($(CONFIG_RS),y)
 CFLAGS_EXTRA += -DHAVE_RS
 OBJS += overclock_routerstation.o
