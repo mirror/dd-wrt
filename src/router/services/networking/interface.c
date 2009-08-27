@@ -517,6 +517,9 @@ int flush_interfaces(void)
 #elif HAVE_RS
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+#elif HAVE_AP83
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
+		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_LSX
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
