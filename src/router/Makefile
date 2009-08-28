@@ -76,6 +76,7 @@ endif
 
 
 export ARCH:= mipsel
+export ARCHEXT: = .brcm24
 export ARCHITECTURE:= broadcom
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
 export CC := $(CROSS_COMPILE)gcc
@@ -152,10 +153,10 @@ endif
 #endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage ; \
+	    $(MAKE) -C $(LINUXDIR) zImage ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
+	    $(MAKE) -C $(LINUXDIR) modules ; \
 	fi
 	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
@@ -210,7 +211,7 @@ optimize-lib:
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
 
-install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(LINUXDIR)/.config
+install package: clean_target $(filter-out lib.mipsel.brcm24-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
@@ -219,7 +220,7 @@ install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) lib.mipsel-install
+	$(MAKE) lib.mipsel.brcm24-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) optimize-lib
 	# Install modules into filesystem
@@ -354,6 +355,9 @@ endif
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/netfilter
 ifneq ($(CONFIG_JFFS2),y)
 	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/jffs2.o
+endif
+ifneq ($(CONFIG_3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/serial
 endif
 	rm -f $(TARGETDIR)/usr/lib/libpcap.so
 	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/*.o		
