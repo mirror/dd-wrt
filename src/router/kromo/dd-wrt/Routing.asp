@@ -80,8 +80,8 @@ var update;
 
 addEvent(window, "load", function() {
 	
-	show_layer_ext(document.setup.ospfd_copt, 'idospfd', <% nvram_else_match("ospfd_copt", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.zebra_copt, 'idzebra', <% nvram_else_match("zebra_copt", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.static.ospfd_copt, 'idospfd', <% nvram_else_match("ospfd_copt", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.static.zebra_copt, 'idzebra', <% nvram_else_match("zebra_copt", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
 	update.start();
