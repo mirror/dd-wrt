@@ -4635,9 +4635,9 @@ void show_radius(webs_t wp, char *prefix, int showmacformat)
 		char acct[32];
 		char vvar[32];
 
-		strcpy(vvar, var);
+		strcpy(vvar, prefix);
 		rep(vvar, '.', 'X');
-		sprintf(acct, "%s_acct", prefix);
+		sprintf(acct, "%s_acct", var);
 		websWrite(wp,
 			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label18)</script></div>\n");
 		websWrite(wp,
@@ -4646,7 +4646,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat)
 							    "0") ?
 			  "checked=\"checked\"" : "");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct, false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  vvar, prefix, nvram_default_match(acct, "0",
 							    "0") ?
 			  "checked=\"checked\"" : "");
