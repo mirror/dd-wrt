@@ -1,0 +1,18 @@
+#
+# $Id$
+#
+
+TARGET      = @targetname@
+SRCS        = rlm_perl.c
+HEADERS     =
+RLM_CFLAGS  = @perl_cflags@
+RLM_LIBS    = @perl_ldflags@
+RLM_INSTALL = install-scripts
+
+## this uses the RLM_CFLAGS and RLM_LIBS and SRCS defs to make TARGET.
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)
+
+install-scripts:
+	$(INSTALL) -m 755 example.pl $(R)$(raddbdir)
