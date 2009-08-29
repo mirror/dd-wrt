@@ -13,8 +13,8 @@ freeradius-configure:
 	--datadir=/usr/share \
 	--includedir=/usr/include \
 	--infodir=/usr/share/info \
-	--libdir=/usr/lib/freeradius2 \
-	--libexecdir=/usr/lib/freeradius2 \
+	--libdir=/usr/lib \
+	--libexecdir=/usr/lib \
 	--with-raddbdir=/etc/freeradius2 \
 	--with-radacctdir=/var/db/radacct \
 	--with-logdir=/var/log \
@@ -107,7 +107,7 @@ freeradius-install:
 	rm -rf $(INSTALLDIR)/freeradius/usr/share/man
 	rm -rf $(INSTALLDIR)/freeradius/usr/include
 	rm -rf $(INSTALLDIR)/freeradius/var
-	rm -f $(INSTALLDIR)/freeradius/usr/lib/freeradius2/*.la
+	rm -f $(INSTALLDIR)/freeradius/usr/lib/*.la
 
 
 
