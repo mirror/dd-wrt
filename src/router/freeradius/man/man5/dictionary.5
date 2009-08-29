@@ -1,0 +1,133 @@
+.\"     # DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+.\"     # DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+.TH dictionary 5 "31 Oct 2005"
+.SH NAME
+dictionary \- RADIUS dictionary file
+.SH DESCRIPTION
+The master RADIUS dictionary file resides in
+\fI/etc/raddb/dictionary\fP.  It references other \fIdictionary\fP
+files located in \fI/usr/local/share/freeradius/\fP.  Each dictionary
+file contains a list of RADIUS attributes and values, which the server
+uses to map between descriptive names and on-the-wire data.  The names
+have no meaning outside of the RADIUS server itself, and are never
+exchanged between server and clients.
+.PP
+That is, editing the dictionaries will have NO EFFECT on anything
+other than the server that is reading those files.  Adding new
+attributes to the dictionaries will have NO EFFECT on RADIUS clients,
+and will not make RADIUS clients magically understand those
+attributes.  The dictionaries are solely for local administrator
+convenience, and are specific to each version of FreeRADIUS.
+.PP
+The dictionaries in \fI/usr/local/share\fP SHOULD NOT be edited unless
+you know exactly what you are doing.  Changing them will most likely
+break your RADIUS deployment.
+.PP
+If you need to add new attributes, please edit the
+\fI/etc/raddb/dictionary\fP file.  It's sole purpose is to contain
+site-local defintions that are added by the local administrator.
+
+.SH FORMAT
+Every line starting with a hash sign
+.RB (' # ')
+is treated as comment and ignored.
+.PP
+Each line of the file can contain one of the following strings
+.TP 0.5i
+.B ATTRIBUTE name  number  type [vendor|options]
+Define a RADIUS attribute name to number mapping.  The \fIname\fP
+field can be any non-space text, but is usually taken from
+\fIRFC2865\fP, and other related documents.  The \fInumber\fP field is
+also taken from the relevant documents, for that name.  The \fItype\fP
+field can be one of \fIstring\fP, \fIoctets\fP, \fIipaddr\fP,
+\fIinteger\fP, \fIdate\fP, \fIifid\fP, \fIipv6addr\fP,
+\fIipv6prefix\fP, or \fIether\fP \fIabinary\fP.  See the RFC's, or the main
+\fIdictionary\fP file for a description of the various types.
+
+The last (optional) field of an attribute definition can have either a
+vendor name, or options for that attribute.  When a vendor name is
+given, the attribute is defined to be a vendor specific attribute.
+Alternately, the options may be the a comma-separated list of the
+following options:
+
+.TP 0.5i
+.DS
+	encrypt=[1-3]
+.DE
+.RS
+Mark the attribute as being encrypted with one of three methods.  "1"
+means that the attribute is encrypted with the method as defined in
+\fIRFC2865\fP for the User-Password attribute.  "2" means that the
+password is encrypted with the method as defined in \fIRFC2868\fP for
+the Tunnel-Password attribute.  "3" means that the attribute is
+encrypted as per Ascend's definitions for the Ascend-Send-Secret attribute.
+.RE
+
+.DS
+	has_tag
+.DE
+.RS
+Mark the attribute as being permitted to have a tag, as defined in
+\fIRFC2868\fP.  The purpose of the tag is to allow grouping of
+attributes for tunnelled users.  See \fIRFC2868\fP for more details.
+.RE
+
+When the server receives an encoded attribute in a RADIUS packet, it
+looks up that attribute by number in the dictionary, and uses the name
+found there for printing diagnostic and log messages.
+
+.TP 0.5i
+.B VALUE attribute-name value-name number
+Define an attribute value name to number mapping, for an attribute of
+type \fIinteger\fP.  The \fIattribute-name\fP field MUST be previously
+defined by an \fIATTRIBUTE\fP entry.  The \fIvalue-name\fP field can
+be any non-space text, but is usually taken from \fIRFC2865\fP, or
+other documents..  The \fInumber\fP field is also taken from the
+relevant documents, for that name.
+
+When the server receives an encoded value in a RADIUS packet, it looks
+up the value of that attribute by number in the dictionary, and uses
+the name found there for printing diagnostic and log messages.
+
+.TP 0.5i
+.B VENDOR vendor-name number [format=t,l]
+Define a Vendor Specific Attribute encapsulation for \fIvendor-name\fP
+to \fInumber\fP.  For a list of vendor names and numbers, see
+http://www.iana.org/enterprise-numbers.txt.
+.PP
+The "format=t,l" statement tells the server how many octets to use to
+encode/decode the vendor "type" and "length" fields in the attributes.
+The default is "format=1,1", which does not have to be specified.  For
+USR VSA's, the format is "format=4,0", for Lucent VSA's it's
+"format=2,1", and for Starent VSA's it's "format=2,2".
+.PP
+The supported values for the number of type octets (i.e. the first
+digit) are 1, 2, and 4.  The support values for the number of length
+octets (i.e. the second digit) are 0, 1, and 2.  Any combination of
+those values will work.
+
+.TP 0.5i
+.B $INCLUDE filename
+Include dictionary entries from the file \fIfilename\fP.  The
+\fIfilename\fP is taken as relative to the location of the file which
+is asking for the inclusion.
+.PP
+.SH FILES
+.I /etc/raddb/dictionary,
+.I /usr/share/freeradius/dictionary.*
+.SH "SEE ALSO"
+.BR radiusd (8),
+.BR naslist (5),
+.BR RFC2865,
+.BR RFC2866,
+.BR RFC2868
