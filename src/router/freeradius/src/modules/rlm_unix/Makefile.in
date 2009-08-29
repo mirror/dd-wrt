@@ -1,0 +1,13 @@
+#
+# $Id$
+#
+
+TARGET     = @targetname@
+SRCS       = rlm_unix.c
+HEADERS    =
+RLM_LIBS   = @unix_ldflags@
+RLM_CFLAGS = @unix_cflags@
+
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)

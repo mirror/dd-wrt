@@ -1,0 +1,108 @@
+# -*- makefile -*-
+# Make.inc.in
+#
+# Version:	$Id$
+#
+
+# Location of files.
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+sysconfdir	= @sysconfdir@
+localstatedir	= @localstatedir@
+libdir		= @libdir@
+bindir		= @bindir@
+sbindir		= @sbindir@
+docdir		= @docdir@
+mandir		= @mandir@
+datadir		= @datadir@
+dictdir		= $(datadir)/freeradius
+logdir		= @logdir@
+includedir	= @includedir@
+raddbdir	= @raddbdir@
+radacctdir	= @radacctdir@
+top_builddir	= @abs_top_builddir@
+top_srcdir	= @abs_top_srcdir@
+
+MAKE		= @MAKE@
+CC		= @CC@
+RANLIB		= @RANLIB@
+INCLUDE		=
+CFLAGS		= $(INCLUDE) @CFLAGS@
+CPPFLAGS	= @CPPFLAGS@
+LIBPREFIX	= @LIBPREFIX@
+EXEEXT		= @EXEEXT@
+
+LIBTOOL		= @LIBTOOL@
+ACLOCAL		= @ACLOCAL@
+AUTOCONF	= @AUTOCONF@
+AUTOHEADER	= @AUTOHEADER@
+INSTALL		= ${top_builddir}/install-sh -c
+INSTALL_PROGRAM	= ${INSTALL}
+INSTALL_DATA	= ${INSTALL} -m 644
+INSTALL_SCRIPT	= ${INSTALL_PROGRAM}
+INSTALLSTRIP	= @INSTALLSTRIP@
+
+LCRYPT		= @CRYPTLIB@
+LIBS		= @LIBS@
+LDFLAGS		= @LDFLAGS@
+
+LOGDIR		= ${logdir}
+RADDBDIR	= ${raddbdir}
+RUNDIR		= ${localstatedir}/run/radiusd
+SBINDIR		= ${sbindir}
+RADIR		= ${radacctdir}
+LIBRADIUS	= $(top_builddir)/src/lib/$(LIBPREFIX)freeradius-radius.la
+
+LIBLTDL		= @LIBLTDL@
+INCLTDL		= @INCLTDL@
+LTDL_SUBDIRS	= @LTDL_SUBDIRS@
+
+USE_SHARED_LIBS	= @USE_SHARED_LIBS@
+USE_STATIC_LIBS = @USE_STATIC_LIBS@
+STATIC_MODULES	= @STATIC_MODULES@
+
+OPENSSL_LIBS	= @OPENSSL_LIBS@
+OPENSSL_INCLUDE = @OPENSSL_INCLUDE@
+
+LIBREADLINE	= @LIBREADLINE@
+
+#
+#  SQL driver defines
+#
+SQL_ODBC_LIBS = @ODBC_LIBS@
+SQL_ODBC_INCLUDE = @ODBC_INCLUDE@
+
+RADIUSD_MAJOR_VERSION	= @RADIUSD_MAJOR_VERSION@
+RADIUSD_MINOR_VERSION	= @RADIUSD_MINOR_VERSION@
+RADIUSD_VERSION		= @RADIUSD_VERSION@
+
+MODULES			= @MODULES@
+HOSTINFO		= @HOSTINFO@
+
+ifneq ($(WITH_OPENSSL_MD5),)
+LIBRADIUS_WITH_OPENSSL = 1
+CFLAGS += -DWITH_OPENSSL_MD5
+endif
+
+ifneq ($(WITH_OPENSSL_SHA1),)
+LIBRADIUS_WITH_OPENSSL = 1
+CFLAGS += -DWITH_OPENSSL_SHA1
+endif
+
+ifneq ($(LIBRADIUS_WITH_OPENSSL),)
+ifeq ($(OPENSSL_LIBS),)
+$(error OPENSSL_LIBS must be define in order to use WITH_OPENSSL_*)
+else
+LIBRADIUS += $(OPENSSL_LIBS)
+endif
+endif
+
+#  http://clang.llvm.org/StaticAnalysis.html
+#
+#  $ make scan | sed "s/.*Run '//;s/'.*//" > scan.sh
+#  $ ./scan.sh
+#
+SCAN_BUILD	= /path/to/checker-0.167/scan-build
+ifeq ($(SCAN),yes)
+CC		:= $(SCAN_BUILD) gcc -DFR_SCAN_BUILD
+endif

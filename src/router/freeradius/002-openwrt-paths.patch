@@ -1,0 +1,987 @@
+diff -Naur freeradius-server-2.1.4/raddb/attrs freeradius-server-2.1.4.new/raddb/attrs
+--- freeradius-server-2.1.4/raddb/attrs	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/attrs	2009-04-07 15:09:02.000000000 -0700
+@@ -1,7 +1,4 @@
+ #
+-#	Configuration file for the rlm_attr_filter module.
+-#	Please see rlm_attr_filter(5) manpage for more information.
+-#
+ #	$Id$
+ #
+ #	This file contains security and configuration information
+diff -Naur freeradius-server-2.1.4/raddb/attrs.access_reject freeradius-server-2.1.4.new/raddb/attrs.access_reject
+--- freeradius-server-2.1.4/raddb/attrs.access_reject	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/attrs.access_reject	2009-04-07 15:09:20.000000000 -0700
+@@ -1,7 +1,4 @@
+ #
+-#	Configuration file for the rlm_attr_filter module.
+-#	Please see rlm_attr_filter(5) manpage for more information.
+-#
+ #	$Id$
+ #
+ #	This configuration file is used to remove almost all of the attributes
+diff -Naur freeradius-server-2.1.4/raddb/attrs.accounting_response freeradius-server-2.1.4.new/raddb/attrs.accounting_response
+--- freeradius-server-2.1.4/raddb/attrs.accounting_response	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/attrs.accounting_response	2009-04-07 15:09:32.000000000 -0700
+@@ -1,7 +1,4 @@
+ #
+-#	Configuration file for the rlm_attr_filter module.
+-#	Please see rlm_attr_filter(5) manpage for more information.
+-#
+ #	$Id$
+ #
+ #	This configuration file is used to remove almost all of the attributes
+diff -Naur freeradius-server-2.1.4/raddb/attrs.pre-proxy freeradius-server-2.1.4.new/raddb/attrs.pre-proxy
+--- freeradius-server-2.1.4/raddb/attrs.pre-proxy	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/attrs.pre-proxy	2009-04-07 15:09:44.000000000 -0700
+@@ -1,7 +1,4 @@
+ #
+-#	Configuration file for the rlm_attr_filter module.
+-#	Please see rlm_attr_filter(5) manpage for more information.
+-#
+ #	$Id$
+ #
+ #	This file contains security and configuration information
+diff -Naur freeradius-server-2.1.4/raddb/dictionary.in freeradius-server-2.1.4.new/raddb/dictionary.in
+--- freeradius-server-2.1.4/raddb/dictionary.in	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/dictionary.in	2009-04-07 15:10:18.000000000 -0700
+@@ -11,14 +11,12 @@
+ #
+ #	The filename given here should be an absolute path. 
+ #
+-$INCLUDE	@prefix@/share/freeradius/dictionary
++$INCLUDE	@prefix@/share/freeradius2/dictionary
+ 
+ #
+ #	Place additional attributes or $INCLUDEs here.  They will
+ #	over-ride the definitions in the pre-defined dictionaries.
+ #
+-#	See the 'man' page for 'dictionary' for information on
+-#	the format of the dictionary files.
+ 
+ #
+ #	If you want to add entries to the dictionary file,
+diff -Naur freeradius-server-2.1.4/raddb/eap.conf freeradius-server-2.1.4.new/raddb/eap.conf
+--- freeradius-server-2.1.4/raddb/eap.conf	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/eap.conf	2009-04-07 15:20:28.000000000 -0700
+@@ -27,7 +27,7 @@
+ 		#  then that EAP type takes precedence over the
+ 		#  default type configured here.
+ 		#
+-		default_eap_type = md5
++		default_eap_type = peap
+ 
+ 		#  A list is maintained to correlate EAP-Response
+ 		#  packets with EAP-Request packets.  After a
+@@ -72,23 +72,8 @@
+ 		#  for wireless connections.  It is insecure, and does
+ 		#  not provide for dynamic WEP keys.
+ 		#
+-		md5 {
+-		}
+-
+-		# Cisco LEAP
+-		#
+-		#  We do not recommend using LEAP in new deployments.  See:
+-		#  http://www.securiteam.com/tools/5TP012ACKE.html
+-		#
+-		#  Cisco LEAP uses the MS-CHAP algorithm (but not
+-		#  the MS-CHAP attributes) to perform it's authentication.
+-		#
+-		#  As a result, LEAP *requires* access to the plain-text
+-		#  User-Password, or the NT-Password attributes.
+-		#  'System' authentication is impossible with LEAP.
+-		#
+-		leap {
+-		}
++#		md5 {
++#		}
+ 
+ 		#  Generic Token Card.
+ 		#
+@@ -101,10 +86,10 @@
+ 		#  the users password will go over the wire in plain-text,
+ 		#  for anyone to see.
+ 		#
+-		gtc {
++#		gtc {
+ 			#  The default challenge, which many clients
+ 			#  ignore..
+-			#challenge = "Password: "
++#			challenge = "Password: "
+ 
+ 			#  The plain-text response which comes back
+ 			#  is put into a User-Password attribute,
+@@ -118,8 +103,8 @@
+ 			#  configured for the request, and do the
+ 			#  authentication itself.
+ 			#
+-			auth_type = PAP
+-		}
++#			auth_type = PAP
++#		}
+ 
+ 		## EAP-TLS
+ 		#
+@@ -130,11 +115,6 @@
+ 		#  built, the "tls", "ttls", and "peap" sections will
+ 		#  be ignored.
+ 		#
+-		#  Otherwise, when the server first starts in debugging
+-		#  mode, test certificates will be created.  See the
+-		#  "make_cert_command" below for details, and the README
+-		#  file in raddb/certs
+-		#
+ 		#  These test certificates SHOULD NOT be used in a normal
+ 		#  deployment.  They are created only to make it easier
+ 		#  to install the server, and to perform some simple
+@@ -201,7 +181,7 @@
+ 			#  In these cases, fragment size should be
+ 			#  1024 or less.
+ 			#
+-		#	fragment_size = 1024
++			fragment_size = 1024
+ 
+ 			#  include_length is a flag which is
+ 			#  by default set to yes If set to
+@@ -211,7 +191,7 @@
+ 			#  message is included ONLY in the
+ 			#  First packet of a fragment series.
+ 			#
+-		#	include_length = yes
++			include_length = yes
+ 
+ 			#  Check the Certificate Revocation List
+ 			#
+@@ -220,83 +200,74 @@
+ 			#    'c_rehash' is OpenSSL's command.
+ 			#  3) uncomment the line below.
+ 			#  5) Restart radiusd
+-		#	check_crl = yes
+-		#	CA_path = /path/to/directory/with/ca_certs/and/crls/
++#			check_crl = yes
++#			CA_path = /path/to/directory/with/ca_certs/and/crls/
++
++			#
++			#  If check_cert_issuer is set, the value will
++			#  be checked against the DN of the issuer in
++			#  the client certificate.  If the values do not
++			#  match, the cerficate verification will fail,
++			#  rejecting the user.
++			#
++#		       check_cert_issuer = "/C=GB/ST=Berkshire/L=Newbury/O=My Company Ltd"
++
++			#
++			#  If check_cert_cn is set, the value will
++			#  be xlat'ed and checked against the CN
++			#  in the client certificate.  If the values
++			#  do not match, the certificate verification
++			#  will fail rejecting the user.
++			#
++			#  This check is done only if the previous
++			#  "check_cert_issuer" is not set, or if
++			#  the check succeeds.
++			#
++#			check_cert_cn = %{User-Name}
+ 
+-		       #
+-		       #  If check_cert_issuer is set, the value will
+-		       #  be checked against the DN of the issuer in
+-		       #  the client certificate.  If the values do not
+-		       #  match, the cerficate verification will fail,
+-		       #  rejecting the user.
+-		       #
+-		#       check_cert_issuer = "/C=GB/ST=Berkshire/L=Newbury/O=My Company Ltd"
+-
+-		       #
+-		       #  If check_cert_cn is set, the value will
+-		       #  be xlat'ed and checked against the CN
+-		       #  in the client certificate.  If the values
+-		       #  do not match, the certificate verification
+-		       #  will fail rejecting the user.
+-		       #
+-		       #  This check is done only if the previous
+-		       #  "check_cert_issuer" is not set, or if
+-		       #  the check succeeds.
+-		       #
+-		#	check_cert_cn = %{User-Name}
+-		#
+ 			# Set this option to specify the allowed
+ 			# TLS cipher suites.  The format is listed
+ 			# in "man 1 ciphers".
+ 			cipher_list = "DEFAULT"
+ 
+ 			#
+-
+-			#  This configuration entry should be deleted
+-			#  once the server is running in a normal
+-			#  configuration.  It is here ONLY to make
+-			#  initial deployments easier.
+-			#
+-			make_cert_command = "${certdir}/bootstrap"
+-
+-			#
+ 			#  Session resumption / fast reauthentication
+ 			#  cache.
+ 			#
+-			cache {
+-			      #
+-			      #  Enable it.  The default is "no".
+-			      #  Deleting the entire "cache" subsection
+-			      #  Also disables caching.
+-			      #
+-			      #  You can disallow resumption for a
+-			      #  particular user by adding the following
+-			      #  attribute to the control item list:
+-			      #
+-			      #		Allow-Session-Resumption = No
+-			      #
+-			      #  If "enable = no" below, you CANNOT
+-			      #  enable resumption for just one user
+-			      #  by setting the above attribute to "yes".
+-			      #
+-			      enable = no
+-
+-			      #
+-			      #  Lifetime of the cached entries, in hours.
+-			      #  The sessions will be deleted after this
+-			      #  time.
+-			      #
+-			      lifetime = 24 # hours
+-
+-			      #
+-			      #  The maximum number of entries in the
+-			      #  cache.  Set to "0" for "infinite".
+-			      #
+-			      #  This could be set to the number of users
+-			      #  who are logged in... which can be a LOT.
+-			      #
+-			      max_entries = 255
+-			}
++#			cache {
++				#
++				#  Enable it.  The default is "no".
++				#  Deleting the entire "cache" subsection
++				#  Also disables caching.
++				#
++				#  You can disallow resumption for a
++				#  particular user by adding the following
++				#  attribute to the control item list:
++				#
++				#		Allow-Session-Resumption = No
++				#
++				#  If "enable = no" below, you CANNOT
++				#  enable resumption for just one user
++				#  by setting the above attribute to "yes".
++				#
++#				enable = no
++
++				#
++				#  Lifetime of the cached entries, in hours.
++				#  The sessions will be deleted after this
++				#  time.
++				#
++#				lifetime = 24 # hours
++
++				#
++				#  The maximum number of entries in the
++				#  cache.  Set to "0" for "infinite".
++				#
++				#  This could be set to the number of users
++				#  who are logged in... which can be a LOT.
++				#
++#				max_entries = 255
++#			}
+ 		}
+ 
+ 		#  The TTLS module implements the EAP-TTLS protocol,
+@@ -320,7 +291,7 @@
+ 		#
+ 		#  in the control items for a request.
+ 		#
+-		ttls {
++#		ttls {
+ 			#  The tunneled EAP session needs a default
+ 			#  EAP type which is separate from the one for
+ 			#  the non-tunneled EAP module.  Inside of the
+@@ -328,7 +299,7 @@
+ 			#  If the request does not contain an EAP
+ 			#  conversation, then this configuration entry
+ 			#  is ignored.
+-			default_eap_type = md5
++#			default_eap_type = mschapv2
+ 
+ 			#  The tunneled authentication request does
+ 			#  not usually contain useful attributes
+@@ -344,7 +315,7 @@
+ 			#  is copied to the tunneled request.
+ 			#
+ 			# allowed values: {no, yes}
+-			copy_request_to_tunnel = no
++#			copy_request_to_tunnel = yes
+ 
+ 			#  The reply attributes sent to the NAS are
+ 			#  usually based on the name of the user
+@@ -357,20 +328,8 @@
+ 			#  the tunneled request.
+ 			#
+ 			# allowed values: {no, yes}
+-			use_tunneled_reply = no
+-
+-			#
+-			#  The inner tunneled request can be sent
+-			#  through a virtual server constructed
+-			#  specifically for this purpose.
+-			#
+-			#  If this entry is commented out, the inner
+-			#  tunneled request will be sent through
+-			#  the virtual server that processed the
+-			#  outer requests.
+-			#
+-			virtual_server = "inner-tunnel"
+-		}
++#			use_tunneled_reply = yes
++#		}
+ 
+ 		##################################################
+ 		#
+@@ -433,26 +392,16 @@
+ 
+ 			#  the PEAP module also has these configuration
+ 			#  items, which are the same as for TTLS.
+-			copy_request_to_tunnel = no
+-			use_tunneled_reply = no
++			copy_request_to_tunnel = yes
++			use_tunneled_reply = yes
+ 
+ 			#  When the tunneled session is proxied, the
+ 			#  home server may not understand EAP-MSCHAP-V2.
+ 			#  Set this entry to "no" to proxy the tunneled
+ 			#  EAP-MSCHAP-V2 as normal MSCHAPv2.
+-		#	proxy_tunneled_request_as_eap = yes
++			proxy_tunneled_request_as_eap = no
+ 
+-			#
+-			#  The inner tunneled request can be sent
+-			#  through a virtual server constructed
+-			#  specifically for this purpose.
+-			#
+-			#  If this entry is commented out, the inner
+-			#  tunneled request will be sent through
+-			#  the virtual server that processed the
+-			#  outer requests.
+-			#
+-			virtual_server = "inner-tunnel"
++			EAP-TLS-Require-Client-Cert = no
+ 		}
+ 
+ 		#
+diff -Naur freeradius-server-2.1.4/raddb/ldap.attrmap freeradius-server-2.1.4.new/raddb/ldap.attrmap
+--- freeradius-server-2.1.4/raddb/ldap.attrmap	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/ldap.attrmap	2009-04-07 15:21:54.000000000 -0700
+@@ -13,8 +13,7 @@
+ #			    If not present, defaults to "==" for checkItems,
+ #			    and "=" for replyItems.
+ #			    If present, the operator here should be one
+-#			    of the same operators as defined in the "users"3
+-#			    file ("man users", or "man 5 users").
++#			    of the same operators as defined in the "users" file.
+ #			    If an operator is present in the value of the
+ #			    LDAP entry (i.e. ":=foo"), then it over-rides
+ #			    both the default, and any operator given here.
+diff -Naur freeradius-server-2.1.4/raddb/modules/counter freeradius-server-2.1.4.new/raddb/modules/counter
+--- freeradius-server-2.1.4/raddb/modules/counter	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/modules/counter	2009-04-08 01:34:16.000000000 -0700
+@@ -69,7 +69,7 @@
+ #  'check-name' attribute.
+ #
+ counter daily {
+-	filename = ${db_dir}/db.daily
++	filename = ${radacctdir}/db.daily
+ 	key = User-Name
+ 	count-attribute = Acct-Session-Time
+ 	reset = daily
+diff -Naur freeradius-server-2.1.4/raddb/modules/detail freeradius-server-2.1.4.new/raddb/modules/detail
+--- freeradius-server-2.1.4/raddb/modules/detail	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/modules/detail	2009-04-07 15:28:33.000000000 -0700
+@@ -46,8 +46,7 @@
+ 
+ 	#
+ 	#  Every entry in the detail file has a header which
+-	#  is a timestamp.  By default, we use the ctime
+-	#  format (see "man ctime" for details).
++	#  is a timestamp.  By default, we use the ctime format.
+ 	#
+ 	#  The header can be customized by editing this
+ 	#  string.  See "doc/variables.txt" for a description
+diff -Naur freeradius-server-2.1.4/raddb/modules/exec freeradius-server-2.1.4.new/raddb/modules/exec
+--- freeradius-server-2.1.4/raddb/modules/exec	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/modules/exec	2009-04-07 15:29:45.000000000 -0700
+@@ -15,9 +15,8 @@
+ #  of the program which is executed.  Due to RADIUS protocol
+ #  limitations, any output over 253 bytes will be ignored.
+ #
+-#  The RADIUS attributes from the user request will be placed
+-#  into environment variables of the executed program, as
+-#  described in "man unlang" and in doc/variables.txt
++#  The RADIUS attributes from the user request will be placed into environment
++#  variables of the executed program, as described in doc/variables.txt
+ #
+ #  See also "echo" for more sample configuration.
+ #
+diff -Naur freeradius-server-2.1.4/raddb/modules/pap freeradius-server-2.1.4.new/raddb/modules/pap
+--- freeradius-server-2.1.4/raddb/modules/pap	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/modules/pap	2009-04-07 15:31:17.000000000 -0700
+@@ -4,8 +4,7 @@
+ 
+ # PAP module to authenticate users based on their stored password
+ #
+-#  Supports multiple encryption/hash schemes.  See "man rlm_pap"
+-#  for details.
++#  Supports multiple encryption/hash schemes.
+ #
+ #  The "auto_header" configuration item can be set to "yes".
+ #  In this case, the module will look inside of the User-Password
+@@ -14,5 +13,5 @@
+ #  with the correct value.  It will also automatically handle
+ #  Base-64 encoded data, hex strings, and binary data.
+ pap {
+-	auto_header = no
++	auto_header = yes
+ }
+diff -Naur freeradius-server-2.1.4/raddb/modules/radutmp freeradius-server-2.1.4.new/raddb/modules/radutmp
+--- freeradius-server-2.1.4/raddb/modules/radutmp	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/modules/radutmp	2009-04-07 11:13:56.000000000 -0700
+@@ -12,7 +12,7 @@
+ 	#  Where the file is stored.  It's not a log file,
+ 	#  so it doesn't need rotating.
+ 	#
+-	filename = ${logdir}/radutmp
++	filename = ${radacctdir}/radutmp
+ 
+ 	#  The field in the packet to key on for the
+ 	#  'user' name,  If you have other fields which you want
+diff -Naur freeradius-server-2.1.4/raddb/modules/sradutmp freeradius-server-2.1.4.new/raddb/modules/sradutmp
+--- freeradius-server-2.1.4/raddb/modules/sradutmp	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/modules/sradutmp	2009-04-07 11:14:07.000000000 -0700
+@@ -10,7 +10,7 @@
+ # then name "sradutmp" to identify it later in the "accounting"
+ # section.
+ radutmp sradutmp {
+-	filename = ${logdir}/sradutmp
++	filename = ${radacctdir}/sradutmp
+ 	perm = 0644
+ 	callerid = "no"
+ }
+diff -Naur freeradius-server-2.1.4/raddb/preproxy_users freeradius-server-2.1.4.new/raddb/preproxy_users
+--- freeradius-server-2.1.4/raddb/preproxy_users	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/preproxy_users	2009-04-07 15:23:02.000000000 -0700
+@@ -1,6 +1,5 @@
+ #
+ #  Configuration file for the rlm_files module.
+-#  Please see rlm_files(5) manpage for more information.
+ #
+ #  $Id$
+ #
+diff -Naur freeradius-server-2.1.4/raddb/proxy.conf freeradius-server-2.1.4.new/raddb/proxy.conf
+--- freeradius-server-2.1.4/raddb/proxy.conf	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/proxy.conf	2009-04-07 15:22:45.000000000 -0700
+@@ -525,9 +525,8 @@
+ #  This section defines a new-style "realm".  Note the in version 2.0,
+ #  there are many fewer configuration items than in 1.x for a realm.
+ #
+-#  Automatic proxying is done via the "realms" module (see "man
+-#  rlm_realm").  To manually proxy the request put this entry in the
+-#  "users" file:
++#  Automatic proxying is done via the "realms" module.
++#  To manually proxy the request put this entry in the "users" file:
+ 
+ #
+ #
+diff -Naur freeradius-server-2.1.4/raddb/radiusd.conf.in freeradius-server-2.1.4.new/raddb/radiusd.conf.in
+--- freeradius-server-2.1.4/raddb/radiusd.conf.in	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/radiusd.conf.in	2009-04-07 15:34:38.000000000 -0700
+@@ -8,11 +8,6 @@
+ 
+ ######################################################################
+ #
+-#	Read "man radiusd" before editing this file.  See the section
+-#	titled DEBUGGING.  It outlines a method where you can quickly
+-#	obtain the configuration you want, without running into
+-#	trouble.
+-#
+ #	Run the server in debugging mode, and READ the output.
+ #
+ #		$ radiusd -X
+@@ -41,14 +36,8 @@
+ #  	file, it is exported through the API to modules that ask for
+ #  	it.
+ #
+-#	See "man radiusd.conf" for documentation on the format of this
+-#	file.  Note that the individual configuration items are NOT
+-#	documented in that "man" page.  They are only documented here,
+-#	in the comments.
+-#
+ #	As of 2.0.0, FreeRADIUS supports a simple processing language
+ #	in the "authorize", "authenticate", "accounting", etc. sections.
+-#	See "man unlang" for details.
+ #
+ 
+ prefix = @prefix@
+@@ -66,7 +55,7 @@
+ 
+ #  Location of config and logfiles.
+ confdir = ${raddbdir}
+-run_dir = ${localstatedir}/run/${name}
++run_dir = ${localstatedir}/run
+ 
+ # Should likely be ${localstatedir}/lib/radiusd
+ db_dir = ${raddbdir}
+@@ -112,7 +101,7 @@
+ #
+ #  This file is written when ONLY running in daemon mode.
+ #
+-#  e.g.:  kill -HUP `cat /var/run/radiusd/radiusd.pid`
++#  e.g.:  kill -HUP `cat /var/run/radiusd.pid`
+ #
+ pidfile = ${run_dir}/${name}.pid
+ 
+@@ -283,7 +272,7 @@
+ 	#  If your system does not support this feature, you will
+ 	#  get an error if you try to use it.
+ 	#
+-#	interface = eth0
++	interface = br-lan
+ 
+ 	#  Per-socket lists of clients.  This is a very useful feature.
+ 	#
+@@ -310,7 +299,7 @@
+ #	ipv6addr = ::
+ 	port = 0
+ 	type = acct
+-#	interface = eth0
++	interface = br-lan
+ #	clients = per_socket_clients
+ }
+ 
+@@ -445,9 +434,6 @@
+ 	auth_goodpass = no
+ }
+ 
+-#  The program to execute to do concurrency checks.
+-checkrad = ${sbindir}/checkrad
+-
+ # SECURITY CONFIGURATION
+ #
+ #  There may be multiple methods of attacking on the server.  This
+@@ -522,8 +508,8 @@
+ #
+ #  allowed values: {no, yes}
+ #
+-proxy_requests  = yes
+-$INCLUDE proxy.conf
++proxy_requests  = no
++#$INCLUDE proxy.conf
+ 
+ 
+ # CLIENTS CONFIGURATION
+@@ -675,10 +661,6 @@
+ 	#
+ #	$INCLUDE sql/mysql/counter.conf
+ 
+-	#
+-	#  IP addresses managed in an SQL table.
+-	#
+-#	$INCLUDE sqlippool.conf
+ }
+ 
+ # Instantiation
+@@ -703,7 +685,7 @@
+ 	#  The entire command line (and output) must fit into 253 bytes.
+ 	#
+ 	#  e.g. Framed-Pool = `%{exec:/bin/echo foo}`
+-	exec
++#	exec
+ 
+ 	#
+ 	#  The expression module doesn't do authorization,
+@@ -716,15 +698,15 @@
+ 	#  listed in any other section.  See 'doc/rlm_expr' for
+ 	#  more information.
+ 	#
+-	expr
++#	expr
+ 
+ 	#
+ 	# We add the counter module here so that it registers
+ 	# the check-name attribute before any module which sets
+ 	# it
+ #	daily
+-	expiration
+-	logintime
++#	expiration
++#	logintime
+ 
+ 	# subsections here can be thought of as "virtual" modules.
+ 	#
+@@ -748,7 +730,7 @@
+ #	to multiple times.
+ #
+ ######################################################################
+-$INCLUDE policy.conf
++#$INCLUDE policy.conf
+ 
+ ######################################################################
+ #
+@@ -758,9 +740,9 @@
+ #	match the regular expression: /[a-zA-Z0-9_.]+/
+ #
+ #	It allows you to define new virtual servers simply by placing
+-#	a file into the raddb/sites-enabled/ directory.
++#	a file into the /etc/freeradius2/sites/ directory.
+ #
+-$INCLUDE sites-enabled/
++$INCLUDE sites/
+ 
+ ######################################################################
+ #
+@@ -768,15 +750,11 @@
+ #	"authenticate {}", "accounting {}", have been moved to the
+ #	the file:
+ #
+-#		raddb/sites-available/default
++#		/etc/freeradius2/sites/default
+ #
+ #	This is the "default" virtual server that has the same
+ #	configuration as in version 1.0.x and 1.1.x.  The default
+ #	installation enables this virtual server.  You should
+ #	edit it to create policies for your local site.
+ #
+-#	For more documentation on virtual servers, see:
+-#
+-#		raddb/sites-available/README
+-#
+ ######################################################################
+diff -Naur freeradius-server-2.1.4/raddb/sites-available/default freeradius-server-2.1.4.new/raddb/sites-available/default
+--- freeradius-server-2.1.4/raddb/sites-available/default	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/sites-available/default	2009-04-07 15:27:12.000000000 -0700
+@@ -11,12 +11,6 @@
+ #
+ ######################################################################
+ #
+-#	Read "man radiusd" before editing this file.  See the section
+-#	titled DEBUGGING.  It outlines a method where you can quickly
+-#	obtain the configuration you want, without running into
+-#	trouble.  See also "man unlang", which documents the format
+-#	of this file.
+-#
+ #	This configuration is designed to work in the widest possible
+ #	set of circumstances, with the widest possible number of
+ #	authentication methods.  This means that in general, you should
+@@ -69,7 +63,7 @@
+ 	#  'raddb/huntgroups' files.
+ 	#
+ 	#  It also adds the %{Client-IP-Address} attribute to the request.
+-	preprocess
++#	preprocess
+ 
+ 	#
+ 	#  If you want to have a log of authentication requests,
+@@ -80,7 +74,7 @@
+ 	#
+ 	#  The chap module will set 'Auth-Type := CHAP' if we are
+ 	#  handling a CHAP request and Auth-Type has not already been set
+-	chap
++#	chap
+ 
+ 	#
+ 	#  If the users are logging in with an MS-CHAP-Challenge
+@@ -88,13 +82,7 @@
+ 	#  the MS-CHAP-Challenge attribute, and add 'Auth-Type := MS-CHAP'
+ 	#  to the request, which will cause the server to then use
+ 	#  the mschap module for authentication.
+-	mschap
+-
+-	#
+-	#  If you have a Cisco SIP server authenticating against
+-	#  FreeRADIUS, uncomment the following line, and the 'digest'
+-	#  line in the 'authenticate' section.
+-#	digest
++#	mschap
+ 
+ 	#
+ 	#  Look for IPASS style 'realm/', and if not found, look for
+@@ -108,7 +96,7 @@
+ 	#  Otherwise, when the first style of realm doesn't match,
+ 	#  the other styles won't be checked.
+ 	#
+-	suffix
++#	suffix
+ #	ntdomain
+ 
+ 	#
+@@ -133,14 +121,6 @@
+ 	}
+ 
+ 	#
+-	#  Pull crypt'd passwords from /etc/passwd or /etc/shadow,
+-	#  using the system API's to get the password.  If you want
+-	#  to read /etc/passwd or /etc/shadow directly, see the
+-	#  passwd module in radiusd.conf.
+-	#
+-	unix
+-
+-	#
+ 	#  Read the 'users' file
+ 	files
+ 
+@@ -152,28 +132,11 @@
+ #	sql
+ 
+ 	#
+-	#  If you are using /etc/smbpasswd, and are also doing
+-	#  mschap authentication, the un-comment this line, and
+-	#  configure the 'etc_smbpasswd' module, above.
+-#	etc_smbpasswd
+-
+-	#
+ 	#  The ldap module will set Auth-Type to LDAP if it has not
+ 	#  already been set
+ #	ldap
+ 
+ 	#
+-	#  Enforce daily limits on time spent logged in.
+-#	daily
+-
+-	#
+-	# Use the checkval module
+-#	checkval
+-
+-	expiration
+-	logintime
+-
+-	#
+ 	#  If no other module has claimed responsibility for
+ 	#  authentication, then try to use PAP.  This allows the
+ 	#  other modules listed above to add a "known good" password
+@@ -248,24 +211,6 @@
+ 		mschap
+ 	}
+ 
+-	#
+-	#  If you have a Cisco SIP server authenticating against
+-	#  FreeRADIUS, uncomment the following line, and the 'digest'
+-	#  line in the 'authorize' section.
+-#	digest
+-
+-	#
+-	#  Pluggable Authentication Modules.
+-#	pam
+-
+-	#
+-	#  See 'man getpwent' for information on how the 'unix'
+-	#  module checks the users password.  Note that packets
+-	#  containing CHAP-Password attributes CANNOT be authenticated
+-	#  against /etc/passwd!  See the FAQ for details.
+-	#  
+-	unix
+-
+ 	# Uncomment it if you want to use ldap for authentication
+ 	#
+ 	# Note that this means "check plain-text password against
+@@ -278,19 +223,15 @@
+ 	#
+ 	#  Allow EAP authentication.
+ 	eap
++	pap
+ }
+ 
+ 
+ #
+ #  Pre-accounting.  Decide which accounting type to use.
+ #
+-preacct {
+-	preprocess
+-
+-	#
+-	#  Ensure that we have a semi-unique identifier for every
+-	#  request, and many NAS boxes are broken.
+-	acct_unique
++#preacct {
++#	preprocess
+ 
+ 	#
+ 	#  Look for IPASS-style 'realm/', and if not found, look for
+@@ -300,13 +241,13 @@
+ 	#  Accounting requests are generally proxied to the same
+ 	#  home server as authentication requests.
+ #	IPASS
+-	suffix
++#	suffix
+ #	ntdomain
+ 
+ 	#
+ 	#  Read the 'acct_users' file
+-	files
+-}
++#	files
++#}
+ 
+ #
+ #  Accounting.  Log the accounting data.
+@@ -316,14 +257,9 @@
+ 	#  Create a 'detail'ed log of the packets.
+ 	#  Note that accounting requests which are proxied
+ 	#  are also logged in the detail file.
+-	detail
++#	detail
+ #	daily
+ 
+-	#  Update the wtmp file
+-	#
+-	#  If you don't use "radlast", you can delete this line.
+-	unix
+-
+ 	#
+ 	#  For Simultaneous-Use tracking.
+ 	#
+@@ -332,9 +268,6 @@
+ 	radutmp
+ #	sradutmp
+ 
+-	#  Return an address to the IP Pool when we see a stop record.
+-#	main_pool
+-
+ 	#
+ 	#  Log traffic to an SQL database.
+ 	#
+@@ -351,7 +284,7 @@
+ #	pgsql-voip
+ 
+ 	#  Filter attributes from the accounting response.
+-	attr_filter.accounting_response
++	#attr_filter.accounting_response
+ 
+ 	#
+ 	#  See "Autz-Type Status-Server" for how this works.
+@@ -377,10 +310,7 @@
+ #  Post-Authentication
+ #  Once we KNOW that the user has been authenticated, there are
+ #  additional steps we can take.
+-post-auth {
+-	#  Get an address from the IP Pool.
+-#	main_pool
+-
++#post-auth {
+ 	#
+ 	#  If you want to have a log of authentication replies,
+ 	#  un-comment the following line, and the 'detail reply_log'
+@@ -406,7 +336,7 @@
+ 	#
+ #	ldap
+ 
+-	exec
++#	exec
+ 
+ 	#
+ 	#  Access-Reject packets are sent through the REJECT sub-section of the
+@@ -415,10 +345,10 @@
+ 	#  Add the ldap module name (or instance) if you have set 
+ 	#  'edir_account_policy_check = yes' in the ldap module configuration
+ 	#
+-	Post-Auth-Type REJECT {
+-		attr_filter.access_reject
+-	}
+-}
++#	Post-Auth-Type REJECT {
++#		attr_filter.access_reject
++#	}
++#}
+ 
+ #
+ #  When the server decides to proxy a request to a home server,
+@@ -428,7 +358,7 @@
+ #
+ #  Only a few modules currently have this method.
+ #
+-pre-proxy {
++#pre-proxy {
+ #	attr_rewrite
+ 
+ 	#  Uncomment the following line if you want to change attributes
+@@ -444,14 +374,14 @@
+ 	#  server, un-comment the following line, and the
+ 	#  'detail pre_proxy_log' section, above.
+ #	pre_proxy_log
+-}
++#}
+ 
+ #
+ #  When the server receives a reply to a request it proxied
+ #  to a home server, the request may be massaged here, in the
+ #  post-proxy stage.
+ #
+-post-proxy {
++#post-proxy {
+ 
+ 	#  If you want to have a log of replies from a home server,
+ 	#  un-comment the following line, and the 'detail post_proxy_log'
+@@ -475,7 +405,7 @@
+ 	#  hidden inside of the EAP packet, and the end server will
+ 	#  reject the EAP request.
+ 	#
+-	eap
++#	eap
+ 
+ 	#
+ 	#  If the server tries to proxy a request and fails, then the
+@@ -497,6 +427,5 @@
+ #	Post-Proxy-Type Fail {
+ #			detail
+ #	}
+-
+-}
++#}
+ 
+diff -Naur freeradius-server-2.1.4/raddb/users freeradius-server-2.1.4.new/raddb/users
+--- freeradius-server-2.1.4/raddb/users	2009-03-10 19:26:50.000000000 -0700
++++ freeradius-server-2.1.4.new/raddb/users	2009-04-07 15:23:54.000000000 -0700
+@@ -1,6 +1,5 @@
+ #
+-#	Please read the documentation file ../doc/processing_users_file,
+-#	or 'man 5 users' (after installing the server) for more information.
++#	Please read the documentation file ../doc/processing_users_file.
+ #
+ #	This file contains authentication security and configuration
+ #	information for each user.  Accounting requests are NOT processed
+@@ -169,22 +168,22 @@
+ #	by the terminal server in which case there may not be a "P" suffix.
+ #	The terminal server sends "Framed-Protocol = PPP" for auto PPP.
+ #
+-DEFAULT	Framed-Protocol == PPP
+-	Framed-Protocol = PPP,
+-	Framed-Compression = Van-Jacobson-TCP-IP
++#DEFAULT	Framed-Protocol == PPP
++#	Framed-Protocol = PPP,
++#	Framed-Compression = Van-Jacobson-TCP-IP
+ 
+ #
+ # Default for CSLIP: dynamic IP address, SLIP mode, VJ-compression.
+ #
+-DEFAULT	Hint == "CSLIP"
+-	Framed-Protocol = SLIP,
+-	Framed-Compression = Van-Jacobson-TCP-IP
++#DEFAULT	Hint == "CSLIP"
++#	Framed-Protocol = SLIP,
++#	Framed-Compression = Van-Jacobson-TCP-IP
+ 
+ #
+ # Default for SLIP: dynamic IP address, SLIP mode.
+ #
+-DEFAULT	Hint == "SLIP"
+-	Framed-Protocol = SLIP
++#DEFAULT	Hint == "SLIP"
++#	Framed-Protocol = SLIP
+ 
+ #
+ # Last default: rlogin to our main server.

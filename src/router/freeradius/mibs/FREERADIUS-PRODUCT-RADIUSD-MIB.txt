@@ -1,0 +1,37 @@
+FREERADIUS-PRODUCT-RADIUSD-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+	MODULE-IDENTITY,
+	OBJECT-IDENTITY
+		FROM SNMPv2-SMI
+	freeRadiusProducts
+		FROM FREERADIUS-SMI;
+
+freeradius MODULE-IDENTITY
+	LAST-UPDATED "200712170000Z"
+	ORGANIZATION "FreeRADIUS Project"
+	CONTACT-INFO
+		"FreeRADIUS Network Object Model Environment project
+		
+		see http://www.freeradius.org for contact persons of a particular
+		area or subproject of FREERADIUS.
+
+		Administrative contact for MIB module:
+
+		Alan DeKok
+
+		email: aland@freeradius.org"
+	DESCRIPTION
+		"The product registrations for the FreeRADIUS SNMP subagent.
+		These registrations are guaranteed to be unique and are used
+		for SMUX registration by default (if not overridden manually)."
+	::= { freeRadiusProducts 1 }
+
+radiusd OBJECT-IDENTITY
+	STATUS  current
+	DESCRIPTION
+		"radiusd is the RADIUS protocol deamon of the FreeRADIUS
+		project."
+	::= { freeradius 1 }
+
+END
