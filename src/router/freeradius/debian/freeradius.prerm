@@ -1,0 +1,23 @@
+#! /bin/sh
+
+set -e
+
+case "$1" in
+  remove)
+	if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+		invoke-rc.d freeradius stop
+	else
+		/etc/init.d/freeradius stop
+	fi
+	;;
+  upgrade)
+	;;
+  failed-upgrade)
+	;;
+  deconfigure)
+	;;
+esac
+
+#DEBHELPER#
+
+exit 0
