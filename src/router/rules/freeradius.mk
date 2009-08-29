@@ -103,10 +103,11 @@ freeradius-clean:
 
 freeradius-install:
 	make -C freeradius install R=$(INSTALLDIR)/freeradius
-	rm -rf $(INSTALLDIR)/freeradius/usr/share
+	rm -rf $(INSTALLDIR)/freeradius/usr/share/doc
+	rm -rf $(INSTALLDIR)/freeradius/usr/share/man
 	rm -rf $(INSTALLDIR)/freeradius/usr/include
 	rm -rf $(INSTALLDIR)/freeradius/var
-	rm -f $(INSTALLDIR)/freeradius/usr/lib/*.la
+	rm -f $(INSTALLDIR)/freeradius/usr/lib/freeradius2/*.la
 
 
 
