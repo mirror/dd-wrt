@@ -9,5 +9,5 @@ php5-clean:
 
 php5-install:
 	install -D php5/sapi/cli/php $(INSTALLDIR)/php5/usr/bin/php
-	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
+#	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
 
