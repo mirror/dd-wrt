@@ -96,7 +96,7 @@ freeradius-configure:
 	--without-rlm_sql_postgresql
 
 freeradius:
-	make -C freeradius R="$(INSTALLDIR)/freeradius" INSTALLSTRIP="" all certs
+	make -C freeradius R="$(INSTALLDIR)/freeradius" INSTALLSTRIP="" all
 
 freeradius-clean:
 	make -C freeradius clean
