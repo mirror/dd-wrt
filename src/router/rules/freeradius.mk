@@ -51,7 +51,6 @@ freeradius-configure:
 	--without-rlm_pam \
 	--without-rlm_perl \
 	--without-rlm_python \
-	--without-rlm_radutmp \
 	--without-rlm_smb \
 	--with-rlm_sql \
 	--with-rlm_sqlcounter \
@@ -61,7 +60,6 @@ freeradius-configure:
 	--without-rlm_sql_oracle \
 	--without-rlm_sql_sybase \
 	--without-rlm_sql_unixodbc \
-	--without-rlm_unix \
 	--without-rlm_x99-token \
   	--without-rlm_eap_ikev2 \
   	--without-rlm_eap_tnc \

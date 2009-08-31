@@ -272,7 +272,7 @@ listen {
 	#  If your system does not support this feature, you will
 	#  get an error if you try to use it.
 	#
-	interface = br-lan
+	interface = br0
 
 	#  Per-socket lists of clients.  This is a very useful feature.
 	#
@@ -299,7 +299,7 @@ listen {
 #	ipv6addr = ::
 	port = 0
 	type = acct
-	interface = br-lan
+	interface = br0
 #	clients = per_socket_clients
 }
 
