@@ -221,15 +221,15 @@ int mtd_write(const char *path, const char *mtd)
 		goto fail;
 	}
 	sysinfo(&info);
-	stopservice("sshd");
-	stopservice("snmpd");
-	stopservice("zebra");
-	stopservice("pppoeserver");
-	stopservice("olsrd");
-	stopservice("openvpn");
-	stopservice("openvpnserver");
-	stopservice("pptpd");
-	stopservice("upnp");
+	stop_service("sshd");
+	stop_service("snmpd");
+	stop_service("zebra");
+	stop_service("pppoeserver");
+	stop_service("olsrd");
+	stop_service("openvpn");
+	stop_service("openvpnserver");
+	stop_service("pptpd");
+	stop_service("upnp");
 	system("killall process_monitor");
 	
 #ifdef HAVE_MAGICBOX
