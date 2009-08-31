@@ -1667,23 +1667,6 @@ int cf_file_include(const char *filename, CONF_SECTION *cs)
 
 	DEBUG2( "including configuration file %s", filename);
 
-	if (stat(filename, &statbuf) == 0) {
-#ifdef S_IWOTH
-		if ((statbuf.st_mode & S_IWOTH) != 0) {
-			radlog(L_ERR|L_CONS, "Configuration file %s is globally writable.  Refusing to start due to insecure configuration.",
-			       filename);
-			return -1;
-		}
-#endif
-
-#ifdef S_IROTH
-		if (0 && (statbuf.st_mode & S_IROTH) != 0) {
-			radlog(L_ERR|L_CONS, "Configuration file %s is globally readable.  Refusing to start due to insecure configuration.",
-			       filename);
-			return -1;
-		}
-#endif
-	}
 
 	fp = fopen(filename, "r");
 	if (!fp) {
