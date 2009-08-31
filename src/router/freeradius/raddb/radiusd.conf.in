@@ -742,7 +742,7 @@ instantiate {
 #	It allows you to define new virtual servers simply by placing
 #	a file into the /etc/freeradius2/sites/ directory.
 #
-$INCLUDE sites/
+$INCLUDE sites-enabled/
 
 ######################################################################
 #
