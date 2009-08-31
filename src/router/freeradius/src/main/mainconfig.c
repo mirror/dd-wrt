@@ -745,28 +745,6 @@ int read_mainconfig(int reload)
 		return -1;
 	}
 
-	if (stat(radius_dir, &statbuf) < 0) {
-		radlog(L_ERR, "Errors reading %s: %s",
-		       radius_dir, strerror(errno));
-		return -1;
-	}
-
-#ifdef S_IWOTH
-	if ((statbuf.st_mode & S_IWOTH) != 0) {
-		radlog(L_ERR, "Configuration directory %s is globally writable.  Refusing to start due to insecure configuration.",
-		       radius_dir);
-	  return -1;
-	}
-#endif
-
-#ifdef S_IROTH
-	if (0 && (statbuf.st_mode & S_IROTH) != 0) {
-		radlog(L_ERR, "Configuration directory %s is globally readable.  Refusing to start due to insecure configuration.",
-		       radius_dir);
-		return -1;
-	}
-#endif
-
 	radlog(L_INFO, "Starting - reading configuration files ...");
 
 	/* Read the configuration file */
