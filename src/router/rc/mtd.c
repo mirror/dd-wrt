@@ -221,6 +221,17 @@ int mtd_write(const char *path, const char *mtd)
 		goto fail;
 	}
 	sysinfo(&info);
+	stopservice("sshd");
+	stopservice("snmpd");
+	stopservice("zebra");
+	stopservice("pppoeserver");
+	stopservice("olsrd");
+	stopservice("openvpn");
+	stopservice("openvpnserver");
+	stopservice("pptpd");
+	stopservice("upnp");
+	system("killall process_monitor");
+	
 #ifdef HAVE_MAGICBOX
 	trx.magic = STORE32_LE(trx.magic);
 	trx.len = STORE32_LE(trx.len);
