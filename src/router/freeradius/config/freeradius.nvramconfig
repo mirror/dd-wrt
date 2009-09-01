@@ -1,0 +1,2 @@
+ "radius_enabled"  "Enable FreeRadius"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
+ "radius_port"  "FreeRadius Port"  "RANGE"  "1" "65535" "TRUE" "0"  
