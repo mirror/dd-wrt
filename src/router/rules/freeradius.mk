@@ -84,7 +84,6 @@ freeradius-configure:
 	--without-rlm_sql_unixodbc \
 	--without-rlm_sql_log \
 	--without-rlm_sql_sqlite \
-	--without-rlm_unix \
 	--without-rlm_eap_tnc \
 	--without-rlm_eap_ikev2 \
 	--without-rlm_opendirectory \
