@@ -17,4 +17,10 @@ struct radiusdb {
 	struct radiususer *users;
 };
 
+
+struct radiusdb *loadradiusdb(void);
+void writeradiusdb(struct radiusdb *db);
+void freeradiusdb(struct radiusdb *db);
+
+
 #endif

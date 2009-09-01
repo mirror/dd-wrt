@@ -3508,29 +3508,148 @@ void tf_upnp(webs_t wp)
 
 }
 
-
 #ifdef HAVE_FREERADIUS
 
 void radius_generate_certificate(webs_t wp)
 {
-nvram_set("radius_country",websGetVar(wp,"radius_country",""));
-nvram_set("radius_state",websGetVar(wp,"radius_state",""));
-nvram_set("radius_locality",websGetVar(wp,"radius_locality",""));
-nvram_set("radius_organisation",websGetVar(wp,"radius_organisation",""));
-nvram_set("radius_email",websGetVar(wp,"radius_email",""));
-nvram_set("radius_common",websGetVar(wp,"radius_common",""));
+	nvram_set("radius_country", websGetVar(wp, "radius_country", ""));
+	nvram_set("radius_state", websGetVar(wp, "radius_state", ""));
+	nvram_set("radius_locality", websGetVar(wp, "radius_locality", ""));
+	nvram_set("radius_organisation",
+		  websGetVar(wp, "radius_organisation", ""));
+	nvram_set("radius_email", websGetVar(wp, "radius_email", ""));
+	nvram_set("radius_common", websGetVar(wp, "radius_common", ""));
 
 //system("rm /jffs/etc/freeradius/certs/dh");
-system("rm /jffs/etc/freeradius/certs/server.csr");
-system("rm /jffs/etc/freeradius/certs/server.key");
-system("rm /jffs/etc/freeradius/certs/ca.pem");
-system("rm /jffs/etc/freeradius/certs/ca.key");
-system("rm /jffs/etc/freeradius/certs/server.crt");
-system("rm /jffs/etc/freeradius/certs/server.p12");
-system("rm /jffs/etc/freeradius/certs/server.pem");
-system("rm /jffs/etc/freeradius/certs/ca.der");
-system("rm /jffs/etc/freeradius/certs/index.txt");
-system("rm /jffs/etc/freeradius/certs/serial");
-system("startservice_f gen_radius_cert");
+	system("rm /jffs/etc/freeradius/certs/server.csr");
+	system("rm /jffs/etc/freeradius/certs/server.key");
+	system("rm /jffs/etc/freeradius/certs/ca.pem");
+	system("rm /jffs/etc/freeradius/certs/ca.key");
+	system("rm /jffs/etc/freeradius/certs/server.crt");
+	system("rm /jffs/etc/freeradius/certs/server.p12");
+	system("rm /jffs/etc/freeradius/certs/server.pem");
+	system("rm /jffs/etc/freeradius/certs/ca.der");
+	system("rm /jffs/etc/freeradius/certs/index.txt");
+	system("rm /jffs/etc/freeradius/certs/serial");
+	system("startservice gen_radius_cert&");
 }
+
+/*struct radiususer {
+	unsigned int fieldlen;
+	unsigned int usersize;
+	unsigned char *user;
+	unsigned int passwordsize;
+	unsigned char *passwd;
+	unsigned int downstream;
+	unsigned int upstream;
+//more fields can be added in future
+};
+
+struct radiusdb {
+	unsigned int usercount;
+	struct radiususer *users;
+};
+*/
+#include <radiusdb.h>
+void add_radius_user(webs_t wp)
+{
+	struct radiusdb *db = loadradiusdb();
+	if (db == NULL) {
+		db = malloc(sizeof(struct radiusdb));
+		db->usercount = 0;
+		db->users = malloc(sizeof(struct radiususer));
+	} else {
+		db->users =
+		    realloc(db->users,
+			    sizeof(struct radiususer) * (db->usercount + 1));
+	}
+	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - 8;
+	db->users[db->usercount].usersize = 0;
+	db->users[db->usercount].user = NULL;
+	db->users[db->usercount].passwd = NULL;
+	db->users[db->usercount].passwordsize = 0;
+	db->users[db->usercount].downstream = 0;
+	db->users[db->usercount].upstream = 0;
+	db->usercount++;
+	writeradiusdb(db);
+	freeradiusdb(db);
+}
+
+void del_radius_user(webs_t wp)
+{
+	char *val = websGetVar(wp, "del_value", NULL);
+	if (val == NULL)
+		return;
+	int todel = atoi(val);
+	struct radiusdb *db = loadradiusdb();
+	if (db == NULL)
+		return;
+	if (db->usercount == 0)
+		return;
+	if (db->usercount > 1)
+		memcpy(&db->users[todel], &db->users[todel + 1],
+		       sizeof(struct radiususer) * ((db->usercount - 1) -
+						    todel));
+	db->usercount--;
+	if (db->usercount > 0)
+		db->users =
+		    realloc(db->users,
+			    sizeof(struct radiususer) * (db->usercount));
+	else {
+		free(db->users);
+		db->users = NULL;
+	}
+	writeradiusdb(db);
+	freeradiusdb(db);
+}
+
+void save_radius_user(webs_t wp)
+{
+	char passwd[] = { "passwordXXXXX" };
+	char user[] = { "usernameXXXXX" };
+	char downstream[] = { "passwordXXXXX" };
+	char upstream[] = { "usernameXXXXX" };
+	struct radiusdb *db = malloc(sizeof(struct radiusdb));
+	db->usercount = 0;
+	db->users = NULL;
+	while (1) {
+		sprintf(user, "username%d", db->usercount);
+		sprintf(passwd, "password%d", db->usercount);
+		sprintf(downstream, "downstream%d", db->usercount);
+		sprintf(upstream, "upstream%d", db->usercount);
+		char *u = websGetVar(wp, user, NULL);
+		if (!u)
+			break;
+		char *p = websGetVar(wp, passwd, NULL);
+		if (!p)
+			break;
+
+		char *d = websGetVar(wp, downstream, NULL);
+		if (!d)
+			break;
+
+		char *up = websGetVar(wp, upstream, NULL);
+		if (!up)
+			break;
+		db->users =
+		    realloc(db->users,
+			    sizeof(struct radiususer) * (db->usercount + 1));
+
+		db->users[db->usercount].user = malloc(strlen(u) + 1);
+		strcpy(db->users[db->usercount].user, u);
+		db->users[db->usercount].usersize = strlen(u) + 1;
+		db->users[db->usercount].passwd = malloc(strlen(p) + 1);
+		strcpy(db->users[db->usercount].passwd, p);
+		db->users[db->usercount].passwordsize = strlen(p) + 1;
+		db->users[db->usercount].downstream = atoi(d);
+		db->users[db->usercount].upstream = atoi(up);
+		db->usercount++;
+	}
+	writeradiusdb(db);
+	freeradiusdb(db);
+	char *value = websGetVar(wp, "action", "");
+	addAction("freeradius");
+	applytake(value);
+}
+
 #endif
