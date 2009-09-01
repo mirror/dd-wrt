@@ -133,11 +133,11 @@ static void gen_cert(char *name, int type)
 
 	if (type == TYPE_CA)
 		fprintf(fp, "commonName		= \"%s\"\n",
-			nvram_default_get("radius_commonca",
+			nvram_default_get("radius_common",
 					  "DD-WRT FreeRadius Certificate"));
 	else
 		fprintf(fp, "commonName		= \"%s\"\n",
-			nvram_default_get("radius_commonsrv",
+			nvram_default_get("radius_common",
 					  "DD-WRT FreeRadius Certificate"));
 
 	if (type == TYPE_CA)
@@ -161,8 +161,8 @@ void start_freeradius(void)
 
 	stop_freeradius();
 
-	nvram_default_get("radius_enable", "0");
-	if (!nvram_match("radius_enable", "1"))
+	nvram_default_get("radius_enabled", "0");
+	if (!nvram_match("radius_enabled", "1"))
 		return;
 	if (!nvram_match("jffs_mounted", "1"))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
