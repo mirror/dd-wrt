@@ -143,6 +143,8 @@ int mk_nocat_conf(void);
 
 void start_wifidog(void);
 void stop_wifidog(void);
+void start_freeradius(void);
+void stop_freeradius(void);
 void start_openvpn(void);
 void stop_openvpn(void);
 void start_anchorfree(void);
