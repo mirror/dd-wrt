@@ -1777,6 +1777,7 @@ freeradius.common="Common Certificate Name";
 freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
 freeradius.generate="Generate Certificate";
+freeradius.port="Radius Port";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();

@@ -24,9 +24,8 @@ var update;
 
 addEvent(window, "load", function() {
 		show_layer_ext(document.radius.radius_enabled, 'idradius', <% nvram_else_match("radius_enabled", "1", "1", "0"); %> == 1);
-		update = new StatusbarUpdate();
-		update.start();
-		
+		update = new StatusUpdate("FreeRadius.live.asp", <% nvram_get("refresh_time"); %>);
+		update.start();		
 });
 
 addEvent(window, "unload", function() {
@@ -107,6 +106,16 @@ addEvent(window, "unload", function() {
 
 							<fieldset>
 							<legend><% tran("freeradius.settings"); %></legend>
+							<div class="setting">
+								<div class="label"><% tran("freeradius.port"); %></div>
+								<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,'FreeRadius Port')" value="<% nvram_get("radius_port"); %>" />
+								<span class="default">
+								<script type="text/javascript">
+								//<![CDATA[
+								document.write("(" + share.deflt + ": 1812)");
+								//]]>
+								</script></span>
+							</div>
 							</fieldset>
 
 							<fieldset>

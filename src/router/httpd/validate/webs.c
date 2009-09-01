@@ -3529,6 +3529,8 @@ system("rm /jffs/etc/freeradius/certs/server.crt");
 system("rm /jffs/etc/freeradius/certs/server.p12");
 system("rm /jffs/etc/freeradius/certs/server.pem");
 system("rm /jffs/etc/freeradius/certs/ca.der");
+system("rm /jffs/etc/freeradius/certs/index.txt");
+system("rm /jffs/etc/freeradius/certs/serial");
 system("startservice_f gen_radius_cert");
 }
 #endif
