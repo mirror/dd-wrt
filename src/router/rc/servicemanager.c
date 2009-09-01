@@ -1,7 +1,7 @@
 /* 
  * DD-WRT servicemanager.c
  *
-/* Copyright (C) 2005 - 2006 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ * Copyright (C) 2005 - 2006 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <shutils.h>
+#include <stdlib.h> 
 
 #define SERVICE_MODULE "/lib/services.so"
 
@@ -84,6 +85,7 @@ int start_service(char *name)
 int start_service_f(char *name)
 {
 	FORK(start_service(name));
+	return 0;
 }
 
 int start_service_fork(char *name)
@@ -122,6 +124,7 @@ int start_service_fork(char *name)
 int start_service_fork_f(char *name)
 {
 	FORK(start_service_fork(name));
+	return 0;
 }
 
 void *start_service_nofree(char *name, void *handle)
@@ -133,6 +136,7 @@ void *start_service_nofree(char *name, void *handle)
 void *start_service_nofree_f(char *name, void *handle)
 {
 	FORK(start_service(name));
+	return handle;
 }
 
 int start_servicep(char *name, char *param)
@@ -161,6 +165,7 @@ int start_servicep(char *name, char *param)
 int start_servicep_f(char *name, char *param)
 {
 	FORK(start_servicep(name, param));
+	return 0;
 }
 
 void start_servicei(char *name, int param)
@@ -259,6 +264,7 @@ void *stop_service_nofree(char *name, void *handle)
 void *stop_service_nofree_f(char *name, void *handle)
 {
 	FORK(stop_service(name));
+	return handle;
 }
 
 void startstop(char *name)
@@ -287,6 +293,7 @@ int startstop_main_f(int argc, char **argv)
 {
 	char *name = argv[1];
 	FORK(startstop_main(argc, argv));
+	return 0;
 }
 
 void *startstop_nofree(char *name, void *handle)
@@ -300,4 +307,5 @@ void *startstop_nofree(char *name, void *handle)
 void *startstop_nofree_f(char *name, void *handle)
 {
 	FORK(startstop(name));
+	return handle;
 }
