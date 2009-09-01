@@ -1447,6 +1447,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"apwatchdog_enable", "0", 0},
 	{"apwatchdog_interval", "15", 0},
+	{"boot_wait", "on", 0};
 #ifdef HAVE_SKYTEL
 	{"cron_enable", "0", 0},
 #elif HAVE_WRK54G
