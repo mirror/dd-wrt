@@ -970,7 +970,7 @@ static struct SERVICES services_def[] = {
 	{"start_l2tp", handle_pppoe},
 #endif
 #ifdef HAVE_FREERADIUS
-	{"start_freeradius", handle_freeradius},
+	{"freeradius", handle_freeradius},
 #endif
 #ifdef HAVE_HEARTBEAT
 	{"start_heartbeat", handle_pppoe},

@@ -3774,7 +3774,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_DDLINK
 
-
 	if (isXR36(prefix)) {
 		char wl_cardtype[32];
 		sprintf(wl_cardtype, "%s_cardtype", prefix);
@@ -3801,7 +3800,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			  : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
-
 
 	if (isEMP(prefix)) {
 		char wl_cardtype[32];
@@ -7271,13 +7269,13 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 	FILE *fp;
 
 #ifdef HAVE_MADWIFI
-	char *ifname=nvram_safe_get("wifi_display");
+	char *ifname = nvram_safe_get("wifi_display");
 #elif HAVE_RT2880
-	char *ifname="ra0";
+	char *ifname = "ra0";
 #else
 	char name[32];
 	sprintf(name, "%s_ifname", nvram_safe_get("wifi_display"));
-	char *ifname=nvram_safe_get(name);
+	char *ifname = nvram_safe_get(name);
 #endif
 	struct dev_info {
 		// unsigned long rx_bytes;
@@ -7323,17 +7321,16 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 				ifl++;
 			line[ifl] = 0;	/* interface */
 			char ifnamecopy[32];
-			int l=0;
+			int l = 0;
 			int i;
 			int len = strlen(line);
-			for (i=0;i<len;i++)
-			    {
-			    if (line[i]==' ')
-				continue;
-			    ifnamecopy[l++]=line[i];
-			    }
-			ifnamecopy[l]=0;
-			if (!strcmp(ifnamecopy,ifname)) {
+			for (i = 0; i < len; i++) {
+				if (line[i] == ' ')
+					continue;
+				ifnamecopy[l++] = line[i];
+			}
+			ifnamecopy[l] = 0;
+			if (!strcmp(ifnamecopy, ifname)) {
 				/*
 				 * sscanf (line + ifl + 1, "%ld %ld %ld %ld %ld %ld %ld %ld
 				 * %ld %ld %ld %ld %ld %ld %ld %ld", &info.rx_bytes,
@@ -7771,38 +7768,105 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
-
 #ifdef HAVE_FREERADIUS
-
-
 
 void ej_show_certificate_status(webs_t wp, int argc, char_t ** argv)
 {
-int percent=0;
-if (f_exists("/jffs/etc/freeradius/certs/dh"))
-    percent+=60;
-if (f_exists("/jffs/etc/freeradius/certs/server.csr"))
-    percent+=5;
-if (f_exists("/jffs/etc/freeradius/certs/server.key"))
-    percent+=5;
-if (f_exists("/jffs/etc/freeradius/certs/ca.pem"))
-    percent+=5;
-if (f_exists("/jffs/etc/freeradius/certs/ca.key"))
-    percent+=5;
-if (f_exists("/jffs/etc/freeradius/certs/server.crt"))
-    percent+=5;
-if (f_exists("/jffs/etc/freeradius/certs/server.p12"))
-    percent+=5;
-if (f_exists("/jffs/etc/freeradius/certs/server.pem"))
-    percent+=5;
-if (f_exists("/jffs/etc/freeradius/certs/ca.der"))
-    percent+=5;
-    
-if (percent==100)
-    {
-    websWrite(wp,"certicate generation done<br />\n");
-    }else{
-    websWrite(wp,"generating %d%%, this may take a long time<br />\n",percent);
-    }
+	int percent = 0;
+	if (f_exists("/jffs/etc/freeradius/certs/dh"))
+		percent += 60;
+	if (f_exists("/jffs/etc/freeradius/certs/server.csr"))
+		percent += 5;
+	if (f_exists("/jffs/etc/freeradius/certs/server.key"))
+		percent += 5;
+	if (f_exists("/jffs/etc/freeradius/certs/ca.pem"))
+		percent += 5;
+	if (f_exists("/jffs/etc/freeradius/certs/ca.key"))
+		percent += 5;
+	if (f_exists("/jffs/etc/freeradius/certs/server.crt"))
+		percent += 5;
+	if (f_exists("/jffs/etc/freeradius/certs/server.p12"))
+		percent += 5;
+	if (f_exists("/jffs/etc/freeradius/certs/server.pem"))
+		percent += 5;
+	if (f_exists("/jffs/etc/freeradius/certs/ca.der"))
+		percent += 5;
+
+	if (percent == 100) {
+		websWrite(wp, "certicate generation done<br />\n");
+	} else {
+		websWrite(wp,
+			  "generating %d%%, this may take a long time<br />\n",
+			  percent);
+	}
 }
+
+#include <radiusdb.h>
+
+/*struct radiususer {
+	unsigned int fieldlen;
+	unsigned int usersize;
+	unsigned char *user;
+	unsigned int passwordsize;
+	unsigned char *passwd;
+	unsigned int downstream;
+	unsigned int upstream;
+//more fields can be added in future
+};
+
+struct radiusdb {
+	unsigned int usercount;
+	struct radiususer *users;
+};
+*/
+void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
+{
+	unsigned int i;
+	struct radiusdb *db = loadradiusdb();
+	if (db != NULL)		// empty
+	{
+		for (i = 0; i < db->usercount; i++) {
+			websWrite(wp, "<div class=\"setting\">\n");
+//              websWrite(wp, "<div class=\"label\">User %d</div>\n",i+1);
+			char vlan_name[32];
+			sprintf(vlan_name, "username%d", i);
+			websWrite(wp, "&nbsp;Username&nbsp;");
+			websWrite(wp,
+				  "<input name=\"%s\" size=\"5\" value=\"%s\" />\n",
+				  vlan_name, (db->users[i].user != NULL
+					      && db->users[i].usersize) ? db->
+				  users[i].user : "");
+
+			sprintf(vlan_name, "password%d", i);
+			websWrite(wp, "&nbsp;Password&nbsp;");
+			websWrite(wp,
+				  "<input name=\"%s\" size=\"5\" value=\"%s\" />\n",
+				  vlan_name, (db->users[i].passwd != NULL
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
+
+			sprintf(vlan_name, "downstream%d", i);
+			websWrite(wp, "&nbsp;Downstream&nbsp;");
+			websWrite(wp,
+				  "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" />\n",
+				  vlan_name, db->users[i].downstream);
+
+			sprintf(vlan_name, "upstream%d", i);
+			websWrite(wp, "&nbsp;Upstream&nbsp;");
+			websWrite(wp,
+				  "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" />\n",
+				  vlan_name, db->users[i].upstream);
+
+			websWrite(wp,
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+				  i);
+			websWrite(wp, "</div>\n");
+		}
+		freeradiusdb(db);
+	}
+	websWrite(wp,
+		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"user_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+}
+
 #endif

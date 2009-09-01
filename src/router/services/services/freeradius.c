@@ -32,6 +32,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <services.h>
+#include <radiusdb.h>
 
 #define TYPE_SERVER 0x01
 #define TYPE_CA 0x2
@@ -155,10 +156,10 @@ void start_gen_radius_cert(void)
 	} else
 		fclose(fp);
 
-		gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER);
-		gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA);
-		//this takes a long time (depending from the cpu speed)
-		system("cd /jffs/etc/freeradius/certs && ./bootstrap");
+	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER);
+	gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA);
+	//this takes a long time (depending from the cpu speed)
+	system("cd /jffs/etc/freeradius/certs && ./bootstrap");
 }
 
 void start_freeradius(void)
@@ -176,8 +177,7 @@ void start_freeradius(void)
 	nvram_default_get("radius_locality", "");
 	nvram_default_get("radius_organisation", "DD-WRT");
 	nvram_default_get("radius_email", "info@dd-wrt.com");
-	nvram_default_get("radius_common","DD-WRT FreeRadius Certificate");
-
+	nvram_default_get("radius_common", "DD-WRT FreeRadius Certificate");
 
 	nvram_default_get("radius_port", "1812");
 	nvram_default_get("radius_enabled", "0");
@@ -193,8 +193,10 @@ void start_freeradius(void)
 		system("cp -r /etc/freeradius /jffs/etc");
 	} else
 		fclose(fp);
-		
-	sysprintf("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",nvram_safe_get("radius_port"));
+
+	sysprintf
+	    ("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",
+	     nvram_safe_get("radius_port"));
 
 	fp = fopen("/jffs/etc/freeradius/certs/server.pem", "rb");
 	if (NULL == fp) {
@@ -202,7 +204,29 @@ void start_freeradius(void)
 		start_gen_radius_cert();
 	} else
 		fclose(fp);
+	/* now generate users */
+	struct radiusdb *db = loadradiusdb();
+	int i;
+	fp = fopen("/jffs/etc/freeradius/users", "wb");
+	fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
+		"Session-Timeout := 3600,\n"
+		"User-Name := \"%%{User-Name}\",\n"
+		"Acct-Interim-Interval := 300,\n" "Fall-Through = Yes\n\n");
 
+	for (i = 0; i < db->usercount; i++) {
+		fprintf(fp, "%s        Cleartext-Password := \"%%s\" ",
+			db->users[i].user, db->users[i].passwd);
+		if (db->users[i].downstream)
+			fprintf(fp, "WISPr-Bandwidth-Max-Down := %d",
+				db->users[i].downstream * 1024);
+		if (db->users[i].upstream) {
+			if (db->users[i].downstream)
+				fprintf(fp, ",");
+			fprintf(fp, "WISPr-Bandwidth-Max-Up := %d\n",
+				db->users[i].upstream * 1024);
+		}
+	}
+	freeradiusdb(db);
 	ret = _evalpid(radiusd_argv, NULL, 0, &pid);
 
 	dd_syslog(LOG_INFO,
