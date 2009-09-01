@@ -177,6 +177,10 @@ endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
 endif
+ifeq ($(CONFIG_FREERADIUS),y)
+  CFLAGS += -DHAVE_FREERADIUS
+  OBJS += radius.o
+endif
 ifeq ($(CONFIG_MR3202A),y)
   CFLAGS += -DHAVE_MR3202A
   CFLAGS += -DHAVE_FONERA
