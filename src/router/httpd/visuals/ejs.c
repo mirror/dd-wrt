@@ -1491,9 +1491,9 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp",
 	 "Wireless_radauth.asp", "WL_WPATable.asp", "Wireless_MAC.asp",
 	 "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},
-	{"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp",
+	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp",
 	 "Hotspot.asp", "Milkfish.asp", "AnchorFree.asp", "",
-	 "",""},
+	 ""},
 	{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
 	{"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
 	{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp",
@@ -1513,9 +1513,9 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
 	 "wirelessRadius", "wirelessSecurity", "wirelessMac",
 	 "wirelessAdvanced", "wirelessWds", "", "", ""},
-	{"services", "servicesServices", "servicesPppoesrv", "servicesPptp",
+	{"services", "servicesServices", "servicesRadius","servicesPppoesrv", "servicesPptp",
 	 "servicesUSB", "servicesNAS", "servicesHotspot", "servicesMilkfish",
-	 "servicesAnchorFree", "", "", ""},
+	 "servicesAnchorFree", "", ""},
 	{"security", "firwall", "vpn", "", "", "", "", "", "", "", "", ""},
 	{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", ""},
 	{"applications", "applicationspforwarding", "applicationsprforwarding",
@@ -1712,6 +1712,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_MILKFISH
 				if (!strcmp(menu[i][j], "Milkfish.asp"))
+					j++;
+#endif
+#ifndef HAVE_FREERADIUS
+				if (!strcmp(menu[i][j], "FreeRadius.asp"))
 					j++;
 #endif
 #ifndef HAVE_WOL
