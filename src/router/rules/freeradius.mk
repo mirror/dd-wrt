@@ -105,6 +105,8 @@ freeradius-install:
 	rm -rf $(INSTALLDIR)/freeradius/usr/include
 	rm -rf $(INSTALLDIR)/freeradius/var
 	rm -f $(INSTALLDIR)/freeradius/usr/lib/*.la
+	mkdir -p $(INSTALLDIR)/freeradius/etc
+	cp freeradius/config/freeradius.nvramconfig $(INSTALLDIR)/freeradius/etc/config
 
 
 
