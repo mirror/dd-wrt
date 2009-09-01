@@ -147,7 +147,7 @@ static void gen_cert(char *name, int type)
 
 void start_gen_radius_cert(void)
 {
-	fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
+	FILE *fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
 	if (NULL == fp) {
 		//prepare files
 		system("mkdir -p /jffs/etc/freeradius");
@@ -179,6 +179,7 @@ void start_freeradius(void)
 	nvram_default_get("radius_common","DD-WRT FreeRadius Certificate");
 
 
+	nvram_default_get("radius_port", "1812");
 	nvram_default_get("radius_enabled", "0");
 	if (!nvram_match("radius_enabled", "1"))
 		return;
@@ -192,6 +193,8 @@ void start_freeradius(void)
 		system("cp -r /etc/freeradius /jffs/etc");
 	} else
 		fclose(fp);
+		
+	sysprintf("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",nvram_safe_get("radius_port"));
 
 	fp = fopen("/jffs/etc/freeradius/certs/server.pem", "rb");
 	if (NULL == fp) {
