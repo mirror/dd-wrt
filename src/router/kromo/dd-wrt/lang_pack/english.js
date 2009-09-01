@@ -423,6 +423,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Services";
 bmenu.servicesServices="Services";
+bmenu.servicesRadius="Radius";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1695,6 +1696,7 @@ wl_filter.h2="MAC Address Filter List";
 wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
+
 // ** WL_ActiveTable.asp **//
 var wl_active = new Object();
 wl_active.titl="Wireless Active Client MAC List";
@@ -1757,6 +1759,12 @@ wl_wimax.width="Channel Width";
 wl_wimax.duplex="Duplex Mode";
 wl_wimax.mode="Operation Mode";
 wl_wimax.mac="Subscriber MAC Address";
+
+// ** FreeRadius.asp **//
+var freeradius = new Object();
+freeradius.titl="Radius";
+freeradius.h2="FreeRadius";
+
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();
