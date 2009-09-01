@@ -11,7 +11,7 @@
 #
 #	The filename given here should be an absolute path. 
 #
-$INCLUDE	@prefix@/share/freeradius2/dictionary
+$INCLUDE	@prefix@/share/freeradius/dictionary
 
 #
 #	Place additional attributes or $INCLUDEs here.  They will
