@@ -1,7 +1,7 @@
 /*
- * snmp.c
+ * freeradius.c
  *
- * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -35,6 +35,15 @@
 
 #define TYPE_SERVER 0x01
 #define TYPE_CA 0x2
+
+/* user database definition */
+typedef struct userentry {
+char username[32];
+char password[64];
+unsigned int downstream;
+unsigned int upstream;
+unsigned int enabled;
+}
 
 static void gen_cert(char *name, int type)
 {
@@ -95,19 +104,35 @@ static void gen_cert(char *name, int type)
 		"input_password		= whatever\n"
 		"output_password		= whatever\n");
 	if (type == TYPE_CA)
+		{
 		fprintf(fp, "x509_extensions		= v3_ca\n");
+		fprintf(fp, "\n" "[certificate_authority]\n");
+		}else{
+		fprintf(fp, "\n" "[server]\n");
+		}
+nvram_default_get("radius_country", "DE");
+nvram_default_get("radius_state", "Saxon");
+nvram_default_get("radius_locality", "");
+nvram_default_get("radius_organisation", "DD-WRT");
+nvram_default_get("radius_email", "info@dd-wrt.com");
 
-	fprintf(fp, "\n" "[certificate_authority]\n");
-	fprintf(fp, "countryName		= %s\n",
-		nvram_default_get("radius_country", "DE"));
+
+	if (!nvram_match("radius_country",""))
+		fprintf(fp, "countryName		= %s\n",
+		nvram_get("radius_country", "DE"));
+	if (!nvram_match("radius_state",""))
 	fprintf(fp, "stateOrProvinceName	= %s\n",
-		nvram_default_get("radius_state", "Saxon"));
+		nvram_get("radius_state", "Saxon"));
+	if (!nvram_match("radius_locality",""))
 	fprintf(fp, "localityName		= %s\n",
-		nvram_default_get("radius_locality", ""));
+		nvram_get("radius_locality", ""));
+	if (!nvram_match("radius_organisation",""))
 	fprintf(fp, "organizationName	= %s\n",
-		nvram_default_get("radius_organisation", "DD-WRT"));
+		nvram_get("radius_organisation", "DD-WRT"));
+	if (!nvram_match("radius_email",""))
 	fprintf(fp, "emailAddress		= %s\n",
-		nvram_default_get("radius_email", "info@dd-wrt.com"));
+		nvram_get("radius_email", "info@dd-wrt.com"));
+
 	if (type == TYPE_CA)
 		fprintf(fp, "commonName		= \"%s\"\n",
 			nvram_default_get("radius_commonca",
@@ -118,7 +143,7 @@ static void gen_cert(char *name, int type)
 					  "DD-WRT FreeRadius Certificate"));
 
 	if (type == TYPE_CA)
-		fprintf(fp, "[v3_ca]\n"
+		fprintf(fp, "\n[v3_ca]\n"
 			"subjectKeyIdentifier	= hash\n"
 			"authorityKeyIdentifier	= keyid:always,issuer:always\n"
 			"basicConstraints	= CA:true\n");
@@ -138,7 +163,8 @@ void start_freeradius(void)
 
 	stop_freeradius();
 
-	if (!nvram_invmatch("radius_enable", "0"))
+	nvram_default_get("radius_enable","0");
+	if (!nvram_match("radius_enable", "1"))
 		return;
 	if (!nvram_match("jffs_mounted","1"))
 		return; //jffs is a requirement for radius and must be mounted at this point here
