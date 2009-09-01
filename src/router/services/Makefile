@@ -699,6 +699,11 @@ ifeq ($(CONFIG_RADVD),y)
 CFLAGS_EXTRA += -DHAVE_RADVD
 endif
 
+ifeq ($(CONFIG_FREERADIUS),y)
+CFLAGS_EXTRA += -DHAVE_FREERADIUS
+OBJS += freeradius.o
+endif
+
 ifeq ($(CONFIG_DHCPFORWARD),y)
 OBJS += dhcpforward.o
 CFLAGS_EXTRA += -DHAVE_DHCPFWD
