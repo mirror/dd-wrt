@@ -37,13 +37,13 @@
 #define TYPE_CA 0x2
 
 /* user database definition */
-typedef struct userentry {
-char username[32];
-char password[64];
-unsigned int downstream;
-unsigned int upstream;
-unsigned int enabled;
-}
+struct userentry {
+	char username[32];
+	char password[64];
+	unsigned int downstream;
+	unsigned int upstream;
+	unsigned int enabled;
+};
 
 static void gen_cert(char *name, int type)
 {
@@ -103,35 +103,33 @@ static void gen_cert(char *name, int type)
 	fprintf(fp, "default_bits		= 2048\n"
 		"input_password		= whatever\n"
 		"output_password		= whatever\n");
-	if (type == TYPE_CA)
-		{
+	if (type == TYPE_CA) {
 		fprintf(fp, "x509_extensions		= v3_ca\n");
 		fprintf(fp, "\n" "[certificate_authority]\n");
-		}else{
+	} else {
 		fprintf(fp, "\n" "[server]\n");
-		}
-nvram_default_get("radius_country", "DE");
-nvram_default_get("radius_state", "Saxon");
-nvram_default_get("radius_locality", "");
-nvram_default_get("radius_organisation", "DD-WRT");
-nvram_default_get("radius_email", "info@dd-wrt.com");
+	}
+	nvram_default_get("radius_country", "DE");
+	nvram_default_get("radius_state", "Saxon");
+	nvram_default_get("radius_locality", "");
+	nvram_default_get("radius_organisation", "DD-WRT");
+	nvram_default_get("radius_email", "info@dd-wrt.com");
 
-
-	if (!nvram_match("radius_country",""))
+	if (!nvram_match("radius_country", ""))
 		fprintf(fp, "countryName		= %s\n",
-		nvram_get("radius_country", "DE"));
-	if (!nvram_match("radius_state",""))
-	fprintf(fp, "stateOrProvinceName	= %s\n",
-		nvram_get("radius_state", "Saxon"));
-	if (!nvram_match("radius_locality",""))
-	fprintf(fp, "localityName		= %s\n",
-		nvram_get("radius_locality", ""));
-	if (!nvram_match("radius_organisation",""))
-	fprintf(fp, "organizationName	= %s\n",
-		nvram_get("radius_organisation", "DD-WRT"));
-	if (!nvram_match("radius_email",""))
-	fprintf(fp, "emailAddress		= %s\n",
-		nvram_get("radius_email", "info@dd-wrt.com"));
+			nvram_get("radius_country"));
+	if (!nvram_match("radius_state", ""))
+		fprintf(fp, "stateOrProvinceName	= %s\n",
+			nvram_get("radius_state"));
+	if (!nvram_match("radius_locality", ""))
+		fprintf(fp, "localityName		= %s\n",
+			nvram_get("radius_locality"));
+	if (!nvram_match("radius_organisation", ""))
+		fprintf(fp, "organizationName	= %s\n",
+			nvram_get("radius_organisation"));
+	if (!nvram_match("radius_email", ""))
+		fprintf(fp, "emailAddress		= %s\n",
+			nvram_get("radius_email"));
 
 	if (type == TYPE_CA)
 		fprintf(fp, "commonName		= \"%s\"\n",
@@ -163,11 +161,11 @@ void start_freeradius(void)
 
 	stop_freeradius();
 
-	nvram_default_get("radius_enable","0");
+	nvram_default_get("radius_enable", "0");
 	if (!nvram_match("radius_enable", "1"))
 		return;
-	if (!nvram_match("jffs_mounted","1"))
-		return; //jffs is a requirement for radius and must be mounted at this point here
+	if (!nvram_match("jffs_mounted", "1"))
+		return;		//jffs is a requirement for radius and must be mounted at this point here
 
 	fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
 	if (NULL == fp) {
