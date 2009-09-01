@@ -3507,3 +3507,28 @@ void tf_upnp(webs_t wp)
 	}
 
 }
+
+
+#ifdef HAVE_FREERADIUS
+
+void radius_generate_certificate(webs_t wp)
+{
+nvram_set("radius_country",websGetVar(wp,"radius_country",""));
+nvram_set("radius_state",websGetVar(wp,"radius_state",""));
+nvram_set("radius_locality",websGetVar(wp,"radius_locality",""));
+nvram_set("radius_organisation",websGetVar(wp,"radius_organisation",""));
+nvram_set("radius_email",websGetVar(wp,"radius_email",""));
+nvram_set("radius_common",websGetVar(wp,"radius_common",""));
+
+//system("rm /jffs/etc/freeradius/certs/dh");
+system("rm /jffs/etc/freeradius/certs/server.csr");
+system("rm /jffs/etc/freeradius/certs/server.key");
+system("rm /jffs/etc/freeradius/certs/ca.pem");
+system("rm /jffs/etc/freeradius/certs/ca.key");
+system("rm /jffs/etc/freeradius/certs/server.crt");
+system("rm /jffs/etc/freeradius/certs/server.p12");
+system("rm /jffs/etc/freeradius/certs/server.pem");
+system("rm /jffs/etc/freeradius/certs/ca.der");
+system("startservice_f gen_radius_cert");
+}
+#endif

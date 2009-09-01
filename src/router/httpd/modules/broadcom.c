@@ -945,6 +945,9 @@ static struct gozila_action gozila_actions[] = {
 	{"Forward", "remove_forward", "", 0, REFRESH, "forward_remove"},
 	{"Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs"},
 	{"Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs"},
+#ifdef HAVE_FREERADIUS
+	{"FreeRadius", "generate_certificate", "", 0, REFRESH, "radius_generate_certificate"},
+#endif
 #ifdef HAVE_BONDING
 	{"Networking", "add_bond", "", 0, REFRESH, "add_bond"},
 	{"Networking", "del_bond", "", 0, REFRESH, "del_bond"},
