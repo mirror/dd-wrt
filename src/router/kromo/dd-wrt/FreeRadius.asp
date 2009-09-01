@@ -3,19 +3,38 @@
 		//<![CDATA[
 
 function to_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "save_radius_user";
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
 
 function to_apply(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "save_radius_user";
 	F.save_button.value = sbutton.saving;
 	applytake(F);
 }
 
 
+
 function generate_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "generate_certificate";
+	F.submit();
+}
+
+function user_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_radius_user";
+	F.submit();
+}
+
+
+function user_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_radius_user";
+	F.del_value.value=I;
 	F.submit();
 }
 
@@ -50,6 +69,7 @@ addEvent(window, "unload", function() {
 						<form name="radius" action="apply.cgi" method="post">
 							<input type="hidden" name="submit_button" value="FreeRadius" />
 							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="del_value" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 
