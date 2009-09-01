@@ -537,6 +537,8 @@ int static set_macallowed(char *macallowed, int len) {
     }
   }
   free(p3);
+  
+  return 0;
 }
 
 int static process_options(int argc, char **argv, int firsttime) {
@@ -2996,7 +2998,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
 
   /* Get Service Type */
   if (!radius_getattr(pack, &stateattr, RADIUS_ATTR_SERVICE_TYPE, 0, 0, 0)) {
-    if(ntohl(attr->v.i) == RADIUS_SERVICE_TYPE_CHILLISPOT_AUTHORIZE_ONLY) {
+    if(ntohl(stateattr->v.i) == RADIUS_SERVICE_TYPE_CHILLISPOT_AUTHORIZE_ONLY) {
       sys_err(LOG_ERR, __FILE__, __LINE__, 0,
 	      "Chillispot-Authorize-Only Service-Type in Access-Accept");
       return dnprot_reject(appconn);
