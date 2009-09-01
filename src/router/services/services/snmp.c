@@ -31,6 +31,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>
+#include <services.h>
 #include "snmp.h"
 
 #define SNMP_CONF_FILE	"/var/snmp/snmpd.conf"
