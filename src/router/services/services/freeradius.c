@@ -20,7 +20,7 @@
  * $Id:
  */
 
-#ifdef HAVE_SNMP
+#ifdef HAVE_FREERADIUS
 
 #include <unistd.h>
 #include <string.h>
@@ -31,6 +31,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>
+#include <services.h>
 
 #define TYPE_SERVER 0x01
 #define TYPE_CA 0x2
@@ -139,6 +140,8 @@ void start_freeradius(void)
 
 	if (!nvram_invmatch("radius_enable", "0"))
 		return;
+	if (!nvram_match("jffs_mounted","1"))
+		return; //jffs is a requirement for radius and must be mounted at this point here
 
 	fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
 	if (NULL == fp) {
