@@ -561,6 +561,16 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
+	
+	struct nvram_tuple wrt320vlan[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan1 eth1", 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
 
 	struct nvram_tuple wrt30011vlan[] = {
 		{"lan_ifname", "br0", 0},
@@ -902,6 +912,9 @@ void start_restore_defaults(void)
 	case ROUTER_NETGEAR_WNR3500L:
 		linux_overrides = wnr3500vlan;
 		break;
+	case ROUTER_WRT320N:
+		linux_overrides = wrt320vlan;
+		break;
 	case ROUTER_WRT350N:
 		linux_overrides = wrt350vlan;
 		break;
@@ -1236,6 +1249,7 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_WRT320N:
 				nvram_unset("vlan0hwname");
 				break;			
 			case ROUTER_LINKSYS_WTR54GS:
@@ -1280,6 +1294,7 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_WRT320N:
 				nvram_set("vlan2ports", "0 8");
 			break;			
 			case ROUTER_LINKSYS_WTR54GS:

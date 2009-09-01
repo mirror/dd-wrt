@@ -215,6 +215,9 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("wl0gpio0", "2");
 		nvram_set("wl0gpio1", "0");
 		break;
+	case ROUTER_NETGEAR_WNR3500L:
+		nvram_set("ledbh0", "7");
+		break;
 	}
 
 	int boardflags;
@@ -680,19 +683,19 @@ void start_sysinit(void)
 			extra_params++;
 		}
 		break;
+
 	case ROUTER_NETGEAR_WNR3500L:
+	case ROUTER_WRT320N:
 		nvram_set("lan_ifnames", "vlan1 eth1");	
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("wan_ifname2", "vlan2");
 		nvram_set("wan_default", "vlan2");
 		nvram_set("wan_ifnames", "vlan2");
 		nvram_set("wl0_ifname", "eth1");	
-		if (nvram_get("boot_wait") == NULL)
-		    nvram_set("boot_wait", "off");
 		if (nvram_match("vlan2ports", "0 8u"))
 			nvram_set("vlan2ports", "0 8");
-		nvram_set("ledbh0", "7");
-	break;
+		break;
+
 	case ROUTER_NETGEAR_WNDR3300:
 		nvram_set("lan_ifnames", "eth0 eth2 eth3");	// dual radio
 		nvram_set("wan_ifname", "eth1");
@@ -1086,8 +1089,7 @@ void start_sysinit(void)
 		break;
 
 	}
-	if (nvram_get("boot_wait") == NULL)
-	    nvram_set("boot_wait", "on");
+
 #if 0
 	/*
 	 * fix il0macaddr to be lanmac+2 
