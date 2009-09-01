@@ -294,14 +294,14 @@ listen {
 #  This second "listen" section is for listening on the accounting
 #  port, too.
 #
-listen {
-	ipaddr = *
+#listen {
+#	ipaddr = *
 #	ipv6addr = ::
-	port = 0
-	type = acct
-	interface = br0
+#	port = 0
+#	type = acct
+#	interface = br0
 #	clients = per_socket_clients
-}
+#}
 
 #  hostname_lookups: Log the names of clients or just their IP addresses
 #  e.g., www.freeradius.org (on) or 206.47.27.232 (off).
