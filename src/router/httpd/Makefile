@@ -112,6 +112,12 @@ endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
+ifeq ($(CONFIG_V25),y)
+CFLAGS += -DHAVE_V25
+endif
+ifeq ($(CONFIG_BCMMODERN),y)
+CFLAGS += -DHAVE_BCMMODERN
+endif
 ifeq ($(CONFIG_SYSLOG),y)
 CFLAGS += -DHAVE_SYSLOG
 endif
