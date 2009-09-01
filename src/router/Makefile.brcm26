@@ -334,9 +334,38 @@ install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(
 #endif
 #endif
 ifneq ($(CONFIG_USB),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb
-	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/class
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/core
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mbcache.ko
 endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd	
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/usb
+endif
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2
+endif
+
 #ifeq ($(CONFIG_PCMCIA),y)
 #	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
 #	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/pcmcia/* $(TARGETDIR)/lib/modules/$(LINUXVER)
@@ -394,9 +423,9 @@ endif
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/rootfs.squashfs -noappend -root-owned -le
 	../../opt/tools/trx -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg_wnr3500.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_mini-WNR3500v2_VC.chk
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2_VC.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2-L.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg_wnr3500.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_mini-WNR3500v2-L.chk
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2-L.chk
 	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
 
 	
