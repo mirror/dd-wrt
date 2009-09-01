@@ -32,9 +32,7 @@ ifeq ($(CONFIG_BBOX),"mini")
 	cp busybox/.config_mini busybox/.config
 endif
 ifeq ($(CONFIG_BCMMODERN),y)
-	echo CONFIG_MKNOD=y >> busybox/.config
-else
-	echo "# CONFIG_MKNOD is not set" >> busybox/.config
+	cp busybox/.config_bcmmodern busybox/.config
 endif
 	cd busybox && make oldconfig
 endif
