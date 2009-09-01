@@ -1662,12 +1662,94 @@ int redir_accept(struct redir_t *redir) {
       exit(0);
     }
 
+/*JAC-KYN */
+      unsigned char user_password[REDIR_MD5LEN + 1];
+
+      {
+	unsigned char chap_challenge[REDIR_MD5LEN];
+	int n;
+
+
+	MD5_CTX context;
+
+	if (redir->secret)
+	  {
+	    /* Get MD5 hash on challenge and uamsecret */
+	    MD5Init (&context);
+	    MD5Update (&context, conn.uamchal, REDIR_MD5LEN);
+	    MD5Update (&context, redir->secret, strlen (redir->secret));
+	    MD5Final (chap_challenge, &context);
+	  }
+	else
+	  {
+	    memcpy (chap_challenge, conn.uamchal, REDIR_MD5LEN);
+	  }
+
+	if (conn.chap == 0)
+	  {
+	    for (n = 0; n < REDIR_MD5LEN; n++)
+	      user_password[n] = conn.password[n] ^ chap_challenge[n];
+	  }
+	else if (conn.chap == 1)
+	  {
+	    memcpy (user_password, conn.password, REDIR_MD5LEN);
+	  }
+	user_password[REDIR_MD5LEN] = 0;
+
+      }
+
+      int KYN_Authenticate (const char *username, const char *password)
+      {
+	if (username!=NULL && strlen(username)==0)return 0;
+	if (password!=NULL && strlen(password)==0)return 0;
+
+	FILE *f;
+	int authenticated = 0;	/*Can't authenticate? */
+
+	f = fopen ("/tmp/fonusers.local", "r");
+
+	if (f == NULL)
+	  {
+	    sys_err (LOG_ERR, __FILE__, __LINE__, errno,
+		     "fopen() failed opening /tmp/fonusers.local!");
+	    return authenticated;
+	  }
+	char *line = (char *) malloc (REDIR_MD5LEN * 2 + 2);
+	size_t ncar = 0;
+	char f_username[REDIR_MD5LEN + 1];
+	char f_password[REDIR_MD5LEN + 1];
+
+	while (getline (&line, &ncar, f) >= 0)
+	  {
+	    sscanf (line, "%s %s", f_username, f_password);
+	    if (!strcmp (username, f_username)
+		&& !strcmp (password, f_password))
+	      {
+		authenticated = 1;
+		break;
+	      }
+	  }
+
+	free (line);
+	fclose (f);
+	return authenticated;
+      }
+
+      if (KYN_Authenticate (conn.username, user_password))
+	{			/*Non zero if  autenticated */
+	  conn.response = REDIR_SUCCESS;
+	}
+      else
+	{
+
+/*endJAC-KYN*/
+
     termstate = REDIR_TERM_RADIUS;
     if (optionsdebug) printf("Calling radius\n");
 
     if (optionsdebug) printf("redir_accept: Sending redius request\n");
     redir_radius(redir, &address.sin_addr, &conn);
-
+    }
     termstate = REDIR_TERM_REPLY;
     if (optionsdebug) printf("Received radius reply\n");
 
