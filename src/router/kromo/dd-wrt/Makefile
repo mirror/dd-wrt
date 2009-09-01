@@ -505,6 +505,9 @@ endif
 ifneq ($(CONFIG_SUPERCHANNEL),y)
 	rm -f $(INSTALLDIR)/www/SuperChannel.asp
 endif
+ifneq ($(CONFIG_FREERADIUS),y)
+	rm -f $(INSTALLDIR)/www/FreeRadius.asp
+endif
 ifneq ($(CONFIG_WOL),y)
 	rm -f $(INSTALLDIR)/www/Wol.asp
 	rm -f $(INSTALLDIR)/www/help/HWol.asp
