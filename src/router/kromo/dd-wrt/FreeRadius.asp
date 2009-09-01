@@ -129,13 +129,14 @@ addEvent(window, "unload", function() {
 							</fieldset>
 							
 				
-								<div class="submitFooter">
-									<script type="text/javascript">
-									//<![CDATA[
-									submitFooterButton(1,1);
-									//]]>
-									</script>
-								</div>
+							 <div class="submitFooter">
+							 <script type="text/javascript">
+							 //<![CDATA[
+							 var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+							 submitFooterButton(1,1,0,autoref);
+							 //]]>
+							 </script>
+							</div>
 							</form>
 						</div>
 					</div>
