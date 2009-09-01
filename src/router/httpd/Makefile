@@ -173,6 +173,9 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
+ifeq ($(CONFIG_FREERADIUS),y)
+CFLAGS += -DHAVE_FREERADIUS
+endif
 ifeq ($(CONFIG_PICO5),y)
 CFLAGS += -DHAVE_PICO5
 endif

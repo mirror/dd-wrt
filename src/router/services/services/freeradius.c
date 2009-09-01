@@ -109,11 +109,6 @@ static void gen_cert(char *name, int type)
 	} else {
 		fprintf(fp, "\n" "[server]\n");
 	}
-	nvram_default_get("radius_country", "DE");
-	nvram_default_get("radius_state", "Saxon");
-	nvram_default_get("radius_locality", "");
-	nvram_default_get("radius_organisation", "DD-WRT");
-	nvram_default_get("radius_email", "info@dd-wrt.com");
 
 	if (!nvram_match("radius_country", ""))
 		fprintf(fp, "countryName		= %s\n",
@@ -150,6 +145,22 @@ static void gen_cert(char *name, int type)
 
 }
 
+void start_gen_radius_cert(void)
+{
+	fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
+	if (NULL == fp) {
+		//prepare files
+		system("mkdir -p /jffs/etc/freeradius");
+		system("cp -r /etc/freeradius /jffs/etc");
+	} else
+		fclose(fp);
+
+		gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER);
+		gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA);
+		//this takes a long time (depending from the cpu speed)
+		system("cd /jffs/etc/freeradius/certs && ./bootstrap");
+}
+
 void start_freeradius(void)
 {
 	int ret = 0;
@@ -160,6 +171,13 @@ void start_freeradius(void)
 	FILE *fp = NULL;
 
 	stop_freeradius();
+	nvram_default_get("radius_country", "DE");
+	nvram_default_get("radius_state", "Saxon");
+	nvram_default_get("radius_locality", "");
+	nvram_default_get("radius_organisation", "DD-WRT");
+	nvram_default_get("radius_email", "info@dd-wrt.com");
+	nvram_default_get("radius_common","DD-WRT FreeRadius Certificate");
+
 
 	nvram_default_get("radius_enabled", "0");
 	if (!nvram_match("radius_enabled", "1"))
@@ -175,13 +193,10 @@ void start_freeradius(void)
 	} else
 		fclose(fp);
 
-	fp = fopen("/jffs/etc/freeradius/certs/dh", "rb");
+	fp = fopen("/jffs/etc/freeradius/certs/server.pem", "rb");
 	if (NULL == fp) {
 		//prepare certificates
-		gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER);
-		gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA);
-		//this takes a long time (depending from the cpu speed)
-		system("cd /jffs/etc/freeradius/certs && ./bootstrap");
+		start_gen_radius_cert();
 	} else
 		fclose(fp);
 
