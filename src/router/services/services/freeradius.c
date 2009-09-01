@@ -214,7 +214,7 @@ void start_freeradius(void)
 		"Acct-Interim-Interval := 300,\n" "Fall-Through = Yes\n\n");
 
 	for (i = 0; i < db->usercount; i++) {
-		fprintf(fp, "%s        Cleartext-Password := \"%%s\" ",
+		fprintf(fp, "%s        Cleartext-Password := \"%s\" ",
 			db->users[i].user, db->users[i].passwd);
 		if (db->users[i].downstream)
 			fprintf(fp, "WISPr-Bandwidth-Max-Down := %d",
@@ -225,6 +225,7 @@ void start_freeradius(void)
 			fprintf(fp, "WISPr-Bandwidth-Max-Up := %d\n",
 				db->users[i].upstream * 1024);
 		}
+		fprintf(fp,"\n");
 	}
 	freeradiusdb(db);
 	ret = _evalpid(radiusd_argv, NULL, 0, &pid);
