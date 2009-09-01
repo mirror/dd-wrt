@@ -1764,7 +1764,19 @@ wl_wimax.mac="Subscriber MAC Address";
 var freeradius = new Object();
 freeradius.titl="Radius";
 freeradius.h2="FreeRadius";
+freeradius.certificate="Server Certificate";
+freeradius.settings="Settings";
+freeradius.users="Users";
 
+freeradius.countrycode="Country Code";
+freeradius.state="State or Province";
+freeradius.locality="Locality";
+freeradius.organisation="Organisation / Company";
+freeradius.email="Email Address";
+freeradius.common="Common Certificate Name";
+freeradius.generate="Generate Certificate";
+freeradius.cert_status="Certificate Status";
+freeradius.generate="Generate Certificate";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();
