@@ -7770,3 +7770,39 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #endif
+
+
+#ifdef HAVE_FREERADIUS
+
+
+
+void ej_show_certificate_status(webs_t wp, int argc, char_t ** argv)
+{
+int percent=0;
+if (f_exists("/jffs/etc/freeradius/certs/dh"))
+    percent+=60;
+if (f_exists("/jffs/etc/freeradius/certs/server.csr"))
+    percent+=5;
+if (f_exists("/jffs/etc/freeradius/certs/server.key"))
+    percent+=5;
+if (f_exists("/jffs/etc/freeradius/certs/ca.pem"))
+    percent+=5;
+if (f_exists("/jffs/etc/freeradius/certs/ca.key"))
+    percent+=5;
+if (f_exists("/jffs/etc/freeradius/certs/server.crt"))
+    percent+=5;
+if (f_exists("/jffs/etc/freeradius/certs/server.p12"))
+    percent+=5;
+if (f_exists("/jffs/etc/freeradius/certs/server.pem"))
+    percent+=5;
+if (f_exists("/jffs/etc/freeradius/certs/ca.der"))
+    percent+=5;
+    
+if (percent==100)
+    {
+    websWrite(wp,"certicate generation done<br />\n");
+    }else{
+    websWrite(wp,"generating %d%%, this may take a long time<br />\n",percent);
+    }
+}
+#endif

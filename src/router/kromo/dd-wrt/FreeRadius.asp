@@ -16,7 +16,6 @@ function to_apply(F) {
 function generate_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "generate_certificate";
-	checked(F);
 	F.submit();
 }
 
@@ -24,7 +23,7 @@ function generate_submit(F) {
 var update;
 
 addEvent(window, "load", function() {
-		show_layer_ext(document.setup.radius_enabled, 'idradius', <% nvram_else_match("radius_enabled", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.radius.radius_enabled, 'idradius', <% nvram_else_match("radius_enabled", "1", "1", "0"); %> == 1);
 		update = new StatusbarUpdate();
 		update.start();
 		
@@ -49,14 +48,15 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="eop" action="apply.cgi" method="post">
-							<input type="hidden" name="submit_button" value="freeradius" />
+						<form name="radius" action="apply.cgi" method="post">
+							<input type="hidden" name="submit_button" value="FreeRadius" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 
 							<fieldset>
 							<legend><% tran("freeradius.h2"); %></legend>
+							<div class="setting">
 							<div class="label"><% tran("freeradius.h2"); %></div>
 							<input class="spaceradio" type="radio" name="radius_enabled" value="1" <% nvram_checked("radius_enabled", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
 							<input class="spaceradio" type="radio" name="radius_enabled" value="0" <% nvram_checked("radius_enabled", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>

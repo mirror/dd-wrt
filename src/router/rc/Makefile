@@ -494,6 +494,9 @@ endif
 ifeq ($(CONFIG_TMK),y)
 CFLAGS += -DHAVE_TMK
 endif
+ifeq ($(CONFIG_FREERADIUS),y)
+CFLAGS += -DHAVE_FREERADIUS
+endif
 
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH

@@ -171,6 +171,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_MILKFISH
 	handle = start_service_nofree_f("milkfish", handle);
 #endif
+#ifdef HAVE_FREERADIUS
+	handle = start_service_nofree_f("freeradius", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 
@@ -183,6 +186,9 @@ int stop_services_main(int argc, char **argv)
 	void *handle = NULL;
 
 	// stop_ses();
+#ifdef HAVE_FREERADIUS
+	handle = stop_service_nofree("freeradius", handle);
+#endif
 #ifdef HAVE_MULTICAST
 	handle = stop_service_nofree("igmp_proxy", handle);
 #endif
@@ -749,6 +755,15 @@ static void handle_ddns(void)
 
 }
 
+#ifdef HAVE_FREERADIUS
+
+static void handle_freeradius(void)
+{
+	startstop_f("freeradius");
+}
+#endif
+
+
 /* 
  * static void handle_ping (void) { char *ip = nvram_safe_get ("ping_ip"); // 
  * use Ping.asp as a debugging console char cmd[256] = { 0 }; //snprintf
@@ -953,6 +968,9 @@ static struct SERVICES services_def[] = {
 	{"start_pptp", handle_pppoe},
 #ifdef HAVE_L2TP
 	{"start_l2tp", handle_pppoe},
+#endif
+#ifdef HAVE_FREERADIUS
+	{"start_freeradius", handle_freeradius},
 #endif
 #ifdef HAVE_HEARTBEAT
 	{"start_heartbeat", handle_pppoe},
