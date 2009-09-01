@@ -711,6 +711,7 @@ void rmmod(char *module);
 int do80211priv(const char *ifname, int op, void *data, size_t len);
 int getsocket(void);
 int isEMP(char *ifname);
+int isXR36(char *ifname);
 char *get3GControlDevice(void);
 char *getIsoName(const char *country);
 
