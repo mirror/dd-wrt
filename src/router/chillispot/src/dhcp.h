@@ -56,7 +56,7 @@
 
 
 /* Misc decl */
-#define DHCP_DEBUG        0      /* Print debug information */
+#define DHCP_DEBUG        0     /* Print debug information */
 #define DHCP_MTU       1492      /* Maximum MTU size */
 
 #define DHCP_TAG_VLEN 255        /* Tag value always shorter than this */
