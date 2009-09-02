@@ -423,7 +423,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Services";
 bmenu.servicesServices="Services";
-bmenu.servicesRadius="Radius";
+bmenu.servicesRadius="FreeRadius";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
