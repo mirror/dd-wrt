@@ -176,7 +176,6 @@ void start_freeradius(void)
 	char *radiusd_argv[] =
 	    { "radiusd", "-d", "/jffs/etc/freeradius", NULL };
 	FILE *fp = NULL;
-
 	stop_freeradius();
 	nvram_default_get("radius_country", "DE");
 	nvram_default_get("radius_state", "Saxon");
@@ -189,9 +188,12 @@ void start_freeradius(void)
 	nvram_default_get("radius_enabled", "0");
 	if (!nvram_match("radius_enabled", "1"))
 		return;
+#ifdef HAVE_X86
+	system("mount -t ext2 /dev/discs/disc0/part3 /jffs");
+#else
 	if (!nvram_match("jffs_mounted", "1"))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
-
+#endif
 	fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
 	if (NULL == fp) {
 		//prepare files
