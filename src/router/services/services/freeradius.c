@@ -215,6 +215,10 @@ void start_freeradius(void)
 		"\tFall-Through = Yes\n\n");
 
 	for (i = 0; i < db->usercount; i++) {
+		if (!db->users[i].usersize)
+		    continue;
+		if (!db->users[i].user || !strlen(db->users[i].user))
+		    continue;
 		fprintf(fp, "%s        Cleartext-Password := \"%s\"\n",
 			db->users[i].user, db->users[i].passwd);
 		if (db->users[i].downstream)
