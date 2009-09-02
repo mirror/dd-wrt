@@ -98,7 +98,7 @@ static void gen_cert(char *name, int type)
 
 	fprintf(fp, "default_bits		= 2048\n"
 		"input_password		= %s\n"
-		"output_password		= %s\n",nvram_default_get("radius_passphrase","whatever"));
+		"output_password		= %s\n",nvram_default_get("radius_passphrase","whatever"),nvram_default_get("radius_passphrase","whatever"));
 	if (type == TYPE_CA) {
 		fprintf(fp, "x509_extensions		= v3_ca\n");
 		fprintf(fp, "\n" "[certificate_authority]\n");
