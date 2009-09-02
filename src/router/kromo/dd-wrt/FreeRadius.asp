@@ -122,7 +122,7 @@ addEvent(window, "unload", function() {
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.expiration"); %></div>
-							<input size="32" class="num" name="radius_expiration" maxlength="5" size="5" value="<% nvram_get("radius_expiration"); %>" />
+							<input class="num" maxlength="5" size="5" name="radius_expiration" value="<% nvram_get("radius_expiration"); %>" />
 								<span class="default">
 								<script type="text/javascript">
 								//<![CDATA[
