@@ -1767,6 +1767,7 @@ freeradius.h2="FreeRadius";
 freeradius.certificate="Server Certificate";
 freeradius.settings="Settings";
 freeradius.users="Users";
+freeradius.clients="Clients";
 
 freeradius.countrycode="Country Code";
 freeradius.state="State or Province";
