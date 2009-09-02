@@ -355,7 +355,7 @@ log {
 	#  The command-line option "-X" over-rides this option, and forces
 	#  logging to go to stdout.
 	#
-	destination = files
+	destination = syslog
 
 	#
 	#  The logging messages for the server are appended to the
@@ -364,7 +364,7 @@ log {
 	#  If the server is running in debugging mode, this file is
 	#  NOT used.
 	#
-	file = ${logdir}/radius.log
+	#file = ${logdir}/radius.log
 
 	#
 	#  If this configuration parameter is set, then log messages for
