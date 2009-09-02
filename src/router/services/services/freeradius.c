@@ -208,21 +208,21 @@ void start_freeradius(void)
 	struct radiusdb *db = loadradiusdb();
 	int i;
 	fp = fopen("/jffs/etc/freeradius/users", "wb");
-//	fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
-//		"Session-Timeout := 3600,\n"
-//		"User-Name := \"%%{User-Name}\",\n"
-//		"Acct-Interim-Interval := 300,\n" "Fall-Through = Yes\n\n");
+	fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
+		"\tSession-Timeout := 3600,\n"
+		"\tUser-Name := \"%%{User-Name}\",\n"
+		"\tAcct-Interim-Interval := 300,\n" "Fall-Through = Yes\n\n");
 
 	for (i = 0; i < db->usercount; i++) {
-		fprintf(fp, "%s        Cleartext-Password := \"%s\" ",
+		fprintf(fp, "%s        Cleartext-Password := \"%s\"\n",
 			db->users[i].user, db->users[i].passwd);
 		if (db->users[i].downstream)
-			fprintf(fp, "WISPr-Bandwidth-Max-Down := %d",
+			fprintf(fp, "\tWISPr-Bandwidth-Max-Down := %d",
 				db->users[i].downstream * 1024);
 		if (db->users[i].upstream) {
 			if (db->users[i].downstream)
-				fprintf(fp, ",");
-			fprintf(fp, "WISPr-Bandwidth-Max-Up := %d\n",
+				fprintf(fp, ",\n");
+			fprintf(fp, "\tWISPr-Bandwidth-Max-Up := %d\n",
 				db->users[i].upstream * 1024);
 		}
 		fprintf(fp,"\n");
