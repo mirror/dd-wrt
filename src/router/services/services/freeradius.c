@@ -211,7 +211,8 @@ void start_freeradius(void)
 	fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
 		"\tSession-Timeout := 3600,\n"
 		"\tUser-Name := \"%%{User-Name}\",\n"
-		"\tAcct-Interim-Interval := 300,\n" "Fall-Through = Yes\n\n");
+		"\tAcct-Interim-Interval := 300,\n" 
+		"\tFall-Through = Yes\n\n");
 
 	for (i = 0; i < db->usercount; i++) {
 		fprintf(fp, "%s        Cleartext-Password := \"%s\"\n",
