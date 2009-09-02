@@ -270,7 +270,11 @@ main (int argc, char **argv)
   
   /* port and conf file mandatory */
   if (!vty_port || !config_file)
-    usage (progname, 1);
+    {
+      fprintf (stderr, "Error: --vty_port and --config_file arguments"
+                       " are both required\n");
+      usage (progname, 1);
+    }
   
   /* Make master thread emulator. */
   zebrad.master = thread_master_create ();
@@ -308,8 +312,11 @@ main (int argc, char **argv)
     exit (0);
 
   /* Daemonize. */
-  if (daemon_mode)
-    daemon (0, 0);
+  if (daemon_mode && daemon (0, 0) < 0)
+    {
+      perror("daemon start failed");
+      exit (1);
+    }
 
   /* Needed for BSD routing socket. */
   pid = getpid ();
