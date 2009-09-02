@@ -56,7 +56,6 @@ static void writeword(unsigned int value, FILE * out)
 
 struct radiusdb *loadradiusdb(void)
 {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	FILE *fp = fopen("/jffs/etc/freeradius/dd-wrtusers.db", "rb");
 	if (fp == NULL)
 		return NULL;
@@ -92,13 +91,11 @@ fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 		db->users[i].upstream = readword(fp);
 	}
 	fclose(fp);
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	return db;
 }
 
 void writeradiusdb(struct radiusdb *db)
 {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	FILE *fp = fopen("/jffs/etc/freeradius/dd-wrtusers.db", "wb");
 	if (fp == NULL)
 		return;
@@ -127,13 +124,11 @@ fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 		writeword(db->users[i].downstream, fp);
 		writeword(db->users[i].upstream, fp);
 	}
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	fclose(fp);
 }
 
 void freeradiusdb(struct radiusdb *db)
 {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	unsigned int i;
 	for (i = 0; i < db->usercount; i++) {
 		if (db->users[i].passwd && db->users[i].passwordsize)
@@ -144,5 +139,92 @@ fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	if (db->users)
 	    free(db->users);
 	free(db);
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
+}
+
+
+
+
+
+
+struct radiusclientdb *loadradiusclientdb(void)
+{
+	FILE *fp = fopen("/jffs/etc/freeradius/dd-wrtclients.db", "rb");
+	if (fp == NULL)
+		return NULL;
+	struct radiusclientdb *db;
+	if (feof(fp))
+	    return NULL;
+	db = malloc(sizeof(struct radiusclientdb));
+	db->usercount = readword(fp);
+	if (db->usercount)
+	    db->users = malloc(db->usercount * sizeof(struct radiusclient));
+	else
+	    db->users = NULL;
+	unsigned int i;
+	for (i = 0; i < db->usercount; i++) {
+		db->users[i].fieldlen = readword(fp);
+		db->users[i].clientsize = readword(fp);
+		if (db->users[i].clientsize)
+		{
+		db->users[i].client = malloc(db->users[i].clientsize);
+		fread(db->users[i].client, db->users[i].clientsize, 1, fp);
+		}else
+		db->users[i].client = NULL;
+		
+		db->users[i].passwordsize = readword(fp);
+		if (db->users[i].passwordsize)
+		{
+		db->users[i].passwd = malloc(db->users[i].passwordsize);
+		fread(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
+		}else
+		    db->users[i].passwd=NULL;
+		
+	}
+	fclose(fp);
+	return db;
+}
+
+void writeradiusclientdb(struct radiusclientdb *db)
+{
+	FILE *fp = fopen("/jffs/etc/freeradius/dd-wrtclients.db", "wb");
+	if (fp == NULL)
+		return;
+	writeword(db->usercount, fp);
+	unsigned int i;
+	for (i = 0; i < db->usercount; i++) {
+		if (db->users[i].client)
+		    db->users[i].clientsize = strlen(db->users[i].client)+1;
+		else
+		    db->users[i].clientsize = 0;
+
+		if (db->users[i].passwd)
+		    db->users[i].passwordsize = strlen(db->users[i].passwd)+1;
+		else
+		    db->users[i].passwordsize = 0;
+
+		db->users[i].fieldlen=sizeof(struct radiusclient)+db->users[i].clientsize+db->users[i].passwordsize - 8;
+
+		writeword(db->users[i].fieldlen, fp);
+		writeword(db->users[i].clientsize, fp);
+		if (db->users[i].clientsize)
+		    fwrite(db->users[i].client, db->users[i].clientsize, 1, fp);
+		writeword(db->users[i].passwordsize, fp);
+		if (db->users[i].passwordsize)
+		    fwrite(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
+	}
+	fclose(fp);
+}
+
+void freeradiusclientdb(struct radiusclientdb *db)
+{
+	unsigned int i;
+	for (i = 0; i < db->usercount; i++) {
+		if (db->users[i].passwd && db->users[i].passwordsize)
+		    free(db->users[i].passwd);
+		if (db->users[i].client && db->users[i].clientsize)
+		    free(db->users[i].client);
+	}
+	if (db->users)
+	    free(db->users);
+	free(db);
 }
