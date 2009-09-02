@@ -1363,6 +1363,9 @@ void start_restore_defaults(void)
 	nvram_unset("sputnik_mjid");
 	nvram_unset("sputnik_rereg");
 #endif
+#ifdef HAVE_FREERADIUS
+	nvram_unset("cert_running");
+#endif
 	nvram_unset("probe_blacklist");
 
 	if (nvram_get("overclocking") == NULL) {
