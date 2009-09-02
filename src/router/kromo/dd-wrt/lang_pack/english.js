@@ -1775,11 +1775,10 @@ freeradius.locality="Locality";
 freeradius.organisation="Organisation / Company";
 freeradius.email="Email Address";
 freeradius.common="Common Certificate Name";
-freeradius.expiration="Expiration";
+freeradius.expiration="Expiration in days";
 freeradius.passphrase="Passphrase";
 freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
-freeradius.generate="Generate Certificate";
 freeradius.port="Radius Port";
 
 // ** Wireless_Advanced.asp **//
