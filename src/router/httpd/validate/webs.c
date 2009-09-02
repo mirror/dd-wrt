@@ -3603,15 +3603,102 @@ void del_radius_user(webs_t wp)
 	freeradiusdb(db);
 }
 
-void save_radius_user(webs_t wp)
+
+void add_radius_client(webs_t wp)
+{
+	struct radiusclientdb *db = loadradiusclientdb();
+	if (db == NULL) {
+		db = malloc(sizeof(struct radiusclientdb));
+		db->usercount = 0;
+		db->users = malloc(sizeof(struct radiusclient));
+	} else {
+		db->users =
+		    realloc(db->users,
+			    sizeof(struct radiusclient) * (db->usercount + 1));
+	}
+	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - 8;
+	db->users[db->usercount].clientsize = 0;
+	db->users[db->usercount].client = NULL;
+	db->users[db->usercount].passwd = NULL;
+	db->users[db->usercount].passwordsize = 0;
+	db->usercount++;
+	writeradiusclientdb(db);
+	freeradiusclientdb(db);
+}
+
+void del_radius_client(webs_t wp)
+{
+	char *val = websGetVar(wp, "del_value", NULL);
+	if (val == NULL)
+		return;
+	int todel = atoi(val);
+	struct radiusclientdb *db = loadradiusclientdb();
+	if (db == NULL)
+		return;
+	if (db->usercount == 0)
+		return;
+	if (db->usercount > 1)
+		memcpy(&db->users[todel], &db->users[todel + 1],
+		       sizeof(struct radiusclient) * ((db->usercount - 1) -
+						    todel));
+	db->usercount--;
+	if (db->usercount > 0)
+		db->users =
+		    realloc(db->users,
+			    sizeof(struct radiusclient) * (db->usercount));
+	else {
+		free(db->users);
+		db->users = NULL;
+	}
+	writeradiusclientdb(db);
+	freeradiusclientdb(db);
+}
+
+
+
+static void save_radius_clients(webs_t wp)
+{
+	char passwd[] = { "passwordXXXXX" };
+	char user[] = { "usernameXXXXX" };
+	struct radiusclientdb *db = malloc(sizeof(struct radiusclientdb));
+	db->usercount = 0;
+	db->users = NULL;
+	while (1) {
+		sprintf(user, "client%d", db->usercount);
+		sprintf(passwd, "shared%d", db->usercount);
+		char *u = websGetVar(wp, user, NULL);
+		if (!u)
+			break;
+		char *p = websGetVar(wp, passwd, NULL);
+		if (!p)
+			break;
+
+		db->users =
+		    realloc(db->users,
+			    sizeof(struct radiusclient) * (db->usercount + 1));
+
+		db->users[db->usercount].client = malloc(strlen(u) + 1);
+		strcpy(db->users[db->usercount].client, u);
+		db->users[db->usercount].clientsize = strlen(u) + 1;
+		db->users[db->usercount].passwd = malloc(strlen(p) + 1);
+		strcpy(db->users[db->usercount].passwd, p);
+		db->users[db->usercount].passwordsize = strlen(p) + 1;
+		db->usercount++;
+	}
+	writeradiusclientdb(db);
+	freeradiusclientdb(db);
+
+}
+
+
+
+static void save_radius_users(webs_t wp)
 {
 	char passwd[] = { "passwordXXXXX" };
 	char user[] = { "usernameXXXXX" };
 	char downstream[] = { "passwordXXXXX" };
 	char upstream[] = { "usernameXXXXX" };
 	struct radiusdb *db = malloc(sizeof(struct radiusdb));
-	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
-	nvram_set("radius_port",websGetVar(wp,"radius_port","1812"));
 	db->usercount = 0;
 	db->users = NULL;
 	while (1) {
@@ -3649,6 +3736,18 @@ void save_radius_user(webs_t wp)
 	}
 	writeradiusdb(db);
 	freeradiusdb(db);
+
+}
+
+void save_radius_user(webs_t wp)
+{
+	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
+	nvram_set("radius_port",websGetVar(wp,"radius_port","1812"));
+	save_radius_users(wp);
+	save_radius_clients(wp);
+
+
+
 	char *value = websGetVar(wp, "action", "");
 	addAction("freeradius");
 	applytake(value);
