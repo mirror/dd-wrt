@@ -148,7 +148,7 @@ static void gen_cert(char *name, int type)
 
 void start_gen_radius_cert(void)
 {
-	if (nvram_match("cert_running","1"))
+	if (nvram_match("cert_running","1") && pidof("openssl") > 0)
 	    return; //already running
 	FILE *fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
 	if (NULL == fp) {
