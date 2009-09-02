@@ -37,14 +37,6 @@
 #define TYPE_SERVER 0x01
 #define TYPE_CA 0x2
 
-/* user database definition */
-struct userentry {
-	char username[32];
-	char password[64];
-	unsigned int downstream;
-	unsigned int upstream;
-	unsigned int enabled;
-};
 
 static void gen_cert(char *name, int type)
 {
@@ -76,9 +68,10 @@ static void gen_cert(char *name, int type)
 		"name_opt		= ca_default\n"
 		"cert_opt		= ca_default\n");
 	fprintf(fp, "default_days		= %s\n",
-		nvram_default_get("radius_days", "365"));
+		nvram_default_get("radius_expiration", "365"));
 	fprintf(fp,
-		"default_crl_days	= 30\n" "default_md		= md5\n"
+		"default_crl_days	= 30\n" 
+		"default_md		= md5\n"
 		"preserve		= no\n"
 		"policy			= policy_match\n"
 		"\n" "[ policy_match ]\n"
@@ -104,8 +97,8 @@ static void gen_cert(char *name, int type)
 		fprintf(fp, "distinguished_name	= server\n");
 
 	fprintf(fp, "default_bits		= 2048\n"
-		"input_password		= whatever\n"
-		"output_password		= whatever\n");
+		"input_password		= %s\n"
+		"output_password		= %s\n",nvram_default_get("radius_passphrase","whatever"));
 	if (type == TYPE_CA) {
 		fprintf(fp, "x509_extensions		= v3_ca\n");
 		fprintf(fp, "\n" "[certificate_authority]\n");
@@ -180,6 +173,8 @@ void start_freeradius(void)
 	nvram_default_get("radius_country", "DE");
 	nvram_default_get("radius_state", "Saxon");
 	nvram_default_get("radius_locality", "");
+	nvram_default_get("radius_expiration", "365");
+	nvram_default_get("radius_passphrase", "whatever");
 	nvram_default_get("radius_organisation", "DD-WRT");
 	nvram_default_get("radius_email", "info@dd-wrt.com");
 	nvram_default_get("radius_common", "DD-WRT FreeRadius Certificate");
