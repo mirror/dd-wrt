@@ -136,7 +136,7 @@ addEvent(window, "unload", function() {
 							<div id="idospfd">
 								<div class="setting">
 								    <div class="label"><% tran("route.ospf_conf"); %></div>
-								    <textarea cols="60" rows="4" id="ospfd_conf" name="ospfd_conf"></textarea>
+								    <textarea cols="60" rows="12" id="ospfd_conf" name="ospfd_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
 								    var ospfd_conf = fix_cr( '<% nvram_get("ospfd_conf"); %>' );
@@ -152,7 +152,7 @@ addEvent(window, "unload", function() {
 								<div id="idzebra">
 								<div class="setting">
 								    <div class="label"><% tran("route.zebra_legend"); %></div>
-								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
+								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
 								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
@@ -192,7 +192,7 @@ addEvent(window, "unload", function() {
 								<div id="idzebra">
 								<div class="setting">
 								    <div class="label"><% tran("route.zebra_legend"); %></div>
-								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
+								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
 								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
@@ -219,7 +219,7 @@ addEvent(window, "unload", function() {
 								<div id="idzebra">
 								<div class="setting">
 								    <div class="label"><% tran("route.zebra_legend"); %></div>
-								    <textarea cols="60" rows="4" id="zebra_conf" name="zebra_conf"></textarea>
+								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
 								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
