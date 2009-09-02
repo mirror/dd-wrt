@@ -87,8 +87,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 
-							<fieldset>
-							<legend><% tran("freeradius.h2"); %></legend>
+							<h2><% tran("freeradius.h2"); %></h2>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.h2"); %></div>
 							<input class="spaceradio" type="radio" name="radius_enabled" value="1" <% nvram_checked("radius_enabled", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
@@ -165,7 +164,6 @@ addEvent(window, "unload", function() {
 							</div>
 							
 							
-							</fieldset>
 							
 				
 							 <div class="submitFooter">
