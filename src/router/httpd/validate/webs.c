@@ -3512,6 +3512,7 @@ void tf_upnp(webs_t wp)
 
 void radius_generate_certificate(webs_t wp)
 {
+	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
 	nvram_set("radius_country", websGetVar(wp, "radius_country", ""));
 	nvram_set("radius_state", websGetVar(wp, "radius_state", ""));
 	nvram_set("radius_locality", websGetVar(wp, "radius_locality", ""));
@@ -3553,6 +3554,7 @@ struct radiusdb {
 #include <radiusdb.h>
 void add_radius_user(webs_t wp)
 {
+	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
 	struct radiusdb *db = loadradiusdb();
 	if (db == NULL) {
 		db = malloc(sizeof(struct radiusdb));
@@ -3577,6 +3579,7 @@ void add_radius_user(webs_t wp)
 
 void del_radius_user(webs_t wp)
 {
+	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
 	char *val = websGetVar(wp, "del_value", NULL);
 	if (val == NULL)
 		return;
@@ -3606,6 +3609,7 @@ void del_radius_user(webs_t wp)
 
 void add_radius_client(webs_t wp)
 {
+	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
 	struct radiusclientdb *db = loadradiusclientdb();
 	if (db == NULL) {
 		db = malloc(sizeof(struct radiusclientdb));
@@ -3628,6 +3632,7 @@ void add_radius_client(webs_t wp)
 
 void del_radius_client(webs_t wp)
 {
+	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
 	char *val = websGetVar(wp, "del_value", NULL);
 	if (val == NULL)
 		return;
