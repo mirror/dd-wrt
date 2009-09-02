@@ -3531,7 +3531,7 @@ void radius_generate_certificate(webs_t wp)
 	system("rm /jffs/etc/freeradius/certs/ca.der");
 	system("rm /jffs/etc/freeradius/certs/index.txt");
 	system("rm /jffs/etc/freeradius/certs/serial");
-	system("startservice gen_radius_cert&");
+	system("startservice_f gen_radius_cert");
 }
 
 /*struct radiususer {
@@ -3610,6 +3610,8 @@ void save_radius_user(webs_t wp)
 	char downstream[] = { "passwordXXXXX" };
 	char upstream[] = { "usernameXXXXX" };
 	struct radiusdb *db = malloc(sizeof(struct radiusdb));
+	nvram_set("radius_enabled",websGetVar(wp,"radius_enabled","0"));
+	nvram_set("radius_port",websGetVar(wp,"radius_port","1812"));
 	db->usercount = 0;
 	db->users = NULL;
 	while (1) {
