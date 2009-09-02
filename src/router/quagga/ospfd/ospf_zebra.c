@@ -91,8 +91,9 @@ ospf_interface_add (int command, struct zclient *zclient, zebra_size_t length)
   ifp = zebra_interface_add_read (zclient->ibuf);
 
   if (IS_DEBUG_OSPF (zebra, ZEBRA_INTERFACE))
-    zlog_debug ("Zebra: interface add %s index %d flags %ld metric %d mtu %d",
-               ifp->name, ifp->ifindex, ifp->flags, ifp->metric, ifp->mtu);
+    zlog_debug ("Zebra: interface add %s index %d flags %llx metric %d mtu %d",
+               ifp->name, ifp->ifindex, (unsigned long long)ifp->flags,
+               ifp->metric, ifp->mtu);
 
   assert (ifp->info);
 
@@ -132,7 +133,7 @@ ospf_interface_delete (int command, struct zclient *zclient,
 
   if (IS_DEBUG_OSPF (zebra, ZEBRA_INTERFACE))
     zlog_debug
-      ("Zebra: interface delete %s index %d flags %ld metric %d mtu %d",
+      ("Zebra: interface delete %s index %d flags %lld metric %d mtu %d",
        ifp->name, ifp->ifindex, ifp->flags, ifp->metric, ifp->mtu);
 
 #ifdef HAVE_SNMP
@@ -377,8 +378,8 @@ ospf_zebra_add (struct prefix_ipv4 *p, struct ospf_route *or)
           else
             {
               stream_putc (s, ZEBRA_NEXTHOP_IFINDEX);
-              if (path->oi)
-                stream_putl (s, path->oi->ifp->ifindex);
+              if (path->ifindex)
+                stream_putl (s, path->ifindex);
               else
                 stream_putl (s, 0);
             }
@@ -438,11 +439,11 @@ ospf_zebra_delete (struct prefix_ipv4 *p, struct ospf_route *or)
               nexthop = &path->nexthop;
               api.nexthop = &nexthop;
             }
-          else if (ospf_if_exists(path->oi) && (path->oi->ifp))
+          else if (if_lookup_by_index(path->ifindex))
             {
               SET_FLAG (api.message, ZAPI_MESSAGE_NEXTHOP);
               api.ifindex_num = 1;
-              api.ifindex = &path->oi->ifp->ifindex;
+              api.ifindex = &path->ifindex;
             }
           else if ( IS_DEBUG_OSPF(zebra,ZEBRA_REDISTRIBUTE) )
             {
@@ -681,16 +682,13 @@ ospf_external_lsa_originate_check (struct ospf *ospf,
 int
 ospf_distribute_check_connected (struct ospf *ospf, struct external_info *ei)
 {
-  struct route_node *rn;
+  struct listnode *node;
+  struct ospf_interface *oi;
 
-  for (rn = route_top (ospf->networks); rn; rn = route_next (rn))
-    if (rn->info != NULL)
-      if (prefix_match (&rn->p, (struct prefix *) &ei->p))
-        {
-          route_unlock_node (rn);
+
+  for (ALL_LIST_ELEMENTS_RO (ospf->oiflist, node, oi))
+      if (prefix_match (oi->address, (struct prefix *) &ei->p))
           return 0;
-        }
-
   return 1;
 }
 

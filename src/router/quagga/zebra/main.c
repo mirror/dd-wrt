@@ -362,8 +362,11 @@ main (int argc, char **argv)
     exit (0);
 
   /* Daemonize. */
-  if (daemon_mode)
-    daemon (0, 0);
+  if (daemon_mode && daemon (0, 0) < 0)
+    {
+      zlog_err("Zebra daemon failed: %s", strerror(errno));
+      exit (1);
+    }
 
   /* Output pid of zebra. */
   pid_output (pid_file);
@@ -381,6 +384,9 @@ main (int argc, char **argv)
 
   /* Needed for BSD routing socket. */
   pid = getpid ();
+
+  /* This must be done only after locking pidfile (bug #403). */
+  zebra_zserv_socket_init ();
 
   /* Make vty server socket. */
   vty_serv_sock (vty_addr, vty_port, ZEBRA_VTYSH_PATH);

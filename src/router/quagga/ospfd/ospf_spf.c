@@ -369,7 +369,11 @@ ospf_get_next_link (struct vertex *v, struct vertex *w,
 {
   u_char *p;
   u_char *lim;
+  u_char lsa_type =  LSA_LINK_TYPE_TRANSIT;
   struct router_lsa_link *l;
+
+  if (w->type == OSPF_VERTEX_ROUTER)
+    lsa_type = LSA_LINK_TYPE_POINTOPOINT;
 
   if (prev_link == NULL)
     p = ((u_char *) v->lsa) + OSPF_LSA_HEADER_SIZE + 4;
@@ -388,13 +392,7 @@ ospf_get_next_link (struct vertex *v, struct vertex *w,
 
       p += (ROUTER_LSA_MIN_SIZE + (l->m[0].tos_count * ROUTER_LSA_TOS_SIZE));
 
-      if (l->m[0].type == LSA_LINK_TYPE_STUB)
-        continue;
-
-      /* Defer NH calculation via VLs until summaries from
-         transit areas area confidered             */
-
-      if (l->m[0].type == LSA_LINK_TYPE_VIRTUALLINK)
+      if (l->m[0].type != lsa_type)
         continue;
 
       if (IPV4_ADDR_SAME (&l->link_id, &w->id))
@@ -680,6 +678,19 @@ ospf_nexthop_calculation (struct ospf_area *area, struct vertex *v,
                 }
             }
         }
+      /* NB: This code is non-trivial.
+       * 
+       * E.g. it is not enough to know that V connects to the root. It is
+       * also important that the while above, looping through all links from
+       * W->V found at least one link, so that we know there is
+       * bi-directional connectivity between V and W.  Otherwise, if we
+       * /always/ return here, but don't check that W->V exists then we
+       * we will prevent SPF from finding/using higher cost paths..
+       *
+       * See also bug #330, and also:
+       *
+       * http://blogs.sun.com/paulj/entry/the_difference_a_line_makes
+       */
       if (added)
         return added;
     }
@@ -1079,13 +1090,14 @@ ospf_rtrs_print (struct route_table *rtrs)
                 {
                   if (IS_DEBUG_OSPF_EVENT)
                     zlog_debug ("   directly attached to %s\r\n",
-                               IF_NAME (path->oi));
+				ifindex2ifname (path->ifindex));
                 }
               else
                 {
                   if (IS_DEBUG_OSPF_EVENT)
                     zlog_debug ("   via %s, %s\r\n",
-                               inet_ntoa (path->nexthop), IF_NAME (path->oi));
+				inet_ntoa (path->nexthop),
+				ifindex2ifname (path->ifindex));
                 }
             }
         }
@@ -1164,12 +1176,6 @@ ospf_spf_calculate (struct ospf_area *area, struct route_table *new_table,
       *(v->stat) = LSA_SPF_IN_SPFTREE;
 
       ospf_vertex_add_parent (v);
-
-      /* Note that when there is a choice of vertices closest to the
-         root, network vertices must be chosen before router vertices
-         in order to necessarily find all equal-cost paths. */
-      /* We don't do this at this moment, we should add the treatment
-         above codes. -- kunihiro. */
 
       /* RFC2328 16.1. (4). */
       if (v->type == OSPF_VERTEX_ROUTER)

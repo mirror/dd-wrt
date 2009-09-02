@@ -2373,7 +2373,7 @@ ospf_read (struct thread *thread)
   ospfh = (struct ospf_header *) STREAM_PNT (ibuf);
 
   /* associate packet with ospf interface */
-  oi = ospf_if_lookup_recv_if (ospf, iph->ip_src);
+  oi = ospf_if_lookup_recv_if (ospf, iph->ip_src, ifp);
 
   /* If incoming interface is passive one, ignore it. */
   if (oi && OSPF_IF_PASSIVE_STATUS (oi) == OSPF_IF_PASSIVE)
@@ -2419,14 +2419,15 @@ ospf_read (struct thread *thread)
           return 0;
         }
     }
-    
+
   /* else it must be a local ospf interface, check it was received on 
    * correct link 
    */
   else if (oi->ifp != ifp)
     {
-      zlog_warn ("Packet from [%s] received on wrong link %s",
-                 inet_ntoa (iph->ip_src), ifp->name); 
+      if (IS_DEBUG_OSPF_EVENT)
+        zlog_warn ("Packet from [%s] received on wrong link %s",
+                   inet_ntoa (iph->ip_src), ifp->name); 
       return 0;
     }
   else if (oi->state == ISM_Down)
