@@ -1606,6 +1606,36 @@ wl_mac.deny="WLAN-MAC-Adressen, die nicht auf das Netzwerk zugreifen dürfen";
 wl_mac.allow="WLAN-MAC-Adressen, die auf das Netzwerk zugreifen dürfen";
 
 
+wl_wimax.titl="WiMAX";
+wl_wimax.h2="Worldwide Interoperability for Microwave Access";
+wl_wimax.downstream="Downstream Frequenz";
+wl_wimax.upstream="Upstream Frequenz";
+wl_wimax.width="Kanal Breite";
+wl_wimax.duplex="Duplex Modus";
+wl_wimax.mode="Betriebsmodus";
+wl_wimax.mac="Teilnehmer MAC Address";
+
+// ** FreeRadius.asp **//
+freeradius.titl="FreeRadius";
+freeradius.h2="FreeRadius";
+freeradius.certificate="Server Certificate";
+freeradius.settings="Einstellungen";
+freeradius.users="Nutzer";
+freeradius.clients="Klienten";
+
+freeradius.countrycode="Ländercode";
+freeradius.state="Staat oder Provinz";
+freeradius.locality="Lokalität";
+freeradius.organisation="Organisation / Firma";
+freeradius.email="Email Addresse";
+freeradius.common="Zertifikats Name";
+freeradius.expiration="Verfall in Tagen";
+freeradius.passphrase="Kennwort";
+freeradius.generate="Erzeuge Certificate";
+freeradius.cert_status="Zertifikat Status";
+freeradius.port="Radius Port";
+
+
 // **************************************************************** Wireless_Advanced.asp ***************************************************************//
 
 wl_adv.titl="Erweiterte WLAN-Einstellungen";
