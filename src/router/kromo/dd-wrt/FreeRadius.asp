@@ -38,6 +38,20 @@ function user_del_submit(F,I) {
 	F.submit();
 }
 
+function client_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_radius_client";
+	F.submit();
+}
+
+
+function client_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_radius_client";
+	F.del_value.value=I;
+	F.submit();
+}
+
 
 var update;
 
@@ -136,6 +150,11 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script></span>
 							</div>
+							</fieldset>
+
+							<fieldset>
+							<legend><% tran("freeradius.clients"); %></legend>
+							<% show_radius_clients(); %>
 							</fieldset>
 
 							<fieldset>

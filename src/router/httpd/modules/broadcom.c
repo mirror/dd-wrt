@@ -949,6 +949,8 @@ static struct gozila_action gozila_actions[] = {
 	{"FreeRadius", "generate_certificate", "", 0, REFRESH, "radius_generate_certificate"},
 	{"FreeRadius", "add_radius_user", "", 0, REFRESH, "add_radius_user"},
 	{"FreeRadius", "del_radius_user", "", 0, REFRESH, "del_radius_user"},
+	{"FreeRadius", "add_radius_client", "", 0, REFRESH, "add_radius_client"},
+	{"FreeRadius", "del_radius_client", "", 0, REFRESH, "del_radius_client"},
 	{"FreeRadius", "save_radius_user", "", 0, REFRESH, "save_radius_user"},
 #endif
 #ifdef HAVE_BONDING
