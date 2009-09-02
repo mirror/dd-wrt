@@ -208,10 +208,10 @@ void start_freeradius(void)
 	struct radiusdb *db = loadradiusdb();
 	int i;
 	fp = fopen("/jffs/etc/freeradius/users", "wb");
-	fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
-		"Session-Timeout := 3600,\n"
-		"User-Name := \"%%{User-Name}\",\n"
-		"Acct-Interim-Interval := 300,\n" "Fall-Through = Yes\n\n");
+//	fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
+//		"Session-Timeout := 3600,\n"
+//		"User-Name := \"%%{User-Name}\",\n"
+//		"Acct-Interim-Interval := 300,\n" "Fall-Through = Yes\n\n");
 
 	for (i = 0; i < db->usercount; i++) {
 		fprintf(fp, "%s        Cleartext-Password := \"%s\" ",
