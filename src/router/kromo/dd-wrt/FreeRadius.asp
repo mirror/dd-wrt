@@ -120,6 +120,14 @@ addEvent(window, "unload", function() {
 							<div class="label"><% tran("freeradius.common"); %></div>
 							<input size="32" name="radius_common" value="<% nvram_get("radius_common"); %>" />
 							</div>
+							<div class="setting">
+							<div class="label"><% tran("freeradius.expiration"); %></div>
+							<input size="32" class="num" name="radius_expiration" maxlength="5" size="5" value="<% nvram_get("radius_expiration"); %>" />
+							</div>
+							<div class="setting">
+							<div class="label"><% tran("freeradius.passphrase"); %></div>
+							<input size="32" name="radius_passphrase" value="<% nvram_get("radius_passphrase"); %>" />
+							</div>
 							<div class="center">
 							<script type="text/javascript">
 							//<![CDATA[
