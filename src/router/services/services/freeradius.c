@@ -49,6 +49,8 @@ struct userentry {
 static void gen_cert(char *name, int type)
 {
 	FILE *fp = fopen(name, "wb");
+	if (fp==NULL)
+	    return;
 	fprintf(fp, "[ ca ]\n"
 		"default_ca		= CA_default\n"
 		"\n"
