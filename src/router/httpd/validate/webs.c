@@ -3516,6 +3516,8 @@ void radius_generate_certificate(webs_t wp)
 	nvram_set("radius_country", websGetVar(wp, "radius_country", ""));
 	nvram_set("radius_state", websGetVar(wp, "radius_state", ""));
 	nvram_set("radius_locality", websGetVar(wp, "radius_locality", ""));
+	nvram_set("radius_expiration", websGetVar(wp, "radius_expiration", "365"));
+	nvram_set("radius_passphrase", websGetVar(wp, "radius_passphrase", "whatever"));
 	nvram_set("radius_organisation",
 		  websGetVar(wp, "radius_organisation", ""));
 	nvram_set("radius_email", websGetVar(wp, "radius_email", ""));
