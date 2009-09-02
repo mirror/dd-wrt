@@ -224,6 +224,8 @@ static int usb_add_ufd()
 			sprintf(path, "%s", nvram_safe_get("usb_runonmount"));
 			if (stat(path, &tmp_stat) == 0)	//file exists
 			{
+				setenv("PATH","/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",1);
+				setenv("LD_LIBRARY_PATH","/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",1);
 				system(path);
 			}
 		}
