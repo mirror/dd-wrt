@@ -1762,7 +1762,7 @@ wl_wimax.mac="Subscriber MAC Address";
 
 // ** FreeRadius.asp **//
 var freeradius = new Object();
-freeradius.titl="Radius";
+freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="Server Certificate";
 freeradius.settings="Settings";
