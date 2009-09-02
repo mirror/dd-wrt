@@ -97,11 +97,6 @@
 # matched an entry with no Fall-Through)
 #
 
-DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1
-        Session-Timeout := 3600,
-        User-Name := "%{User-Name}",
-        Acct-Interim-Interval := 300,
-        Fall-Through = Yes
 
 DEFAULT
 	Service-Type == Framed-User,
