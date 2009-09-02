@@ -150,7 +150,6 @@ void start_gen_radius_cert(void)
 {
 	if (nvram_match("cert_running","1"))
 	    return; //already running
-	nvram_set("cert_running","1");
 	FILE *fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
 	if (NULL == fp) {
 		//prepare files
@@ -161,6 +160,7 @@ void start_gen_radius_cert(void)
 
 	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER);
 	gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA);
+	nvram_set("cert_running","1");
 	//this takes a long time (depending from the cpu speed)
 	system("cd /jffs/etc/freeradius/certs && ./bootstrap");
 	nvram_set("cert_running","0");
