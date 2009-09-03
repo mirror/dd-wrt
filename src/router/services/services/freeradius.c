@@ -158,6 +158,7 @@ void start_gen_radius_cert(void)
 	nvram_set("cert_running","1");
 	//this takes a long time (depending from the cpu speed)
 	system("cd /jffs/etc/freeradius/certs && ./bootstrap");
+	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf",nvram_safe_get("radius_passphrase"));
 	nvram_set("cert_running","0");
 }
 
@@ -197,9 +198,8 @@ void start_freeradius(void)
 	} else
 		fclose(fp);
 
-	sysprintf
-	    ("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",
-	     nvram_safe_get("radius_port"));
+	sysprintf("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",nvram_safe_get("radius_port"));
+	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf",nvram_safe_get("radius_passphrase"));
 
 	fp = fopen("/jffs/etc/freeradius/certs/server.pem", "rb");
 	if (NULL == fp) {
