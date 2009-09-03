@@ -210,7 +210,7 @@ out:
 static int checkusername(unsigned char *username, unsigned int userlen) {
 
 	char* listshell = NULL;
-	char* usershell = NULL;
+//	char* usershell = NULL;
 	TRACE(("enter checkusername"))
 	if (userlen > MAX_USERNAME_LEN) {
 		return DROPBEAR_FAILURE;
@@ -260,33 +260,33 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 	TRACE(("shell is %s", ses.authstate.pw_shell))
 
 	/* check that the shell is set */
-	usershell = ses.authstate.pw_shell;
-	if (usershell[0] == '\0') {
-		/* empty shell in /etc/passwd means /bin/sh according to passwd(5) */
-		usershell = "/bin/sh";
-	}
+//	usershell = ses.authstate.pw_shell;
+//	if (usershell[0] == '\0') {
+//		/* empty shell in /etc/passwd means /bin/sh according to passwd(5) */
+//		usershell = "/bin/sh";
+//	}
 
 	/* check the shell is valid. If /etc/shells doesn't exist, getusershell()
 	 * should return some standard shells like "/bin/sh" and "/bin/csh" (this
 	 * is platform-specific) */
-	setusershell();
-	while ((listshell = getusershell()) != NULL) {
-		TRACE(("test shell is '%s'", listshell))
-		if (strcmp(listshell, usershell) == 0) {
-			/* have a match */
-			goto goodshell;
-		}
-	}
+//	setusershell();
+//	while ((listshell = getusershell()) != NULL) {
+//		TRACE(("test shell is '%s'", listshell))
+//		if (strcmp(listshell, usershell) == 0) {
+//			/* have a match */
+//			goto goodshell;
+//		}
+//	}
 	/* no matching shell */
-	endusershell();
-	TRACE(("no matching shell"))
-	dropbear_log(LOG_WARNING, "user '%s' has invalid shell, rejected",
-				ses.authstate.pw_name);
-	send_msg_userauth_failure(0, 1);
-	return DROPBEAR_FAILURE;
+//	endusershell();
+//	TRACE(("no matching shell"))
+//	dropbear_log(LOG_WARNING, "user '%s' has invalid shell, rejected",
+//				ses.authstate.pw_name);
+//	send_msg_userauth_failure(0, 1);
+//	return DROPBEAR_FAILURE;
 	
 goodshell:
-	endusershell();
+//	endusershell();
 	TRACE(("matching shell"))
 
 	TRACE(("uid = %d", ses.authstate.pw_uid))
