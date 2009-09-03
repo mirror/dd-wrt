@@ -623,6 +623,9 @@ int internal_getRouterBrand()
 #elif HAVE_ESR9752
 	setRouter("Senao ESR9752");
 	return ROUTER_BOARD_ESR9752;
+#elif HAVE_ACXNR22
+	setRouter("Aceex NR22");
+	return ROUTER_BOARD_ACXNR22;
 #elif HAVE_DIR600
 	setRouter("Dlink-DIR600 rev b");
 	return ROUTER_BOARD_DIR600B;
