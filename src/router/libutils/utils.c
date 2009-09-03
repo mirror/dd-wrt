@@ -398,7 +398,7 @@ int check_vlan_support(void)
 		break;
 	}
 
-	uint boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
+	unsigned long boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
 
 	if (boardflags & BFL_ENETVLAN)
 		return 1;
@@ -453,7 +453,7 @@ char *getRouter()
 int internal_getRouterBrand()
 {
 #if defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
-	uint boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
+	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
 	if (boardnum == 8 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x11")) {
@@ -886,7 +886,8 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_CA8;
 #else
 
-	uint boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
+	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
+	unsigned long melco_id = strtoul(nvram_safe_get("melco_id"), NULL, 0);
 
 	if (boardnum == 42 && nvram_match("boardtype", "bcm94710ap")) {
 		cprintf("router is buffalo\n");
@@ -961,7 +962,7 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WLA2-G54C / WLI3-TX1-G54");
 		return ROUTER_BUFFALO_WLA2G54C;
 	}
-	if (boardnum == 0 && nvram_match("melco_id", "29090")
+	if (boardnum == 0 && melco_id == 29090
 	    && nvram_match("boardflags", "0x0010")
 	    && nvram_match("boardrev", "0x10")) {
 		cprintf("router is Buffalo WLAH-G54\n");
@@ -969,7 +970,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WLAH_G54;
 
 	}
-	if (boardnum == 0 && nvram_match("melco_id", "31070")
+	if (boardnum == 0 && melco_id == 31070
 	    && nvram_match("boardflags", "0x2288")
 	    && nvram_match("boardrev", "0x10")) {
 		cprintf("router is Buffalo WAPM-HP-AM54G54\n");
@@ -978,7 +979,7 @@ int internal_getRouterBrand()
 	}
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e")
-	    && nvram_match("melco_id", "32093")) {
+	    && melco_id == 32093) {
 		cprintf("router is Buffalo WHR-G125\n");
 		setRouter("Buffalo WHR-G125");
 		return ROUTER_BUFFALO_WHRG54S;
@@ -986,7 +987,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardtype", "0x048e")
-	    && nvram_match("melco_id", "32139")) {
+	    && melco_id == 32139) {
 		cprintf("router is Buffalo WCA-G\n");
 		setRouter("Buffalo WCA-G");
 		return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
@@ -994,7 +995,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e")
-	    && nvram_match("melco_id", "32064")) {
+	    && melco_id == 32064) {
 		cprintf("router is Buffalo WHR-HP-G125\n");
 		setRouter("Buffalo WHR-HP-G125");
 		return ROUTER_BUFFALO_WHRG54S;
@@ -1040,7 +1041,6 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 42 && nvram_match("boardtype", "0x042f")) {
-		uint melco_id = strtoul(nvram_safe_get("melco_id"), NULL, 0);
 
 		if (nvram_match("product_name", "WZR-RS-G54")
 		    || melco_id == 30083) {
@@ -1220,7 +1220,7 @@ int internal_getRouterBrand()
 		}
 	}
 #endif
-	if (boardnum == 2 && nvram_match("boardtype", "bcm94710dev") && nvram_match("melco_id", "29016"))	// Buffalo 
+	if (boardnum == 2 && nvram_match("boardtype", "bcm94710dev") && melco_id == 29016)	// Buffalo 
 		// WLI2-TX1-G54)
 	{
 		cprintf("router is Buffalo WLI2-TX1-G54\n");
@@ -1230,7 +1230,7 @@ int internal_getRouterBrand()
 #ifndef HAVE_BUFFALO
 
 	char *gemtek = nvram_safe_get("GemtekPmonVer");
-	uint gemteknum = strtoul(gemtek, NULL, 0);
+	unsigned long gemteknum = strtoul(gemtek, NULL, 0);
 
 	if (boardnum == 2 && gemteknum == 10 &&
 	    (startswith(et0, "00:0C:E5") ||
@@ -1304,7 +1304,7 @@ int internal_getRouterBrand()
 	if (boardnum == 0 && nvram_match("boardtype", "0x478")
 	    && nvram_match("cardbus", "0") && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardflags", "0x110")
-	    && nvram_match("melco_id", "32027")) {
+	    && melco_id == 32027) {
 		setRouter("Buffalo WZR-G144NH");
 		return ROUTER_BUFFALO_WZRG144NH;
 	}
@@ -1494,9 +1494,8 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WBR54G;
 	}
 #ifndef HAVE_BUFFALO
-	if (nvram_match("boardtype", "0x048e") &&
-	    nvram_match("boardrev", "0x35") &&
-	    nvram_match("sdram_init", "0x000b")) {
+	if (boardnum == 0 && nvram_match("boardtype", "0x048e") &&   // cfe sets boardnum="", strtoul -> 0
+	    nvram_match("boardrev", "0x35")) {
 		cprintf("router is D-Link DIR-320\n");
 		setRouter("D-Link DIR-320");
 		// apply some fixes
