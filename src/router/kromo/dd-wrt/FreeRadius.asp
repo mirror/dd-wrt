@@ -52,6 +52,13 @@ function client_del_submit(F,I) {
 	F.submit();
 }
 
+function make_client_cert(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "make_client_cert";
+	F.index_value.value=I;
+	F.submit();
+}
+
 
 var update;
 
@@ -84,6 +91,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_button" value="FreeRadius" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="del_value" />
+							<input type="hidden" name="index_value" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 
