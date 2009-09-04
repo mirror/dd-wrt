@@ -59,6 +59,7 @@ install:
 	if [ ! -d $(R)$(raddbdir)/certs ]; then \
 		$(INSTALL) -d -m 750	$(R)$(raddbdir)/certs; \
 		$(INSTALL) -m 750 certs/bootstrap $(R)$(raddbdir)/certs; \
+		$(INSTALL) -m 750 certs/doclientcert $(R)$(raddbdir)/certs; \
 		for i in Makefile README xpextensions ca.cnf server.cnf client.cnf; do \
 			$(INSTALL) -m 640 certs/$$i $(R)$(raddbdir)/certs; \
 		done; \
