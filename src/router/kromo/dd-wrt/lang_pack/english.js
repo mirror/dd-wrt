@@ -249,6 +249,7 @@ sbutton.upgrade="Upgrade";
 sbutton.preview="Preview";
 sbutton.allways_on="Always On";
 sbutton.allways_off="Always Off";
+sbutton.download="Download";
 
 
 // ** COMMON ERROR MESSAGES  **//
