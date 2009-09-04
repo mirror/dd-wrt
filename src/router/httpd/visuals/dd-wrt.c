@@ -7858,7 +7858,7 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 				  vlan_name, db->users[i].upstream);
 
 			websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",i);
-			websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.cert + \"\\\" onclick=\\\"openWindow('FreeRadiusCert-%d', 630, 430);\\\" />\");\n//]]>\n</script>\n",i);
+			websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.cert + \"\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 630, 430,'Certificate Generation');\\\" />\");\n//]]>\n</script>\n",i);
 			websWrite(wp, "</div>\n");
 		}
 		freeradiusdb(db);
