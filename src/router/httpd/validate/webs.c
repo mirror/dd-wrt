@@ -3534,6 +3534,7 @@ void radius_generate_certificate(webs_t wp)
 	system("rm /jffs/etc/freeradius/certs/ca.der");
 	system("rm /jffs/etc/freeradius/certs/index.txt");
 	system("rm /jffs/etc/freeradius/certs/serial");
+	system("rm -rf /jffs/etc/freeradius/certs/clients");
 	system("startservice_f gen_radius_cert");
 }
 
