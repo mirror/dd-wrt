@@ -230,6 +230,7 @@ int mtd_write(const char *path, const char *mtd)
 	stop_service("openvpnserver");
 	stop_service("pptpd");
 	stop_service("upnp");
+	stop_service("freeradius");
 	system("killall process_monitor");
 	
 #ifdef HAVE_MAGICBOX
