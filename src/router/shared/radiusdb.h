@@ -44,5 +44,11 @@ struct radiusclientdb *loadradiusclientdb(void);
 void writeradiusclientdb(struct radiusclientdb *db);
 void freeradiusclientdb(struct radiusclientdb *db);
 
+#define TYPE_SERVER 0x01
+#define TYPE_CA 0x2
+#define TYPE_CLIENT 0x3
+
+
+void gen_cert(char *name, int type,char *common,char *pass);
 
 #endif
