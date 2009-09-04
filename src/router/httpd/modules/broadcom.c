@@ -67,6 +67,9 @@ int debug_value = 0;
 
 // tofu
 
+
+char *live_translate(char *tran);
+
 /*
  * Deal with side effects before committing 
  */
@@ -645,6 +648,115 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 	do_ej_buffer(temp, stream);
 }
 
+
+#ifdef HAVE_FREERADIUS
+#include <radiusdb.h>
+
+static void show_certfield(webs_t wp,char *title,char *id,char *file)
+{
+FILE *fp = fopen(file,"rb");
+if (fp==NULL)
+    return;
+unsigned int len;
+fseek(fp,0,SEEK_END);
+len=ftell(fp);
+rewind(fp);
+char *content = malloc(len+1);
+memset(content,0,len+1);
+fread(content,len,1,fp);
+fclose(fp);
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\">%s</div>\n",title);
+websWrite(wp,"<textarea cols=\"60\" rows=\"2\" id=\"%s\" name=\"%s\"></textarea>\n",id,id);
+websWrite(wp,"<script type=\"text/javascript\">\n");
+websWrite(wp,"//<![CDATA[\n");
+websWrite(wp,"var %s = fix_cr( '%s' );",id,content);
+websWrite(wp,"document.getElementById(\"%s\").value = %s;\n",id,id);
+websWrite(wp,"//]]>\n");
+websWrite(wp,"</script>\n");			
+websWrite(wp,"</div>\n");
+free(content);
+}
+
+void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
+		    char *query)
+{
+	char *temp2 = &path[indexof(path, '-') + 1];
+	char number[16];
+	webs_t wp = stream;
+	strcpy(number, temp2);
+	int radiusindex = atoi(number);
+	if (radiusindex==-1)
+	    return;
+	struct radiusdb *db = loadradiusdb();
+	if (db==NULL) // database empty
+	    return; 
+	if (radiusindex>=db->usercount) // index out of bound
+	    {
+	    goto out;
+	    }
+	if (db->users[radiusindex].usersize==0 || db->users[radiusindex].passwordsize==0 || strlen(db->users[radiusindex].user)==0 || strlen(db->users[radiusindex].passwd)==0)
+	    {
+	    //define username fail
+	    char *argv[]={"freeradius.clientcert"};
+	    call_ej("do_pagehead",NULL,wp,1,argv); // thats dirty
+	    websWrite(wp,"</head>\n");
+	    websWrite(wp,"<body>\n");
+	    websWrite(wp,"<div id=\"main\">\n");
+	    websWrite(wp,"<div id=\"contentsInfo\">\n");
+	    websWrite(wp,"<h2>%s</h2>\n",live_translate("freeradius.clientcert"));
+	    websWrite(wp,"Error: please specify a value username and password\n");
+	    websWrite(wp,"<div class=\"submitFooter\">\n");
+	    websWrite(wp,"<script type=\"text/javascript\">\n");
+	    websWrite(wp,"//<![CDATA[\n");
+	    websWrite(wp,"submitFooterButton(0,0,0,0,0,1);\n");
+	    websWrite(wp,"//]]>\n");
+	    websWrite(wp,"</script>\n");
+	    websWrite(wp,"</div>\n");
+	    websWrite(wp,"</div>\n");
+	    websWrite(wp,"</div>\n");
+	    websWrite(wp,"</body>\n");
+	    websWrite(wp,"</html>\n");
+	    goto out;
+	    }
+/*export DEFDAYS=$1
+export CC_COUNTRY=$2
+export CC_STATE=$3
+export CC_LOCALITY=$4
+export CC_ORGANISATION=$5
+export CC_EMAIL=$6
+export CC_COMMONNAME=$7*/
+	    sysprintf("/jffs/etc/freeradius/cert/doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",nvram_safe_get("radius_expiration"),nvram_safe_get("radius_country"),nvram_safe_get("radius_state"),nvram_safe_get("radius_locality"),nvram_safe_get("radius_organisation"),db->users[radiusindex].user,db->users[radiusindex].passwd);
+	    char *argv[]={"freeradius.clientcert"};
+	    call_ej("do_pagehead",NULL,wp,1,argv); // thats dirty
+	    websWrite(wp,"</head>\n");
+	    websWrite(wp,"<body>\n");
+	    websWrite(wp,"<div id=\"main\">\n");
+	    websWrite(wp,"<div id=\"contentsInfo\">\n");
+	    websWrite(wp,"<h2>%s</h2>\n",live_translate("freeradius.clientcert"));
+char filename[64];
+sprintf(filename,"/jffs/etc/freeradius/cert/clients/%s-cert.pem",db->users[radiusindex].user);
+	    show_certfield(wp,"Certificate PEM",db->users[radiusindex].user,filename);
+//	    websWrite(wp,"Error: please specify a value username and password\n");
+	    websWrite(wp,"<div class=\"submitFooter\">\n");
+	    websWrite(wp,"<script type=\"text/javascript\">\n");
+	    websWrite(wp,"//<![CDATA[\n");
+	    websWrite(wp,"submitFooterButton(0,0,0,0,0,1);\n");
+	    websWrite(wp,"//]]>\n");
+	    websWrite(wp,"</script>\n");
+	    websWrite(wp,"</div>\n");
+	    websWrite(wp,"</div>\n");
+	    websWrite(wp,"</div>\n");
+	    websWrite(wp,"</body>\n");
+	    websWrite(wp,"</html>\n");
+	
+	    //make certificates
+out:;
+	    freeradiusdb(db);
+
+}
+
+#endif
 void do_activetable(struct mime_handler *handler, char *path, webs_t stream,
 		    char *query)
 {
@@ -1107,6 +1219,10 @@ gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	cprintf("refresh to %s\n", path);
 	if (!strncmp(path, "WL_FilterTable", 14))
 		do_filtertable(NULL, path, wp, NULL);	// refresh
+#ifdef HAVE_FREERADIUS
+	else if (!strncmp(path, "FreeRadiusCert", 14))
+		do_filtertable(NULL, path, wp, NULL);	// refresh
+#endif
 	// #ifdef HAVE_MADWIFI
 	else if (!strncmp(path, "WL_ActiveTable", 14))
 		do_activetable(NULL, path, wp, NULL);	// refresh
@@ -1404,6 +1520,10 @@ footer:
 		cprintf("refresh to %s\n", path);
 		if (!strncmp(path, "WL_FilterTable", 14))
 			do_filtertable(NULL, path, wp, NULL);	// refresh
+#ifdef HAVE_FREERADIUS
+		else if (!strncmp(path, "FreeRadiusCert", 14))
+			do_radiuscert(NULL, path, wp, NULL);	// refresh      
+#endif
 		else if (!strncmp(path, "WL_ActiveTable", 14))
 			do_activetable(NULL, path, wp, NULL);	// refresh      
 		else if (!strncmp(path, "Wireless_WDS", 12))
@@ -2146,9 +2266,10 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_REGISTER
 	{"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1},
 #endif
-	{"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
-	 do_auth,
-	 1},
+	{"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,do_auth,1},
+#ifdef HAVE_FREERADIUS
+	{"FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert,do_auth,1},
+#endif
 	// #endif
 	// #ifdef HAVE_MADWIFI
 	{"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1},
