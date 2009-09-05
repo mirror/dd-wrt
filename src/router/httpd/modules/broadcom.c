@@ -67,7 +67,6 @@ int debug_value = 0;
 
 // tofu
 
-
 char *live_translate(char *tran);
 
 /*
@@ -648,34 +647,36 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 	do_ej_buffer(temp, stream);
 }
 
-
 #ifdef HAVE_FREERADIUS
 #include <radiusdb.h>
 
-static void cert_file_out(struct mime_handler *handler, char *path, webs_t stream,char *query)
+static void cert_file_out(struct mime_handler *handler, char *path,
+			  webs_t stream, char *query)
 {
-char *temp2 = &path[indexof(path, '/') + 1];
-fprintf(stderr,"down %s\n",temp2);
-char link[128];
-sprintf(link,"/jffs/etc/freeradius/certs/clients/%s",temp2);
-do_file_attach(handler, link, stream, NULL, temp2);
+	char *temp2 = &path[indexof(path, '/') + 1];
+	fprintf(stderr, "down %s\n", temp2);
+	char link[128];
+	sprintf(link, "/jffs/etc/freeradius/certs/clients/%s", temp2);
+	do_file_attach(handler, link, stream, NULL, temp2);
 }
 
-static void show_certfield(webs_t wp,char *title,char *file)
+static void show_certfield(webs_t wp, char *title, char *file)
 {
-websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\">%s</div>\n",title);
-websWrite(wp,"<script type=\"text/javascript\">\n");
-websWrite(wp,"//<![CDATA[\n");
-websWrite(wp,"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n",file);
-websWrite(wp,"//]]>\n");
-websWrite(wp,"</script>\n");			
-websWrite(wp,"</div>\n");
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\">%s</div>\n", title);
+	websWrite(wp, "<script type=\"text/javascript\">\n");
+	websWrite(wp, "//<![CDATA[\n");
+	websWrite(wp,
+		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n",
+		  file);
+	websWrite(wp, "//]]>\n");
+	websWrite(wp, "</script>\n");
+	websWrite(wp, "</div>\n");
 
 }
 
 void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
-		    char *query)
+		   char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
 	char number[16];
@@ -683,40 +684,44 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 	strcpy(number, temp2);
 	number[indexof(number, '.')] = 0;
 	int radiusindex = atoi(number);
-	
-	if (radiusindex==-1)
-	    return;
+
+	if (radiusindex == -1)
+		return;
 	struct radiusdb *db = loadradiusdb();
-	if (db==NULL) // database empty
-	    return; 
-	if (radiusindex>=db->usercount) // index out of bound
-	    {
-	    goto out;
-	    }
-	if (db->users[radiusindex].usersize==0 || db->users[radiusindex].passwordsize==0 || strlen(db->users[radiusindex].user)==0 || strlen(db->users[radiusindex].passwd)==0)
-	    {
-	    //define username fail
-	    char *argv[]={"freeradius.clientcert"};
-	    call_ej("do_pagehead",NULL,wp,1,argv); // thats dirty
-	    websWrite(wp,"</head>\n");
-	    websWrite(wp,"<body>\n");
-	    websWrite(wp,"<div id=\"main\">\n");
-	    websWrite(wp,"<div id=\"contentsInfo\">\n");
-	    websWrite(wp,"<h2>%s</h2>\n",live_translate("freeradius.clientcert"));
-	    websWrite(wp,"Error: please specify a value username and password\n");
-	    websWrite(wp,"<div class=\"submitFooter\">\n");
-	    websWrite(wp,"<script type=\"text/javascript\">\n");
-	    websWrite(wp,"//<![CDATA[\n");
-	    websWrite(wp,"submitFooterButton(0,0,0,0,0,1);\n");
-	    websWrite(wp,"//]]>\n");
-	    websWrite(wp,"</script>\n");
-	    websWrite(wp,"</div>\n");
-	    websWrite(wp,"</div>\n");
-	    websWrite(wp,"</div>\n");
-	    websWrite(wp,"</body>\n");
-	    websWrite(wp,"</html>\n");
-	    goto out;
-	    }
+	if (db == NULL)		// database empty
+		return;
+	if (radiusindex >= db->usercount)	// index out of bound
+	{
+		goto out;
+	}
+	if (db->users[radiusindex].usersize == 0
+	    || db->users[radiusindex].passwordsize == 0
+	    || strlen(db->users[radiusindex].user) == 0
+	    || strlen(db->users[radiusindex].passwd) == 0) {
+		//define username fail
+		char *argv[] = { "freeradius.clientcert" };
+		call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
+		websWrite(wp, "</head>\n");
+		websWrite(wp, "<body>\n");
+		websWrite(wp, "<div id=\"main\">\n");
+		websWrite(wp, "<div id=\"contentsInfo\">\n");
+		websWrite(wp, "<h2>%s</h2>\n",
+			  live_translate("freeradius.clientcert"));
+		websWrite(wp,
+			  "Error: please specify a value username and password\n");
+		websWrite(wp, "<div class=\"submitFooter\">\n");
+		websWrite(wp, "<script type=\"text/javascript\">\n");
+		websWrite(wp, "//<![CDATA[\n");
+		websWrite(wp, "submitFooterButton(0,0,0,0,0,1);\n");
+		websWrite(wp, "//]]>\n");
+		websWrite(wp, "</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</body>\n");
+		websWrite(wp, "</html>\n");
+		goto out;
+	}
 /*export DEFDAYS=$1
 export CC_COUNTRY=$2
 export CC_STATE=$3
@@ -725,41 +730,50 @@ export CC_ORGANISATION=$5
 export CC_EMAIL=$6
 export CC_COMMONNAME=$7*/
 
-	    gen_cert("/jffs/etc/freeradius/certs/client.cnf", TYPE_CLIENT,db->users[radiusindex].user,db->users[radiusindex].passwd);
-	    char exec[512];
-	    sprintf(exec,"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",nvram_safe_get("radius_expiration"),nvram_safe_get("radius_country"),nvram_safe_get("radius_state"),nvram_safe_get("radius_locality"),nvram_safe_get("radius_organisation"),nvram_safe_get("radius_email"),db->users[radiusindex].user,db->users[radiusindex].passwd);
-	    system(exec);
-	    char *argv[]={"freeradius.clientcert"};
-	    call_ej("do_pagehead",NULL,wp,1,argv); // thats dirty
-	    websWrite(wp,"</head>\n");
-	    websWrite(wp,"<body>\n");
-	    websWrite(wp,"<div id=\"main\">\n");
-	    websWrite(wp,"<div id=\"contentsInfo\">\n");
-	    websWrite(wp,"<h2>%s</h2>\n",live_translate("freeradius.clientcert"));
-	    char filename[64];
-	    sprintf(filename,"%s-cert.pem",db->users[radiusindex].user);
-	    show_certfield(wp,"Certificate PEM",filename);
-	    sprintf(filename,"%s-cert.p12",db->users[radiusindex].user);
-	    show_certfield(wp,"Certificate P12 (Windows)",filename);
-	    sprintf(filename,"%s-key.pem",db->users[radiusindex].user);
-	    show_certfield(wp,"Certificate Request",filename);
-	    sprintf(filename,"%s-req.pem",db->users[radiusindex].user);
-	    show_certfield(wp,"Private Key PEM",filename);
-	    websWrite(wp,"<div class=\"submitFooter\">\n");
-	    websWrite(wp,"<script type=\"text/javascript\">\n");
-	    websWrite(wp,"//<![CDATA[\n");
-	    websWrite(wp,"submitFooterButton(0,0,0,0,0,1);\n");
-	    websWrite(wp,"//]]>\n");
-	    websWrite(wp,"</script>\n");
-	    websWrite(wp,"</div>\n");
-	    websWrite(wp,"</div>\n");
-	    websWrite(wp,"</div>\n");
-	    websWrite(wp,"</body>\n");
-	    websWrite(wp,"</html>\n");
-	
-	    //make certificates
-out:;
-	    freeradiusdb(db);
+	gen_cert("/jffs/etc/freeradius/certs/client.cnf", TYPE_CLIENT,
+		 db->users[radiusindex].user, db->users[radiusindex].passwd);
+	char exec[512];
+	sprintf(exec,
+		"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+		nvram_safe_get("radius_expiration"),
+		nvram_safe_get("radius_country"),
+		nvram_safe_get("radius_state"),
+		nvram_safe_get("radius_locality"),
+		nvram_safe_get("radius_organisation"),
+		nvram_safe_get("radius_email"), db->users[radiusindex].user,
+		db->users[radiusindex].passwd);
+	system(exec);
+	char *argv[] = { "freeradius.clientcert" };
+	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
+	websWrite(wp, "</head>\n");
+	websWrite(wp, "<body>\n");
+	websWrite(wp, "<div id=\"main\">\n");
+	websWrite(wp, "<div id=\"contentsInfo\">\n");
+	websWrite(wp, "<h2>%s</h2>\n", live_translate("freeradius.clientcert"));
+	char filename[64];
+	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
+	show_certfield(wp, "Certificate PEM", filename);
+	sprintf(filename, "%s-cert.p12", db->users[radiusindex].user);
+	show_certfield(wp, "Certificate P12 (Windows)", filename);
+	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
+	show_certfield(wp, "Certificate Request", filename);
+	sprintf(filename, "%s-req.pem", db->users[radiusindex].user);
+	show_certfield(wp, "Private Key PEM", filename);
+	websWrite(wp, "<div class=\"submitFooter\">\n");
+	websWrite(wp, "<script type=\"text/javascript\">\n");
+	websWrite(wp, "//<![CDATA[\n");
+	websWrite(wp, "submitFooterButton(0,0,0,0,0,1);\n");
+	websWrite(wp, "//]]>\n");
+	websWrite(wp, "</script>\n");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</body>\n");
+	websWrite(wp, "</html>\n");
+
+	//make certificates
+      out:;
+	freeradiusdb(db);
 
 }
 
@@ -1065,11 +1079,14 @@ static struct gozila_action gozila_actions[] = {
 	{"Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs"},
 	{"Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs"},
 #ifdef HAVE_FREERADIUS
-	{"FreeRadius", "generate_certificate", "", 0, REFRESH, "radius_generate_certificate"},
+	{"FreeRadius", "generate_certificate", "", 0, REFRESH,
+	 "radius_generate_certificate"},
 	{"FreeRadius", "add_radius_user", "", 0, REFRESH, "add_radius_user"},
 	{"FreeRadius", "del_radius_user", "", 0, REFRESH, "del_radius_user"},
-	{"FreeRadius", "add_radius_client", "", 0, REFRESH, "add_radius_client"},
-	{"FreeRadius", "del_radius_client", "", 0, REFRESH, "del_radius_client"},
+	{"FreeRadius", "add_radius_client", "", 0, REFRESH,
+	 "add_radius_client"},
+	{"FreeRadius", "del_radius_client", "", 0, REFRESH,
+	 "del_radius_client"},
 	{"FreeRadius", "save_radius_user", "", 0, REFRESH, "save_radius_user"},
 #endif
 #ifdef HAVE_BONDING
@@ -2273,10 +2290,13 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_REGISTER
 	{"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1},
 #endif
-	{"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,do_auth,1},
+	{"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
+	 do_auth, 1},
 #ifdef HAVE_FREERADIUS
-	{"FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert,do_auth,1},
-	{"freeradius-certs/*", "application/octet-stream", no_cache, NULL,cert_file_out,do_auth, 0},
+	{"FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth,
+	 1},
+	{"freeradius-certs/*", "application/octet-stream", no_cache, NULL,
+	 cert_file_out, do_auth, 0},
 #endif
 	// #endif
 	// #ifdef HAVE_MADWIFI
@@ -2397,14 +2417,16 @@ struct mime_handler mime_handlers[] = {
 	 do_auth, 0},
 
 #ifdef HAVE_DDLAN
-	{"nvrambak.bin*", "application/octet-stream", no_cache, NULL,nv_file_out,do_auth2, 0},
+	{"nvrambak.bin*", "application/octet-stream", no_cache, NULL,
+	 nv_file_out, do_auth2, 0},
 	{"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
 	 nv_file_out,
 	 do_auth2, 0},
 	{"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL,
 	 1},
 #else
-	{"nvrambak.bin*", "application/octet-stream", no_cache, NULL,nv_file_out,do_auth, 0},
+	{"nvrambak.bin*", "application/octet-stream", no_cache, NULL,
+	 nv_file_out, do_auth, 0},
 	{"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
 	 nv_file_out,
 	 do_auth, 0},
