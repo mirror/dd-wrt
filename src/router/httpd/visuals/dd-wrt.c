@@ -7833,17 +7833,18 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<input name=\"%s\" size=\"8\" value=\"%s\" />\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].usersize) ? db->
-				  users[i].user : "");
+					      && db->users[i].
+					      usersize) ? db->users[i].
+				  user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp, "&nbsp;Password&nbsp;");
 			websWrite(wp,
 				  "<input name=\"%s\" size=\"8\" value=\"%s\" />\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp, "&nbsp;Downstream&nbsp;");
@@ -7857,8 +7858,12 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 				  "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" />\n",
 				  vlan_name, db->users[i].upstream);
 
-			websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",i);
-			websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.cert + \"\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 630, 430,'Certificate Generation');\\\" />\");\n//]]>\n</script>\n",i);
+			websWrite(wp,
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+				  i);
+			websWrite(wp,
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.cert + \"\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 630, 430,'Certificate Generation');\\\" />\");\n//]]>\n</script>\n",
+				  i);
 			websWrite(wp, "</div>\n");
 		}
 		freeradiusdb(db);
@@ -7881,17 +7886,18 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<input name=\"%s\" size=\"12\" value=\"%s\" />\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].clientsize) ? db->
-				  users[i].client : "");
+					      && db->users[i].
+					      clientsize) ? db->users[i].
+				  client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp, "&nbsp;Shared Key&nbsp;");
 			websWrite(wp,
 				  "<input name=\"%s\" size=\"8\" value=\"%s\" />\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
