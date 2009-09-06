@@ -10,6 +10,7 @@
 #
 #  $Id$
 #
+export RANDFILE=/jffs/etc/freeradius/certs/.rnd
 umask 027
 cd `dirname $0`
 make all
