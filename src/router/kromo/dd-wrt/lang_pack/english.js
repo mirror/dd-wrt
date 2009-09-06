@@ -1766,11 +1766,17 @@ var freeradius = new Object();
 freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="Server Certificate";
-freeradius.cert="Cert";
+freeradius.cert="Make Certificate";
 freeradius.clientcert="Client Certificates";
 freeradius.settings="Settings";
 freeradius.users="Users";
 freeradius.clients="Clients";
+freeradius.username="Username";
+freeradius.password="Password";
+freeradius.downstream="Downstream";
+freeradius.upstream="Upstream";
+freeradius.sharedkey="Shared key";
+
 
 freeradius.countrycode="Country Code";
 freeradius.state="State or Province";
