@@ -727,19 +727,19 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 	int generate = 0;
 	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem",
 		db->users[radiusindex].user);
-	if (!f_exists(file))
+	if (!f_exists(filename))
 		generate = 1;
 	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.p12",
 		db->users[radiusindex].user);
-	if (!f_exists(file))
+	if (!f_exists(filename))
 		generate = 1;
 	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-key.pem",
 		db->users[radiusindex].user);
-	if (!f_exists(file))
+	if (!f_exists(filename))
 		generate = 1;
 	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-req.pem",
 		db->users[radiusindex].user);
-	if (!f_exists(file))
+	if (!f_exists(filename))
 		generate = 1;
 
 	if (generate)		//do not regenerate certificates if they are already created
