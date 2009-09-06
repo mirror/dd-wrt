@@ -1,13 +1,5 @@
 #!/bin/sh
-#export DEFDAYS=365
-#export CC_COUNTRY="DE"
-#export CC_STATE="hessen"
-#export CC_LOCALITY="woanners"
-#export CC_ORGANISATION="ICHAG"
-#export CC_EMAIL="email1@ichag"
-#export CC_COMMONNAME="clientcert2"
-
-
+export RANDFILE=/jffs/etc/freeradius/certs/.rnd
 export DEFDAYS=$1
 export CC_COUNTRY=$2
 export CC_STATE=$3
