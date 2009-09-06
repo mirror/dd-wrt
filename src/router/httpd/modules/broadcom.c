@@ -768,9 +768,9 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 	show_certfield(wp, "Certificate PEM", filename);
 	sprintf(filename, "%s-cert.p12", db->users[radiusindex].user);
 	show_certfield(wp, "Certificate P12 (Windows)", filename);
-	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
-	show_certfield(wp, "Certificate Request", filename);
 	sprintf(filename, "%s-req.pem", db->users[radiusindex].user);
+	show_certfield(wp, "Certificate Request", filename);
+	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
 	websWrite(wp, "<div class=\"submitFooter\">\n");
 	websWrite(wp, "<script type=\"text/javascript\">\n");
