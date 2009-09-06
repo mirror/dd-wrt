@@ -722,27 +722,40 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 		websWrite(wp, "</html>\n");
 		goto out;
 	}
-/*export DEFDAYS=$1
-export CC_COUNTRY=$2
-export CC_STATE=$3
-export CC_LOCALITY=$4
-export CC_ORGANISATION=$5
-export CC_EMAIL=$6
-export CC_COMMONNAME=$7*/
-
-//	gen_cert("/jffs/etc/freeradius/certs/client.cnf", TYPE_CLIENT,
-//		 db->users[radiusindex].user, db->users[radiusindex].passwd);
+	char filename[128];
 	char exec[512];
-	sprintf(exec,
-		"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-		nvram_safe_get("radius_expiration"),
-		nvram_safe_get("radius_country"),
-		nvram_safe_get("radius_state"),
-		nvram_safe_get("radius_locality"),
-		nvram_safe_get("radius_organisation"),
-		nvram_safe_get("radius_email"), db->users[radiusindex].user,
-		db->users[radiusindex].passwd);
-	system(exec);
+	int generate = 0;
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem",
+		db->users[radiusindex].user);
+	if (!f_exists(file))
+		generate = 1;
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.p12",
+		db->users[radiusindex].user);
+	if (!f_exists(file))
+		generate = 1;
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-key.pem",
+		db->users[radiusindex].user);
+	if (!f_exists(file))
+		generate = 1;
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-req.pem",
+		db->users[radiusindex].user);
+	if (!f_exists(file))
+		generate = 1;
+
+	if (generate)		//do not regenerate certificates if they are already created
+	{
+		sprintf(exec,
+			"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+			nvram_safe_get("radius_expiration"),
+			nvram_safe_get("radius_country"),
+			nvram_safe_get("radius_state"),
+			nvram_safe_get("radius_locality"),
+			nvram_safe_get("radius_organisation"),
+			nvram_safe_get("radius_email"),
+			db->users[radiusindex].user,
+			db->users[radiusindex].passwd);
+		system(exec);
+	}
 	char *argv[] = { "freeradius.clientcert" };
 	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
 	websWrite(wp, "</head>\n");
@@ -750,7 +763,6 @@ export CC_COMMONNAME=$7*/
 	websWrite(wp, "<div id=\"main\">\n");
 	websWrite(wp, "<div id=\"contentsInfo\">\n");
 	websWrite(wp, "<h2>%s</h2>\n", live_translate("freeradius.clientcert"));
-	char filename[64];
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Certificate PEM", filename);
 	sprintf(filename, "%s-cert.p12", db->users[radiusindex].user);
