@@ -7824,10 +7824,10 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Users\">\n");
 
 	websWrite(wp, "<tr>\n\
-  					<th>Username</th>\n\
-  					<th>Password</th>\n\
-  					<th>Downstream</th>\n\
-  					<th>Upstream</th>\n\
+  					<th><script type=\"text/javascript\">Capture(freeradius.username)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(freeradius.password)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(freeradius.downstream)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(freeradius.upstream)</script></th>\n\
   					<th>&nbsp;</th>\n\
   					<th>&nbsp;</th>\n\
   				</tr>\n");
@@ -7886,7 +7886,7 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, "<tr>\n\
   					<th>IP/NET</th>\n\
-  					<th>Shared Key</th>\n\
+  					<th><script type=\"text/javascript\">Capture(freeradius.sharedkey)</script></th>\n\
   					<th>&nbsp;</th>\n\
   				</tr>\n");
 	unsigned int i;

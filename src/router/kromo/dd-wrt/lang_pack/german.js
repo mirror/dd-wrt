@@ -1619,9 +1619,15 @@ wl_wimax.mac="Teilnehmer MAC Address";
 freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="Server Certificate";
+freeradius.cert="Erstelle Zertifikat";
 freeradius.settings="Einstellungen";
 freeradius.users="Nutzer";
 freeradius.clients="Klienten";
+freeradius.username="Nutzername";
+freeradius.password="Passwort";
+freeradius.downstream="Downstream";
+freeradius.upstream="Upstream";
+freeradius.sharedkey="Shared Key";
 
 freeradius.countrycode="Ländercode";
 freeradius.state="Staat oder Provinz";
