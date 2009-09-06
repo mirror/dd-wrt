@@ -7821,7 +7821,7 @@ struct radiusdb {
 */
 void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 {
-websWrite(wp,"<table class=\"table\" summary=\"Radius Users\">\n");
+	websWrite(wp, "<table class=\"table\" summary=\"Radius Users\">\n");
 
 	websWrite(wp, "<tr>\n\
   					<th>Username</th>\n\
@@ -7837,22 +7837,22 @@ websWrite(wp,"<table class=\"table\" summary=\"Radius Users\">\n");
 	if (db != NULL)		// empty
 	{
 		for (i = 0; i < db->usercount; i++) {
-			websWrite(wp,"<tr>\n");
+			websWrite(wp, "<tr>\n");
 			char vlan_name[32];
 			sprintf(vlan_name, "username%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].
-					      usersize) ? db->users[i].
-				  user : "");
+					      && db->users[i].usersize) ? db->
+				  users[i].user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -7870,18 +7870,18 @@ websWrite(wp,"<table class=\"table\" summary=\"Radius Users\">\n");
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.cert + \"\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 630, 430,'Certificate Generation');\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
-			websWrite(wp,"</tr>\n");
+			websWrite(wp, "</tr>\n");
 		}
 		freeradiusdb(db);
 	}
-websWrite(wp,"</table>\n");
+	websWrite(wp, "</table>\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"user_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 }
 
 void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 {
-websWrite(wp,"<table class=\"table\" summary=\"Radius Clients\">\n");
+	websWrite(wp, "<table class=\"table\" summary=\"Radius Clients\">\n");
 
 	websWrite(wp, "<tr>\n\
   					<th>IP/NET</th>\n\
@@ -7893,32 +7893,31 @@ websWrite(wp,"<table class=\"table\" summary=\"Radius Clients\">\n");
 	if (db != NULL)		// empty
 	{
 		for (i = 0; i < db->usercount; i++) {
-			websWrite(wp,"<tr>\n");
+			websWrite(wp, "<tr>\n");
 			char vlan_name[32];
 			sprintf(vlan_name, "client%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].
-					      clientsize) ? db->users[i].
-				  client : "");
+					      && db->users[i].clientsize) ? db->
+				  users[i].client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
-			websWrite(wp,"</tr>\n");
+			websWrite(wp, "</tr>\n");
 		}
 		freeradiusclientdb(db);
 	}
-websWrite(wp,"</table>\n");
+	websWrite(wp, "</table>\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"client_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 }
