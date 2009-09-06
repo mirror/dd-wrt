@@ -16,6 +16,7 @@ export CC_ORGANISATION=$5
 export CC_EMAIL=$6
 export CC_COMMONNAME=$7
 export CC_PASS=$8
+export CC_SERVERPASS=$9
 #key
 mkdir -p clients
 openssl req -batch -nodes -new -x509 -keyout clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-req.pem -days $DEFDAYS -config client.cnf

@@ -730,8 +730,8 @@ export CC_ORGANISATION=$5
 export CC_EMAIL=$6
 export CC_COMMONNAME=$7*/
 
-	gen_cert("/jffs/etc/freeradius/certs/client.cnf", TYPE_CLIENT,
-		 db->users[radiusindex].user, db->users[radiusindex].passwd);
+//	gen_cert("/jffs/etc/freeradius/certs/client.cnf", TYPE_CLIENT,
+//		 db->users[radiusindex].user, db->users[radiusindex].passwd);
 	char exec[512];
 	sprintf(exec,
 		"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
