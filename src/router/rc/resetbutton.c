@@ -377,7 +377,7 @@ void period_check(int sig)
 	} else if (brand == ROUTER_BOARD_ESR9752) {
 		val = get_gpio(0);
 	} else if (brand == ROUTER_BOARD_ACXNR22) {
-		val = get_gpio(10);
+		val = get_gpio(10) << 10;
 	} else {
 
 		if ((fp = fopen(GPIO_FILE, "r"))) {
