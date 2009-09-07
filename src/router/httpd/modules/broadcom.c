@@ -744,19 +744,71 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 
 	if (generate)		//do not regenerate certificates if they are already created
 	{
-		
-		char expiration_days[64];
-		strcpy(expiration_days,nvram_safe_get("radius_expiration"));
-			long expiration=0; //never
-			if (db->users[radiusindex].expiration)
-			    {
-			    time_t tm;
-			    time(&tm);
-			    long curtime = ((tm/60)/60)/24; //in days
-			    expiration = db->users[radiusindex].expiration - curtime;
-			    sprintf(expiration_days,"%ld",expiration);
-			    }
 
+		char expiration_days[64];
+		strcpy(expiration_days, nvram_safe_get("radius_expiration"));
+		long expiration = 0;	//never
+		if (db->users[radiusindex].expiration) {
+			time_t tm;
+			time(&tm);
+			long curtime = ((tm / 60) / 60) / 24;	//in days
+			expiration =
+			    db->users[radiusindex].expiration - curtime;
+			sprintf(expiration_days, "%ld", expiration);
+		}
+		//erase line from database
+		FILE *fp = fopen("/jffs/etc/freeradius/certs/index.txt", "rb");
+		if (fp) {
+			fseek(fp, 0, SEEK_END);
+			int len = ftell(fp);
+			rewind(fp);
+			char *serial = malloc(len + 1);
+			char *output = malloc(len + 1);
+			fread(serial, len, 1, fp);
+			fclose(fp);
+			//look for existing entry
+			char common[128];
+			sprintf(common, "CN=%s", db->users[radiusindex].user);
+			int i;
+			int clen = strlen(common);
+			int llen = len - clen;
+			int line = -1;
+			int oc = 0;
+			for (i = 0; i < llen; i++) {
+				if (serial[i] == 0xa) {
+					if (line == -1)
+						line++;
+					line++;
+				}
+				if (!strncmp
+				    (&serial[i], common, strlen(common))) {
+					//found line
+					int lines = 0;
+					int ic = 0;
+					while (1) {
+						if (serial[ic] == 0xa) {
+							lines++;
+						}
+						if (line != lines)
+							output[oc++] =
+							    serial[ic];
+						ic++;
+						if (ic == len)
+							break;
+					}
+					break;
+				}
+			}
+			if (oc) {
+				fp = fopen
+				    ("/jffs/etc/freeradius/certs/index.txt",
+				     "wb");
+				if (fp) {
+					fwrite(output, oc, 1, fp);
+					fclose(fp);
+				}
+			}
+		}
 		sprintf(exec,
 			"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 			expiration_days,

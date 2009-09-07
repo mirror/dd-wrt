@@ -3706,7 +3706,7 @@ static void save_radius_users(webs_t wp)
 	char upstream[] = { "usernameXXXXX" };
 	char expiration[] = { "expirationXXXXX" };
 	struct radiusdb *db = malloc(sizeof(struct radiusdb));
-	system("rm -rf /jffs/etc/freeradius/certs/clients");	//delete client certificates since they could become invalid
+	char filename[128];
 	db->usercount = 0;
 	db->users = NULL;
 	time_t tm;
@@ -3720,6 +3720,9 @@ static void save_radius_users(webs_t wp)
 		char *u = websGetVar(wp, user, NULL);
 		if (!u)
 			break;
+		sprintf(filename,
+			"/jffs/etc/freeradius/certs/clients/%s-cert.pem", u);
+		sysprintf("rm -f %s", filename);
 		char *p = websGetVar(wp, passwd, NULL);
 		if (!p)
 			break;
@@ -3748,11 +3751,10 @@ static void save_radius_users(webs_t wp)
 		db->users[db->usercount].downstream = atoi(d);
 		db->users[db->usercount].upstream = atoi(up);
 		long expiration = atoi(e);
-		if (expiration)
-		    {
-		    long curtime = ((tm/60)/60)/24; //in days
-		    expiration = expiration + curtime;
-		    }
+		if (expiration) {
+			long curtime = ((tm / 60) / 60) / 24;	//in days
+			expiration = expiration + curtime;
+		}
 		db->users[db->usercount].expiration = expiration;
 		db->usercount++;
 	}
