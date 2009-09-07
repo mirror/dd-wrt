@@ -14,6 +14,6 @@ mkdir -p clients
 openssl req -batch -nodes -new -x509 -keyout clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-req.pem -days $DEFDAYS -config client.cnf
 #signing-request
 openssl x509 -x509toreq -in clients/${CC_COMMONNAME}-req.pem -signkey clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-tmp.pem
-openssl ca -batch -config server.cnf -policy policy_anything -out clients/${CC_COMMONNAME}-cert.pem -passin pass:`grep output_password server.cnf | sed 's/.*=//;s/^ *//'` -extensions xpclient_ext -extfile xpextensions -infiles clients/${CC_COMMONNAME}-tmp.pem
+openssl ca -batch -config server.cnf -policy policy_anything -out clients/${CC_COMMONNAME}-cert.pem -passin pass:`grep output_password server.cnf | sed 's/.*=//;s/^ *//'` -extensions xpclient_ext -extfile xpextensions -infiles clients/${CC_COMMONNAME}-tmp.pem  -days $DEFDAYS
 openssl pkcs12 -export -in clients/${CC_COMMONNAME}-cert.pem -passout pass:${CC_PASS} -out clients/${CC_COMMONNAME}-cert.p12 -inkey clients/${CC_COMMONNAME}-key.pem -descert
 rm -f clients/${CC_COMMONNAME}-tmp.pem
