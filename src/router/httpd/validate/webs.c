@@ -3577,6 +3577,7 @@ void add_radius_user(webs_t wp)
 	db->users[db->usercount].passwordsize = 0;
 	db->users[db->usercount].downstream = 0;
 	db->users[db->usercount].upstream = 0;
+	db->users[db->usercount].expiration = 0;
 	db->usercount++;
 	writeradiusdb(db);
 	freeradiusdb(db);
@@ -3703,6 +3704,7 @@ static void save_radius_users(webs_t wp)
 	char user[] = { "usernameXXXXX" };
 	char downstream[] = { "passwordXXXXX" };
 	char upstream[] = { "usernameXXXXX" };
+	char expiration[] = { "expirationXXXXX" };
 	struct radiusdb *db = malloc(sizeof(struct radiusdb));
 	db->usercount = 0;
 	db->users = NULL;
@@ -3711,6 +3713,7 @@ static void save_radius_users(webs_t wp)
 		sprintf(passwd, "password%d", db->usercount);
 		sprintf(downstream, "downstream%d", db->usercount);
 		sprintf(upstream, "upstream%d", db->usercount);
+		sprintf(expiration, "expiration%d", db->usercount);
 		char *u = websGetVar(wp, user, NULL);
 		if (!u)
 			break;
@@ -3725,6 +3728,10 @@ static void save_radius_users(webs_t wp)
 		char *up = websGetVar(wp, upstream, NULL);
 		if (!up)
 			break;
+
+		char *e = websGetVar(wp, expiration, NULL);
+		if (!e)
+			break;
 		db->users =
 		    realloc(db->users,
 			    sizeof(struct radiususer) * (db->usercount + 1));
@@ -3737,6 +3744,7 @@ static void save_radius_users(webs_t wp)
 		db->users[db->usercount].passwordsize = strlen(p) + 1;
 		db->users[db->usercount].downstream = atoi(d);
 		db->users[db->usercount].upstream = atoi(up);
+		db->users[db->usercount].expiration = atoi(e);
 		db->usercount++;
 	}
 	writeradiusdb(db);

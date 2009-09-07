@@ -1776,6 +1776,7 @@ freeradius.password="Password";
 freeradius.downstream="Downstream";
 freeradius.upstream="Upstream";
 freeradius.sharedkey="Shared key";
+freeradius.expiration="Expiration";
 
 
 freeradius.countrycode="Country Code";
