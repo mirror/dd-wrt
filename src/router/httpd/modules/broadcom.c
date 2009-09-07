@@ -744,9 +744,20 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 
 	if (generate)		//do not regenerate certificates if they are already created
 	{
+		
+		char expiration_days[64];
+		strcpy(expiration_days,nvram_safe_get("radius_expiration"));
+			long expiration=0; //never
+			if (db->users[radiusindex].expiration)
+			    {
+			    long curtime = ((tm/60)/60)/24; //in days
+			    expiration = db->users[radiusindex].expiration - curtime;
+			    sprintf(expiration_days,"%ld",expiration);
+			    }
+
 		sprintf(exec,
 			"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-			nvram_safe_get("radius_expiration"),
+			expiration_days,
 			nvram_safe_get("radius_country"),
 			nvram_safe_get("radius_state"),
 			nvram_safe_get("radius_locality"),
