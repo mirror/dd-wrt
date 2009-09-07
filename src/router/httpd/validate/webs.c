@@ -3751,8 +3751,8 @@ static void save_radius_users(webs_t wp)
 		    {
 		    long curtime = ((tm/60)/60)/24; //in days
 		    expiration = expiration + curtime;
+		    db->users[db->usercount].expiration = expiration;
 		    }
-		db->users[db->usercount].expiration = expiration;
 		db->usercount++;
 	}
 	writeradiusdb(db);
