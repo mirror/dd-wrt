@@ -152,6 +152,9 @@ endif
 ifeq ($(CONFIG_ECB9750),y)
   CFLAGS += -DHAVE_ECB9750
 endif
+ifeq ($(CONFIG_AR670W),y)
+  CFLAGS += -DHAVE_AR670W
+endif
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880 -I../wireless-tools -DHEADERS_KERNEL
 endif
