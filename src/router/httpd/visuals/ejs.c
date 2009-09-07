@@ -1689,7 +1689,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// not 
 					// supported
 					j++;
-
+#ifndef HAVE_FREERADIUS
+				if (!strcmp(menu[i][j], "FreeRadius.asp"))
+					j++;
+#endif
 #ifndef HAVE_PPPOESERVER
 				if (!strcmp(menu[i][j], "PPPoE_Server.asp"))
 					j++;
@@ -1715,10 +1718,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_MILKFISH
 				if (!strcmp(menu[i][j], "Milkfish.asp"))
-					j++;
-#endif
-#ifndef HAVE_FREERADIUS
-				if (!strcmp(menu[i][j], "FreeRadius.asp"))
 					j++;
 #endif
 #ifndef HAVE_WOL
