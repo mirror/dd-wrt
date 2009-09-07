@@ -224,7 +224,7 @@ nvram_unset(const char *name)
 
 	return ret;
 }
-
+extern unsigned int cfi_bootloc;
 static void
 erase_callback(struct erase_info *done)
 {
@@ -284,12 +284,15 @@ nvram_commit(void)
 	if (ret)
 		goto done;
 
+	int esize = nvram_mtd->erasesize;
+
+
 	/* Erase sector blocks */
 	init_waitqueue_head(&wait_q);
-	for (; offset < nvram_mtd->size - NVRAM_SPACE + header->len; offset += nvram_mtd->erasesize) {
+	for (; offset < nvram_mtd->size - NVRAM_SPACE + header->len; offset += esize) {
 		erase.mtd = nvram_mtd;
 		erase.addr = offset;
-		erase.len = nvram_mtd->erasesize;
+		erase.len = esize;
 		erase.callback = erase_callback;
 		erase.priv = (u_long) &wait_q;
 
@@ -298,7 +301,7 @@ nvram_commit(void)
 
 		/* Unlock sector blocks */
 		if (nvram_mtd->unlock)
-			nvram_mtd->unlock(nvram_mtd, offset, nvram_mtd->erasesize);
+			nvram_mtd->unlock(nvram_mtd, offset, esize);
 
 		if ((ret = nvram_mtd->erase(nvram_mtd, &erase))) {
 			set_current_state(TASK_RUNNING);

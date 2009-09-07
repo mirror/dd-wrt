@@ -145,6 +145,7 @@ static void fixup_amd_bootblock(struct mtd_info *mtd, void* param)
 	struct cfi_pri_amdstd *extp = cfi->cmdset_priv;
 	__u8 major = extp->MajorVersion;
 	__u8 minor = extp->MinorVersion;
+//	printk(KERN_EMERG "major:minor %X:%X\n",major,minor);
 
 	if (((major << 8) | minor) < 0x3131) {
 		/* CFI version 1.0 => don't trust bootloc */
@@ -289,7 +290,7 @@ void Flash_SetModeRead(void)
 	for (delay = 0; delay < 5; delay++) ;
 }
 #endif
-
+unsigned int cfi_bootloc;
 struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 {
 	struct cfi_private *cfi = map->fldrv_priv;
@@ -371,6 +372,7 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 				cfi->cfiq->EraseRegionInfo[j] = swap;
 			}
 		}
+		cfi_bootloc = bootloc;
 #if 0// CONFIG_RT2880_FLASH_8M
 
 		switch (cfi->device_type) {

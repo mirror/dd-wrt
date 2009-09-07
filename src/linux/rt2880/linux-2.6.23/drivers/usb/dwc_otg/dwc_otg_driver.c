@@ -886,7 +886,7 @@ static int __init dwc_otg_driver_init(void)
 	int error;
 	
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0x0; //Enable USB Port
-	ralink_gpio_control(6,1); // turn on 5V
+//	ralink_gpio_control(6,1); // turn on 5V
 	lmdev = kzalloc(sizeof(struct lm_device), GFP_KERNEL);
 	if (!lmdev)
 	{
@@ -928,7 +928,7 @@ static void __exit dwc_otg_driver_cleanup(void)
 	driver_remove_file(&dwc_otg_driver.drv, &driver_attr_version);
 
 	lm_driver_unregister(&dwc_otg_driver);
-	ralink_gpio_control(6,0); // turn off 5V
+//	ralink_gpio_control(6,0); // turn off 5V
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0xF; //Disable USB Port
 	printk(KERN_INFO "%s module removed\n", dwc_driver_name);
 }
