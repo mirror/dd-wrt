@@ -137,8 +137,10 @@ serial_setup(si_t *sih)
 #endif /* CONFIG_SERIAL_CORE */
 int iswrt350n=0;
 int iswrt300n11=0;
+int iswnr3500v2=0;
 EXPORT_SYMBOL (iswrt350n);
 EXPORT_SYMBOL (iswrt300n11);
+EXPORT_SYMBOL (iswnr3500v2);
 
 void __init
 brcm_setup(void)
@@ -172,6 +174,8 @@ char *boardtype = nvram_get("boardtype");
 char *boothwmodel = nvram_get("boot_hw_model");
 char *boothwver = nvram_get("boot_hw_ver");
 char *cardbus = nvram_get("cardbus");
+char *boardrev = nvram_get("boardrev");
+if (boardrev!=NULL && !strcmp(boardrev,"0x1213") && !strcmp(boardtype,"0x04CF"))iswnr3500v2=1;
 if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
 if (cardbus!=NULL && !strcmp(cardbus, "0") && boardtype!=NULL && !strcmp(boardtype,"0x478"))
     {
