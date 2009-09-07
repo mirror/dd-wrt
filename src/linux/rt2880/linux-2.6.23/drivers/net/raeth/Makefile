@@ -1,10 +1,14 @@
 obj-$(CONFIG_RAETH) += raeth.o
-raeth-objs := raether.o ra_mac.o mcast.o mii_mgr.o
+raeth-objs := raether.o ra_mac.o mcast.o mii_mgr.o 
 
 EXTRA_CFLAGS   += 
 
 ifeq ($(CONFIG_RAETH_QOS),y)
 raeth-objs += ra_qos.o
+endif
+
+ifeq ($(CONFIG_RALINK_RT3052),y)
+raeth-objs += rt3052_access.o
 endif
 
 ifeq ($(CONFIG_ETHTOOL),y)
