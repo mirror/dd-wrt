@@ -627,6 +627,7 @@ int internal_getRouterBrand()
 		return ROUTER_BOARD_GATEWORX;
 	}
 #elif HAVE_RT2880
+
 #ifdef HAVE_ECB9750
 #ifdef HAVE_ALLNETWRT
 	setRouter("Allnet 802.11n Router");
@@ -637,6 +638,9 @@ int internal_getRouterBrand()
 #elif HAVE_ALLNET11N
 	setRouter("Allnet 802.11n Router");
 	return ROUTER_BOARD_WHRG300N;
+#elif HAVE_AR670W
+	setRouter("Airlink 101 AR670W");
+	return ROUTER_BOARD_AR670W;
 #elif HAVE_ESR6650
 	setRouter("Senao ESR6650");
 	return ROUTER_BOARD_ESR6650;
@@ -647,7 +651,11 @@ int internal_getRouterBrand()
 	setRouter("Aceex NR22");
 	return ROUTER_BOARD_ACXNR22;
 #elif HAVE_DIR600
+#ifdef HAVE_DIR300
+	setRouter("Dlink-DIR300 rev b");
+#else
 	setRouter("Dlink-DIR600 rev b");
+#endif
 	return ROUTER_BOARD_DIR600B;
 #elif HAVE_WHRG300N
 	setRouter("Buffalo WHR-G300N");
