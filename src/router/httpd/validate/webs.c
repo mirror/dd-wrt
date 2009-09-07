@@ -3708,6 +3708,8 @@ static void save_radius_users(webs_t wp)
 	struct radiusdb *db = malloc(sizeof(struct radiusdb));
 	db->usercount = 0;
 	db->users = NULL;
+	time_t tm;
+	time(&tm);
 	while (1) {
 		sprintf(user, "username%d", db->usercount);
 		sprintf(passwd, "password%d", db->usercount);
@@ -3744,7 +3746,13 @@ static void save_radius_users(webs_t wp)
 		db->users[db->usercount].passwordsize = strlen(p) + 1;
 		db->users[db->usercount].downstream = atoi(d);
 		db->users[db->usercount].upstream = atoi(up);
-		db->users[db->usercount].expiration = atoi(e);
+		long expiration = atoi(e);
+		if (expiration)
+		    {
+		    long curtime = ((tm/60)/60)/24; //in days
+		    expiration = expiration + curtime;
+		    }
+		db->users[db->usercount].expiration = expiration;
 		db->usercount++;
 	}
 	writeradiusdb(db);

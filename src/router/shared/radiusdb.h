@@ -9,6 +9,7 @@ struct radiususer {
 	unsigned char *passwd;
 	unsigned int downstream;
 	unsigned int upstream;
+	unsigned int expiration;
 //more fields can be added in future
 };
 
