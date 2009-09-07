@@ -644,6 +644,7 @@ CONFIG_MTD_CFI_UTIL=y
 # Mapping drivers for chip access
 #
 CONFIG_MTD_RALINK=y
+# CONFIG_MTD_AR670W is not set
 # CONFIG_MTD_ESR6650 is not set
 # CONFIG_MTD_COMPLEX_MAPPINGS is not set
 # CONFIG_MTD_PHYSMAP is not set
