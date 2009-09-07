@@ -808,6 +808,8 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 					fclose(fp);
 				}
 			}
+			free(output);
+			free(serial);
 		}
 		sprintf(exec,
 			"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
