@@ -63,7 +63,7 @@ static struct map_info ralink_map[] = {
 	{
 	.name = "Ralink SoC physically mapped flash",
 	.bankwidth = BUSWIDTH,
-	.size = CONFIG_MTD_PHYSMAP_LEN/2,
+	.size = CONFIG_MTD_PHYSMAP_LEN,
 	.phys = CONFIG_MTD_PHYSMAP_START
 	},
 };

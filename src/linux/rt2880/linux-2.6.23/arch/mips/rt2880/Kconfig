@@ -23,6 +23,26 @@ endchoice
 
 endif
 
+
+config  RT2860V2_2850
+        bool "Dual Band"
+        depends on RALINK_RT2880
+
+choice
+        prompt "RF Type"
+        depends on RALINK_RT3052
+        default RALINK_RT3052_2T2R
+
+        config  RALINK_RT3050_1T1R
+        bool "RT3050-1T1R"
+
+        config  RALINK_RT3051_1T2R
+        bool "RT3051-1T2R"
+
+        config  RALINK_RT3052_2T2R
+        bool "RT3052-2T2R"
+endchoice
+
 #--------------------------
 
 config FLASH_REMAP_NEED
