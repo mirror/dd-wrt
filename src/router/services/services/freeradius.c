@@ -143,32 +143,28 @@ void start_freeradius(void)
 		"\tFall-Through = Yes\n\n");
 	time_t tm;
 	struct tm tm_time;
-	time(&tm);
 	for (i = 0; i < db->usercount; i++) {
 		if (!db->users[i].usersize)
 		    continue;
 		if (!db->users[i].user || !strlen(db->users[i].user))
 		    continue;
-		fprintf(fp, "%s        Cleartext-Password := \"%s\"\n",db->users[i].user, db->users[i].passwd);
+		fprintf(fp, "%s        Cleartext-Password := \"%s\"",db->users[i].user, db->users[i].passwd);
 		if (db->users[i].expiration)
 		    {
-			tm+=db->users[i].expiration*24*60*60;
+			tm=db->users[i].expiration*24*60*60;
 			memcpy(&tm_time, localtime(&tm), sizeof(tm_time));
 			char datebuf[128];
 			strftime(datebuf, sizeof(datebuf), "%d %b %Y", &tm_time);
-			fprintf(fp,"\tExpiration := %s",datebuf);
-		    }
+			fprintf(fp," Expiration == \"%s\"\n",datebuf);
+		    }else
+			fprintf(fp,"\n");
 		if (db->users[i].downstream)
 			{
-			if (db->users[i].expiration)
-				fprintf(fp, ",\n");
 			fprintf(fp, "\tWISPr-Bandwidth-Max-Down := %d",
 				db->users[i].downstream * 1024);
 			}
 		if (db->users[i].upstream) {
 			if (db->users[i].downstream)
-				fprintf(fp, ",\n");
-			if (!db->users[i].downstream && db->users[i].expiration)
 				fprintf(fp, ",\n");
 			fprintf(fp, "\tWISPr-Bandwidth-Max-Up := %d\n",
 				db->users[i].upstream * 1024);
