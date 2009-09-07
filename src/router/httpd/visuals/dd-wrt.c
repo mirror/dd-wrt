@@ -7835,6 +7835,8 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 
 	unsigned int i;
 	struct radiusdb *db = loadradiusdb();
+	time_t tm;
+	time(&tm);
 	if (db != NULL)		// empty
 	{
 		for (i = 0; i < db->usercount; i++) {
@@ -7865,7 +7867,13 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,"<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",vlan_name, db->users[i].upstream);
 
 			sprintf(vlan_name, "expiration%d", i);
-			websWrite(wp,"<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",vlan_name, db->users[i].expiration);
+			long expiration=0; //never
+			if (db->users[i].expiration)
+			    {
+			    long curtime = ((tm/60)/60)/24; //in days
+			    expiration = db->users[i].expiration - curtime;
+			    }
+			websWrite(wp,"<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",vlan_name, expiration);
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>",

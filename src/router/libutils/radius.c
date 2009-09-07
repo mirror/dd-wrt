@@ -92,25 +92,42 @@ struct radiusdb *loadradiusdb(void)
 	    db->users = NULL;
 	unsigned int i;
 	for (i = 0; i < db->usercount; i++) {
+		int curlen=0;
 		db->users[i].fieldlen = readword(fp);
 		db->users[i].usersize = readword(fp);
+		curlen+=8;
 		if (db->users[i].usersize)
 		{
 		db->users[i].user = malloc(db->users[i].usersize);
 		fread(db->users[i].user, db->users[i].usersize, 1, fp);
+		curlen+=db->users[i].usersize;
 		}else
 		db->users[i].user = NULL;
 		
 		db->users[i].passwordsize = readword(fp);
+		curlen+=4;
 		if (db->users[i].passwordsize)
 		{
 		db->users[i].passwd = malloc(db->users[i].passwordsize);
 		fread(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
+		curlen+=db->users[i].passwordsize;
 		}else
 		    db->users[i].passwd=NULL;
 		
 		db->users[i].downstream = readword(fp);
 		db->users[i].upstream = readword(fp);
+		curlen+=8;
+		if (curlen<db->users[i].fieldlen)
+		    {
+		    db->users[i].expiration = readword(fp);
+		    curlen+=4;
+		    }else
+		    db->users[i].expiration = 0;
+
+		if ((db->users[i].fieldlen-curlen) > 0) //for backward compatiblity
+		    fseek(fp,db->users[i].fieldlen-curlen,SEEK_CUR);
+
+
 	}
 	fclose(fp);
 	return db;
@@ -206,12 +223,6 @@ struct radiusclientdb *loadradiusclientdb(void)
 		curlen+=db->users[i].passwordsize;
 		}else
 		    db->users[i].passwd=NULL;
-		if (curlen<db->users[i].fieldlen)
-		    {
-		    db->users[i].expiration = readword(fp);
-		    curlen+=4;
-		    }else
-		    db->users[i].expiration = 0;
 		    
 		if ((db->users[i].fieldlen-curlen) > 0) //for backward compatiblity
 		    fseek(fp,db->users[i].fieldlen-curlen,SEEK_CUR);
