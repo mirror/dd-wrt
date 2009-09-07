@@ -1776,7 +1776,6 @@ freeradius.password="Password";
 freeradius.downstream="Downstream";
 freeradius.upstream="Upstream";
 freeradius.sharedkey="Shared key";
-freeradius.expiration="Expiration";
 
 
 freeradius.countrycode="Country Code";
@@ -1785,7 +1784,7 @@ freeradius.locality="Locality";
 freeradius.organisation="Organisation / Company";
 freeradius.email="Email Address";
 freeradius.common="Common Certificate Name";
-freeradius.expiration="Expiration in days";
+freeradius.expiration="Expiration (Days)";
 freeradius.passphrase="Passphrase";
 freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
