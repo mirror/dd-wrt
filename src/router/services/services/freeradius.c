@@ -155,7 +155,7 @@ void start_freeradius(void)
 			memcpy(&tm_time, localtime(&tm), sizeof(tm_time));
 			char datebuf[128];
 			strftime(datebuf, sizeof(datebuf), "%d %b %Y", &tm_time);
-			fprintf(fp," Expiration == \"%s\"\n",datebuf);
+			fprintf(fp,", Expiration == \"%s\"\n",datebuf);
 		    }else
 			fprintf(fp,"\n");
 		if (db->users[i].downstream)
