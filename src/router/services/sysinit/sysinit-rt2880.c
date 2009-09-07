@@ -158,26 +158,74 @@ if (in!=NULL)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth2", "1");	//LAN 
 		eval("vconfig", "add", "eth2", "2");	//WAN
+#ifdef HAVE_ALLNET11N
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
-#ifdef HAVE_ALLNET11N
 		sysprintf("switch reg w 40 1002");
 		sysprintf("switch reg w 44 1001");
 		sysprintf("switch reg w 48 1001");
 		sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_ESR9752
+		sysprintf("switch reg w 14 405555");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 98 7f3f");
+		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
 		sysprintf("switch reg w 44 1001");
 		sysprintf("switch reg w 48 1001");
 		sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_ACXNR22
+		sysprintf("switch reg w 14 405555");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 98 7f3f");
+		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
 		sysprintf("switch reg w 44 1001");
 		sysprintf("switch reg w 48 1001");
 		sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_AR670W
+	sysprintf("mii_mgr -s -p 29 -r 23 -v 0x07c2");
+	sysprintf("mii_mgr -s -p 29 -r 22 -v 0x8420");
+
+/*	if [ "$1" = "LLLLW" ]; then */
+		sysprintf("mii_mgr -s -p 29 -r 24 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 25 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 26 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 27 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 28 -v 0x2");
+		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
+/*		if [ "$CONFIG_RALINK_VISTA_BASIC" == "y" ]; then
+			mii_mgr -s -p 30 -r 1 -v 0x2f3f
+		else*/
+			sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
+/*		fi */
+		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
+	/*elif [ "$1" = "WLLLL" ]; then*/
+	
+/*		sysprintf("mii_mgr -s -p 29 -r 24 -v 0x2");
+		sysprintf("mii_mgr -s -p 29 -r 25 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 26 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 27 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 28 -v 0x1");
+		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x0189");*/
+/*		if [ "$CONFIG_RALINK_VISTA_BASIC" == "y" ]; then
+			mii_mgr -s -p 30 -r 1 -v 0x3e3f
+		else */
+//			sysprintf("mii_mgr -s -p 30 -r 1 -v 0x3e00");
+/*		fi
+		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0021");
+/*	else
+		echo "LAN WAN layout $0 is not suported"
+	fi*/
+
+
 #else
+		sysprintf("switch reg w 14 405555");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 98 7f3f");
+		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1001");
 		sysprintf("switch reg w 44 1001");
 		sysprintf("switch reg w 48 1002");
@@ -253,6 +301,8 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_AR670W
+
 #else
 			sysprintf("switch reg w 40 1001");
 			sysprintf("switch reg w 44 1001");
@@ -281,6 +331,11 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_AR670W
+/*			sysprintf("switch reg w 40 1002");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1001");
+			sysprintf("switch reg w 70 ffff417e");*/
 #else
 			sysprintf("switch reg w 40 1001");
 			sysprintf("switch reg w 44 1001");

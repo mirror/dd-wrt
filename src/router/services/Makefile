@@ -812,6 +812,9 @@ endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS_EXTRA += -DHAVE_WHRG300N
 endif
+ifeq ($(CONFIG_AR670W),y)
+  CFLAGS_EXTRA += -DHAVE_AR670W
+endif
 ifeq ($(CONFIG_ESR6650),y)
   CFLAGS_EXTRA += -DHAVE_ESR6650
 endif
@@ -827,6 +830,7 @@ vpath %.c sysinit sysinit/switchlib services tools networking $(TOP)/shared $(SR
 all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c
 endif
 	gcc -o bin/defaults $(HCFLAGS) bin/defaults.c
 	cd bin && ./defaults
@@ -844,6 +848,7 @@ install: all
 ifeq ($(CONFIG_RT2880),y)
 	install -d $(INSTALLDIR)/services/sbin	
 	install switch $(INSTALLDIR)/services/sbin
+	install mii_mgr $(INSTALLDIR)/services/sbin
 endif
 
 services.so: $(OBJS)
