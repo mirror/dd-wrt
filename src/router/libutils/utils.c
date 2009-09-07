@@ -2856,6 +2856,12 @@ int led_control(int type, int act)
 		connected_gpio = 0x104;
 		diag_gpio = 0x001;	// power led blink /off to indicate factory defaults
 		break;
+	case ROUTER_NETGEAR_WNR3500L:
+		power_gpio = 0x003;  //power led green
+		diag_gpio = 0x007;	// power led amber
+		ses_gpio = 0x001;	// WPS led green
+		connected_gpio = 0x002;  //wan led green
+		break;
 
 #endif
 	}
