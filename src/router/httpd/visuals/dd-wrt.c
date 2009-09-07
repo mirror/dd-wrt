@@ -7828,6 +7828,7 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
   					<th><script type=\"text/javascript\">Capture(freeradius.password)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(freeradius.downstream)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(freeradius.upstream)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(freeradius.expiration)</script></th>\n\
   					<th>&nbsp;</th>\n\
   					<th>&nbsp;</th>\n\
   				</tr>\n");
@@ -7861,9 +7862,10 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 				  vlan_name, db->users[i].downstream);
 
 			sprintf(vlan_name, "upstream%d", i);
-			websWrite(wp,
-				  "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",
-				  vlan_name, db->users[i].upstream);
+			websWrite(wp,"<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",vlan_name, db->users[i].upstream);
+
+			sprintf(vlan_name, "expiration%d", i);
+			websWrite(wp,"<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",vlan_name, db->users[i].expiration);
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>",
