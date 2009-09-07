@@ -705,7 +705,7 @@ instantiate {
 	# the check-name attribute before any module which sets
 	# it
 #	daily
-#	expiration
+	expiration
 #	logintime
 
 	# subsections here can be thought of as "virtual" modules.
