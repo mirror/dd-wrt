@@ -39,6 +39,12 @@ static struct {
 static int gpio_init_flag = 0;
 static int __init gpio_init(void);
 
+#define WNR3500V2_USB_PSU_GPIO			0
+#define WNR3500V2_WPS_LED_GPIO			1
+#define WNR3500V2_CONNECTED_LED_GPIO	2
+#define WNR3500V2_PWR_LED_GPIO			3  //pwr led green
+#define WNR3500V2_DIAG_LED_GPIO			7  //pwr led amber
+
 static int
 gpio_open(struct inode *inode, struct file * file)
 {
@@ -147,6 +153,7 @@ static struct file_operations gpio_fops = {
 
 extern int iswrt350n;
 extern int iswrt300n11;
+extern int iswnr3500v2;
 static struct class *gpio_class = NULL;
 
 static int __init
@@ -200,6 +207,22 @@ if (iswrt350n)
 		si_gpioreserve(gpio_sih, 0x4, GPIO_HI_PRIORITY);
 		si_gpioouten(gpio_sih, 0x4, 0x4, GPIO_HI_PRIORITY);
 		si_gpioout(gpio_sih, 0x4, 0x4, GPIO_HI_PRIORITY);
+}
+if (iswnr3500v2)
+{
+		printk(KERN_EMERG "WNR3500V2 GPIO Init\n");
+//		si_gpioreserve(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
+//		si_gpioouten(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
+//		si_gpioout(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
+		si_gpioreserve(gpio_sih, 1 << WNR3500V2_WPS_LED_GPIO, GPIO_HI_PRIORITY);
+		si_gpioouten(gpio_sih, 1 << WNR3500V2_WPS_LED_GPIO, 1 << WNR3500V2_WPS_LED_GPIO, GPIO_HI_PRIORITY);
+		si_gpioreserve(gpio_sih, 1 << WNR3500V2_CONNECTED_LED_GPIO, GPIO_HI_PRIORITY);
+		si_gpioouten(gpio_sih, 1 << WNR3500V2_CONNECTED_LED_GPIO, 1 << WNR3500V2_CONNECTED_LED_GPIO, GPIO_HI_PRIORITY);
+		si_gpioreserve(gpio_sih, 1 << WNR3500V2_PWR_LED_GPIO, GPIO_HI_PRIORITY);
+		si_gpioouten(gpio_sih, 1 << WNR3500V2_PWR_LED_GPIO, 1 << WNR3500V2_PWR_LED_GPIO, GPIO_HI_PRIORITY);
+		si_gpioreserve(gpio_sih, 1 << WNR3500V2_DIAG_LED_GPIO, GPIO_HI_PRIORITY);
+		si_gpioouten(gpio_sih, 1 << WNR3500V2_DIAG_LED_GPIO, 1 << WNR3500V2_DIAG_LED_GPIO, GPIO_HI_PRIORITY);
+	
 }
 /*if (iswrt300n11)
 {
