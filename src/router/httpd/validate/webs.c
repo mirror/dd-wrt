@@ -3706,6 +3706,7 @@ static void save_radius_users(webs_t wp)
 	char upstream[] = { "usernameXXXXX" };
 	char expiration[] = { "expirationXXXXX" };
 	struct radiusdb *db = malloc(sizeof(struct radiusdb));
+	system("rm -rf /jffs/etc/freeradius/certs/clients");	//delete client certificates since they could become invalid
 	db->usercount = 0;
 	db->users = NULL;
 	time_t tm;
@@ -3751,8 +3752,8 @@ static void save_radius_users(webs_t wp)
 		    {
 		    long curtime = ((tm/60)/60)/24; //in days
 		    expiration = expiration + curtime;
-		    db->users[db->usercount].expiration = expiration;
 		    }
+		db->users[db->usercount].expiration = expiration;
 		db->usercount++;
 	}
 	writeradiusdb(db);

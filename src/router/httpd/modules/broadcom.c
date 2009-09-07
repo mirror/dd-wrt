@@ -750,6 +750,8 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 			long expiration=0; //never
 			if (db->users[radiusindex].expiration)
 			    {
+			    time_t tm;
+			    time(&tm);
 			    long curtime = ((tm/60)/60)/24; //in days
 			    expiration = db->users[radiusindex].expiration - curtime;
 			    sprintf(expiration_days,"%ld",expiration);
