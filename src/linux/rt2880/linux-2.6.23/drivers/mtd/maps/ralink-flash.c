@@ -169,11 +169,21 @@ static struct mtd_partition rt2880_partitions[] = {
                 size:           0x10000,  /* 64K */
                 offset:         MTDPART_OFS_APPEND,
                 mask_flags:     0  /* force read-only */
-        }, {
+        }
+#ifdef CONFIG_MTD_AR670W
+, {
+                name:           "linux", /* mtdblock3 */
+                size:           CONFIG_MTD_KERNEL_PART_SIZ,
+                offset:         0x40000,
+        }, 
+#else
+, {
                 name:           "linux", /* mtdblock3 */
                 size:           CONFIG_MTD_KERNEL_PART_SIZ,
                 offset:         0x50000,
-        }, {
+        }, 
+#endif
+    	    {
                 name:           "rootfs", /* mtdblock4 */
                 size:           MTDPART_SIZ_FULL,
                 offset:         MTDPART_OFS_APPEND,
@@ -252,9 +262,15 @@ int nvramsize = ralink_mtd[0]->erasesize;
 					rt2880_partitions[4].offset=offset;					
 					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-0x450000);					
 #else
+#ifdef CONFIG_MTD_AR670W
+					rt2880_partitions[3].size=(((ralink_mtd[0]->size)-nvramsize)-0x40000);					
+					rt2880_partitions[4].offset=offset;					
+					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-0x40000);					
+#else
 					rt2880_partitions[3].size=(((ralink_mtd[0]->size)-nvramsize)-0x50000);					
 					rt2880_partitions[4].offset=offset;					
 					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-0x50000);					
+#endif
 #endif
 					rt2880_partitions[5].offset=ralink_mtd[0]->size-nvramsize;					
 					rt2880_partitions[5].size = ralink_mtd[0]->erasesize;					

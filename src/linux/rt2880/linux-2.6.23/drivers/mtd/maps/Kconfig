@@ -12,6 +12,10 @@ config MTD_ESR6650
        bool "Senao ESR6650 support"
        depends on MTD
 
+config MTD_AR670W
+       bool "Senao ESR6650 support"
+       depends on MTD
+
 
 config MTD_COMPLEX_MAPPINGS
 	bool "Support non-linear mappings of flash chips"
