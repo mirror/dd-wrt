@@ -1309,6 +1309,18 @@ service.nstx_log="Switch on debug messages";
 service.ttraff_legend="WAN Traffic Counter";
 service.ttraff_daemon="ttraff Daemon";
 
+//notifier.webservices
+service.warn_legend="Connection Warning Daemon";
+service.warn="Warning Daemon";
+service.warn_limit="Connection Limit";
+service.warn_server="Email SMTP Server";
+service.warn_from="Senders Email Address";
+service.warn_fromfull="Senders Full Name";
+service.warn_to="Recipient Email Address";
+service.warn_domain="Recipient Domain Name";
+service.warn_user="SMTP Auth Username";
+service.warn_pass="SMTP Auth Password";
+
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
