@@ -4556,7 +4556,7 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 }
 
-void show_radius(webs_t wp, char *prefix, int showmacformat)
+void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 {
 	char var[80];
 
@@ -4622,8 +4622,52 @@ void show_radius(webs_t wp, char *prefix, int showmacformat)
 	websWrite(wp,
 		  "<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"",
 		  prefix, prefix);
+
 	tf_webWriteESCNV(wp, var);
 	websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
+
+	if (backup) {
+		rad = nvram_nget("%s_radius2_ipaddr", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label23)</script></div>\n");
+		websWrite(wp,
+			  "<input type=\"hidden\" name=\"%s_radius2_ipaddr\" value=\"4\" />\n",
+			  prefix);
+		websWrite(wp,
+			  "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label23)\" class=\"num\" value=\"%d\" />.",
+			  prefix, get_single_ip(rad, 0));
+		websWrite(wp,
+			  "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label23)\" class=\"num\" value=\"%d\" />.",
+			  prefix, get_single_ip(rad, 1));
+		websWrite(wp,
+			  "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label23)\" class=\"num\" value=\"%d\" />.",
+			  prefix, get_single_ip(rad, 2));
+		websWrite(wp,
+			  "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label23)\" class=\"num\" value=\"%d\" />\n",
+			  prefix, get_single_ip(rad, 3));
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label24)</script></div>\n");
+		sprintf(var, "%s_radius2_port", prefix);
+		websWrite(wp,
+			  "<input name=\"%s_radius2_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label24)\" value=\"%s\" />\n",
+			  prefix, nvram_default_get(var, "1812"));
+		websWrite(wp,
+			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label27)</script></div>\n");
+		sprintf(var, "%s_radius2_key", prefix);
+		websWrite(wp,
+			  "<input type=\"password\" id=\"%s_radius2_key\" name=\"%s_radius2_key\" maxlength=\"79\" size=\"32\" value=\"",
+			  prefix, prefix);
+
+		tf_webWriteESCNV(wp, var);
+		websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
+	}
 	websWrite(wp,
 		  "<input type=\"checkbox\" name=\"%s_radius_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
@@ -5049,7 +5093,11 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n",
 		  selmatch(var, "tkip+aes", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
-	show_radius(wp, prefix, 0);
+#ifdef HAVE_MADWIFI
+	show_radius(wp, prefix, 0, 1);
+#else
+	show_radius(wp, prefix, 0, 0);
+#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.rekey)</script></div>\n");
@@ -7846,16 +7894,17 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].usersize) ? db->
-				  users[i].user : "");
+					      && db->users[i].
+					      usersize) ? db->users[i].
+				  user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -7912,16 +7961,17 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].clientsize) ? db->
-				  users[i].client : "");
+					      && db->users[i].
+					      clientsize) ? db->users[i].
+				  client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",

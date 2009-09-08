@@ -718,6 +718,12 @@ _8021xprv
 		nvram_set(n, radius);
 	copytonv(wp, "%s_radius_port", prefix);
 	copytonv(wp, "%s_radius_key", prefix);
+
+	sprintf(n, "%s_radius2_ipaddr", prefix);
+	if (get_merge_ipaddr(wp, n, radius))
+		nvram_set(n, radius);
+	copytonv(wp, "%s_radius2_port", prefix);
+	copytonv(wp, "%s_radius2_key", prefix);
 #ifdef HAVE_MADWIFI
 	copytonv(wp, "%s_acct", prefix);
 	sprintf(n, "%s_acct_ipaddr", prefix);
@@ -1704,6 +1710,14 @@ void add_vifs_single(char *prefix, int device)
 
 	sprintf(v2, "%s_radius_ipaddr", v);
 	nvram_set(v2, "0.0.0.0");
+#ifdef HAVE_MADWIFI
+	sprintf(v2, "%s_radius2_ipaddr", v);
+	nvram_set(v2, "0.0.0.0");
+
+	sprintf(v2, "%s_radius2_port", v);
+	nvram_set(v2, "1812");
+
+#endif
 
 	// nvram_commit ();
 	free(n);
