@@ -13,6 +13,7 @@ static int smtp_checkp(const char *fmt, const char *param, int code)
 {
 	char *answer;
 	const char *msg = command(fmt, param);
+	
 	// read stdin
 	// if the string has a form \d\d\d- -- read next string. E.g. EHLO response
 	// parse first bytes to a number
@@ -72,9 +73,12 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 	char *opt_connect = opt_connect;
 	char *opt_from, *opt_fullname;
 	char *boundary;
+	char *user;
+	char *pass;
+	char *text;
+	char *domain;
 	llist_t *l;
 	llist_t *headers = NULL;
-	char *domain = sane_address(safe_getdomainname());
 	int code;
 
 	enum {
@@ -90,6 +94,10 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 		OPT_S = 1 << 9,         // specify connection string
 		OPT_c = 1 << 10,        // carbon copy
 		OPT_e = 1 << 11,        // errors-to address
+		OPT_u = 1 << 12,        // errors-to address
+		OPT_p = 1 << 13,        // errors-to address
+		OPT_m = 1 << 14,
+		OPT_d = 1 << 15,
 	};
 
 	// init global variables
@@ -103,12 +111,13 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 	opt_complementary = "w+" USE_FEATURE_SENDMAIL_MAILX(":a::H--S:S--H") USE_FEATURE_SENDMAIL_MAILXX(":c::");
 	opts = getopt32(argv,
 		"w:t" "N:f:F:" USE_FEATURE_SENDMAIL_MAILX("s:j:a:H:S:") USE_FEATURE_SENDMAIL_MAILXX("c:e:")
+		"u:p:m:d:"
 		"X:V:vq:R:O:o:nmL:Iih:GC:B:b:A:" // postfix compat only, ignored
 		// r:Q:p:M:Dd are candidates from another man page. TODO?
 		"46E", // ssmtp introduces another quirks. TODO?: -a[upm] (user, pass, method) to be supported
 		&timeout /* -w */, NULL, &opt_from, &opt_fullname,
 		USE_FEATURE_SENDMAIL_MAILX(&opt_subject, &G.opt_charset, &opt_attachments, &opt_connect, &opt_connect,)
-		USE_FEATURE_SENDMAIL_MAILXX(&opt_carboncopies, &opt_errors_to,)
+		USE_FEATURE_SENDMAIL_MAILXX(&opt_carboncopies, &opt_errors_to,) &user,&pass,&text,&domain,
 		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	);
 	//argc -= optind;
@@ -142,18 +151,24 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 		xdup2(STDIN_FILENO, STDOUT_FILENO);
 	}
 	// N.B. from now we know nothing about network :)
-
+	usleep(100*1000);
 	// wait for initial server OK
 	// N.B. if we used openssl the initial 220 answer is already swallowed during openssl TLS init procedure
 	// so we need to push the server to see whether we are ok
 	code = smtp_check("NOOP", -1);
+	if (554 == code)
+	    code = smtp_check("NOOP", -1);
 	// 220 on plain connection, 250 on openssl-helped TLS session
 	if (220 == code)
 		smtp_check(NULL, 250); // reread the code to stay in sync
 	else if (250 != code)
+		{
 		bb_error_msg_and_die("INIT failed");
-
+		}
 	// we should start with modern EHLO
+	usleep(500*1000);
+	if (strlen(domain)==0)
+	    domain="DD-WRT";
 	if (250 != smtp_checkp("EHLO %s", domain, -1)) {
 		smtp_checkp("HELO %s", domain, 250);
 	}
@@ -177,6 +192,15 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 	}
 	if (ENABLE_FEATURE_CLEAN_UP)
 		free(domain);
+
+	if ((opts & OPT_u) && (opts & OPT_p)) {
+		if (334 == smtp_check("AUTH LOGIN", -1)) {
+			encode_base64(NULL, user, NULL);
+			smtp_check("", 334);
+			encode_base64(NULL, pass, NULL);
+			smtp_check("", 235);
+		}
+	}
 
 	code = -1; // first try softly without authentication
 	while (250 != smtp_checkp("MAIL FROM:<%s>", opt_from, code)) {
@@ -364,16 +388,7 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 		// terminate headers
 		printf("\r\n");
 		// put plain text respecting leading dots
-		while ((s = xmalloc_fgetline(G.fp0)) != NULL) {
-			// escape leading dots
-			// N.B. this feature is implied even if no -i (-oi) switch given
-			// N.B. we need to escape the leading dot regardless of
-			// whether it is single or not character on the line
-			if ('.' == s[0] /*&& '\0' == s[1] */)
-				printf(".");
-			// dump read line
-			printf("%s\r\n", s);
-		}
+		printf("%s\r\n", text);
 	}
 
 	// leave "put message" mode
