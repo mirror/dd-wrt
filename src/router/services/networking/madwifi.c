@@ -562,12 +562,26 @@ void setupHostAP(char *prefix, int iswan)
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			fprintf(fp, "radius_retry_primary_interval=60\n");
+
 			fprintf(fp, "auth_server_addr=%s\n",
 				nvram_nget("%s_radius_ipaddr", prefix));
 			fprintf(fp, "auth_server_port=%s\n",
 				nvram_nget("%s_radius_port", prefix));
 			fprintf(fp, "auth_server_shared_secret=%s\n",
 				nvram_nget("%s_radius_key", prefix));
+
+			if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
+			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr",
+					     prefix)
+			    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
+				fprintf(fp, "auth_server_addr=%s\n",
+					nvram_nget("%s_radius2_ipaddr",
+						   prefix));
+				fprintf(fp, "auth_server_port=%s\n",
+					nvram_nget("%s_radius2_port", prefix));
+				fprintf(fp, "auth_server_shared_secret=%s\n",
+					nvram_nget("%s_radius2_key", prefix));
+			}
 			if (nvram_nmatch("1", "%s_acct", prefix)) {
 				fprintf(fp, "acct_server_addr=%s\n",
 					nvram_nget("%s_acct_ipaddr", prefix));
@@ -1124,9 +1138,9 @@ static void configure_single(int count)
 	setsysctrl(wif, "csma", atoi(nvram_default_get(wl_csma, "1")));
 	setsysctrl(wif, "intmit", atoi(nvram_default_get(wl_intmit, "-1")));
 	int level = atoi(nvram_default_get(wl_noise_immunity, "4"));
-	if (level<0)
-	    level = 4;
-	setsysctrl(wif, "noise_immunity",level);
+	if (level < 0)
+		level = 4;
+	setsysctrl(wif, "noise_immunity", level);
 	setsysctrl(wif, "ofdm_weak_det",
 		   atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
 
