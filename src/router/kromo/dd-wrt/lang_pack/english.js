@@ -1731,9 +1731,14 @@ radius.label="MAC Radius Client";
 radius.label2="MAC Format";
 radius.label3="Radius Auth Server Address";
 radius.label4="Radius Auth Server Port";
+radius.label7="Radius Auth Shared Secret";
+
+radius.label23="Radius Auth Backup Server Address";
+radius.label24="Radius Auth Backup Server Port";
+radius.label27="Radius Auth Backup Shared Secret";
+
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
-radius.label7="Radius Auth Shared Secret";
 radius.label8="Override Radius if server is unavailable";
 radius.label13="Radius Acct Server Address";
 radius.label14="Radius Acct Server Port";
