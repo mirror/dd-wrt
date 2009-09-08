@@ -1,0 +1,49 @@
+<fieldset>
+	<legend><% tran("service.warn_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.warn"); %></div>
+		<input class="spaceradio" type="radio" name="warn_enabled" value="1" <% nvram_checked("warn_enabled", "1"); %> onclick="show_layer_ext(this, 'idwarn', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="warn_enabled" value="0" <% nvram_checked("warn_enabled", "0"); %> onclick="show_layer_ext(this, 'idwarn', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idwarn">
+		<div class="setting">
+			<div class="label"><% tran("service.warn_limit"); %></div>
+			<input class="num" maxlength="5" size="5" name="warn_connlimit" onblur="valid_range(this,1,65535,'Connection Limit')" value="<% nvram_get("warn_connlimit"); %>" />
+			<span class="default">
+			<script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 500)");
+			//]]>
+			</script></span>
+		</div>
+
+		<div class="setting">
+			<div class="label"><% tran("service.warn_server"); %></div>
+			<input size="25" name="warn_server" value="<% nvram_get("warn_server"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.warn_user"); %></div>
+			<input size="25" name="warn_user" value="<% nvram_get("warn_user"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.warn_pass"); %></div>
+			<input size="25" name="warn_pass" value="<% nvram_get("warn_pass"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.warn_from"); %></div>
+			<input size="25" name="warn_from" value="<% nvram_get("warn_from"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.warn_fromfull"); %></div>
+			<input size="25" name="warn_fromfull" value="<% nvram_get("warn_fromfull"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.warn_domain"); %></div>
+			<input size="25" name="warn_domain" value="<% nvram_get("warn_domain"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.warn_to"); %></div>
+			<input size="25" name="warn_to" value="<% nvram_get("warn_to"); %>" />
+		</div>
+	</div>
+</fieldset><br />

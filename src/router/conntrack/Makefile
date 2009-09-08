@@ -5,6 +5,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 
 MODULE:=conntrack.startup
 ifeq ($(CONFIG_RB500),y)
@@ -62,13 +63,29 @@ ifeq ($(CONFIG_CA8),y)
 MODULE:=conntrack.26
 endif
 
+
+notifier: notifier.o
+	$(CC) -o $@ $^ $(CFLAGS) -L$(TOP)/nvram -lnvram
+
 clean:
-	@true
-all:
-	@true
+	rm -f notifier notifier.o
+
+all: notifier
+
 
 install:
+	
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
+	install -d $(INSTALLDIR)/usr/sbin
 	cp $(MODULE)* $(INSTALLDIR)/etc/config
-
+ifeq ($(CONFIG_XSCALE),y)
+	cp notifier.webservices $(INSTALLDIR)/etc/config
+	cp notifier.nvramconfig $(INSTALLDIR)/etc/config
+	cp notifier $(INSTALLDIR)/usr/sbin
+endif
+ifeq ($(CONFIG_LSX),y)
+	cp notifier.webservices $(INSTALLDIR)/etc/config
+	cp notifier.nvramconfig $(INSTALLDIR)/etc/config
+	cp notifier $(INSTALLDIR)/usr/sbin
+endif
