@@ -7859,12 +7859,12 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
-				  "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",
+				  "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" /></td>\n",
 				  vlan_name, db->users[i].downstream);
 
 			sprintf(vlan_name, "upstream%d", i);
 			websWrite(wp,
-				  "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",
+				  "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" /></td>\n",
 				  vlan_name, db->users[i].upstream);
 
 			sprintf(vlan_name, "expiration%d", i);
