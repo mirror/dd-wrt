@@ -2613,6 +2613,8 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_VNCREPEATER
 	{"vncr_enable", "0", 0},
 #endif
+	{"warn_enabled","0",0},
+	{"warn_connlimit","500",0},
 	{0, 0, 0}
 };
 #else
