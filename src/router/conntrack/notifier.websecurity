@@ -1,3 +1,4 @@
+<h2><% tran("service.warn_legend"); %></h2>
 <fieldset>
 	<legend><% tran("service.warn_legend"); %></legend>
 	<div class="setting">
