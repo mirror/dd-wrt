@@ -6,4 +6,4 @@
  "warn_to"  "Recipient"  "NAME"  "128"  "TRUE" "0"  
  "warn_domain"  "Client Domain"  "NAME"  "128"  "TRUE" "0"  
  "warn_user"  "Server Username"  "NAME"  "128"  "TRUE" "0"  
- "warn_pass"  "Server Password"  "PASSWORD"  "128"  "TRUE" "0"  
+ "warn_pass"  "Server Password"  "PASSWORD2"  "128"  "TRUE" "0"  
