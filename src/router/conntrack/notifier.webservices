@@ -27,7 +27,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.warn_pass"); %></div>
-			<input size="25" name="warn_pass" value="<% nvram_get("warn_pass"); %>" />
+			<input size="25" type="password" name="warn_pass" value="d6nw5v1x2pc7st9m" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.warn_from"); %></div>
