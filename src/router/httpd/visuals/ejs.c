@@ -2301,6 +2301,8 @@ static void showencstatus(webs_t wp, char *prefix)
 			websWrite(wp, "RADIUS");
 		if (nvram_match(akm, "wep"))
 			websWrite(wp, "WEP");
+		if (nvram_match(akm, "8021X"))
+			websWrite(wp, "802.1x");
 	}
 
 	websWrite(wp, "\n</div>\n");
