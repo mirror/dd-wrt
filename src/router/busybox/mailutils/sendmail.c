@@ -24,6 +24,7 @@ static int smtp_checkp(const char *fmt, const char *param, int code)
 		if (strlen(answer) <= 3 || '-' != answer[3])
 			break;
 	if (answer) {
+		fprintf(stderr,"%s\n",answer);
 		int n = atoi(answer);
 		if (timeout)
 			alarm(0);
