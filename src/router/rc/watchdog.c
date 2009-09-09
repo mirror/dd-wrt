@@ -78,7 +78,7 @@ static void watchdog(void)
 		{
 		counter++;
 		if (!(counter%60))
-		    system("notifier"); // 
+		    system("notifier&"); // 
 		}
 	}
 }
