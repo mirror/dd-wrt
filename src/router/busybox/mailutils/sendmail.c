@@ -152,7 +152,7 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 		xdup2(STDIN_FILENO, STDOUT_FILENO);
 	}
 	// N.B. from now we know nothing about network :)
-	usleep(100*1000);
+	sleep(1);
 	// wait for initial server OK
 	// N.B. if we used openssl the initial 220 answer is already swallowed during openssl TLS init procedure
 	// so we need to push the server to see whether we are ok
