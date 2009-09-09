@@ -79,7 +79,7 @@ void getword(FILE * in, char *val)
 	val[c++] = 0;
 }
 
-void send_email(char *source,int value)
+void send_email(char *source, int value)
 {
 	char email_line[512];
 	char *server = nvram_safe_get("warn_server");
@@ -93,7 +93,7 @@ void send_email(char *source,int value)
 	char subject[128];
 	sprintf(subject, "user %s reached connection limit", source);
 	char mess[256];
-	sprintf(mess,"%d open connections found\n",value);
+	sprintf(mess, "%d open connections found\n", value);
 	if (strlen(user) > 0)
 		sprintf(email_line,
 			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" -u \"%s\" -p \"%s\"  \"%s\" -m \"%s\" -d \"%s\"",
@@ -108,10 +108,10 @@ void send_email(char *source,int value)
 
 }
 
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
-	if (!nvram_match("warn_enabled","1"))
-	    return 0;
+	if (!nvram_match("warn_enabled", "1"))
+		return 0;
 	int nf = 0;
 	struct linkedlist list;
 	list.name = "entry";
@@ -148,18 +148,18 @@ int main(int argc,char *argv[])
 		}
 		if (feof(fp))
 			break;
-		if (!strcmp(proto,"tcp"))
-		addEntry(&list, src, 1);
+		if (!strcmp(proto, "tcp"))
+			addEntry(&list, src, 1);
 		else
-		addEntry(&list, state, 1);
+			addEntry(&list, state, 1);
 		nextline(fp);
 	}
 	fclose(fp);
 	struct linkedlist *entry = &list;
-	int limit = atoi(nvram_default_get("warn_connlimit","500"));
+	int limit = atoi(nvram_default_get("warn_connlimit", "500"));
 	while (1) {
 		if (entry->value > limit) {
-			send_email(entry->name,entry->value);
+			send_email(entry->name, entry->value);
 		}
 		entry = entry->next;
 		if (entry == NULL)
