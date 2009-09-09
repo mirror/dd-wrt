@@ -56,6 +56,7 @@ addEvent(window, "load", function() {
 	setFirewall("<% nvram_get("filter"); %>");
 	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.firewall.warn_enabled, 'idwarn', <% nvram_else_match("warn_enabled", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
 	update.start();
