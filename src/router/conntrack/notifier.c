@@ -101,7 +101,7 @@ void send_email(struct linkedlist *list, char *source, int value)
 		if (!strcmp(list->name, source)) {
 			c += sprintf(&mess[c],
 				     "%d open connections on port %d\n",
-				     list->value,list->port);
+				     list->value, list->port);
 		}
 		list = list->next;
 		if (list == NULL)
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 			addEntry(&list, &src[4], &dport[6], 1);
 			addEntry(&total, &src[4], "0", 1);
 		} else {
-			addEntry(&list, &state[4], &src[6], 1);
+			addEntry(&list, &state[4], &sport[6], 1);
 			addEntry(&total, &state[4], "0", 1);
 		}
 		nextline(fp);

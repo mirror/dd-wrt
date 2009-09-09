@@ -80,12 +80,12 @@ install:
 	install -d $(INSTALLDIR)/usr/sbin
 	cp $(MODULE)* $(INSTALLDIR)/etc/config
 ifeq ($(CONFIG_XSCALE),y)
-	cp notifier.webservices $(INSTALLDIR)/etc/config
+	cp notifier.websecurity $(INSTALLDIR)/etc/config
 	cp notifier.nvramconfig $(INSTALLDIR)/etc/config
 	cp notifier $(INSTALLDIR)/usr/sbin
 endif
 ifeq ($(CONFIG_LSX),y)
-	cp notifier.webservices $(INSTALLDIR)/etc/config
+	cp notifier.websecurity $(INSTALLDIR)/etc/config
 	cp notifier.nvramconfig $(INSTALLDIR)/etc/config
 	cp notifier $(INSTALLDIR)/usr/sbin
 endif
