@@ -7,17 +7,19 @@
 typedef struct linkedlist {
 	char *name;
 	int value;
+	int port;
 	struct linkedlist *prev;
 	struct linkedlist *next;
 };
 
-void addEntry(struct linkedlist *list, char *name, int value)
+void addEntry(struct linkedlist *list, char *name, char *port, int value)
 {
 	struct linkedlist *first = list;
+	int p = atoi(port);
 	if (list == NULL)
 		return;
 	while (1) {
-		if (!strcmp(first->name, name)) {
+		if (!strcmp(first->name, name) && first->port == p) {
 			first->value += value;
 			return;
 		} else {
@@ -26,6 +28,7 @@ void addEntry(struct linkedlist *list, char *name, int value)
 				    malloc(sizeof(struct linkedlist));
 				next->name = strdup(name);
 				next->value = value;
+				next->port = p;
 				first->next = next;
 				next->prev = first;
 				return;
@@ -79,9 +82,9 @@ void getword(FILE * in, char *val)
 	val[c++] = 0;
 }
 
-void send_email(char *source, int value)
+void send_email(struct linkedlist *list, char *source, int value)
 {
-	char email_line[512];
+	static char email_line[4096];
 	char *server = nvram_safe_get("warn_server");
 	char *from = nvram_safe_get("warn_from");
 	char *fromfull = nvram_safe_get("warn_fromfull");
@@ -90,10 +93,21 @@ void send_email(char *source, int value)
 
 	char *user = nvram_safe_get("warn_user");
 	char *pass = nvram_safe_get("warn_pass");
-	char subject[128];
-	sprintf(subject, "user %s reached connection limit", source);
+	static char subject[4096];
+	sprintf(subject, "user %s reached connection limit\n", source);
 	char mess[256];
-	sprintf(mess, "%d open connections found\n", value);
+	int c = sprintf(mess, "ip %s has %d open connections\n", source, value);
+	while (1) {
+		if (!strcmp(list->name, source)) {
+			c += sprintf(&mess[c],
+				     "%d open connections on port %d\n",
+				     list->value,list->port);
+		}
+		list = list->next;
+		if (list == NULL)
+			break;
+	}
+
 	if (strlen(user) > 0)
 		sprintf(email_line,
 			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" -u \"%s\" -p \"%s\"  \"%s\" -m \"%s\" -d \"%s\"",
@@ -114,10 +128,16 @@ int main(int argc, char *argv[])
 		return 0;
 	int nf = 0;
 	struct linkedlist list;
+	struct linkedlist total;
 	list.name = "entry";
 	list.value = 0;
 	list.next = NULL;
 	list.prev = NULL;
+
+	total.name = "entry";
+	total.value = 0;
+	total.next = NULL;
+	total.prev = NULL;
 	FILE *fp = fopen("/proc/net/ip_conntrack", "rb");
 	if (fp == NULL) {
 		fp = fopen("/proc/net/nf_conntrack", "rb");
@@ -131,6 +151,9 @@ int main(int argc, char *argv[])
 		unsigned char p3[64];
 		unsigned char state[64];
 		unsigned char src[64];
+		unsigned char dst[64];
+		unsigned char sport[64];
+		unsigned char dport[64];
 		if (nf) {
 			getword(fp, dummy);
 			getword(fp, dummy2);
@@ -139,32 +162,42 @@ int main(int argc, char *argv[])
 			getword(fp, p3);
 			getword(fp, state);
 			getword(fp, src);
+			getword(fp, dst);
+			getword(fp, sport);
+			getword(fp, dport);
 		} else {
 			getword(fp, proto);
 			getword(fp, p2);
 			getword(fp, p3);
 			getword(fp, state);
 			getword(fp, src);
+			getword(fp, dst);
+			getword(fp, sport);
+			getword(fp, dport);
 		}
 		if (feof(fp))
 			break;
-		if (!strcmp(proto, "tcp"))
-			addEntry(&list, src, 1);
-		else
-			addEntry(&list, state, 1);
+		if (!strcmp(proto, "tcp")) {
+			addEntry(&list, &src[4], &dport[6], 1);
+			addEntry(&total, &src[4], "0", 1);
+		} else {
+			addEntry(&list, &state[4], &src[6], 1);
+			addEntry(&total, &state[4], "0", 1);
+		}
 		nextline(fp);
 	}
 	fclose(fp);
-	struct linkedlist *entry = &list;
+	struct linkedlist *entry = &total;
 	int limit = atoi(nvram_default_get("warn_connlimit", "500"));
 	while (1) {
 		if (entry->value > limit) {
-			send_email(entry->name, entry->value);
+			send_email(&list, entry->name, entry->value);
 		}
 		entry = entry->next;
 		if (entry == NULL)
 			break;
 	}
 	freeList(&list);
+	freeList(&total);
 	return 0;
 }
