@@ -145,6 +145,7 @@ addEvent(window, "unload", function() {
 										</div>
 									</fieldset><br />
 								</div>
+								<% show_modules(".websecurity"); %>
 								<% ifdef("MICRO", "<!--"); %>
 								<h2><% tran("log.h2"); %></h2>
 							
