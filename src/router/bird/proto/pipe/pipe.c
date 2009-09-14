@@ -31,11 +31,15 @@
 #include "pipe.h"
 
 static void
-pipe_send(struct pipe_proto *p, rtable *dest, net *n, rte *new, rte *old UNUSED, ea_list *attrs)
+pipe_send(struct pipe_proto *p, rtable *dest, net *n, rte *new, rte *old, ea_list *attrs)
 {
+  struct proto *src;
   net *nn;
   rte *e;
   rta a;
+
+  if (!new && !old)
+    return;
 
   if (dest->pipe_busy)
     {
@@ -47,17 +51,34 @@ pipe_send(struct pipe_proto *p, rtable *dest, net *n, rte *new, rte *old UNUSED,
   if (new)
     {
       memcpy(&a, new->attrs, sizeof(rta));
-      a.proto = &p->p;
-      a.source = RTS_PIPE;
+
+      if (p->mode == PIPE_OPAQUE)
+	{
+	  a.proto = &p->p;
+	  a.source = RTS_PIPE;
+	}
+
       a.aflags = 0;
       a.eattrs = attrs;
       e = rte_get_temp(&a);
       e->net = nn;
+
+      if (p->mode == PIPE_TRANSPARENT)
+	{
+	  /* Copy protocol specific embedded attributes. */
+	  memcpy(&(e->u), &(new->u), sizeof(e->u));
+	}
+
+      src = new->attrs->proto;
     }
   else
-    e = NULL;
+    {
+      e = NULL;
+      src = old->attrs->proto;
+    }
+
   dest->pipe_busy = 1;
-  rte_update(dest, nn, &p->p, e);
+  rte_update(dest, nn, &p->p, (p->mode == PIPE_OPAQUE) ? &p->p : src, e);
   dest->pipe_busy = 0;
 }
 
@@ -82,7 +103,7 @@ pipe_rt_notify_sec(struct proto *P, net *net, rte *new, rte *old, ea_list *attrs
 static int
 pipe_import_control(struct proto *P, rte **ee, ea_list **ea UNUSED, struct linpool *p UNUSED)
 {
-  struct proto *pp = (*ee)->attrs->proto;
+  struct proto *pp = (*ee)->sender;
 
   if (pp == P || pp == &((struct pipe_proto *) P)->phantom->p)
     return -1;	/* Avoid local loops automatically */
@@ -106,6 +127,7 @@ pipe_start(struct proto *P)
   memcpy(ph, p, sizeof(struct pipe_proto));
   p->phantom = ph;
   ph->phantom = p;
+  ph->p.accept_ra_types = (p->mode == PIPE_OPAQUE) ? RA_OPTIMAL : RA_ANY;
   ph->p.rt_notify = pipe_rt_notify_sec;
   ph->p.proto_state = PS_UP;
   ph->p.core_state = ph->p.core_goal = FS_HAPPY;
@@ -141,6 +163,8 @@ pipe_init(struct proto_config *C)
   struct pipe_proto *p = (struct pipe_proto *) P;
 
   p->peer = c->peer->table;
+  p->mode = c->mode;
+  P->accept_ra_types = (p->mode == PIPE_OPAQUE) ? RA_OPTIMAL : RA_ANY;
   P->rt_notify = pipe_rt_notify_pri;
   P->import_control = pipe_import_control;
   return P;
@@ -162,7 +186,7 @@ pipe_get_status(struct proto *P, byte *buf)
 {
   struct pipe_proto *p = (struct pipe_proto *) P;
 
-  bsprintf(buf, "-> %s", p->peer->name);
+  bsprintf(buf, "%c> %s", (p->mode == PIPE_OPAQUE) ? '-' : '=', p->peer->name);
 }
 
 static int
@@ -171,7 +195,7 @@ pipe_reconfigure(struct proto *p, struct proto_config *new)
   struct pipe_config *o = (struct pipe_config *) p->cf;
   struct pipe_config *n = (struct pipe_config *) new;
 
-  return o->peer == n->peer;
+  return (o->peer == n->peer) && (o->mode == n->mode);
 }
 
 struct protocol proto_pipe = {

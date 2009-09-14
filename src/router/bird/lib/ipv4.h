@@ -35,6 +35,7 @@ typedef u32 ip_addr;
 
 #endif
 
+#define MAX_PREFIX_LENGTH 32
 #define BITS_PER_IP_ADDRESS 32
 #define STD_ADDRESS_P_LENGTH 15
 #define SIZE_OF_IP_HEADER 24
@@ -53,11 +54,14 @@ typedef u32 ip_addr;
 #define ipa_hton(x) x = _MI(htonl(_I(x)))
 #define ipa_ntoh(x) x = _MI(ntohl(_I(x)))
 #define ipa_classify(x) ipv4_classify(_I(x))
-#define ipa_opposite(x) _MI(_I(x) ^ 1)
+#define ipa_opposite(x,len) _MI(_I(x) ^ (len == 30 ? 3 : 1))
 #define ipa_class_mask(x) _MI(ipv4_class_mask(_I(x)))
 #define ipa_from_u32(x) _MI(x)
 #define ipa_to_u32(x) _I(x)
 #define ipa_compare(x,y) ipv4_compare(_I(x),_I(y))
+/* ipa_pxlen() requires that x != y */
+#define ipa_pxlen(x, y) ipv4_pxlen(_I(x), _I(y))
+#define ipa_getbit(x, y) (_I(x) & (0x80000000 >> (y)))
 
 #define ip_skip_header(x, y) ipv4_skip_header(x, y)
 
@@ -77,6 +81,12 @@ static inline int ipv4_compare(u32 x, u32 y)
 {
   return (x > y) - (x < y);
 }
+
+static inline u32 ipv4_pxlen(u32 a, u32 b)
+{
+  return 31 - u32_log2(a ^ b);
+}
+
 
 #define IP_PREC_INTERNET_CONTROL 0xc0
 

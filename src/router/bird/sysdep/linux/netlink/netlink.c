@@ -38,40 +38,55 @@
  *	Synchronous Netlink interface
  */
 
-static int nl_sync_fd = -1;		/* Unix socket for synchronous netlink actions */
-static u32 nl_sync_seq;			/* Sequence number of last request sent */
+struct nl_sock
+{
+  int fd;
+  u32 seq;
+  byte *rx_buffer;			/* Receive buffer */
+  struct nlmsghdr *last_hdr;		/* Recently received packet */
+  unsigned int last_size;
+};
 
-static byte *nl_rx_buffer;		/* Receive buffer */
 #define NL_RX_SIZE 8192
 
-static struct nlmsghdr *nl_last_hdr;	/* Recently received packet */
-static unsigned int nl_last_size;
+static struct nl_sock nl_scan = {.fd = -1};	/* Netlink socket for synchronous scan */
+static struct nl_sock nl_req  = {.fd = -1};	/* Netlink socket for requests */
+
 
 static void
-nl_open(void)
+nl_open_sock(struct nl_sock *nl)
 {
-  if (nl_sync_fd < 0)
+  if (nl->fd < 0)
     {
-      nl_sync_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
-      if (nl_sync_fd < 0)
+      nl->fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+      if (nl->fd < 0)
 	die("Unable to open rtnetlink socket: %m");
-      nl_sync_seq = now;
-      nl_rx_buffer = xmalloc(NL_RX_SIZE);
+      nl->seq = now;
+      nl->rx_buffer = xmalloc(NL_RX_SIZE);
+      nl->last_hdr = NULL;
+      nl->last_size = 0;
     }
 }
 
 static void
-nl_send(struct nlmsghdr *nh)
+nl_open(void)
+{
+  nl_open_sock(&nl_scan);
+  nl_open_sock(&nl_req);
+}
+
+static void
+nl_send(struct nl_sock *nl, struct nlmsghdr *nh)
 {
   struct sockaddr_nl sa;
 
   memset(&sa, 0, sizeof(sa));
   sa.nl_family = AF_NETLINK;
   nh->nlmsg_pid = 0;
-  nh->nlmsg_seq = ++nl_sync_seq;
-  if (sendto(nl_sync_fd, nh, nh->nlmsg_len, 0, (struct sockaddr *)&sa, sizeof(sa)) < 0)
+  nh->nlmsg_seq = ++(nl->seq);
+  if (sendto(nl->fd, nh, nh->nlmsg_len, 0, (struct sockaddr *)&sa, sizeof(sa)) < 0)
     die("rtnetlink sendto: %m");
-  nl_last_hdr = NULL;
+  nl->last_hdr = NULL;
 }
 
 static void
@@ -85,20 +100,20 @@ nl_request_dump(int cmd)
   req.nh.nlmsg_len = sizeof(req);
   req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
   req.g.rtgen_family = BIRD_PF;
-  nl_send(&req.nh);
+  nl_send(&nl_scan, &req.nh);
 }
 
 static struct nlmsghdr *
-nl_get_reply(void)
+nl_get_reply(struct nl_sock *nl)
 {
   for(;;)
     {
-      if (!nl_last_hdr)
+      if (!nl->last_hdr)
 	{
-	  struct iovec iov = { nl_rx_buffer, NL_RX_SIZE };
+	  struct iovec iov = { nl->rx_buffer, NL_RX_SIZE };
 	  struct sockaddr_nl sa;
 	  struct msghdr m = { (struct sockaddr *) &sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
-	  int x = recvmsg(nl_sync_fd, &m, 0);
+	  int x = recvmsg(nl->fd, &m, 0);
 	  if (x < 0)
 	    die("nl_get_reply: %m");
 	  if (sa.nl_pid)		/* It isn't from the kernel */
@@ -106,28 +121,30 @@ nl_get_reply(void)
 	      DBG("Non-kernel packet\n");
 	      continue;
 	    }
-	  nl_last_size = x;
-	  nl_last_hdr = (void *) nl_rx_buffer;
+	  nl->last_size = x;
+	  nl->last_hdr = (void *) nl->rx_buffer;
 	  if (m.msg_flags & MSG_TRUNC)
 	    bug("nl_get_reply: got truncated reply which should be impossible");
 	}
-      if (NLMSG_OK(nl_last_hdr, nl_last_size))
+      if (NLMSG_OK(nl->last_hdr, nl->last_size))
 	{
-	  struct nlmsghdr *h = nl_last_hdr;
-	  nl_last_hdr = NLMSG_NEXT(h, nl_last_size);
-	  if (h->nlmsg_seq != nl_sync_seq)
+	  struct nlmsghdr *h = nl->last_hdr;
+	  nl->last_hdr = NLMSG_NEXT(h, nl->last_size);
+	  if (h->nlmsg_seq != nl->seq)
 	    {
 	      log(L_WARN "nl_get_reply: Ignoring out of sequence netlink packet (%x != %x)",
-		  h->nlmsg_seq, nl_sync_seq);
+		  h->nlmsg_seq, nl->seq);
 	      continue;
 	    }
 	  return h;
 	}
-      if (nl_last_size)
-	log(L_WARN "nl_get_reply: Found packet remnant of size %d", nl_last_size);
-      nl_last_hdr = NULL;
+      if (nl->last_size)
+	log(L_WARN "nl_get_reply: Found packet remnant of size %d", nl->last_size);
+      nl->last_hdr = NULL;
     }
 }
+
+static struct rate_limit rl_netlink_err;
 
 static int
 nl_error(struct nlmsghdr *h)
@@ -143,14 +160,14 @@ nl_error(struct nlmsghdr *h)
   e = (struct nlmsgerr *) NLMSG_DATA(h);
   ec = -e->error;
   if (ec)
-    log(L_WARN "Netlink: %s", strerror(ec));
+    log_rl(&rl_netlink_err, L_WARN "Netlink: %s", strerror(ec));
   return ec;
 }
 
 static struct nlmsghdr *
 nl_get_scan(void)
 {
-  struct nlmsghdr *h = nl_get_reply();
+  struct nlmsghdr *h = nl_get_reply(&nl_scan);
 
   if (h->nlmsg_type == NLMSG_DONE)
     return NULL;
@@ -167,10 +184,10 @@ nl_exchange(struct nlmsghdr *pkt)
 {
   struct nlmsghdr *h;
 
-  nl_send(pkt);
+  nl_send(&nl_req, pkt);
   for(;;)
     {
-      h = nl_get_reply();
+      h = nl_get_reply(&nl_req);
       if (h->nlmsg_type == NLMSG_ERROR)
 	break;
       log(L_WARN "nl_exchange: Unexpected reply received");
@@ -255,7 +272,7 @@ static void
 nl_parse_link(struct nlmsghdr *h, int scan)
 {
   struct ifinfomsg *i;
-  struct rtattr *a[IFLA_STATS+1];
+  struct rtattr *a[IFLA_WIRELESS+1];
   int new = h->nlmsg_type == RTM_NEWLINK;
   struct iface f;
   struct iface *ifi;
@@ -268,7 +285,8 @@ nl_parse_link(struct nlmsghdr *h, int scan)
   if (!a[IFLA_IFNAME] || RTA_PAYLOAD(a[IFLA_IFNAME]) < 2 ||
       !a[IFLA_MTU] || RTA_PAYLOAD(a[IFLA_MTU]) != 4)
     {
-      log(L_ERR "nl_parse_link: Malformed message received");
+      if (scan || !a[IFLA_WIRELESS])
+        log(L_ERR "nl_parse_link: Malformed message received");
       return;
     }
   name = RTA_DATA(a[IFLA_IFNAME]);
@@ -377,14 +395,14 @@ nl_parse_addr(struct nlmsghdr *h)
       ifa.brd = ipa_or(ifa.ip, ipa_not(netmask));
 #ifndef IPV6
       if (i->ifa_prefixlen == BITS_PER_IP_ADDRESS - 2)
-	ifa.opposite = ipa_opposite(ifa.ip);
+	ifa.opposite = ipa_opposite(ifa.ip, i->ifa_prefixlen);
       if ((ifi->flags & IF_BROADCAST) && a[IFA_BROADCAST])
 	{
 	  memcpy(&xbrd, RTA_DATA(a[IFA_BROADCAST]), sizeof(xbrd));
 	  ipa_ntoh(xbrd);
 	  if (ipa_equal(xbrd, ifa.prefix) || ipa_equal(xbrd, ifa.brd))
 	    ifa.brd = xbrd;
-	  else
+	  else if (ifi->flags & IF_TMP_DOWN) /* Complain only during the first scan */
 	    log(L_ERR "KIF: Invalid broadcast address %I for %s", xbrd, ifi->name);
 	}
 #endif
@@ -482,7 +500,7 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
   bzero(&r.r, sizeof(r.r));
   r.h.nlmsg_type = new ? RTM_NEWROUTE : RTM_DELROUTE;
   r.h.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtmsg));
-  r.h.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | (new ? NLM_F_CREATE|NLM_F_REPLACE : 0);
+  r.h.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | (new ? NLM_F_CREATE|NLM_F_EXCL : 0);
 
   r.r.rtm_family = BIRD_AF;
   r.r.rtm_dst_len = net->n.pxlen;
@@ -498,6 +516,8 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
       nl_add_attr_ipa(&r.h, sizeof(r), RTA_GATEWAY, a->gw);
       break;
     case RTD_DEVICE:
+      if (!a->iface)
+	return;
       r.r.rtm_type = RTN_UNICAST;
       nl_add_attr_u32(&r.h, sizeof(r), RTA_OIF, a->iface->index);
       break;
@@ -520,25 +540,11 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
 void
 krt_set_notify(struct krt_proto *p, net *n UNUSED, rte *new, rte *old)
 {
-  if (old && new)
-    {
-      /*
-       *  We should check whether priority and TOS is identical as well,
-       *  but we don't use these and default value is always equal to default value. :-)
-       */
-      nl_send_route(p, new, 1);
-    }
-  else
-    {
-      if (old)
-	{
-	  if (!old->attrs->iface || (old->attrs->iface->flags & IF_UP))
-	    nl_send_route(p, old, 0);
-	  /* else the kernel has already flushed it */
-	}
-      if (new)
-	nl_send_route(p, new, 1);
-    }
+  if (old)
+    nl_send_route(p, old, 0);
+
+  if (new)
+    nl_send_route(p, new, 1);
 }
 
 static struct iface *
@@ -780,7 +786,6 @@ nl_async_hook(sock *sk, int size UNUSED)
   int x;
   unsigned int len;
 
-  nl_last_hdr = NULL;		/* Discard packets accidentally remaining in the rxbuf */
   x = recvmsg(sk->fd, &m, 0);
   if (x < 0)
     {

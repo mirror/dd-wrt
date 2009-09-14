@@ -139,8 +139,8 @@ resource to the debugging output.
 <H3>Description</H3>
 <P>This function is called by the resource classes to create a new
 resource of the specified class and link it to the given pool.
-Size of the resource structure is taken from the <B>size</B> field
-of the <I>resclass</I>.
+Allocated memory is zeroed. Size of the resource structure is taken
+from the <B>size</B> field of the <I>resclass</I>.
 
 
 <HR><H3>Function</H3>
@@ -221,6 +221,28 @@ zeroes and creates a memory block resource representing this memory
 chunk in the pool <B>p</B>.
 <P>Please note that <B>mb_alloc()</B> returns a pointer to the memory
 chunk, not to the resource, hence you have to free it using
+<B>mb_free()</B>, not <B>rfree()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void *</I>
+<B>mb_realloc</B>
+(<I>pool *</I> <B>p</B>, <I>void *</I> <B>m</B>, <I>unsigned</I> <B>size</B>) --     reallocate a memory block
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>pool *</I> <B>p</B><DD><P>pool
+<DT><I>void *</I> <B>m</B><DD><P>memory block
+<DT><I>unsigned</I> <B>size</B><DD><P>new size of the block
+</DL>
+<H3>Description</H3>
+<P><B>mb_realloc()</B> changes the size of the memory block <B>m</B> to a given size.
+The contents will be unchanged to the minimum of the old and new sizes;
+newly allocated memory will be uninitialized. If <B>m</B> is NULL, the call
+is equivalent to mb_alloc(<B>p</B>, <B>size</B>).
+<P>Like <B>mb_alloc()</B>, <B>mb_realloc()</B> also returns a pointer to the memory
+chunk , not to the resource, hence you have to free it using
 <B>mb_free()</B>, not <B>rfree()</B>.
 
 
@@ -492,10 +514,11 @@ appropriate.
 a function at the specified time. The platform dependent code
 doesn't guarantee exact timing, only that a timer function
 won't be called before the requested time.
-<P>In BIRD, real time is represented by values of the <I>bird_clock_t</I> type
-which are integral numbers interpreted as a number of seconds since
-a fixed (but platform dependent) epoch. The current time can be read
-from a variable <B>now</B> with reasonable accuracy.
+<P>In BIRD, time is represented by values of the <I>bird_clock_t</I> type
+which are integral numbers interpreted as a relative number of seconds since
+some fixed time point in past. The current time can be read
+from variable <B>now</B> with reasonable accuracy and is monotonic. There is also
+a current 'absolute' time in variable <B>now_real</B> reported by OS.
 <P>Each timer is described by a <I>timer</I> structure containing a pointer
 to the handler function (<B>hook</B>), data private to this function (<B>data</B>),
 time the function should be called at (<B>expires</B>, 0 for inactive timers),
@@ -598,8 +621,8 @@ and converts it to the corresponding value of type <I>bird_clock_t</I>.
 <DT><I>bird_clock_t</I> <B>t</B><DD><P>time
 </DL>
 <H3>Description</H3>
-<P>This function formats the given time value <B>t</B> to a textual
-date representation (dd-mm-yyyy).
+<P>This function formats the given relative time value <B>t</B> to a textual
+date representation (dd-mm-yyyy) in real time..
 
 
 <HR><H3>Function</H3>
@@ -614,8 +637,8 @@ date representation (dd-mm-yyyy).
 <DT><I>bird_clock_t</I> <B>t</B><DD><P>time
 </DL>
 <H3>Description</H3>
-<P>This function formats the given time value <B>t</B> to a textual
-date/time representation (dd-mm-yyyy hh:mm:ss).
+<P>This function formats the given relative time value <B>t</B> to a textual
+date/time representation (dd-mm-yyyy hh:mm:ss) in real time.
 
 
 <HR><H3>Function</H3>
@@ -630,8 +653,8 @@ date/time representation (dd-mm-yyyy hh:mm:ss).
 <DT><I>bird_clock_t</I> <B>t</B><DD><P>time
 </DL>
 <H3>Description</H3>
-<P>This function formats the given time value <B>t</B> to a short
-textual representation relative to the current time.
+<P>This function formats the given relative time value <B>t</B> to a short
+textual representation in real time, relative to the current time.
 
 <H2><A NAME="ss8.8">8.8</A> <A HREF="prog.html#toc8.8">Sockets</A>
 </H2>
@@ -659,6 +682,49 @@ hook functions to be called when new data have arrived to the receive buffer
 <P>This function creates a new socket resource. If you want to use it,
 you need to fill in all the required fields of the structure and
 call <B>sk_open()</B> to do the actual opening of the socket.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_set_ttl</B>
+(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set TTL for given socket.
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>int</I> <B>ttl</B><DD><P>TTL value
+</DL>
+<H3>Description</H3>
+<P>Set TTL for already opened connections when TTL was not set before.
+Useful for accepted connections when different ones should have 
+different TTL.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>sk_set_md5_auth</B>
+(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>a</B>, <I>char *</I> <B>passwd</B>) --     add / remove MD5 security association for given socket.
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>ip_addr</I> <B>a</B><DD><P>IP address of the other side
+<DT><I>char *</I> <B>passwd</B><DD><P>password used for MD5 authentication
+</DL>
+<H3>Description</H3>
+<P>In TCP MD5 handling code in kernel, there is a set of pairs
+(address, password) used to choose password according to
+address of the other side. This function is useful for
+listening socket, for active sockets it is enough to set
+s-&gt;password field.
+<P>When called with passwd != NULL, the new pair is added,
+When called with passwd == NULL, the existing pair is removed.
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
 
 
 <HR><H3>Function</H3>

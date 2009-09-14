@@ -11,6 +11,7 @@
 
 #include "lib/resource.h"
 #include "lib/ip.h"
+#include "nest/route.h"
 #include "nest/attrs.h"
 
 struct f_inst {		/* Instruction */
@@ -49,6 +50,7 @@ struct f_val {
     struct f_prefix px;
     char *s;
     struct f_tree *t;
+    struct f_trie *ti;
     struct adata *ad;
     struct f_path_mask *path_mask;
   } val;
@@ -68,15 +70,24 @@ struct f_tree *build_tree(struct f_tree *);
 struct f_tree *find_tree(struct f_tree *t, struct f_val val);
 int same_tree(struct f_tree *t1, struct f_tree *t2);
 
+struct f_trie *f_new_trie(void);
+void trie_add_prefix(struct f_trie *t, struct f_prefix *px);
+int trie_match_prefix(struct f_trie *t, struct f_prefix *px);
+int trie_same(struct f_trie *t1, struct f_trie *t2);
+int trie_print(struct f_trie *t, char *buf, int blen);
+
 struct ea_list;
 struct rte;
 
 int f_run(struct filter *filter, struct rte **rte, struct ea_list **tmp_attrs, struct linpool *tmp_pool, int flags);
 int f_eval_int(struct f_inst *expr);
+u32 f_eval_asn(struct f_inst *expr);
+
 char *filter_name(struct filter *filter);
 int filter_same(struct filter *new, struct filter *old);
 
 int i_same(struct f_inst *f1, struct f_inst *f2);
+void f_prefix_get_bounds(struct f_prefix *px, int *l, int *h);
 
 int val_compare(struct f_val v1, struct f_val v2);
 void val_print(struct f_val v);
@@ -127,11 +138,25 @@ void val_print(struct f_val v);
 
 #define T_RETURN 0x40
 #define T_SET 0x80
+#define T_PREFIX_SET 0x81
 
 struct f_tree {
   struct f_tree *left, *right;
   struct f_val from, to;
   void *data;
+};
+
+struct f_trie_node
+{
+  ip_addr addr, mask, accept;
+  int plen;
+  struct f_trie_node *c[2];
+};
+
+struct f_trie
+{
+  int zero;
+  struct f_trie_node root;
 };
 
 #define NEW_F_VAL struct f_val * val; val = cfg_alloc(sizeof(struct f_val));

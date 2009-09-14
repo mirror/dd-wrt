@@ -48,14 +48,14 @@ struct protocol {
   int (*shutdown)(struct proto *);		/* Stop the instance */
   void (*get_status)(struct proto *, byte *buf); /* Get instance status (for `show protocols' command) */
   void (*get_route_info)(struct rte *, byte *buf, struct ea_list *attrs); /* Get route information (for `show route' command) */
-  int (*get_attr)(struct eattr *, byte *buf);	/* ASCIIfy dynamic attribute (returns GA_*) */
+  int (*get_attr)(struct eattr *, byte *buf, int buflen);	/* ASCIIfy dynamic attribute (returns GA_*) */
 };
 
 void protos_build(void);
 void proto_build(struct protocol *);
 void protos_preconfig(struct config *);
 void protos_postconfig(struct config *);
-void protos_commit(struct config *new, struct config *old, int force_restart);
+void protos_commit(struct config *new, struct config *old, int force_restart, int type);
 void protos_dump_all(void);
 
 #define GA_UNKNOWN	0		/* Attribute not recognized */
@@ -87,6 +87,31 @@ struct proto_config {
   /* Protocol-specific data follow... */
 };
 
+  /* Protocol statistics */
+struct proto_stats {
+  /* Import - from protocol to core */
+  u32 imp_routes;		/* Number of routes successfully imported to the (adjacent) routing table */
+  u32 pref_routes;		/* Number of routes that are preferred, sum over all routing table */
+  u32 imp_updates_received;	/* Number of route updates received */
+  u32 imp_updates_invalid;	/* Number of route updates rejected as invalid */
+  u32 imp_updates_filtered;	/* Number of route updates rejected by filters */
+  u32 imp_updates_ignored;	/* Number of route updates rejected as already in route table */
+  u32 imp_updates_accepted;	/* Number of route updates accepted and imported */
+  u32 imp_withdraws_received;	/* Number of route withdraws received */
+  u32 imp_withdraws_invalid;	/* Number of route withdraws rejected as invalid */
+  u32 imp_withdraws_ignored;	/* Number of route withdraws rejected as already not in route table */
+  u32 imp_withdraws_accepted;	/* Number of route withdraws accepted and processed */
+
+  /* Export - from core to protocol */
+  u32 exp_routes;		/* Number of routes successfully exported to the protocol */
+  u32 exp_updates_received;	/* Number of route updates received */
+  u32 exp_updates_rejected;	/* Number of route updates rejected by protocol */
+  u32 exp_updates_filtered;	/* Number of route updates rejected by filters */
+  u32 exp_updates_accepted;	/* Number of route updates accepted and exported */ 
+  u32 exp_withdraws_received;	/* Number of route withdraws received */
+  u32 exp_withdraws_accepted;	/* Number of route withdraws accepted and processed */
+};
+
 struct proto {
   node n;				/* Node in *_proto_list */
   node glob_node;			/* Node in global proto_list */
@@ -100,6 +125,7 @@ struct proto {
   unsigned debug;			/* Debugging flags */
   unsigned preference;			/* Default route preference */
   int min_scope;			/* Minimal route scope accepted */
+  unsigned accept_ra_types;		/* Which types of route announcements are accepted (RA_OPTIMAL or RA_ANY) */
   unsigned disabled;			/* Manually disabled */
   unsigned proto_state;			/* Protocol state machine (see below) */
   unsigned core_state;			/* Core state machine (see below) */
@@ -108,6 +134,7 @@ struct proto {
   u32 hash_key;				/* Random key used for hashing of neighbors */
   bird_clock_t last_state_change;	/* Time of last state transition */
   char *last_state_name_announced;	/* Last state name we've announced to the user */
+  struct proto_stats stats;		/* Current protocol statistics */
 
   /*
    *	General protocol hooks:

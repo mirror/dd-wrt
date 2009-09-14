@@ -60,7 +60,7 @@ static_install(struct proto *p, struct static_route *r, struct iface *ifa)
   e = rte_get_temp(aa);
   e->net = n;
   e->pflags = 0;
-  rte_update(p->table, n, p, e);
+  rte_update(p->table, n, p, p, e);
   r->installed = 1;
 }
 
@@ -75,7 +75,7 @@ static_remove(struct proto *p, struct static_route *r)
   DBG("Removing static route %I/%d\n", r->net, r->masklen);
   n = net_find(p->table, r->net, r->masklen);
   if (n)
-    rte_update(p->table, n, p, NULL);
+    rte_update(p->table, n, p, p, NULL);
   r->installed = 0;
 }
 

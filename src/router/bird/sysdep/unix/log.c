@@ -30,6 +30,9 @@ static FILE *dbgf = NULL;
 static list *current_log_list;
 static list init_log_list;
 
+bird_clock_t rate_limit_time = 5;
+int rate_limit_count = 5;
+
 #ifdef HAVE_SYSLOG
 #include <sys/syslog.h>
 
@@ -123,6 +126,35 @@ log_msg(char *msg, ...)
   if (*msg >= 1 && *msg <= 8)
     class = *msg++;
   vlog(class, msg, args);
+  va_end(args);
+}
+
+void
+log_rl(struct rate_limit *rl, char *msg, ...)
+{
+  int class = 1;
+  va_list args;
+
+  bird_clock_t delta = now - rl->timestamp;
+  if ((0 <= delta) && (delta < rate_limit_time))
+    {
+      rl->count++;
+    }
+  else
+    {
+      rl->timestamp = now;
+      rl->count = 1;
+    }
+
+  if (rl->count > rate_limit_count)
+    return;
+
+  va_start(args, msg);
+  if (*msg >= 1 && *msg <= 8)
+    class = *msg++;
+  vlog(class, msg, args);
+  if (rl->count == rate_limit_count)
+    vlog(class, "...", args);
   va_end(args);
 }
 

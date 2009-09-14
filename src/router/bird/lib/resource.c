@@ -165,8 +165,8 @@ rdump(void *res)
   char x[16];
   resource *r = res;
 
-  bsprintf(x, "%%%ds%%08x ", indent);
-  bdebug(x, "", (int) r);
+  bsprintf(x, "%%%ds%%p ", indent);
+  bdebug(x, "", r);
   if (r)
     {
       bdebug("%s ", r->class->name);
@@ -183,13 +183,14 @@ rdump(void *res)
  *
  * This function is called by the resource classes to create a new
  * resource of the specified class and link it to the given pool.
- * Size of the resource structure is taken from the @size field
- * of the &resclass.
+ * Allocated memory is zeroed. Size of the resource structure is taken
+ * from the @size field of the &resclass.
  */
 void *
 ralloc(pool *p, struct resclass *c)
 {
   resource *r = xmalloc(c->size);
+  bzero(r, c->size);
 
   r->class = c;
   add_tail(&p->inside, &r->n);
@@ -250,6 +251,7 @@ resource_init(void)
 struct mblock {
   resource r;
   unsigned size;
+  uintptr_t data_align[0];
   byte data[0];
 };
 
@@ -328,6 +330,42 @@ mb_allocz(pool *p, unsigned size)
 }
 
 /**
+ * mb_realloc - reallocate a memory block
+ * @p: pool
+ * @m: memory block
+ * @size: new size of the block
+ *
+ * mb_realloc() changes the size of the memory block @m to a given size.
+ * The contents will be unchanged to the minimum of the old and new sizes;
+ * newly allocated memory will be uninitialized. If @m is NULL, the call
+ * is equivalent to mb_alloc(@p, @size).
+ *
+ * Like mb_alloc(), mb_realloc() also returns a pointer to the memory
+ * chunk , not to the resource, hence you have to free it using
+ * mb_free(), not rfree().
+ */
+void *
+mb_realloc(pool *p, void *m, unsigned size)
+{
+  struct mblock *ob = NULL;
+
+  if (m)
+    {
+      ob = SKIP_BACK(struct mblock, data, m);
+      if (ob->r.n.next)
+	rem_node(&ob->r.n);
+    }
+
+  struct mblock *b = xrealloc(ob, sizeof(struct mblock) + size);
+
+  b->r.class = &mb_class;
+  add_tail(&p->inside, &b->r.n);
+  b->size = size;
+  return b->data;
+}
+
+
+/**
  * mb_free - free a memory block
  * @m: memory block
  *
@@ -339,3 +377,4 @@ mb_free(void *m)
   struct mblock *b = SKIP_BACK(struct mblock, data, m);
   rfree(b);
 }
+

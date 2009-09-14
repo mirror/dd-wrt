@@ -2,7 +2,7 @@
 #
 #  LinuxDocTools.pm
 #
-#  $Id: LinuxDocTools.pm,v 1.1 2003/04/06 19:35:50 mj Exp $
+#  $Id$
 #
 #  LinuxDoc-Tools driver core. This contains all the basic functionality
 #  we need to control all other components.

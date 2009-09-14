@@ -74,7 +74,7 @@ ea__find(ea_list *e, unsigned id)
       if (e->flags & EALF_BISECT)
 	{
 	  l = 0;
-	  r = e->count + 1;
+	  r = e->count - 1;
 	  while (l <= r)
 	    {
 	      m = (l+r) / 2;
@@ -310,7 +310,7 @@ ea_same(ea_list *x, ea_list *y)
 	  a->flags != b->flags ||
 	  a->type != b->type ||
 	  ((a->type & EAF_EMBEDDED) ? a->u.data != b->u.data :
-	   (a->u.ptr->length != b->u.ptr->length || memcmp(a->u.ptr, b->u.ptr, a->u.ptr->length))))
+	   (a->u.ptr->length != b->u.ptr->length || memcmp(a->u.ptr->data, b->u.ptr->data, a->u.ptr->length))))
 	return 0;
     }
   return 1;
@@ -386,7 +386,7 @@ ea_format(eattr *e, byte *buf)
     {
       buf += bsprintf(buf, "%s.", p->name);
       if (p->get_attr)
-	status = p->get_attr(e, buf);
+	status = p->get_attr(e, buf, end - buf);
       buf += strlen(buf);
     }
   else if (EA_PROTO(e->id))
@@ -419,17 +419,13 @@ ea_format(eattr *e, byte *buf)
 	  bsprintf(buf, "%I", *(ip_addr *) ad->data);
 	  break;
 	case EAF_TYPE_ROUTER_ID:
-	  bsprintf(buf, "%d.%d.%d.%d",
-		   (e->u.data >> 24) & 0xff,
-		   (e->u.data >> 16) & 0xff,
-		   (e->u.data >> 8) & 0xff,
-		   e->u.data & 0xff);
+	  bsprintf(buf, "%R", e->u.data);
 	  break;
 	case EAF_TYPE_AS_PATH:
 	  as_path_format(ad, buf, end - buf);
 	  break;
 	case EAF_TYPE_INT_SET:
-	  int_set_format(ad, buf, end - buf);
+	  int_set_format(ad, 1, buf, end - buf);
 	  break;
 	case EAF_TYPE_UNDEF:
 	default:

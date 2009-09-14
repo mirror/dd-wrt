@@ -223,12 +223,13 @@ for an invalid address.
 <HR><H3>Function</H3>
 <P><I>ip_addr</I>
 <B>ipa_opposite</B>
-(<I>ip_addr</I> <B>x</B>) --     return address of point-to-point neighbor
+(<I>ip_addr</I> <B>x</B>, <I>int</I> <B>pxlen</B>) --     return address of point-to-point neighbor
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>ip_addr</I> <B>x</B><DD><P>IP address of our end of the link
+<DT><I>int</I> <B>pxlen</B><DD><P>network prefix length
 </DL>
 <H3>Description</H3>
 <P><B>ipa_opposite()</B> returns an address of the opposite end of a numbered
@@ -571,6 +572,22 @@ zeroes) and returns the number of ones or -1 if the mask is invalid.
 
 
 <HR><H3>Function</H3>
+<P><I>u32</I>
+<B>u32_log2</B>
+(<I>u32</I> <B>v</B>) --     compute a binary logarithm.
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>u32</I> <B>v</B><DD><P>number
+</DL>
+<H3>Description</H3>
+<P>This function computes a integral part of binary logarithm of given
+integer <B>v</B> and returns it. The computed value is also an index of the
+most significant non-zero bit position.
+
+
+<HR><H3>Function</H3>
 <P><I>int</I>
 <B>patmatch</B>
 (<I>byte *</I> <B>p</B>, <I>byte *</I> <B>s</B>) --     match shell-like patterns
@@ -610,7 +627,8 @@ available space to avoid buffer overflows and it allows some more
 <H3>format specifiers</H3>
 <P><CODE><I>I</I></CODE> for formatting of IP addresses (any non-zero
 width is automatically replaced by standard IP address width which
-depends on whether we use IPv4 or IPv6; <CODE>%#I</CODE> gives hexadecimal format)
+depends on whether we use IPv4 or IPv6; <CODE>%#I</CODE> gives hexadecimal format),
+<CODE><I>R</I></CODE> for Router / Network ID (u32 value printed as IPv4 address)
 and <CODE><I>m</I></CODE> resp. <CODE><I>M</I></CODE> for error messages (uses <B>strerror()</B> to translate <B>errno</B> code to
 message text). On the other hand, it doesn't support floating
 point numbers.
@@ -685,6 +703,24 @@ sure the buffer won't overflow.
 </DL>
 <H3>Description</H3>
 <P>This function is equivalent to <B>malloc()</B> except that in case of
+failure it calls <B>die()</B> to quit the program instead of returning
+a <I>NULL</I> pointer.
+<P>Wherever possible, please use the memory resources instead.
+
+
+<HR><H3>Function</H3>
+<P><I>void *</I>
+<B>xrealloc</B>
+(<I>void *</I> <B>ptr</B>, <I>unsigned</I> <B>size</B>) --     realloc with checking
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>void *</I> <B>ptr</B><DD><P>original memory block
+<DT><I>unsigned</I> <B>size</B><DD><P>block size
+</DL>
+<H3>Description</H3>
+<P>This function is equivalent to <B>realloc()</B> except that in case of
 failure it calls <B>die()</B> to quit the program instead of returning
 a <I>NULL</I> pointer.
 <P>Wherever possible, please use the memory resources instead.

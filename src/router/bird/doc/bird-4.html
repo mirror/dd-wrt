@@ -25,6 +25,8 @@ reconfigure. Press <CODE>?</CODE> at any time to get online help. Option
 codes along with the messages. You do not necessarily need to use birdc to talk to BIRD, your
 own applications could do that, too -- the format of communication between
 BIRD and birdc is stable (see the programmer's documentation).
+<P>Many commands have the <I>name</I> of the protocol instance as an argument.
+This argument can be omitted if there exists only a single instance.
 <P>
 <P>Here is a brief list of supported functions:
 <P>
@@ -35,15 +37,23 @@ BIRD and birdc is stable (see the programmer's documentation).
 <P>
 <DT><CODE>show protocols [all]</CODE><DD><P>Show list of protocol instances along with tables they are connected to and protocol status, possibly giving verbose information, if <CODE>all</CODE> is specified.
 <P>
-<DT><CODE>show ospf [interface|neighbors] [<I>name</I>] ["<I>interface</I>"]</CODE><DD><P>Show detailed information about OSPF protocol, possibly giving a verbose list of interfaces and neighbors. The <I>name</I> of the protocol instance can be omitted if there exists only a single instance.
+<DT><CODE>show ospf interface [<I>name</I>] ["<I>interface</I>"]</CODE><DD><P>Show detailed information about OSPF interfaces.
 <P>
-<DT><CODE>show static [<I>name</I>]</CODE><DD><P>Show detailed information about static routes. The <I>name</I> of the protocol instance can be omitted if there exists only a single instance.
+<DT><CODE>show ospf neighbors [<I>name</I>] ["<I>interface</I>"]</CODE><DD><P>Show a list of OSPF neighbors and a state of adjacency to them.
+<P>
+<DT><CODE>show ospf state [<I>name</I>]</CODE><DD><P>Show detailed information about OSPF areas based on a content of link-state database.
+It shows network topology,  aggregated networks and routers from other areas and external routes.
+<P>
+<DT><CODE>show ospf topology [<I>name</I>]</CODE><DD><P>Show a topology of OSPF areas based on a content of link-state database.
+It is just a stripped-down version of 'show ospf state'.
+<P>
+<DT><CODE>show static [<I>name</I>]</CODE><DD><P>Show detailed information about static routes.
 <P>
 <DT><CODE>show interfaces [summary]</CODE><DD><P>Show the list of interfaces. For each interface, print its type, state, MTU and addresses assigned. 
 <P>
 <DT><CODE>show symbols</CODE><DD><P>Show the list of symbols defined in the configuration (names of protocols, routing tables etc.).
 <P>
-<DT><CODE>show route [[for] <I>prefix</I>|<I>IP</I>] [table <I>sym</I>] [filter <I>f</I>|where <I>c</I>] [(import|preimport) <I>p</I>] [<I>options</I>]</CODE><DD><P>Show contents of a routing table (by default of the main one),
+<DT><CODE>show route [[for] <I>prefix</I>|<I>IP</I>] [table <I>sym</I>] [filter <I>f</I>|where <I>c</I>] [(export|preexport) <I>p</I>] [protocol <I>p</I>] [<I>options</I>]</CODE><DD><P>Show contents of a routing table (by default of the main one),
 that is routes, their metrics and (in case the <CODE>all</CODE> switch is given)
 all their attributes.
 <P>
@@ -56,9 +66,12 @@ only the selected route is shown.
 <P>
 <P>You can also ask for printing only routes processed and accepted by
 a given filter (<CODE>filter <I>name</I></CODE> or <CODE>filter { <I>filter</I> }</CODE> or matching a given condition (<CODE>where <I>condition</I></CODE>).
-The <CODE>import</CODE> and <CODE>preimport</CODE> switches ask for printing of entries
-that are imported to the specified protocol. With <CODE>preimport</CODE>, the
-import filter of the protocol is skipped.
+The <CODE>export</CODE> and <CODE>preexport</CODE> switches ask for printing of entries
+that are exported to the specified protocol. With <CODE>preexport</CODE>, the
+export filter of the protocol is skipped.
+<P>
+<P>You can also select just routes added by a specific protocol.
+<CODE>protocol <I>p</I></CODE>.
 <P>
 <P>The <CODE>stats</CODE> switch requests showing of route statistics (the
 number of networks, number of routes before and after filtering). If
@@ -66,7 +79,15 @@ you use <CODE>count</CODE> instead, only the statistics will be printed.
 <P>
 <DT><CODE>enable|disable|restart <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Enable, disable or restart a given protocol instance, instances matching the <CODE><I>pattern</I></CODE> or <CODE>all</CODE> instances.
 <P>
-<DT><CODE>configure ["<I>config file</I>"]</CODE><DD><P>Reload configuration from a given file.
+<DT><CODE>configure [soft] ["<I>config file</I>"]</CODE><DD><P>Reload configuration from a given file. BIRD will smoothly
+switch itself to the new configuration, protocols are
+reconfigured if possible, restarted otherwise. Changes in
+filters usualy lead to restart of affected protocols. If
+<CODE>soft> option is used, changes in filters does not cause
+BIRD to restart affected protocols, therefore already accepted
+routes (according to old filters) would be still propagated,
+but new routes would be processed according to the new
+filters.</CODE>
 <P>
 <DT><CODE>down</CODE><DD><P>Shut BIRD down.
 <P>

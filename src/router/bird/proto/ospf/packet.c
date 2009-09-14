@@ -1,7 +1,7 @@
 /*
  *	BIRD -- OSPF
  *
- *	(c) 1999--2004 Ondrej Filip <feela@network.cz>
+ *	(c) 1999--2005 Ondrej Filip <feela@network.cz>
  *
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
@@ -31,14 +31,17 @@ ospf_pkt_fill_hdr(struct ospf_iface *ifa, void *buf, u8 h_type)
 unsigned
 ospf_pkt_maxsize(struct ospf_iface *ifa)
 {
-  return ifa->iface->mtu - SIZE_OF_IP_HEADER -
-    ((ifa->autype == OSPF_AUTH_CRYPT) ? OSPF_AUTH_CRYPT_SIZE : 0);
+  unsigned mtu = (ifa->type == OSPF_IT_VLINK) ? OSPF_VLINK_MTU : ifa->iface->mtu;
+  /* Can be mtu < 576? */
+  return ((mtu <=  ifa->iface->mtu) ? mtu : ifa->iface->mtu) -
+  SIZE_OF_IP_HEADER - ((ifa->autype == OSPF_AUTH_CRYPT) ? OSPF_AUTH_CRYPT_SIZE : 0);
+  /* For virtual links use mtu=576 */
 }
 
 void
 ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
 {
-  struct password_item *passwd = password_find (ifa->passwords);
+  struct password_item *passwd = NULL;
   void *tail;
   struct MD5Context ctxt;
   char password[OSPF_AUTH_CRYPT_SIZE];
@@ -49,6 +52,7 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
   {
     case OSPF_AUTH_SIMPLE:
       bzero(&pkt->u, sizeof(union ospf_auth));
+      passwd = password_find(ifa->passwords, 1);
       if (!passwd)
       {
         log( L_ERR "No suitable password found for authentication" );
@@ -62,6 +66,7 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
 				  sizeof(struct ospf_packet), NULL);
       break;
     case OSPF_AUTH_CRYPT:
+      passwd = password_find(ifa->passwords, 0);
       if (!passwd)
       {
         log( L_ERR "No suitable password found for authentication" );
@@ -70,13 +75,25 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
 
       pkt->checksum = 0;
 
+      /* Perhaps use random value to prevent replay attacks after
+	 reboot when system does not have independent RTC? */
       if (!ifa->csn)
-        ifa->csn = (u32) time(NULL);
+	{
+	  ifa->csn = (u32) now;
+	  ifa->csn_use = now;
+	}
+
+      /* We must have sufficient delay between sending a packet and increasing 
+	 CSN to prevent reordering of packets (in a network) with different CSNs */
+      if ((now - ifa->csn_use) > 1)
+	ifa->csn++;
+
+      ifa->csn_use = now;
 
       pkt->u.md5.keyid = passwd->id;
       pkt->u.md5.len = OSPF_AUTH_CRYPT_SIZE;
       pkt->u.md5.zero = 0;
-      pkt->u.md5.csn = htonl(ifa->csn++);
+      pkt->u.md5.csn = htonl(ifa->csn);
       tail = ((void *)pkt) + ntohs(pkt->length);
       MD5Init(&ctxt);
       MD5Update(&ctxt, (char *) pkt, ntohs(pkt->length));
@@ -120,8 +137,8 @@ ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_
       return 1;
       break;
     case OSPF_AUTH_SIMPLE:
-      pass = password_find (ifa->passwords);
-      if(!pass)
+      pass = password_find(ifa->passwords, 1);
+      if (!pass)
       {
         OSPF_TRACE(D_PACKETS, "OSPF_auth: no password found");
 	return 0;
@@ -144,9 +161,10 @@ ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_
         OSPF_TRACE(D_PACKETS, "OSPF_auth: wrong size of md5 digest");
         return 0;
       }
+
       if (ntohs(pkt->length) + OSPF_AUTH_CRYPT_SIZE != size)
       {
-        OSPF_TRACE(D_PACKETS, "OSPF_auth: size mismatch (%d vs %s)",
+        OSPF_TRACE(D_PACKETS, "OSPF_auth: size mismatch (%d vs %d)",
 	  ntohs(pkt->length) + OSPF_AUTH_CRYPT_SIZE, size);
         return 0;
       }
@@ -159,28 +177,33 @@ ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_
 
       tail = ((void *)pkt) + ntohs(pkt->length);
 
-      WALK_LIST(ptmp, *(ifa->passwords))
+      if (ifa->passwords)
       {
-        if (pkt->u.md5.keyid != ptmp->id) continue;
-        if ((ptmp->accfrom > now) || (ptmp->accto < now)) continue;
-        pass = ptmp;
-        break;
+	WALK_LIST(ptmp, *(ifa->passwords))
+	{
+	  if (pkt->u.md5.keyid != ptmp->id) continue;
+	  if ((ptmp->accfrom > now_real) || (ptmp->accto < now_real)) continue;
+	  pass = ptmp;
+	  break;
+	}
       }
 
-      if(!pass)
+      if (!pass)
       {
         OSPF_TRACE(D_PACKETS, "OSPF_auth: no suitable md5 password found");
         return 0;
       }
 
-      if(n)
+      if (n)
       {
-        if(ntohs(pkt->u.md5.csn) < n->csn)
-        {
-          OSPF_TRACE(D_PACKETS, "OSPF_auth: lower sequence number");
-          return 0;
-        }
-        n->csn = ntohs(pkt->u.md5.csn);
+	u32 rcv_csn = ntohl(pkt->u.md5.csn);
+	if(rcv_csn < n->csn)
+	{
+	  OSPF_TRACE(D_PACKETS, "OSPF_auth: lower sequence number (rcv %d, old %d)", rcv_csn, n->csn);
+	  return 0;
+	}
+
+	n->csn = rcv_csn;
       }
 
       MD5Init(&ctxt);
@@ -227,6 +250,12 @@ ospf_rx_hook(sock * sk, int size)
 
   ps = (struct ospf_packet *) ipv4_skip_header(sk->rbuf, &size);
 
+  if (ps == NULL)
+  {
+    log(L_ERR "%s%I - bad IP header", mesg, sk->faddr);
+    return 1;
+  }
+
   if ((ifa->oa->areaid != 0) && (ntohl(ps->areaid) == 0))
   {
     WALK_LIST(iff, po->iface_list)
@@ -242,11 +271,6 @@ ospf_rx_hook(sock * sk, int size)
   DBG("%s: RX_Hook called on interface %s.\n", p->name, sk->iface->name);
 
   osize = ntohs(ps->length);
-  if (ps == NULL)
-  {
-    log(L_ERR "%s%I - bad IP header", mesg, sk->faddr);
-    return 1;
-  }
 
   if ((unsigned) size < sizeof(struct ospf_packet))
   {
@@ -292,12 +316,16 @@ ospf_rx_hook(sock * sk, int size)
     return 1;
   }
 
-  if ((unsigned) size > ifa->iface->mtu)
+  if (((unsigned) size > sk->rbsize) || (ntohs(ps->length) > sk->rbsize))
   {
-    log(L_ERR "%s%I - received larger packet than MTU", mesg, sk->faddr);
+    log(L_ERR "%s%I - packet is too large (%d-%d vs %d)",
+      mesg, sk->faddr, size, ntohs(ps->length), sk->rbsize);
     return 1;
   }
 
+  /* This is deviation from RFC 2328 - neighbours should be identified by
+   * IP address on broadcast and NBMA networks.
+   */
   n = find_neigh(ifa, ntohl(((struct ospf_packet *) ps)->routerid));
 
   if(!n && (ps->type != HELLO_P))
@@ -390,6 +418,9 @@ ospf_send_to(sock *sk, ip_addr ip, struct ospf_iface *ifa)
   struct ospf_packet *pkt = (struct ospf_packet *) sk->tbuf;
   int len = ntohs(pkt->length) + ((ifa->autype == OSPF_AUTH_CRYPT) ? OSPF_AUTH_CRYPT_SIZE : 0);
   ospf_pkt_finalize(ifa, pkt);
+
+  if (sk->tbuf != sk->tpos)
+    log(L_ERR "Aiee, old packet was overwritted in TX buffer");
 
   if (ipa_equal(ip, IPA_NONE))
     sk_send(sk, len);

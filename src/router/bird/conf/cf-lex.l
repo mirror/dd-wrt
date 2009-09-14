@@ -157,7 +157,7 @@ WHITE [ \t]
   return CLI_MARKER;
 }
 
-[={}:;,.()+*/%<>~\[\]?!-] {
+[={}:;,.()+*/%<>~\[\]?!\|-] {
   return yytext[0];
 }
 
@@ -199,6 +199,9 @@ WHITE [ \t]
 \>\= return GEQ;
 \&\& return AND;
 \|\| return OR;
+
+\[\= return PO;
+\=\] return PC;
 
 %%
 

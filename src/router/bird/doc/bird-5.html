@@ -118,7 +118,8 @@ statements.
 to +2000000000. Overflows are not checked. You can use <CODE>0x1234</CODE> syntax to write hexadecimal values.
 <P>
 <DT><CODE>pair</CODE><DD><P>This is a pair of two short integers. Each component can have values from 0 to
-65535. Literals of this type is written as <CODE>(1234,5678)</CODE>.
+65535. Literals of this type are written as <CODE>(1234,5678)</CODE>. The same syntax can also be
+used to construct a pair from two arbitrary integer expressions (for example <CODE>(1+2,a)</CODE>).
 <P>
 <DT><CODE>string</CODE><DD><P>This is a string of characters. There are no ways to modify strings in
 filters. You can pass them between functions, assign them to variables of type <CODE>string</CODE>, print
@@ -139,12 +140,29 @@ length from the pair. So <CODE>1.2.0.0/16.pxlen = 16</CODE> is true.
 <P>
 <DT><CODE>int|ip|prefix|pair|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you can pass them around
 but you can't modify them. Literals of type <CODE>set int</CODE> look like <CODE>[ 1, 2, 5..7 ]</CODE>. As you can see, both simple values and ranges are permitted in
-sets. Sets of prefixes are special: you can specify which prefix lengths should match them by
-using <CODE>[ 1.0.0.0/8+, 2.0.0.0/8-, 3.0.0.0/8{5,6} ]</CODE>. <CODE>3.0.0.0/8{5,6}</CODE> matches
-prefixes <CODE>3.X.X.X</CODE> whose prefix length is 5 to 6. <CODE><I>address</I>/<I>num</I>+</CODE> is a shorthand for <CODE><I>address</I>/{0,<I>num</I>}</CODE>,
-<CODE><I>address</I>/<I>num</I>-</CODE> is a shorthand for <CODE><I>address</I>/{0,<I>num-1</I>}</CODE>. For example,
-<CODE>1.2.0.0/16 ~ [ 1.0.0.0/8{ 15 , 17 } ]</CODE> is true, but
-<CODE>1.0.0.0/8 ~ [ 1.0.0.0/8- ]</CODE> is false.
+sets.
+<P>Sets of prefixes are special: their literals does not allow ranges, but allows
+prefix patterns that are written as <CODE><I>ipaddress</I>/<I>pxlen</I>{<I>low</I>,<I>high</I>}</CODE>.
+Prefix <CODE><I>ip1</I>/<I>len1</I></CODE> matches prefix pattern <CODE><I>ip2</I>/<I>len2</I>{<I>l</I>,<I>h</I>}</CODE> iff 
+the first <CODE>min(len1, len2)</CODE> bits of <CODE>ip1</CODE> and <CODE>ip2</CODE> are identical and <CODE>len1 &lt;= ip1 &lt;= len2</CODE>.
+A valid prefix pattern has to satisfy <CODE>low &lt;= high</CODE>, but <CODE>pxlen</CODE> is not constrained by <CODE>low</CODE>
+or <CODE>high</CODE>. Obviously, a prefix matches a prefix set literal iff it matches any prefix pattern in the
+prefix set literal.
+<P>There are also two shorthands for prefix patterns: <CODE><I>address</I>/<I>len</I>+</CODE> is a shorthand for
+<CODE><I>address</I>/<I>len</I>{<I>len</I>,<I>maxlen</I>}</CODE> (where <CODE><I>maxlen</I></CODE> is 32 for IPv4 and 128 for IPv6), 
+that means network prefix <CODE><I>address</I>/<I>len</I></CODE> and all its subnets. <CODE><I>address</I>/<I>len</I>-</CODE>
+is a shorthand for <CODE><I>address</I>/<I>len</I>{0,<I>len</I>}</CODE>, that means network prefix <CODE><I>address</I>/<I>len</I></CODE>
+and all its supernets (network prefixes that contain it).
+<P>For example, <CODE>[ 1.0.0.0/8, 2.0.0.0/8+, 3.0.0.0/8-, 4.0.0.0/8{16,24} ]</CODE> matches
+prefix <CODE>1.0.0.0/8</CODE>, all subprefixes of <CODE>2.0.0.0/8</CODE>, all superprefixes of <CODE>3.0.0.0/8</CODE> and prefixes
+<CODE>4.X.X.X</CODE> whose prefix length is 16 to 24. <CODE>[ 0.0.0.0/0{20,24} ]</CODE> matches all prefixes (regardless of
+IP address) whose prefix length is 20 to 24, <CODE>[ 1.2.3.4/32- ]</CODE> matches any prefix that contains IP address
+<CODE>1.2.3.4</CODE>. <CODE>1.2.0.0/16 ~ [ 1.0.0.0/8{15,17} ]</CODE> is true,
+but <CODE>1.0.0.0/16 ~ [ 1.0.0.0/8- ]</CODE> is false.
+<P>Cisco-style patterns like <CODE>10.0.0.0/8 ge 16 le 24</CODE> can be expressed
+in Bird as <CODE>10.0.0.0/8{16,24}</CODE>, <CODE>192.168.0.0/16 le 24</CODE> as 
+<CODE>192.168.0.0/16{16,24}</CODE> and <CODE>192.168.0.0/16 ge 24</CODE> as
+<CODE>192.168.0.0/16{24,32}</CODE>.
 <P>
 <DT><CODE>enum</CODE><DD><P>Enumeration types are fixed sets of possibilities. You can't define your own
 variables of such type, but some route attributes are of enumeration
@@ -153,13 +171,16 @@ type. Enumeration types are incompatible with each other.
 <DT><CODE>bgppath</CODE><DD><P>BGP path is a list of autonomous system numbers. You can't write literals of this type.
 <P>
 <DT><CODE>bgpmask</CODE><DD><P>BGP masks are patterns used for BGP path matching
-(using <CODE>path ~ /2 3 5 ?/</CODE> syntax). The masks
+(using <CODE>path ~ [= 2 3 5 * =]</CODE> syntax). The masks
 resemble wildcard patterns as used by UNIX shells. Autonomous
-system numbers match themselves, <CODE>?</CODE> matches any (even empty)
-sequence of arbitrary AS numbers (<CODE>*</CODE> hasn't been chosen, because
-<CODE>/*</CODE> starts a comment). For example:
-<CODE>/4 3 2 1/ ~ /? 4 3 ?/</CODE> is true, but 
-<CODE>/4 3 2 1/ ~ /? 4 5 ?/</CODE> is false.
+system numbers match themselves, <CODE>*</CODE> matches any (even empty)
+sequence of arbitrary AS numbers and <CODE>?</CODE> matches one arbitrary AS number.
+For example, if <CODE>bgp_path</CODE> is 4 3 2 1, then:
+<CODE>bgp_path ~ [= * 4 3 * =]</CODE> is true, but 
+<CODE>bgp_path ~ [= * 4 5 * =]</CODE> is false.
+BGP mask expressions can also contain integer expressions enclosed in parenthesis
+and integer variables, for example <CODE>[= * 4 (1+2) a =]</CODE>.
+There is also old syntax that uses / .. / instead of [= .. =] and ? instead of *.
 <DT><CODE>clist</CODE><DD><P>Community list is similar to set of pairs,
 except that unlike other sets, it can be modified.
 There exist no literals of this type.
@@ -172,7 +193,8 @@ There exist no literals of this type.
 <P>The filter language supports common integer operators <CODE>(+,-,*,/)</CODE>, parentheses <CODE>(a*(b+c))</CODE>, comparison
 <CODE>(a=b, a!=b, a&lt;b, a&gt;=b)</CODE>. Logical operations include unary not (<CODE>!</CODE>), and (<CODE>&amp;&amp;</CODE>) and or (<CODE>||</CODE>). 
 Special operators include <CODE>~</CODE> for "is element of a set" operation - it can be
-used on element and set of elements of the same type (returning true if element is contained in the given set), or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
+used on element and set of elements of the same type (returning true if element is contained in the given set), or
+on two strings (returning true if first string matches a shell-like pattern stored in second string) or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
 prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair and clist (returning true if the community is element of the community list).
 <P>
 <P>
@@ -227,6 +249,8 @@ defined by using the <CODE>defined( <I>attribute</I> )</CODE> operator.
 <DT><CODE><I>ip</I> from</CODE><DD><P>The router which the route has originated from. Read-only.
 <P>
 <DT><CODE><I>ip</I> gw</CODE><DD><P>Next hop packets routed using this route should be forwarded to.
+<P>
+<DT><CODE><I>string</I> proto</CODE><DD><P>The name of the protocol which the route has been imported from. Read-only.
 <P>
 <DT><CODE><I>enum</I> source</CODE><DD><P>what protocol has told me about this route. Possible values: <CODE>RTS_DUMMY</CODE>, <CODE>RTS_STATIC</CODE>, <CODE>RTS_INHERIT</CODE>, <CODE>RTS_DEVICE</CODE>, <CODE>RTS_STATIC_DEVICE</CODE>, <CODE>RTS_REDIRECT</CODE>, <CODE>RTS_RIP</CODE>, <CODE>RTS_OSPF</CODE>, <CODE>RTS_OSPF_IA</CODE>, <CODE>RTS_OSPF_EXT</CODE>, <CODE>RTS_BGP</CODE>, <CODE>RTS_PIPE</CODE>.
 <P>

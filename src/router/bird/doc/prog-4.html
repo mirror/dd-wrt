@@ -170,6 +170,130 @@ thus both are as fast as they can be.
 <H3>Description</H3>
 <P>Compares two trees and returns 1 if they are same
 
+<H2><A NAME="ss4.2">4.2</A> <A HREF="prog.html#toc4.2">Trie for prefix sets</A>
+</H2>
+
+<P>
+<P>We use a (compressed) trie to represent prefix sets. Every node
+in the trie represents one prefix (<I>addr</I>/<I>plen</I>) and <I>plen</I> also
+indicates the index of the bit in the address that is used to
+branch at the node. If we need to represent just a set of
+prefixes, it would be simple, but we have to represent a
+set of prefix pattern. Each prefix pattern consists of
+<I>ppaddr</I>/<I>pplen</I> and two integers: <I>low</I> and <I>high</I>, and a prefix
+<I>paddr</I>/<I>plen</I> matches that pattern if the first MIN(<I>plen</I>, <I>pplen</I>)
+bits of <I>paddr</I> and <I>ppaddr</I> are the same and <I>low</I> &lt;= <I>plen</I> &lt;= <I>high</I>.
+<P>We use a bitmask (<I>accept</I>) to represent accepted prefix lengths
+at a node. As there are 33 prefix lengths (0..32 for IPv4), but
+there is just one prefix of zero length in the whole trie so we 
+have <I>zero</I> flag in <I>f_trie</I> (indicating whether the trie accepts
+prefix 0.0.0.0/0) as a special case, and <I>accept</I> bitmask
+represents accepted prefix lengths from 1 to 32.
+<P>There are two cases in prefix matching - a match when the length
+of the prefix is smaller that the length of the prefix pattern,
+(<I>plen</I> &lt; <I>pplen</I>) and otherwise. The second case is simple - we
+just walk through the trie and look at every visited node
+whether that prefix accepts our prefix length (<I>plen</I>). The
+first case is tricky - we don't want to examine every descendant
+of a final node, so (when we create the trie) we have to propagate
+that information from nodes to their ascendants.
+<P>Suppose that we have two masks (M1 and M2) for a node. Mask M1
+represents accepted prefix lengths by just the node and mask M2
+represents accepted prefix lengths by the node or any of its
+descendants. Therefore M2 is a bitwise or of M1 and children's
+M2 and this is a maintained invariant during trie building.
+Basically, when we want to match a prefix, we walk through the trie,
+check mask M1 for our prefix length and when we came to
+final node, we check mask M2.
+<P>There are two differences in the real implementation. First,
+we use a compressed trie so there is a case that we skip our
+final node (if it is not in the trie) and we came to node that
+is either extension of our prefix, or completely out of path
+In the first case, we also have to check M2.
+<P>Second, we really need not to maintain two separate bitmasks.
+Checks for mask M1 are always larger than <I>applen</I> and we need
+just the first <I>pplen</I> bits of mask M2 (if trie compression
+hadn't been used it would suffice to know just $applen-th bit),
+so we have to store them together in <I>accept</I> mask - the first
+<I>pplen</I> bits of mask M2 and then mask M1.
+<P>There are four cases when we walk through a trie:
+<P>- we are in NULL
+- we are out of path (prefixes are inconsistent)
+- we are in the wanted (final) node (node length == <I>plen</I>)
+- we are beyond the end of path (node length &gt; <I>plen</I>)
+- we are still on path and keep walking (node length &lt; <I>plen</I>)
+<P>The walking code in <B>add_node_to_trie()</B> and <B>trie_match_prefix()</B>
+is structured according to these cases.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>struct f_trie *</I>
+<B>f_new_trie</B>
+(<B>void</B>)
+<H3>Trie for prefix sets</H3>
+<P>
+<P>Allocates and returns a new empty trie.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>trie_add_prefix</B>
+(<I>struct f_trie *</I> <B>t</B>, <I>struct f_prefix *</I> <B>px</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_trie *</I> <B>t</B><DD><P>trie to add to
+<DT><I>struct f_prefix *</I> <B>px</B><DD><P>prefix to add
+</DL>
+<H3>Description</H3>
+<P>Adds prefix (prefix pattern) <B>px</B> to trie <B>t</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>trie_match_prefix</B>
+(<I>struct f_trie *</I> <B>t</B>, <I>struct f_prefix *</I> <B>px</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_trie *</I> <B>t</B><DD><P>trie
+<DT><I>struct f_prefix *</I> <B>px</B><DD><P>prefix
+</DL>
+<H3>Description</H3>
+<P>Tries to find a matching prefix pattern in the trie such that
+prefix <B>px</B> matches that prefix pattern. Returns 1 if there
+is such prefix pattern in the trie.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>trie_same</B>
+(<I>struct f_trie *</I> <B>t1</B>, <I>struct f_trie *</I> <B>t2</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_trie *</I> <B>t1</B><DD><P>first trie to be compared
+<DT><I>struct f_trie *</I> <B>t2</B><DD><P>second one
+</DL>
+<H3>Description</H3>
+<P>Compares two tries and returns 1 if they are same
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>trie_print</B>
+(<I>struct f_trie *</I> <B>t</B>, <I>char *</I> <B>buf</B>, <I>int</I> <B>blen</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_trie *</I> <B>t</B><DD><P>trie to be printed
+<DT><I>char *</I> <B>buf</B><DD><P>buffer
+<DT><I>int</I> <B>blen</B><DD><P>buffer length
+</DL>
+<H3>Description</H3>
+<P>Prints the trie to the buffer, using at most blen bytes.
+Returns the number of used bytes, or -1 if there is not
+enough space in the buffer.
+
 <HR>
 <A HREF="prog-5.html">Next</A>
 <A HREF="prog-3.html">Previous</A>

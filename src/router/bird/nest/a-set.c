@@ -14,7 +14,7 @@
 #include "lib/string.h"
 
 void
-int_set_format(struct adata *set, byte *buf, unsigned int size)
+int_set_format(struct adata *set, int way, byte *buf, unsigned int size)
 {
   u32 *z = (u32 *) set->data;
   int l = set->length / 4;
@@ -30,7 +30,12 @@ int_set_format(struct adata *set, byte *buf, unsigned int size)
 	  strcpy(buf, "...");
 	  return;
 	}
-      buf += bsprintf(buf, "(%d,%d)", *z >> 16, *z & 0xffff);
+
+      if (way)
+	buf += bsprintf(buf, "(%d,%d)", *z >> 16, *z & 0xffff);
+      else
+	buf += bsprintf(buf, "%R", *z);
+
       z++;
       sp = 0;
     }
@@ -40,10 +45,12 @@ int_set_format(struct adata *set, byte *buf, unsigned int size)
 struct adata *
 int_set_add(struct linpool *pool, struct adata *list, u32 val)
 {
-  struct adata *res = lp_alloc(pool, list->length + sizeof(struct adata) + 4);
-  res->length = list->length+4;
+  int len = list ? list->length : 0;
+  struct adata *res = lp_alloc(pool, len + sizeof(struct adata) + 4);
+  res->length = len + 4;
   * (u32 *) res->data = val;
-  memcpy((char *) res->data + 4, list->data, list->length);
+  if (list)
+    memcpy((char *) res->data + 4, list->data, list->length);
   return res;
 }
 

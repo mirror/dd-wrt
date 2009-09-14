@@ -145,3 +145,16 @@ if test -z "$bird_cv_sys_linux_version" ; then
 	AC_MSG_ERROR([Cannot determine kernel version])
 fi
 ])])
+
+# BIRD_CHECK_PROG_FLAVOR_GNU(PROGRAM-PATH, IF-SUCCESS, [IF-FAILURE])
+# copied autoconf internal _AC_PATH_PROG_FLAVOR_GNU
+m4_define([BIRD_CHECK_PROG_FLAVOR_GNU],
+[# Check for GNU $1
+case `"$1" --version 2>&1` in
+*GNU*)
+  $2;;
+m4_ifval([$3],
+[*)
+  $3;;
+])esac
+])#

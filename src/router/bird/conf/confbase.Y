@@ -34,6 +34,7 @@ CF_DECLS
   struct f_inst *x;
   struct filter *f;
   struct f_tree *e;
+  struct f_trie *trie;
   struct f_val v;
   struct f_path_mask *h;
   struct password_item *p;
@@ -45,6 +46,7 @@ CF_DECLS
 
 %token END CLI_MARKER INVALID_TOKEN
 %token GEQ LEQ NEQ AND OR
+%token PO PC
 %token <i> NUM ENUM
 %token <i32> RTRID
 %token <a> IPA
@@ -55,9 +57,10 @@ CF_DECLS
 %type <time> datetime
 %type <a> ipa
 %type <px> prefix prefix_or_ipa
+%type <t> text_or_none
 
 %nonassoc PREFIX_DUMMY
-%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ AND OR
+%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ AND OR PO PC
 %left '+' '-'
 %left '*' '/' '%'
 %left '!'
@@ -149,6 +152,11 @@ datetime:
      if (!$$)
        cf_error("Invalid date and time");
    }
+ ;
+
+text_or_none:
+   TEXT { $$ = $1; }
+ |      { $$ = NULL; }
  ;
 
 CF_CODE

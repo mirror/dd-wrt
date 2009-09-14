@@ -62,6 +62,7 @@ static struct resclass sl_class = {
 
 struct sl_obj {
   node n;
+  uintptr_t data_align[0];
   byte data[0];
 };
 
