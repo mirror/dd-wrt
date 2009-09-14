@@ -213,10 +213,10 @@ sflash_mtd_init(void)
 	do_support = 1;  //Netgear WGR614L, WGR614v8, WGR614v9, WGR614v8WW
 	}
 	
-  if (boardnum == 1 && nvram_match( "boardtype", "0x04CF" )
-	&& nvram_match( "boardrev", "0x1213" ))
+  if ((boardnum == 1 || boardnum == 3500) && nvram_match( "boardtype", "0x04CF" )
+	&& (nvram_match( "boardrev", "0x1213" ) | nvram_match( "boardrev", "02" )))
 	{
-	do_support = 1;  //Netgear WNR3500v2/L
+	do_support = 1;  //Netgear WNR3500v2/U/L
 	}
 
   if (boardnum == 66 && nvram_match( "boardtype", "0x04EF" )
