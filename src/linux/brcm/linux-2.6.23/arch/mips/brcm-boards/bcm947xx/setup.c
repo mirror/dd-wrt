@@ -175,7 +175,7 @@ char *boothwmodel = nvram_get("boot_hw_model");
 char *boothwver = nvram_get("boot_hw_ver");
 char *cardbus = nvram_get("cardbus");
 char *boardrev = nvram_get("boardrev");
-if (boardrev!=NULL && !strcmp(boardrev,"0x1213") && !strcmp(boardtype,"0x04CF"))iswnr3500v2=1;
+if (boardrev!=NULL && (!strcmp(boardrev,"0x1213") || !strcmp(boardrev,"0x02")) && !strcmp(boardtype,"0x04CF"))iswnr3500v2=1;
 if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
 if (cardbus!=NULL && !strcmp(cardbus, "0") && boardtype!=NULL && !strcmp(boardtype,"0x478"))
     {
