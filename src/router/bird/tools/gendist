@@ -21,9 +21,10 @@ rm -rf $T/$REL $T/$DREL
 mkdir -p $T/$REL $T/$DREL $T/$DREL/doc
 cp -a . $T/$REL
 echo Generating ChangeLog
-cvs log | tools/cvslog >$T/$REL/ChangeLog
+git log  >$T/$REL/ChangeLog
 mv $T/$REL/doc/*.ps $T/$DREL/doc
 rm -f $T/$REL/bird.conf*
+rm -rf $T/$REL/.git/
 rm -rf `find $T/$REL -name CVS -o -name tmp` $T/$REL/{misc,rfc,doc/slides}
 ( cd $T ; tar czvvf $REL.tar.gz $REL )
 ( cd $T ; tar czvvf $DREL.tar.gz $DREL )
@@ -32,6 +33,6 @@ echo -n "OK? "
 read OK
 echo Uploading to Atrey...
 scp $T/$REL.tar.gz $T/$DREL.tar.gz atrey.karlin.mff.cuni.cz:~ftp/pub/bird/
-echo Uploading to Regina...
-scp $T/$REL.tar.gz $T/$DREL.tar.gz jana.gin.cz:~ftp/pub/bird/
+echo Uploading to Trubka...
+scp $T/$REL.tar.gz $T/$DREL.tar.gz bird.network.cz:~ftp/pub/bird/
 echo Done.

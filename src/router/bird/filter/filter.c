@@ -64,9 +64,51 @@ pm_path_compare(struct f_path_mask *m1, struct f_path_mask *m2)
   while (1) {
     if ((!m1) || (!m2))
       return !((!m1) && (!m2));
+
+    if ((m1->kind != m2->kind) || (m1->val != m2->val)) return 1;
     m1 = m1->next;
     m2 = m2->next;
   }
+}
+
+u32 f_eval_asn(struct f_inst *expr);
+
+static void
+pm_format(struct f_path_mask *p, byte *buf, unsigned int size)
+{
+  byte *end = buf + size - 16;
+
+  while (p)
+    {
+      if (buf > end)
+	{
+	  strcpy(buf, " ...");
+	  return;
+	}
+
+      switch(p->kind)
+	{
+	case PM_ASN:
+	  buf += bsprintf(buf, " %u", p->val);
+	  break;
+
+	case PM_QUESTION:
+	  buf += bsprintf(buf, " ?");
+	  break;
+
+	case PM_ASTERISK:
+	  buf += bsprintf(buf, " *");
+	  break;
+
+	case PM_ASN_EXPR:
+	  buf += bsprintf(buf, " %u", f_eval_asn((struct f_inst *) p->val));
+	  break;
+	}
+
+      p = p->next;
+    }
+
+  *buf = 0;
 }
 
 /**
@@ -96,7 +138,8 @@ val_compare(struct f_val v1, struct f_val v2)
   }
   switch (v1.type) {
   case T_ENUM:
-  case T_INT: 
+  case T_INT:
+  case T_BOOL:
   case T_PAIR:
     if (v1.val.i == v2.val.i) return 0;
     if (v1.val.i < v2.val.i) return -1;
@@ -113,10 +156,31 @@ val_compare(struct f_val v1, struct f_val v2)
     return 0;
   case T_PATH_MASK:
     return pm_path_compare(v1.val.path_mask, v2.val.path_mask);
+  case T_STRING:
+    return strcmp(v1.val.s, v2.val.s);
   default:
-    bdebug( "Compare of unkown entities: %x\n", v1.type );
+    bdebug( "Compare of unknown entities: %x\n", v1.type );
     return CMP_ERROR;
   }
+}
+
+
+void
+f_prefix_get_bounds(struct f_prefix *px, int *l, int *h)
+{
+  *l = *h = px->len & LEN_MASK;
+
+  if (px->len & LEN_MINUS)
+    *l = 0;
+
+  else if (px->len & LEN_PLUS)
+    *h = MAX_PREFIX_LENGTH;
+
+  else if (px->len & LEN_RANGE)
+    {
+      *l = 0xff & (px->len >> 16);
+      *h = 0xff & (px->len >> 8);
+    }
 }
 
 /*
@@ -129,27 +193,15 @@ val_simple_in_range(struct f_val v1, struct f_val v2)
     return as_path_match(v1.val.ad, v2.val.path_mask);
   if ((v1.type == T_PAIR) && (v2.type == T_CLIST))
     return int_set_contains(v2.val.ad, v1.val.i);
+  if ((v1.type == T_STRING) && (v2.type == T_STRING))
+    return patmatch(v2.val.s, v1.val.s);
 
   if ((v1.type == T_IP) && (v2.type == T_PREFIX))
-    return !(ipa_compare(ipa_and(v2.val.px.ip, ipa_mkmask(v2.val.px.len)), ipa_and(v1.val.px.ip, ipa_mkmask(v2.val.px.len))));
+    return ipa_in_net(v1.val.px.ip, v2.val.px.ip, v2.val.px.len);
 
-  if ((v1.type == T_PREFIX) && (v2.type == T_PREFIX)) {
-    ip_addr mask;
-    if (v1.val.px.len & (LEN_PLUS | LEN_MINUS | LEN_RANGE))
-      return CMP_ERROR;
-    mask = ipa_mkmask( v2.val.px.len & LEN_MASK );
-    if (ipa_compare(ipa_and(v2.val.px.ip, mask), ipa_and(v1.val.px.ip, mask)))
-      return 0;
+  if ((v1.type == T_PREFIX) && (v2.type == T_PREFIX))
+    return ipa_in_net(v1.val.px.ip, v2.val.px.ip, v2.val.px.len) && (v1.val.px.len >= v2.val.px.len);
 
-    if ((v2.val.px.len & LEN_MINUS) && (v1.val.px.len <= (v2.val.px.len & LEN_MASK)))
-      return 0;
-    if ((v2.val.px.len & LEN_PLUS) && (v1.val.px.len < (v2.val.px.len & LEN_MASK)))
-      return 0;
-    if ((v2.val.px.len & LEN_RANGE) && ((v1.val.px.len < (0xff & (v2.val.px.len >> 16)))
-					|| (v1.val.px.len > (0xff & (v2.val.px.len >> 8)))))
-      return 0;
-    return 1;    
-  }
   return CMP_ERROR;
 }
 
@@ -171,6 +223,9 @@ val_in_range(struct f_val v1, struct f_val v2)
   if (res != CMP_ERROR)
     return res;
   
+  if ((v1.type == T_PREFIX) && (v2.type == T_PREFIX_SET))
+    return trie_match_prefix(v2.val.ti, &v1.val.px);
+
   if (v2.type == T_SET)
     switch (v1.type) {
     case T_ENUM:
@@ -220,11 +275,12 @@ val_print(struct f_val v)
   case T_IP: PRINTF( "%I", v.val.px.ip ); break;
   case T_PREFIX: PRINTF( "%I/%d", v.val.px.ip, v.val.px.len ); break;
   case T_PAIR: PRINTF( "(%d,%d)", v.val.i >> 16, v.val.i & 0xffff ); break;
+  case T_PREFIX_SET: trie_print(v.val.ti, buf, 2040); break;
   case T_SET: tree_print( v.val.t ); PRINTF( "\n" ); break;
   case T_ENUM: PRINTF( "(enum %x)%d", v.type, v.val.i ); break;
   case T_PATH: as_path_format(v.val.ad, buf2, 1020); PRINTF( "(path %s)", buf2 ); break;
-  case T_CLIST: int_set_format(v.val.ad, buf2, 1020); PRINTF( "(clist %s)", buf2 ); break;
-  case T_PATH_MASK: bdebug( "(pathmask " ); { struct f_path_mask *p = v.val.path_mask; while (p) { bdebug("%d ", p->val); p=p->next; } bdebug(")" ); } break;
+  case T_CLIST: int_set_format(v.val.ad, 1, buf2, 1020); PRINTF( "(clist %s)", buf2 ); break;
+  case T_PATH_MASK: pm_format(v.val.path_mask, buf2, 1020); PRINTF( "(pathmask%s)", buf2 ); break;
   default: PRINTF( "[unknown type %x]", v.type );
 #undef PRINTF
   }
@@ -253,8 +309,10 @@ rta_cow(void)
   }
 }
 
+static struct rate_limit rl_runtime_err;
+
 #define runtime(x) do { \
-    log( L_ERR "filters, line %d: %s", what->lineno, x); \
+    log_rl(&rl_runtime_err, L_ERR "filters, line %d: %s", what->lineno, x); \
     res.type = T_RETURN; \
     res.val.i = F_ERROR; \
     return res; \
@@ -294,6 +352,7 @@ interpret(struct f_inst *what)
 {
   struct symbol *sym;
   struct f_val v1, v2, res;
+  unsigned u1, u2;
   int i;
 
   res.type = T_VOID;
@@ -356,6 +415,18 @@ interpret(struct f_inst *what)
     res.val.i = v1.val.i || v2.val.i;
     break;
 
+  case P('m','p'):
+    TWOARGS_C;
+    if ((v1.type != T_INT) || (v2.type != T_INT))
+      runtime( "Can't operate with value of non-integer type in pair constructor" );
+    u1 = v1.val.i;
+    u2 = v2.val.i;
+    if ((u1 > 0xFFFF) || (u2 > 0xFFFF))
+      runtime( "Can't operate with value out of bounds in pair constructor" );
+    res.val.i = (u1 << 16) | u2;
+    res.type = T_PAIR;
+    break;
+
 /* Relational operators */
 
 #define COMPARE(x) \
@@ -400,26 +471,40 @@ interpret(struct f_inst *what)
     switch (res.type = v2.type) {
     case T_VOID: runtime( "Can't assign void values" );
     case T_ENUM:
-    case T_INT: 
-    case T_IP: 
-    case T_PREFIX: 
-    case T_PAIR: 
+    case T_BOOL:
+    case T_INT:
+    case T_PAIR:
+    case T_STRING:
+    case T_IP:
+    case T_PREFIX:
+    case T_PREFIX_SET:
+    case T_SET:
     case T_PATH:
-    case T_CLIST:
     case T_PATH_MASK:
+    case T_CLIST:
       if (sym->class != (SYM_VARIABLE | v2.type))
 	runtime( "Assigning to variable of incompatible type" );
-      * (struct f_val *) sym->aux2 = v2; 
+      * (struct f_val *) sym->def = v2; 
       break;
     default:
       bug( "Set to invalid type" );
     }
     break;
 
-  case 'c':	/* integer (or simple type) constant */
+    /* some constants have value in a2, some in *a1.p, strange. */
+  case 'c':	/* integer (or simple type) constant, string, set, or prefix_set */
     res.type = what->aux;
-    res.val.i = what->a2.i;
+
+    if (res.type == T_PREFIX_SET)
+      res.val.ti = what->a2.p;
+    else if (res.type == T_SET)
+      res.val.t = what->a2.p;
+    else if (res.type == T_STRING)
+      res.val.s = what->a2.p;
+    else
+      res.val.i = what->a2.i;
     break;
+  case 'V':
   case 'C':
     res = * ((struct f_val *) what->a1.p);
     break;
@@ -473,6 +558,9 @@ interpret(struct f_inst *what)
       case T_ENUM:
 	res.val.i = * ((char *) rta + what->a2.i);
 	break;
+      case T_STRING:	/* Warning: this is a special case for proto attribute */
+	res.val.s = rta->proto->name;
+	break;
       case T_PREFIX:	/* Warning: this works only for prefix of network */
 	{
 	  res.val.px.ip = (*f_rte)->net->n.prefix;
@@ -522,6 +610,15 @@ interpret(struct f_inst *what)
 	res.type = T_INT;
 	res.val.i = e->u.data;
 	break;
+      case EAF_TYPE_IP_ADDRESS:
+	if (!e) {
+	  res.type = T_VOID;
+	  break;
+	}
+	res.type = T_IP;
+	struct adata * ad = e->u.ptr;
+	res.val.px.ip = * (ip_addr *) ad->data;
+	break;
       case EAF_TYPE_AS_PATH:
 	if (!e) {
 	  res.type = T_VOID;
@@ -560,6 +657,14 @@ interpret(struct f_inst *what)
 	if (v1.type != T_INT)
 	  runtime( "Setting int attribute to non-int value" );
 	l->attrs[0].u.data = v1.val.i;
+	break;
+      case EAF_TYPE_IP_ADDRESS:
+	if (v1.type != T_IP)
+	  runtime( "Setting ip attribute to non-ip value" );
+	int len = sizeof(ip_addr);
+	struct adata *ad = lp_alloc(f_pool, sizeof(struct adata) + len);
+	ad->length = len;
+	(* (ip_addr *) ad->data) = v1.val.px.ip;
 	break;
       case EAF_TYPE_AS_PATH:
 	if (v1.type != T_PATH)
@@ -606,7 +711,7 @@ interpret(struct f_inst *what)
     switch(v1.type) {
     case T_PREFIX: res.val.i = v1.val.px.len; break;
     case T_PATH:   res.val.i = as_path_getlen(v1.val.ad); break;
-    default: bug( "Length of what?" );
+    default: runtime( "Prefix or path expected" );
     }
     break;
   case P('c','p'):	/* Convert prefix to ... */
@@ -624,7 +729,7 @@ interpret(struct f_inst *what)
     ONEARG;
     res = v1;
     res.type |= T_RETURN;
-    break;
+    return res;
   case P('c','a'): /* CALL: this is special: if T_RETURN and returning some value, mask it out  */
     ONEARG;
     res = interpret(what->a2.p);
@@ -645,7 +750,10 @@ interpret(struct f_inst *what)
 	}
       }	
       /* It is actually possible to have t->data NULL */
-      return interpret(t->data);
+
+      res = interpret(t->data);
+      if (res.type & T_RETURN)
+	return res;
     }
     break;
   case P('i','M'): /* IP.MASK(val) */
@@ -735,6 +843,7 @@ i_same(struct f_inst *f1, struct f_inst *f2)
   case '/':
   case '|':
   case '&':
+  case P('m','p'):
   case P('!','='):
   case P('=','='):
   case '<':
@@ -758,22 +867,33 @@ i_same(struct f_inst *f1, struct f_inst *f2)
     break;
 
   case 'c': 
-    if (f1->aux & T_SET) {
+    switch (f1->aux) {
+
+    case T_PREFIX_SET:
+      if (!trie_same(f1->a2.p, f2->a2.p))
+	return 0;
+      break;
+
+    case T_SET:
       if (!same_tree(f1->a2.p, f2->a2.p))
 	return 0;
       break;
-    } 
-    switch (f1->aux) {
+
     case T_STRING:
       if (strcmp(f1->a2.p, f2->a2.p))
 	return 0;
       break;
+
     default:
       A2_SAME;
     }
     break;
   case 'C': 
     if (val_compare(* (struct f_val *) f1->a1.p, * (struct f_val *) f2->a1.p))
+      return 0;
+    break;
+  case 'V': 
+    if (strcmp((char *) f1->a2.p, (char *) f2->a2.p))
       return 0;
     break;
   case 'p': case 'L': ONEARG; break;
@@ -850,6 +970,16 @@ f_eval_int(struct f_inst *expr)
   res = interpret(expr);
   if (res.type != T_INT)
     cf_error("Integer expression expected");
+  return res.val.i;
+}
+
+u32
+f_eval_asn(struct f_inst *expr)
+{
+  struct f_val res = interpret(expr);
+  if (res.type != T_INT)
+    cf_error("Can't operate with value of non-integer type in AS path mask constructor");
+ 
   return res.val.i;
 }
 

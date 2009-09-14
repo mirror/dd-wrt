@@ -13,5 +13,8 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #endif

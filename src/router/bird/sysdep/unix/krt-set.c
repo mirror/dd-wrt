@@ -61,6 +61,8 @@ krt_ioctl(int ioc, rte *e, char *name)
       re.rt_flags |= RTF_GATEWAY;
       break;
     case RTD_DEVICE:
+      if (!a->iface)
+	return;
       re.rt_dev = a->iface->name;
       break;
 #ifdef RTF_REJECT

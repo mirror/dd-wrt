@@ -9,9 +9,11 @@
 #ifndef _BIRD_BIRDLIB_H_
 #define _BIRD_BIRDLIB_H_
 
+#include "timer.h"
+
 /* Ugly structure offset handling macros */
 
-#define OFFSETOF(s, i) ((unsigned int)&((s *)0)->i)
+#define OFFSETOF(s, i) ((size_t) &((s *)0)->i)
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define BIRD_ALIGN(s, a) (((s)+a-1)&~(a-1))
 
@@ -33,8 +35,14 @@
 
 /* Logging and dying */
 
+struct rate_limit {
+  bird_clock_t timestamp;
+  int count;
+};
+
 #define log log_msg
 void log_msg(char *msg, ...);
+void log_rl(struct rate_limit *rl, char *msg, ...);
 void die(char *msg, ...) NORET;
 void bug(char *msg, ...) NORET;
 

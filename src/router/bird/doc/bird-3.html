@@ -48,6 +48,7 @@ protocol device {
 protocol rip {
         export all;
         import all;
+        interface "*";
 }
 </PRE>
 <HR>
@@ -89,6 +90,14 @@ most protocols (like RIP or BGP). By default, no instances are configured.
 you could use a simple integer or an IP address.
 <P>
 <DT><CODE>router id <I>IPv4 address</I></CODE><DD><P>Set BIRD's router ID. It's a world-wide unique identification of your router, usually one of router's IPv4 addresses. Default: in IPv4 version, the lowest IP address of a non-loopback interface. In IPv6 version, this option is mandatory. 
+<P>
+<DT><CODE>listen bgp [address <I>address</I>] [port <I>port</I>] [v6only]</CODE><DD><P>This option allows to specify address and port where BGP
+protocol should listen. It is global option as listening
+socket is common to all BGP instances. Default is to listen on
+all addresses (0.0.0.0) and port 179. In IPv6 mode, option
+<CODE>v6only</CODE> can be used to specify that BGP socket should
+listen to IPv6 connections only. This is needed if you want to
+run both bird and bird6 on the same port.
 <P>
 <DT><CODE>table <I>name</I></CODE><DD><P>Create a new routing table. The default
 routing table is created implicitly, other routing tables have
@@ -139,19 +148,70 @@ works in the direction from the routing table to the protocol. Default: <CODE>no
 <P>There are several options that give sense only with certain protocols:
 <P>
 <DL>
-<DT><CODE>passwords { password "<I>password</I>" from <I>time</I> to <I>time</I> passive <I>time</I> id
-<I>num</I> [...] }</CODE><DD><P>Specifies passwords to be used with this protocol. <CODE>Passive <I>time</I></CODE> is
-time from which the password is not used for sending, but it is recognized on reception. <CODE>id</CODE> is password ID as needed by
-certain protocols. Format of <CODE><I>time</I></CODE> is <CODE>dd-mm-yyyy HH:MM:SS</CODE>.
+<DT><CODE>
+<A NAME="dsc-iface"></A> interface [-] [ "<I>mask</I>" ] [ <I>prefix</I> ] [, ...] [ { <I>option</I> ; [...] } ]</CODE><DD><P>Specifies a set of interfaces on which the protocol is activated with
+given interface-specific options. A set of interfaces specified by one
+interface option is described using an interface pattern. The
+interface pattern consists of a sequence of clauses (separted by
+commas), each clause may contain a mask, a prefix, or both of them. An
+interface matches the clause if its name matches the mask (if
+specified) and its address matches the prefix (if specified). Mask is
+specified as shell-like pattern.
+<P>An interface matches the pattern if it matches any of its
+clauses. If the clause begins with <CODE>-</CODE>, matching interfaces are
+excluded. Patterns are parsed left-to-right, thus
+<CODE>interface "eth0", -"eth*", "*";</CODE> means eth0 and all
+non-ethernets.
+<P>An interface option can be used more times with different
+interfaces-specific options, in that case for given interface
+the first matching interface option is used.
+<P>This option is allowed in Direct, OSPF and RIP protocols,
+but in OSPF protocol it is used in <CODE>area</CODE> subsection.
+<P>Default: none.
+<P>Examples:
+<P><CODE>interface "*" { type broadcast; };</CODE> - start the protocol on all interfaces with
+<CODE>type broadcast</CODE> option.
+<P><CODE>interface "eth1", "eth4", "eth5" { type pointopoint; };</CODE> - start the protocol
+on enumerated interfaces with <CODE>type pointopoint</CODE> option.
+<P><CODE>interface -192.168.1.0/24, 192.168.0.0/16;</CODE> - start the protocol on all
+interfaces that have address from 192.168.0.0/16, but not
+from 192.168.1.0/24.
+<P><CODE>interface -192.168.1.0/24, 192.168.0.0/16;</CODE> - start the protocol on all
+interfaces that have address from 192.168.0.0/16, but not
+from 192.168.1.0/24.
+<P><CODE>interface "eth*" 192.168.1.0/24;</CODE> - start the protocol on all
+ethernet interfaces that have address from 192.168.1.0/24.
 <P>
-<DT><CODE>interface "<I>mask</I>"|<I>prefix</I> [ { <I>option</I> ; [...] } ]</CODE><DD><P>Specifies which
-interfaces is this protocol active on and allows you to set options on a
-per-interface basis. Mask is specified as in shell-like patterns, thus <CODE>interface
-"*" { mode broadcast; };</CODE> will start the protocol on all interfaces with <CODE>mode
-broadcast;</CODE> option. If the first character of mask is <CODE>-</CODE>, such interfaces are
-excluded. Masks are parsed left-to-right, thus <CODE>interface "-eth*", "*";</CODE> means all but
-the ethernets. Default: none.
+<DT><CODE>
+<A NAME="dsc-pass"></A> password "<I>password</I>" [ { id <I>num</I>; generate from <I>time</I>; generate to <I>time</I>; accept from <I>time</I>; accept to <I>time</I>; } ]</CODE><DD><P>Specifies a password that can be used by the protocol. Password option can
+be used more times to specify more passwords. If more passwords are
+specified, it is a protocol-dependent decision which one is really
+used. Specifying passwords does not mean that authentication is
+enabled, authentication can be enabled by separate, protocol-dependent
+<CODE>authentication</CODE> option.
+<P>This option is allowed in OSPF and RIP protocols. BGP has also
+<CODE>password</CODE> option, but it is slightly different and described
+separately.
+<P>Default: none.
+</DL>
 <P>
+<P>Password option can contain section with some (not necessary all) password sub-options:
+<P>
+<DL>
+<DT><CODE>id <I>num</I></CODE><DD><P>ID of the password, (0-255). If it's not used, BIRD will choose
+ID based on an order of the password item in the interface. For
+example, second password item in one interface will have default
+ID 2. ID is used by some routing protocols to identify which
+password was used to authenticate protocol packets.
+<P>
+<DT><CODE>generate from "<I>time</I>"</CODE><DD><P>The start time of the usage of the password for packet signing.
+The format of <CODE><I>time</I></CODE> is <CODE>dd-mm-yyyy HH:MM:SS</CODE>.
+<P>
+<DT><CODE>generate to "<I>time</I>"</CODE><DD><P>The last time of the usage of the password for packet signing.
+<P>
+<DT><CODE>accept from "<I>time</I>"</CODE><DD><P>The start time of the usage of the password for packet verification.
+<P>
+<DT><CODE>accept to "<I>time</I>"</CODE><DD><P>The last time of the usage of the password for packet verification.
 </DL>
 <P>
 <HR>

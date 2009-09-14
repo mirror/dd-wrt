@@ -2,7 +2,7 @@
 #
 #   sgmltools.in
 #
-#   $Id: sgml2html,v 1.2 2003/04/06 19:35:50 mj Exp $
+#   $Id$
 #
 #   SGML-Tools driver. Calls all other SGML-Tools components, contains
 #   configuration information, etcetera.

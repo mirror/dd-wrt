@@ -269,6 +269,7 @@ proto_init(struct proto_config *c)
  * @old: old configuration or %NULL if it's boot time config
  * @force_reconfig: force restart of all protocols (used for example
  * when the router ID changes)
+ * @type: type of reconfiguration (RECONFIG_SOFT or RECONFIG_HARD)
  *
  * Scan differences between @old and @new configuration and adjust all
  * protocol instances to conform to the new configuration.
@@ -281,15 +282,17 @@ proto_init(struct proto_config *c)
  * When a protocol exists in the old configuration, but it doesn't in the
  * new one, it's shut down and deleted after the shutdown completes.
  *
- * When a protocol exists in both configurations, the core decides whether
- * it's possible to reconfigure it dynamically (it checks all the core properties
- * of the protocol and if they match, it asks the reconfigure() hook of the
- * protocol to see if the protocol is able to switch to the new configuration).
- * If it isn't possible, the protocol is shut down and a new instance is started
- * with the new configuration after the shutdown is completed.
+ * When a protocol exists in both configurations, the core decides
+ * whether it's possible to reconfigure it dynamically - it checks all
+ * the core properties of the protocol (changes in filters are ignored
+ * if type is RECONFIG_SOFT) and if they match, it asks the
+ * reconfigure() hook of the protocol to see if the protocol is able
+ * to switch to the new configuration.  If it isn't possible, the
+ * protocol is shut down and a new instance is started with the new
+ * configuration after the shutdown is completed.
  */
 void
-protos_commit(struct config *new, struct config *old, int force_reconfig)
+protos_commit(struct config *new, struct config *old, int force_reconfig, int type)
 {
   struct proto_config *oc, *nc;
   struct proto *p, *n;
@@ -310,8 +313,8 @@ protos_commit(struct config *new, struct config *old, int force_reconfig)
 		  && nc->preference == oc->preference
 		  && nc->disabled == oc->disabled
 		  && nc->table->table == oc->table->table
-		  && filter_same(nc->in_filter, oc->in_filter)
-		  && filter_same(nc->out_filter, oc->out_filter)
+		  && ((type == RECONFIG_SOFT) || filter_same(nc->in_filter, oc->in_filter))
+		  && ((type == RECONFIG_SOFT) || filter_same(nc->out_filter, oc->out_filter))
 		  && p->proto_state != PS_DOWN)
 		{
 		  /* Generic attributes match, try converting them and then ask the protocol */
@@ -512,6 +515,11 @@ static void
 proto_fell_down(struct proto *p)
 {
   DBG("Protocol %s down\n", p->name);
+
+  if (p->stats.imp_routes != 0)
+    log(L_ERR "Protocol %s is down but still has %d routes", p->name, p->stats.imp_routes);
+
+  bzero(&p->stats, sizeof(struct proto_stats));
   rt_unlock_table(p->table);
   proto_rethink_goal(p);
 }
@@ -521,9 +529,10 @@ proto_feed_more(void *P)
 {
   struct proto *p = P;
 
-  DBG("Feeding protocol %s continued\n", p->name);
   if (p->core_state != FS_FEEDING)
     return;
+
+  DBG("Feeding protocol %s continued\n", p->name);
   if (rt_feed_baby(p))
     {
       p->core_state = FS_HAPPY;
@@ -542,10 +551,37 @@ proto_feed(void *P)
 {
   struct proto *p = P;
 
+  if (p->core_state != FS_FEEDING)
+    return;
+
   DBG("Feeding protocol %s\n", p->name);
   proto_add_announce_hook(p, p->table);
   if_feed_baby(p);
   proto_feed_more(P);
+}
+
+static void
+proto_schedule_flush(struct proto *p)
+{
+  /* Need to abort feeding */
+  if (p->core_state == FS_FEEDING)
+    rt_feed_baby_abort(p);
+
+  DBG("%s: Scheduling flush\n", p->name);
+  p->core_state = FS_FLUSHING;
+  proto_relink(p);
+  proto_flush_hooks(p);
+  ev_schedule(proto_flush_event);
+}
+
+static void
+proto_schedule_feed(struct proto *p)
+{
+  DBG("%s: Scheduling meal\n", p->name);
+  p->core_state = FS_FEEDING;
+  proto_relink(p);
+  p->attn->hook = proto_feed;
+  ev_schedule(p->attn);
 }
 
 /**
@@ -558,7 +594,9 @@ proto_feed(void *P)
  * it should immediately notify the core about the change by calling
  * proto_notify_state() which will write the new state to the &proto
  * structure and take all the actions necessary to adapt to the new
- * state.
+ * state. State change to PS_DOWN immediately frees resources of protocol
+ * and might execute start callback of protocol; therefore,
+ * it should be used at tail positions of protocol callbacks.
  */
 void
 proto_notify_state(struct proto *p, unsigned ps)
@@ -570,22 +608,22 @@ proto_notify_state(struct proto *p, unsigned ps)
   if (ops == ps)
     return;
 
+  p->proto_state = ps;
+
   switch (ps)
     {
     case PS_DOWN:
+      if ((cs = FS_FEEDING) || (cs == FS_HAPPY))
+	proto_schedule_flush(p);
+
+      neigh_prune(); // FIXME convert neighbors to resource?
+      rfree(p->pool);
+      p->pool = NULL;
+
       if (cs == FS_HUNGRY)		/* Shutdown finished */
 	{
-	  p->proto_state = ps;
 	  proto_fell_down(p);
 	  return;			/* The protocol might have ceased to exist */
-	}
-      else if (cs == FS_FLUSHING)	/* Still flushing... */
-	;
-      else
-	{
-	  if (cs == FS_FEEDING)		/* Need to abort feeding */
-	    rt_feed_baby_abort(p);
-	  goto schedule_flush;		/* Need to start flushing */
 	}
       break;
     case PS_START:
@@ -595,27 +633,15 @@ proto_notify_state(struct proto *p, unsigned ps)
     case PS_UP:
       ASSERT(ops == PS_DOWN || ops == PS_START);
       ASSERT(cs == FS_HUNGRY);
-      DBG("%s: Scheduling meal\n", p->name);
-      cs = FS_FEEDING;
-      p->attn->hook = proto_feed;
-      ev_schedule(p->attn);
+      proto_schedule_feed(p);
       break;
     case PS_STOP:
-      if (ops != PS_DOWN)
-	{
-	schedule_flush:
-	  DBG("%s: Scheduling flush\n", p->name);
-	  proto_flush_hooks(p);
-	  cs = FS_FLUSHING;
-	  ev_schedule(proto_flush_event);
-	}
+      if ((cs = FS_FEEDING) || (cs == FS_HAPPY))
+	proto_schedule_flush(p);
       break;
     default:
       bug("Invalid state transition for %s from %s/%s to */%s", p->name, c_states[cs], p_states[ops], p_states[ps]);
     }
-  p->proto_state = ps;
-  p->core_state = cs;
-  proto_relink(p);
 }
 
 static void
@@ -624,15 +650,13 @@ proto_flush_all(void *unused UNUSED)
   struct proto *p;
 
   rt_prune_all();
-  neigh_prune();
   while ((p = HEAD(flush_proto_list))->n.next)
     {
       DBG("Flushing protocol %s\n", p->name);
-      rfree(p->pool);
-      p->pool = NULL;
       p->core_state = FS_HUNGRY;
       proto_relink(p);
-      proto_fell_down(p);
+      if (p->proto_state == PS_DOWN)
+	proto_fell_down(p);
     }
 }
 
@@ -677,9 +701,30 @@ proto_do_show(struct proto *p, int verbose)
 	  buf);
   if (verbose)
     {
-      cli_msg(-1006, "\tPreference: %d", p->preference);
-      cli_msg(-1006, "\tInput filter: %s", filter_name(p->in_filter));
-      cli_msg(-1006, "\tOutput filter: %s", filter_name(p->out_filter));
+      cli_msg(-1006, "  Preference:     %d", p->preference);
+      cli_msg(-1006, "  Input filter:   %s", filter_name(p->in_filter));
+      cli_msg(-1006, "  Output filter:  %s", filter_name(p->out_filter));
+
+      if (p->proto_state != PS_DOWN)
+	{
+	  cli_msg(-1006, "  Routes:         %u imported, %u exported, %u preferred", 
+		  p->stats.imp_routes, p->stats.exp_routes, p->stats.pref_routes);
+	  cli_msg(-1006, "  Route change stats:     received   rejected   filtered    ignored   accepted");
+	  cli_msg(-1006, "    Import updates:     %10u %10u %10u %10u %10u",
+		  p->stats.imp_updates_received, p->stats.imp_updates_invalid,
+		  p->stats.imp_updates_filtered, p->stats.imp_updates_ignored,
+		  p->stats.imp_updates_accepted);
+	  cli_msg(-1006, "    Import withdraws:   %10u %10u        --- %10u %10u",
+		  p->stats.imp_withdraws_received, p->stats.imp_withdraws_invalid,
+		  p->stats.imp_withdraws_ignored, p->stats.imp_withdraws_accepted);
+	  cli_msg(-1006, "    Export updates:     %10u %10u %10u        --- %10u",
+		  p->stats.exp_updates_received, p->stats.exp_updates_rejected,
+		  p->stats.exp_updates_filtered, p->stats.exp_updates_accepted);
+	  cli_msg(-1006, "    Export withdraws:   %10u        ---        ---        --- %10u",
+		  p->stats.exp_withdraws_received, p->stats.exp_withdraws_accepted);
+	}
+
+      cli_msg(-1006, "");
     }
 }
 

@@ -32,4 +32,24 @@ xmalloc(unsigned size)
   die("Unable to allocate %d bytes of memory", size);
 }
 
+/**
+ * xrealloc - realloc with checking
+ * @ptr: original memory block
+ * @size: block size
+ *
+ * This function is equivalent to realloc() except that in case of
+ * failure it calls die() to quit the program instead of returning
+ * a %NULL pointer.
+ *
+ * Wherever possible, please use the memory resources instead.
+ */
+void *
+xrealloc(void *ptr, unsigned size)
+{
+  void *p = realloc(ptr, size);
+  if (p)
+    return p;
+  die("Unable to allocate %d bytes of memory", size);
+}
+
 #endif

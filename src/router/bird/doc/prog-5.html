@@ -57,6 +57,41 @@ and <B>bgp_encode_attrs()</B> which does the converse. Both functions are built 
 Unknown transitive attributes are attached to the route as <I>EAF_TYPE_OPAQUE</I> byte streams.
 <P>
 <P><HR><H3>Function</H3>
+<P><I>int</I>
+<B>bgp_open</B>
+(<I>struct bgp_proto *</I> <B>p</B>) --     open a BGP instance
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct bgp_proto *</I> <B>p</B><DD><P>BGP instance
+</DL>
+<H3>Description</H3>
+<P>This function allocates and configures shared BGP resources.
+Should be called as the last step during initialization
+(when lock is acquired and neighbor is ready).
+When error, state changed to PS_DOWN, -1 is returned and caller
+should return immediately.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>bgp_close</B>
+(<I>struct bgp_proto *</I> <B>p</B>, <I>int</I> <B>apply_md5</B>) --     close a BGP instance
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct bgp_proto *</I> <B>p</B><DD><P>BGP instance
+<DT><I>int</I> <B>apply_md5</B><DD><P>0 to disable unsetting MD5 auth
+</DL>
+<H3>Description</H3>
+<P>This function frees and deconfigures shared BGP resources.
+<B>apply_md5</B> is set to 0 when bgp_close is called as a cleanup
+from failed <B>bgp_open()</B>.
+
+
+<HR><H3>Function</H3>
 <P><I>void</I>
 <B>bgp_start_timer</B>
 (<I>timer *</I> <B>t</B>, <I>int</I> <B>value</B>) --     start a BGP timer
@@ -86,10 +121,23 @@ it for all BGP timers.
 <H3>Description</H3>
 <P>This function takes a connection described by the <I>bgp_conn</I> structure,
 closes its socket and frees all resources associated with it.
-<P>If the connection is being closed due to a protocol error, adjust
-the connection restart timer as well according to the error recovery
-policy set in the configuration.
-<P>If the connection was marked as primary, it shuts down the protocol as well.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>bgp_update_startup_delay</B>
+(<I>struct bgp_proto *</I> <B>p</B>) --     update a startup delay
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct bgp_proto *</I> <B>p</B><DD><P>BGP instance
+</DL>
+<H3>Description</H3>
+<P>This function updates a startup delay that is used to postpone next BGP connect.
+It also handles disable_after_error and might stop BGP instance when error
+happened and disable_after_error is on.
+<P>It should be called when BGP protocol error happened.
 
 
 <HR><H3>Function</H3>
@@ -149,6 +197,24 @@ closes the connection.
 
 
 <HR><H3>Function</H3>
+<P><I>void</I>
+<B>bgp_store_error</B>
+(<I>struct bgp_proto *</I> <B>p</B>, <I>struct bgp_conn *</I> <B>c</B>, <I>u8</I> <B>class</B>, <I>u32</I> <B>code</B>) --     store last error for status report
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct bgp_proto *</I> <B>p</B><DD><P>BGP instance
+<DT><I>struct bgp_conn *</I> <B>c</B><DD><P>connection
+<DT><I>u8</I> <B>class</B><DD><P>error class (BE_xxx constants)
+<DT><I>u32</I> <B>code</B><DD><P>error code (class specific)
+</DL>
+<H3>Description</H3>
+<P><B>bgp_store_error()</B> decides whether given error is interesting enough
+and store that error to last_error variables of <B>p</B>
+
+
+<HR><H3>Function</H3>
 <P><I>int</I>
 <B>bgp_fire_tx</B>
 (<I>struct bgp_conn *</I> <B>conn</B>) --  transmit packets
@@ -179,6 +245,23 @@ and body and sending it to the connection.
 </DL>
 <H3>Description</H3>
 <P>Schedule a packet of type <B>type</B> to be sent as soon as possible.
+
+
+<HR><H3>Function</H3>
+<P><I>const byte *</I>
+<B>bgp_error_dsc</B>
+(<I>byte *</I> <B>buff</B>, <I>unsigned</I> <B>code</B>, <I>unsigned</I> <B>subcode</B>) --  return BGP error description
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>byte *</I> <B>buff</B><DD><P>temporary buffer
+<DT><I>unsigned</I> <B>code</B><DD><P>BGP error code
+<DT><I>unsigned</I> <B>subcode</B><DD><P>BGP error subcode
+</DL>
+<H3>Description</H3>
+<P><B>bgp_error_dsc()</B> returns error description for BGP errors
+which might be static string or given temporary buffer.
 
 
 <HR><H3>Function</H3>
@@ -219,11 +302,12 @@ checks their headers and framing and passes complete packets to
 <HR><H3>Function</H3>
 <P><I>unsigned int</I>
 <B>bgp_encode_attrs</B>
-(<I>byte *</I> <B>w</B>, <I>ea_list *</I> <B>attrs</B>, <I>int</I> <B>remains</B>) --  encode BGP attributes
+(<I>struct bgp_proto *</I> <B>p</B>, <I>byte *</I> <B>w</B>, <I>ea_list *</I> <B>attrs</B>, <I>int</I> <B>remains</B>) --  encode BGP attributes
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
+<DT><I>struct bgp_proto *</I> <B>p</B><DD><P>BGP instance
 <DT><I>byte *</I> <B>w</B><DD><P>buffer
 <DT><I>ea_list *</I> <B>attrs</B><DD><P>a list of extended attributes
 <DT><I>int</I> <B>remains</B><DD><P>remaining space in the buffer
@@ -232,7 +316,7 @@ checks their headers and framing and passes complete packets to
 <P>The <B>bgp_encode_attrs()</B> function takes a list of extended attributes
 and converts it to its BGP representation (a part of an Update message).
 <H3>Result</H3>
-<P>Length of the attribute block generated.
+<P>Length of the attribute block generated or -1 if not enough space.
 
 
 <HR><H3>Function</H3>
@@ -639,12 +723,13 @@ calculation is necessary. This is described in 13.2 of RFC 2328.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>ospf_dbdes_send</B>
-(<I>struct ospf_neighbor *</I> <B>n</B>) --  transmit database description packet
+(<I>struct ospf_neighbor *</I> <B>n</B>, <I>int</I> <B>next</B>) --  transmit database description packet
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct ospf_neighbor *</I> <B>n</B><DD><P>neighbor
+<DT><I>int</I> <B>next</B><DD><P>whether to send a next packet in a sequence (1) or to retransmit the old one (0)
 </DL>
 <H3>Description</H3>
 <P>Sending of a database description packet is described in 10.6 of RFC 2328.

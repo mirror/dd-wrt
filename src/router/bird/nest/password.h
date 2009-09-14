@@ -22,7 +22,7 @@ struct password_item {
 
 extern struct password_item *last_password_item;
 
-struct password_item *password_find(list *);
+struct password_item *password_find(list *l, int first_fit);
 void password_cpy(char *dst, char *src, int size);
 
 #endif

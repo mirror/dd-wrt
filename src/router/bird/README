@@ -1,8 +1,8 @@
-		       BIRD Internet Routing Daemon 1.0.6
+		       BIRD Internet Routing Daemon
 
-		(c) 1998--2004  Martin Mares <mj@ucw.cz>
+		(c) 1998--2008  Martin Mares <mj@ucw.cz>
                 (c) 1998--2000  Pavel Machek <pavel@ucw.cz>
-                (c) 1998--2004  Ondrej Filip <feela@network.cz>
+                (c) 1998--2008  Ondrej Filip <feela@network.cz>
 
 ================================================================================
 
@@ -78,7 +78,6 @@ What do we support:
 What is missing:
 
 	o  OSPF for IPv6
-	o  OSPF multiple areas and virtual links
 	o  See the TODO list
 
 Good Luck and enjoy the BIRD :)

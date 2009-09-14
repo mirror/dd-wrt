@@ -84,5 +84,6 @@ void s_insert_node(snode *, snode *);
 snode *s_get(siterator *);
 void s_put(siterator *, snode *n);
 static inline void s_init(siterator *i, slist *l) { s_put(i, SHEAD(*l)); }
+static inline int s_is_used(siterator *i) { return (i->prev != NULL); }
 
 #endif

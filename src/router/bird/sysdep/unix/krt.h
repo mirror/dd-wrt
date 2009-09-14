@@ -86,10 +86,18 @@ void krt_got_route_async(struct krt_proto *p, struct rte *e, int new);
 
 extern struct protocol proto_unix_iface;
 
+struct kif_primary_item {
+  node n;
+  byte *pattern;
+  ip_addr prefix;
+  int pxlen;
+};
+
 struct kif_config {
   struct proto_config c;
   struct krt_if_params iface;
   int scan_time;		/* How often we re-scan interfaces */
+  list primary;			/* Preferences for primary addresses */
 };
 
 struct kif_proto {

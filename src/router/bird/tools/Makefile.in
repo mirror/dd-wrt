@@ -11,17 +11,29 @@ daemon: $(exedir)/bird
 
 client: $(exedir)/birdc
 
-subdir depend: .dir-stamp
+bird-dep := $(addsuffix /all.o, $(static-dirs)) conf/all.o lib/birdlib.a
+
+$(bird-dep): sysdep/paths.h .dep-stamp subdir
+
+birdc-dep := client/all.o lib/birdlib.a
+
+$(birdc-dep): sysdep/paths.h .dep-stamp subdir
+
+depend: sysdep/paths.h .dir-stamp
 	set -e ; for a in $(dynamic-dirs) ; do $(MAKE) -C $$a $@ ; done
 	set -e ; for a in $(static-dirs) $(client-dirs) ; do $(MAKE) -C $$a -f $(srcdir_abs)/$$a/Makefile $@ ; done
 
-$(exedir)/bird: $(addsuffix /all.o, $(static-dirs)) conf/all.o lib/birdlib.a
+subdir: sysdep/paths.h .dir-stamp .dep-stamp
+	set -e ; for a in $(dynamic-dirs) ; do $(MAKE) -C $$a $@ ; done
+	set -e ; for a in $(static-dirs) $(client-dirs) ; do $(MAKE) -C $$a -f $(srcdir_abs)/$$a/Makefile $@ ; done
+
+$(exedir)/bird: $(bird-dep)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-$(exedir)/birdc: client/all.o lib/birdlib.a
+$(exedir)/birdc: $(birdc-dep)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) $(CLIENT_LIBS)
 
-.dir-stamp:
+.dir-stamp: sysdep/paths.h
 	mkdir -p $(static-dirs) $(client-dirs) $(doc-dirs)
 	touch .dir-stamp
 
@@ -43,24 +55,25 @@ tags:
 	cd $(srcdir) ; etags -lc `find $(static-dirs) $(addprefix $(objdir)/,$(dynamic-dirs)) $(client-dirs) -name *.[chY]`
 
 install: all
-	$(INSTALL) -d $(sbindir) $(sysconfdir) $(localstatedir)
-	$(INSTALL_PROGRAM) -s $(exedir)/bird $(sbindir)/
+	$(INSTALL) -d $(DESTDIR)/$(sbindir) $(DESTDIR)/$(sysconfdir) $(DESTDIR)/$(localstatedir)
+	$(INSTALL_PROGRAM) -s $(exedir)/bird $(DESTDIR)/$(sbindir)/bird@SUFFIX6@
 	if test -n "@CLIENT@" ; then								\
-		$(INSTALL_PROGRAM) -s $(exedir)/birdc $(sbindir)/ ;				\
+		$(INSTALL_PROGRAM) -s $(exedir)/birdc $(DESTDIR)/$(sbindir)/birdc@SUFFIX6@ ;				\
 	fi
-	if ! test -f $(sysconfdir)/bird.conf ; then						\
-		$(INSTALL_DATA) $(srcdir)/doc/bird.conf.example $(sysconfdir)/bird.conf ;	\
+	if ! test -f $(DESTDIR)/$(sysconfdir)/bird@SUFFIX6@.conf ; then						\
+		$(INSTALL_DATA) $(srcdir)/doc/bird.conf.example $(DESTDIR)/$(sysconfdir)/bird@SUFFIX6@.conf ;	\
 	else											\
-		echo "Not overwriting old bird.conf" ;						\
+		echo "Not overwriting old bird@SUFFIX@.conf" ;						\
 	fi
 
 install-docs:
-	$(INSTALL) -d $(docdir)
-	$(INSTALL_DATA) $(srcdir)/doc/{bird,prog}{,-*}.html $(docdir)/
+	$(INSTALL) -d $(DESTDIR)/$(docdir)
+	$(INSTALL_DATA) $(srcdir)/doc/{bird,prog}{,-*}.html $(DESTDIR)/$(docdir)/
 
 clean:
 	find . -name "*.[oa]" -o -name core -o -name depend -o -name "*.html" | xargs rm -f
-	rm -f $(exedir)/bird $(exedir)/birdc $(exedir)/bird.ctl .dep-stamp
+	rm -f conf/cf-lex.c conf/cf-parse.* conf/commands.h conf/keywords.h
+	rm -f $(exedir)/bird $(exedir)/birdc $(exedir)/bird.ctl $(exedir)/bird6.ctl .dep-stamp
 
 distclean: clean
 	rm -f config.* configure sysdep/autoconf.h sysdep/paths.h Makefile Rules
