@@ -11,9 +11,6 @@
 #define _BIRD_OSPF_NEIGHBOR_H_
 
 struct ospf_neighbor *ospf_neighbor_new(struct ospf_iface *ifa);
-void neigh_chstate(struct ospf_neighbor *n, u8 state);
-struct ospf_neighbor *electbdr(list nl);
-struct ospf_neighbor *electdr(list nl);
 void ospf_neigh_sm(struct ospf_neighbor *n, int event);
 void bdr_election(struct ospf_iface *ifa);
 struct ospf_neighbor *find_neigh(struct ospf_iface *ifa, u32 rid);

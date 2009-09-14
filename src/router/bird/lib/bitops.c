@@ -45,3 +45,26 @@ u32_masklen(u32 x)
   if (x & 0xaaaaaaaa) l++;
   return l;
 }
+
+/**
+ * u32_log2 - compute a binary logarithm.
+ * @v: number
+ *
+ * This function computes a integral part of binary logarithm of given
+ * integer @v and returns it. The computed value is also an index of the
+ * most significant non-zero bit position.
+ */
+
+u32
+u32_log2(u32 v)
+{
+  /* The code from http://www-graphics.stanford.edu/~seander/bithacks.html */
+  u32 r, shift;
+  r =     (v > 0xFFFF) << 4; v >>= r;
+  shift = (v > 0xFF  ) << 3; v >>= shift; r |= shift;
+  shift = (v > 0xF   ) << 2; v >>= shift; r |= shift;
+  shift = (v > 0x3   ) << 1; v >>= shift; r |= shift;
+  r |= (v >> 1);
+  return r;
+}
+

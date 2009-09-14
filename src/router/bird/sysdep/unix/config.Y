@@ -13,7 +13,7 @@ CF_HDR
 
 CF_DECLS
 
-CF_KEYWORDS(LOG, SYSLOG, ALL, DEBUG, TRACE, INFO, REMOTE, WARNING, ERROR, AUTH, FATAL, BUG, STDERR)
+CF_KEYWORDS(LOG, SYSLOG, ALL, DEBUG, TRACE, INFO, REMOTE, WARNING, ERROR, AUTH, FATAL, BUG, STDERR, SOFT)
 
 %type <i> log_mask log_mask_list log_cat
 %type <g> log_file
@@ -65,8 +65,13 @@ log_cat:
 
 /* Unix specific commands */
 
+CF_CLI_HELP(CONFIGURE, [soft] [\"<file>\"], [[Reload configuration]])
+
 CF_CLI(CONFIGURE, cfg_name, [\"<file>\"], [[Reload configuration]])
-{ cmd_reconfig($2); } ;
+{ cmd_reconfig($2, RECONFIG_HARD); } ;
+
+CF_CLI(CONFIGURE SOFT, cfg_name, [\"<file>\"], [[Reload configuration and ignore changes in filters]])
+{ cmd_reconfig($3, RECONFIG_SOFT); } ;
 
 CF_CLI(DOWN,,, [[Shut the daemon down]])
 { cli_msg(7, "Shutdown requested"); order_shutdown(); } ;

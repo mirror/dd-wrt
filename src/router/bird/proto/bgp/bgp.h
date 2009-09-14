@@ -16,7 +16,7 @@ struct eattr;
 
 struct bgp_config {
   struct proto_config c;
-  unsigned int local_as, remote_as;
+  u32 local_as, remote_as;
   ip_addr remote_ip;
   int multihop;				/* Number of hops if multihop */
   ip_addr multihop_via;			/* Multihop: address to route to */
@@ -25,6 +25,13 @@ struct bgp_config {
   int compare_path_lengths;		/* Use path lengths when selecting best route */
   u32 default_local_pref;		/* Default value for LOCAL_PREF attribute */
   u32 default_med;			/* Default value for MULTI_EXIT_DISC attribute */
+  int capabilities;			/* Enable capability handshake [RFC3392] */
+  int enable_as4;			/* Enable local support for 4B AS numbers [RFC4893] */
+  u32 rr_cluster_id;			/* Route reflector cluster ID, if different from local ID */
+  int rr_client;			/* Whether neighbor is RR client of me */
+  int rs_client;			/* Whether neighbor is RS client of me */
+  int advertise_ipv4;			/* Whether we should add IPv4 capability advertisement to OPEN message */
+  u32 route_limit;			/* Number of routes that may be imported, 0 means disable limit */
   unsigned connect_retry_time;
   unsigned hold_time, initial_hold_time;
   unsigned keepalive_time;
@@ -33,6 +40,7 @@ struct bgp_config {
   unsigned error_delay_time_min;	/* Time to wait after an error is detected */
   unsigned error_delay_time_max;
   unsigned disable_after_error;		/* Disable the protocol when error is detected */
+  char *password;			/* Password used for MD5 authentication */
 };
 
 struct bgp_conn {
@@ -42,21 +50,29 @@ struct bgp_conn {
   struct timer *connect_retry_timer;
   struct timer *hold_timer;
   struct timer *keepalive_timer;
+  struct event *tx_ev;
   int packets_to_send;			/* Bitmap of packet types to be sent */
   int notify_code, notify_subcode, notify_size;
   byte *notify_data;
-  int error_flag;			/* Error state, ignore all input */
-  int primary;				/* This connection is primary */
+  u32 advertised_as;			/* Temporary value for AS number received */
+  int start_state;			/* protocol start_state snapshot when connection established */
+  int want_as4_support;			/* Connection tries to establish AS4 session */
+  int peer_as4_support;			/* Peer supports 4B AS numbers [RFC4893] */
   unsigned hold_time, keepalive_time;	/* Times calculated from my and neighbor's requirements */
 };
 
 struct bgp_proto {
   struct proto p;
   struct bgp_config *cf;		/* Shortcut to BGP configuration */
-  unsigned local_as, remote_as;
+  u32 local_as, remote_as;
+  int start_state;			/* Substates that partitions BS_START */
   int is_internal;			/* Internal BGP connection (local_as == remote_as) */
+  int as4_session;			/* Session uses 4B AS numbers in AS_PATH (both sides support it) */
   u32 local_id;				/* BGP identifier of this router */
   u32 remote_id;			/* BGP identifier of the neighbor */
+  u32 rr_cluster_id;			/* Route reflector cluster ID */
+  int rr_client;			/* Whether neighbor is RR client of me */
+  int rs_client;			/* Whether neighbor is RS client of me */
   struct bgp_conn *conn;		/* Connection we have established */
   struct bgp_conn outgoing_conn;	/* Outgoing connection we're working with */
   struct bgp_conn incoming_conn;	/* Incoming connection we have neither accepted nor rejected yet */
@@ -64,13 +80,19 @@ struct bgp_proto {
   ip_addr next_hop;			/* Either the peer or multihop_via */
   struct neighbor *neigh;		/* Neighbor entry corresponding to next_hop */
   ip_addr local_addr;			/* Address of the local end of the link to next_hop */
+  ip_addr source_addr;			/* Address used as advertised next hop, usually local_addr */
+  struct event *event;			/* Event for respawning and shutting process */
+  struct timer *startup_timer;		/* Timer used to delay protocol startup due to previous errors (startup_delay) */
   struct bgp_bucket **bucket_hash;	/* Hash table of attribute buckets */
   unsigned int hash_size, hash_count, hash_limit;
   struct fib prefix_fib;		/* Prefixes to be sent */
   list bucket_queue;			/* Queue of buckets to send */
   struct bgp_bucket *withdraw_bucket;	/* Withdrawn routes */
   unsigned startup_delay;		/* Time to delay protocol startup by due to errors */
-  bird_clock_t last_connect;		/* Time of last connect attempt */
+  bird_clock_t last_proto_error;	/* Time of last error that leads to protocol stop */
+  u8 last_error_class; 			/* Error class of last error */
+  u32 last_error_code;			/* Error code of last error. BGP protocol errors
+					   are encoded as (bgp_err_code << 16 | bgp_err_subcode) */
 #ifdef IPV6
   byte *mp_reach_start, *mp_unreach_start; /* Multiprotocol BGP attribute notes */
   unsigned mp_reach_len, mp_unreach_len;
@@ -100,10 +122,22 @@ struct bgp_bucket {
 
 extern struct linpool *bgp_linpool;
 
+extern int bgp_as4_support;
+
+
 void bgp_start_timer(struct timer *t, int value);
 void bgp_check(struct bgp_config *c);
 void bgp_error(struct bgp_conn *c, unsigned code, unsigned subcode, byte *data, int len);
 void bgp_close_conn(struct bgp_conn *c);
+void bgp_update_startup_delay(struct bgp_proto *p);
+void bgp_conn_enter_established_state(struct bgp_conn *conn);
+void bgp_conn_enter_close_state(struct bgp_conn *conn);
+void bgp_conn_enter_idle_state(struct bgp_conn *conn);
+void bgp_store_error(struct bgp_proto *p, struct bgp_conn *c, u8 class, u32 code);
+int bgp_apply_limits(struct bgp_proto *p);
+void bgp_stop(struct bgp_proto *p, unsigned subcode);
+
+
 
 #ifdef LOCAL_DEBUG
 #define BGP_FORCE_DEBUG 1
@@ -113,25 +147,46 @@ void bgp_close_conn(struct bgp_conn *c);
 #define BGP_TRACE(flags, msg, args...) do { if ((p->p.debug & flags) || BGP_FORCE_DEBUG) \
 	log(L_TRACE "%s: " msg, p->p.name , ## args ); } while(0)
 
+#define BGP_TRACE_RL(rl, flags, msg, args...) do { if ((p->p.debug & flags) || BGP_FORCE_DEBUG) \
+	log_rl(rl, L_TRACE "%s: " msg, p->p.name , ## args ); } while(0)
+
+
 /* attrs.c */
 
-byte *bgp_attach_attr(struct ea_list **to, struct linpool *, unsigned attr, unsigned val);
+/* Hack: although BA_NEXT_HOP attribute has type EAF_TYPE_IP_ADDRESS, in IPv6
+ * we store two addesses in it - a global address and a link local address.
+ */
+#ifdef IPV6
+#define NEXT_HOP_LENGTH (2*sizeof(ip_addr))
+static inline void set_next_hop(byte *b, ip_addr addr) { ((ip_addr *) b)[0] = addr; ((ip_addr *) b)[1] = IPA_NONE; }
+#else
+#define NEXT_HOP_LENGTH sizeof(ip_addr)
+static inline void set_next_hop(byte *b, ip_addr addr) { ((ip_addr *) b)[0] = addr; }
+#endif
+
+void bgp_attach_attr(struct ea_list **to, struct linpool *pool, unsigned attr, uintptr_t val);
+byte *bgp_attach_attr_wa(struct ea_list **to, struct linpool *pool, unsigned attr, unsigned len);
 struct rta *bgp_decode_attrs(struct bgp_conn *conn, byte *a, unsigned int len, struct linpool *pool, int mandatory);
-int bgp_get_attr(struct eattr *e, byte *buf);
+int bgp_get_attr(struct eattr *e, byte *buf, int buflen);
 int bgp_rte_better(struct rte *, struct rte *);
 void bgp_rt_notify(struct proto *, struct network *, struct rte *, struct rte *, struct ea_list *);
 int bgp_import_control(struct proto *, struct rte **, struct ea_list **, struct linpool *);
 void bgp_attr_init(struct bgp_proto *);
-unsigned int bgp_encode_attrs(byte *w, struct ea_list *attrs, int remains);
+unsigned int bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains);
 void bgp_free_bucket(struct bgp_proto *p, struct bgp_bucket *buck);
 void bgp_get_route_info(struct rte *, byte *buf, struct ea_list *attrs);
+
+inline static void bgp_attach_attr_ip(struct ea_list **to, struct linpool *pool, unsigned attr, ip_addr a)
+{ *(ip_addr *) bgp_attach_attr_wa(to, pool, attr, sizeof(ip_addr)) = a; }
 
 /* packets.c */
 
 void bgp_schedule_packet(struct bgp_conn *conn, int type);
+void bgp_kick_tx(void *vconn);
 void bgp_tx(struct birdsock *sk);
 int bgp_rx(struct birdsock *sk, int size);
-void bgp_log_error(struct bgp_proto *p, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len);
+const byte * bgp_error_dsc(byte *buff, unsigned code, unsigned subcode);
+void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len);
 
 /* Packet types */
 
@@ -165,8 +220,10 @@ void bgp_log_error(struct bgp_proto *p, char *msg, unsigned code, unsigned subco
 #define BA_MP_REACH_NLRI	0x0e	/* [RFC2283] */
 #define BA_MP_UNREACH_NLRI	0x0f
 #define BA_EXTENDED_COMM	0x10	/* draft-ramachandra-bgp-ext-communities */
+#define BA_AS4_PATH             0x11    /* [RFC4893] */
+#define BA_AS4_AGGREGATOR       0x12
 
-/* BGP states */
+/* BGP connection states */
 
 #define BS_IDLE			0
 #define BS_CONNECT		1	/* Attempting to connect */
@@ -174,6 +231,42 @@ void bgp_log_error(struct bgp_proto *p, char *msg, unsigned code, unsigned subco
 #define BS_OPENSENT		3
 #define BS_OPENCONFIRM		4
 #define BS_ESTABLISHED		5
+#define BS_CLOSE		6	/* Used during transition to BS_IDLE */
+
+/* BGP start states
+ * 
+ * Used in PS_START for fine-grained specification of starting state.
+ *
+ * When BGP protocol is started by core, it goes to BSS_PREPARE. When BGP protocol
+ * done what is neccessary to start itself (like acquiring the lock), it goes to BSS_CONNECT.
+ * When some connection attempt failed because of option or capability error, it goes to
+ * BSS_CONNECT_NOCAP.
+ */
+
+#define BSS_PREPARE		0	/* Used before ordinary BGP started, i. e. waiting for lock */
+#define BSS_DELAY		1	/* Startup delay due to previous errors */
+#define BSS_CONNECT		2	/* Ordinary BGP connecting */
+#define BSS_CONNECT_NOCAP	3	/* Legacy BGP connecting (without capabilities) */
+
+/* Error classes */
+
+#define BE_NONE			0
+#define BE_MISC			1	/* Miscellaneous error */
+#define BE_SOCKET		2	/* Socket error */
+#define BE_BGP_RX		3	/* BGP protocol error notification received */
+#define BE_BGP_TX		4	/* BGP protocol error notification sent */
+#define BE_AUTO_DOWN		5	/* Automatic shutdown */
+#define BE_MAN_DOWN		6	/* Manual shutdown */
+
+/* Misc error codes */
+
+#define BEM_NEIGHBOR_LOST	1
+#define BEM_INVALID_NEXT_HOP	2
+#define BEM_INVALID_MD5		3	/* MD5 authentication kernel request failed (possibly not supported) */
+
+/* Automatic shutdown error codes */
+
+#define BEA_ROUTE_LIMIT_EXCEEDED 1
 
 /* Well-known communities */
 
@@ -189,6 +282,7 @@ void bgp_log_error(struct bgp_proto *p, char *msg, unsigned code, unsigned subco
 
 /* Address families */
 
+#define BGP_AF_IPV4		1
 #define BGP_AF_IPV6		2
 
 #endif

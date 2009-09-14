@@ -268,7 +268,7 @@ rip_rte_update_if_better(rtable *tab, net *net, struct proto *p, rte *new)
   if (!old || p->rte_better(new, old) ||
       (ipa_equal(old->attrs->from, new->attrs->from) &&
       (old->u.rip.metric != new->u.rip.metric)) )
-    rte_update(tab, net, p, new);
+    rte_update(tab, net, p, p, new);
 }
 
 /*
@@ -742,7 +742,7 @@ rip_real_if_add(struct object_lock *lock)
   struct iface *iface = lock->iface;
   struct proto *p = lock->data;
   struct rip_interface *rif;
-  struct iface_patt *k = iface_patt_match(&P_CF->iface_list, iface);
+  struct iface_patt *k = iface_patt_find(&P_CF->iface_list, iface);
 
   if (!k)
     bug("This can not happen! It existed few seconds ago!" );
@@ -771,7 +771,7 @@ rip_if_notify(struct proto *p, unsigned c, struct iface *iface)
     }
   }
   if (c & IF_CHANGE_UP) {
-    struct iface_patt *k = iface_patt_match(&P_CF->iface_list, iface);
+    struct iface_patt *k = iface_patt_find(&P_CF->iface_list, iface);
     struct object_lock *lock;
     struct rip_patt *PATT = (struct rip_patt *) k;
 
@@ -946,6 +946,7 @@ rip_rte_remove(net *net UNUSED, rte *rte)
 void
 rip_init_instance(struct proto *p)
 {
+  p->accept_ra_types = RA_OPTIMAL;
   p->if_notify = rip_if_notify;
   p->rt_notify = rip_rt_notify;
   p->import_control = rip_import_control;
@@ -972,7 +973,7 @@ rip_init_config(struct rip_proto_config *c)
 }
 
 static int
-rip_get_attr(eattr *a, byte *buf)
+rip_get_attr(eattr *a, byte *buf, int buflen UNUSED)
 {
   switch (a->id) {
   case EA_RIP_METRIC: buf += bsprintf( buf, "metric: %d", a->u.data ); return GA_FULL;

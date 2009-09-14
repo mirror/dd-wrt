@@ -12,11 +12,16 @@
 #include "nest/iface.h"
 #include "nest/protocol.h"
 #include "nest/route.h"
+#include "nest/attrs.h"
 #include "conf/conf.h"
 #include "lib/unaligned.h"
 #include "lib/socket.h"
 
+#include "nest/cli.h"
+
 #include "bgp.h"
+
+static struct rate_limit rl_rcv_update,  rl_snd_update;
 
 static byte *
 bgp_create_notification(struct bgp_conn *conn, byte *buf)
@@ -30,25 +35,10 @@ bgp_create_notification(struct bgp_conn *conn, byte *buf)
   return buf + 2 + conn->notify_size;
 }
 
+#ifdef IPV6
 static byte *
-bgp_create_open(struct bgp_conn *conn, byte *buf)
+bgp_put_cap_ipv6(struct bgp_conn *conn UNUSED, byte *buf)
 {
-  struct bgp_proto *p = conn->bgp;
-
-  BGP_TRACE(D_PACKETS, "Sending OPEN(ver=%d,as=%d,hold=%d,id=%08x)",
-	    BGP_VERSION, p->local_as, p->cf->hold_time, p->local_id);
-  buf[0] = BGP_VERSION;
-  put_u16(buf+1, p->local_as);
-  put_u16(buf+3, p->cf->hold_time);
-  put_u32(buf+5, p->local_id);
-#ifndef IPV6
-  buf[9] = 0;				/* No optional parameters */
-  return buf+10;
-#else
-  buf += 9;
-  *buf++ = 8;		/* Optional params len */
-  *buf++ = 2;		/* Option: Capability list */
-  *buf++ = 6;		/* Option length */
   *buf++ = 1;		/* Capability 1: Multiprotocol extensions */
   *buf++ = 4;		/* Capability data length */
   *buf++ = 0;		/* We support AF IPv6 */
@@ -56,7 +46,81 @@ bgp_create_open(struct bgp_conn *conn, byte *buf)
   *buf++ = 0;		/* RFU */
   *buf++ = 1;		/* and SAFI 1 */
   return buf;
+}
+
+#else
+
+static byte *
+bgp_put_cap_ipv4(struct bgp_conn *conn UNUSED, byte *buf)
+{
+  *buf++ = 1;		/* Capability 1: Multiprotocol extensions */
+  *buf++ = 4;		/* Capability data length */
+  *buf++ = 0;		/* We support AF IPv4 */
+  *buf++ = BGP_AF_IPV4;
+  *buf++ = 0;		/* RFU */
+  *buf++ = 1;		/* and SAFI 1 */
+  return buf;
+}
 #endif
+
+static byte *
+bgp_put_cap_as4(struct bgp_conn *conn, byte *buf)
+{
+  *buf++ = 65;		/* Capability 65: Support for 4-octet AS number */
+  *buf++ = 4;		/* Capability data length */
+  put_u32(buf, conn->bgp->local_as);
+  return buf + 4;
+}
+
+static byte *
+bgp_create_open(struct bgp_conn *conn, byte *buf)
+{
+  struct bgp_proto *p = conn->bgp;
+  byte *cap;
+  int cap_len;
+
+  BGP_TRACE(D_PACKETS, "Sending OPEN(ver=%d,as=%d,hold=%d,id=%08x)",
+	    BGP_VERSION, p->local_as, p->cf->hold_time, p->local_id);
+  buf[0] = BGP_VERSION;
+  put_u16(buf+1, (p->local_as < 0xFFFF) ? p->local_as : AS_TRANS);
+  put_u16(buf+3, p->cf->hold_time);
+  put_u32(buf+5, p->local_id);
+
+  if (conn->start_state == BSS_CONNECT_NOCAP)
+    {
+      BGP_TRACE(D_PACKETS, "Skipping capabilities");
+      buf[9] = 0;
+      return buf + 10;
+    }
+
+  /* Skipped 3 B for length field and Capabilities parameter header */
+  cap = buf + 12;
+
+#ifndef IPV6
+  if (p->cf->advertise_ipv4)
+    cap = bgp_put_cap_ipv4(conn, cap);
+#endif
+
+#ifdef IPV6
+  cap = bgp_put_cap_ipv6(conn, cap);
+#endif
+
+  if (conn->want_as4_support)
+    cap = bgp_put_cap_as4(conn, cap);
+
+  cap_len = cap - buf - 12;
+  if (cap_len > 0)
+    {
+      buf[9]  = cap_len + 2;	/* Optional params len */
+      buf[10] = 2;		/* Option: Capability list */
+      buf[11] = cap_len;	/* Option length */
+      return cap;
+    }
+  else
+    {
+      buf[9] = 0;		/* No optional parameters */
+      return buf + 10;
+    }
 }
 
 static unsigned int
@@ -83,6 +147,18 @@ bgp_encode_prefixes(struct bgp_proto *p, byte *w, struct bgp_bucket *buck, unsig
   return w - start;
 }
 
+static void
+bgp_flush_prefixes(struct bgp_proto *p, struct bgp_bucket *buck)
+{
+  while (!EMPTY_LIST(buck->prefixes))
+    {
+      struct bgp_prefix *px = SKIP_BACK(struct bgp_prefix, bucket_node, HEAD(buck->prefixes));
+      log(L_ERR "%s: - route %I/%d skipped", p->p.name, px->n.prefix, px->n.pxlen);
+      rem_node(&px->bucket_node);
+      fib_delete(&p->prefix_fib, px);
+    }
+}
+
 #ifndef IPV6		/* IPv4 version */
 
 static byte *
@@ -106,7 +182,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
     }
   put_u16(buf, wd_size);
 
-  if (remains >= 2048)
+  if (remains >= 3072)
     {
       while ((buck = (struct bgp_bucket *) HEAD(p->bucket_queue))->send_node.next)
 	{
@@ -117,8 +193,19 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	      bgp_free_bucket(p, buck);
 	      continue;
 	    }
+
 	  DBG("Processing bucket %p\n", buck);
-	  a_size = bgp_encode_attrs(w+2, buck->eattrs, 1024);
+	  a_size = bgp_encode_attrs(p, w+2, buck->eattrs, 2048);
+
+	  if (a_size < 0)
+	    {
+	      log(L_ERR "%s: Attribute list too long, skipping corresponding route group", p->p.name);
+	      bgp_flush_prefixes(p, buck);
+	      rem_node(&buck->send_node);
+	      bgp_free_bucket(p, buck);
+	      continue;
+	    }
+
 	  put_u16(w, a_size);
 	  w += a_size + 2;
 	  r_size = bgp_encode_prefixes(p, w, buck, remains - a_size);
@@ -133,7 +220,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
     }
   if (wd_size || r_size)
     {
-      BGP_TRACE(D_PACKETS, "Sending UPDATE");
+      BGP_TRACE_RL(&rl_snd_update, D_PACKETS, "Sending UPDATE");
       return w;
     }
   else
@@ -147,10 +234,10 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 {
   struct bgp_proto *p = conn->bgp;
   struct bgp_bucket *buck;
-  int size, is_ll;
+  int size;
   int remains = BGP_MAX_PACKET_LENGTH - BGP_HEADER_LENGTH - 4;
   byte *w, *tmp, *tstart;
-  ip_addr ip, ip_ll;
+  ip_addr *ipp, ip, ip_ll;
   ea_list *ea;
   eattr *nh;
   neighbor *n;
@@ -161,17 +248,18 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
   if ((buck = p->withdraw_bucket) && !EMPTY_LIST(buck->prefixes))
     {
       DBG("Withdrawn routes:\n");
-      tmp = bgp_attach_attr(&ea, bgp_linpool, BA_MP_UNREACH_NLRI, remains-8);
+      tmp = bgp_attach_attr_wa(&ea, bgp_linpool, BA_MP_UNREACH_NLRI, remains-8);
       *tmp++ = 0;
       *tmp++ = BGP_AF_IPV6;
       *tmp++ = 1;
-      ea->attrs[0].u.ptr->length = bgp_encode_prefixes(p, tmp, buck, remains-11);
-      size = bgp_encode_attrs(w, ea, remains);
+      ea->attrs[0].u.ptr->length = 3 + bgp_encode_prefixes(p, tmp, buck, remains-11);
+      size = bgp_encode_attrs(p, w, ea, remains);
+      ASSERT(size >= 0);
       w += size;
       remains -= size;
     }
 
-  if (remains >= 2048)
+  if (remains >= 3072)
     {
       while ((buck = (struct bgp_bucket *) HEAD(p->bucket_queue))->send_node.next)
 	{
@@ -182,36 +270,63 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	      bgp_free_bucket(p, buck);
 	      continue;
 	    }
+
 	  DBG("Processing bucket %p\n", buck);
-	  size = bgp_encode_attrs(w, buck->eattrs, 1024);
+	  size = bgp_encode_attrs(p, w, buck->eattrs, 2048);
+
+	  if (size < 0)
+	    {
+	      log(L_ERR "%s: Attribute list too long, ignoring corresponding route group", p->p.name);
+	      bgp_flush_prefixes(p, buck);
+	      rem_node(&buck->send_node);
+	      bgp_free_bucket(p, buck);
+	      continue;
+	    }
+
 	  w += size;
 	  remains -= size;
-	  tstart = tmp = bgp_attach_attr(&ea, bgp_linpool, BA_MP_REACH_NLRI, remains-8);
+	  tstart = tmp = bgp_attach_attr_wa(&ea, bgp_linpool, BA_MP_REACH_NLRI, remains-8);
 	  *tmp++ = 0;
 	  *tmp++ = BGP_AF_IPV6;
 	  *tmp++ = 1;
 	  nh = ea_find(buck->eattrs, EA_CODE(EAP_BGP, BA_NEXT_HOP));
 	  ASSERT(nh);
-	  ip = *(ip_addr *) nh->u.ptr->data;
-	  is_ll = 0;
-	  if (ipa_equal(ip, p->local_addr))
-	    {
-	      is_ll = 1;
-	      ip_ll = p->local_link;
-	    }
+
+	  /* We have two addresses here in 'nh'. Really. */
+	  ipp = (ip_addr *) nh->u.ptr->data;
+	  ip = ipp[0];
+	  ip_ll = IPA_NONE;
+
+	  if (ipa_equal(ip, p->source_addr))
+	    ip_ll = p->local_link;
 	  else
 	    {
+	      /* If we send a route with 'third party' next hop destinated 
+	       * in the same interface, we should also send a link local 
+	       * next hop address. We use the received one (stored in the 
+	       * other part of BA_NEXT_HOP eattr). If we didn't received
+	       * it (for example it is a static route), we can't use
+	       * 'third party' next hop and we have to use local IP address
+	       * as next hop. Sending original next hop address without
+	       * link local address seems to be a natural way to solve that
+	       * problem, but it is contrary to RFC 2545 and Quagga does not
+	       * accept such routes.
+	       */
+
 	      n = neigh_find(&p->p, &ip, 0);
 	      if (n && n->iface == p->neigh->iface)
 		{
-		  /* FIXME: We are assuming the global scope addresses use the lower 64 bits
-		   * as an interface identifier which hasn't necessarily to be true.
-		   */
-		  is_ll = 1;
-	          ip_ll = ipa_or(ipa_build(0xfe800000,0,0,0), ipa_and(ip, ipa_build(0,0,~0,~0)));
+		  if (ipa_nonzero(ipp[1]))
+		    ip_ll = ipp[1];
+		  else
+		    {
+		      ip = p->source_addr;
+		      ip_ll = p->local_link;
+		    }
 		}
 	    }
-	  if (is_ll)
+
+	  if (ipa_nonzero(ip_ll))
 	    {
 	      *tmp++ = 32;
 	      ipa_hton(ip);
@@ -227,10 +342,13 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	      memcpy(tmp, &ip, 16);
 	      tmp += 16;
 	    }
+
 	  *tmp++ = 0;			/* No SNPA information */
 	  tmp += bgp_encode_prefixes(p, tmp, buck, remains - (8+3+32+1));
 	  ea->attrs[0].u.ptr->length = tmp - tstart;
-	  w += bgp_encode_attrs(w, ea, remains);
+	  size = bgp_encode_attrs(p, w, ea, remains);
+	  ASSERT(size >= 0);
+	  w += size;
 	  break;
 	}
     }
@@ -240,7 +358,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
   lp_flush(bgp_linpool);
   if (size)
     {
-      BGP_TRACE(D_PACKETS, "Sending UPDATE");
+      BGP_TRACE_RL(&rl_snd_update, D_PACKETS, "Sending UPDATE");
       return w;
     }
   else
@@ -286,7 +404,8 @@ bgp_fire_tx(struct bgp_conn *conn)
 
   if (s & (1 << PKT_SCHEDULE_CLOSE))
     {
-      bgp_close_conn(conn);
+      /* We can finally close connection and enter idle state */
+      bgp_conn_enter_idle_state(conn);
       return 0;
     }
   if (s & (1 << PKT_NOTIFICATION))
@@ -339,8 +458,17 @@ bgp_schedule_packet(struct bgp_conn *conn, int type)
   DBG("BGP: Scheduling packet type %d\n", type);
   conn->packets_to_send |= 1 << type;
   if (conn->sk && conn->sk->tpos == conn->sk->tbuf)
-    while (bgp_fire_tx(conn))
-      ;
+    ev_schedule(conn->tx_ev);
+}
+
+void
+bgp_kick_tx(void *vconn)
+{
+  struct bgp_conn *conn = vconn;
+
+  DBG("BGP: kicking TX\n");
+  while (bgp_fire_tx(conn))
+    ;
 }
 
 void
@@ -353,9 +481,49 @@ bgp_tx(sock *sk)
     ;
 }
 
+/* Capatibility negotiation as per RFC 2842 */
+
+void
+bgp_parse_capabilities(struct bgp_conn *conn, byte *opt, int len)
+{
+  struct bgp_proto *p = conn->bgp;
+  int cl;
+
+  while (len > 0)
+    {
+      if (len < 2 || len < 2 + opt[1])
+	goto err;
+      
+      cl = opt[1];
+
+      switch (opt[0])
+	{
+	case 65:
+	  if (cl != 4)
+	    goto err;
+	  conn->peer_as4_support = 1;
+	  if (conn->want_as4_support)
+	    conn->advertised_as = get_u32(opt + 2);
+	  break;
+
+	  /* We can safely ignore all other capabilities */
+	}
+      len -= 2 + cl;
+      opt += 2 + cl;
+    }
+  return;
+
+    err:
+  bgp_error(conn, 2, 0, NULL, 0);
+  return;
+}
+
 static int
 bgp_parse_options(struct bgp_conn *conn, byte *opt, int len)
 {
+  struct bgp_proto *p = conn->bgp;
+  int ol;
+
   while (len > 0)
     {
       if (len < 2 || len < 2 + opt[1])
@@ -369,12 +537,17 @@ bgp_parse_options(struct bgp_conn *conn, byte *opt, int len)
 	DBG("\n");
       }
 #endif
+
+      ol = opt[1];
       switch (opt[0])
 	{
 	case 2:
-	  /* Capatibility negotiation as per RFC 2842 */
-	  /* We can safely ignore all capabilities announced */
+	  if (conn->start_state == BSS_CONNECT_NOCAP)
+	    BGP_TRACE(D_PACKETS, "Ignoring received capabilities");
+	  else
+	    bgp_parse_capabilities(conn, opt + 2, ol);
 	  break;
+
 	default:
 	  /*
 	   *  BGP specs don't tell us to send which option
@@ -382,11 +555,11 @@ bgp_parse_options(struct bgp_conn *conn, byte *opt, int len)
 	   *  to do so. Also, capability negotiation with
 	   *  Cisco routers doesn't work without that.
 	   */
-	  bgp_error(conn, 2, 4, opt, opt[1]);
+	  bgp_error(conn, 2, 4, opt, ol);
 	  return 0;
 	}
-      len -= 2 + opt[1];
-      opt += 2 + opt[1];
+      len -= 2 + ol;
+      opt += 2 + ol;
     }
   return 0;
 }
@@ -396,76 +569,74 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
 {
   struct bgp_conn *other;
   struct bgp_proto *p = conn->bgp;
-  struct bgp_config *cf = p->cf;
-  unsigned as, hold;
+  unsigned hold;
+  u16 base_as;
   u32 id;
 
   /* Check state */
   if (conn->state != BS_OPENSENT)
-    { bgp_error(conn, 5, 0, NULL, 0); }
+    { bgp_error(conn, 5, 0, NULL, 0); return; }
 
   /* Check message contents */
   if (len < 29 || len != 29 + pkt[28])
     { bgp_error(conn, 1, 2, pkt+16, 2); return; }
   if (pkt[19] != BGP_VERSION)
     { bgp_error(conn, 2, 1, pkt+19, 1); return; } /* RFC 1771 says 16 bits, draft-09 tells to use 8 */
-  as = get_u16(pkt+20);
+  conn->advertised_as = base_as = get_u16(pkt+20);
   hold = get_u16(pkt+22);
   id = get_u32(pkt+24);
-  BGP_TRACE(D_PACKETS, "Got OPEN(as=%d,hold=%d,id=%08x)", as, hold, id);
-  if (cf->remote_as && as != p->remote_as)
-    { bgp_error(conn, 2, 2, pkt+20, -2); return; }
-  if (hold > 0 && hold < 3)
-    { bgp_error(conn, 2, 6, pkt+22, 2); return; }
-  p->remote_id = id;
+  BGP_TRACE(D_PACKETS, "Got OPEN(as=%d,hold=%d,id=%08x)", conn->advertised_as, hold, id);
+
   if (bgp_parse_options(conn, pkt+29, pkt[28]))
     return;
+
+  if (hold > 0 && hold < 3)
+    { bgp_error(conn, 2, 6, pkt+22, 2); return; }
+
   if (!id || id == 0xffffffff || id == p->local_id)
     { bgp_error(conn, 2, 3, pkt+24, -4); return; }
+
+  if ((conn->advertised_as != base_as) && (base_as != AS_TRANS))
+    log(L_WARN "%s: Peer advertised inconsistent AS numbers", p->p.name);
+
+  if (conn->advertised_as != p->remote_as)
+    { bgp_error(conn, 2, 2, (byte *) &(conn->advertised_as), -4); return; }
 
   /* Check the other connection */
   other = (conn == &p->outgoing_conn) ? &p->incoming_conn : &p->outgoing_conn;
   switch (other->state)
     {
     case BS_IDLE:
-      break;
     case BS_CONNECT:
     case BS_ACTIVE:
     case BS_OPENSENT:
-      BGP_TRACE(D_EVENTS, "Connection collision, giving up the other connection");
-      bgp_close_conn(other);
+    case BS_CLOSE:
       break;
     case BS_OPENCONFIRM:
       if ((p->local_id < id) == (conn == &p->incoming_conn))
 	{
 	  /* Should close the other connection */
 	  BGP_TRACE(D_EVENTS, "Connection collision, giving up the other connection");
-	  bgp_error(other, 6, 0, NULL, 0);
+	  bgp_error(other, 6, 7, NULL, 0);
 	  break;
 	}
       /* Fall thru */
     case BS_ESTABLISHED:
       /* Should close this connection */
       BGP_TRACE(D_EVENTS, "Connection collision, giving up this connection");
-      bgp_error(conn, 6, 0, NULL, 0);
+      bgp_error(conn, 6, 7, NULL, 0);
       return;
     default:
       bug("bgp_rx_open: Unknown state");
     }
 
-  /* Make this connection primary */
-  conn->primary = 1;
-  p->conn = conn;
-
   /* Update our local variables */
-  if (hold < p->cf->hold_time)
-    conn->hold_time = hold;
-  else
-    conn->hold_time = p->cf->hold_time;
+  conn->hold_time = MIN(hold, p->cf->hold_time);
   conn->keepalive_time = p->cf->keepalive_time ? : conn->hold_time / 3;
-  p->remote_as = as;
   p->remote_id = id;
-  DBG("BGP: Hold timer set to %d, keepalive to %d, AS to %d, ID to %x\n", conn->hold_time, conn->keepalive_time, p->remote_as, p->remote_id);
+  p->as4_session = conn->want_as4_support && conn->peer_as4_support;
+
+  DBG("BGP: Hold timer set to %d, keepalive to %d, AS to %d, ID to %x, AS4 session to %d\n", conn->hold_time, conn->keepalive_time, p->remote_as, p->remote_id, p->as4_session);
 
   bgp_schedule_packet(conn, PKT_KEEPALIVE);
   bgp_start_timer(conn->hold_timer, conn->hold_time);
@@ -532,7 +703,7 @@ bgp_do_rx_update(struct bgp_conn *conn,
       DECODE_PREFIX(withdrawn, withdrawn_len);
       DBG("Withdraw %I/%d\n", prefix, pxlen);
       if (n = net_find(p->p.table, prefix, pxlen))
-	rte_update(p->p.table, n, &p->p, NULL);
+	rte_update(p->p.table, n, &p->p, &p->p, NULL);
     }
 
   if (!attr_len && !nlri_len)		/* shortcut */
@@ -551,14 +722,20 @@ bgp_do_rx_update(struct bgp_conn *conn,
 	  n = net_get(p->p.table, prefix, pxlen);
 	  e->net = n;
 	  e->pflags = 0;
-	  rte_update(p->p.table, n, &p->p, e);
+	  rte_update(p->p.table, n, &p->p, &p->p, e);
+	  if (bgp_apply_limits(p) < 0)
+	    goto bad2;
 	}
+      rta_free(a);
     }
-bad:
+
+  return;
+
+ bad:
+  bgp_error(conn, 3, err, NULL, 0);
+ bad2:
   if (a)
     rta_free(a);
-  if (err)
-    bgp_error(conn, 3, err, NULL, 0);
   return;
 }
 
@@ -610,7 +787,7 @@ bgp_do_rx_update(struct bgp_conn *conn,
 	  DECODE_PREFIX(x, len);
 	  DBG("Withdraw %I/%d\n", prefix, pxlen);
 	  if (n = net_find(p->p.table, prefix, pxlen))
-	    rte_update(p->p.table, n, &p->p, NULL);
+	    rte_update(p->p.table, n, &p->p, &p->p, NULL);
 	}
     }
 
@@ -621,19 +798,23 @@ bgp_do_rx_update(struct bgp_conn *conn,
       /* Create fake NEXT_HOP attribute */
       if (len < 1 || (*x != 16 && *x != 32) || len < *x + 2)
 	goto bad;
-      memcpy(bgp_attach_attr(&a0->eattrs, bgp_linpool, BA_NEXT_HOP, 16), x+1, 16);
-      len -= *x + 2;
-      x += *x + 1;
 
-      /* Ignore SNPA info */
-      i = *x++;
-      while (i--)
+      ip_addr *nh = (ip_addr *) bgp_attach_attr_wa(&a0->eattrs, bgp_linpool, BA_NEXT_HOP, NEXT_HOP_LENGTH);
+      memcpy(nh, x+1, 16);
+      ipa_ntoh(nh[0]);
+
+      /* We store received link local address in the other part of BA_NEXT_HOP eattr. */
+      if (*x == 32)
 	{
-	  if (len < 1 || len < 1 + *x)
-	    goto bad;
-	  len -= *x + 1;
-	  x += *x + 1;
+	  memcpy(nh+1, x+17, 16);
+	  ipa_ntoh(nh[1]);
 	}
+      else
+	nh[1] = IPA_NONE;
+
+      /* Also ignore one reserved byte */
+      len -= *x + 2;
+      x += *x + 2;
 
       if (bgp_get_nexthop(p, a0))
 	{
@@ -647,7 +828,9 @@ bgp_do_rx_update(struct bgp_conn *conn,
 	      n = net_get(p->p.table, prefix, pxlen);
 	      e->net = n;
 	      e->pflags = 0;
-	      rte_update(p->p.table, n, &p->p, e);
+	      rte_update(p->p.table, n, &p->p, &p->p, e);
+	      if (bgp_apply_limits(p) < 0)
+		goto bad2;
 	    }
 	  rta_free(a);
 	}
@@ -655,8 +838,9 @@ bgp_do_rx_update(struct bgp_conn *conn,
 
   return;
 
-bad:
+ bad:
   bgp_error(conn, 3, 9, start, len0);
+ bad2:
   if (a)
     rta_free(a);
   return;
@@ -671,7 +855,8 @@ bgp_rx_update(struct bgp_conn *conn, byte *pkt, int len)
   byte *withdrawn, *attrs, *nlri;
   int withdrawn_len, attr_len, nlri_len;
 
-  BGP_TRACE(D_PACKETS, "Got UPDATE");
+  BGP_TRACE_RL(&rl_rcv_update, D_PACKETS, "Got UPDATE");
+
   if (conn->state != BS_ESTABLISHED)
     { bgp_error(conn, 5, 0, NULL, 0); return; }
   bgp_start_timer(conn->hold_timer, conn->hold_time);
@@ -720,7 +905,7 @@ static struct {
   { 2, 4, "Unsupported optional parameter" },
   { 2, 5, "Authentication failure" },
   { 2, 6, "Unacceptable hold time" },
-  { 2, 7, "Required capability missing" }, /* capability negotiation draft */
+  { 2, 7, "Required capability missing" }, /* [RFC3392] */
   { 3, 0, "Invalid UPDATE message" },
   { 3, 1, "Malformed attribute list" },
   { 3, 2, "Unrecognized well-known attribute" },
@@ -735,27 +920,53 @@ static struct {
   { 3, 11, "Malformed AS_PATH" },
   { 4, 0, "Hold timer expired" },
   { 5, 0, "Finite state machine error" },
-  { 6, 0, "Cease" }
+  { 6, 0, "Cease" }, /* Subcodes are according to [RFC4486] */
+  { 6, 1, "Maximum number of prefixes reached" },
+  { 6, 2, "Administrative shutdown" },
+  { 6, 3, "Peer de-configured" },
+  { 6, 4, "Administrative reset" },
+  { 6, 5, "Connection rejected" },
+  { 6, 6, "Other configuration change" },
+  { 6, 7, "Connection collision resolution" },
+  { 6, 8, "Out of Resources" }
 };
 
-void
-bgp_log_error(struct bgp_proto *p, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len)
+/**
+ * bgp_error_dsc - return BGP error description
+ * @buff: temporary buffer
+ * @code: BGP error code
+ * @subcode: BGP error subcode
+ *
+ * bgp_error_dsc() returns error description for BGP errors
+ * which might be static string or given temporary buffer.
+ */
+const byte *
+bgp_error_dsc(byte *buff, unsigned code, unsigned subcode)
 {
-  byte *name, namebuf[16];
-  byte *t, argbuf[36];
   unsigned i;
-
-  if (code == 6 && !subcode)		/* Don't report Cease messages */
-    return;
-
-  bsprintf(namebuf, "%d.%d", code, subcode);
-  name = namebuf;
   for (i=0; i < ARRAY_SIZE(bgp_msg_table); i++)
     if (bgp_msg_table[i].major == code && bgp_msg_table[i].minor == subcode)
       {
-	name = bgp_msg_table[i].msg;
-	break;
+	return bgp_msg_table[i].msg;
       }
+
+  bsprintf(buff, "Unknown error %d.%d", code, subcode);
+  return buff;
+}
+
+void
+bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len)
+{
+  const byte *name;
+  byte namebuf[32];
+  byte *t, argbuf[36];
+  unsigned i;
+
+  /* Don't report Cease messages generated by myself */
+  if (code == 6 && class == BE_BGP_TX)
+    return;
+
+  name = bgp_error_dsc(namebuf, code, subcode);
   t = argbuf;
   if (len)
     {
@@ -773,16 +984,48 @@ bgp_log_error(struct bgp_proto *p, char *msg, unsigned code, unsigned subcode, b
 static void
 bgp_rx_notification(struct bgp_conn *conn, byte *pkt, int len)
 {
+  struct bgp_proto *p = conn->bgp;
   if (len < 21)
     {
       bgp_error(conn, 1, 2, pkt+16, 2);
       return;
     }
-  bgp_log_error(conn->bgp, "Received error notification", pkt[19], pkt[20], pkt+21, len-21);
-  conn->error_flag = 1;
-  if (conn->primary)
-    proto_notify_state(&conn->bgp->p, PS_STOP);
+
+  unsigned code = pkt[19];
+  unsigned subcode = pkt[20];
+  int err = (code != 6);
+
+  bgp_log_error(p, BE_BGP_RX, "Received", code, subcode, pkt+21, len-21);
+  bgp_store_error(p, conn, BE_BGP_RX, (code << 16) | subcode);
+
+#ifndef IPV6
+  if ((code == 2) && ((subcode == 4) || (subcode == 7))
+      /* Error related to capability:
+       * 4 - Peer does not support capabilities at all.
+       * 7 - Peer request some capability. Strange unless it is IPv6 only peer.
+       */
+      && (p->cf->capabilities == 2)
+      /* Capabilities are not explicitly enabled or disabled, therefore heuristic is used */
+      && (conn->start_state == BSS_CONNECT)
+      /* Failed connection attempt have used capabilities */
+      && (p->cf->remote_as <= 0xFFFF))
+      /* Not possible with disabled capabilities */
+    {
+      /* We try connect without capabilities */
+      log(L_WARN "%s: Capability related error received, retry with capabilities disabled", p->p.name);
+      p->start_state = BSS_CONNECT_NOCAP;
+      err = 0;
+    }
+#endif
+
+  bgp_conn_enter_close_state(conn);
   bgp_schedule_packet(conn, PKT_SCHEDULE_CLOSE);
+
+  if (err) 
+    {
+      bgp_update_startup_delay(p);
+      bgp_stop(p, 0);
+    }
 }
 
 static void
@@ -795,10 +1038,7 @@ bgp_rx_keepalive(struct bgp_conn *conn)
   switch (conn->state)
     {
     case BS_OPENCONFIRM:
-      DBG("BGP: UP!!!\n");
-      conn->state = BS_ESTABLISHED;
-      bgp_attr_init(conn->bgp);
-      proto_notify_state(&conn->bgp->p, PS_UP);
+      bgp_conn_enter_established_state(conn);
       break;
     case BS_ESTABLISHED:
       break;
@@ -851,18 +1091,8 @@ bgp_rx(sock *sk, int size)
   DBG("BGP: RX hook: Got %d bytes\n", size);
   while (end >= pkt_start + BGP_HEADER_LENGTH)
     {
-      if (conn->error_flag)
-	{
-	  /*
-	   *  We still need to remember the erroneous packet, so that
-	   *  we can generate error notifications properly.  To avoid
-	   *  subsequent reads rewriting the buffer, we just reset the
-	   *  rx_hook.
-	   */
-	  DBG("BGP: Error, dropping input\n");
-	  sk->rx_hook = NULL;
-	  return 0;
-	}
+      if ((conn->state == BS_CLOSE) || (conn->sk != sk))
+	return 0;
       for(i=0; i<16; i++)
 	if (pkt_start[i] != 0xff)
 	  {

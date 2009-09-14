@@ -1,7 +1,7 @@
 /*
  *	BIRD -- OSPF
  *
- *	(c) 1999 - 2004 Ondrej Filip <feela@network.cz>
+ *	(c) 1999--2005 Ondrej Filip <feela@network.cz>
  *
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
@@ -41,6 +41,23 @@ wait_timer_hook(timer * timer)
   ospf_iface_sm(ifa, ISM_WAITF);
 }
 
+u32
+rxbufsize(struct ospf_iface *ifa)
+{
+  switch(ifa->rxbuf)
+  {
+    case OSPF_RXBUF_NORMAL:
+      return (ifa->iface->mtu * 2);
+      break;
+    case OSPF_RXBUF_LARGE:
+      return OSPF_MAX_PKT_SIZE;
+      break;
+    default:
+      return ifa->rxbuf;
+      break;
+  }
+}
+
 static sock *
 ospf_open_ip_socket(struct ospf_iface *ifa)
 {
@@ -59,7 +76,7 @@ ospf_open_ip_socket(struct ospf_iface *ifa)
   ipsk->tx_hook = ospf_tx_hook;
   ipsk->err_hook = ospf_err_hook;
   ipsk->iface = ifa->iface;
-  ipsk->rbsize = ifa->iface->mtu;
+  ipsk->rbsize = rxbufsize(ifa);
   ipsk->tbsize = ifa->iface->mtu;
   ipsk->data = (void *) ifa;
   if (sk_open(ipsk) != 0)
@@ -95,7 +112,7 @@ ospf_iface_chstate(struct ospf_iface *ifa, u8 state)
     if (ifa->type == OSPF_IT_VLINK)
     {
       OSPF_TRACE(D_EVENTS,
-		 "Changing state of virtual link %I from \"%s\" into \"%s\".",
+		 "Changing state of virtual link %R from \"%s\" into \"%s\".",
 		 ifa->vid, ospf_is[oldstate], ospf_is[state]);
       if (state == OSPF_IS_PTP)
       {
@@ -126,7 +143,7 @@ ospf_iface_chstate(struct ospf_iface *ifa, u8 state)
 	    ifa->dr_sk->tx_hook = ospf_tx_hook;
 	    ifa->dr_sk->err_hook = ospf_err_hook;
 	    ifa->dr_sk->iface = ifa->iface;
-	    ifa->dr_sk->rbsize = ifa->iface->mtu;
+	    ifa->dr_sk->rbsize = rxbufsize(ifa);
 	    ifa->dr_sk->tbsize = ifa->iface->mtu;
 	    ifa->dr_sk->data = (void *) ifa;
 	    if (sk_open(ifa->dr_sk) != 0)
@@ -213,7 +230,7 @@ ospf_iface_sm(struct ospf_iface *ifa, int event)
 {
   struct ospf_area *oa = ifa->oa;
 
-  DBG("SM on iface %s. Event is \"%s\".", ifa->iface->name, ospf_ism[event]);
+  DBG("SM on iface %s. Event is '%s'\n", ifa->iface->name, ospf_ism[event]);
 
   switch (event)
   {
@@ -299,7 +316,7 @@ ospf_open_mc_socket(struct ospf_iface *ifa)
   mcsk->tx_hook = ospf_tx_hook;
   mcsk->err_hook = ospf_err_hook;
   mcsk->iface = ifa->iface;
-  mcsk->rbsize = ifa->iface->mtu;
+  mcsk->rbsize = rxbufsize(ifa);
   mcsk->tbsize = ifa->iface->mtu;
   mcsk->data = (void *) ifa;
   if (sk_open(mcsk) != 0)
@@ -397,6 +414,7 @@ ospf_iface_new(struct proto_ospf *po, struct iface *iface,
   ifa->stub = ip->stub;
   ifa->autype = ip->autype;
   ifa->passwords = ip->passwords;
+  ifa->rxbuf = ip->rxbuf;
 
   if (ip->type == OSPF_IT_UNDEF)
     ifa->type = ospf_iface_clasify(ifa->iface);
@@ -477,6 +495,44 @@ ospf_iface_new(struct proto_ospf *po, struct iface *iface,
 }
 
 void
+ospf_iface_change_mtu(struct proto_ospf *po, struct ospf_iface *ifa)
+{
+  struct proto *p = &po->proto;
+  struct ospf_packet *op;
+  struct ospf_neighbor *n;
+  OSPF_TRACE(D_EVENTS, "Changing MTU on interface %s.", ifa->iface->name);
+  if (ifa->hello_sk)
+  {
+    ifa->hello_sk->rbsize = rxbufsize(ifa);
+    ifa->hello_sk->tbsize = ifa->iface->mtu;
+    sk_reallocate(ifa->hello_sk);
+  }
+  if (ifa->dr_sk)
+  {
+    ifa->dr_sk->rbsize = rxbufsize(ifa);
+    ifa->dr_sk->tbsize = ifa->iface->mtu;
+    sk_reallocate(ifa->dr_sk);
+  }
+  if (ifa->ip_sk)
+  {
+    ifa->ip_sk->rbsize = rxbufsize(ifa);
+    ifa->ip_sk->tbsize = ifa->iface->mtu;
+    sk_reallocate(ifa->ip_sk);
+  }
+
+  WALK_LIST(n, ifa->neigh_list)
+  {
+    op = (struct ospf_packet *) n->ldbdes;
+    n->ldbdes = mb_allocz(n->pool, ifa->iface->mtu);
+
+    if (ntohs(op->length) <= ifa->iface->mtu)	/* If the packet in old buffer is bigger, let it filled by zeros */
+      memcpy(n->ldbdes, op, ifa->iface->mtu);	/* If the packet is old is same or smaller, copy it */
+
+    rfree(op);
+  }
+}
+
+void
 ospf_iface_notify(struct proto *p, unsigned flags, struct iface *iface)
 {
   struct proto_ospf *po = (struct proto_ospf *) p;
@@ -494,7 +550,7 @@ ospf_iface_notify(struct proto *p, unsigned flags, struct iface *iface)
     WALK_LIST(ac, c->area_list)
     {
       if (ip = (struct ospf_iface_patt *)
-	  iface_patt_match(&ac->patt_list, iface))
+	  iface_patt_find(&ac->patt_list, iface))
 	break;
     }
 
@@ -517,40 +573,7 @@ ospf_iface_notify(struct proto *p, unsigned flags, struct iface *iface)
   if (flags & IF_CHANGE_MTU)
   {
     if ((ifa = ospf_iface_find((struct proto_ospf *) p, iface)) != NULL)
-    {
-      struct ospf_packet *op;
-      struct ospf_neighbor *n;
-      OSPF_TRACE(D_EVENTS, "Changing MTU on interface %s.", iface->name);
-      if (ifa->hello_sk)
-      {
-	ifa->hello_sk->rbsize = ifa->iface->mtu;
-	ifa->hello_sk->tbsize = ifa->iface->mtu;
-	sk_reallocate(ifa->hello_sk);
-      }
-      if (ifa->dr_sk)
-      {
-	ifa->dr_sk->rbsize = ifa->iface->mtu;
-	ifa->dr_sk->tbsize = ifa->iface->mtu;
-	sk_reallocate(ifa->dr_sk);
-      }
-      if (ifa->ip_sk)
-      {
-	ifa->ip_sk->rbsize = ifa->iface->mtu;
-	ifa->ip_sk->tbsize = ifa->iface->mtu;
-	sk_reallocate(ifa->ip_sk);
-      }
-
-      WALK_LIST(n, ifa->neigh_list)
-      {
-	op = (struct ospf_packet *) n->ldbdes;
-	n->ldbdes = mb_allocz(n->pool, iface->mtu);
-
-	if (ntohs(op->length) <= iface->mtu)	/* If the packet in old buffer is bigger, let it filled by zeros */
-	  memcpy(n->ldbdes, op, iface->mtu);	/* If the packet is old is same or smaller, copy it */
-
-	rfree(op);
-      }
-    }
+      ospf_iface_change_mtu(po, ifa);
   }
 }
 
@@ -563,8 +586,8 @@ ospf_iface_info(struct ospf_iface *ifa)
     strict = "";
   if (ifa->type == OSPF_IT_VLINK)
   {
-    cli_msg(-1015, "Virtual link to %I:", ifa->vid);
-    cli_msg(-1015, "\tTransit area: %I (%u)", ifa->voa->areaid,
+    cli_msg(-1015, "Virtual link to %R:", ifa->vid);
+    cli_msg(-1015, "\tTransit area: %R (%u)", ifa->voa->areaid,
 	    ifa->voa->areaid);
   }
   else
@@ -572,13 +595,14 @@ ospf_iface_info(struct ospf_iface *ifa)
     cli_msg(-1015, "Interface \"%s\":",
 	    (ifa->iface ? ifa->iface->name : "(none)"));
     cli_msg(-1015, "\tType: %s %s", ospf_it[ifa->type], strict);
-    cli_msg(-1015, "\tArea: %I (%u)", ifa->oa->areaid, ifa->oa->areaid);
+    cli_msg(-1015, "\tArea: %R (%u)", ifa->oa->areaid, ifa->oa->areaid);
   }
   cli_msg(-1015, "\tState: %s %s", ospf_is[ifa->state],
 	  ifa->stub ? "(stub)" : "");
   cli_msg(-1015, "\tPriority: %u", ifa->priority);
   cli_msg(-1015, "\tCost: %u", ifa->cost);
   cli_msg(-1015, "\tHello timer: %u", ifa->helloint);
+
   if (ifa->type == OSPF_IT_NBMA)
   {
     cli_msg(-1015, "\tPoll timer: %u", ifa->pollint);
@@ -588,9 +612,9 @@ ospf_iface_info(struct ospf_iface *ifa)
   cli_msg(-1015, "\tRetransmit timer: %u", ifa->rxmtint);
   if ((ifa->type == OSPF_IT_BCAST) || (ifa->type == OSPF_IT_NBMA))
   {
-    cli_msg(-1015, "\tDesigned router (ID): %I", ifa->drid);
+    cli_msg(-1015, "\tDesigned router (ID): %R", ifa->drid);
     cli_msg(-1015, "\tDesigned router (IP): %I", ifa->drip);
-    cli_msg(-1015, "\tBackup designed router (ID): %I", ifa->bdrid);
+    cli_msg(-1015, "\tBackup designed router (ID): %R", ifa->bdrid);
     cli_msg(-1015, "\tBackup designed router (IP): %I", ifa->bdrip);
   }
 }

@@ -1,7 +1,7 @@
 #
 #  fmt_txt.pl
 #
-#  $Id: fmt_txt.pl,v 1.2 2003/04/06 19:35:50 mj Exp $
+#  $Id$
 #
 #  TXT-specific driver stuff
 #

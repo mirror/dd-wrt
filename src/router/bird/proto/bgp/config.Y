@@ -18,9 +18,11 @@ CF_DECLS
 
 CF_KEYWORDS(BGP, LOCAL, NEIGHBOR, AS, HOLD, TIME, CONNECT, RETRY, KEEPALIVE,
 	MULTIHOP, STARTUP, VIA, NEXT, HOP, SELF, DEFAULT, PATH, METRIC,
-	ERROR, START, DELAY, FORGET, WAIT, DISABLE, AFTER,
+	ERROR, START, DELAY, FORGET, WAIT, ENABLE, DISABLE, AFTER,
 	BGP_PATH, BGP_LOCAL_PREF, BGP_MED, BGP_ORIGIN, BGP_NEXT_HOP,
-	BGP_ATOMIC_AGGR, BGP_AGGREGATOR, BGP_COMMUNITY, SOURCE, ADDRESS)
+	BGP_ATOMIC_AGGR, BGP_AGGREGATOR, BGP_COMMUNITY, SOURCE, ADDRESS,
+	PASSWORD, RR, RS, CLIENT, CLUSTER, ID, AS4, ADVERTISE, IPV4,
+	CAPABILITIES, LIMIT)
 
 CF_GRAMMAR
 
@@ -32,27 +34,31 @@ bgp_proto_start: proto_start BGP {
      BGP_CFG->hold_time = 240;
      BGP_CFG->connect_retry_time = 120;
      BGP_CFG->initial_hold_time = 240;
-     BGP_CFG->default_med = ~0;		/* RFC 1771 doesn't specify this, draft-09 says ~0 */
+     BGP_CFG->default_med = 0;
      BGP_CFG->compare_path_lengths = 1;
      BGP_CFG->start_delay_time = 5;
      BGP_CFG->error_amnesia_time = 300;
      BGP_CFG->error_delay_time_min = 60;
      BGP_CFG->error_delay_time_max = 300;
+     BGP_CFG->enable_as4 = bgp_as4_support;
+     BGP_CFG->capabilities = 2;
+     BGP_CFG->advertise_ipv4 = 1;
  }
  ;
 
 bgp_proto:
    bgp_proto_start proto_name '{'
  | bgp_proto proto_item ';'
- | bgp_proto LOCAL AS expr ';' {
-     if ($4 < 0 || $4 > 65535) cf_error("AS number out of range");
-     BGP_CFG->local_as = $4;
-   }
+ | bgp_proto LOCAL AS expr ';' { BGP_CFG->local_as = $4; }
  | bgp_proto NEIGHBOR ipa AS expr ';' {
-     if ($5 < 0 || $5 > 65535) cf_error("AS number out of range");
+     if (ipa_nonzero(BGP_CFG->remote_ip)) cf_error("Only one neighbor per BGP instance is allowed");
+
      BGP_CFG->remote_ip = $3;
      BGP_CFG->remote_as = $5;
    }
+ | bgp_proto RR CLUSTER ID expr ';' { BGP_CFG->rr_cluster_id = $5; }
+ | bgp_proto RR CLIENT ';' { BGP_CFG->rr_client = 1; }
+ | bgp_proto RS CLIENT ';' { BGP_CFG->rs_client = 1; }
  | bgp_proto HOLD TIME expr ';' { BGP_CFG->hold_time = $4; }
  | bgp_proto STARTUP HOLD TIME expr ';' { BGP_CFG->initial_hold_time = $5; }
  | bgp_proto CONNECT RETRY TIME expr ';' { BGP_CFG->connect_retry_time = $5; }
@@ -67,6 +73,11 @@ bgp_proto:
  | bgp_proto ERROR FORGET TIME expr ';' { BGP_CFG->error_amnesia_time = $5; } 
  | bgp_proto ERROR WAIT TIME expr ',' expr ';' { BGP_CFG->error_delay_time_min = $5; BGP_CFG->error_delay_time_max = $7; }
  | bgp_proto DISABLE AFTER ERROR bool ';' { BGP_CFG->disable_after_error = $5; }
+ | bgp_proto ENABLE AS4 bool ';' { BGP_CFG->enable_as4 = $4; }
+ | bgp_proto CAPABILITIES bool ';' { BGP_CFG->capabilities = $3; }
+ | bgp_proto ADVERTISE IPV4 bool ';' { BGP_CFG->advertise_ipv4 = $4; }
+ | bgp_proto PASSWORD TEXT ';' { BGP_CFG->password = $3; }
+ | bgp_proto ROUTE LIMIT expr ';' { BGP_CFG->route_limit = $4; }
  ;
 
 CF_ADDTO(dynamic_attr, BGP_PATH

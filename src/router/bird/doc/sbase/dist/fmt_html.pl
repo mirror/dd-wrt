@@ -1,7 +1,7 @@
 #
 #  fmt_html.pl
 #
-#  $Id: fmt_html.pl,v 1.2 2003/04/06 19:35:50 mj Exp $
+#  $Id$
 #
 #  HTML-specific driver stuff
 #

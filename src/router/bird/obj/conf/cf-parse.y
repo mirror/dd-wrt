@@ -42,14 +42,42 @@
 
 static struct proto_config *this_proto;
 static struct iface_patt *this_ipatt;
+static struct iface_patt_node *this_ipn;
 static list *this_p_list;
 static struct password_item *this_p_item;
+static int password_id;
+
+static inline void
+reset_passwords(void)
+{
+ this_p_list = NULL;
+}
+
+static inline list *
+get_passwords(void)
+{
+  list *rv = this_p_list;
+  this_p_list = NULL;
+  return rv;
+}
+
 
 /* Headers from ../../filter/config.Y */
 
 /* Defines from ../../filter/config.Y */
 
 #define P(a,b) ((a<<8) | b)
+
+static int make_pair(int i1, int i2)
+{
+  unsigned u1 = i1;
+  unsigned u2 = i2;
+
+  if ((u1 > 0xFFFF) || (u2 > 0xFFFF))
+    cf_error( "Can't operate with value out of bounds in pair constructor");
+
+  return (u1 << 16) | u2;
+}
 
 /* Headers from ../../proto/bgp/config.Y */
 
@@ -66,15 +94,32 @@ static struct password_item *this_p_item;
 /* Defines from ../../proto/ospf/config.Y */
 
 #define OSPF_CFG ((struct ospf_config *) this_proto)
-static struct ospf_area_config *this_area;
-static struct iface_patt *this_ipatt;
 #define OSPF_PATT ((struct ospf_iface_patt *) this_ipatt)
+
+static struct ospf_area_config *this_area;
 static struct nbma_node *this_nbma;
 static struct area_net_config *this_pref;
+static struct ospf_stubnet_config *this_stubnet; 
+
+static void
+finish_iface_config(struct ospf_iface_patt *ip)
+{
+  ip->passwords = get_passwords();
+
+  if ((ip->autype == OSPF_AUTH_CRYPT) && (ip->helloint < 5))
+    log(L_WARN "Hello or poll interval less that 5 makes cryptographic authenication prone to replay attacks");
+
+  if ((ip->autype == OSPF_AUTH_NONE) && (ip->passwords != NULL))
+    log(L_WARN "Password option without authentication option does not make sense");
+}
 
 /* Headers from ../../proto/pipe/config.Y */
 
 #include "proto/pipe/pipe.h"
+
+/* Defines from ../../proto/pipe/config.Y */
+
+#define PIPE_CFG ((struct pipe_config *) this_proto)
 
 /* Headers from ../../proto/rip/config.Y */
 
@@ -108,6 +153,7 @@ static struct static_route *this_srt;
   struct f_inst *x;
   struct filter *f;
   struct f_tree *e;
+  struct f_trie *trie;
   struct f_val v;
   struct f_path_mask *h;
   struct password_item *p;
@@ -119,6 +165,7 @@ static struct static_route *this_srt;
 
 %token END CLI_MARKER INVALID_TOKEN
 %token GEQ LEQ NEQ AND OR
+%token PO PC
 %token <i> NUM ENUM
 %token <i32> RTRID
 %token <a> IPA
@@ -129,9 +176,10 @@ static struct static_route *this_srt;
 %type <time> datetime
 %type <a> ipa
 %type <px> prefix prefix_or_ipa
+%type <t> text_or_none
 
 %nonassoc PREFIX_DUMMY
-%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ AND OR
+%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ AND OR PO PC
 %left '+' '-'
 %left '*' '/' '%'
 %left '!'
@@ -140,7 +188,7 @@ static struct static_route *this_srt;
 
 /* Declarations from ../../sysdep/unix/config.Y */
 
-%token LOG SYSLOG ALL DEBUG TRACE INFO REMOTE WARNING ERROR AUTH FATAL BUG STDERR
+%token LOG SYSLOG ALL DEBUG TRACE INFO REMOTE WARNING ERROR AUTH FATAL BUG STDERR SOFT
 
 %type <i> log_mask log_mask_list log_cat
 %type <g> log_file
@@ -161,7 +209,8 @@ static struct static_route *this_srt;
 %token ROUTER ID PROTOCOL PREFERENCE DISABLED DIRECT
 %token INTERFACE IMPORT EXPORT FILTER NONE STATES ROUTES FILTERS
 %token PASSWORD FROM PASSIVE TO EVENTS PACKETS PROTOCOLS INTERFACES
-%token PRIMARY STATS COUNT FOR COMMANDS PREIMPORT GENERATE
+%token PRIMARY STATS COUNT FOR COMMANDS PREEXPORT GENERATE
+%token LISTEN BGP V6ONLY ADDRESS PORT PASSWORDS
 
 
 
@@ -171,10 +220,9 @@ static struct static_route *this_srt;
 %type <i32> idval
 %type <f> imexport
 %type <r> rtable
-%type <p> password_list password_begin password_begin_list
 %type <s> optsym
 %type <ra> r_args
-%type <i> echo_mask echo_size debug_mask debug_list debug_flag import_or_proto
+%type <i> echo_mask echo_size debug_mask debug_list debug_flag export_or_preexport
 %type <t> proto_patt
 
 %token SHOW STATUS
@@ -191,41 +239,44 @@ static struct static_route *this_srt;
 %token RESTART
 /* Declarations from ../../filter/config.Y */
 
-%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR SET STRING BGPMASK BGPPATH CLIST IF THEN ELSE CASE TRUE FALSE GW NET MASK SOURCE SCOPE CAST DEST LEN DEFINED ADD DELETE CONTAINS RESET PREPEND MATCH EMPTY WHERE EVAL
+%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR SET STRING BGPMASK BGPPATH CLIST IF THEN ELSE CASE TRUE FALSE GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED ADD DELETE CONTAINS RESET PREPEND MATCH EMPTY WHERE EVAL
 
 %nonassoc THEN
 %nonassoc ELSE
 
-%type <x> term block cmds cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call
+%type <x> term block cmds cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
 %type <f> filter filter_body where_filter
-%type <i> type break_command pair
+%type <i> type break_command cpair
 %type <e> set_item set_items switch_body
+%type <trie> fprefix_set
 %type <v> set_atom fprefix fprefix_s fipa
 %type <s> decls declsn one_decl function_params 
-%type <h> bgp_path
-%type <i> bgp_one
+%type <h> bgp_path bgp_path_tail1 bgp_path_tail2
 
 /* Declarations from ../../proto/bgp/config.Y */
 
-%token BGP LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY ADDRESS
+%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT
 
 /* Declarations from ../../proto/ospf/config.Y */
 
-%token OSPF AREA OSPF_METRIC1 OSPF_METRIC2 OSPF_TAG
+%token OSPF AREA OSPF_METRIC1 OSPF_METRIC2 OSPF_TAG BROADCAST
 %token RFC1583COMPAT STUB TICK COST RETRANSMIT
 %token HELLO TRANSMIT PRIORITY DEAD NONBROADCAST POINTOPOINT TYPE
 %token SIMPLE AUTHENTICATION STRICT CRYPTOGRAPHIC
 %token ELIGIBLE POLL NETWORKS HIDDEN VIRTUAL LINK
+%token RX BUFFER LARGE NORMAL STUBNET
 
 %type <t> opttext
 
+%token TOPOLOGY
+%token STATE
 /* Declarations from ../../proto/pipe/config.Y */
 
-%token PIPE PEER
+%token PIPE PEER MODE OPAQUE TRANSPARENT
 
 /* Declarations from ../../proto/rip/config.Y */
 
-%token RIP INFINITY PORT PERIOD GARBAGE TIMEOUT PASSWORDS MODE BROADCAST MULTICAST QUIET NOLISTEN VERSION1 PLAINTEXT MD5 HONOR NEVER ALWAYS RIP_METRIC RIP_TAG
+%token RIP INFINITY PERIOD GARBAGE TIMEOUT MULTICAST QUIET NOLISTEN VERSION1 PLAINTEXT MD5 HONOR NEVER ALWAYS RIP_METRIC RIP_TAG
 
 %type <i> rip_mode rip_auth
 
@@ -320,6 +371,11 @@ datetime:
    }
  ;
 
+text_or_none:
+   TEXT { $$ = $1; }
+ |      { $$ = NULL; }
+ ;
+
 /* Grammar from ../../sysdep/unix/config.Y */
 
 
@@ -365,8 +421,13 @@ log_cat:
 
 /* Unix specific commands */
 
+
+
 cmd_CONFIGURE: CONFIGURE cfg_name END
-{ cmd_reconfig($2); } ;
+{ cmd_reconfig($2, RECONFIG_HARD); } ;
+
+cmd_CONFIGURE_SOFT: CONFIGURE SOFT cfg_name END
+{ cmd_reconfig($3, RECONFIG_SOFT); } ;
 
 cmd_DOWN: DOWN  END
 { cli_msg(7, "Shutdown requested"); order_shutdown(); } ;
@@ -420,6 +481,7 @@ kif_proto_start: proto_start DEVICE {
      cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config));
      this_proto->preference = DEF_PREF_DIRECT;
      THIS_KIF->scan_time = 60;
+     init_list(&THIS_KIF->primary);
      krt_if_construct(THIS_KIF);
    }
  ;
@@ -430,6 +492,13 @@ kif_item:
       /* Scan time of 0 means scan on startup only */
       THIS_KIF->scan_time = $3;
    }
+ | PRIMARY text_or_none prefix_or_ipa {
+     struct kif_primary_item *kpi = cfg_alloc(sizeof (struct kif_primary_item));
+     kpi->pattern = $2;
+     kpi->prefix = $3.addr;
+     kpi->pxlen = $3.len;
+     add_tail(&THIS_KIF->primary, &kpi->n);
+   }
  ;
 
 /* Grammar from ../../sysdep/linux/netlink/netlink.Y */
@@ -437,13 +506,8 @@ kif_item:
 
 nl_item:
    KERNEL TABLE expr {
-#ifndef IPV6
 	if ($3 <= 0 || $3 >= NL_NUM_TABLES)
 	  cf_error("Kernel routing table number out of range");
-#else
-	if ($3 != 254)
-	  cf_error("Linux implementation of IPv6 doesn't support multiple routing tables");
-#endif
 	THIS_KRT->scan.table_id = $3;
    }
  ;
@@ -469,6 +533,22 @@ idval:
 #endif
    }
  ;
+
+
+
+listen: LISTEN BGP listen_opts ';' ;
+
+listen_opts:
+   /* Nothing */
+ | listen_opts listen_opt
+ ;
+
+listen_opt: 
+   ADDRESS ipa { new_config->listen_bgp_addr = $2; }
+ | PORT expr { new_config->listen_bgp_port = $2; }
+ | V6ONLY { new_config->listen_bgp_flags |= SKF_V6ONLY; }
+ ;
+
 
 /* Creation of routing tables */
 
@@ -532,11 +612,35 @@ debug_default:
 
 /* Interface patterns */
 
-iface_patt:
-   TEXT { this_ipatt->pattern = $1; this_ipatt->prefix = IPA_NONE; this_ipatt->pxlen = 0; }
- | prefix { this_ipatt->pattern = NULL; this_ipatt->prefix = $1.addr; this_ipatt->pxlen = $1.len; }
- | TEXT prefix { this_ipatt->pattern = $1; this_ipatt->prefix = $2.addr; this_ipatt->pxlen = $2.len; }
+iface_patt_node_init:
+   /* EMPTY */ {
+     struct iface_patt_node *ipn = cfg_allocz(sizeof(struct iface_patt_node));
+     add_tail(&this_ipatt->ipn_list, NODE ipn);
+     this_ipn = ipn;
+   }
  ;
+
+iface_patt_node_body:
+   TEXT { this_ipn->pattern = $1; this_ipn->prefix = IPA_NONE; this_ipn->pxlen = 0; }
+ | prefix { this_ipn->pattern = NULL; this_ipn->prefix = $1.addr; this_ipn->pxlen = $1.len; }
+ | TEXT prefix { this_ipn->pattern = $1; this_ipn->prefix = $2.addr; this_ipn->pxlen = $2.len; }
+ ;
+
+iface_negate:
+       { this_ipn->positive = 1; }
+ | '-' { this_ipn->positive = 0; }
+ ;
+
+iface_patt_node:
+   iface_patt_node_init iface_negate iface_patt_node_body 
+ ;
+
+
+iface_patt_list:
+   iface_patt_node
+ | iface_patt_list ',' iface_patt_node
+ ;
+
 
 /* Direct device route protocol */
 
@@ -552,25 +656,20 @@ dev_proto_start: proto_start DIRECT {
 dev_proto:
    dev_proto_start proto_name '{'
  | dev_proto proto_item ';'
- | dev_proto dev_iface_list ';'
+ | dev_proto dev_iface_patt ';'
  ;
 
-dev_iface_entry_init:
+dev_iface_init:
    /* EMPTY */ {
      struct rt_dev_config *p = (void *) this_proto;
-     struct iface_patt *k = cfg_allocz(sizeof(struct iface_patt));
-     add_tail(&p->iface_list, &k->n);
-     this_ipatt = k;
+     this_ipatt = cfg_allocz(sizeof(struct iface_patt));
+     add_tail(&p->iface_list, NODE this_ipatt);
+     init_list(&this_ipatt->ipn_list);
    }
  ;
 
-dev_iface_entry:
-   dev_iface_entry_init iface_patt
- ;
-
-dev_iface_list:
-   INTERFACE dev_iface_entry
- | dev_iface_list ',' dev_iface_entry
+dev_iface_patt:
+   INTERFACE dev_iface_init iface_patt_list
  ;
 
 /* Debug flags */
@@ -597,6 +696,11 @@ debug_flag:
 
 /* Password lists */
 
+password_list:
+   PASSWORDS '{' password_items '}'
+ | password_item
+;
+
 password_items: 
     /* empty */
   | password_item ';' password_items
@@ -609,14 +713,18 @@ password_item:
 
 password_item_begin:
    PASSWORD TEXT {
-     static int id = 1;
+     if (!this_p_list) {
+     	this_p_list = cfg_alloc(sizeof(list));
+     	init_list(this_p_list);
+        password_id = 1;
+     }
      this_p_item = cfg_alloc(sizeof (struct password_item));
      this_p_item->password = $2;
      this_p_item->genfrom = 0;
      this_p_item->gento = TIME_INFINITY;
      this_p_item->accfrom = 0;
      this_p_item->accto = TIME_INFINITY;
-     this_p_item->id = id++;
+     this_p_item->id = password_id++;
      add_tail(this_p_list, &this_p_item->n);
    }
 ;
@@ -630,36 +738,7 @@ password_item_params:
  | ID expr ';' password_item_params { this_p_item->id = $2; if ($2 <= 0) cf_error("Password ID has to be greated than zero."); }
  ;
 
-password_list:
-   password_begin_list '{' password_items '}' {
-     $$ = $1;
-   }
- | password_begin
-;
 
-password_begin_list:
-  PASSWORDS {
-     this_p_list = cfg_alloc(sizeof(list));
-     init_list(this_p_list);
-     $$ = (void *) this_p_list;
-  }
-;
-
-password_begin:
-  PASSWORD TEXT {
-     this_p_list = cfg_alloc(sizeof(list));
-     init_list(this_p_list);
-     this_p_item = cfg_alloc(sizeof (struct password_item));
-     this_p_item->password = $2;
-     this_p_item->genfrom = 0;
-     this_p_item->gento = TIME_INFINITY;
-     this_p_item->accfrom = 0;
-     this_p_item->accto = TIME_INFINITY;
-     this_p_item->id = 1;
-     add_tail(this_p_list, &this_p_item->n);
-     $$ = (void *) this_p_list;
-  }
-;
 
 /* Core commands */
 
@@ -730,14 +809,22 @@ r_args:
      $$ = $1;
      $$->primary_only = 1;
    }
- | r_args import_or_proto SYM {
+ | r_args export_or_preexport SYM {
      struct proto_config *c = (struct proto_config *) $3->def;
      $$ = $1;
-     if ($$->import_mode) cf_error("Protocol specified twice");
+     if ($$->export_mode) cf_error("Protocol specified twice");
      if ($3->class != SYM_PROTO || !c->proto) cf_error("%s is not a protocol", $3->name);
-     $$->import_mode = $2;
+     $$->export_mode = $2;
      $$->primary_only = 1;
-     $$->import_protocol = c->proto;
+     $$->export_protocol = c->proto;
+     $$->running_on_config = c->proto->cf->global;
+   }
+ | r_args PROTOCOL SYM {
+     struct proto_config *c = (struct proto_config *) $3->def;
+     $$ = $1;
+     if ($$->show_protocol) cf_error("Protocol specified twice");
+     if ($3->class != SYM_PROTO || !c->proto) cf_error("%s is not a protocol", $3->name);
+     $$->show_protocol = c->proto;
      $$->running_on_config = c->proto->cf->global;
    }
  | r_args STATS {
@@ -750,9 +837,9 @@ r_args:
    }
  ;
 
-import_or_proto:
-   PREIMPORT { $$ = 1; }
- | IMPORT { $$ = 2; }
+export_or_preexport:
+   PREEXPORT { $$ = 1; }
+ | EXPORT { $$ = 2; }
  ;
 
 cmd_SHOW_SYMBOLS: SHOW SYMBOLS optsym END
@@ -838,25 +925,29 @@ type:
  | CLIST { $$ = T_CLIST; }
  | type SET { 
 	switch ($1) {
+	  case T_INT:
+	  case T_IP:
+	  case T_PAIR:
+	       $$ = T_SET;
+	       break;
+
+	  case T_PREFIX:
+	       $$ = T_PREFIX_SET;
+	    break;
+
 	  default:
 		cf_error( "You can't create sets of this type." );
-	  case T_INT: case T_IP: case T_PREFIX: case T_PAIR: ;
 	}
-	$$ = $1 | T_SET;
-	}
+   }
  ;
 
 one_decl:
    type SYM {
-     $2 = cf_define_symbol($2, SYM_VARIABLE | $1, NULL);
+     struct f_val * val = cfg_alloc(sizeof(struct f_val)); 
+     val->type = $1; 
+     $2 = cf_define_symbol($2, SYM_VARIABLE | $1, val);
      DBG( "New variable %s type %x\n", $2->name, $1 );
-     $2->aux = 0;
-     {
-       struct f_val * val; 
-       val = cfg_alloc(sizeof(struct f_val)); 
-       val->type = $1; 
-       $2->aux2 = val;
-     }
+     $2->aux2 = NULL;
      $$=$2;
    }
  ;
@@ -865,7 +956,7 @@ one_decl:
 decls: /* EMPTY */ { $$ = NULL; }
  | one_decl ';' decls {
      $$ = $1;
-     $$->aux = (int) $3;
+     $$->aux2 = $3;
    }
  ;
 
@@ -873,7 +964,7 @@ decls: /* EMPTY */ { $$ = NULL; }
 declsn: one_decl { $$ = $1; }
  | declsn ';' one_decl {
      $$ = $1;
-     $$->aux = (int) $3;
+     $$->aux2 = $3;
    }
  ;
 
@@ -935,8 +1026,7 @@ function_def:
      cf_push_scope($2);
    } function_params function_body {
      $2->def = $5;
-     $2->aux = (int) $4;
-     $2->aux2 = $5;
+     $2->aux2 = $4;
      DBG("Hmm, we've got one function here - %s\n", $2->name); 
      cf_pop_scope();
    }
@@ -967,16 +1057,45 @@ block:
 /*
  * Simple types, their bison value is int
  */
-pair:
-   '(' NUM ',' NUM ')' { $$ = $2 << 16 | $4; }
+cpair:
+   '(' NUM ',' NUM ')' { $$ = make_pair($2, $4); }
  ;
 
 /*
  * Complex types, their bison value is struct f_val
  */
+fipa:
+   IPA %prec PREFIX_DUMMY { $$.type = T_IP; $$.val.px.ip = $1; }
+ ;
+
+set_atom:
+   NUM   { $$.type = T_INT; $$.val.i = $1; }
+ | cpair { $$.type = T_PAIR; $$.val.i = $1; }
+ | fipa  { $$ = $1; }
+ | ENUM  {  $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
+ ; 
+
+set_item:
+   set_atom { 
+	$$ = f_new_tree(); 
+	$$->from = $1; 
+	$$->to = $1;
+   }
+ | set_atom '.' '.' set_atom { 
+	$$ = f_new_tree(); 
+	$$->from = $1; 
+	$$->to = $4; 
+   }
+ ;
+
+set_items:
+   set_item { $$ = $1; }
+ | set_items ',' set_item { $$ = $3; $$->left = $1; }
+ ;
+
 fprefix_s:
    IPA '/' NUM %prec '/' {
-     if (!ip_is_prefix($1, $3)) cf_error("Invalid network prefix: %I/%d.", $1, $3);
+     if (($3 < 0) || ($3 > MAX_PREFIX_LENGTH) || !ip_is_prefix($1, $3)) cf_error("Invalid network prefix: %I/%d.", $1, $3);
      $$.type = T_PREFIX; $$.val.px.ip = $1; $$.val.px.len = $3;
    }
  ;
@@ -985,43 +1104,15 @@ fprefix:
    fprefix_s { $$ = $1; }
  | fprefix_s '+' { $$ = $1; $$.val.px.len |= LEN_PLUS; }
  | fprefix_s '-' { $$ = $1; $$.val.px.len |= LEN_MINUS; }
- | fprefix_s '{' NUM ',' NUM '}' { $$ = $1; $$.val.px.len |= LEN_RANGE | ($3 << 16) | ($5 << 8); }
- ;
-
-fipa:
-   IPA %prec PREFIX_DUMMY { $$.type = T_IP; $$.val.px.ip = $1; }
- ;
-
-set_atom:
-   NUM  { $$.type = T_INT; $$.val.i = $1; }
- | pair { $$.type = T_PAIR; $$.val.i = $1; }
- | fipa { $$ = $1; }
- | fprefix { $$ = $1; }
- | ENUM {  $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
- ; 
-
-set_item:
-   set_atom { 
-	$$ = f_new_tree(); 
-	$$->from = $1; 
-	if ($1.type != T_PREFIX)
-		$$->to = $1;
-	else {
-		$$->to = $1;
-		$$->to.val.px.ip = ipa_or( $$->to.val.px.ip, ipa_not( ipa_mkmask( $$->to.val.px.len ) ));
-	}
-   }
- | set_atom '.' '.' set_atom { 
-	$$ = f_new_tree(); 
-	$$->from = $1; 
-	$$->to = $4; 
-	if (($1.type == T_PREFIX) || ($4.type == T_PREFIX)) cf_error( "You can't use prefixes for range." ); 
+ | fprefix_s '{' NUM ',' NUM '}' { 
+     if (! ((0 <= $3) && ($3 <= $5) && ($5 <= MAX_PREFIX_LENGTH))) cf_error("Invalid prefix pattern range: {%d, %d}.", $3, $5);
+     $$ = $1; $$.val.px.len |= LEN_RANGE | ($3 << 16) | ($5 << 8);
    }
  ;
 
-set_items:
-   set_item { $$ = $1; }
- | set_items ',' set_item { $$ = $3; $$->left = $1; }
+fprefix_set:
+   fprefix { $$ = f_new_trie(); trie_add_prefix($$, &($1.val.px)); }
+ | fprefix_set ',' fprefix { $$ = $1; trie_add_prefix($$, &($3.val.px)); }
  ;
 
 switch_body: /* EMPTY */ { $$ = NULL; }
@@ -1040,14 +1131,41 @@ switch_body: /* EMPTY */ { $$ = NULL; }
 
 /* CONST '(' expr ')' { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_INT; $$->a2.i = $3; } */
 
-bgp_one:
-   NUM { $$ = $1; }
- | '?' { $$ = PM_ANY; }
+bgp_path_expr:
+   symbol       { $$ = $1; }   
+ | '(' term ')' { $$ = $2; }
  ;
 
-bgp_path: 
-   bgp_one          { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = NULL; $$->val  = $1; }
- | bgp_one bgp_path { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2;   $$->val  = $1; }
+bgp_path:
+   PO  bgp_path_tail1 PC  { $$ = $2; }
+ | '/' bgp_path_tail2 '/' { $$ = $2; }
+ ;
+
+bgp_path_tail1:
+   NUM bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN;      $$->val = $1; }
+ | '*' bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASTERISK; $$->val  = 0; }
+ | '?' bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_QUESTION; $$->val  = 0; }
+ | bgp_path_expr bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN_EXPR; $$->val = (uintptr_t) $1; }
+ |  		      { $$ = NULL; }
+ ;
+
+bgp_path_tail2:
+   NUM bgp_path_tail2 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN;      $$->val = $1; }
+ | '?' bgp_path_tail2 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASTERISK; $$->val  = 0; }
+ | 		      { $$ = NULL; }
+ ;
+
+dpair:
+   '(' term ',' term ')' {
+        if (($2->code == 'c') && ($4->code == 'c'))
+          { 
+            if (($2->aux != T_INT) || ($4->aux != T_INT))
+              cf_error( "Can't operate with value of non-integer type in pair constructor" );
+            $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_PAIR;  $$->a2.i = make_pair($2->a2.i, $4->a2.i);
+          }
+	else
+	  { $$ = f_new_inst(); $$->code = P('m', 'p'); $$->a1.p = $2; $$->a2.p = $4; }
+    }
  ;
 
 constant:
@@ -1055,13 +1173,14 @@ constant:
  | TRUE   { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_BOOL; $$->a2.i = 1;  }
  | FALSE  { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_BOOL; $$->a2.i = 0;  }
  | TEXT   { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_STRING; $$->a2.p = $1; }
- | pair   { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_PAIR;  $$->a2.i = $1; }
  | fipa	   { NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; *val = $1; }
  | fprefix_s {NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; *val = $1; }
  | '[' set_items ']' { DBG( "We've got a set here..." ); $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_SET; $$->a2.p = build_tree($2); DBG( "ook\n" ); }
+ | '[' fprefix_set ']' { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_PREFIX_SET;  $$->a2.p = $2; }
  | ENUM	  { $$ = f_new_inst(); $$->code = 'c'; $$->aux = $1 >> 16; $$->a2.i = $1 & 0xffff; }
- | '/' bgp_path '/' { NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; val->type = T_PATH_MASK; val->val.path_mask = $2; $$->a1.p = val; }
+ | bgp_path { NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; val->type = T_PATH_MASK; val->val.path_mask = $1; $$->a1.p = val; }
  ;
+
 
 /*
  *  Maybe there are no dynamic attributes defined by protocols.
@@ -1082,24 +1201,58 @@ function_call:
      $$ = f_new_inst();
      $$->code = P('c','a');
      $$->a1.p = inst;
-     $$->a2.p = $1->aux2;
-     sym = (void *) $1->aux;
+     $$->a2.p = $1->def;
+     sym = $1->aux2;
      while (sym || inst) {
        if (!sym || !inst)
 	 cf_error("Wrong number of arguments for function %s.", $1->name);
        DBG( "You should pass parameter called %s\n", sym->name);
        inst->a1.p = sym;
-       sym = (void *) sym->aux;
+       sym = sym->aux2;
        inst = inst->next;
      }
    }
  ;
+
+symbol:
+   SYM {
+     $$ = f_new_inst();
+     switch ($1->class) {
+       case SYM_NUMBER:
+	$$ = f_new_inst();
+	$$->code = 'c'; 
+	$$->aux = T_INT; 
+	$$->a2.i = $1->aux;
+	break;
+       case SYM_IPA:
+	{ NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; val->type = T_IP; val->val.px.ip = * (ip_addr *) ($1->def); }
+	break;
+       case SYM_VARIABLE | T_BOOL:
+       case SYM_VARIABLE | T_INT:
+       case SYM_VARIABLE | T_PAIR:
+       case SYM_VARIABLE | T_STRING:
+       case SYM_VARIABLE | T_IP:
+       case SYM_VARIABLE | T_PREFIX:
+       case SYM_VARIABLE | T_PREFIX_SET:
+       case SYM_VARIABLE | T_SET:
+       case SYM_VARIABLE | T_PATH:
+       case SYM_VARIABLE | T_PATH_MASK:
+       case SYM_VARIABLE | T_CLIST:
+	 $$->code = 'V';
+	 $$->a1.p = $1->def;
+	 $$->a2.p = $1->name;
+	 break;
+       default:
+	 cf_error("%s: variable expected.", $1->name );
+     }
+   }
 
 static_attr:
    FROM    { $$ = f_new_inst(); $$->aux = T_IP;         $$->a2.i = OFFSETOF(struct rta, from);   $$->a1.i = 1; }
 
  | GW      { $$ = f_new_inst(); $$->aux = T_IP;         $$->a2.i = OFFSETOF(struct rta, gw);     $$->a1.i = 1; }
  | NET     { $$ = f_new_inst(); $$->aux = T_PREFIX;     $$->a2.i = 0x12345678; /* This is actually ok - T_PREFIX is special-cased. */ }
+ | PROTO   { $$ = f_new_inst(); $$->aux = T_STRING;     $$->a2.i = 0x12345678; /* T_STRING is also special-cased. */ }
  | SOURCE  { $$ = f_new_inst(); $$->aux = T_ENUM_RTS;   $$->a2.i = OFFSETOF(struct rta, source); }
  | SCOPE   { $$ = f_new_inst(); $$->aux = T_ENUM_SCOPE; $$->a2.i = OFFSETOF(struct rta, scope);  $$->a1.i = 1; }
  | CAST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTC;   $$->a2.i = OFFSETOF(struct rta, cast); }
@@ -1124,33 +1277,9 @@ term:
  | '!' term { $$ = f_new_inst(); $$->code = '!'; $$->a1.p = $2; }
  | DEFINED '(' term ')' { $$ = f_new_inst(); $$->code = P('d','e');  $$->a1.p = $3; }
 
+ | symbol   { $$ = $1; }
  | constant { $$ = $1; }
- | SYM {
-     $$ = f_new_inst();
-     switch ($1->class) {
-       case SYM_NUMBER:
-	$$ = f_new_inst();
-	$$->code = 'c'; 
-	$$->aux = T_INT; 
-	$$->a2.i = $1->aux;
-	break;
-       case SYM_IPA:
-	{ NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; val->type = T_IP; val->val.px.ip = * (ip_addr *) ($1->def); }
-	break;
-       case SYM_VARIABLE | T_INT:
-       case SYM_VARIABLE | T_PAIR:
-       case SYM_VARIABLE | T_PREFIX:
-       case SYM_VARIABLE | T_IP:
-       case SYM_VARIABLE | T_PATH_MASK:
-       case SYM_VARIABLE | T_PATH:
-       case SYM_VARIABLE | T_CLIST:
-	 $$->code = 'C';
-	 $$->a1.p = $1->aux2;
-	 break;
-       default:
-	 cf_error("%s: variable expected.", $1->name );
-     }
-   }
+ | dpair    { $$ = $1; }
 
  | PREFERENCE { $$ = f_new_inst(); $$->code = 'P'; }
 
@@ -1188,14 +1317,14 @@ term:
      $$ = f_new_inst();
      $$->code = P('c','a');
      $$->a1.p = inst;
-     $$->a2.p = $1->aux2;
-     sym = (void *) $1->aux;
+     $$->a2.p = $1->def;
+     sym = $1->aux2;
      while (sym || inst) {
        if (!sym || !inst)
 	 cf_error("Wrong number of arguments for function %s.", $1->name);
        DBG( "You should pass parameter called %s\n", sym->name);
        inst->a1.p = sym;
-       sym = (void *) sym->aux;
+       sym = sym->aux2;
        inst = inst->next;
      }
    }
@@ -1326,27 +1455,31 @@ bgp_proto_start: proto_start BGP {
      BGP_CFG->hold_time = 240;
      BGP_CFG->connect_retry_time = 120;
      BGP_CFG->initial_hold_time = 240;
-     BGP_CFG->default_med = ~0;		/* RFC 1771 doesn't specify this, draft-09 says ~0 */
+     BGP_CFG->default_med = 0;
      BGP_CFG->compare_path_lengths = 1;
      BGP_CFG->start_delay_time = 5;
      BGP_CFG->error_amnesia_time = 300;
      BGP_CFG->error_delay_time_min = 60;
      BGP_CFG->error_delay_time_max = 300;
+     BGP_CFG->enable_as4 = bgp_as4_support;
+     BGP_CFG->capabilities = 2;
+     BGP_CFG->advertise_ipv4 = 1;
  }
  ;
 
 bgp_proto:
    bgp_proto_start proto_name '{'
  | bgp_proto proto_item ';'
- | bgp_proto LOCAL AS expr ';' {
-     if ($4 < 0 || $4 > 65535) cf_error("AS number out of range");
-     BGP_CFG->local_as = $4;
-   }
+ | bgp_proto LOCAL AS expr ';' { BGP_CFG->local_as = $4; }
  | bgp_proto NEIGHBOR ipa AS expr ';' {
-     if ($5 < 0 || $5 > 65535) cf_error("AS number out of range");
+     if (ipa_nonzero(BGP_CFG->remote_ip)) cf_error("Only one neighbor per BGP instance is allowed");
+
      BGP_CFG->remote_ip = $3;
      BGP_CFG->remote_as = $5;
    }
+ | bgp_proto RR CLUSTER ID expr ';' { BGP_CFG->rr_cluster_id = $5; }
+ | bgp_proto RR CLIENT ';' { BGP_CFG->rr_client = 1; }
+ | bgp_proto RS CLIENT ';' { BGP_CFG->rs_client = 1; }
  | bgp_proto HOLD TIME expr ';' { BGP_CFG->hold_time = $4; }
  | bgp_proto STARTUP HOLD TIME expr ';' { BGP_CFG->initial_hold_time = $5; }
  | bgp_proto CONNECT RETRY TIME expr ';' { BGP_CFG->connect_retry_time = $5; }
@@ -1361,6 +1494,11 @@ bgp_proto:
  | bgp_proto ERROR FORGET TIME expr ';' { BGP_CFG->error_amnesia_time = $5; } 
  | bgp_proto ERROR WAIT TIME expr ',' expr ';' { BGP_CFG->error_delay_time_min = $5; BGP_CFG->error_delay_time_max = $7; }
  | bgp_proto DISABLE AFTER ERROR bool ';' { BGP_CFG->disable_after_error = $5; }
+ | bgp_proto ENABLE AS4 bool ';' { BGP_CFG->enable_as4 = $4; }
+ | bgp_proto CAPABILITIES bool ';' { BGP_CFG->capabilities = $3; }
+ | bgp_proto ADVERTISE IPV4 bool ';' { BGP_CFG->advertise_ipv4 = $4; }
+ | bgp_proto PASSWORD TEXT ';' { BGP_CFG->password = $3; }
+ | bgp_proto ROUTE LIMIT expr ';' { BGP_CFG->route_limit = $4; }
  ;
 
 
@@ -1398,6 +1536,7 @@ ospf_area_start: AREA idval '{' {
   init_list(&this_area->patt_list);
   init_list(&this_area->vlink_list);
   init_list(&this_area->net_list);
+  init_list(&this_area->stubnet_list);
  }
  ;
 
@@ -1413,12 +1552,38 @@ ospf_area_item:
    STUB COST expr { this_area->stub = $3 ; if($3<=0) cf_error("Stub cost must be greater than zero"); }
  | STUB bool {if($2) { if(!this_area->stub) this_area->stub=DEFAULT_STUB_COST;}else{ this_area->stub=0;}}
  | NETWORKS '{' pref_list '}'
- | INTERFACE ospf_iface_list
+ | STUBNET ospf_stubnet
+ | INTERFACE ospf_iface
  | ospf_vlink
  ;
 
+ospf_stubnet:
+   ospf_stubnet_start '{' ospf_stubnet_opts '}'
+ | ospf_stubnet_start
+ ;
+
+ospf_stubnet_start:
+   prefix {
+     this_stubnet = cfg_allocz(sizeof(struct ospf_stubnet_config));
+     add_tail(&this_area->stubnet_list, NODE this_stubnet);
+     this_stubnet->px = $1;
+     this_stubnet->cost = COST_D;
+   } 
+ ;
+
+ospf_stubnet_opts:
+   /* empty */
+ | ospf_stubnet_opts ospf_stubnet_item ';'
+ ;
+
+ospf_stubnet_item:
+   HIDDEN bool { this_stubnet->hidden = $2; }
+ | SUMMARY bool { this_stubnet->summary = $2; }
+ | COST expr { this_stubnet->cost = $2; }
+ ;
+
 ospf_vlink:
-   ospf_vlink_start '{' ospf_vlink_opts '}'
+   ospf_vlink_start '{' ospf_vlink_opts '}' { finish_iface_config(OSPF_PATT); }
  | ospf_vlink_start
  ;
 
@@ -1437,7 +1602,7 @@ ospf_vlink_item:
  | AUTHENTICATION NONE { OSPF_PATT->autype = OSPF_AUTH_NONE ; }
  | AUTHENTICATION SIMPLE { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; }
  | AUTHENTICATION CRYPTOGRAPHIC { OSPF_PATT->autype = OSPF_AUTH_CRYPT ; }
- | password_list {OSPF_PATT->passwords = (list *) $1; }
+ | password_list 
  ;
 
 ospf_vlink_start: VIRTUAL LINK idval
@@ -1445,6 +1610,7 @@ ospf_vlink_start: VIRTUAL LINK idval
   if (this_area->areaid == 0) cf_error("Virtual link cannot be in backbone");
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
   add_tail(&this_area->vlink_list, NODE this_ipatt);
+  init_list(&this_ipatt->ipn_list);
   OSPF_PATT->vid = $3;
   OSPF_PATT->cost = COST_D;
   OSPF_PATT->helloint = HELLOINT_D;
@@ -1456,6 +1622,7 @@ ospf_vlink_start: VIRTUAL LINK idval
   OSPF_PATT->type = OSPF_IT_VLINK;
   init_list(&OSPF_PATT->nbma_list);
   OSPF_PATT->autype = OSPF_AUTH_NONE;
+  reset_passwords();
  }
 ;
 
@@ -1478,7 +1645,10 @@ ospf_iface_item:
  | AUTHENTICATION NONE { OSPF_PATT->autype = OSPF_AUTH_NONE ; }
  | AUTHENTICATION SIMPLE { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; }
  | AUTHENTICATION CRYPTOGRAPHIC { OSPF_PATT->autype = OSPF_AUTH_CRYPT ; }
- | password_list {OSPF_PATT->passwords = (list *) $1; }
+ | RX BUFFER LARGE { OSPF_PATT->rxbuf = OSPF_RXBUF_LARGE ; } 
+ | RX BUFFER NORMAL { OSPF_PATT->rxbuf = OSPF_RXBUF_NORMAL ; } 
+ | RX BUFFER expr { OSPF_PATT->rxbuf = $3 ; if ($3 < OSPF_RXBUF_MINSIZE) cf_error("Buffer size is too small") ; } 
+ | password_list
  ;
 
 pref_list:
@@ -1541,6 +1711,7 @@ ospf_iface_start:
  {
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
   add_tail(&this_area->patt_list, NODE this_ipatt);
+  init_list(&this_ipatt->ipn_list);
   OSPF_PATT->cost = COST_D;
   OSPF_PATT->helloint = HELLOINT_D;
   OSPF_PATT->pollint = POLLINT_D;
@@ -1555,6 +1726,7 @@ ospf_iface_start:
   OSPF_PATT->stub = 0;
   init_list(&OSPF_PATT->nbma_list);
   OSPF_PATT->autype = OSPF_AUTH_NONE;
+  reset_passwords();
  }
 ;
 
@@ -1569,12 +1741,7 @@ ospf_iface_opt_list:
  ;
 
 ospf_iface:
-  ospf_iface_start iface_patt ospf_iface_opt_list
- ;
-
-ospf_iface_list:
-   ospf_iface
- | ospf_iface_list ',' ospf_iface
+  ospf_iface_start iface_patt_list ospf_iface_opt_list { finish_iface_config(OSPF_PATT); }
  ;
 
 opttext:
@@ -1584,13 +1751,19 @@ opttext:
 
 
 cmd_SHOW_OSPF: SHOW OSPF optsym END
-{ ospf_sh(proto_get_named($3, &proto_ospf)); } ;
+{ ospf_sh(proto_get_named($3, &proto_ospf)); };
 
 cmd_SHOW_OSPF_NEIGHBORS: SHOW OSPF NEIGHBORS optsym opttext END
-{ ospf_sh_neigh(proto_get_named($4, &proto_ospf), $5); } ;
+{ ospf_sh_neigh(proto_get_named($4, &proto_ospf), $5); };
 
 cmd_SHOW_OSPF_INTERFACE: SHOW OSPF INTERFACE optsym opttext END
 { ospf_sh_iface(proto_get_named($4, &proto_ospf), $5); };
+
+cmd_SHOW_OSPF_TOPOLOGY: SHOW OSPF TOPOLOGY optsym opttext END
+{ ospf_sh_state(proto_get_named($4, &proto_ospf), 0); };
+
+cmd_SHOW_OSPF_STATE: SHOW OSPF STATE optsym opttext END
+{ ospf_sh_state(proto_get_named($4, &proto_ospf), 1); };
 
 /* Grammar from ../../proto/pipe/config.Y */
 
@@ -1598,6 +1771,7 @@ cmd_SHOW_OSPF_INTERFACE: SHOW OSPF INTERFACE optsym opttext END
 pipe_proto_start: proto_start PIPE {
      this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config));
      this_proto->preference = DEF_PREF_PIPE;
+     PIPE_CFG->mode = PIPE_OPAQUE;
   }
  ;
 
@@ -1607,8 +1781,10 @@ pipe_proto:
  | pipe_proto PEER TABLE SYM ';' {
      if ($4->class != SYM_TABLE)
        cf_error("Routing table name expected");
-     ((struct pipe_config *) this_proto)->peer = $4->def;
+     PIPE_CFG->peer = $4->def;
    }
+ | pipe_proto MODE OPAQUE ';' { PIPE_CFG->mode = PIPE_OPAQUE; }
+ | pipe_proto MODE TRANSPARENT ';' { PIPE_CFG->mode = PIPE_TRANSPARENT; }
  ;
 
 /* Grammar from ../../proto/rip/config.Y */
@@ -1629,11 +1805,11 @@ rip_cfg:
  | rip_cfg GARBAGE TIME expr ';' { RIP_CFG->garbage_time = $4; }
  | rip_cfg TIMEOUT TIME expr ';' { RIP_CFG->timeout_time = $4; }
  | rip_cfg AUTHENTICATION rip_auth ';' {RIP_CFG->authtype = $3; }
- | rip_cfg password_list ';' {RIP_CFG->passwords = (list *)$2; }
+ | rip_cfg password_list ';'
  | rip_cfg HONOR ALWAYS ';'    { RIP_CFG->honor = HO_ALWAYS; }
  | rip_cfg HONOR NEIGHBOR ';'    { RIP_CFG->honor = HO_NEIGHBOR; }
  | rip_cfg HONOR NEVER ';'    { RIP_CFG->honor = HO_NEVER; }
- | rip_cfg rip_iface_list ';'
+ | rip_cfg INTERFACE rip_iface ';'
  ;
 
 rip_auth:
@@ -1641,6 +1817,7 @@ rip_auth:
  | MD5 { $$=AT_MD5; }
  | NONE { $$=AT_NONE; }
  ;
+
 
 rip_mode: 
     BROADCAST { $$=IM_BROADCAST; }
@@ -1656,28 +1833,26 @@ rip_iface_item:
  ;
 
 rip_iface_opts: 
-   '{'
+   /* empty */
  | rip_iface_opts rip_iface_item ';'
  ;
 
-rip_iface_opt_list: /* EMPTY */ | rip_iface_opts '}' ;
+rip_iface_opt_list:
+   /* empty */
+ | '{' rip_iface_opts '}'
+ ;
 
 rip_iface_init:
    /* EMPTY */ {
-     struct rip_patt *k = cfg_allocz(sizeof(struct rip_patt));
-     k->metric = 1;
-     add_tail(&RIP_CFG->iface_list, &k->i.n);
-     this_ipatt = &k->i;
+     this_ipatt = cfg_allocz(sizeof(struct rip_patt));
+     add_tail(&RIP_CFG->iface_list, NODE this_ipatt);
+     init_list(&this_ipatt->ipn_list);
+     RIP_IPATT->metric = 1;
    }
  ;
 
 rip_iface:
-   rip_iface_init iface_patt rip_iface_opt_list
- ;
-
-rip_iface_list:
-   INTERFACE rip_iface
- | rip_iface_list ',' rip_iface
+   rip_iface_init iface_patt_list rip_iface_opt_list
  ;
 
 
@@ -1727,9 +1902,9 @@ cmd_SHOW_STATIC: SHOW STATIC optsym END
 /* Dynamic rules */
 
 
-conf: ';' | definition | log_config | rtrid | newtab | proto | debug_default | filter_def | filter_eval | function_def ;
-cli_cmd: cmd_CONFIGURE | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_DEBUG | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_STATIC ;
-proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' | pipe_proto '}' | rip_cfg '}' | static_proto '}' ;
+conf: ';' | definition | log_config | rtrid | listen | newtab | proto | debug_default | filter_def | filter_eval | function_def ;
+cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_DEBUG | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_STATE | cmd_SHOW_STATIC ;
+proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
 kern_proto: kern_proto_start proto_name '{' | kern_proto proto_item ';' | kern_proto kern_item ';' | kern_proto nl_item ';' ;
 kif_proto: kif_proto_start proto_name '{' | kif_proto proto_item ';' | kif_proto kif_item ';' ;
 dynamic_attr: INVALID_TOKEN { $$ = NULL; } | BGP_PATH

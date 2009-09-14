@@ -47,6 +47,7 @@ extern pool root_pool;
 
 void *mb_alloc(pool *, unsigned size);
 void *mb_allocz(pool *, unsigned size);
+void *mb_realloc(pool *p, void *m, unsigned size);
 void mb_free(void *);
 
 /* Memory pools with linear allocation */
@@ -75,12 +76,13 @@ void sl_free(slab *, void *);
 #ifdef HAVE_LIBDMALLOC
 /*
  * The standard dmalloc macros tend to produce lots of namespace
- * conflicts and we use only xmalloc and xfree, so we can define
- * the stubs ourselves.
+ * conflicts and we use only xmalloc, xrealloc and xfree, so we
+ * can define the stubs ourselves.
  */
 #define DMALLOC_DISABLE
 #include <dmalloc.h>
 #define xmalloc(size) _xmalloc_leap(__FILE__, __LINE__, size)
+#define xrealloc(size) _xrealloc_leap(__FILE__, __LINE__, size)
 #define xfree(ptr) _xfree_leap(__FILE__, __LINE__, ptr)
 #else
 /*
@@ -89,7 +91,9 @@ void sl_free(slab *, void *);
  * the renaming.
  */
 #define xmalloc bird_xmalloc
+#define xrealloc bird_xrealloc
 void *xmalloc(unsigned);
+void *xrealloc(void *, unsigned);
 #define xfree(x) free(x)
 #endif
 

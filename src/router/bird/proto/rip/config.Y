@@ -24,7 +24,7 @@ CF_DEFINES
 
 CF_DECLS
 
-CF_KEYWORDS(RIP, INFINITY, METRIC, PORT, PERIOD, GARBAGE, TIMEOUT, PASSWORDS,
+CF_KEYWORDS(RIP, INFINITY, METRIC, PORT, PERIOD, GARBAGE, TIMEOUT,
 	    MODE, BROADCAST, MULTICAST, QUIET, NOLISTEN, VERSION1, 
 	    AUTHENTICATION, NONE, PLAINTEXT, MD5,
 	    HONOR, NEVER, NEIGHBOR, ALWAYS,
@@ -34,7 +34,7 @@ CF_KEYWORDS(RIP, INFINITY, METRIC, PORT, PERIOD, GARBAGE, TIMEOUT, PASSWORDS,
 
 CF_GRAMMAR
 
-CF_ADDTO(proto, rip_cfg '}')
+CF_ADDTO(proto, rip_cfg '}' { RIP_CFG->passwords = get_passwords(); } )
 
 rip_cfg_start: proto_start RIP {
      this_proto = proto_config_new(&proto_rip, sizeof(struct rip_proto_config));
@@ -51,11 +51,11 @@ rip_cfg:
  | rip_cfg GARBAGE TIME expr ';' { RIP_CFG->garbage_time = $4; }
  | rip_cfg TIMEOUT TIME expr ';' { RIP_CFG->timeout_time = $4; }
  | rip_cfg AUTHENTICATION rip_auth ';' {RIP_CFG->authtype = $3; }
- | rip_cfg password_list ';' {RIP_CFG->passwords = (list *)$2; }
+ | rip_cfg password_list ';'
  | rip_cfg HONOR ALWAYS ';'    { RIP_CFG->honor = HO_ALWAYS; }
  | rip_cfg HONOR NEIGHBOR ';'    { RIP_CFG->honor = HO_NEIGHBOR; }
  | rip_cfg HONOR NEVER ';'    { RIP_CFG->honor = HO_NEVER; }
- | rip_cfg rip_iface_list ';'
+ | rip_cfg INTERFACE rip_iface ';'
  ;
 
 rip_auth:
@@ -63,6 +63,7 @@ rip_auth:
  | MD5 { $$=AT_MD5; }
  | NONE { $$=AT_NONE; }
  ;
+
 
 rip_mode: 
     BROADCAST { $$=IM_BROADCAST; }
@@ -78,28 +79,26 @@ rip_iface_item:
  ;
 
 rip_iface_opts: 
-   '{'
+   /* empty */
  | rip_iface_opts rip_iface_item ';'
  ;
 
-rip_iface_opt_list: /* EMPTY */ | rip_iface_opts '}' ;
+rip_iface_opt_list:
+   /* empty */
+ | '{' rip_iface_opts '}'
+ ;
 
 rip_iface_init:
    /* EMPTY */ {
-     struct rip_patt *k = cfg_allocz(sizeof(struct rip_patt));
-     k->metric = 1;
-     add_tail(&RIP_CFG->iface_list, &k->i.n);
-     this_ipatt = &k->i;
+     this_ipatt = cfg_allocz(sizeof(struct rip_patt));
+     add_tail(&RIP_CFG->iface_list, NODE this_ipatt);
+     init_list(&this_ipatt->ipn_list);
+     RIP_IPATT->metric = 1;
    }
  ;
 
 rip_iface:
-   rip_iface_init iface_patt rip_iface_opt_list
- ;
-
-rip_iface_list:
-   INTERFACE rip_iface
- | rip_iface_list ',' rip_iface
+   rip_iface_init iface_patt_list rip_iface_opt_list
  ;
 
 CF_ADDTO(dynamic_attr, RIP_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); })

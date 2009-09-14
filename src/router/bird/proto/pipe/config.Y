@@ -10,9 +10,13 @@ CF_HDR
 
 #include "proto/pipe/pipe.h"
 
+CF_DEFINES
+
+#define PIPE_CFG ((struct pipe_config *) this_proto)
+
 CF_DECLS
 
-CF_KEYWORDS(PIPE, PEER, TABLE)
+CF_KEYWORDS(PIPE, PEER, TABLE, MODE, OPAQUE, TRANSPARENT)
 
 CF_GRAMMAR
 
@@ -21,6 +25,7 @@ CF_ADDTO(proto, pipe_proto '}')
 pipe_proto_start: proto_start PIPE {
      this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config));
      this_proto->preference = DEF_PREF_PIPE;
+     PIPE_CFG->mode = PIPE_OPAQUE;
   }
  ;
 
@@ -30,8 +35,10 @@ pipe_proto:
  | pipe_proto PEER TABLE SYM ';' {
      if ($4->class != SYM_TABLE)
        cf_error("Routing table name expected");
-     ((struct pipe_config *) this_proto)->peer = $4->def;
+     PIPE_CFG->peer = $4->def;
    }
+ | pipe_proto MODE OPAQUE ';' { PIPE_CFG->mode = PIPE_OPAQUE; }
+ | pipe_proto MODE TRANSPARENT ';' { PIPE_CFG->mode = PIPE_TRANSPARENT; }
  ;
 
 CF_CODE

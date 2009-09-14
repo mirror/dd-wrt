@@ -80,6 +80,7 @@ void if_end_partial_update(struct iface *);
 void if_feed_baby(struct proto *);
 struct iface *if_find_by_index(unsigned);
 struct iface *if_find_by_name(char *);
+void ifa_recalc_all_primary_addresses(void);
 
 /* The Neighbor Cache */
 
@@ -116,16 +117,22 @@ void neigh_init(struct pool *);
  *	Interface Pattern Lists
  */
 
+struct iface_patt_node {
+  node n;
+  int positive;
+  byte *pattern;
+  ip_addr prefix;
+  int pxlen;
+};
+
 struct iface_patt {
   node n;
-  byte *pattern;			/* Interface name pattern */
-  ip_addr prefix;			/* Interface prefix */
-  int pxlen;
+  list ipn_list;			/* A list of struct iface_patt_node */
 
   /* Protocol-specific data follow after this structure */
 };
 
-struct iface_patt *iface_patt_match(list *, struct iface *);
+struct iface_patt *iface_patt_find(list *, struct iface *);
 int iface_patts_equal(list *, list *, int (*)(struct iface_patt *, struct iface_patt *));
 
 #endif

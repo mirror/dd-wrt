@@ -1,6 +1,6 @@
 <!-- This is a DTD, but will be read as -*- sgml -*-   -->
 <!-- ================================================= -->
-<!-- $Id: birddoc.dtd,v 1.4 2000/06/05 21:02:58 mj Exp $ 
+<!-- $Id$ 
 
 This was heavilly modified for use with bird! Don't you dare to use it
 anywhere else. <pavel@ucw.cz>
@@ -11,8 +11,8 @@ anywhere else. <pavel@ucw.cz>
      Tristan Debeaupuis; modified from QWERTZ.DTD by
      Tom Gordon.
 
-     $Log: birddoc.dtd,v $
-     Revision 1.4  2000/06/05 21:02:58  mj
+     $Log$
+     Revision 1.4  2000-06-05 21:02:58  mj
      Define element <progdoc> which initializes different formatting for the
      programmer's guide (\raggedbottom etc.).
 

@@ -22,6 +22,9 @@ struct config {
   list logfiles;			/* Configured log fils (sysdep) */
   struct rtable_config *master_rtc;	/* Configuration of master routing table */
   u32 router_id;			/* Our Router ID */
+  ip_addr listen_bgp_addr;		/* Listening BGP socket should use this address */
+  unsigned listen_bgp_port;		/* Listening BGP socket should use this port (0 is default) */
+  u32 listen_bgp_flags;			/* Listening BGP socket should use these flags */
   unsigned int proto_default_debug;	/* Default protocol debug mask */
   int cli_debug;			/* Tracing of CLI connections and commands */
   char *err_msg;			/* Parser error message */
@@ -47,7 +50,9 @@ struct config *config_alloc(byte *name);
 int config_parse(struct config *);
 int cli_parse(struct config *);
 void config_free(struct config *);
-int config_commit(struct config *);
+int config_commit(struct config *, int type);
+#define RECONFIG_HARD 0
+#define RECONFIG_SOFT 1
 void cf_error(char *msg, ...) NORET;
 void config_add_obstacle(struct config *);
 void config_del_obstacle(struct config *);
@@ -76,7 +81,7 @@ struct symbol {
   struct sym_scope *scope;
   int class;
   int aux;
-  void *aux2; 
+  void *aux2;
   void *def;
   char name[1];
 };

@@ -47,6 +47,20 @@
  * The @this_cli variable points to a &cli structure of the session being
  * currently parsed, but it's of course available only in command handlers
  * not entered using the @cont hook.
+ *
+ * TX buffer management works as follows: At cli.tx_buf there is a
+ * list of TX buffers (struct cli_out), cli.tx_write is the buffer
+ * currently used by the producer (cli_printf(), cli_alloc_out()) and
+ * cli.tx_pos is the buffer currently used by the consumer
+ * (cli_write(), in system dependent code). The producer uses
+ * cli_out.wpos ptr as the current write position and the consumer
+ * uses cli_out.outpos ptr as the current read position. When the
+ * producer produces something, it calls cli_write_trigger(). If there
+ * is not enough space in the current buffer, the producer allocates
+ * the new one. When the consumer processes everything in the buffer
+ * queue, it calls cli_written(), tha frees all buffers (except the
+ * first one) and schedules cli.event .
+ * 
  */
 
 #include "nest/bird.h"
@@ -196,6 +210,14 @@ cli_free_out(cli *c)
   c->async_msg_size = 0;
 }
 
+void
+cli_written(cli *c)
+{
+  cli_free_out(c);
+  ev_schedule(c->event);
+}
+
+
 static byte *cli_rh_pos;
 static unsigned int cli_rh_len;
 static int cli_rh_trick_flag;
@@ -263,11 +285,8 @@ cli_event(void *data)
       else
 	cli_command(c);
     }
-  if (cli_write(c))
-    {
-      cli_free_out(c);
-      ev_schedule(c->event);
-    }
+
+  cli_write_trigger(c);
 }
 
 cli *
@@ -294,13 +313,6 @@ cli_kick(cli *c)
 {
   if (!c->cont && !c->tx_pos)
     ev_schedule(c->event);
-}
-
-void
-cli_written(cli *c)
-{
-  cli_free_out(c);
-  ev_schedule(c->event);
 }
 
 static list cli_log_hooks;

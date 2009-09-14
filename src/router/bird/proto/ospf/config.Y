@@ -13,19 +13,34 @@ CF_HDR
 CF_DEFINES
 
 #define OSPF_CFG ((struct ospf_config *) this_proto)
-static struct ospf_area_config *this_area;
-static struct iface_patt *this_ipatt;
 #define OSPF_PATT ((struct ospf_iface_patt *) this_ipatt)
+
+static struct ospf_area_config *this_area;
 static struct nbma_node *this_nbma;
 static struct area_net_config *this_pref;
+static struct ospf_stubnet_config *this_stubnet; 
+
+static void
+finish_iface_config(struct ospf_iface_patt *ip)
+{
+  ip->passwords = get_passwords();
+
+  if ((ip->autype == OSPF_AUTH_CRYPT) && (ip->helloint < 5))
+    log(L_WARN "Hello or poll interval less that 5 makes cryptographic authenication prone to replay attacks");
+
+  if ((ip->autype == OSPF_AUTH_NONE) && (ip->passwords != NULL))
+    log(L_WARN "Password option without authentication option does not make sense");
+}
 
 CF_DECLS
 
-CF_KEYWORDS(OSPF, AREA, OSPF_METRIC1, OSPF_METRIC2, OSPF_TAG)
+CF_KEYWORDS(OSPF, AREA, OSPF_METRIC1, OSPF_METRIC2, OSPF_TAG, BROADCAST)
 CF_KEYWORDS(NEIGHBORS, RFC1583COMPAT, STUB, TICK, COST, RETRANSMIT)
 CF_KEYWORDS(HELLO, TRANSMIT, PRIORITY, DEAD, NONBROADCAST, POINTOPOINT, TYPE)
 CF_KEYWORDS(NONE, SIMPLE, AUTHENTICATION, STRICT, CRYPTOGRAPHIC)
 CF_KEYWORDS(ELIGIBLE, POLL, NETWORKS, HIDDEN, VIRTUAL, LINK)
+CF_KEYWORDS(RX, BUFFER, LARGE, NORMAL, STUBNET, HIDDEN, SUMMARY)
+CF_KEYWORDS(WAIT, DELAY)
 
 %type <t> opttext
 
@@ -62,6 +77,7 @@ ospf_area_start: AREA idval '{' {
   init_list(&this_area->patt_list);
   init_list(&this_area->vlink_list);
   init_list(&this_area->net_list);
+  init_list(&this_area->stubnet_list);
  }
  ;
 
@@ -77,12 +93,38 @@ ospf_area_item:
    STUB COST expr { this_area->stub = $3 ; if($3<=0) cf_error("Stub cost must be greater than zero"); }
  | STUB bool {if($2) { if(!this_area->stub) this_area->stub=DEFAULT_STUB_COST;}else{ this_area->stub=0;}}
  | NETWORKS '{' pref_list '}'
- | INTERFACE ospf_iface_list
+ | STUBNET ospf_stubnet
+ | INTERFACE ospf_iface
  | ospf_vlink
  ;
 
+ospf_stubnet:
+   ospf_stubnet_start '{' ospf_stubnet_opts '}'
+ | ospf_stubnet_start
+ ;
+
+ospf_stubnet_start:
+   prefix {
+     this_stubnet = cfg_allocz(sizeof(struct ospf_stubnet_config));
+     add_tail(&this_area->stubnet_list, NODE this_stubnet);
+     this_stubnet->px = $1;
+     this_stubnet->cost = COST_D;
+   } 
+ ;
+
+ospf_stubnet_opts:
+   /* empty */
+ | ospf_stubnet_opts ospf_stubnet_item ';'
+ ;
+
+ospf_stubnet_item:
+   HIDDEN bool { this_stubnet->hidden = $2; }
+ | SUMMARY bool { this_stubnet->summary = $2; }
+ | COST expr { this_stubnet->cost = $2; }
+ ;
+
 ospf_vlink:
-   ospf_vlink_start '{' ospf_vlink_opts '}'
+   ospf_vlink_start '{' ospf_vlink_opts '}' { finish_iface_config(OSPF_PATT); }
  | ospf_vlink_start
  ;
 
@@ -101,7 +143,7 @@ ospf_vlink_item:
  | AUTHENTICATION NONE { OSPF_PATT->autype = OSPF_AUTH_NONE ; }
  | AUTHENTICATION SIMPLE { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; }
  | AUTHENTICATION CRYPTOGRAPHIC { OSPF_PATT->autype = OSPF_AUTH_CRYPT ; }
- | password_list {OSPF_PATT->passwords = (list *) $1; }
+ | password_list 
  ;
 
 ospf_vlink_start: VIRTUAL LINK idval
@@ -109,6 +151,7 @@ ospf_vlink_start: VIRTUAL LINK idval
   if (this_area->areaid == 0) cf_error("Virtual link cannot be in backbone");
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
   add_tail(&this_area->vlink_list, NODE this_ipatt);
+  init_list(&this_ipatt->ipn_list);
   OSPF_PATT->vid = $3;
   OSPF_PATT->cost = COST_D;
   OSPF_PATT->helloint = HELLOINT_D;
@@ -120,6 +163,7 @@ ospf_vlink_start: VIRTUAL LINK idval
   OSPF_PATT->type = OSPF_IT_VLINK;
   init_list(&OSPF_PATT->nbma_list);
   OSPF_PATT->autype = OSPF_AUTH_NONE;
+  reset_passwords();
  }
 ;
 
@@ -142,7 +186,10 @@ ospf_iface_item:
  | AUTHENTICATION NONE { OSPF_PATT->autype = OSPF_AUTH_NONE ; }
  | AUTHENTICATION SIMPLE { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; }
  | AUTHENTICATION CRYPTOGRAPHIC { OSPF_PATT->autype = OSPF_AUTH_CRYPT ; }
- | password_list {OSPF_PATT->passwords = (list *) $1; }
+ | RX BUFFER LARGE { OSPF_PATT->rxbuf = OSPF_RXBUF_LARGE ; } 
+ | RX BUFFER NORMAL { OSPF_PATT->rxbuf = OSPF_RXBUF_NORMAL ; } 
+ | RX BUFFER expr { OSPF_PATT->rxbuf = $3 ; if ($3 < OSPF_RXBUF_MINSIZE) cf_error("Buffer size is too small") ; } 
+ | password_list
  ;
 
 pref_list:
@@ -205,6 +252,7 @@ ospf_iface_start:
  {
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
   add_tail(&this_area->patt_list, NODE this_ipatt);
+  init_list(&this_ipatt->ipn_list);
   OSPF_PATT->cost = COST_D;
   OSPF_PATT->helloint = HELLOINT_D;
   OSPF_PATT->pollint = POLLINT_D;
@@ -219,6 +267,7 @@ ospf_iface_start:
   OSPF_PATT->stub = 0;
   init_list(&OSPF_PATT->nbma_list);
   OSPF_PATT->autype = OSPF_AUTH_NONE;
+  reset_passwords();
  }
 ;
 
@@ -233,12 +282,7 @@ ospf_iface_opt_list:
  ;
 
 ospf_iface:
-  ospf_iface_start iface_patt ospf_iface_opt_list
- ;
-
-ospf_iface_list:
-   ospf_iface
- | ospf_iface_list ',' ospf_iface
+  ospf_iface_start iface_patt_list ospf_iface_opt_list { finish_iface_config(OSPF_PATT); }
  ;
 
 opttext:
@@ -251,13 +295,19 @@ CF_ADDTO(dynamic_attr, OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF
 CF_ADDTO(dynamic_attr, OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); })
 
 CF_CLI(SHOW OSPF, optsym, [<name>], [[Show information about OSPF protocol]])
-{ ospf_sh(proto_get_named($3, &proto_ospf)); } ;
+{ ospf_sh(proto_get_named($3, &proto_ospf)); };
 
 CF_CLI(SHOW OSPF NEIGHBORS, optsym opttext, [<name>] [\"<interface>\"], [[Show information about OSPF neighbors]])
-{ ospf_sh_neigh(proto_get_named($4, &proto_ospf), $5); } ;
+{ ospf_sh_neigh(proto_get_named($4, &proto_ospf), $5); };
 
 CF_CLI(SHOW OSPF INTERFACE, optsym opttext, [<name>] [\"<interface>\"], [[Show information about interface]])
 { ospf_sh_iface(proto_get_named($4, &proto_ospf), $5); };
+
+CF_CLI(SHOW OSPF TOPOLOGY, optsym opttext, [<name>], [[Show information about OSPF network topology]])
+{ ospf_sh_state(proto_get_named($4, &proto_ospf), 0); };
+
+CF_CLI(SHOW OSPF STATE, optsym opttext, [<name>], [[Show information about OSPF network state]])
+{ ospf_sh_state(proto_get_named($4, &proto_ospf), 1); };
 
 CF_CODE
 

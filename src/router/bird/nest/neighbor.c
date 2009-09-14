@@ -254,7 +254,7 @@ neigh_if_down(struct iface *i)
 static inline void
 neigh_prune_one(neighbor *n)
 {
-  if (n->proto->core_state != FS_FLUSHING)
+  if (n->proto->proto_state != PS_DOWN)
     return;
   rem_node(&n->n);
   if (n->iface)

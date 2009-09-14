@@ -14,7 +14,7 @@ flush_lsa(struct top_hash_entry *en, struct proto_ospf *po)
   struct proto *p = &po->proto;
 
   OSPF_TRACE(D_EVENTS,
-	     "Going to remove node Type: %u, Id: %I, Rt: %I, Age: %u, SN: 0x%x",
+	     "Going to remove node Type: %u, Id: %R, Rt: %R, Age: %u, SN: 0x%x",
 	     en->lsa.type, en->lsa.id, en->lsa.rt, en->lsa.age, en->lsa.sn);
   s_rem_node(SNODE en);
   if (en->lsa_body != NULL)
@@ -56,8 +56,8 @@ ospf_age(struct proto_ospf *po)
       en->nhi = NULL;
       en->nh = IPA_NONE;
       en->lb = IPA_NONE;
-      DBG("Infinitying Type: %u, Id: %I, Rt: %I\n", en->lsa.type, en->lsa.id,
-	  en->lsa.rt);
+      DBG("Infinitying Type: %u, Id: %R, Rt: %R\n", en->lsa.type,
+	  en->lsa.id, en->lsa.rt);
     }
     if (en->lsa.age == LSA_MAXAGE)
     {
@@ -68,7 +68,7 @@ ospf_age(struct proto_ospf *po)
     if ((en->lsa.rt == p->cf->global->router_id) &&(en->lsa.age >=
 						    LSREFRESHTIME))
     {
-      OSPF_TRACE(D_EVENTS, "Refreshing my LSA: Type: %u, Id: %I, Rt: %I",
+      OSPF_TRACE(D_EVENTS, "Refreshing my LSA: Type: %u, Id: %R, Rt: %R",
 		 en->lsa.type, en->lsa.id, en->lsa.rt);
       en->lsa.sn++;
       en->lsa.age = 0;
@@ -459,7 +459,7 @@ lsa_install_new(struct ospf_lsa_header *lsa, void *body, struct ospf_area *oa)
     s_rem_node(SNODE en);
   }
 
-  DBG("Inst lsa: Id: %I, Rt: %I, Type: %u, Age: %u, Sum: %u, Sn: 0x%x\n",
+  DBG("Inst lsa: Id: %R, Rt: %R, Type: %u, Age: %u, Sum: %u, Sn: 0x%x\n",
       lsa->id, lsa->rt, lsa->type, lsa->age, lsa->checksum, lsa->sn);
 
   s_add_tail(&po->lsal, SNODE en);

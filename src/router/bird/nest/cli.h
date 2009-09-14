@@ -62,7 +62,7 @@ void cli_echo(unsigned int class, byte *msg);
 
 /* Functions provided by sysdep layer */
 
-int cli_write(cli *);
+void cli_write_trigger(cli *);
 int cli_get_command(cli *);
 
 #endif

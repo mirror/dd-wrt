@@ -1,7 +1,7 @@
 /*
  *	BIRD -- OSPF
  *
- *	(c) 1999--2004 Ondrej Filip <feela@network.cz>
+ *	(c) 1999--2005 Ondrej Filip <feela@network.cz>
  *
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
@@ -10,6 +10,14 @@
 #define _BIRD_OSPF_H_
 
 #define MAXNETS 10
+#define OSPF_VLINK_MTU 576	/* RFC2328 - A.1 */
+#define OSPF_MAX_PKT_SIZE 65536
+			/*
+                         * RFC 2328 says, maximum packet size is 65535
+			 * This could be too much for small systems, so I
+			 * normally allocate 2*mtu - (I found one cisco
+			 * sending packets mtu+16)
+			 */
 #ifdef LOCAL_DEBUG
 #define OSPF_FORCE_DEBUG 1
 #else
@@ -17,6 +25,11 @@
 #endif
 #define OSPF_TRACE(flags, msg, args...) do { if ((p->debug & flags) || OSPF_FORCE_DEBUG) \
   log(L_TRACE "%s: " msg, p->name , ## args ); } while(0)
+
+#define OSPF_PACKET(dumpfn, buffer, msg, args...) \
+do { if ((p->debug & D_PACKETS) || OSPF_FORCE_DEBUG) \
+{ log(L_TRACE "%s: " msg, p->name, ## args ); dumpfn(p, buffer); } } while(0)
+
 
 #include "nest/bird.h"
 
@@ -86,6 +99,14 @@ struct area_net
   u32 metric;
 };
 
+struct ospf_stubnet_config
+{
+  node n;
+  struct prefix px;
+  int hidden, summary;
+  u32 cost;
+};
+
 struct ospf_area_config
 {
   node n;
@@ -94,11 +115,12 @@ struct ospf_area_config
   list patt_list;
   list vlink_list;
   list net_list;
+  list stubnet_list;
 };
 
 struct obits
 {
-#ifdef _BIG_ENDIAN
+#ifdef CPU_BIG_ENDIAN
   u8 unused2:2;
   u8 dc:1;
   u8 ea:1;
@@ -148,7 +170,8 @@ struct ospf_iface
   u16 autype;
   u16 helloint;			/* number of seconds between hello sending */
   list *passwords;
-  u32 csn;                      /* Crypt seq num. that will be sent net */
+  u32 csn;                      /* Last used crypt seq number */
+  bird_clock_t csn_use;         /* Last time when packet with that CSN was sent */
   ip_addr drip;			/* Designated router */
   u32 drid;
   ip_addr bdrip;		/* Backup DR */
@@ -192,6 +215,7 @@ struct ospf_iface
   list nbma_list;
   u8 priority;			/* A router priority for DR election */
   u8 ioprob;
+  u32 rxbuf;
 };
 
 struct ospf_md5
@@ -240,7 +264,7 @@ struct ospf_hello_packet
 
 struct immsb
 {
-#ifdef _BIG_ENDIAN
+#ifdef CPU_BIG_ENDIAN
   u8 padding:5;
   u8 i:1;
   u8 m:1;
@@ -296,7 +320,7 @@ struct ospf_lsa_header
 
 struct vebb
 {
-#ifdef _BIG_ENDIAN
+#ifdef CPU_BIG_ENDIAN
   u8 padding:5;
   u8 v:1;
   u8 e:1;
@@ -360,7 +384,7 @@ struct ospf_lsa_ext
 
 struct ospf_lsa_ext_etos 
 {
-#ifdef _BIG_ENDIAN
+#ifdef CPU_BIG_ENDIAN
   u8 ebit:1;
   u8 tos:7;
   u8 padding1;
@@ -376,7 +400,7 @@ struct ospf_lsa_ext_etos
 #define METRIC_MASK 0x00FFFFFF
 struct ospf_lsa_sum_tos 
 {
-#ifdef _BIG_ENDIAN
+#ifdef CPU_BIG_ENDIAN
   u8 tos;
   u8 padding1;
   u16 padding2;
@@ -508,6 +532,7 @@ struct ospf_area
 {
   node n;
   u32 areaid;
+  struct ospf_area_config *ac;	/* Related area config */
   int origrt;			/* Rt lsa origination scheduled? */
   struct top_hash_entry *rt;	/* My own router LSA */
   list cand;			/* List of candidates for RT calc. */
@@ -535,6 +560,8 @@ struct proto_ospf
   int rfc1583;			/* RFC1583 compatibility */
   int ebit;			/* Did I originate any ext lsa? */
   struct ospf_area *backbone;	/* If exists */
+  void *lsab;			/* LSA buffer used when originating router LSAs */
+  int lsab_size, lsab_used;
 };
 
 struct ospf_iface_patt
@@ -558,6 +585,10 @@ struct ospf_iface_patt
 #define OSPF_AUTH_SIMPLE 1
 #define OSPF_AUTH_CRYPT 2
 #define OSPF_AUTH_CRYPT_SIZE 16
+  u32 rxbuf;
+#define OSPF_RXBUF_NORMAL 0
+#define OSPF_RXBUF_LARGE 1
+#define OSPF_RXBUF_MINSIZE 256	/* Minimal allowed size */
   list *passwords;
   list nbma_list;
 };
@@ -566,14 +597,14 @@ int ospf_import_control(struct proto *p, rte **new, ea_list **attrs,
 			struct linpool *pool);
 struct ea_list *ospf_make_tmp_attrs(struct rte *rt, struct linpool *pool);
 void ospf_store_tmp_attrs(struct rte *rt, struct ea_list *attrs);
-void ospf_rt_notify(struct proto *p, net *n, rte *new, rte *old,
-		    ea_list * attrs);
 void schedule_rt_lsa(struct ospf_area *oa);
 void schedule_rtcalc(struct proto_ospf *po);
 void schedule_net_lsa(struct ospf_iface *ifa);
 void ospf_sh_neigh(struct proto *p, char *iff);
 void ospf_sh(struct proto *p);
 void ospf_sh_iface(struct proto *p, char *iff);
+void ospf_sh_state(struct proto *p, int verbose);
+
 
 #define EA_OSPF_METRIC1	EA_CODE(EAP_OSPF, 0)
 #define EA_OSPF_METRIC2	EA_CODE(EAP_OSPF, 1)

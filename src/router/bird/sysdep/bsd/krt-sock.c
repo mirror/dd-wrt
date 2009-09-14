@@ -574,10 +574,11 @@ krt_scan_shutdown(struct krt_proto *x UNUSED, int last UNUSED)
 }
 
 static void
-krt_sysctl_scan(struct proto *p, pool *pool, byte **buf, int *bl, int cmd)
+krt_sysctl_scan(struct proto *p, pool *pool, byte **buf, size_t *bl, int cmd)
 {
   byte *next;
-  int obl, needed, mib[6], on;
+  int mib[6], on;
+  size_t obl, needed;
   struct ks_msg *m;
 
   mib[0] = CTL_NET;
@@ -622,7 +623,7 @@ void
 krt_scan_fire(struct krt_proto *p)
 {
   static byte *buf = NULL;
-  static int bl = 32768;
+  static size_t bl = 32768;
   krt_sysctl_scan((struct proto *)p , p->krt_pool, &buf, &bl, NET_RT_DUMP);
 }
 
@@ -630,7 +631,7 @@ void
 krt_if_scan(struct kif_proto *p)
 {
   static byte *buf = NULL;
-  static int bl = 4096;
+  static size_t bl = 4096;
   struct proto *P = (struct proto *)p;
   if_start_update();
   krt_sysctl_scan(P, P->pool, &buf, &bl, NET_RT_IFLIST);

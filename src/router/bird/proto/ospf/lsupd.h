@@ -10,6 +10,8 @@
 #ifndef _BIRD_OSPF_LSUPD_H_
 #define _BIRD_OSPF_LSUPD_H_
 
+void ospf_dump_lsahdr(struct proto *p, struct ospf_lsa_header *lsa_n);
+void ospf_dump_common(struct proto *p, struct ospf_packet *op);
 void ospf_lsupd_send_list(struct ospf_neighbor *n, list * l);
 void ospf_lsupd_receive(struct ospf_lsupd_packet *ps,
 			struct ospf_iface *ifa, struct ospf_neighbor *n);

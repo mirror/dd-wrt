@@ -7,7 +7,7 @@
 #define _BIRD_CONFIG_H_
 
 /* BIRD version */
-#define BIRD_VERSION "1.0.11"
+#define BIRD_VERSION "1.1.3"
 
 /* Include parameters determined by configure script */
 #include "sysdep/autoconf.h"
@@ -38,11 +38,11 @@ typedef u16 word;
 /* Path to configuration file */
 #ifdef IPV6
 #  ifdef DEBUGGING
-#    define PATH_CONFIG "bird-6.conf"
-#    define PATH_CONTROL_SOCKET "bird-6.ctl"
+#    define PATH_CONFIG "bird6.conf"
+#    define PATH_CONTROL_SOCKET "bird6.ctl"
 #  else
-#    define PATH_CONFIG PATH_CONFIG_DIR "/bird-6.conf"
-#    define PATH_CONTROL_SOCKET PATH_CONTROL_SOCKET_DIR "/bird-6.ctl"
+#    define PATH_CONFIG PATH_CONFIG_DIR "/bird6.conf"
+#    define PATH_CONTROL_SOCKET PATH_CONTROL_SOCKET_DIR "/bird6.ctl"
 #  endif
 #else
 #  ifdef DEBUGGING

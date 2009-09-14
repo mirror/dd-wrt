@@ -18,15 +18,33 @@ CF_DEFINES
 
 static struct proto_config *this_proto;
 static struct iface_patt *this_ipatt;
+static struct iface_patt_node *this_ipn;
 static list *this_p_list;
 static struct password_item *this_p_item;
+static int password_id;
+
+static inline void
+reset_passwords(void)
+{
+ this_p_list = NULL;
+}
+
+static inline list *
+get_passwords(void)
+{
+  list *rv = this_p_list;
+  this_p_list = NULL;
+  return rv;
+}
+
 
 CF_DECLS
 
 CF_KEYWORDS(ROUTER, ID, PROTOCOL, PREFERENCE, DISABLED, DEBUG, ALL, OFF, DIRECT)
 CF_KEYWORDS(INTERFACE, IMPORT, EXPORT, FILTER, NONE, TABLE, STATES, ROUTES, FILTERS)
 CF_KEYWORDS(PASSWORD, FROM, PASSIVE, TO, ID, EVENTS, PACKETS, PROTOCOLS, INTERFACES)
-CF_KEYWORDS(PRIMARY, STATS, COUNT, FOR, COMMANDS, PREIMPORT, GENERATE)
+CF_KEYWORDS(PRIMARY, STATS, COUNT, FOR, COMMANDS, PREEXPORT, GENERATE)
+CF_KEYWORDS(LISTEN, BGP, V6ONLY, ADDRESS, PORT, PASSWORDS)
 
 CF_ENUM(T_ENUM_RTS, RTS_, DUMMY, STATIC, INHERIT, DEVICE, STATIC_DEVICE, REDIRECT,
 	RIP, OSPF, OSPF_IA, OSPF_EXT1, OSPF_EXT2, BGP, PIPE)
@@ -37,10 +55,9 @@ CF_ENUM(T_ENUM_RTD, RTD_, ROUTER, DEVICE, BLACKHOLE, UNREACHABLE, PROHIBIT)
 %type <i32> idval
 %type <f> imexport
 %type <r> rtable
-%type <p> password_list password_begin password_begin_list
 %type <s> optsym
 %type <ra> r_args
-%type <i> echo_mask echo_size debug_mask debug_list debug_flag import_or_proto
+%type <i> echo_mask echo_size debug_mask debug_list debug_flag export_or_preexport
 %type <t> proto_patt
 
 CF_GRAMMAR
@@ -65,6 +82,23 @@ idval:
 #endif
    }
  ;
+
+
+CF_ADDTO(conf, listen)
+
+listen: LISTEN BGP listen_opts ';' ;
+
+listen_opts:
+   /* Nothing */
+ | listen_opts listen_opt
+ ;
+
+listen_opt: 
+   ADDRESS ipa { new_config->listen_bgp_addr = $2; }
+ | PORT expr { new_config->listen_bgp_port = $2; }
+ | V6ONLY { new_config->listen_bgp_flags |= SKF_V6ONLY; }
+ ;
+
 
 /* Creation of routing tables */
 
@@ -131,11 +165,35 @@ debug_default:
 
 /* Interface patterns */
 
-iface_patt:
-   TEXT { this_ipatt->pattern = $1; this_ipatt->prefix = IPA_NONE; this_ipatt->pxlen = 0; }
- | prefix { this_ipatt->pattern = NULL; this_ipatt->prefix = $1.addr; this_ipatt->pxlen = $1.len; }
- | TEXT prefix { this_ipatt->pattern = $1; this_ipatt->prefix = $2.addr; this_ipatt->pxlen = $2.len; }
+iface_patt_node_init:
+   /* EMPTY */ {
+     struct iface_patt_node *ipn = cfg_allocz(sizeof(struct iface_patt_node));
+     add_tail(&this_ipatt->ipn_list, NODE ipn);
+     this_ipn = ipn;
+   }
  ;
+
+iface_patt_node_body:
+   TEXT { this_ipn->pattern = $1; this_ipn->prefix = IPA_NONE; this_ipn->pxlen = 0; }
+ | prefix { this_ipn->pattern = NULL; this_ipn->prefix = $1.addr; this_ipn->pxlen = $1.len; }
+ | TEXT prefix { this_ipn->pattern = $1; this_ipn->prefix = $2.addr; this_ipn->pxlen = $2.len; }
+ ;
+
+iface_negate:
+       { this_ipn->positive = 1; }
+ | '-' { this_ipn->positive = 0; }
+ ;
+
+iface_patt_node:
+   iface_patt_node_init iface_negate iface_patt_node_body 
+ ;
+
+
+iface_patt_list:
+   iface_patt_node
+ | iface_patt_list ',' iface_patt_node
+ ;
+
 
 /* Direct device route protocol */
 
@@ -152,25 +210,20 @@ dev_proto_start: proto_start DIRECT {
 dev_proto:
    dev_proto_start proto_name '{'
  | dev_proto proto_item ';'
- | dev_proto dev_iface_list ';'
+ | dev_proto dev_iface_patt ';'
  ;
 
-dev_iface_entry_init:
+dev_iface_init:
    /* EMPTY */ {
      struct rt_dev_config *p = (void *) this_proto;
-     struct iface_patt *k = cfg_allocz(sizeof(struct iface_patt));
-     add_tail(&p->iface_list, &k->n);
-     this_ipatt = k;
+     this_ipatt = cfg_allocz(sizeof(struct iface_patt));
+     add_tail(&p->iface_list, NODE this_ipatt);
+     init_list(&this_ipatt->ipn_list);
    }
  ;
 
-dev_iface_entry:
-   dev_iface_entry_init iface_patt
- ;
-
-dev_iface_list:
-   INTERFACE dev_iface_entry
- | dev_iface_list ',' dev_iface_entry
+dev_iface_patt:
+   INTERFACE dev_iface_init iface_patt_list
  ;
 
 /* Debug flags */
@@ -197,6 +250,11 @@ debug_flag:
 
 /* Password lists */
 
+password_list:
+   PASSWORDS '{' password_items '}'
+ | password_item
+;
+
 password_items: 
     /* empty */
   | password_item ';' password_items
@@ -209,14 +267,18 @@ password_item:
 
 password_item_begin:
    PASSWORD TEXT {
-     static int id = 1;
+     if (!this_p_list) {
+     	this_p_list = cfg_alloc(sizeof(list));
+     	init_list(this_p_list);
+        password_id = 1;
+     }
      this_p_item = cfg_alloc(sizeof (struct password_item));
      this_p_item->password = $2;
      this_p_item->genfrom = 0;
      this_p_item->gento = TIME_INFINITY;
      this_p_item->accfrom = 0;
      this_p_item->accto = TIME_INFINITY;
-     this_p_item->id = id++;
+     this_p_item->id = password_id++;
      add_tail(this_p_list, &this_p_item->n);
    }
 ;
@@ -230,36 +292,7 @@ password_item_params:
  | ID expr ';' password_item_params { this_p_item->id = $2; if ($2 <= 0) cf_error("Password ID has to be greated than zero."); }
  ;
 
-password_list:
-   password_begin_list '{' password_items '}' {
-     $$ = $1;
-   }
- | password_begin
-;
 
-password_begin_list:
-  PASSWORDS {
-     this_p_list = cfg_alloc(sizeof(list));
-     init_list(this_p_list);
-     $$ = (void *) this_p_list;
-  }
-;
-
-password_begin:
-  PASSWORD TEXT {
-     this_p_list = cfg_alloc(sizeof(list));
-     init_list(this_p_list);
-     this_p_item = cfg_alloc(sizeof (struct password_item));
-     this_p_item->password = $2;
-     this_p_item->genfrom = 0;
-     this_p_item->gento = TIME_INFINITY;
-     this_p_item->accfrom = 0;
-     this_p_item->accto = TIME_INFINITY;
-     this_p_item->id = 1;
-     add_tail(this_p_list, &this_p_item->n);
-     $$ = (void *) this_p_list;
-  }
-;
 
 /* Core commands */
 CF_CLI_HELP(SHOW, ..., [[Show status information]])
@@ -284,7 +317,7 @@ CF_CLI(SHOW INTERFACES,,, [[Show network interfaces]])
 CF_CLI(SHOW INTERFACES SUMMARY,,, [[Show summary of network interfaces]])
 { if_show_summary(); } ;
 
-CF_CLI(SHOW ROUTE, r_args, [[[<prefix>|for <prefix>|for <ip>] [table <t>] [filter <f>|where <cond>] [all] [primary] [(import|protocol) <p>] [stats|count]]], [[Show routing table]])
+CF_CLI(SHOW ROUTE, r_args, [[[<prefix>|for <prefix>|for <ip>] [table <t>] [filter <f>|where <cond>] [all] [primary] [(export|preexport) <p>] [protocol <p>] [stats|count]]], [[Show routing table]])
 { rt_show($3); } ;
 
 r_args:
@@ -330,14 +363,22 @@ r_args:
      $$ = $1;
      $$->primary_only = 1;
    }
- | r_args import_or_proto SYM {
+ | r_args export_or_preexport SYM {
      struct proto_config *c = (struct proto_config *) $3->def;
      $$ = $1;
-     if ($$->import_mode) cf_error("Protocol specified twice");
+     if ($$->export_mode) cf_error("Protocol specified twice");
      if ($3->class != SYM_PROTO || !c->proto) cf_error("%s is not a protocol", $3->name);
-     $$->import_mode = $2;
+     $$->export_mode = $2;
      $$->primary_only = 1;
-     $$->import_protocol = c->proto;
+     $$->export_protocol = c->proto;
+     $$->running_on_config = c->proto->cf->global;
+   }
+ | r_args PROTOCOL SYM {
+     struct proto_config *c = (struct proto_config *) $3->def;
+     $$ = $1;
+     if ($$->show_protocol) cf_error("Protocol specified twice");
+     if ($3->class != SYM_PROTO || !c->proto) cf_error("%s is not a protocol", $3->name);
+     $$->show_protocol = c->proto;
      $$->running_on_config = c->proto->cf->global;
    }
  | r_args STATS {
@@ -350,9 +391,9 @@ r_args:
    }
  ;
 
-import_or_proto:
-   PREIMPORT { $$ = 1; }
- | IMPORT { $$ = 2; }
+export_or_preexport:
+   PREEXPORT { $$ = 1; }
+ | EXPORT { $$ = 2; }
  ;
 
 CF_CLI(SHOW SYMBOLS, optsym, [<symbol>], [[Show all known symbolic names]])
