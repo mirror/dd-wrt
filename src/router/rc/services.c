@@ -808,6 +808,9 @@ static void handle_milkfish(void)
 static void handle_wireless(void)
 {
 	void *handle = NULL;
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+	handle = stop_service_nofree("zebra", handle);
+#endif
 
 	handle = stop_service_nofree("radio_timer", handle);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -861,7 +864,7 @@ static void handle_wireless(void)
 	handle = startstop_nofree_f("dnsmasq", handle);
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = startstop_nofree_f("zebra", handle);
+	handle = start_service_nofree_f("zebra", handle);
 #endif
 	startstop_f("httpd");	// httpd will not accept connection anymore
 	// on wan/lan ip changes changes
@@ -873,6 +876,10 @@ static void handle_wireless(void)
 static void handle_wireless_2(void)
 {
 	void *handle = NULL;
+
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+	handle = stop_service_nofree("zebra", handle);
+#endif
 
 	handle = stop_service_nofree("radio_timer", handle);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -933,7 +940,7 @@ static void handle_wireless_2(void)
 	handle = start_service_nofree_f("hostapdwan", handle);
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = startstop_nofree_f("zebra", handle);
+	handle = start_service_nofree_f("zebra", handle);
 #endif
 //    if( handle )
 //      dlclose( handle );
