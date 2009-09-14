@@ -861,7 +861,7 @@ static void handle_wireless(void)
 	handle = startstop_nofree_f("dnsmasq", handle);
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = start_service_nofree_f("zebra", handle);
+	handle = startstop_nofree_f("zebra", handle);
 #endif
 	startstop_f("httpd");	// httpd will not accept connection anymore
 	// on wan/lan ip changes changes
@@ -933,7 +933,7 @@ static void handle_wireless_2(void)
 	handle = start_service_nofree_f("hostapdwan", handle);
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = start_service_nofree_f("zebra", handle);
+	handle = startstop_nofree_f("zebra", handle);
 #endif
 //    if( handle )
 //      dlclose( handle );
