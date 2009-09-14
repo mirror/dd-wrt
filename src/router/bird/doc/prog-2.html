@@ -213,26 +213,35 @@ the protocol.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>rte_announce</B>
-(<I>rtable *</I> <B>tab</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
+(<I>rtable *</I> <B>tab</B>, <I>int</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>rtable *</I> <B>tab</B><DD><P>table the route has been added to
+<DT><I>int</I> <B>type</B><DD><P>type of route announcement (RA_OPTIMAL or RA_ANY)
 <DT><I>net *</I> <B>net</B><DD><P>network in question
 <DT><I>rte *</I> <B>new</B><DD><P>the new route to be announced
-<DT><I>rte *</I> <B>old</B><DD><P>previous optimal route for the same network
+<DT><I>rte *</I> <B>old</B><DD><P>the previous route for the same network
 <DT><I>ea_list *</I> <B>tmpa</B><DD><P>a list of temporary attributes belonging to the new route
 </DL>
 <H3>Description</H3>
 <P>This function gets a routing table update and announces it
-to all protocols connected to the same table by their announcement hooks.
-<P>For each such protocol, we first call its <B>import_control()</B> hook which
-performs basic checks on the route (each protocol has a right to veto
-or force accept of the route before any filter is asked) and adds default
-values of attributes specific to the new protocol (metrics, tags etc.).
-Then it consults the protocol's export filter and if it accepts the
-route, the <B>rt_notify()</B> hook of the protocol gets called.
+to all protocols that acccepts given type of route announcement
+and are connected to the same table by their announcement hooks.
+<P>Route announcement of type RA_OPTIMAL si generated when optimal
+route (in routing table <B>tab</B>) changes. In that case <B>old</B> stores the
+old optimal route.
+<P>Route announcement of type RA_ANY si generated when any route (in
+routing table <B>tab</B>) changes In that case <B>old</B> stores the old route
+from the same protocol.
+<P>For each appropriate protocol, we first call its <B>import_control()</B>
+hook which performs basic checks on the route (each protocol has a
+right to veto or force accept of the route before any filter is
+asked) and adds default values of attributes specific to the new
+protocol (metrics, tags etc.).  Then it consults the protocol's
+export filter and if it accepts the route, the <B>rt_notify()</B> hook of
+the protocol gets called.
 
 
 <HR><H3>Function</H3>
@@ -252,7 +261,7 @@ route, the <B>rt_notify()</B> hook of the protocol gets called.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>rte_update</B>
-(<I>rtable *</I> <B>table</B>, <I>net *</I> <B>net</B>, <I>struct proto *</I> <B>p</B>, <I>rte *</I> <B>new</B>) --     enter a new update to a routing table
+(<I>rtable *</I> <B>table</B>, <I>net *</I> <B>net</B>, <I>struct proto *</I> <B>p</B>, <I>struct proto *</I> <B>src</B>, <I>rte *</I> <B>new</B>) --     enter a new update to a routing table
 <P>
 <H3>Arguments</H3>
 <P>
@@ -260,6 +269,7 @@ route, the <B>rt_notify()</B> hook of the protocol gets called.
 <DT><I>rtable *</I> <B>table</B><DD><P>table to be updated
 <DT><I>net *</I> <B>net</B><DD><P>network node
 <DT><I>struct proto *</I> <B>p</B><DD><P>protocol submitting the update
+<DT><I>struct proto *</I> <B>src</B><DD><P>protocol originating the update
 <DT><I>rte *</I> <B>new</B><DD><P>a <I>rte</I> representing the new route or <I>NULL</I> for route removal.
 </DL>
 <H3>Description</H3>
@@ -270,6 +280,11 @@ to zero or a cached one using <B>rta_lookup()</B>; in this case please note that
 you need to increase the use count of the attributes yourself by calling
 <B>rta_clone()</B>), call <B>rte_get_temp()</B> to obtain a temporary <I>rte</I>, fill in all
 the appropriate data and finally submit the new <I>rte</I> by calling <B>rte_update()</B>.
+<P><B>src</B> specifies the protocol that originally created the route and the meaning
+of protocol-dependent data of <B>new</B>. If <B>new</B> is not <I>NULL</I>, <B>src</B> have to be the
+same value as <B>new</B>-&gt;attrs-&gt;proto. <B>p</B> specifies the protocol that called
+<B>rte_update()</B>. In most cases it is the same protocol as <B>src</B>. <B>rte_update()</B>
+stores <B>p</B> in <B>new</B>-&gt;sender;
 <P>When <B>rte_update()</B> gets any route, it automatically validates it (checks,
 whether the network and next hop address are valid IP addresses and also
 whether a normal routing protocol doesn't try to smuggle a host or link
@@ -278,7 +293,7 @@ in the <I>rte</I> to temporary extended attributes, consults import filters of t
 protocol to see if the route should be accepted and/or its attributes modified,
 stores the temporary attributes back to the <I>rte</I>.
 <P>Now, having a "public" version of the route, we
-automatically find any old route defined by the protocol <B>p</B>
+automatically find any old route defined by the protocol <B>src</B>
 for network <B>n</B>, replace it by the new one (or removing it if <B>new</B> is <I>NULL</I>),
 recalculate the optimal route for this destination and finally broadcast
 the change (if any) to all routing protocols by calling <B>rte_announce()</B>.
@@ -982,7 +997,7 @@ instances specified in configuration <B>c</B>.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>protos_commit</B>
-(<I>struct config *</I> <B>new</B>, <I>struct config *</I> <B>old</B>, <I>int</I> <B>force_reconfig</B>) --  commit new protocol configuration
+(<I>struct config *</I> <B>new</B>, <I>struct config *</I> <B>old</B>, <I>int</I> <B>force_reconfig</B>, <I>int</I> <B>type</B>) --  commit new protocol configuration
 <P>
 <H3>Arguments</H3>
 <P>
@@ -991,6 +1006,7 @@ instances specified in configuration <B>c</B>.
 <DT><I>struct config *</I> <B>old</B><DD><P>old configuration or <I>NULL</I> if it's boot time config
 <DT><I>int</I> <B>force_reconfig</B><DD><P>force restart of all protocols (used for example
 when the router ID changes)
+<DT><I>int</I> <B>type</B><DD><P>type of reconfiguration (RECONFIG_SOFT or RECONFIG_HARD)
 </DL>
 <H3>Description</H3>
 <P>Scan differences between <B>old</B> and <B>new</B> configuration and adjust all
@@ -1001,12 +1017,14 @@ running protocol would arise, the new protocol will be temporarily stopped
 by the locking mechanism.
 <P>When a protocol exists in the old configuration, but it doesn't in the
 new one, it's shut down and deleted after the shutdown completes.
-<P>When a protocol exists in both configurations, the core decides whether
-it's possible to reconfigure it dynamically (it checks all the core properties
-of the protocol and if they match, it asks the <B>reconfigure()</B> hook of the
-protocol to see if the protocol is able to switch to the new configuration).
-If it isn't possible, the protocol is shut down and a new instance is started
-with the new configuration after the shutdown is completed.
+<P>When a protocol exists in both configurations, the core decides
+whether it's possible to reconfigure it dynamically - it checks all
+the core properties of the protocol (changes in filters are ignored
+if type is RECONFIG_SOFT) and if they match, it asks the
+<B>reconfigure()</B> hook of the protocol to see if the protocol is able
+to switch to the new configuration.  If it isn't possible, the
+protocol is shut down and a new instance is started with the new
+configuration after the shutdown is completed.
 
 
 <HR><H3>Function</H3>
@@ -1070,7 +1088,9 @@ to the protocol (i.e., not inside a <B>start()</B> or <B>shutdown()</B> hook),
 it should immediately notify the core about the change by calling
 <B>proto_notify_state()</B> which will write the new state to the <I>proto</I>
 structure and take all the actions necessary to adapt to the new
-state.
+state. State change to PS_DOWN immediately frees resources of protocol
+and might execute start callback of protocol; therefore,
+it should be used at tail positions of protocol callbacks.
 
 <H2><A NAME="ss2.5">2.5</A> <A HREF="prog.html#toc2.5">Protocol hooks</A>
 </H2>
@@ -1251,13 +1271,14 @@ representation of metrics of a route belonging to this protocol.
 <HR><H3>Function</H3>
 <P><I>int</I>
 <B>get_attr</B>
-(<I>eattr *</I> <B>a</B>, <I>byte *</I> <B>buf</B>) --     get attribute information
+(<I>eattr *</I> <B>a</B>, <I>byte *</I> <B>buf</B>, <I>int</I> <B>buflen</B>) --     get attribute information
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>eattr *</I> <B>a</B><DD><P>an extended attribute
 <DT><I>byte *</I> <B>buf</B><DD><P>buffer to be filled with attribute information
+<DT><I>int</I> <B>buflen</B><DD><P>-- undescribed --
 </DL>
 <H3>Description</H3>
 <P>The <B>get_attr()</B> hook is called by the core to obtain a user friendly
@@ -1315,8 +1336,8 @@ a combination of status bits (<I>IF_CHANGE_xxx</I>) in the <B>flags</B> paramete
 <DL>
 <DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
 <DT><I>net *</I> <B>net</B><DD><P>a network entry
-<DT><I>rte *</I> <B>new</B><DD><P>new optimal route for the network
-<DT><I>rte *</I> <B>old</B><DD><P>old optimal route for the network
+<DT><I>rte *</I> <B>new</B><DD><P>new route for the network
+<DT><I>rte *</I> <B>old</B><DD><P>old route for the network
 <DT><I>ea_list *</I> <B>attrs</B><DD><P>extended attributes associated with the <B>new</B> entry
 </DL>
 <H3>Description</H3>
@@ -1325,6 +1346,14 @@ changes in the routing table it's connected to, that is a route <B>old</B>
 belonging to network <B>net</B> being replaced by a new route <B>new</B> with
 extended attributes <B>attrs</B>. Either <B>new</B> or <B>old</B> or both can be <I>NULL</I>
 if the corresponding route doesn't exist.
+<P>If the type of route announcement is RA_OPTIMAL, it is an
+announcement of optimal route change, <B>new</B> stores the new optimal
+route and <B>old</B> stores the old optimal route.
+<P>If the type of route announcement is RA_ANY, it is an announcement
+of any route change, <B>new</B> stores the new route and <B>old</B> stores the
+old route from the same protocol.
+<P><B>p</B>-&gt;accept_ra_types specifies which kind of route announcements
+protocol wants to receive.
 
 
 <HR><H3>Function</H3>
@@ -1817,6 +1846,18 @@ to call it again when the output is transferred to the user.
 <P>The <B>this_cli</B> variable points to a <I>cli</I> structure of the session being
 currently parsed, but it's of course available only in command handlers
 not entered using the <B>cont</B> hook.
+<P>TX buffer management works as follows: At cli.tx_buf there is a
+list of TX buffers (struct cli_out), cli.tx_write is the buffer
+currently used by the producer (<B>cli_printf()</B>, <B>cli_alloc_out()</B>) and
+cli.tx_pos is the buffer currently used by the consumer
+(<B>cli_write()</B>, in system dependent code). The producer uses
+cli_out.wpos ptr as the current write position and the consumer
+uses cli_out.outpos ptr as the current read position. When the
+producer produces something, it calls <B>cli_write_trigger()</B>. If there
+is not enough space in the current buffer, the producer allocates
+the new one. When the consumer processes everything in the buffer
+queue, it calls <B>cli_written()</B>, tha frees all buffers (except the
+first one) and schedules cli.event .
 <P>
 <P><HR><H3>Function</H3>
 <P><I>void</I>

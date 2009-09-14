@@ -120,7 +120,8 @@ static char * number(char * str, long num, int base, int size, int precision,
  * available space to avoid buffer overflows and it allows some more
  * format specifiers: |%I| for formatting of IP addresses (any non-zero
  * width is automatically replaced by standard IP address width which
- * depends on whether we use IPv4 or IPv6; |%#I| gives hexadecimal format)
+ * depends on whether we use IPv4 or IPv6; |%#I| gives hexadecimal format),
+ * |%R| for Router / Network ID (u32 value printed as IPv4 address)
  * and |%m| resp. |%M| for error messages (uses strerror() to translate @errno code to
  * message text). On the other hand, it doesn't support floating
  * point numbers.
@@ -133,6 +134,7 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 	int len;
 	unsigned long num;
 	int i, base;
+	u32 x;
 	char *str, *start;
 	const char *s;
 	char ipbuf[STD_ADDRESS_P_LENGTH+1];
@@ -274,6 +276,17 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 				if (field_width > 0)
 					field_width = STD_ADDRESS_P_LENGTH;
 			}
+			s = ipbuf;
+			goto str;
+
+		/* Router/Network ID - essentially IPv4 address in u32 value */
+		case 'R':
+			x = va_arg(args, u32);
+			bsprintf(ipbuf, "%d.%d.%d.%d",
+				 ((x >> 24) & 0xff),
+				 ((x >> 16) & 0xff),
+				 ((x >> 8) & 0xff),
+				 (x & 0xff));
 			s = ipbuf;
 			goto str;
 

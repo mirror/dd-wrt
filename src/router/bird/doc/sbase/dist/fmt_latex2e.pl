@@ -1,7 +1,7 @@
 #
 #  fmt_latex2e.pl
 #
-#  $Id: fmt_latex2e.pl,v 1.2 2003/04/06 19:35:50 mj Exp $
+#  $Id$
 #
 #  LaTeX-specific driver stuff
 #

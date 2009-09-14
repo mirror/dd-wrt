@@ -23,7 +23,8 @@ configuration primitives, <cf> is fragment of configuration within normal text, 
 <author>
 Ondrej Filip <it/&lt;feela@network.cz&gt;/,
 Pavel Machek <it/&lt;pavel@ucw.cz&gt;/,
-Martin Mares <it/&lt;mj@ucw.cz&gt;/
+Martin Mares <it/&lt;mj@ucw.cz&gt;/,
+Ondrej Zajicek <it/&lt;santiago@crfreenet.org&gt;/
 </author>
 
 <abstract>
@@ -62,9 +63,10 @@ a statically configured table.
 <p>A <em/Routing Daemon/ is in UNIX terminology a non-interactive program running on
 background which does the dynamic part of Internet routing, that is it communicates
 with the other routers, calculates routing tables and sends them to the OS kernel
-which does the actual packet forwarding. There already exist other such routing daemons: routed (RIP only), GateD<HTMLURL URL="http://www.gated.org/">
- (non-free), Zebra<HTMLURL URL="http://www.zebra.org"> and MRTD<HTMLURL URL="http://www.zcu.cz/ftp/mirrors/mmrz/mrtd">, but their capabilities are limited and
-they are relatively hard to configure and maintain.
+which does the actual packet forwarding. There already exist other such routing
+daemons: routed (RIP only), GateD (non-free), Zebra<HTMLURL URL="http://www.zebra.org">
+and MRTD<HTMLURL URL="http://sourceforge.net/projects/mrt">, but their capabilities are
+limited and they are relatively hard to configure and maintain.
 
 <p>BIRD is an Internet Routing Daemon designed to avoid all of these shortcomings,
 to support all the routing technology used in the today's Internet or planned to be
@@ -205,6 +207,7 @@ protocol device {
 protocol rip {
 	export all;
 	import all;
+	interface "*";
 }
 </code>
 
@@ -246,6 +249,15 @@ protocol rip {
 	you could use a simple integer or an IP address.
 
 	<tag>router id <m/IPv4 address/</tag> Set BIRD's router ID. It's a world-wide unique identification of your router, usually one of router's IPv4 addresses. Default: in IPv4 version, the lowest IP address of a non-loopback interface. In IPv6 version, this option is mandatory. 
+
+	<tag>listen bgp [address <m/address/] [port <m/port/] [v6only]</tag>
+	This option allows to specify address and port where BGP
+	protocol should listen. It is global option as listening
+	socket is common to all BGP instances. Default is to listen on
+	all addresses (0.0.0.0) and port 179. In IPv6 mode, option
+	<cf/v6only/ can be used to specify that BGP socket should
+	listen to IPv6 connections only. This is needed if you want to
+	run both bird and bird6 on the same port.
 
 	<tag>table <m/name/</tag> Create a new routing table. The default
 	routing table is created implicitly, other routing tables have
@@ -297,19 +309,88 @@ to zero to disable it. An empty <cf><m/switch/</cf> is equivalent to <cf/on/
 <p>There are several options that give sense only with certain protocols:
 
 <descrip>
-	<tag>passwords { password "<m/password/" from <m/time/ to <m/time/ passive <m/time/ id
-	<m/num/ [...] }</tag> Specifies passwords to be used with this protocol. <cf>Passive <m/time/</cf> is
-	time from which the password is not used for sending, but it is recognized on reception. <cf/id/ is password ID as needed by
-	certain protocols. Format of <cf><m/time/</cf> is <tt>dd-mm-yyyy HH:MM:SS</tt>.
+	<tag><label id="dsc-iface">interface [-] [ "<m/mask/" ] [ <m/prefix/ ] [, ...] [ { <m/option/ ; [...] } ]</tag>
 
-	<tag>interface "<m/mask/"|<m/prefix/ [ { <m/option/ ; [...] } ]</tag> Specifies which
-	interfaces is this protocol active on and allows you to set options on a
-	per-interface basis. Mask is specified as in shell-like patterns, thus <cf>interface
-	"*" { mode broadcast; };</cf> will start the protocol on all interfaces with <cf>mode
-	broadcast;</cf> option. If the first character of mask is <cf/-/, such interfaces are
-	excluded. Masks are parsed left-to-right, thus <cf/interface "-eth*", "*";/ means all but
-	the ethernets. Default: none.
+	Specifies a set of interfaces on which the protocol is activated with
+	given interface-specific options. A set of interfaces specified by one
+	interface option is described using an interface pattern. The
+	interface pattern consists of a sequence of clauses (separted by
+	commas), each clause may contain a mask, a prefix, or both of them. An
+	interface matches the clause if its name matches the mask (if
+	specified) and its address matches the prefix (if specified). Mask is
+	specified as shell-like pattern.
 
+	An interface matches the pattern if it matches any of its
+	clauses. If the clause begins with <cf/-/, matching interfaces are
+	excluded. Patterns are parsed left-to-right, thus
+	<cf/interface "eth0", -"eth*", "*";/ means eth0 and all
+	non-ethernets.
+
+	An interface option can be used more times with different
+	interfaces-specific options, in that case for given interface
+	the first matching interface option is used.
+	
+	This option is allowed in Direct, OSPF and RIP protocols,
+	but in OSPF protocol it is used in <cf/area/ subsection.
+
+	Default: none.
+
+	Examples:
+
+	<cf>interface "*" { type broadcast; };</cf> - start the protocol on all interfaces with
+	<cf>type broadcast</cf> option.
+
+	<cf>interface "eth1", "eth4", "eth5" { type pointopoint; };</cf> - start the protocol
+	on enumerated interfaces with <cf>type pointopoint</cf> option.
+	
+	<cf>interface -192.168.1.0/24, 192.168.0.0/16;</cf> - start the protocol on all
+	interfaces that have address from 192.168.0.0/16, but not
+	from 192.168.1.0/24.
+
+	<cf>interface -192.168.1.0/24, 192.168.0.0/16;</cf> - start the protocol on all
+	interfaces that have address from 192.168.0.0/16, but not
+	from 192.168.1.0/24.
+
+	<cf>interface "eth*" 192.168.1.0/24;</cf> - start the protocol on all
+	ethernet interfaces that have address from 192.168.1.0/24.
+
+	<tag><label id="dsc-pass">password "<m/password/" [ { id <m/num/; generate from <m/time/; generate to <m/time/; accept from <m/time/; accept to <m/time/; } ]</tag>
+	Specifies a password that can be used by the protocol. Password option can
+	be used more times to specify more passwords. If more passwords are
+	specified, it is a protocol-dependent decision which one is really
+	used. Specifying passwords does not mean that authentication is
+	enabled, authentication can be enabled by separate, protocol-dependent
+	<cf/authentication/ option.
+	
+	This option is allowed in OSPF and RIP protocols. BGP has also
+	<cf/password/ option, but it is slightly different and described
+	separately.
+
+	Default: none.
+</descrip>
+
+<p>Password option can contain section with some (not necessary all) password sub-options:
+
+<descrip>
+	<tag>id <M>num</M></tag>
+	 ID of the password, (0-255). If it's not used, BIRD will choose
+	 ID based on an order of the password item in the interface. For
+	 example, second password item in one interface will have default
+	 ID 2. ID is used by some routing protocols to identify which
+	 password was used to authenticate protocol packets.
+
+	<tag>generate from "<m/time/"</tag>
+	 The start time of the usage of the password for packet signing.
+	 The format of <cf><m/time/</cf> is <tt>dd-mm-yyyy HH:MM:SS</tt>.
+
+	<tag>generate to "<m/time/"</tag>
+	 The last time of the usage of the password for packet signing.
+
+	<tag>accept from "<m/time/"</tag>
+	 The start time of the usage of the password for packet verification.
+
+	<tag>accept to "<m/time/"</tag>
+	 The last time of the usage of the password for packet verification.
 </descrip>
 
 <chapt>Remote control
@@ -326,6 +407,9 @@ codes along with the messages. You do not necessarily need to use <file/birdc/ t
 own applications could do that, too -- the format of communication between
 BIRD and <file/birdc/ is stable (see the programmer's documentation).
 
+Many commands have the <m/name/ of the protocol instance as an argument.
+This argument can be omitted if there exists only a single instance.
+
 <p>Here is a brief list of supported functions:
 
 <descrip>
@@ -338,19 +422,30 @@ BIRD and <file/birdc/ is stable (see the programmer's documentation).
 	<tag>show protocols [all]</tag>
 	Show list of protocol instances along with tables they are connected to and protocol status, possibly giving verbose information, if <cf/all/ is specified.
 
-	<tag>show ospf [interface|neighbors] [<m/name/] ["<m/interface/"]</tag>
-	Show detailed information about OSPF protocol, possibly giving a verbose list of interfaces and neighbors. The <m/name/ of the protocol instance can be omitted if there exists only a single instance.
+	<tag>show ospf interface [<m/name/] ["<m/interface/"]</tag>
+	Show detailed information about OSPF interfaces.
+
+	<tag>show ospf neighbors [<m/name/] ["<m/interface/"]</tag>
+	Show a list of OSPF neighbors and a state of adjacency to them.
+
+	<tag>show ospf state [<m/name/]</tag>
+	Show detailed information about OSPF areas based on a content of link-state database.
+	It shows network topology,  aggregated networks and routers from other areas and external routes.
+
+	<tag>show ospf topology [<m/name/]</tag>
+	Show a topology of OSPF areas based on a content of link-state database.
+	It is just a stripped-down version of 'show ospf state'.
 
 	<tag>show static [<m/name/]</tag>
-	Show detailed information about static routes. The <m/name/ of the protocol instance can be omitted if there exists only a single instance.
-	
+	Show detailed information about static routes.
+
 	<tag>show interfaces [summary]</tag>
 	Show the list of interfaces. For each interface, print its type, state, MTU and addresses assigned. 
 
 	<tag>show symbols</tag>
 	Show the list of symbols defined in the configuration (names of protocols, routing tables etc.).
 
-	<tag>show route [[for] <m/prefix/|<m/IP/] [table <m/sym/] [filter <m/f/|where <m/c/] [(import|preimport) <m/p/] [<m/options/]</tag>
+	<tag>show route [[for] <m/prefix/|<m/IP/] [table <m/sym/] [filter <m/f/|where <m/c/] [(export|preexport) <m/p/] [protocol <m/p/] [<m/options/]</tag>
 	Show contents of a routing table (by default of the main one),
 	that is routes, their metrics and (in case the <cf/all/ switch is given)
 	all their attributes.
@@ -365,9 +460,12 @@ BIRD and <file/birdc/ is stable (see the programmer's documentation).
 	<p>You can also ask for printing only routes processed and accepted by
 	a given filter (<cf>filter <m/name/</cf> or <cf>filter { <m/filter/ }
 	</cf> or matching a given condition (<cf>where <m/condition/</cf>).
-	The <cf/import/ and <cf/preimport/ switches ask for printing of entries
-        that are imported to the specified protocol. With <cf/preimport/, the
-	import filter of the protocol is skipped.
+	The <cf/export/ and <cf/preexport/ switches ask for printing of entries
+	that are exported to the specified protocol. With <cf/preexport/, the
+	export filter of the protocol is skipped.
+
+	<p>You can also select just routes added by a specific protocol.
+	<cf>protocol <m/p/</cf>.
 
 	<p>The <cf/stats/ switch requests showing of route statistics (the
 	number of networks, number of routes before and after filtering). If
@@ -376,8 +474,16 @@ BIRD and <file/birdc/ is stable (see the programmer's documentation).
 	<tag>enable|disable|restart <m/name/|"<m/pattern/"|all</tag>
 	Enable, disable or restart a given protocol instance, instances matching the <cf><m/pattern/</cf> or <cf/all/ instances.
 
-	<tag>configure ["<m/config file/"]</tag>
-	Reload configuration from a given file.
+	<tag>configure [soft] ["<m/config file/"]</tag>
+	Reload configuration from a given file. BIRD will smoothly
+	switch itself to the new configuration, protocols are
+	reconfigured if possible, restarted otherwise. Changes in
+	filters usualy lead to restart of affected protocols. If
+	<cf/soft> option is used, changes in filters does not cause
+	BIRD to restart affected protocols, therefore already accepted
+	routes (according to old filters) would be still propagated,
+	but new routes would be processed according to the new
+	filters.
 
 	<tag/down/
 	Shut BIRD down.
@@ -484,7 +590,8 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  to +2000000000. Overflows are not checked. You can use <cf/0x1234/ syntax to write hexadecimal values.
 
 	<tag/pair/ This is a pair of two short integers. Each component can have values from 0 to
-	  65535. Literals of this type is written as <cf/(1234,5678)/.
+	  65535. Literals of this type are written as <cf/(1234,5678)/. The same syntax can also be
+	  used to construct a pair from two arbitrary integer expressions (for example <cf/(1+2,a)/).
 
 	<tag/string/ This is a string of characters. There are no ways to modify strings in
 	  filters. You can pass them between functions, assign them to variables of type <cf/string/, print
@@ -507,12 +614,33 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  Filters recognize four types of sets. Sets are similar to strings: you can pass them around
 	  but you can't modify them. Literals of type <cf>set int</cf> look like <cf>
 	  [ 1, 2, 5..7 ]</cf>. As you can see, both simple values and ranges are permitted in
-	  sets. Sets of prefixes are special: you can specify which prefix lengths should match them by
-	  using <cf>[ 1.0.0.0/8+, 2.0.0.0/8-, 3.0.0.0/8{5,6} ]</cf>. <cf>3.0.0.0/8{5,6}</cf> matches
-	  prefixes <cf/3.X.X.X/ whose prefix length is 5 to 6. <cf><m>address</m>/<m>num</m>+</cf> is a shorthand for <cf><m>address</m>/{0,<m/num/}</cf>,
-	  <cf><m>address</m>/<m/num/-</cf> is a shorthand for <cf><m>address</m>/{0,<m/num-1/}</cf>. For example,
-	  <cf>1.2.0.0/16 &tilde; [ 1.0.0.0/8{ 15 , 17 } ]</cf> is true, but
-	  <cf>1.0.0.0/8 &tilde; [ 1.0.0.0/8- ]</cf> is false.
+	  sets.
+
+	  Sets of prefixes are special: their literals does not allow ranges, but allows
+	  prefix patterns that are written as <cf><M>ipaddress</M>/<M>pxlen</M>{<M>low</M>,<M>high</M>}</cf>.
+	  Prefix <cf><m>ip1</m>/<m>len1</m></cf> matches prefix pattern <cf><m>ip2</m>/<m>len2</m>{<m>l</m>,<m>h</m>}</cf> iff 
+	  the first <cf>min(len1, len2)</cf> bits of <cf/ip1/ and <cf/ip2/ are identical and <cf>len1 &lt;= ip1 &lt;= len2</cf>.
+	  A valid prefix pattern has to satisfy <cf>low &lt;= high</cf>, but <cf/pxlen/ is not constrained by <cf/low/
+	  or <cf/high/. Obviously, a prefix matches a prefix set literal iff it matches any prefix pattern in the
+	  prefix set literal.
+
+	  There are also two shorthands for prefix patterns: <cf><m>address</m>/<m/len/+</cf> is a shorthand for
+	  <cf><m>address</m>/<m/len/{<m/len/,<m/maxlen/}</cf> (where <cf><m>maxlen</m></cf> is 32 for IPv4 and 128 for IPv6), 
+	  that means network prefix <cf><m>address</m>/<m/len/</cf> and all its subnets. <cf><m>address</m>/<m/len/-</cf>
+	  is a shorthand for <cf><m>address</m>/<m/len/{0,<m/len/}</cf>, that means network prefix <cf><m>address</m>/<m/len/</cf>
+	  and all its supernets (network prefixes that contain it).
+
+	  For example, <cf>[ 1.0.0.0/8, 2.0.0.0/8+, 3.0.0.0/8-, 4.0.0.0/8{16,24} ]</cf> matches
+	  prefix <cf>1.0.0.0/8</cf>, all subprefixes of <cf>2.0.0.0/8</cf>, all superprefixes of <cf>3.0.0.0/8</cf> and prefixes
+	  <cf/4.X.X.X/ whose prefix length is 16 to 24. <cf>[ 0.0.0.0/0{20,24} ]</cf> matches all prefixes (regardless of
+	  IP address) whose prefix length is 20 to 24, <cf>[ 1.2.3.4/32- ]</cf> matches any prefix that contains IP address
+	  <cf>1.2.3.4</cf>. <cf>1.2.0.0/16 &tilde; [ 1.0.0.0/8{15,17} ]</cf> is true,
+	  but <cf>1.0.0.0/16 &tilde; [ 1.0.0.0/8- ]</cf> is false.
+
+	  Cisco-style patterns like <cf>10.0.0.0/8 ge 16 le 24</cf> can be expressed
+	  in Bird as <cf>10.0.0.0/8{16,24}</cf>, <cf>192.168.0.0/16 le 24</cf> as 
+	  <cf>192.168.0.0/16{16,24}</cf> and <cf>192.168.0.0/16 ge 24</cf> as
+	  <cf>192.168.0.0/16{24,32}</cf>.
 
 	<tag/enum/
 	  Enumeration types are fixed sets of possibilities. You can't define your own
@@ -524,13 +652,16 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 
 	<tag/bgpmask/
 	  BGP masks are patterns used for BGP path matching
-	  (using <cf>path &tilde; /2 3 5 ?/</cf> syntax). The masks
+	  (using <cf>path &tilde; [= 2 3 5 * =]</cf> syntax). The masks
 	  resemble wildcard patterns as used by UNIX shells. Autonomous
-	  system numbers match themselves, <cf/?/ matches any (even empty)
-	  sequence of arbitrary AS numbers (<cf/*/ hasn't been chosen, because
-	  <cf>/*</cf> starts a comment). For example:
-	  <tt>/4 3 2 1/ &tilde; /? 4 3 ?/</tt> is true, but 
-	  <tt>/4 3 2 1/ &tilde; /? 4 5 ?/</tt> is false.
+	  system numbers match themselves, <cf/*/ matches any (even empty)
+	  sequence of arbitrary AS numbers and <cf/?/ matches one arbitrary AS number.
+	  For example, if <cf>bgp_path</cf> is 4 3 2 1, then:
+	  <tt>bgp_path &tilde; [= * 4 3 * =]</tt> is true, but 
+	  <tt>bgp_path &tilde; [= * 4 5 * =]</tt> is false.
+	  BGP mask expressions can also contain integer expressions enclosed in parenthesis
+	  and integer variables, for example <tt>[= * 4 (1+2) a =]</tt>.
+	  There is also old syntax that uses / .. / instead of [= .. =] and ? instead of *.
 	<tag/clist/ 
 	  Community list is similar to set of pairs,
 	  except that unlike other sets, it can be modified.
@@ -543,7 +674,8 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 <p>The filter language supports common integer operators <cf>(+,-,*,/)</cf>, parentheses <cf/(a*(b+c))/, comparison
 <cf/(a=b, a!=b, a&lt;b, a&gt;=b)/. Logical operations include unary not (<cf/!/), and (<cf/&amp;&amp;/) and or (<cf/&verbar;&verbar;/). 
 Special operators include <cf/&tilde;/ for "is element of a set" operation - it can be
-used on element and set of elements of the same type (returning true if element is contained in the given set), or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
+used on element and set of elements of the same type (returning true if element is contained in the given set), or
+on two strings (returning true if first string matches a shell-like pattern stored in second string) or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
 prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair and clist (returning true if the community is element of the community list).
 
 
@@ -600,6 +732,9 @@ defined by using the <cf>defined( <m>attribute</m> )</cf> operator.
 	<tag><m/ip/ gw</tag>
 	Next hop packets routed using this route should be forwarded to.
 
+	<tag><m/string/ proto</tag>
+	The name of the protocol which the route has been imported from. Read-only.
+
 	<tag><m/enum/ source</tag>
 	what protocol has told me about this route. Possible values: <cf/RTS_DUMMY/, <cf/RTS_STATIC/, <cf/RTS_INHERIT/, <cf/RTS_DEVICE/, <cf/RTS_STATIC_DEVICE/, <cf/RTS_REDIRECT/, <cf/RTS_RIP/, <cf/RTS_OSPF/, <cf/RTS_OSPF_IA/, <cf/RTS_OSPF_EXT/, <cf/RTS_BGP/, <cf/RTS_PIPE/.
 
@@ -655,13 +790,21 @@ routing table it wishes to export along with complete path information
 route) in order to avoid routing loops.
 
 <p>BIRD supports all requirements of the BGP4 standard as defined in
-RFC 1771<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc1771.txt">
-including several enhancements from the
-latest draft<htmlurl url="ftp://ftp.rfc-editor.org/internet-drafts/draft-ietf-idr-bgp4-09.txt">.
-It also supports the community attributes as per
-RFC 1997<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc1997.txt">,
-capability negotiation defined in
-RFC 2842<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2842.txt">.
+RFC 4271<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4271.txt">
+It also supports the community attributes
+(RFC 1997<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc1997.txt">),
+capability negotiation
+(RFC 3392<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc3392.txt">),
+MD5 password authentication
+(RFC 2385<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2385.txt">),
+route reflectors 
+(RFC 4456<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4456.txt">),
+multiprotocol extensions
+(RFC 4760<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4760.txt">),
+and 4B AS numbers 
+(RFC 4893<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4893.txt">).
+
+
 For IPv6, it uses the standard multiprotocol extensions defined in
 RFC 2283<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2283.txt">
 including changes described in the
@@ -721,6 +864,55 @@ for each neighbor using the following configuration parameters:
 	for next hop calculation. Default: the address of the local end
 	of the interface our neighbor is connected to.
 
+	<tag>password <m/string/</tag> Use this password for MD5 authentication
+	of BGP sessions. Default: no authentication. Password has to be set by
+	external utility (e.g. setkey(8)) on BSD systems.
+
+	<tag>rr client</tag> Be a route reflector and treat the neighbor as
+	a route reflection client. Default: disabled.
+
+	<tag>rr cluster id <m/IPv4 address/</tag> Route reflectors use cluster id
+	to avoid route reflection loops. When there is one route reflector in a cluster
+	it usually uses its router id as a cluster id, but when there are more route
+	reflectors in a cluster, these need to be configured (using this option) to
+	use a common cluster id. Clients in a cluster need not know their cluster
+	id and this option is not allowed for them. Default: the same as router id.
+
+	<tag>rs client</tag> Be a route server and treat the neighbor
+	as a route server client. A route server is used as a
+	replacement for full mesh EBGP routing in Internet exchange
+	points in a similar way to route reflectors used in IBGP routing.
+	Bird does not implement obsoleted RFC 1863, but uses ad-hoc implementation,
+	which behaves like plain EBGP but reduces modifications to advertised route
+	attributes to be transparent (for example does not prepend its AS number to
+	AS PATH attribute and keep MED attribute). Default: disabled.
+
+	<tag>enable as4 <m/switch/</tag> BGP protocol was designed to use 2B AS numbers
+	and was extended later to allow 4B AS number. BIRD supports 4B AS extension,
+	but by disabling this option it can be persuaded not to advertise it and
+	to maintain old-style sessions with its neighbors. This might be useful for
+	circumventing bugs in neighbor's implementation of 4B AS extension.
+	Even when disabled (off), BIRD behaves internally as AS4-aware BGP router.
+	Default: on.
+
+	<tag>capabilities <m/switch/</tag> Use capability advertisement
+	to advertise optional capabilities. This is standard behavior
+	for newer BGP implementations, but there might be some older
+	BGP implementations that reject such connection attempts.
+	When disabled (off), features that request it (4B AS support)
+	are also disabled. Default: on, with automatic fallback to
+	off when received capability-related error.
+
+	<tag>advertise ipv4 <m/switch/</tag> Advertise IPv4 multiprotocol capability.
+	This is not a correct behavior according to the strict interpretation
+	of RFC 4760, but it is widespread and required by some BGP
+	implementations (Cisco and Quagga). This option is relevant
+	to IPv4 mode with enabled capability advertisement only. Default: on.
+
+	<tag>route limit <m/number/</tag> The maximal number of routes
+	that may be imported from the protocol. If the route limit is
+	exceeded, the connection is closed with error. Default: no limit.
+
 	<tag>disable after error <m/switch/</tag> When an error is encountered (either
 	locally or by the other side), disable the instance automatically
 	and wait for an administrator to fix the problem manually. Default: off.
@@ -757,7 +949,7 @@ for each neighbor using the following configuration parameters:
 
 	<tag>default bgp_med <m/number/</tag> Value of the Multiple Exit
 	Discriminator to be used during route selection when the MED attribute
-	is missing. Default: infinite.
+	is missing. Default: 0.
 
 	<tag>default bgp_local_pref <m/number/</tag> Value of the Local Preference
 	to be used during route selection when the Local Preference attribute
@@ -779,10 +971,16 @@ with `<tt/O/') are optional.
 	selection among multiple BGP routes (see the selection rules above). It's
 	used as an additional metric which is propagated through the whole local AS.
 
-	<tag>int <cf/bgp_med/ [IO]</tag> The Multiple Exit Discriminator of the route
-	is an optional attribute which is often used within the local AS to
-	reflect interior distances to various boundary routers. See the route selection
-	rules above for exact semantics.
+	<tag>int <cf/bgp_med/ [O]</tag> The Multiple Exit Discriminator of the route
+	is an optional attribute which is used on on external (inter-AS) links to
+	convey to an adjacent AS the optimal entry point into the local AS.
+	The received attribute may be also propagated over internal BGP links
+	(and this is default behavior). The attribute value is zeroed when a route
+	is exported from a routing table to a BGP instance to ensure that the attribute
+	received from a neighboring AS is not propagated to other neighboring ASes.
+	A new value might be set in the export filter of a BGP instance.
+	See RFC 4451<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4451.txt">
+	for further discussion of BGP MED attribute.
 
 	<tag>enum <cf/bgp_origin/</tag> Origin of the route: either <cf/ORIGIN_IGP/
 	if the route has originated in an interior routing protocol or
@@ -828,7 +1026,7 @@ protocol bgp {
 			bgp_community.add((65000,5678));
 			# Artificially increase path length
 			# by advertising local AS number twice
-			if bgp_path ~ / 65000 / then	  
+			if bgp_path ~ [= 65000 =] then	  
 				bgp_path.prepend(65000);  
 			accept;
 		}
@@ -849,7 +1047,7 @@ interfaces from the kernel.
 this protocol in the configuration since almost all other protocols
 require network interfaces to be defined for them to work with.
 
-<p>The only configurable thing is interface scan time:
+<sect1>Configuration
 
 <p><descrip>
 	<tag>scan time <m/number/</tag> Time in seconds between two scans
@@ -857,14 +1055,34 @@ require network interfaces to be defined for them to work with.
 	interface status changes asynchronously (such as newer versions of
 	Linux), we need to scan the list only in order to avoid confusion by lost
 	notification messages, so the default time is set to a large value.
+
+	<tag>primary  [ "<m/mask/" ] <m/prefix/</tag>
+	If a network interface has more than one network address,
+	BIRD has to choose one of them as a primary one, because some
+	routing protocols (for example OSPFv2) suppose there is only
+	one network address per interface. By default, BIRD chooses
+	the lexicographically smallest address as the primary one.
+
+	This option allows to specify which network address should be
+	chosen as a primary one. Network addresses that match
+	<m/prefix/ are preferred to non-matching addresses. If more
+	<cf/primary/ options are used, the first one has the highest
+	preference. If "<m/mask/" is specified, then such
+	<cf/primary/ option is relevant only to matching network
+	interfaces.
+
+	In all cases, an address marked by operating system as
+	secondary cannot be chosen as the primary one. 
 </descrip>
 
 <p>As the Device protocol doesn't generate any routes, it cannot have
-any attributes. Example configuration looks really simple:
+any attributes. Example configuration looks like this:
 
 <p><code>
 protocol device {
 	scan time 10;		# Scan the interfaces often
+	primary "eth0" 192.168.1.1;
+	primary 192.168.0.0/16;
 }
 </code>
 
@@ -966,7 +1184,8 @@ protocol kernel {		# Secondary routing table
 <sect1>Introduction
 
 <p>Open Shortest Path First (OSPF) is a quite complex interior gateway
-protocol. The current IPv4 version (OSPFv2) is defined in RFC 2328<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt">. It's a link
+protocol. The current IPv4 version (OSPFv2) is defined
+in RFC 2328<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt">. It's a link
 state (a.k.a. shortest path first) protocol -- each router maintains a database
 describing the autonomous system's topology. Each participating router
 has an identical copy of the database and all routers run the same algorithm
@@ -1014,8 +1233,13 @@ protocol ospf &lt;name&gt; {
 			&lt;prefix&gt;;
 			&lt;prefix&gt; hidden;
 		}
-		interface &lt;interface pattern&gt;
-		{
+		stubnet &lt;prefix&gt;;
+		stubnet &lt;prefix&gt; {
+			hidden &lt;switch&gt;;
+			summary &lt;switch&gt;;
+			cost &lt;num&gt;;
+		}
+		interface &lt;interface pattern&gt; {
 			cost &lt;num&gt;;
 			stub &lt;switch&gt;;
 			hello &lt;num&gt;;
@@ -1025,26 +1249,24 @@ protocol ospf &lt;name&gt; {
 			wait &lt;num&gt;;
 			dead count &lt;num&gt;;
 			dead &lt;num&gt;;
+			rx buffer [normal|large|&lt;num&gt;];
 			type [broadcast|nonbroadcast|pointopoint];
 			strict nonbroadcast &lt;switch&gt;;
-			authentication [none|simple];
+			authentication [none|simple|cryptographics];
 			password "&lt;text&gt;";
-			passwords {
-				password "&lt;text&gt;" {
-					id &lt;num&gt;;
-					generate from &lt;date&gt;;
-					generate to &lt;date&gt;;
-					accept from &lt;date&gt;;
-					accept to &lt;date&gt;;
-				};
+			password "&lt;text&gt;" {
+				id &lt;num&gt;;
+				generate from "&lt;date&gt;";
+				generate to "&lt;date&gt;";
+				accept from "&lt;date&gt;";
+				accept to "&lt;date&gt;";
 			};
 			neighbors {
 				&lt;ip&gt;;
 				&lt;ip&gt; eligible;
 			};
 		};
-		virtual link &lt;id&gt;
-		{
+		virtual link &lt;id&gt;	{
 			hello &lt;num&gt;;
 			retransmit &lt;num&gt;;
 			wait &lt;num&gt;;
@@ -1085,8 +1307,27 @@ protocol ospf &lt;name&gt; {
          Definition of area IP ranges. This is used in summary lsa origination.
 	 Hidden networks are not propagated into other areas.
 
+	<tag>stubnet <m/prefix/ { <m/options/ }</tag>
+	 Stub networks are networks that are not transit networks
+	 between OSPF routers. They are also propagated through an
+	 OSPF area as a part of a link state database. By default,
+	 BIRD generates a stub network record for each primary network
+	 address on each OSPF interface that does not have any OSPF
+	 neighbors, and also for each non-primary network address on
+	 each OSPF interface. This option allows to alter a set of
+	 stub networks propagated by this router. 
+
+	 Each instance of this option adds a stub network with given
+	 network prefix to the set of propagated stub network, unless
+	 option <cf/hidden/ is used. It also suppresses default stub
+	 networks for given network prefix. When option
+	 <cf/summary/ is used, also default stub networks that are
+	 subnetworks of given stub network are suppressed. This might
+	 be used, for example, to aggregate generated stub networks.
+	 
 	<tag>interface <M>pattern</M></tag>
 	 Defines that the specified interfaces belong to the area being defined.
+	 See <ref id="dsc-iface" name="interface"> common option for detailed description.
 
 	<tag>virtual link <M>id</M></tag>
 	 Virtual link to router with the router id. Virtual link acts as a
@@ -1133,6 +1374,11 @@ protocol ospf &lt;name&gt; {
 	 <m/dead/ seconds, it will consider the neighbor down. If both directives
 	 <m/dead count/ and <m/dead/ are used, <m/dead/ has precendence.
 
+	<tag>rx buffer <M>num</M></tag>
+	 This sets the size of buffer used for receiving packets. The buffer should
+	 be bigger than maximal size of any packets. Value NORMAL (default)
+	 means 2*MTU, value LARGE means maximal allowed packet - 65536.
+
 	<tag>type broadcast</tag>
 	 BIRD detects a type of a connected network automatically, but sometimes it's
 	 convenient to force use of a different type manually.
@@ -1160,29 +1406,14 @@ protocol ospf &lt;name&gt; {
 	 very weak.
 
 	<tag>authentication cryptographic</tag>
-	 16-byte long md5 digest is appended to every packet. For the digest
+	 16-byte long MD5 digest is appended to every packet. For the digest
          generation 16-byte long passwords are used. Those passwords are 
          not sent via network, so this mechanismus is quite secure.
          Packets can still be read by an attacker.
 
 	<tag>password "<M>text</M>"</tag>
 	 An 8-byte or 16-byte password used for authentication.
-
-	<tag>id <M>num</M></tag>
-	 ID of the password, (0-255). If it's not used, BIRD will choose
-	 some automatically.
-
-	<tag>generate from <M>date</M></tag>
-	 The start time of the usage of the password for packet signing.
-
-	<tag>generate to <M>date</M></tag>
-	 The last time of the usage of the password for packet signing.
-
-	<tag>accept from <M>date</M></tag>
-	 The start time of the usage of the password for packet verification.
-
-	<tag>accept to <M>date</M></tag>
-	 The last time of the usage of the password for packet verification.
+	 See <ref id="dsc-pass" name="password"> common option for detailed description.
 
 	<tag>neighbors { <m/set/ } </tag>
 	 A set of neighbors to which Hello messages on nonbroadcast networks
@@ -1218,7 +1449,7 @@ protocol ospf MyOSPF {
 			accept;
 		}
 		reject;
-	};                                                                      
+	};
 	area 0.0.0.0 {
 		interface "eth*" {
 			cost 11;
@@ -1231,17 +1462,15 @@ protocol ospf MyOSPF {
 		interface "ppp*" {
 			cost 100;
 			authentication cryptographic;
-			passwords {
-				password "abc" {
-					id 1;
-					generate to 22-04-2003 11:00:06;
-					accept from 17-01-2001 12:01:05;
-				};
-				password "def" {
-					id 2;
-					generate to 22-07-2005 17:03:21;
-					accept from 22-02-2001 11:34:06;
-				};
+			password "abc" {
+				id 1;
+				generate to "22-04-2003 11:00:06";
+				accept from "17-01-2001 12:01:05";
+			};
+			password "def" {
+				id 2;
+				generate to "22-07-2005 17:03:21";
+				accept from "22-02-2001 11:34:06";
 			};
 		};
 		interface "arc0" {
@@ -1284,10 +1513,23 @@ and vice versa, depending on what's allowed by the filters. Export filters contr
 of routes from the primary table to the secondary one, import filters control the opposite
 direction.
 
+<p>The Pipe protocol may work in the opaque mode or in the transparent
+mode. In the opaque mode, the Pipe protocol retransmits optimal route
+from one table to the other table in a similar way like other
+protocols send and receive routes. Retransmitted route will have the
+source set to the Pipe protocol, which may limit access to protocol
+specific route attributes. The opaque mode is a default mode.
+
+<p>In transparent mode, the Pipe protocol retransmits all routes from
+one table to the other table, retaining their original source and
+attributes.  If import and export filters are set to accept, then both
+tables would have the same content. The mode can be set by
+<tt/mode/ option.
+
 <p>The primary use of multiple routing tables and the Pipe protocol is for policy routing,
 where handling of a single packet doesn't depend only on its destination address, but also
 on its source address, source interface, protocol type and other similar parameters.
-In many systems (Linux 2.2 being a good example), the kernel allows to enforce routing policies
+In many systems (Linux being a good example), the kernel allows to enforce routing policies
 by defining routing rules which choose one of several routing tables to be used for a packet
 according to its parameters. Setting of these rules is outside the scope of BIRD's work
 (on Linux, you can use the <tt/ip/ command), but you can create several routing tables in BIRD,
@@ -1298,8 +1540,10 @@ another one.
 <sect1>Configuration
 
 <p><descrip>
-	<tag>peer table <m/table/</tag> Define secondary routing table to connect to. The
+	<tag>peer table <m/table/</tag> Defines secondary routing table to connect to. The
 	primary one is selected by the <cf/table/ keyword.
+
+	<tag>mode opaque|transparent</tag> Specifies the mode for the pipe to work in. Default is opaque.
 </descrip>
 
 <sect1>Attributes
@@ -1389,7 +1633,7 @@ RIP on networks where maximal distance is higher than 15 hosts. You can read mor
 URL="http://www.ietf.org/html.charters/rip-charter.html" name="http://www.ietf.org/html.charters/rip-charter.html">. Both IPv4  
 (RFC 1723<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc1723.txt">)
 and IPv6 (RFC 2080<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2080.txt">) versions of RIP are supported by BIRD, historical RIPv1 (RFC 1058<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc1058.txt">)is
-not currently supported. RIPv4 md5 authentication (RFC 2082<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2082.txt">) is supported.
+not currently supported. RIPv4 MD5 authentication (RFC 2082<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2082.txt">) is supported.
 
 <p>RIP is a very simple protocol, and it has a lot of shortcomings. Slow
 convergence, big network load and inability to handle larger networks
@@ -1404,8 +1648,8 @@ because there are no good implementations of OSPFv3.
 <descrip>
 	<tag/authentication none|plaintext|md5/ selects authentication method to be used. <cf/none/ means that
 	  packets are not authenticated at all, <cf/plaintext/ means that a plaintext password is embedded
-	  into each packet, and <cf/md5/ means that packets are authenticated using a md5 cryptographic
-	  hash. If you set authentication to not-none, it is a good idea to add <cf>passwords { }</cf>
+	  into each packet, and <cf/md5/ means that packets are authenticated using a MD5 cryptographic
+	  hash. If you set authentication to not-none, it is a good idea to add <cf>password</cf>
 	  section. Default: none.
 
 	<tag>honor always|neighbor|never </tag>specifies when should requests for dumping routing table
@@ -1470,8 +1714,8 @@ protocol rip MyRIP_test {
         port 1520;
         period 10;
         garbage time 60;
-        interface "eth0" { metric 3; mode multicast; }
-	          "eth1" { metric 2; mode broadcast; };
+        interface "eth0" { metric 3; mode multicast; };
+	interface "eth*" { metric 2; mode broadcast; };
         honor neighbor;
         authentication none;
         import filter { print "importing"; accept; };

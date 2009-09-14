@@ -45,7 +45,7 @@ ospf_rt_initort(struct fib_node *fn)
 /* 
  * This is hard to understand:
  * If rfc1583 is set to 1, it work likes normal route_better()
- * But if it is set to 0, it prunes number of AS bondary
+ * But if it is set to 0, it prunes number of AS boundary
  * routes before it starts the router decision
  */
 static int
@@ -60,35 +60,35 @@ ri_better(struct proto_ospf *po, orta * new, ort *nefn, orta * old, ort *oefn, i
   if (old->metric1 == LSINFINITY)
     return 1;
 
-  if(!rfc1583)
+  if (!rfc1583)
   {
-    if(new->oa->areaid == 0) newtype = RTS_OSPF_IA;
-    if(old->oa->areaid == 0) oldtype = RTS_OSPF_IA;
+    if ((new->type < RTS_OSPF_EXT1) && (new->oa->areaid == 0)) newtype = RTS_OSPF_IA;
+    if ((old->type < RTS_OSPF_EXT2) && (old->oa->areaid == 0)) oldtype = RTS_OSPF_IA;
   }
 
-  if (new->type < old->type)
+  if (newtype < oldtype)
     return 1;
 
-  if (new->type > old->type)
+  if (newtype > oldtype)
     return 0;
 
   /* Same type */
-  if(new->type == RTS_OSPF_EXT2)
+  if (new->type == RTS_OSPF_EXT2)
   {
     if (new->metric2 < old->metric2) return 1;
     if (new->metric2 > old->metric2) return 0;
   }
 
-  if(((new->type == RTS_OSPF_EXT2) || (new->type == RTS_OSPF_EXT1)) && (!po->rfc1583))
+  if (((new->type == RTS_OSPF_EXT2) || (new->type == RTS_OSPF_EXT1)) && (!po->rfc1583))
   {
-    int newtype = nefn->n.type;
-    int oldtype = oefn->n.type;
+    newtype = nefn->n.type;
+    oldtype = oefn->n.type;
 
-    if(nefn->n.oa->areaid == 0) newtype = RTS_OSPF_IA;
-    if(oefn->n.oa->areaid == 0) oldtype = RTS_OSPF_IA;
+    if (nefn->n.oa->areaid == 0) newtype = RTS_OSPF_IA;
+    if (oefn->n.oa->areaid == 0) oldtype = RTS_OSPF_IA;
 
-    if(newtype < oldtype) return 1;
-    if(newtype > oldtype) return 0;
+    if (newtype < oldtype) return 1;
+    if (newtype > oldtype) return 0;
   }
 
   if (new->metric1 < old->metric1)
@@ -154,8 +154,7 @@ ospf_rt_spfa(struct ospf_area *oa)
   if (oa->rt == NULL)
     return;
 
-  OSPF_TRACE(D_EVENTS, "Starting routing table calculation for area %I",
-	     oa->areaid);
+  OSPF_TRACE(D_EVENTS, "Starting routing table calculation for area %R", oa->areaid);
 
   if (oa->rt->dist != LSINFINITY)
     bug("Aging was not processed.");
@@ -168,8 +167,8 @@ ospf_rt_spfa(struct ospf_area *oa)
   oa->rt->dist = 0;
   oa->rt->color = CANDIDATE;
   add_head(&oa->cand, &oa->rt->cn);
-  DBG("RT LSA: rt: %I, id: %I, type: %u\n", oa->rt->lsa.rt,
-      oa->rt->lsa.id, oa->rt->lsa.type);
+  DBG("RT LSA: rt: %R, id: %R, type: %u\n",
+      oa->rt->lsa.rt, oa->rt->lsa.id, oa->rt->lsa.type);
 
   while (!EMPTY_LIST(oa->cand))
   {
@@ -177,8 +176,8 @@ ospf_rt_spfa(struct ospf_area *oa)
     act = SKIP_BACK(struct top_hash_entry, cn, n);
     rem_node(n);
 
-    DBG("Working on LSA: rt: %I, id: %I, type: %u\n", act->lsa.rt,
-	act->lsa.id, act->lsa.type);
+    DBG("Working on LSA: rt: %R, id: %R, type: %u\n",
+	act->lsa.rt, act->lsa.id, act->lsa.type);
 
     act->color = INSPF;
     switch (act->lsa.type)
@@ -195,6 +194,7 @@ ospf_rt_spfa(struct ospf_area *oa)
         if (rt->veb.bit.e) nf.capa |= ORTA_ASBR;
 	nf.metric1 = act->dist;
 	nf.metric2 = LSINFINITY;
+	nf.tag = 0;
 	nf.oa = oa;
 	nf.ar = act;
 	nf.nh = act->nh;
@@ -207,7 +207,7 @@ ospf_rt_spfa(struct ospf_area *oa)
       {
 	tmp = NULL;
 	rtl = (rr + i);
-	DBG("     Working on link: %I (type: %u)  ", rtl->id, rtl->type);
+	DBG("     Working on link: %R (type: %u)  ", rtl->id, rtl->type);
 	switch (rtl->type)
 	{
 	case LSART_STUB:
@@ -221,6 +221,7 @@ ospf_rt_spfa(struct ospf_area *oa)
 	  nf.capa = 0;
 	  nf.metric1 = act->dist + rtl->metric;
 	  nf.metric2 = LSINFINITY;
+	  nf.tag = 0;
 	  nf.oa = oa;
 	  nf.ar = act;
 	  nf.nh = act->nh;
@@ -263,7 +264,7 @@ ospf_rt_spfa(struct ospf_area *oa)
 	  DBG("PTP found.\n");
 	  break;
 	default:
-	  log("Unknown link type in router lsa. (rid = %I)", act->lsa.id);
+	  log("Unknown link type in router lsa. (rid = %R)", act->lsa.id);
 	  break;
 	}
 	if (tmp)
@@ -278,6 +279,7 @@ ospf_rt_spfa(struct ospf_area *oa)
       nf.capa = 0;
       nf.metric1 = act->dist;
       nf.metric2 = LSINFINITY;
+      nf.tag = 0;
       nf.oa = oa;
       nf.ar = act;
       nf.nh = act->nh;
@@ -289,8 +291,8 @@ ospf_rt_spfa(struct ospf_area *oa)
       for (i = 0; i < (act->lsa.length - sizeof(struct ospf_lsa_header) -
 		       sizeof(struct ospf_lsa_net)) / sizeof(u32); i++)
       {
-	DBG("     Working on router %I ", *(rts + i));
-	tmp = ospf_hash_find(po->gr, oa->areaid, *(rts + i), *(rts + i), LSA_T_RT);
+	DBG("     Working on router %R ", rts[i]);
+	tmp = ospf_hash_find(po->gr, oa->areaid, rts[i], rts[i], LSA_T_RT);
 	if (tmp != NULL)
 	  DBG("Found :-)\n");
 	else
@@ -311,7 +313,7 @@ ospf_rt_spfa(struct ospf_area *oa)
       {
         if ((iface->state != OSPF_IS_PTP) || (iface->iface != tmp->nhi->iface) || (!ipa_equal(iface->vip, tmp->lb)))
         {
-          OSPF_TRACE(D_EVENTS, "Vlink peer %I found", tmp->lsa.id);
+          OSPF_TRACE(D_EVENTS, "Vlink peer %R found", tmp->lsa.id);
           ospf_iface_sm(iface, ISM_DOWN);
           iface->iface = tmp->nhi->iface;
           iface->vip = tmp->lb;
@@ -322,7 +324,7 @@ ospf_rt_spfa(struct ospf_area *oa)
       {
         if (iface->state > OSPF_IS_DOWN)
         {
-          OSPF_TRACE(D_EVENTS, "Vlink peer %I lost", iface->vid);
+          OSPF_TRACE(D_EVENTS, "Vlink peer %R lost", iface->vid);
           ospf_iface_sm(iface, ISM_DOWN);
         }
       }
@@ -339,8 +341,8 @@ link_back(struct ospf_area *oa, struct top_hash_entry *fol, struct top_hash_entr
   struct ospf_lsa_rt_link *rtl, *rr;
   struct proto_ospf *po = oa->po;
 
-  if(!pre) return 0;
-  if(!fol) return 0;
+  if (!pre) return 0;
+  if (!fol) return 0;
   switch (fol->lsa.type)
   {
     case LSA_T_RT:
@@ -369,7 +371,7 @@ link_back(struct ospf_area *oa, struct top_hash_entry *fol, struct top_hash_entr
           }
 	  break;
 	default:
-	  log("Unknown link type in router lsa. (rid = %I)", fol->lsa.id);
+	  log("Unknown link type in router lsa. (rid = %R)", fol->lsa.id);
 	  break;
 	}
       }
@@ -387,7 +389,7 @@ link_back(struct ospf_area *oa, struct top_hash_entry *fol, struct top_hash_entr
       }
       break;
     default:
-      bug("Unknown lsa type. (id = %I)", fol->lsa.id);
+      bug("Unknown lsa type. (id = %R)", fol->lsa.id);
   }
   return 0;
 }
@@ -405,7 +407,7 @@ ospf_rt_sum_tr(struct ospf_area *oa)
   ort *re = NULL, *abr;
   orta nf;
 
-  if(!bb) return;
+  if (!bb) return;
 
   WALK_SLIST(en, po->lsal)
   {
@@ -439,14 +441,14 @@ ospf_rt_sum_tr(struct ospf_area *oa)
       type = ORT_ROUTER;
       re = (ort *) fib_find(&bb->rtr, &ip, 32);
     }
-    if(!re) continue;
-    if(re->n.oa->areaid != 0) continue;
-    if((re->n.type != RTS_OSPF) && (re->n.type != RTS_OSPF_IA)) continue;
+    if (!re) continue;
+    if (re->n.oa->areaid != 0) continue;
+    if ((re->n.type != RTS_OSPF) && (re->n.type != RTS_OSPF_IA)) continue;
 
     abrip = ipa_from_u32(en->lsa.rt);
 
     abr = fib_find(&oa->rtr, &abrip, 32);
-    if(!abr) continue;
+    if (!abr) continue;
 
     tm = (union ospf_lsa_sum_tm *)(mask + 1);
 
@@ -454,6 +456,7 @@ ospf_rt_sum_tr(struct ospf_area *oa)
     nf.capa = ORTA_ASBR;
     nf.metric1 = abr->n.metric1 + (tm->metric & METRIC_MASK);
     nf.metric2 = LSINFINITY;
+    nf.tag = 0;
     nf.oa = oa;
     nf.ar = abr->n.ar;
     nf.nh = abr->n.nh;
@@ -476,7 +479,7 @@ ospf_rt_sum(struct ospf_area *oa)
   int mlen = -1, type = -1;
   union ospf_lsa_sum_tm *tm;
 
-  OSPF_TRACE(D_EVENTS, "Starting routing table calculation for inter-area (area %I)", oa->areaid);
+  OSPF_TRACE(D_EVENTS, "Starting routing table calculation for inter-area (area %R)", oa->areaid);
 
   WALK_SLIST(en, po->lsal)
   {
@@ -489,13 +492,13 @@ ospf_rt_sum(struct ospf_area *oa)
     if (en->lsa.rt == p->cf->global->router_id)
       continue;
 
-    if((en->lsa.type != LSA_T_SUM_RT) && (en->lsa.type != LSA_T_SUM_NET))
+    if ((en->lsa.type != LSA_T_SUM_RT) && (en->lsa.type != LSA_T_SUM_NET))
       continue;
 
     mask = (ip_addr *)en->lsa_body;
     tm = (union ospf_lsa_sum_tm *)(mask + 1);
 
-    if((tm->metric & METRIC_MASK) == LSINFINITY)
+    if ((tm->metric & METRIC_MASK) == LSINFINITY)
       continue;
 
     if (en->lsa.type == LSA_T_SUM_NET)
@@ -533,6 +536,7 @@ ospf_rt_sum(struct ospf_area *oa)
     nf.capa = ORTA_ASBR;
     nf.metric1 = abr->n.metric1 + (tm->metric & METRIC_MASK);
     nf.metric2 = LSINFINITY;
+    nf.tag = 0;
     nf.oa = oa;
     nf.ar = abr->n.ar;
     nf.nh = abr->n.nh;
@@ -658,7 +662,7 @@ ospf_ext_spf(struct proto_ospf *po)
     le = en->lsa_body;
     lt = (struct ospf_lsa_ext_tos *) (le + 1);
 
-    DBG("%s: Working on LSA. ID: %I, RT: %I, Type: %u, Mask %I\n",
+    DBG("%s: Working on LSA. ID: %R, RT: %R, Type: %u, Mask %I\n",
 	p->name, en->lsa.id, en->lsa.rt, en->lsa.type, le->netmask);
 
     if ((lt->etm.metric & METRIC_MASK) == LSINFINITY)
@@ -667,7 +671,7 @@ ospf_ext_spf(struct proto_ospf *po)
     mlen = ipa_mklen(le->netmask);
     if ((mlen < 0) || (mlen > 32))
     {
-      log("%s: Invalid mask in LSA. ID: %I, RT: %I, Type: %u, Mask %I",
+      log("%s: Invalid mask in LSA. ID: %R, RT: %R, Type: %u, Mask %I",
 	  p->name, en->lsa.id, en->lsa.rt, en->lsa.type, le->netmask);
       continue;
     }
@@ -683,9 +687,9 @@ ospf_ext_spf(struct proto_ospf *po)
     WALK_LIST(atmp, po->area_list)
     {
       nfh = fib_find(&atmp->rtr, &rtid, 32);
-      if(nfh == NULL) continue;
-      if(nf1 == NULL) nf1 = nfh;
-      else if(ri_better(po, &nfh->n, NULL, &nf1->n, NULL, po->rfc1583)) nf1 = nfh;
+      if (nfh == NULL) continue;
+      if (nf1 == NULL) nf1 = nfh;
+      else if (ri_better(po, &nfh->n, NULL, &nf1->n, NULL, po->rfc1583)) nf1 = nfh;
     }
 
     if (!nf1)
@@ -746,19 +750,19 @@ ospf_ext_spf(struct proto_ospf *po)
 	nhi = nf2->n.ifa;
       }
 
-      nfh = nf2;
+      if (nf2->n.metric1 == LSINFINITY)
+        continue;			/* distance is INF */
     }
 
-    nfa.type = RTS_OSPF_EXT2;
-    if(met2 == LSINFINITY) nfa.type = RTS_OSPF_EXT1;
+    nfa.type = (met2 == LSINFINITY) ? RTS_OSPF_EXT1 : RTS_OSPF_EXT2;
     nfa.capa = 0;
     nfa.metric1 = met1;
     nfa.metric2 = met2;
-    nfa.oa = po->backbone;
+    nfa.tag = lt->tag;
+    nfa.oa = (po->backbone == NULL) ? HEAD(po->area_list) : po->backbone;
     nfa.ar = nf1->n.ar;
     nfa.nh = nh;
     nfa.ifa = nhi;
-    nfa.tag = lt->tag;
     ri_install(po, ip, mlen, ORT_NET, &nfa, nfh);
   }
 
@@ -791,8 +795,8 @@ add_cand(list * l, struct top_hash_entry *en, struct top_hash_entry *par,
   if (!link_back(oa, en, par))
     return;
 
-  DBG("     Adding candidate: rt: %I, id: %I, type: %u\n", en->lsa.rt,
-      en->lsa.id, en->lsa.type);
+  DBG("     Adding candidate: rt: %R, id: %R, type: %u\n",
+      en->lsa.rt, en->lsa.id, en->lsa.type);
 
   en->nhi = NULL;
   en->nh = IPA_NONE;
@@ -854,7 +858,7 @@ calc_next_hop(struct top_hash_entry *en, struct top_hash_entry *par,
   if (ipa_equal(par->nh, IPA_NONE))
   {
     neighbor *nn;
-    DBG("     Next hop calculating for id: %I rt: %I type: %u\n",
+    DBG("     Next hop calculating for id: %R rt: %R type: %u\n",
 	en->lsa.id, en->lsa.rt, en->lsa.type);
 
     if (par == oa->rt)
@@ -909,7 +913,7 @@ calc_next_hop(struct top_hash_entry *en, struct top_hash_entry *par,
     }
     else
     {				/* Parent is some RT neighbor */
-      log(L_ERR "Router's parent has no next hop. (EN=%I, PAR=%I)",
+      log(L_ERR "Router's parent has no next hop. (EN=%R, PAR=%R)",
 	  en->lsa.id, par->lsa.id);
       /* I hope this would never happen */
       return;
@@ -998,11 +1002,11 @@ again1:
         e->pref = p->preference;
         DBG("Mod rte type %d - %I/%d via %I on iface %s, met %d\n",
 	  a0.source, nf->fn.prefix, nf->fn.pxlen, a0.gw, a0.iface ? a0.iface->name : "(none)", nf->n.metric1);
-	rte_update(p->table, ne, p, e);
+	rte_update(p->table, ne, p, p, e);
       }
       else
       {
-        rte_update(p->table, ne, p, NULL);
+        rte_update(p->table, ne, p, p, NULL);
         FIB_ITERATE_PUT(&fit, nftmp);
         fib_delete(fib, nftmp);
         goto again1;
@@ -1021,7 +1025,7 @@ again2:
       if (memcmp(&nf->n, &nf->o, sizeof(orta)))
       {				/* Some difference */
         check_sum_lsa(po, nf, ORT_ROUTER);
-        if(nf->n.metric1 >= LSINFINITY)
+        if (nf->n.metric1 >= LSINFINITY)
         {
           FIB_ITERATE_PUT(&fit, nftmp);
           fib_delete(&oa->rtr, nftmp);
@@ -1036,7 +1040,7 @@ again2:
     {
       flush = 1;
       anet = (struct area_net *) nftmp;
-      if((!anet->hidden) && anet->active)
+      if ((!anet->hidden) && anet->active)
         flush = 0;
           
       WALK_LIST(oaa, po->area_list)
@@ -1049,7 +1053,7 @@ again2:
 
 	if (oaa->stub) fl = 1;
 
-        if(fl) flush_sum_lsa(oaa, &anet->fn, ORT_NET);
+        if (fl) flush_sum_lsa(oaa, &anet->fn, ORT_NET);
         else originate_sum_lsa(oaa, &anet->fn, ORT_NET, anet->metric);
       }
     }
@@ -1063,7 +1067,7 @@ again2:
 
       fnn.prefix = IPA_NONE;
       fnn.pxlen = 0;
-      if(oa->stub) originate_sum_lsa(oa, &fnn, ORT_NET, oa->stub);
+      if (oa->stub) originate_sum_lsa(oa, &fnn, ORT_NET, oa->stub);
       else flush_sum_lsa(oa, &fnn, ORT_NET);
     }
   }

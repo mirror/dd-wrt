@@ -30,7 +30,8 @@ void tm_start(timer *, unsigned after);
 void tm_stop(timer *);
 void tm_dump_all(void);
 
-extern bird_clock_t now;		/* Time in seconds since unknown epoch */
+extern bird_clock_t now; 		/* Relative, monotonic time in seconds */
+extern bird_clock_t now_real;		/* Time in seconds since fixed known epoch */
 
 bird_clock_t tm_parse_date(char *);	/* Convert date to bird_clock_t */
 bird_clock_t tm_parse_datetime(char *);	/* Convert date to bird_clock_t */

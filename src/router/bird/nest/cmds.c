@@ -19,6 +19,7 @@ cmd_show_status(void)
 
   cli_msg(-1000, "BIRD " BIRD_VERSION);
   tm_format_datetime(tim, now);
+  cli_msg(-1011, "Router ID is %R", config->router_id);
   cli_msg(-1011, "Current server time is %s", tim);
   tm_format_datetime(tim, boot_time);
   cli_msg(-1011, "Last reboot on %s", tim);

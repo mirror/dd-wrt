@@ -111,12 +111,13 @@ associated with it.
 <HR><H3>Function</H3>
 <P><I>int</I>
 <B>config_commit</B>
-(<I>struct config *</I> <B>c</B>) --     commit a configuration
+(<I>struct config *</I> <B>c</B>, <I>int</I> <B>type</B>) --     commit a configuration
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct config *</I> <B>c</B><DD><P>new configuration
+<DT><I>int</I> <B>type</B><DD><P>type of reconfiguration (RECONFIG_SOFT or RECONFIG_HARD)
 </DL>
 <H3>Description</H3>
 <P>When a configuration is parsed and prepared for use, the

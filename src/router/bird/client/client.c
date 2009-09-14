@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <curses.h>
 
 #include "nest/bird.h"
 #include "lib/resource.h"
@@ -29,13 +30,19 @@ static int verbose;
 
 static char *server_path = PATH_CONTROL_SOCKET;
 static int server_fd;
-static int server_reply;
 static byte server_read_buf[4096];
 static byte *server_read_pos = server_read_buf;
 
+#define STATE_PROMPT		0
+#define STATE_CMD_SERVER	1
+#define STATE_CMD_USER		2
+
 static int input_initialized;
-static int input_hidden;
 static int input_hidden_end;
+static int cstate = STATE_CMD_SERVER;
+static int nstate = STATE_CMD_SERVER;
+
+static int num_lines, skip_input, interactive;
 
 /*** Parsing of arguments ***/
 
@@ -70,7 +77,6 @@ parse_args(int argc, char **argv)
 /*** Input ***/
 
 static void server_send(char *);
-static void select_loop(int);
 
 /* HACK: libreadline internals we need to access */
 extern int _rl_vis_botlin;
@@ -93,6 +99,15 @@ handle_internal_command(char *cmd)
   return 0;
 }
 
+void
+submit_server_command(char *cmd)
+{
+  server_send(cmd);
+  nstate = STATE_CMD_SERVER;
+  num_lines = 2;
+}
+
+
 static void
 got_line(char *cmd_buffer)
 {
@@ -109,13 +124,10 @@ got_line(char *cmd_buffer)
       if (cmd)
 	{
 	  add_history(cmd);
+
 	  if (!handle_internal_command(cmd))
-	    {
-	      server_send(cmd);
-	      input_hidden = -1;
-	      select_loop(0);
-	      input_hidden = 0;
-	    }
+	    submit_server_command(cmd);
+
 	  free(cmd);
 	}
       else
@@ -168,20 +180,30 @@ input_complete(int arg UNUSED, int key UNUSED)
 static int
 input_help(int arg, int key UNUSED)
 {
-  int i = 0;
+  int i, in_string, in_bracket;
 
   if (arg != 1)
     return rl_insert(arg, '?');
-  while (i < rl_point)
+
+  in_string = in_bracket = 0;
+  for (i = 0; i < rl_point; i++)
     {
-      if (rl_line_buffer[i++] == '"')
-	do
-	  {
-	    if (i >= rl_point)		/* `?' inside quoted string -> insert */
-	      return rl_insert(1, '?');
-	  }
-        while (rl_line_buffer[i++] != '"');
+   
+      if (rl_line_buffer[i] == '"')
+	in_string = ! in_string;
+      else if (! in_string)
+        {
+	  if (rl_line_buffer[i] == '[')
+	    in_bracket++;
+	  else if (rl_line_buffer[i] == ']')
+	    in_bracket--;
+        }
     }
+
+  /* `?' inside string or path -> insert */
+  if (in_string || in_bracket)
+    return rl_insert(1, '?');
+
   rl_begin_undo_group();		/* HACK: We want to display `?' at point position */
   rl_insert_text("?");
   rl_redisplay();
@@ -201,34 +223,31 @@ input_init(void)
   rl_add_defun("bird-help", input_help, '?');
   rl_callback_handler_install("bird> ", got_line);
   input_initialized = 1;
-  if (fcntl(0, F_SETFL, O_NONBLOCK) < 0)
-    die("fcntl: %m");
+//  readline library does strange things when stdin is nonblocking.
+//  if (fcntl(0, F_SETFL, O_NONBLOCK) < 0)
+//    die("fcntl: %m");
 }
 
 static void
 input_hide(void)
 {
-  if (input_hidden)
-    return;
-  if (rl_line_buffer)
-    {
-      input_hidden_end = rl_end;
-      rl_end = 0;
-      rl_expand_prompt("");
-      rl_redisplay();
-      input_hidden = 1;
-    }
+  input_hidden_end = rl_end;
+  rl_end = 0;
+  rl_expand_prompt("");
+  rl_redisplay();
 }
 
 static void
 input_reveal(void)
 {
-  if (input_hidden <= 0)
-    return;
+  /* need this, otherwise some lib seems to eat pending output when
+     the prompt is displayed */
+  fflush(stdout);
+  tcdrain(fileno(stdout));
+
   rl_end = input_hidden_end;
   rl_expand_prompt("bird> ");
   rl_forced_update_display();
-  input_hidden = 0;
 }
 
 void
@@ -242,6 +261,51 @@ cleanup(void)
     }
 }
 
+void
+update_state(void)
+{
+  if (nstate == cstate)
+    return;
+
+  if (nstate == STATE_PROMPT)
+    if (input_initialized)
+      input_reveal();
+    else
+      input_init();
+
+  if (nstate != STATE_PROMPT)
+    input_hide();
+
+  cstate = nstate;
+}
+
+void
+more(void)
+{
+  printf("--More--\015");
+  fflush(stdout);
+
+ redo:
+  switch (getchar())
+    {
+    case 32:
+      num_lines = 2;
+      break;
+    case 13:
+      num_lines--;
+      break;
+    case 'q':
+      skip_input = 1;
+      break;
+    default:
+      goto redo;
+    }
+
+  printf("        \015");
+  fflush(stdout);
+}
+
+
 /*** Communication with server ***/
 
 static void
@@ -252,6 +316,10 @@ server_connect(void)
   server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (server_fd < 0)
     die("Cannot create socket: %m");
+
+  if (strlen(server_path) >= sizeof(sa.sun_path))
+    die("server_connect: path too long");
+
   bzero(&sa, sizeof(sa));
   sa.sun_family = AF_UNIX;
   strcpy(sa.sun_path, server_path);
@@ -265,27 +333,39 @@ static void
 server_got_reply(char *x)
 {
   int code;
+  int len = 0;
 
-  input_hide();
   if (*x == '+')			/* Async reply */
-    printf(">>> %s\n", x+1);
+    skip_input || (len = printf(">>> %s\n", x+1));
   else if (x[0] == ' ')			/* Continuation */
-    printf("%s%s\n", verbose ? "     " : "", x+1);
+    skip_input || (len = printf("%s%s\n", verbose ? "     " : "", x+1));
   else if (strlen(x) > 4 &&
 	   sscanf(x, "%d", &code) == 1 && code >= 0 && code < 10000 &&
 	   (x[4] == ' ' || x[4] == '-'))
     {
       if (code)
-	printf("%s\n", verbose ? x : x+5);
+	skip_input || (len = printf("%s\n", verbose ? x : x+5));
       if (x[4] == ' ')
-	server_reply = code;
+      {
+	nstate = STATE_PROMPT;
+	skip_input = 0;
+	return;
+      }
     }
   else
-    printf("??? <%s>\n", x);
-  /* need this, otherwise some lib seems to eat pending output when
-     the prompt is displayed */
-  fflush(stdout);
-  tcdrain(fileno(stdout));
+    skip_input || (len = printf("??? <%s>\n", x));
+
+  if (skip_input)
+    return;
+
+  if (interactive && input_initialized && (len > 0))
+    {
+      int lns = LINES ? LINES : 25;
+      int cls = COLS ? COLS : 80;
+      num_lines += (len + cls - 1) / cls; /* Divide and round up */
+      if ((num_lines >= lns)  && (cstate == STATE_CMD_SERVER))
+	more();
+    }
 }
 
 static void
@@ -294,11 +374,18 @@ server_read(void)
   int c;
   byte *start, *p;
 
+ redo:
   c = read(server_fd, server_read_pos, server_read_buf + sizeof(server_read_buf) - server_read_pos);
   if (!c)
     die("Connection closed by server.");
   if (c < 0)
-    die("Server read error: %m");
+    {
+      if (errno == EINTR)
+	goto redo;
+      else
+	die("Server read error: %m");
+    }
+
   start = server_read_buf;
   p = server_read_pos;
   server_read_pos += c;
@@ -325,26 +412,63 @@ server_read(void)
 static fd_set select_fds;
 
 static void
-select_loop(int mode)
+select_loop(void)
 {
-  server_reply = -1;
-  while (mode || server_reply < 0)
+  int rv;
+  while (1)
     {
       FD_ZERO(&select_fds);
-      FD_SET(server_fd, &select_fds);
-      if (mode)
+
+      if (cstate != STATE_CMD_USER)
+	FD_SET(server_fd, &select_fds);
+      if (cstate != STATE_CMD_SERVER)
 	FD_SET(0, &select_fds);
-      select(server_fd+1, &select_fds, NULL, NULL, NULL);
+
+      rv = select(server_fd+1, &select_fds, NULL, NULL, NULL);
+      if (rv < 0)
+	{
+	  if (errno == EINTR)
+	    continue;
+	  else
+	    die("select: %m");
+	}
+
       if (FD_ISSET(server_fd, &select_fds))
 	{
 	  server_read();
-	  if (mode)
-	    input_reveal();
+	  update_state();
 	}
+
       if (FD_ISSET(0, &select_fds))
-	rl_callback_read_char();
+	{
+	  rl_callback_read_char();
+	  update_state();
+	}
     }
-  input_reveal();
+}
+
+static void
+wait_for_write(int fd)
+{
+  while (1)
+    {
+      int rv;
+      fd_set set;
+      FD_ZERO(&set);
+      FD_SET(fd, &set);
+
+      rv = select(fd+1, NULL, &set, NULL, NULL);
+      if (rv < 0)
+	{
+	  if (errno == EINTR)
+	    continue;
+	  else
+	    die("select: %m");
+	}
+
+      if (FD_ISSET(server_fd, &set))
+	return;
+    }
 }
 
 static void
@@ -358,19 +482,13 @@ server_send(char *cmd)
   while (l)
     {
       int cnt = write(server_fd, z, l);
+
       if (cnt < 0)
 	{
-	  if (errno == -EAGAIN)
-	    {
-	      fd_set set;
-	      FD_ZERO(&set);
-	      do
-		{
-		  FD_SET(server_fd, &set);
-		  select(server_fd+1, NULL, &set, NULL, NULL);
-		}
-	      while (!FD_ISSET(server_fd, &set));
-	    }
+	  if (errno == EAGAIN)
+	    wait_for_write(server_fd);
+	  else if (errno == EINTR)
+	    continue;
 	  else
 	    die("Server write error: %m");
 	}
@@ -390,13 +508,10 @@ main(int argc, char **argv)
     dmalloc_debug(0x2f03d00);
 #endif
 
+  interactive = isatty(0);
   parse_args(argc, argv);
   cmd_build_tree();
   server_connect();
-  select_loop(0);
-
-  input_init();
-
-  select_loop(1);
+  select_loop();
   return 0;
 }

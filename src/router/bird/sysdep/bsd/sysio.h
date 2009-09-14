@@ -74,3 +74,48 @@ sysio_mcast_join(sock * s)
 }
 
 #endif
+
+
+#include <netinet/tcp.h>
+#ifndef TCP_KEYLEN_MAX
+#define TCP_KEYLEN_MAX 80
+#endif
+#ifndef TCP_SIG_SPI
+#define TCP_SIG_SPI 0x1000
+#endif
+
+/* 
+ * FIXME: Passwords has to be set by setkey(8) command. This is the same
+ * behaviour like Quagga. We need to add code for SA/SP entries
+ * management.
+ */
+
+static int
+sk_set_md5_auth_int(sock *s, sockaddr *sa, char *passwd)
+{
+  int enable = 0;
+  if (passwd)
+    {
+      int len = strlen(passwd);
+
+      enable = len ? TCP_SIG_SPI : 0;
+
+      if (len > TCP_KEYLEN_MAX)
+	{
+	  log(L_ERR "MD5 password too long");
+	  return -1;
+	}
+    }
+
+  int rv = setsockopt(s->fd, IPPROTO_TCP, TCP_MD5SIG, &enable, sizeof(enable));
+
+  if (rv < 0) 
+    {
+      if (errno == ENOPROTOOPT)
+	log(L_ERR "Kernel does not support TCP MD5 signatures");
+      else
+	log(L_ERR "sk_set_md5_auth_int: setsockopt: %m");
+    }
+
+  return rv;
+}

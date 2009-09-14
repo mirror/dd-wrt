@@ -73,8 +73,12 @@
  * and conserves memory.
  */
 
+#include <stdlib.h>
 #include "ospf.h"
 
+
+static void ospf_rt_notify(struct proto *p, net * n, rte * new, rte * old UNUSED, ea_list * attrs);
+static void ospf_ifa_notify(struct proto *p, unsigned flags, struct ifa *a);
 static int ospf_rte_better(struct rte *new, struct rte *old);
 static int ospf_rte_same(struct rte *new, struct rte *old);
 static void ospf_disp(timer *timer);
@@ -123,6 +127,9 @@ ospf_start(struct proto *p)
   po->disp_timer->hook = ospf_disp;
   po->disp_timer->recurrent = po->tick;
   tm_start(po->disp_timer, 1);
+  po->lsab_size = 256;
+  po->lsab_used = 0;
+  po->lsab = mb_alloc(p->pool, po->lsab_size);
   init_list(&(po->iface_list));
   init_list(&(po->area_list));
   fib_init(&po->rtf, p->pool, sizeof(ort), 16, ospf_rt_initort);
@@ -141,6 +148,7 @@ ospf_start(struct proto *p)
     oa = mb_allocz(p->pool, sizeof(struct ospf_area));
     add_tail(&po->area_list, NODE oa);
     po->areano++;
+    oa->ac = ac;
     oa->stub = ac->stub;
     oa->areaid = ac->areaid;
     oa->rt = NULL;
@@ -201,11 +209,11 @@ ospf_dump(struct proto *p)
   {
     OSPF_TRACE(D_EVENTS, "Interface: %s", (ifa->iface ? ifa->iface->name : "(null)"));
     OSPF_TRACE(D_EVENTS, "state: %u", ifa->state);
-    OSPF_TRACE(D_EVENTS, "DR:  %I", ifa->drid);
-    OSPF_TRACE(D_EVENTS, "BDR: %I", ifa->bdrid);
+    OSPF_TRACE(D_EVENTS, "DR:  %R", ifa->drid);
+    OSPF_TRACE(D_EVENTS, "BDR: %R", ifa->bdrid);
     WALK_LIST(n, ifa->neigh_list)
     {
-      OSPF_TRACE(D_EVENTS, "  neighbor %I in state %u", n->rid, n->state);
+      OSPF_TRACE(D_EVENTS, "  neighbor %R in state %u", n->rid, n->state);
     }
   }
 
@@ -223,8 +231,10 @@ ospf_init(struct proto_config *c)
   p->import_control = ospf_import_control;
   p->make_tmp_attrs = ospf_make_tmp_attrs;
   p->store_tmp_attrs = ospf_store_tmp_attrs;
+  p->accept_ra_types = RA_OPTIMAL;
   p->rt_notify = ospf_rt_notify;
   p->if_notify = ospf_iface_notify;
+  p->ifa_notify = ospf_ifa_notify;
   p->rte_better = ospf_rte_better;
   p->rte_same = ospf_rte_same;
 
@@ -299,8 +309,7 @@ schedule_rt_lsa(struct ospf_area *oa)
 {
   struct proto *p = &oa->po->proto;
 
-  OSPF_TRACE(D_EVENTS, "Scheduling RT lsa origination for area %I.",
-	     oa->areaid);
+  OSPF_TRACE(D_EVENTS, "Scheduling RT lsa origination for area %R.", oa->areaid);
   oa->origrt = 1;
 }
 
@@ -427,7 +436,7 @@ ospf_shutdown(struct proto *p)
   return PS_DOWN;
 }
 
-void
+static void
 ospf_rt_notify(struct proto *p, net * n, rte * new, rte * old UNUSED,
 	       ea_list * attrs)
 {
@@ -469,6 +478,25 @@ ospf_rt_notify(struct proto *p, net * n, rte * new, rte * old UNUSED,
       }
     }
   }
+}
+
+static void
+ospf_ifa_notify(struct proto *p, unsigned flags, struct ifa *a)
+{
+  struct proto_ospf *po = (struct proto_ospf *) p;
+  struct ospf_iface *ifa;
+  
+  if ((a->flags & IA_SECONDARY) || (a->flags & IA_UNNUMBERED))
+    return;
+
+  WALK_LIST(ifa, po->iface_list)
+    {
+      if (ifa->iface == a->iface)
+	{
+	  schedule_rt_lsa(ifa->oa);
+	  return;
+	}
+    }
 }
 
 static void
@@ -528,7 +556,7 @@ ospf_get_route_info(rte * rte, byte * buf, ea_list * attrs UNUSED)
 }
 
 static int
-ospf_get_attr(eattr * a, byte * buf)
+ospf_get_attr(eattr * a, byte * buf, int buflen UNUSED)
 {
   switch (a->id)
   {
@@ -601,8 +629,30 @@ ospf_reconfigure(struct proto *p, struct proto_config *c)
     if (!oa)
       return 0;
 
+    oa->ac = newac;
     oa->stub = newac->stub;
     if (newac->stub && (oa->areaid == 0)) oa->stub = 0;
+
+    /* Check stubnet_list */
+    struct ospf_stubnet_config *oldsn = HEAD(oldac->stubnet_list);
+    struct ospf_stubnet_config *newsn = HEAD(newac->stubnet_list);
+
+    while (((NODE(oldsn))->next != NULL) && ((NODE(newsn))->next != NULL))
+      {
+	if (!ipa_equal(oldsn->px.addr, newsn->px.addr) ||
+	    (oldsn->px.len != newsn->px.len) ||
+	    (oldsn->hidden != newsn->hidden) ||
+	    (oldsn->summary != newsn->summary) ||
+	    (oldsn->cost != newsn->cost))
+	  break;
+
+	oldsn = (struct ospf_stubnet_config *)(NODE(oldsn))->next;
+	newsn = (struct ospf_stubnet_config *)(NODE(newsn))->next;
+      }
+
+    /* If there is no change, both pointers should be NULL */
+    if (((NODE(oldsn))->next) != ((NODE(newsn))->next))
+      schedule_rt_lsa(oa);
 
     /* Change net_list */
     FIB_WALK(&oa->net_fib, nf)	/* First check if some networks are deleted */
@@ -633,11 +683,11 @@ ospf_reconfigure(struct proto *p, struct proto_config *c)
     WALK_LIST(ifa, po->iface_list)
     {
       if (oldip = (struct ospf_iface_patt *)
-	  iface_patt_match(&oldac->patt_list, ifa->iface))
+	  iface_patt_find(&oldac->patt_list, ifa->iface))
       {
 	/* Now reconfigure interface */
 	if (!(newip = (struct ospf_iface_patt *)
-	      iface_patt_match(&oldac->patt_list, ifa->iface)))
+	      iface_patt_find(&newac->patt_list, ifa->iface)))
 	  return 0;
 
 	/* HELLO TIMER */
@@ -670,6 +720,16 @@ ospf_reconfigure(struct proto *p, struct proto_config *c)
 		     "Changing cost interface %s from %d to %d",
 		     ifa->iface->name, oldip->cost, newip->cost);
 	  schedule_rt_lsa(ifa->oa);
+	}
+
+	/* RX BUFF */
+	if (oldip->rxbuf != newip->rxbuf)
+	{
+	  ifa->rxbuf = newip->rxbuf;
+	  OSPF_TRACE(D_EVENTS,
+		     "Changing rxbuf interface %s from %d to %d",
+		     ifa->iface->name, oldip->rxbuf, newip->rxbuf);
+	  ospf_iface_change_mtu(po, ifa);
 	}
 
 	/* strict nbma */
@@ -892,7 +952,7 @@ ospf_sh(struct proto *p)
 
   WALK_LIST(oa, po->area_list)
   {
-    cli_msg(-1014, "\tArea: %I (%u) %s", oa->areaid, oa->areaid,
+    cli_msg(-1014, "\tArea: %R (%u) %s", oa->areaid, oa->areaid,
 	    oa->areaid == 0 ? "[BACKBONE]" : "");
     ifano = 0;
     nno = 0;
@@ -969,6 +1029,218 @@ ospf_sh_iface(struct proto *p, char *iff)
   }
   cli_msg(-1015, "%s:", p->name);
   WALK_LIST(ifa, po->iface_list) ospf_iface_info(ifa);
+  cli_msg(0, "");
+}
+
+/* First we want to separate network-LSAs and other LSAs (because network-LSAs
+ * will be presented as network nodes and other LSAs together as router nodes)
+ * Network-LSAs are sorted according to network prefix, other LSAs are sorted
+ * according to originating router id (to get all LSA needed to represent one
+ * router node together). Then, according to LSA type, ID and age.
+ */
+static int
+he_compare(const void *p1, const void *p2)
+{
+  struct top_hash_entry * he1 = * (struct top_hash_entry **) p1;
+  struct top_hash_entry * he2 = * (struct top_hash_entry **) p2;
+  struct ospf_lsa_header *lsa1 = &(he1->lsa);
+  struct ospf_lsa_header *lsa2 = &(he2->lsa);
+  int nt1 = (lsa1->type == LSA_T_NET);
+  int nt2 = (lsa2->type == LSA_T_NET);
+
+  if (he1->oa->areaid != he2->oa->areaid)
+    return he1->oa->areaid - he2->oa->areaid;
+
+  if (nt1 != nt2)
+    return nt1 - nt2;
+
+  if (nt1)
+  {
+    // we are cheating for now
+    if (lsa1->id != lsa2->id)
+      return lsa1->id - lsa2->id;
+    
+    return lsa1->age - lsa2->age;
+  }
+  else 
+    {
+      if (lsa1->rt != lsa2->rt)
+	return lsa1->rt - lsa2->rt;
+ 
+      if (lsa1->type != lsa2->type)
+	return lsa1->type - lsa2->type;
+  
+      if (lsa1->id != lsa2->id)
+	return lsa1->id - lsa2->id;
+  
+      return lsa1->age - lsa2->age;
+    }
+}
+
+static inline void
+show_lsa_router(struct top_hash_entry *he)
+{
+  struct ospf_lsa_header *lsa = &(he->lsa);
+  struct ospf_lsa_rt *rt = he->lsa_body;
+  struct ospf_lsa_rt_link *rr = (struct ospf_lsa_rt_link *) (rt + 1);
+  u32 i;
+
+  for (i = 0; i < rt->links; i++)
+    if (rr[i].type == LSART_PTP)
+      cli_msg(-1016, "\t\trouter %R metric %u ", rr[i].id, rr[i].metric);
+
+  for (i = 0; i < rt->links; i++)
+    if (rr[i].type == LSART_NET)
+    {
+      struct proto_ospf *po = he->oa->po;
+      struct top_hash_entry *net_he = ospf_hash_find(po->gr, he->oa->areaid, rr[i].id, rr[i].id, LSA_T_NET);
+      if (net_he)
+      {
+	struct ospf_lsa_header *net_lsa = &(net_he->lsa);
+	struct ospf_lsa_net *net_ln = net_he->lsa_body;
+	cli_msg(-1016, "\t\tnetwork %I/%d metric %u ", ipa_and(ipa_from_u32(net_lsa->id), net_ln->netmask), ipa_mklen(net_ln->netmask), rr[i].metric);
+      }
+      else
+	cli_msg(-1016, "\t\tnetwork ??? metric %u ", rr[i].metric);
+    }
+
+  for (i = 0; i < rt->links; i++)
+    if (rr[i].type == LSART_STUB)
+      cli_msg(-1016, "\t\tstubnet %I/%d metric %u ", ipa_from_u32(rr[i].id), ipa_mklen(ipa_from_u32(rr[i].data)), rr[i].metric);
+
+  for (i = 0; i < rt->links; i++)
+    if (rr[i].type == LSART_VLNK)
+      cli_msg(-1016, "\t\tvlink %I metric %u ", ipa_from_u32(rr[i].id), rr[i].metric);
+}
+
+static inline void
+show_lsa_network(struct top_hash_entry *he)
+{
+  struct ospf_lsa_header *lsa = &(he->lsa);
+  struct ospf_lsa_net *ln = he->lsa_body;
+  u32 *rts = (u32 *) (ln + 1);
+  u32 max = (lsa->length - sizeof(struct ospf_lsa_header) - sizeof(struct ospf_lsa_net)) / sizeof(u32);
+  u32 i;
+
+  cli_msg(-1016, "");
+  cli_msg(-1016, "\tnetwork %I/%d", ipa_and(ipa_from_u32(lsa->id), ln->netmask), ipa_mklen(ln->netmask));
+  cli_msg(-1016, "\t\tdr %R", lsa->rt);
+
+  for (i = 0; i < max; i++)
+    cli_msg(-1016, "\t\trouter %R", rts[i]);
+}
+
+static inline void
+show_lsa_sum_net(struct top_hash_entry *he)
+{
+  struct ospf_lsa_header *lsa = &(he->lsa);
+  struct ospf_lsa_sum *sm = he->lsa_body;
+
+  cli_msg(-1016, "\t\txnetwork %I/%d", ipa_and(ipa_from_u32(lsa->id), sm->netmask), ipa_mklen(sm->netmask));
+}
+
+static inline void
+show_lsa_sum_rt(struct top_hash_entry *he)
+{
+  cli_msg(-1016, "\t\txrouter %R", he->lsa.id);
+}
+
+
+static inline void
+show_lsa_external(struct top_hash_entry *he)
+{
+  struct ospf_lsa_header *lsa = &(he->lsa);
+  struct ospf_lsa_ext *ext = he->lsa_body;
+  struct ospf_lsa_ext_tos *et = (struct ospf_lsa_ext_tos *) (ext + 1);
+
+  char str_via[STD_ADDRESS_P_LENGTH + 8] = "";
+  char str_tag[16] = "";
+  
+  if (ipa_nonzero(et->fwaddr))
+    bsprintf(str_via, " via %I", et->fwaddr);
+
+  if (et->tag)
+    bsprintf(str_tag, " tag %08x", et->tag);
+
+  cli_msg(-1016, "\t\texternal %I/%d metric%s %u%s%s",
+	  ipa_and(ipa_from_u32(lsa->id), ext->netmask),
+	  ipa_mklen(ext->netmask), et->etm.etos.ebit ? "2" : "",
+	  et->etm.metric & METRIC_MASK, str_via, str_tag);
+}
+
+
+void
+ospf_sh_state(struct proto *p, int verbose)
+{
+  struct proto_ospf *po = (struct proto_ospf *) p;
+  struct top_graph *f = po->gr;
+  unsigned int i, j;
+  u32 last_rt = 0xFFFFFFFF;
+  u32 last_area = 0xFFFFFFFF;
+
+  if (p->proto_state != PS_UP)
+  {
+    cli_msg(-1016, "%s: is not up", p->name);
+    cli_msg(0, "");
+    return;
+  }
+
+  struct top_hash_entry *hea[f->hash_entries];
+  struct top_hash_entry *he;
+
+  j = 0;
+  for (i = 0; i < f->hash_size; i++)
+    for (he = f->hash_table[i]; he != NULL; he = he->next)
+      hea[j++] = he;
+
+  if (j == f->hash_size)
+    die("Fatal mismatch");
+
+  qsort(hea, j, sizeof(struct top_hash_entry *), he_compare);
+
+  for (i = 0; i < j; i++)
+  {
+    if ((verbose == 0) && (hea[i]->lsa.type > LSA_T_NET))
+      continue;
+
+    if (last_area != hea[i]->oa->areaid)
+    {
+      cli_msg(-1016, "");
+      cli_msg(-1016, "area %R", hea[i]->oa->areaid);
+      last_area = hea[i]->oa->areaid;
+      last_rt = 0xFFFFFFFF;
+    }
+
+    if ((hea[i]->lsa.rt != last_rt) && (hea[i]->lsa.type != LSA_T_NET))
+    {
+      cli_msg(-1016, "");
+      cli_msg(-1016, (hea[i]->lsa.type != LSA_T_EXT) ? "\trouter %R" : "\txrouter %R", hea[i]->lsa.rt);
+      last_rt = hea[i]->lsa.rt;
+    }
+
+    switch (hea[i]->lsa.type)
+    {
+      case LSA_T_RT:
+	show_lsa_router(hea[i]);
+	break;
+
+      case LSA_T_NET:
+	show_lsa_network(hea[i]);
+	break;
+
+      case LSA_T_SUM_NET:
+	show_lsa_sum_net(hea[i]);
+	break;
+
+      case LSA_T_SUM_RT:
+	show_lsa_sum_rt(hea[i]);
+	break;
+      case LSA_T_EXT:
+	show_lsa_external(hea[i]);
+	break;
+    }
+  }
+
   cli_msg(0, "");
 }
 

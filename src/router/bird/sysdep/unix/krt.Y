@@ -68,6 +68,7 @@ kif_proto_start: proto_start DEVICE {
      cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config));
      this_proto->preference = DEF_PREF_DIRECT;
      THIS_KIF->scan_time = 60;
+     init_list(&THIS_KIF->primary);
      krt_if_construct(THIS_KIF);
    }
  ;
@@ -80,6 +81,13 @@ kif_item:
    SCAN TIME expr {
       /* Scan time of 0 means scan on startup only */
       THIS_KIF->scan_time = $3;
+   }
+ | PRIMARY text_or_none prefix_or_ipa {
+     struct kif_primary_item *kpi = cfg_alloc(sizeof (struct kif_primary_item));
+     kpi->pattern = $2;
+     kpi->prefix = $3.addr;
+     kpi->pxlen = $3.len;
+     add_tail(&THIS_KIF->primary, &kpi->n);
    }
  ;
 

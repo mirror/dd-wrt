@@ -1,13 +1,13 @@
 -- This is a DTD, but will be read as -*- sgml -*-   --
 -- ================================================= --
--- $Id: catalog,v 1.1 2000/05/29 12:05:22 mj Exp $ 
+-- $Id$ 
 
    This is dtd/catalog for SGML-Tools.
 
    Initial revision June 23st, 1997, by B. Kreimeier
 
-   $Log: catalog,v $
-   Revision 1.1  2000/05/29 12:05:22  mj
+   $Log$
+   Revision 1.1  2000-05-29 12:05:22  mj
    Renamed the DTD from linuxdoc to birddoc.
 
    Pavel, please check whether it builds in your environment as well.

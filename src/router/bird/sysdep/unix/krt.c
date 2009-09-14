@@ -151,6 +151,49 @@ kif_shutdown(struct proto *P)
   return PS_DOWN;
 }
 
+
+static inline int
+prefer_scope(struct ifa *a, struct ifa *b)
+{ return (a->scope > SCOPE_LINK) && (b->scope <= SCOPE_LINK); }
+
+static inline int
+prefer_addr(struct ifa *a, struct ifa *b)
+{ return ipa_compare(a->ip, b->ip) < 0; }
+
+static inline struct ifa *
+find_preferred_ifa(struct iface *i, ip_addr prefix, ip_addr mask)
+{
+  struct ifa *a, *b = NULL;
+
+  WALK_LIST(a, i->addrs)
+    {
+      if (!(a->flags & IA_SECONDARY) &&
+	  ipa_equal(ipa_and(a->ip, mask), prefix) &&
+	  (!b || prefer_scope(a, b) || prefer_addr(a, b)))
+	b = a;
+    }
+
+  return b;
+}
+
+struct ifa *
+kif_choose_primary(struct iface *i)
+{
+  struct kif_config *cf = (struct kif_config *) (kif_proto->p.cf);
+  struct kif_primary_item *it;
+  struct ifa *a;
+
+  WALK_LIST(it, cf->primary)
+    {
+      if (!it->pattern || patmatch(it->pattern, i->name))
+	if (a = find_preferred_ifa(i, it->prefix, ipa_mkmask(it->pxlen)))
+	  return a;
+    }
+
+  return find_preferred_ifa(i, IPA_NONE, IPA_NONE);
+}
+
+
 static int
 kif_reconfigure(struct proto *p, struct proto_config *new)
 {
@@ -159,6 +202,7 @@ kif_reconfigure(struct proto *p, struct proto_config *new)
 
   if (!kif_params_same(&o->iface, &n->iface))
     return 0;
+
   if (o->scan_time != n->scan_time)
     {
       tm_stop(kif_scan_timer);
@@ -166,6 +210,18 @@ kif_reconfigure(struct proto *p, struct proto_config *new)
       kif_scan(kif_scan_timer);
       tm_start(kif_scan_timer, n->scan_time);
     }
+
+  if (!EMPTY_LIST(o->primary) || !EMPTY_LIST(n->primary))
+    {
+      /* This is hack, we have to update a configuration
+       * to the new value just now, because it is used
+       * for recalculation of primary addresses.
+       */
+      p->cf = new;
+
+      ifa_recalc_all_primary_addresses();
+    }
+
   return 1;
 }
 
@@ -183,18 +239,18 @@ struct protocol proto_unix_iface = {
  *	Tracing of routes
  */
 
-static void
-krt_trace_in_print(struct krt_proto *p, rte *e, char *msg)
-{
-  DBG("KRT: %I/%d: %s\n", e->net->n.prefix, e->net->n.pxlen, msg);
-  log(L_TRACE "%s: %I/%d: %s", p->p.name, e->net->n.prefix, e->net->n.pxlen, msg);
-}
-
 static inline void
 krt_trace_in(struct krt_proto *p, rte *e, char *msg)
 {
   if (p->p.debug & D_PACKETS)
-    krt_trace_in_print(p, e, msg);
+    log(L_TRACE "%s: %I/%d: %s", p->p.name, e->net->n.prefix, e->net->n.pxlen, msg);
+}
+
+static inline void
+krt_trace_in_rl(struct rate_limit *rl, struct krt_proto *p, rte *e, char *msg)
+{
+  if (p->p.debug & D_PACKETS)
+    log_rl(rl, L_TRACE "%s: %I/%d: %s", p->p.name, e->net->n.prefix, e->net->n.pxlen, msg);
 }
 
 /*
@@ -202,6 +258,8 @@ krt_trace_in(struct krt_proto *p, rte *e, char *msg)
  */
 
 #ifdef KRT_ALLOW_LEARN
+
+static struct rate_limit rl_alien_seen, rl_alien_updated, rl_alien_created, rl_alien_ignored;
 
 static inline int
 krt_same_key(rte *a, rte *b)
@@ -222,7 +280,7 @@ krt_learn_announce_update(struct krt_proto *p, rte *e)
   ee->pflags = 0;
   ee->pref = p->p.preference;
   ee->u.krt = e->u.krt;
-  rte_update(p->p.table, nn, &p->p, ee);
+  rte_update(p->p.table, nn, &p->p, &p->p, ee);
 }
 
 static void
@@ -230,7 +288,7 @@ krt_learn_announce_delete(struct krt_proto *p, net *n)
 {
   n = net_find(p->p.table, n->n.prefix, n->n.pxlen);
   if (n)
-    rte_update(p->p.table, n, &p->p, NULL);
+    rte_update(p->p.table, n, &p->p, &p->p, NULL);
 }
 
 static void
@@ -249,20 +307,20 @@ krt_learn_scan(struct krt_proto *p, rte *e)
     {
       if (krt_uptodate(m, e))
 	{
-	  krt_trace_in(p, e, "[alien] seen");
+	  krt_trace_in_rl(&rl_alien_seen, p, e, "[alien] seen");
 	  rte_free(e);
 	  m->u.krt.seen = 1;
 	}
       else
 	{
-	  krt_trace_in(p, e, "[alien] updated");
+	  krt_trace_in_rl(&rl_alien_updated, p, e, "[alien] updated");
 	  *mm = m->next;
 	  rte_free(m);
 	  m = NULL;
 	}
     }
   else
-    krt_trace_in(p, e, "[alien] created");
+    krt_trace_in_rl(&rl_alien_created, p, e, "[alien] created");
   if (!m)
     {
       e->attrs = rta_lookup(e->attrs);
@@ -460,8 +518,12 @@ krt_flush_routes(struct krt_proto *p)
       if (e)
 	{
 	  rta *a = e->attrs;
-	  if (a->source != RTS_DEVICE && a->source != RTS_INHERIT)
-	    krt_set_notify(p, e->net, NULL, e);
+	  if ((n->n.flags & KRF_INSTALLED) &&
+	      a->source != RTS_DEVICE && a->source != RTS_INHERIT)
+	    {
+	      krt_set_notify(p, e->net, NULL, e);
+	      n->n.flags &= ~KRF_INSTALLED;
+	    }
 	}
     }
   FIB_WALK_END;
@@ -516,7 +578,7 @@ krt_got_route(struct krt_proto *p, rte *e)
 	krt_learn_scan(p, e);
       else
 	{
-	  krt_trace_in(p, e, "alien route, ignored");
+	  krt_trace_in_rl(&rl_alien_ignored, p, e, "alien route, ignored");
 	  rte_free(e);
 	}
       return;
@@ -631,8 +693,8 @@ krt_got_route_async(struct krt_proto *p, rte *e, int new UNUSED)
       DBG("It's a redirect, kill him! Kill! Kill!\n");
       krt_set_notify(p, net, NULL, e);
       break;
-    case KRT_SRC_ALIEN:
 #ifdef KRT_ALLOW_LEARN
+    case KRT_SRC_ALIEN:
       if (KRT_CF->learn)
 	{
 	  krt_learn_async(p, e, new);
@@ -684,7 +746,7 @@ krt_notify(struct proto *P, net *net, rte *new, rte *old, struct ea_list *attrs 
 {
   struct krt_proto *p = (struct krt_proto *) P;
 
-  if (shutting_down && KRT_CF->persist)
+  if (shutting_down)
     return;
   if (new && (!krt_capable(new) || new->attrs->source == RTS_INHERIT))
     new = NULL;
@@ -770,7 +832,7 @@ krt_start(struct proto *P)
   if (first)
     krt_scan_timer = krt_start_timer(p);
   else
-    tm_start(p->scan_timer, 0);
+    tm_start(krt_scan_timer, 0);
   p->scan_timer = krt_scan_timer;
 #else
   p->scan_timer = krt_start_timer(p);
@@ -793,7 +855,8 @@ krt_shutdown(struct proto *P)
 #endif
     tm_stop(p->scan_timer);
 
-  if (!KRT_CF->persist)
+  /* FIXME we should flush routes even when persist during reconfiguration */
+  if (p->initialized && !KRT_CF->persist)
     krt_flush_routes(p);
 
   krt_set_shutdown(p, last);
@@ -812,6 +875,7 @@ krt_init(struct proto_config *c)
 {
   struct krt_proto *p = proto_new(c, sizeof(struct krt_proto));
 
+  p->p.accept_ra_types = RA_OPTIMAL;
   p->p.rt_notify = krt_notify;
   p->p.min_scope = SCOPE_HOST;
   return &p->p;

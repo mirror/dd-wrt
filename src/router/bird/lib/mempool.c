@@ -27,6 +27,7 @@
 struct lp_chunk {
   struct lp_chunk *next;
   unsigned int size;
+  uintptr_t data_align[0];
   byte data[0];
 };
 
@@ -63,13 +64,9 @@ linpool
 *lp_new(pool *p, unsigned blk)
 {
   linpool *m = ralloc(p, &lp_class);
-  m->ptr = m->end = NULL;
-  m->first = m->current = NULL;
   m->plast = &m->first;
-  m->first_large = NULL;
   m->chunk_size = blk;
   m->threshold = 3*blk/4;
-  m->total = m->total_large = 0;
   return m;
 }
 

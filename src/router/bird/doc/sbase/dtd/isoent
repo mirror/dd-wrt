@@ -1,13 +1,13 @@
 <!-- This is a DTD, but will be read as -*- sgml -*-   -->
 <!-- ================================================= -->
-<!-- $Id: isoent,v 1.1 2000/05/31 14:27:50 mj Exp $ 
+<!-- $Id$ 
 
      This is dtd/isoent for SGML-Tools.
 
      Initial revision June 23st, 1997, by B. Kreimeier
 
-     $Log: isoent,v $
-     Revision 1.1  2000/05/31 14:27:50  mj
+     $Log$
+     Revision 1.1  2000-05-31 14:27:50  mj
      This should be enough from the SGMLtools distribution to make the
      SGMLtools happy.
 

@@ -30,7 +30,7 @@ dev_ifa_notify(struct proto *p, unsigned c, struct ifa *ad)
   struct rt_dev_config *P = (void *) p->cf;
 
   if (!EMPTY_LIST(P->iface_list) &&
-      !iface_patt_match(&P->iface_list, ad->iface))
+      !iface_patt_find(&P->iface_list, ad->iface))
     /* Empty list is automagically treated as "*" */
     return;
   if (c & IF_CHANGE_DOWN)
@@ -44,7 +44,7 @@ dev_ifa_notify(struct proto *p, unsigned c, struct ifa *ad)
 	  DBG("dev_if_notify: device shutdown: prefix not found\n");
 	  return;
 	}
-      rte_update(p->table, n, p, NULL);
+      rte_update(p->table, n, p, p, NULL);
     }
   else if (c & IF_CHANGE_UP)
     {
@@ -66,7 +66,7 @@ dev_ifa_notify(struct proto *p, unsigned c, struct ifa *ad)
       e = rte_get_temp(a);
       e->net = n;
       e->pflags = 0;
-      rte_update(p->table, n, p, e);
+      rte_update(p->table, n, p, p, e);
     }
 }
 

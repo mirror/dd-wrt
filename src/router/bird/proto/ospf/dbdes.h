@@ -10,7 +10,7 @@
 #ifndef _BIRD_OSPF_DBDES_H_
 #define _BIRD_OSPF_DBDES_H_
 
-void ospf_dbdes_send(struct ospf_neighbor *n);
+void ospf_dbdes_send(struct ospf_neighbor *n, int next);
 void ospf_dbdes_receive(struct ospf_dbdes_packet *ps,
 			struct ospf_iface *ifa, struct ospf_neighbor *n);
 

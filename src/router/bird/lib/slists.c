@@ -61,6 +61,9 @@ s_get(siterator *i)
   f->next = g;
   if (g)
     g->prev = f;
+
+  i->prev = NULL;
+  i->next = NULL;
   return n;
 }
 

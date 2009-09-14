@@ -30,6 +30,12 @@
 #include "lib/unix.h"
 #include "lib/sysio.h"
 
+/* Maximum number of calls of rx/tx handler for one socket in one
+ * select iteration. Should be small enough to not monopolize CPU by
+ * one protocol instance.
+ */
+#define MAX_STEPS 4
+
 /*
  *	Tracked Files
  */
@@ -83,10 +89,11 @@ tracked_fopen(pool *p, char *name, char *mode)
  * doesn't guarantee exact timing, only that a timer function
  * won't be called before the requested time.
  *
- * In BIRD, real time is represented by values of the &bird_clock_t type
- * which are integral numbers interpreted as a number of seconds since
- * a fixed (but platform dependent) epoch. The current time can be read
- * from a variable @now with reasonable accuracy.
+ * In BIRD, time is represented by values of the &bird_clock_t type
+ * which are integral numbers interpreted as a relative number of seconds since
+ * some fixed time point in past. The current time can be read
+ * from variable @now with reasonable accuracy and is monotonic. There is also
+ * a current 'absolute' time in variable @now_real reported by OS.
  *
  * Each timer is described by a &timer structure containing a pointer
  * to the handler function (@hook), data private to this function (@data),
@@ -99,7 +106,61 @@ tracked_fopen(pool *p, char *name, char *mode)
 static list near_timers, far_timers;
 static bird_clock_t first_far_timer = TIME_INFINITY;
 
-bird_clock_t now;
+bird_clock_t now, now_real;
+
+static void
+update_times_plain(void)
+{
+  bird_clock_t new_time = time(NULL);
+  int delta = new_time - now_real;
+
+  if ((delta >= 0) && (delta < 60))
+    now += delta;
+  else if (now_real != 0)
+   log(L_WARN "Time jump, delta %d s", delta);
+
+  now_real = new_time;
+}
+
+static void
+update_times_gettime(void)
+{
+  struct timespec ts;
+  int rv;
+
+  rv = clock_gettime(CLOCK_MONOTONIC, &ts);
+  if (rv != 0)
+    die("clock_gettime: %m");
+
+  if (ts.tv_sec != now) {
+    if (ts.tv_sec < now)
+      log(L_ERR "Monotonic timer is broken");
+
+    now = ts.tv_sec;
+    now_real = time(NULL);
+  }
+}
+
+static int clock_monotonic_available;
+
+static inline void
+update_times(void)
+{
+  if (clock_monotonic_available)
+    update_times_gettime();
+  else
+    update_times_plain();
+}
+
+static inline void
+init_times(void)
+{
+ struct timespec ts;
+ clock_monotonic_available = (clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+ if (!clock_monotonic_available)
+   log(L_WARN "Monotonic timer is missing");
+}
+
 
 static void
 tm_free(resource *r)
@@ -144,10 +205,6 @@ timer *
 tm_new(pool *p)
 {
   timer *t = ralloc(p, &tm_class);
-  t->hook = NULL;
-  t->data = NULL;
-  t->randomize = 0;
-  t->expires = 0;
   return t;
 }
 
@@ -353,8 +410,8 @@ tm_parse_date(char *x)
  * @x: destination buffer of size %TM_DATE_BUFFER_SIZE
  * @t: time
  *
- * This function formats the given time value @t to a textual
- * date representation (dd-mm-yyyy).
+ * This function formats the given relative time value @t to a textual
+ * date representation (dd-mm-yyyy) in real time..
  */
 void
 tm_format_date(char *x, bird_clock_t t)
@@ -370,14 +427,15 @@ tm_format_date(char *x, bird_clock_t t)
  * @x: destination buffer of size %TM_DATETIME_BUFFER_SIZE
  * @t: time
  *
- * This function formats the given time value @t to a textual
- * date/time representation (dd-mm-yyyy hh:mm:ss).
+ * This function formats the given relative time value @t to a textual
+ * date/time representation (dd-mm-yyyy hh:mm:ss) in real time.
  */
 void
 tm_format_datetime(char *x, bird_clock_t t)
 {
   struct tm *tm;
-
+  bird_clock_t delta = now - t;
+  t = now_real - delta;
   tm = localtime(&t);
   if (strftime(x, TM_DATETIME_BUFFER_SIZE, "%d-%m-%Y %H:%M:%S", tm) == TM_DATETIME_BUFFER_SIZE)
     strcpy(x, "<too-long>");
@@ -388,16 +446,17 @@ tm_format_datetime(char *x, bird_clock_t t)
  * @x: destination buffer of size %TM_RELTIME_BUFFER_SIZE
  * @t: time
  *
- * This function formats the given time value @t to a short
- * textual representation relative to the current time.
+ * This function formats the given relative time value @t to a short
+ * textual representation in real time, relative to the current time.
  */
 void
 tm_format_reltime(char *x, bird_clock_t t)
 {
   struct tm *tm;
-  bird_clock_t delta = (t < now) ? (now - t) : (t - now);
   static char *month_names[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
+  bird_clock_t delta = now - t;
+  t = now_real - delta;
   tm = localtime(&t);
   if (delta < 20*3600)
     bsprintf(x, "%02d:%02d", tm->tm_hour, tm->tm_min);
@@ -532,20 +591,9 @@ sk_new(pool *p)
 {
   sock *s = ralloc(p, &sk_class);
   s->pool = p;
-  s->data = NULL;
-  s->saddr = s->daddr = IPA_NONE;
-  s->sport = s->dport = 0;
+  // s->saddr = s->daddr = IPA_NONE;
   s->tos = s->ttl = -1;
-  s->iface = NULL;
-  s->rbuf = NULL;
-  s->rx_hook = NULL;
-  s->rbsize = 0;
-  s->tbuf = NULL;
-  s->tx_hook = NULL;
-  s->tbsize = 0;
-  s->err_hook = NULL;
   s->fd = -1;
-  s->rbuf_alloc = s->tbuf_alloc = NULL;
   return s;
 }
 
@@ -609,6 +657,25 @@ get_sockaddr(struct sockaddr_in *sa, ip_addr *a, unsigned *port, int check)
 
 #endif
 
+static char *
+sk_set_ttl_int(sock *s)
+{
+  int one = 1;
+#ifdef IPV6
+  if (s->type != SK_UDP_MC && s->type != SK_IP_MC &&
+      setsockopt(s->fd, SOL_IPV6, IPV6_UNICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
+    return "IPV6_UNICAST_HOPS";
+#else
+  if (setsockopt(s->fd, SOL_IP, IP_TTL, &s->ttl, sizeof(s->ttl)) < 0)
+    return "IP_TTL";
+#ifdef CONFIG_UNIX_DONTROUTE
+  if (s->ttl == 1 && setsockopt(s->fd, SOL_SOCKET, SO_DONTROUTE, &one, sizeof(one)) < 0)
+    return "SO_DONTROUTE";
+#endif 
+#endif
+  return NULL;
+}
+
 #define ERR(x) do { err = x; goto bad; } while(0)
 #define WARN(x) log(L_WARN "sk_setup: %s: %m", x)
 
@@ -616,31 +683,83 @@ static char *
 sk_setup(sock *s)
 {
   int fd = s->fd;
-  int one = 1;
   char *err;
 
   if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
     ERR("fcntl(O_NONBLOCK)");
   if (s->type == SK_UNIX)
     return NULL;
-#ifdef IPV6
-  if (s->ttl >= 0 && s->type != SK_UDP_MC && s->type != SK_IP_MC &&
-      setsockopt(fd, SOL_IPV6, IPV6_UNICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
-    ERR("IPV6_UNICAST_HOPS");
-#else
+#ifndef IPV6
   if ((s->tos >= 0) && setsockopt(fd, SOL_IP, IP_TOS, &s->tos, sizeof(s->tos)) < 0)
     WARN("IP_TOS");
-  if (s->ttl >= 0 && setsockopt(fd, SOL_IP, IP_TTL, &s->ttl, sizeof(s->ttl)) < 0)
-    ERR("IP_TTL");
-#ifdef CONFIG_UNIX_DONTROUTE
-  if (s->ttl == 1 && setsockopt(fd, SOL_SOCKET, SO_DONTROUTE, &one, sizeof(one)) < 0)
-    ERR("SO_DONTROUTE");
-#endif 
 #endif
-  err = NULL;
+
+#ifdef IPV6
+  int v = 1;
+  if ((s->flags & SKF_V6ONLY) && setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &v, sizeof(v)) < 0)
+    WARN("IPV6_V6ONLY");
+#endif
+
+  if (s->ttl >= 0)
+    err = sk_set_ttl_int(s);
+  else
+    err = NULL;
+
 bad:
   return err;
 }
+
+/**
+ * sk_set_ttl - set TTL for given socket.
+ * @s: socket
+ * @ttl: TTL value
+ *
+ * Set TTL for already opened connections when TTL was not set before.
+ * Useful for accepted connections when different ones should have 
+ * different TTL.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_set_ttl(sock *s, int ttl)
+{
+  char *err;
+
+  s->ttl = ttl;
+  if (err = sk_set_ttl_int(s))
+    log(L_ERR "sk_set_ttl: %s: %m", err);
+
+  return (err ? -1 : 0);
+}
+
+
+/**
+ * sk_set_md5_auth - add / remove MD5 security association for given socket.
+ * @s: socket
+ * @a: IP address of the other side
+ * @passwd: password used for MD5 authentication
+ *
+ * In TCP MD5 handling code in kernel, there is a set of pairs
+ * (address, password) used to choose password according to
+ * address of the other side. This function is useful for
+ * listening socket, for active sockets it is enough to set
+ * s->password field.
+ *
+ * When called with passwd != NULL, the new pair is added,
+ * When called with passwd == NULL, the existing pair is removed.
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_set_md5_auth(sock *s, ip_addr a, char *passwd)
+{
+  sockaddr sa;
+  fill_in_sockaddr(&sa, a, 0);
+  return sk_set_md5_auth_int(s, &sa, passwd);
+}
+
 
 static void
 sk_tcp_connected(sock *s)
@@ -798,13 +917,22 @@ sk_open(sock *s)
 	}
       fill_in_sockaddr(&sa, s->saddr, port);
 #ifdef CONFIG_SKIP_MC_BIND
-      if (type == SK_IP && bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
+      if ((type != SK_UDP_MC) && (type != SK_IP_MC) &&
+	  bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
 #else
       if (bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
 #endif
 	ERR("bind");
     }
   fill_in_sockaddr(&sa, s->daddr, s->dport);
+
+  if (s->password)
+    {
+      int rv = sk_set_md5_auth_int(s, &sa, s->password);
+      if (rv < 0)
+	goto bad_no_log;
+    }
+
   switch (type)
     {
     case SK_TCP_ACTIVE:
@@ -846,6 +974,7 @@ sk_open(sock *s)
 
 bad:
   log(L_ERR "sk_open: %s: %m", err);
+bad_no_log:
   close(fd);
   s->fd = -1;
   return -1;
@@ -865,6 +994,10 @@ sk_open_unix(sock *s, char *name)
   if (err = sk_setup(s))
     goto bad;
   unlink(name);
+ 
+  if (strlen(name) >= sizeof(sa.sun_path))
+    die("sk_open_unix: path too long");
+
   sa.sun_family = AF_UNIX;
   strcpy(sa.sun_path, name);
   if (bind(fd, (struct sockaddr *) &sa, SUN_LEN(&sa)) < 0)
@@ -1103,8 +1236,9 @@ io_init(void)
   init_list(&sock_list);
   init_list(&global_event_list);
   krt_io_init();
-  now = time(NULL);
-  srandom((int) now);
+  init_times();
+  update_times();
+  srandom((int) now_real);
 }
 
 void
@@ -1121,7 +1255,7 @@ io_loop(void)
   for(;;)
     {
       events = ev_run_list(&global_event_list);
-      now = time(NULL);
+      update_times();
       tout = tm_first_shot();
       if (tout <= now)
 	{
@@ -1200,22 +1334,27 @@ io_loop(void)
 	    {
 	      sock *s = current_sock;
 	      int e;
-	      if (FD_ISSET(s->fd, &rd))
+	      int steps = MAX_STEPS;
+	      if (FD_ISSET(s->fd, &rd) && s->rx_hook)
 		do
 		  {
+		    steps--;
 		    e = sk_read(s);
 		    if (s != current_sock)
 		      goto next;
 		  }
-		while (e);
+		while (e && s->rx_hook && steps);
+
+	      steps = MAX_STEPS;
 	      if (FD_ISSET(s->fd, &wr))
 		do
 		  {
+		    steps--;
 		    e = sk_write(s);
 		    if (s != current_sock)
 		      goto next;
 		  }
-		while (e);
+		while (e && steps);
 	      current_sock = sk_next(s);
 	    next: ;
 	    }
