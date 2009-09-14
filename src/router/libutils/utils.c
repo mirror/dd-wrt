@@ -1676,10 +1676,12 @@ int internal_getRouterBrand()
 		return ROUTER_WAP54G_V3;
 	}
 	
-	if (boardnum == 1 && nvram_match("boardtype", "0x04CF")
-	    && nvram_match("boardrev", "0x1213")) {
-		cprintf("router is wnr3500v2/L\n");
-		setRouter("Netgear WNR3500v2/L");
+	if ((boardnum == 1 || boardnum == 3500)
+		&& nvram_match("boardtype", "0x04CF")
+	    && (nvram_match("boardrev", "0x1213")
+	    || nvram_match("boardrev", "02"))) {
+		cprintf("router is wnr3500v2/U/L\n");
+		setRouter("Netgear WNR3500v2/U/L");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
 	
