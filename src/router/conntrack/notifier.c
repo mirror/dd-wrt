@@ -1,3 +1,26 @@
+/*
+ * notifier.c - connection limit email notifier (some sort of IDS or lets say the beginning of cyclic connection analysis)
+ *
+ * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
+ */
+
+
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -53,7 +76,7 @@ void freeList(struct linkedlist *list)
 	}
 }
 
-void nextline(FILE * fp)
+void nextline(FILE * fp) // skip current line and goto next line
 {
 	while (1) {
 		int c = getc(fp);
@@ -64,7 +87,7 @@ void nextline(FILE * fp)
 	}
 }
 
-void getword(FILE * in, char *val)
+void getword(FILE * in, char *val) //read a word which is separated by spaces, so wait for the first non space character and end if the first occuring space
 {
 	int c = 0;
 	while (1) {
@@ -81,7 +104,10 @@ void getword(FILE * in, char *val)
 	}
 	val[c++] = 0;
 }
-
+/*
+ * sends a email with the detailed connection statistic per port. this requires a modified sendmail command from busybox. the original one is buggy and does not work with alot of email servers like exim, so we modified
+ * it to support direct message sending and authentication with commandline parameters
+ */
 void send_email(struct linkedlist *list, char *source, int value)
 {
 	static char email_line[4096];
@@ -95,7 +121,7 @@ void send_email(struct linkedlist *list, char *source, int value)
 	char *pass = nvram_safe_get("warn_pass");
 	static char subject[4096];
 	sprintf(subject, "user %s reached connection limit\n", source);
-	char mess[256];
+	char *mess=malloc(65536);
 	int c = sprintf(mess, "ip %s has %d open connections\n", source, value);
 	while (1) {
 		if (!strcmp(list->name, source)) {
@@ -119,6 +145,7 @@ void send_email(struct linkedlist *list, char *source, int value)
 			server, from, fromfull, subject, to, mess, domain);
 
 	system(email_line);
+	free(mess);
 
 }
 
@@ -154,7 +181,7 @@ int main(int argc, char *argv[])
 		unsigned char dst[64];
 		unsigned char sport[64];
 		unsigned char dport[64];
-		if (nf) {
+		if (nf) { //nf_conntrack has 2 fields more
 			getword(fp, dummy);
 			getword(fp, dummy2);
 			getword(fp, proto);
@@ -177,9 +204,9 @@ int main(int argc, char *argv[])
 		}
 		if (feof(fp))
 			break;
-		if (!strcmp(proto, "tcp")) {
-			addEntry(&list, &src[4], &dport[6], 1);
-			addEntry(&total, &src[4], "0", 1);
+		if (!strcmp(proto, "tcp")) { //tcp has one field more
+			addEntry(&list, &src[4], &dport[6], 1); //add connection per port
+			addEntry(&total, &src[4], "0", 1);      //add connection to total statistic
 		} else {
 			addEntry(&list, &state[4], &sport[6], 1);
 			addEntry(&total, &state[4], "0", 1);
