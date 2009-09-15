@@ -559,10 +559,10 @@ int main(int argc, char **argv)
 			cprintf("USER1\n");
 			start_single_service();
 #ifdef HAVE_CHILLI
-			start_service_f("chilli");
+			start_service("chilli");
 #endif
 #ifdef HAVE_WIFIDOG
-			start_service_f("wifidog");
+			start_service("wifidog");
 #endif
 
 			state = IDLE;
@@ -750,10 +750,10 @@ int main(int argc, char **argv)
 				}
 			}
 #ifdef HAVE_CHILLI
-			start_service_f("chilli");
+			start_service("chilli");
 #endif
 #ifdef HAVE_WIFIDOG
-			start_service_f("wifidog");
+			start_service("wifidog");
 #endif
 			cprintf("start syslog\n");
 #ifdef HAVE_SYSLOG
