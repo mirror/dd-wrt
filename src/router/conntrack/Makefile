@@ -63,6 +63,7 @@ ifeq ($(CONFIG_CA8),y)
 MODULE:=conntrack.26
 endif
 
+include $(TOP)/busybox/.config
 
 notifier: notifier.o
 	$(CC) -o $@ $^ $(CFLAGS) -L$(TOP)/nvram -lnvram
@@ -79,12 +80,7 @@ install:
 	install -d $(INSTALLDIR)/etc/config
 	install -d $(INSTALLDIR)/usr/sbin
 	cp $(MODULE)* $(INSTALLDIR)/etc/config
-ifeq ($(CONFIG_XSCALE),y)
-	cp notifier.websecurity $(INSTALLDIR)/etc/config
-	cp notifier.nvramconfig $(INSTALLDIR)/etc/config
-	cp notifier $(INSTALLDIR)/usr/sbin
-endif
-ifeq ($(CONFIG_LSX),y)
+ifeq ($(CONFIG_SENDMAIL),y)
 	cp notifier.websecurity $(INSTALLDIR)/etc/config
 	cp notifier.nvramconfig $(INSTALLDIR)/etc/config
 	cp notifier $(INSTALLDIR)/usr/sbin
