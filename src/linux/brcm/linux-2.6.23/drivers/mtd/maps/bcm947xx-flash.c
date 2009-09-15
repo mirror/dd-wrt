@@ -400,9 +400,10 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		jffs_exclude_size = 0x10000;    //checksum is @ 0x003AFFF8
 	}
 	
-	if ( boardnum == 01 && nvram_match ("boardtype", "0x04CF")
-	    && nvram_match ("boardrev", "0x1213") ) {	
-		board_data_size = 0x10000;  //Netgear WNR3500v2/L
+	if ( (boardnum == 1 || boardnum == 3500)
+	  && nvram_match ("boardtype", "0x04CF")
+	  && (nvram_match ("boardrev", "0x1213") || nvram_match ("boardrev", "02")) ) {	
+		board_data_size = 0x10000;  //Netgear WNR3500v2/U/L
 	}															
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
