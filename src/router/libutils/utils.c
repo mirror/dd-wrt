@@ -869,6 +869,9 @@ int internal_getRouterBrand()
 #elif HAVE_PB42
 	setRouter("Atheros PB42");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_RSPRO
+	setRouter("Ubiquiti RouterStation Pro");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_RS
 #ifdef HAVE_DDLINK
 	setRouter("ddlink1x1");
