@@ -997,7 +997,7 @@ static void configure_single(int count)
 		countvaps++;
 	}
 	if (countvaps<8)
-	    countvaps=4;
+	    countvaps=8;
 	if (countvaps > vapcount)
 		vapcount = countvaps;
 
