@@ -990,7 +990,6 @@ static void configure_single(int count)
 	sprintf(wl_poll, "%s_pollingmode", dev);
 
 	setsysctrl(wif, "pollingmode", atoi(nvram_default_get(wl_poll, "0")));
-	int countvaps = 1;
 
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
