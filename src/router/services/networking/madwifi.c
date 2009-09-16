@@ -950,6 +950,9 @@ static void configure_single(int count)
 	char athmac[16];
 	char maxassoc[32];
 	char wl_poll[32];
+	static int vapcount = 0;
+	if (count == 0)
+		vapcount = 0;
 
 	sprintf(wif, "wifi%d", count);
 	sprintf(dev, "ath%d", count);
@@ -987,8 +990,18 @@ static void configure_single(int count)
 	sprintf(wl_poll, "%s_pollingmode", dev);
 
 	setsysctrl(wif, "pollingmode", atoi(nvram_default_get(wl_poll, "0")));
+	int countvaps = 1;
 
 	char *vifs = nvram_safe_get(wifivifs);
+	int countvaps = 1;
+	foreach(var, vifs, next) {
+		countvaps++;
+	}
+	if (countvaps > vapcount)
+		vapcount = countvaps;
+
+	setsysctrl(wif, "maxvaps", vapcount);
+
 	char primary[32] = { 0 };
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
