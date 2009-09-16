@@ -996,6 +996,8 @@ static void configure_single(int count)
 	foreach(var, vifs, next) {
 		countvaps++;
 	}
+	if (countvaps<8)
+	    countvaps=4;
 	if (countvaps > vapcount)
 		vapcount = countvaps;
 
