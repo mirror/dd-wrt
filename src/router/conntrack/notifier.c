@@ -110,7 +110,7 @@ void getword(FILE * in, char *val) //read a word which is separated by spaces, s
  */
 void send_email(struct linkedlist *list, char *source, int value)
 {
-	static char email_line[4096];
+	char *email_line;
 	char *server = nvram_safe_get("warn_server");
 	char *from = nvram_safe_get("warn_from");
 	char *fromfull = nvram_safe_get("warn_fromfull");
@@ -121,19 +121,26 @@ void send_email(struct linkedlist *list, char *source, int value)
 	char *pass = nvram_safe_get("warn_pass");
 	static char subject[4096];
 	sprintf(subject, "user %s reached connection limit\n", source);
-	char *mess=malloc(65536);
-	int c = sprintf(mess, "ip %s has %d open connections\n", source, value);
+	char *mess=NULL;
+	static char line[1024];
+
+	int c = sprintf(line, "ip %s has %d open connections\n", source, value);
+	mess = realloc(mess,c+1);
+	strcpy(mess,line);
 	while (1) {
 		if (!strcmp(list->name, source)) {
-			c += sprintf(&mess[c],
+			c += sprintf(line,
 				     "%d open connections on port %d\n",
 				     list->value, list->port);
+			mess = realloc(mess,c+1);
+			strcat(mess,line);
 		}
 		list = list->next;
 		if (list == NULL)
 			break;
 	}
-
+	email_line=malloc(strlen(mess)+1024);
+	
 	if (strlen(user) > 0)
 		sprintf(email_line,
 			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" -u \"%s\" -p \"%s\"  \"%s\" -m \"%s\" -d \"%s\"",
@@ -143,8 +150,9 @@ void send_email(struct linkedlist *list, char *source, int value)
 		sprintf(email_line,
 			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" \"%s\" -m \"%s\" -d \"%s\"",
 			server, from, fromfull, subject, to, mess, domain);
-
+	
 	system(email_line);
+	free(email_line);
 	free(mess);
 
 }
