@@ -569,10 +569,12 @@ void setupHostAP(char *prefix, int iswan)
 				nvram_nget("%s_radius_port", prefix));
 			fprintf(fp, "auth_server_shared_secret=%s\n",
 				nvram_nget("%s_radius_key", prefix));
+			char check[64];
+			sprintf(check,"%s_radius2_ipaddr",prefix);
+			nvram_default_get(check,"0.0.0.0");
 
 			if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
-			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr",
-					     prefix)
+			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr",prefix)
 			    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
 				fprintf(fp, "auth_server_addr=%s\n",
 					nvram_nget("%s_radius2_ipaddr",
