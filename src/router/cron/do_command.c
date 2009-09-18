@@ -377,13 +377,13 @@ child_process(e, u)
 				if (!*mailto) {
 					/* ... but it's empty. set to NULL
 					 */
-					mailto = NULL;
 				}
 			} else {
 				/* MAILTO not present, set to USER.
 				 */
 				mailto = usernm;
 			}
+			mailto = NULL;
 		
 			/* if we are supposed to be mailing, MAILTO will
 			 * be non-NULL.  only in this case should we set
@@ -396,8 +396,7 @@ child_process(e, u)
 				auto char	hostname[MAXHOSTNAMELEN];
 
 				(void) gethostname(hostname, MAXHOSTNAMELEN);
-				(void) snprintf(mailcmd, MAX_COMMAND, MAILARGS,
-					       MAILCMD, mailto);
+				(void) snprintf(mailcmd, MAX_COMMAND, MAILARGS,MAILCMD, mailto);
 				if (!(mail = cron_popen(mailcmd, "w", e))) {
 					perror(MAILCMD);
 					(void) _exit(ERROR_EXIT);
@@ -420,7 +419,6 @@ child_process(e, u)
 				 */
 				putc(ch, mail);
 			}
-
 			/* we have to read the input pipe no matter whether
 			 * we mail or not, but obviously we only write to
 			 * mail pipe if we ARE mailing.
