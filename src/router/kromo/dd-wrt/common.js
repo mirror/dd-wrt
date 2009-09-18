@@ -1011,19 +1011,19 @@ function openBW(iface) {
 
 /* Added by Botho 25.April.06 */
 /* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
-/* reference values (125 Mhz cpu): 90 sec for a reboot or restore config file, 120 for a reset nvram + reboot */
+/* reference values (200 Mhz cpu): 60 sec for a reboot or restore config file, 120 for a reset nvram + reboot */
 function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
 	var scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
-	var coef = 2.0;
+	var coef = 1.0;
 
-    if (clk == 125 || clk == 240) {	                            // old 125 MHz cpus need some more.... 
-		coef = 2.5;												// also 5354 @ 240 MHz needs more
+    if (clk < 200 || clk == 240) {	                // some slow cpus need some more....
+		coef = 2.0;									// also bcm5354 need more
 	}
 	
 	if (rest_default == 1) {	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
-		coef = coef * 1.5;
+		coef = coef * 2;
 	}
 	if (flags == 1) {
 		coef = coef * 3;
@@ -1032,7 +1032,7 @@ function getTimeOut(clk, rest_default, flags) {
 		coef = coef * 1.8;
 	}
 
-	this.wait_time = coef * wait_time * (125 / clk);
+	this.wait_time = coef * wait_time;
 	this.scroll_count = this.wait_time / 5 - 3;
 
 }
