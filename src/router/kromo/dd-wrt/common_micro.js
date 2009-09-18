@@ -935,14 +935,14 @@ function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;
 	var scroll_count = (wait_time / 5) - 3;
-	var coef = 2.0;
+	var coef = 1.0;
 
-    if (clk == 125  || clk == 240) {
-		coef = 2.5;
+    if (clk < 200 || clk == 240) {
+		coef = 2.0;
 	}	
 	
 	if (rest_default == 1) {
-		coef = coef * 1.5;
+		coef = coef * 2;
 	}
 	if (flags == 1) {
 		coef = coef * 3;
@@ -951,7 +951,7 @@ function getTimeOut(clk, rest_default, flags) {
 		coef = coef * 1.8;
 	}
 	
-	this.wait_time = coef * wait_time * (125 / clk);
+	this.wait_time = coef * wait_time;
 	this.scroll_count = this.wait_time / 5 - 3;
 
 }
