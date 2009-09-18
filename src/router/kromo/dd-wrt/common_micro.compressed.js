@@ -925,12 +925,12 @@ win.focus();
 function getTimeOut(clk,_5e,_5f){
 var _60=60;
 var _61=(_60/5)-3;
-var _62=2;
-if(clk==125||clk==240){
-_62=2.5;
+var _62=1;
+if(clk<200||clk==240){
+_62=2;
 }
 if(_5e==1){
-_62=_62*1.5;
+_62=_62*2;
 }
 if(_5f==1){
 _62=_62*3;
@@ -938,7 +938,7 @@ _62=_62*3;
 if(_5f==2){
 _62=_62*1.8;
 }
-this.wait_time=_62*_60*(125/clk);
+this.wait_time=_62*_60;
 this.scroll_count=this.wait_time/5-3;
 };
 function setElementMask(id,_63){
