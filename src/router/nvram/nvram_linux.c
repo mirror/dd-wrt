@@ -87,12 +87,14 @@ char *nvram_get(const char *name)
 
 	if (nvram_fd < 0)
 		if (nvram_init(NULL)) {
+			fprintf(stderr,"nvram_get failed, init fucked up\n");
 			//unlock();
 			return NULL;
 		}
 	if (count > sizeof(tmp)) {
 		if (!(off = malloc(count))) {
 			//unlock();
+			fprintf(stderr,"nvram_get failed, malloc fucked up\n");
 			return NULL;
 		}
 	}
@@ -198,6 +200,8 @@ int nvram_set(const char *name, const char *value)
 	struct nvram_convert *v;
 	int ret;
 	ret = _nvram_set(name, value);
+	if (ret!=0)
+	    fprintf(stderr,"nvram_set failed with code %d\n",ret);
 
 	for (v = nvram_converts; v->name; v++) {
 		if (!strcmp(v->name, name)) {
